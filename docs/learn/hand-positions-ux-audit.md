@@ -2,6 +2,31 @@
 
 Scope: the shipped hand-positions experience, not a repository-wide code-quality grade.
 
+## Automatic practice progression, September 8
+
+Austen approved the visible test experience and requested that the checkmarked
+position advance to the next assignment without requiring Next. This supersedes
+the earlier manual-only progression decision for this practice sequence.
+
+The existing workshop state owns a cancellable 1.2-second success hold. The
+experience then calls its existing Next handler, retaining the pictograph,
+heading and grid-mode transitions. Next remains an optional way to skip the
+hold. The sixth success opens the completion playground, never another lesson.
+Incorrect/incomplete placement, selecting a hand, Clear, Back, manual Next,
+page hiding and teardown cancel pending progression. Returning to a visible
+successful round starts a fresh hold. Reduced motion keeps the reading pause
+while the existing motion owners remove decorative movement. Free exploration
+does not auto-advance.
+
+Focused tests cover all six timed successes, wrong answers, cancellation,
+manual/timed advancement races and resumption. Existing visual and input owners
+are unchanged; this revision does not add layout, copy or pictograph treatments.
+All 31 workshop tests pass and Svelte check reports zero errors or warnings.
+Browser verification completed all six rounds without pressing Next, observed
+the retained checkmarked pictograph, and confirmed reduced-motion completion
+stays in this lesson. The unrelated primary-checkout merge still blocks local
+integration; these results are from the task-owned preview.
+
 ## Content motion and exploration tools, September 8
 
 Austen accepted the anchored layout and canonical glyph revision, then requested

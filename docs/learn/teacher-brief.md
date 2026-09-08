@@ -60,8 +60,9 @@ roles are not required dependencies and are not active pilot agents.
   approves Grid's prominent Next and coordinated spatial transitions. It rejects
   Hand Positions' tiny distant Next, duplicate confirmation, and static
   checkmark-only reward. After meaningful achievement, show one confirmation
-  and a coordinated visible response leading attention to a large, obvious next
-  action, without scanning editing tools or reference blocks. Verify a
+  and a coordinated visible response leading attention forward. September 8
+  Hand Positions requests a success hold followed by
+  automatic practice progression; leaving the lesson stays manual. Verify a
   reduced-motion equivalent through shared motion owners. Do not claim measured
   dopamine effects. This is a requested acceptance gate, not approval of the
   implementation; [the UX audit](hand-positions-ux-audit.md) owns its evidence.

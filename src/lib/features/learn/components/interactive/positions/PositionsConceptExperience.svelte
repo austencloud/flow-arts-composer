@@ -93,6 +93,23 @@
   let boardHeight = $state(320);
   let experienceElement: HTMLDivElement;
   const correct = $derived(workshop.feedback === "correct");
+  let pageVisible = $state(true);
+  $effect(() => {
+    const updateVisibility = () => {
+      pageVisible = !document.hidden;
+    };
+    updateVisibility();
+    document.addEventListener("visibilitychange", updateVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", updateVisibility);
+  });
+  $effect(() => {
+    // Keep the successful pictograph readable before reusing the existing Next
+    // transition. Editing, leaving, or hiding the page cancels this round's wait.
+    [workshop.round, workshop.phase];
+    if (!correct || !pageVisible) return;
+    return workshop.scheduleAutoAdvance(() => void next());
+  });
   const incorrect = $derived(workshop.feedback === "incorrect");
   const correctionPreview = $derived(
     incorrect && workshop.challenge && placement.leftLocation

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   GridLocation,
   GridMode,
@@ -17,7 +17,10 @@ import {
   restorePositionWorkshop,
   transformPosition,
 } from "../../../src/lib/features/learn/components/interactive/positions/hand-position-lesson";
-import { createPositionWorkshopState } from "../../../src/lib/features/learn/components/interactive/positions/positions-experience-state.svelte";
+import {
+  createPositionWorkshopState,
+  POSITION_SUCCESS_HOLD_MS,
+} from "../../../src/lib/features/learn/components/interactive/positions/positions-experience-state.svelte";
 import { HandSide } from "../../../src/lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { PropPlacementChange } from "../../../src/lib/shared/pictograph/grid/domain/prop-placement";
 
@@ -33,6 +36,88 @@ function memory(saved?: unknown) {
     getPhaseData: <T>(_key: string, fallback: T) => fallback,
   };
 }
+
+describe("hand position automatic progression", () => {
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
+  it("holds each success before advancing and ends on completion, not another lesson", () => {
+    vi.useFakeTimers();
+    const workshop = createPositionWorkshopState(memory());
+    workshop.practice();
+    for (let round = 0; round < POSITION_CHALLENGES.length; round++) {
+      workshop.check(workshop.challenge!.kind);
+      workshop.scheduleAutoAdvance(() => workshop.next());
+      vi.advanceTimersByTime(POSITION_SUCCESS_HOLD_MS - 1);
+      expect(workshop.round).toBe(round);
+      expect(workshop.feedback).toBe("correct");
+      vi.advanceTimersByTime(1);
+      expect(workshop.round).toBe(round + 1);
+    }
+    expect(workshop.phase).toBe("complete");
+    const advance = vi.fn();
+    workshop.scheduleAutoAdvance(advance);
+    vi.runAllTimers();
+    expect(advance).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "edit",
+    "clear",
+    "select",
+    "explore",
+    "restart",
+    "cleanup",
+    "manual next",
+  ])("cancels the pending advance on %s", (action) => {
+    vi.useFakeTimers();
+    const workshop = createPositionWorkshopState(memory());
+    workshop.practice();
+    workshop.check("alpha");
+    const advance = vi.fn(() => workshop.next());
+    const cleanup = workshop.scheduleAutoAdvance(advance);
+    vi.advanceTimersByTime(POSITION_SUCCESS_HOLD_MS / 2);
+    if (action === "edit") workshop.edited();
+    if (action === "clear" || action === "select")
+      workshop.evaluatePlacement({
+        leftLocation: GridLocation.NORTH,
+        rightLocation: action === "clear" ? null : GridLocation.SOUTH,
+        complete: action !== "clear",
+        activeHand: HandSide.RIGHT,
+        canUndo: true,
+      });
+    if (action === "explore") workshop.explore();
+    if (action === "restart") workshop.practice();
+    if (action === "cleanup") cleanup();
+    if (action === "manual next") workshop.next();
+    vi.runAllTimers();
+    expect(advance).not.toHaveBeenCalled();
+    expect(workshop.round).toBe(action === "manual next" ? 1 : 0);
+  });
+
+  it("keeps wrong answers in place and gives a resumed success a fresh hold", () => {
+    vi.useFakeTimers();
+    const workshop = createPositionWorkshopState(memory());
+    workshop.practice();
+    const advance = vi.fn(() => workshop.next());
+    workshop.check("gamma");
+    workshop.scheduleAutoAdvance(advance);
+    vi.runAllTimers();
+    expect(advance).not.toHaveBeenCalled();
+    workshop.check("alpha");
+    const suspend = workshop.scheduleAutoAdvance(advance);
+    vi.advanceTimersByTime(600);
+    suspend();
+    vi.advanceTimersByTime(5000);
+    expect(workshop.round).toBe(0);
+    workshop.scheduleAutoAdvance(advance);
+    vi.advanceTimersByTime(POSITION_SUCCESS_HOLD_MS);
+    expect(advance).toHaveBeenCalledTimes(1);
+    expect(workshop.round).toBe(1);
+  });
+});
 
 describe("hand position workshop domain", () => {
   it("renders the canonical static letter for every arrangement without changing either hand", () => {
