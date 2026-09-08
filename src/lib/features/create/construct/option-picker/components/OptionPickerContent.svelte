@@ -151,6 +151,8 @@ Uses organizer and sizer services for section grouping and sizing.
   let containerWidth = $state(800);
   let containerHeight = $state(600);
   let sizingStable = $state(false);
+  let sectionsElement: HTMLDivElement | null = $state(null);
+  let rejectedDesktopFit = $state<string | null>(null);
 
   // Content-area bounds for the continuous compact grid. Fed by the same
   // HorizontalSwipeContainer the sectioned (All) layout uses, so the continuous
@@ -287,6 +289,26 @@ Uses organizer and sizer services for section grouping and sizing.
     );
   });
 
+  // Width alone cannot prove that the grouped desktop catalog fits. A short
+  // pane can be wide enough for eight columns while still clipping the later
+  // letter types below the fold. Remember that exact geometry/content frame as
+  // unsuitable and use the existing mobile hierarchy instead.
+  const desktopFitSignature = $derived(
+    [
+      Math.round(containerWidth),
+      Math.round(containerHeight),
+      level,
+      turnControlsEditable ? 1 : 0,
+      shouldShowFilterToggle() ? 1 : 0,
+      ...continuationState().sections.map(
+        (section) => `${section.title}:${section.pictographs.length}`
+      ),
+    ].join("|")
+  );
+  const desktopHeightFits = $derived(
+    rejectedDesktopFit !== desktopFitSignature
+  );
+
   // Mobile stacked layout (workspace on top, tool panel on bottom) vs side-by-side desktop
   const isMobileStackedLayout = $derived(() => !isSideBySideLayout());
 
@@ -306,7 +328,8 @@ Uses organizer and sizer services for section grouping and sizing.
     // - OR not using wide layout (container < 750px)
     // - AND not using compact 4x4 (continuous mode)
     // Fixed letter-type groups remain mounted even when a group is empty.
-    const shouldSwipe = isMobileStackedLayout() || !shouldUseWideLayout;
+    const shouldSwipe =
+      isMobileStackedLayout() || !shouldUseWideLayout || !desktopHeightFits;
     return shouldSwipe && !shouldUseCompact4x4();
   });
 
@@ -539,6 +562,22 @@ Uses organizer and sizer services for section grouping and sizing.
     };
   });
 
+  $effect(() => {
+    if (!sectionsElement) return;
+    const element = sectionsElement;
+    const signature = desktopFitSignature;
+    let frame = requestAnimationFrame(() => {
+      frame = 0;
+      if (element.scrollHeight > element.clientHeight + 1) {
+        rejectedDesktopFit = signature;
+      }
+    });
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+    };
+  });
+
   const dismissInteractionHintOnUse: Attachment<HTMLDivElement> = (node) => {
     function targetsOption(target: EventTarget | null): boolean {
       return (
@@ -703,7 +742,7 @@ Uses organizer and sizer services for section grouping and sizing.
           </OptionViewerSwipeLayout>
         </div>
       {:else if shouldUseWideLayout && !isMobileStackedLayout()}
-        <div class="sections-container">
+        <div class="sections-container" bind:this={sectionsElement}>
           <!-- Types 1-3: Individual vertical sections -->
           {#each types123Sections() as section (section.title)}
             <OptionSection
@@ -831,7 +870,7 @@ Uses organizer and sizer services for section grouping and sizing.
     justify-content: center;
     gap: 16px;
     padding: 8px;
-    overflow-y: auto;
+    overflow-y: hidden;
     min-height: 0;
   }
 

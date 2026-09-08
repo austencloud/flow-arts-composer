@@ -19,6 +19,7 @@
     hiddenCount = 0,
     settledWidth = undefined,
     settleMs = 450,
+    sectionTitles = [],
   } = $props<{
     width?: number;
     height?: number;
@@ -34,7 +35,12 @@
     /** Width the box eases to, standing in for the workspace expansion. */
     settledWidth?: number;
     settleMs?: number;
+    sectionTitles?: string[];
   }>();
+
+  const harnessOptions = $derived(
+    sectionTitles.length > 0 ? ([{}] as PictographData[]) : []
+  );
 
   const currentSequence = $derived(
     Array.from({ length: sequenceLength }, () => ({}) as PictographData)
@@ -66,8 +72,9 @@
   style:margin-top={`${topOffset}px`}
 >
   <OptionPickerContent
-    options={[]}
-    organizerService={() => []}
+    options={harnessOptions as never[]}
+    organizerService={() =>
+      sectionTitles.map((title) => ({ title, pictographs: [] }))}
     sizerService={() => ({
       pictographSize: 80,
       pictographSizeString: "80px",

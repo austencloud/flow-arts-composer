@@ -4,6 +4,22 @@ import { describe, expect, it, vi } from "vitest";
 import OptionPickerDesktopLayoutHarness from "./OptionPickerDesktopLayoutHarness.svelte";
 
 describe("OptionPickerContent desktop layout", () => {
+  it("uses the mobile hierarchy when the desktop sections would scroll", async () => {
+    render(OptionPickerDesktopLayoutHarness, {
+      width: 900,
+      height: 120,
+      sideBySide: true,
+      sectionTitles: ["Type1", "Type2", "Type3"],
+    });
+
+    await vi.waitFor(() => {
+      expect(document.querySelector(".sections-container")).toBeNull();
+    });
+    await expect
+      .element(page.getByRole("tablist", { name: "Letter type" }))
+      .toBeInTheDocument();
+  });
+
   it("does not render redundant letter-type navigation above visible sections", async () => {
     render(OptionPickerDesktopLayoutHarness);
 
