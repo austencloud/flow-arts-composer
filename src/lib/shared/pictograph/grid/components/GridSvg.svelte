@@ -22,6 +22,7 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     // Hand point visibility control
     handPointVisibility = "all",
     activeLocations = undefined,
+    layer = "all",
   } = $props<{
     /** Grid mode - derived from motion data */
     gridMode?: GridMode;
@@ -43,6 +44,8 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     handPointVisibility?: "all" | "active" | "none";
     /** Locations where props are positioned (used when handPointVisibility="active") */
     activeLocations?: GridLocation[];
+    /** The bitmap card compositor places hand/non-radial points above props. */
+    layer?: "all" | "base" | "points";
   }>();
 
   // Map hand point IDs to their grid locations
@@ -574,6 +577,7 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
 <g
   bind:this={gridContainerElement}
   class="grid-container"
+  data-grid-layer={layer}
   class:visible
   class:box-mode={gridMode === GridMode.BOX}
   class:skewed-mode={gridMode === GridMode.SKEWED}
@@ -614,6 +618,16 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
 </g>
 
 <style>
+  .grid-container[data-grid-layer="base"] :global(.normal-hand-point),
+  .grid-container[data-grid-layer="base"] :global(.normal-layer2-point) {
+    display: none;
+  }
+
+  .grid-container[data-grid-layer="points"] :global(circle:not(.normal-hand-point):not(.normal-layer2-point)),
+  .grid-container[data-grid-layer="points"] :global(path:not(.normal-hand-point):not(.normal-layer2-point)) {
+    display: none;
+  }
+
   .grid-container {
     z-index: 1;
     /* Beautiful fade in/out effect matching other pictograph elements */

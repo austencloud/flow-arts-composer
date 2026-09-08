@@ -40,6 +40,12 @@ export interface ChoreoCardCell {
   gridRow: number;
   duration: number;
   fadeOutUrl?: string;
+  live?: {
+    data: PictographData;
+    options: PreviewCellRenderOptions;
+    epoch: number;
+    onSettled: (failed: boolean) => void;
+  };
 }
 
 export interface ChoreoCardRenderModel {
@@ -70,6 +76,7 @@ interface RenderSizingPort {
 }
 
 export interface ChoreoCardRenderDeps {
+  readonly livePictographs?: boolean;
   readonly sequence: SequenceData;
   readonly renderOptions: PreviewCellRenderOptions;
   readonly leftPropType: PropType | undefined;
@@ -114,6 +121,9 @@ export function createChoreoCardRenderEngine(
   sizing: RenderSizingPort,
   crossfader: ReturnType<typeof createCrossfaderState>
 ) {
+  let liveEpoch = 0;
+  let liveGeneration = 0;
+  let disposed = false;
   let isRendering = false;
   let renderQueued = false;
   let refreshDelayTimer: ReturnType<typeof setTimeout> | null = null;
@@ -171,6 +181,8 @@ export function createChoreoCardRenderEngine(
       ...gridPosition(cell.index, deps.effectiveColumns),
     }));
     sizing.updateCellWidth();
+
+    if (deps.livePictographs) return;
 
     storePreviewInCache(
       cacheKey(deps),
@@ -270,6 +282,7 @@ export function createChoreoCardRenderEngine(
   async function renderAllCells(): Promise<void> {
     const initialDeps = getDeps();
     if (!initialDeps.sequence.steps?.length) {
+      model.cells = [];
       model.isLoading = false;
       return;
     }
@@ -327,6 +340,45 @@ export function createChoreoCardRenderEngine(
         model.durationColCount = 0;
       }
       model.rows = rows;
+
+      if (deps.livePictographs) {
+        const generation = ++liveGeneration;
+        const firstStep = deps.sequence.steps[0];
+        const start =
+          deps.sequence.startPosition ??
+          createStartPositionFromBeatStart(firstStep!);
+        model.cells = buildPlaceholders(deps, columns).map((cell) => ({
+          ...cell,
+          live: {
+            data: cell.index === -1 ? start : deps.sequence.steps[cell.index]!,
+            options: {
+              ...deps.renderOptions,
+              widthMultiplier: mixed && cell.index !== -1 ? cell.duration : 1,
+            },
+            epoch: liveEpoch,
+            onSettled: (failed: boolean) => {
+              if (disposed || generation !== liveGeneration) return;
+              const current = model.cells.find(
+                (item) => item.index === cell.index
+              );
+              if (!current) return;
+              current.isLoaded = !failed;
+              current.renderFailed = failed;
+              const visible = model.cells.filter(
+                (item) => deps.includeStartPosition || item.index !== -1
+              );
+              deps.onRenderProgress?.(
+                visible.filter((item) => item.isLoaded || item.renderFailed)
+                  .length,
+                visible.length
+              );
+            },
+          },
+        }));
+        crossfader.setActiveDarkMode(deps.darkMode);
+        model.isLoading = false;
+        return;
+      }
 
       const key = cacheKey(deps);
       const cached = globalPreviewCache.get(key);
@@ -538,6 +590,7 @@ export function createChoreoCardRenderEngine(
     animate = true
   ): Promise<void> {
     const initialDeps = getDeps();
+    if (initialDeps.livePictographs) return renderAllCells();
     if (!initialDeps.sequence.steps?.length || model.cells.length === 0) return;
     if (isRendering) {
       renderQueued = true;
@@ -686,6 +739,13 @@ export function createChoreoCardRenderEngine(
   async function forceRerenderAllCells(): Promise<void> {
     const deps = getDeps();
     if (!deps.sequence.steps?.length) return;
+    if (deps.livePictographs) {
+      liveEpoch++;
+      const { pictographPreparer } =
+        await import("$lib/shared/pictograph/shared/services/pictograph-preparer");
+      pictographPreparer.clearCache();
+      return renderAllCells();
+    }
     globalPreviewCache.delete(cacheKey(deps));
 
     const firstStep = deps.sequence.steps[0];
@@ -718,6 +778,7 @@ export function createChoreoCardRenderEngine(
 
   function adoptCachedPreview(): boolean {
     const deps = getDeps();
+    if (deps.livePictographs) return false;
     if (!deps.sequence.steps?.length) return false;
     const cached = globalPreviewCache.get(cacheKey(deps));
     if (
@@ -745,6 +806,7 @@ export function createChoreoCardRenderEngine(
   }
 
   function dispose(): void {
+    disposed = true;
     if (refreshDelayTimer !== null) clearTimeout(refreshDelayTimer);
     clearCellUrls();
   }

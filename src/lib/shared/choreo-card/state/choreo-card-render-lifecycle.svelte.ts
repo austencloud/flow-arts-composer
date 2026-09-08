@@ -13,6 +13,7 @@ import type { createCrossfaderState } from "$lib/shared/choreo-card/state/crossf
 export interface ChoreoCardRenderLifecycleDeps {
   readonly primaryPropColors?: { left: string; right: string } | null;
   readonly sequence: SequenceData;
+  readonly handPathMode?: boolean;
   readonly leftPropType: PropType | undefined;
   readonly rightPropType: PropType | undefined;
   readonly browseViewMode: BrowseViewMode | undefined;
@@ -66,6 +67,8 @@ export function createChoreoCardRenderLifecycle(
   function renderKeys(deps: ChoreoCardRenderLifecycleDeps) {
     return buildChoreoCardRenderKeys({
       sequence: deps.sequence,
+      handPathMode: deps.handPathMode,
+      browseViewMode: deps.browseViewMode,
       primaryPropColors: deps.primaryPropColors,
       leftPropType: deps.leftPropType,
       rightPropType: deps.rightPropType,

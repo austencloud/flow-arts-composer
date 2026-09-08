@@ -43,17 +43,7 @@
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { toMandalaPathShape } from "$lib/shared/mandala/services/mandala-path-policy";
 
-  interface CellData {
-    index: number;
-    label: string;
-    imageUrl: string;
-    isLoaded: boolean;
-    renderFailed?: boolean;
-    gridColumn: number;
-    gridRow: number;
-    duration: number;
-    fadeOutUrl?: string;
-  }
+  import type { ChoreoCardCell as CellData } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
 
   interface MandalaPlacement {
     row: number;

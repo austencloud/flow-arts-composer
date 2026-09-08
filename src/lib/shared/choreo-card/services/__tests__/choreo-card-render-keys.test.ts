@@ -67,6 +67,14 @@ function routeMode(
 }
 
 describe("buildChoreoCardRenderKeys — overlay vs structural routing", () => {
+  it("invalidates geometry for hand-path and solo presentation changes", () => {
+    const before = baseInputs();
+    expect(routeMode(before, { ...before, handPathMode: true })).toBe("swap");
+    expect(routeMode(before, {
+      ...before,
+      browseViewMode: { subject: "props", granularity: "solo", hand: "right" },
+    })).toBe("swap");
+  });
   it("repaints a changed palette without moving the card cells", () => {
     const before = baseInputs();
     const after = { ...before, primaryPropColors: { left: "#00ff88", right: "#ff8800" } };

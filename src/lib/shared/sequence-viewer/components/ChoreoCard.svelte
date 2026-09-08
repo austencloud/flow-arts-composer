@@ -503,7 +503,9 @@
       !containedWidth ||
       !containedHeight ||
       !cells.length ||
-      !cells.every((cell) => cell.isLoaded || cell.renderFailed) ||
+      !cells
+        .filter((cell) => includeStartPosition || cell.index !== -1)
+        .every((cell) => cell.isLoaded || cell.renderFailed) ||
       !qrState.settled
     )
       return;
@@ -635,7 +637,9 @@
 
     return {
       ...baseOptions,
-      primaryPropColors: cloudProbeEnabled ? null : getSettings().primaryPropColors,
+      primaryPropColors: cloudProbeEnabled
+        ? null
+        : getSettings().primaryPropColors,
       // A scan represents the printed card, not the scanner's personal export
       // toggles. Pin the same canonical visibility used when QR creation
       // verifies cloud assets; retain the sequence's participating hands.
@@ -664,6 +668,7 @@
     renderModel,
     () => ({
       sequence,
+      livePictographs: !cloudProbeEnabled,
       renderOptions: buildRenderOptionsFn(),
       leftPropType,
       rightPropType,
@@ -691,7 +696,10 @@
 
   renderLifecycle = createChoreoCardRenderLifecycle(
     () => ({
-      primaryPropColors: cloudProbeEnabled ? null : getSettings().primaryPropColors,
+      handPathMode,
+      primaryPropColors: cloudProbeEnabled
+        ? null
+        : getSettings().primaryPropColors,
       sequence,
       leftPropType,
       rightPropType,
