@@ -2,6 +2,38 @@
 
 Scope: the shipped hand-positions experience, not a repository-wide code-quality grade.
 
+## Content motion and exploration tools, September 8
+
+Austen accepted the anchored layout and canonical glyph revision, then requested
+visible transitions for example selection and Clear, a whole-button grid toggle,
+and Rotate/Reflect/Swap while exploring after completion.
+
+The live board opts into prop/glyph presence fades in PictographRenderer. Departing
+content retains its own geometry and assets until the fade finishes. Existing
+hands use PropSvg's position interpolation; the grid is never crossfaded or
+remounted. Direct drag/drop positioning remains immediate. Print/export and other
+consumers do not opt in. Reduced motion removes the content animation.
+
+GridModeToggle now uses one native button with an explicit switch-to label,
+rotating grid icon, whole-surface hover, and keyboard focus feedback. Transform
+actions reuse the existing position operations and app icons, grouped with Undo
+and Clear in both exploration phases. Continue stays ahead of these utilities.
+
+Browser evidence: sampled opacity increases from 0 to 0.92 for both entering
+hands and the canonical glyph, and decreases through 0.83, 0.67 and 0.58 on Clear.
+Existing hand geometry interpolates between example positions. Rapid Clear then
+example selection settles with exactly two hands. Drag release has zero-duration
+position interpolation, and Undo restores the previous placement. Four rotations
+restore the starting pair; reflection and hand swap are reversible. Space toggles
+the grid once. Reduced-motion Clear leaves no outgoing hands or glyph.
+
+All six practice builds and wrong-answer correction passed in the browser. Seven
+viewport tiers plus the reported tall pane have no horizontal overflow. Utilities
+wrap and remain scroll-reachable on short screens; tablet and larger layouts keep
+them in one row when space permits. Native touch remains unverified. This motion
+follow-up awaits Austen's review; acceptance of the preceding layout is recorded
+separately from this implementation's verification.
+
 ## Canonical pictographs and anchored feedback, September 8
 
 Austen accepted improved clarity but rejected the top-left glyph overlays,

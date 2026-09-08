@@ -47,6 +47,7 @@
     previewPictographData?: StepData | PictographData | null;
     /** An identified static position uses the normal in-pictograph letter glyph. */
     positionLetter?: PictographData["letter"];
+    animateContent?: boolean;
     resetEpoch?: number;
     /** Epoch-counted committed location change to play as an in-place motion. */
     motionMove?: PlacementMotionMove | null;
@@ -84,6 +85,7 @@
     betaSwapped = false,
     previewPictographData = null,
     positionLetter,
+    animateContent = false,
     resetEpoch = 0,
     motionMove = null,
     showCenter = false,
@@ -323,6 +325,7 @@
           showElemental={previewPictographData ? undefined : false}
           showPositions={previewPictographData ? undefined : false}
           disableTransitions={true}
+          {animateContent}
           directPropPositioning={aim.grabbedLocationColor !== null ||
             aim.landing !== null}
           cellIndex={null}

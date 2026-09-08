@@ -6,6 +6,7 @@ Action-oriented pattern: Shows the mode you can switch TO (not current mode)
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
+  import Crossfade from "$lib/shared/components/Crossfade.svelte";
 
   const { currentGridMode = GridMode.DIAMOND, onGridModeChange } = $props<{
     currentGridMode?: GridMode;
@@ -20,34 +21,36 @@ Action-oriented pattern: Shows the mode you can switch TO (not current mode)
   );
 
   const oppositeLabel = $derived(
-    oppositeMode === GridMode.DIAMOND ? t("assembly_diamond") : t("assembly_box")
+    oppositeMode === GridMode.DIAMOND
+      ? t("assembly_diamond")
+      : t("assembly_box")
   );
 
-  const switchAriaLabel = $derived(t("assembly_switch_to_mode", { mode: oppositeLabel }));
+  const switchAriaLabel = $derived(
+    t("assembly_switch_to_mode", { mode: oppositeLabel })
+  );
 
   function handleToggle() {
     hapticService?.trigger("selection");
     onGridModeChange?.(oppositeMode);
   }
-
-  function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      handleToggle();
-    }
-  }
 </script>
 
 <button
   class="grid-mode-toggle"
+  type="button"
   onclick={handleToggle}
-  onkeydown={handleKeyDown}
-  role="switch"
-  aria-checked={currentGridMode === GridMode.BOX}
   aria-label={switchAriaLabel}
   title={switchAriaLabel}
 >
-  <span class="mode-label">{oppositeLabel}</span>
+  <i
+    class="fas fa-square mode-icon"
+    class:diamond={currentGridMode === GridMode.DIAMOND}
+    aria-hidden="true"
+  ></i>
+  <Crossfade key={oppositeMode}>
+    <span class="mode-label">{switchAriaLabel}</span>
+  </Crossfade>
 </button>
 
 <style>
@@ -61,11 +64,11 @@ Action-oriented pattern: Shows the mode you can switch TO (not current mode)
     min-height: var(--min-touch-target);
     padding: 0 20px;
 
-    /* Glass morphism styling */
+    /* Same matte surface and focus treatment as the app's panel controls. */
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.1));
-    backdrop-filter: blur(10px);
     border: 2px solid var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
-    border-radius: 24px;
+    border-radius: 8px;
+    min-width: 13rem;
 
     /* Typography */
     font-size: var(--font-size-sm);
@@ -79,7 +82,10 @@ Action-oriented pattern: Shows the mode you can switch TO (not current mode)
     -webkit-tap-highlight-color: transparent;
 
     /* Smooth transitions */
-    transition: all var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background-color var(--duration-fast) ease,
+      border-color var(--duration-fast) ease,
+      box-shadow var(--duration-fast) ease;
 
     /* Shadow */
     box-shadow:
@@ -93,15 +99,25 @@ Action-oriented pattern: Shows the mode you can switch TO (not current mode)
     white-space: nowrap;
   }
 
+  .mode-icon {
+    transition: transform var(--duration-normal) ease;
+  }
+
+  .mode-icon.diamond {
+    transform: rotate(45deg);
+  }
+
   /* Hover state */
   @media (hover: hover) {
     .grid-mode-toggle:hover {
-      background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.15));
-      border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.3));
-      transform: translateY(-2px);
-      box-shadow:
-        0 4px 12px rgba(0, 0, 0, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      background: color-mix(
+        in srgb,
+        var(--theme-accent) 24%,
+        var(--theme-card-bg)
+      );
+      border-color: var(--theme-accent);
+      box-shadow: 0 0 0 2px
+        color-mix(in srgb, var(--theme-accent) 18%, transparent);
     }
   }
 
@@ -120,6 +136,10 @@ Action-oriented pattern: Shows the mode you can switch TO (not current mode)
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     .grid-mode-toggle {
+      transition: none;
+    }
+
+    .mode-icon {
       transition: none;
     }
 
