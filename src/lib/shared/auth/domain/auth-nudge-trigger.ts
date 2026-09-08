@@ -114,8 +114,8 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
   },
   "step-cap-guest": {
     key: "step-cap-guest",
-    title: "Got more moves?",
-    body: "Free account. Up to 64 steps.",
+    title: "Eight is the guest limit.",
+    body: "A free account gets you up to 64 steps.",
   },
   "patterns-guest": {
     key: "patterns-guest",
@@ -239,15 +239,13 @@ export function getAuthPromptContent(
     return {
       key: trigger,
       title:
-        encore === "offer"
-          ? "Fine. Sixteen steps."
-          : titles[index % titles.length]!,
+        encore === "offer" ? "Fine. Sixteen." : titles[index % titles.length]!,
       body:
         encore === "offer"
-          ? "Just this once. Don't take it for granted!"
+          ? "This sequence only."
           : encore === "limit"
-            ? "That's the encore limit. Free accounts get 64 steps."
-            : "The encore was one sequence. A free account gets you 64 steps.",
+            ? "Sixteen was the exception. A free account gets you up to 64 steps."
+            : "A free account gets you up to 64 steps.",
     };
   }
   if (
@@ -265,27 +263,13 @@ export function getAuthPromptContent(
 }
 
 const STEP_CAP_REPEAT_TITLES = [
-  "Step nine wants in.",
-  "You've got more in you.",
-  "You're wearing me down.",
-  "You really want this.",
-  "Oh, you again.",
-  "The props are getting restless.",
-  "Still negotiating, I see.",
-  "Your move.",
+  "Still eight.",
+  "Nice try.",
+  "That did not change the limit.",
+  "You seem committed to this.",
+  "All right.",
 ];
 
-const ENCORE_SPENT_TITLES = [
-  "We had a deal.",
-  "I bent the rules and everything.",
-  "My generosity has witnesses.",
-  "The tiny committee says no.",
-  "An encore of the encore?",
-  "I'm keeping the ceremonial hat.",
-];
+const ENCORE_SPENT_TITLES = ["That was the exception."];
 
-const ENCORE_LIMIT_TITLES = [
-  "Sixteen. We shook on sixteen.",
-  "The encore has an ending.",
-  "Step seventeen needs a name tag.",
-];
+const ENCORE_LIMIT_TITLES = ["Seventeen is not sixteen."];

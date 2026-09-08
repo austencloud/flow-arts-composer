@@ -96,7 +96,7 @@
     {#if compact}
       <div class="fac-signature">
         <img src="/branding/logo.jpg" alt="" width="28" height="28" />
-        {#if encoreOffer}<span>One-time encore</span>{/if}
+        {#if encoreOffer}<span>One-time extension</span>{/if}
       </div>
     {/if}
     <h2 id={titleId}>{content.title}</h2>
@@ -106,7 +106,7 @@
   <div class="auth-methods">
     {#if compact && encoreOffer}
       <button class="encore-button" type="button" onclick={onAcceptEncore}>
-        I'll make it count
+        Keep going
         <i class="fas fa-arrow-right" aria-hidden="true"></i>
       </button>
     {:else if compact}
