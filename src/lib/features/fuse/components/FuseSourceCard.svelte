@@ -459,6 +459,7 @@
           onStepClick={firstStepPickerActive
             ? (stepIndex) => void chooseInlineStartPose(stepIndex)
             : undefined}
+          posePicker={firstStepPickerActive}
         />
       </div>
     {:else if source.isLoading || isSymmetryFollower}

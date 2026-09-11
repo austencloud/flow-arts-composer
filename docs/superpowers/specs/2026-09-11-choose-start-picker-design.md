@@ -39,11 +39,14 @@ elemental, duration, and path-shape glyphs. Only the grid and props remain, so
 the row reads as poses. The start tile keeps its glyphs so it still reads as
 the current start. Tile positions do not move.
 
-Implementation: CSS on the existing `.step-grid-wrapper.shift-mode` in
-`SequenceDisplay.svelte`. The renderer removes arrows with an `{#if}` when
-told to, so opacity on the layer classes is what gives a 150 ms fade in both
-directions. `prefers-reduced-motion` disables the transition. The cyan glow
-already on the wrapper stays.
+Implementation: `PictographRenderer` takes a `poseOnly` prop. It drives the
+glyph components' existing `visible` props (each fades with its own
+transition), hides the step number, and fades the arrows group and the
+duration/path-shape layers with a renderer-scoped opacity transition, since
+`ArrowSvg` unmounts on `showArrow`. `PictographContainer`, `StepCell`,
+`WorkspaceGrid`, and `StepGrid` (`posePicker`) pass it through so the grid
+never reaches into renderer internals. `prefers-reduced-motion` disables the
+transition. The cyan glow already on the wrapper stays.
 
 ## Copy
 
@@ -72,7 +75,10 @@ already on the wrapper stays.
   `transform-help-content.ts`, `FirstStepConfirmDialog.svelte`: labels.
 - Fuse (`FuseSourceCard.svelte`): same tile-to-target remap and last-step
   no-op. Fuse sources are always loops so there is no confirm path. Picker
-  toolbar copy updated.
+  toolbar copy updated. `FuseLivePathGrid` takes `posePicker` and renders
+  its step tiles pose-only; the drawer picker (`FuseFirstStepPanel`) passes
+  `posePicker` through `ChoreoCard`, `CardGridLayout`, `CellRenderer`, and
+  `LiveCardPictograph` so its card tiles read as poses too.
 - `/test/sequence-actions` review variant label follows the rename.
 
 ## Out of scope
