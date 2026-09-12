@@ -353,9 +353,15 @@ export interface PanelCoordinationState {
 
   get workspacePlayback(): {
     sequence: SequenceData;
-    sourceSequenceRevision: number;
     sourceTab: string;
   } | null;
+  /**
+   * Revision of the source sequence the running playback session was started
+   * from, or null when nothing is playing. Kept outside the session object so
+   * re-basing it cannot change that object's identity — the workspace keys the
+   * mounted player on it, so a new object restarts the animation from beat 0.
+   */
+  get workspacePlaybackSourceRevision(): number | null;
   startWorkspacePlayback(
     sequence: SequenceData,
     sourceSequenceRevision: number,
@@ -366,6 +372,16 @@ export interface PanelCoordinationState {
     sourceTab: string,
     sourceSequenceRevision: number
   ): void;
+  /**
+   * Move the running session's baseline from one revision to another without
+   * interrupting it. For a sequence rewrite that playback does not care about:
+   * a global prop-type swap stamps the new prop onto every motion, but the
+   * animator and the notation rail both resolve prop type from settings, so the
+   * motion the user is watching is unchanged. Only the exact delta the caller
+   * observed is forgiven, so a real edit landing at the same time still stops
+   * playback.
+   */
+  rebaseWorkspacePlayback(fromRevision: number, toRevision: number): void;
 
   // LOOP Completion Flow (triggers confirmation dialog in CreateModule)
   requestLoopCompletion(loopType: LOOPType): void;
@@ -477,9 +493,11 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   let optionAuditionRequestId = 0;
   let workspacePlayback = $state.raw<{
     sequence: SequenceData;
-    sourceSequenceRevision: number;
     sourceTab: string;
   } | null>(null);
+  // Plain variable, not $state: the baseline is read imperatively by
+  // syncWorkspacePlaybackSource, and nothing should re-render when it moves.
+  let workspacePlaybackSourceRevision: number | null = null;
   let restoreStepEditorAfterPlayback = false;
 
   // Preset drawer state
@@ -501,6 +519,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
    */
   function closeAllPanels() {
     workspacePlayback = null;
+    workspacePlaybackSourceRevision = null;
     restoreStepEditorAfterPlayback = false;
     // Exit shift start mode
     isShiftStartMode = false;
@@ -557,6 +576,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   function stopWorkspacePlayback() {
     if (!workspacePlayback) return;
     workspacePlayback = null;
+    workspacePlaybackSourceRevision = null;
     if (restoreStepEditorAfterPlayback) isStepEditorPanelOpen = true;
     restoreStepEditorAfterPlayback = false;
   }
@@ -1016,6 +1036,10 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       return workspacePlayback;
     },
 
+    get workspacePlaybackSourceRevision() {
+      return workspacePlaybackSourceRevision;
+    },
+
     startWorkspacePlayback(
       sequence,
       sourceSequenceRevision,
@@ -1028,9 +1052,9 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       // Playback gets a fixed document. An edit cannot change the motion mid-beat.
       workspacePlayback = {
         sequence: structuredClone($state.snapshot(sequence)),
-        sourceSequenceRevision,
         sourceTab,
       };
+      workspacePlaybackSourceRevision = sourceSequenceRevision;
     },
 
     stopWorkspacePlayback,
@@ -1040,9 +1064,15 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       if (
         workspacePlayback &&
         (workspacePlayback.sourceTab !== sourceTab ||
-          workspacePlayback.sourceSequenceRevision !== sourceSequenceRevision)
+          workspacePlaybackSourceRevision !== sourceSequenceRevision)
       )
         stopWorkspacePlayback();
+    },
+
+    rebaseWorkspacePlayback(fromRevision, toRevision) {
+      if (!workspacePlayback) return;
+      if (workspacePlaybackSourceRevision !== fromRevision) return;
+      workspacePlaybackSourceRevision = toRevision;
     },
 
     enterOptionAudition(audition) {
