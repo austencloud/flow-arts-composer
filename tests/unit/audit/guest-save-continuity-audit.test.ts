@@ -122,20 +122,14 @@ vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => ({
   getAllSequences: vi.fn().mockResolvedValue([]),
 }));
 
-const { LibrarySaveService } = await import(
-  "$lib/features/library/services/library-save-service"
-);
-const { importDrafts } = await import(
-  "$lib/shared/auth/services/anonymous-upgrade"
-);
-const { createLibrarySequence } = await import(
-  "$lib/shared/library/domain/models/library-sequence"
-);
-const {
-  anonymousImportPrompt,
-  promptAnonymousImport,
-  confirmAnonymousImport,
-} = await import("$lib/shared/auth/state/anonymous-import-prompt.svelte");
+const { LibrarySaveService } =
+  await import("$lib/features/library/services/library-save-service");
+const { importDrafts } =
+  await import("$lib/shared/auth/services/anonymous-upgrade");
+const { createLibrarySequence } =
+  await import("$lib/shared/library/domain/models/library-sequence");
+const { anonymousImportPrompt, promptAnonymousImport, confirmAnonymousImport } =
+  await import("$lib/shared/auth/state/anonymous-import-prompt.svelte");
 
 function makeSequence(o: Record<string, unknown> = {}) {
   return { id: "seq-1", steps: [{ letter: "A" }], thumbnails: [], ...o } as any;
@@ -218,7 +212,12 @@ describe("F2 — upgrade-import must not republish the guest's private work", ()
   it("carries the draft's saved visibility through to the repository write", async () => {
     const privateDraft = {
       id: "seq-private",
-      steps: [{ letter: "A" }, { letter: "B" }, { letter: "C" }, { letter: "D" }],
+      steps: [
+        { letter: "A" },
+        { letter: "B" },
+        { letter: "C" },
+        { letter: "D" },
+      ],
       thumbnails: [],
       pendingSyncMetadata: { visibility: "private", notes: "mine" },
     } as any;

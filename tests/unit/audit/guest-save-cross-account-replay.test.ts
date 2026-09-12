@@ -13,14 +13,25 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-/** One row saved by account A on this device, whose cloud sync never landed. */
+/**
+ * One row saved by account A on this device, whose cloud sync never landed.
+ *
+ * FOUR steps deliberately: MIN_COMMUNITY_STEPS is 4
+ * (`src/lib/shared/library/domain/sequence-min-length.ts:7`), and
+ * `meetsCommunityMinimum` downgrades anything shorter to private inside
+ * `library-repository.saveSequence`. A 1-step fixture would therefore be
+ * incapable of reaching the community gallery whatever the retry passed, which
+ * would make the public-visibility assertion below irrelevant to the real
+ * consequence. This row clears the minimum, so the visibility the retry hands
+ * over is the visibility that would actually be persisted.
+ */
 const ACCOUNT_A_ROW = {
   id: "seq-owned-by-a",
   name: "A's private sequence",
   displayName: undefined,
   tags: [] as string[],
   thumbnails: [] as string[],
-  steps: [{ letter: "A" }],
+  steps: [{ letter: "A" }, { letter: "B" }, { letter: "C" }, { letter: "D" }],
   syncStatus: "failed" as const,
   pendingSyncMetadata: { visibility: "private" as const, notes: "A's notes" },
 };
@@ -64,13 +75,15 @@ vi.mock("$lib/shared/offline/state/network-status-state.svelte", () => ({
 vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
   toast: { info: vi.fn(), warning: vi.fn(), error: vi.fn(), success: vi.fn() },
 }));
-vi.mock("$lib/shared/library/services/sequence-persistence-coordinator", () => ({
-  isSequenceDeletionIntended: () => false,
-}));
-
-const { retryPendingSyncs } = await import(
-  "$lib/features/library/services/library-sync-retry"
+vi.mock(
+  "$lib/shared/library/services/sequence-persistence-coordinator",
+  () => ({
+    isSequenceDeletionIntended: () => false,
+  })
 );
+
+const { retryPendingSyncs } =
+  await import("$lib/features/library/services/library-sync-retry");
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -89,7 +102,7 @@ describe("F5 — a background sync retry must not replay another account's rows"
    * lands in Dexie with syncStatus "failed". A signs out; B signs in on the
    * same device. Dexie is flat, not uid-scoped, and never cleared on sign-out.
    *
-   * `retryPendingSyncs` (library-sync-retry.ts:122-131) filters ONLY on
+   * `retryPendingSyncs` (library-sync-retry.ts:121-131) filters ONLY on
    * syncStatus and blockedReason — no uid, no ledger — then calls the CURRENT
    * account's repository (library-repository.ts:397 `getWritableUserId()` →
    * `authState.effectiveUserId`). `createLibrarySequence` stamps
@@ -97,9 +110,15 @@ describe("F5 — a background sync retry must not replay another account's rows"
    *
    * So A's sequence is written into B's library, attributed to B.
    *
-   * This runs unprompted: once at app boot (routes/+layout.svelte:699-702,
+   * This runs unprompted: once at app boot (routes/+layout.svelte:701-702,
    * ungated by auth) and again on every reconnect
-   * (library-sync-retry.ts:203-205).
+   * (library-sync-retry.ts:214-215).
+   *
+   * SCOPE OF THIS TEST. The repository is mocked, so what is proven here is
+   * that the sweep HANDS a foreign row to the current account's repository.
+   * The subsequent ownerId stamping (library-sequence.ts:157-167) and the
+   * community-gallery mirror (library-repository.ts:704-706) are read from
+   * source, not executed — see the evidence/inference table in the report.
    */
   it("does not write account A's unsynced row while account B is signed in", async () => {
     rows.push(ACCOUNT_A_ROW);

@@ -14,7 +14,7 @@ separated from inference; F1/F2/F3/F5 reproduced by failing tests)
 > session's push policy pins this session to the task-specific branch
 > `claude/guest-save-audit-iyayl1`, so the artifacts land there instead. No
 > worktree was created: this container is an isolated ephemeral clone with no
-> parallel agents in it, so the primary checkout *is* a task-owned tree here.
+> parallel agents in it, so the primary checkout _is_ a task-owned tree here.
 > The two concurrent agents named in the brief (quick-viewer prop selection,
 > gallery carousel wrapping) touch no file listed below.
 
@@ -29,7 +29,7 @@ separated from inference; F1/F2/F3/F5 reproduced by failing tests)
 - Firestore **rules** behavior is read from `firestore.rules` as source, not
   exercised against the emulator (`tests/config/vitest.rules.config.ts` needs
   `npm run test:rules` + emulators, unavailable here).
-- Claims about what the user *sees* are derived from the read paths named in
+- Claims about what the user _sees_ are derived from the read paths named in
   each finding, not from a rendered surface.
 
 ---
@@ -38,17 +38,17 @@ separated from inference; F1/F2/F3/F5 reproduced by failing tests)
 
 F-numbers are stable IDs, not ranks. This is the order to fix in.
 
-| Rank | ID | Severity | One line |
-|---|---|---|---|
-| 1 | **F5** | **HIGH — crosses an account boundary** | A background retry replays one account's unsynced rows into whichever account is signed in next |
-| 2 | **F2** | HIGH | Upgrade-import discards the guest's recorded visibility; the repository then defaults to public |
-| 3 | **F1** | HIGH (availability, bounded, recoverable) | The guest save cap counts the whole unscoped Dexie table, so guest saves are refused while the library reads empty |
-| 4 | **F3** | MEDIUM-HIGH | A failed import puts the pending drafts out of reach with no error and no retry |
-| 5 | **F4** | MEDIUM-HIGH | The retro shells sign in without the guest-upgrade branch |
+| Rank | ID     | Severity                                  | One line                                                                                                           |
+| ---- | ------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 1    | **F5** | **HIGH — crosses an account boundary**    | A background retry replays one account's unsynced rows into whichever account is signed in next                    |
+| 2    | **F2** | HIGH                                      | Upgrade-import discards the guest's recorded visibility; the repository then defaults to public                    |
+| 3    | **F1** | HIGH (availability, bounded, recoverable) | The guest save cap counts the whole unscoped Dexie table, so guest saves are refused while the library reads empty |
+| 4    | **F3** | MEDIUM-HIGH                               | A failed import puts the pending drafts out of reach with no error and no retry                                    |
+| 5    | **F4** | MEDIUM-HIGH                               | The retro shells sign in without the guest-upgrade branch                                                          |
 
 **F5 was re-scoped during review.** It previously read "nothing kicks a sync
 pass at upgrade." Investigating the reviewer's evidence showed the missing
-trigger is the lesser half: the retry that *does* run is itself unscoped. The
+trigger is the lesser half: the retry that _does_ run is itself unscoped. The
 old framing is retained as F5b below because the fix must address both, but the
 replay is the finding.
 
@@ -59,7 +59,8 @@ replay is the finding.
 ### F5 — HIGH. `retryPendingSyncs` replays every unsynced Dexie row into whichever account is signed in when it runs
 
 **Locations**
-- `src/lib/features/library/services/library-sync-retry.ts:122-131` — the sweep
+
+- `src/lib/features/library/services/library-sync-retry.ts:121-131` — the sweep
   filters **only** on `syncStatus` and `pendingSyncMetadata.blockedReason`. No
   uid, no ledger.
 - `src/lib/features/library/services/library-sync-retry.ts:137-145` — each row is
@@ -71,8 +72,8 @@ replay is the finding.
 - `src/lib/shared/library/domain/models/library-sequence.ts:157-167` —
   `createLibrarySequence(sequenceData, ownerId, …)` stamps `ownerId` from that
   uid.
-- Triggers, both unprompted: `src/routes/+layout.svelte:699-702` (app boot,
-  **not** gated on auth) and `library-sync-retry.ts:203-205` (every reconnect).
+- Triggers, both unprompted: `src/routes/+layout.svelte:701-702` (app boot,
+  **not** gated on auth) and `library-sync-retry.ts:214-215` (every reconnect).
 
 **Trigger.** Account A saves on this device while offline or during any
 Firestore failure → the row lands in Dexie with `syncStatus: "failed"`. A signs
@@ -91,7 +92,26 @@ it — this path does not.
 community gallery. This is one user's work crossing into another user's account
 without either of them acting — worse than losing it.
 
-**Reproduced:** `tests/unit/audit/guest-save-cross-account-replay.test.ts`.
+**Evidence vs. inference — stated explicitly, as for F2.** The repro mocks the
+repository, so it proves the _handover_, not the write.
+
+| Step                                                                     | Status                                                                                                          |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| The sweep selects a row the signed-in account does not own               | **Tested** — `tests/unit/audit/guest-save-cross-account-replay.test.ts`                                         |
+| It passes that row to the current account's `saveSequenceWithMetadata`   | **Tested** (mocked repository records the call)                                                                 |
+| A row with no recorded metadata is handed over as `visibility: "public"` | **Tested** (fixture clears `MIN_COMMUNITY_STEPS`, so the value is not pre-empted by the community downgrade)    |
+| The repository stamps `ownerId` from `authState.effectiveUserId`         | **Inference from source, NOT tested** — `library-repository.ts:397` → `:234-240`, `library-sequence.ts:157-167` |
+| The resulting public sequence is mirrored to the community gallery       | **Inference from source, NOT tested** — `library-repository.ts:704-706`; needs the emulator                     |
+
+So "a foreign row is selected and handed to the wrong account's repository with
+a public visibility" is demonstrated. "It is therefore stored under B's
+`ownerId` and appears in the gallery" is read from the call sites above, not
+observed. The fixture uses a **4-step** sequence deliberately:
+`MIN_COMMUNITY_STEPS` is 4 (`sequence-min-length.ts:7`) and
+`meetsCommunityMinimum` downgrades anything shorter to private inside
+`saveSequence`, so a 1-step row could not reach the gallery whatever the retry
+passed — the first draft of this test used one, which made the public assertion
+true but inconsequential.
 
 **F5b (the original framing, still true and still worth fixing).** Nothing kicks
 a reconciliation pass at the moment of upgrade —
@@ -104,7 +124,7 @@ sequences are saved." (`anonymous-upgrade.ts:194`). Recoverable on reload.
 > **Correction to this audit's own first draft.** Progress publish 1 recommended
 > calling `retryPendingSyncs()` from `notifyUpgradeSignup` **and after a
 > collision import**. The collision half of that is wrong and the reviewer was
-> right to stop it: on a collision the signed-in uid is a *different* account,
+> right to stop it: on a collision the signed-in uid is a _different_ account,
 > so the blanket sweep is exactly the replay described above. Scoping, not
 > triggering, is the load-bearing fix. The revised plan below reflects that.
 
@@ -113,6 +133,7 @@ sequences are saved." (`anonymous-upgrade.ts:194`). Recoverable on reload.
 ### F2 — HIGH. Upgrade-import discards the guest's recorded visibility, and the repository defaults the result to public
 
 **Locations**
+
 - `src/lib/shared/auth/services/anonymous-upgrade.ts:364` — `repo.saveSequence(draft)`,
   **no overrides argument**.
 - `src/lib/shared/library/services/library-repository.ts:510-519` — new-sequence
@@ -140,11 +161,11 @@ for the fix, whether or not the row ever synced.
 
 **Evidence vs. inference — stated explicitly, per review.**
 
-| Step | Status |
-|---|---|
-| `importDrafts` passes no visibility override | **Tested** (mocked repository records a single-argument call) |
-| `createLibrarySequence` turns that into `visibility: "public"` | **Tested against real unmocked source** — the failing `createLibrarySequence` case in the audit suite |
-| A public, full-account-owned sequence is mirrored to the community gallery via `publicIndexSyncer.syncToPublicIndex` (`library-repository.ts:704-706`) | **Inference from source, NOT tested.** Needs the Firebase emulator, unavailable here. |
+| Step                                                                                                                                                   | Status                                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `importDrafts` passes no visibility override                                                                                                           | **Tested** (mocked repository records a single-argument call)                                         |
+| `createLibrarySequence` turns that into `visibility: "public"`                                                                                         | **Tested against real unmocked source** — the failing `createLibrarySequence` case in the audit suite |
+| A public, full-account-owned sequence is mirrored to the community gallery via `publicIndexSyncer.syncToPublicIndex` (`library-repository.ts:704-706`) | **Inference from source, NOT tested.** Needs the Firebase emulator, unavailable here.                 |
 
 So "the metadata is dropped and the result is public" is demonstrated; "and it
 therefore appears in the community gallery" is read from the mirror call site
@@ -157,6 +178,7 @@ and its `isFullUser()` gate, not observed.
 ### F1 — HIGH (availability). The guest save cap counts the whole unscoped Dexie table, so guest saves are refused while the guest's library reads empty
 
 **Locations**
+
 - Cap: `src/lib/features/library/services/library-save-service.ts:144-158`
   (`db.sequences.count()`)
 - Read: `src/lib/shared/browse/engine/create-browse-engine.svelte.ts:645-665`
@@ -193,6 +215,7 @@ the cap must still fire once the guest genuinely owns three.
 ### F3 — MEDIUM-HIGH. A failed import puts the pending drafts out of reach, with no error and no retry
 
 **Locations**
+
 - `src/lib/shared/auth/state/anonymous-import-prompt.svelte.ts:31-37` —
   `state.drafts = []` runs **before** `await importDrafts(drafts)`; no `try`/`catch`.
 - `src/lib/shared/foundation/ui/ConfirmDialog.svelte:40,117-118` —
@@ -213,9 +236,10 @@ permanent data destruction:
 - drafts that imported before the failure stay imported in the new account.
 
 What is lost is **access**: the in-memory prompt state is cleared before the
-await, the dialog has already closed itself, and the rejection is swallowed as an
-unhandled rejection — so nothing tells the user the import failed and there is no
-surface left to retry from. The remaining drafts stay in Dexie under the **old
+await, the dialog has already closed itself, and the rejection goes unhandled —
+`ConfirmDialog` neither awaits nor catches the promise, so no code path reacts to
+the failure. Nothing tells the user the import failed and there is no surface
+left to retry from. The remaining drafts stay in Dexie under the **old
 anon uid's** ledger, which no read path consults afterwards (the new uid's ledger
 is empty; a full account reads Firestore). Recovering them needs a code change or
 manual DB work, not a user action. The first draft called this "silent, total,
@@ -233,8 +257,9 @@ continue-on-error satisfies F3.
 ### F4 — MEDIUM-HIGH. The retro shells sign in without the guest-upgrade branch
 
 **Locations**
+
 - `src/lib/features/retro/win95/components/shell/RetroLoginDialog.svelte:51`
-  (`signInWithEmail`), `:73` (`signInWithGoogle`) — no `isAnonymous` branch, no capture
+  (`signInWithEmail`), `:71` (`signInWithGoogle`) — no `isAnonymous` branch, no capture
 - `src/lib/shared/auth/services/authenticator.ts:192-198` — `signInWithEmail` is a
   bare `signInWithEmailAndPassword`
 - `src/lib/shared/auth/services/authenticator.ts:75-110` — `signInWithGoogle`'s
@@ -248,29 +273,30 @@ continue-on-error satisfies F3.
 **Impact.** The anon uid is replaced with no link attempt and no draft capture,
 so unlike F3 the user is never even offered the import. Dexie rows survive but
 under a ledger uid nothing reads again; the anon's Firestore docs (anonymous
-owners *can* write `users/{uid}/sequences` — `firestore.rules:599`) are orphaned
+owners _can_ write `users/{uid}/sequences` — `firestore.rules:599`) are orphaned
 under a uid nobody can sign into.
 
-**Not reproduced by test.** This is an *absence* of a branch at two call sites;
+**Not reproduced by test.** This is an _absence_ of a branch at two call sites;
 an honest test needs the emulator. Static trace only.
+
 ## Old spec claims now RESOLVED
 
 Verified against current source; the spec's Rev-3 problem statement is
 substantially stale.
 
-| Spec claim (2026-07-22) | Current state |
-|---|---|
-| "Guest saves through four 'keep' paths never reach the guest's library" (viewer / scan / video-record / retro call `LibraryRepository` directly) | **RESOLVED.** All four route through `getLibrarySaveService().saveSequence`: `ScanCardSheet.svelte:214`, `VideoRecordCoordinator.svelte:112`, `notation-adapter.ts:159`, and the viewer via `library-state.svelte.ts:474`. |
-| "`LibrarySaveService` swallows `ALREADY_EXISTS` inside fire-and-forget sync" | **RESOLVED.** Synchronous `hasMatchingContent` pre-check rejects before the Dexie write (`library-save-service.ts:169-188`); covered by an existing test. |
-| "A Dexie-write failure warns and continues" | **RESOLVED.** Rejects with `LibraryError("PERSIST_FAILED")` (`library-save-service.ts:256-260`). |
-| "`SaveResult` needs `persisted`/`isGuest`" | **RESOLVED.** Returned at `library-save-service.ts:385`. |
-| "`captureAnonymousDrafts` reads Firestore, so a fresh Dexie-only save is missed" | **RESOLVED, and better than specified.** It now reads Dexie *filtered by the per-uid `saved-sequence-ledger`* (`anonymous-upgrade.ts:108-119`), which also closes the shared-device leak the spec did not anticipate. |
-| "Google One Tap strands the guest (`authenticator.ts:115`, no `isAnonymous` check)" | **RESOLVED.** `signInWithGoogleCredential` links then prompts on collision (`authenticator.ts:118-137`). |
-| "Email/password **sign-in** mode strands the guest (most-reached route, zero mitigation)" | **RESOLVED.** Captures before the swap and prompts after (`EmailPasswordAuth.svelte:143-156`). |
-| "Cross-browser magic link strands the guest" | **RESOLVED for the same-browser case** — anon link, collision → `upgradeMagicLinkCollision` + prompt (`email-link-completion.ts:235-264`). The *cross-browser* server carry (SP2 item 6) remains deliberately deferred, as the spec allowed. |
-| "`library-save-service.ts:143` calls the dead `openAuthDialog()`" | **RESOLVED.** Now `authDrawerState.show("signup", "save-limit")` (`library-save-service.ts:150`). |
-| "Account A's state can bleed into account B in-session" | **RESOLVED.** The signout cascade resets `firstRunState`, `appEntryState` and `postSaveActivation` (`auth-state.svelte.ts:762-786`), and the browse engine keys its cache on **both** `effectiveUserId` and `isFullAccount` (`create-browse-engine.svelte.ts:504-528`) — so an in-place link, which does not change the uid, still invalidates. |
-| SP3 coordinator / two-phase guard | **SHIPPED.** `post-save-activation-state.svelte.ts` exists and is reset on signout; `saved.persisted` gates the fire at `ScanCardSheet.svelte:229`. |
+| Spec claim (2026-07-22)                                                                                                                          | Current state                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Guest saves through four 'keep' paths never reach the guest's library" (viewer / scan / video-record / retro call `LibraryRepository` directly) | **RESOLVED.** All four route through `getLibrarySaveService().saveSequence`: `ScanCardSheet.svelte:214`, `VideoRecordCoordinator.svelte:112`, `notation-adapter.ts:159`, and the viewer via `library-state.svelte.ts:474`.                                                                                                                      |
+| "`LibrarySaveService` swallows `ALREADY_EXISTS` inside fire-and-forget sync"                                                                     | **RESOLVED.** Synchronous `hasMatchingContent` pre-check rejects before the Dexie write (`library-save-service.ts:169-188`); covered by an existing test.                                                                                                                                                                                       |
+| "A Dexie-write failure warns and continues"                                                                                                      | **RESOLVED.** Rejects with `LibraryError("PERSIST_FAILED")` (`library-save-service.ts:256-260`).                                                                                                                                                                                                                                                |
+| "`SaveResult` needs `persisted`/`isGuest`"                                                                                                       | **RESOLVED.** Returned at `library-save-service.ts:385`.                                                                                                                                                                                                                                                                                        |
+| "`captureAnonymousDrafts` reads Firestore, so a fresh Dexie-only save is missed"                                                                 | **RESOLVED, and better than specified.** It now reads Dexie _filtered by the per-uid `saved-sequence-ledger`_ (`anonymous-upgrade.ts:108-119`), which also closes the shared-device leak the spec did not anticipate.                                                                                                                           |
+| "Google One Tap strands the guest (`authenticator.ts:115`, no `isAnonymous` check)"                                                              | **RESOLVED.** `signInWithGoogleCredential` links then prompts on collision (`authenticator.ts:118-137`).                                                                                                                                                                                                                                        |
+| "Email/password **sign-in** mode strands the guest (most-reached route, zero mitigation)"                                                        | **RESOLVED.** Captures before the swap and prompts after (`EmailPasswordAuth.svelte:143-156`).                                                                                                                                                                                                                                                  |
+| "Cross-browser magic link strands the guest"                                                                                                     | **RESOLVED for the same-browser case** — anon link, collision → `upgradeMagicLinkCollision` + prompt (`email-link-completion.ts:235-264`). The _cross-browser_ server carry (SP2 item 6) remains deliberately deferred, as the spec allowed.                                                                                                    |
+| "`library-save-service.ts:143` calls the dead `openAuthDialog()`"                                                                                | **RESOLVED.** Now `authDrawerState.show("signup", "save-limit")` (`library-save-service.ts:150`).                                                                                                                                                                                                                                               |
+| "Account A's state can bleed into account B in-session"                                                                                          | **RESOLVED.** The signout cascade resets `firstRunState`, `appEntryState` and `postSaveActivation` (`auth-state.svelte.ts:762-786`), and the browse engine keys its cache on **both** `effectiveUserId` and `isFullAccount` (`create-browse-engine.svelte.ts:504-528`) — so an in-place link, which does not change the uid, still invalidates. |
+| SP3 coordinator / two-phase guard                                                                                                                | **SHIPPED.** `post-save-activation-state.svelte.ts` exists and is reset on signout; `saved.persisted` gates the fire at `ScanCardSheet.svelte:229`.                                                                                                                                                                                             |
 
 **Still open from the spec's own ledger:** the SP2 retro GUARD-FIX (**F4** above)
 and the cross-browser magic-link carry (deferred by design).
@@ -296,17 +322,17 @@ pnpm exec vitest run --config tests/config/vitest.config.ts tests/unit/audit/
 
 Result — **6 failed | 3 passed (9)**:
 
-| ID | Test | Outcome | Observed |
-|---|---|---|---|
-| F5 | account A's unsynced row is not written while B is signed in | **FAIL** | `saveSequenceWithMetadata` called once — A's row replayed under B |
-| F5 | a metadata-less foreign row is not published public | **FAIL** | replayed with `visibility: "public"` |
-| F5 | a row the signed-in account owns still replays | pass | guard: the fix must not disable the retry |
-| F2 | the draft's saved visibility reaches the repository | **FAIL** | `overrides === undefined` — single-argument call |
-| F2 | `createLibrarySequence` does not publish a private draft | **FAIL** | returns `visibility: "public"` — **real unmocked source** |
-| F1 | fresh guest saves on a device holding another session's rows | **FAIL** | `LibraryError: Guest save limit reached (3).` at `library-save-service.ts:151` |
-| F1 | cap still enforced once this guest owns 3 | pass | guard |
-| F3 | drafts stay offerable after a failed import | **FAIL** | `anonymousImportPrompt.count` 1 → 0; retry state gone |
-| F3 | (characterization) remaining drafts abandoned mid-loop | pass | records current behavior; not a contract |
+| ID  | Test                                                         | Outcome  | Observed                                                                       |
+| --- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------------------------ |
+| F5  | account A's unsynced row is not written while B is signed in | **FAIL** | `saveSequenceWithMetadata` called once — A's row replayed under B              |
+| F5  | a metadata-less foreign row is not published public          | **FAIL** | replayed with `visibility: "public"`                                           |
+| F5  | a row the signed-in account owns still replays               | pass     | guard: the fix must not disable the retry                                      |
+| F2  | the draft's saved visibility reaches the repository          | **FAIL** | `overrides === undefined` — single-argument call                               |
+| F2  | `createLibrarySequence` does not publish a private draft     | **FAIL** | returns `visibility: "public"` — **real unmocked source**                      |
+| F1  | fresh guest saves on a device holding another session's rows | **FAIL** | `LibraryError: Guest save limit reached (3).` at `library-save-service.ts:151` |
+| F1  | cap still enforced once this guest owns 3                    | pass     | guard                                                                          |
+| F3  | drafts stay offerable after a failed import                  | **FAIL** | `anonymousImportPrompt.count` 1 → 0; retry state gone                          |
+| F3  | (characterization) remaining drafts abandoned mid-loop       | pass     | records current behavior; not a contract                                       |
 
 **Baseline control**, same commit, unchanged suites —
 `tests/unit/library-save-service-persisted.test.ts`, `tests/unit/auth/`,
@@ -353,7 +379,7 @@ fail for reasons unrelated to user-visible behavior.
    continues past a failing draft is a separate, optional call. `ConfirmDialog`
    is shared surface — check its other call sites in the same pass.
 5. **F4 — route the retro shells through the upgrade owner**
-   (`RetroLoginDialog.svelte:51,73`, `dos/services/command-parser.ts:500`), reusing
+   (`RetroLoginDialog.svelte:51,71`, `dos/services/command-parser.ts:500`), reusing
    `upgradeAnonymousWithEmail` / `upgradeAnonymousWithGoogle` +
    `promptAnonymousImport` as `EmailPasswordAuth.svelte` already does. Closes the
    last open SP2 ledger item that is not the deferred magic-link carry.
