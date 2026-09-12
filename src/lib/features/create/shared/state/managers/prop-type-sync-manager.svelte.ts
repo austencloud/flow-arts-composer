@@ -24,7 +24,10 @@ export interface PropTypeSyncConfig {
    * Called only when a prop swap actually rewrote the sequence, with the
    * revision before and after the rewrite.
    */
-  onPropTypeSequenceRewrite?: (fromRevision: number, toRevision: number) => void;
+  onPropTypeSequenceRewrite?: (
+    fromRevision: number,
+    toRevision: number
+  ) => void;
 }
 
 export function createPropTypeSyncEffect(

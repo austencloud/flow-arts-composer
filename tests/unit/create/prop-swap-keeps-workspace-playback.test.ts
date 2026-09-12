@@ -190,7 +190,9 @@ describe("changing a prop while the workspace quick viewer plays", () => {
     let revision = 5;
     disposeSync = createPropTypeSyncEffect({
       getStepOperator: () =>
-        ({ bulkUpdatePropType: () => (revision += 1) }) as unknown as StepOperator,
+        ({
+          bulkUpdatePropType: () => (revision += 1),
+        }) as unknown as StepOperator,
       getCreateModuleState: () => ({}) as CreateModuleState,
       isServicesInitialized: () => true,
       getSequenceRevision: () => revision,

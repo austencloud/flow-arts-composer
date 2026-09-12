@@ -39,7 +39,7 @@ the beat grid.
    The revision no longer matches the one playback started from, so
    `stopWorkspacePlayback()` runs and the quick viewer closes.
 
-The revision check exists to stop playback when the user *edits* the sequence,
+The revision check exists to stop playback when the user _edits_ the sequence,
 because playback holds a fixed snapshot. A prop swap is not that kind of change:
 both surfaces inside the quick viewer resolve prop type from settings, not from
 the snapshot — the animator through
@@ -63,7 +63,7 @@ running playback session onto it instead of stopping.
   `rebaseWorkspacePlayback(fromRevision, toRevision)` moves the baseline and
   does nothing else.
 - `prop-type-sync-manager.svelte.ts`: reports `onPropTypeSequenceRewrite(from,
-  to)` only when a prop change actually rewrote the sequence. The revision is
+to)` only when a prop change actually rewrote the sequence. The revision is
   read under `untrack` so the effect keeps depending on settings alone.
 - `create-module-effect-coordinator.ts`: wires that callback to
   `panelState.rebaseWorkspacePlayback`.
@@ -86,7 +86,22 @@ another panel opens, and unmount.
 
 ## Checks
 
-Recorded in the "Final result" section below as they complete.
+All run in this container with `pnpm install --frozen-lockfile` and
+`pnpm run build:packages` (the workspace `dist` output is required — without it
+25 create test files and ~60 type errors are workspace-resolution noise, not
+real failures).
+
+| Check                                                                                                                                                 | Result                                                                                                                             |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `npx vitest run --config tests/config/vitest.config.ts tests/unit/create/{workspace-playback-panel-state,prop-swap-keeps-workspace-playback}.test.ts` | pass — 14 tests                                                                                                                    |
+| Same two files with `rebaseWorkspacePlayback` stubbed to a no-op                                                                                      | 2 failed / 3 passed — the new tests do fail without the fix                                                                        |
+| `npx vitest run … tests/unit/create src/lib/features/create/shared/state src/lib/shared/create`                                                       | pass — 70 files, 421 tests                                                                                                         |
+| `pnpm run check:fast`                                                                                                                                 | 582 errors / 44 warnings, **identical count on `main`** (`git switch --detach main`), none in the changed files or their consumers |
+| `npx eslint` on the three changed source files                                                                                                        | clean (the three test files are covered by an eslint ignore pattern)                                                               |
+| `npx prettier --check` on all changed files                                                                                                           | clean after `--write`                                                                                                              |
+
+A full `npm run check` was not run: `check:fast` already covers the type
+boundary these three files cross, and its error count is unchanged from `main`.
 
 ## Known limits
 
@@ -100,6 +115,26 @@ Recorded in the "Final result" section below as they complete.
   exclusive with playback (`enterOptionAudition` returns early while playback
   runs), so it is out of this fix's scope — flagged rather than changed.
 
-## Final result
+## Unresolved risks
 
-_Filled in on completion._
+- **The main one: no rendered evidence.** The reasoning that the new prop shows
+  up live rests on reading `PropTypeManager.loadPropTextures` and
+  `pictograph-preparer`, not on watching it. If the animation keeps the old prop
+  after the swap, the close is fixed but the visual refresh is not, and the
+  playback snapshot would need the new `propType` stamped into it as well.
+- The re-base is keyed on the revision delta rather than on a typed "this change
+  was cosmetic" signal. Any future writer that rewrites the sequence in the same
+  tick as a prop swap would have its delta folded into the forgiven one. The
+  conservative `fromRevision` guard limits this to that exact tick.
+- `bulkUpdatePropType` runs once per hand, so a cat/dog pair change produces two
+  revision bumps; both are inside the single reported delta and were exercised
+  in the "leaves the same playback session running" test.
+- The prop-type sync effect still tracks the sequence reads that
+  `bulkUpdatePropType` performs, so it re-runs on every sequence edit as it did
+  before. The new revision reads are wrapped in `untrack` so they add no
+  dependency of their own.
+
+## Status
+
+Implementation and checks complete. Not merged, not deployed; branch left in
+place for local review.
