@@ -1,7 +1,7 @@
 # Guest-Save → Sign-In Continuity Audit
 
-**Status:** IN PROGRESS (progress publish 1 — findings confirmed by static trace,
-repro tests pending)
+**Status:** COMPLETE (progress publish 2 — findings confirmed; F1/F2/F3
+reproduced by failing tests)
 **Date:** 2026-09-12
 **Scope:** READ-ONLY audit. No application code changed.
 **Branch:** `claude/guest-save-audit-iyayl1`
@@ -254,7 +254,117 @@ and the cross-browser magic-link carry (deferred by design).
 
 ---
 
+## Reproduction evidence
+
+**Artifact:** `tests/unit/audit/guest-save-continuity-audit.test.ts` —
+**FAILING BY DESIGN, NOT MERGE-READY.** It encodes the intended contract for
+F1/F2/F3 and fails against `main`. That failure is the reproduction. Do not
+"fix" the test; fix the source or delete the file with this report.
+
+```
+pnpm install --frozen-lockfile
+pnpm run build:packages          # required: @tka/tka-types must be built first
+pnpm exec vitest run --config tests/config/vitest.config.ts \
+  tests/unit/audit/guest-save-continuity-audit.test.ts
+```
+
+Result — **4 failed | 1 passed (5)**:
+
+| Test | Outcome | Observed |
+|---|---|---|
+| F1 · fresh guest saves on a device holding another session's rows | **FAIL** | `LibraryError: Guest save limit reached (3).` thrown at `library-save-service.ts:151` for a guest whose own ledger is empty |
+| F1 · cap still enforced once this guest owns 3 | pass | guard that a fix must not simply delete the cap |
+| F2 · draft's saved visibility reaches the repository | **FAIL** | `repo.saveSequence` called with `overrides === undefined` → `?? "public"` wins |
+| F2 · import never defaults to public | **FAIL** | no explicit visibility is passed at all |
+| F3 · every draft attempted when one write fails | **FAIL** | `expected 3 calls, got 2` — the loop aborts and the `imported` count is discarded |
+
+**Baseline control.** The existing related suites were run unchanged on the same
+commit — `tests/unit/library-save-service-persisted.test.ts`, `tests/unit/auth/`,
+`tests/unit/library/`, `tests/unit/browse-engine-identity-switch.test.ts`:
+
+```
+Test Files  64 passed (64)
+     Tests  367 passed (367)
+```
+
+So the four failures above are new information, not a broken tree.
+
+**F4 and F5 have no unit reproduction, deliberately.** Both are *absences* — a
+missing guest branch in two call sites (F4) and a missing reconciliation call
+(F5). The honest test for either is an integration test against the Firebase
+emulator (`tests/config/vitest.e2e.config.ts`, `npm run test:e2e`), which cannot
+run in this container. A grep-the-source assertion would pass or fail for
+reasons unrelated to user-visible behavior, so none was written. Both findings
+rest on the static trace and the exact line references given above.
+
+---
+
+## Ranked fix plan
+
+Small, independent, and each already has its failing assertion or its named
+call site. None is a refactor.
+
+1. **F1 — scope the cap to the ledger** (`library-save-service.ts:144-158`).
+   Replace `db.sequences.count()` with the guest's own count:
+   `getSavedSequenceIds(authState.effectiveUserId).length`. One line plus an
+   import; makes the cap and the browse-engine read share one definition of
+   "the guest's sequences". Highest severity, lowest cost, already covered by
+   both F1 tests (one must go green, one must stay green).
+2. **F2 — pass visibility through the import**
+   (`anonymous-upgrade.ts:364`). `repo.saveSequence(draft, { visibility: draft.pendingSyncMetadata?.visibility ?? "private", notes: draft.pendingSyncMetadata?.notes })`.
+   Ship this with F3 — same function, same review.
+3. **F3 — make the import survivable** (`anonymous-import-prompt.svelte.ts:31-37`,
+   `anonymous-upgrade.ts:359-373`, `ConfirmDialog.svelte:40,117`). Accumulate
+   per-draft failures instead of rethrowing out of the loop; clear
+   `state.drafts` only after the import settles; restore the drafts and toast on
+   failure so Import can be retried; widen `onConfirm` to
+   `() => void | Promise<void>` and `.catch` it. The `ConfirmDialog` change is
+   shared surface — check its other call sites in the same pass.
+4. **F4 — route the retro shells through the upgrade owner**
+   (`RetroLoginDialog.svelte:51,73`, `dos/services/command-parser.ts:500`).
+   Reuse `upgradeAnonymousWithEmail` / `upgradeAnonymousWithGoogle` +
+   `promptAnonymousImport` exactly as `EmailPasswordAuth.svelte` does. Closes
+   the last open SP2 ledger item that is not the deferred magic-link carry.
+5. **F5 — reconcile on upgrade** (`anonymous-upgrade.ts:140-209`). Call
+   `retryPendingSyncs()` after `refreshUser()` in `notifyUpgradeSignup`, and
+   after a collision import. Already idempotent (`retryInFlight`). Cheapest of
+   the five; makes the "Your sequences are saved" toast true at the moment it
+   is shown.
+
+**Sequencing.** 1 first (it refuses work outright). 2 and 3 together (one
+function, and 2 without 3 still loses drafts on a failed import). 4 and 5 are
+independent of the rest.
+
+---
+
+## Uncertainties
+
+- **F2's blast radius depends on real sequence length.** `meetsCommunityMinimum`
+  downgrades sub-minimum sequences to private on the way in, so the exposure
+  only fires for drafts at or above `MIN_COMMUNITY_STEPS`. I did not measure how
+  many real guest drafts clear that bar.
+- **F5's frequency is unmeasured.** How often a guest's Firestore sync actually
+  fails depends on rules behavior I read but did not exercise. Anonymous owners
+  *can* write `users/{uid}/sequences` (`firestore.rules:599`), but a guest save
+  that resolves to `visibility: "public"` also attempts the `publicSequences`
+  mirror, which `isFullUser()` denies — and `library-repository.ts:704-710`
+  **rethrows** that failure, failing the whole `saveSequenceWithMetadata`. If
+  that is the common guest path, F5 is much more frequent than "offline only".
+  I could not confirm it without the emulator; it is flagged rather than
+  claimed.
+- **F4 assumes the retro shell is reachable by a guest who has saved.** The save
+  path is confirmed (`notation-adapter.ts:159` routes through
+  `LibrarySaveService`), but I did not verify the shell's own entry gating in a
+  browser.
+- No runtime observation of any kind was possible here (no credentials, no
+  emulator, no browser). Every "the user sees" statement is derived from the
+  read paths cited, not observed.
+
+---
+
 ## Status of this document
 
-Progress publish 1. Repro tests and the final ranked fix plan follow in the
-next update on this branch.
+Complete. Artifacts on `claude/guest-save-audit-iyayl1`:
+`docs/superpowers/reviews/2026-09-12-guest-save-continuity-audit.md` and
+`tests/unit/audit/guest-save-continuity-audit.test.ts`. No application code was
+modified.
