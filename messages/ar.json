@@ -1,7 +1,9 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "tab_toys_third_order": "الحركة من الرتبة الثالثة",
+  "tab_toys_hand_tunnel": "نفق الأيدي",
   "tab_desc_toys_third_order": "حرّك تسلسلات كاملة داخل تسلسل أكبر",
+  "tab_desc_toys_hand_tunnel": "كدّس مسارات أيدي عدة مؤدّين في مستوى واحد",
   "action_cancel": "إلغاء",
   "action_close": "إغلاق",
   "action_confirm": "تأكيد",

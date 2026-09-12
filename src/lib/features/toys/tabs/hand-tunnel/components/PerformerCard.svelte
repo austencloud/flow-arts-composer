@@ -1,5 +1,5 @@
 <!--
-  One performer in the Hand Tunnel Lab rail.
+  One performer in the Hand Tunnel rail.
 
   Shows the performer's two hand paths as mini glyphs in the same hues the
   canvas draws them, the six TnD buttons with their elemental icons, and the
@@ -152,8 +152,8 @@
     gap: 8px;
     padding: 10px;
     border-radius: 12px;
-    border: 1px solid rgba(255 255 255 / 0.1);
-    background: rgba(255 255 255 / 0.03);
+    border: 1px solid var(--theme-stroke, rgba(255 255 255 / 0.1));
+    background: var(--theme-panel-bg, rgba(255 255 255 / 0.03));
   }
   .card.selected {
     border-color: rgba(255 255 255 / 0.45);
