@@ -1,7 +1,9 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "tab_toys_third_order": "三阶运动",
+  "tab_toys_hand_tunnel": "手部隧道",
   "tab_desc_toys_third_order": "让完整序列在更大的序列中运动",
+  "tab_desc_toys_hand_tunnel": "将多位表演者的手部路径叠加在同一平面上",
   "action_cancel": "取消",
   "action_close": "关闭",
   "action_confirm": "确认",

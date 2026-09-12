@@ -5,6 +5,8 @@
     isOpen: boolean;
     ariaLabel: string;
     onClose: () => void;
+    /** After the native dialog has left the top layer; see BaseModal.onclosed. */
+    onClosed?: () => void;
     narrow?: boolean;
     expanded?: boolean;
     children: Snippet<[surface: "modal" | "drawer"]>;
@@ -13,6 +15,7 @@
     isOpen,
     ariaLabel,
     onClose,
+    onClosed,
     narrow = false,
     expanded = false,
     children,
@@ -29,6 +32,7 @@
   animation="pop"
   labelledBy={headingId}
   onclose={onClose}
+  onclosed={onClosed}
 >
   <span id={headingId} class="sr-only">{ariaLabel}</span>
   {@render children("modal")}
