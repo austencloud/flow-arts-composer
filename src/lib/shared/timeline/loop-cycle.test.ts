@@ -3,52 +3,71 @@ import {
   cycleSlotCount,
   resolveCycleBeatIndex,
   resolveCycleStep,
+  resolvePreviewCycleStep,
 } from "./loop-cycle";
 
 /**
  * The gallery card preview's clock. These assertions guard behavior that is
- * invisible in a still frame: which slot a free-running clock lands on, and
- * whether the repeat length matches the rail it drives.
+ * invisible in a still frame: how long one repeat lasts, which slot a
+ * free-running clock lands on, and — above all — that a seamlessly loopable
+ * sequence keeps spinning at exactly its own beat count.
+ *
+ * `performsStartSlot` is exercised against real sequences in
+ * tests/unit/browse/gallery-preview-cycle.test.ts — shared/ may not import a
+ * feature's fixtures.
  */
+
+describe("resolvePreviewCycleStep", () => {
+  const STEP_COUNT = 4;
+
+  it("adds no playback time to a seamlessly loopable repeat", () => {
+    // The pre-fix clock, verbatim. A loopable sequence must still match it
+    // beat for beat: no held pose, no padded cycle, same cadence.
+    const legacy = (elapsed: number) => (elapsed % STEP_COUNT) + 1;
+    for (let frame = 0; frame <= 400; frame++) {
+      const elapsed = frame / 8;
+      expect(resolvePreviewCycleStep(elapsed, STEP_COUNT, false)).toBeCloseTo(
+        legacy(elapsed),
+        10
+      );
+    }
+  });
+
+  it("repeats a loopable sequence on its own beat count", () => {
+    expect(cycleSlotCount(STEP_COUNT, false)).toBe(STEP_COUNT);
+    expect(resolvePreviewCycleStep(STEP_COUNT, STEP_COUNT, false)).toBe(
+      resolvePreviewCycleStep(0, STEP_COUNT, false)
+    );
+    // Beat k begins exactly k-1 beats in — the seam costs nothing.
+    for (let beat = 1; beat <= STEP_COUNT; beat++) {
+      expect(resolvePreviewCycleStep(beat - 1, STEP_COUNT, false)).toBe(beat);
+    }
+  });
+
+  it("never holds a pose for a loopable sequence", () => {
+    for (let frame = 0; frame <= 200; frame++) {
+      const step = resolvePreviewCycleStep(frame / 8, STEP_COUNT, false);
+      expect(step).toBeGreaterThanOrEqual(1);
+      expect(resolveCycleBeatIndex(step, STEP_COUNT)).not.toBeNull();
+    }
+  });
+
+  it("opens in motion, then performs the start hold at a freeform seam", () => {
+    const slots = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((beats) =>
+      resolvePreviewCycleStep(beats, STEP_COUNT, true)
+    );
+    // beats 1..4, start hold, beats 1..4, start hold — the canonical freeform
+    // loop, and never a held pose on the very first pass.
+    expect(slots).toEqual([1, 2, 3, 4, 0, 1, 2, 3, 4, 0]);
+    expect(cycleSlotCount(STEP_COUNT, true)).toBe(STEP_COUNT + 1);
+  });
+});
+
 describe("resolveCycleStep", () => {
-  it("performs the start slot in order, once per repeat", () => {
-    const stepCount = 3;
-    const slots = [0, 1, 2, 3, 4, 5, 6, 7].map((beats) =>
-      resolveCycleStep(beats, stepCount, true)
-    );
-    // start, beat1, beat2, beat3, start, beat1, beat2, beat3
-    expect(slots).toEqual([0, 1, 2, 3, 0, 1, 2, 3]);
-  });
-
-  it("repeats on the rail's cell count, not the beat count", () => {
-    const stepCount = 4;
-    expect(cycleSlotCount(stepCount, true)).toBe(5);
-    expect(resolveCycleStep(5, stepCount, true)).toBe(
-      resolveCycleStep(0, stepCount, true)
-    );
-    // The pre-fix formula `(elapsed % stepCount) + 1` repeated every 4 beats
-    // against a 5-cell rail — one beat short of the rail, which is what made
-    // the boundary fall backwards.
-    expect(resolveCycleStep(4, stepCount, true)).not.toBe(
-      resolveCycleStep(0, stepCount, true)
-    );
-  });
-
   it("keeps progress within a beat in the fraction", () => {
     expect(resolveCycleStep(2.25, 4, true)).toBeCloseTo(2.25, 10);
     expect(resolveCycleStep(0.5, 4, true)).toBeCloseTo(0.5, 10);
-  });
-
-  it("never lands on the start slot when the surface omits it", () => {
-    const stepCount = 3;
-    for (const beats of [0, 0.5, 1, 2, 2.99, 3, 4.5]) {
-      const step = resolveCycleStep(beats, stepCount, false);
-      expect(step).toBeGreaterThanOrEqual(1);
-      expect(step).toBeLessThan(stepCount + 1);
-    }
-    expect(resolveCycleStep(3, stepCount, false)).toBe(
-      resolveCycleStep(0, stepCount, false)
-    );
+    expect(resolveCycleStep(2.25, 4, false)).toBeCloseTo(3.25, 10);
   });
 
   it("stays inside the cycle for a negative or unusable clock", () => {

@@ -8,18 +8,35 @@
  *   step < 1        → the start position (notation cell 0, `isStart`)
  *   1 <= step < N+1 → motion beat `floor(step)` (notation cells 1..N)
  *
- * The repeat is expressed in SLOTS, one per notation cell, so a rail that shows
- * the Start cell performs it: `N + 1` slots when the start pose is part of the
- * cycle, `N` when the surface omits it (the endless spinner's lane drops the
- * Start cell because its pose equals the sequence's end).
- *
- * Keeping the modulo here — instead of `(elapsed % stepCount) + 1` inline —
- * is what keeps a rail's wrap continuous: the slot count the clock repeats on
- * and the cell count the rail wraps on are the same number, so the carousel
- * advances exactly one stride across the boundary instead of snapping back.
+ * The repeat is measured in PERFORMED SLOTS, and canonical loop semantics
+ * decide whether the start pose is one of them — see `performsStartSlot`. That
+ * count is playback time, so it is never padded to match the rail: a rail that
+ * carries a Start cell a loopable sequence does not perform simply travels
+ * through that cell at the boundary (StepStrip's loop offset keeps the motion
+ * forward), rather than the clock holding still to wait for it.
  */
 
-/** Notation cells in one repeat: the motion beats, plus Start when performed. */
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
+
+/**
+ * Does one repeat of this sequence perform the start pose?
+ *
+ * Canonical loop semantics, from the playback controller's own boundary
+ * (`onAnimationUpdate`): a seamlessly loopable sequence resumes at
+ * `startPositionDuration` — it skips the repeated start hold, because its last
+ * beat already ends on the start pose — while a freeform sequence restarts at 0
+ * and shows the hold again, which is what makes its pose jump legible.
+ *
+ * Holding the start pose for a loopable sequence would inject a beat of
+ * stillness into a cadence that is meant to spin continuously.
+ */
+export function performsStartSlot(sequence: SequenceData): boolean {
+  return !isSeamlesslyLoopable(sequence);
+}
+
+/** Performed slots in one repeat: the motion beats, plus the start hold when
+ *  the sequence performs it. */
 export function cycleSlotCount(
   stepCount: number,
   includesStartSlot: boolean
@@ -33,8 +50,8 @@ export function cycleSlotCount(
  *
  * @param elapsedBeats Beats since playback started. Grows without bound.
  * @param stepCount Motion beats in the sequence.
- * @param includesStartSlot Whether the start pose gets its own slot.
- * @returns Float step: `[0,1)` is the start hold (only when it has a slot),
+ * @param includesStartSlot Whether the start pose is performed in the repeat.
+ * @returns Float step: `[0,1)` is the start hold (only when it is performed),
  *          `[1, N+1)` are the motion beats with progress in the fraction.
  */
 export function resolveCycleStep(
@@ -48,6 +65,27 @@ export function resolveCycleStep(
   // must still land inside the cycle rather than before it.
   const phase = ((elapsed % slots) + slots) % slots;
   return includesStartSlot ? phase : phase + 1;
+}
+
+/**
+ * Cycle step for a preview that opens in motion.
+ *
+ * A reader who just tapped play should see movement, not a held pose, so the
+ * clock enters the cycle at beat 1; a performed start hold arrives at the first
+ * wrap and on every repeat after it. For a sequence that does not perform the
+ * hold this is exactly the plain `(elapsed % stepCount) + 1` cadence — no beat
+ * is added anywhere.
+ */
+export function resolvePreviewCycleStep(
+  elapsedBeats: number,
+  stepCount: number,
+  includesStartSlot: boolean
+): number {
+  return resolveCycleStep(
+    elapsedBeats + (includesStartSlot ? 1 : 0),
+    stepCount,
+    includesStartSlot
+  );
 }
 
 /**
