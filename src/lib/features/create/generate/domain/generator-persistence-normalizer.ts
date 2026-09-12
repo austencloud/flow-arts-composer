@@ -38,6 +38,12 @@ export function normalizePersistedGenerationConfig(
   ) {
     delete normalized.handRelationshipInverted;
   }
+  if (
+    value.matchHandTurns !== undefined &&
+    typeof value.matchHandTurns !== "boolean"
+  ) {
+    delete normalized.matchHandTurns;
+  }
   // Level 4 (SKEWED) pictograph data does not exist yet (see
   // MAX_AVAILABLE_LEVEL in config-mapper.ts). A config saved to localStorage
   // or Firestore before that gate existed can still carry level 4; clamp it

@@ -220,6 +220,7 @@ describe("card-configurator LOOP descriptor", () => {
     motionTypeFilter: null,
     handRelationship: "flipped",
     handRelationshipInverted: false,
+    matchHandTurns: false,
     durationTemplateId: null,
     spellTargetLength: null,
   };

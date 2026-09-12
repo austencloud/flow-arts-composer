@@ -328,6 +328,22 @@ describe("hand relationship fact", () => {
     expect(summary.isDefault).toBe(true);
   });
 
+  it("adds a Turns fact when the hands' turns are matched", () => {
+    const summary = buildCustomizeSummary({
+      ...inputFrom(PRODUCTION_STYLE_BASELINE),
+      handRelationship: "free",
+      matchHandTurns: true,
+    });
+    expect(summary.facts).toEqual(["Turns: Matched"]);
+    expect(summary.isDefault).toBe(false);
+    const both = buildCustomizeSummary({
+      ...inputFrom(PRODUCTION_STYLE_BASELINE),
+      handRelationship: "mirrored",
+      matchHandTurns: true,
+    });
+    expect(both.facts).toEqual(["Relationship: Mirrored", "Turns: Matched"]);
+  });
+
   it("orders the fact after the style axes", () => {
     const summary = buildCustomizeSummary({
       ...inputFrom({ ...PRODUCTION_STYLE_BASELINE, constraintPreset: "choppy" }),

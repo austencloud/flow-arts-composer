@@ -120,6 +120,7 @@ export interface UIGenerationConfig {
   // Hand relationship (Generate only, not part of GenerationStylePolicy)
   handRelationship: HandRelationship;
   handRelationshipInverted: boolean;
+  matchHandTurns: boolean;
 
   // Duration rhythm template (applied automatically after generation)
   durationTemplateId: string | null;
@@ -195,6 +196,7 @@ export function uiConfigToGenerationOptions(
     motionTypeFilter: uiConfig.motionTypeFilter ?? undefined,
     handRelationship: uiConfig.handRelationship ?? DEFAULT_HAND_RELATIONSHIP,
     handRelationshipInverted: uiConfig.handRelationshipInverted ?? false,
+    matchHandTurns: uiConfig.matchHandTurns ?? false,
 
     // Include start/end options if provided
     blockedStartPositions: startEndOptions?.blockedStartPositions ?? undefined,
@@ -243,6 +245,7 @@ export function generationOptionsToUIConfig(
     motionTypeFilter: options.motionTypeFilter ?? null,
     handRelationship: options.handRelationship ?? DEFAULT_HAND_RELATIONSHIP,
     handRelationshipInverted: options.handRelationshipInverted ?? false,
+    matchHandTurns: options.matchHandTurns ?? false,
     durationTemplateId: null,
     spellTargetLength: null,
     inversionInterval: options.loopRhythm?.inversionInterval,

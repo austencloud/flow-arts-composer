@@ -46,6 +46,7 @@ export interface CardHandlers {
   // Hand relationship handlers (Customize drill row)
   handleHandRelationshipChange?: (v: HandRelationship) => void;
   handleHandRelationshipInvertedChange?: (v: boolean) => void;
+  handleMatchHandTurnsChange?: (v: boolean) => void;
   /** Restore every persisted generation setting to its first-run value. */
   handleResetAll?: () => void;
   // Duration card handler

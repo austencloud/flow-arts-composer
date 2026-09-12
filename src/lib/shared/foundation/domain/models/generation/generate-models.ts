@@ -69,6 +69,8 @@ export interface GenerationOptions {
   // step. "free" or absent means unconstrained. Inverted is ignored for free.
   handRelationship?: HandRelationship | undefined;
   handRelationshipInverted?: boolean | undefined;
+  /** Both hands take the same turn value every step. Absent means off. */
+  matchHandTurns?: boolean | undefined;
 
   // Customize options - advanced constraints for generation
   /**

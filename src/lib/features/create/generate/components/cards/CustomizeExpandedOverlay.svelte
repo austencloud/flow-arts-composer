@@ -73,8 +73,10 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onMotionTypeFilterChange,
     handRelationship = "free",
     handRelationshipInverted = false,
+    matchHandTurns = false,
     onHandRelationshipChange = null,
     onHandRelationshipInvertedChange = null,
+    onMatchHandTurnsChange = null,
     onStartEndChange,
     onResetAll = null,
     onClose,
@@ -92,8 +94,10 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     onMotionTypeFilterChange: (v: "no-dash" | "mixed" | "prefer-dash") => void;
     handRelationship?: HandRelationship;
     handRelationshipInverted?: boolean;
+    matchHandTurns?: boolean;
     onHandRelationshipChange?: ((v: HandRelationship) => void) | null;
     onHandRelationshipInvertedChange?: ((v: boolean) => void) | null;
+    onMatchHandTurnsChange?: ((v: boolean) => void) | null;
     onStartEndChange: ((options: StartEndOptions) => void) | null;
     onResetAll?: (() => void) | null;
     onClose: () => void;
@@ -143,6 +147,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   let localHandRelationshipInverted = $state<boolean>(
     untrack(() => handRelationshipInverted)
   );
+  let localMatchHandTurns = $state<boolean>(untrack(() => matchHandTurns));
 
   // ─── Local state for start positions (instant UI feedback) ───
   let localBlockedPositions = $state<GridPosition[]>(
@@ -273,7 +278,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
             label: "Hand Relationship",
             value: describeHandRelationship(
               localHandRelationship,
-              localHandRelationshipInverted
+              localHandRelationshipInverted,
+              localMatchHandTurns
             ),
           },
         ]
@@ -302,6 +308,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     localHandRelationship = GENERATE_DEFAULT_CONFIG.handRelationship;
     localHandRelationshipInverted =
       GENERATE_DEFAULT_CONFIG.handRelationshipInverted;
+    localMatchHandTurns = GENERATE_DEFAULT_CONFIG.matchHandTurns;
     localBlockedPositions = [];
     localEndPositions = [];
     localLeftOri = Orientation.IN;
@@ -468,6 +475,12 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
               onInvertedChange={(v) => {
                 localHandRelationshipInverted = v;
                 onHandRelationshipInvertedChange?.(v);
+              }}
+              matchTurns={localMatchHandTurns}
+              turnsAvailable={level >= 2}
+              onMatchTurnsChange={(v) => {
+                localMatchHandTurns = v;
+                onMatchHandTurnsChange?.(v);
               }}
             />
           </div>

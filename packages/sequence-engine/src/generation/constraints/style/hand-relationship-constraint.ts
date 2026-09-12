@@ -98,6 +98,23 @@ function spinRelates(
   return expectOpposite ? !same : same;
 }
 
+/**
+ * The spin the left hand should have once the right hand's is known, for a
+ * dash or static that gained turns after the dataset row was chosen. Same
+ * rule as spinRelates: a reflection flips it, inversion flips it back.
+ * Undefined when the right hand is not spinning (nothing to relate to).
+ */
+export function relatedRotationDirection(
+  rightDirection: string | undefined,
+  options: HandRelationshipOptions
+): "cw" | "ccw" | undefined {
+  const r = lower(rightDirection);
+  if (r !== "cw" && r !== "ccw") return undefined;
+  const flip = REFLECTIONS.has(options.map) !== (options.inverted === true);
+  if (!flip) return r;
+  return r === "cw" ? "ccw" : "cw";
+}
+
 /** True when `left` is `right` under the relationship. */
 export function handRelationshipHolds(
   left: MotionData,

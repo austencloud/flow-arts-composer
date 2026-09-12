@@ -274,6 +274,28 @@ App:
   in diamond and one in box, read the steps' motions from the workspace to
   confirm the predicate on real output, then look at the mandala trail.
 
+## Addendum 2026-09-12: Match turns
+
+Austen, after the first ship: "we should have the option to match left-right
+turns versus allow them to be different." Shipped as a second toggle on the
+Hand Relationship screen, **Match turns**, off by default so the launch
+behavior (independent turns) is unchanged.
+
+- On: `allocateTurns({ matchHands })` rolls one lane and gives both hands the
+  same value every step, float included. With a relationship active, a left
+  dash or static that gains turns takes the spin the relationship implies from
+  the right hand (a reflection flips it, inversion flips it back), applied in
+  the beam search enrichment and again in postProcess so the direction the
+  constraints scored is the one that ships. Free plus Match turns only matches
+  the counts; there is no relationship to derive a spin from.
+- Random allocation only. A `turnPattern` (MCP, labs) keeps its own lanes.
+- Disabled at level 1 with the hint "Level 1 has no turns to match."
+- `UIGenerationConfig.matchHandTurns`, `GenerationOptions.matchHandTurns`,
+  `BuildOptions.matchHandTurns`. Summary fact "Turns: Matched"; the drill row
+  value appends ", matched turns".
+- Start orientation is still the user's choice on both hands; at levels 1 to 3
+  the default in/in is already symmetric.
+
 ## Not in scope
 
 - Loose (soft) relationships and rotating-frame loops (see Exploration).

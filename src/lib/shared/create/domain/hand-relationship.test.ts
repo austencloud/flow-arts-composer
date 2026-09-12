@@ -5,6 +5,9 @@ import {
   HAND_RELATIONSHIP_HINTS,
   HAND_RELATIONSHIP_INVERTED_HINT,
   HAND_RELATIONSHIP_LABELS,
+  MATCH_HAND_TURNS_HINT,
+  MATCH_HAND_TURNS_LABEL,
+  MATCH_HAND_TURNS_LEVEL_HINT,
   describeHandRelationship,
   handRelationshipToEngine,
   isHandRelationship,
@@ -60,6 +63,12 @@ describe("hand relationship vocabulary", () => {
     expect(describeHandRelationship("mirrored", true)).toBe(
       "Mirrored, inverted"
     );
+    expect(describeHandRelationship("free", false, true)).toBe(
+      "Free, matched turns"
+    );
+    expect(describeHandRelationship("mirrored", true, true)).toBe(
+      "Mirrored, inverted, matched turns"
+    );
   });
 
   it("never says hybrid and never uses an em dash", () => {
@@ -67,6 +76,9 @@ describe("hand relationship vocabulary", () => {
       ...Object.values(HAND_RELATIONSHIP_LABELS),
       ...Object.values(HAND_RELATIONSHIP_HINTS),
       HAND_RELATIONSHIP_INVERTED_HINT,
+      MATCH_HAND_TURNS_LABEL,
+      MATCH_HAND_TURNS_HINT,
+      MATCH_HAND_TURNS_LEVEL_HINT,
     ].join(" ");
     expect(copy.toLowerCase()).not.toContain("hybrid");
     expect(copy).not.toContain("—");

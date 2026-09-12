@@ -74,6 +74,23 @@ describe("GenerationOrchestrator hand relationship", () => {
     }
   });
 
+  it("passes matchHandTurns to the builder on both paths", async () => {
+    const orchestrator = makeOrchestrator();
+    await orchestrator.generateSequence(baseOptions({ matchHandTurns: true }));
+    await orchestrator.generateSequence(
+      baseOptions({
+        mode: GenerationMode.CIRCULAR,
+        loopType: "rotated" as never,
+        period: "halved" as never,
+        matchHandTurns: true,
+      })
+    );
+    await orchestrator.generateSequence(baseOptions({}));
+    expect(buildMock.mock.calls[0]![0].matchHandTurns).toBe(true);
+    expect(buildMock.mock.calls[1]![0].matchHandTurns).toBe(true);
+    expect(buildMock.mock.calls[2]![0].matchHandTurns).toBe(false);
+  });
+
   it("also reaches the circular path", async () => {
     await makeOrchestrator().generateSequence(
       baseOptions({

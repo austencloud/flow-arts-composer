@@ -9,6 +9,14 @@ export interface TurnMaterializationOptions {
   previousRotation?: string;
   propContinuity?: "maximize" | "allow-reversals" | "force-reversals";
   random?: () => number;
+  /**
+   * Direction to give a dash or static that gained turns, instead of the
+   * continuity or coin-flip answer. The builder sets it for the left hand when
+   * "Match turns" is on and a hand relationship decides the spin (a mirrored
+   * dash spins the other way from its partner). A shift keeps its own
+   * direction regardless; this never overrides the dataset.
+   */
+  forcedRotationDirection?: string;
 }
 
 export interface MaterializedTurn {
@@ -70,6 +78,7 @@ function resolveRotationDirection(
   const isNoRotation =
     original === "noRotation" || original === "no_rot" || !original;
   if (!hasTurns || !isNoRotation) return original;
+  if (options.forcedRotationDirection) return options.forcedRotationDirection;
 
   const previous = options.previousRotation;
   const hasPrevious =

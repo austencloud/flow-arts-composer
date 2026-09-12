@@ -75,3 +75,24 @@ describe("Hand relationship in the Generate config", () => {
     expect(state.config.handRelationshipInverted).toBe(false);
   });
 });
+
+describe("Match turns in the Generate config", () => {
+  it("starts off, round-trips, reaches GenerationOptions, and resets", () => {
+    expect(GENERATE_DEFAULT_CONFIG.matchHandTurns).toBe(false);
+    const first = createGenerationConfigState();
+    expect(first.config.matchHandTurns).toBe(false);
+    first.updateConfig({ matchHandTurns: true });
+    const second = createGenerationConfigState();
+    expect(second.config.matchHandTurns).toBe(true);
+    expect(uiConfigToGenerationOptions(second.config).matchHandTurns).toBe(true);
+    second.resetConfig();
+    expect(second.config.matchHandTurns).toBe(false);
+  });
+
+  it("drops a non-boolean persisted value", () => {
+    expect(normalizePersistedGenerationConfig({ matchHandTurns: "yes" })).toEqual({});
+    expect(normalizePersistedGenerationConfig({ matchHandTurns: true })).toEqual({
+      matchHandTurns: true,
+    });
+  });
+});

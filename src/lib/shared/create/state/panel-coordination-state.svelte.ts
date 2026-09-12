@@ -185,6 +185,8 @@ export interface CustomizeOverlayProps {
   handRelationshipInverted?: boolean;
   onHandRelationshipChange?: ((v: HandRelationship) => void) | null;
   onHandRelationshipInvertedChange?: ((v: boolean) => void) | null;
+  matchHandTurns?: boolean;
+  onMatchHandTurnsChange?: ((v: boolean) => void) | null;
   onStartEndChange: ((options: StartEndOptions) => void) | null;
   /** "Reset all" — every persisted generation setting back to first-run. */
   onResetAll: (() => void) | null;

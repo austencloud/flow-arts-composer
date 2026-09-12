@@ -58,6 +58,7 @@ interface SerializedConfig {
   // Hand relationship
   handRelationship?: HandRelationship;
   handRelationshipInverted?: boolean;
+  matchHandTurns?: boolean;
   // Duration rhythm template
   durationTemplateId?: string | null;
   // Spell mode length override
@@ -88,6 +89,7 @@ function saveConfig(config: UIGenerationConfig): void {
       motionTypeFilter: config.motionTypeFilter,
       handRelationship: config.handRelationship,
       handRelationshipInverted: config.handRelationshipInverted,
+      matchHandTurns: config.matchHandTurns,
       durationTemplateId: config.durationTemplateId,
       spellTargetLength: config.spellTargetLength,
     };
@@ -191,6 +193,9 @@ function loadConfig(): UIGenerationConfig | null {
     if (data.handRelationshipInverted !== undefined) {
       result.handRelationshipInverted = data.handRelationshipInverted;
     }
+    if (data.matchHandTurns !== undefined) {
+      result.matchHandTurns = data.matchHandTurns;
+    }
     if (data.durationTemplateId !== undefined) {
       result.durationTemplateId = data.durationTemplateId;
     }
@@ -234,6 +239,7 @@ const DEFAULT_CONFIG: UIGenerationConfig = {
   ...DEFAULT_GENERATION_STYLE,
   handRelationship: DEFAULT_HAND_RELATIONSHIP,
   handRelationshipInverted: false,
+  matchHandTurns: false,
   durationTemplateId: null,
   spellTargetLength: null,
 };

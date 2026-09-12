@@ -82,6 +82,8 @@ export interface CustomizeSummaryInput {
   /** Free by default; absent means Free. */
   handRelationship?: HandRelationship;
   handRelationshipInverted?: boolean;
+  /** Off by default; absent means off. */
+  matchHandTurns?: boolean;
   startEndOptions?: StartEndOptions | null;
   gridMode?: GridMode;
 }
@@ -141,6 +143,9 @@ export function buildCustomizeSummary(
     push(
       `Relationship: ${describeHandRelationship(relationship, input.handRelationshipInverted ?? false)}`
     );
+  }
+  if (input.matchHandTurns) {
+    push("Turns: Matched");
   }
 
   const options = input.startEndOptions;

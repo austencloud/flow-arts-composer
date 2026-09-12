@@ -47,6 +47,10 @@ import {
 } from "../turns/TurnSource.js";
 import { materializeTurn } from "../turns/TurnMaterializer.js";
 import {
+  relatedRotationDirection,
+  type HandRelationshipOptions,
+} from "../constraints/style/hand-relationship-constraint.js";
+import {
   applyLayerPattern,
   enforceHandFlipParity,
 } from "../turns/layer-targeting.js";
@@ -181,7 +185,20 @@ function resolveTurnAllocationOptions(
       : {}),
     allowFloat:
       constraints.motionType !== "pro" && constraints.motionType !== "anti",
+    matchHands: options.matchHandTurns === true,
   };
+}
+
+/**
+ * The relationship that decides a left dash's spin, or undefined when turns
+ * are independent or no relationship is active. Only the random allocation
+ * path matches turns; a turnPattern keeps whatever lanes it was given.
+ */
+function resolveMatchedHandRelationship(
+  options: BuildOptions
+): HandRelationshipOptions | undefined {
+  if (!options.matchHandTurns) return undefined;
+  return options.constraintOptions?.handRelationship;
 }
 
 // Public types
@@ -222,6 +239,14 @@ export interface BuildOptions {
 
   /** Maximum turn intensity cap (0-3). Undefined = level default. */
   maxTurnIntensity?: number;
+
+  /**
+   * Give both hands the same turn value on every step (floats together). With
+   * a `constraintOptions.handRelationship` active, a left dash or static that
+   * gained turns also takes the spin the relationship implies from the right
+   * hand. Random allocation only: a `turnPattern` keeps its own lanes.
+   */
+  matchHandTurns?: boolean;
 
   /**
    * Turns to use instead of rolling them at random, given as a repeating
@@ -703,6 +728,7 @@ export class SequenceBuilder {
           {
             level: options.level,
             allowStaticSteps: this.resolveAllowStaticSteps(options),
+            matchedHandRelationship: resolveMatchedHandRelationship(options),
           }
         );
         const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -759,7 +785,8 @@ export class SequenceBuilder {
         leftStartOrientation: options.leftStartOrientation,
         rightStartOrientation: options.rightStartOrientation,
       },
-      resolveLayerShaping(options)
+      resolveLayerShaping(options),
+      resolveMatchedHandRelationship(options)
     );
 
     // Stage 6: LOOP extension (if requested)
@@ -989,6 +1016,7 @@ export class SequenceBuilder {
         {
           level: options.level,
           allowStaticSteps: this.resolveAllowStaticSteps(options),
+          matchedHandRelationship: resolveMatchedHandRelationship(options),
         }
       );
       const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -1113,6 +1141,7 @@ export class SequenceBuilder {
           {
             level: options.level,
             allowStaticSteps: this.resolveAllowStaticSteps(options),
+            matchedHandRelationship: resolveMatchedHandRelationship(options),
           }
         );
         const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -1186,7 +1215,8 @@ export class SequenceBuilder {
         leftStartOrientation: options.leftStartOrientation,
         rightStartOrientation: options.rightStartOrientation,
       },
-      resolveLayerShaping(options)
+      resolveLayerShaping(options),
+      resolveMatchedHandRelationship(options)
     );
 
     // Stage 6: LOOP extension (if requested)
@@ -1346,7 +1376,8 @@ export class SequenceBuilder {
       /** Keeps the rewritten turns inside the values this level actually has. */
       level?: number;
       maxTurnIntensity?: number;
-    }
+    },
+    matchedHandRelationship?: HandRelationshipOptions
   ): BuildResult {
     const bridgeIndices = new Set(searchResult.bridgeStepIndices);
     const sequence: SequenceStep[] = [];
@@ -1375,13 +1406,21 @@ export class SequenceBuilder {
       const prevLeftRot = prevStep?.motions.left.rotationDirection;
       const prevRightRot = prevStep?.motions.right.rotationDirection;
 
-      const leftTurn = materializeTurn(pd.leftMotion, leftTurns, {
-        previousRotation: prevLeftRot,
-        propContinuity,
-      });
+      // Right first: with matched turns and a relationship, a left dash or
+      // static takes the spin the relationship implies from the right hand.
       const rightTurn = materializeTurn(pd.rightMotion, rightTurns, {
         previousRotation: prevRightRot,
         propContinuity,
+      });
+      const leftTurn = materializeTurn(pd.leftMotion, leftTurns, {
+        previousRotation: prevLeftRot,
+        propContinuity,
+        forcedRotationDirection: matchedHandRelationship
+          ? relatedRotationDirection(
+              rightTurn.rotationDirection,
+              matchedHandRelationship
+            )
+          : undefined,
       });
 
       // PictographData from the variation provider carries string-typed

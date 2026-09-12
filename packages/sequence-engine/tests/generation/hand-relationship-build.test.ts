@@ -169,3 +169,88 @@ describe("SequenceBuilder with a hand relationship", () => {
     ).toThrow();
   });
 });
+
+describe("SequenceBuilder with matchHandTurns", () => {
+  it("gives both hands the same turns on every step, floats included, and keeps the relationship", () => {
+    for (let i = 0; i < 5; i++) {
+      const result = diamond().build({
+        length: 8,
+        gridMode: "diamond",
+        level: 3,
+        maxTurnIntensity: 3,
+        matchHandTurns: true,
+        constraintOptions: { handRelationship: MIRRORED },
+      });
+      expectRelationship(result.sequence, MIRRORED);
+      expect(result.turnAllocation.left).toEqual(result.turnAllocation.right);
+      for (const step of result.sequence.slice(1)) {
+        expect(step.motions.left.turns).toEqual(step.motions.right.turns);
+        expect(step.motions.left.motionType === "float").toBe(
+          step.motions.right.motionType === "float"
+        );
+      }
+    }
+  });
+
+  /**
+   * A shift's spin is fixed by its path; a dash's comes from turns after the
+   * row is chosen, so dash steps with turns are where the derived spin shows.
+   * The beam picks them at random, so build until a few have appeared.
+   */
+  function dashStepsWithTurns(
+    options: HandRelationshipOptions,
+    want: number
+  ): Array<{ left: string; right: string }> {
+    const seen: Array<{ left: string; right: string }> = [];
+    for (let i = 0; i < 40 && seen.length < want; i++) {
+      const result = diamond().build({
+        length: 8,
+        gridMode: "diamond",
+        level: 2,
+        maxTurnIntensity: 3,
+        matchHandTurns: true,
+        constraintOptions: { handRelationship: options },
+      });
+      for (const step of result.sequence.slice(1)) {
+        const { left, right } = step.motions;
+        if (left.motionType !== "dash" || right.motionType !== "dash") continue;
+        expect(left.turns).toEqual(right.turns);
+        if (right.rotationDirection === "noRotation") continue;
+        seen.push({
+          left: String(left.rotationDirection),
+          right: String(right.rotationDirection),
+        });
+      }
+    }
+    return seen;
+  }
+
+  it("spins a left dash the mirror way when the hands are mirrored", () => {
+    const seen = dashStepsWithTurns(MIRRORED, 3);
+    expect(seen.length).toBeGreaterThan(0);
+    for (const { left, right } of seen) expect(left).not.toBe(right);
+  });
+
+  it("keeps the same spin on both hands for unison dashes", () => {
+    const seen = dashStepsWithTurns({ map: "identity" }, 3);
+    expect(seen.length).toBeGreaterThan(0);
+    for (const { left, right } of seen) expect(left).toBe(right);
+  });
+
+  it("leaves turns independent when the flag is off", () => {
+    let differed = false;
+    for (let i = 0; i < 10 && !differed; i++) {
+      const result = diamond().build({
+        length: 8,
+        gridMode: "diamond",
+        level: 3,
+        maxTurnIntensity: 3,
+        constraintOptions: { handRelationship: MIRRORED },
+      });
+      differed = result.turnAllocation.left.some(
+        (t, idx) => t !== result.turnAllocation.right[idx]
+      );
+    }
+    expect(differed).toBe(true);
+  });
+});

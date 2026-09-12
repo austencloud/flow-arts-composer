@@ -35,6 +35,8 @@
         handRelationshipInverted={overlayProps.handRelationshipInverted}
         onHandRelationshipChange={overlayProps.onHandRelationshipChange}
         onHandRelationshipInvertedChange={overlayProps.onHandRelationshipInvertedChange}
+        matchHandTurns={overlayProps.matchHandTurns}
+        onMatchHandTurnsChange={overlayProps.onMatchHandTurnsChange}
         startEndOptions={overlayProps.startEndOptions}
         level={overlayProps.level}
         gridMode={overlayProps.gridMode}

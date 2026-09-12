@@ -509,6 +509,10 @@ Delegates ALL logic to services (SRP compliant)
     updateConfig({ handRelationshipInverted: v });
   }
 
+  function handleMatchHandTurnsChange(v: boolean) {
+    updateConfig({ matchHandTurns: v });
+  }
+
   // LOOP toggle handler
   function handleLoopToggle() {
     updateConfig({ loopEnabled: !config.loopEnabled });
@@ -585,6 +589,7 @@ Delegates ALL logic to services (SRP compliant)
         handleMotionTypeFilterChange,
         handleHandRelationshipChange,
         handleHandRelationshipInvertedChange,
+        handleMatchHandTurnsChange,
         handleDurationTemplateSelect,
         handleLoopToggle,
         wordInputValue,

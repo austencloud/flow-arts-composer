@@ -6,8 +6,9 @@
  * Generate is the only surface that offers it, so Fuse and the public Composer
  * demo keep their untouched recipe unchanged.
  *
- * Turns, floats, orientations and dash spin stay independent per hand. The
- * relationship is about hand paths and motion types only.
+ * Turns, floats, orientations and dash spin stay independent per hand unless
+ * "Match turns" is on. The relationship itself is about hand paths and motion
+ * types only; matching turns is the separate toggle that completes the mirror.
  */
 import type {
   HandRelationshipMap,
@@ -94,11 +95,24 @@ export const HAND_RELATIONSHIP_HINTS: Record<HandRelationship, string> = {
 export const HAND_RELATIONSHIP_INVERTED_HINT =
   "The left hand uses the other motion type. Pro on the right is anti on the left.";
 
-/** Row and summary wording: "Free", "Mirrored", "Mirrored, inverted". */
+export const MATCH_HAND_TURNS_LABEL = "Match turns";
+
+export const MATCH_HAND_TURNS_HINT =
+  "Both hands take the same number of turns on every step, and a mirrored dash spins the mirror way. Off, each hand rolls its own.";
+
+export const MATCH_HAND_TURNS_LEVEL_HINT = "Level 1 has no turns to match.";
+
+/**
+ * Row and summary wording: "Free", "Mirrored", "Mirrored, inverted",
+ * "Mirrored, inverted, matched turns".
+ */
 export function describeHandRelationship(
   relationship: HandRelationship,
-  inverted: boolean
+  inverted: boolean,
+  matchTurns = false
 ): string {
-  const label = HAND_RELATIONSHIP_LABELS[relationship];
-  return relationship !== "free" && inverted ? `${label}, inverted` : label;
+  const parts = [HAND_RELATIONSHIP_LABELS[relationship]];
+  if (relationship !== "free" && inverted) parts.push("inverted");
+  if (matchTurns) parts.push("matched turns");
+  return parts.join(", ");
 }

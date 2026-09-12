@@ -2,8 +2,9 @@
 HandRelationshipPanel.svelte - the Hand Relationship drill screen.
 
 One SegmentedControl for the relationship (exactly one is active, so it is
-the owner per chip-primitives.md) and one FilterChipBase toggle for Inverted.
-The hints stack in one grid cell so switching options never moves the toggle.
+the owner per chip-primitives.md) and two FilterChipBase toggles: Inverted,
+which needs a relationship, and Match turns, which stands on its own. The
+hints stack in one grid cell so switching options never moves the toggles.
 -->
 <script lang="ts">
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -14,21 +15,31 @@ The hints stack in one grid cell so switching options never moves the toggle.
     HAND_RELATIONSHIP_HINTS,
     HAND_RELATIONSHIP_INVERTED_HINT,
     HAND_RELATIONSHIP_LABELS,
+    MATCH_HAND_TURNS_HINT,
+    MATCH_HAND_TURNS_LABEL,
+    MATCH_HAND_TURNS_LEVEL_HINT,
     type HandRelationship,
   } from "$lib/shared/create/domain/hand-relationship";
 
   let {
     relationship,
     inverted,
+    matchTurns = false,
+    turnsAvailable = true,
     haptic = null,
     onRelationshipChange,
     onInvertedChange,
+    onMatchTurnsChange = null,
   }: {
     relationship: HandRelationship;
     inverted: boolean;
+    matchTurns?: boolean;
+    /** False at level 1, where every turn is zero and matching is moot. */
+    turnsAvailable?: boolean;
     haptic?: HapticFeedback | null;
     onRelationshipChange: (v: HandRelationship) => void;
     onInvertedChange: (v: boolean) => void;
+    onMatchTurnsChange?: ((v: boolean) => void) | null;
   } = $props();
 
   const options = HAND_RELATIONSHIPS.map((value) => ({
@@ -44,6 +55,11 @@ The hints stack in one grid cell so switching options never moves the toggle.
   function handleInverted() {
     haptic?.trigger("selection");
     onInvertedChange(!inverted);
+  }
+
+  function handleMatchTurns() {
+    haptic?.trigger("selection");
+    onMatchTurnsChange?.(!matchTurns);
   }
 </script>
 
@@ -75,6 +91,21 @@ The hints stack in one grid cell so switching options never moves the toggle.
     />
     <span class="inverted-hint">{HAND_RELATIONSHIP_INVERTED_HINT}</span>
   </div>
+  {#if onMatchTurnsChange}
+    <div class="inverted-row">
+      <FilterChipBase
+        label={MATCH_HAND_TURNS_LABEL}
+        mode="toggle"
+        emphasis="solid"
+        active={matchTurns}
+        disabled={!turnsAvailable}
+        onclick={handleMatchTurns}
+      />
+      <span class="inverted-hint"
+        >{turnsAvailable ? MATCH_HAND_TURNS_HINT : MATCH_HAND_TURNS_LEVEL_HINT}</span
+      >
+    </div>
+  {/if}
 </div>
 
 <style>

@@ -35,8 +35,10 @@ to three rows. Click opens the expanded overlay.
     onMotionTypeFilterChange,
     handRelationship = "free",
     handRelationshipInverted = false,
+    matchHandTurns = false,
     onHandRelationshipChange = null,
     onHandRelationshipInvertedChange = null,
+    onMatchHandTurnsChange = null,
     onStartEndChange,
     onResetAll = null,
     color = "linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)",
@@ -62,8 +64,10 @@ to three rows. Click opens the expanded overlay.
     onMotionTypeFilterChange: (v: "no-dash" | "mixed" | "prefer-dash") => void;
     handRelationship?: HandRelationship;
     handRelationshipInverted?: boolean;
+    matchHandTurns?: boolean;
     onHandRelationshipChange?: ((v: HandRelationship) => void) | null;
     onHandRelationshipInvertedChange?: ((v: boolean) => void) | null;
+    onMatchHandTurnsChange?: ((v: boolean) => void) | null;
     onStartEndChange?: (options: StartEndOptions) => void;
     onResetAll?: (() => void) | null;
     color?: string;
@@ -98,6 +102,7 @@ to three rows. Click opens the expanded overlay.
         motionTypeFilter,
         handRelationship,
         handRelationshipInverted,
+        matchHandTurns,
         startEndOptions,
         gridMode,
       },
@@ -134,8 +139,10 @@ to three rows. Click opens the expanded overlay.
       onMotionTypeFilterChange,
       handRelationship,
       handRelationshipInverted,
+      matchHandTurns,
       onHandRelationshipChange,
       onHandRelationshipInvertedChange,
+      onMatchHandTurnsChange,
       onStartEndChange: onStartEndChange ?? null,
       onResetAll: onResetAll ?? null,
     });
