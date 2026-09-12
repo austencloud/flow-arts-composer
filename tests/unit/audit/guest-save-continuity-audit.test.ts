@@ -128,6 +128,14 @@ const { LibrarySaveService } = await import(
 const { importDrafts } = await import(
   "$lib/shared/auth/services/anonymous-upgrade"
 );
+const { createLibrarySequence } = await import(
+  "$lib/shared/library/domain/models/library-sequence"
+);
+const {
+  anonymousImportPrompt,
+  promptAnonymousImport,
+  confirmAnonymousImport,
+} = await import("$lib/shared/auth/state/anonymous-import-prompt.svelte");
 
 function makeSequence(o: Record<string, unknown> = {}) {
   return { id: "seq-1", steps: [{ letter: "A" }], thumbnails: [], ...o } as any;
@@ -222,31 +230,78 @@ describe("F2 — upgrade-import must not republish the guest's private work", ()
     expect(overrides).toMatchObject({ visibility: "private" });
   });
 
-  it("never defaults an imported draft to public when no visibility was recorded", async () => {
-    const unmarkedDraft = {
-      id: "seq-unmarked",
-      steps: [{ letter: "A" }, { letter: "B" }, { letter: "C" }, { letter: "D" }],
+  /**
+   * The step above proves only that the metadata is not PROPAGATED. This one
+   * closes the inference with real, unmocked code: `createLibrarySequence` is
+   * the function `library-repository.ts:514` calls, and it is what turns an
+   * unspecified visibility into a public one. No Firestore needed.
+   *
+   * (The remaining step — that a public LibrarySequence owned by a full account
+   * is then mirrored to the community gallery via
+   * `publicIndexSyncer.syncToPublicIndex`, `library-repository.ts:704-706` — is
+   * NOT exercised here. It needs the emulator. See the report's evidence table,
+   * which labels it inference rather than tested fact.)
+   */
+  it("createLibrarySequence must not publish a draft whose recorded visibility was private", () => {
+    const draft = {
+      id: "seq-private",
+      steps: [{ letter: "A" }],
       thumbnails: [],
+      pendingSyncMetadata: { visibility: "private", notes: "" },
     } as any;
 
-    await importDrafts([unmarkedDraft]);
+    // Exactly the call importDrafts produces today: no visibility override.
+    const result = createLibrarySequence(draft, "new-account-uid", {});
 
-    const [, overrides] = repoSaveSequenceMock.mock.calls[0]!;
-    // An import is a preservation action, not a publication decision, so the
-    // import must pass an EXPLICIT safe visibility rather than leaving the
-    // repository to fall through to its `?? "public"` default.
-    expect(overrides?.visibility).toBe("private");
+    expect(result.visibility).not.toBe("public");
   });
 });
 
-describe("F3 — a failed import must not silently destroy the captured drafts", () => {
+describe("F3 — a failed import must leave the drafts retained and retryable", () => {
   /**
-   * Reproduction 3b: importDrafts rethrows any error that is not
-   * ALREADY_EXISTS / INVALID_DATA (anonymous-upgrade.ts:369), abandoning every
-   * remaining draft in the loop and discarding the running `imported` count.
-   * One offline write therefore loses the rest of the guest's work.
+   * THE CONTRACT. Clicking "Import" and having the write fail must not put the
+   * drafts out of reach: `confirmAnonymousImport` clears `state.drafts` BEFORE
+   * awaiting (anonymous-import-prompt.svelte.ts:32-35) and `ConfirmDialog` has
+   * already closed itself and discarded the promise
+   * (ConfirmDialog.svelte:40,117-118), so after a failure there is nothing left
+   * to retry from and nothing tells the user.
+   *
+   * The Dexie rows themselves survive, and drafts imported before the failure
+   * stay imported — this is lost ACCESS to the pending drafts, not destroyed
+   * data. But the only surface that offered them is gone for the session.
+   *
+   * This contract is satisfied by retaining the drafts on failure. It does NOT
+   * mandate any particular batching design inside importDrafts.
    */
-  it("attempts every draft even when one write fails", async () => {
+  it("keeps the captured drafts available after the import fails", async () => {
+    repoSaveSequenceMock.mockRejectedValue(
+      Object.assign(new Error("offline"), { code: "unavailable" })
+    );
+
+    promptAnonymousImport([
+      { id: "d1", steps: [{ letter: "A" }], thumbnails: [] },
+    ] as any[]);
+    expect(anonymousImportPrompt.count).toBe(1);
+
+    // A rejection here is itself part of the defect: MainApplication passes this
+    // function straight to ConfirmDialog, which neither awaits nor catches it.
+    await confirmAnonymousImport().catch(() => undefined);
+
+    // The drafts were never imported, so they must still be offerable.
+    expect(anonymousImportPrompt.count).toBe(1);
+  });
+
+  /**
+   * CHARACTERIZATION, not a contract. Documents that importDrafts rethrows
+   * mid-loop (anonymous-upgrade.ts:369) and abandons the remaining drafts,
+   * discarding the running `imported` count with the stack. This PASSES today —
+   * it records current behavior so a fix has a baseline to move.
+   *
+   * Either fix shape satisfies F3: continue-on-error inside importDrafts, or
+   * retaining the drafts so the user can retry. This test deliberately does not
+   * pick one.
+   */
+  it("(characterization) abandons the remaining drafts when one write fails", async () => {
     repoSaveSequenceMock
       .mockResolvedValueOnce({})
       .mockRejectedValueOnce(
@@ -260,11 +315,9 @@ describe("F3 — a failed import must not silently destroy the captured drafts",
       { id: "d3", steps: [{ letter: "C" }], thumbnails: [] },
     ] as any[];
 
-    const imported = await importDrafts(drafts).catch(() => "threw" as const);
+    const outcome = await importDrafts(drafts).catch(() => "threw" as const);
 
-    // The third draft had nothing wrong with it.
-    expect(repoSaveSequenceMock).toHaveBeenCalledTimes(3);
-    // And the two that succeeded must still be reported as imported.
-    expect(imported).toBe(2);
+    expect(outcome).toBe("threw");
+    expect(repoSaveSequenceMock).toHaveBeenCalledTimes(2); // d3 never attempted
   });
 });
