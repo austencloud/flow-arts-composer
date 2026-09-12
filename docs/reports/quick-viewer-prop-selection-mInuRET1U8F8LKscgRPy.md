@@ -1,6 +1,7 @@
 # Quick viewer closes on prop change — feedback `mInuRET1U8F8LKscgRPy`
 
-**Status:** implementation complete, checks in progress
+**Status:** implementation and checks complete; no browser verification available
+here (see Unresolved risks)
 **Branch:** `claude/quick-viewer-prop-selection-8h33f2` (cloud namespace enforced;
 the requested `codex/opus-quick-viewer` name is not pushable from this
 environment)
