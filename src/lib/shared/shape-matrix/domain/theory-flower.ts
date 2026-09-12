@@ -265,10 +265,17 @@ export function theorySoloKnobs(flower: TheoryFlower): QftKnobs {
  *
  * - Same Direction is the same motion δ = offset steps ahead, which leaves the
  *   prop needing the remaining `(s − 1)·offset` on top of its own start.
- * - Opposite Direction is the same motion mirrored, and the mirror negates
- *   every bearing about the axis between the hands. On the prop's own start
- *   that reads as `−phase`, which is why it swaps clock for counter and leaves
- *   in and out where they are.
+ * - Opposite Direction is the same motion run BACKWARDS from δ steps in:
+ *   `hand(u) = left(δ − u)`, `prop(u) = leftProp(δ − u)`. The model already
+ *   flips the prop's rate with the hand's sign, so the prop's own start needs
+ *   exactly the same `(s − 1)·offset` the forward play needs.
+ *
+ * Both rules keep each hand on its tile's locus, which is the whole point:
+ * timing and direction live between the hands, never in the shape. The
+ * earlier reading of Opposite Direction as a MIRROR about the axis between
+ * the hands only holds when the flower happens to be symmetric about that
+ * axis — an integer-turn ratio at split time — and rotated every other
+ * flower (2:3 in Fire turned the red hand's five petals into their gaps).
  *
  * A stationary hand has no clock to be ahead of, so its timing stays the plain
  * bearing offset it always was.
@@ -290,11 +297,9 @@ export function theoryKnobs(
     ...solo,
     handPhase: HAND_HOME + offset,
     handDirection: opposite ? -1 : 1,
-    phase: opposite
-      ? -soloPhase
-      : travelling
-        ? soloPhase + (propRateForKnobs(solo) - 1) * offset
-        : soloPhase,
+    phase: travelling
+      ? soloPhase + (propRateForKnobs(solo) - 1) * offset
+      : soloPhase,
   };
 }
 

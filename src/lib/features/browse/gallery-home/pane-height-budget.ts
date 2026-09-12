@@ -63,13 +63,23 @@ function gridTrackRange(block: HTMLElement): GridTrackRange | null {
   return range;
 }
 
-function measureEditor(
+/**
+ * Exported for the budget test. A child counts as present when it has any
+ * content, not only when the last allocation left it room: the value list is
+ * `flex: 0 1 auto; min-height: 0`, so a short editor squeezes it to 0px while
+ * its rows still exist below the fold. Filtering on the laid-out box dropped
+ * the list, measured the editor as header-only, handed the surplus to the
+ * catalog, and every re-measure then saw the same 0px list — the sequence
+ * picker locked at a 98px editor under a 720px catalog on 1440p and 4K.
+ */
+export function measureEditor(
   screen: HTMLElement,
   stage: HTMLElement
 ): EditorMeasurement {
   const screenStyle = getComputedStyle(screen);
   const visibleChildren = [...screen.children].filter(
-    (child) => child.getBoundingClientRect().height > 0
+    (child) =>
+      child.getBoundingClientRect().height > 0 || child.scrollHeight > 0
   ) as HTMLElement[];
   let fixed = boxChrome(screen) + boxChrome(stage);
   if (visibleChildren.length > 1) {

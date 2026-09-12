@@ -22,6 +22,7 @@
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
@@ -179,6 +180,13 @@ export interface CustomizeOverlayProps {
   onConstraintPresetChange: (v: "smooth" | "mixed" | "choppy") => void;
   onHandPathModeChange: (v: "smooth" | "mixed" | "choppy") => void;
   onMotionTypeFilterChange: (v: "no-dash" | "mixed" | "prefer-dash") => void;
+  /** Absent on surfaces that do not offer the row (public Composer demo). */
+  handRelationship?: HandRelationship;
+  handRelationshipInverted?: boolean;
+  onHandRelationshipChange?: ((v: HandRelationship) => void) | null;
+  onHandRelationshipInvertedChange?: ((v: boolean) => void) | null;
+  matchHandTurns?: boolean;
+  onMatchHandTurnsChange?: ((v: boolean) => void) | null;
   onStartEndChange: ((options: StartEndOptions) => void) | null;
   /** "Reset all" — every persisted generation setting back to first-run. */
   onResetAll: (() => void) | null;

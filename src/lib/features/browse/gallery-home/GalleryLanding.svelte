@@ -371,10 +371,14 @@
     }
     .mini-grid {
       grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      /* The longest sub-lines ("Sequences added in the last 30 days · 40")
+         run to four lines in a 165px tile while their neighbours hold two, so
+         the rows stepped. Equal rows keep the set reading as one grid. */
+      grid-auto-rows: 1fr;
     }
     /* Exactly six minis square up 3x2 — a 4+2 ragged break reads as an
        accident, not a set. */
-    .mini-grid:has(> :nth-child(6):last-child) {
+    .mini-grid:has(> :global(:nth-child(6):last-child)) {
       grid-template-columns: repeat(3, 1fr);
     }
     /* Show-all spans the full row at this tier — a 4-across strip fills the
@@ -382,6 +386,20 @@
     .peek-collage {
       grid-template-columns: repeat(4, auto);
       margin-right: 0.6rem;
+    }
+  }
+  /* From 700px the auto-fill above already lands on four columns, and the
+     desktop tiers pin four, which leaves the sequence picker's ten minis
+     4+4+2 at every width. Let the last pair take the width the missing pair
+     would have had (`4k-native-layout.md` rule 2). Scoped to exactly ten so
+     the six-tile 3x2 rule and any other count keep their own shape. */
+  @container drill (min-width: 700px) {
+    .mini-grid:has(> :global(:nth-child(10):last-child)) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .mini-grid:has(> :global(:nth-child(10):last-child)) > :global(:nth-child(9)),
+    .mini-grid:has(> :global(:nth-child(10):last-child)) > :global(:nth-child(10)) {
+      grid-column: span 2;
     }
   }
 

@@ -602,8 +602,18 @@ export class ImageComposer {
 
           await this.ensureCanvas2DInitialized();
 
-          const pictographCanvas = await this.canvas2DRenderer.renderPictograph(
+          // The direct renderer has no preparer of its own: handed a raw step it
+          // still paints the grid, letter, and turn numbers but silently skips
+          // every prop and arrow. Custom palettes land here (the compositor's
+          // blue/red layer caches must not leak into them), so prepare first,
+          // the same way the compositor branch does.
+          const preparedPictograph = await this.prepareForRaster(
             pictographData,
+            finalVisibilitySettings
+          );
+
+          const pictographCanvas = await this.canvas2DRenderer.renderPictograph(
+            preparedPictograph,
             {
               size: stepSize,
               visibility: finalVisibilitySettings,
@@ -907,6 +917,32 @@ export class ImageComposer {
     return result;
   }
 
+  // Every rasterizer below (the layer compositor and the direct renderer) draws
+  // props and arrows only from `_prepared`; neither prepares on its own. The
+  // preparer is imported lazily because its dependency chain is heavy and
+  // unavailable to unit tests, which inject a fake.
+  private async prepareForRaster(
+    pictographData: StepData | PictographData,
+    visibilitySettings: PictographVisibilityOptions
+  ): Promise<PreparedPictographData> {
+    const themeMode = visibilitySettings.darkMode ? "dark" : "light";
+    const { pictographPreparer: preparer } = await import(
+      "../../pictograph/shared/services/pictograph-preparer"
+    );
+    const prepared = await preparer.prepareSingle(pictographData, {
+      themeMode,
+      fanAppearance: visibilitySettings.fanAppearance,
+      leftPropType: visibilitySettings.leftPropType,
+      rightPropType: visibilitySettings.rightPropType,
+      handPathMode: visibilitySettings.handPathMode ?? false,
+      showLeftMotion: visibilitySettings.showLeftMotion,
+      showRightMotion: visibilitySettings.showRightMotion,
+      leftBuugengFlipped: visibilitySettings.leftBuugengFlipped,
+      rightBuugengFlipped: visibilitySettings.rightBuugengFlipped,
+    });
+    return prepared as unknown as PreparedPictographData;
+  }
+
   private async renderPictographWithLayerCompositor(
     ctx: CanvasRenderingContext2D,
     pictographData: StepData | PictographData,
@@ -924,21 +960,10 @@ export class ImageComposer {
 
     await this.ensureCanvas2DInitialized();
 
-    const themeMode = visibilitySettings.darkMode ? "dark" : "light";
-    const { pictographPreparer: preparer } = await import(
-      "../../pictograph/shared/services/pictograph-preparer"
+    const preparedPictograph = await this.prepareForRaster(
+      pictographData,
+      visibilitySettings
     );
-    const preparedPictograph = await preparer.prepareSingle(pictographData, {
-      themeMode,
-      fanAppearance: visibilitySettings.fanAppearance,
-      leftPropType: visibilitySettings.leftPropType,
-      rightPropType: visibilitySettings.rightPropType,
-      handPathMode: visibilitySettings.handPathMode ?? false,
-      showLeftMotion: visibilitySettings.showLeftMotion,
-      showRightMotion: visibilitySettings.showRightMotion,
-      leftBuugengFlipped: visibilitySettings.leftBuugengFlipped,
-      rightBuugengFlipped: visibilitySettings.rightBuugengFlipped,
-    });
 
     const { options: layerOptions, visibility: layerVisibility } = buildCellLayerOptions(
       stepSize,
@@ -946,7 +971,7 @@ export class ImageComposer {
     );
 
     const result = await this.layerCompositor.compose(
-      preparedPictograph as unknown as PreparedPictographData,
+      preparedPictograph,
       layerOptions,
       layerVisibility,
       stepNumber

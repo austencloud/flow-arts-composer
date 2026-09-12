@@ -79,6 +79,17 @@
     }
   }
 
+  /**
+   * The split pane needs its left column to hold the catalog plus one whole
+   * editor row: below the 1680px seam that is 445px of tiles + 68px header +
+   * 166px card + gaps and padding (about 780px of drill); above it, 512 + 68 +
+   * 212 (about 890px). A dialog at 90dvh gives the drill 734px at 1440×900 and
+   * 896px at 1920×1080, so the laptop tier takes the step-through flow (three
+   * level cards across, then a full-width grid) instead of a split pane that
+   * shows 83% of one card, and 1080p keeps the live results beside the editor.
+   */
+  const SPLIT_MIN_HEIGHT = 780;
+
   function openResults(apply: () => void): void {
     apply();
     showResults = true;
@@ -117,7 +128,12 @@
         />
       </div>
     {:else}
-      <FilterWorkspace {engine} onEject={openResults} {resultsPane} />
+      <FilterWorkspace
+        {engine}
+        onEject={openResults}
+        {resultsPane}
+        splitMinHeight={SPLIT_MIN_HEIGHT}
+      />
     {/if}
 
     {#if isSelectingSequence}
@@ -178,11 +194,17 @@
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
   }
 
+  /* The body takes whatever the dialog gives it. It used to be `60vh` with a
+   * 300px floor, which sized the workspace to the window instead of to the
+   * dialog: 30% of every desktop viewport became empty bands above and below
+   * the modal while the split pane inside starved (the value editor fell
+   * below the dialog's bottom edge from 1440×900 up), and at 412px tall the
+   * floor overshot the dialog by 5px so two scrollbars fought. */
   .picker-body {
     position: relative;
     display: flex;
-    height: 60vh;
-    min-height: 300px;
+    height: 100%;
+    min-height: 0;
     min-width: 0;
   }
 
@@ -210,28 +232,69 @@
     border-radius: inherit;
   }
 
-  /* The picker is a live workspace now. On large displays its filter catalog
-   * and sequence grid need room to remain side by side instead of floating as
-   * a narrow modal in the middle of the canvas. */
+  /* The picker is a live workspace now, so the dialog is the height budget:
+   * BaseModal only caps an xl dialog, and a content-sized box let the 60vh
+   * body above decide the height. Same expression as the cap, so the modal
+   * never exceeds what BaseModal allows. Below the phone seam BaseModal
+   * already makes xl dialogs full-screen; this rule stays out of its way. */
+  @media (min-width: 521px) {
+    :global(dialog.base-modal.sequence-picker-modal[data-size="xl"]) {
+      height: min(
+        90dvh,
+        calc(
+          var(--viewport-height, 100dvh) - 32px - env(safe-area-inset-top, 0px) -
+            env(safe-area-inset-bottom, 0px)
+        )
+      );
+    }
+  }
+
+  /* On large displays the filter catalog and sequence grid need room to stay
+   * side by side instead of floating as a narrow modal in the middle of the
+   * canvas. The bands follow the drill's own wide-canvas ceiling
+   * (`.drill.fluid-wide-canvas .drill-stage`, 156rem) rather than stopping
+   * short of it: the old 112rem/132rem steps left 379px of dead rail per side
+   * at 2560×1440 and 859px at 3840×2160. */
   @media (min-width: 1680px) {
     :global(dialog.base-modal.sequence-picker-modal[data-size="xl"]) {
-      width: min(calc(100dvw - 3rem), 112rem);
+      width: min(calc(100dvw - 4rem), 132rem);
     }
   }
 
   @media (min-width: 2600px) {
     :global(dialog.base-modal.sequence-picker-modal[data-size="xl"]) {
-      width: min(calc(100dvw - 5rem), 132rem);
+      width: min(calc(100dvw - 6rem), 160rem);
     }
   }
 
-  @media (max-width: 520px) {
-    /* XL modals are full-screen at the phone seam. The body must consume the
-     * space BaseModal leaves beneath its header; a viewport-relative height
-     * stranded roughly 40% of an iPhone SE as an empty black band. */
-    .picker-body {
-      height: 100%;
-      min-height: 0;
+  /* Short landscape (a phone on its side is 412px tall): the dialog gets
+   * 371px, and header + toolbar + prop control + grid gutters spent 240 of
+   * them before the first card, so the result rows were cut at 136px and a
+   * 190px card never showed whole. Tightening the chrome to its touch
+   * floors and the gutters to the phone value returns 70px, one full row.
+   * Controls keep their 44px targets; only padding around them shrinks. */
+  @media (max-height: 480px) {
+    .picker-header {
+      padding: 4px var(--spacing-lg, 16px);
+    }
+
+    .picker-body :global(.browse-toolbar) {
+      padding-top: 4px;
+      padding-bottom: 4px;
+    }
+
+    .picker-body :global(.viewing-control) {
+      padding-top: 0;
+      padding-bottom: 0;
+    }
+
+    .picker-body :global(.browse-panel .grid-area) {
+      padding: var(--spacing-sm, 8px);
+    }
+
+    .picker-body :global(.gallery-rule-strip) {
+      padding-top: 0.3rem;
+      padding-bottom: 0.3rem;
     }
   }
 

@@ -743,6 +743,14 @@
       color var(--duration-fast, 150ms) ease;
   }
 
+  /* Touch screens get the full target. The 36px button is a mouse size; on a
+     phone it sat under the 44px floor while every neighbour met it. */
+  @media (pointer: coarse) {
+    .source-btn {
+      height: var(--min-touch-target, 44px);
+    }
+  }
+
   .source-btn:hover {
     color: var(--theme-text);
   }
@@ -1181,7 +1189,10 @@
 
   .search-slot {
     flex: 1;
-    min-width: 0;
+    /* Never narrower than the 44px button it holds: with `min-width: 0` a
+       375px phone shrank the slot to 35px and the button ran into the result
+       count beside it. */
+    min-width: var(--min-touch-target, 44px);
     display: flex;
     align-items: center;
   }
@@ -1197,6 +1208,17 @@
 
   /* ---- Mobile (max-width: 520px) ---- */
   @media (max-width: 520px) {
+    /* Back, source toggle, sort, search and count total 384px at 8px gaps and
+       8px button padding, 9px more than an iPhone SE. Two points off each gap
+       and each toggle label pays for the search slot's floor above. */
+    .browse-toolbar {
+      gap: 6px;
+    }
+
+    .source-btn {
+      padding: 0 6px;
+    }
+
     .sort-trigger-label {
       display: none;
     }

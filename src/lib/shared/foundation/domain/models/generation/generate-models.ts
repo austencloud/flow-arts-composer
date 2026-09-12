@@ -12,6 +12,7 @@ import type {
 import type { LOOPSpec, LOOPSpecWire } from "@tka/sequence-engine/loop";
 import type { TurnLanes } from "@tka/sequence-engine/generation";
 import type { LoopRhythm } from "$lib/shared/create/services/loop-type-utils";
+import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
 
 // Re-export LOOPType for convenience
 export type { LOOPType };
@@ -63,6 +64,13 @@ export interface GenerationOptions {
   constraintPreset?: "smooth" | "mixed" | "choppy" | undefined;
   handPathMode?: "smooth" | "mixed" | "choppy" | undefined;
   motionTypeFilter?: "no-dash" | "prefer-dash" | null | undefined;
+
+  // Hand relationship: how the left hand relates to the right inside each
+  // step. "free" or absent means unconstrained. Inverted is ignored for free.
+  handRelationship?: HandRelationship | undefined;
+  handRelationshipInverted?: boolean | undefined;
+  /** Both hands take the same turn value every step. Absent means off. */
+  matchHandTurns?: boolean | undefined;
 
   // Customize options - advanced constraints for generation
   /**

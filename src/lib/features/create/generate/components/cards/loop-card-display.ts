@@ -21,6 +21,7 @@ import {
   resolveLoopConfig,
 } from "$lib/shared/create/services/loop-type-utils";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
+import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
 
 export interface LoopCardDisplayInput {
   loopEnabled: boolean;
@@ -30,6 +31,8 @@ export interface LoopCardDisplayInput {
   inversionInterval?: 2 | 4;
   inversionMode?: "expand" | "overlay";
   reflectionAxis?: ReflectionAxis;
+  /** Mirrored and Flipped hands coerce quartered rotation and diagonal axes. */
+  handRelationship?: HandRelationship;
 }
 
 export interface LoopCardDisplay {
@@ -130,6 +133,7 @@ export function buildLoopCardDisplay(
     inversionInterval: input.inversionInterval,
     inversionMode: input.inversionMode,
     reflectionAxis: input.reflectionAxis,
+    handRelationship: input.handRelationship,
   });
 
   const effectiveAxis = resolveEffectiveAxis(

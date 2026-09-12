@@ -27,6 +27,10 @@ import {
   type GenerationMotionTypeFilter,
   type GenerationStyleAxis,
 } from "$lib/shared/create/domain/generation-style";
+import {
+  DEFAULT_HAND_RELATIONSHIP,
+  type HandRelationship,
+} from "$lib/shared/create/domain/hand-relationship";
 
 // Re-export for convenience
 export type { UIGenerationConfig };
@@ -51,6 +55,10 @@ interface SerializedConfig {
   constraintPreset?: GenerationStyleAxis;
   handPathMode?: GenerationStyleAxis;
   motionTypeFilter?: GenerationMotionTypeFilter;
+  // Hand relationship
+  handRelationship?: HandRelationship;
+  handRelationshipInverted?: boolean;
+  matchHandTurns?: boolean;
   // Duration rhythm template
   durationTemplateId?: string | null;
   // Spell mode length override
@@ -79,6 +87,9 @@ function saveConfig(config: UIGenerationConfig): void {
       constraintPreset: config.constraintPreset,
       handPathMode: config.handPathMode,
       motionTypeFilter: config.motionTypeFilter,
+      handRelationship: config.handRelationship,
+      handRelationshipInverted: config.handRelationshipInverted,
+      matchHandTurns: config.matchHandTurns,
       durationTemplateId: config.durationTemplateId,
       spellTargetLength: config.spellTargetLength,
     };
@@ -176,6 +187,15 @@ function loadConfig(): UIGenerationConfig | null {
     if (data.motionTypeFilter !== undefined) {
       result.motionTypeFilter = data.motionTypeFilter;
     }
+    if (data.handRelationship !== undefined) {
+      result.handRelationship = data.handRelationship;
+    }
+    if (data.handRelationshipInverted !== undefined) {
+      result.handRelationshipInverted = data.handRelationshipInverted;
+    }
+    if (data.matchHandTurns !== undefined) {
+      result.matchHandTurns = data.matchHandTurns;
+    }
     if (data.durationTemplateId !== undefined) {
       result.durationTemplateId = data.durationTemplateId;
     }
@@ -217,6 +237,9 @@ const DEFAULT_CONFIG: UIGenerationConfig = {
   loopType: LOOPType.ROTATED,
   reflectionAxis: "north-south",
   ...DEFAULT_GENERATION_STYLE,
+  handRelationship: DEFAULT_HAND_RELATIONSHIP,
+  handRelationshipInverted: false,
+  matchHandTurns: false,
   durationTemplateId: null,
   spellTargetLength: null,
 };

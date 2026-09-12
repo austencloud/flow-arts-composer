@@ -18,6 +18,12 @@
 # - Process existence is not treated as origin health. If Vite stops serving
 #   while its pnpm/cmd wrapper remains alive, the launcher exits after three
 #   failed probes so pm2 can rebuild the complete process tree.
+# - Under pm2 the launcher watches its supervising shim (start-dev-pm2.cjs).
+#   pm2 on Windows kills only that shim on stop/restart and cannot reach this
+#   tree, so without the watch every restart left an orphaned Vite holding
+#   :5173 and the next boot killed whichever server was actually healthy. When
+#   the shim disappears, the launcher stops itself and its finally block tears
+#   down Vite and the tunnel.
 #
 # Tunnel credentials (one-time setup on a new machine), first match wins:
 #   1. Token file:  %USERPROFILE%\.cloudflared\tka-dev.token
@@ -48,11 +54,27 @@ function Wait-ForOrigin {
     param([string]$Url = "https://[::1]:5173/", [int]$TimeoutSec = 180)
     $deadline = (Get-Date).AddSeconds($TimeoutSec)
     while ((Get-Date) -lt $deadline) {
+        if (-not (Test-SupervisorAlive)) { return $false }
         $code = & curl.exe -g -k -s -o NUL -w "%{http_code}" --max-time 5 $Url
         if ($code -eq "200") { return $true }
         Start-Sleep -Milliseconds 500
     }
     return $false
+}
+
+# The pm2 shim hands us its pid in TKA_PM2_PARENT_PID. Once that process is
+# gone, pm2 has already moved on (stop, restart, or crash) and this tree is an
+# orphan that would fight the replacement boot for :5173. Manual runs have no
+# supervisor and never trip this.
+$supervisorPid = 0
+if ($env:TKA_PM2_PARENT_PID -match '^\d+$') { $supervisorPid = [int]$env:TKA_PM2_PARENT_PID }
+function Test-SupervisorAlive {
+    if ($supervisorPid -le 0) { return $true }
+    $alive = $null -ne (Get-Process -Id $supervisorPid -ErrorAction SilentlyContinue)
+    if (-not $alive) {
+        Write-Status "pm2 shim (PID $supervisorPid) is gone - this launcher is orphaned; shutting down its Vite and tunnel."
+    }
+    return $alive
 }
 
 function Test-Http200 {
@@ -384,6 +406,7 @@ try {
     $publicFailureCount = 0
     $tunnelRestartCount = 0
     while ($viteProc -and -not $viteProc.HasExited) {
+        if (-not (Test-SupervisorAlive)) { break }
         if ($manageTunnel -and ((-not $tunnelProc) -or $tunnelProc.HasExited)) {
             $exitCode = if ($tunnelProc) { $tunnelProc.ExitCode } else { "not started" }
             $tunnelRestartCount += 1

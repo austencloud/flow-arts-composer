@@ -1,6 +1,23 @@
+<!--
+  SheetBrowserDock.svelte
+
+  The add-sequences picker, docked INLINE beside the sheet preview (a flex
+  sibling, not an overlay): the page narrows to make room and stays fully
+  visible while you pick. On a narrow workspace the parent hides the preview
+  and the dock takes its slot. Same dock pattern as ActPlayer and ActsDock.
+
+  Reuses the full Browse experience (BrowsePanel + a browse engine): rendered
+  pictograph cards, filter sheet, sort, virtualization. Sources are the two
+  pools (My Library | Community); collections surface as the chips row.
+
+  Perf: the virtualized gallery is too heavy to mount inside the click frame
+  (traced at 254ms of presentation delay), so the dock shell glides in over a
+  skeleton and the heavy content mounts on introend. A dock restored open on
+  reload plays no intro, so it settles on mount instead.
+-->
 <script lang="ts">
   import { onMount } from "svelte";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
+  import { dockSlide } from "$lib/shared/transitions/dock-slide";
   import BrowsePanel from "$lib/shared/browse/components/BrowsePanel.svelte";
   import GalleryFilterSheet from "$lib/features/browse/gallery-home/GalleryFilterSheet.svelte";
   import CollectionChipsRow from "$lib/features/library/components/collection-picker/CollectionChipsRow.svelte";
@@ -16,10 +33,13 @@
   import { getChoreoSheetContext } from "../../state/choreo-sheet-state.svelte";
 
   let {
-    isOpen = $bindable(false),
+    stacked = false,
+    onClose,
     resolveSequence,
   }: {
-    isOpen?: boolean;
+    /** Narrow workspace: the dock fills the body instead of docking right. */
+    stacked?: boolean;
+    onClose: () => void;
     resolveSequence: (
       id: string,
       signal: AbortSignal
@@ -35,14 +55,12 @@
 
   let filterOpen = $state(false);
   let settled = $state(false);
-  let initialized = false;
   let sideBySide = $state(false);
   let addingCollectionId = $state<string | null>(null);
 
-  function initialize(): void {
+  function settle(): void {
+    if (settled) return;
     settled = true;
-    if (initialized) return;
-    initialized = true;
     engine.initialize();
   }
 
@@ -51,9 +69,14 @@
     const unsubscribe = responsiveLayoutManager.onLayoutChange(() => {
       sideBySide = responsiveLayoutManager.shouldUseSideBySideLayout();
     });
-    if (isOpen) initialize();
+    // A dock restored open on reload plays no intro (local transition), so
+    // introend never fires for it. Settle after the intro would have ended
+    // instead; when an intro does play, introend gets there first and this
+    // is a no-op.
+    const timer = setTimeout(settle, 320);
     return () => {
       unsubscribe();
+      clearTimeout(timer);
       engine.destroy();
     };
   });
@@ -67,7 +90,7 @@
       builder.addHydratedSequences([outcome.sequence ?? sequence]);
     } catch (error) {
       console.warn(
-        "[SheetBrowserDrawer] Failed to hydrate selected sequence:",
+        "[SheetBrowserDock] Failed to hydrate selected sequence:",
         error
       );
       builder.addHydratedSequences([sequence]);
@@ -119,7 +142,7 @@
         );
       }
     } catch (error) {
-      console.error("[SheetBrowserDrawer] Failed to add collection:", error);
+      console.error("[SheetBrowserDock] Failed to add collection:", error);
       toast.error("Couldn't add that collection. Try again.");
     } finally {
       addingCollectionId = null;
@@ -127,130 +150,174 @@
   }
 </script>
 
-<Drawer
-  bind:isOpen
-  placement={sideBySide ? "right" : "bottom"}
-  ariaLabel="Add sequences"
-  class="choreo-browser-drawer"
-  showHandle={!sideBySide}
-  onOpenChange={(open) => {
-    if (open) initialize();
-  }}
+<aside
+  id="choreo-browse-dock"
+  class="browse-dock"
+  class:stacked
+  aria-labelledby="choreo-browse-dock-title"
+  transition:dockSlide
+  onintroend={settle}
 >
-  <div class="browser">
-    <header>
-      <strong>Add sequences</strong>
-      <span>Tap a card to add a row</span>
-      <button
-        type="button"
-        aria-label="Close browser"
-        onclick={() => (isOpen = false)}
-      >
-        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-      </button>
-    </header>
+  <header class="dock-head">
+    <strong id="choreo-browse-dock-title">Add sequences</strong>
+    <span>Tap a card to add a row</span>
+    <button
+      type="button"
+      class="dock-close"
+      aria-label="Close browser"
+      onclick={onClose}
+    >
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </header>
 
-    {#if settled}
-      <CollectionChipsRow
+  {#if settled}
+    <CollectionChipsRow
+      {engine}
+      onAddCollection={(collectionId) => void handleAddCollection(collectionId)}
+      addCollectionBusy={addingCollectionId !== null}
+    />
+    <div class="panel">
+      <BrowsePanel
         {engine}
-        onAddCollection={(collectionId) =>
-          void handleAddCollection(collectionId)}
-        addCollectionBusy={addingCollectionId !== null}
+        layout="compact"
+        showSourceToggle
+        onSelect={(sequence) => void handleSelect(sequence)}
+        hideToolbarSearch
+        onOpenFilters={() => (filterOpen = true)}
       />
-      <div class="panel">
-        <BrowsePanel
-          {engine}
-          layout="compact"
-          showSourceToggle
-          onSelect={(sequence) => void handleSelect(sequence)}
-          hideToolbarSearch
-          onOpenFilters={() => (filterOpen = true)}
-        />
+    </div>
+  {:else}
+    <!-- Mirrors the real layout (chips row, toolbar, card grid) so the settle
+         swap doesn't jump. -->
+    <div class="skeleton" aria-hidden="true">
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="grid">
+        {#each { length: 6 } as _, i (i)}
+          <div class="card" style:animation-delay="{i * 70}ms"></div>
+        {/each}
       </div>
-    {:else}
-      <div class="skeleton" aria-hidden="true">
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="grid">
-          {#each { length: 6 } as _}<div class="card"></div>{/each}
-        </div>
-      </div>
-    {/if}
-  </div>
-  <GalleryFilterSheet
-    {engine}
-    bind:isOpen={filterOpen}
-    isMobile={!sideBySide}
-  />
-</Drawer>
+    </div>
+  {/if}
+</aside>
+
+<GalleryFilterSheet {engine} bind:isOpen={filterOpen} isMobile={!sideBySide} />
 
 <style>
-  :global(.choreo-browser-drawer) {
-    width: min(clamp(400px, 30vw, 640px), 92vw) !important;
-    height: 100% !important;
-    max-height: 100% !important;
-    background: var(--theme-panel-bg) !important;
-  }
-  :global(.choreo-browser-drawer[data-placement="bottom"]) {
-    width: 100% !important;
-    height: min(78vh, 720px) !important;
-  }
-  .browser {
+  /* Inline docked column. `--dock-w` is set by ChoreoSheetView from the
+     measured workspace, so this dock and the acts dock share one width. */
+  .browse-dock {
+    flex-shrink: 0;
+    width: var(--dock-w);
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
     min-height: 0;
     background: var(--theme-panel-bg);
+    border: 1px solid var(--theme-stroke);
+    border-radius: 8px;
+    overflow: hidden;
   }
-  header {
+
+  /* dockSlide perf contract: pin children at the dock's final width so the
+     width animation is a pure clip-reveal. Without this the virtualized
+     gallery re-measures itself every frame (traced at 180ms+ of reflow). */
+  .browse-dock > :global(*) {
+    /* Inside the 1px border. */
+    width: calc(var(--dock-w) - 2px);
+  }
+
+  /* Narrow workspace: the parent hides the preview and the dock takes the
+     whole body. Children follow the dock instead of the pinned width. */
+  .browse-dock.stacked {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .browse-dock.stacked > :global(*) {
+    width: auto;
+  }
+
+  .dock-head {
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
+    flex-shrink: 0;
     min-height: 52px;
     padding: 0 var(--spacing-md);
     border-bottom: 1px solid var(--theme-stroke);
     color: var(--theme-text);
   }
-  header span {
+
+  .dock-head span {
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact);
   }
-  header button {
+
+  .dock-close {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
+    width: var(--min-touch-target, 44px);
+    height: var(--min-touch-target, 44px);
     margin-left: auto;
     border: 0;
     border-radius: 6px;
     background: transparent;
     color: var(--theme-text-dim);
+    cursor: pointer;
   }
+
   .panel {
     flex: 1;
     min-height: 0;
   }
+
   .skeleton {
+    flex: 1;
+    min-height: 0;
     display: grid;
+    align-content: start;
     gap: var(--spacing-sm);
     padding: var(--spacing-md);
+    overflow: hidden;
   }
+
   .bar,
   .card {
     border-radius: 8px;
     background: var(--theme-card-bg);
+    animation: dock-skel-pulse 1.1s ease-in-out infinite;
   }
+
   .bar {
     height: 36px;
   }
+
   .grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-sm);
   }
+
   .card {
     aspect-ratio: 1;
+  }
+
+  @keyframes dock-skel-pulse {
+    0%,
+    100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bar,
+    .card {
+      animation: none;
+    }
   }
 </style>

@@ -18,6 +18,7 @@ icons when enabled. Click opens the expanded overlay.
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
   import { buildLoopCardDisplay, describeLoopRhythm } from "./loop-card-display";
   import type { ReflectionAxis } from "@tka/sequence-engine/loop";
+  import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
 
   let {
     loopEnabled,
@@ -26,6 +27,7 @@ icons when enabled. Click opens the expanded overlay.
     inversionInterval,
     inversionMode,
     reflectionAxis,
+    handRelationship,
     onLOOPTypeChange,
     cardIndex = 0,
     headerFontSize = "9px",
@@ -37,6 +39,7 @@ icons when enabled. Click opens the expanded overlay.
     inversionInterval?: 2 | 4;
     inversionMode?: "expand" | "overlay";
     reflectionAxis?: ReflectionAxis;
+    handRelationship?: HandRelationship;
     onLOOPTypeChange: (loopType: LOOPType) => void;
     cardIndex?: number;
     headerFontSize?: string;
@@ -60,6 +63,7 @@ icons when enabled. Click opens the expanded overlay.
       inversionInterval,
       inversionMode,
       reflectionAxis,
+      handRelationship,
     })
   );
 

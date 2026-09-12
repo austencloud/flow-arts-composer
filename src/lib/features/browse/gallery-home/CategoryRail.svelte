@@ -225,7 +225,14 @@
         grid-template-columns: minmax(0, 1fr);
         grid-auto-rows: minmax(44px, 1fr);
         gap: 0.4rem;
-        overflow: hidden;
+        /* Twelve rows at their 44px floor need about 600px. A column shorter
+           than that (the sequence picker at 1440×900 gives it 620px minus its
+           heading) used to clip the last tile in half behind `overflow:
+           hidden`; the rail scrolls the remainder instead. */
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
       }
     }
   }

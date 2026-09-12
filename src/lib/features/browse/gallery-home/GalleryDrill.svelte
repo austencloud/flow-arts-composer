@@ -144,6 +144,12 @@
      * "Show all" sets it from inside; a host can set it to bring the user into
      * the workspace instead of ejecting to the full-page grid tab. */
     showAllPane?: boolean;
+    /** Drill height below which the split pane stays closed even past the
+     * width seam. The pane's left column stacks the whole catalog (about
+     * 445px of tiles) over the value editor, so a short host such as a modal
+     * can clear 1240px of width and still leave the editor no room for one
+     * row. 0 keeps the width-only decision for full-page hosts. */
+    splitMinHeight?: number;
   }
   let {
     pool = [],
@@ -180,6 +186,7 @@
     onSplitPaneChange,
     onSplitCapableChange,
     showAllPane = $bindable(false),
+    splitMinHeight = 0,
   }: Props = $props();
 
   // Null inside the shared sequence picker, which composes this drill in a
@@ -214,6 +221,9 @@
   });
 
   let drillWidth = $state(0);
+  /** Live height, read off the same box as the width so the height gate on
+   * the split pane can never disagree with the layout either. */
+  let drillHeight = $state(0);
   /** Live width of the split pane's left column — the art tiers inside the
    * value editors follow IT, not the whole drill, once the pane is open. */
   let paneWidth = $state(0);
@@ -297,7 +307,9 @@
    * the pane is keyed to an open value editor and Show all had nowhere to go
    * but the old full-page grid tab. Cleared on any return to the landing. */
   const splitCapable = $derived(
-    Boolean(resultsPane) && drillWidth >= SPLIT_SEAM
+    Boolean(resultsPane) &&
+      drillWidth >= SPLIT_SEAM &&
+      (splitMinHeight <= 0 || drillHeight >= splitMinHeight)
   );
   const splitPane = $derived(splitCapable && (!showLanding || showAllPane));
 
@@ -556,6 +568,7 @@
   class:persistent-desktop-catalog={persistentDesktopCatalog}
   class:split-pane={splitPane}
   bind:clientWidth={drillWidth}
+  bind:clientHeight={drillHeight}
   bind:this={drillEl}
 >
   <!-- Search renders wherever the host wires it — the page front door AND the

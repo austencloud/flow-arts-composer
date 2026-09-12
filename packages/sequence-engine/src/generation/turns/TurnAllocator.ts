@@ -9,7 +9,8 @@
  * - Level 3: 0, 0.5, 1, 1.5, 2, 2.5, 3, "fl" (all values including float)
  *
  * For each step, left and right get independently randomized turn values
- * filtered by the maxTurnIntensity cap.
+ * filtered by the maxTurnIntensity cap, unless `matchHands` asks for one roll
+ * shared by both hands.
  */
 
 export interface TurnAllocation {
@@ -84,6 +85,13 @@ export interface TurnAllocationOptions {
    * execution by the orientation-cycle module.
    */
   forcePeriod4OrientationCycle?: boolean;
+
+  /**
+   * Roll one lane and give both hands the same value on every step, float
+   * included. The Generate "Match turns" toggle: a mirrored or unison pair of
+   * hands reads as one figure only when their turn counts agree.
+   */
+  matchHands?: boolean;
 }
 
 /**
@@ -130,7 +138,9 @@ export function allocateTurns(
   }
 
   const turnsLeft = allocateSingleHand(stepCount, turnsPool, random, options);
-  const turnsRight = allocateSingleHand(stepCount, turnsPool, random, options);
+  const turnsRight = options?.matchHands
+    ? [...turnsLeft]
+    : allocateSingleHand(stepCount, turnsPool, random, options);
 
   // A short LOOP repeats a tiny seed. If both hands roll only zeros, selecting
   // Level 2 appears to do nothing across the entire generated sequence.
@@ -143,9 +153,15 @@ export function allocateTurns(
       (turn): turn is number => typeof turn === "number" && turn > 0
     );
     if (positiveTurns.length > 0) {
-      const hand = randomChoice([turnsLeft, turnsRight], random);
       const index = Math.floor(random() * stepCount) % stepCount;
-      hand[index] = randomChoice(positiveTurns, random);
+      const turn = randomChoice(positiveTurns, random);
+      if (options?.matchHands) {
+        turnsLeft[index] = turn;
+        turnsRight[index] = turn;
+      } else {
+        const hand = randomChoice([turnsLeft, turnsRight], random);
+        hand[index] = turn;
+      }
     }
   }
 

@@ -71,11 +71,14 @@
   <div class="actions">
     <div class="secondary">
       <button
+        id="choreo-acts-trigger"
         type="button"
         class="btn acts"
         class:active={actsOpen}
         onclick={onToggleActs}
         aria-label="Saved acts"
+        aria-controls="choreo-acts-dock"
+        aria-expanded={actsOpen}
         ><i class="fa-solid fa-clapperboard" aria-hidden="true"></i><span
           >Acts</span
         ></button
@@ -97,10 +100,13 @@
     <span class="divider" aria-hidden="true"></span>
     <div class="primary">
       <button
+        id="choreo-browse-trigger"
         type="button"
         class="btn"
         class:active={browseOpen}
         onclick={onToggleBrowse}
+        aria-controls="choreo-browse-dock"
+        aria-expanded={browseOpen}
         ><i class="fa-solid fa-plus" aria-hidden="true"></i>Add sequences</button
       >
       <button

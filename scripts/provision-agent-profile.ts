@@ -379,6 +379,10 @@ export async function provisionAgentProfile(
 async function readInput(): Promise<ProvisionInput> {
   let raw = "";
   for await (const chunk of process.stdin) raw += String(chunk);
+  // Windows PowerShell 5.1 prefixes every native stdin pipe with a UTF-8 BOM,
+  // which JSON.parse rejects. pwsh 7 does not, so strip it rather than require
+  // a particular host shell.
+  raw = raw.replace(/^\uFEFF/, "");
   if (!raw.trim()) throw new Error("Provisioning input is required on stdin.");
   const parsed = JSON.parse(raw) as ProvisionInput;
   return parsed;

@@ -432,8 +432,14 @@
       height: 2.6rem;
       font-size: clamp(1.2rem, 34cqh, 2.6rem);
     }
-    .mini-tile.catalog .mini-title {
-      font-size: 1.2rem;
+    /* 1.2rem "Performances" needs about 140px; a two-column tile at the
+       default 440px pane leaves the label 126px, and it broke as
+       "Performa / nces" at 3840×2160. The larger label waits for the
+       three-column catalog (CategoryRail steps at 620px of column). */
+    @container drill (min-width: 620px) {
+      .mini-tile.catalog .mini-title {
+        font-size: 1.2rem;
+      }
     }
     .mini-tile.catalog .rule-dot {
       width: 1.5rem;
@@ -922,6 +928,12 @@
     aspect-ratio: 1;
     width: auto;
     min-width: 0;
+    /* The label is the decision (`.mini-title` above): in a two-column row
+       the art grows with the cell, and at 94px rows it left "Performances"
+       116px, which is one letter short — it broke as "Performanc / es" at
+       2560×1440. The art yields its square before the longest word yields
+       a letter. */
+    max-width: calc(100% - 8.5rem);
   }
   @container cat-cell (min-height: 6.25rem) {
     .mini-tile.catalog {
@@ -1008,6 +1020,15 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+  /* Last in the cascade on purpose: the row composition above reserves
+     8.5rem for the label, which holds "Performances" at 2560×1440 (139px box)
+     but not at the 2600 tier, where the same tile leaves the label 131px and
+     the word breaks by one letter. The art gives up the difference here. */
+  @media (min-width: 2600px) {
+    .mini-tile.catalog .mini-art {
+      max-width: calc(100% - 9.25rem);
+    }
   }
 
 </style>

@@ -27,12 +27,13 @@
   import ActsDock from "./ActsDock.svelte";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
   import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
-  import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
   import ChoreoSheetToolbar from "./ChoreoSheetToolbar.svelte";
   import ChoreoSheetRail from "./ChoreoSheetRail.svelte";
   import SheetPreviewStage from "./SheetPreviewStage.svelte";
-  import SheetBrowserDrawer from "./SheetBrowserDrawer.svelte";
+  import SheetBrowserDock from "./SheetBrowserDock.svelte";
   import { shouldStackSheetWorkspace } from "../../domain/sheet-workspace-layout";
+  import { shouldDeferEscapeShortcut } from "$lib/shared/keyboard/domain/escape-shortcut-target";
+  import { hasOpenDrawers } from "$lib/shared/foundation/ui/drawer/drawer-stack";
 
   const resolver = createSheetSequenceResolver({
     // Strict on both tiers: null must mean "the server says it's gone", never
@@ -97,15 +98,18 @@
     if (next) setPictographSize(next);
   }
 
-  // ── Add-sequences picker (inline docked column) ─────────────────────────────
-  // Reuses the full Browse experience (BrowsePanel + a browse engine): real
-  // rendered pictograph cards, filter sheet, sort, virtualization. Sources are
-  // the two POOLS (My Library | Community — the toolbar toggle); collections
-  // organize the library, so they surface as the chips row above the grid
-  // (CollectionChipsRow → the engine's COLLECTION filter). Open state and the
-  // engine's source/sort/filters persist across reload/HMR so the picker
-  // reopens exactly as it was left.
+  // ── Docks (inline, not overlays) ────────────────────────────────────────────
+  // Add sequences, Saved acts, and Play are three inline docks that share the
+  // slot beside the preview — flex siblings, so the page narrows to make room
+  // and stays fully visible instead of being covered. They are mutually
+  // exclusive: opening one closes the others. On a narrow workspace the open
+  // dock hides the preview and takes its slot instead (the preview stays
+  // mounted so zoom and scroll survive). Open state and the picker engine's
+  // source/sort/filters persist across reload/HMR so the workspace reopens
+  // exactly as it was left.
   const PICKER_PREFS_KEY = "tka-choreo-sheet-picker-ui";
+  const BROWSE_TRIGGER_ID = "choreo-browse-trigger";
+  const ACTS_TRIGGER_ID = "choreo-acts-trigger";
   interface PickerPrefs {
     open: boolean;
     playerOpen: boolean;
@@ -187,6 +191,24 @@
     if (!browseOpen) return;
     exitPlayback();
     actsOpen = false;
+  }
+
+  // Closing from inside a dock (its X, or Escape) sends focus back to the
+  // toolbar button that opened it — the inline docks are not modal, so nothing
+  // else restores focus for them.
+  function focusTrigger(id: string): void {
+    if (typeof document === "undefined") return;
+    requestAnimationFrame(() => document.getElementById(id)?.focus());
+  }
+
+  function closeBrowse(restoreFocus = false): void {
+    browseOpen = false;
+    if (restoreFocus) focusTrigger(BROWSE_TRIGGER_ID);
+  }
+
+  function closeActs(restoreFocus = false): void {
+    actsOpen = false;
+    if (restoreFocus) focusTrigger(ACTS_TRIGGER_ID);
   }
 
   function togglePlayer(): void {
@@ -409,10 +431,10 @@
     shouldStackSheetWorkspace(workspaceWidth, workspaceHeight)
   );
   const workspacePhone = $derived(workspaceWidth > 0 && workspaceWidth <= 640);
+  const dockOpen = $derived(browseOpen || actsOpen);
   const workspaceShort = $derived(workspaceHeight > 0 && workspaceHeight < 600);
   const workspaceWide = $derived(workspaceWidth >= 1680);
   const workspaceUltraWide = $derived(workspaceWidth >= 2600);
-  const drawerSideBySide = $derived(workspaceWidth >= 1024);
 
   // ── View mode ───────────────────────────────────────────────────────────────
   // A phone gets Reading by default: the page model sizes everything from
@@ -705,10 +727,22 @@
 
 <svelte:window
   onkeydown={(e) => {
-    if (e.key !== "Escape") return;
+    if (e.key !== "Escape" || e.defaultPrevented) return;
     if (playerOpen) {
       e.preventDefault();
       exitPlayback(true);
+      return;
+    }
+    // A focused search field owns its own Escape, and so does an open Drawer
+    // (the picker's filter sheet): the docks are inline, so a modal on top of
+    // them must close first.
+    if (shouldDeferEscapeShortcut() || hasOpenDrawers()) return;
+    if (browseOpen) {
+      e.preventDefault();
+      closeBrowse(true);
+    } else if (actsOpen) {
+      e.preventDefault();
+      closeActs(true);
     } else if (builder.selectedSequenceId) builder.clearSelection();
   }}
 />
@@ -718,6 +752,7 @@
   class:is-narrow={workspaceNarrow}
   class:is-phone={workspacePhone}
   class:is-playing={playerOpen}
+  class:is-docked={dockOpen}
   class:is-wide={workspaceWide}
   class:is-ultra-wide={workspaceUltraWide}
   bind:this={workspaceEl}
@@ -760,29 +795,29 @@
       onDragEnd={onRailDragEnd}
     />
     <SheetPreviewStage bind:zoom {viewMode} {actStepIndex} />
-    <SheetBrowserDrawer
-      bind:isOpen={browseOpen}
-      resolveSequence={resolver.resolve}
-    />
-    <Drawer
-      bind:isOpen={actsOpen}
-      placement={drawerSideBySide ? "right" : "bottom"}
-      ariaLabel="Saved acts"
-      class="choreo-acts-drawer"
-      showHandle={!drawerSideBySide}
-    >
+
+    {#if browseOpen}
+      <SheetBrowserDock
+        stacked={workspaceNarrow}
+        resolveSequence={resolver.resolve}
+        onClose={() => closeBrowse(true)}
+      />
+    {/if}
+
+    {#if actsOpen}
       <ActsDock
         currentActId={builder.sheet.id}
         currentActName={builder.sheet.name}
         {dirty}
         refreshKey={saveRefreshKey}
+        stacked={workspaceNarrow}
         onOpenAct={openAct}
         onNewAct={newAct}
         onSaveCurrent={save}
         onDeleted={handleActDeleted}
-        onClose={() => (actsOpen = false)}
+        onClose={() => closeActs(true)}
       />
-    </Drawer>
+    {/if}
 
     {#if playerOpen}
       <ActPlayer
@@ -820,20 +855,9 @@
     height: 100%;
     min-height: 0;
     gap: var(--spacing-sm);
-    /* Drawer width follows the measured workspace without layout containment. */
+    /* Dock width (picker + acts) follows the measured workspace, not the
+       viewport, without layout containment. */
     --dock-w: clamp(400px, calc(var(--workspace-w, 1200px) * 0.3), 640px);
-  }
-
-  :global(.choreo-acts-drawer) {
-    width: min(var(--dock-w), 92vw) !important;
-    height: 100% !important;
-    max-height: 100% !important;
-    background: var(--theme-panel-bg) !important;
-  }
-
-  :global(.choreo-acts-drawer[data-placement="bottom"]) {
-    width: 100% !important;
-    height: min(78vh, 720px) !important;
   }
 
   .sheet-body {
@@ -860,6 +884,17 @@
   }
 
   .choreo-sheet-view.is-playing.is-phone .sheet-body {
+    overflow: hidden;
+  }
+
+  /* Narrow workspace with a dock open (Add sequences / Acts): there is no
+     room for a side column, so the dock takes the preview's slot. Like Play
+     on a phone, the preview stays mounted so zoom and scroll survive. */
+  .choreo-sheet-view.is-narrow.is-docked :global(.preview-pane) {
+    display: none;
+  }
+
+  .choreo-sheet-view.is-narrow.is-docked .sheet-body {
     overflow: hidden;
   }
 </style>

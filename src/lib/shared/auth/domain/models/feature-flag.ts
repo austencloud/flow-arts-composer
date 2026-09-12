@@ -85,6 +85,18 @@ const CORE_USER_MODULES: ModuleId[] = [
 ];
 
 /**
+ * Modules open to testers by default.
+ *
+ * The runtime role override only reaches tabs and capabilities: the admin
+ * Permission Matrix renders role cells per tab, so a module with no tabs
+ * has no cell to click, and checkFeatureAccess() runs the role check on
+ * every path (PostHog and per-user grants can't lower it). Until modules
+ * get their own row in the matrix, this list is the only way to open a
+ * tab-less module below admin.
+ */
+const TESTER_MODULES: ModuleId[] = ["choreo"];
+
+/**
  * Tabs that are still in development - visible to admins only,
  * regardless of the parent module's role.
  * Format: "moduleId:tabId"
@@ -97,10 +109,11 @@ const ADMIN_ONLY_TABS: string[] = ["create:assemble"];
  *
  * Logic:
  * 1. Core modules (create, browse, settings, feedback) → "user"
- * 2. Tabs → inherit from parent module
- * 3. Everything else → "admin" (secure by default)
+ * 2. TESTER_MODULES → "tester"
+ * 3. Tabs → inherit from parent module
+ * 4. Everything else → "admin" (secure by default)
  *
- * To open a module/tab to testers or users, configure it in PostHog Feature Flags.
+ * To open a tab to testers or users, configure it in the Permission Matrix.
  */
 export function getDefaultFeatureRole(
   featureId: FeatureId,
@@ -111,6 +124,9 @@ export function getDefaultFeatureRole(
     const moduleId = featureId.replace("module:", "") as ModuleId;
     if (CORE_USER_MODULES.includes(moduleId)) {
       return "user";
+    }
+    if (TESTER_MODULES.includes(moduleId)) {
+      return "tester";
     }
   }
 

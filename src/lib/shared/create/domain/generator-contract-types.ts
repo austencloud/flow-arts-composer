@@ -7,6 +7,7 @@ import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/c
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
 import type { GeneratorCardId } from "$lib/shared/create/domain/card-registry";
+import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
 
 /**
  * Card descriptor for rendering in the UI
@@ -42,6 +43,10 @@ export interface CardHandlers {
   handleMotionTypeFilterChange?: (
     v: "no-dash" | "mixed" | "prefer-dash"
   ) => void;
+  // Hand relationship handlers (Customize drill row)
+  handleHandRelationshipChange?: (v: HandRelationship) => void;
+  handleHandRelationshipInvertedChange?: (v: boolean) => void;
+  handleMatchHandTurnsChange?: (v: boolean) => void;
   /** Restore every persisted generation setting to its first-run value. */
   handleResetAll?: () => void;
   // Duration card handler

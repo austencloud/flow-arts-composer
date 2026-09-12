@@ -38,6 +38,10 @@ import type {
 } from "../../core/types/sequence-engine-types.js";
 import { LetterClassifier } from "../../core/letters/LetterClassifier.js";
 import type { ReachabilityResult } from "../reachability/PositionReachabilityAnalyzer.js";
+import {
+  relatedRotationDirection,
+  type HandRelationshipOptions,
+} from "../constraints/style/hand-relationship-constraint.js";
 
 /**
  * PropContinuity mode for rotation direction resolution.
@@ -59,26 +63,36 @@ function enrichWithTurns(
   stepIndex: number,
   turnSource: TurnSource | undefined,
   previousSteps: PictographData[],
-  propContinuity: PropContinuityMode | undefined
+  propContinuity: PropContinuityMode | undefined,
+  matchedHandRelationship?: HandRelationshipOptions
 ): PictographData {
   if (!turnSource) return variation;
 
   const leftTurns = turnSource.at(stepIndex, "left");
   const rightTurns = turnSource.at(stepIndex, "right");
 
-  const enrichedLeft = enrichMotionDirection(
-    variation.leftMotion,
-    leftTurns,
-    previousSteps,
-    "left",
-    propContinuity
-  );
+  // Right first: with matched turns and a hand relationship, a left dash or
+  // static that gains turns takes the spin the relationship implies from the
+  // right hand instead of its own continuity or coin flip.
   const enrichedRight = enrichMotionDirection(
     variation.rightMotion,
     rightTurns,
     previousSteps,
     "right",
     propContinuity
+  );
+  const enrichedLeft = enrichMotionDirection(
+    variation.leftMotion,
+    leftTurns,
+    previousSteps,
+    "left",
+    propContinuity,
+    matchedHandRelationship
+      ? relatedRotationDirection(
+          enrichedRight.rotationDirection as string | undefined,
+          matchedHandRelationship
+        )
+      : undefined
   );
 
   if (
@@ -105,7 +119,8 @@ function enrichMotionDirection(
   turns: number | "fl" | undefined,
   previousSteps: PictographData[],
   hand: "left" | "right",
-  propContinuity: PropContinuityMode | undefined
+  propContinuity: PropContinuityMode | undefined,
+  forcedDirection?: string
 ): PictographData["leftMotion"] {
   const hasTurns = turns !== undefined && turns !== 0 && turns !== "fl";
   // Runtime JSON may emit either "noRotation" (canonical) or legacy "no_rot".
@@ -117,6 +132,12 @@ function enrichMotionDirection(
     motionDirWire === "no_rot";
 
   if (!hasTurns || !isNoRot) return motion;
+  if (forcedDirection) {
+    return {
+      ...motion,
+      rotationDirection: forcedDirection as Motion["rotationDirection"],
+    };
+  }
 
   // Find the last real direction from previous steps
   let prevDir: string | null = null;
@@ -212,6 +233,9 @@ export class BeamSearch {
       /** Offer static (Type 6) letters mid-sequence. Off by default: a static
        *  step the user did not ask for reads as standing still. */
       allowStaticSteps?: boolean;
+      /** "Match turns" plus a hand relationship: the left hand's dash or
+       *  static spin follows the right hand's. See enrichWithTurns. */
+      matchedHandRelationship?: HandRelationshipOptions;
     } = {}
   ) {}
 
@@ -330,7 +354,8 @@ export class BeamSearch {
           0,
           turnSource,
           initialState.steps,
-          propContinuity
+          propContinuity,
+          this.options.matchedHandRelationship
         );
         const state = extendState(initialState, enriched, scored);
         beam.push(state);
@@ -415,7 +440,8 @@ export class BeamSearch {
               i,
               turnSource,
               state.steps,
-              propContinuity
+              propContinuity,
+          this.options.matchedHandRelationship
             );
             nextBeam.push(extendState(state, enriched, scored));
             statesExplored++;
@@ -623,7 +649,8 @@ export class BeamSearch {
           0,
           turnSource,
           initialState.steps,
-          propContinuity
+          propContinuity,
+          this.options.matchedHandRelationship
         );
         const state = extendState(initialState, enriched, scored);
         beam.push(state);
@@ -720,7 +747,8 @@ export class BeamSearch {
             i,
             turnSource,
             state.steps,
-            propContinuity
+            propContinuity,
+          this.options.matchedHandRelationship
           );
           nextBeam.push(extendState(state, enriched, scored));
           statesExplored++;

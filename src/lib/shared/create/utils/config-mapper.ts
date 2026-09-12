@@ -27,6 +27,10 @@ import type {
   GenerationMotionTypeFilter,
   GenerationStyleAxis,
 } from "$lib/shared/create/domain/generation-style";
+import {
+  DEFAULT_HAND_RELATIONSHIP,
+  type HandRelationship,
+} from "$lib/shared/create/domain/hand-relationship";
 
 /**
  * Map difficulty level number to DifficultyLevel enum
@@ -113,6 +117,11 @@ export interface UIGenerationConfig {
   handPathMode: GenerationStyleAxis; // Hand path reversal frequency
   motionTypeFilter: GenerationMotionTypeFilter; // Dash frequency ("mixed" = null)
 
+  // Hand relationship (Generate only, not part of GenerationStylePolicy)
+  handRelationship: HandRelationship;
+  handRelationshipInverted: boolean;
+  matchHandTurns: boolean;
+
   // Duration rhythm template (applied automatically after generation)
   durationTemplateId: string | null;
 
@@ -147,6 +156,7 @@ export function uiConfigToGenerationOptions(
           inversionInterval: uiConfig.inversionInterval,
           inversionMode: uiConfig.inversionMode,
           reflectionAxis: uiConfig.reflectionAxis,
+          handRelationship: uiConfig.handRelationship,
         })
       : undefined;
   const period = resolvedLoop?.period ?? uiConfig.period;
@@ -184,6 +194,9 @@ export function uiConfigToGenerationOptions(
     constraintPreset: uiConfig.constraintPreset ?? undefined,
     handPathMode: uiConfig.handPathMode ?? undefined,
     motionTypeFilter: uiConfig.motionTypeFilter ?? undefined,
+    handRelationship: uiConfig.handRelationship ?? DEFAULT_HAND_RELATIONSHIP,
+    handRelationshipInverted: uiConfig.handRelationshipInverted ?? false,
+    matchHandTurns: uiConfig.matchHandTurns ?? false,
 
     // Include start/end options if provided
     blockedStartPositions: startEndOptions?.blockedStartPositions ?? undefined,
@@ -230,6 +243,9 @@ export function generationOptionsToUIConfig(
     constraintPreset,
     handPathMode: options.handPathMode ?? "mixed",
     motionTypeFilter: options.motionTypeFilter ?? null,
+    handRelationship: options.handRelationship ?? DEFAULT_HAND_RELATIONSHIP,
+    handRelationshipInverted: options.handRelationshipInverted ?? false,
+    matchHandTurns: options.matchHandTurns ?? false,
     durationTemplateId: null,
     spellTargetLength: null,
     inversionInterval: options.loopRhythm?.inversionInterval,

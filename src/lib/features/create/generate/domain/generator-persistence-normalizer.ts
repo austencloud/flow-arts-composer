@@ -3,6 +3,7 @@ import {
   clampToAvailableLevel,
   type UIGenerationConfig,
 } from "../shared/utils/config-mapper";
+import { isHandRelationship } from "$lib/shared/create/domain/hand-relationship";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -22,6 +23,27 @@ export function normalizePersistedGenerationConfig(
   // Generate now uses Level and Turn Intensity only. Old custom patterns must
   // not silently override those controls when a session or setup is restored.
   delete normalized.turnPattern;
+  // A setup or session saved by a build that knew a relationship this one
+  // does not (or a corrupted value) must not reach the engine. Drop it so the
+  // default wins; a well-formed value passes through untouched.
+  if (
+    value.handRelationship !== undefined &&
+    !isHandRelationship(value.handRelationship)
+  ) {
+    delete normalized.handRelationship;
+  }
+  if (
+    value.handRelationshipInverted !== undefined &&
+    typeof value.handRelationshipInverted !== "boolean"
+  ) {
+    delete normalized.handRelationshipInverted;
+  }
+  if (
+    value.matchHandTurns !== undefined &&
+    typeof value.matchHandTurns !== "boolean"
+  ) {
+    delete normalized.matchHandTurns;
+  }
   // Level 4 (SKEWED) pictograph data does not exist yet (see
   // MAX_AVAILABLE_LEVEL in config-mapper.ts). A config saved to localStorage
   // or Firestore before that gate existed can still carry level 4; clamp it
