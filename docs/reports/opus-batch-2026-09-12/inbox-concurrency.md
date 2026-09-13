@@ -6,12 +6,12 @@ owned tree. No production data was written and no message was sent anywhere;
 every result below comes from the repository's own test harnesses in this cloud
 container.
 
-| Field       | Value                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------ |
-| Branch      | `claude/inbox-concurrency-fixes-7fu4t7`                                                    |
-| Base SHA    | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                |
-| Final SHA   | `FINAL_SHA_PLACEHOLDER`                                                                    |
-| Owned paths | `src/lib/shared/inbox/**`, `tests/unit/messaging/message-delivery-activation-race.test.ts` |
+| Field       | Value                                                                                                                                              |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch      | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                            |
+| Base SHA    | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                        |
+| Final SHA   | `f4fff16d2ed58a7f2ddd27550a0b5cec1ae420ab` — last code/test/report commit; the branch tip is the one commit after it, which only fills in this row |
+| Owned paths | `src/lib/shared/inbox/**`, `tests/unit/messaging/message-delivery-activation-race.test.ts`                                                         |
 
 Files changed:
 
