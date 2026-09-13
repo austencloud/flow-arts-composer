@@ -7,6 +7,9 @@ should fade naturally."
 - Branch: `claude/fire-emitter-prop-switch-cleanup-7qzzfl` — PR
   [#51](https://github.com/austencloud/tka-platform/pull/51)
 - Base SHA: `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)
+- Reviewed integration base: `6accb9d0efdb7e95b213a42ba82db266c5b6e4d6`
+  (`main`)
+- Integration branch: `codex/opus-fire-reviewed`
 - Commits: `c887a127` (lifecycle fix), `a00d3169` (fade window at the display
   gate), then the cadence correction below.
 
@@ -24,14 +27,14 @@ was measured.
 Estimate vs. real field at the frame the old code called the fade finished
 (peak 4, base 0.972, floor 0.1):
 
-| Cadence | subDt | subSteps | settles at | estimate | real field | verdict |
-| --- | --- | --- | --- | --- | --- | --- |
-| 60Hz | 0.01667 | 1 | frame 130 / 2.167s | .0997 | .0997 | correct |
-| 120Hz | 0.00833 | 1 | frame 130 / 1.083s | .0997 | **.6315** | plume deleted |
-| 144Hz | 0.00694 | 1 | frame 130 / 0.903s | .0997 | **.8590** | plume deleted |
-| reduced motion 60Hz | 0.00333 | 1 | frame 130 / 2.167s | .0997 | **1.9115** | plume deleted |
-| reduced motion 120Hz | 0.00167 | 1 | frame 130 / 1.083s | .0997 | **2.7652** | plume deleted |
-| 30Hz | 0.01667 | 2 | frame 65 / 2.167s | .0997 | .0997 | correct |
+| Cadence              | subDt   | subSteps | settles at         | estimate | real field | verdict       |
+| -------------------- | ------- | -------- | ------------------ | -------- | ---------- | ------------- |
+| 60Hz                 | 0.01667 | 1        | frame 130 / 2.167s | .0997    | .0997      | correct       |
+| 120Hz                | 0.00833 | 1        | frame 130 / 1.083s | .0997    | **.6315**  | plume deleted |
+| 144Hz                | 0.00694 | 1        | frame 130 / 0.903s | .0997    | **.8590**  | plume deleted |
+| reduced motion 60Hz  | 0.00333 | 1        | frame 130 / 2.167s | .0997    | **1.9115** | plume deleted |
+| reduced motion 120Hz | 0.00167 | 1        | frame 130 / 1.083s | .0997    | **2.7652** | plume deleted |
+| 30Hz                 | 0.01667 | 2        | frame 65 / 2.167s  | .0997    | .0997      | correct       |
 
 So on a 120Hz or 144Hz display, or for any user with reduced motion on,
 `clearSimulation()` wiped a plume that was still plainly burning — a worse
@@ -72,20 +75,20 @@ measured in a real WebGL2 context (see Evidence).
 Nothing else clears the canvas on a prop switch: fire's enablement comes from
 `hasEffectInMap(tipEffectMap, "fire")`
 (`services/managers/effect-system.ts:179`), which is unaffected by prop type, so
-the keep-warm `parkWarm()` path that *does* hard-clear never fires here.
+the keep-warm `parkWarm()` path that _does_ hard-clear never fires here.
 
 ## What changed
 
 Owned files:
 
-| File | Change |
-| --- | --- |
-| `src/lib/shared/animation-engine/services/fire/fire-emitter-fade.ts` | **new** — pure residual-heat math for the post-emission fade |
-| `src/lib/shared/animation-engine/services/fire/web-gl-fire-renderer.ts` | residual-heat tracking, `hasResidualFire()`, frame-cache drop on emission stop, one terminal clear |
-| `src/lib/shared/animation-engine/services/charcoal/charcoal-spark-renderer.ts` | `hasActiveParticles()` |
-| `src/lib/shared/animation-engine/services/animation-render-loop.ts` | keep driving a renderer that still holds live fire/sparks, with an empty tip list |
-| `src/lib/shared/animation-engine/services/fire/fire-emitter-fade.test.ts` | **new** |
-| `src/lib/shared/animation-engine/services/__tests__/render-loop-fire-prop-switch-fade.test.ts` | **new** |
+| File                                                                                           | Change                                                                                             |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `src/lib/shared/animation-engine/services/fire/fire-emitter-fade.ts`                           | **new** — pure residual-heat math for the post-emission fade                                       |
+| `src/lib/shared/animation-engine/services/fire/web-gl-fire-renderer.ts`                        | residual-heat tracking, `hasResidualFire()`, frame-cache drop on emission stop, one terminal clear |
+| `src/lib/shared/animation-engine/services/charcoal/charcoal-spark-renderer.ts`                 | `hasActiveParticles()`                                                                             |
+| `src/lib/shared/animation-engine/services/animation-render-loop.ts`                            | keep driving a renderer that still holds live fire/sparks, with an empty tip list                  |
+| `src/lib/shared/animation-engine/services/fire/fire-emitter-fade.test.ts`                      | **new**                                                                                            |
+| `src/lib/shared/animation-engine/services/__tests__/render-loop-fire-prop-switch-fade.test.ts` | **new**                                                                                            |
 
 The loop now calls `renderFire({...input, tips: []})` while
 `hasResidualFire()` is true. `stepSimulation()` with an empty tip list builds no
@@ -132,17 +135,17 @@ all.
 
 ## Cases traced
 
-| Case | Behaviour |
-| --- | --- |
-| Both props → hands | Every tip disappears; fade runs, canvas ends transparent |
-| One prop → hands | Other hand keeps emitting; the dropped hand's flame ages out inside the same simulation (tips go 4 → 2). This path already worked |
-| Hands → fire-capable prop mid-fade | Emitter re-arms, no clear, no pop |
-| Paused | The rAF loop stays alive while `fireConfig` is set (`anyEffectActive` at `animation-render-loop.ts:1192-1204` is config-based, not `isPlaying`-based) and the rAF clock keeps advancing, so a swap on a paused canvas fades the same way |
-| `stop()` / effect turned off | Unchanged: `parkWarm()` still hard-clears, which is correct for an explicit "fire off" |
-| Multiple performers | Each animation instance owns its own loop + renderer; residual state is per-instance. Covered by a test with two loops |
-| Gap detected (tab switch, HMR) | Unchanged: `clearSimulation()` first, which now also zeroes the residual estimate |
-| Prop that never had fire | `hasResidualFire()` is false from construction, so the renderer is never driven |
-| Export / QR-video worker paths | `worker-effect-renderer.ts` and `video-trails/WorkspaceView.svelte` call `renderFire` every frame with their own tips; they never hit the empty-tip path while emitting, so behaviour is unchanged |
+| Case                               | Behaviour                                                                                                                                                                                                                                |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Both props → hands                 | Every tip disappears; fade runs, canvas ends transparent                                                                                                                                                                                 |
+| One prop → hands                   | Other hand keeps emitting; the dropped hand's flame ages out inside the same simulation (tips go 4 → 2). This path already worked                                                                                                        |
+| Hands → fire-capable prop mid-fade | Emitter re-arms, no clear, no pop                                                                                                                                                                                                        |
+| Paused                             | The rAF loop stays alive while `fireConfig` is set (`anyEffectActive` at `animation-render-loop.ts:1192-1204` is config-based, not `isPlaying`-based) and the rAF clock keeps advancing, so a swap on a paused canvas fades the same way |
+| `stop()` / effect turned off       | Unchanged: `parkWarm()` still hard-clears, which is correct for an explicit "fire off"                                                                                                                                                   |
+| Multiple performers                | Each animation instance owns its own loop + renderer; residual state is per-instance. Covered by a test with two loops                                                                                                                   |
+| Gap detected (tab switch, HMR)     | Unchanged: `clearSimulation()` first, which now also zeroes the residual estimate                                                                                                                                                        |
+| Prop that never had fire           | `hasResidualFire()` is false from construction, so the renderer is never driven                                                                                                                                                          |
+| Export / QR-video worker paths     | `worker-effect-renderer.ts` and `video-trails/WorkspaceView.svelte` call `renderFire` every frame with their own tips; they never hit the empty-tip path while emitting, so behaviour is unchanged                                       |
 
 ## Evidence
 
@@ -217,13 +220,13 @@ Chromium (`/opt/pw-browsers/chromium-1194`) with ANGLE/SwiftShader, driving the
 **real `WebGLFireRenderer`** through a Vite dev server on a task-owned port 5199.
 `readPixels` on the fire canvas's default framebuffer:
 
-| Stage | Result |
-| --- | --- |
-| Burning (2 moving tips, 91 frames) | total alpha `6,339,729`, max RGB 255 |
+| Stage                                                           | Result                                                                                           |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Burning (2 moving tips, 91 frames)                              | total alpha `6,339,729`, max RGB 255                                                             |
 | 180 frames with `renderFire` **not called** (the old behaviour) | total alpha `6,339,729` — **byte-identical**: the frame is frozen, which is the reported symptom |
-| Fade, empty tip list | 130 frames (2.17 s); visible fire (max RGB) already 0 by frame 80 |
-| Settled | total alpha `0`, `residualHeat` `0` |
-| Re-lit with tips | total alpha `6,352,290` |
+| Fade, empty tip list                                            | 130 frames (2.17 s); visible fire (max RGB) already 0 by frame 80                                |
+| Settled                                                         | total alpha `0`, `residualHeat` `0`                                                              |
+| Re-lit with tips                                                | total alpha `6,352,290`                                                                          |
 
 Warm-cache adversarial case (measured): after three recorded loops the cache
 reports `state: "warm"` with 40 frames; once the tips are removed it goes
@@ -238,20 +241,20 @@ final frame the renderer still claimed residual fire — i.e. the frame
 immediately before `clearSimulation()`. A non-zero `maxRGB` there means visible
 fire was wiped.
 
-| Cadence | fade frames | fade seconds | plume dark by | last live frame maxRGB |
-| --- | --- | --- | --- | --- |
-| **After** 60Hz | 130 | 2.167 | frame 68 | 0 |
-| **After** 120Hz | 260 | 2.167 | frame 164 | 0 |
-| **After** 144Hz | 312 | 2.167 | frame 205 | 0 |
-| **After** reduced motion 60Hz | 650 | 10.833 | frame 385 | 0 |
-| **Before** 60Hz | 130 | 2.167 | frame 68 | 0 |
-| **Before** 120Hz | 130 | 1.083 | — | **14** |
-| **Before** 144Hz | 130 | 0.903 | — | **138** |
-| **Before** reduced motion 60Hz | 130 | 2.167 | — | **255** |
+| Cadence                        | fade frames | fade seconds | plume dark by | last live frame maxRGB |
+| ------------------------------ | ----------- | ------------ | ------------- | ---------------------- |
+| **After** 60Hz                 | 130         | 2.167        | frame 68      | 0                      |
+| **After** 120Hz                | 260         | 2.167        | frame 164     | 0                      |
+| **After** 144Hz                | 312         | 2.167        | frame 205     | 0                      |
+| **After** reduced motion 60Hz  | 650         | 10.833       | frame 385     | 0                      |
+| **Before** 60Hz                | 130         | 2.167        | frame 68      | 0                      |
+| **Before** 120Hz               | 130         | 1.083        | —             | **14**                 |
+| **Before** 144Hz               | 130         | 0.903        | —             | **138**                |
+| **Before** reduced motion 60Hz | 130         | 2.167        | —             | **255**                |
 
 Under reduced motion the old code cleared the canvas while the plume was at full
 white (255). After the correction every cadence settles on the same 2.167s of
-*simulated* time — 10.83s under reduced motion, which is 5x because the sim
+_simulated_ time — 10.83s under reduced motion, which is 5x because the sim
 itself runs at 0.2x — and in every case the plume is already dark before the
 renderer stands down.
 
@@ -269,40 +272,44 @@ node - <<'JS'   # playwright, executablePath /opt/pw-browsers/chromium-1194/chro
 JS
 ```
 
-### Mounted-pipeline proof — attempted, NOT achieved
+### Mounted CanvasSurface proof (measured)
 
-The review asked for mounted `/lab/effects` or quick-viewer visual proof, since
-the renderer-level evidence only exercises the renderer. I could not produce it
-in this container. What was attempted, and what each attempt established:
+The integration review closes the remaining mounted seam with
+`CanvasSurface.fire-switch.svelte.test.ts`, run by the repository's Chromium
+component runner. A real Svelte parent owns `leftPropType` and `rightPropType`
+state and changes both through rendered **Hands** and **Staffs** buttons. This
+drives the real `CanvasSurface`, `AnimationEngine`, `PropTypeManager`,
+`FireTipTracker`, `AnimationRenderLoop`, `EffectRendererManager` and
+`WebGLFireRenderer`; no engine or renderer is mocked.
 
-1. **`/lab/effects` in the cloud browser** — boots, then redirects away. The lab
-   module is `adminOnly`, and this container's egress blocks Firebase:
-   `ERR_TUNNEL_CONNECTION_FAILED` on `firestore.googleapis.com` and
-   `the-kinetic-alphabet-default-rtdb.firebaseio.com`, so auth never resolves
-   and the route lands on the composer instead.
-2. **Mounting the real `CanvasSurface` directly** (Svelte 5 `mount()` with a
-   `proxy()` props object, dev-server module URLs). This *worked as a mount*:
-   the real AnimationEngine, EffectRendererManager, FireTipTracker,
-   AnimationRenderLoop and WebGLFireRenderer all came up, and the surface
-   rendered two staffs with fire burning at all four tips
-   (`.wt-mounted-1-burning.png`, not committed). Read through the render-context
-   registry, the mounted fire renderer reported `activeTips: 4`,
-   `residualHeat: 4` (peak), `hasResidualFire: true` — so the residual
-   bookkeeping is live in the mounted path.
-3. **Driving the prop switch through that mount** — this is what failed. Setting
-   `leftPropType`/`rightPropType` to `"hand"` on the props object reads back as
-   `"hand"` but never reaches the engine: `activeTips` stayed at 4. Driving the
-   engine's own `renderFrameSync` with `leftPropType: "hand"` did not move it
-   either, because the mounted component's own rAF loop keeps re-asserting its
-   props each frame. Prop type reaches the tip tracker via PropTypeManager's
-   async texture/crossfade path, which a parent component drives and an
-   out-of-app mount does not.
+The test reads the mounted render context and samples the fire canvas's actual
+WebGL2 default framebuffer with `readPixels`:
 
-So: **the fade path is proven at the renderer and at the render loop; that a
-prop switch in the assembled app reaches it is not proven here.** The
-render-loop tests cover the loop's half of that seam with the real
-`FireTipTracker` and real `getTipPoints("hand")`, which is the mechanism, but it
-is not the same as watching the app.
+| Parent state        | active tips | residual heat | total alpha | max RGB |   checksum |
+| ------------------- | ----------: | ------------: | ----------: | ------: | ---------: |
+| Staffs, burning     |           4 |             4 |   8,522,606 |     255 | 95,337,069 |
+| Hands, early fade   |           0 |        2.8453 |   8,688,654 |     255 | 98,546,775 |
+| Hands, 250 ms later |           0 |        1.6121 |   8,623,632 |     255 | 96,148,183 |
+| Hands, settled      |           0 |             0 |           0 |       0 |          0 |
+| Staffs returned     |           4 |             4 |   8,522,403 |     255 | 95,266,691 |
+
+The two hand-state checks have different framebuffer checksums and decreasing
+residual heat, so the old frozen-frame behavior is absent. The canvas then
+clears completely, and the parent-driven return to staffs re-establishes four
+tips and visible fire.
+
+The component runner does not serve SvelteKit's `static/` directory, so the
+grid and prop-art fetches log 404s in this isolated test. That does not replace
+or mock the prop-type pipeline: the live engine diagnostics changing from four
+staff tips to zero hand tips and back are the measured seam. The framebuffer
+evidence is the fire overlay itself. The shipping prop artwork was not judged by
+this test.
+
+```
+npx vitest run --config tests/config/vitest.components.config.ts \
+  src/lib/shared/animation-engine/components/CanvasSurface.fire-switch.svelte.test.ts
+→ 1 file, 1 test passed in Chromium
+```
 
 ### Verification route for Austen
 
@@ -315,8 +322,8 @@ behaves identically.
 
 The same check applies anywhere the animation canvas has a prop selector (the
 sequence viewer's quick-viewer prop selection is the surface the feedback came
-from). Not run here: this session has no access to Austen's dev server, and the
-cloud browser exercised the renderer directly rather than the assembled UI.
+from). The isolated mounted test verifies the shared `CanvasSurface` seam; the
+authenticated Effects Lab route was not used.
 
 ## Separate finding — NOT fixed (pre-existing, outside this task's scope)
 
@@ -355,9 +362,11 @@ background. That is a fire-look change and wants Austen's eye.
 
 ## Limitations
 
-- **Mounted visual proof is still outstanding** — see the section above for what
-  blocked it and what was established instead. This is the one piece of the
-  review's correction list not closed here.
+- The mounted Chromium proof exercises the shared `CanvasSurface` with a real
+  Svelte parent and real WebGL2 renderer. It does not mount the authenticated
+  Effects Lab or quick-viewer chrome, and its component-runner server does not
+  serve the prop SVG assets. The prop-state transition itself is measured at
+  both ends: rendered parent controls and live fire-tip diagnostics.
 - The fade window is an estimate, deliberately conservative: it starts from a
   peak-heat headroom of 4 against a real peak that is lower, so it outlives the
   visible plume at every cadence measured (60Hz: dark at frame 68, stops at 130;
