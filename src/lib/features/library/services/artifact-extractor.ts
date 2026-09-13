@@ -24,6 +24,13 @@ export class ArtifactExtractor {
     private readonly soloPropRepository: SoloPropRepository
   ) {}
 
+  /**
+   * `userId` is both the stamped `ownerId` AND the account these writes are
+   * fenced to. The repositories resolve the path uid from live auth after their
+   * own awaits, so without the fence a guest's artifacts could land in a
+   * collision account's subtree — stamped with the guest's ownerId, in someone
+   * else's tree — before the user ever consented to the import.
+   */
   async extract(sequence: SequenceData, userId: string): Promise<void> {
     const { leftSoloProp, rightSoloProp } = sequence;
 
@@ -42,19 +49,23 @@ export class ArtifactExtractor {
     const results = await Promise.allSettled([
       this.handPathRepository.save(
         { ...leftSoloProp.handPath, ownerId: userId },
-        provenance
+        provenance,
+        userId
       ),
       this.handPathRepository.save(
         { ...rightSoloProp.handPath, ownerId: userId },
-        provenance
+        provenance,
+        userId
       ),
       this.soloPropRepository.save(
         { ...leftSoloProp, ownerId: userId },
-        provenance
+        provenance,
+        userId
       ),
       this.soloPropRepository.save(
         { ...rightSoloProp, ownerId: userId },
-        provenance
+        provenance,
+        userId
       ),
     ]);
 

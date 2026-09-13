@@ -27,7 +27,10 @@ import { toast } from "$lib/shared/toast/state/toast-state.svelte";
 import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
 import type { LibraryTag, CreateTagOptions } from "../domain/models/tag";
 import { createTag } from "../domain/models/tag";
-import { getUserTagsPath, getUserTagPath } from "$lib/shared/library/data/firestore-paths";
+import {
+  getUserTagsPath,
+  getUserTagPath,
+} from "$lib/shared/library/data/firestore-paths";
 
 /**
  * Error class for tag operations
@@ -73,18 +76,34 @@ function mapDocToTag(docData: DocumentData, id: string): LibraryTag {
   };
 }
 
-
 export async function createUserTag(
   name: string,
-  options: CreateTagOptions = {}
+  options: CreateTagOptions = {},
+  /**
+   * The account this tag belongs to. A save's tag creation runs after the
+   * sequence write and awaits Firestore itself, so `getAuthenticatedUserId()`
+   * below can resolve a DIFFERENT account than the one that made the save —
+   * a guest whose sign-in collided would otherwise seed tags into the existing
+   * account before consenting to any import. Callers that know the owner pass
+   * it and the write is refused rather than re-aimed.
+   */
+  expectedOwnerId?: string
 ): Promise<LibraryTag> {
   try {
     const firestore = await getFirestoreInstance();
     const userId = getAuthenticatedUserId();
+    if (expectedOwnerId && expectedOwnerId !== userId) {
+      throw new TagError(
+        "The signed-in account changed before this tag could be attributed.",
+        "UNAUTHORIZED"
+      );
+    }
     const normalizedName = normalizeTagName(name);
 
-    // Check for duplicate
-    const existing = await findTagByName(normalizedName);
+    // Check for duplicate — scoped to the SAME account this tag will be written
+    // under. Unscoped, this second lookup re-resolves live auth and could
+    // answer about a different account than the fence above just approved.
+    const existing = await findTagByName(normalizedName, userId);
     if (existing) {
       return existing;
     }
@@ -215,15 +234,30 @@ export async function deleteTag(tagId: string): Promise<void> {
   }
 }
 
-
 export function normalizeTagName(name: string): string {
   return name.trim().toLowerCase();
 }
 
-export async function findTagByName(name: string): Promise<LibraryTag | null> {
+export async function findTagByName(
+  name: string,
+  /**
+   * The account whose tags should be searched. This READ decides a collection
+   * path (`users/{uid}/tags`) from live auth after an await, exactly like the
+   * write does — so an unscoped lookup during a save can answer "does this tag
+   * exist?" about the WRONG account, and a false "no" then creates a duplicate
+   * while a false "yes" returns a stranger's tag id.
+   */
+  expectedOwnerId?: string
+): Promise<LibraryTag | null> {
   try {
     const firestore = await getFirestoreInstance();
     const userId = getAuthenticatedUserId();
+    if (expectedOwnerId && expectedOwnerId !== userId) {
+      throw new TagError(
+        "The signed-in account changed before this tag lookup could be attributed.",
+        "UNAUTHORIZED"
+      );
+    }
     const normalizedName = normalizeTagName(name);
     const tagsRef = collection(firestore, getUserTagsPath(userId));
     const q = query(tagsRef, where("name", "==", normalizedName));
@@ -246,7 +280,6 @@ export async function findTagByName(name: string): Promise<LibraryTag | null> {
     return null;
   }
 }
-
 
 export async function incrementUseCount(tagId: string): Promise<void> {
   try {
@@ -280,8 +313,9 @@ export async function decrementUseCount(tagId: string): Promise<void> {
   }
 }
 
-
-export function subscribeToTags(callback: (tags: LibraryTag[]) => void): () => void {
+export function subscribeToTags(
+  callback: (tags: LibraryTag[]) => void
+): () => void {
   const userId = getAuthenticatedUserId();
   let unsubscribe: Unsubscribe | null = null;
 

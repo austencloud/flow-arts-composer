@@ -5,18 +5,23 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // manager). Stub each to a minimal shape so the test drives only the
 // truncation branch under test - see docs/superpowers/specs/active/
 // 2026-07-18-onboarding-silent-work-loss.md, finding spell-truncation-silent.
-const { generateSequenceMock, parseWordMock, recordCreationMock } = vi.hoisted(() => ({
-  generateSequenceMock: vi.fn(),
-  parseWordMock: vi.fn(),
-  recordCreationMock: vi.fn().mockResolvedValue(undefined),
-}));
+const { generateSequenceMock, parseWordMock, recordCreationMock } = vi.hoisted(
+  () => ({
+    generateSequenceMock: vi.fn(),
+    parseWordMock: vi.fn(),
+    recordCreationMock: vi.fn().mockResolvedValue(undefined),
+  })
+);
 vi.mock("$lib/shared/create/services/generation-orchestrator", () => ({
   generationOrchestrator: { generateSequence: generateSequenceMock },
 }));
 
-vi.mock("$lib/features/create/spell/get-variation-exploration-orchestrator", () => ({
-  getVariationExplorationOrchestrator: () => ({ parseWord: parseWordMock }),
-}));
+vi.mock(
+  "$lib/features/create/spell/get-variation-exploration-orchestrator",
+  () => ({
+    getVariationExplorationOrchestrator: () => ({ parseWord: parseWordMock }),
+  })
+);
 
 vi.mock("$lib/shared/gamification/get-prop-unlock-manager", () => ({
   getPropUnlockManager: () => ({ recordCreation: recordCreationMock }),
@@ -36,7 +41,9 @@ import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { UIGenerationConfig } from "$lib/shared/create/utils/config-mapper";
 import { AUTH_NUDGE_TEXTS } from "$lib/shared/auth/domain/auth-nudge-trigger";
 
-function makeConfig(overrides: Partial<UIGenerationConfig> = {}): UIGenerationConfig {
+function makeConfig(
+  overrides: Partial<UIGenerationConfig> = {}
+): UIGenerationConfig {
   return {
     mode: "spell",
     loopEnabled: false,
@@ -58,7 +65,10 @@ function makeConfig(overrides: Partial<UIGenerationConfig> = {}): UIGenerationCo
 
 /** 12 bare-bones steps - enough to exceed the guest 8-step cap. */
 function makeSteps(count: number) {
-  return Array.from({ length: count }, (_, i) => ({ letter: "A", stepNumber: i + 1 }));
+  return Array.from({ length: count }, (_, i) => ({
+    letter: "A",
+    stepNumber: i + 1,
+  }));
 }
 
 describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () => {
@@ -71,10 +81,70 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
     mockAuthState.role = "user";
   });
 
+  it.each([false, true])(
+    "preserves relationship and matched turns in Spell (LOOP=%s)",
+    async (loopEnabled) => {
+      parseWordMock.mockResolvedValue({
+        success: true,
+        expandedLetters: ["D", "J"],
+        letterSources: [],
+      });
+      generateSequenceMock.mockResolvedValue({
+        id: "relationship",
+        word: "DJ",
+        steps: makeSteps(2),
+        metadata: {},
+      });
+      const spellState = createSpellModeState();
+      spellState.setInputWord("DJ");
+      const actions = createGenerationActionsState(
+        undefined,
+        undefined,
+        () =>
+          makeConfig({
+            handRelationship: "mirrored",
+            handRelationshipInverted: true,
+            matchHandTurns: true,
+            loopEnabled,
+            loopType: "rotated",
+            period: "quartered",
+          }),
+        () => spellState
+      );
+      await actions.onSpellGenerate();
+      expect(generateSequenceMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          word: "DJ",
+          handRelationship: "mirrored",
+          handRelationshipInverted: true,
+          matchHandTurns: true,
+          mode: loopEnabled ? "circular" : "freeform",
+          ...(loopEnabled
+            ? { period: "halved", loopSpecWire: expect.any(Object) }
+            : {}),
+        })
+      );
+      expect(actions.lastGeneratedSequence?.id).toBe("relationship");
+    }
+  );
+
   it("fires the guest-tier truncation toast when the spelled word's sequence exceeds the step cap", async () => {
     parseWordMock.mockResolvedValue({
       success: true,
-      expandedLetters: ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"],
+      expandedLetters: [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+      ],
       letterSources: [],
     });
     generateSequenceMock.mockResolvedValue({
@@ -93,7 +163,7 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
       undefined,
       undefined,
       () => makeConfig(),
-      () => spellState,
+      () => spellState
     );
 
     await actions.onSpellGenerate();
@@ -103,7 +173,7 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
     // AUTH_NUDGE_TEXTS["step-cap-guest"] (2026-07-18 nudge-copy spec).
     expect(toastInfoSpy).toHaveBeenCalledWith(
       AUTH_NUDGE_TEXTS["step-cap-guest"],
-      5000,
+      5000
     );
     expect(actions.lastGeneratedSequence?.steps.length).toBe(8);
 
@@ -132,7 +202,7 @@ describe("onSpellGenerate — truncation toast (mirrors onGenerateClicked)", () 
       undefined,
       undefined,
       () => makeConfig(),
-      () => spellState,
+      () => spellState
     );
 
     await actions.onSpellGenerate();

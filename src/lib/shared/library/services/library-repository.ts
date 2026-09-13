@@ -250,6 +250,29 @@ export class LibraryRepository {
   }
 
   /**
+   * The owner every step of a multi-step operation must act as.
+   *
+   * A publish reads the owner document, flips its visibility, writes the public
+   * mirror and touches collections — four awaits, each of which used to resolve
+   * the effective user again. An anonymous->Google upgrade or a sign-out in any
+   * of those gaps meant reading one user's sequence and writing another's, or
+   * publishing a mirror attributed to whoever arrived last. Callers that already
+   * captured an owner pass it here: it must still be the signed-in, writable
+   * user, so a swap fails the operation instead of writing under either identity
+   * by accident. This never widens access — the owner has to equal the live user.
+   */
+  private ownerFor(ownerId?: string): string {
+    const current = this.getWritableUserId();
+    if (ownerId !== undefined && ownerId !== current) {
+      throw new LibraryError(
+        "Signed-in user changed during this operation",
+        "UNAUTHORIZED"
+      );
+    }
+    return current;
+  }
+
+  /**
    * `{ isAnonymous }` for the live auth user, or `{}` when there is no current
    * user. Merged into every users/{uid} write this repository makes so a doc it
    * mints is never identity-less (see the save-batch comment).
@@ -391,10 +414,15 @@ export class LibraryRepository {
 
   async saveSequence(
     sequence: SequenceData,
-    overrides?: { visibility?: SequenceVisibility; notes?: string }
+    overrides?: {
+      visibility?: SequenceVisibility;
+      notes?: string;
+      /** Refuse the write if the account captured by the caller changed. */
+      expectedOwnerId?: string;
+    }
   ): Promise<LibrarySequence> {
     const firestore = await getFirestoreInstance();
-    const userId = this.getWritableUserId();
+    const userId = this.ownerFor(overrides?.expectedOwnerId);
 
     if (isEmptySequence(sequence)) {
       throw new LibraryError(
@@ -780,6 +808,8 @@ export class LibraryRepository {
       tags: string[];
       notes: string;
       thumbnailUrl?: string;
+      /** Forwarded to saveSequence's identity fence. */
+      expectedOwnerId?: string;
     }
   ): Promise<LibrarySequence> {
     // Put the new thumbnail first, filter out duplicates so re-saves
@@ -825,6 +855,7 @@ export class LibraryRepository {
       return this.saveSequence(enrichedSequence, {
         visibility: metadata.visibility,
         notes: metadata.notes,
+        expectedOwnerId: metadata.expectedOwnerId,
       });
     };
 
@@ -840,10 +871,11 @@ export class LibraryRepository {
    */
   async attachThumbnail(
     sequenceId: string,
-    thumbnailUrl: string
+    thumbnailUrl: string,
+    expectedOwnerId?: string
   ): Promise<void> {
     const firestore = await getFirestoreInstance();
-    const userId = this.getWritableUserId();
+    const userId = this.ownerFor(expectedOwnerId);
     const existing = await this.getSequence(sequenceId);
     if (!existing) {
       throw new LibraryError("Sequence not found", "NOT_FOUND", sequenceId);
@@ -876,9 +908,12 @@ export class LibraryRepository {
    * Callers that must not mistake "couldn't tell" for "deleted" — anything that
    * reports the result to the user as gone — use {@link getSequenceStrict}.
    */
-  async getSequence(sequenceId: string): Promise<LibrarySequence | null> {
+  async getSequence(
+    sequenceId: string,
+    ownerId?: string
+  ): Promise<LibrarySequence | null> {
     try {
-      return await this.getSequenceStrict(sequenceId);
+      return await this.getSequenceStrict(sequenceId, ownerId);
     } catch (error) {
       if (error instanceof LibraryError && error.code === "UNAUTHORIZED")
         throw error;
@@ -894,8 +929,13 @@ export class LibraryRepository {
    * is how a restored Choreo sheet declared six live sequences missing on a cold
    * load and then found all six the moment the user retried.
    */
-  async getSequenceStrict(sequenceId: string): Promise<LibrarySequence | null> {
-    const userId = this.getUserId();
+  async getSequenceStrict(
+    sequenceId: string,
+    ownerId?: string
+  ): Promise<LibrarySequence | null> {
+    // An operation that captured an owner reads that owner's document, so its
+    // read and its writes can never disagree about whose library this is.
+    const userId = ownerId ?? this.getUserId();
     const outcome = await firestoreGetDetailed(
       getUserSequencesPath(userId),
       sequenceId,
@@ -958,14 +998,15 @@ export class LibraryRepository {
 
   async updateSequence(
     sequenceId: string,
-    updates: Partial<LibrarySequence>
+    updates: Partial<LibrarySequence>,
+    ownerId?: string
   ): Promise<LibrarySequence> {
     const firestore = await getFirestoreInstance();
-    const userId = this.getWritableUserId();
+    const userId = this.ownerFor(ownerId);
     const docRef = doc(firestore, getUserSequencePath(userId, sequenceId));
 
     // Read existing from local cache (fast - Firestore serves from cache first)
-    const existing = await this.getSequence(sequenceId);
+    const existing = await this.getSequence(sequenceId, userId);
     if (!existing) {
       throw new LibraryError("Sequence not found", "NOT_FOUND", sequenceId);
     }
@@ -1311,55 +1352,66 @@ export class LibraryRepository {
 
   async setVisibility(
     sequenceId: string,
-    visibility: SequenceVisibility
+    visibility: SequenceVisibility,
+    ownerId?: string
   ): Promise<void> {
-    await this.updateSequence(sequenceId, {
-      visibility,
-      visibilityChangedAt: new Date(),
-    });
+    await this.updateSequence(
+      sequenceId,
+      {
+        visibility,
+        visibilityChangedAt: new Date(),
+      },
+      ownerId
+    );
   }
 
-  async publishSequence(sequenceId: string): Promise<void> {
-    this.getWritableUserId();
-    const existing = await this.getSequence(sequenceId);
+  /**
+   * `ownerId` is the user the caller already captured. Pass it whenever the
+   * publish is one step of a longer operation (adding a member to a public
+   * collection, say): every read and write below then acts as that one user, and
+   * an identity change part-way through fails the publish instead of moving a
+   * sequence between libraries. Omitted, it resolves the live user once.
+   */
+  async publishSequence(sequenceId: string, ownerId?: string): Promise<void> {
+    const owner = this.ownerFor(ownerId);
+    const existing = await this.getSequence(sequenceId, owner);
     if (!existing) {
       throw new LibraryError("Sequence not found", "NOT_FOUND", sequenceId);
     }
 
     if (existing.visibility !== "public") {
-      await this.setVisibility(sequenceId, "public");
+      await this.setVisibility(sequenceId, "public", owner);
       return;
     }
 
     // Publishing an already-public owner doc is an explicit repair operation.
     // This covers legacy records whose public mirror was never written.
-    const userId = this.getWritableUserId();
+    this.ownerFor(owner);
     const compositionReady = {
       ...existing,
       ...ensureComposition(existing),
     };
-    await this.publicIndexSyncer.syncToPublicIndex(compositionReady, userId);
-    await this.touchSequenceCollections(userId, existing.collectionIds);
+    await this.publicIndexSyncer.syncToPublicIndex(compositionReady, owner);
+    await this.touchSequenceCollections(owner, existing.collectionIds);
   }
 
-  async unpublishSequence(sequenceId: string): Promise<void> {
-    this.getWritableUserId();
-    const existing = await this.getSequence(sequenceId);
+  /** Same owner discipline as {@link publishSequence}. */
+  async unpublishSequence(sequenceId: string, ownerId?: string): Promise<void> {
+    const owner = this.ownerFor(ownerId);
+    const existing = await this.getSequence(sequenceId, owner);
     if (!existing) {
       throw new LibraryError("Sequence not found", "NOT_FOUND", sequenceId);
     }
 
     if (existing.visibility === "public") {
-      await this.setVisibility(sequenceId, "private");
+      await this.setVisibility(sequenceId, "private", owner);
       return;
     }
 
     // Likewise, an already-private doc can still have a stale legacy mirror.
+    this.ownerFor(owner);
     await this.publicIndexSyncer.removeFromPublicIndex(sequenceId);
-    await this.touchSequenceCollections(
-      this.getWritableUserId(),
-      existing.collectionIds
-    );
+    await this.touchSequenceCollections(owner, existing.collectionIds);
   }
 
   // ============================================================

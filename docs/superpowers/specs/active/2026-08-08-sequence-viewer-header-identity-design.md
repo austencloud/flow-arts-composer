@@ -1,6 +1,37 @@
+---
+status: active
+value: 4
+effort: XS
+remaining: "Code is complete and live (7bbabbf45, 2026-08-08). Only the spec's own step 3-5 browser proof is unrecorded: inspect the viewer at 1920x1080, 2560x1440, 3840x2160, 1440x900, 820x1180, 960x412 and 375x667, measure the header centre slot and action-group bounds, and exercise the word menu, More menu, Share menu, export transitions and Close. Do NOT re-implement any of this document."
+depends_on: "external: a browser session on the shared authenticated Chrome DevTools target"
+plan_path: ""
+tags: [sequence-viewer, header, responsive, verification-only]
+last_triaged: 2026-09-13
+---
+
 # Sequence Viewer Header Identity
 
-**Status:** Approved for implementation on 2026-08-08  
+**Status:** IMPLEMENTED 2026-08-08 in `7bbabbf45` (_feat(viewer): art settings
+split, header identity, escape ownership_). Only the seven-viewport visual proof
+under "Verification" below is unrecorded. This header previously read "Approved
+for implementation on 2026-08-08", which made the spec a rebuild hazard — an
+agent taking it at its word would have rewritten live chrome. Corrected
+2026-09-13 during spec reconciliation.
+
+> **Do not implement this document.** Read it as the record of a shipped
+> decision. The one open item is verification, not code.
+
+**Reconciliation evidence (2026-09-13):** all twelve files under "Planned files"
+exist. `7bbabbf45` created `WordActionMenu.svelte` (258 lines), rewrote
+`ViewerHeader.svelte` (+988), and cut `SequenceViewerPage.svelte` by 527 lines —
+the `/sequence/[id]` migration to `SequenceViewerShell` this design calls for.
+In `ViewerHeader.svelte` today: `WordHeader` is composed from the animation
+engine (line 12), `FULL_CHROME_MIN_WIDTH = 1080` and
+`LABELLED_CHROME_MIN_WIDTH = 1840` are the two density tiers this spec names
+(lines 134-135), Favorite carries `aria-pressed` (line 258), and Practice /
+Exit Practice, Remix and Favorite are the primary row. `WordActionMenu.svelte`
+offers exactly "Copy word" (line 75) and "Read aloud" (line 81).
+
 **Surfaces:** Viewer drawer, QR viewer, and `/sequence/[id]`
 
 ## Problem

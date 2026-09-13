@@ -296,6 +296,28 @@ behavior (independent turns) is unchanged.
 - Start orientation is still the user's choice on both hands; at levels 1 to 3
   the default in/in is already symmetric.
 
+## Addendum 2026-09-13: the picker is the timing and direction table
+
+Austen noticed the four relationships map onto VTG's four timing and
+direction quadrants: Mirrored is together-opposite, Flipped split-opposite,
+Unison together-same, Opposite split-same. `hand-relationship-tnd.test.ts`
+reads both dataframes and confirms it: every shift row a relationship selects
+carries that one quadrant, 16 of 16 per cell, inverted included.
+
+It is structural. Direction asks whether the map is a reflection (a
+reflection reverses one hand's arc). Timing asks whether the map moves the
+downbeat: the N-S mirror and identity keep South fixed, so both hands reach
+it together; the E-W flip and the 180 turn swap North and South, so the hands
+are half a cycle apart. The remaining four elements of the grid's symmetry
+group, the 90-degree rotations and the diagonal reflections, are the
+quarter-time pair (Sun, Moon), which the picker does not offer yet.
+
+The Hand Relationship screen now shows this: each relationship row carries
+its timing and direction, the element it reads as, and the element glyph,
+via `HAND_RELATIONSHIP_TND` and the app's own `TND_TO_ELEMENTAL`. The rows
+replaced the segmented control (which floated in a mostly empty pane) and
+are top-aligned so the list reads as a continuation of the drill rows.
+
 ## Not in scope
 
 - Loose (soft) relationships and rotating-frame loops (see Exploration).

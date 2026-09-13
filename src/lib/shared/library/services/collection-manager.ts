@@ -52,8 +52,13 @@ import {
   mapDocToCollection,
   batchFetchSequences,
   batchFetchPublicSequences,
+  filterExistingSequenceIds,
   CollectionError,
 } from "$lib/shared/library/services/collection-firestore-mapper";
+
+// One delete commit carries at most this many reverse-membership updates, well
+// under Firestore's 500-writes-per-commit ceiling.
+const DELETE_CLEANUP_CHUNK_SIZE = 200;
 
 // Re-export so existing imports of CollectionError from this module still work
 export { CollectionError };
@@ -73,6 +78,30 @@ function sameIds(left: readonly string[], right: readonly string[]): boolean {
 }
 
 /**
+ * Stop if the effective user is no longer the one this operation captured.
+ *
+ * `publishSequence` now acts as an explicit owner, so the publish itself can no
+ * longer straddle two identities. This covers the remaining gap: the moment
+ * between that work finishing and this module's own membership write, which
+ * must not commit under a session that ended.
+ */
+function assertStillSignedInAs(userId: string, subjectId?: string): void {
+  let current: string | null = null;
+  try {
+    current = getAuthenticatedUserId();
+  } catch {
+    current = null;
+  }
+  if (current !== userId) {
+    throw new CollectionError(
+      "Signed-in user changed while updating the collection",
+      "UNAUTHORIZED",
+      subjectId
+    );
+  }
+}
+
+/**
  * Make one member readable through the public index before a public collection
  * points at it. Own-library sequences are published through the repository so
  * moderation, minimum length, composition, and mirror shape stay canonical.
@@ -89,7 +118,13 @@ async function ensurePublicMember(
   if (ownSnapshot.exists()) {
     const { getLibraryRepository } =
       await import("$lib/shared/library/get-library-repository");
-    await getLibraryRepository().publishSequence(sequenceId);
+    // The publish acts as this operation's captured owner, so every read and
+    // write inside it agrees about whose library this is and a uid swap fails
+    // it rather than moving a sequence between libraries. The check afterwards
+    // covers the remaining gap before the membership write itself.
+    assertStillSignedInAs(userId, sequenceId);
+    await getLibraryRepository().publishSequence(sequenceId, userId);
+    assertStillSignedInAs(userId, sequenceId);
     return;
   }
 
@@ -376,6 +411,28 @@ export async function syncSmartCollectionCount(
   }
 }
 
+/**
+ * Read one collection document under an already-captured uid.
+ *
+ * `getCollection` resolves the effective user itself, so calling it after an
+ * await can read one user's document and then write under another's — the
+ * effective uid changes on the anonymous->Google upgrade, on sign-out, and when
+ * admin preview is toggled. Anything that reads metadata and then writes
+ * captures the uid once and passes it here.
+ */
+async function readCollectionAs(
+  firestore: Firestore,
+  userId: string,
+  collectionId: string
+): Promise<LibraryCollection | null> {
+  const snapshot = await getDoc(
+    doc(firestore, getUserCollectionPath(userId, collectionId))
+  );
+  return snapshot.exists()
+    ? mapDocToCollection(snapshot.data(), collectionId)
+    : null;
+}
+
 export async function getCollection(
   collectionId: string
 ): Promise<LibraryCollection | null> {
@@ -409,7 +466,7 @@ export async function updateCollection(
 ): Promise<LibraryCollection> {
   const firestore = await getFirestoreInstance();
   const userId = getAuthenticatedUserId();
-  const existing = await getCollection(collectionId);
+  const existing = await readCollectionAs(firestore, userId, collectionId);
 
   if (!existing) {
     throw new CollectionError(
@@ -526,7 +583,7 @@ export async function updateCollection(
 export async function deleteCollection(collectionId: string): Promise<void> {
   const firestore = await getFirestoreInstance();
   const userId = getAuthenticatedUserId();
-  const existing = await getCollection(collectionId);
+  const existing = await readCollectionAs(firestore, userId, collectionId);
 
   if (!existing) {
     return;
@@ -540,24 +597,51 @@ export async function deleteCollection(collectionId: string): Promise<void> {
     );
   }
 
-  const batch = writeBatch(firestore);
-  for (const sequenceId of existing.sequenceIds) {
-    const seqRef = doc(firestore, getUserSequencePath(userId, sequenceId));
-    batch.update(seqRef, {
-      collectionIds: arrayRemove(collectionId),
-    });
-  }
-
-  batch.delete(doc(firestore, getUserCollectionPath(userId, collectionId)));
-  batch.set(
-    doc(firestore, `users/${userId}`),
-    {
-      lastActivityDate: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  const memberIds = [...new Set(existing.sequenceIds)];
 
   try {
+    // Firestore fails an entire commit when one `update` targets a document
+    // that doesn't exist, and refuses more than 500 writes per commit. A
+    // collection may hold a saved public sequence the user doesn't own (no
+    // owner document at all) and up to MAX_SEQUENCES_PER_COLLECTION members,
+    // so one unfiltered batch made those collections permanently undeletable.
+    const ownedIds =
+      memberIds.length > 0
+        ? await filterExistingSequenceIds(firestore, userId, memberIds)
+        : new Set<string>();
+    const cleanupIds = memberIds.filter((sequenceId) =>
+      ownedIds.has(sequenceId)
+    );
+
+    // Reverse membership first, the collection document last: arrayRemove is
+    // idempotent, so a failure part-way through leaves a collection the user
+    // can simply delete again instead of sequences pointing at a folder that
+    // no longer exists.
+    for (
+      let offset = 0;
+      offset < cleanupIds.length;
+      offset += DELETE_CLEANUP_CHUNK_SIZE
+    ) {
+      const chunk = cleanupIds.slice(offset, offset + DELETE_CLEANUP_CHUNK_SIZE);
+      const cleanupBatch = writeBatch(firestore);
+      for (const sequenceId of chunk) {
+        cleanupBatch.update(
+          doc(firestore, getUserSequencePath(userId, sequenceId)),
+          { collectionIds: arrayRemove(collectionId) }
+        );
+      }
+      await cleanupBatch.commit();
+    }
+
+    const batch = writeBatch(firestore);
+    batch.delete(doc(firestore, getUserCollectionPath(userId, collectionId)));
+    batch.set(
+      doc(firestore, `users/${userId}`),
+      {
+        lastActivityDate: serverTimestamp(),
+      },
+      { merge: true }
+    );
     await batch.commit();
   } catch (error) {
     console.error("[CollectionManager] Failed to delete collection:", error);
@@ -1242,9 +1326,17 @@ export function subscribeToCollections(
 ): () => void {
   const userId = getAuthenticatedUserId("read");
   let unsubscribe: Unsubscribe | null = null;
+  // The listener attaches a microtask after this function returns, so a caller
+  // that disposes first (collections-state tears down synchronously on a uid
+  // swap or sign-out) would run a disposer with nothing to dispose and leave an
+  // orphaned onSnapshot billing reads for the life of the tab. Same flag
+  // discipline as subscribeToAllPublicCollections.
+  let disposed = false;
 
   getFirestoreInstance()
     .then((firestore) => {
+      if (disposed) return;
+
       const collectionsRef = collection(
         firestore,
         getUserCollectionsPath(userId)
@@ -1276,6 +1368,11 @@ export function subscribeToCollections(
           toast.error("Couldn't load collections. Check your connection.");
         }
       );
+
+      if (disposed) {
+        unsubscribe();
+        unsubscribe = null;
+      }
     })
     .catch((error) => {
       if (error.code === "permission-denied") {
@@ -1293,9 +1390,9 @@ export function subscribeToCollections(
     });
 
   return () => {
-    if (unsubscribe) {
-      unsubscribe();
-    }
+    disposed = true;
+    unsubscribe?.();
+    unsubscribe = null;
   };
 }
 
@@ -1305,9 +1402,14 @@ export function subscribeToCollection(
 ): () => void {
   const userId = getAuthenticatedUserId("read");
   let unsubscribe: Unsubscribe | null = null;
+  // Same disposal race as subscribeToCollections above: a detail view closed
+  // before Firestore initializes must not leave its listener attached.
+  let disposed = false;
 
   getFirestoreInstance()
     .then((firestore) => {
+      if (disposed) return;
+
       const docRef = doc(
         firestore,
         getUserCollectionPath(userId, collectionId)
@@ -1337,6 +1439,11 @@ export function subscribeToCollection(
           toast.error("Couldn't load collection. Check your connection.");
         }
       );
+
+      if (disposed) {
+        unsubscribe();
+        unsubscribe = null;
+      }
     })
     .catch((error) => {
       if (error.code === "permission-denied") {
@@ -1354,9 +1461,9 @@ export function subscribeToCollection(
     });
 
   return () => {
-    if (unsubscribe) {
-      unsubscribe();
-    }
+    disposed = true;
+    unsubscribe?.();
+    unsubscribe = null;
   };
 }
 

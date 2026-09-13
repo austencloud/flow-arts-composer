@@ -135,8 +135,8 @@ Usage:
     showDuration = true,
     showPathShape = true,
     // Pose only: keep the grid and props (drawn at their end locations) and
-    // fade every beat glyph out. Used by the Choose Start picker so a tile
-    // reads as the pose after its beat rather than the beat itself.
+    // fade the arrows and every beat glyph out. Used by the Choose Start
+    // picker so a tile reads as the pose after its beat rather than the beat.
     poseOnly = false,
     // Fires when the grid SVG has loaded (or errored). The grid loads asynchronously
     // and independently of the prepared arrow/prop data, so an offscreen/export
@@ -216,7 +216,7 @@ Usage:
     /** Card annotations are composed by the card's existing overlay layer. */
     showDuration?: boolean;
     showPathShape?: boolean;
-    /** Show only grid and props; every beat glyph fades out (Choose Start). */
+    /** Show only grid and props; arrows and beat glyphs fade out (Choose Start). */
     poseOnly?: boolean;
     /** Fires when the grid finishes loading (or errors). Used by export readiness gating. */
     onGridReady?: () => void;
@@ -275,12 +275,13 @@ Usage:
   const arrowMirroring = $derived(pictograph._prepared?.arrowMirroring || {});
   const propPositions = $derived(pictograph._prepared?.propPositions || {});
   const propAssets = $derived(pictograph._prepared?.propAssets || {});
-  const effectiveArrowOpacity = $derived(
-    Math.min(1, Math.max(0, arrowOpacity))
-  );
-
   // Opacity for dimmed (not hidden) motions - visible enough to see, clearly de-emphasized
   const DIMMED_OPACITY = 0.2;
+
+  // Pose-only hides the motion entirely so only the pose reads.
+  const effectiveArrowOpacity = $derived(
+    poseOnly ? 0 : Math.min(1, Math.max(0, arrowOpacity))
+  );
 
   // Motions to render (filtered by visibleHand only; visibility controls opacity, not presence)
   const motions = $derived.by(() => {
@@ -515,11 +516,7 @@ Usage:
       {/each}
 
       <!-- Arrows -->
-      <g
-        class="pictograph-arrows"
-        class:pose-only={poseOnly}
-        opacity={effectiveArrowOpacity}
-      >
+      <g class="pictograph-arrows" opacity={effectiveArrowOpacity}>
         {#if tipPromotionNeeded}
           <!-- Split rendering: shafts first, then tips on top -->
           {#each motions as { hand, data, opacity } (hand + "-shaft")}
@@ -808,15 +805,15 @@ Usage:
     pointer-events: none;
   }
 
-  /* Pose-only fade for the layers that have no visibility transition of
-     their own. The glyph components fade themselves via their `visible`
-     prop; ArrowSvg unmounts on showArrow, so the arrows group fades here. */
+  /* Pose-only transitions for the layers that have no visibility transition
+     of their own. The glyph components fade themselves via their `visible`
+     prop; the arrows group fades through its opacity attribute, and the
+     duration/path-shape layers fade here. */
   .pictograph-arrows,
   .beat-layer {
     transition: opacity var(--duration-fast, 150ms) ease-out;
   }
 
-  .pictograph-arrows.pose-only,
   .beat-layer.pose-only {
     opacity: 0;
   }
