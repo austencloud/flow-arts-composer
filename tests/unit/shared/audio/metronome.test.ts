@@ -301,6 +301,40 @@ describe("Metronome mute, accent and disposal contracts", () => {
     ]);
   });
 
+  it("recovers a context the browser suspended mid-session", () => {
+    // The practice cockpit unlocks audio on the Start tap and then drives its
+    // own beats through tick(). Nothing on that path unlocks again, so a
+    // suspension — hidden tab, iOS interruption — freezes currentTime and
+    // silences the rest of the session.
+    metronome.resume();
+    metronome.tick();
+    const resumesBeforeSuspension = ctx().resumeCalls;
+    const clicksBeforeSuspension = ctx().clicks.length;
+
+    ctx().state = "suspended";
+    metronome.tick(true);
+
+    expect(ctx().resumeCalls).toBe(resumesBeforeSuspension + 1);
+    expect(ctx().state).toBe("running");
+    // Queued, not dropped: the opening count-in tick fires while the first
+    // resume() is still settling and has to survive it.
+    expect(ctx().clicks.length).toBe(clicksBeforeSuspension + 1);
+  });
+
+  it("releases finished nodes on the tick-driven path", () => {
+    metronome.resume();
+    metronome.tick();
+    const first = ctx().clicks[0];
+
+    // A practice ramp drives beats itself; no scheduler poll runs to prune, so
+    // each tick has to release the click before it.
+    ctx().currentTime = 1;
+    metronome.tick();
+
+    expect(first.disconnected).toBe(true);
+    expect(ctx().clicks[1].disconnected).toBe(false);
+  });
+
   it("closes the audio context on dispose and stops the scheduler", () => {
     metronome.start(120);
     advance(100);
