@@ -25,7 +25,7 @@ nothing was pushed to `main` and no pull request was opened.
 ```
 tests/opus-security-audit/harness.ts
 tests/opus-security-audit/vitest.audit.config.ts
-tests/opus-security-audit/rules-source.audit.test.ts        (offline, 46 probes, green)
+tests/opus-security-audit/rules-source.audit.test.ts        (offline, 47 probes, green)
 tests/opus-security-audit/firestore-authz.audit.test.ts     (33 emulator probes, see §3)
 tests/opus-security-audit/storage-authz.audit.test.ts       (19 emulator probes, see §3)
 docs/reports/opus-batch-2026-09-12/security-rules-audit.md  (this file)
@@ -62,7 +62,8 @@ Why it could not be covered from source:
 | It covers **three** top-level keys: `presence`, `gallery-sessions`, `sync-rooms`                                                                                                      | same file                                                              |
 | No `database` emulator is configured, and neither probe file touches RTDB                                                                                                             | `firebase.json` `emulators` block; both audit test files               |
 
-Live clients use these RTDB paths. Only `presence` appears in the script:
+Live clients use these RTDB paths. Two of them — `presence` and `sync-rooms` —
+are covered by the script; the remaining five are not:
 
 | Path                                                                         | Client                                                                                          | Covered by the script? |
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------- |
@@ -79,9 +80,24 @@ Path names are from `connect-constants.ts` and `museum-persister.ts:17-61`.
 **What this audit therefore cannot say.** Nothing about who can read another
 user's friends list, invites, sync sessions, or museum contents. Those five
 subtrees have no reviewable policy in this repository, so their authorization
-posture is **unknown from source** — not "fine", and not "broken". A missing
-declarative file also means whatever is deployed drifted from source at some
-point, and source no longer describes it.
+posture is **unknown from source** — not "fine", and not "broken".
+
+Two separate statements, kept separate on purpose:
+
+- **The deployed RTDB policy is unknown.** Whatever is live may be correct,
+  permissive, or anything between. This report has no evidence either way.
+- **The source-controlled deployment configuration is incomplete.** The rules
+  file `firebase.json` names is absent, and the script that exists covers a
+  subset of the paths in use.
+
+> **CORRECTED 2026-09-13 (second independent review).** This paragraph
+> previously added that a missing declarative file "means whatever is deployed
+> drifted from source at some point, and source no longer describes it."
+> **That does not follow.** The absence of a file in the working tree says
+> nothing about deployment history — the rules may have been set only ever by
+> the script, or by console, or never. Inferring drift from absence is exactly
+> the kind of unevidenced claim this report's own evidence rules forbid.
+> Replaced with the two statements above, which the source does support.
 
 **Deployed RTDB policy was deliberately not resolved.** Reading it requires
 either production credentials or a live database call, both outside this
@@ -130,6 +146,28 @@ suite is 46/46 after the corrections.
 
 Findings **F1 (videos), F2 (storage caches) and F3 (telemetry, as a finding)**
 were reviewed and stand as written; only F3's proposed remediation changed.
+
+### Corrections log — second independent review of `e5803aaf`, 2026-09-13
+
+A second review of the corrected report found **two of the corrections
+themselves still inaccurate, plus one internal contradiction.** All three were
+verified and all three were correct. Round two:
+
+| #   | What was wrong                                                                                                                                                                                                                                                           | Where fixed                              | Severity of the error                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- | ------------------------------------------------------------------------- |
+| 6   | F5 Option A was described as preserving convergence "for the create path". It does not: `setDoc(…, { merge: true })` on an **existing** document evaluates as `update`, and convergence is the existing-document case, so Option A denies every honest second publisher. | F5 "Safe fix", Option A                  | **High** — a fix presented as compatible that silently breaks a live path |
+| 7   | The RTDB section inferred deployment drift from a missing file. Source absence establishes nothing about deployment history.                                                                                                                                             | §1 "⚠ Scope limitation"                  | **Medium** — an unevidenced claim, of exactly the kind this report bans   |
+| 8   | The RTDB section said "Only `presence` appears in the script" while its own table correctly marked `sync-rooms` as covered.                                                                                                                                              | §1, sentence above the client-path table | **Low** — internal contradiction                                          |
+
+Round two also surfaced a fact worth its own line, because it changes how #6
+would fail in practice: `syncArtifactsToPublic` wraps its writes in
+`Promise.allSettled` (`public-index-syncer.ts:386`), which never rejects, so the
+call site's `.catch(console.warn)` (`public-index-syncer.ts:199-201`) never sees
+a per-write denial. **Option A's compatibility break would produce no error, no
+warning, and no user-visible symptom** — the artifact would simply stop
+converging. That is now stated in F5 and pinned by an assertion.
+
+The source suite is **47/47** after both rounds (37 → 46 → 47).
 
 ---
 
@@ -647,8 +685,9 @@ prevention.** Fix what rules actually can fix — the missing owner check — an
 say plainly that content integrity is unenforced:
 
 ```
-// Convergence stays: an honest second publisher of the same shape still
-// creates. What closes is a NON-OWNER rewriting a document already stored.
+// Closes: a NON-OWNER rewriting a document already stored.
+// Does NOT close: first-writer poisoning, or content/id divergence.
+// BREAKS: an honest second publisher of the same shape — see below.
 allow create: if isFullUser()
   && request.resource.data.ownerId == request.auth.uid;
 allow update: if isFullUser()
@@ -656,11 +695,41 @@ allow update: if isFullUser()
   && request.resource.data.ownerId == request.auth.uid;
 ```
 
-This preserves the documented convergence policy at
-`public-index-syncer.ts:385-389` (_"merge so we don't overwrite existing
-documents"_, `{ merge: true }`) for the create path, and changes only the case
-where a stranger overwrites a stored document. It does **not** stop first-writer
-poisoning — a bad first writer still owns that hash slot. Ship it knowing that.
+> **CORRECTED AGAIN 2026-09-13 (second independent review).** The paragraph
+> here previously claimed Option A "preserves the documented convergence policy
+> … for the create path". **That is false, and the error matters.**
+> `setDoc(..., { merge: true })` against a document that **already exists** is
+> evaluated as an **`update`**, not a `create` — Firestore rules pick the verb
+> from whether the document exists, not from the SDK call shape. Convergence is
+> by definition the case where the document already exists. So Option A's
+> `resource.data.ownerId == request.auth.uid` denies **every honest second
+> publisher** of an identical shape, exactly the case the convergence policy
+> exists to serve. Do not read Option A as convergence-preserving.
+
+**Option A is a deliberate behavioral change, not a pure hardening.** It
+converts these collections from _last honest writer merges_ to
+_first publisher owns the hash slot_. Before shipping it:
+
+1. **Decide the policy.** Is per-hash ownership acceptable? Under Option A the
+   first account to publish a given shape permanently owns that document, and
+   later publishers of the same shape contribute nothing. That may be fine —
+   the payload is identical by construction — but it is a product decision, not
+   an implementation detail, and it contradicts the comment at
+   `public-index-syncer.ts:385` (_"merge so we don't overwrite existing
+   documents"_).
+2. **Handle it in the writer, because the failure is completely silent today.**
+   `syncArtifactsToPublic` wraps the writes in `Promise.allSettled`
+   (`public-index-syncer.ts:386`), which never rejects, so the outer
+   `.catch(console.warn)` at `public-index-syncer.ts:199-201` never fires for a
+   per-write denial. A second publisher would get `permission-denied`, the
+   artifact would simply not converge, and **nothing would log it** — no error,
+   no warning, no user-visible symptom. If Option A ships, the writer must
+   inspect the `allSettled` results and treat "denied on an existing hash" as
+   the expected no-op rather than swallowing it indistinguishably from a real
+   failure.
+
+It also does **not** stop first-writer poisoning — a bad first writer still owns
+that hash slot, and now owns it more firmly than before.
 
 **Option B (closes integrity, costs a round trip): a trusted writer.** Move the
 artifact fan-out behind a callable that recomputes the digest server-side and
@@ -668,6 +737,12 @@ writes with the Admin SDK, then set `allow create, update: if false`. This is
 the only way the id actually means what it claims. The repo already uses this
 shape for `shares` (`create, update, delete: if false` + the collection
 callables) and for `scanEvents`.
+
+**Option B does not have Option A's compatibility break.** The Admin SDK
+bypasses rules entirely, so the callable can keep merging on an existing
+document and convergence survives unchanged — the server decides who may write
+what, rather than the rules denying a legitimate writer. If the convergence
+policy is worth keeping, Option B is the option that keeps it.
 
 Either way, do not ship the `contentHash == soloPropId` form — it reads like a
 binding and is not one, which is worse than leaving the gap documented.
@@ -834,7 +909,7 @@ PREPARED runtime controls in the two emulator files.
 | `npm i -g firebase-tools@latest`                                                                                                                             | exit 0 — firebase-tools **15.30.0**                                                                                |
 | `firebase emulators:exec --only firestore,storage --project the-kinetic-alphabet "npx vitest run --config tests/opus-security-audit/vitest.audit.config.ts"` | **exit 1 — blocked.** `Failed to make request to .../cloud-firestore-emulator-v1.22.0.jar`; egress policy 403 (§3) |
 | `curl -sS "$HTTPS_PROXY/__agentproxy/status"`                                                                                                                | 5 hosts `connect_rejected` / `403 to CONNECT` (§3)                                                                 |
-| `npx vitest run --config tests/opus-security-audit/vitest.audit.config.ts rules-source`                                                                      | **46 passed / 46**, 1 file, ~0.9 s                                                                                 |
+| `npx vitest run --config tests/opus-security-audit/vitest.audit.config.ts rules-source`                                                                      | **47 passed / 47**, 1 file, ~1.6 s                                                                                 |
 | `npx tsc --noEmit` over `tests/opus-security-audit/**/*.ts` (project `tsconfig.json`, explicit `typeRoots`)                                                  | **clean, 0 errors** across all 4 files                                                                             |
 | `npx vitest run … firestore-authz --testTimeout=8000`                                                                                                        | 33 collected, suite fails at `ECONNREFUSED 127.0.0.1:8080` (expected: no emulator)                                 |
 | `npx vitest run … storage-authz --testTimeout=8000`                                                                                                          | 19 collected, suite fails at `ECONNREFUSED 127.0.0.1:8080` (expected: no emulator)                                 |
@@ -928,9 +1003,13 @@ single command, before any rule is changed.
 - [ ] F4: add the per-`shortCode` ceiling (the concrete mitigation); treat
       device attestation as an optional upgrade, not the lead fix. Narrow the
       `scanEvents` rules-file comment to the geo claim it supports.
-- [ ] F5: choose Option A (rules-only, takeover prevention, integrity stays
-      documented-open) or Option B (trusted writer, closes integrity). **Do not
-      ship the `contentHash == soloPropId` form** — it binds nothing.
+- [ ] F5: **Option A is not a drop-in.** It denies every honest second
+      publisher (a merge onto an existing doc is an `update`), and
+      `Promise.allSettled` makes that denial silent. Choosing it means
+      accepting first-publisher-owns-the-hash-slot as policy AND changing the
+      writer to distinguish that no-op from a real failure. Option B (trusted
+      writer) keeps convergence intact. **Do not ship the
+      `contentHash == soloPropId` form** — it binds nothing.
 - [ ] F6: allowlist bounds shape only; the rate-limited API is what bounds
       volume. Decide which problem you are solving.
 - [ ] N1–N6: triage; N7 needs no action (already tracked).
