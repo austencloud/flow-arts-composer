@@ -3,6 +3,7 @@
   import { browser } from "$app/environment";
   import { page } from "$app/state";
   import HandMotionPlayer from "$lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { reparentToInspector as reparentToSlot } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
   import { reducedMotion } from "$lib/shared/transitions/motion";
   import {
@@ -42,7 +43,7 @@
            (see SSR_STUBBED_SHARED_RENDER_PATHS), so the canvas mounts client-only. -->
       {#if browser}
         <HandMotionPlayer
-          neutralMarkers
+          primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
           sequence={playback.selected.motion.sequence}
           initialStep={playback.step}
           ariaLabel={playback.selected.article.name}

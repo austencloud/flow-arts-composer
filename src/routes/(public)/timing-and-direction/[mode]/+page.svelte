@@ -171,7 +171,7 @@
       </div>
       <div class="demo-canvas" use:playback.registerTarget></div>
       <figcaption>
-        Drag the bar to scrub. The two dots show the relationship.
+        Drag the bar to follow the hands through the cycle.
       </figcaption>
     </figure>
   </div>
