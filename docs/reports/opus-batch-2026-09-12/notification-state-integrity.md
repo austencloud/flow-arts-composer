@@ -2,8 +2,9 @@
 
 Date: 2026-09-13. Branch: `claude/notification-state-integrity-t5l2ay`.
 Base: `6e4c1b5a` (`origin/main`, "Merge pull request #49 from austencloud/claude/ember-parity-timeout").
-Code commit: `6c17c7f5`. This report is the following commit on the same branch;
-no source file changed after `6c17c7f5`.
+Code commit: `6c17c7f5`. Final commit: `4cff5bb1`, which adds this report and
+applies Prettier formatting to the two new test files — no behavior changed
+after `6c17c7f5`.
 
 Assignment: investigate and fix up to two reproduced notification state /
 read-marker races. Audit-only for everything else. No push sends, no real
