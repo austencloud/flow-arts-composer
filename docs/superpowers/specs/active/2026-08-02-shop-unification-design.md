@@ -2,7 +2,7 @@
 status: active
 value: 4
 effort: S
-remaining: 'ACTIVE. Phases 1-6 and hero rounds 1-13 are verified locally. Production push sequencing and the decisions in "Decisions Austen owns" remain.'
+remaining: "ACTIVE, but no longer for the reason recorded in 2026-08. The push gate is spent: a422744d6 (phase 1), 0beba2808 (phase 2) and e84ee4ab4 (round 13) are all on origin/main, verified 2026-09-13. What actually remains: (1) SALES_LIVE is still false in purchase-state.ts, gated on Austen clearing the Stripe payout requirement and Tax registration - every product still resolves to notify; (2) all four items under Decisions Austen owns are untouched - three Chicago fulfilment claims still render (DeckArchitectPage:392, LoopDeckConfiguratorPage:557, TnDTrilogyPage:80), the catalog sequence-id migration is undone so the R8 do-not-key-a-cache-on-sequence-id-alone workaround still stands, and claimUsername is unchanged; (3) round 13 embed chrome trim has no test; (4) the five deferred Codex follow-ups. Do NOT re-implement the front door, the shared shell, the five re-seated PDPs, the cross-sell rail, the 308 redirect or the nav rewire - all shipped."
 depends_on: ""
 plan_path: ""
 tags: []
@@ -490,7 +490,26 @@ visitors today.
       autostash` entry is still listed afterwards — not ours to drop, flagged
       rather than touched.
 
-## Shipped state (2026-08-02, local commits — NOT pushed)
+## Shipped state
+
+> **Correction, 2026-09-13 (spec reconciliation).** This section was headed
+> "2026-08-02, local commits — NOT pushed" and the paragraph below describes a
+> push Austen had yet to sequence. That is no longer true: `git branch -r
+> --contains` puts `a422744d6` (phase 1), `0beba2808` (phase 2) and `e84ee4ab4`
+> (round 13) on `origin/main`. The shop is pushed and the unified surface is
+> live. What still holds the store closed is `SALES_LIVE = false` in
+> `purchase-state.ts`, which is a payment gate on Austen's Stripe payout and Tax
+> registration — a real gate, deliberately preserved here, not drift.
+>
+> Two other small corrections from the same pass. The IA table calls the retired
+> route a 301; the implementation is a **308**, chosen on purpose to preserve the
+> path and method and to match the `/store` shim
+> (`src/routes/(public)/shop/choreography-cards/+page.ts`) — the code is right.
+> And two ledger SHAs do not resolve in this repository: `0cfcc0e026` (round 4,
+> which appears to be `48d392b35`) and `5126812d89`. Every one of the other 26
+> cited SHAs resolves.
+
+### Original note (2026-08-02, local commits — NOT pushed)
 
 All work is committed locally. **Pushing main deploys production (CF Pages)** and would take
 the ungated shop live; Austen sequences that. Blocking the push, deliberately:

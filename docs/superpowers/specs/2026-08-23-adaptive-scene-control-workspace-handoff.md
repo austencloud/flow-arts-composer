@@ -6,7 +6,7 @@ Finish and land the adaptive controls redesign for the production 3D Scene
 Studio. The work makes desktop scene editing a coherent right-side workspace,
 uses horizontal room on wide displays, keeps shallow tools from reserving an
 empty dock, and gives phones a focused bottom-sheet flow. The current governing
-document is the [Adaptive Scene Control Workspace](active/2026-08-21-adaptive-scene-control-workspace-design.md).
+document is the [Adaptive Scene Control Workspace](shipped/2026-08-21-adaptive-scene-control-workspace-design.md).
 The older Performer Hub Rethink plan is useful history, but its avatar-modal
 direction was explicitly superseded by Austen's 2026-08-22 inline-editor call.
 
@@ -46,7 +46,7 @@ The core candidate file set for this workspace work is below. Audit each diff
 against `fca6c4a2b7` before committing because several tracked files may also
 contain changes from parallel sessions.
 
-- Governing design: `docs/superpowers/specs/active/2026-08-21-adaptive-scene-control-workspace-design.md`
+- Governing design: `docs/superpowers/specs/shipped/2026-08-21-adaptive-scene-control-workspace-design.md`
 - Workspace composition: `SceneControlWorkspace.svelte`,
   `SceneControlRail.svelte`, `SceneControlInspector.svelte`, and
   `SceneChromeButton.svelte` under

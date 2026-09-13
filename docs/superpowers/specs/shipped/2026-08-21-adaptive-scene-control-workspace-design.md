@@ -1,6 +1,38 @@
 # Adaptive Scene Control Workspace
 
-**Status:** Implemented 2026-08-21
+**Status:** Shipped (implementing commit `21335f9da`, 2026-08-23 — two days
+after the date this header originally claimed). Moved out of `active/` on
+2026-09-13 during spec reconciliation. Two stated constraints no longer hold;
+see the divergences below.
+
+**Reconciliation evidence (2026-09-13):** the pure resolver is
+`src/lib/shared/3d/domain/scene-control-layout.ts`, with the three presentations
+`compact | overlay | docked`, `DOCK_MIN_WIDTH = 1680` (105rem),
+`MIN_DOCKED_STAGE_WIDTH = 960`, and the inspector clamped between 520 and 1100px
+at 0.32 of the workspace. Presentation resolves from the measured workspace, not
+the viewport. `tests/unit/3d-viewer/scene-control-layout.test.ts`: 7 tests pass,
+covering the shallow-inspector case, the reserved-canvas rule and the 4K cap.
+Compact bottom sheets, the Save Scene backdrop/Escape/button dismissal paths,
+and the single shared `scene-prop-catalog.ts` consumed by both the picker and
+Prop Studio are all present.
+
+**Post-ship divergences:**
+
+1. _"The desktop scene rail contains no more than five primary actions."_ The
+   rail now carries seven non-admin entries: Presets was added by `34c0f135b`
+   and Focus avatar by `cfb54c17b` (_fix(viewer): recover avatar focus and
+   continuous camera zoom_, 2026-09-05). Flagged rather than blessed — whether
+   the ceiling still matters is the owner's call, not a reconciliation call.
+2. _Compact gate._ This document says "width below 48rem, **or** height below
+   34rem". The code forces compact on height alone only at 500px
+   (`CRITICALLY_SHALLOW_HEIGHT`); the 544px height gate applies only together
+   with width below 1100px. A 1600x540 workspace is `overlay` in code and
+   `compact` in this text.
+3. _"The shared playback timeline is always visible at the bottom when a loaded
+   sequence reports playable steps."_ `SceneControlWorkspace.svelte` owns no
+   timeline — it leaves room for host chrome below the rail. Nothing in the
+   repository asserts that every host complies.
+
 
 ## Outcome
 

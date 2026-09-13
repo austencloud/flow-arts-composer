@@ -1,7 +1,20 @@
 # Step Grid Layout Transition — Design
 
 **Date:** 2026-08-15
-**Status:** Implemented
+**Status:** Shipped. Moved out of `active/` on 2026-09-13 during spec
+reconciliation.
+
+**Reconciliation evidence (2026-09-13):** `db1454736` created `layout-flip.ts`;
+`6c6163b84` landed the whole-cell targeting fix this document records. The API
+is exactly `capture()/play()/discard()/cancel()`, x and y scale independently,
+`fill: "both"` with a self-cancelling `onfinish`, rect read before cancel with no
+blanket pre-cancel, and `getDuration() <= 0` declines capture. Cell size is
+deliberately absent from `grid-layout-signature.ts`. All three superseded FLIP
+copies are provably gone: `WorkspaceGrid.svelte` has zero matches for
+`animate:flip`, `slideIntoPlace`, or the `activeMode === "construct"` branch.
+`tests/unit/GridLayoutSignature.test.ts`: 12 tests pass. The Chromium suite
+`layout-flip.svelte.test.ts` (12 blocks) needs a browser and was not re-run
+here; the per-frame runtime table below is the original measurement.
 **Owner:** `src/lib/shared/transitions/layout-flip.ts`
 
 ## The problem

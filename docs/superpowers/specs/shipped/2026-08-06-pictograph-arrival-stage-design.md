@@ -1,6 +1,24 @@
 # Pictograph Arrival Stage
 
-**Status:** Implemented and browser-verified 2026-08-12
+**Status:** Shipped. Implemented and browser-verified 2026-08-12. Moved out of
+`active/` on 2026-09-13 during spec reconciliation.
+
+**Reconciliation evidence (2026-09-13):** all eight named deliverables resolve.
+`963121a4d` (_feat(create): animate pictographs into the step grid_) created
+`PictographArrivalStage.svelte` and the three domain modules; `d3d5227b6` and
+`8be948936` followed. Every literal target in this document is present in the
+source: the six-phase machine (`PictographArrivalStage.svelte:22-27`), the 280ms
+focus pull / 350ms vignette after a 50ms delay / 0.58 peak scrim / 120ms hold /
+280ms landing, the clamped prop rate
+`clamp(max(850, effectiveDegrees/360 deg/s), 850, 2000)` computed from
+`staffRotationDelta` rather than turn count
+(`pictograph-arrival-motion.ts:6-36`), the `visibility: hidden` destination
+(`WorkspaceGrid.svelte:1414`), and the four-column Construct policy pinned at
+`StepGrid.svelte:265` and applied only above 650px. `StepCell.svelte` is a static
+renderer again. Tests: `tests/unit/create/pictograph-arrival-layout.test.ts`,
+`-geometry.test.ts`, `step-grid-arrival-state.test.ts` and
+`create-workspace-grid-layout.test.ts` pass (29 assertions). The browser trace
+recorded below is the original 2026-08-12 evidence and was not re-measured.
 
 **Date:** 2026-08-06
 
