@@ -13,30 +13,39 @@ export const _reviewDocument = `<!doctype html>
       :root { color-scheme: dark; font-family: system-ui, sans-serif; background: var(--theme-page-bg, #0b0d13); color: var(--theme-text, #f7f8fb); }
       * { box-sizing: border-box; }
       body { margin: 0; min-height: 100dvh; }
-      main { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100dvh; min-height: 100dvh; background: var(--theme-page-bg, #0b0d13); }
-      header, footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px max(16px, env(safe-area-inset-left)); background: var(--theme-panel-bg, #12151d); border-color: var(--theme-stroke, rgba(255,255,255,.16)); }
-      header { border-bottom: 1px solid var(--theme-stroke, rgba(255,255,255,.16)); }
-      footer { min-height: 45px; border-top: 1px solid var(--theme-stroke, rgba(255,255,255,.16)); color: var(--theme-text-muted, rgba(247,248,251,.68)); font-size: 12px; }
+      main { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100dvh; min-height: 0; background: var(--theme-page-bg, #0b0d13); }
+      header { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px max(8px, env(safe-area-inset-right)) 2px max(8px, env(safe-area-inset-left)); background: var(--theme-panel-bg, #12151d); border-bottom: 1px solid var(--theme-stroke, rgba(255,255,255,.16)); z-index: 1; }
       p { margin: 0; }
-      header > div { min-width: 0; }
+      details { min-width: 0; }
+      summary { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px; cursor: pointer; font-size: 14px; list-style: none; }
+      summary::-webkit-details-marker { display: none; }
+      summary::after { content: "▾"; }
+      details[open] summary::after { content: "▴"; }
+      .review-details { position: absolute; top: 100%; left: 8px; right: 8px; max-height: min(260px, 60dvh); overflow: auto; display: grid; gap: 8px; padding: 12px; border: 1px solid var(--theme-stroke, rgba(255,255,255,.16)); border-radius: 0 0 8px 8px; background: var(--theme-panel-bg, #12151d); box-shadow: 0 8px 24px rgba(0,0,0,.3); }
+      .review-status { color: var(--theme-text-muted, rgba(247,248,251,.68)); font-size: 12px; }
       .eyebrow { color: var(--theme-text-muted, rgba(247,248,251,.68)); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
       .path { margin-top: 2px; overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
-      button { min-height: var(--min-touch-target, 44px); padding: 10px 16px; border: 1px solid var(--theme-stroke, rgba(255,255,255,.16)); border-radius: 8px; background: var(--theme-card-bg, #1b202b); color: var(--theme-text, #f7f8fb); font: inherit; cursor: pointer; }
+      button { min-height: var(--min-touch-target, 44px); padding: 8px 12px; border: 1px solid var(--theme-stroke, rgba(255,255,255,.16)); border-radius: 8px; background: var(--theme-card-bg, #1b202b); color: var(--theme-text, #f7f8fb); font: inherit; font-size: 14px; cursor: pointer; }
       button[data-primary="true"] { background: var(--theme-accent, #7c66e8); border-color: var(--theme-accent, #7c66e8); color: var(--theme-text-on-accent, #fff); }
-      button:focus-visible { outline: 3px solid var(--theme-accent, #9f8dff); outline-offset: 3px; }
+      button:focus-visible, summary:focus-visible { outline: 3px solid var(--theme-accent, #9f8dff); outline-offset: 1px; }
       iframe { display: block; width: 100%; height: 100%; min-height: 0; border: 0; background: #000; }
-      .served { max-width: 50%; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; text-align: right; }
-      @media (max-width: 500px) { footer { align-items: flex-start; flex-direction: column; } }
+      .served { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; font-size: 12px; }
     </style>
   </head>
   <body>
     <main>
       <header>
-        <div><p class="eyebrow">Development review</p><p class="path" id="path">/create</p></div>
+        <details>
+          <summary>Review</summary>
+          <div class="review-details">
+            <p class="eyebrow">Development review</p><p class="path" id="path">/create</p>
+            <p class="review-status" id="status" aria-live="polite">Connecting to the local review target</p>
+            <p class="served" id="served">Serving checkout unavailable</p>
+          </div>
+        </details>
         <button id="control" type="button" data-primary="false">Pause</button>
       </header>
       <iframe id="preview" title="Interactive phone preview"></iframe>
-      <footer aria-live="polite"><span id="status">Connecting to the local review target</span><span class="served" id="served">Serving checkout unavailable</span></footer>
     </main>
     <script>
       (() => {
