@@ -5,8 +5,11 @@
  * and the export panel can close between them. It shares one CameraManager with
  * other surfaces through `getCameraManager()`, so a camera opened after this
  * panel's teardown has nobody left to close it and the camera light stays on.
- * The manager fences this too; these tests cover the component's own guard, with
- * a fake manager and fake tracks rather than a real device.
+ * The manager fences this too; these tests cover the component's own guard. The
+ * manager is faked, but the streams are real (canvas capture), because the
+ * component hands them to a real video element's srcObject — a stand-in object
+ * throws there and leaves an unhandled error in the page even when every
+ * assertion passes. No real camera is involved.
  */
 
 import { page } from "vitest/browser";
@@ -22,12 +25,6 @@ vi.mock("$app/environment", () => ({
 }));
 
 const cameraFake = vi.hoisted(() => {
-  interface Track {
-    kind: string;
-    readyState: "live" | "ended";
-    stop: () => void;
-  }
-
   const state = {
     initializeCalls: 0,
     acquisitions: 0,
@@ -37,7 +34,7 @@ const cameraFake = vi.hoisted(() => {
     stop: null as unknown,
     abandonAcquisition: null as unknown,
     releaseStream: null as unknown,
-    tracks: [] as Track[],
+    streams: [] as MediaStream[],
   };
 
   return { state };
@@ -57,17 +54,19 @@ vi.mock("$lib/shared/train/get-camera-manager", () => {
     ),
     start: vi.fn(
       () =>
-        new Promise((resolve) => {
+        new Promise<MediaStream>((resolve) => {
           state.resolveStart = () => {
-            const track = {
-              kind: "video",
-              readyState: "live" as "live" | "ended",
-              stop: () => {
-                track.readyState = "ended";
-              },
-            };
-            state.tracks.push(track);
-            resolve({ getTracks: () => [track] });
+            // A real MediaStream, because the component assigns it to a real
+            // video element's srcObject — a plain stand-in object throws a
+            // TypeError there, which is an unhandled error in the page even
+            // when every assertion passes.
+            const canvas = document.createElement("canvas");
+            canvas.width = 16;
+            canvas.height = 16;
+            canvas.getContext("2d")?.fillRect(0, 0, 16, 16);
+            const stream = canvas.captureStream();
+            state.streams.push(stream);
+            resolve(stream);
           };
         })
     ),
@@ -76,11 +75,9 @@ vi.mock("$lib/shared/train/get-camera-manager", () => {
     // owns the camera now.
     stop: vi.fn(),
     abandonAcquisition: vi.fn(),
-    releaseStream: vi.fn(
-      (stream: { getTracks: () => Array<{ stop: () => void }> }) => {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    ),
+    releaseStream: vi.fn((stream: MediaStream) => {
+      stream.getTracks().forEach((track) => track.stop());
+    }),
     getVideoElement: () => null,
     get isActive() {
       return false;
@@ -113,6 +110,11 @@ function releaseStreamSpy() {
   return state.releaseStream as ReturnType<typeof vi.fn>;
 }
 
+/** readyState of the first track of the nth stream the fake handed out. */
+function trackState(index: number): string | undefined {
+  return state.streams[index]?.getTracks()[0]?.readyState;
+}
+
 /** Give the component's async mount a turn to continue. */
 async function settle(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 50));
@@ -124,7 +126,7 @@ describe("PerformancePreview camera teardown", () => {
     state.acquisitions = 0;
     state.resolveInitialize = null;
     state.resolveStart = null;
-    state.tracks.length = 0;
+    state.streams.length = 0;
     startSpy().mockClear();
     stopSpy().mockClear();
     abandonSpy().mockClear();
@@ -158,8 +160,8 @@ describe("PerformancePreview camera teardown", () => {
     state.resolveStart?.();
     await settle();
 
-    expect(state.tracks).toHaveLength(1);
-    expect(state.tracks[0]?.readyState).toBe("ended");
+    expect(state.streams).toHaveLength(1);
+    expect(trackState(0)).toBe("ended");
     // The late stream is handed back by identity; another surface may own the
     // camera by now, and the instance-wide stop would take it away.
     expect(stopSpy()).not.toHaveBeenCalled();
@@ -174,12 +176,12 @@ describe("PerformancePreview camera teardown", () => {
     await settle();
     state.resolveStart?.();
     await settle();
-    expect(state.tracks[0]?.readyState).toBe("live");
+    expect(trackState(0)).toBe("live");
 
     await page.getByRole("button", { name: "Close preview" }).click();
     await settle();
 
-    expect(state.tracks[0]?.readyState).toBe("ended");
+    expect(trackState(0)).toBe("ended");
     expect(stopSpy()).not.toHaveBeenCalled();
     expect(releaseStreamSpy()).toHaveBeenCalledTimes(1);
   });
