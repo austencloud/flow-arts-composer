@@ -542,7 +542,7 @@
   }
   .example-options {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(8.75rem, 1fr));
     gap: 0.5rem;
   }
   .example-options :global(.panel-btn) {
