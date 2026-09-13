@@ -1,20 +1,32 @@
 /**
- * Audit repro: blob-URL lifecycle in the orchestrator's in-memory tier.
+ * Audit: blob-URL lifecycle in the orchestrator's in-memory tier.
  *
  * MemoryUrlCache (thumbnail-render-orchestrator.ts:96-142) is the only
- * zero-flash tier and the only thing that revokes the blob URLs the renderer
- * and the IndexedDB tier create. It revokes on LRU eviction and on explicit
- * delete — but NOT when a hash is re-set with a different URL, which is exactly
- * what every force-rerender, image-decode repair, and admin cache-clear does.
+ * zero-flash tier and the only thing that revokes the blob URLs the renderer and
+ * the IndexedDB tier create. It revokes on LRU eviction, on `delete()`, and in
+ * `clear()` — but NOT when a hash is re-`set()` with a different URL.
  *
- * A live blob: URL keeps its Blob alive for the lifetime of the document, so an
- * unrevoked replacement is a permanent retention of one full-size WebP.
+ * That gap is LATENT, not a live leak. All three shipped paths that re-render an
+ * already-cached hash remove the entry first:
+ *
+ *  - PropAwareThumbnail.handleImageError (`:298-335`) and `forceRerender`
+ *    (`:506-533`) both call `repairThumbnailCaches`, whose first act is a
+ *    synchronous `evictHash(hash)` (thumbnail-repair.ts:20) — which revokes;
+ *  - handleCacheCleared (`:241-255`) only ever fires from AdminToolbar
+ *    (`:214`), five lines after that component calls `invalidateAllCaches()`
+ *    (`:209`), which clears and revokes the whole map.
+ *
+ * So these tests do two things: exercise the class-level gap directly (a
+ * replacement no shipped caller performs today), and pin the three protections
+ * so the gap stays latent. The retention *cap* is a separate observation: 500
+ * entries with no byte budget.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { ThumbnailRenderInput } from "$lib/shared/browse/services/thumbnail-key-deriver";
+import { repairThumbnailCaches } from "$lib/shared/browse/services/thumbnail-repair";
 
 vi.mock("$lib/shared/analytics/thumbnail-analytics", () => ({
   captureThumbnailRenderFailure: vi.fn(),
@@ -97,16 +109,18 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("memory URL cache retention", () => {
-  it("DEFECT: re-rendering one key leaks the blob URL it replaces", async () => {
+describe("memory URL cache replacement", () => {
+  it("LATENT: set() drops the URL it replaces without revoking it", async () => {
     const orchestrator = await createOrchestrator();
 
     const first = await orchestrator.getThumbnail({
       sequence: sequence("AB"),
       input: input("AB"),
     });
-    // What a force-rerender / decode-error repair / admin cache clear does:
-    // same cache key, cache tiers skipped, fresh blob.
+    // Reaching the gap requires re-rendering a hash whose entry is still live.
+    // No shipped caller does this — the two repair paths and the admin clear all
+    // evict first (see the file header) — so this is the class exercised
+    // directly, not a reproduction of a production sequence.
     const second = await orchestrator.getThumbnail({
       sequence: sequence("AB"),
       input: input("AB"),
@@ -116,30 +130,75 @@ describe("memory URL cache retention", () => {
     expect(createdUrls).toEqual(["blob:thumb-1", "blob:thumb-2"]);
     expect(first.url).toBe("blob:thumb-1");
     expect(second.url).toBe("blob:thumb-2");
-    // The memory tier now serves the new URL, so nothing can ever reach or
-    // revoke the old one again.
+    // The map now serves the new URL, so nothing can reach or revoke the old
+    // one again.
     expect(orchestrator.getCached(second.key.hash)).toBe("blob:thumb-2");
 
-    // DEFECT: MemoryUrlCache.set() deletes the displaced entry without
-    // revoking it. Should become ["blob:thumb-1"] once set() revokes a
-    // replaced blob: URL.
+    // LATENT DEFECT: MemoryUrlCache.set() deletes the displaced entry without
+    // revoking it. Should become ["blob:thumb-1"] once set() revokes a replaced
+    // blob: URL — at which point the protection stops depending on all three
+    // call sites remembering to evict first.
     expect(revokedUrls).toEqual([]);
   });
 
-  it("CONTROL: LRU eviction past 500 entries does revoke", async () => {
+  it("CONTROL: the shared repair path evicts (and revokes) before the re-render", async () => {
     const orchestrator = await createOrchestrator();
+    const first = await orchestrator.getThumbnail({
+      sequence: sequence("AB"),
+      input: input("AB"),
+    });
 
-    for (let i = 0; i < 501; i++) {
+    // Exactly what handleImageError and forceRerender do before setting
+    // skipCacheOnNextRequest, with the real repair owner.
+    await repairThumbnailCaches({
+      kind: "blob-decode",
+      hash: first.key.hash,
+      cloudKey: null,
+      localCache: null,
+      evictHash: (hash) => orchestrator.evictHash(hash),
+    });
+    expect(revokedUrls).toEqual(["blob:thumb-1"]);
+
+    const second = await orchestrator.getThumbnail({
+      sequence: sequence("AB"),
+      input: input("AB"),
+      skipCache: true,
+    });
+
+    // Two URLs created, the first already released: no orphan.
+    expect(createdUrls).toEqual(["blob:thumb-1", "blob:thumb-2"]);
+    expect(revokedUrls).toEqual(["blob:thumb-1"]);
+    expect(orchestrator.getCached(second.key.hash)).toBe("blob:thumb-2");
+  });
+
+  it("CONTROL: invalidateAllCaches revokes every URL it forgets", async () => {
+    const orchestrator = await createOrchestrator();
+    for (const id of ["AB", "CD", "EF"]) {
       await orchestrator.getThumbnail({
-        sequence: sequence(`SEQ${i}`),
-        input: input(`SEQ${i}`),
+        sequence: sequence(id),
+        input: input(id),
       });
     }
+    expect(createdUrls).toHaveLength(3);
 
-    expect(createdUrls).toHaveLength(501);
-    // Only the single oldest entry is released: the cap is 500 ENTRIES with no
-    // byte budget, so steady-state retention is 500 full-size WebP blobs.
-    expect(revokedUrls).toEqual(["blob:thumb-1"]);
+    // AdminToolbar:209 — runs before it dispatches thumbnailCacheCleared, so
+    // the cards that re-render on that event have nothing live to displace.
+    orchestrator.invalidateAllCaches();
+
+    expect(revokedUrls).toEqual([
+      "blob:thumb-1",
+      "blob:thumb-2",
+      "blob:thumb-3",
+    ]);
+    for (const id of ["AB", "CD", "EF"]) {
+      await orchestrator.getThumbnail({
+        sequence: sequence(id),
+        input: input(id),
+        skipCache: true,
+      });
+    }
+    expect(createdUrls).toHaveLength(6);
+    expect(revokedUrls).toHaveLength(3);
   });
 
   it("CONTROL: evictHash releases the blob it drops", async () => {
@@ -155,42 +214,20 @@ describe("memory URL cache retention", () => {
     expect(orchestrator.getCached(result.key.hash)).toBeNull();
   });
 
-  it("DEFECT: invalidateAllCaches leaks every blob URL it forgets", async () => {
+  it("records the retention cap: 500 entries, no byte budget", async () => {
     const orchestrator = await createOrchestrator();
-    for (const id of ["AB", "CD", "EF"]) {
+
+    for (let i = 0; i < 501; i++) {
       await orchestrator.getThumbnail({
-        sequence: sequence(id),
-        input: input(id),
+        sequence: sequence(`SEQ${i}`),
+        input: input(`SEQ${i}`),
       });
     }
-    expect(createdUrls).toHaveLength(3);
 
-    // The admin "Clear Cloud Thumbnails" flow. clear() DOES revoke, so this
-    // path is clean...
-    orchestrator.invalidateAllCaches();
-    expect(revokedUrls).toEqual([
-      "blob:thumb-1",
-      "blob:thumb-2",
-      "blob:thumb-3",
-    ]);
-
-    // ...but every card that re-renders afterwards goes through the leaking
-    // replacement path above, because handleCacheCleared() deliberately keeps
-    // the displayed URL alive while the new render populates the same hash.
-    for (const id of ["AB", "CD", "EF"]) {
-      await orchestrator.getThumbnail({
-        sequence: sequence(id),
-        input: input(id),
-        skipCache: true,
-      });
-      await orchestrator.getThumbnail({
-        sequence: sequence(id),
-        input: input(id),
-        skipCache: true,
-      });
-    }
-    expect(createdUrls).toHaveLength(9);
-    // Three of the six new URLs are unreachable and unrevoked.
-    expect(revokedUrls).toHaveLength(3);
+    expect(createdUrls).toHaveLength(501);
+    // LRU eviction does revoke — but only one entry is released, because the cap
+    // counts ENTRIES (MAX_MEMORY_ENTRIES = 500) and never bytes. Steady-state
+    // retention is 500 full-size WebP blobs held by live blob: URLs.
+    expect(revokedUrls).toEqual(["blob:thumb-1"]);
   });
 });

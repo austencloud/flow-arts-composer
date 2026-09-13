@@ -47,10 +47,13 @@ gallery load.**
    Any per-card cost above ~1.15 s puts the last cards of a 40-card pass past
    15 s of waiting — which is the shape of the field incident.
 
-Four lifecycle defects sit on top of that: a returning card can be stranded on
-the loading placeholder forever, two distinct images share one cache key, the
-memory tier leaks a blob URL on every re-render, and the IndexedDB tier does
-O(n²) work per gallery pass while writing on every read.
+Four lifecycle findings sit on top of that: a returning card could be stranded on
+the loading placeholder (§4.5, **fixed on this branch**), two distinct images
+shared one cache key (§4.8, the reachable `cardMode` half **fixed on this
+branch**; the `showMandala` half is latent), the IndexedDB tier writes on every
+read and does O(n²) work per gallery pass (§4.6), and the memory tier's
+replacement path has no revoke (§4.7 — **latent**, no shipped caller reaches it).
+§8 records what was implemented and what stays evidence-only.
 
 **The single cheapest high-impact change is not in the render path at all: give
 `loadManifest()` a bounded idle timeout (or hoist it out of `runDeferred`) and
@@ -267,62 +270,86 @@ max, no queue-wait samples.
   (`get-thumbnail-render-queue.ts:14-17`, no `probeWorkerSupport()` call on any
   Browse path), so more slots mainly means more contention.
 
-### 4.5 Fast scroll can strand a card on the loading placeholder forever — HIGH
+### 4.5 Fast scroll stranded a returning card's thumbnail — HIGH — **FIXED on this branch**
 
-**Evidence (code-proven, repro:
-`tests/unit/opus-thumbnail-audit/scroll-cancellation-lifecycle.test.ts`):**
+**Evidence (code-proven; evidence repro:
+`tests/unit/opus-thumbnail-audit/scroll-cancellation-lifecycle.test.ts`,
+regression coverage with the fix:
+`tests/unit/browse/thumbnail-queue-task-identity.test.ts`):**
 
 1. `ThumbnailRenderer.render()` (`thumbnail-renderer.ts:89-194`) never checks
    its `signal` between stages. The first and only observation point is inside
    `CompositionDispatcher.compose()` (`composition-dispatcher.ts:339`). So an
    aborted render still completes `sequence_load` (a Firestore read) and LOOP
    detection — measured: `detectLOOPType` runs _after_ the abort, and the render
-   promise does not settle until the abandoned read resolves.
+   promise does not settle until the abandoned read resolves. **Still open** (the
+   renderer is outside this task's ownership).
 2. Because it does not settle, `ThumbnailRenderQueue` still counts the slot as
    active. Measured: three cancelled renders hold `getStats().active === 3` and
    a card that is _currently visible_ does not start until the three abandoned
-   document reads land.
-3. `cancelCoreTask` (`thumbnail-render-queue.ts:164-174`) deletes
-   `pendingPromises` **only** for a queued task; for an active task it just
-   aborts the controller. A card that scrolls back before the zombie settles
-   therefore deduplicates onto the dying render and inherits its outcome:
-   - zombie exits via the abort guard → the fresh request rejects with
-     `AbortError` even though `secondMount.signal.aborted === false`;
-   - zombie's read stalls → the fresh request waits the **full 15 s deadline**
-     and then reports `ThumbnailRenderTimeoutError` (measured with a fake clock).
+   document reads land. **Still open**, and largely a consequence of (1): the
+   slot legitimately belongs to running work.
+3. `cancelCoreTask` dropped the dedup entry **only** for a queued task; for an
+   active task it just aborted the controller. A card that scrolled back before
+   the abandoned render settled therefore deduplicated onto it and inherited its
+   outcome: an `AbortError` on a request whose own signal was never aborted, or —
+   when the abandoned read stalled — that render's full 15 s inactivity deadline.
+   **Fixed**, see below.
 
-`PropAwareThumbnail.svelte:416-423` treats a cancellation as "not mine": no
-URL, no error placeholder. `currentKeyHash` still equals the key
-(`:347-349`), so the `$effect` will not re-request, and `isVisible` never
-transitions again. **The card stays on the shimmering loading placeholder for
-the rest of the session.** Control test: once the zombie has settled, the same
-key renders normally — so this is purely a race, which is why it would read as
-"sometimes a card never loads".
+`PropAwareThumbnail.svelte:416-423` treats a cancellation as "not mine": no URL,
+no error placeholder. `currentKeyHash` still equals the key (`:347-349`), so the
+`$effect` does not re-request. The card then stays on the shimmering loading
+placeholder **until one of: its cache key changes (a prop, theme, settings or
+sequence change); a `thumbnailCacheCleared` event while it is visible; an
+explicit `forceRerender()`; or the virtual grid unmounts and remounts it** —
+`SectionedVirtualGrid` renders only the visible window plus `overscan: 4` rows
+(`:369`), so scrolling several rows away and back does recycle the component and
+clear the state. The stuck window is the one where the card stays mounted, which
+is exactly the window a short scroll-out-and-back produces.
 
-**Impact.** Explains stuck grey cards after flinging through the gallery, and
-inflates the tail for every visible card behind a zombie. Also partially
-explains a 15 s timeout attributed to a card the user is looking at when the
-stalled read belongs to a card they already scrolled past.
+**Impact.** Stuck grey cards after flinging through the gallery, until one of the
+recovery events above. Point 2 also inflates the tail for every visible card
+queued behind an abandoned render, and can attribute a 15 s timeout to a card
+the user is looking at when the stalled read belongs to one they scrolled past.
 
-**Bounded fix (three small, independent changes):**
+**Fix applied (owned by this task): per-task identity in
+`ThumbnailRenderQueue`.**
 
-1. `thumbnail-render-queue.ts:164-174` — in `cancelCoreTask`, drop the id from
-   `pendingPromises` when an **active** task is cancelled too, so a later
-   `enqueue` of the same id starts a fresh core task instead of adopting a dying
-   one. (Keep the existing `forgetPending` identity check; it already guards
-   against deleting a newer promise.)
-2. `thumbnail-renderer.ts` — add `if (signal?.aborted) throw new DOMException("Aborted", "AbortError")`
+Dropping `pendingPromises` at cancel time is necessary but **not sufficient on
+its own**: the queue's slot, controller and consumer bookkeeping were all keyed
+by thumbnail ID (`activeIds`, `activeControllers`, `consumerCounts`), so two
+live tasks under one ID would share them and the older task's `finally` cleanup
+(`activeCount--`, `activeControllers.delete(task.id)`) would erase the retry's
+state — trading a stranded card for a lost slot and an uncancellable render. The
+implemented change therefore:
+
+- gives every task a monotonic `token`, and keys `activeTasks` (slot +
+  controller) and `consumerCounts` by that token, so cleanup can only ever
+  remove the state it installed. `activeCount`/`activeIds` are derived from
+  `activeTasks`, keeping `QueueStats` shape-compatible;
+- releases the ID (`forgetPendingTask`) when a task is cancelled — active or
+  queued — so a returning card starts a fresh render instead of adopting a dying
+  one, while the cancelled task keeps its slot until its own work settles;
+- makes `cancel(id)` act on every task registered under that ID (queued plus a
+  released-but-unsettled active one) and idempotent, and extends `cancelAll()`
+  with the same release semantics.
+
+Prompt settlement (point 1) remains the complementary fix and is **not** a
+substitute: `await loadFullSequenceData(...)` cannot be interrupted, so the
+window always exists — token identity is what makes the retry safe inside it.
+
+**Still recommended, not in this task's scope:**
+
+1. `thumbnail-renderer.ts` — `if (signal?.aborted) throw new DOMException("Aborted", "AbortError")`
    after `ensureFullSequenceData`, after `loop_and_start`, and after the QR
-   bitmap. Three lines; releases the queue slot promptly.
-3. `PropAwareThumbnail.svelte` — when a _current_ request ends in cancellation
-   but this card is still visible and still wants this key, clear
-   `currentKeyHash` so the effect can re-request (or keep the last status rather
-   than leaving `idle`). This is the belt-and-braces guard if 1 and 2 ever race
-   again.
-
-Passing the request's `AbortSignal` into `loadFullSequenceData` would be the
-complete fix for (2), but that changes `PublicSequencesLoader`'s public shape and
-belongs in its own change.
+   bitmap. Three lines; releases the queue slot promptly and removes the wasted
+   main-thread LOOP detection.
+2. `PropAwareThumbnail.svelte` — when a _current_ request ends in cancellation
+   while the card is still visible and still wants that key, clear
+   `currentKeyHash` so the effect can re-request. Belt-and-braces once (1) lands.
+3. Passing the request's `AbortSignal` into `loadFullSequenceData` is the
+   complete form of (1), but it changes `PublicSequencesLoader`'s public shape
+   and belongs in its own change.
 
 ### 4.6 The IndexedDB tier writes on every read and rescans the store on every write — MEDIUM
 
@@ -369,67 +396,103 @@ Quantifying it needs a real device.
 3. Optional: an explicit `size` index so a future scan can use
    `openKeyCursor()` instead of deserializing records.
 
-### 4.7 The memory tier leaks a blob URL on every re-render of a key — MEDIUM
+### 4.7 The memory tier does not revoke the blob URL it replaces — LOW, **latent**
 
 **Evidence (measured, repro:
 `tests/unit/opus-thumbnail-audit/memory-url-cache-lifecycle.test.ts`):**
 `MemoryUrlCache.set()` (`thumbnail-render-orchestrator.ts:108-123`) deletes a
-displaced entry without revoking it; it only revokes on LRU eviction, on
-`delete()`, and in `clear()`. Rendering one key twice (the second with
-`skipCache`, which is what `forceRerender()`, the image-decode repair path, and
-`handleCacheCleared()` all do) yields 2 `createObjectURL` and **0**
-`revokeObjectURL`. Controls confirm eviction and `evictHash` do revoke.
+displaced entry without revoking it; it revokes only on LRU eviction, in
+`delete()`, and in `clear()`.
 
-**Impact.** A live `blob:` URL keeps its `Blob` alive for the document's
-lifetime, so each orphan is one full-size WebP retained permanently.
-**Inferred magnitude**, combining the repo's own ~11 MB figure for the live
-slice (`bundle-desktop-thumbnails.cjs:12-15`) with the 110 current dark-gallery
-keys the spec's manifest table records ⇒ order of 100 KB per thumbnail: the
-500-entry cap alone is ~50 MB of retained blobs at steady state (the cap is
-entries, not bytes — `:94`), and every admin cache-clear or decode-error repair
-adds one orphan per affected card on top of that. On the target iPhone class
-that is material.
+**Reachability: latent — no shipped caller performs that replacement.** This
+report's first draft called it a leak "on every re-render", which was wrong.
+There are exactly three production paths that re-render an already-cached hash,
+and all three remove the entry first:
 
-**Bounded fix.** In `MemoryUrlCache.set()`, when replacing an existing hash
-whose stored URL differs and starts with `blob:`, revoke it. Four lines, in the
-class that already owns revocation. Consider also a byte budget alongside the
-500-entry cap. Note `renderedGenerations` (`:294`) grows without bound and is
-never pruned when the URL cache evicts; harmless today (short strings), but it
-is the same map's lifetime twin and worth clearing together.
+| Path                                                     | Protection                                                                                                                                                        |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `handleImageError` (`PropAwareThumbnail.svelte:298-335`) | `repairThumbnailCaches` → synchronous `evictHash(hash)` (`thumbnail-repair.ts:20`), which revokes, before `skipCacheOnNextRequest` is set                         |
+| `forceRerender` (`:506-533`)                             | same repair owner, same synchronous eviction                                                                                                                      |
+| `handleCacheCleared` (`:241-255`)                        | only ever dispatched by `AdminToolbar.svelte:214`, five lines after that component calls `invalidateAllCaches()` (`:209`), which clears and revokes the whole map |
 
-### 4.8 Two distinct images share one cache key — MEDIUM (correctness)
+Those three protections are now pinned as controls in the repro file, alongside
+one test that exercises the class-level gap directly (a `skipCache` render over a
+live entry — a sequence nothing ships today). So the finding is: **the invariant
+lives in three call sites instead of in the cache**, and the next caller that
+re-renders a cached hash without evicting first leaks silently.
 
-**Evidence (code-proven, repro:
-`tests/unit/opus-thumbnail-audit/cache-key-collisions.test.ts`):**
+Separately, and unchanged: the memory tier's cap is **500 entries with no byte
+budget** (`:94`), and a live `blob:` URL keeps its `Blob` alive for the
+document's lifetime. Order-of-magnitude retention, **inferred** from the repo's
+own ~11 MB figure for the live static slice
+(`bundle-desktop-thumbnails.cjs:12-15`) against the 110 current dark-gallery keys
+in the spec's manifest table (≈100 KB per thumbnail): roughly 50 MB held at
+steady state on a fully browsed gallery. Not measured on a device.
 
-- **`showMandala`**: the deriver's canonical default is `true`
+**Bounded fix.** Four lines in `MemoryUrlCache.set()`: when replacing an existing
+hash whose stored URL differs and starts with `blob:`, revoke it — moving the
+invariant into the owner. Optionally add a byte budget beside the entry cap.
+`renderedGenerations` (`:294`) also grows without bound and is never pruned when
+the URL cache evicts; harmless today (short strings), worth clearing together.
+Not implemented here: the reachability is unproven, and this task's authorization
+excludes it.
+
+### 4.8 Two distinct images shared one cache key — MEDIUM (correctness)
+
+**Evidence (code-proven; evidence repro:
+`tests/unit/opus-thumbnail-audit/cache-key-collisions.test.ts`, regression
+coverage with the fix:
+`tests/unit/browse/thumbnail-cardmode-cache-identity.test.ts`):**
+
+- **`cardMode` — reachable in the personal tiers; latent for the cloud. FIXED on
+  this branch.** It was absent from `checkInputUsesDefaults` and from both hash
+  branches, so the 5:7 playing-card raster and the standard raster shared one
+  hash. Reachable today through the card designer:
+  `CardPreviewStack.svelte:154-156` passes `cardMode={!printMode}` while
+  `ChoreoCard.svelte:105` resolves **both** states to `lightMode: true`, so the
+  two layouts derive the same key in the memory + IndexedDB tiers (the printMode
+  branch only avoids the render when a pre-rendered front already exists, so the
+  frequency is low). The **cloud** half was latent: every shipped `cardMode`
+  caller also sets `customNotesText`, which already forced
+  `usesDefaults: false`, so no shared object was ever written under a colliding
+  key.
+- **`showMandala` — latent.** The deriver's canonical default is `true`
   (`thumbnail-key-deriver.ts:249-257`), the renderer's fallback for the same
-  field is `?? false` (`thumbnail-renderer.ts:365`), and the shared-class hash
-  branch omits the field entirely (`:144-160`). So `showMandala: true` and
-  `showMandala: undefined` produce **the same hash and the same cloud path**
-  while the composer draws mandalas in one and not the other
-  (`card-front-assembler.ts:373` is a truthiness check). Measured both ways.
-- **`cardMode`**: absent from `checkInputUsesDefaults` and from **both** hash
-  branches, so the 5:7 playing-card layout and the standard layout share one
-  identity. Measured for the shared branch and the personal branch.
+  field is `?? false` (`thumbnail-renderer.ts:365`), and the shared hash branch
+  omits the field, so `showMandala: true` and `showMandala: undefined` produce
+  the same hash and cloud path while the composer draws mandalas in only one
+  (`card-front-assembler.ts:373` is a truthiness check). **No shipped caller
+  reaches it:** every producer of a visibility object sets the field explicitly —
+  `ChoreoCard.svelte:126`, `buildGalleryVisibility`'s no-visibility branch
+  (`gallery-render-input.ts:173-180`), and `gallery-thumbnail-warmer.ts:207`.
+  The first draft of this report cited ChoreoCard as a reachable omission; that
+  was wrong.
 
-**Impact.** For `showMandala` the collision is reachable by any caller that
-passes an explicit `visibility` object without the field — `ChoreoCard` passes
-one (`ChoreoCard.svelte:183`), and `buildGalleryVisibility` only guarantees the
-field when no `visibility` prop is supplied (`gallery-render-input.ts:133-143`).
-Because the colliding class is `usesDefaults`, a mismatched raster can be
-uploaded to the shared bucket and served to everyone. For `cardMode` the
-practical blast radius is narrower (`ChoreoCard` always sets
-`customNotesText`, which forces `usesDefaults: false`), so it cross-serves
-within one browser's memory + IndexedDB tiers rather than the cloud — still a
-wrong-layout image.
+**Fix applied (owned by this task): `cardMode` in the cache identity.**
 
-**Bounded fix.** Normalize before deriving: make `buildGalleryVisibility`'s
-"always explicit" guarantee unconditional (apply it in the `visibility`-supplied
-branch too), and add `cardMode` to `buildFullHashInput` plus the `usesDefaults`
-disqualifier list. Both are inside the two files that already own this.
-`THUMBNAIL_RENDERER_VERSION` must be bumped with the `cardMode` change, since
-existing keys would otherwise keep serving the wrong layout.
+- `checkInputUsesDefaults` now disqualifies `cardMode`, so a card-layout render
+  can never be classified shareable and can never be uploaded to, or served
+  from, the static/cloud tiers that hold one layout per variant.
+- `buildFullHashInput` includes `cardMode` **only when it is true**, mirroring
+  the existing `primaryPropColors` treatment. That is what makes the change
+  free: a cardMode render gets a new identity and **every existing key stays
+  byte-identical**, pinned by a regression test against the hashes `main`
+  produced (`-382kas`, `30dl4f`, `-iwx7i2`).
+
+**No `THUMBNAIL_RENDERER_VERSION` bump is required**, and the first draft's claim
+that one was is withdrawn. A global bump exists to invalidate _shared_ rasters,
+and no shared object was ever written under a colliding cardMode key (see
+above); the shared hash branch is untouched by this change, so bumping would
+cold-start the entire correctly-warmed static and cloud population for nothing.
+The only stale entries are personal IndexedDB/memory records for the old
+colliding key, which are simply no longer addressed and age out through the
+existing LRU/100 MB prune.
+
+**Remaining, not implemented:** normalize `showMandala` so the invariant leaves
+the callers — either make `buildGalleryVisibility`'s explicit-field guarantee
+unconditional (it currently only applies to the no-`visibility` branch), or align
+the renderer's fallback with the deriver's canonical default (`?? true`). Neither
+changes any hash, so neither needs a version bump.
 
 ### 4.9 `sequence_load` is the one stage with no time bound on web and mobile — MEDIUM
 
@@ -534,46 +597,146 @@ Recording these so the next audit does not re-derive them:
 
 ## 7. Recommended order of work
 
-| #   | Change                                                                                            | Finding | Size | Why first                                                            |
-| --- | ------------------------------------------------------------------------------------------------- | ------- | ---- | -------------------------------------------------------------------- |
-| 1   | Bound the idle manifest load; probe unknown keys while it is pending                              | 4.2     | XS   | Turns cold renders into cache hits with two small edits              |
-| 2   | Drop `pendingPromises` when an active task is cancelled; check the signal between renderer stages | 4.5     | S    | Fixes stranded cards and frees queue slots                           |
-| 3   | Restore the static tier on web (or delete the tier and rewrite Design 5)                          | 4.1     | S-M  | Reinstates the only instant tier; unblocks the spec's warm/sync work |
-| 4   | Revoke the displaced blob URL in `MemoryUrlCache.set()`                                           | 4.7     | XS   | Removes a permanent per-re-render retention                          |
-| 5   | Normalize `showMandala`; hash `cardMode` (bump renderer version)                                  | 4.8     | S    | Correctness: stops two images sharing one key                        |
-| 6   | `readonly` reads + O(1) prune decision in the local cache                                         | 4.6     | S    | Removes write amplification and the O(n²) scan                       |
-| 7   | Bound the source read on all platforms                                                            | 4.9     | XS   | Removes the last unbounded stage                                     |
-| 8   | Re-benchmark, then decide about workers/concurrency                                               | 4.4     | M    | Only meaningful once 1-3 have removed the cold-pass renders          |
-| 9   | Wire or delete the `qrPolicy` preview path                                                        | 4.10    | S    | Stop carrying untested complexity                                    |
+| #   | Change                                                                   | Finding | Size | Status                                                        |
+| --- | ------------------------------------------------------------------------ | ------- | ---- | ------------------------------------------------------------- |
+| —   | Per-task identity in the queue; release the ID on cancel                 | 4.5     | S    | **Done on this branch** (§8)                                  |
+| —   | `cardMode` in the personal hash; disqualified from the shared class      | 4.8     | XS   | **Done on this branch** (§8)                                  |
+| 1   | Bound the idle manifest load; probe unknown keys while it is pending     | 4.2     | XS   | Turns cold renders into cache hits with two small edits       |
+| 2   | Restore the static tier on web (or delete the tier and rewrite Design 5) | 4.1     | S-M  | Reinstates the only instant tier; unblocks the warm/sync work |
+| 3   | Stage-level signal checks in `ThumbnailRenderer`                         | 4.5     | XS   | Frees queue slots and stops wasted post-cancel work           |
+| 4   | `readonly` reads + O(1) prune decision in the local cache                | 4.6     | S    | Removes write amplification and the O(n²) scan                |
+| 5   | Bound the source read on all platforms                                   | 4.9     | XS   | Removes the last unbounded stage                              |
+| 6   | Normalize `showMandala` so the invariant leaves the callers              | 4.8     | XS   | Closes the remaining latent key collision; no version bump    |
+| 7   | Revoke the displaced blob URL in `MemoryUrlCache.set()`                  | 4.7     | XS   | Moves a latent invariant into its owner                       |
+| 8   | Re-benchmark, then decide about workers/concurrency                      | 4.4     | M    | Only meaningful once 1-2 have removed the cold-pass renders   |
+| 9   | Wire or delete the `qrPolicy` preview path                               | 4.10    | S    | Stop carrying untested complexity                             |
 
-Items 1, 2, 4, 5 and 7 are each a handful of lines in files that already own the
-behaviour. Item 3 is a build-pipeline decision. Item 8 is where the spec's
+Items 1, 3, 5, 6 and 7 are each a handful of lines in files that already own the
+behaviour. Item 2 is a build-pipeline decision. Item 8 is where the spec's
 "measured optimization gate" actually belongs, and it should be re-run _after_
 the cache tiers work, or it will keep measuring a cold pass that should not have
-happened.
+happened. Items 6 and 7 are ordered after the live-latency work deliberately:
+both are latent hazards, not current defects.
 
 ---
 
-## 8. Deliverables, commands, and results
+## 8. Implementation on this branch
+
+Everything in §3–§7 is **evidence**: a read-only audit with repro tests under
+`tests/unit/opus-thumbnail-audit/`. Two findings were then authorized for
+implementation, and only those two production files changed. Their regression
+tests live **with the fix**, in `tests/unit/browse/`, not in the audit suite.
+
+### 8.1 `src/lib/shared/browse/services/thumbnail-render-queue.ts` (§4.5)
+
+Per-task identity, then release-on-cancel:
+
+- every task carries a monotonic `token`; `activeTasks` (slot + controller) and
+  `consumerCounts` are keyed by it, so a task's cleanup can only remove the state
+  it installed. `getStats()` derives `active`/`activeIds` from `activeTasks`, so
+  the public `QueueStats` shape is unchanged;
+- `cancelTask()` drops the dedup entry for the cancelled task — active or queued —
+  so a returning card starts a fresh render, while the cancelled task keeps its
+  slot until its own work settles;
+- `cancel(id)` now acts on every task registered under that ID and is idempotent;
+  `cancelAll()` uses the same release semantics.
+
+Why not the simpler change: dropping `pendingPromises` alone would let two live
+tasks share ID-keyed bookkeeping, so the older task's `finally`
+(`activeCount--`, `activeControllers.delete(task.id)`) would erase the retry's
+slot and controller. Prompt settlement in the renderer shortens the window but
+cannot remove it — `await loadFullSequenceData(...)` is not interruptible — so
+token identity is the load-bearing part.
+
+### 8.2 `src/lib/shared/browse/services/thumbnail-key-deriver.ts` (§4.8)
+
+- `checkInputUsesDefaults` disqualifies `cardMode`, keeping the 5:7 card layout
+  out of the shared static/cloud class;
+- `buildFullHashInput` includes `cardMode` only when true (the existing
+  `primaryPropColors` shape), so a card render gains an identity while **every
+  existing key stays byte-identical**. No `THUMBNAIL_RENDERER_VERSION` bump — see
+  §4.8 for why one would be actively harmful here.
+
+### 8.3 Evidence that the tests fail before and pass after
+
+Run on the same working tree, with only the two production files stashed:
+
+```bash
+git stash push -- src/lib/shared/browse/services/thumbnail-render-queue.ts \
+                  src/lib/shared/browse/services/thumbnail-key-deriver.ts
+npx vitest run --config tests/config/vitest.config.ts \
+  tests/unit/browse/thumbnail-queue-task-identity.test.ts \
+  tests/unit/browse/thumbnail-cardmode-cache-identity.test.ts
+# 6 failed | 2 passed (8)
+#   × gives the 5:7 card layout a different hash from the standard layout
+#   × keeps a cardMode render out of the shared static/cloud class
+#   × releases the ID so a retry renders instead of adopting the dying task
+#   × keeps the retry's slot, controller and consumer count ...
+#   × does not make the retry wait out the abandoned task's inactivity deadline
+#   × CONTROL: one consumer leaving does not cancel a render another card needs
+#     (collateral: it passes in isolation pre-fix; the two 15s/30s hangs above
+#      starve it when the file runs as a whole)
+#   ✓ leaves every existing key byte-identical   <- must pass in BOTH states
+#   ✓ CONTROL: two consumers of one live task still share a single render
+git stash pop
+
+npx vitest run --config tests/config/vitest.config.ts \
+  tests/unit/browse/thumbnail-queue-task-identity.test.ts \
+  tests/unit/browse/thumbnail-cardmode-cache-identity.test.ts
+# 9 passed (9)   (6 queue/orchestrator + 3 key identity)
+```
+
+### 8.4 Corrections applied to the first draft of this report
+
+Recorded because the first version overstated three things:
+
+| Claim in the first draft                                             | Correction                                                                                                                                                                                                                                                                                                                                                                                  |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "the memory tier leaks a blob URL on every re-render"                | Wrong. All three production re-render paths evict (and revoke) first — two via `repairThumbnailCaches` → `evictHash`, one behind `invalidateAllCaches()`. Downgraded to a latent class-level gap (§4.7); the test that "proved" it did two artificial `skipCache` renders per key and has been replaced with one direct exercise of the class plus controls that pin the three protections. |
+| "`ChoreoCard` passes a visibility object without `showMandala`"      | Wrong: `ChoreoCard.svelte:126` sets it explicitly. No shipped caller omits it, so the `showMandala` collision is latent, not reachable (§4.8).                                                                                                                                                                                                                                              |
+| "bump `THUMBNAIL_RENDERER_VERSION` with the `cardMode` change"       | Withdrawn. Nothing shared was ever written under a colliding key and the shared hash branch is untouched, so a bump would cold-start the whole warmed population for nothing (§4.8).                                                                                                                                                                                                        |
+| "the card stays stranded for the rest of the session"                | Overstated. Recovery happens on a key change, a cache-cleared event while visible, `forceRerender()`, or a virtual-grid remount (`SectionedVirtualGrid` keeps only the visible window plus `overscan: 4`) — §4.5.                                                                                                                                                                           |
+| "drop `pendingPromises` when an active task is cancelled" as the fix | Insufficient and unsafe on its own; it needed per-task identity first (§8.1).                                                                                                                                                                                                                                                                                                               |
+
+---
+
+## 9. Deliverables, commands, and results
 
 ### Files this task owns
 
+Production (implementation, §8):
+
 ```
-tests/unit/opus-thumbnail-audit/cache-key-collisions.test.ts
-tests/unit/opus-thumbnail-audit/cloud-manifest-ordering.test.ts
-tests/unit/opus-thumbnail-audit/gallery-latency-model.test.ts
-tests/unit/opus-thumbnail-audit/local-cache-io-amplification.test.ts
-tests/unit/opus-thumbnail-audit/memory-url-cache-lifecycle.test.ts
-tests/unit/opus-thumbnail-audit/scroll-cancellation-lifecycle.test.ts
-tests/unit/opus-thumbnail-audit/shared-class-coverage.test.ts
+src/lib/shared/browse/services/thumbnail-render-queue.ts
+src/lib/shared/browse/services/thumbnail-key-deriver.ts
+```
+
+Regression tests for those fixes:
+
+```
+tests/unit/browse/thumbnail-queue-task-identity.test.ts        (6 tests)
+tests/unit/browse/thumbnail-cardmode-cache-identity.test.ts    (3 tests)
+```
+
+Audit evidence (read-only repros) and this report:
+
+```
+tests/unit/opus-thumbnail-audit/cache-key-collisions.test.ts          (4 tests)
+tests/unit/opus-thumbnail-audit/cloud-manifest-ordering.test.ts       (3 tests)
+tests/unit/opus-thumbnail-audit/gallery-latency-model.test.ts         (3 tests)
+tests/unit/opus-thumbnail-audit/local-cache-io-amplification.test.ts  (5 tests)
+tests/unit/opus-thumbnail-audit/memory-url-cache-lifecycle.test.ts    (5 tests)
+tests/unit/opus-thumbnail-audit/scroll-cancellation-lifecycle.test.ts (2 tests)
+tests/unit/opus-thumbnail-audit/shared-class-coverage.test.ts         (4 tests)
 docs/reports/opus-batch-2026-09-12/thumbnail-performance.md
 ```
 
-7 test files, 30 tests, all passing.
-
-Assertions that encode a defect are labelled `DEFECT:` in the test name or in a
-comment stating what the assertion should become once the fix lands, so the
-suite is a tripwire in both directions. Controls are labelled `CONTROL:`.
+Naming in the evidence suite: `DEFECT:` is an assertion that pins current
+behaviour and says what it should become; `LATENT:` pins a class-level hazard no
+shipped caller reaches; `CONTROL:` pins behaviour that must not change. The two
+findings fixed in §8 no longer appear as `DEFECT:` assertions there — their
+(inverted) coverage moved to `tests/unit/browse/`, so nothing in this branch
+asserts behaviour the branch itself corrects.
 
 ### Commands run
 
@@ -581,32 +744,47 @@ suite is a tripwire in both directions. Controls are labelled `CONTROL:`.
 pnpm install                                   # exit 0
 npm run build:packages                         # exit 0 (required: @tka/tka-types)
 
-npx vitest run --config tests/config/vitest.config.ts tests/unit/opus-thumbnail-audit
-# 7 files, 30 tests, all passed (3.6s)
+# fail-before / pass-after for the two fixes: see §8.3 (6 failed -> 9 passed)
 
 npx vitest run --config tests/config/vitest.config.ts \
-  tests/unit/opus-thumbnail-audit tests/unit/browse \
-  tests/unit/thumbnail-local-cache.test.ts tests/unit/gallery-render-input.test.ts
-# 52 files, 233 tests, all passed (17.1s) — the existing browse thumbnail
-# suites (queue, orchestrator failures, metrics, renderer stages, warmer QR
-# consistency, static manifest retry, local cache) stay green alongside them
+  tests/unit/browse tests/unit/opus-thumbnail-audit src/lib/shared/browse \
+  tests/unit/thumbnail-cache-keys.test.ts tests/unit/thumbnail-local-cache.test.ts \
+  tests/unit/gallery-render-input.test.ts tests/unit/offline-cache-orchestrator.test.ts
+# 63 files, 313 tests, all passed (19.6s) — every existing queue, orchestrator,
+# metrics, renderer, warmer, preview, manifest-retry and cache-key suite stays
+# green with the two production changes in place
+
+npx vitest run --config tests/config/vitest.config.ts \
+  tests/unit/primary-prop-colors.test.ts \
+  src/lib/shared/render/services/__tests__/image-composer-palette-prepare.test.ts \
+  src/lib/shared/render/services/buugeng-chirality-raster.test.ts
+# 3 files, 14 tests, all passed — the remaining suites that touch deriveKey
 
 npm run check:tsc
 # exit 1 — one PRE-EXISTING owned error, unrelated to this task:
 #   src/lib/features/community/get-geocoding-service.ts(4,10): TS2305
 #   Module '"$env/static/public"' has no exported member 'PUBLIC_GOOGLE_MAPS_API_KEY'
-#   (this container has no .env; nothing under tests/unit/opus-thumbnail-audit
-#    produced a diagnostic)
+#   (this container has no .env; neither changed production file nor any new
+#    test produced a diagnostic)
 
-npx eslint tests/unit/opus-thumbnail-audit
-# not applicable: eslint.config.js:11-28 puts "tests/" in the global ignores
+npx prettier --check <owned files>
+# clean, except thumbnail-key-deriver.ts, which does not conform on main either
+# (verified against `git show HEAD:` of the same file). Its formatting is left
+# untouched; prettier reproduces both added hunks byte-for-byte, so the added
+# lines themselves conform.
+
+npx eslint src/lib/shared/browse/services/thumbnail-render-queue.ts \
+           src/lib/shared/browse/services/thumbnail-key-deriver.ts
+# 0 problems (tests/ is in eslint.config.js:11-28's global ignores)
 ```
 
 ### Limitations
 
-- No browser pass: this task changed no rendered surface. Every runtime claim
-  above is either a passing test against real modules or an explicitly labelled
-  inference.
+- No browser pass. Neither production change alters a rendered surface: the key
+  change gives the card layout its own identity (the same image, a different
+  cache slot) and the queue change is invisible scheduling. Every runtime claim
+  in this report is either a passing test against real modules or an explicitly
+  labelled inference.
 - No device benchmark, no signed-in warm pass, no production telemetry query —
   all three are listed in §6 with what they would settle.
 - The latency numbers in §4.4 are exact for the stated workload and parameter,
@@ -614,3 +792,5 @@ npx eslint tests/unit/opus-thumbnail-audit
   claim about any real device.
 - `fake-indexeddb` is an in-memory shim: §4.6's operation counts are exact, its
   wall-clock implications are inferred from the IndexedDB transaction model.
+- §4.1, §4.2, §4.3, §4.6, §4.7, §4.9 and §4.10 remain **evidence only** — no
+  production code was changed for them, by scope.

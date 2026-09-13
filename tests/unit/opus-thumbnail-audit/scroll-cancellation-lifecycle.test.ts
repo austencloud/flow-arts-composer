@@ -1,21 +1,24 @@
 /**
- * Audit repro: what a fast scroll costs, and what it strands.
+ * Audit evidence: what a fast scroll costs the render queue.
  *
  * A gallery card aborts its thumbnail request the moment the
  * IntersectionObserver reports it off-screen (PropAwareThumbnail.svelte:226-232)
- * and re-requests it on re-entry. This file measures the three consequences with
- * the real queue, the real orchestrator, and the real ThumbnailRenderer:
+ * and re-requests it on re-entry. Two consequences are measured here, and BOTH
+ * are still present on this branch:
  *
- *  1. the renderer never re-checks its signal between stages, so a cancelled
- *     render keeps running (and keeps its queue slot) until `sequence_load` and
- *     LOOP detection finish;
- *  2. because the slot is held, cancelled renders can starve the cards the user
- *     is actually looking at;
- *  3. a card that returns before the zombie settles deduplicates onto it and is
- *     rejected with AbortError even though its own request was never cancelled —
- *     which leaves the live card with no URL, no error state, and no retry.
+ *  1. ThumbnailRenderer never re-checks its signal between stages, so a
+ *     cancelled render keeps running until `sequence_load` and LOOP detection
+ *     finish. The renderer is outside this task's ownership; see the report's
+ *     recommendation to add three stage guards.
+ *  2. Because the work has not settled, it keeps its queue slot — so cancelled
+ *     renders can delay the cards the user is actually looking at.
  *
- * DEFECT assertions encode today's behavior on `main`.
+ * The third consequence this suite originally recorded — a returning card
+ * deduplicating onto the dying render and inheriting its AbortError or its 15s
+ * deadline — is FIXED on this branch by per-task identity in
+ * ThumbnailRenderQueue. Its regression coverage lives with the fix, in
+ * tests/unit/browse/thumbnail-queue-task-identity.test.ts, so this file no
+ * longer asserts that behaviour.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -222,180 +225,5 @@ describe("cancelled renders keep working", () => {
 
     gates.get("VISIBLE")!.resolve(loadedDocument("VISIBLE"));
     await Promise.all([...scrolledPast, visible]);
-  });
-});
-
-describe("a card that scrolls back before the zombie settles", () => {
-  /** Real orchestrator + real queue + real renderer, with only the composition
-   *  dispatcher and the document loader stubbed. Returns the loader gates so a
-   *  test can decide when (or whether) the abandoned read lands. */
-  async function createStack() {
-    const [{ ThumbnailRenderOrchestrator }, { ThumbnailRenderQueue }] =
-      await Promise.all([
-        import("$lib/shared/browse/services/thumbnail-render-orchestrator"),
-        import("$lib/shared/browse/services/thumbnail-render-queue"),
-      ]);
-
-    const gates: Array<ReturnType<typeof deferred<SequenceData>>> = [];
-    const renderer = new ThumbnailRenderer(
-      {
-        compose: async (
-          _s: unknown,
-          _o: unknown,
-          _p: unknown,
-          signal?: AbortSignal
-        ) => {
-          if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
-          return new Blob(["rendered"], { type: "image/webp" });
-        },
-      } as never,
-      { deriveFromFirstStep: vi.fn() } as never,
-      {
-        loadFullSequenceData: () => {
-          const gate = deferred<SequenceData>();
-          gates.push(gate);
-          return gate.promise;
-        },
-      } as never,
-      { detectLOOPType: () => ({ loopType: null }) } as never
-    );
-
-    const orchestrator = new ThumbnailRenderOrchestrator(
-      new ThumbnailRenderQueue(),
-      renderer,
-      { get: vi.fn(async () => null), set: vi.fn(async () => {}) } as never
-    );
-    return { orchestrator, gates };
-  }
-
-  it("DEFECT: the returning card inherits the cancellation instead of rendering", async () => {
-    const { orchestrator, gates } = await createStack();
-
-    // First mount: visible, render starts, document read in flight.
-    const firstMount = new AbortController();
-    const first = orchestrator
-      .getThumbnail({
-        sequence: metadataOnly("AB"),
-        input: input("AB"),
-        signal: firstMount.signal,
-      })
-      .catch((error: Error) => error);
-    await flush();
-    expect(gates).toHaveLength(1);
-
-    // Scrolled out: the observer aborts this caller, the queue aborts the
-    // shared render, and the render cannot exit until its read resolves.
-    firstMount.abort();
-    await flush();
-    expect(((await first) as Error).name).toBe("AbortError");
-
-    // Scrolled back in: a brand new request with its own, never-aborted signal.
-    const secondMount = new AbortController();
-    const second = orchestrator
-      .getThumbnail({
-        sequence: metadataOnly("AB"),
-        input: input("AB"),
-        signal: secondMount.signal,
-      })
-      .catch((error: Error) => error);
-    await flush();
-
-    // DEFECT: no new render was started. ThumbnailRenderQueue only drops
-    // `pendingPromises` when the core task settles (never at cancel time), so
-    // the retry deduplicated onto the dying render.
-    expect(gates).toHaveLength(1);
-
-    // The abandoned read lands; the zombie exits through the dispatcher's
-    // abort guard and takes the live request down with it.
-    gates[0]!.resolve(loadedDocument("AB"));
-    const outcome = await second;
-
-    expect(secondMount.signal.aborted).toBe(false);
-    expect((outcome as Error).name).toBe("AbortError");
-    // PropAwareThumbnail treats a cancellation as "not my problem": no URL, no
-    // error placeholder, and currentKeyHash still equals this key, so the
-    // $effect will not re-request. The card is stranded on the loading
-    // placeholder for the rest of the session.
-  });
-
-  it("DEFECT: if the abandoned read stalls, the returning card waits out the full 15s deadline", async () => {
-    vi.useFakeTimers();
-    try {
-      const { orchestrator, gates } = await createStack();
-      const tick = () => vi.advanceTimersByTimeAsync(0);
-
-      const firstMount = new AbortController();
-      const first = orchestrator
-        .getThumbnail({
-          sequence: metadataOnly("AB"),
-          input: input("AB"),
-          signal: firstMount.signal,
-        })
-        .catch((error: Error) => error);
-      await tick();
-      firstMount.abort();
-      await tick();
-      await first;
-
-      const second = orchestrator.getThumbnail({
-        sequence: metadataOnly("AB"),
-        input: input("AB"),
-      });
-      await tick();
-      expect(gates).toHaveLength(1);
-
-      // 14.9s in: still nothing, because the only progress signal belongs to a
-      // render that was cancelled before this card ever asked.
-      await vi.advanceTimersByTimeAsync(14_900);
-      let settled = false;
-      void second.then(() => {
-        settled = true;
-      });
-      await tick();
-      expect(settled).toBe(false);
-
-      await vi.advanceTimersByTimeAsync(200);
-      const result = await second;
-
-      // DEFECT: a fresh request pays the inactivity deadline of a stalled
-      // render it inherited, then surfaces the error placeholder.
-      expect(result.url).toBeNull();
-      expect(result.error?.name).toBe("ThumbnailRenderTimeoutError");
-      expect(gates).toHaveLength(1);
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it("CONTROL: once the zombie has settled, the same key renders normally", async () => {
-    const { orchestrator, gates } = await createStack();
-
-    const firstMount = new AbortController();
-    const first = orchestrator
-      .getThumbnail({
-        sequence: metadataOnly("AB"),
-        input: input("AB"),
-        signal: firstMount.signal,
-      })
-      .catch((error: Error) => error);
-    await flush();
-    firstMount.abort();
-    await flush();
-    // Let the abandoned read land BEFORE the card returns.
-    gates[0]!.resolve(loadedDocument("AB"));
-    await first;
-    await flush();
-
-    const retry = orchestrator.getThumbnail({
-      sequence: metadataOnly("AB"),
-      input: input("AB"),
-    });
-    await flush();
-    expect(gates).toHaveLength(2);
-    gates[1]!.resolve(loadedDocument("AB"));
-
-    const result = await retry;
-    expect(result.url).toBe("blob:rendered");
-    expect(result.error).toBeUndefined();
   });
 });

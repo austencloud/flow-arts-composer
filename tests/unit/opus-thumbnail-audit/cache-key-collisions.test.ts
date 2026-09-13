@@ -1,10 +1,16 @@
 /**
- * Audit repro: thumbnail cache-key identity vs. what the renderer actually draws.
+ * Audit evidence: thumbnail cache-key identity vs. what the renderer draws.
  *
- * These tests are OBSERVATIONS of current `main`, not desired behavior. Each
- * assertion that encodes a defect is marked DEFECT and says what it should
- * become once the production fix lands, so the suite is a regression tripwire
- * either way.
+ * Status on this branch:
+ *  - the `cardMode` collision was verified reachable in the personal tiers and
+ *    is FIXED here (thumbnail-key-deriver: cardMode disqualifies the shared
+ *    class and enters the personal hash when set). Its regression coverage
+ *    lives with the fix, in
+ *    tests/unit/browse/thumbnail-cardmode-cache-identity.test.ts.
+ *  - the `showMandala` collision below is LATENT and unfixed: no shipped caller
+ *    can reach it today, so it is recorded as a class-level hazard rather than
+ *    a live defect. See the report for the one-line normalization that would
+ *    close it.
  *
  * Owner of the key: src/lib/shared/browse/services/thumbnail-key-deriver.ts
  * Owner of the raster: src/lib/shared/browse/services/thumbnail-renderer.ts
@@ -60,10 +66,17 @@ async function composeOptionsFor(
 }
 
 describe("thumbnail cache key vs. rendered image", () => {
-  it("DEFECT: an explicit mandala render and an unset-mandala render share one key and one cloud path", async () => {
+  it("LATENT: an explicit mandala render and an unset-mandala render share one key and one cloud path", async () => {
     // Both inputs are "default settings" as far as the key deriver is
     // concerned: `true` equals its canonical default, and `undefined` is
     // skipped by every check in checkInputUsesDefaults().
+    //
+    // Reachability: LATENT. Every shipped producer of a visibility object sets
+    // showMandala explicitly — ChoreoCard.svelte:126, the no-visibility branch
+    // of buildGalleryVisibility (gallery-render-input.ts:173-180), and
+    // gallery-thumbnail-warmer.ts:207 — so nothing reaches this collision
+    // today. It is recorded because the protection lives in the callers rather
+    // than in the key.
     const withMandala: ThumbnailRenderInput = {
       ...galleryInput,
       visibility: { showQRCode: false, showMandala: true },
@@ -95,45 +108,9 @@ describe("thumbnail cache key vs. rendered image", () => {
     expect(drawnUnset.visibilityOverrides?.showMandala).toBe(false);
   });
 
-  it("DEFECT: cardMode changes the layout but is absent from both hash branches", async () => {
-    const standard: ThumbnailRenderInput = { ...galleryInput };
-    const playingCard: ThumbnailRenderInput = {
-      ...galleryInput,
-      cardMode: true,
-    };
-
-    const a = deriveKey(standard);
-    const b = deriveKey(playingCard);
-
-    // DEFECT: neither the usesDefaults branch nor buildFullHashInput() mentions
-    // cardMode, and checkInputUsesDefaults() does not disqualify it, so the 5:7
-    // playing-card raster and the standard raster occupy the same memory /
-    // IndexedDB / cloud identity.
-    expect(a.hash).toBe(b.hash);
-    expect(a.cloudPath).toBe(b.cloudPath);
-    expect(a.usesDefaults).toBe(true);
-    expect(b.usesDefaults).toBe(true);
-
-    const drawnStandard = await composeOptionsFor(standard);
-    const drawnCard = await composeOptionsFor(playingCard);
-    expect(drawnStandard.cardMode).toBe(false);
-    expect(drawnCard.cardMode).toBe(true);
-  });
-
-  it("DEFECT: cardMode also collides inside the personal (non-default) hash branch", () => {
-    // The ChoreoCard path always sets customNotesText, which forces
-    // usesDefaults=false — so that surface is only exposed through the personal
-    // memory + IndexedDB tiers, not the shared cloud path.
-    const base: ThumbnailRenderInput = {
-      ...galleryInput,
-      variant: "wordcard",
-      customNotesText: "🔥 FireDrums 2026 🔥",
-    };
-    expect(inputUsesDefaults(base)).toBe(false);
-    expect(deriveKey(base).hash).toBe(
-      deriveKey({ ...base, cardMode: true }).hash
-    );
-  });
+  // The two cardMode collision tests that stood here are fixed on this branch;
+  // their assertions now live (inverted) in
+  // tests/unit/browse/thumbnail-cardmode-cache-identity.test.ts.
 
   it("keeps the fields that ARE hashed isolated (control)", () => {
     const hash = (patch: Partial<ThumbnailRenderInput>) =>
