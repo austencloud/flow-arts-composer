@@ -142,7 +142,16 @@ export function mapNotificationDocument(
 }
 
 export class Notifier {
-  private unsubscribe: (() => void) | null = null;
+  /**
+   * Disposers for every live subscription. This used to be a single field
+   * holding "the current listener", which made the lifetime of a subscription
+   * depend on what else happened to be running: a disposer returned to one
+   * caller tore down whichever listener was current, and a disposer that ran
+   * before its own `onSnapshot` existed (registration is async) tore down
+   * nothing at all and left the listener attached forever — still pushing the
+   * previous account's notifications into the inbox after sign-out.
+   */
+  private subscriptions = new Set<() => void>();
 
   /**
    * Get unread notification count for a user
@@ -345,15 +354,30 @@ export class Notifier {
     callback: (notifications: UserNotification[]) => void,
     maxCount: number = 20
   ): () => void {
-    // Clean up previous subscription
-    if (this.unsubscribe) {
-      this.unsubscribe();
-    }
+    // Each subscription owns its own lifetime: `dispose` ends this one and
+    // nothing else, and it works whether or not the async registration below
+    // has produced a listener yet.
+    let disposed = false;
+    let detach: (() => void) | null = null;
+
+    const dispose = (): void => {
+      if (disposed) return;
+      disposed = true;
+      detach?.();
+      detach = null;
+      this.subscriptions.delete(dispose);
+    };
+
+    this.subscriptions.add(dispose);
 
     // Initialize subscription asynchronously
     void (async () => {
       try {
         const firestore = await getFirestoreInstance();
+        // The caller unmounted while Firestore was resolving. Registering now
+        // would attach a listener with no owner and no way to reach it.
+        if (disposed) return;
+
         const notificationsRef = collection(
           firestore,
           USERS_COLLECTION,
@@ -371,15 +395,19 @@ export class Notifier {
               )
             : query(notificationsRef, orderBy("createdAt", "desc"));
 
-        this.unsubscribe = onSnapshot(
+        detach = onSnapshot(
           q,
           (snapshot) => {
+            // A snapshot already queued when the listener was detached must
+            // not reach a consumer that is gone.
+            if (disposed) return;
             const notifications: UserNotification[] = snapshot.docs.map(
               (docSnap) => this.mapDocToNotification(docSnap.id, docSnap.data())
             );
             callback(notifications);
           },
           (error) => {
+            if (disposed) return;
             // Expected on sign-out. Skip the toast; the listener is about to
             // be cleaned up by the auth state handler.
             if (isPermissionDeniedError(error)) return;
@@ -391,6 +419,7 @@ export class Notifier {
           }
         );
       } catch (error) {
+        if (disposed) return;
         console.error(
           "[Notifier] Failed to initialize notifications subscription:",
           error
@@ -399,21 +428,15 @@ export class Notifier {
       }
     })();
 
-    return () => {
-      if (this.unsubscribe) {
-        this.unsubscribe();
-      }
-    };
+    return dispose;
   }
 
   /**
    * Clean up subscriptions
    */
   cleanup(): void {
-    if (this.unsubscribe) {
-      this.unsubscribe();
-      this.unsubscribe = null;
-    }
+    for (const dispose of [...this.subscriptions]) dispose();
+    this.subscriptions.clear();
   }
 }
 
