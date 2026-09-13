@@ -6,10 +6,14 @@ recording-specific tests only.
 - Base SHA: `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`)
 - Recorder reproduction: `c2b4b362`. Recorder fix:
   `5d6e36340230034e322beae3bec06a1f9e108fce`.
-- Panel reproduction: `51e390a8`. Panel fix:
-  `f50841d7`, the final code SHA.
+- Panel acquisition reproduction: `51e390a8`. Panel acquisition fix:
+  `f50841d7`.
+- Cross-consumer reproduction: `71646363`. Cross-consumer correction:
+  `e19878a5`, the final code SHA.
 - Branch: `claude/fix-recording-lifecycle-tum13f`. Its head is the commit that
   last edited this report.
+- Read, never edited, for contract alignment:
+  `claude/camera-resource-lifecycle-sdoeg6` at `39f0271b`.
 
 ## Owned files
 
@@ -19,7 +23,7 @@ recording-specific tests only.
 | `src/lib/shared/video-record/components/VideoRecordPanel.svelte`         | Camera acquisition lifecycle guard        |
 | `tests/unit/video-record/video-recorder-lifecycle.test.ts`               | New. 7 lifecycle tests                    |
 | `tests/unit/video-record/fake-media-recorder.ts`                         | New. Controllable MediaRecorder fake      |
-| `src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts` | New. 3 browser component tests            |
+| `src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts` | New. 5 browser component tests            |
 | `docs/reports/opus-batch-2026-09-12/recording-session-integrity.md`      | This report                               |
 
 Nothing under `camera-manager`, `CameraPreview`, MediaPipe, `video-export`, or
@@ -162,38 +166,102 @@ Measured against the pre-fix tree:
   afterwards still had `readyState === "live"` tracks
 
 Fix, entirely in the consumer: a `destroyed` flag set at the top of `onDestroy`
-and checked after each await, plus a `releaseCamera` helper that stops the
-manager and ends the tracks of a stream that arrives too late. `onDestroy` now
-routes through the same helper instead of repeating the stop-then-stop-tracks
-pair. The `catch` branch releases as well, because `CameraManager.start()`
-assigns its `_stream` before awaiting `play()`, so a failure after teardown can
-still have left a device open.
+and checked after each await, releasing the stream when it arrives too late.
 
-Nothing was changed in `camera-manager`. The guard is written against its
-public contract (`initialize`, `start`, `stop`), so it composes with whatever
-the camera agent changes inside the manager. The manager still has no
-cancellation token of its own, which is that agent's call, not this one's.
+Nothing was changed in `camera-manager`.
+
+## Defect 4: a cancelled attempt stopped the shared camera
+
+Found by the cross-branch review of `639ea6312d`, and a defect in the defect-3
+fix rather than in the original code. That fix routed every cleanup path
+through one `releaseCamera` helper whose first act was `cameraService.stop()`,
+including the `catch` branch, which ran with no stream of its own.
+
+`getCameraManager()` is a module-level singleton, and `PerformancePreview`
+reaches the same instance. `stop()` on it is global. With the ticketed manager
+on `claude/camera-resource-lifecycle-sdoeg6`, an invalidated `start()` rejects
+only after the manager has already released whatever that attempt opened, so by
+the time the destroyed panel's `catch` ran it owned nothing, and its global stop
+landed on whichever consumer had acquired the camera since. A live panel loses
+its camera and cannot tell why.
+
+Measured against `639ea6312d`, with a second consumer acquiring the singleton
+between teardown and the stale attempt settling:
+
+- stale `start()` rejects: the new consumer's tracks went to
+  `readyState === "ended"`
+- stale `start()` resolves late: the new consumer's tracks ended alongside the
+  stale one's
+
+Fix: cleanup by ownership. `releaseOwnStream` ends the tracks of the stream this
+panel was actually handed and touches nothing else. The one global stop left is
+in `onDestroy`, where the panel still owns the attempt at that instant and where
+`stop()` is also the manager's cancel signal for the handshake.
+
+### Alignment with the cancellation contract
+
+The camera agent is replacing the generic `AbortError` with a named
+`CameraAcquisitionCancelled` plus an `isCameraAcquisitionCancelled` predicate,
+so that silencing cancellation does not also silence a real
+`getUserMedia`/`play()` abort. This guard decides from its own teardown and
+never from the error's identity, so it is correct against the current manager
+and the ticketed one, and it needed no import that does not yet exist on `main`.
+
+One alignment gap remains, for the camera agent to settle rather than for this
+branch to guess. A panel that is still mounted when a newer consumer's `start()`
+invalidates its ticket currently paints the cancellation message as a camera
+error with a retry button, where `CameraPreview` and `PerformancePreview` return
+silently and leave their spinner up. Once `isCameraAcquisitionCancelled` is on
+`main` this becomes one line in the `catch`. Adding it now would mean copying
+their sentinel string into this file, which is the duplicate their predicate
+exists to prevent.
 
 ### Before and after
 
 `vitest run --config tests/config/vitest.components.config.ts
 src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts`
 
-| Test                                                              | Before | After |
-| ----------------------------------------------------------------- | ------ | ----- |
-| does not open the camera when destroyed while enumerating devices | fail   | pass  |
-| ends a stream that arrives after the panel is destroyed           | fail   | pass  |
-| still opens the camera for a panel that stays mounted             | pass   | pass  |
+| Test                                                                 | At `f50841d7`'s parent | At `639ea6312d` | Now  |
+| -------------------------------------------------------------------- | ---------------------- | --------------- | ---- |
+| does not open the camera when destroyed while enumerating devices    | fail                   | pass            | pass |
+| ends a stream that arrives after the panel is destroyed              | fail                   | pass            | pass |
+| leaves a newer consumer's camera alone when this start is rejected   | not written            | fail            | pass |
+| leaves a newer consumer's camera alone when this stream arrives late | not written            | fail            | pass |
+| still opens the camera for a panel that stays mounted                | pass                   | pass            | pass |
 
-Before: 2 failed, 1 passed. After: 3 passed. The third is the control: it would
-catch a guard that simply stopped acquiring cameras.
+Defect 3: 2 failed, 1 passed, then 3 passed. Defect 4: 2 failed, 3 passed, then
+5 passed. The last row is the control throughout: it would catch a guard that
+simply stopped acquiring cameras.
 
 The tests stand in a contract-faithful fake for the camera manager rather than
 the real one, so they do not break when the camera agent changes it, and so
-they assert what this consumer owes the contract. The stream they hand back is
-a real `MediaStream` from `canvas.captureStream()`, so teardown is read off the
+they assert what this consumer owes the contract. The fake now models the
+singleton the way the ticketed manager behaves: one instance across consumers,
+each `start()` taking a ticket, and a start that settles after a newer one took
+over never becoming the held stream. That is what makes a stray global stop
+visible, as somebody else's tracks ending. The streams it hands back are real
+`MediaStream`s from `canvas.captureStream()`, so teardown is read off the
 tracks' own `readyState` rather than off a spy, and no camera permission is
 involved.
+
+### Cross-branch integration check
+
+Because the fake could in principle flatter the guard, the correction was also
+run against the real ticketed manager, on a local throwaway merge of this branch
+with `claude/camera-resource-lifecycle-sdoeg6` (never pushed, branch deleted
+after). A scratch test mounted `VideoRecordPanel` with no mock of
+`get-camera-manager`, stubbed `navigator.mediaDevices` so `getUserMedia` could
+be held open, unmounted the panel mid-acquisition, let a second consumer acquire
+the singleton, then released the panel's abandoned `getUserMedia`.
+
+- pre-correction panel: the next consumer's tracks ended, the assertion "the
+  next consumer's camera survived the stale attempt" failed
+- corrected panel: the abandoned stream ended, the next consumer's tracks stayed
+  `live`, and `manager.isActive` stayed true
+
+On that merged tree the camera agent's own suites also pass unchanged:
+`camera-manager.test.ts` plus this branch's recorder tests, 18 tests, and the
+`PerformancePreview` and `VideoRecordPanel` component suites, 7 tests.
 
 ### Environment note
 
@@ -228,15 +296,23 @@ the inflated duration reaches the Firestore document through
 `VideoRecordCoordinator`. The failure mechanism is reproduced; the real-world
 trigger for it is not.
 
-For defect 3, measured: both failing states and the fix, in a real Chromium
-through the browser component harness, with real `MediaStreamTrack` teardown.
-Mocked: the camera manager itself, deliberately, since another agent owns it.
-Inferred, from reading `camera-manager.ts` at
-`6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` and not observed: that
-`initialize()` really does await `enumerateDevices`, that `start()` assigns
-`_stream` before awaiting `play()`, and that `stop()` on a manager with no
-stream yet is a no-op. No real camera or `getUserMedia` call was made anywhere
-in this work.
+For defects 3 and 4, measured: every failing state and every fix, in a real
+Chromium through the browser component harness, with real `MediaStreamTrack`
+teardown. Defect 4 was additionally measured against the real ticketed
+`CameraManager` on a local merge with
+`claude/camera-resource-lifecycle-sdoeg6`, both before and after the
+correction.
+
+Mocked in the committed tests: the camera manager itself, deliberately, since
+another agent owns it. Read from that agent's branch rather than observed:
+that `initialize()` rejects with `CameraAcquisitionCancelled` when a stop lands
+during `enumerateDevices`, and that `start()` stops the tracks of an
+invalidated ticket before rejecting. The integration check exercised both, so
+the guard's behaviour against them is measured even though their
+implementation is not this scope's to verify.
+
+No real camera was opened anywhere in this work. `getUserMedia` was called only
+as a stub returning `canvas.captureStream()`.
 
 ## Risks
 
@@ -253,13 +329,21 @@ Duration is now frozen when stop is requested rather than when the recorder
 finishes flushing. That is the intended reading, but it makes saved durations
 slightly shorter than before on a recorder that takes time to flush.
 
-`releaseCamera` calls `cameraService.stop()`, and the camera manager is a
-module-level singleton shared with `CameraPreview` and `PerformancePreview`. A
-late release therefore stops whatever that singleton currently holds, which
-could belong to another consumer that mounted in between. The previous
-`onDestroy` already called `cameraService.stop()` unconditionally, so this is
-the existing coupling reaching one step further, not a new one. Making
-acquisition per-consumer belongs to the camera manager's owner.
+`onDestroy` still calls `cameraService.stop()`, and the camera manager is a
+module-level singleton shared with `PerformancePreview`. If both panels are
+mounted at once, that stop takes the camera from the other one. This is the
+pre-existing coupling, unchanged by this branch, and it is load-bearing: the
+ticketed manager reads a `stop()` during the handshake as the cancel signal.
+Defect 4 removed the part that reached past the panel's own ownership window;
+making acquisition per-consumer would remove the rest and belongs to the camera
+manager's owner.
+
+`releaseOwnStream` on the late-resolve path no longer tells the manager that
+the stream it may still be holding is dead. Against the ticketed manager this
+cannot happen, because an invalidated start rejects rather than delivering.
+Against a manager without ticketing it leaves `_stream` pointing at ended
+tracks until the next `start()`, which releases it anyway. The device is freed
+either way, and that is the trade for never touching another panel's camera.
 
 ## Follow-ups, not fixed here
 
@@ -287,15 +371,24 @@ acquisition per-consumer belongs to the camera manager's owner.
    pick its own default, but that changes the output container, which is a
    product choice this brief excludes. Read from the code, not reproduced.
 
-4. **`PerformancePreview` has the same acquisition race.** It is in
-   `export-panel`, owned by the export agent, so it was not touched. Its
-   `initializeCamera` has the same shape: await `initialize()`, then call
-   `start()` with no check that the component is still alive. The same
-   caller-side guard would close it. Read from the code, not reproduced.
+4. **`PerformancePreview` carries the defect-4 shape.** It is in `export-panel`
+   and the camera agent has already guarded it on
+   `claude/camera-resource-lifecycle-sdoeg6`, so it was not touched here. Its
+   late-stream branch still runs `cameraService.stop()` before stopping its own
+   tracks, which is the same global stop on the same singleton that defect 4
+   removed from this panel. It is narrower there, since that branch only runs
+   when a stream was actually delivered, but the victim would be the same. For
+   the camera or export owner. Read from that branch, not reproduced.
 
-5. **The camera manager has no cancellation of its own.** `CameraManager.stop()`
-   clears `_stream` and `_isActive`, but an in-flight `start()` that resolves
-   afterwards assigns `_stream` and sets `_isActive = true` again, so the
-   manager can come back to life after being stopped. Every consumer guard is
-   working around that. It belongs to the camera agent. Read from
-   `camera-manager.ts`, not reproduced.
+5. **Adopt `isCameraAcquisitionCancelled` in this panel's `catch`.** One line,
+   once the symbol is on `main`, so a still-mounted panel whose start was
+   superseded stops painting the cancellation text as a camera error. See the
+   alignment note under defect 4.
+
+6. **Manager-side cancellation, already in flight elsewhere.** On `main` the
+   manager has none: `stop()` clears `_stream` and `_isActive`, but an in-flight
+   `start()` that resolves afterwards sets them again, so it comes back to life
+   after being stopped. `claude/camera-resource-lifecycle-sdoeg6` fixes exactly
+   that with per-start tickets, and this branch's guard is written to be correct
+   against both. Nothing left for this scope; noted so the two branches are not
+   read as duplicating each other.
