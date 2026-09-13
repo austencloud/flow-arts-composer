@@ -10,21 +10,33 @@
  *
  * Stepping it forever is just as wrong, so the renderer tracks a cheap scalar
  * estimate of the heat still in the field: reset to full on every emitting
- * frame, then multiplied down by the same per-sub-step temperature dissipation
- * the solver itself applies once emission stops. The estimate is in the display
- * pass's own units, so it can stop exactly where that pass stops drawing.
+ * frame, then decayed the way the solver itself decays temperature once
+ * emission stops. The estimate is in the display pass's own units, so it can
+ * stop exactly where that pass stops drawing.
  *
- * It follows sub-steps rather than wall-clock time on purpose: dt scaling
- * (reduced motion, deterministic export dt, long frames) changes how fast the
- * field actually decays, and a wall-clock timer would cut a slow fade short or
- * idle through a fast one.
+ * The decay law is the solver's, not a per-frame constant: `advect` runs the
+ * configured dissipation through `computeFluidStepDissipation`, which raises it
+ * to `dt / (1/60)`, so a sub-step shorter than 16.7ms decays *less* per step.
+ * Assuming one full unit of decay per sub-step reads far too fast anywhere the
+ * frame dt is not 1/60 — at 120Hz it settles while the real field is still at
+ * 0.63 and under reduced motion at 1.91, both well above the 0.1 visibility
+ * gate, which deletes a plume the user can still plainly see. Feed it the
+ * renderer's real `subDtSeconds`/`subSteps` (from `computeFireSubStepping`) and
+ * the estimate tracks the field at any refresh rate, any playback speed, and
+ * under reduced motion.
+ *
+ * Consequence worth knowing: reduced motion runs the sim at 0.2x, so its fade
+ * genuinely takes ~5x longer in wall-clock. That is the field actually cooling
+ * more slowly, not the estimate being lazy.
  */
+
+import { computeFluidStepDissipation } from "../fluid/web-gl-fluid-solver-2d";
 
 /**
  * `fireIntensity = (temperature + fuel * 0.5) * displayIntensity` in the fire
- * display shader, and everything that paints a pixel — trail body, ember
- * envelope, cores — sits inside its `fireIntensity > 0.1` branch. Below this
- * the pass writes a fully transparent frame, so there is nothing left to fade.
+ * display shader, and everything that paints a pixel sits inside its
+ * `fireIntensity > 0.1` branch. Below this the pass writes a fully transparent
+ * frame, so there is nothing left to fade.
  */
 export const FIRE_DISPLAY_HEAT_GATE = 0.1;
 
@@ -47,6 +59,14 @@ export const FIRE_RESIDUAL_PEAK_HEAT = 4;
 const MAX_ESTIMATED_DISSIPATION = 0.99;
 
 /**
+ * Fallback sub-step used only when the caller cannot supply a usable one. The
+ * renderer's `computeFireStepDt` floors a non-positive dt at 16ms, so this is
+ * unreachable from the live path; it keeps the estimate progressing at the
+ * solver's own reference step rather than stalling if it ever is reached.
+ */
+const REFERENCE_SUB_DT_SECONDS = 1 / 60;
+
+/**
  * Field heat at which the display pass goes dark, for a given display
  * intensity. Brighter fire keeps a colder field visible, so it has to fade for
  * longer before the canvas is genuinely empty.
@@ -56,44 +76,59 @@ export function computeResidualHeatFloor(displayIntensity: number): number {
 }
 
 /**
- * Advance the residual-heat estimate across one rendered frame of `subSteps`
- * solver sub-steps with no emission. Returns exactly 0 once the remaining heat
- * can no longer paint anything, which is the renderer's signal to clear and
- * stop.
+ * Advance the residual-heat estimate across one rendered frame that ran
+ * `subSteps` solver sub-steps of `subDtSeconds` each with no emission. Returns
+ * exactly 0 once the remaining heat can no longer paint anything, which is the
+ * renderer's signal to clear and stop.
  */
 export function decayResidualHeat(
   previous: number,
-  dissipationPerSubStep: number,
+  dissipationBase: number,
+  subDtSeconds: number,
   subSteps: number,
   floor: number
 ): number {
-  if (!(previous > 0)) return 0;
+  if (!Number.isFinite(previous) || previous <= 0) return 0;
+
   const steps = Math.max(1, Math.floor(subSteps));
-  const dissipation = Math.min(
-    Math.max(dissipationPerSubStep, 0),
+  const base = Math.min(
+    Math.max(dissipationBase, 0),
     MAX_ESTIMATED_DISSIPATION
   );
-  const next = previous * Math.pow(dissipation, steps);
+  const subDt =
+    Number.isFinite(subDtSeconds) && subDtSeconds > 0
+      ? subDtSeconds
+      : REFERENCE_SUB_DT_SECONDS;
+
+  // The same call the solver makes per advected sub-step, so the estimate
+  // cools at exactly the rate the temperature field does.
+  const perSubStep = computeFluidStepDissipation(base, subDt);
+  const next = previous * Math.pow(perSubStep, steps);
   return next < floor ? 0 : next;
 }
 
 /**
- * How long a fade lasts, in seconds, at a given sub-step rate. Not used by the
- * render path — it exists so the fade window can be asserted against real
+ * How many rendered frames a fade takes at a given sub-step shape. Not used by
+ * the render path — it exists so the fade window can be asserted against real
  * physics constants instead of a hand-picked duration.
  */
-export function estimateResidualFadeSeconds(
-  dissipationPerSubStep: number,
-  subStepsPerSecond: number,
-  displayIntensity = 1
+export function countResidualFadeFrames(
+  dissipationBase: number,
+  subDtSeconds: number,
+  subSteps: number,
+  floor: number
 ): number {
-  if (subStepsPerSecond <= 0) return Infinity;
-  const floor = computeResidualHeatFloor(displayIntensity);
   let heat = FIRE_RESIDUAL_PEAK_HEAT;
-  let steps = 0;
+  let frames = 0;
   while (heat > 0) {
-    heat = decayResidualHeat(heat, dissipationPerSubStep, 1, floor);
-    steps++;
+    heat = decayResidualHeat(
+      heat,
+      dissipationBase,
+      subDtSeconds,
+      subSteps,
+      floor
+    );
+    frames++;
   }
-  return steps / subStepsPerSecond;
+  return frames;
 }

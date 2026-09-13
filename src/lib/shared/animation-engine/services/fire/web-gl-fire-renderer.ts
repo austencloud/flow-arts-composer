@@ -175,6 +175,24 @@ export function computeFireStepDt(dt: number, reducedMotion: boolean): number {
   return d;
 }
 
+/** Sub-step to keep dt ≤ 17ms. The Navier-Stokes solver is nonlinear — larger
+ *  time steps cause numerical instability that makes the plume "explode"
+ *  outward. At 30fps export (dt=33ms) that produced massive bloom halos absent
+ *  from the 60fps live preview. */
+const MAX_FIRE_SUB_DT = 0.017;
+
+/** Pure: the sub-step shape one rendered frame turns into. Owns the split so
+ *  the solver and anything reasoning about how far the field advanced (the
+ *  residual-fade estimate) read the same numbers instead of assuming 60Hz. */
+export function computeFireSubStepping(
+  frameDtSeconds: number,
+  reducedMotion: boolean
+): { subDtSeconds: number; subSteps: number } {
+  const totalDt = computeFireStepDt(frameDtSeconds, reducedMotion);
+  const subSteps = Math.max(1, Math.ceil(totalDt / MAX_FIRE_SUB_DT));
+  return { subDtSeconds: totalDt / subSteps, subSteps };
+}
+
 /**
  * Compute optimal Jacobi iterations based on how many fire renderers
  * are running simultaneously. Fire doesn't need precise pressure solving -
@@ -1076,7 +1094,11 @@ export class WebGLFireRenderer {
       input.dt ??
       (this.lastTime > 0 ? (input.currentTime - this.lastTime) / 1000 : 0);
     this.lastTime = input.currentTime;
-    const totalDt = computeFireStepDt(srcDt, this.reducedMotion);
+    const { subDtSeconds: subDt, subSteps } = computeFireSubStepping(
+      srcDt,
+      this.reducedMotion
+    );
+    const totalDt = subDt * subSteps;
 
     gl.viewport(0, 0, this.simWidth, this.simHeight);
     gl.disable(gl.BLEND);
@@ -1085,14 +1107,6 @@ export class WebGLFireRenderer {
       1.0 / this.simWidth,
       1.0 / this.simHeight,
     ];
-
-    // Sub-step to keep dt ≤ 16ms. The Navier-Stokes solver is nonlinear —
-    // larger time steps cause numerical instability that makes the fire
-    // plume "explode" outward. At 30fps export (dt=33ms), this produced
-    // massive bloom halos absent from the 60fps live preview.
-    const MAX_SUB_DT = 0.017;
-    const subSteps = Math.max(1, Math.ceil(totalDt / MAX_SUB_DT));
-    const subDt = totalDt / subSteps;
 
     // 1. Inject fuel + velocity at tip positions (ONCE per frame, not per sub-step).
     const p = this.physics;
@@ -1177,10 +1191,11 @@ export class WebGLFireRenderer {
     );
 
     // With no tips there were no splats above, so this frame only cools what is
-    // already burning. Track that decay with the same dissipation the solver
-    // applies and stop at the heat where the display pass goes dark, so
-    // hasResidualFire() reports false the moment the plume stops being visible
-    // rather than after a guessed timeout.
+    // already burning. Feed the estimate the same dissipation AND the same
+    // sub-step shape the advect calls below use, so it cools at the field's
+    // real rate rather than a 60Hz assumption, and stop at the heat where the
+    // display pass goes dark. hasResidualFire() then reports false the moment
+    // the plume stops being visible rather than after a guessed timeout.
     if (tips.length === 0) {
       const displayIntensity = useReaction
         ? computeFireEmissionMultiplier(config.brightness)
@@ -1188,6 +1203,7 @@ export class WebGLFireRenderer {
       this.residualHeat = decayResidualHeat(
         this.residualHeat,
         temperatureDissipation,
+        subDt,
         subSteps,
         computeResidualHeatFloor(displayIntensity)
       );

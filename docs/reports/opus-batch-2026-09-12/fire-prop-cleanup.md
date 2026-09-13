@@ -4,10 +4,49 @@ Feedback `eqFBtgUrvgRsyXFEQaRf` — "with fire active, switching from a fire-cap
 prop to hands leaves persistent fire stuck on the animation canvas; existing fire
 should fade naturally."
 
-- Branch: `claude/fire-emitter-prop-switch-cleanup-7qzzfl`
+- Branch: `claude/fire-emitter-prop-switch-cleanup-7qzzfl` — PR
+  [#51](https://github.com/austencloud/tka-platform/pull/51)
 - Base SHA: `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)
-- Final SHA: see the branch head; the fix commit is `c887a127` plus the fade-window
-  refinement and this report.
+- Commits: `c887a127` (lifecycle fix), `a00d3169` (fade window at the display
+  gate), then the cadence correction below.
+
+## Correction after independent review (HOLD on `a00d3169`)
+
+The review was right, and its numbers reproduce exactly. The first version of
+the residual estimate decayed by `dissipation ** subSteps` — one full unit of
+decay per sub-step. The solver does not do that: `advect` runs its dissipation
+through `computeFluidStepDissipation`
+(`services/fluid/web-gl-fluid-solver-2d.ts:167-171`), which raises the base to
+`dt / (1/60)`, and the renderer feeds it the real `subDt`. The two agree only
+when `subDt` is exactly 1/60, which is why 60Hz measured clean and nothing else
+was measured.
+
+Estimate vs. real field at the frame the old code called the fade finished
+(peak 4, base 0.972, floor 0.1):
+
+| Cadence | subDt | subSteps | settles at | estimate | real field | verdict |
+| --- | --- | --- | --- | --- | --- | --- |
+| 60Hz | 0.01667 | 1 | frame 130 / 2.167s | .0997 | .0997 | correct |
+| 120Hz | 0.00833 | 1 | frame 130 / 1.083s | .0997 | **.6315** | plume deleted |
+| 144Hz | 0.00694 | 1 | frame 130 / 0.903s | .0997 | **.8590** | plume deleted |
+| reduced motion 60Hz | 0.00333 | 1 | frame 130 / 2.167s | .0997 | **1.9115** | plume deleted |
+| reduced motion 120Hz | 0.00167 | 1 | frame 130 / 1.083s | .0997 | **2.7652** | plume deleted |
+| 30Hz | 0.01667 | 2 | frame 65 / 2.167s | .0997 | .0997 | correct |
+
+So on a 120Hz or 144Hz display, or for any user with reduced motion on,
+`clearSimulation()` wiped a plume that was still plainly burning — a worse
+artifact than the frozen frame this branch set out to fix. 30Hz survived only
+because its two sub-steps happen to cancel the error.
+
+**The correction**: `decayResidualHeat` now takes the renderer's real
+`subDtSeconds` and `subSteps` and calls `computeFluidStepDissipation` itself, so
+the estimate cools at exactly the rate the temperature field does. Reusing the
+solver's own function rather than a second copy of the law is the point — a
+future change to how dissipation is normalized moves both together.
+
+`computeFireSubStepping()` is now the single owner of the frame → sub-step
+split; `stepSimulation` and the estimate both read it, and tests drive the real
+arithmetic instead of restating `0.017` and the ceil.
 
 ## Root cause
 
@@ -56,17 +95,21 @@ plume ages out through the same physics it always used. `renderDisplay()` repain
 every frame, so the canvas tracks the fade instead of holding a still.
 
 **Knowing when to stop** is the only new judgement. Rather than a wall-clock
-timer, the renderer keeps a scalar estimate of the heat left in the field:
-reset to `FIRE_RESIDUAL_PEAK_HEAT` on every emitting frame, then multiplied by the
-solver's own `computeFireTemperatureDissipation()` value once per sub-step when
-nothing is emitting. It stops at the display shader's own visibility gate —
-everything that paints a pixel lives inside
-`if (fireIntensity > 0.1)` in `FIRE_DISPLAY_FRAG`, where
+timer, the renderer keeps a scalar estimate of the heat left in the field: reset
+to `FIRE_RESIDUAL_PEAK_HEAT` on every emitting frame, then, when nothing is
+emitting, decayed through the solver's own
+`computeFluidStepDissipation(temperatureDissipation, subDt)` once per sub-step —
+the identical call `advect` makes, with the renderer's real `subDt` and
+`subSteps` from `computeFireSubStepping()`. That is what keeps the estimate
+honest at any refresh rate, any playback speed, under reduced motion and on the
+export's fixed dt; assuming a flat unit of decay per sub-step is the defect the
+review caught.
+
+It stops at the display shader's own visibility gate — everything that paints a
+pixel lives inside `if (fireIntensity > 0.1)` in `FIRE_DISPLAY_FRAG`, where
 `fireIntensity = (temp + fuel * 0.5) * displayIntensity` — so the fade ends
 exactly where the pass goes dark, and a brighter configuration fades for longer
-because a colder field is still visible to it. Sub-steps rather than seconds
-means reduced motion, deterministic export dt and long frames all track
-correctly.
+because a colder field is still visible to it.
 
 When the estimate reaches zero the renderer calls `clearSimulation()` once (which
 also blanks the visible framebuffer) and `hasResidualFire()` goes false, so an
@@ -109,12 +152,37 @@ all.
 npx vitest run --config tests/config/vitest.config.ts \
   src/lib/shared/animation-engine/services/fire/fire-emitter-fade.test.ts \
   src/lib/shared/animation-engine/services/__tests__/render-loop-fire-prop-switch-fade.test.ts
-→ 2 files, 14 tests passed
+→ 2 files, 31 tests passed
 ```
 
-Fails before the fix, passes after. With only the render-loop change reverted
-(`git stash push -- animation-render-loop.ts`), **5 of the 7** render-loop tests
-fail:
+Both suites now drive cadence explicitly. `fire-emitter-fade.test.ts` runs a
+reference field written from the solver's documented law
+(`base ** (60 * subDt * subSteps)`, derived independently of the estimate's
+code) alongside the estimate, at 60/120/144/30Hz and under reduced motion at
+60/120Hz, and asserts the estimate never reaches zero while that field is still
+above the display gate. `render-loop-fire-prop-switch-fade.test.ts`'s fake
+renderer now derives its sub-step shape from the frame dt the loop hands it via
+`computeFireSubStepping`, instead of a fixed decay per call, so a loop test at
+120Hz or under reduced motion exercises the cadence the renderer would see.
+
+Restoring the pre-correction law (`perSubStep = base`, ignoring `subDt`) fails
+**13 of 31**, with the review's exact numbers:
+
+```
+× does not clear a still-visible plume at '120Hz'                 expected 0.6314910671174816 to be <= 0.1
+× does not clear a still-visible plume at '144Hz'                 expected 0.8589792538478577 to be <= 0.1
+× does not clear a still-visible plume at 'reduced motion 60Hz'   expected 1.9115377513535876 to be <= 0.1
+× does not clear a still-visible plume at 'reduced motion 120Hz'  expected 2.7651674461801394 to be <= 0.1
+× holds the estimate above the floor while the field is visible at '120Hz' / '144Hz' / both reduced-motion cases
+× takes the same wall-clock fade at 60Hz and 120Hz                expected 130 to be greater than 234
+× fades roughly five times slower under reduced motion            expected 1 to be greater than 4
+× drives the fade for the same simulated span at '120Hz' / '144Hz' / 'reduced motion 60Hz'
+✓ every 60Hz and 30Hz case                                        (the cadences the old law got right)
+```
+
+The original lifecycle regression still holds too. With only the render-loop
+change reverted (`git stash push -- animation-render-loop.ts`), **5 of the
+original 7** render-loop tests fail:
 
 ```
 × keeps driving the fire renderer with no tips so live fire ages out   expected 5 to be 6
@@ -162,6 +230,31 @@ reports `state: "warm"` with 40 frames; once the tips are removed it goes
 `state: "idle"` and the canvas fades to alpha 0 in 130 frames rather than
 replaying the burning loop.
 
+### Cadence, in the real renderer, before and after the correction (measured)
+
+Same instrument, four cadences, Playwright `emulateMedia({ reducedMotion })` for
+the reduced-motion rows. "last live frame" is the fire canvas sampled on the
+final frame the renderer still claimed residual fire — i.e. the frame
+immediately before `clearSimulation()`. A non-zero `maxRGB` there means visible
+fire was wiped.
+
+| Cadence | fade frames | fade seconds | plume dark by | last live frame maxRGB |
+| --- | --- | --- | --- | --- |
+| **After** 60Hz | 130 | 2.167 | frame 68 | 0 |
+| **After** 120Hz | 260 | 2.167 | frame 164 | 0 |
+| **After** 144Hz | 312 | 2.167 | frame 205 | 0 |
+| **After** reduced motion 60Hz | 650 | 10.833 | frame 385 | 0 |
+| **Before** 60Hz | 130 | 2.167 | frame 68 | 0 |
+| **Before** 120Hz | 130 | 1.083 | — | **14** |
+| **Before** 144Hz | 130 | 0.903 | — | **138** |
+| **Before** reduced motion 60Hz | 130 | 2.167 | — | **255** |
+
+Under reduced motion the old code cleared the canvas while the plume was at full
+white (255). After the correction every cadence settles on the same 2.167s of
+*simulated* time — 10.83s under reduced motion, which is 5x because the sim
+itself runs at 0.2x — and in every case the plume is already dark before the
+renderer stands down.
+
 Reproduction (scripts were task-owned and not committed; port 5199, not 5173):
 
 ```bash
@@ -175,6 +268,41 @@ node - <<'JS'   # playwright, executablePath /opt/pw-browsers/chromium-1194/chro
 //   reading gl.readPixels on the default framebuffer at each stage.
 JS
 ```
+
+### Mounted-pipeline proof — attempted, NOT achieved
+
+The review asked for mounted `/lab/effects` or quick-viewer visual proof, since
+the renderer-level evidence only exercises the renderer. I could not produce it
+in this container. What was attempted, and what each attempt established:
+
+1. **`/lab/effects` in the cloud browser** — boots, then redirects away. The lab
+   module is `adminOnly`, and this container's egress blocks Firebase:
+   `ERR_TUNNEL_CONNECTION_FAILED` on `firestore.googleapis.com` and
+   `the-kinetic-alphabet-default-rtdb.firebaseio.com`, so auth never resolves
+   and the route lands on the composer instead.
+2. **Mounting the real `CanvasSurface` directly** (Svelte 5 `mount()` with a
+   `proxy()` props object, dev-server module URLs). This *worked as a mount*:
+   the real AnimationEngine, EffectRendererManager, FireTipTracker,
+   AnimationRenderLoop and WebGLFireRenderer all came up, and the surface
+   rendered two staffs with fire burning at all four tips
+   (`.wt-mounted-1-burning.png`, not committed). Read through the render-context
+   registry, the mounted fire renderer reported `activeTips: 4`,
+   `residualHeat: 4` (peak), `hasResidualFire: true` — so the residual
+   bookkeeping is live in the mounted path.
+3. **Driving the prop switch through that mount** — this is what failed. Setting
+   `leftPropType`/`rightPropType` to `"hand"` on the props object reads back as
+   `"hand"` but never reaches the engine: `activeTips` stayed at 4. Driving the
+   engine's own `renderFrameSync` with `leftPropType: "hand"` did not move it
+   either, because the mounted component's own rAF loop keeps re-asserting its
+   props each frame. Prop type reaches the tip tracker via PropTypeManager's
+   async texture/crossfade path, which a parent component drives and an
+   out-of-app mount does not.
+
+So: **the fade path is proven at the renderer and at the render loop; that a
+prop switch in the assembled app reaches it is not proven here.** The
+render-loop tests cover the loop's half of that seam with the real
+`FireTipTracker` and real `getTipPoints("hand")`, which is the mechanism, but it
+is not the same as watching the app.
 
 ### Verification route for Austen
 
@@ -227,14 +355,21 @@ background. That is a fire-look change and wants Austen's eye.
 
 ## Limitations
 
-- The browser evidence drives the renderer directly, not the assembled animation
-  UI; the end-to-end prop switch in the real app was not observed from here.
+- **Mounted visual proof is still outstanding** — see the section above for what
+  blocked it and what was established instead. This is the one piece of the
+  review's correction list not closed here.
 - The fade window is an estimate, deliberately conservative: it starts from a
   peak-heat headroom of 4 against a real peak that is lower, so it outlives the
-  visible plume (measured: fire invisible by frame ~80, simulation stops at frame
-  130). Truncating a live plume is the failure mode worth avoiding; an extra
-  ~0.8 s of a 128×128 solve is not.
+  visible plume at every cadence measured (60Hz: dark at frame 68, stops at 130;
+  144Hz: dark at 205, stops at 312). Truncating a live plume is the failure mode
+  worth avoiding; an extra fraction of a second of a 128×128 solve is not.
+- Reduced motion now fades for ~10.8s of wall clock. That is the field genuinely
+  cooling at 0.2x, and it is what the user sees, but it is a longer tail of GPU
+  work than before. If that is judged too long, the right lever is the sim's
+  reduced-motion dt scale, not the fade estimate.
 - Charcoal's fade shares the loop change and has unit coverage, but was not
-  measured in the browser.
+  measured in the browser, and its particle ageing is not dt-normalized the same
+  way fire's field is — it integrates `stepDt` directly, so the cadence defect
+  fixed here does not apply to it.
 - The pre-existing repo-wide `check:fast` baseline (582 errors) was not
   investigated; it is identical with and without this branch.

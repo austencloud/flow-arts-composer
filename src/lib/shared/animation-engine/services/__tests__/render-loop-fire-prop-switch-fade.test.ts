@@ -13,6 +13,7 @@ import {
   decayResidualHeat,
   FIRE_RESIDUAL_PEAK_HEAT,
 } from "../fire/fire-emitter-fade";
+import { computeFireSubStepping } from "../fire/web-gl-fire-renderer";
 import { DEFAULT_TRAIL_SETTINGS } from "../../domain/types/trail-types";
 
 /**
@@ -31,10 +32,19 @@ import { DEFAULT_TRAIL_SETTINGS } from "../../domain/types/trail-types";
 /** Temperature dissipation the cinematic profile actually advects with. */
 const CINEMATIC_TEMPERATURE_DISSIPATION = 0.972;
 
+/**
+ * Stands in for WebGLFireRenderer's residual bookkeeping. It honours the frame
+ * dt the loop hands it — deriving the solver's real sub-step shape the same way
+ * the renderer does — rather than assuming a fixed decay per call, so a loop
+ * test at 120Hz or under reduced motion exercises the cadence the renderer
+ * would actually see.
+ */
 class FakeFireRenderer {
   readonly tipCounts: number[] = [];
   clearCount = 0;
   private residualHeat = 0;
+
+  constructor(private readonly reducedMotion = false) {}
 
   isInitialized(): boolean {
     return true;
@@ -57,10 +67,15 @@ class FakeFireRenderer {
       this.residualHeat = FIRE_RESIDUAL_PEAK_HEAT;
       return;
     }
+    const { subDtSeconds, subSteps } = computeFireSubStepping(
+      input.dt ?? 1 / 60,
+      this.reducedMotion
+    );
     this.residualHeat = decayResidualHeat(
       this.residualHeat,
       CINEMATIC_TEMPERATURE_DISSIPATION,
-      1,
+      subDtSeconds,
+      subSteps,
       computeResidualHeatFloor(1)
     );
   }
@@ -200,6 +215,53 @@ describe("AnimationRenderLoop fire emitter lifecycle across a prop switch", () =
     // and that one needs a real GL context to observe.
     expect(fire.clearCount).toBe(0);
   });
+
+  it.each([
+    { label: "120Hz", fps: 120, reducedMotion: false },
+    { label: "144Hz", fps: 144, reducedMotion: false },
+    { label: "reduced motion 60Hz", fps: 60, reducedMotion: true },
+  ])(
+    "drives the fade for the same simulated span at $label",
+    ({ fps, reducedMotion }) => {
+      const runAt = (rate: number, reduced: boolean) => {
+        const fire = new FakeFireRenderer(reduced);
+        const loop = createLoop({ fire });
+        const frameMs = 1000 / rate;
+        let time = 100;
+        let frames = 0;
+
+        for (let i = 0; i < WARMUP_FRAMES + 3; i++) {
+          loop.renderSync(frameParams("staff", "staff"), time, 1 / rate);
+          time += frameMs;
+        }
+        const emittingFrames = fire.tipCounts.length;
+
+        let callsBefore = -1;
+        while (callsBefore !== fire.tipCounts.length && frames < 20_000) {
+          callsBefore = fire.tipCounts.length;
+          loop.renderSync(frameParams("hand", "hand"), time, 1 / rate);
+          time += frameMs;
+          frames++;
+        }
+        const fadeFrames = fire.tipCounts.length - emittingFrames;
+        return { fadeFrames, seconds: fadeFrames / rate };
+      };
+
+      const baseline = runAt(60, false);
+      const cadence = runAt(fps, reducedMotion);
+
+      // A fade is a span of simulated time, not a frame count. With a fixed
+      // per-call decay every cadence settled after the same ~130 frames, so at
+      // 120Hz the loop stopped driving after half the span and at reduced
+      // motion after a fifth of it — cutting off fire that was still burning.
+      const expectedSeconds = reducedMotion
+        ? baseline.seconds * 5
+        : baseline.seconds;
+      expect(cadence.seconds).toBeGreaterThan(expectedSeconds * 0.8);
+      expect(cadence.seconds).toBeLessThan(expectedSeconds * 1.25);
+      expect(cadence.fadeFrames).toBeGreaterThan(1);
+    }
+  );
 
   it("resumes emission when a fire-capable prop comes back mid-fade", () => {
     const fire = new FakeFireRenderer();
