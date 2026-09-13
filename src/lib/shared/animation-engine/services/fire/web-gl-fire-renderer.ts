@@ -26,6 +26,11 @@
  */
 
 import { FireFrameCache } from "./fire-frame-cache";
+import {
+  computeResidualHeatFloor,
+  decayResidualHeat,
+  FIRE_RESIDUAL_PEAK_HEAT,
+} from "./fire-emitter-fade";
 import type {
   FireFrameInput,
   FireOverlayConfig,
@@ -168,6 +173,24 @@ export function computeFireStepDt(dt: number, reducedMotion: boolean): number {
   if (reducedMotion) d *= 0.2;
   if (d <= 0) d = 0.016;
   return d;
+}
+
+/** Sub-step to keep dt ≤ 17ms. The Navier-Stokes solver is nonlinear — larger
+ *  time steps cause numerical instability that makes the plume "explode"
+ *  outward. At 30fps export (dt=33ms) that produced massive bloom halos absent
+ *  from the 60fps live preview. */
+const MAX_FIRE_SUB_DT = 0.017;
+
+/** Pure: the sub-step shape one rendered frame turns into. Owns the split so
+ *  the solver and anything reasoning about how far the field advanced (the
+ *  residual-fade estimate) read the same numbers instead of assuming 60Hz. */
+export function computeFireSubStepping(
+  frameDtSeconds: number,
+  reducedMotion: boolean
+): { subDtSeconds: number; subSteps: number } {
+  const totalDt = computeFireStepDt(frameDtSeconds, reducedMotion);
+  const subSteps = Math.max(1, Math.ceil(totalDt / MAX_FIRE_SUB_DT));
+  return { subDtSeconds: totalDt / subSteps, subSteps };
 }
 
 /**
@@ -369,6 +392,11 @@ export class WebGLFireRenderer {
   // Frame cache for loop replay (Tier 3 optimization)
   private frameCache: FireFrameCache | null = null;
   private lastConfigHash = "";
+
+  /** Estimated heat still in the field once the emitters stop. Drives the
+   *  natural fade after a fire-capable prop is swapped for hands; see
+   *  fire-emitter-fade.ts for what the number means. */
+  private residualHeat = 0;
 
   initialize(container: HTMLElement, width: number, height: number): boolean {
     this.canvas = document.createElement("canvas");
@@ -635,6 +663,16 @@ export class WebGLFireRenderer {
       return;
     }
     this.lastRenderTime = input.currentTime;
+
+    // No tips means no emitter this frame — every fire-carrying tip went away,
+    // which is what switching a fire-capable prop to hands looks like from
+    // here. The plume that is already burning keeps being stepped and drawn
+    // until it dies out; stepSimulation() does the decay, this flag decides
+    // which paths below are still allowed to run.
+    const emitting = input.tips.length > 0;
+    const hadResidualHeat = this.residualHeat > 0;
+    if (emitting) this.residualHeat = FIRE_RESIDUAL_PEAK_HEAT;
+
     this.resizePresentationBuffers(config.renderingProfile ?? "cinematic");
     this.updateDisplayTipData(input.tips, input);
     this.renderPropVisibilityMatte(input);
@@ -664,8 +702,12 @@ export class WebGLFireRenderer {
     }
 
     // --- Frame cache logic ---
+    // The cache only ever records emitting frames, so a warm cache would keep
+    // replaying the burning loop after the emitters stopped and the plume
+    // would never fade. Once emission ends the fade runs on the live solver
+    // and the recorded loop is dropped.
     const cache = this.frameCache;
-    if (cache && !config.disableFrameCache) {
+    if (cache && !config.disableFrameCache && emitting) {
       // Compute config hash for invalidation (includes playback speed - different BPM = different fire physics)
       const hash = computeFireVisualCacheKey(config, input);
 
@@ -737,11 +779,9 @@ export class WebGLFireRenderer {
         this.renderDisplayToCache(config, input, cache);
         return;
       }
-    } else if (cache && config.disableFrameCache) {
-      // Frame caching disabled - invalidate any existing cache
-      if (cache.isRecording() || cache.isWarm()) {
-        cache.invalidate();
-      }
+    } else if (cache && (cache.isRecording() || cache.isWarm())) {
+      // Caching turned off, or emission stopped: drop whatever was recorded.
+      cache.invalidate();
     }
 
     // Default path: no cache, run full simulation + display
@@ -760,6 +800,25 @@ export class WebGLFireRenderer {
     }
     this.stepSimulation(input.tips, input, config);
     this.renderDisplay(config, input);
+
+    // Fade finished: nothing visible is left in the field. Zero it (which also
+    // blanks the visible framebuffer that preserveDrawingBuffer would
+    // otherwise hold) so the render loop can stop driving this renderer until
+    // a fire-capable prop comes back.
+    if (!emitting && hadResidualHeat && this.residualHeat === 0) {
+      this.clearSimulation();
+    }
+  }
+
+  /**
+   * True while the simulation still holds heat the user can see after its
+   * emitters stopped. The render loop keeps calling renderFire() with an empty
+   * tip list for as long as this is true, which is what lets fire age out
+   * naturally when a fire-capable prop is switched to hands instead of
+   * freezing on the canvas.
+   */
+  hasResidualFire(): boolean {
+    return this.residualHeat > 0;
   }
 
   /**
@@ -892,6 +951,7 @@ export class WebGLFireRenderer {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     this.lastRenderTime = -1;
+    this.residualHeat = 0;
     this.frameCache?.invalidate();
   }
 
@@ -938,6 +998,11 @@ export class WebGLFireRenderer {
     // Reset dedup guard so the first post-clear frame runs
     this.lastRenderTime = -1;
 
+    // The field is empty, so there is no fade left to run. Anything that
+    // hard-clears (keep-warm parking, gap detection, error recovery) lands
+    // here and hands the renderer back in its idle state.
+    this.residualHeat = 0;
+
     // Invalidate frame cache so stale fire frames from old effort/position
     // aren't served after the simulation is cleared
     this.frameCache?.invalidate();
@@ -972,6 +1037,7 @@ export class WebGLFireRenderer {
       presentationResolution: [this.presentationWidth, this.presentationHeight],
       dpr: this.dpr,
       activeTips: this.displayTipCount,
+      residualHeat: this.residualHeat,
       canvasSize: [this.displayCanvasWidth, this.displayCanvasHeight],
       cacheState: this.frameCache?.getDiagnostics() ?? null,
       propVisibilityMatteActive: this.propVisibilityMatteActive,
@@ -1028,7 +1094,11 @@ export class WebGLFireRenderer {
       input.dt ??
       (this.lastTime > 0 ? (input.currentTime - this.lastTime) / 1000 : 0);
     this.lastTime = input.currentTime;
-    const totalDt = computeFireStepDt(srcDt, this.reducedMotion);
+    const { subDtSeconds: subDt, subSteps } = computeFireSubStepping(
+      srcDt,
+      this.reducedMotion
+    );
+    const totalDt = subDt * subSteps;
 
     gl.viewport(0, 0, this.simWidth, this.simHeight);
     gl.disable(gl.BLEND);
@@ -1037,14 +1107,6 @@ export class WebGLFireRenderer {
       1.0 / this.simWidth,
       1.0 / this.simHeight,
     ];
-
-    // Sub-step to keep dt ≤ 16ms. The Navier-Stokes solver is nonlinear —
-    // larger time steps cause numerical instability that makes the fire
-    // plume "explode" outward. At 30fps export (dt=33ms), this produced
-    // massive bloom halos absent from the 60fps live preview.
-    const MAX_SUB_DT = 0.017;
-    const subSteps = Math.max(1, Math.ceil(totalDt / MAX_SUB_DT));
-    const subDt = totalDt / subSteps;
 
     // 1. Inject fuel + velocity at tip positions (ONCE per frame, not per sub-step).
     const p = this.physics;
@@ -1127,6 +1189,26 @@ export class WebGLFireRenderer {
       p.temperatureDissipation,
       config.renderingProfile
     );
+
+    // With no tips there were no splats above, so this frame only cools what is
+    // already burning. Feed the estimate the same dissipation AND the same
+    // sub-step shape the advect calls below use, so it cools at the field's
+    // real rate rather than a 60Hz assumption, and stop at the heat where the
+    // display pass goes dark. hasResidualFire() then reports false the moment
+    // the plume stops being visible rather than after a guessed timeout.
+    if (tips.length === 0) {
+      const displayIntensity = useReaction
+        ? computeFireEmissionMultiplier(config.brightness)
+        : config.intensity;
+      this.residualHeat = decayResidualHeat(
+        this.residualHeat,
+        temperatureDissipation,
+        subDt,
+        subSteps,
+        computeResidualHeatFloor(displayIntensity)
+      );
+    }
+
     for (let step = 0; step < subSteps; step++) {
       this.advect(
         this.velocity!,
