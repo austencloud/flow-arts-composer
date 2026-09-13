@@ -119,6 +119,7 @@
     "screenshots:public": "tsx scripts/take-screenshots.ts --public",
     "screenshots:compare": "tsx scripts/take-screenshots.ts --compare",
     "screenshots:update": "tsx scripts/take-screenshots.ts --update-baselines",
+    "review:target": "tsx scripts/set-phone-review-target.ts",
     "triage": "tsx scripts/triage-sessions.ts",
     "analytics:lifecycle-integrity": "tsx scripts/check-lifecycle-analytics-integrity.ts",
     "review:firestore-permissions": "tsx scripts/review-firestore-permission-fix.ts",
