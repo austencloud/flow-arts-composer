@@ -24,7 +24,11 @@
 	} from '../background-interaction-routing';
 	import { createOceanBubblePop } from '../ocean-bubble-pop';
 	import { isBackgroundSuppressed } from '../state/background-suppression.svelte';
-	import { holdBackground, releaseBackground } from '../state/background-hold.svelte';
+	import {
+		holdBackground,
+		registerBackgroundFreezeTarget,
+		releaseBackground
+	} from '../state/background-hold.svelte';
 	import { createRenderActivityGate } from '$lib/shared/render-gating/render-activity-gate';
 	import { sharedAnimationState } from '$lib/shared/animation-engine/state/shared-animation-state.svelte';
 	import { shouldReduceBackgroundResolution } from '$lib/shared/platform/network-conditions';
@@ -57,6 +61,12 @@
 
 	let containerRef: HTMLDivElement | undefined = $state();
 	const controller = browser ? getBackgroundController() : null;
+	// This component is the only owner of the controller singleton. Publishing it
+	// here is what lets background-hold.svelte.ts stay free of a static
+	// @austencloud/backgrounds import — that module is small enough for Rollup to
+	// merge into the root layout's chunk, which put the whole shared `vendor`
+	// chunk on every route's hydration path. See the note in that file.
+	if (controller) registerBackgroundFreezeTarget(controller);
 	let mounted = $state(false);
 
 	// Layout-readiness gate. Bumped from a deferred frame to re-run the lifecycle

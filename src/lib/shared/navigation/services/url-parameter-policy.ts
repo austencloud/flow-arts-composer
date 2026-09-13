@@ -1,4 +1,7 @@
-import { VIEWER_STATE_PARAM_NAMES } from "$lib/shared/sequence-viewer/services/viewer-url-state-codec";
+// Deliberately the params module, not the codec: this file runs in the root
+// layout's `afterNavigate`, and the codec's fflate compression stack has no
+// business on every route's hydration path. See viewer-url-state-params.ts.
+import { VIEWER_STATE_PARAM_NAMES } from "$lib/shared/sequence-viewer/services/viewer-url-state-params";
 
 interface RouteScopedParameter {
   name: string;

@@ -25,23 +25,56 @@
  * each other early, and a released key is idempotent.
  */
 
-import { browser } from "$app/environment";
-import { getBackgroundController } from "@austencloud/backgrounds";
+/**
+ * IMPORT BOUNDARY — this module must not statically import a renderer package.
+ *
+ * It is a few hundred bytes, which puts it under Rollup's
+ * `experimentalMinChunkSize` floor (vite.config.ts, `clientOnlyChunkMergePlugin`),
+ * so the bundler is free to merge it into whatever chunk it happens to sit
+ * beside — and it did: into the root layout's own chunk. A static
+ * `@austencloud/backgrounds` import here therefore became a static edge from
+ * `+layout.svelte` into the shared `vendor` chunk, and every route (landing
+ * included) preloaded 3.28 MB / 918 KB gzip of unrelated packages before it
+ * could hydrate. Measured 2026-09-12 against `4eeaea16d0`'s successor build.
+ *
+ * The controller is owned by BackgroundHost, which is the only component that
+ * mounts it. It registers the instance here; a hold taken before the host
+ * exists is remembered and applied at registration. Holding with no host is a
+ * no-op either way — the controller's `freeze()` stops animations that a
+ * hostless singleton never started.
+ *
+ * `tests/unit/boot-import-boundary.test.ts` enforces the rule.
+ */
+
+/** The slice of BackgroundController this module drives. */
+export interface BackgroundFreezeTarget {
+  freeze(): void;
+  unfreeze(): void;
+}
 
 const heldKeys = new Set<string>();
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 
-function controller(): ReturnType<typeof getBackgroundController> | null {
-  if (!browser) return null;
-  return getBackgroundController();
+let freezeTarget: BackgroundFreezeTarget | null = null;
+
+/**
+ * Publish the live background controller. Called by BackgroundHost, the single
+ * owner of the controller singleton. Registering while a hold is outstanding
+ * freezes immediately, so a hold taken before the host mounted still holds.
+ */
+export function registerBackgroundFreezeTarget(
+  target: BackgroundFreezeTarget
+): void {
+  freezeTarget = target;
+  if (heldKeys.size > 0) target.freeze();
 }
 
 function applyFreeze(): void {
-  controller()?.freeze();
+  freezeTarget?.freeze();
 }
 
 function applyUnfreeze(): void {
-  controller()?.unfreeze();
+  freezeTarget?.unfreeze();
 }
 
 /** Hold the background still. Idempotent for the same key. */
