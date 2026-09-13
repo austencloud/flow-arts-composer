@@ -3,7 +3,27 @@
  *
  * Provides metronome functionality using Web Audio API.
  * Creates click sounds synced with beat progression timing.
+ *
+ * Scheduling model: a 25ms polling timer queues clicks onto the audio clock up
+ * to `scheduleAheadTime` in the future, which is what keeps the beat grid free
+ * of `setTimeout` jitter. The cost of a lookahead is that "now" and "already
+ * committed" are different things — stopping has to reach the clicks and beat
+ * callbacks that were queued for a future that is no longer going to happen.
  */
+
+/** Length of a single click's envelope. */
+const CLICK_DURATION_SECONDS = 0.05;
+
+/** How often the lookahead scheduler wakes up to top up the queue. */
+const SCHEDULER_POLL_MS = 25;
+
+/** One queued click and the graph nodes that have to be released with it. */
+interface ScheduledClick {
+  oscillator: OscillatorNode;
+  gain: GainNode;
+  startTime: number;
+  endTime: number;
+}
 
 export class Metronome {
   private audioContext: AudioContext | null = null;
@@ -11,6 +31,10 @@ export class Metronome {
   private nextClickTime: number = 0;
   private scheduleAheadTime: number = 0.1; // Schedule clicks 100ms ahead
   private timerID: number | null = null;
+  /** Clicks committed to the audio clock but not finished sounding yet. */
+  private scheduledClicks: ScheduledClick[] = [];
+  /** Beat-callback timeouts already queued by the lookahead. */
+  private pendingCallbacks: number[] = [];
 
   constructor() {
     // Initialize AudioContext on first user interaction
@@ -60,11 +84,71 @@ export class Metronome {
 
     // Short click sound
     oscillator.start(time);
-    oscillator.stop(time + 0.05); // 50ms click
+    oscillator.stop(time + CLICK_DURATION_SECONDS);
 
     // Fade out to avoid clicking
     gainNode.gain.setValueAtTime(gainNode.gain.value, time);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+    gainNode.gain.exponentialRampToValueAtTime(
+      0.01,
+      time + CLICK_DURATION_SECONDS
+    );
+
+    this.scheduledClicks.push({
+      oscillator,
+      gain: gainNode,
+      startTime: time,
+      endTime: time + CLICK_DURATION_SECONDS,
+    });
+  }
+
+  /**
+   * Drop clicks that have finished sounding. Without this the tracking list —
+   * and the audio graph behind it — would grow by one node pair per beat for
+   * as long as the metronome runs.
+   */
+  private releaseFinishedClicks(now: number): void {
+    if (this.scheduledClicks.length === 0) return;
+
+    const stillLive: ScheduledClick[] = [];
+    for (const click of this.scheduledClicks) {
+      if (click.endTime <= now) {
+        click.oscillator.disconnect();
+        click.gain.disconnect();
+      } else {
+        stillLive.push(click);
+      }
+    }
+    this.scheduledClicks = stillLive;
+  }
+
+  /**
+   * Silence everything the lookahead committed to but that has not started
+   * yet. Per the Web Audio spec an oscillator whose stop time precedes its
+   * start time never sounds at all, so re-stopping at "now" cancels it.
+   */
+  private cancelScheduledClicks(): void {
+    const now = this.audioContext?.currentTime ?? 0;
+
+    for (const click of this.scheduledClicks) {
+      if (click.startTime > now) {
+        try {
+          click.oscillator.stop(now);
+        } catch {
+          // Already stopped or the context went away; nothing left to cancel.
+        }
+        click.oscillator.disconnect();
+        click.gain.disconnect();
+      } else {
+        // Mid-click: cutting it here would pop, so let the 50ms envelope
+        // finish and release the nodes when it does.
+        click.oscillator.onended = () => {
+          click.oscillator.disconnect();
+          click.gain.disconnect();
+        };
+      }
+    }
+
+    this.scheduledClicks = [];
   }
 
   /**
@@ -75,12 +159,23 @@ export class Metronome {
    *          caller can surface the failure to the user; true otherwise.
    */
   start(bpm: number, onStep?: (stepNumber: number) => void): boolean {
+    // A restart — tempo change, stop/play, a second play tap — must replace
+    // the running scheduler, not race it. Two loops share `nextClickTime`, so
+    // they interleave onto one corrupted grid, and only the newer loop's timer
+    // is reachable from stop(): the older one would click forever.
+    this.stop();
+
     this.initializeAudioContext();
 
     if (!this.audioContext) {
       console.error("Failed to initialize audio context");
       return false;
     }
+
+    // A context created outside a user gesture — or auto-suspended by the
+    // browser while the tab was hidden — has a frozen currentTime. The
+    // scheduler would poll forever without the beat grid ever advancing.
+    this.resume();
 
     const beatsPerSecond = bpm / 60;
     const secondsPerBeat = 1 / beatsPerSecond;
@@ -90,6 +185,8 @@ export class Metronome {
 
     const scheduler = () => {
       if (!this.audioContext) return;
+
+      this.releaseFinishedClicks(this.audioContext.currentTime);
 
       // Schedule clicks ahead of time
       while (
@@ -103,17 +200,26 @@ export class Metronome {
         }
 
         if (onStep) {
-          // Schedule callback at the same time as the click
+          // Schedule callback at the same time as the click. Capture the beat
+          // this pass is scheduling: `stepIndex` has already moved on by the
+          // time the timeout fires, so reading it there reports the wrong beat.
+          const beat = stepIndex;
           const callbackDelay =
             (this.nextClickTime - this.audioContext.currentTime) * 1000;
-          setTimeout(() => onStep(stepIndex), Math.max(0, callbackDelay));
+          const callbackID = window.setTimeout(() => {
+            this.pendingCallbacks = this.pendingCallbacks.filter(
+              (id) => id !== callbackID
+            );
+            onStep(beat);
+          }, Math.max(0, callbackDelay));
+          this.pendingCallbacks.push(callbackID);
         }
 
         this.nextClickTime += secondsPerBeat;
         stepIndex++;
       }
 
-      this.timerID = window.setTimeout(scheduler, 25);
+      this.timerID = window.setTimeout(scheduler, SCHEDULER_POLL_MS);
     };
 
     scheduler();
@@ -127,7 +233,11 @@ export class Metronome {
   resume(): void {
     this.initializeAudioContext();
     if (this.audioContext?.state === "suspended") {
-      void this.audioContext.resume();
+      // resume() rejects on a closed context; degrade quietly rather than
+      // surfacing an unhandled rejection.
+      this.audioContext.resume().catch((err) => {
+        console.warn("Failed to resume audio context:", err);
+      });
     }
   }
 
@@ -139,17 +249,29 @@ export class Metronome {
    */
   tick(isAccent = false): void {
     if (!this.audioContext) return;
-    this.createClick(this.audioContext.currentTime, isAccent);
+    const now = this.audioContext.currentTime;
+    // No scheduler runs on this path, so each tick releases the previous one.
+    this.releaseFinishedClicks(now);
+    this.createClick(now, isAccent);
   }
 
   /**
-   * Stop the metronome
+   * Stop the metronome. Cancels the polling loop and everything the lookahead
+   * already committed: queued clicks and queued beat callbacks both outlive a
+   * stop that only clears the timer.
    */
   stop(): void {
     if (this.timerID !== null) {
       window.clearTimeout(this.timerID);
       this.timerID = null;
     }
+
+    for (const callbackID of this.pendingCallbacks) {
+      window.clearTimeout(callbackID);
+    }
+    this.pendingCallbacks = [];
+
+    this.cancelScheduledClicks();
   }
 
   /**
