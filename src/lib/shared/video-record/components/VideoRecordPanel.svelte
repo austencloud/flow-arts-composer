@@ -101,8 +101,13 @@
   // flag the camera opens after the panel is gone and stays open.
   let destroyed = false;
 
-  function releaseCamera(stream: MediaStream | null) {
-    cameraService?.stop();
+  // The manager is one shared instance: PerformancePreview reaches the same
+  // one through getCameraManager(). Its stop() is global, so this panel may
+  // only call it while it still owns the attempt — in onDestroy, where stop()
+  // is also the manager's cancel signal. Afterwards the attempt is cancelled
+  // and whatever the manager holds may belong to a panel that mounted since,
+  // so late cleanup releases the stream this panel was handed and nothing more.
+  function releaseOwnStream(stream: MediaStream | null) {
     stream?.getTracks().forEach((track) => track.stop());
   }
 
@@ -123,19 +128,18 @@
 
       const stream = await cameraService.start();
       if (destroyed) {
-        releaseCamera(stream);
+        releaseOwnStream(stream);
         return;
       }
 
       cameraStream = stream;
       cameraInitialized = true;
     } catch (error) {
-      // A failure after teardown can still have opened something: start()
-      // assigns the manager's stream before it awaits play().
-      if (destroyed) {
-        releaseCamera(null);
-        return;
-      }
+      // A cancelled attempt owns nothing. The manager releases whatever it had
+      // opened before it rejects, so there is nothing here to clean up and
+      // reaching for its stop() would take down whichever panel acquired the
+      // camera next.
+      if (destroyed) return;
       cameraError =
         error instanceof Error ? error.message : "Failed to access camera";
     }
@@ -289,7 +293,11 @@
     if (recordingId) recordService.cancelRecording(recordingId);
     if (recordedVideo?.blobUrl) URL.revokeObjectURL(recordedVideo.blobUrl);
     if (browser) window.removeEventListener("resize", detectLayout);
-    releaseCamera(cameraStream);
+    // Still the owner at this instant, so the global stop is this panel's, and
+    // during the handshake it is the only signal the manager has that the
+    // owner is gone.
+    cameraService?.stop();
+    releaseOwnStream(cameraStream);
   });
 </script>
 
