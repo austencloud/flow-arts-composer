@@ -45,7 +45,7 @@ not in this audit config:
 | --- | --- | --- |
 | jsdom unit (`tests/config/vitest.config.ts`) | `validate` | `src/lib/shared/keyboard/domain/models/__tests__/keyboard-event-drawer-scope.test.ts` |
 | browser component (`tests/config/vitest.components.config.ts`) | `component-tests` | `src/lib/shared/foundation/ui/Drawer.svelte.test.ts` |
-| browser component | `component-tests` | `src/lib/shared/browse/components/filter-chips/FilterChipBase.svelte.test.ts` |
+| browser component | `component-tests` | `src/lib/shared/browse/components/filter-chips/FilterChipBase.svelte.test.ts` (a new `describe` block appended to the file's existing five specs, which are unchanged) |
 
 The audit config under `tests/opus-accessibility-audit/` is still **not wired
 into CI** and is not a gate. It keeps the exploratory specs — including the two
