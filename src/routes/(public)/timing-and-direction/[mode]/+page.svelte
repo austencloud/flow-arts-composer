@@ -7,6 +7,8 @@
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import { reducedMotion } from "$lib/shared/transitions/motion";
   import { getTimingDirectionState } from "../_state/timing-direction-state.svelte";
   import TimingDirectionModeCard from "../_components/TimingDirectionModeCard.svelte";
   import {
@@ -49,6 +51,7 @@
   let examplesError = $state<string | null>(null);
   let examplesRetry = $state(0);
   let examplesRequest = 0;
+  let examplePlayer: HTMLElement | undefined = $state();
 
   $effect(() => {
     if (article.code !== "TO") {
@@ -83,9 +86,18 @@
       });
   });
 
-  function selectTogetherOppositeExample(example: TogetherOppositeExample) {
+  function selectTogetherOppositeExample(
+    example: TogetherOppositeExample,
+    reveal = false
+  ) {
     selectedTogetherOppositeExample = example.id;
     playback.selectExample(example.sequence, example.step);
+    if (reveal && window.matchMedia("(max-width: 800px)").matches) {
+      examplePlayer?.scrollIntoView({
+        block: "center",
+        behavior: reducedMotion() ? "instant" : "smooth",
+      });
+    }
   }
 
   function retryTogetherOppositeExamples() {
@@ -191,7 +203,11 @@
               />
             {/if}
           </div>
-          <div class="demo-canvas" use:playback.registerTarget></div>
+          <div
+            class="demo-canvas"
+            bind:this={examplePlayer}
+            use:playback.registerTarget
+          ></div>
           <figcaption>
             Drag the bar to follow the selected hand path.
           </figcaption>
@@ -200,11 +216,7 @@
         <section class="example-picker" aria-labelledby="example-picker-title">
           <div>
             <h2 id="example-picker-title">Matching pictographs</h2>
-            <p>
-              Pick a letter to seek its exact hand path. The card shows its prop
-              rotation, which can differ while the hand relationship stays
-              Together-Opposite.
-            </p>
+            <p>Choose a pictograph to follow its hand path.</p>
           </div>
           <div
             class="example-options"
@@ -225,7 +237,8 @@
                 <PanelButton
                   fullWidth
                   ariaPressed={selectedTogetherOppositeExample === example.id}
-                  onclick={() => selectTogetherOppositeExample(example)}
+                  ariaLabel={`Show ${example.pictograph.letter} in ${example.gridMode} grid`}
+                  onclick={() => selectTogetherOppositeExample(example, true)}
                 >
                   <span class="example-pictograph">
                     <PictographContainer
@@ -233,6 +246,8 @@
                       gridMode={example.gridMode}
                       leftPropTypeOverride={PropType.HAND}
                       rightPropTypeOverride={PropType.HAND}
+                      leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
+                      rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
                       showGrid={true}
                       showTKA={true}
                       showElemental={true}
@@ -243,7 +258,11 @@
                       disableTransitions
                     />
                   </span>
-                  <span>{example.label}</span>
+                  <span class="example-label"
+                    ><strong>{example.pictograph.letter}</strong><span
+                      >{example.gridMode === "box" ? "Box" : "Diamond"}</span
+                    ></span
+                  >
                 </PanelButton>
               {/each}
             {/if}
@@ -409,11 +428,16 @@
     max-width: 86rem;
   }
   .to-header {
-    max-width: 68ch;
+    max-width: 100%;
     margin-bottom: 1.5rem;
   }
   .to-header h1 {
     margin-bottom: 0.75rem;
+    text-wrap: balance;
+  }
+  .to-header .definition {
+    max-width: 68ch;
+    margin-bottom: 0;
   }
   .to-stage {
     display: grid;
@@ -534,6 +558,13 @@
   .example-pictograph {
     display: block;
     aspect-ratio: 1;
+  }
+  .example-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.25rem;
   }
   .example-status {
     display: grid;
