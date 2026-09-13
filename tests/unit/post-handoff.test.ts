@@ -15,9 +15,8 @@ vi.mock("$lib/shared/foundation/services/file-downloader", async () => {
   return { ...actual, supportsNativeFileShare, canNativeShareFile };
 });
 
-const { buildArtifactFilename, resolveDestinations } = await import(
-  "$lib/shared/share/services/post-handoff"
-);
+const { buildArtifactFilename, copyPreparedLink, resolveDestinations } =
+  await import("$lib/shared/share/services/post-handoff");
 
 function pngBlob(): Blob {
   return new Blob(["x"], { type: "image/png" });
@@ -115,6 +114,131 @@ describe("artifact filenames", () => {
   });
 
   it("strips characters that are illegal in a path", () => {
-    expect(buildArtifactFilename('A/B:C', "card")).toBe("A_B_C.png");
+    expect(buildArtifactFilename("A/B:C", "card")).toBe("A_B_C.png");
+  });
+});
+
+function readBlobText(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(blob);
+  });
+}
+
+describe("prepared link clipboard handoff", () => {
+  const originalClipboardItem = globalThis.ClipboardItem;
+
+  beforeEach(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    if (originalClipboardItem) {
+      Object.defineProperty(globalThis, "ClipboardItem", {
+        configurable: true,
+        value: originalClipboardItem,
+      });
+    } else {
+      Reflect.deleteProperty(globalThis, "ClipboardItem");
+    }
+  });
+
+  it("starts ClipboardItem writing before the lazy link resolves", async () => {
+    let resolveUrl!: (url: string) => void;
+    const preparedUrl = new Promise<string>((resolve) => {
+      resolveUrl = resolve;
+    });
+    let textBlob: Promise<Blob> | undefined;
+    class ClipboardItemStub {
+      constructor(items: Record<string, Promise<Blob>>) {
+        textBlob = items["text/plain"];
+      }
+    }
+    Object.defineProperty(globalThis, "ClipboardItem", {
+      configurable: true,
+      value: ClipboardItemStub,
+    });
+    const write = vi.fn(async () => {
+      await textBlob;
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { write },
+    });
+
+    const copying = copyPreparedLink(preparedUrl);
+
+    expect(write).toHaveBeenCalledOnce();
+    expect(textBlob).toBeDefined();
+    resolveUrl("https://tkaflowarts.com/sequence/ABCD");
+    expect(await readBlobText(await textBlob!)).toBe(
+      "https://tkaflowarts.com/sequence/ABCD"
+    );
+    await expect(copying).resolves.toMatchObject({ status: "done" });
+  });
+
+  it("falls back to writeText after preparation when promised ClipboardItems are unavailable", async () => {
+    Reflect.deleteProperty(globalThis, "ClipboardItem");
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+
+    await expect(
+      copyPreparedLink(Promise.resolve("https://tkaflowarts.com/sequence/ABCD"))
+    ).resolves.toMatchObject({ status: "done" });
+    expect(writeText).toHaveBeenCalledWith(
+      "https://tkaflowarts.com/sequence/ABCD"
+    );
+  });
+
+  it("allows a fresh retry after clipboard denial and a later preparation failure", async () => {
+    let rejectUrl!: (reason: Error) => void;
+    const pending = new Promise<string>((_, reject) => {
+      rejectUrl = reject;
+    });
+    class ClipboardItemStub {
+      constructor(public items: Record<string, Promise<Blob>>) {}
+    }
+    Object.defineProperty(globalThis, "ClipboardItem", {
+      configurable: true,
+      value: ClipboardItemStub,
+    });
+    const write = vi.fn(async (items: ClipboardItemStub[]) => {
+      await items[0]!.items["text/plain"];
+    });
+    write.mockRejectedValueOnce(new Error("Clipboard denied"));
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { write },
+    });
+    await expect(copyPreparedLink(pending)).resolves.toMatchObject({
+      status: "failed",
+    });
+    rejectUrl(new Error("Link creation failed after permission denial"));
+    await expect(
+      copyPreparedLink(Promise.resolve("https://tkaflowarts.com/sequence/ABCD"))
+    ).resolves.toMatchObject({ status: "done", message: "Link copied" });
+    expect(write).toHaveBeenCalledTimes(2);
+  });
+
+  it("reports a rejected preparation without claiming the link was copied", async () => {
+    Reflect.deleteProperty(globalThis, "ClipboardItem");
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+
+    await expect(
+      copyPreparedLink(Promise.reject(new Error("mint failed")))
+    ).resolves.toEqual({
+      status: "failed",
+      message: "Couldn't copy link",
+    });
+    expect(writeText).not.toHaveBeenCalled();
   });
 });

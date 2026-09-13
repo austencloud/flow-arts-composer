@@ -196,6 +196,44 @@ export function copyLink(url: string): Promise<HandoffResult> {
   return copyText(url, "Link");
 }
 
+/**
+ * Starts a text clipboard write while a post link is still being prepared.
+ * Safari keeps a click's clipboard permission only for work begun in that
+ * click, but accepts promised ClipboardItem values and waits for their bytes.
+ */
+export async function copyPreparedLink(
+  preparedUrl: Promise<string>
+): Promise<HandoffResult> {
+  // Clipboard capability can disappear between rendering and the click. Keep a
+  // rejected preparation observed even when there is nowhere to write it.
+  void preparedUrl.catch(() => {});
+  if (typeof navigator === "undefined" || !navigator.clipboard) {
+    return { status: "failed", message: "Clipboard unavailable" };
+  }
+
+  if (navigator.clipboard.write && typeof ClipboardItem !== "undefined") {
+    const textBlob = preparedUrl.then(
+      (url) => new Blob([url], { type: "text/plain" })
+    );
+    // A denied write may return before preparation fails later.
+    void textBlob.catch(() => {});
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({ "text/plain": textBlob }),
+      ]);
+      return { status: "done", message: "Link copied" };
+    } catch {
+      return { status: "failed", message: "Couldn't copy link" };
+    }
+  }
+
+  try {
+    return await copyLink(await preparedUrl);
+  } catch {
+    return { status: "failed", message: "Couldn't copy link" };
+  }
+}
+
 const FACEBOOK_COMPOSER_URL = "https://www.facebook.com/";
 
 /**

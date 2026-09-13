@@ -38,6 +38,7 @@
     buildArtifactFilename,
     buildPostLink,
     copyLink,
+    copyPreparedLink,
     copyCaption,
     copyImageAndOpenFacebook,
     downloadArtifact,
@@ -242,7 +243,10 @@
   });
 
   let shortUrl = $state<string | null>(null);
-  let linkRequested = $state(false);
+  let linkRequest: Promise<string> | null = null;
+  let linkSession = 0;
+  let linkSequence: SequenceData | null = null;
+  let copyLinkPending = $state(false);
 
   let qrDataUrl = $state<string | null>(null);
   let qrPending = $state(false);
@@ -279,13 +283,12 @@
    * view that was shared. Captions keep the bare post link: a caption is read by
    * people, and a state blob in it is noise.
    */
-  const copyLinkUrl = $derived.by(() => {
-    const baseUrl = postUrl || shareUrl;
+  function buildCopyLinkUrl(baseUrl: string, viewerUrl = shareUrl): string {
     if (!baseUrl) return "";
-    if (!postUrl || !shareUrl) return baseUrl;
+    if (!viewerUrl) return baseUrl;
     try {
-      const state = new URL(shareUrl).searchParams;
-      const target = new URL(postUrl);
+      const state = new URL(viewerUrl).searchParams;
+      const target = new URL(baseUrl);
       let carried = false;
       for (const name of VIEWER_STATE_PARAM_NAMES) {
         const value = state.get(name);
@@ -293,11 +296,13 @@
         target.searchParams.set(name, value);
         carried = true;
       }
-      return carried ? target.toString() : postUrl;
+      return carried ? target.toString() : baseUrl;
     } catch {
       return baseUrl;
     }
-  });
+  }
+
+  const copyLinkUrl = $derived.by(() => buildCopyLinkUrl(postUrl || shareUrl));
 
   const presets = $derived(
     captions.buildPresets({
@@ -589,7 +594,6 @@
     pageMenuOpen = false;
     postedPermalinks = {};
     shortUrl = seededShortUrl || null;
-    linkRequested = !!seededShortUrl;
     if (initialEntry === "download") beginFilePreparation("download");
   });
 
@@ -621,40 +625,20 @@
     };
   });
 
-  // A short link is a persisted record. Only mint one after a link, caption, or
-  // publishing action asks for it; opening Share itself stays read-only.
+  // A completed request must never update a later sequence or reopened sheet.
   $effect(() => {
-    if (
-      !isOpen ||
-      !linkRequested ||
-      !sequence ||
-      seededShortUrl ||
-      !canCreateLink
-    )
-      return;
-
     const target = sequence;
-    let stale = false;
-    shortUrl = null;
-
-    void (async () => {
-      try {
-        const result = await getShortCodeManager().createShortCode(target, {
-          embedSequenceData: true,
-        });
-        if (!stale) shortUrl = buildPostLink(result.code);
-      } catch (error) {
-        // A missing short code leaves a still-usable word-only caption.
-        console.warn("[PostShareSheet] No short link for the caption:", error);
-        if (!stale) {
-          linkRequested = false;
-          statusMessage = "Couldn't create a link. Try again.";
-        }
-      }
-    })();
-
+    if (!isOpen || !target) return;
+    const session = ++linkSession;
+    linkRequest = null;
+    if (linkSequence !== target) shortUrl = seededShortUrl || null;
+    linkSequence = target;
+    copyLinkPending = false;
     return () => {
-      stale = true;
+      if (linkSession !== session) return;
+      linkSession += 1;
+      linkRequest = null;
+      copyLinkPending = false;
     };
   });
 
@@ -712,28 +696,80 @@
     }
   }
 
-  function handleCopyLinkIntent(): void {
-    if (copyLinkUrl) {
-      void runLocalTile("copy-link", () => copyLink(copyLinkUrl));
-      return;
+  function linkSessionIsCurrent(
+    session: number,
+    target: SequenceData
+  ): boolean {
+    return linkSession === session && isOpen && sequence === target;
+  }
+
+  /** A short link is persisted only after a share action needs it. */
+  function requestPostLink(): Promise<string> {
+    if (postUrl) return Promise.resolve(postUrl);
+    if (!canCreateLink || !sequence || !isOpen) {
+      return Promise.reject(
+        new Error("A saved sequence is required for a link")
+      );
     }
-    if (!canCreateLink) {
+
+    if (linkRequest) return linkRequest;
+
+    const target = sequence;
+    const session = linkSession;
+    const request = getShortCodeManager()
+      .createShortCode(target, { embedSequenceData: true })
+      .then((result) => {
+        if (!linkSessionIsCurrent(session, target)) {
+          throw new Error("Share sheet session changed");
+        }
+        const url = buildPostLink(result.code);
+        shortUrl = url;
+        return url;
+      })
+      .catch((error: unknown) => {
+        if (linkSessionIsCurrent(session, target)) {
+          linkRequest = null;
+          console.warn("[PostShareSheet] Couldn't create a link:", error);
+        }
+        throw error;
+      });
+    linkRequest = request;
+    return request;
+  }
+
+  async function handleCopyLinkIntent(): Promise<void> {
+    if (copyLinkPending) return;
+    if (!copyLinkUrl && !canCreateLink) {
       statusMessage = "Save this sequence to create a shareable link.";
       return;
     }
-    linkRequested = true;
-    statusMessage = "Preparing link…";
+
+    const session = linkSession;
+    const target = sequence;
+    const viewerUrl = shareUrl;
+    copyLinkPending = true;
+    statusMessage = copyLinkUrl ? "" : "Preparing link…";
+    const result = copyLinkUrl
+      ? await copyLink(copyLinkUrl)
+      : await copyPreparedLink(
+          requestPostLink().then((url) => buildCopyLinkUrl(url, viewerUrl))
+        );
+
+    if (target && linkSessionIsCurrent(session, target) && result.message) {
+      statusMessage = result.message;
+    }
+    if (!target || linkSessionIsCurrent(session, target)) {
+      copyLinkPending = false;
+    }
   }
 
-  $effect(() => {
-    if (shortUrl && statusMessage === "Preparing link…") {
-      statusMessage = "Link ready. Choose Copy link.";
-    }
-  });
+  function preparePostLink(): void {
+    void requestPostLink().catch(() => {});
+  }
 
   function openCaption(): void {
     captionOpen = !captionOpen;
-    if (captionOpen) linkRequested = true;
+    if (captionOpen) preparePostLink();
   }
 
   function returnToChooser(): void {
@@ -1293,7 +1329,7 @@
               <button
                 type="button"
                 class="intent"
-                disabled={busyLocalTile !== null}
+                disabled={busyLocalTile !== null || copyLinkPending}
                 onclick={handleCopyLinkIntent}
               >
                 <i class="fa-solid fa-link" aria-hidden="true"></i>
@@ -1337,7 +1373,7 @@
                 onclick={() => {
                   beginFilePreparation("share");
                   publishOpen = true;
-                  linkRequested = true;
+                  preparePostLink();
                 }}
               >
                 Publish to social…
@@ -1637,7 +1673,7 @@
                     class="publish-route"
                     onclick={() => {
                       publishOpen = true;
-                      linkRequested = true;
+                      preparePostLink();
                     }}
                   >
                     Publish to social…
