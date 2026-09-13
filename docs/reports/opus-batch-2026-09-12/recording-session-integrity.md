@@ -5,8 +5,11 @@ recording-specific tests only.
 
 - Base SHA: `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`)
 - Reproduction commit: `c2b4b362`
-- Fix commit: `5d6e36340230034e322beae3bec06a1f9e108fce`
-- Branch: `claude/fix-recording-lifecycle-tum13f`
+- Final code SHA: `5d6e36340230034e322beae3bec06a1f9e108fce` (the fix; every
+  measurement below was taken against this tree)
+- Branch: `claude/fix-recording-lifecycle-tum13f`. Its head is the commit that
+  added this report, `fabca8265bb64edf2f4e1a0ace24df0d625bc9f6`, plus any
+  later edit to this file.
 
 ## Owned files
 
