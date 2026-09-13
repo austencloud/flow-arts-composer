@@ -3,7 +3,7 @@
 Scope: reproduced concurrency/state defects in `src/lib/shared/inbox`, its tests,
 and — from the third round, explicitly authorized — two named defects in
 `src/lib/shared/messaging/services/messenger.ts`, and — from the sixth round —
-`MessageImageSender`. Twelve fixed, one confirmed and left to another owner. No production data was written and no message was sent
+`MessageImageSender`. Thirteen fixed, one confirmed and left to another owner. No production data was written and no message was sent
 anywhere; every result below comes from the repository's own test harnesses in
 this cloud container.
 
@@ -26,16 +26,19 @@ Revision history:
    claim corrected, and the double fixed to the real call order. Held: refusing
    correctly left a staging object that only its own account may delete, and the
    create rule then blocked that account's retry.
-7. this revision — F9: staging cleanup that matches the storage rules, so an
-   abandoned attempt cannot strand the message.
+7. `2b32ccb9` — F9: staging cleanup that matches the storage rules, so an
+   abandoned attempt cannot strand the message. Held: the cleanup await F9 added
+   was itself unfenced.
+8. this revision — F10: that gap closed, plus an audit of every await this branch
+   introduced.
 
 | Field          | Value                                                                                                                                                                                                                           |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Branch         | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                                                                                                         |
 | Base SHA       | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                                                                                                     |
-| Held revisions | `ea203124` (F1 + F2), `eb822199` (adds F3, F4, A1), `9030cdd5` (adds F5, M1, M2), `71988b7e` (adds F6), `c5cf6d0d` (adds F7), `3b79c83a` (adds F8) — all HOLD                                                                   |
+| Held revisions | `ea203124` (F1 + F2), `eb822199` (F3, F4, A1), `9030cdd5` (F5, M1, M2), `71988b7e` (F6), `c5cf6d0d` (F7), `3b79c83a` (F8), `2b32ccb9` (F9) — all HOLD                                                                           |
 | Merged `main`  | `6e4c1b5a` (unrelated 3D parity test), then `cb4d4210` — which carries `73aafa4a`, the `withPlainRecords` wrapper in this same state file. Auto-merged clean; the wrapper is preserved verbatim, see the integration note below |
-| Final SHA      | `c4f8c9a6e2b832ef93b44c96192057f67c2f0797` — this round's correction commit; the branch tip after it only fills in this row and updates this report                                                                             |
+| Final SHA      | `10bb7c82a32c12339b636a12800bbceef1f607f2` — this round's correction commit; the branch tip after it only fills in this row and updates this report                                                                             |
 | Owned paths    | `src/lib/shared/inbox/**`, `tests/unit/messaging/*` (three new files), `tests/helpers/inbox/**` (new), plus the two authorized functions in `messaging/services/messenger.ts`                                                   |
 
 Files changed:
@@ -49,7 +52,7 @@ Files changed:
 - `src/lib/shared/inbox/services/contracts/IMessageDeliveryCoordinator.ts` (F7: the `isOwned` hook)
 - `src/lib/shared/inbox/domain/message-delivery-errors.ts` (F7: the cancellation sentinel)
 - `src/lib/shared/messaging/services/messenger.ts` (fixes M1, M2, and F7's pre-dispatch recheck in `sendMessage` — authorized scope: those three functions, nothing else in the file)
-- `src/lib/shared/messaging/services/implementations/MessageImageSender.ts` (fixes F8, F9)
+- `src/lib/shared/messaging/services/implementations/MessageImageSender.ts` (fixes F8, F9, F10)
 - `src/lib/shared/messaging/services/contracts/IMessageImageSender.ts` (F8: `expectedUserId` on the request)
 - `tests/unit/messaging/message-delivery-activation-race.test.ts` (new; was quarantined, now green against the fix)
 - `tests/unit/messaging/message-delivery-account-ownership.test.ts` (new; proves F5 and F6)
@@ -720,6 +723,79 @@ and no send goes out under the wrong account.
 
 ---
 
+## F10 (fixed) — the cleanup F9 added was itself an unfenced await
+
+**Severity: high — a cancelled send uploaded anyway, and an upload could begin at
+one account's path while another was signed in.** Raised by independent review of
+`2b32ccb9`. Self-inflicted: F9's fix introduced the await that caused it.
+
+### Mechanism
+
+F9 put a `deleteObject` before the upload to clear the staging slot. The owner
+and cancel checks sat above it; nothing re-checked below it:
+
+```ts
+if (request.expectedUserId && request.expectedUserId !== user.uid) throw …  // before
+if (cancelled) throw …                                                      // before
+await deleteObject(stagingRef).catch(() => undefined);                      // ← new await
+uploadTask = uploadBytesResumable(stagingRef, request.file, …);             // unconditional
+```
+
+Two consequences, both real:
+
+- **Cancel is silently dropped.** `cancel()` sets the flag and calls
+  `uploadTask?.cancel()` — but during the cleanup there is no upload task yet,
+  so the optional call no-ops and the full upload then starts anyway.
+- **The upload can start under the wrong account.** A switch during the cleanup
+  leaves the path built from the first account's uid while the second is signed
+  in, and the client issues the upload regardless.
+
+### Evidence — measured
+
+Two cases in `message-image-sender-ownership.test.ts`, parking the cleanup with a
+one-shot gate on `deleteObject`. At `2b32ccb9` both fail with
+`expected "vi.fn()" to not be called at all, but actually been called 1 times` —
+the upload started in each case. Green after.
+
+### The fix
+
+`cancelled` and the expected owner are re-checked immediately after the cleanup
+and before `uploadBytesResumable`. Nothing has been uploaded at that point, so
+both simply stop; the `finally` then skips its own delete when the owner is gone,
+exactly as F9 set up.
+
+One nuance the second test pins rather than hides: the cleanup request itself can
+be denied when the switch lands while it is in flight, because it is evaluated
+against whoever is signed in by then. That is inherent to the race and harmless —
+the delete is ignored either way. What must not happen is a _second_, pointless
+denied attempt from the `finally`, and the test asserts exactly one denial.
+
+### Await-boundary audit
+
+Review asked for every await this branch added to be checked for the same gap.
+All eleven, and what stands after each:
+
+| Await added                                              | What follows it                                               |
+| -------------------------------------------------------- | ------------------------------------------------------------- |
+| `deleteObject` pre-upload cleanup (`MessageImageSender`) | **was the gap** — now re-checks cancel + owner                |
+| `deleteObject` in `finally` (`MessageImageSender`)       | nothing; guarded by `ownerIsSignedIn()` at call time          |
+| `upload.handle.promise` (`MessageDeliveryCoordinator`)   | the catch maps a cancelled upload; success returns            |
+| `getFirestoreInstance` in `markAsRead` (`Messenger`)     | only the pre-captured reader is used; no identity re-read     |
+| `repository.putOutbox` in `persistDelivery`              | nothing; the mirror decision is made before the write         |
+| `persistDelivery` in `abandonDelivery`                   | nothing                                                       |
+| `abandonDelivery` at the pre-coordinator fence           | `return`                                                      |
+| `persistDelivery` in `onPrepared`                        | nothing inside the hook                                       |
+| `persistDelivery` for the `sent` transition              | last statement of the `try`                                   |
+| `abandonDelivery` in the cancellation catch              | `return`                                                      |
+| `persistDelivery` for the failure transition             | last statement of the `catch`                                 |
+| `markAsRead` (`InboxDrawer`)                             | last statement of the `try`; the catch is `ownsThread`-fenced |
+| `saveDraft` (`MessageComposer`)                          | the `hydratedDraftKey` check before any UI state is touched   |
+
+One gap in the set, and it is the one review found. That is a read of the code,
+not a measurement: only the first row has a test proving the gap existed.
+
+---
+
 ## M1 (fixed, authorized messenger scope) — a subscription attached after its caller disposed
 
 **Severity: high.** A leaked Firestore listener per fast switch, plus a toast for
@@ -850,16 +926,16 @@ unmount, so it is worth doing next.
 
 All run in the cloud container at the final SHA unless noted.
 
-| Command                                                                                     | Result                                                                                                                                                              |
-| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer: 3 failed (F3). With the base drawer: 4 failed (F1)                                                                              |
-| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)                                                                         |
-| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                                                                                         |
-| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 40 passed / 40 (10 files). Reverting each round's sources in turn: 1 failed (F9), 3 + 1 failed (F8), 3 failed (F7), 3 failed (F6), 2 failed (F5), 5 failed (M1, M2) |
-| `… tests/unit/messaging tests/unit/inbox …` (the inbox + messaging sweep)                   | 93 passed / 93 (21 files), nothing skipped                                                                                                                          |
-| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — unchanged across every revision and after merging `main`, none in the changed files                                                      |
-| `prettier --check` on the changed files                                                     | clean                                                                                                                                                               |
-| `eslint` on the changed files                                                               | 0 errors, 0 warnings (`tests/**` paths are eslint-ignored by config, which it reports as a warning)                                                                 |
+| Command                                                                                     | Result                                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer: 3 failed (F3). With the base drawer: 4 failed (F1)                                                                                              |
+| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)                                                                                         |
+| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                                                                                                         |
+| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 42 passed / 42 (10 files). Reverting each round's sources in turn: 2 failed (F10), 1 failed (F9), 3 + 1 failed (F8), 3 failed (F7), 3 failed (F6), 2 failed (F5), 5 failed (M1, M2) |
+| `… tests/unit/messaging tests/unit/inbox …` (the inbox + messaging sweep)                   | 95 passed / 95 (21 files), nothing skipped                                                                                                                                          |
+| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — unchanged across every revision and after merging `main`, none in the changed files                                                                      |
+| `prettier --check` on the changed files                                                     | clean                                                                                                                                                                               |
+| `eslint` on the changed files                                                               | 0 errors, 0 warnings (`tests/**` paths are eslint-ignored by config, which it reports as a warning)                                                                                 |
 
 Harness note: the container ships Chromium build 1194 at `/opt/pw-browsers`
 while `playwright@1.61.1` expects 1228, so the browser project was run through a
@@ -915,6 +991,10 @@ packages are not prebuilt in a fresh clone.
   `create` only when nothing is there), transcribed from `storage.rules:252-263`
   — but it is a transcription, not the rules engine. The emulator was not run, and
   nothing here exercises what `finalizeMessageImage` does server-side.
+- **Each round of this branch's own fences has needed the next one to find its
+  gap** (F5→F6→F7→F8→F9→F10). The await-boundary audit in F10 is a code read of
+  all eleven awaits this branch added, with a test only for the one that was
+  broken; it is a checklist, not proof that no twelfth boundary exists.
 - **Staging cleanup cannot complete while the owning account is absent** (F9).
   The object waits for that account's next attempt, which clears it. If the
   account never returns, this code never deletes it, and no lifecycle policy for
