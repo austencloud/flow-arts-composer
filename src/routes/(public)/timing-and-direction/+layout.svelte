@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy, type Snippet } from "svelte";
+  import { onMount, onDestroy, untrack, type Snippet } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/state";
   import HandMotionPlayer from "$lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
@@ -25,12 +25,13 @@
   });
 
   $effect(() => {
-    if (page.params.mode) playback.select(page.params.mode);
+    const slug = page.params.mode;
+    if (slug) untrack(() => playback.select(slug));
   });
 
   $effect(() => {
     playback.pendingSeek.version;
-    playback.runPendingSeek();
+    untrack(() => playback.runPendingSeek());
   });
 </script>
 
