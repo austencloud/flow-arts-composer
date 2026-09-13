@@ -18,6 +18,7 @@ import {
   INTENTIONAL_ZERO_DIMENSION_ASSETS,
   listSvgFiles,
   readSvg,
+  stripComments,
   type SvgRecord,
 } from "./svg-corpus";
 
@@ -151,6 +152,53 @@ describe("static SVG corpus", () => {
     expect(bad).toEqual([]);
   });
 
+  it("keeps allowed dangling references inside unused style selectors", () => {
+    for (const svg of CORPUS) {
+      const expected = DEAD_STYLE_RULE_REFS[svg.file];
+      if (expected === undefined) continue;
+
+      const body = stripComments(svg.text);
+      const markup = body.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
+      const ids = new Set(svg.ids);
+      const dangling = [...new Set(svg.fragmentRefs)].filter(
+        (ref) => !ids.has(ref)
+      );
+      expect(dangling, svg.file).toHaveLength(expected);
+
+      const styleText = [
+        ...body.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi),
+      ]
+        .map((match) => match[1] ?? "")
+        .join("\n");
+      const rules = [...styleText.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+      const usedClasses = new Set(
+        [...markup.matchAll(/\bclass\s*=\s*["']([^"']*)["']/g)].flatMap(
+          (match) => match[1]!.split(/\s+/).filter(Boolean)
+        )
+      );
+
+      for (const ref of dangling) {
+        expect(markup, `${svg.file}: live url(#${ref})`).not.toContain(
+          `url(#${ref})`
+        );
+        const selectors = rules
+          .filter(([, , declarations]) =>
+            declarations?.includes(`url(#${ref})`)
+          )
+          .flatMap(([, selector]) => selector?.split(",") ?? []);
+        expect(selectors.length, `${svg.file}: style owner for ${ref}`).toBe(1);
+        const classNames = [
+          ...(selectors[0] ?? "").matchAll(/\.([A-Za-z_][\w-]*)/g),
+        ].map((match) => match[1]!);
+        expect(classNames.length, `${svg.file}: selector for ${ref}`).toBe(1);
+        expect(
+          usedClasses.has(classNames[0]!),
+          `${svg.file}: ${classNames[0]} activates dangling ${ref}`
+        ).toBe(false);
+      }
+    }
+  });
+
   it("keeps every path `d` attribute parseable", () => {
     const bad: string[] = [];
     for (const svg of CORPUS) {
@@ -209,6 +257,25 @@ describe("arrow asset geometry contract", () => {
       .filter((svg) => svg.box && (svg.box[0] !== 0 || svg.box[1] !== 0))
       .map((svg) => `${svg.file} (${svg.viewBox})`);
     expect(offset).toEqual([]);
+  });
+
+  it("keeps cross-file arrow ids restricted to removable centerPoint markers", () => {
+    const filesById = new Map<string, string[]>();
+    for (const arrow of arrows) {
+      for (const id of arrow.ids) {
+        const files = filesById.get(id) ?? [];
+        files.push(arrow.file);
+        filesById.set(id, files);
+      }
+    }
+
+    const shared = [...filesById]
+      .filter(([, files]) => files.length > 1)
+      .map(([id, files]) => ({ id, files }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    expect(shared).toHaveLength(1);
+    expect(shared[0]?.id).toBe("centerPoint");
+    expect(shared[0]?.files).toHaveLength(10);
   });
 
   it("declares `centerPoint` as an invisible circle wherever it exists", () => {

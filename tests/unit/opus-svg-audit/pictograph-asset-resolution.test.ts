@@ -130,15 +130,15 @@ describe("full-motion arrow asset resolution", () => {
   });
 
   it.fails(
-    "resolves every zero-turn skew combination to a file on disk",
+    "backs every synthetic zero-turn skew resolver combination with a file",
     () => {
-      // KNOWN DEFECT (audit finding F2). A skewed zero-turn pro or anti resolves
-      // to art that was never drawn for four of the eight slots, e.g.
+      // AUDIT INVENTORY (finding F2). This Cartesian sweep covers every
+      // accepted resolver field combination. The report separately identifies
+      // which missing output has a traced production source path. For example,
       // pro/clock/0 skew+ asks for
       // static/images/arrows/pro/from_nonradial/pro_0.0_skew+.svg.
-      // The loader rejects on the 404 and the arrow is dropped from the
-      // pictograph without a user-visible error. Delete the `.fails` when the
-      // art lands or the resolver learns to fall back.
+      // Delete the `.fails` when the art lands or the resolver learns to fall
+      // back.
       const zeroTurn = SKEW_COMBOS.filter((combo) => combo.turns === 0);
       const missing = [...resolvedPaths(zeroTurn)]
         .filter(([assetPath]) => !exists(assetPath))
@@ -147,7 +147,7 @@ describe("full-motion arrow asset resolution", () => {
     }
   );
 
-  it("names exactly the four zero-turn skew slots with no art", () => {
+  it("names exactly four synthetic zero-turn skew paths with no art", () => {
     const zeroTurn = SKEW_COMBOS.filter((combo) => combo.turns === 0);
     const missing = [...resolvedPaths(zeroTurn)]
       .filter(([assetPath]) => !exists(assetPath))
@@ -161,11 +161,11 @@ describe("full-motion arrow asset resolution", () => {
     ]);
   });
 
-  it.fails("resolves every turning skew combination to a file on disk", () => {
-    // KNOWN DEFECT (audit finding F2, wider half). Every skew variant above
-    // zero turns resolves to a file that does not exist. Reachable only if a
-    // skewed motion can carry turns; no shipped sequence data does today, so
-    // this is recorded as latent rather than live.
+  it.fails("backs every synthetic turning-skew path with a file", () => {
+    // AUDIT INVENTORY (finding F2, wider half). Every synthetic skew variant
+    // above zero turns resolves to a file that does not exist. The audit found
+    // no shipped-data construction path for these combinations, so the report
+    // records them as latent rather than live.
     const turning = SKEW_COMBOS.filter((combo) => combo.turns !== 0);
     const missing = [...resolvedPaths(turning)]
       .filter(([assetPath]) => !exists(assetPath))
@@ -244,13 +244,12 @@ describe("prop artwork resolution", () => {
   });
 
   it.fails(
-    "gives every prop type the animated artwork its consumers request",
+    "gives every prop enum value a same-named animated artwork file",
     () => {
-      // KNOWN DEFECT (audit finding F3). PropPlane2D.svelte and the qr-video
-      // worker-asset-loader build `/images/props/animated/{propType}.svg` from an
-      // arbitrary prop type, and PropSvgLoader does the same under
-      // useGridVersion. Two prop types have no file in that directory:
-      // capsule_baton and fire_double_staff. Both fetches reject.
+      // AUDIT INVENTORY (finding F3). Two prop enum values have no same-named
+      // animated file: capsule_baton and fire_double_staff. PropPlane2D is the
+      // only production requester established by the source trace; the report
+      // classifies other possible consumers as latent or unreferenced.
       const missing = propTypes
         .map((propType) => `/images/props/animated/${propType}.svg`)
         .filter((assetPath) => !exists(assetPath));

@@ -3,14 +3,15 @@
 Read-only audit of the pictograph SVG corpus and the loaders that consume it.
 No runtime module and no SVG asset was modified.
 
-|             |                                                            |
-| ----------- | ---------------------------------------------------------- |
-| Date        | 2026-09-13                                                 |
-| Base commit | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`) |
-| Branch      | `claude/svg-asset-contract-audit-p7ta75`                   |
-| Commits     | `4a00b626` (tests), then this report as the branch head    |
-| Owned paths | `tests/unit/opus-svg-audit/`, this report                  |
-| Corpus      | 497 `.svg` files under `static/`, read at the base commit  |
+|                        |                                                                    |
+| ---------------------- | ------------------------------------------------------------------ |
+| Date                   | 2026-09-13                                                         |
+| Audit base             | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`)         |
+| Reviewed compatibility | `84ea8901ca95a54f990bf35d921e3be977037b38` (`main`)                |
+| Original branch        | `claude/svg-asset-contract-audit-p7ta75` at `b642348785`           |
+| Integration branch     | `codex/opus-svg-audit-reviewed`                                    |
+| Owned paths            | `tests/unit/opus-svg-audit/`, this report                          |
+| Corpus                 | 497 `.svg` files under `static/`, read at the compatibility commit |
 
 ## How to reproduce
 
@@ -19,15 +20,16 @@ npm run build:packages   # workspace packages must be built first
 npx vitest run --config tests/config/vitest.config.ts tests/unit/opus-svg-audit/
 ```
 
-47 tests, all passing. Three of them are `it.fails` cases: they record a
+49 tests, all passing. Four of them are `it.fails` cases: they record a
 defect that exists today and turn red when it is fixed, which is the same
 convention `src/lib/shared/render/core/__tests__/prop-placement.test.ts`
 already uses in this repository.
 
 ## What was checked
 
-Every check runs against the real files under `static/` and calls the shipped
-functions rather than reimplementing them.
+Every corpus check reads the real files under `static/`. The transform,
+resolver and sanitizer suites call shipped functions; the XML, id, reference
+and path census is audit-owned analysis.
 
 | Area                                  | Instrument                                                                                                       |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -47,9 +49,9 @@ These passed across all 497 files and are now guarded by
 
 - Every file parses as well-formed XML and has an `<svg>` root in the SVG
   namespace. Every file using an `xlink:` attribute declares the namespace.
-- No file repeats an id. Across the 105 arrow assets, no id is shared between
-  two files either, so inlining two arrows into one pictograph cannot produce
-  an ambiguous reference.
+- No file repeats an id. The only id shared between arrow files is
+  `centerPoint`, present in 10 halved-motion glyphs. The shipped color
+  transform removes these marker circles before the arrows are inlined.
 - Every `d` attribute parses. No empty, `NaN`, or truncated path data.
 - No `<script>` element and no reference to an external resource anywhere in
   the corpus.
@@ -80,14 +82,14 @@ rewrites `id="X"` to `id="X-left"` and `url(#X)` to `url(#X-left)`
 (`packages/render-core/src/svg-color.ts:211`), so two props inlined into one
 pictograph document cannot collide. It does not rewrite `xlink:href="#X"`.
 
-Four files the loader fetches use `<use>`:
+Four files accepted by this transform use `<use>`:
 
-| Asset                                         | `<use>` targets lost |
-| --------------------------------------------- | -------------------- |
-| `static/images/props/pictograph/torch.svg`    | 3 of 3               |
-| `static/images/props/pictograph/bigtorch.svg` | 2 of 2               |
-| `static/images/props/animated/torch.svg`      | 3 of 3               |
-| `static/images/props/animated/bigtorch.svg`   | 2 of 2               |
+| Asset                                         | `<use>` targets lost | Reachability                                      |
+| --------------------------------------------- | -------------------- | ------------------------------------------------- |
+| `static/images/props/pictograph/torch.svg`    | 3 of 3               | Production traced through the default prop loader |
+| `static/images/props/pictograph/bigtorch.svg` | 2 of 2               | Production traced through the default prop loader |
+| `static/images/props/animated/torch.svg`      | 3 of 3               | Synthetic transform coverage; no caller traced    |
+| `static/images/props/animated/bigtorch.svg`   | 2 of 2               | Synthetic transform coverage; no caller traced    |
 
 All four are internally consistent as authored: zero dangling `<use>` before
 the transform, every target dangling after it. Measured by
@@ -109,10 +111,12 @@ Impact, stated conservatively:
   clipped interior shading, on every surface that goes through this loader:
   the live DOM, the composition worker raster, image export and print.
 - Under `useGridVersion: true` the contrast palette is skipped
-  (`prop-svg-loader.ts:176`) and the `animated/` artwork is used, so the
-  authored shaft body is lost as well. Reachable from
-  `HandPathBuilderLab.svelte`, `assemble-lab/components/InteractiveGrid.svelte`
-  and `/test/positions-concept`.
+  (`prop-svg-loader.ts:176`) and the `animated/` artwork would lose the
+  authored shaft body as well. This audit found no current caller that sends a
+  torch through that option: `HandPathBuilderLab.svelte` and
+  `InteractiveGrid.svelte` pass `false`, while `/test/positions-concept` passes
+  `true` only for a hard-coded hand prop. The animated result is therefore a
+  latent transform defect rather than an established live rendering path.
 - The animation canvas is not affected. `svg-generator.ts:485` calls
   `applyColorToSvg` without `makeClassNamesUnique`, so `<use>` survives there.
 
@@ -126,15 +130,16 @@ outside this audit's edit scope): teach the `makeClassNamesUnique` branch to
 rewrite `href`/`xlink:href` fragments alongside `url(#…)`, or flatten the
 `<use>` elements out of the four assets during an art pass.
 
-### F2: Four zero-turn skew arrow slots resolve to art that does not exist
+### F2: The resolver emits four zero-turn skew paths with no art; production reachability is partially established
 
 Confirmed.
 
 `resolveFullArrowAssetPath` appends `_skew+` or `_skew-` for any pro or anti
 motion with `skewSteps > 0` and a direction, at every turns value except 0.25.
-Walking the resolver's full input domain (4 motion types x 16 orientations x
-8 turns values x 3 skew states) produces 92 distinct non-skew paths, all of
-which exist, and 56 distinct skew paths, of which 4 exist:
+An audit-owned Cartesian sweep over accepted resolver fields (4 motion types x
+16 orientations x 8 turns values x 3 skew states) produces 92 distinct
+non-skew paths, all of which exist, and 56 distinct skew paths, of which 4
+exist:
 
 ```
 static/images/arrows/anti/from_nonradial/anti_0.0_skew+.svg
@@ -152,27 +157,33 @@ At zero turns the art set is asymmetric. These four resolve to nothing:
 /images/arrows/pro/from_nonradial/pro_0.0_skew-.svg
 ```
 
-`ArrowSvgLoader.fetchSvgContent` throws on the 404 and the arrow is dropped
-from the pictograph. Nothing surfaces to the user.
+The static skew CSV and `CSVPictographParser` trace
+`anti/from_radial/anti_0.0_skew+.svg` to shipped source data. That path is
+therefore a live missing-file case: `ArrowSvgLoader.fetchSvgContent` throws on
+the 404 and the arrow is dropped from the pictograph without user feedback.
+The three nonradial paths are valid resolver outputs, but this audit did not
+trace a production transformation that constructs them; they remain latent.
 
-The remaining 48 missing paths are skew variants above zero turns. No shipped
-sequence data carries a skewed motion with turns, so that half is recorded as
-latent rather than live; the zero-turn half is reachable now.
+The remaining 48 missing paths are synthetic skew variants above zero turns.
+No shipped-data construction path for those combinations was established, so
+they are recorded as latent rather than live.
 
 ### F3: Two prop types have no artwork in `props/animated/`
 
 Confirmed.
 
 `capsule_baton` and `fire_double_staff` are in `PropType` and have
-`props/pictograph/` artwork, but no `props/animated/` file. Three call sites
-build that path from an arbitrary prop type:
+`props/pictograph/` artwork, but no `props/animated/` file. The live production
+impact is established for the 2D path:
 
 - `src/lib/shared/3d/components/PropPlane2D.svelte:38`
-- `src/lib/shared/qr-video/services/worker-asset-loader.ts:14`
-- `src/lib/shared/pictograph/prop/services/prop-svg-loader.ts:125` under
-  `useGridVersion`
 
-Each rejects on the missing file. The main animation canvas is not affected:
+That consumer builds the animated path from arbitrary left and right prop
+types, so either missing file rejects. The similarly shaped
+`worker-asset-loader.ts` function has no caller, and `PropSvgLoader` can build
+the path under `useGridVersion`, but no current caller sends either affected
+prop through that option. Those two paths are capabilities rather than proven
+production requesters. The main animation canvas is not affected:
 `resolvePropSvgPath` sends only `torch`, `bigtorch`, `triquetra2` and the
 `sword-*` builds to `animated/`, and all of those exist.
 
@@ -254,8 +265,11 @@ Eight prop assets carry Illustrator `<style>` rules whose `clip-path` or
 `props/torch.svg` (3), and `props/{pictograph,animated,buttons}/torch.svg`,
 `props/{pictograph,animated,buttons}/bigtorch.svg` and `props/bigtorch.svg`
 (2 each). Every affected `.stN` class is applied by no element, so the browser
-never resolves the reference. Recorded rather than ignored, because an art pass
-that starts using one of those classes would inherit a broken reference.
+never resolves the reference. The contract now proves both halves of that
+exception: the dangling reference remains in its recorded style selector and
+that selector's class remains unused in markup. An art pass that activates one
+of those classes will therefore fail the test rather than inherit the broken
+reference silently.
 
 The `url(#…)` occurrences inside the long authoring comments in
 `capsule_baton.svg` and `fire_double_staff.svg` are prose, not references. The
@@ -287,10 +301,9 @@ everything its transform depends on.
 `getImageFromUrl(url)`. Callers in `canvas-2d-direct-renderer.ts` build keys
 from a 32-bit hash of the full wrapped SVG, so the key is content-addressed and
 a custom `primaryPropColors` recolor cannot collide with the default one. The
-residual risk is a hash collision returning the wrong bitmap: with a 32-bit
-space and a few thousand distinct SVG strings in one session the probability is
-under a tenth of a percent, which is why it is listed here as a note and not as
-a finding.
+residual risk is an ordinary 32-bit hash collision returning the wrong bitmap.
+This audit did not measure session key cardinality or validate a uniform hash
+distribution, so it does not assign a collision probability.
 
 ## Tests
 
@@ -298,12 +311,12 @@ Before: no test in the repository covered the asset corpus itself. The closest
 existing coverage is `tests/unit/svg-precache-manifest.test.ts`, which checks
 the service-worker precache list, not the files.
 
-After: `tests/unit/opus-svg-audit/` adds 47 tests in four files.
+After: `tests/unit/opus-svg-audit/` adds 49 tests in four files.
 
 | File                                     | Tests | Covers                                                                                          |
 | ---------------------------------------- | ----- | ----------------------------------------------------------------------------------------------- |
 | `svg-corpus.ts`                          | n/a   | shared corpus reader, comment stripping, zero-dimension inventory                               |
-| `svg-corpus-contract.test.ts`            | 18    | XML, namespaces, viewBox, ids, fragment refs, path data, grid/arrow/prop coordinate conventions |
+| `svg-corpus-contract.test.ts`            | 20    | XML, namespaces, viewBox, ids, fragment refs, path data, grid/arrow/prop coordinate conventions |
 | `pictograph-asset-resolution.test.ts`    | 14    | arrow, half-arrow and prop path resolution against disk; F2 and F3                              |
 | `prop-color-transform-fragments.test.ts` | 8     | fragment survival across the real color transform; F1                                           |
 | `svg-bitmap-sanitizer-contract.test.ts`  | 7     | sanitizer behavior and corpus exposure; F5                                                      |
@@ -313,7 +326,7 @@ Neighboring suites re-run unchanged after the workspace packages were built:
 `tests/unit/render/svg-loader-batch-cache.test.ts`,
 `src/lib/shared/pictograph/prop/services/prop-svg-loader.fan-build.test.ts`,
 `src/lib/shared/pictograph/arrow/rendering/services/__tests__/arrow-path-resolver-quarter.test.ts`
-Ran 27 tests, all passing.
+Ran 28 tests, all passing.
 
 A note on running them: those four suites fail to collect with
 `Failed to resolve entry for package "@tka/tka-types"` on a fresh checkout
@@ -336,9 +349,10 @@ gate does not reach these files and was not run for them.
 - The corpus census is textual. It uses jsdom for well-formedness and
   `svg-path-commander` for path data, but it does not rasterize, so it cannot
   catch a defect that only appears at decode time in one browser engine.
-- Reachability for F2 was judged from the shipped sequence data in the
-  repository. A user-authored sequence with a skewed turning motion was not
-  constructed.
+- F2's Cartesian resolver sweep is synthetic. One missing zero-turn path was
+  traced through shipped skew data and the CSV parser; the other three
+  zero-turn paths and all turning paths were not traced from a production
+  construction flow. A user-authored skewed turning motion was not constructed.
 - Prop appearance, fire and flame artwork, positioning offsets and half-arrow
   visual tuning were out of scope for edits. F1, F3 and F7 all sit in that
   territory and are reported rather than fixed.
@@ -357,9 +371,9 @@ Ordered by how much they change on screen.
    `resolveFullArrowAssetPath` a documented fallback to the unskewed glyph so a
    missing variant degrades instead of vanishing.
 3. F3. Either add the two `props/animated/` files, or route
-   `PropPlane2D.svelte` and `worker-asset-loader.ts` through
-   `resolvePropSvgPath`, which already knows which props live in that
-   directory.
+   `PropPlane2D.svelte` through `resolvePropSvgPath`, which already knows which
+   props live in that directory. Reassess the unreferenced worker only if it is
+   brought back into use.
 4. F4. Move the arrow loader and the SVG preloader onto `assetFetch`. Small
    change, and it closes the freeze path through the most-fetched asset class.
 5. F6. If the `< 50x50` rescale in `parseArrowSvg` is genuinely obsolete,
