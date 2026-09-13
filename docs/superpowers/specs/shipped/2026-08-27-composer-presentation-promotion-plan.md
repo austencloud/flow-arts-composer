@@ -1,8 +1,19 @@
 # Composer Presentation Promotion Plan
 
-**Status:** Approved for implementation
+**Status:** Shipped 2026-08-27 in `8ec8a09c5` (_feat(composer): promote reviewed
+presentation_). Header corrected 2026-09-13 during spec reconciliation; it still
+read "Approved for implementation" after the promotion had landed.
 
 **Approved:** 2026-08-27
+
+**Reconciliation evidence (2026-09-13):** `8ec8a09c5` deleted
+`src/routes/(public)/composer/mockup/+page.svelte` (922 lines) and `+page.ts`,
+rewrote `src/routes/(public)/composer/+page.svelte`, dropped the review-route
+alias from `SiteHeader.svelte` and the exception from `src/routes/+layout.svelte`,
+and updated `feature-truth-matrix.md`, `presentation-guardrails.md`,
+`tests/unit/landing-route-morph.test.ts`, `tests/unit/seo-funnel-analytics.test.ts`
+and `tests/unit/seo-head-contract.test.ts`. No `composer/mockup` reference
+remains anywhere under `src/`.
 
 **Scope:** Promote the reviewed Composer presentation from `/composer/mockup`
 to the public `/composer` route.

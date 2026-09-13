@@ -1,6 +1,21 @@
 # Product Decision Analytics Coverage
 
-**Status:** implemented
+**Status:** Shipped. Moved out of `active/` on 2026-09-13 during spec
+reconciliation.
+
+**Reconciliation evidence (2026-09-13):** `8d688b0d5` (_feat(analytics): cover
+product decisions_) landed the spec, the ledger
+(`docs/architecture/product-analytics-coverage.md`) and six test files together.
+Every event in the gap table exists with its named completion boundary, and the
+source vocabulary in `viewer-events.ts:4-22` is a closed union of exactly the 18
+listed values with no `unknown` member, so a new call site cannot default
+silently. Success-only emission is asserted, not assumed
+(`user-follow-analytics.test.ts` emits follow only when the transaction creates
+the relationship; `followed-collections` does not emit when the write fails).
+The 450ms settle-boundary coalescing preserves `previous_value` and suppresses
+no-op transitions. Dev capture is off (`posthog.ts:277`). The analytics unit
+tests pass. The production PostHog query this spec names as its
+post-deployment proof is outside the repository and stays outside it.
 **Date:** 2026-09-01
 **Owner:** `src/lib/shared/analytics/services/posthog.ts`
 
