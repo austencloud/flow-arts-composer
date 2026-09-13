@@ -140,6 +140,30 @@ export function createMessageDeliveryState(
     return outbox.filter((item) => item.userId === activeUserId);
   }
 
+  /**
+   * True while a delivery begun at `token` still belongs to the signed-in
+   * account. Checked after EVERY await inside a delivery, not only at its
+   * start: the coordinator forwards to the messenger, which resolves the sender
+   * from live auth, so a row handed over after the account changed is sent from
+   * the wrong account.
+   */
+  function ownsDelivery(token: number, userId: string): boolean {
+    return token === activation && activeUserId === userId;
+  }
+
+  /**
+   * A delivery's state always reaches the durable ledger — that row belongs to
+   * the account that queued it and is how the message is recovered. Only a
+   * delivery still owned here is mirrored into the live outbox.
+   */
+  async function persistDelivery(
+    record: MessageOutboxRecord,
+    token: number
+  ): Promise<void> {
+    if (ownsDelivery(token, record.userId)) replaceOutbox(record);
+    await repository.putOutbox(record);
+  }
+
   function queueDraftWrite(
     draftId: string,
     write: () => Promise<void>
@@ -400,6 +424,7 @@ export function createMessageDeliveryState(
     if (item.userId !== activeUserId) return;
     if (item.status !== "queued" || !isOnline()) return;
     const token = activation;
+    const owner = item.userId;
     const sending: MessageOutboxRecord = {
       ...item,
       status: "sending",
@@ -412,55 +437,79 @@ export function createMessageDeliveryState(
     replaceOutbox(sending);
     await repository.putOutbox(sending);
 
+    // The optimistic "sending" write is itself an await, and the account can
+    // change across it — the owner check that started this delivery is already
+    // stale here. Handing the row to the coordinator now would send it as
+    // whoever is signed in, so put it back where its own account can recover
+    // it. The attempt is un-counted because nothing was attempted.
+    if (!ownsDelivery(token, owner)) {
+      await repository.putOutbox({
+        ...sending,
+        status: "queued",
+        attemptCount: item.attemptCount,
+        progress: undefined,
+        updatedAt: now(),
+      });
+      return;
+    }
+
+    // What this delivery has produced so far. Held locally rather than re-read
+    // from the outbox, so a status transition can still be written to the right
+    // durable row after the live outbox has moved on to another account.
+    let latest = sending;
+
     try {
       await coordinator.deliver(sending, {
         onProgress(progress) {
+          if (!ownsDelivery(token, owner)) return;
           const current = currentOutbox(messageId);
-          if (!current || token !== activation) return;
-          replaceOutbox({ ...current, progress });
+          if (!current) return;
+          latest = { ...current, progress };
+          replaceOutbox(latest);
         },
         async onPrepared(attachments) {
-          const current = currentOutbox(messageId);
-          if (!current || token !== activation) return;
-          const prepared = {
-            ...current,
+          // Persisted even if the account changed mid-send: a prepared
+          // attachment is expensive to mint again, and the durable row is what
+          // the owning account resumes from.
+          latest = {
+            ...latest,
             preparedAttachments: attachments,
             updatedAt: now(),
           };
-          replaceOutbox(prepared);
-          await repository.putOutbox(prepared);
+          await persistDelivery(latest, token);
         },
       });
-      const current = currentOutbox(messageId);
-      if (!current || token !== activation) return;
-      const sent: MessageOutboxRecord = {
-        ...current,
-        status: "sent",
-        progress: undefined,
-        lastError: undefined,
-        nextAttemptAt: undefined,
-        updatedAt: now(),
-      };
-      replaceOutbox(sent);
-      await repository.putOutbox(sent);
+      // Recorded whether or not the account is still ours: the message really
+      // was sent, and leaving the durable row unfinished would re-send it on
+      // that account's next activation.
+      await persistDelivery(
+        {
+          ...latest,
+          status: "sent",
+          progress: undefined,
+          lastError: undefined,
+          nextAttemptAt: undefined,
+          updatedAt: now(),
+        },
+        token
+      );
     } catch (error) {
-      const current = currentOutbox(messageId);
-      if (!current || token !== activation) return;
       const failure = describeMessageDeliveryFailure(error, isOnline());
       const delay = Math.min(
         MAX_RETRY_DELAY_MS,
-        1000 * 2 ** Math.min(current.attemptCount, 5)
+        1000 * 2 ** Math.min(latest.attemptCount, 5)
       );
-      const failed: MessageOutboxRecord = {
-        ...current,
-        status: failure.retryable ? "queued" : "failed",
-        progress: undefined,
-        lastError: failure.message,
-        nextAttemptAt: failure.retryable ? now() + delay : undefined,
-        updatedAt: now(),
-      };
-      replaceOutbox(failed);
-      await repository.putOutbox(failed);
+      await persistDelivery(
+        {
+          ...latest,
+          status: failure.retryable ? "queued" : "failed",
+          progress: undefined,
+          lastError: failure.message,
+          nextAttemptAt: failure.retryable ? now() + delay : undefined,
+          updatedAt: now(),
+        },
+        token
+      );
     }
   }
 
