@@ -7,9 +7,10 @@ Opus batch 2026-09-12 · settings persistence assignment
 | Base SHA        | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`) |
 | Fix SHA (round 1) | `2ca4cb27bb39a1ecb7edb22dfcab065b2793744e`              |
 | Fix SHA (round 2) | `0e90e7a6` — review corrections                         |
-| Final SHA       | the branch head; this report is the commit after `0e90e7a6` |
+| Fix SHA (round 3) | `50d4548c` — async-boundary corrections                 |
+| Final SHA       | the branch head; this report is the commit after `50d4548c` |
 | Branch          | `claude/settings-persistence-defects-yoobmn`              |
-| Defects fixed   | 6 — 2 reproduced originally, 4 more found in review        |
+| Defects fixed   | 11 — 2 reproduced originally, 4 in review round 2, 5 in round 3 |
 | Environment     | Isolated cloud checkout, Linux, `pnpm` install of the committed lockfile |
 
 ## Owned files
@@ -17,7 +18,9 @@ Opus batch 2026-09-12 · settings persistence assignment
 | Path                                                          | Change             |
 | ------------------------------------------------------------- | ------------------ |
 | `src/lib/shared/settings/state/settings-state.svelte.ts`       | Modified           |
-| `tests/unit/settings/settings-local-edit-race.test.ts`         | Added (11 tests)   |
+| `src/lib/shared/settings/services/firebase-settings-persister.ts` | Modified        |
+| `tests/unit/settings/settings-local-edit-race.test.ts`         | Added (14 tests)   |
+| `tests/unit/settings/firebase-settings-persister.test.ts`      | Added (6 tests)    |
 | `docs/reports/opus-batch-2026-09-12/settings-sync-integrity.md` | Added (this file)  |
 
 Nothing else was touched. The auth service, guest/library state, prop
@@ -180,6 +183,65 @@ mutating shared state, and a stale init unsubscribes its own subscription
 rather than orphaning the live one. An `activeSaveToken` adds per-write
 ownership, so only the write that owns the in-flight flags may clear them.
 
+## Review round 3 — five async boundaries (`50d4548c`)
+
+Review of `a9d7a6e8` found five places where an `await` splits a decision from
+its use. Two were pre-existing; three were holes in rounds 1–2.
+
+### Defect 7 — `syncFromFirebase` applies a stale load over newer state
+
+`syncFromFirebase()` checked only the UID after `await loadSettings()`, and the
+caller's generation check ran after the whole method resolved — far too late.
+A load returning after a sign-out and sign-in **to the same account** passed
+the UID check and applied the old document on top of the newer one. The
+generation now flows into `syncFromFirebase` and is validated before anything
+is applied.
+
+### Defect 8 — a snapshot listener created after teardown
+
+`onSettingsChange` creates its `onSnapshot` listener **after** awaiting
+`getSettingsDocRef()`. Unsubscribing inside that window returned a canceller
+that nulled a still-null field, and the listener was then opened with no handle
+held by anyone — a permanent leak. Round 2's synchronous test mock could not
+see this, because the mock returned its canceller immediately.
+
+Pending creation is now cancellable, and each call owns its own handle in a
+closure rather than the shared `this.unsubscribe` field, so a stale handle
+cannot reach through and close the live listener.
+
+### Defect 9 — a reload makes the queue guard drop the newer edit
+
+Round 2 stamped queue entries with `localEditSequence`, which counts edits **in
+memory and restarts at zero on reload**. A queue entry persisted at sequence 5
+by a previous page load therefore outranked this session's sequence 1, and
+`queueOfflineChange` rejected the newer payload — losing the edit entirely
+rather than merely mis-ordering it. Measured on `a9d7a6e8`: the queue still
+held the previous session's `{hapticFeedback: true}` and the new
+`reducedMotion: true` edit was gone.
+
+Entries now also carry a session id, and sequences are compared only within the
+same session. An entry from any other session is by definition older than what
+this session is writing now.
+
+### Defect 10 — the offline replay never claimed the write slot
+
+`processOfflineQueue` checked `pendingFirebaseSave` once and then awaited its
+replay **without claiming the slot**, so the slot stayed null for the whole
+replay. An edit made mid-replay started a concurrent write — reinstating
+exactly the reverse-settlement race round 2's serialization existed to remove.
+Claim and release are now factored into `claimWriteSlot` / `releaseWriteSlot`
+and shared by both paths.
+
+### Defect 11 — the activeProp mirror can write to the wrong account
+
+`saveSettings` resolves the settings doc for account A, awaits the write, then
+calls `mirrorActiveProp`, which **re-read `auth.currentUser`** afterwards. If
+the account changed during the write, A's prop was stamped onto B's public user
+doc. The owner is now captured before the first await and fenced through the
+mirror (re-checked again after awaiting the Firestore instance), and
+`lastMirroredActiveProp` is scoped to that owner so an account switch is not
+suppressed by the cache.
+
 ## Verification
 
 All commands run in the isolated cloud checkout with the project's own config.
@@ -203,6 +265,29 @@ suite run against the unmodified production file, then against the fix):
 
 Measured: 9 of 11 fail on base `6e4c1b5a`; 5 of 11 fail on round 1 `c33e6bbd`;
 11 of 11 pass on `0e90e7a6`.
+
+**Round 3 tests**, each run against round 2 (`a9d7a6e8`) and the fix
+(`50d4548c`):
+
+| Test                                                            | `a9d7a6e8` | `50d4548c` |
+| ---------------------------------------------------------------- | ---------- | ---------- |
+| drops a load resolving after the same account re-signed in       | ✗ fail     | ✓ pass     |
+| no concurrent write for an edit made during an offline replay    | ✗ fail     | ✓ pass     |
+| queues a failed edit whose sequence is lower than a prior load's | ✗ fail     | ✓ pass     |
+| no snapshot listener when unsubscribed before the doc ref lands  | ✗ fail     | ✓ pass     |
+| stops delivering snapshots after unsubscribe                     | ✗ fail     | ✓ pass     |
+| gives each subscription its own handle                           | ✗ fail     | ✓ pass     |
+| does not mirror activeProp onto an account that signed in mid-write | ✗ fail  | ✓ pass     |
+| mirrors again for a different account with the same prop         | ✗ fail     | ✓ pass     |
+| writes settings and the activeProp mirror to the same account    | ✓ pass     | ✓ pass     |
+
+Measured: 5 of 6 persister tests and 2 of 3 new state tests fail on
+`a9d7a6e8`. The reload test initially passed on `a9d7a6e8` for the wrong
+reason — init drained the queue before the stale sequence could be compared —
+so it was rewritten to keep the replay failing (still offline), which is the
+condition under which the comparison actually happens. It then failed with the
+real symptom: the queue still held the previous session's payload and the new
+edit was gone.
 
 Two tests pass on base by construction — they are regression guards, not defect
 reproductions. The pre-sign-in guard protects existing documented behavior the
@@ -228,20 +313,41 @@ Notes on two of the review-round tests:
   spies rather than dispatching an `online` event. Each `loadSettingsService()`
   call re-imports the module, and every previous instance is still registered
   on the shared jsdom window, so an event-dispatch assertion passed on the old
-  code purely from another instance's listener.
+  code purely from another instance's listener. The same hazard reappeared in
+  round 3: the offline-replay test counted **nine** `saveSettings` calls from
+  one dispatched event. Both replay tests now drive `processOfflineQueue` on
+  the one instance under test (white-box, via a named `drainOfflineQueue`
+  helper that says why).
 
 **Regression runs (measured):**
 
 | Scope                                                   | Result           |
 | -------------------------------------------------------- | ---------------- |
-| `tests/unit/settings/` (incl. 7 pre-existing sync tests) | 27/27 pass       |
-| `tests/unit/share`, `collections/settings-checkpoint`, `prop-studio-lightweight-bootstrap`, `profile-stage-prop-contract`, `browse-engine-identity-switch`, `animation-engine`, `offline-cache-orchestrator` | 77 files, 604/604 pass |
-| Full default Vitest project (`vitest run --config tests/config/vitest.config.ts`) | 1973 files passed, 5 skipped; **15986 tests passed**, 106 skipped, 1 todo, **0 failed** (935 s) — re-run on `0e90e7a6`; round 1 measured 15981 passed / 0 failed |
+| `tests/unit/settings/` (incl. 7 pre-existing sync tests) | 36/36 pass       |
+| `tests/unit/share`, `collections/settings-checkpoint`, `prop-studio-lightweight-bootstrap`, `profile-stage-prop-contract`, `browse-engine-identity-switch`, `animation-engine`, `offline-cache-orchestrator`, `prop-system`, `auth` | 121 files, 873/873 pass |
+| Full default Vitest project (`vitest run --config tests/config/vitest.config.ts`) | 1974 files passed, 5 skipped; **15995 tests passed**, 106 skipped, 1 todo, **0 failed** (918 s) on `50d4548c`. Round 2 measured 15986 passed / 0 failed; round 1, 15981 / 0. |
 | `svelte-fast-check --tsconfig ./tsconfig.json`           | 582 errors / 44 warnings, **identical to the measured base count**; zero reference the changed files |
 
 The 582 type errors are a pre-existing project-wide baseline, measured on this
 same checkout with the production change stashed. They are not introduced by
 this work.
+
+### One unexplained error, not reproduced
+
+The first full-suite run on `50d4548c` reported `Errors 1 error` alongside
+15995 passing tests and zero failures — an error surfaced outside any test
+body. Neither of the two prior full runs (rounds 1 and 2) printed that line, so
+it is treated as possibly introduced here rather than dismissed.
+
+It did not reproduce in three subsequent runs: `tests/unit` alone, `src`
+co-located tests alone, and an identical full-suite re-run (1974 files, 15995
+passed, 0 failed, **no error line**, and a grep for "unhandled" across the
+captured output matching nothing). It is therefore **not root-caused** — only
+observed once and non-reproducing. Recorded here rather than claimed resolved.
+If it recurs, the likeliest suspects are the promise plumbing added to
+`processOfflineQueue` (a replay whose rejection is consumed both by `await` and
+by the non-rejecting slot view) and the deliberately rejecting `saveSettings`
+mocks in the new tests.
 
 ## Claim provenance
 
@@ -293,6 +399,14 @@ this work.
   bypasses that path would not bump the generation, and the fencing would fall
   back to the UID checks alone — correct for a *different* UID, which is the
   case that path would produce.
+- **The queue's session id is per page load, not per tab-aware owner.** Two
+  tabs sharing `localStorage` have different session ids, so neither will judge
+  the other's queued entry by sequence — the later writer simply wins. That is
+  the same outcome as before this work for the cross-tab case; the guard only
+  strengthens ordering *within* one page load.
+- **The offline replay now occupies the write slot**, so a debounced user save
+  during a long replay waits for it rather than racing it. Correct, but it
+  means a slow replay delays the user's own save by up to one round trip.
 
 ## Follow-ups (not done — out of this assignment's scope)
 
@@ -313,3 +427,9 @@ this work.
    that is a narrowing: if a save happens to be in flight at sign-in, the queue
    waits for the next `online` event or the next init instead of being drained
    immediately.
+5. The two `saveSettings` calls **inside** `syncFromFirebase` (the background
+   migration write and the seed-push when no account document exists) still
+   bypass the write slot, so they can overlap a debounced user save during
+   initial sync. Pre-existing, and narrow — both run before the realtime
+   listener is attached — but they are the last writes not routed through
+   `claimWriteSlot`.
