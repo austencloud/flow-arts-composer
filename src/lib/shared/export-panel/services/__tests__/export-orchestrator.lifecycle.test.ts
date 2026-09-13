@@ -39,19 +39,22 @@ vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
   }),
 }));
 
-vi.mock("$lib/shared/animation-panel/state/export-options-state.svelte", () => ({
-  getExportOptionsState: () => ({
-    getVideoOptions: () => ({
-      fps: 30,
-      loopCount: 1,
-      resolution: 1080,
-      effectOverrides: null,
-      includeStartPosition: true,
-      includeEndHold: true,
-      quality: 0.9,
+vi.mock(
+  "$lib/shared/animation-panel/state/export-options-state.svelte",
+  () => ({
+    getExportOptionsState: () => ({
+      getVideoOptions: () => ({
+        fps: 30,
+        loopCount: 1,
+        resolution: 1080,
+        effectOverrides: null,
+        includeStartPosition: true,
+        includeEndHold: true,
+        quality: 0.9,
+      }),
     }),
-  }),
-}));
+  })
+);
 
 vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
   settingsService: { settings: { propType: "staff" } },
@@ -60,10 +63,13 @@ vi.mock("$lib/shared/settings/state/settings-state.svelte", () => ({
 // The 1.5s success-feedback hold is cosmetic and would cost this file ten
 // seconds of real waiting. Every assertion here is about run identity, not that
 // pause; the pause itself stays exercised by the product path.
-vi.mock("$lib/shared/animation-engine/domain/constants/timing", async (original) => ({
-  ...((await original()) as Record<string, unknown>),
-  VIDEO_EXPORT_SUCCESS_DELAY_MS: 0,
-}));
+vi.mock(
+  "$lib/shared/animation-engine/domain/constants/timing",
+  async (original) => ({
+    ...((await original()) as Record<string, unknown>),
+    VIDEO_EXPORT_SUCCESS_DELAY_MS: 0,
+  })
+);
 
 const shareBlobNatively = vi.fn();
 vi.mock("$lib/shared/foundation/services/file-downloader", () => ({
@@ -144,7 +150,11 @@ class ControllableVideoOrchestrator implements IVideoExportOrchestrator {
   }
 }
 
-const SEQUENCE = { id: "seq-1", word: "ABC", steps: [] } as unknown as SequenceData;
+const SEQUENCE = {
+  id: "seq-1",
+  word: "ABC",
+  steps: [],
+} as unknown as SequenceData;
 const ANIMATION_SETTINGS = { format: "animation" } as ExportSettings;
 
 function animationDependencies(): AnimationExportDependencies {
