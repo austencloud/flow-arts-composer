@@ -101,12 +101,21 @@
   // flag the camera opens after the panel is gone and stays open.
   let destroyed = false;
 
-  // The manager is one shared instance: PerformancePreview reaches the same
-  // one through getCameraManager(). Its stop() is global, so this panel may
-  // only call it while it still owns the attempt — in onDestroy, where stop()
-  // is also the manager's cancel signal. Afterwards the attempt is cancelled
-  // and whatever the manager holds may belong to a panel that mounted since,
-  // so late cleanup releases the stream this panel was handed and nothing more.
+  // The manager is one shared instance: PerformancePreview reaches the same one
+  // through getCameraManager(), and its stop() releases whatever that instance
+  // currently holds, whoever opened it. This panel never calls it. Another
+  // surface can take the camera over at any point, including before this panel
+  // tears down, so the only thing teardown may release is the stream this panel
+  // was itself handed.
+  //
+  // INTEGRATION: claude/camera-resource-lifecycle-sdoeg6 adds the scoped calls
+  // this wants. Once that is on main, initialize() returns a CameraAcquisition
+  // handle — capture it, pass it to start(handle), and replace the teardown
+  // below with abandonAcquisition(handle) when no stream arrived and
+  // releaseStream(stream) when one did. That cancels this panel's handshake
+  // early instead of letting the camera open and be closed a moment later, and
+  // clears the manager's own state, which stopping the tracks alone cannot do.
+  // Neither call exists on main yet, so this stays track-level until then.
   function releaseOwnStream(stream: MediaStream | null) {
     stream?.getTracks().forEach((track) => track.stop());
   }
@@ -293,10 +302,9 @@
     if (recordingId) recordService.cancelRecording(recordingId);
     if (recordedVideo?.blobUrl) URL.revokeObjectURL(recordedVideo.blobUrl);
     if (browser) window.removeEventListener("resize", detectLayout);
-    // Still the owner at this instant, so the global stop is this panel's, and
-    // during the handshake it is the only signal the manager has that the
-    // owner is gone.
-    cameraService?.stop();
+    // Only this panel's own stream. An acquisition still in flight is handled
+    // by the destroyed checks in initializeCamera: the stream it opens is
+    // released the moment it arrives, so nothing is left running either way.
     releaseOwnStream(cameraStream);
   });
 </script>
