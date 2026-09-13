@@ -195,6 +195,43 @@ describe("prepared link clipboard handoff", () => {
     );
   });
 
+  it.each([false, true])(
+    "finishes plain text after an early item acknowledgement (later write denied: %s)",
+    async (denied) => {
+      let resolveUrl!: (url: string) => void;
+      const pending = new Promise<string>((resolve) => {
+        resolveUrl = resolve;
+      });
+      class ClipboardItemStub {
+        constructor(public items: Record<string, Promise<Blob>>) {}
+      }
+      Object.defineProperty(globalThis, "ClipboardItem", {
+        configurable: true,
+        value: ClipboardItemStub,
+      });
+      const writeText = vi.fn(async () => {
+        if (denied) throw new Error("User gesture expired");
+      });
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: { write: vi.fn(async () => {}), writeText },
+      });
+      let finished = false;
+      const copying = copyPreparedLink(pending).then((result) => {
+        finished = true;
+        return result;
+      });
+      await Promise.resolve();
+      expect(finished).toBe(false);
+      expect(writeText).not.toHaveBeenCalled();
+      resolveUrl("https://tkaflowarts.com/sequence/ABCD");
+      await expect(copying).resolves.toMatchObject({ status: "done" });
+      expect(writeText).toHaveBeenCalledWith(
+        "https://tkaflowarts.com/sequence/ABCD"
+      );
+    }
+  );
+
   it("allows a fresh retry after clipboard denial and a later preparation failure", async () => {
     let rejectUrl!: (reason: Error) => void;
     const pending = new Promise<string>((_, reject) => {
