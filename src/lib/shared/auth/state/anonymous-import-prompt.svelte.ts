@@ -1,5 +1,6 @@
 import type { AnonymousDraft } from "$lib/shared/auth/services/anonymous-upgrade";
 import { importDrafts } from "$lib/shared/auth/services/anonymous-upgrade";
+import { getAuthInstance } from "$lib/shared/auth/firebase";
 import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
 
 interface ImportPromptState {
@@ -8,6 +9,15 @@ interface ImportPromptState {
 }
 
 const state = $state<ImportPromptState>({ isOpen: false, drafts: [] });
+
+/**
+ * Bumped by every state transition of this prompt (a new offer, a dismissal,
+ * the start of an import). An in-flight import compares the generation it
+ * started under against the current one before touching state, so a slow
+ * import that finishes after the user has dismissed the offer or after a NEWER
+ * offer has replaced it cannot resurrect stale drafts or clobber the new ones.
+ */
+let generation = 0;
 
 export const anonymousImportPrompt = {
   get isOpen() {
@@ -24,6 +34,7 @@ export const anonymousImportPrompt = {
 /** Open the import offer if there is anything worth importing. */
 export function promptAnonymousImport(drafts: AnonymousDraft[]): void {
   if (!drafts.length) return;
+  generation += 1;
   state.drafts = drafts;
   state.isOpen = true;
 }
@@ -49,15 +60,34 @@ export async function confirmAnonymousImport(): Promise<void> {
   // import has actually settled.
   state.isOpen = false;
 
+  // This import belongs to this offer and to the account signed in at the
+  // moment the user agreed. Anything that changes either of those invalidates
+  // the result we are about to write back.
+  generation += 1;
+  const startedAt = generation;
+
+  let destinationUid: string | undefined;
+  try {
+    destinationUid = (await getAuthInstance()).currentUser?.uid;
+  } catch {
+    // Can't read the destination — leave it undefined and let the write go
+    // unfenced rather than blocking a legitimate import on an auth hiccup.
+  }
+
   let imported = 0;
   let failed: AnonymousDraft[] = drafts;
   try {
-    ({ imported, failed } = await importDrafts(drafts));
+    ({ imported, failed } = await importDrafts(drafts, destinationUid));
   } catch (error) {
     // importDrafts collects per-draft failures rather than throwing, so this is
     // the repository lookup itself failing. Keep everything.
     console.warn("[anonymous-import-prompt] Import could not run:", error);
   }
+
+  // A newer offer or a dismissal happened while we were writing. Reporting or
+  // restoring this run's drafts now would overwrite state that is no longer
+  // about them.
+  if (startedAt !== generation) return;
 
   if (imported > 0) {
     showToast(
@@ -78,6 +108,7 @@ export async function confirmAnonymousImport(): Promise<void> {
 }
 
 export function cancelAnonymousImport(): void {
+  generation += 1;
   state.isOpen = false;
   state.drafts = [];
 }

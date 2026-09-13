@@ -150,13 +150,21 @@ export class LibrarySaveService {
     // sequences they cannot see. The read side and the cap side must count the
     // same set. See docs/superpowers/reviews/
     // 2026-09-12-guest-save-continuity-audit.md (F1).
+    //
+    // `isFullAccount`, the uid and the ledger are read as ONE snapshot, before
+    // the Dexie await below. Reading the tier before an await and the uid after
+    // it mixes two identities: a sign-in landing in that window would decide the
+    // cap as a guest but count a full account's ledger (or the reverse), which
+    // is the same time-of-check/time-of-use mistake the retry pass makes at its
+    // write boundary.
+    const saverUid = authState.effectiveUserId;
     const isFullAccount = isFullAccountUser(
       authState.isAuthenticated,
       authState.isAnonymous
     );
+    const ownedIds = getOwnedSequenceIdSet(saverUid);
     const alreadySavedLocally = await db.sequences.get(resolvedSequence.id);
     if (!isFullAccount) {
-      const ownedIds = getOwnedSequenceIdSet(authState.effectiveUserId);
       // Already this guest's own sequence → an update, never a new save.
       if (
         !ownedIds.has(resolvedSequence.id) &&
@@ -281,7 +289,11 @@ export class LibrarySaveService {
     // captures EXACTLY this session's own drafts (saved-sequence-ledger),
     // instead of sweeping every row out of the flat, never-cleared Dexie store
     // (which could import a prior user's library on a shared device).
-    recordSavedSequenceId(authState.effectiveUserId, sequenceId);
+    // The SNAPSHOT uid, not a fresh read. The cap was decided against this
+    // account's ledger; recording the save against a different one (a sign-in
+    // that landed during the Dexie write) would leave the row owned by nobody
+    // the cap ever consulted, and invisible to the account that made it.
+    recordSavedSequenceId(saverUid, sequenceId);
 
     // Now that the local write has landed (persisted === true past the throw
     // above), it's honest to tell a public-visibility save it was kept private.

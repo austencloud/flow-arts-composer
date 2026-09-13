@@ -22,7 +22,28 @@ vi.mock("$lib/shared/library/get-library-repository", () => ({
   }),
 }));
 vi.mock("$lib/shared/offline/state/network-status-state.svelte", () => ({
-  networkStatusState: { onOnline: vi.fn(() => vi.fn()) },
+  // onOffline is reached through this module's import graph; omitting it threw
+  // at collection time and this whole file silently ran ZERO tests.
+  networkStatusState: {
+    onOnline: vi.fn(() => vi.fn()),
+    onOffline: vi.fn(() => vi.fn()),
+  },
+}));
+// The retry pass is scoped to rows the signed-in account owns, so these
+// fixtures have to be owned by someone for the pass to consider them at all.
+vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
+  authState: {
+    isAuthenticated: true,
+    isAnonymous: false,
+    user: { uid: "owner-uid" },
+    effectiveUserId: "owner-uid",
+  },
+}));
+vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+  getSavedSequenceIds: () => ["deleting-sequence", "live-sequence"],
+  getOwnedSequenceIdSet: () => new Set(["deleting-sequence", "live-sequence"]),
+  recordSavedSequenceId: vi.fn(),
+  removeSavedSequenceIds: vi.fn(),
 }));
 vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
   toast: { info: vi.fn() },

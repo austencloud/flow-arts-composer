@@ -132,6 +132,12 @@ let retryInFlight = false;
  * neither is visible in this account's library either (a guest reads Dexie
  * through the same ledger; a full account reads Firestore), so skipping them
  * hides nothing that was showing. Adopting them is the bug.
+ *
+ * Ownership scoping decides WHOSE rows are written; it deliberately does not
+ * touch WHAT visibility they get. An unspecified visibility still falls back to
+ * public, per the public-by-default save contract that
+ * tests/unit/public-collection-live-choreo-contract.test.ts pins on this file
+ * by name. Changing that would be a product decision, not an isolation fix.
  */
 export async function retryPendingSyncs(): Promise<void> {
   if (retryInFlight) return;
@@ -173,16 +179,18 @@ export async function retryPendingSyncs(): Promise<void> {
         await repo.saveSequenceWithMetadata(sequence, {
           name: sequence.name,
           displayName: sequence.displayName,
-          // Private, not public, when the row recorded no intent. A save made
-          // through LibrarySaveService always stamps pendingSyncMetadata, so a
-          // row without it is a legacy row whose visibility nobody recorded —
-          // and an unattended background pass must not be what decides to
-          // publish it to the community gallery. Guessing "private" is
-          // recoverable by re-saving; guessing "public" is not.
-          visibility: sequence.pendingSyncMetadata?.visibility ?? "private",
+          visibility: sequence.pendingSyncMetadata?.visibility ?? "public",
           tags: [...sequence.tags],
           notes: sequence.pendingSyncMetadata?.notes ?? "",
           thumbnailUrl: sequence.thumbnails[0],
+          // Identity fence, re-checked inside the repository AFTER it resolves
+          // the uid it is about to stamp. The ownership filter above selected
+          // this row for `ownerUid`; the guard before the loop is only a cheap
+          // early exit. Between that guard and the actual write the repository
+          // awaits getFirestoreInstance(), and an account switch in that window
+          // would attribute this row to whoever is signed in by then. The
+          // repository refuses the write instead.
+          expectedOwnerId: ownerUid,
         });
         await markSequenceSyncStatus(sequence.id, "synced");
       } catch (error) {
@@ -201,11 +209,8 @@ export async function retryPendingSyncs(): Promise<void> {
             await db.sequences.update(sequence.id, {
               syncStatus: "failed",
               pendingSyncMetadata: {
-                // Same conservative default as the write above: recording
-                // "public" here would hand the next pass a publication intent
-                // the user never expressed.
                 visibility:
-                  sequence.pendingSyncMetadata?.visibility ?? "private",
+                  sequence.pendingSyncMetadata?.visibility ?? "public",
                 notes: sequence.pendingSyncMetadata?.notes ?? "",
                 blockedReason: permanent.code,
               },

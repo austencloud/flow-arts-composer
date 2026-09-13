@@ -26,8 +26,12 @@ vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
   toast: { info: vi.fn(), warning: vi.fn(), error: vi.fn(), success: vi.fn() },
   showToast: (...a: unknown[]) => showToastMock(...a),
 }));
+/** The account the import would write into, swapped mid-flight by tests. */
+const signedInUid = { value: "account-B" as string | undefined };
 vi.mock("$lib/shared/auth/firebase", () => ({
-  getAuthInstance: vi.fn().mockResolvedValue({ currentUser: null }),
+  getAuthInstance: async () => ({
+    currentUser: signedInUid.value ? { uid: signedInUid.value } : null,
+  }),
 }));
 vi.mock("$lib/shared/auth/services/pending-credential-link", () => ({
   stashPendingLink: vi.fn(),
@@ -79,6 +83,7 @@ function retryable(message = "offline") {
 beforeEach(() => {
   vi.clearAllMocks();
   repoSaveSequenceMock.mockResolvedValue({});
+  signedInUid.value = "account-B";
   cancelAnonymousImport();
 });
 
@@ -228,5 +233,95 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
     expect(anonymousImportPrompt.count).toBe(0);
     expect(anonymousImportPrompt.isOpen).toBe(false);
     expect(repoSaveSequenceMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("collision import — destination fencing and staleness", () => {
+  it("fences every write to the account signed in when the user confirmed", async () => {
+    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+
+    await confirmAnonymousImport();
+
+    for (const call of repoSaveSequenceMock.mock.calls) {
+      expect(call[1]).toMatchObject({ expectedOwnerId: "account-B" });
+    }
+  });
+
+  it("keeps fencing to the confirming account even if the session changes mid-import", async () => {
+    // The repository is what ultimately refuses; what matters here is that the
+    // expected owner never follows the switch.
+    repoSaveSequenceMock.mockImplementationOnce(async () => {
+      signedInUid.value = "account-C";
+      return {};
+    });
+    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+
+    await confirmAnonymousImport();
+
+    expect(
+      repoSaveSequenceMock.mock.calls.every(
+        (c: any[]) => c[1]?.expectedOwnerId === "account-B"
+      )
+    ).toBe(true);
+  });
+
+  it("returns a draft the repository refused as still-outstanding, not imported", async () => {
+    repoSaveSequenceMock.mockRejectedValue(
+      Object.assign(new Error("owner changed"), { code: "UNAUTHORIZED" })
+    );
+    promptAnonymousImport([makeDraft("d1")]);
+
+    await confirmAnonymousImport();
+
+    // Refused for identity reasons is retryable work, not silently dropped.
+    expect(anonymousImportPrompt.count).toBe(1);
+  });
+
+  it("a slow import does not resurrect drafts the user has since dismissed", async () => {
+    let release: (() => void) | null = null;
+    repoSaveSequenceMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = () => resolve({});
+        })
+    );
+    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+
+    const inFlight = confirmAnonymousImport();
+    // confirm awaits the destination-uid read before it writes, so wait until
+    // the first write is genuinely in flight.
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    // User dismisses while that write is still open.
+    cancelAnonymousImport();
+    release!();
+    await inFlight;
+
+    expect(anonymousImportPrompt.count).toBe(0);
+    expect(anonymousImportPrompt.isOpen).toBe(false);
+  });
+
+  it("an older import completing late does not clobber a newer offer", async () => {
+    let release: (() => void) | null = null;
+    repoSaveSequenceMock.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          release = () =>
+            reject(
+              Object.assign(new Error("offline"), { code: "unavailable" })
+            );
+        })
+    );
+    promptAnonymousImport([makeDraft("old-1")]);
+
+    const inFlight = confirmAnonymousImport();
+    await vi.waitFor(() => expect(release).toBeTypeOf("function"));
+    // A newer collision produces a fresh offer before the old one settles.
+    promptAnonymousImport([makeDraft("new-1"), makeDraft("new-2")]);
+    release!();
+    await inFlight;
+
+    // The stale run must not overwrite the newer offer with its own failures.
+    expect(anonymousImportPrompt.count).toBe(2);
+    expect(anonymousImportPrompt.isOpen).toBe(true);
   });
 });

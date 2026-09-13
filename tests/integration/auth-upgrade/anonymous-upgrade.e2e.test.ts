@@ -27,6 +27,10 @@ const ACCOUNTS_ENDPOINT = `${EMULATOR_HOST}/emulator/v1/projects/${PROJECT_ID}/a
 const h = vi.hoisted(() => ({
   testAuth: null as Auth | null,
   repo: null as any,
+  /** Ids the anon uid recorded as its own (saved-sequence-ledger). */
+  ledgerIds: [] as string[],
+  /** Rows sitting in this device's Dexie store. */
+  dexieRows: [] as any[],
 }));
 
 vi.mock("$lib/shared/auth/firebase", () => ({
@@ -51,11 +55,32 @@ vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
   toast: { success: () => undefined, error: () => undefined },
 }));
 
+// last-auth-method is a `.svelte.ts` $state rune module too, imported directly
+// by anonymous-upgrade. Without this the file threw "$state is not defined" at
+// import time and the whole suite silently collected ZERO tests.
+vi.mock("$lib/shared/auth/services/last-auth-method.svelte", () => ({
+  recordLastAuthMethod: () => undefined,
+}));
+
+// captureAnonymousDrafts reads LOCAL Dexie rows filtered by the per-uid ledger
+// — NOT the repository. (It used to read Firestore via repo.getUserSequences;
+// SP2 moved the capture source because a guest's fresh save may never have
+// reached the cloud.) Both sides are stubbed here: the ledger reads
+// localStorage, which this node-environment suite has none of, and Dexie needs
+// a browser IndexedDB.
+vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+  getSavedSequenceIds: () => h.ledgerIds,
+  getOwnedSequenceIdSet: () => new Set(h.ledgerIds),
+  recordSavedSequenceId: () => undefined,
+  removeSavedSequenceIds: () => undefined,
+}));
+vi.mock("$lib/shared/persistence/services/dexie-persistence-service", () => ({
+  getAllSequences: async () => h.dexieRows,
+}));
+
 // Static imports are fine: vi.mock is hoisted above them, so these resolve to
 // the mocked modules.
-import {
-  ensureGuestIdentity,
-} from "$lib/shared/auth/services/guest-identity";
+import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
 import {
   importDrafts,
   upgradeAnonymousWithEmail,
@@ -96,6 +121,8 @@ describe("anonymous identity upgrade (auth emulator E2E)", () => {
     await signOut(h.testAuth!);
     await clearEmulatorAccounts();
     h.repo = makeRepoStub();
+    h.ledgerIds = [];
+    h.dexieRows = [];
   });
 
   it("1. lazily provisions an anonymous identity and is idempotent", async () => {
@@ -117,10 +144,11 @@ describe("anonymous identity upgrade (auth emulator E2E)", () => {
     await ensureGuestIdentity();
     const anonUid = h.testAuth!.currentUser!.uid;
 
-    h.repo.getUserSequences.mockResolvedValueOnce([
-      makeDraft("d1"),
-      makeDraft("d2"),
-    ]);
+    // Capture still runs on the link path. Nothing needs importing here — the
+    // uid survives, so the drafts stay attached to it — but the capture must
+    // not blow up or mis-scope on the way through.
+    h.dexieRows = [makeDraft("d1"), makeDraft("d2"), makeDraft("someone-else")];
+    h.ledgerIds = ["d1", "d2"];
 
     const res = await upgradeAnonymousWithEmail(
       "newuser@example.com",
@@ -152,10 +180,12 @@ describe("anonymous identity upgrade (auth emulator E2E)", () => {
     const anonUid = h.testAuth!.currentUser!.uid;
     expect(h.testAuth!.currentUser!.isAnonymous).toBe(true);
 
-    h.repo.getUserSequences.mockResolvedValueOnce([
-      makeDraft("d1"),
-      makeDraft("d2"),
-    ]);
+    // The guest's own local saves: rows in this device's Dexie store that the
+    // anon uid recorded in its ledger. Capture reads exactly this intersection,
+    // so a prior user's rows on a shared device are never swept into the
+    // colliding account.
+    h.dexieRows = [makeDraft("d1"), makeDraft("d2"), makeDraft("someone-else")];
+    h.ledgerIds = ["d1", "d2"];
 
     const res = await upgradeAnonymousWithEmail(
       "taken@example.com",
@@ -164,27 +194,73 @@ describe("anonymous identity upgrade (auth emulator E2E)", () => {
 
     expect(res.status).toBe("collision-signed-in");
     expect(res.importable).toBeDefined();
-    expect(res.importable!.length).toBe(2);
+    expect(res.importable!.map((d: any) => d.id).sort()).toEqual(["d1", "d2"]);
+    // The unowned row on the same device is NOT captured.
+    expect(res.importable!.some((d: any) => d.id === "someone-else")).toBe(
+      false
+    );
 
     const user = h.testAuth!.currentUser!;
     expect(user.uid).not.toBe(anonUid); // signed into the pre-existing account
     expect(user.isAnonymous).toBe(false);
   });
 
-  it("4. importDrafts copies drafts, swallows duplicates, rethrows other errors", async () => {
-    // First save succeeds, second is a duplicate (ALREADY_EXISTS, swallowed).
+  it("4. importDrafts copies drafts, settles duplicates, and returns what still needs retrying", async () => {
+    // First save succeeds, second is a duplicate (ALREADY_EXISTS): already safe
+    // in the account, so it is settled rather than pending work.
     h.repo.saveSequence
       .mockResolvedValueOnce(undefined)
       .mockRejectedValueOnce({ code: "ALREADY_EXISTS" });
 
-    const n = await importDrafts([makeDraft("dA"), makeDraft("dB")]);
-    expect(n).toBe(1);
+    const first = await importDrafts([makeDraft("dA"), makeDraft("dB")]);
+    expect(first.imported).toBe(1);
+    expect(first.failed).toEqual([]);
     expect(h.repo.saveSequence).toHaveBeenCalledTimes(2);
 
-    // A non-duplicate error must propagate.
-    h.repo.saveSequence.mockRejectedValueOnce({ code: "SOMETHING_ELSE" });
-    await expect(importDrafts([makeDraft("dC")])).rejects.toMatchObject({
-      code: "SOMETHING_ELSE",
-    });
+    // A retryable error is REPORTED, not thrown: throwing out of the loop
+    // abandoned every draft behind the failing one and discarded the count of
+    // the ones already written, which is how a single offline write used to
+    // lose the rest of a guest's work (audit F3).
+    h.repo.saveSequence.mockReset();
+    h.repo.saveSequence
+      .mockRejectedValueOnce({ code: "SOMETHING_ELSE" })
+      .mockResolvedValueOnce(undefined);
+
+    const second = await importDrafts([makeDraft("dC"), makeDraft("dD")]);
+    // The draft AFTER the failure was still attempted.
+    expect(h.repo.saveSequence).toHaveBeenCalledTimes(2);
+    expect(second.imported).toBe(1);
+    expect(second.failed.map((d: any) => d.id)).toEqual(["dC"]);
+  });
+
+  it("5. importDrafts carries each draft's recorded visibility to the repository", async () => {
+    // A guest's Dexie row records its saved visibility only under
+    // pendingSyncMetadata, and the repository defaults an unspecified
+    // visibility to "public" — so importing without it republished private
+    // guest work once the importing session was a full account (audit F2).
+    const priv = makeDraft("dPriv");
+    priv.pendingSyncMetadata = { visibility: "private", notes: "mine" };
+    const pub = makeDraft("dPub");
+    pub.pendingSyncMetadata = { visibility: "public", notes: "" };
+
+    await importDrafts([priv, pub, makeDraft("dNone")]);
+
+    expect(h.repo.saveSequence).toHaveBeenNthCalledWith(
+      1,
+      priv,
+      expect.objectContaining({ visibility: "private", notes: "mine" })
+    );
+    expect(h.repo.saveSequence).toHaveBeenNthCalledWith(
+      2,
+      pub,
+      expect.objectContaining({ visibility: "public" })
+    );
+    // Nothing recorded → private. An import preserves work; it does not make a
+    // publication decision on the user's behalf.
+    expect(h.repo.saveSequence).toHaveBeenNthCalledWith(
+      3,
+      expect.anything(),
+      expect.objectContaining({ visibility: "private" })
+    );
   });
 });

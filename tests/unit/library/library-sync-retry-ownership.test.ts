@@ -45,6 +45,18 @@ const authStateMock = {
   effectiveUserId: "account-B" as string | null,
 };
 
+// The failure path does `error instanceof FirebaseError`, and the suite-wide
+// firebase/app mock does not export it. Only the class identity matters here.
+vi.mock("firebase/app", () => ({
+  FirebaseError: class FirebaseError extends Error {
+    constructor(
+      public code: string,
+      message: string
+    ) {
+      super(message);
+    }
+  },
+}));
 vi.mock("$lib/shared/persistence/database/tka-database", () => ({
   db: {
     sequences: {
@@ -185,15 +197,63 @@ describe("retryPendingSyncs — account isolation", () => {
     });
   });
 
-  it("does not publish an owned row that recorded no visibility intent", async () => {
+  it("leaves the public-by-default contract alone for a row with no recorded intent", async () => {
     rows.push(makeRow({ id: "owned-by-b", pendingSyncMetadata: undefined }));
     ledger.set("account-B", ["owned-by-b"]);
 
     await retryPendingSyncs();
 
-    // An unattended background pass must not be what decides to publish.
+    // Ownership scoping decides WHOSE rows are written, not what visibility
+    // they get. Public-by-default is a product decision pinned on this file by
+    // name in tests/unit/public-collection-live-choreo-contract.test.ts.
     expect(saveSequenceWithMetadataMock.mock.calls[0]?.[1]?.visibility).toBe(
-      "private"
+      "public"
     );
+  });
+
+  it("fences every write to the account the row was selected for", async () => {
+    rows.push(makeRow({ id: "owned-by-b" }));
+    ledger.set("account-B", ["owned-by-b"]);
+
+    await retryPendingSyncs();
+
+    // The repository re-checks this AFTER resolving the uid it will stamp, so
+    // a switch inside its own await cannot land the row on another account.
+    expect(saveSequenceWithMetadataMock.mock.calls[0]?.[1]).toMatchObject({
+      expectedOwnerId: "account-B",
+    });
+  });
+
+  it("keeps fencing to the ORIGINAL account when the switch happens mid-pass", async () => {
+    rows.push(makeRow({ id: "b-1" }), makeRow({ id: "b-2" }));
+    ledger.set("account-B", ["b-1", "b-2"]);
+    // A write that resolves only after the account has already changed.
+    saveSequenceWithMetadataMock.mockImplementationOnce(async () => {
+      authStateMock.effectiveUserId = "account-C";
+      return {};
+    });
+
+    await retryPendingSyncs();
+
+    // The one write that did happen was fenced to B, never re-targeted to C.
+    expect(saveSequenceWithMetadataMock.mock.calls[0]?.[1]).toMatchObject({
+      expectedOwnerId: "account-B",
+    });
+    expect(
+      saveSequenceWithMetadataMock.mock.calls.some(
+        (c: any[]) => c[1]?.expectedOwnerId === "account-C"
+      )
+    ).toBe(false);
+  });
+
+  it("survives the repository refusing a write whose owner went stale", async () => {
+    rows.push(makeRow({ id: "b-1" }));
+    ledger.set("account-B", ["b-1"]);
+    saveSequenceWithMetadataMock.mockRejectedValueOnce(
+      Object.assign(new Error("owner changed"), { code: "UNAUTHORIZED" })
+    );
+
+    // The refusal is handled like any other failed sync: recorded, not thrown.
+    await expect(retryPendingSyncs()).resolves.toBeUndefined();
   });
 });

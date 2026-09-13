@@ -381,7 +381,8 @@ export interface ImportDraftsResult {
  * it does not make a publication decision on the user's behalf (F2).
  */
 export async function importDrafts(
-  drafts: AnonymousDraft[]
+  drafts: AnonymousDraft[],
+  destinationUid?: string
 ): Promise<ImportDraftsResult> {
   const repo = getLibraryRepository();
   let imported = 0;
@@ -391,6 +392,13 @@ export async function importDrafts(
       await repo.saveSequence(draft, {
         visibility: draft.pendingSyncMetadata?.visibility ?? "private",
         notes: draft.pendingSyncMetadata?.notes ?? "",
+        // The account the user agreed to import INTO. Each write awaits, and
+        // the repository resolves the uid it stamps only after its own await,
+        // so without this a switch between drafts would silently redirect the
+        // remainder into a different account. The repository refuses instead,
+        // and the draft comes back in `failed` rather than landing somewhere
+        // the user never chose.
+        expectedOwnerId: destinationUid,
       });
       imported += 1;
     } catch (error) {

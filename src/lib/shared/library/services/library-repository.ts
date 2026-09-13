@@ -391,10 +391,34 @@ export class LibraryRepository {
 
   async saveSequence(
     sequence: SequenceData,
-    overrides?: { visibility?: SequenceVisibility; notes?: string }
+    overrides?: {
+      visibility?: SequenceVisibility;
+      notes?: string;
+      /**
+       * Refuse the write unless the account it would be stamped onto is still
+       * this one. See the identity fence below.
+       */
+      expectedOwnerId?: string;
+    }
   ): Promise<LibrarySequence> {
     const firestore = await getFirestoreInstance();
     const userId = this.getWritableUserId();
+
+    // Identity fence. `userId` is resolved from live auth state HERE, after an
+    // await, and is what gets stamped as ownerId. A caller that selected this
+    // row for a specific account (a background sync retry sweeping local rows,
+    // a guest-upgrade import writing into the account just signed into) cannot
+    // guarantee that account is still current by the time this line runs — the
+    // user may have switched in between. Checking at the call site is a
+    // time-of-check/time-of-use gap; only a check on this side of every await,
+    // against the uid actually about to be written, closes it.
+    if (overrides?.expectedOwnerId && overrides.expectedOwnerId !== userId) {
+      throw new LibraryError(
+        "The signed-in account changed before this write could be attributed.",
+        "UNAUTHORIZED",
+        sequence.id
+      );
+    }
 
     if (isEmptySequence(sequence)) {
       throw new LibraryError(
@@ -780,6 +804,8 @@ export class LibraryRepository {
       tags: string[];
       notes: string;
       thumbnailUrl?: string;
+      /** Forwarded to saveSequence's identity fence. */
+      expectedOwnerId?: string;
     }
   ): Promise<LibrarySequence> {
     // Put the new thumbnail first, filter out duplicates so re-saves
@@ -825,6 +851,7 @@ export class LibraryRepository {
       return this.saveSequence(enrichedSequence, {
         visibility: metadata.visibility,
         notes: metadata.notes,
+        expectedOwnerId: metadata.expectedOwnerId,
       });
     };
 
