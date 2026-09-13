@@ -1,16 +1,19 @@
 # Learn progress persistence and state integrity
 
 Date: 2026-09-13. Domain: Learn progress/checkpoint services and state under
-`src/lib/features/learn`. Branch: `claude/learn-progress-defects-3p215o`.
+`src/lib/features/learn`. Original branch:
+`claude/learn-progress-defects-3p215o`. Reviewed integration branch:
+`codex/opus-learn-reviewed`.
 
-Base SHA: `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (equal to `origin/main` at
-the start of this task). `origin/main` has since moved to `cb4d4210`, which
-changes nothing under `src/lib/features/learn` — `git diff 6e4c1b5a cb4d4210 --
-src/lib/features/learn` is empty — so this branch's base is still current for
-its own paths.
+Audit base SHA: `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (equal to
+`origin/main` at the start of this task). Reviewed integration base SHA:
+`55911b2c384b2024389751899baa1aa42411c064`. The newer base changes nothing
+under `src/lib/features/learn` relative to the audit base. Original branch tip:
+`38622cbd4fbd76306119573ddcf97802729ab21b`.
 
-Code commits: `3a24958b` (round 1), `5c728b15` (round 2), `76dc5e92` (round 3).
-Each report commit follows its code commit, so the branch tip is docs-only.
+Original code commits: `3a24958b` (round 1), `5c728b15` (round 2),
+`76dc5e92` (round 3). Each original report commit follows its code commit, so
+the original branch tip is docs-only.
 
 ## Owned files
 
@@ -202,19 +205,25 @@ Reproduced as `expected [ 'user-a' ] to deeply equal []` on `5c728b15`.
 ownership synchronously, before the new load is awaited: one
 `retireRemoteOwnership()` (cancel the subscription, `userId = null`,
 `initialized = false`), which the failure path and `disconnect()` share as a
-single owner. The window is now write-free rather than misdirected — local
-writes continue and the new user's first successful merge pushes them, exactly
-as Defect 2's fix intends. The generation guards are untouched; this only
-changes _when_ the outgoing user stops being the write target.
+single owner. The window is now write-free rather than misdirected. Local
+writes continue, and the existing timestamp merge policy decides their fate
+when the new user finishes loading: they are pushed when the remote record is
+absent or older, while a newer remote record wins. The generation guards are
+untouched; this only changes _when_ the outgoing user stops being the write
+target.
 
 Note on what this does **not** fix: the progress cached in `localStorage` is
-not namespaced per account, so work done during the window is still pushed to
-whoever connects next. That is follow-up 2 below, unchanged in scope by this
-fix — it is a storage-key question, not a race.
+not namespaced per account. Work done during the window remains in that shared
+cache; the next successful account load applies the existing timestamp policy
+and can push it when the remote record is absent or older. That is follow-up 2
+below, unchanged in scope by this fix — it is a storage-key question, not a
+race.
 
 ## Verification
 
-All measured on this branch in this cloud checkout, not inferred.
+The historical columns were measured in the original cloud checkout. The
+current column was rerun on the reviewed integration branch after merging the
+integration base above.
 
 Both suites were run against every prior state of this branch as well as the
 current one. Only the source file under test was swapped; the tests are the same
@@ -314,10 +323,12 @@ produce an independent baseline.
   the client's own formula winning over a second one, not a new formula — but
   two writers disagreeing on the denominator is a follow-up in its own right.
 - Deferring `this.userId` means progress made between sign-in and the merge
-  landing is local-only for that window. It is pushed by the next successful
-  attempt, and localStorage holds it meanwhile — but if the merge never
-  succeeds in a session, that session never writes to Firestore. That is the
-  intended trade: silence over destroying the server's copy.
+  landing is local-only for that window, and localStorage holds it meanwhile.
+  On the next successful attempt, the existing timestamp policy either pushes
+  it when the remote record is absent or older or replaces it with a newer
+  remote record. If the merge never succeeds in a session, that session never
+  writes to Firestore. That is the intended trade: silence over destroying the
+  server's copy.
 - The generation guard makes a superseded attempt a silent no-op. That is
   correct for the account-switch and sign-out cases it exists for, but it means
   a caller awaiting `initializeForUser` cannot distinguish "connected" from
