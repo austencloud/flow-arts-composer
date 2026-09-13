@@ -39,6 +39,7 @@
     dismissible = true,
     labelledBy,
     ariaLabel,
+    title,
     describedBy,
     role = "dialog",
     showHandle = undefined,
@@ -76,6 +77,19 @@
     dismissible?: boolean;
     labelledBy?: string;
     ariaLabel?: string;
+    /**
+     * The surface's visible title. Used as the dialog's accessible name when
+     * neither `labelledBy` nor `ariaLabel` is supplied, so a drawer that
+     * already renders a `DrawerHeader title=...` can name itself by passing the
+     * same string here instead of hand-minting an id to point at.
+     *
+     * This is the naming contract for the primitive: an `aria-modal` dialog
+     * with no accessible name is announced as a bare "dialog" (WCAG 2.1 SC
+     * 4.1.2). Supply exactly one of `labelledBy`, `ariaLabel` or `title`.
+     * Rendered as `aria-label`, never as the `title` attribute, so it adds no
+     * native tooltip.
+     */
+    title?: string;
     /** ID of element that describes the drawer content. For screen reader descriptions. */
     describedBy?: string;
     role?: "dialog" | "menu" | "listbox" | "alertdialog";
@@ -481,9 +495,20 @@
     }
   }
 
-  // Handle escape key - only close if this is the topmost drawer
+  // Handle escape key - only close if this is the topmost drawer.
+  //
+  // `shouldDeferEscapeShortcut` is the same guard `handleDialogCancel` below
+  // already applies, and the same one the global `global.escape` owner uses
+  // (register-escape-shortcut.ts). Without it here, this window-level handler
+  // took the first Escape press away from a focused input, combobox, menu or
+  // expanded control inside the drawer — closing the whole sheet when the user
+  // meant to cancel the field they were typing in. That contradicts ownership
+  // rule 1 in docs/architecture/escape-routing.md, and it made the drawer the
+  // only surface in the app that ignored the deferral every other Escape owner
+  // honours.
   function handleKeydown(event: KeyboardEvent) {
     if (event.defaultPrevented) return;
+    if (shouldDeferEscapeShortcut(document)) return;
 
     if (
       event.key === "Escape" &&
@@ -514,6 +539,14 @@
     // Let it close naturally - our close logic will handle cleanup
     requestClose("escape");
   }
+
+  // `labelledBy` wins when the consumer points at real header markup; `title`
+  // is the fallback for the common case where the visible name is a plain
+  // string the consumer already has. Resolving to `undefined` leaves the
+  // attribute off entirely rather than emitting an empty name.
+  const resolvedAriaLabel = $derived(
+    labelledBy ? undefined : (ariaLabel ?? title ?? undefined)
+  );
 
   // Compute state attribute for CSS - use animated state for visual transitions
   const dataState = $derived(isAnimatedOpen ? "open" : "closed");
@@ -628,7 +661,7 @@
     tabindex="-1"
     aria-modal="true"
     aria-labelledby={labelledBy}
-    aria-label={ariaLabel}
+    aria-label={resolvedAriaLabel}
     aria-describedby={describedBy}
     oncancel={handleDialogCancel}
     style:z-index={stackZIndex}

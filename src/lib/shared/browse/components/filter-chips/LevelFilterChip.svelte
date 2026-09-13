@@ -79,6 +79,7 @@ Options: All, Level 1, Level 2, Level 3. Each shows contextual count.
     chipColor="var(--semantic-info)"
     mode="dropdown"
     expanded={isOpen}
+    ondismiss={() => (isOpen = false)}
     onclick={handleToggle}
     ghostKind="browse-filter"
   >

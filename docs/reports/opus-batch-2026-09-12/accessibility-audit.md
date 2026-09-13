@@ -23,40 +23,54 @@ AUDIT_CHROMIUM_PATH=/opt/pw-browsers/chromium \
   npx vitest run --config tests/opus-accessibility-audit/vitest.audit.config.ts
 ```
 
-Result on the audited SHA, stable across repeated runs:
+Result **after the fixes** (§ Implementation), stable across repeated runs:
 
 ```
- Test Files  4 failed | 3 passed (7)
-      Tests  6 failed | 10 passed (16)
+ Test Files  2 failed | 6 passed (8)
+      Tests  2 failed | 16 passed (18)
 ```
 
-Each failing spec is a finding below. Each passing spec is either a control that
-isolates a cause or a behavior this audit verified as correct (§ Verified
-correct).
+Before the fixes the same suite reported `6 failed | 10 passed (16)`. The two
+that still fail are the two things still open: the narrowed F2 (a modal over a
+drawer, focus on a plain button) and the F5 callsites other than Browse Filters.
+Every other spec is a fixed defect, a control that isolates a cause, or a
+behavior this audit verified as correct (§ Verified correct).
 
-### This suite is not a regression gate
+### Where the regression tests live
 
-**Nothing in CI runs these specs.** No workflow references
-`tests/opus-accessibility-audit/vitest.audit.config.ts`, and the
-`component-tests` job (`.github/workflows/web-ci.yml:143`) runs
-`test:components:ci`, whose config globs only `src/**/*.svelte.{test,spec}.ts` —
-which never matches `tests/opus-accessibility-audit/**/*.audit.test.ts`. The
-isolated config was the right call for an audit (it needs an `executablePath`
-override and a `browser === true` environment stub that the shared config must
-not carry), but the consequence is that these six failures are a **point-in-time
-snapshot, not a guard**: the defects can be reintroduced after they are fixed and
-nothing will notice.
+The four fixed defects are guarded by tests in the project's **normal CI gates**,
+not in this audit config:
 
-Making them a real gate is deliberate follow-up work and is outside this
-audit-only task's ownership. Two options, in preference order:
+| Gate | CI job | File |
+| --- | --- | --- |
+| jsdom unit (`tests/config/vitest.config.ts`) | `validate` | `src/lib/shared/keyboard/domain/models/__tests__/keyboard-event-drawer-scope.test.ts` |
+| browser component (`tests/config/vitest.components.config.ts`) | `component-tests` | `src/lib/shared/foundation/ui/Drawer.svelte.test.ts` |
+| browser component | `component-tests` | `src/lib/shared/browse/components/filter-chips/FilterChipBase.svelte.test.ts` |
 
-1. When each defect is fixed, colocate its spec as
-   `src/lib/shared/foundation/ui/Drawer.svelte.test.ts` (and siblings) so the
-   existing `component-tests` job picks it up with no CI change. This needs the
-   harnesses to work under the shared `$app/environment` stub, or that stub to
-   gain a browser-true variant.
-2. Add a CI step invoking this config. Cheaper, but it leaves a second browser
-   project to maintain, which `.claude/rules/never-hand-roll.md` argues against.
+The audit config under `tests/opus-accessibility-audit/` is still **not wired
+into CI** and is not a gate. It keeps the exploratory specs — including the two
+that still fail for the unfixed F2 — plus the measurement records. That is
+deliberate: an audit suite that needs an `executablePath` override and a
+`browser === true` environment stub should not become a second browser project
+CI has to maintain (`.claude/rules/never-hand-roll.md`). Anything worth guarding
+was moved into the gates above.
+
+**Correction to the first version of this report.** It claimed
+`pnpm run test:components:ci` "cannot run here". That was wrong — it is
+runnable in this sandbox by pointing `PLAYWRIGHT_BROWSERS_PATH` at a directory
+that presents the 1194 binaries under the revision-1228 names Playwright 1.61.1
+looks for:
+
+```bash
+SHIM=/tmp/pw-shim
+mkdir -p "$SHIM/chromium_headless_shell-1228/chrome-headless-shell-linux64"
+ln -sfn /opt/pw-browsers/chromium_headless_shell-1194/chrome-linux/headless_shell \
+        "$SHIM/chromium_headless_shell-1228/chrome-headless-shell-linux64/chrome-headless-shell"
+touch "$SHIM/chromium_headless_shell-1228/INSTALLATION_COMPLETE"
+PLAYWRIGHT_BROWSERS_PATH="$SHIM" pnpm run test:components:ci
+```
+
+All evidence below for the colocated specs was produced that way.
 
 `AUDIT_CHROMIUM_PATH` exists because this sandbox ships Chromium revision 1194
 while `playwright@1.61.1` expects 1228's headless shell. **The project's own
@@ -83,7 +97,9 @@ Ordered by user impact. Every finding is reproducible from the command above.
 
 ### F1 — Escape inside an open Drawer closes the whole sheet, even while a text field owns the key
 
-**Severity: high — keyboard users lose sheet state on a routine keystroke.**
+**Status: FIXED** (§ Implementation).
+
+**Severity as found: high — keyboard users lose sheet state on a routine keystroke.**
 
 - **Route / steps:** `/browse` → open the **Filters** sheet → focus its search
   field (`GalleryDrill.svelte:578-586`, `<input type="search" aria-label="Search
@@ -111,7 +127,14 @@ Ordered by user impact. Every finding is reproducible from the command above.
 
 ### F2 — With a modal open over a drawer, Escape dismisses the drawer underneath and leaves the modal open
 
-**Severity: medium as shipped — the primitive-level defect is measured, but no
+**Status: NARROWED, still open.** The F1 fix incidentally resolved the
+text-field case — the drawer no longer preventDefaults the key, so the browser's
+close request reaches `BaseModal` and the correct layer goes. With focus on a
+plain button nothing defers, and the drawer's handler still claims the key on
+`isTopDrawer` alone. Deliberately not fixed further: reachability is unproven
+and the implementation brief excluded speculative F2 route changes.
+
+**Severity as found: medium as shipped — the primitive-level defect is measured, but no
 product route that reaches it has been demonstrated. High if such a route exists
 or is introduced.**
 
@@ -184,7 +207,9 @@ or is introduced.**
 
 ### F3 — A bare Arrow key pressed inside an open Drawer dismisses the drawer
 
-**Severity: medium-high on `/create` — an inert key silently destroys the surface the user is working in.**
+**Status: FIXED** (§ Implementation).
+
+**Severity as found: medium-high on `/create` — an inert key silently destroys the surface the user is working in.**
 
 > **Correction (review pass).** The first version of this report justified the
 > severity by saying arrow keys are how a keyboard user moves through the prop
@@ -232,7 +257,9 @@ or is introduced.**
 
 ### F4 — The Browse filter-chip popovers cannot be dismissed from the keyboard
 
-**Severity: medium-high — a keyboard user who opens a filter popover has no Escape path out of it.**
+**Status: FIXED** (§ Implementation).
+
+**Severity as found: medium-high — a keyboard user who opens a filter popover has no Escape path out of it.**
 
 - **Route / steps:** `/browse` → the filter chip row above the gallery grid →
   focus the **Length** (or Level, LOOP, Max turn intensity) chip → <kbd>Enter</kbd>
@@ -267,7 +294,13 @@ or is introduced.**
 
 ### F5 — Shared dialog surfaces ship without accessible names
 
-**Severity: medium — WCAG 2.1 SC 4.1.2. Assistive tech announces a bare "dialog".**
+**Status: PARTIALLY FIXED.** `Drawer` now has a naming contract (`title` →
+`aria-label`) and the Browse Filters sheet adopted it. The other 8 unnamed
+`Drawer` instances and 12 unnamed `BaseModal` instances in the census below are
+untouched — outside the implementation brief's scope, and `BaseModal` was
+excluded from it entirely.
+
+**Severity as found: medium — WCAG 2.1 SC 4.1.2. Assistive tech announces a bare "dialog".**
 
 - **Route / steps:** `/browse` → **Filters** sheet; `/create` → the save-prompt
   confirm. Both are `aria-modal="true"` dialogs with a visible `<h2>` title and
@@ -330,6 +363,143 @@ or is introduced.**
   asking 21 call sites to remember.
 
 ---
+
+## Implementation (second authorization)
+
+F1, F3, F4 and F5 were fixed under a later, expanded authorization. F2 was
+deliberately **not** touched — its reachability is unproven (see above) and the
+brief excluded speculative product-route changes. No `BaseModal` or `ErrorModal`
+file was modified.
+
+### Ownership decisions
+
+Per `.claude/rules/never-hand-roll.md` and `primitive-discovery.md`, every
+change extends an existing owner. Nothing new was created:
+
+- **Extending `Drawer.svelte`** with the Escape deferral, reusing
+  `shouldDeferEscapeShortcut` from `escape-shortcut-target.ts` — the same guard
+  `Drawer`'s own `handleDialogCancel` and the global `global.escape` owner
+  already use.
+- **Extending `Drawer.svelte`** with a `title` naming fallback. No new naming
+  mechanism: it resolves into the existing `aria-label` path.
+- **Extending `NormalizedKeyboardEvent.shouldIgnore`** — the existing owner of
+  "this event belongs to the focused surface, not the application" — with one
+  more case, keyed off the `data-drawer-id` attribute `Drawer` already stamps.
+  No new marker attribute.
+- **Extending `FilterChipBase`** with an `ondismiss` callback. It is the owner
+  `chip-primitives.md` names for dropdown chips, so the keyboard behavior lives
+  there once and the four consumers inherit it rather than each growing a copy.
+
+### Changes
+
+| Finding | File | Change |
+| --- | --- | --- |
+| F1 | `src/lib/shared/foundation/ui/Drawer.svelte` | `handleKeydown` returns early when `shouldDeferEscapeShortcut(document)` is true |
+| F3 | `src/lib/shared/keyboard/domain/models/keyboard-event.ts` | `shouldIgnore` ignores **single-key** shortcuts whose target is inside `[data-drawer-id]` |
+| F4 | `src/lib/shared/browse/components/filter-chips/FilterChipBase.svelte` | new `ondismiss` prop + Escape handler on trigger and popover, returning focus to the chip |
+| F4 | `LengthFilterChip`, `LevelFilterChip`, `LOOPFilterChip`, `MaxTurnIntensityFilterChip` | pass `ondismiss={() => (isOpen = false)}` |
+| F5 | `src/lib/shared/foundation/ui/Drawer.svelte` | new `title` prop; becomes `aria-label` when neither `labelledBy` nor `ariaLabel` is given |
+| F5 | `src/lib/features/browse/gallery-home/GalleryFilterSheet.svelte` | passes `{title}` to the `Drawer` |
+
+### What was deliberately preserved
+
+The F3 fix is **narrower than `data-keyboard-shortcuts-ignore`**, which
+suppresses every shortcut beneath it. Applying that marker to `Drawer` — the
+obvious one-line fix, and what the first version of this report proposed —
+would have broken Ctrl+S (save) and Ctrl+Z (undo) inside every drawer. Scoping
+to single-key shortcuts keeps modifier combos working, and scoping to the event
+target keeps the intentional "single key pressed *outside* an open drawer
+dismisses it, then executes" behavior at
+`keyboard-shortcut-manager.ts:295` exactly as it was. Three of the four cases in
+`keyboard-event-drawer-scope.test.ts` exist to hold that line.
+
+Native dialog semantics are untouched: no change to `show()`/`showModal()`,
+`oncancel`, the focus trap, or the inert handling.
+
+### Evidence
+
+Red → green, demonstrated by stashing **only** the production files and
+re-running the same specs:
+
+| Spec | Pre-fix | Post-fix |
+| --- | --- | --- |
+| `keyboard-event-drawer-scope.test.ts` (4) | 1 failed, 3 passed | **4 passed** |
+| `Drawer.svelte.test.ts` (5) | 2 failed, 3 passed | **5 passed** |
+| `FilterChipBase.svelte.test.ts` (4) | 3 failed, 1 passed | **4 passed** |
+
+The seven specs that pass in *both* columns are the guard cases: single-key
+outside a drawer, modifier combos inside a drawer, no drawer open, Escape on a
+collapsed chip, ordinary Escape dismissal from a plain button, `labelledBy`
+precedence, and no-name-emitted-when-none-supplied.
+
+Other checks:
+
+- `npx svelte-check --tsconfig ./tsconfig.json` — **0 errors, 0 warnings**
+  (whole project).
+- `npx vitest run --config tests/config/vitest.config.ts src/lib/shared/keyboard`
+  — **29 passed / 7 files**, no regression in the keyboard domain.
+
+### Responsive verification
+
+`.claude/rules/visual-verification-mandatory.md` classification: the diff adds a
+keydown handler, an `aria-label` value and a `shouldIgnore` branch. It changes
+no CSS, no element count and no layout property, so it is a **no-browser-pass**
+change for composition. Rather than assert that,
+`tests/opus-accessibility-audit/touched-surface-viewports.audit.test.ts`
+re-measures the touched controls across all seven canonical tiers and fails if
+any moved:
+
+| Tier | DrawerHeader close button |
+| --- | --- |
+| 375×667, 960×412, 820×1180, 1440×900, 1920×1080, 2560×1440, 3840×2160 | `44×44` at every tier |
+
+Chip popover rows hold `150×44` and stay fully within the viewport at every
+tier. One honest caveat: at some emulated viewports Chromium reports `43.9907`
+for the same declared-44px box, so that spec carries a documented 0.5px
+tolerance. That is measurement rounding under viewport emulation, not a product
+change — the declared floor and the pre-fix measurement are identical.
+
+### Full component gate: no regression attributable to this diff
+
+Running the entire `component-tests` suite in this sandbox is dominated by
+timeouts and is not a reliable signal on its own, so the claim was checked
+rather than assumed:
+
+- Whole-suite run **with** the fixes: 40 failures. Whole-suite run with only the
+  production files stashed (pre-fix): 23 failures. The two sets share just 7
+  names — a ~50-spec disagreement between two runs of identical code paths, with
+  most failures timing out at ~15,000ms. That is a contention signature, not a
+  deterministic regression from a 9-file diff.
+- Every spec the comparison flagged was then re-run **in isolation** against the
+  fixed tree: **42 of 43 passed**, including `BaseModal.svelte.test.ts` (which I
+  did not modify and which would be the first casualty of a bad Drawer change),
+  `Crossfade`, `LazyMount`, `SegmentedControl`, `PropOrientationControl`,
+  `ExportTakeover` and `MotionColorChips`.
+- The single remaining failure — `MotionColorChips` "supports Blue/Red labels in
+  a stacked control without losing accessible names", a 15,020ms timeout — was
+  confirmed **pre-existing**: it appears in the pre-fix baseline list and fails
+  identically in isolation with the fixes stashed.
+
+I cannot certify the whole gate green in this environment, and I am not claiming
+it. What is established is that no failure is attributable to this change.
+
+### Limitations of the implementation evidence
+
+- **No screen-reader validation.** F5 is verified as an `aria-label` attribute
+  on the dialog, through the same DOM-attribute check the audit used. No AX-tree
+  read and no AT was exercised.
+- **F5 fixes one callsite.** `GalleryFilterSheet` is named; the other 8 unnamed
+  `Drawer` instances and 12 unnamed `BaseModal` instances in the census are
+  untouched, as the brief scoped. The `title` prop now exists for them.
+- **F2 is narrowed, not closed.** One of its two specs now passes as a
+  side-effect of the F1 fix; the button-focus case still fails, and that failing
+  spec is the intended record of the remaining defect.
+- **The app was not driven end to end.** These fixes are verified at the
+  component layer in a real browser with real dispatched key events, not on a
+  running `/browse` or `/create` route. No dev server is available in this
+  environment, and port 5173 belongs to Austen's workflow
+  (`.claude/rules/never-start-the-dev-server.md`).
+- **The whole component gate is not certifiably green here** — see above.
 
 ## Latent defects (no current consumer triggers them)
 

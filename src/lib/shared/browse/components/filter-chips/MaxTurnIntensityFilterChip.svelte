@@ -78,6 +78,7 @@ Shows available turn-intensity ceilings with contextual counts.
       chipColor="var(--max-turn-intensity-chip-color)"
       mode="dropdown"
       expanded={isOpen}
+      ondismiss={() => (isOpen = false)}
       {disabled}
       onclick={handleToggle}
       ghostKind="browse-filter"

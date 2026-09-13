@@ -121,6 +121,7 @@ Color-coded icons per primitive. Rotated splits into halved/quartered.
     chipColor={chipColor}
     mode="dropdown"
     expanded={isOpen}
+    ondismiss={() => (isOpen = false)}
     onclick={handleToggle}
     ghostKind="browse-filter"
   >

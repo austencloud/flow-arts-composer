@@ -11,9 +11,15 @@
  * A dialog with no accessible name is announced as a bare "dialog" — WCAG 2.1
  * SC 4.1.2 Name, Role, Value.
  *
- * The harness reproduces GalleryFilterSheet.svelte's exact composition on the
- * /browse route: `<Drawer>` with no name props, `<DrawerHeader title="Filters">`
- * as its first child.
+ * STATUS: partially fixed. `Drawer` now accepts a `title` prop that becomes the
+ * dialog's `aria-label` (covered by the colocated, CI-gated
+ * src/lib/shared/foundation/ui/Drawer.svelte.test.ts), and
+ * GalleryFilterSheet.svelte adopted it — /browse's Filters sheet is named.
+ *
+ * This spec now stands for the REMAINING debt: the other unnamed callsites in
+ * the F5 census, which still render the `<Drawer>` + `<DrawerHeader>` shape with
+ * no name prop at all. It is expected to fail until those callsites adopt
+ * `title`, and it fails for the callsites, not for the primitive.
  *
  * Audit evidence, not a production gate.
  */
@@ -60,7 +66,7 @@ describe("Shared dialog surfaces expose an accessible name", () => {
     document.body.innerHTML = "";
   });
 
-  it("names the Browse Filters sheet from the header it already renders", async () => {
+  it("the remaining unnamed callsites still produce a nameless modal dialog", async () => {
     render(HeaderOnlyDrawerHarness, { isOpen: true });
     await settle();
 
@@ -69,7 +75,8 @@ describe("Shared dialog surfaces expose an accessible name", () => {
     expect(dialog, "drawer dialog rendered").not.toBeNull();
     expect(dialog!.getAttribute("aria-modal")).toBe("true");
 
-    // The visible title is right there in the DOM.
+    // The visible title is right there in the DOM, and since the fix the
+    // primitive can consume it — these callsites just do not pass it yet.
     expect(
       dialog!.querySelector("h2")?.textContent?.trim(),
       "header title is rendered"

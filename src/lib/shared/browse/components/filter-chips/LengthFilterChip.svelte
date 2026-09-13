@@ -74,6 +74,7 @@ Shows available lengths with contextual counts.
     chipColor="var(--length-chip-color)"
     mode="dropdown"
     expanded={isOpen}
+    ondismiss={() => (isOpen = false)}
     {disabled}
     onclick={handleToggle}
     ghostKind="browse-filter"

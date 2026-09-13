@@ -41,6 +41,19 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     ariaLabel?: string;
     children?: Snippet;
     onclick?: () => void;
+    /**
+     * Close the dropdown. Required for keyboard dismissal in `mode="dropdown"`.
+     *
+     * `expanded` is a controlled input prop — the open/closed state lives in the
+     * consumer — so this component cannot close its own popover by writing to
+     * it. Escape therefore has to hand the decision back the same way a click
+     * outside does. Without this, an expanded chip swallowed Escape entirely:
+     * `aria-expanded="true"` makes the global escape owner defer to the widget
+     * (escape-shortcut-target.ts LOCAL_ESCAPE_OWNER_SELECTOR), and no chip
+     * implemented the handler it was deferring to, so a keyboard user had no
+     * way out of the popover at all.
+     */
+    ondismiss?: () => void;
     /** Split-chip removal: renders a trailing × segment as its OWN control so
      * the chip body can carry a non-destructive action (edit/open) while
      * removal stays one deliberate tap away. Without it a rule chip's entire
@@ -76,9 +89,31 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     ghostKind,
     children,
     onclick,
+    ondismiss,
     onremove,
     removeAriaLabel,
   }: Props = $props();
+
+  /**
+   * Escape closes the dropdown and returns focus to the chip that opened it,
+   * so the user lands back where they were rather than at the top of the
+   * document. Bound to both the trigger and the popover because they are
+   * siblings, not ancestor and descendant — a key pressed on an option row
+   * never bubbles through the chip button.
+   *
+   * `stopPropagation` keeps this one press from also reaching a Drawer or
+   * modal behind the chip: escape-routing.md requires that one Escape press
+   * dismiss exactly one layer.
+   */
+  function handleEscape(event: KeyboardEvent) {
+    if (event.key !== "Escape" || !expanded || mode !== "dropdown") return;
+    if (!ondismiss) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    ondismiss();
+    chipEl?.focus();
+  }
 
   let chipEl: HTMLButtonElement | null = $state(null);
   let popoverEl: HTMLDivElement | null = $state(null);
@@ -262,6 +297,7 @@ Popover uses fixed positioning to escape overflow:hidden containers.
     data-ghost={ghostKind && !disabled ? "safe" : undefined}
     data-ghost-kind={ghostKind && !disabled ? ghostKind : undefined}
     data-ghost-label={ghostKind ? label : undefined}
+    onkeydown={handleEscape}
     bind:this={chipEl}
   >
     {@render chipBody()}
@@ -269,12 +305,14 @@ Popover uses fixed positioning to escape overflow:hidden containers.
 {/if}
 
 {#if children && expanded}
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
     bind:this={popoverEl}
     class="chip-popover"
     role="listbox"
     aria-label="{label} options"
     style="top: {popoverTop}px; left: {popoverLeft}px;"
+    onkeydown={handleEscape}
   >
     {@render children()}
   </div>

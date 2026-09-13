@@ -89,6 +89,7 @@ their own copies drifted (dropdown popovers, stale search) within days.
 		{isOpen}
 		placement={isMobile ? "bottom" : "right"}
 		class="filter-sheet-drawer"
+		{title}
 		onOpenChange={(open) => {
 			if (!open) isOpen = false;
 		}}

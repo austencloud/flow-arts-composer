@@ -156,10 +156,16 @@ describe("Escape ownership across shared surfaces", () => {
     ).toBe(false);
   });
 
-  // Same stack, different focus target. The lone-modal control above passes, so
-  // BaseModal's own Escape path is sound; both of these fail, which shows the
-  // failure does not depend on what is focused inside the modal — it depends on
-  // a Drawer being open underneath it.
+  // Same stack, different focus target.
+  //
+  // UPDATED after the F1 fix. Before it, BOTH of these failed. The F1 deferral
+  // (Drawer.handleKeydown now returns early when shouldDeferEscapeShortcut is
+  // true) incidentally fixed the text-field case: the drawer no longer
+  // preventDefaults the key, so the browser's dialog close request reaches
+  // BaseModal and the correct layer goes. The button case still fails, because
+  // with focus on a plain button nothing defers and the drawer's handler still
+  // claims the key on the strength of `isTopDrawer` alone — it remains unaware
+  // of the modal stack. F2 is therefore narrowed, not closed.
   it("stacked modal is the layer dismissed — focus on a button in the modal", async () => {
     render(DrawerUnderModalHarness);
     await settle(400);

@@ -150,6 +150,24 @@ export class NormalizedKeyboardEvent implements KeyboardEventDetails {
     // Single-key shortcuts should be ignored when typing in inputs
     if (isSingleKeyShortcut && this.isInputTarget) return true;
 
+    // ...and equally when the key was pressed inside an open drawer. A drawer
+    // is a surface the user is working *inside*; a bare key there belongs to
+    // that surface, not to the application behind it. Without this, any
+    // registered single-key shortcut fired from within a sheet, and
+    // KeyboardShortcutManager's `dismissTopDrawer()` step then closed the sheet
+    // out from under the user — on /create the bare Arrow keys
+    // (register-create-shortcuts.ts) did exactly that while their own actions
+    // were still stubs, so the only visible effect of pressing an arrow in a
+    // sheet was that the sheet vanished.
+    //
+    // Deliberately narrower than `data-keyboard-shortcuts-ignore`, which
+    // suppresses ALL shortcuts under it: modifier combos (Ctrl+S save, Ctrl+Z
+    // undo) must keep working inside a drawer, and a single key pressed
+    // OUTSIDE an open drawer must keep its existing dismiss-then-execute
+    // behaviour. Both are preserved because this only matches when the event
+    // target is itself within the drawer.
+    if (isSingleKeyShortcut && this.isInsideOpenDrawer()) return true;
+
     // Shift-only shortcuts in input fields should be treated as typing.
     // Shift+1 = !, Shift+2 = @, Shift+A = A, etc.
     // These are characters the user wants to type, not commands.
@@ -164,6 +182,20 @@ export class NormalizedKeyboardEvent implements KeyboardEventDetails {
     }
 
     return false;
+  }
+
+  /**
+   * Is the event's target inside an open drawer?
+   *
+   * Matches `data-drawer-id`, which `Drawer.svelte` already stamps on its
+   * `<dialog>` while open — no new marker, and the attribute is emitted by
+   * that primitive alone.
+   */
+  private isInsideOpenDrawer(): boolean {
+    return (
+      this.target instanceof Element &&
+      this.target.closest("[data-drawer-id]") !== null
+    );
   }
 
   /**
