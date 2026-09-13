@@ -20,7 +20,9 @@ Five further findings are reported below without runtime edits.
 ## Revisions
 
 - Base: `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`)
-- Final: `92e507095b60e5677b87965049087b3dfaa6cfc5`
+- Final code change: `92e507095b60e5677b87965049087b3dfaa6cfc5`
+- Final branch head: `b80f1b88` (this report) — verification below ran against
+  `92e5070`, which carries every code and test change
 - Branch: `claude/undo-redo-integrity-fy8xr2`
 
 ## Files owned by this task
