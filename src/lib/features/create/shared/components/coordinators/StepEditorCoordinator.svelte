@@ -379,9 +379,12 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
       return;
     }
 
-    // Push undo snapshot BEFORE deleting
-    CreateModuleState.pushUndoSnapshot(UndoOperationType.REMOVE_BEATS);
-
+    // No snapshot here: StepOperator.removeStep pushes its own REMOVE_BEATS
+    // entry (with the step index and removed count in its metadata). Pushing
+    // one here too recorded the same pre-delete state twice, so undoing a
+    // single delete took two presses — the second one restored an identical
+    // state while the toast still claimed it had undone something.
+    //
     // For regular steps, remove the beat with animation
     // NOTE: Don't clear selection here - the animation callback in StepRemovalHandler
     // will select the appropriate next beat after the animation completes.
