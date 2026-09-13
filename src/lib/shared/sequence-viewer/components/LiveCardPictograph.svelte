@@ -19,11 +19,14 @@
     darkMode,
     stepNumber,
     showStepNumber,
+    poseOnly = false,
   }: {
     live: NonNullable<ChoreoCardCell["live"]>;
     darkMode: boolean;
     stepNumber: number;
     showStepNumber: boolean;
+    /** Choose Start picker: grid and props only, beat glyphs fade out. */
+    poseOnly?: boolean;
   } = $props();
 
   const contract = $derived(
@@ -135,6 +138,7 @@
       {activeLocations}
       showTKA={contract.visibility.showTKA}
       showReversals={contract.visibility.showReversals}
+      {poseOnly}
       showTnD={options.showTnD}
       showElemental={options.showElemental}
       showPositions={options.showPositions}
@@ -144,7 +148,7 @@
         readyGridMode = gridMode;
       }}
     />
-    {#if showStepNumber}
+    {#if showStepNumber && !poseOnly}
       <svg
         class="number-layer"
         viewBox="0 0 {950 * (options.widthMultiplier ?? 1)} 950"

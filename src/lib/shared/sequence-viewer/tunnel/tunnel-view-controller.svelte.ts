@@ -34,7 +34,10 @@ import {
   type TunnelPresetRecipe,
 } from "./tunnel-preset-recipe";
 import {
-  activeTunnelPropColorPair,
+  buildTunnelRenderColors,
+  normalizePerformerColors,
+  tunnelPerformerPair,
+  type TunnelPerformerColors,
   resolveTunnelPropColorState,
   tunnelPropColor,
   type TunnelPropColorMode,
@@ -161,6 +164,7 @@ export class TunnelViewController {
    * the pair while another mode is active lets authors compare looks without
    * losing their values. */
   colorMode = $state<TunnelPropColorMode>("spectrum");
+  performerColors = $state<Record<string, TunnelPerformerColors>>({});
   readonly customColorState: ViewerCustomColorState;
 
   get customPropColors(): TunnelPropColorPair {
@@ -171,12 +175,16 @@ export class TunnelViewController {
     return {
       mode: this.colorMode,
       custom: { ...this.customPropColors },
+      ...(Object.keys(this.performerColors).length
+        ? { performers: this.performerColors }
+        : {}),
     };
   }
 
   set colors(value: TunnelPropColorState) {
     const resolved = resolveTunnelPropColorState(value);
     this.colorMode = resolved.mode;
+    this.performerColors = resolved.performers ?? {};
     this.customColorState.hydrate(resolved.custom);
   }
 
@@ -191,10 +199,45 @@ export class TunnelViewController {
   }
 
   get exactPropColors(): TunnelPropColorPair | null {
-    return activeTunnelPropColorPair({
-      mode: this.colorMode,
-      custom: this.customPropColors,
-    });
+    return buildTunnelRenderColors(
+      this.colors,
+      this.colorStage.map((row) => row.id),
+      getBaseMotionColors()
+    );
+  }
+
+  get colorStage(): Array<{ id: string; label: string; arm: number }> {
+    const composition = this.#sources.getComposition?.();
+    if (composition) {
+      const labels = new Map(
+        composition.performers.map((p) => [p.id, p.label])
+      );
+      const instances = this.#layers.length
+        ? this.#layers
+        : composition.stage.instances;
+      return instances.map((instance) => ({
+        id: instance.performerId,
+        arm: instance.arm,
+        label: labels.get(instance.performerId) ?? "Performer",
+      }));
+    }
+    return Array.from({ length: imageCount(this.config) }, (_, arm) => ({
+      id: `arm:${arm}`,
+      arm,
+      label: `Performer ${arm + 1}`,
+    }));
+  }
+
+  get colorPerformers(): Array<{ id: string; label: string }> {
+    return [...new Map(this.colorStage.map((row) => [row.id, row])).values()];
+  }
+
+  setPerformerColors(id: string, value: TunnelPerformerColors | null): void {
+    const next = value
+      ? { ...this.performerColors, [id]: normalizePerformerColors(value) }
+      : { ...this.performerColors };
+    if (!value) delete next[id];
+    this.performerColors = next;
   }
 
   setCustomPropColor(hand: "left" | "right", value: string): void {
@@ -258,6 +301,7 @@ export class TunnelViewController {
     this.#gridVisible =
       sources.visibilityManager?.isGridVisible() ?? view.gridVisible;
     this.colorMode = view.colors.mode;
+    this.performerColors = view.colors.performers ?? {};
     this.section = view.section;
     this.presetRecipe = cloneTunnelPresetRecipe(view.presetRecipe);
 
@@ -634,12 +678,12 @@ export class TunnelViewController {
       label: row.label,
       rate: effectiveSpeed(cfg, row.arm),
       leftHex: exactColors
-        ? exactColors.left
+        ? tunnelPerformerPair(exactColors, i).left
         : i === 0 || !this.spectrum
           ? handColors.left
           : tunnelPropColor(i * 2, layerCount).hex,
       rightHex: exactColors
-        ? exactColors.right
+        ? tunnelPerformerPair(exactColors, i).right
         : i === 0 || !this.spectrum
           ? handColors.right
           : tunnelPropColor(i * 2 + 1, layerCount).hex,

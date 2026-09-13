@@ -39,6 +39,7 @@
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
     leftColorOverride = undefined,
+    poseOnly = false,
     rightColorOverride = undefined,
     transitionKey = null,
     onContentReady = undefined,
@@ -77,6 +78,8 @@
     rightPropTypeOverride?: PropType;
     /** Display-only color for the blue-hand prop and arrow. */
     leftColorOverride?: string;
+    /** Choose Start picker: render only the pose after this beat. */
+    poseOnly?: boolean;
     /** Display-only color for the red-hand prop and arrow. */
     rightColorOverride?: string;
     /** Stable history identity used to preserve prop and arrow motion through reordering. */
@@ -374,6 +377,7 @@
     {rightPropTypeOverride}
     {leftColorOverride}
     {rightColorOverride}
+    {poseOnly}
     onReady={onContentReady}
     readyEpoch={animationEpoch}
   />

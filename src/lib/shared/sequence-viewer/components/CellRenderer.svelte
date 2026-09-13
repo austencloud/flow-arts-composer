@@ -19,6 +19,8 @@
     cell: CellData;
     showDurBadge: boolean;
     showStepNumbers: boolean;
+    /** Choose Start picker: step cells render as poses; the start cell does not. */
+    posePicker?: boolean;
     activeDarkMode: boolean;
     crossfadeActive: boolean;
     transitionMode: "crossfade" | "swap";
@@ -37,6 +39,7 @@
     cell,
     showDurBadge,
     showStepNumbers,
+    posePicker = false,
     activeDarkMode,
     crossfadeActive,
     transitionMode,
@@ -61,6 +64,7 @@
     darkMode={activeDarkMode}
     stepNumber={cell.index + 1}
     showStepNumber={showStepNumbers && !isMotionSoloMode && (!isBrowseSoloMode || cell.index === -1)}
+    poseOnly={posePicker && cell.index !== -1}
   />
 {:else if cell.renderFailed}
   <div class="cell-render-error" role="img" aria-label="Pictograph unavailable">
@@ -98,7 +102,7 @@
        during crossfades. Scan cards skip that expensive bitmap rewrite and use
        the same positioned HTML number; motion-solo and start cells already use
        it everywhere. -->
-  {#if showStepNumbers && ((scanUsesHtmlStepNumbers && !isBrowseSoloMode) || isMotionSoloMode || (!cell.live && cell.index === -1))}<span
+  {#if showStepNumbers && !(posePicker && cell.index !== -1) && ((scanUsesHtmlStepNumbers && !isBrowseSoloMode) || isMotionSoloMode || (!cell.live && cell.index === -1))}<span
       class="step-number-overlay"
       class:dark-mode={activeDarkMode}
       style="font-size: {stepNumFontSize}px;"

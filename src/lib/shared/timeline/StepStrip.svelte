@@ -19,6 +19,7 @@
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { buildNotationCells, type NotationCell } from "./notation-cell";
+  import { buildStripWindow, nextLoopOffset } from "./strip-window";
 
   let {
     cells = null,
@@ -70,7 +71,10 @@
      *  density uses nearly all of a short rail's height. */
     fillHeight?: boolean;
     /** Seamless wrap: when the track reaches the end the first cell follows (the
-     *  sequence repeats) instead of snapping back to the start. */
+     *  sequence repeats) instead of snapping back to the start. The window can
+     *  then hold more than one copy of a cell; only the focus's own repeat is
+     *  marked `data-cell-instance="primary"`, so a host pairing
+     *  view-transition-names against cells still finds exactly one element. */
     loop?: boolean;
     leftPropType?: PropType | null;
     rightPropType?: PropType | null;
@@ -173,8 +177,13 @@
       prevSeqKey = seqKey;
       return;
     }
-    if (loop && prevRawStep !== -1 && raw < prevRawStep) {
-      loopOffset += displayedCells.length;
+    if (loop) {
+      loopOffset = nextLoopOffset(
+        loopOffset,
+        prevRawStep,
+        raw,
+        displayedCells.length
+      );
     }
     prevRawStep = raw;
   });
@@ -244,33 +253,31 @@
   // run past the ends and map to cells circularly (seamless wrap); otherwise they
   // clamp to the real range. Cells are absolutely placed at vi * STRIDE.
   let renderCells = $derived.by(() => {
-    const len = displayedCells.length;
-    if (len === 0)
-      return [] as { vi: number; cell: NotationCell; dist: number }[];
-    const a = virtualActive;
-    let start: number;
-    let end: number;
-    if (anchor === "start") {
-      // Forward-biased: one finished cell (graceful exit) + as many upcoming as
-      // the primary axis holds. No deep past — practice only needs what's next.
-      const ahead =
-        Math.ceil((stripPrimarySize - focusOffset) / STRIDE) + renderBuffer;
-      start = a - 1;
-      end = a + ahead + 1;
-    } else {
-      const half = Math.ceil(stripPrimarySize / STRIDE / 2) + renderBuffer;
-      start = a - half;
-      end = a + half + 1;
-    }
-    if (!loop) {
-      start = Math.max(0, start);
-      end = Math.min(len, end);
-    }
-    const out: { vi: number; cell: NotationCell; dist: number }[] = [];
-    for (let vi = start; vi < end; vi++) {
-      const ci = loop ? ((vi % len) + len) % len : vi;
-      const cell = displayedCells[ci];
-      if (cell) out.push({ vi, cell, dist: Math.abs(vi - a) });
+    const window = buildStripWindow({
+      activeVirtualIndex: virtualActive,
+      cellCount: displayedCells.length,
+      loop,
+      anchor,
+      primarySize: stripPrimarySize,
+      focusOffset,
+      stride: STRIDE,
+      buffer: renderBuffer,
+    });
+    const out: {
+      vi: number;
+      cell: NotationCell;
+      dist: number;
+      primary: boolean;
+    }[] = [];
+    for (const item of window) {
+      const cell = displayedCells[item.ci];
+      if (cell)
+        out.push({
+          vi: item.vi,
+          cell,
+          dist: item.dist,
+          primary: item.primary,
+        });
     }
     return out;
   });
@@ -360,6 +367,7 @@
           class:is-focus={item.dist === 0}
           class:clickable={!!onCellClick}
           data-step-number={item.cell.stepNumber}
+          data-cell-instance={item.primary ? "primary" : "repeat"}
           style="{vertical ? 'top' : 'left'}: {item.vi *
             STRIDE}px; opacity: {cellOpacity(item.dist)}"
           role={onCellClick ? "button" : undefined}

@@ -95,6 +95,68 @@ class ImmediatelyLoadedImage {
 }
 
 describe("Canvas2DImageLoader prop crossfade snapshots", () => {
+  it("keeps the latest primary shade when an older texture finishes last", async () => {
+    const loader = new Canvas2DImageLoader();
+    const pending: Array<(image: HTMLImageElement) => void> = [];
+    vi.spyOn(
+      loader as unknown as {
+        createPropImageFromSVG: () => Promise<HTMLImageElement>;
+      },
+      "createPropImageFromSVG"
+    ).mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
+    const older = loader.loadPerColorPropImages("staff", "staff", true, {
+      left: "#111111",
+      right: "#222222",
+    });
+    await vi.waitFor(() => expect(pending).toHaveLength(2));
+    const latest = loader.loadPerColorPropImages("staff", "staff", true, {
+      left: "#333333",
+      right: "#444444",
+    });
+    await vi.waitFor(() => expect(pending).toHaveLength(4));
+    const newestImage = new Image();
+    pending[2]!(newestImage);
+    pending[3]!(newestImage);
+    await latest;
+    pending[0]!(new Image());
+    pending[1]!(new Image());
+    await older;
+    expect(loader.getLeftPropImage()).toBe(newestImage);
+  });
+  it("keeps the latest performer shade when an older texture finishes last", async () => {
+    const loader = new Canvas2DImageLoader();
+    const pending: Array<(image: HTMLImageElement) => void> = [];
+    vi.spyOn(
+      loader as unknown as {
+        createPropImageFromSVG: () => Promise<HTMLImageElement>;
+      },
+      "createPropImageFromSVG"
+    ).mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
+    const older = loader.loadAdditionalLayerPropImages(
+      0,
+      "staff",
+      "staff",
+      "#111111",
+      "#222222"
+    );
+    await vi.waitFor(() => expect(pending).toHaveLength(2));
+    const latest = loader.loadAdditionalLayerPropImages(
+      0,
+      "staff",
+      "staff",
+      "#333333",
+      "#444444"
+    );
+    await vi.waitFor(() => expect(pending).toHaveLength(4));
+    const newestImage = new Image();
+    pending[2]!(newestImage);
+    pending[3]!(newestImage);
+    await latest;
+    pending[0]!(new Image());
+    pending[1]!(new Image());
+    await older;
+    expect(loader.getAdditionalLayerImages(0).left).toBe(newestImage);
+  });
   beforeEach(() => {
     ImmediatelyLoadedImage.sourceAssignments = 0;
     vi.stubGlobal("Image", ImmediatelyLoadedImage);
@@ -153,7 +215,9 @@ describe("Canvas2DImageLoader prop crossfade snapshots", () => {
       PROP_GEOMETRY.staff
     );
     expect(loader.getPreviousLeftProp()?.propType).toBe("staff");
-    expect(loader.getPreviousRightProp()?.dimensions).toEqual(PROP_GEOMETRY.club);
+    expect(loader.getPreviousRightProp()?.dimensions).toEqual(
+      PROP_GEOMETRY.club
+    );
     expect(loader.getPreviousRightProp()?.propType).toBe("club");
 
     loader.clearPreviousLeftProp();
