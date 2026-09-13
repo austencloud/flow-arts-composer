@@ -75,6 +75,8 @@
     exportProgress: number | null;
     /** `false` means no render started, so the sheet must stop waiting. */
     onRequestVideo?: () => void | boolean | Promise<boolean>;
+    /** Hosts retire an unrelated old video only when this share prepares video. */
+    onPrepareFile?: (artifact: ShareArtifact) => boolean | void;
     onClose: () => void;
     /** Visual-test seam for connection states normally supplied by Firestore. */
     metaStatusOverride?: MetaPublishStatus;
@@ -97,6 +99,11 @@
     onOpenPostStudio?: () => void;
     /** False for local-only guest flows that cannot mint an account-owned link. */
     canCreateLink?: boolean;
+    /** A dedicated Export or Download shortcut enters file preparation directly. */
+    initialEntry?: "chooser" | "download";
+    /** A live 3D take temporarily hides this sheet, then resumes its draft. */
+    preserveSession?: boolean;
+    onSessionResumed?: () => void;
   }
 
   let {
@@ -108,6 +115,7 @@
     isRecordingScene = false,
     exportProgress,
     onRequestVideo = () => false,
+    onPrepareFile,
     onClose,
     metaStatusOverride,
     onSendInTka,
@@ -119,6 +127,9 @@
     resolvedCardAutoLayout = null,
     onOpenPostStudio,
     canCreateLink = true,
+    initialEntry = "chooser",
+    preserveSession = false,
+    onSessionResumed,
   }: Props = $props();
 
   const postDeliveryState = createPostDeliveryState({
@@ -183,6 +194,11 @@
   let customizeOpen = $state(false);
   let footerOpen = $state(false);
   let presetsOpen = $state(false);
+  /** Opening Share must not spend a render on a link or sequence handoff. */
+  let filePreparationOpen = $state(false);
+  let captionOpen = $state(false);
+  let publishOpen = $state(false);
+  let fileIntent = $state<"download" | "share">("download");
   let failedPreviewUrl = $state<string | null>(null);
   let cardRenderFailed = $state(false);
 
@@ -215,7 +231,7 @@
   /** Shared with Post Studio and gated on open so unused viewers pay no render. */
   const cardPreview = createCardPreviewState({
     getSequence: () => sequence,
-    getEnabled: () => isOpen,
+    getEnabled: () => isOpen && filePreparationOpen,
     getDarkMode: () => exportOptions.imageDarkMode,
     getResolvedAutoLayout: () => resolvedCardAutoLayout,
     getCardPresentation: () => shareDraft.cardPresentation,
@@ -226,6 +242,7 @@
   });
 
   let shortUrl = $state<string | null>(null);
+  let linkRequested = $state(false);
 
   let qrDataUrl = $state<string | null>(null);
   let qrPending = $state(false);
@@ -263,8 +280,9 @@
    * people, and a state blob in it is noise.
    */
   const copyLinkUrl = $derived.by(() => {
-    if (!postUrl) return "";
-    if (!shareUrl) return postUrl;
+    const baseUrl = postUrl || shareUrl;
+    if (!baseUrl) return "";
+    if (!postUrl || !shareUrl) return baseUrl;
     try {
       const state = new URL(shareUrl).searchParams;
       const target = new URL(postUrl);
@@ -277,7 +295,7 @@
       }
       return carried ? target.toString() : postUrl;
     } catch {
-      return postUrl;
+      return baseUrl;
     }
   });
 
@@ -321,6 +339,15 @@
     destinations.find((destination) => destination.id === "native-share") ??
       null
   );
+  const primaryDeliveryId = $derived.by(() => {
+    if (fileIntent === "download") return "download" as const;
+    return (
+      nativeShare?.id ??
+      destinations.find((destination) => destination.id === "send-to-phone")
+        ?.id ??
+      "download"
+    );
+  });
 
   /** The visual harness can exercise connection states while posting is disabled. */
   const postingAvailable = $derived(
@@ -439,22 +466,14 @@
       }))
   );
 
-  /** Excludes actions already promoted to a branded network button. */
-  const tileDestinations = $derived.by(() => {
-    const claimed = new Set(
-      networks
-        .map((plan) => plan.destination)
-        .filter((id): id is HandoffDestinationId => !!id)
-    );
-    const branded = new Set(networks.map((plan) => plan.brand));
-    return destinations.filter(
+  const tileDestinations = $derived(
+    destinations.filter(
       (destination) =>
-        destination.id !== "native-share" &&
-        (nativeShare !== null || destination.id !== "download") &&
-        !claimed.has(destination.id) &&
-        !(destination.brand && branded.has(destination.brand))
-    );
-  });
+        destination.id !== primaryDeliveryId &&
+        destination.id !== "copy-caption" &&
+        destination.id !== "copy-image-facebook"
+    )
+  );
 
   const facebookPages = $derived(metaStatus.facebookPage?.pages ?? []);
 
@@ -539,6 +558,10 @@
     if (isOpen === wasOpen) return;
     wasOpen = isOpen;
     if (!isOpen) return;
+    if (preserveSession) {
+      onSessionResumed?.();
+      return;
+    }
     pendingHandoff = null;
     shareDraft.start({
       availableArtifacts,
@@ -553,6 +576,9 @@
     customizeOpen = false;
     footerOpen = false;
     presetsOpen = false;
+    filePreparationOpen = false;
+    captionOpen = false;
+    publishOpen = false;
     failedPreviewUrl = null;
     cardRenderFailed = false;
     statusMessage = "";
@@ -563,14 +589,8 @@
     pageMenuOpen = false;
     postedPermalinks = {};
     shortUrl = seededShortUrl || null;
-    if (
-      shareDraft.artifact === "video" &&
-      !hasVideo &&
-      !isExportingVideo &&
-      !isRecordingScene
-    ) {
-      requestVideo();
-    }
+    linkRequested = !!seededShortUrl;
+    if (initialEntry === "download") beginFilePreparation("download");
   });
 
   $effect(() => {
@@ -601,9 +621,17 @@
     };
   });
 
-  // Mint asynchronously on open; captions never expose the long viewer URL.
+  // A short link is a persisted record. Only mint one after a link, caption, or
+  // publishing action asks for it; opening Share itself stays read-only.
   $effect(() => {
-    if (!isOpen || !sequence || seededShortUrl || !canCreateLink) return;
+    if (
+      !isOpen ||
+      !linkRequested ||
+      !sequence ||
+      seededShortUrl ||
+      !canCreateLink
+    )
+      return;
 
     const target = sequence;
     let stale = false;
@@ -618,6 +646,10 @@
       } catch (error) {
         // A missing short code leaves a still-usable word-only caption.
         console.warn("[PostShareSheet] No short link for the caption:", error);
+        if (!stale) {
+          linkRequested = false;
+          statusMessage = "Couldn't create a link. Try again.";
+        }
       }
     })();
 
@@ -633,9 +665,10 @@
     if (first) shareDraft.caption = first.text;
   });
 
-  // Hold the connection listener only while the sheet is open.
+  // Account state is only useful after the explicit publishing route opens.
   $effect(() => {
-    if (!isOpen || metaStatusOverride || !META_POSTING_ENABLED) return;
+    if (!isOpen || !publishOpen || metaStatusOverride || !META_POSTING_ENABLED)
+      return;
 
     const uid = getUser()?.uid;
     if (!uid) {
@@ -655,14 +688,61 @@
     postedPermalinks = {};
 
     // A live scene take also prevents duplicate export requests.
+    if (next === "video") requestVideoForPreparedFile();
+  }
+
+  /** File choices are intentionally lazy, so Copy link and Send in TKA stay fast. */
+  function beginFilePreparation(
+    intent: "download" | "share" = "download"
+  ): void {
+    filePreparationOpen = true;
+    fileIntent = intent;
+    statusMessage = "";
+    if (artifact === "video") requestVideoForPreparedFile();
+  }
+
+  function requestVideoForPreparedFile(): void {
+    const requiresFreshVideo = onPrepareFile?.("video") === true;
     if (
-      next === "video" &&
-      !hasVideo &&
+      (!hasVideo || requiresFreshVideo) &&
       !isExportingVideo &&
       !isRecordingScene
     ) {
       requestVideo();
     }
+  }
+
+  function handleCopyLinkIntent(): void {
+    if (copyLinkUrl) {
+      void runLocalTile("copy-link", () => copyLink(copyLinkUrl));
+      return;
+    }
+    if (!canCreateLink) {
+      statusMessage = "Save this sequence to create a shareable link.";
+      return;
+    }
+    linkRequested = true;
+    statusMessage = "Preparing link…";
+  }
+
+  $effect(() => {
+    if (shortUrl && statusMessage === "Preparing link…") {
+      statusMessage = "Link ready. Choose Copy link.";
+    }
+  });
+
+  function openCaption(): void {
+    captionOpen = !captionOpen;
+    if (captionOpen) linkRequested = true;
+  }
+
+  function returnToChooser(): void {
+    filePreparationOpen = false;
+    captionOpen = false;
+    publishOpen = false;
+    qrDataUrl = null;
+    qrError = "";
+    statusMessage = "";
   }
 
   /** Close before switching viewer surfaces so Back never returns to the modal. */
@@ -970,41 +1050,6 @@
     }
   }
 
-  /** Local actions depend on sheet-owned inbox and short-link context. */
-  interface LocalTile {
-    id: string;
-    label: string;
-    short: string;
-    icon: string;
-    ready: boolean;
-    run: () => void;
-  }
-
-  const localTiles = $derived.by((): LocalTile[] => {
-    const tiles: LocalTile[] = [];
-    if (onSendInTka) {
-      tiles.push({
-        id: "send-in-tka",
-        label: "Send in TKA",
-        short: "Send",
-        icon: "fa-solid fa-paper-plane",
-        ready: !!sequence,
-        run: () => handOffAfterClose(() => onSendInTka?.()),
-      });
-    }
-    if (postUrl) {
-      tiles.push({
-        id: "copy-link",
-        label: "Copy link",
-        short: "Link",
-        icon: "fa-solid fa-link",
-        ready: true,
-        run: () => void runLocalTile("copy-link", () => copyLink(copyLinkUrl)),
-      });
-    }
-    return tiles;
-  });
-
   let busyLocalTile = $state<string | null>(null);
 
   async function runLocalTile(
@@ -1196,6 +1241,7 @@
   {onClose}
   onClosed={runPendingHandoff}
   narrow={!!qrDataUrl}
+  compact={!filePreparationOpen && !qrDataUrl}
 >
   {#snippet children(surface)}
     {#if instagramReviewOpen && reviewPreviewUrl}
@@ -1240,423 +1286,525 @@
           </button>
         </header>
 
-        <div class="sheet-scroll">
-          <div class="preview-column">
-            {#if !qrDataUrl}
-              {#if artifactOptions.length > 1 || onOpenPostStudio}
-                <div
-                  class="artifact-picker"
-                  class:single-artifact={artifactOptions.length === 1}
+        {#if !filePreparationOpen}
+          <div class="share-intents">
+            <p class="intent-intro">Choose how to share this sequence.</p>
+            <div class="intent-grid">
+              <button
+                type="button"
+                class="intent"
+                disabled={busyLocalTile !== null}
+                onclick={handleCopyLinkIntent}
+              >
+                <i class="fa-solid fa-link" aria-hidden="true"></i>
+                <span>Copy link</span>
+                <small>Open this view with its current settings</small>
+              </button>
+              {#if onSendInTka}
+                <button
+                  type="button"
+                  class="intent"
+                  onclick={() => handOffAfterClose(() => onSendInTka?.())}
                 >
-                  {#if artifactOptions.length > 1}
-                    <SegmentedControl
-                      options={artifactOptions}
-                      value={artifact}
-                      onchange={handleArtifactChange}
-                      ariaLabel="What to share"
-                      semantics="radiogroup"
-                      size="sm"
-                      color="accent"
+                  <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                  <span>Send in TKA</span>
+                  <small>Attach this sequence to a TKA message</small>
+                </button>
+              {/if}
+              <button
+                type="button"
+                class="intent"
+                onclick={() => beginFilePreparation("download")}
+              >
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                <span>Download…</span>
+                <small>Prepare a file from the current view</small>
+              </button>
+              <button
+                type="button"
+                class="intent"
+                onclick={() => beginFilePreparation("share")}
+              >
+                <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
+                <span>Share file…</span>
+                <small>Prepare a file for this device</small>
+              </button>
+            </div>
+            {#if postingAvailable}
+              <button
+                type="button"
+                class="publish-route"
+                onclick={() => {
+                  beginFilePreparation("share");
+                  publishOpen = true;
+                  linkRequested = true;
+                }}
+              >
+                Publish to social…
+              </button>
+            {/if}
+            <p class="intent-status" role="status">{statusMessage || " "}</p>
+          </div>
+        {:else}
+          <div class="sheet-scroll">
+            <div class="preview-column">
+              {#if !qrDataUrl}
+                <button
+                  type="button"
+                  class="back-to-chooser"
+                  onclick={returnToChooser}
+                >
+                  <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                  Back to sharing
+                </button>
+                {#if artifactOptions.length > 1 || onOpenPostStudio}
+                  <div
+                    class="artifact-picker"
+                    class:single-artifact={artifactOptions.length === 1}
+                  >
+                    {#if artifactOptions.length > 1}
+                      <SegmentedControl
+                        options={artifactOptions}
+                        value={artifact}
+                        onchange={handleArtifactChange}
+                        ariaLabel="What to share"
+                        semantics="radiogroup"
+                        size="sm"
+                        color="accent"
+                      />
+                    {/if}
+                    {#if onOpenPostStudio}
+                      <button
+                        type="button"
+                        class="studio-launch"
+                        onclick={openPostStudio}
+                      >
+                        <i
+                          class="fa-solid fa-wand-magic-sparkles"
+                          aria-hidden="true"
+                        ></i>
+                        Post Studio
+                      </button>
+                    {/if}
+                  </div>
+                {/if}
+              {/if}
+
+              <div class="stage" class:showing-media={!!previewReady}>
+                {#if qrDataUrl}
+                  <div class="qr-view">
+                    <img
+                      src={qrDataUrl}
+                      alt="QR code linking to the uploaded file"
                     />
-                  {/if}
-                  {#if onOpenPostStudio}
+                    <p>
+                      Scan with your phone, save it, then post from Instagram.
+                    </p>
                     <button
                       type="button"
-                      class="studio-launch"
-                      onclick={openPostStudio}
+                      class="secondary"
+                      onclick={closeQrView}
                     >
-                      <i
-                        class="fa-solid fa-wand-magic-sparkles"
-                        aria-hidden="true"
-                      ></i>
-                      Post Studio
+                      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                      Back
                     </button>
-                  {/if}
-                </div>
-              {/if}
-            {/if}
-
-            <div class="stage" class:showing-media={!!previewReady}>
-              {#if qrDataUrl}
-                <div class="qr-view">
+                  </div>
+                {:else if artifact === "card" && ((cardRenderFailed && !cardPreview.url) || (cardPreview.url && failedPreviewUrl === cardPreview.url))}
+                  <div class="stage-pending stage-refused" role="status">
+                    <i class="fa-regular fa-image" aria-hidden="true"></i>
+                    <strong>Preview unavailable</strong>
+                    <span>Close sharing and try opening it again.</span>
+                  </div>
+                {:else if artifact === "card" && cardPreview.url}
                   <img
-                    src={qrDataUrl}
-                    alt="QR code linking to the uploaded file"
+                    class="preview"
+                    src={cardPreview.url}
+                    alt="Sequence card preview"
+                    onerror={() => (failedPreviewUrl = cardPreview.url)}
                   />
-                  <p>
-                    Scan with your phone, save it, then post from Instagram.
-                  </p>
-                  <button type="button" class="secondary" onclick={closeQrView}>
-                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-                    Back
-                  </button>
-                </div>
-              {:else if artifact === "card" && ((cardRenderFailed && !cardPreview.url) || (cardPreview.url && failedPreviewUrl === cardPreview.url))}
-                <div class="stage-pending stage-refused" role="status">
-                  <i class="fa-regular fa-image" aria-hidden="true"></i>
-                  <strong>Preview unavailable</strong>
-                  <span>Close sharing and try opening it again.</span>
-                </div>
-              {:else if artifact === "card" && cardPreview.url}
-                <img
-                  class="preview"
-                  src={cardPreview.url}
-                  alt="Sequence card preview"
-                  onerror={() => (failedPreviewUrl = cardPreview.url)}
-                />
-              {:else if artifact === "video" && activeVideoUrl}
-                <!-- svelte-ignore a11y_media_has_caption -->
-                <video
-                  class="preview"
-                  src={activeVideoUrl}
-                  autoplay
-                  loop
-                  muted
-                  playsinline
-                ></video>
-              {:else if artifact === "video" && videoRefused}
-                <div class="stage-pending stage-refused" role="status">
-                  <span>The render didn't start.</span>
-                  <button class="retry" type="button" onclick={requestVideo}>
-                    Try again
-                  </button>
-                </div>
-              {:else}
-                <div class="stage-pending" role="status">
-                  <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"
-                  ></i>
-                  <span>{progressLabel || "Preparing…"}</span>
-                </div>
-              {/if}
-            </div>
-
-            <!-- Final content confirmation sits next to the preview it changes. -->
-            {#if !qrDataUrl && sequence}
-              {#if artifact === "card"}
-                <div class="card-footer-confirmation">
-                  <PanelButton
-                    fullWidth
-                    ariaExpanded={footerOpen}
-                    onclick={() => (footerOpen = !footerOpen)}
-                  >
-                    <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-                    Card footer
-                    <span class="setting-value"
-                      >{shareDraft.cardPresentation.footer.mode === "off"
-                        ? "Off"
-                        : shareDraft.cardPresentation.footer.mode === "credit"
-                          ? "Credit"
-                          : "Custom"}</span
-                    >
+                {:else if artifact === "video" && activeVideoUrl}
+                  <!-- svelte-ignore a11y_media_has_caption -->
+                  <video
+                    class="preview"
+                    src={activeVideoUrl}
+                    autoplay
+                    loop
+                    muted
+                    playsinline
+                  ></video>
+                {:else if artifact === "video" && videoRefused}
+                  <div class="stage-pending stage-refused" role="status">
+                    <span>The render didn't start.</span>
+                    <button class="retry" type="button" onclick={requestVideo}>
+                      Try again
+                    </button>
+                  </div>
+                {:else}
+                  <div class="stage-pending" role="status">
                     <i
-                      class={footerOpen
-                        ? "fa-solid fa-chevron-up"
-                        : "fa-solid fa-chevron-down"}
+                      class="fa-solid fa-circle-notch fa-spin"
                       aria-hidden="true"
                     ></i>
-                  </PanelButton>
-                  {#if footerOpen}
-                    <div
-                      class="disclosure-body"
-                      transition:growFade={{ axis: "y" }}
-                    >
-                      <CardFooterEditor
-                        value={shareDraft.cardPresentation}
-                        onchange={changeShareCardPresentation}
-                        onSave={onSaveCardPresentation
-                          ? saveCardPresentation
-                          : undefined}
-                        dirty={shareDraft.cardPresentationDirty}
-                        saving={savingCardPresentation}
-                        description="Appears inside this shared card image."
-                        idBase="share-card-footer"
-                      />
-                    </div>
-                  {/if}
-                </div>
-              {:else}
-                <div class="customize">
-                  <button
-                    type="button"
-                    class="customize-toggle"
-                    aria-expanded={customizeOpen}
-                    aria-controls="post-share-customize"
-                    onclick={() => (customizeOpen = !customizeOpen)}
-                  >
-                    <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-                    <span class="customize-label">{videoLabel} settings</span>
-                    <i
-                      class="fa-solid fa-chevron-down chevron"
-                      class:open={customizeOpen}
-                      aria-hidden="true"
-                    ></i>
-                  </button>
-
-                  {#if customizeOpen}
-                    <div
-                      class="customize-body"
-                      id="post-share-customize"
-                      transition:growFade={{ axis: "y" }}
-                      onintroend={revealCustomize}
-                    >
-                      <ExportPopover />
-                      {#if videoSettingsStale}
-                        <button
-                          type="button"
-                          class="rerender"
-                          onclick={requestVideo}
-                          transition:growFade={{ axis: "y" }}
-                        >
-                          <i class="fa-solid fa-rotate" aria-hidden="true"></i>
-                          Re-render with these settings
-                        </button>
-                      {/if}
-                    </div>
-                  {/if}
-                </div>
-              {/if}
-            {/if}
-          </div>
-          <div class="editing-column">
-            {#if !qrDataUrl}
-              <div class="caption-block">
-                <div class="content-heading">
-                  <label for="post-share-caption">Caption</label>
-                  <span class="optional-label">Optional</span>
-                </div>
-
-                <textarea
-                  id="post-share-caption"
-                  value={caption}
-                  oninput={(event) => {
-                    shareDraft.caption = (
-                      event.currentTarget as HTMLTextAreaElement
-                    ).value;
-                    shareDraft.captionTouched = true;
-                  }}
-                  rows="3"
-                  placeholder="Write a caption…"
-                ></textarea>
-                <div class="preset-toggle">
-                  <PanelButton
-                    ariaExpanded={presetsOpen}
-                    onclick={() => (presetsOpen = !presetsOpen)}
-                  >
-                    <i class="fa-solid fa-align-left" aria-hidden="true"></i>
-                    Caption presets
-                    <i
-                      class={presetsOpen
-                        ? "fa-solid fa-chevron-up"
-                        : "fa-solid fa-chevron-down"}
-                      aria-hidden="true"
-                    ></i>
-                  </PanelButton>
-                </div>
-                {#if presetsOpen}
-                  <div transition:growFade={{ axis: "y" }}>
-                    <div class="presets">
-                      {#each presets as preset (preset.id)}
-                        <!-- Custom text is the implicit none-selected state. -->
-                        <FilterChipBase
-                          label={preset.label}
-                          mode="toggle"
-                          active={caption === preset.text}
-                          size="sm"
-                          onclick={() => applyPreset(preset.text)}
-                          onremove={preset.template
-                            ? () => removePreset(preset)
-                            : undefined}
-                          removeAriaLabel={`Delete the preset ${preset.label}`}
-                        />
-                      {/each}
-                      <FilterChipBase
-                        label="Save current"
-                        icon="fa-solid fa-plus"
-                        mode="action"
-                        size="sm"
-                        disabled={!caption.trim()}
-                        onclick={saveCurrentAsPreset}
-                      />
-                    </div>
+                    <span>{progressLabel || "Preparing…"}</span>
                   </div>
                 {/if}
               </div>
 
-              <div class="actions">
-                {#each networks as plan (plan.key)}
-                  {@render networkButton(plan)}
-                {/each}
-              </div>
-
-              {#if tileDestinations.length || localTiles.length}
-                <div class="destination-heading">More ways to share</div>
-                <div class="tiles">
-                  {#each localTiles as tile (tile.id)}
-                    <button
-                      type="button"
-                      class="tile"
-                      aria-label={tile.label}
-                      title={tile.label}
-                      disabled={!tile.ready || busyLocalTile !== null}
-                      onclick={tile.run}
+              <!-- Final content confirmation sits next to the preview it changes. -->
+              {#if !qrDataUrl && sequence}
+                {#if artifact === "card"}
+                  <div class="card-footer-confirmation">
+                    <PanelButton
+                      fullWidth
+                      ariaExpanded={footerOpen}
+                      onclick={() => (footerOpen = !footerOpen)}
                     >
-                      <span class="tile-icon">
-                        {#if busyLocalTile === tile.id}
-                          <i
-                            class="fa-solid fa-circle-notch fa-spin"
-                            aria-hidden="true"
-                          ></i>
-                        {:else}
-                          <i class={tile.icon} aria-hidden="true"></i>
-                        {/if}
-                      </span>
-                      <span class="tile-label">{tile.short}</span>
-                    </button>
-                  {/each}
-                  {#each tileDestinations as destination (destination.id)}
-                    <button
-                      type="button"
-                      class="tile"
-                      aria-label={destination.label}
-                      title={destination.hint
-                        ? `${destination.label} · ${destination.hint}`
-                        : destination.label}
-                      disabled={(destination.id !== "copy-caption" &&
-                        !activeBlob) ||
-                        busyDestination !== null ||
-                        qrPending}
-                      onclick={() => runDestination(destination.id)}
-                    >
-                      <span class="tile-icon">
-                        {#if busyDestination === destination.id}
-                          <i
-                            class="fa-solid fa-circle-notch fa-spin"
-                            aria-hidden="true"
-                          ></i>
-                        {:else if destination.brand}
-                          {@render brandMark(destination.brand)}
-                        {:else}
-                          <i class={destination.icon} aria-hidden="true"></i>
-                        {/if}
-                      </span>
-                      <span class="tile-label">{destination.short}</span>
-                    </button>
-                  {/each}
-                </div>
-              {/if}
-
-              {#if metaStatus.facebookPage || autoPostTargets.length}
-                <div class="connections">
-                  {#if metaStatus.facebookPage}
-                    {@const selected = metaStatus.facebookPage}
-                    <!-- Page names are unbounded, so they belong in a dropdown. -->
-                    <div class="page-chip">
-                      <FilterChipBase
-                        label={selected.selectedPageName || "Choose a Page"}
-                        ariaLabel="Which Page to post to"
-                        mode="dropdown"
-                        size="sm"
-                        active={pageChoicePending}
-                        emphasis={pageChoicePending ? "solid" : "soft"}
-                        expanded={pageMenuOpen}
-                        disabled={metaBusy}
-                        onclick={() => (pageMenuOpen = !pageMenuOpen)}
+                      <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+                      Card footer
+                      <span class="setting-value"
+                        >{shareDraft.cardPresentation.footer.mode === "off"
+                          ? "Off"
+                          : shareDraft.cardPresentation.footer.mode === "credit"
+                            ? "Credit"
+                            : "Custom"}</span
                       >
-                        {#snippet iconSnippet()}
-                          {@render brandMark("facebook")}
-                        {/snippet}
-                        {#snippet children()}
-                          {#each facebookPages as page (page.id)}
+                      <i
+                        class={footerOpen
+                          ? "fa-solid fa-chevron-up"
+                          : "fa-solid fa-chevron-down"}
+                        aria-hidden="true"
+                      ></i>
+                    </PanelButton>
+                    {#if footerOpen}
+                      <div
+                        class="disclosure-body"
+                        transition:growFade={{ axis: "y" }}
+                      >
+                        <CardFooterEditor
+                          value={shareDraft.cardPresentation}
+                          onchange={changeShareCardPresentation}
+                          onSave={onSaveCardPresentation
+                            ? saveCardPresentation
+                            : undefined}
+                          dirty={shareDraft.cardPresentationDirty}
+                          saving={savingCardPresentation}
+                          description="Appears inside this shared card image."
+                          idBase="share-card-footer"
+                        />
+                      </div>
+                    {/if}
+                  </div>
+                {:else}
+                  <div class="customize">
+                    <button
+                      type="button"
+                      class="customize-toggle"
+                      aria-expanded={customizeOpen}
+                      aria-controls="post-share-customize"
+                      onclick={() => (customizeOpen = !customizeOpen)}
+                    >
+                      <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+                      <span class="customize-label">{videoLabel} settings</span>
+                      <i
+                        class="fa-solid fa-chevron-down chevron"
+                        class:open={customizeOpen}
+                        aria-hidden="true"
+                      ></i>
+                    </button>
+
+                    {#if customizeOpen}
+                      <div
+                        class="customize-body"
+                        id="post-share-customize"
+                        transition:growFade={{ axis: "y" }}
+                        onintroend={revealCustomize}
+                      >
+                        <ExportPopover />
+                        {#if videoSettingsStale}
+                          <button
+                            type="button"
+                            class="rerender"
+                            onclick={requestVideo}
+                            transition:growFade={{ axis: "y" }}
+                          >
+                            <i class="fa-solid fa-rotate" aria-hidden="true"
+                            ></i>
+                            Re-render with these settings
+                          </button>
+                        {/if}
+                      </div>
+                    {/if}
+                  </div>
+                {/if}
+              {/if}
+            </div>
+            <div class="editing-column">
+              {#if !qrDataUrl}
+                <div class="caption-block">
+                  <PanelButton ariaExpanded={captionOpen} onclick={openCaption}>
+                    <i class="fa-solid fa-align-left" aria-hidden="true"></i>
+                    Caption
+                    <span class="optional-label">Optional</span>
+                    <i
+                      class={captionOpen
+                        ? "fa-solid fa-chevron-up"
+                        : "fa-solid fa-chevron-down"}
+                      aria-hidden="true"
+                    ></i>
+                  </PanelButton>
+                  {#if captionOpen}
+                    <div transition:growFade={{ axis: "y" }}>
+                      <textarea
+                        id="post-share-caption"
+                        aria-label="Caption"
+                        value={caption}
+                        oninput={(event) => {
+                          shareDraft.caption = (
+                            event.currentTarget as HTMLTextAreaElement
+                          ).value;
+                          shareDraft.captionTouched = true;
+                        }}
+                        rows="3"
+                        placeholder="Write a caption…"
+                      ></textarea>
+                      <div class="preset-toggle">
+                        <PanelButton
+                          disabled={!caption.trim() || busyLocalTile !== null}
+                          onclick={() =>
+                            runLocalTile("copy-caption", () =>
+                              copyCaption(caption)
+                            )}
+                        >
+                          <i class="fa-solid fa-copy" aria-hidden="true"></i>
+                          Copy caption
+                        </PanelButton>
+                        <PanelButton
+                          ariaExpanded={presetsOpen}
+                          onclick={() => (presetsOpen = !presetsOpen)}
+                        >
+                          <i class="fa-solid fa-align-left" aria-hidden="true"
+                          ></i>
+                          Caption presets
+                          <i
+                            class={presetsOpen
+                              ? "fa-solid fa-chevron-up"
+                              : "fa-solid fa-chevron-down"}
+                            aria-hidden="true"
+                          ></i>
+                        </PanelButton>
+                      </div>
+                      {#if presetsOpen}
+                        <div transition:growFade={{ axis: "y" }}>
+                          <div class="presets">
+                            {#each presets as preset (preset.id)}
+                              <!-- Custom text is the implicit none-selected state. -->
+                              <FilterChipBase
+                                label={preset.label}
+                                mode="toggle"
+                                active={caption === preset.text}
+                                size="sm"
+                                onclick={() => applyPreset(preset.text)}
+                                onremove={preset.template
+                                  ? () => removePreset(preset)
+                                  : undefined}
+                                removeAriaLabel={`Delete the preset ${preset.label}`}
+                              />
+                            {/each}
+                            <FilterChipBase
+                              label="Save current"
+                              icon="fa-solid fa-plus"
+                              mode="action"
+                              size="sm"
+                              disabled={!caption.trim()}
+                              onclick={saveCurrentAsPreset}
+                            />
+                          </div>
+                        </div>
+                      {/if}
+                    </div>
+                  {/if}
+                </div>
+
+                {#if publishOpen}
+                  <div class="actions">
+                    {#each networks as plan (plan.key)}
+                      {@render networkButton(plan)}
+                    {/each}
+                  </div>
+                {:else if postingAvailable}
+                  <button
+                    type="button"
+                    class="publish-route"
+                    onclick={() => {
+                      publishOpen = true;
+                      linkRequested = true;
+                    }}
+                  >
+                    Publish to social…
+                  </button>
+                {/if}
+
+                {#if tileDestinations.length}
+                  <div class="destination-heading">More ways to share</div>
+                  <div class="tiles">
+                    {#each tileDestinations as destination (destination.id)}
+                      <button
+                        type="button"
+                        class="tile"
+                        aria-label={destination.label}
+                        title={destination.hint
+                          ? `${destination.label} · ${destination.hint}`
+                          : destination.label}
+                        disabled={(destination.id !== "copy-caption" &&
+                          !activeBlob) ||
+                          busyDestination !== null ||
+                          qrPending}
+                        onclick={() => runDestination(destination.id)}
+                      >
+                        <span class="tile-icon">
+                          {#if busyDestination === destination.id}
+                            <i
+                              class="fa-solid fa-circle-notch fa-spin"
+                              aria-hidden="true"
+                            ></i>
+                          {:else if destination.brand}
+                            {@render brandMark(destination.brand)}
+                          {:else}
+                            <i class={destination.icon} aria-hidden="true"></i>
+                          {/if}
+                        </span>
+                        <span class="tile-label">{destination.label}</span>
+                        {#if destination.hint}
+                          <span class="tile-hint">{destination.hint}</span>
+                        {/if}
+                      </button>
+                    {/each}
+                  </div>
+                {/if}
+
+                {#if publishOpen && (metaStatus.facebookPage || autoPostTargets.length)}
+                  <div class="connections">
+                    {#if metaStatus.facebookPage}
+                      {@const selected = metaStatus.facebookPage}
+                      <!-- Page names are unbounded, so they belong in a dropdown. -->
+                      <div class="page-chip">
+                        <FilterChipBase
+                          label={selected.selectedPageName || "Choose a Page"}
+                          ariaLabel="Which Page to post to"
+                          mode="dropdown"
+                          size="sm"
+                          active={pageChoicePending}
+                          emphasis={pageChoicePending ? "solid" : "soft"}
+                          expanded={pageMenuOpen}
+                          disabled={metaBusy}
+                          onclick={() => (pageMenuOpen = !pageMenuOpen)}
+                        >
+                          {#snippet iconSnippet()}
+                            {@render brandMark("facebook")}
+                          {/snippet}
+                          {#snippet children()}
+                            {#each facebookPages as page (page.id)}
+                              <button
+                                class="page-option"
+                                class:selected={page.id ===
+                                  selected.selectedPageId}
+                                type="button"
+                                role="option"
+                                aria-selected={page.id ===
+                                  selected.selectedPageId}
+                                onclick={() => handlePageChange(page.id)}
+                              >
+                                <span>{page.name}</span>
+                                {#if page.id === selected.selectedPageId}
+                                  <i
+                                    class="fa-solid fa-check"
+                                    aria-hidden="true"
+                                  ></i>
+                                {/if}
+                              </button>
+                            {/each}
                             <button
-                              class="page-option"
-                              class:selected={page.id ===
-                                selected.selectedPageId}
+                              class="page-option page-option--add"
                               type="button"
                               role="option"
-                              aria-selected={page.id ===
-                                selected.selectedPageId}
-                              onclick={() => handlePageChange(page.id)}
+                              aria-selected="false"
+                              disabled={metaBusy}
+                              onclick={changeSharedPages}
                             >
-                              <span>{page.name}</span>
-                              {#if page.id === selected.selectedPageId}
-                                <i class="fa-solid fa-check" aria-hidden="true"
+                              <span>Add a Page…</span>
+                              {#if connectingTarget === "facebook-page"}
+                                <i
+                                  class="fa-solid fa-circle-notch fa-spin"
+                                  aria-hidden="true"
+                                ></i>
+                              {:else}
+                                <i class="fa-solid fa-plus" aria-hidden="true"
                                 ></i>
                               {/if}
                             </button>
-                          {/each}
-                          <button
-                            class="page-option page-option--add"
-                            type="button"
-                            role="option"
-                            aria-selected="false"
-                            disabled={metaBusy}
-                            onclick={changeSharedPages}
-                          >
-                            <span>Add a Page…</span>
-                            {#if connectingTarget === "facebook-page"}
-                              <i
-                                class="fa-solid fa-circle-notch fa-spin"
-                                aria-hidden="true"
-                              ></i>
-                            {:else}
-                              <i class="fa-solid fa-plus" aria-hidden="true"
-                              ></i>
-                            {/if}
-                          </button>
-                        {/snippet}
-                      </FilterChipBase>
-                    </div>
-                  {/if}
+                          {/snippet}
+                        </FilterChipBase>
+                      </div>
+                    {/if}
 
-                  {#each autoPostTargets as target (target.id)}
-                    <FilterChipBase
-                      label={`Disconnect ${target.network}`}
-                      ariaLabel={`Disconnect ${target.account} from ${target.network}`}
-                      icon={connectingTarget === target.id
-                        ? "fa-solid fa-circle-notch fa-spin"
-                        : "fa-solid fa-link-slash"}
-                      mode="action"
-                      size="sm"
-                      disabled={metaBusy}
-                      onclick={() => forgetTarget(target.id)}
-                    />
-                  {/each}
-                </div>
+                    {#each autoPostTargets as target (target.id)}
+                      <FilterChipBase
+                        label={`Disconnect ${target.network}`}
+                        ariaLabel={`Disconnect ${target.account} from ${target.network}`}
+                        icon={connectingTarget === target.id
+                          ? "fa-solid fa-circle-notch fa-spin"
+                          : "fa-solid fa-link-slash"}
+                        mode="action"
+                        size="sm"
+                        disabled={metaBusy}
+                        onclick={() => forgetTarget(target.id)}
+                      />
+                    {/each}
+                  </div>
+                {/if}
               {/if}
-            {/if}
+            </div>
           </div>
-        </div>
-        <footer class="share-dock">
-          {#if !qrDataUrl}
-            <PanelButton
-              variant="primary"
-              fullWidth
-              disabled={!activeBlob || busyDestination !== null || qrPending}
-              ariaBusy={busyDestination !== null}
-              onclick={() => runDestination(nativeShare?.id ?? "download")}
+          <footer class="share-dock">
+            {#if !qrDataUrl}
+              <PanelButton
+                variant="primary"
+                fullWidth
+                disabled={!activeBlob || busyDestination !== null || qrPending}
+                ariaBusy={busyDestination !== null}
+                onclick={() => runDestination(primaryDeliveryId)}
+              >
+                <i
+                  class={busyDestination
+                    ? "fa-solid fa-circle-notch fa-spin"
+                    : primaryDeliveryId === "send-to-phone"
+                      ? "fa-solid fa-qrcode"
+                      : primaryDeliveryId === "native-share"
+                        ? "fa-solid fa-share-nodes"
+                        : "fa-solid fa-download"}
+                  aria-hidden="true"
+                ></i>
+                {primaryDeliveryId !== "download"
+                  ? nativeShare
+                    ? "Share file"
+                    : primaryDeliveryId === "send-to-phone"
+                      ? "Transfer to phone"
+                      : "Share file"
+                  : artifact === "card"
+                    ? "Download card"
+                    : "Download video"}
+              </PanelButton>
+            {/if}
+            <!-- Reserve status height so messages cannot move the sheet. -->
+            <p
+              class="status"
+              role="status"
+              class:visible={!!(statusMessage || qrError)}
             >
-              <i
-                class={busyDestination
-                  ? "fa-solid fa-circle-notch fa-spin"
-                  : (nativeShare?.icon ?? "fa-solid fa-download")}
-                aria-hidden="true"
-              ></i>
-              {nativeShare
-                ? "Share"
-                : artifact === "card"
-                  ? "Download card"
-                  : "Download video"}
-            </PanelButton>
-          {/if}
-          <!-- Reserve status height so messages cannot move the sheet. -->
-          <p
-            class="status"
-            role="status"
-            class:visible={!!(statusMessage || qrError)}
-          >
-            {qrError || statusMessage || " "}
-          </p>
-        </footer>
+              {qrError || statusMessage || " "}
+            </p>
+          </footer>
+        {/if}
       </div>
     {/if}
   {/snippet}
@@ -2255,12 +2403,95 @@
     scrollbar-width: thin;
     padding: 1rem 1.25rem;
   }
+  .share-intents {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.25rem;
+  }
+  .intent-intro {
+    margin: 0 0 1rem;
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.7));
+    font-size: var(--font-size-min, 0.875rem);
+  }
+  .intent-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .intent,
+  .publish-route {
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
+    color: var(--theme-text, #fff);
+    font: inherit;
+    cursor: pointer;
+  }
+  .intent {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+    align-items: center;
+    min-height: 5.25rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.75rem;
+    text-align: left;
+  }
+  .intent > i {
+    grid-row: span 2;
+    font-size: 1.125rem;
+    color: var(--theme-accent, #8b7cff);
+  }
+  .intent > span {
+    font-weight: 650;
+  }
+  .intent > small {
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
+    font-size: var(--font-size-compact, 0.75rem);
+    line-height: 1.35;
+  }
+  .intent:hover:not(:disabled),
+  .publish-route:hover {
+    border-color: var(--theme-accent, #8b7cff);
+    background: var(--theme-surface-hover, rgba(255, 255, 255, 0.1));
+  }
+  .intent:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .intent-status {
+    min-height: 1.5rem;
+    margin: 1rem 0 0;
+    color: var(--theme-text-secondary);
+    font-size: var(--font-size-min, 0.875rem);
+  }
+  .publish-route {
+    width: fit-content;
+    min-height: var(--min-touch-target, 44px);
+    margin-top: 1rem;
+    padding-inline: 0.875rem;
+    border-radius: 0.625rem;
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.75));
+    font-size: var(--font-size-min, 0.875rem);
+  }
   .preview-column,
   .editing-column {
     min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+  .back-to-chooser {
+    align-self: flex-start;
+    min-height: var(--min-touch-target, 44px);
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    border-radius: 0.625rem;
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.78));
+    font: inherit;
+    font-size: var(--font-size-min, 0.875rem);
+    cursor: pointer;
   }
   .editing-column {
     margin-top: 1.25rem;
@@ -2338,6 +2569,9 @@
     background: var(--theme-card-bg);
   }
   .preset-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
     align-self: start;
   }
   .presets {
@@ -2381,6 +2615,14 @@
   .tile-label {
     font-size: 0.875rem;
   }
+  .tile-hint {
+    display: block;
+    max-width: 100%;
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.62));
+    font-size: var(--font-size-compact, 0.75rem);
+    line-height: 1.25;
+    text-align: center;
+  }
   .connections {
     flex-wrap: wrap;
     overflow: visible;
@@ -2420,6 +2662,12 @@
     height: 100%;
     min-height: 20rem;
   }
+  @media (min-width: 600px) {
+    .intent-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
   @media (min-width: 900px) {
     .panel-header {
       padding: 1.25rem 1.75rem;
@@ -2438,6 +2686,12 @@
       align-items: start;
       gap: 2rem;
       padding: 1.5rem 1.75rem;
+    }
+    .share-intents {
+      padding: 1.75rem;
+    }
+    .intent-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .editing-column {
       margin-top: 0;

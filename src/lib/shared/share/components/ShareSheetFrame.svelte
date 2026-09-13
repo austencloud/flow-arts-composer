@@ -8,6 +8,7 @@
     /** After the native dialog has left the top layer; see BaseModal.onclosed. */
     onClosed?: () => void;
     narrow?: boolean;
+    compact?: boolean;
     expanded?: boolean;
     children: Snippet<[surface: "modal" | "drawer"]>;
   }
@@ -17,6 +18,7 @@
     onClose,
     onClosed,
     narrow = false,
+    compact = false,
     expanded = false,
     children,
   }: Props = $props();
@@ -26,7 +28,7 @@
 <!-- The native modal layer keeps editor toolbars behind sharing on phones too. -->
 <BaseModal
   open={isOpen}
-  class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${expanded ? " share-sheet-modal--expanded" : ""}`}
+  class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${compact ? " share-sheet-modal--compact" : ""}${expanded ? " share-sheet-modal--expanded" : ""}`}
   size="full"
   position="center"
   animation="pop"
@@ -58,6 +60,9 @@
     backdrop-filter: none;
     border: 1px solid var(--theme-stroke);
     border-radius: 1.25rem;
+    transition:
+      width var(--transition-normal),
+      height var(--transition-normal);
   }
   :global(.share-sheet-modal .modal-content-wrapper),
   :global(.share-sheet-modal .modal-body) {
@@ -72,6 +77,10 @@
     width: min(30rem, calc(100vw - 2rem));
     height: min(38rem, calc(var(--viewport-height, 100dvh) - 2rem));
   }
+  :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
+    width: min(44rem, calc(100vw - 3rem));
+    height: min(31rem, calc(var(--viewport-height, 100dvh) - 3rem));
+  }
   :global(dialog.base-modal.share-sheet-modal--expanded[data-size]) {
     width: calc(100vw - 1rem);
     height: calc(var(--viewport-height, 100dvh) - 1rem);
@@ -85,6 +94,23 @@
       margin-block: auto 0;
       border-radius: 1.25rem 1.25rem 0 0;
       border-bottom: 0;
+    }
+    :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
+      height: min(40rem, calc(var(--viewport-height, 100dvh) - 0.75rem));
+    }
+  }
+  @media (min-width: 600px) and (max-width: 899px) {
+    :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
+      width: min(44rem, calc(100vw - 3rem));
+      height: min(31rem, calc(var(--viewport-height, 100dvh) - 3rem));
+      margin: auto;
+      border: 1px solid var(--theme-stroke);
+      border-radius: 1.25rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(dialog.base-modal.share-sheet-modal[data-size]) {
+      transition: none;
     }
   }
 </style>

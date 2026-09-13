@@ -51,11 +51,14 @@
   let studioCardUrl = $state<string | null>(null);
   let studioAnimationUrl = $state<string | null>(null);
   let studioAnimationType = $state<"video" | "image">("video");
+  let initialArtifact = $state<"card" | "video">("card");
+  let tkaHandoffCount = $state(0);
 
   onMount(async () => {
     const params = new URLSearchParams(window.location.search);
     studioHarness = params.has("studio");
     cardOnly = params.has("card");
+    initialArtifact = params.get("artifact") === "video" ? "video" : "card";
     const requestedMeta = params.get("meta");
     if (
       requestedMeta === "none" ||
@@ -277,15 +280,18 @@
         Real sequence {sequence.word} ({sequence.steps?.length ?? 0} steps). Video
         export is driven by the viewer in the real app; this harness only simulates
         its progress states.
+        {#if tkaHandoffCount}
+          Send in TKA selected {tkaHandoffCount} time{tkaHandoffCount === 1
+            ? ""
+            : "s"}.
+        {/if}
       {/if}
     </p>
   </div>
 {/if}
 
-<!-- No `shareUrl`: the sheet mints (or, per the one-code-per-hash invariant,
-     re-resolves) this sequence's real short code itself, which is what the
-     viewer makes it do in production. A hardcoded link here would skip the
-     one piece of the caption the user actually posts. -->
+<!-- No `shareUrl`: Copy link and Caption exercise the sheet's lazy short-code
+     path. A hardcoded link would skip the real link-preparation behavior. -->
 {#if studioHarness && sequence}
   <main class="studio-harness">
     <PostStudio
@@ -303,11 +309,13 @@
     isOpen={isOpen && !!sequence}
     {sequence}
     availableArtifacts={cardOnly ? ["card"] : ["card", "video"]}
+    {initialArtifact}
     shareUrl=""
     {videoBlobUrl}
     {isExportingVideo}
     {exportProgress}
     onRequestVideo={fakeRender}
+    onSendInTka={() => (tkaHandoffCount += 1)}
     onClose={() => (isOpen = false)}
     metaStatusOverride={overrideEnabled ? META_STATES[metaState] : undefined}
   />

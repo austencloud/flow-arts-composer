@@ -3,6 +3,7 @@ import type { OrchestratorContext } from "../domain/viewer-orchestrator-context"
 import { buildViewerShareActions } from "../services/viewer-shell-model";
 import type { MandalaViewerController } from "./mandala-viewer-controller.svelte";
 import type { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
+import type { ShareArtifact } from "$lib/shared/share/services/post-handoff";
 
 type ViewerShareActionId = "share-sequence" | "send-sequence" | "copy-link";
 
@@ -37,6 +38,9 @@ export function createViewerShellShareState(
 ) {
   let shareLinkCopied = $state(false);
   let postSheetOpen = $state(false);
+  let initialEntry = $state<"chooser" | "download">("chooser");
+  let preparedOrdinaryVideo = $state(false);
+  let preserveSession = $state(false);
   /**
    * `$state.raw`: these are class instances with private fields, and a deep
    * proxy around them breaks their own reactivity and their `#private` access.
@@ -105,6 +109,9 @@ export function createViewerShellShareState(
     sceneShare = false;
     postShare = false;
     sceneTakeSuspended = false;
+    initialEntry = "chooser";
+    preparedOrdinaryVideo = false;
+    preserveSession = false;
     postSheetOpen = true;
   }
 
@@ -120,6 +127,9 @@ export function createViewerShellShareState(
     sceneShare = false;
     postShare = true;
     sceneTakeSuspended = false;
+    initialEntry = "chooser";
+    preparedOrdinaryVideo = false;
+    preserveSession = false;
     postSheetOpen = true;
   }
 
@@ -134,6 +144,8 @@ export function createViewerShellShareState(
     sceneShare = false;
     postShare = false;
     sceneTakeSuspended = false;
+    preparedOrdinaryVideo = false;
+    preserveSession = false;
     // Retire the render along with the session that asked for it. The viewer
     // suppresses its own result overlay only while the sheet owns the render, so
     // leaving the blob behind means closing the sheet reveals an "Export
@@ -165,6 +177,9 @@ export function createViewerShellShareState(
     sceneShare = false;
     postShare = false;
     sceneTakeSuspended = false;
+    initialEntry = "chooser";
+    preparedOrdinaryVideo = false;
+    preserveSession = false;
     postSheetOpen = true;
   }
 
@@ -183,6 +198,9 @@ export function createViewerShellShareState(
     sceneShare = true;
     postShare = false;
     sceneTakeSuspended = false;
+    initialEntry = "chooser";
+    preparedOrdinaryVideo = false;
+    preserveSession = false;
     postSheetOpen = true;
   }
 
@@ -233,6 +251,34 @@ export function createViewerShellShareState(
     shareSequence();
   }
 
+  /** A link-only or inbox share keeps its existing preview. A 2D video file
+   * must retire an older export only when the user explicitly prepares one. */
+  function prepareFile(artifact: ShareArtifact): boolean {
+    if (
+      artifact !== "video" ||
+      artShare ||
+      sceneShare ||
+      postShare ||
+      preparedOrdinaryVideo
+    )
+      return false;
+    inputs.getContext().dismissPreview();
+    preparedOrdinaryVideo = true;
+    return true;
+  }
+
+  /** The existing Export control enters the same file-preparation sheet. */
+  function openFilePreparation(): void {
+    artShare = null;
+    sceneShare = false;
+    postShare = false;
+    sceneTakeSuspended = false;
+    initialEntry = "download";
+    preparedOrdinaryVideo = false;
+    preserveSession = false;
+    postSheetOpen = true;
+  }
+
   function selectAction(actionId: string): void {
     switch (actionId as ViewerShareActionId) {
       case "share-sequence":
@@ -271,6 +317,12 @@ export function createViewerShellShareState(
     get postShare() {
       return postShare;
     },
+    get initialEntry() {
+      return initialEntry;
+    },
+    get preserveSession() {
+      return preserveSession;
+    },
     /** The user opening or dismissing the sheet. Dismissing ends the session. */
     setPostSheetOpen(open: boolean) {
       postSheetOpen = open;
@@ -290,11 +342,15 @@ export function createViewerShellShareState(
      */
     suspendForSceneTake() {
       sceneTakeSuspended = true;
+      preserveSession = true;
       postSheetOpen = false;
     },
     resumeAfterSceneTake() {
       sceneTakeSuspended = false;
       postSheetOpen = true;
+    },
+    markSessionResumed() {
+      preserveSession = false;
     },
     getShareUrl(): string {
       return inputs.getContext().getShareUrl();
@@ -302,6 +358,8 @@ export function createViewerShellShareState(
     sendToInbox,
     setArtShareTarget,
     selectAction,
+    prepareFile,
+    openFilePreparation,
     sendToStickerLab,
     shareScene,
     sharePost,
