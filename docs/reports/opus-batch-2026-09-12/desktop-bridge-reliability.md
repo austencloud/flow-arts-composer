@@ -4,12 +4,12 @@ Scope: `src/lib/shared/desktop/**` plus its unit tests. Two reproduced
 lifecycle / error-propagation defects investigated and fixed; the rest of the
 trace is recorded read-only below.
 
-|                |                                                                                                |
-| -------------- | ---------------------------------------------------------------------------------------------- |
-| Base SHA       | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`)                                     |
-| Final code SHA | `e2914629fbb7c1c89844b2f0e13cb8eaff8d7374` (this report lands in `63f08294`, one commit later) |
-| Branch         | `claude/desktop-bridge-reliability-6agfgs`                                                     |
-| Checkout       | isolated cloud container (Linux); no native desktop runtime                                    |
+|                |                                                                |
+| -------------- | -------------------------------------------------------------- |
+| Base SHA       | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`)     |
+| Final code SHA | `bf970d25` (correcting `e2914629`, after review of `98ba26d6`) |
+| Branch         | `claude/desktop-bridge-reliability-6agfgs`                     |
+| Checkout       | isolated cloud container (Linux); no native desktop runtime    |
 
 ## Owned files
 
@@ -109,16 +109,43 @@ seeds the bundled data. Three ways the promise broke that contract:
    desktop boot hostage", `desktop-initializer.ts:98`) and passes
    `check({ timeout: 5000 })`; this path had nothing.
 
-**Fix.** `install()` is now a never-rejecting wrapper around `installBundle()`
-that warns and returns `false`. The manifest read runs under a 5 s bound
-(`MANIFEST_TIMEOUT_MS`, matching the updater's budget) implemented as an
-`AbortController` — which cancels the in-flight read so a stalled handler does
-not hold a connection — raced against a timer, so the bound holds regardless of
-how the request behaves. The manifest shape is validated before use, and the
+**Fix.** `install()` is a never-rejecting wrapper around `installBundle()` that
+warns and returns `false`. The manifest shape is validated before use, and the
 success log sums the files actually indexed rather than trusting the manifest's
 own summary fields. Falling back to network asset loading was already the
 documented behaviour for a build with no bundle; it is now equally the
-behaviour for a bundle that cannot be read.
+behaviour for a bundle that cannot be read. The time bound is described below —
+the first attempt at it was wrong.
+
+### Correction (`bf970d25`) — the first bound did not hold
+
+Review of `98ba26d6` found the "always settles within five seconds" claim
+**false**, and it was. The first fix put the deadline inside a `readManifest()`
+helper that raced only the `fetch()` call and then cleared its timer in a
+`finally`. But `fetch` settles as soon as the response **headers** arrive. A
+scheme handler that answers headers promptly and then stalls the body left
+`response.json()` — back in `installBundle`, past a cleared deadline — pending
+with no bound at all. That is the original boot-forever failure, moved one line
+down rather than removed. The two dynamic imports (`@tauri-apps/api/core`,
+`three`) were outside the bound for the same reason. Nothing suppressed a late
+completion either: had the body eventually landed, it would have installed the
+resolver and wrapped `window.fetch` long after boot continued without them.
+
+The bound is now one `AbortController` owned by `install()`, raced against the
+**entire** `installBundle()` attempt — headers, body parse and both imports
+inside it. Because the losing attempt keeps running, `installBundle()` re-checks
+`signal.aborted` immediately before its first module-state write, so a bundle
+that arrives after boot gave up is discarded instead of swapped in under
+surfaces that already mounted against network URLs. The `three` import moved
+above that write, so `bundledPaths`, `resolver`, `setURLModifier` and the
+`fetch` wrapper are now one synchronous block with no `await` inside it —
+resolver install atomicity is stronger than before, not merely preserved.
+
+The guarantee is now stated for what it is: the **returned promise** settles
+within `INSTALL_TIMEOUT_MS`. The underlying read may still be pending in the
+background afterwards — aborted, best-effort — and its late result is dropped.
+That is what the boot path needs: a `false` means "not installed, and never will
+be for this call".
 
 ## Verification
 
@@ -126,27 +153,45 @@ Project config throughout: `vitest run --config tests/config/vitest.config.ts`
 (jsdom, `pool: "forks"`). Before/after was measured by restoring the pre-fix
 source with `git show` against the final test files.
 
-| Suite                                      | Before fix         | After fix    |
-| ------------------------------------------ | ------------------ | ------------ |
-| `tests/unit/desktop-oauth-bridge.test.ts`  | 1 failed, 4 passed | **5 passed** |
-| `tests/unit/desktop-asset-runtime.test.ts` | 3 failed, 4 passed | **7 passed** |
+| Suite                                      | vs. base `6e4c1b5a` | vs. reviewed `98ba26d6` | Final        |
+| ------------------------------------------ | ------------------- | ----------------------- | ------------ |
+| `tests/unit/desktop-oauth-bridge.test.ts`  | 1 failed, 4 passed  | unchanged, 5 passed     | **5 passed** |
+| `tests/unit/desktop-asset-runtime.test.ts` | 3 failed, 4 passed  | 2 failed, 7 passed      | **9 passed** |
 
 The single pre-fix OAuth failure is the disposal assertion —
 `AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times`
-(`unlisten` after a failed `open()`). The three pre-fix asset-runtime failures
-are exactly the three sub-defects: `promise rejected "TypeError: Failed to
-fetch" instead of resolving`, `promise rejected "TypeError: Cannot read
-properties of undefined (reading 'map')" instead of resolving`, and
-`expected Symbol(never settled) to be false` (the unbounded read). The
-remaining tests in each file pass both before and after — they are the
-regression guard for behaviour that was already correct.
+(`unlisten` after a failed `open()`). The OAuth bridge is untouched by the
+correction and its five tests pass against `98ba26d6` and the final source
+alike.
+
+The three asset-runtime failures against the base are the three original
+sub-defects: `promise rejected "TypeError: Failed to fetch" instead of
+resolving`, `promise rejected "TypeError: Cannot read properties of undefined
+(reading 'map')" instead of resolving`, and `expected Symbol(never settled) to
+be false` (the unbounded read).
+
+The two failures against the **reviewed** `98ba26d6` are the correction's own
+evidence — both `AssertionError: expected Symbol(never settled) to be false`:
+
+- _resolves false when the headers arrive but the body never does_ — a `fetch`
+  stub that answers headers immediately and returns a `json()` that never
+  settles.
+- _discards a bundle that finishes reading after the deadline_ — same shape,
+  body released after the deadline; asserts `setURLModifier` was never called,
+  `window.fetch` was never wrapped, and `resolveDesktopAssetUrl` still returns
+  its input unchanged.
+
+Both stubs **ignore the `AbortSignal` entirely**, so they prove the deadline
+race rather than the mock's fidelity to abort semantics. The remaining tests in
+each file pass at every revision — they are the regression guard for behaviour
+that was already correct.
 
 Neighbouring suites, run together after the change:
 
 - `tests/unit/desktop-asset-url.test.ts`, `tests/unit/desktop-gallery-seed.test.ts`,
   `tests/unit/desktop-asset-bundle.test.js`,
   `tests/unit/desktop-sequence-bundle.test.js`, `tests/unit/auth/**` →
-  **45 files, 272 tests, all passing.**
+  **45 files, 274 tests, all passing** (272 before the correction added two).
   (Two of those files fail in a fresh checkout with
   `Failed to resolve entry for package "@tka/tka-types"` until
   `npm run build:packages` has run once. Environmental, unrelated to this
@@ -178,8 +223,10 @@ Neighbouring suites, run together after the change:
   real loopback OAuth round trip. Specifically unverified in a real shell:
   that a refused `shell.open` rejects the way the mock does; that the custom
   scheme's failure mode is a rejection rather than a status; and that the
-  WebView's `fetch` honours `AbortSignal` (the race makes the 5 s bound hold
-  even if it does not, but the _cancellation_ half depends on it).
+  WebView's `fetch` honours `AbortSignal`. The deadline race holds the bound
+  even if it does not — that is deliberate, and the two correction tests stub a
+  `fetch` that ignores the signal precisely to prove it — but the
+  _cancellation_ half, which frees the stalled connection, does depend on it.
 - **Inferred, not reproduced:** the severity framing of defect 2 — that a
   stalled manifest read delays `DesktopInitializer` and leaves the shell on the
   marketing landing — is read from the `await` at `+layout.svelte:516` and the
@@ -187,11 +234,17 @@ Neighbouring suites, run together after the change:
 
 ## Risks
 
-- The 5 s manifest bound is a new failure mode by construction: a genuinely
-  slow disk read that now exceeds 5 s silently degrades that launch to network
-  asset loading instead of blocking. The bundle manifest is a local file read
+- The 5 s install bound is a new failure mode by construction: an attempt that
+  genuinely needs longer — slow disk, a cold dynamic import — silently degrades
+  that launch to network asset loading instead of blocking, and its late result
+  is then discarded rather than applied. The manifest is a local file read
   documented as "single-digit milliseconds", so 5 s is ~1000× headroom, and the
-  degraded path is the one the web already takes.
+  degraded path is the one the web already takes. The bound now covers the two
+  dynamic imports as well, which is a slightly larger budget to fit inside; both
+  are bundled modules, not network fetches.
+- The losing attempt is not killed, only abandoned and aborted. It holds its
+  closure until it settles. Bounded by one call per session (`installing`
+  caches), and its side effects are gated behind the `signal.aborted` check.
 - Fail-soft hides real breakage behind a `console.warn`. A desktop build that
   ships a broken bundle will now look like a build with no bundle. Mitigated by
   distinct warning strings per cause (timeout / HTTP status / malformed /
