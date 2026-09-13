@@ -178,10 +178,16 @@ inverted when this branch lands. It is not on this branch and was not edited.
 
 ## Commands and results
 
-All runs from a clean cloud checkout of `origin/main` at the base SHA, with
-`pnpm install --frozen-lockfile` and `pnpm --filter @tka/tka-types run build`
-(the workspace package must be built or 16 unrelated library/collection suites
-fail to resolve `@tka/tka-types`).
+All runs from a clean cloud checkout of `origin/main` at the base SHA with
+`pnpm install --frozen-lockfile`.
+
+**Workspace packages must be built before the suite is trustworthy.** A fresh
+checkout has no `packages/*/dist`, and a test file importing one dies at module
+load with `Failed to resolve entry for package "@tka/…"` — 16 library/collection
+suites (`@tka/tka-types`) and, in the full run, 22 further files
+(`@tka/domain`, `@caps/domain`, `@vtg/domain`, `@tka/sequence-engine`). That
+looks like 22 red files but is zero red assertions. `pnpm --recursive --filter
+"./packages/*" run build` clears all of them; the re-run row below is the proof.
 
 | Command                                                                                   | Result                                                           |
 | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -189,6 +195,8 @@ fail to resolve `@tka/tka-types`).
 | `vitest run … tests/unit/library/collection-manager-delete.test.ts` (base)                  | **3 failed / 4** — D2 reproduced (2 of them are the defect)      |
 | `vitest run … tests/unit/library/collection-manager-subscription-disposal.test.ts` (base)   | **3 failed / 4** — D3 reproduced                                 |
 | `vitest run … tests/unit/library/ src/lib/shared/collections/__tests__/ src/lib/features/library/{state,services}/__tests__/` (head) | **37 files, 219 tests, all passing** |
+| `vitest run --config tests/config/vitest.config.ts` — full default suite (head)             | **15 672 passed, 106 skipped**; 22 files failed to load, all from unbuilt workspace packages (see below) |
+| Re-run of those 22 files after `pnpm --recursive --filter "./packages/*" run build`          | **22 files, 327 tests, all passing** — the failures were the environment, not this branch |
 | `npm run check:fast` (head)                                                                | 645 errors / 44 warnings repo-wide; **none in any changed or added file** |
 | `tsc --noEmit` over the three `tests/unit/library/` files (head)                            | **0 errors in those files** (9 errors, all inside a `node_modules` dependency's own sources) |
 | `firebase emulators:exec --only firestore …`                                                | **could not run** — see limitations                              |
