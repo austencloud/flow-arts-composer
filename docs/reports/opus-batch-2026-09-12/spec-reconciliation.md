@@ -208,16 +208,35 @@ bury a reconciliation diff under a reformat. One file
 
 ## 5. Things you should look at, that this task could not fix
 
-1. **The app shell's 4K story has no owner.**
+1. **A dangling spec pointer — but the 4K story does have an owner.**
    `2026-08-06-app-shell-4k-lockstep-scaling-design.md` retires itself in favour
-   of `2026-08-27-logical-pixel-responsive-composition-design.md` — **and that
-   successor does not exist.** `git grep` over `HEAD` finds the string in
-   exactly one place: the archived spec's own supersession note. No file, no
-   creating commit, no `-S` hit in 16,505 commits. `src/app.css` also carries no
-   `html:has(...)` root ramp and no 1680 seam, so the mechanism the One Stage
-   handoff points at is not there either. One design was retired in favour of a
-   document nobody wrote, and two specs now depend on it. Someone has to write
-   the shell spec before either is actionable.
+   of `2026-08-27-logical-pixel-responsive-composition-design.md`, and that
+   filename was never written. The successor shipped as **policy and code, not
+   as a spec**: `.claude/rules/4k-native-layout.md` (ENFORCED),
+   `docs/architecture/responsive-design.md`, and commit `a0c8a9a57a`
+   (_refactor(responsive): keep logical UI scale stable on wide screens_,
+   2026-08-27). Only the pointer was broken; I repaired it in the archived spec
+   to name the real owners.
+
+   The consequence matters more than the pointer. That commit **deleted** the
+   `html:has(.mkt-shell)` / `html:has(.legal-container)` root-font ramp from
+   `src/app.css` — one day after One Stage shipped. So the One Stage handoff's
+   carried-over item ("the fix is shell-wide, through the same `html:has(...)`
+   mechanism") points at a mechanism that no longer exists, and the rule now
+   holds the root at 16px at every viewport width with
+   `responsive-design.md:54` forbidding a second large-screen typography system
+   outright. **That item is closed by refusal, not open for a successor.** If
+   `/stage` reads small at 4K@100%, the sanctioned fix is composition, not root
+   scale. Corrected in the handoff's `remaining` and in the shipped One Stage
+   spec.
+
+   **How I got this wrong first, since it bears on the rest of this report.** My
+   initial pass concluded the successor "does not exist anywhere — no file, no
+   commit, no `-S` hit in 16,505 commits." The file-name and `git grep` searches
+   were sound; the `-S` content search was still running and I read a truncated
+   output file as an empty result. It later returned `a0c8a9a57a`. Absence of a
+   result from an unfinished search is not evidence of absence — the same
+   mistake in kind as trusting an `OK` verdict from a shallow clone (§1).
 
 2. **The scene-control rail broke its own five-action ceiling.** Seven non-admin
    entries today. Two were added post-ship by commits that were fixing other

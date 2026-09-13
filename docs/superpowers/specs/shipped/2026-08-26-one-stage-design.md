@@ -259,6 +259,18 @@ see, all fixed:
    offset is now paid in the matching container query, and the card is bounded
    by its panel and scrolls inside itself.
 
+> **Correction, 2026-09-13 (spec reconciliation).** The closing note below is
+> one day out of date. `a0c8a9a57a` (2026-08-27, _refactor(responsive): keep
+> logical UI scale stable on wide screens_) removed the
+> `html:has(.mkt-shell)` / `html:has(.legal-container)` root-font ramp from
+> `src/app.css` entirely. The "same `html:has(...)` mechanism" this note hands
+> the problem to no longer exists, and `.claude/rules/4k-native-layout.md`
+> (ENFORCED) now holds the root at 16px at every viewport width, with
+> `docs/architecture/responsive-design.md:54` forbidding a second large-screen
+> typography system. The gap is closed by refusal, not left for a successor:
+> wide viewports are for composition, and browser zoom is the user's scale
+> control.
+
 **Known gap, deliberately not taken on here:** at 4K@100% the Stage's type does
 not step. The app shell has no root-font ramp — `src/app.css` scopes it to
 `html:has(.mkt-shell)`, `html:has(.legal-container)`, and `html:has(.qft-app)`

@@ -5,8 +5,18 @@
 **Origin:** [Gallery + Library Shared Filter Workspace handoff](../2026-08-06-gallery-library-shared-workspace-handoff.md)
 
 > This proposal treated viewport width as a proxy for viewing distance. It was
-> superseded by [Logical-Pixel Responsive Composition](2026-08-27-logical-pixel-responsive-composition-design.md),
-> which keeps the app root at 16px and uses wide viewports for composition.
+> superseded by Logical-Pixel Responsive Composition, which keeps the app root
+> at 16px and uses wide viewports for composition.
+>
+> **Pointer repaired 2026-09-13 (spec reconciliation).** This note used to link
+> `2026-08-27-logical-pixel-responsive-composition-design.md`, which was never
+> written — the successor shipped as policy and code, not as a spec. Its real
+> owners are `.claude/rules/4k-native-layout.md` (ENFORCED),
+> `docs/architecture/responsive-design.md`, and commit `a0c8a9a57a`
+> (_refactor(responsive): keep logical UI scale stable on wide screens_,
+> 2026-08-27), which deleted the `html:has(...)` root-font ramp from
+> `src/app.css` and left `src/lib/shared/ui/root-font-ramp.svelte.ts`
+> resolving to scale 1 on every standard surface.
 
 ## Outcome
 
