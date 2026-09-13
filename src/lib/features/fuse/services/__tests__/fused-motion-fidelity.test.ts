@@ -1,11 +1,17 @@
 /**
  * Fused motion fidelity — the fuser must not lose authored domain fields.
  *
- * Fuse builds its combined steps from two one-hand SoloPropData sources. Every
- * other solo-step → motion builder in the codebase (step-deriver.rehydrateMotion,
- * solo-prop-sequence-adapter.buildMotion, sequence-decomposer.motionToSoloPropStep)
- * carries the authored fields across: `prefloatMotionType`, `handPath`,
- * `skewSteps`, `skewDir` and `plane`.
+ * Fuse builds its combined steps from two one-hand SoloPropData sources. The
+ * other solo-step ↔ motion builders in the codebase all carry
+ * `prefloatMotionType`, `handPath`, `skewSteps` and `skewDir` across, and seed
+ * `arrowLocation` from `startLocation`:
+ *   - step-deriver.rehydrateMotion (the two-hand assembly path)
+ *   - solo-prop-sequence-adapter.buildMotion (the Fuse source-card path)
+ *   - sequence-decomposer.motionToSoloPropStep (the inverse direction)
+ * `plane` is carried by rehydrateMotion and by the decomposer, but NOT by
+ * solo-prop-sequence-adapter — so it is not a field every sibling preserves.
+ * Fuse now routes through rehydrateMotion, which does carry it, and the
+ * assertions below pin that.
  *
  * `prefloatMotionType` is load-bearing: a float has rotationDirection
  * "noRotation", so the pro-vs-anti signal only survives in the prefloat type.
@@ -35,6 +41,7 @@ import {
   SkewDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { Plane } from "@tka/tka-types";
 
 // Real pictograph dataframes — the letter lookup must run against the actual
 // domain data, never a stub.
@@ -87,6 +94,9 @@ function floatingLeftSolo(): SoloPropData {
     handPath: HandPath.CLOCKWISE,
     skewSteps: 0,
     skewDir: SkewDirection.PLUS,
+    // Non-default plane: createMotionData leaves `plane` undefined when it is
+    // not supplied, so a dropped field is distinguishable from a carried one.
+    plane: Plane.wheel,
     duration: 1,
   }));
   return createSoloProp(steps, W, Orientation.IN);
@@ -104,6 +114,7 @@ function proRightSolo(): SoloPropData {
     handPath: HandPath.CLOCKWISE,
     skewSteps: 0,
     skewDir: SkewDirection.PLUS,
+    plane: Plane.floor,
     duration: 1,
   }));
   return createSoloProp(steps, E, Orientation.IN);
@@ -129,20 +140,80 @@ function canonicalPair(left: SoloPropData, right: SoloPropData) {
   });
 }
 
+/** Every authored field the fixtures supply, plus the two the builder derives. */
+const CARRIED_FIELDS = [
+  "motionType",
+  "rotationDirection",
+  "startLocation",
+  "endLocation",
+  "startOrientation",
+  "endOrientation",
+  "turns",
+  "prefloatMotionType",
+  "prefloatRotationDirection",
+  "handPath",
+  "skewSteps",
+  "skewDir",
+  "plane",
+  "arrowLocation",
+] as const;
+
 describe("fuseSequences motion fidelity", () => {
-  it("keeps the authored float/skew/handPath fields on both fused hands", () => {
+  it("keeps every supplied authored field on both fused hands", () => {
     const fused = fuseSequences(floatingLeftSolo(), proRightSolo());
 
     const leftMotion = fused.steps[0]!.motions.left!;
     expect(leftMotion.motionType).toBe(MotionType.FLOAT);
     expect(leftMotion.prefloatMotionType).toBe(MotionType.ANTI);
     expect(leftMotion.handPath).toBe(HandPath.CLOCKWISE);
+    // 0, not null: an unsupplied skewSteps lands as null via createMotionData,
+    // so this distinguishes "carried the authored 0" from "dropped the field".
     expect(leftMotion.skewSteps).toBe(0);
     expect(leftMotion.skewDir).toBe(SkewDirection.PLUS);
+    expect(leftMotion.plane).toBe(Plane.wheel);
+    // Seeded from startLocation, the way every canonical builder seeds it. The
+    // hand-rolled builder left createMotionData's NORTH default here instead.
+    expect(leftMotion.arrowLocation).toBe(W);
+    expect(leftMotion.startLocation).toBe(W);
+    // Derived, not supplied: handpath w→n is clockwise, so an anti prefloat
+    // spins counter-clockwise. This is the value the CSV lookup matches on.
+    expect(leftMotion.prefloatRotationDirection).toBe(
+      RotationDirection.COUNTER_CLOCKWISE
+    );
 
     const rightMotion = fused.steps[0]!.motions.right!;
+    expect(rightMotion.motionType).toBe(MotionType.PRO);
+    expect(rightMotion.rotationDirection).toBe(RotationDirection.CLOCKWISE);
     expect(rightMotion.handPath).toBe(HandPath.CLOCKWISE);
+    expect(rightMotion.skewSteps).toBe(0);
     expect(rightMotion.skewDir).toBe(SkewDirection.PLUS);
+    expect(rightMotion.plane).toBe(Plane.floor);
+    expect(rightMotion.arrowLocation).toBe(E);
+    expect(rightMotion.startLocation).toBe(E);
+    expect(rightMotion.prefloatMotionType).toBeUndefined();
+  });
+
+  it("produces the same authored fields as the canonical two-hand assembly", () => {
+    const left = floatingLeftSolo();
+    const right = proRightSolo();
+    const fused = fuseSequences(left, right);
+    const canonical = canonicalPair(left, right);
+
+    // Grid mode is deliberately excluded: Fuse gives each hand its source's
+    // native frame, where deriveSteps resolves one frame per step. Everything
+    // else about the motion must match the canonical owner field for field.
+    for (let i = 0; i < canonical.steps.length; i += 1) {
+      for (const hand of ["left", "right"] as const) {
+        const fusedMotion = fused.steps[i]!.motions[hand]!;
+        const canonicalMotion = canonical.steps[i]!.motions[hand]!;
+        for (const field of CARRIED_FIELDS) {
+          expect(
+            fusedMotion[field],
+            `step ${i + 1} ${hand} ${field}`
+          ).toStrictEqual(canonicalMotion[field]);
+        }
+      }
+    }
   });
 
   it("derives the same word as the canonical two-hand assembly", async () => {
