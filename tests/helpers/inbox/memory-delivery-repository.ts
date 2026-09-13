@@ -19,6 +19,8 @@ export class MemoryDeliveryRepository implements IMessageDeliveryRepository {
   failNextDraftPut = false;
   private listOutboxGate: Promise<void> | null = null;
   private releaseListOutbox: (() => void) | null = null;
+  private draftWriteGate: Promise<void> | null = null;
+  private releaseDraftWrite: (() => void) | null = null;
 
   /** Make every `listOutbox` wait until `openOutboxRead()` is called. */
   holdOutboxRead(): void {
@@ -31,6 +33,19 @@ export class MemoryDeliveryRepository implements IMessageDeliveryRepository {
     this.releaseListOutbox?.();
     this.releaseListOutbox = null;
     this.listOutboxGate = null;
+  }
+
+  /** Make every draft write wait until `openDraftWrites()` is called. */
+  holdDraftWrites(): void {
+    this.draftWriteGate = new Promise<void>((resolve) => {
+      this.releaseDraftWrite = resolve;
+    });
+  }
+
+  openDraftWrites(): void {
+    this.releaseDraftWrite?.();
+    this.releaseDraftWrite = null;
+    this.draftWriteGate = null;
   }
 
   async listDrafts(userId: string): Promise<MessageDraftRecord[]> {
@@ -47,6 +62,7 @@ export class MemoryDeliveryRepository implements IMessageDeliveryRepository {
   }
 
   async putDraft(draft: MessageDraftRecord): Promise<void> {
+    if (this.draftWriteGate) await this.draftWriteGate;
     if (this.failNextDraftPut) {
       this.failNextDraftPut = false;
       throw new Error("IndexedDB unavailable");
@@ -55,6 +71,7 @@ export class MemoryDeliveryRepository implements IMessageDeliveryRepository {
   }
 
   async deleteDraft(userId: string, conversationId: string): Promise<void> {
+    if (this.draftWriteGate) await this.draftWriteGate;
     for (const draft of this.drafts.values()) {
       if (draft.userId === userId && draft.conversationId === conversationId) {
         this.drafts.delete(draft.id);

@@ -84,6 +84,15 @@ export function createMessageDeliveryState(
     return outbox.find((entry) => entry.id === messageId);
   }
 
+  /**
+   * Rows the signed-in account owns. Every delivery path reads through this:
+   * a row belonging to another account must never be sent, retried, scheduled
+   * or counted, whatever put it in the array.
+   */
+  function ownedOutbox(): MessageOutboxRecord[] {
+    return outbox.filter((item) => item.userId === activeUserId);
+  }
+
   function queueDraftWrite(
     draftId: string,
     write: () => Promise<void>
@@ -282,6 +291,15 @@ export function createMessageDeliveryState(
     };
 
     await repository.promoteDraftToOutbox(draftId, item);
+
+    // Both awaits above can outlive the account that started the send: the
+    // pending draft write, and the promotion itself. The durable row is already
+    // filed under `userId` and will be picked up when that account next
+    // activates, but inserting it into memory now would drop one account's
+    // message into another's live outbox — and `flush()` would then deliver it
+    // as the wrong user. The in-memory half belongs to whoever is active.
+    if (activeUserId !== userId) return messageId;
+
     drafts = drafts.filter((entry) => entry.id !== draftId);
     replaceOutbox(item);
     requestFlush();
@@ -330,7 +348,10 @@ export function createMessageDeliveryState(
 
   async function deliverOne(messageId: string): Promise<void> {
     const item = currentOutbox(messageId);
-    if (!item || item.status !== "queued" || !isOnline()) return;
+    if (!item) return;
+    // A row belonging to another account is never this session's to deliver.
+    if (item.userId !== activeUserId) return;
+    if (item.status !== "queued" || !isOnline()) return;
     const token = activation;
     const sending: MessageOutboxRecord = {
       ...item,
@@ -398,7 +419,7 @@ export function createMessageDeliveryState(
 
   async function flush(): Promise<void> {
     if (!activeUserId || !ready || !isOnline()) return;
-    const queued = outbox
+    const queued = ownedOutbox()
       .filter(
         (item) =>
           item.status === "queued" &&
@@ -455,13 +476,17 @@ export function createMessageDeliveryState(
   function scheduleNextFlush(): void {
     clearRetryTimer();
     if (!isOnline()) return;
-    const nextAttempt = outbox
+    const nextAttempt = ownedOutbox()
       .filter(
         (item) => item.status === "queued" && item.nextAttemptAt !== undefined
       )
-      .reduce<
-        number | undefined
-      >((earliest, item) => (earliest === undefined ? item.nextAttemptAt : Math.min(earliest, item.nextAttemptAt!)), undefined);
+      .reduce<number | undefined>(
+        (earliest, item) =>
+          earliest === undefined
+            ? item.nextAttemptAt
+            : Math.min(earliest, item.nextAttemptAt!),
+        undefined
+      );
     if (nextAttempt === undefined) return;
     retryTimer = setTimeout(requestFlush, Math.max(0, nextAttempt - now()));
   }
