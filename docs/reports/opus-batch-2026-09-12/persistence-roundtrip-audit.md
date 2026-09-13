@@ -7,10 +7,16 @@ domain models. No production code was changed.
 **Branch:** `claude/persistence-roundtrip-audit-uy8go8`
 **Base SHA:** `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`,
 "Merge pull request #48 from austencloud/claude/hand-tunnel-toy")
-**Content SHAs:** `3b646f178b9b4633f2c780baeb78e00b0423b116` (audit tests) and
-`490b3227d822a99c3e1fd28f634ca72e71a50d61` (this report). The branch tip is one
-commit later and records only these two SHAs — a commit cannot name its own
-hash, so the tip exists to make the final state self-describing.
+**Commits on the branch** (a commit cannot name its own hash, so the tip is the
+one commit not listed here — `git log --oneline c4be1619..HEAD` prints the full
+set):
+
+| SHA | Contents |
+| --- | --- |
+| `3b646f178b9b4633f2c780baeb78e00b0423b116` | the seven audit test files |
+| `490b3227d822a99c3e1fd28f634ca72e71a50d61` | this report |
+| `3a18a7400377daf2066e2b02e71463d5b4f67326` | SHA bookkeeping in this report |
+| `9f06f0a9f41baad4b6f934bc598081dde86f4bc6` | tightened the wire corpus assertion (P4) |
 
 **Owned paths (exclusive):**
 
