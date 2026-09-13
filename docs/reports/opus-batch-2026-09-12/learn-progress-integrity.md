@@ -9,15 +9,15 @@ changes nothing under `src/lib/features/learn` — `git diff 6e4c1b5a cb4d4210 -
 src/lib/features/learn` is empty — so this branch's base is still current for
 its own paths.
 
-Code commits: `3a24958b` (first round), `5c728b15` (review round). Each report
-commit follows its code commit, so the branch tip is docs-only.
+Code commits: `3a24958b` (round 1), `5c728b15` (round 2), `76dc5e92` (round 3).
+Each report commit follows its code commit, so the branch tip is docs-only.
 
 ## Owned files
 
 | File                                                                       | Change                                                       |
 | -------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `src/lib/features/learn/services/concept-progress-tracker.ts`              | Defects 1–3                                                  |
-| `src/lib/features/learn/services/concept-progress-tracker.test.ts`         | New; 24 cases                                                |
+| `src/lib/features/learn/services/concept-progress-tracker.ts`              | Defects 1–3, 5                                               |
+| `src/lib/features/learn/services/concept-progress-tracker.test.ts`         | New; 26 cases                                                |
 | `src/lib/features/learn/services/user-knowledge-profile-persister.ts`      | Defect 4 (subscription cancellation), plus a prettier reflow |
 | `src/lib/features/learn/services/user-knowledge-profile-persister.test.ts` | New; 6 cases                                                 |
 | `docs/reports/opus-batch-2026-09-12/learn-progress-integrity.md`           | This report                                                  |
@@ -183,28 +183,68 @@ clears the shared pointer. The tracker's generation guard covers the same seam
 from the other side; both are needed, because the tracker cannot see the
 persister's setup window and the persister cannot see whose session it is.
 
+## Defect 5 — a switch window that wrote to the account being left
+
+Found by review of the round-2 commit, and self-inflicted: the fix for Defect 2
+moved `this.userId = userId` to _after_ the load, and the fix for Defect 3
+bumped the generation when a different user's sign-in began — but neither
+cleared the old `userId`. So between `initializeForUser(B)` and B's load
+resolving, `this.userId` was still A while `saveProgress()` only checks that it
+is set. Any Learn action in that window wrote to A's document.
+
+This one is a regression, not a pre-existing defect: the base code assigned
+`this.userId = B` synchronously, so the same window wrote to B. It is narrower
+than what Defect 2 fixed (which wrote un-merged state to the _current_ user's
+document) but it points at the wrong account, which is worse per write.
+Reproduced as `expected [ 'user-a' ] to deeply equal []` on `5c728b15`.
+
+**Fix.** A switch to a different user now retires the previous account's
+ownership synchronously, before the new load is awaited: one
+`retireRemoteOwnership()` (cancel the subscription, `userId = null`,
+`initialized = false`), which the failure path and `disconnect()` share as a
+single owner. The window is now write-free rather than misdirected — local
+writes continue and the new user's first successful merge pushes them, exactly
+as Defect 2's fix intends. The generation guards are untouched; this only
+changes _when_ the outgoing user stops being the write target.
+
+Note on what this does **not** fix: the progress cached in `localStorage` is
+not namespaced per account, so work done during the window is still pushed to
+whoever connects next. That is follow-up 2 below, unchanged in scope by this
+fix — it is a storage-key question, not a race.
+
 ## Verification
 
 All measured on this branch in this cloud checkout, not inferred.
 
-Both suites were run three ways: against the base tracker/persister, against the
-first round's code (to show the review findings were real), and against the
-current branch. Only the source file under test was swapped; the tests are the
-same file in every column.
+Both suites were run against every prior state of this branch as well as the
+current one. Only the source file under test was swapped; the tests are the same
+file in every column.
 
-| Check (`npx vitest run --config tests/config/vitest.config.ts …`)                    | base `6e4c1b5a` | round 1 `3a24958b`   | current       |
-| ------------------------------------------------------------------------------------ | --------------- | -------------------- | ------------- |
-| `src/lib/features/learn/services/concept-progress-tracker.test.ts` (24 cases)        | 15 failed       | 9 failed             | **24 passed** |
-| `src/lib/features/learn/services/user-knowledge-profile-persister.test.ts` (6 cases) | 3 failed        | 3 failed (untouched) | **6 passed**  |
-| `src/lib/features/learn` (whole feature)                                             | —               | —                    | **36 passed** |
+| Check (`npx vitest run --config tests/config/vitest.config.ts …`)                    | base `6e4c1b5a` | round 1 `3a24958b`   | round 2 `5c728b15` | current       |
+| ------------------------------------------------------------------------------------ | --------------- | -------------------- | ------------------ | ------------- |
+| `src/lib/features/learn/services/concept-progress-tracker.test.ts` (26 cases)        | 17 failed       | 10 failed            | 1 failed           | **26 passed** |
+| `src/lib/features/learn/services/user-knowledge-profile-persister.test.ts` (6 cases) | 3 failed        | 3 failed (untouched) | —                  | **6 passed**  |
+| `src/lib/features/learn` (whole feature)                                             | —               | —                    | —                  | **38 passed** |
 
-The 9 tracker failures on round 1 are the review findings, and they map one to
-one: 4 race/disconnect cases (Defect 3), 3 derived-value cases (`overallProgress`
-from the set, a completed record's 100%, badges), and 2 remote-adoption cases
-whose `overallProgress` assertion the round-1 reconciliation did not satisfy.
-The 3 persister failures are Defect 4's three seams: no listener after a cancel
-during setup, a snapshot dropped after cancel, and one subscription's cancel not
-reaching the next one's listener.
+Failure-to-finding map:
+
+- **Round 1 → 10 tracker failures.** 4 race/disconnect cases (Defect 3), 3
+  derived-value cases (`overallProgress` from the set, a completed record's
+  100%, badges), 2 remote-adoption cases whose `overallProgress` assertion the
+  round-1 reconciliation did not satisfy, and the Defect 5 window (which round
+  1 also had, for the same reason).
+- **Round 2 → 1 tracker failure.** Exactly the Defect 5 window:
+  `expected [ 'user-a' ] to deeply equal []` on the list of save targets.
+- **Base and round 1 → 3 persister failures.** Defect 4's three seams: no
+  listener after a cancel during setup, a snapshot dropped after cancel, and one
+  subscription's cancel not reaching the next one's listener.
+
+The Defect 5 pair is deliberately asymmetric: the success-path test reproduces
+the regression, while the failure-path one
+(`does not write to the previous user when the switch is to a load that fails`)
+passes on `5c728b15` too — that branch already cleared `userId` in its `catch`.
+It is a pin, not a reproduction, and it is kept so the two switch outcomes stay
+covered together.
 
 The cases that pass on the older code are deliberate regression pins — normal
 percentage tracking, a shared load for concurrent same-user calls, newer-remote
