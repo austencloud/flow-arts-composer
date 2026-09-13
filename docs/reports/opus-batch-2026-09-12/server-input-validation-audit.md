@@ -95,8 +95,9 @@ Consequences, for the holder of one presigned URL during its 15-minute window:
 1. **The application's size ceiling is unenforced.** Declare `contentLength: 1`, then
    PUT a body of any size the _platform_ still permits: the 500 MB constant constrains
    nothing that reaches R2, so the only remaining limit is whatever R2 and Cloudflare
-   enforce natively — which this audit did **not** test and does not claim is absent.
-   The finding is "the app's own ceiling does not apply", not "bytes are unlimited".
+   enforce natively — a documented provider limit this audit did not look up, and
+   certainly does not claim is absent. The finding is "the app's own ceiling does not
+   apply", not "bytes are unlimited".
    `r2MultipartStart` does not call `assertFileSize` at all, so the multipart path has
    no declared ceiling to begin with.
 2. **The MIME allowlist is advisory.** Declare `video/mp4`, then PUT with
@@ -110,10 +111,12 @@ Consequences, for the holder of one presigned URL during its 15-minute window:
 
 **What is measured:** that the signature binds only `host`, so neither application-level
 check survives into the upload. **What is not established:** (a) what R2 and Cloudflare
-themselves cap an unsigned-payload PUT at, and (b) whether R2's public domain then serves
-the stored `text/html` with that Content-Type — which is what would turn this from a
-storage-cost problem into arbitrary content hosting on a project domain. Both need a
-production probe and neither was performed.
+themselves cap an unsigned-payload PUT at — that is a documented and configured provider
+limit, to be read from R2's documentation and the bucket/account settings, not something
+an upload attempt could establish; and (b) whether R2's public domain then serves the
+stored `text/html` with that Content-Type, which is what would turn this from a
+storage-cost problem into arbitrary content hosting on a project domain. Neither was
+checked here.
 
 **Reachability:** `requireAuth` (`r2/index.ts:113-118`) only checks that `request.auth`
 exists. Firebase populates `auth` for anonymous sign-ins, and the repository maintains
@@ -199,18 +202,27 @@ The handler's own payload checks are sound and were confirmed: a non-MP4 body �
 hash that is not 64 lowercase hex → 400, an oversized declared `content-length` → 413
 before the body is read, and a post-read byte-length re-check.
 
-**Fix direction:** two independent controls, either of which helps on its own.
+**Fix direction:** only one control can close this, and it is not the `Origin` check.
 
-- **Authentication** is the load-bearing one: requiring an authenticated caller (or at
-  minimum a present, matching `Origin`) removes the anonymous-write path outright, with
-  or without any change to S2. That is a product decision about how QR videos get
-  published.
+- **Authenticated authorization is required.** Removing unauthenticated arbitrary-client
+  writes means the handler must establish _who_ the caller is — a verified Firebase token
+  or equivalent — and reject the request when it cannot. This works with or without any
+  change to S2. Whether QR-video publishing should require a signed-in user at all is a
+  product decision; what is not open is that nothing weaker removes the exposure.
+- **The `Origin` header is not caller authentication and must not be treated as a
+  substitute.** `Origin` is set by the browser for the browser's own protection: it can
+  restrict _cross-origin browser_ requests, and the existing check does correctly refuse
+  one (measured: 403 for `https://evil.example`). It says nothing about an arbitrary HTTP
+  client, which can omit it or forge any value it likes. This audit's own evidence shows
+  the weaker half: omitting the header entirely skips the check and the write lands with
+  a 204. Tightening the guard to _require_ a matching `Origin` would raise the bar for
+  casual browser-based abuse and nothing more — a forged header from curl still passes.
 - **The route-id keying from S2** restores a real ceiling for whoever _is_ allowed to
-  write.
+  write. It bounds abuse; it does not decide who may write.
 
-These are separable. Fixing S2 alone still leaves unauthenticated writes, merely rate
-limited; fixing auth alone still leaves an ineffective ceiling for authenticated callers.
-Neither is a prerequisite for the other.
+Auth and the S2 keying are separable and can be done in either order. Fixing S2 alone
+still leaves unauthenticated writes, merely rate limited; fixing auth alone still leaves
+an ineffective ceiling for authenticated callers.
 
 ---
 
@@ -519,10 +531,12 @@ reached through `/api/test-render`'s import graph).
   `svelte.config.js` `routes.exclude`, and the per-handler guards — plus, for the two
   `dev`-guard claims, re-importing the handler with `dev: false` and observing that it
   still runs.
-- Three R2 questions are **not** established and all need a request against the real
-  bucket: what R2 and Cloudflare cap an unsigned-payload PUT at (S1), whether R2's public
-  domain serves back an attacker-chosen Content-Type (S1), and whether R2 resolves `..` in
-  an object key (R4).
+- Three R2 questions are **not** established. Two are behavioural and would need a
+  request against the real bucket: whether R2's public domain serves back an
+  attacker-chosen Content-Type (S1), and whether R2 resolves `..` in an object key (R4).
+  The third — the actual upload ceiling (S1) — is a provider limit to be read from R2's
+  documentation and the bucket/account configuration; no single upload could establish
+  it, since a success only shows that one size was permitted.
 - "Ships to production" for the two `/test/qft-page` endpoints (R3) is an inference from
   `svelte.config.js` and SvelteKit's layout-load semantics. What is measured is only that
   the handlers contain no `dev` check. No build artefact was inspected and no deployed URL
@@ -540,9 +554,11 @@ reached through `/api/test-render`'s import graph).
 
 ## Review corrections
 
-A review round on Windows caught four substantive errors in the first draft. Recording
-them here rather than quietly editing them out, because two were the report contradicting
-its own evidence.
+Two review rounds caught six substantive errors across the first two drafts. Recording
+them here rather than quietly editing them out, because three were the report
+contradicting its own evidence.
+
+**Round one** (four errors):
 
 1. **R1 claimed `/api/test-render` burns a quota "shared with `/api/render-pictograph`".**
    Wrong, and it contradicted S2 in the same document: the two routes share the
@@ -556,19 +572,38 @@ its own evidence.
    controls as separable.
 3. **S1 said "PUT any number of bytes", implying unlimited.** What is measured is that the
    _application's_ declared ceiling does not bind. R2's and Cloudflare's own limits were
-   never tested, so the claim is now scoped to the app-level ceiling, and the platform
-   ceiling is listed as an open question for the verification probe.
+   never established, so the claim is now scoped to the app-level ceiling.
 4. **R3 presented production reachability as established.** The `dev:false` handler
    behaviour is measured; that the endpoints are live in the deployed Worker is an
    inference from `svelte.config.js` and SvelteKit's layout-load semantics. No build
    output or deployed URL was inspected. R3 now separates the two.
 
-Two test defects from the same review, both fixed and detailed under _Verification →
+**Round two** (two errors, both in fix directions rather than findings):
+
+5. **S3's fix direction offered a matching `Origin` header as a weaker-but-sufficient
+   alternative to authentication** — "requiring an authenticated caller (or at minimum a
+   present, matching `Origin`) removes the anonymous-write path outright". False, and
+   again contradicted this report's own measurement: `Origin` is set by the browser for
+   the browser's benefit, and the very test cited in S3 shows a client that simply omits
+   it sailing through to a 204. A non-browser client can forge any value. `Origin` can
+   restrict cross-origin _browser_ requests and nothing else; removing unauthenticated
+   arbitrary-client writes requires authenticated authorization. S3 and follow-up 2 now
+   say so explicitly and warn against the substitution.
+6. **Follow-up 4 claimed "one authorised probe settles" the platform upload ceiling.** A
+   bounded probe establishes only that one tested size was accepted or refused on one
+   path — it cannot establish a ceiling. The upload limit is a documented and configured
+   provider value and should be read from R2's documentation and the bucket/account
+   settings. The probe is still the right instrument for the two _behavioural_ questions
+   (served Content-Type, `..` normalisation). S1, Limitations and follow-up 4 now separate
+   the two kinds of check.
+
+Two test defects from round one, both fixed and detailed under _Verification →
 Portability_: a `path.sep`-dependent assertion that failed on Windows, and a raw NUL byte
 committed into `production-reachability.test.ts`.
 
-The core S1 / S2 / S3 findings were not affected by any of this — the review confirmed
-them against the same evidence.
+The core S1 / S2 / S3 findings were not affected by any of this — both rounds confirmed
+them against the same evidence. Every correction was to a claim _about_ a finding: its
+blast radius, its dependencies, or how to close it.
 
 ## Follow-ups, in the order I would take them
 
@@ -578,14 +613,23 @@ them against the same evidence.
    `/api/qr-video/[hash]` independently stops unauthenticated writes whether or not the
    rate limit is ever corrected. The two are separable and can be done in either order.
 2. **S3** — decide whether `/api/qr-video/[hash]` should accept unauthenticated writes at
-   all. Auth is the load-bearing control here; the rate limit is the second line.
+   all. Closing it needs authenticated authorization; the existing `Origin` check is a
+   browser-scoped control and cannot substitute, since any non-browser client omits or
+   forges the header. The rate limit is the second line, not the first.
 3. **S1** — sign `ContentLength` and `ContentType` on the presigned PUT, and give
    `r2MultipartStart` a bound. Until then the application's declared upload ceiling and
    MIME allowlist do not apply to any signed-in user's upload.
-4. **S1 / R4 verification** — one authorised probe against the real bucket settles three
-   open questions at once: what R2 caps an unsigned-payload PUT at, what Content-Type it
-   serves back, and whether it normalises `..` in a key. That probe is outside this
-   audit's read-only remit.
+4. **S1 / R4 verification** — two different kinds of check, and they should not be
+   conflated:
+   - **Read the provider's documentation and the bucket/account configuration** for the
+     actual upload ceiling. A probe cannot establish a ceiling: sending N bytes
+     successfully shows only that N is permitted, and a rejection at N shows only that
+     something refused N on that path. The limit is a documented and configured value,
+     so look it up rather than infer it from a single upload.
+   - **A bounded authorised probe** can settle the two behavioural questions a document
+     cannot: what Content-Type R2's public domain serves back for an object stored under
+     an attacker-chosen type, and whether `..` in a key is normalised or kept literal.
+     Both are outside this audit's read-only remit.
 5. **R1** — delete `/api/test-render` or gate it to `dev`. It cannot succeed on any
    request, and it advertises an internal symbol on failure.
 6. **R3** — add the missing `dev` guard to the two `/test/qft-page` endpoints.
