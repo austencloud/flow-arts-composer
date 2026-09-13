@@ -5,18 +5,19 @@ Opus batch 2026-09-12 · settings persistence assignment
 | Field           | Value                                                    |
 | --------------- | -------------------------------------------------------- |
 | Base SHA        | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`) |
-| Fix SHA         | `2ca4cb27bb39a1ecb7edb22dfcab065b2793744e`                |
-| Final SHA       | `adef7239` (this report)                                  |
+| Fix SHA (round 1) | `2ca4cb27bb39a1ecb7edb22dfcab065b2793744e`              |
+| Fix SHA (round 2) | `0e90e7a6` — review corrections                         |
+| Final SHA       | the branch head; this report is the commit after `0e90e7a6` |
 | Branch          | `claude/settings-persistence-defects-yoobmn`              |
-| Defects fixed   | 2 reproduced, 1 shared root cause                         |
+| Defects fixed   | 6 — 2 reproduced originally, 4 more found in review        |
 | Environment     | Isolated cloud checkout, Linux, `pnpm` install of the committed lockfile |
 
 ## Owned files
 
 | Path                                                          | Change             |
 | ------------------------------------------------------------- | ------------------ |
-| `src/lib/shared/settings/state/settings-state.svelte.ts`       | Modified (+103/−7) |
-| `tests/unit/settings/settings-local-edit-race.test.ts`         | Added (6 tests)    |
+| `src/lib/shared/settings/state/settings-state.svelte.ts`       | Modified           |
+| `tests/unit/settings/settings-local-edit-race.test.ts`         | Added (11 tests)   |
 | `docs/reports/opus-batch-2026-09-12/settings-sync-integrity.md` | Added (this file)  |
 
 Nothing else was touched. The auth service, guest/library state, prop
@@ -123,6 +124,62 @@ payload-build time; defect 2's test still failed, because a stale snapshot can
 arrive while the write that carries the edit is open. Release must be tied to
 server confirmation, not to write start.
 
+## Review round — four more defects (`0e90e7a6`)
+
+Review of `c33e6bbd` found that round 1 had only tested A-then-B completion
+order. Four further defects, all confirmed against the code and then
+reproduced:
+
+### Defect 3 — an older write failing after a newer one succeeds queues stale values
+
+`saveToFirebaseWithRetry()` allowed two writes to be open at once and never
+awaited `pendingFirebaseSave`. If write A (older) failed *after* write B
+(newer) succeeded, A's `catch` wrote its stale full snapshot into the offline
+queue — which B's success had just cleared. The next reconnect replayed A and
+reverted B's values on the server. Both writes failing settled the same way:
+whichever finished last got the final word on the queue, regardless of age.
+
+Round 1 made this strictly worse in one respect: B's success had already
+released the pins via `releaseConfirmedLocalEdits`, so the stale replay met no
+resistance.
+
+**Fixed by serializing writes** — one in flight, with a single coalesced re-run
+afterwards. That is sufficient precisely because every payload is a full
+snapshot, so one later write subsumes any number of requests made while the
+first was open. A **monotonic revision** on the queue entry is the second line
+of defence: `queueOfflineChange` refuses a payload older than the queued one,
+and `processOfflineQueue` will not replay while a write is open.
+
+### Defect 4 — offline retry dies permanently at the first sign-out
+
+The `online` listener was registered **only in the constructor**, while
+`cleanup()` removed it and nulled the handler. `initializeFirebaseSync()` never
+restored it. Since `settingsService` is a module singleton, the first sign-out
+left the page with no offline retry for the rest of its life — every subsequent
+failed write stayed queued until a reload. Now registered through
+`ensureOnlineHandler()` from both the constructor and every sync init.
+
+### Defect 5 — a torn-down session's continuations mutate the live session
+
+`cleanup()` reset `syncInitialized` but left in-flight continuations running.
+They could still clear `isSavingToFirebase`, null `pendingFirebaseSave`, and
+overwrite `queuedOfflineEdit` belonging to the *next* session. The existing UID
+checks do not catch this: a sign-out and sign-in **to the same account** leaves
+the stale continuation's UID matching.
+
+### Defect 6 — a stale init orphans the live Firestore subscription
+
+The same-UID case above also let a stale `initializeFirebaseSync()` assign
+`this.unsubscribeFirebaseSync`, overwriting the handle for the subscription the
+live session had already opened. That subscription then leaked for the page's
+lifetime. Measured on `c33e6bbd`: two subscriptions opened, one closed.
+
+**Defects 5 and 6 fixed by a `lifecycleGeneration`** bumped in `cleanup()` and
+captured by every async entry point; each continuation checks it before
+mutating shared state, and a stale init unsubscribes its own subscription
+rather than orphaning the live one. An `activeSaveToken` adds per-write
+ownership, so only the write that owns the in-flight flags may clear them.
+
 ## Verification
 
 All commands run in the isolated cloud checkout with the project's own config.
@@ -130,29 +187,56 @@ All commands run in the isolated cloud checkout with the project's own config.
 **Before/after — `tests/unit/settings/settings-local-edit-race.test.ts`** (new
 suite run against the unmodified production file, then against the fix):
 
-| Test                                                            | Base `6e4c1b5a` | Fix `2ca4cb27` |
-| ---------------------------------------------------------------- | --------------- | -------------- |
-| keeps a toggle made while the account document is still loading  | ✗ fail          | ✓ pass         |
-| keeps the newer toggle when a snapshot echoes an earlier save    | ✗ fail          | ✓ pass         |
-| keeps Cosmic when the user picks it while the document loads     | ✗ fail          | ✓ pass         |
-| re-pins an edit whose upload failed so a snapshot cannot revert  | ✗ fail          | ✓ pass         |
-| still lets the account document outrank a pre-sign-in edit       | ✓ pass          | ✓ pass         |
-| releases the pin once the queued offline payload reaches server  | ✓ pass          | ✓ pass         |
+| Test                                                            | Base `6e4c1b5a` | Round 1 `c33e6bbd` | Final `0e90e7a6` |
+| ---------------------------------------------------------------- | --------------- | ------------------ | ---------------- |
+| keeps a toggle made while the account document is still loading  | ✗ fail          | ✓ pass             | ✓ pass           |
+| keeps the newer toggle when a snapshot echoes an earlier save    | ✗ fail          | ✓ pass             | ✓ pass           |
+| keeps Cosmic when the user picks it while the document loads     | ✗ fail          | ✓ pass             | ✓ pass           |
+| re-pins an edit whose upload failed so a snapshot cannot revert  | ✗ fail          | ✓ pass             | ✓ pass           |
+| still lets the account document outrank a pre-sign-in edit       | ✓ pass          | ✓ pass             | ✓ pass           |
+| releases the pin once the queued offline payload reaches server  | ✓ pass          | ✓ pass             | ✓ pass           |
+| never opens a second write while one is still in flight          | ✗ fail          | ✗ fail             | ✓ pass           |
+| leaves newest values queued when writes fail in reverse order    | ✗ fail          | ✗ fail             | ✓ pass           |
+| refuses to let an older payload replace a newer queued one       | ✗ fail          | ✗ fail             | ✓ pass           |
+| does not orphan the live subscription when a torn-down init ends | ✗ fail          | ✗ fail             | ✓ pass           |
+| re-registers the online retry listener after sign-out/sign-in    | ✗ fail          | ✗ fail             | ✓ pass           |
 
-The last two pass on base by construction — they are regression guards, not
-defect reproductions. The pre-sign-in guard protects existing documented
-behavior the fix must not break. The offline-replay guard protects the fix's
-own release path; it was mutation-checked by deleting the
-`releaseConfirmedLocalEdits` call from `processOfflineQueue`, which made it the
-only failing test in the suite.
+Measured: 9 of 11 fail on base `6e4c1b5a`; 5 of 11 fail on round 1 `c33e6bbd`;
+11 of 11 pass on `0e90e7a6`.
+
+Two tests pass on base by construction — they are regression guards, not defect
+reproductions. The pre-sign-in guard protects existing documented behavior the
+fix must not break. The offline-replay guard protects round 1's own release
+path; it was mutation-checked by deleting the `releaseConfirmedLocalEdits` call
+from `processOfflineQueue`, which made it the only failing test in the suite.
+
+Notes on two of the review-round tests:
+
+- *"leaves newest values queued when writes fail in reverse order"* settles
+  every open write **newest-first**, looping until none remain. The script is
+  order-agnostic, so it exercises genuine reverse settlement on the old code
+  (two writes open, older one's `catch` last) while remaining valid against the
+  serialized code (one write open at a time). An earlier version of this test
+  used `mockRejectedValue` and passed on the old code for the wrong reason —
+  the rejections settled before the second write ever started, so nothing
+  overlapped.
+- *"refuses to let an older payload replace a newer queued one"* calls
+  `queueOfflineChange` directly. That is white-box, and deliberate:
+  serialization makes an older payload unreachable through the public path, so
+  the monotonic guard — defence in depth — can only be exercised directly.
+- *"re-registers the online retry listener"* asserts on `addEventListener`
+  spies rather than dispatching an `online` event. Each `loadSettingsService()`
+  call re-imports the module, and every previous instance is still registered
+  on the shared jsdom window, so an event-dispatch assertion passed on the old
+  code purely from another instance's listener.
 
 **Regression runs (measured):**
 
 | Scope                                                   | Result           |
 | -------------------------------------------------------- | ---------------- |
-| `tests/unit/settings/` (incl. 7 pre-existing sync tests) | 22/22 pass       |
-| `tests/unit/share`, `collections/settings-checkpoint`, `prop-studio-lightweight-bootstrap`, `profile-stage-prop-contract`, `browse-engine-identity-switch`, `animation-engine` | 72 files, 564/564 pass |
-| Full default Vitest project (`vitest run --config tests/config/vitest.config.ts`) | 1973 files passed, 5 skipped; **15981 tests passed**, 106 skipped, 1 todo, **0 failed** (656 s) |
+| `tests/unit/settings/` (incl. 7 pre-existing sync tests) | 27/27 pass       |
+| `tests/unit/share`, `collections/settings-checkpoint`, `prop-studio-lightweight-bootstrap`, `profile-stage-prop-contract`, `browse-engine-identity-switch`, `animation-engine`, `offline-cache-orchestrator` | 77 files, 604/604 pass |
+| Full default Vitest project (`vitest run --config tests/config/vitest.config.ts`) | 1973 files passed, 5 skipped; **15986 tests passed**, 106 skipped, 1 todo, **0 failed** (935 s) — re-run on `0e90e7a6`; round 1 measured 15981 passed / 0 failed |
 | `svelte-fast-check --tsconfig ./tsconfig.json`           | 582 errors / 44 warnings, **identical to the measured base count**; zero reference the changed files |
 
 The 582 type errors are a pre-existing project-wide baseline, measured on this
@@ -199,20 +283,33 @@ this work.
   the value they already had. A caller that passes a large partial object
   pins more keys than the user actually changed, for the ~300 ms until the
   next write confirms. Low impact, but wider than strictly necessary.
+- **Serialization adds latency under sustained editing.** A save requested
+  while another is open waits for that one to settle rather than starting
+  immediately. Bounded by one round trip, and the coalesced re-run carries
+  everything, so no edit is dropped — but the last write in a rapid burst
+  lands one round trip later than before.
+- **`lifecycleGeneration` depends on `cleanup()` being called.** It is invoked
+  from the sign-out path in `auth-state.svelte.ts:820`. An account switch that
+  bypasses that path would not bump the generation, and the fencing would fall
+  back to the UID checks alone — correct for a *different* UID, which is the
+  case that path would produce.
 
 ## Follow-ups (not done — out of this assignment's scope)
 
-1. `pendingFirebaseSave` is assigned but never awaited, so overlapping writes
-   are still possible. Serializing writes behind it would close defect 2's
-   window at the source rather than defending against its symptom.
-2. `initialSettings` and `loadSettingsFromStorage()` both use
+1. `initialSettings` and `loadSettingsFromStorage()` both use
    `{ ...DEFAULT_SETTINGS, ...parsed }`. A stored explicit `null` outranks the
    default (JSON cannot carry `undefined`, but `null` round-trips). Not
    reproduced as a user-visible defect here, so not changed.
-3. `resetToDefaults()` and `clearStoredSettings()` use
+2. `resetToDefaults()` and `clearStoredSettings()` use
    `Object.assign(settingsState, DEFAULT_SETTINGS)`, which cannot remove keys
    absent from `DEFAULT_SETTINGS` (`backgroundColor`, `gradientColors`,
    `visibility`, `compositionRecipeOverrides`). A reset leaves those stale and
    re-uploads them.
-4. `processOfflineQueue()` replays a snapshot captured at failure time without
-   reconciling it against state that moved on afterwards.
+3. `processOfflineQueue()` replays a snapshot captured at failure time without
+   reconciling it against state that moved on afterwards. The monotonic
+   revision now prevents an *older* payload from being the one replayed, but
+   the replay still does not merge with edits made after the failure.
+4. `processOfflineQueue()` now returns early while a write is open. On init
+   that is a narrowing: if a save happens to be in flight at sign-in, the queue
+   waits for the next `online` event or the next init instead of being drained
+   immediately.
