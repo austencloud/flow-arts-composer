@@ -23,9 +23,9 @@ Revision history:
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Branch         | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                                                                                                         |
 | Base SHA       | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                                                                                                     |
-| Held revisions | `ea203124` (F1 + F2), `eb822199` (adds F3, F4, A1), `9030cdd5` (adds F5, M1, M2) — all HOLD                                                                                                                                     |
+| Held revisions | `ea203124` (F1 + F2), `eb822199` (adds F3, F4, A1), `9030cdd5` (adds F5, M1, M2), `71988b7e` (adds F6) — all HOLD                                                                                                               |
 | Merged `main`  | `6e4c1b5a` (unrelated 3D parity test), then `cb4d4210` — which carries `73aafa4a`, the `withPlainRecords` wrapper in this same state file. Auto-merged clean; the wrapper is preserved verbatim, see the integration note below |
-| Final SHA      | `52bf04665f24df255ef5695ab734cd5f905655f1` — this round's correction commit; the branch tip after it only fills in this row and updates this report                                                                             |
+| Final SHA      | `315aa2b5673feb195e472227c96221210f861c97` — this round's correction commit; the branch tip after it only fills in this row and updates this report                                                                             |
 | Owned paths    | `src/lib/shared/inbox/**`, `tests/unit/messaging/*` (three new files), `tests/helpers/inbox/**` (new), plus the two authorized functions in `messaging/services/messenger.ts`                                                   |
 
 Files changed:
@@ -34,11 +34,15 @@ Files changed:
 - `src/lib/shared/inbox/components/InboxDrawer.svelte.test.ts` (new; 8 cases prove F1 and F3)
 - `src/lib/shared/inbox/components/messages/MessageComposer.svelte` (fixes F2, F4)
 - `src/lib/shared/inbox/components/messages/MessageComposer.svelte.test.ts` (3 new cases prove F2 and F4)
-- `src/lib/shared/inbox/state/message-delivery-state.svelte.ts` (fixes A1, F5, F6)
-- `src/lib/shared/messaging/services/messenger.ts` (fixes M1, M2 — authorized scope: `subscribeToMessages` and `markAsRead`, nothing else in the file)
+- `src/lib/shared/inbox/state/message-delivery-state.svelte.ts` (fixes A1, F5, F6, F7)
+- `src/lib/shared/inbox/services/implementations/MessageDeliveryCoordinator.ts` (fix F7)
+- `src/lib/shared/inbox/services/contracts/IMessageDeliveryCoordinator.ts` (F7: the `isOwned` hook)
+- `src/lib/shared/inbox/domain/message-delivery-errors.ts` (F7: the cancellation sentinel)
+- `src/lib/shared/messaging/services/messenger.ts` (fixes M1, M2, and F7's pre-dispatch recheck in `sendMessage` — authorized scope: those three functions, nothing else in the file)
 - `tests/unit/messaging/message-delivery-activation-race.test.ts` (new; was quarantined, now green against the fix)
 - `tests/unit/messaging/message-delivery-account-ownership.test.ts` (new; proves F5 and F6)
 - `tests/unit/messaging/messenger-subscription-ownership.test.ts` (new; proves M1 and M2 at the real messaging boundary)
+- `tests/unit/messaging/message-delivery-sending-seam.test.ts` (new; proves F7 against the real coordinator and the real `Messenger.sendMessage`)
 - `tests/helpers/inbox/reactive-account-double.svelte.ts` (new test helper)
 - `tests/helpers/inbox/memory-delivery-repository.ts` (new test helper)
 - `docs/reports/opus-batch-2026-09-12/inbox-concurrency.md` (this report)
@@ -460,6 +464,109 @@ right durable row after the live outbox has moved on to another account.
 
 ---
 
+## F7 (fixed) — the fence stopped at the coordinator's door
+
+**Severity: high — a message sent from the wrong account, through the real seam.**
+Raised by review of `71988b7e`, then reproduced against the real coordinator and
+the real messenger.
+
+### Mechanism
+
+F6 fenced every await inside `deliverOne`. It did not fence the awaits _below_
+it, and there are three:
+
+```
+MessageDeliveryCoordinator.deliver(item, hooks)
+  await shortCodeManager.createShortCode(...)     ← no ownership check
+  await hooks.onPrepared(attachments)             ← no ownership check
+  await messenger.sendMessage({...})
+        const effectiveUser = getEffectiveUserInfo()
+        await getFunctionsInstance()              ← no ownership check
+        await deliver({...})                      ← runs as the SDK's CURRENT auth
+```
+
+So a delivery entered the coordinator legitimately as A, the account changed
+during the short-code mint or the prepared-attachment persist, and the coordinator
+called the messenger anyway. The messenger then captured nothing useful: its
+`effectiveUser` was read before its own await, and the callable it dispatched
+afterwards executes as whoever the SDK has signed in at that moment. The message
+goes out from B, carrying A's sender fields.
+
+Round four also made `onPrepared` persist unconditionally — right for durability,
+but it meant the coordinator carried on normally after an account change instead
+of noticing one.
+
+### Evidence — measured
+
+`tests/unit/messaging/message-delivery-sending-seam.test.ts` wires the real
+`createMessageDeliveryState`, the real `MessageDeliveryCoordinator` and the real
+`messagingService` together, and defers only the boundaries they actually cross:
+the functions handle, the short-code mint, the image upload. The callable
+returned by `httpsCallable` is the network; reaching it at all is the defect.
+
+| Test                                                                         | Failure at `52bf0466` (the held tip's sources restored under this suite) |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| refuses to dispatch when the account changed across the functions handle     | `expected "vi.fn()" to not be called at all, but … called 1 times`       |
+| stops a sequence send whose account changed while its share code was minting | same — the callable went out under the replacement account               |
+| cancels an image upload whose account changed, before it can be finalized    | `expected "vi.fn()" to be called at least once` — nothing cancelled it   |
+
+All three pass against the fix. The fourth case, "never rolls back a send the
+network already accepted", passes before and after: it is the guard that keeps
+this fence from turning into a rollback, not a reproduction.
+
+### The fix
+
+`MessageDeliveryHooks` gains `isOwned?(): boolean`, which the delivery state
+implements as `ownsDelivery(token, owner)` — the same generation-and-owner test
+F6 uses. The coordinator asks it at each boundary before the network:
+
+- entry to the image path, and again from inside the upload's progress callback;
+- immediately before `messenger.sendMessage`, deliberately **after**
+  `onPrepared` rather than between the mint and the persist, so a share code that
+  was already minted is still recorded on its own account's row instead of being
+  thrown away and minted again (measured: `createShortCode` called once).
+
+`Messenger.sendMessage` re-reads the signer after `await getFunctionsInstance()`
+and refuses to dispatch when it no longer matches the account captured at entry.
+It is read through the same `getEffectiveUserInfo()` accessor on both sides, so
+"View As" preview resolves to one identity rather than two — which is also why no
+auth-uid parameter was threaded in from the coordinator.
+
+A refusal is not a failure. Both the coordinator's abandon and the messenger's
+refusal carry a code that `isMessageDeliveryCancelled` recognises, and
+`deliverOne` routes them to the same abandon path F6 introduced: the durable row
+goes back to `queued` with its attempt **un-counted**, nothing is marked `sent`,
+and the owning account delivers it on its next activation.
+
+### Image path — assessed, partly unguarded
+
+`MessageImageSender.send` returns a handle whose `cancel()` sets a flag and
+aborts the upload task. The real sender checks that flag twice: before the upload
+starts, and after it completes, **before** the `finalizeMessageImage` callable
+that commits the message. So cancelling during the upload is safe and is now
+done — the coordinator holds the handle (it previously dropped it) and cancels
+from the progress callback when ownership is lost.
+
+Two things this does **not** close, and end-to-end identity safety is therefore
+**not** claimed for the image path:
+
+1. Once `finalizeMessageImage` is away, `cancel()` is a no-op. That is correct —
+   the send is committed and must not be rolled back — but it means an account
+   change in that last window still finalizes under the new account.
+2. `MessageImageSender` reads `auth.currentUser` **after** its own
+   `Promise.all([...])` await (`MessageImageSender.ts:26-32`) and stages the
+   upload under that uid. An account change across that await stages, and later
+   finalizes, as the wrong account regardless of anything the coordinator does.
+   Closing it means an expected-owner parameter on `MessageImageSendRequest` and
+   a check inside that class — a messaging-side contract change outside this
+   round's authorized scope, and the next thing to do here.
+
+The measured image test above uses a double that reproduces the real sender's
+cancel contract (flag checked before the committing call); the real class's
+internal behaviour is code-read evidence, not exercised.
+
+---
+
 ## M1 (fixed, authorized messenger scope) — a subscription attached after its caller disposed
 
 **Severity: high.** A leaked Firestore listener per fast switch, plus a toast for
@@ -638,11 +745,28 @@ packages are not prebuilt in a fresh clone.
     than sent from the wrong account (F6); one whose account changes _after_ the
     send still records `sent` on the owning account's durable row, so it is not
     sent twice.
-- **One new test is a guard, not a reproduction** in each of two files:
-  "keeps the live listener when the same conversation is reopened" (drawer) and
+  - the coordinator and the messenger now refuse rather than dispatch when the
+    account changed under them, and an image upload in that state is cancelled
+    (F7). A refusal is recorded as an abandoned delivery, never as a failure the
+    user sees, and never as `sent`.
+- **End-to-end identity safety is claimed for text and sequence sends, NOT for
+  images.** The coordinator now cancels an image upload whose account changed, and
+  the real sender checks its cancel flag before the committing call — but
+  `MessageImageSender` reads `auth.currentUser` after its own await and stages
+  under it, and once `finalizeMessageImage` is away nothing can stop it. See the
+  image-path assessment in F7; closing it needs a messaging-side contract change
+  that was outside this round's authorized scope.
+- **The sending-seam tests use the real coordinator and the real
+  `Messenger.sendMessage`**, with the Firebase SDK, the short-code manager and the
+  image sender as deferred doubles at their own contracts. They prove the
+  pre-network handoff — whether the callable is reached — not what Firebase does
+  with it. No emulator and no live project were involved.
+- **One new test is a guard, not a reproduction** in each of three files:
+  "keeps the live listener when the same conversation is reopened" (drawer),
   "delivers the recovered message once its own account is back" (delivery state)
-  both pass before and after. They pin behaviour that must not break; they did not
-  find a defect.
+  and "never rolls back a send the network already accepted" (sending seam) all
+  pass before and after. They pin behaviour that must not break — in the last
+  case, that this fence never became a rollback — but they did not find a defect.
 - **`subscribeToTyping` still has M1's defect.** Same file, same shape, outside
   this round's authorized scope. Named in the M1 section so the next pass can take
   it.
