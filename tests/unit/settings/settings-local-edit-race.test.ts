@@ -11,6 +11,8 @@ const persister = vi.hoisted(() => ({
   saveSettings: vi.fn<(settings: RemoteSettings) => Promise<void>>(),
   onSettingsChange: vi.fn(),
   listener: null as ((settings: RemoteSettings) => void) | null,
+  subscribeCount: 0,
+  unsubscribeCount: 0,
 }));
 
 vi.mock("$app/environment", () => ({ browser: true }));
@@ -56,6 +58,7 @@ vi.mock("$lib/shared/utils/debug-logger", () => ({
 }));
 
 const SETTINGS_KEY = "tka-modern-web-settings";
+const LEGACY_QUEUE_KEY = "tka-settings-offline-queue";
 const DEBOUNCE_MS = 300;
 
 async function loadSettingsService() {
@@ -91,10 +94,14 @@ describe("settings edited while a remote copy is in flight", () => {
     persister.saveSettings.mockResolvedValue();
     persister.onSettingsChange.mockReset();
     persister.listener = null;
+    persister.subscribeCount = 0;
+    persister.unsubscribeCount = 0;
     persister.onSettingsChange.mockImplementation(
       (listener: (settings: RemoteSettings) => void) => {
+        persister.subscribeCount += 1;
         persister.listener = listener;
         return () => {
+          persister.unsubscribeCount += 1;
           persister.listener = null;
         };
       }
@@ -256,5 +263,243 @@ describe("settings edited while a remote copy is in flight", () => {
     await flushMicrotasks();
 
     expect(service.currentSettings.reducedMotion).toBe(false);
+  });
+});
+
+describe("writes that settle out of order", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    localStorage.clear();
+    auth.currentUser = { uid: "user-b" };
+    persister.loadSettings.mockReset();
+    persister.loadSettings.mockResolvedValue({
+      hapticFeedback: true,
+      reducedMotion: false,
+    });
+    persister.saveSettings.mockReset();
+    persister.saveSettings.mockResolvedValue();
+    persister.onSettingsChange.mockReset();
+    persister.listener = null;
+    persister.subscribeCount = 0;
+    persister.unsubscribeCount = 0;
+    persister.onSettingsChange.mockImplementation(
+      (listener: (settings: RemoteSettings) => void) => {
+        persister.subscribeCount += 1;
+        persister.listener = listener;
+        return () => {
+          persister.unsubscribeCount += 1;
+          persister.listener = null;
+        };
+      }
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("never opens a second write while one is still in flight", async () => {
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    const firstSave = deferred<void>();
+    persister.saveSettings.mockReturnValueOnce(firstSave.promise);
+
+    await service.updateSetting("hapticFeedback", false);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    await service.updateSetting("reducedMotion", true);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    // Two open writes can settle in either order; the older one failing after
+    // the newer succeeded would drop its stale snapshot into the offline queue.
+    expect(persister.saveSettings).toHaveBeenCalledTimes(1);
+
+    firstSave.resolve();
+    await flushMicrotasks();
+
+    // The coalesced re-run carries everything, including the edit made while
+    // the first write was open.
+    expect(persister.saveSettings).toHaveBeenCalledTimes(2);
+    expect(persister.saveSettings.mock.calls[1][0]).toMatchObject({
+      hapticFeedback: false,
+      reducedMotion: true,
+    });
+  });
+
+  it("leaves the newest values queued when failing writes settle in reverse order", async () => {
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    // Hold every write open so the test, not the mock, decides settle order.
+    const saves: Array<{
+      reject: (reason?: unknown) => void;
+      settled: boolean;
+    }> = [];
+    persister.saveSettings.mockImplementation(() => {
+      const pending = deferred<void>();
+      saves.push({ reject: pending.reject, settled: false });
+      return pending.promise;
+    });
+
+    await service.updateSetting("hapticFeedback", false);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    await service.updateSetting("reducedMotion", true);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    // Fail every open write newest-first, so the OLDEST write's catch runs
+    // last and gets the final word on the offline queue.
+    for (let round = 0; round < 5; round += 1) {
+      const open = saves.filter((save) => !save.settled);
+      if (open.length === 0) break;
+      for (const save of [...open].reverse()) {
+        save.settled = true;
+        save.reject(new Error("offline"));
+      }
+      await flushMicrotasks();
+      await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+      await flushMicrotasks();
+    }
+
+    const queued = JSON.parse(
+      localStorage.getItem(`${LEGACY_QUEUE_KEY}:user-b`) ?? "{}"
+    );
+    // A reconnect replays this payload, so it must not be older than what the
+    // user last chose.
+    expect(queued.settings).toMatchObject({
+      hapticFeedback: false,
+      reducedMotion: true,
+    });
+  });
+
+  it("refuses to let an older payload replace a newer queued one", async () => {
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    persister.saveSettings.mockRejectedValue(new Error("offline"));
+
+    await service.updateSetting("hapticFeedback", false);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    await service.updateSetting("reducedMotion", true);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    const queueKey = `${LEGACY_QUEUE_KEY}:user-b`;
+    const newest = JSON.parse(localStorage.getItem(queueKey) ?? "{}");
+    expect(typeof newest.sequence).toBe("number");
+
+    // Hand the queue a stale entry carrying a lower revision, as an older
+    // write settling late would.
+    const service2 = service as unknown as {
+      queueOfflineChange: (
+        settings: RemoteSettings,
+        userId: string,
+        sequence: number
+      ) => void;
+    };
+    service2.queueOfflineChange(
+      { hapticFeedback: true, reducedMotion: false },
+      "user-b",
+      newest.sequence - 1
+    );
+
+    expect(JSON.parse(localStorage.getItem(queueKey) ?? "{}")).toMatchObject({
+      settings: { hapticFeedback: false, reducedMotion: true },
+    });
+  });
+});
+
+describe("session lifecycle fencing", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    localStorage.clear();
+    auth.currentUser = { uid: "user-b" };
+    persister.loadSettings.mockReset();
+    persister.loadSettings.mockResolvedValue({ hapticFeedback: true });
+    persister.saveSettings.mockReset();
+    persister.saveSettings.mockResolvedValue();
+    persister.onSettingsChange.mockReset();
+    persister.listener = null;
+    persister.subscribeCount = 0;
+    persister.unsubscribeCount = 0;
+    persister.onSettingsChange.mockImplementation(
+      (listener: (settings: RemoteSettings) => void) => {
+        persister.subscribeCount += 1;
+        persister.listener = listener;
+        return () => {
+          persister.unsubscribeCount += 1;
+          persister.listener = null;
+        };
+      }
+    );
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("does not orphan the live subscription when a torn-down init finishes late", async () => {
+    const staleLoad = deferred<RemoteSettings | null>();
+    persister.loadSettings.mockReturnValueOnce(staleLoad.promise);
+
+    const service = await loadSettingsService();
+    const staleInit = service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    // Sign out and back into the SAME account: the stale continuation's UID
+    // check still passes, so only a lifecycle generation can fence it.
+    service.cleanup();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    staleLoad.resolve({ hapticFeedback: true });
+    await staleInit;
+    await flushMicrotasks();
+
+    service.cleanup();
+    await flushMicrotasks();
+
+    // Every subscription that was opened must have been closed; an orphaned
+    // handle leaks a live Firestore listener for the page's lifetime.
+    expect(persister.unsubscribeCount).toBe(persister.subscribeCount);
+  });
+
+  it("re-registers the online retry listener after a sign-out and sign-in", async () => {
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    // Spy only from here, so listeners left behind by other tests' module
+    // instances cannot be mistaken for this service re-registering.
+    const addListener = vi.spyOn(window, "addEventListener");
+    const removeListener = vi.spyOn(window, "removeEventListener");
+
+    service.cleanup();
+    await flushMicrotasks();
+    expect(
+      removeListener.mock.calls.filter(([type]) => type === "online")
+    ).toHaveLength(1);
+
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    // Without this the singleton loses offline retry for the page's lifetime
+    // the first time anyone signs out.
+    expect(
+      addListener.mock.calls.filter(([type]) => type === "online")
+    ).toHaveLength(1);
+
+    addListener.mockRestore();
+    removeListener.mockRestore();
   });
 });

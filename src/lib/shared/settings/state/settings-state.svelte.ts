@@ -157,6 +157,18 @@ class SettingsState {
   // releases exactly those pins instead of holding them for the session.
   private queuedOfflineEdit: { userId: string; sequence: number } | null = null;
   private pendingFirebaseSave: Promise<void> | null = null;
+  // Bumped by cleanup(). Continuations from a torn-down session captured the
+  // old value and must not mutate the new one's flags, queue bookkeeping, or
+  // subscription handle — the UID checks alone miss a sign-out and sign-in to
+  // the SAME account, where the stale continuation's UID still matches.
+  private lifecycleGeneration = 0;
+  // Identifies the write that currently owns the in-flight bookkeeping, so an
+  // older write's settlement cannot clear a newer one's flags.
+  private activeSaveToken = 0;
+  private saveTokenCounter = 0;
+  // A save requested while another is open. Every payload is a full snapshot,
+  // so one coalesced re-run after the open write settles carries everything.
+  private resaveWhenIdle = false;
   private onlineHandler: (() => void) | null = null;
   private firebaseSaveDebounceTimer: ReturnType<typeof setTimeout> | null =
     null;
@@ -172,11 +184,7 @@ class SettingsState {
         // Storage can be unavailable in hardened/private browser contexts.
       }
       this.processOfflineQueue();
-
-      this.onlineHandler = () => {
-        this.processOfflineQueue();
-      };
-      window.addEventListener("online", this.onlineHandler);
+      this.ensureOnlineHandler();
 
       const sceneUndo = getSceneUndoManager();
       sceneUndo.registerDomain("scene", {
@@ -192,9 +200,27 @@ class SettingsState {
     }
   }
 
+  /**
+   * The online retry listener has to outlive a sign-out. It used to be
+   * registered only in the constructor while cleanup() removed it, so the
+   * first sign-out left the singleton with no offline retry for the rest of
+   * the page's life.
+   */
+  private ensureOnlineHandler(): void {
+    if (!browser || typeof window === "undefined") return;
+    if (this.onlineHandler) return;
+
+    this.onlineHandler = () => {
+      this.processOfflineQueue();
+    };
+    window.addEventListener("online", this.onlineHandler);
+  }
+
   async initializeFirebaseSync(): Promise<void> {
     if (this.syncInitialized) return;
     this.syncInitialized = true;
+
+    const generation = this.lifecycleGeneration;
 
     try {
       this.firebasePersistence = getSettingsPersister();
@@ -205,24 +231,40 @@ class SettingsState {
       return;
     }
 
+    this.ensureOnlineHandler();
     await this.processOfflineQueue();
+    if (this.lifecycleGeneration !== generation) return;
 
     const syncUserId = auth.currentUser?.uid;
     if (syncUserId && this.firebasePersistence) {
       await this.syncFromFirebase();
-      if (auth.currentUser?.uid !== syncUserId) return;
+      if (
+        this.lifecycleGeneration !== generation ||
+        auth.currentUser?.uid !== syncUserId
+      ) {
+        return;
+      }
 
       if (this.firebasePersistence.onSettingsChange) {
-        this.unsubscribeFirebaseSync =
-          this.firebasePersistence.onSettingsChange((remoteSettings) => {
+        const unsubscribe = this.firebasePersistence.onSettingsChange(
+          (remoteSettings) => {
             if (
+              this.lifecycleGeneration === generation &&
               auth.currentUser?.uid === syncUserId &&
               !this.isSavingToFirebase &&
               !this.firebaseSaveDebounceTimer
             ) {
               this.applyRemoteSettings(remoteSettings, syncUserId);
             }
-          });
+          }
+        );
+        // Torn down while subscribing: drop this subscription rather than
+        // overwrite — and orphan — the handle the live session holds.
+        if (this.lifecycleGeneration !== generation) {
+          unsubscribe();
+          return;
+        }
+        this.unsubscribeFirebaseSync = unsubscribe;
       }
     }
   }
@@ -500,6 +542,15 @@ class SettingsState {
       this.firebaseSaveDebounceTimer = null;
     }
 
+    // Everything already in flight belongs to the session being torn down.
+    // Bumping the generation is what stops its continuations from writing into
+    // the next session's bookkeeping.
+    this.lifecycleGeneration += 1;
+    this.activeSaveToken = 0;
+    this.isSavingToFirebase = false;
+    this.pendingFirebaseSave = null;
+    this.resaveWhenIdle = false;
+
     this.syncInitialized = false;
     this.firebasePersistence = null;
     this.lastRemoteApplication = undefined;
@@ -634,6 +685,21 @@ class SettingsState {
       return;
     }
 
+    // One write at a time. Overlapping writes could settle in either order,
+    // and an older one failing after a newer one succeeded would drop its
+    // stale full snapshot into the offline queue — reverting the newer values
+    // on the next reconnect. Serializing also means the flags below describe
+    // exactly one write. Every payload is a full snapshot, so a request that
+    // arrives mid-write is satisfied by one coalesced re-run afterwards.
+    if (this.pendingFirebaseSave) {
+      this.resaveWhenIdle = true;
+      return;
+    }
+
+    const generation = this.lifecycleGeneration;
+    this.saveTokenCounter += 1;
+    const saveToken = this.saveTokenCounter;
+    this.activeSaveToken = saveToken;
     this.isSavingToFirebase = true;
 
     const settingsToSave = this.getSettingsForPersistence(userId);
@@ -655,6 +721,7 @@ class SettingsState {
       .saveSettings(settingsToSave)
       .then(() => {
         debug.success("Settings saved to Firebase successfully");
+        if (this.lifecycleGeneration !== generation) return;
         this.releaseConfirmedLocalEdits(userId, payloadSequence);
         if (
           auth.currentUser?.uid === userId &&
@@ -667,14 +734,23 @@ class SettingsState {
       })
       .catch((error) => {
         console.error("❌ [SettingsState] Failed to save to Firebase:", error);
+        if (this.lifecycleGeneration !== generation) return;
         // The pins stay: the server never took these edits, so the account
         // document is still older than local state.
-        this.queueOfflineChange(settingsToSave, userId);
-        this.queuedOfflineEdit = { userId, sequence: payloadSequence };
+        this.queueOfflineChange(settingsToSave, userId, payloadSequence);
       })
       .finally(() => {
+        // Only the write that owns the flags may clear them.
+        if (this.activeSaveToken !== saveToken) return;
         this.isSavingToFirebase = false;
         this.pendingFirebaseSave = null;
+        this.activeSaveToken = 0;
+
+        if (this.lifecycleGeneration !== generation) return;
+        if (this.resaveWhenIdle) {
+          this.resaveWhenIdle = false;
+          this.saveToFirebaseWithRetry();
+        }
       });
   }
 
@@ -682,18 +758,35 @@ class SettingsState {
     return `${OFFLINE_QUEUE_KEY}:${encodeURIComponent(userId)}`;
   }
 
-  private queueOfflineChange(settings: AppSettings, userId: string): void {
+  private queueOfflineChange(
+    settings: AppSettings,
+    userId: string,
+    sequence: number
+  ): void {
     if (!browser) return;
 
     try {
+      // Belt and braces alongside write serialization: a payload can only
+      // replace a queued one that is the same age or older. An older snapshot
+      // must never become what a reconnect replays.
+      const existing = localStorage.getItem(this.offlineQueueKey(userId));
+      if (existing) {
+        const queued = JSON.parse(existing) as { sequence?: unknown };
+        if (typeof queued?.sequence === "number" && queued.sequence > sequence) {
+          return;
+        }
+      }
+
       const queueEntry = {
         settings,
+        sequence,
         timestamp: Date.now(),
       };
       localStorage.setItem(
         this.offlineQueueKey(userId),
         JSON.stringify(queueEntry)
       );
+      this.queuedOfflineEdit = { userId, sequence };
     } catch (error) {
       console.error("Failed to queue offline change:", error);
     }
@@ -701,8 +794,15 @@ class SettingsState {
 
   private async processOfflineQueue(): Promise<void> {
     if (!browser) return;
+    // A write in flight carries a newer full snapshot than anything queued and
+    // clears the queue when it lands. Replaying now would race it with older
+    // values.
+    if (this.pendingFirebaseSave) return;
+
     const userId = auth.currentUser?.uid;
     if (!userId) return;
+
+    const generation = this.lifecycleGeneration;
 
     try {
       const queuedData = localStorage.getItem(this.offlineQueueKey(userId));
@@ -717,6 +817,12 @@ class SettingsState {
           userId
         );
         await this.firebasePersistence.saveSettings(settings);
+        if (
+          this.lifecycleGeneration !== generation ||
+          auth.currentUser?.uid !== userId
+        ) {
+          return;
+        }
         // The replayed payload is now on the server, so the edits it carried
         // no longer need protection from the account document.
         if (this.queuedOfflineEdit?.userId === userId) {
