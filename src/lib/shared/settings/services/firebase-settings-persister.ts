@@ -26,11 +26,16 @@ import {
 } from "../domain/app-settings";
 
 export class FirebaseSettingsPersister {
-  private unsubscribe: Unsubscribe | null = null;
+  // Cancels whichever subscription attempt is current. Each onSettingsChange
+  // call owns its own handle; this only exists so a new call still replaces
+  // the previous one.
+  private cancelActiveSubscription: (() => void) | null = null;
 
   // Last activeProp mirrored to the user doc this session — skips redundant
-  // writes when a settings save didn't change the prop.
-  private lastMirroredActiveProp: string | null = null;
+  // writes when a settings save didn't change the prop. Scoped to the owner:
+  // an unscoped cache would suppress the mirror for the next account.
+  private lastMirroredActiveProp: { userId: string; activeProp: string } | null =
+    null;
 
   /**
    * Get the Firestore document reference for user settings
@@ -81,8 +86,12 @@ export class FirebaseSettingsPersister {
    * Save settings to Firestore
    */
   async saveSettings(settings: AppSettings): Promise<void> {
+    // Captured before any await, so the whole save — including the activeProp
+    // mirror that runs after the settings write — is pinned to the account
+    // this write belongs to.
+    const ownerId = auth.currentUser?.uid;
     const docRef = await this.getSettingsDocRef();
-    if (!docRef) {
+    if (!docRef || !ownerId) {
       console.warn(
         "⚠️ [FirebaseSettingsPersister] Cannot save: No authenticated user"
       );
@@ -109,7 +118,7 @@ export class FirebaseSettingsPersister {
       throw error;
     }
 
-    await this.mirrorActiveProp(settings);
+    await this.mirrorActiveProp(settings, ownerId);
   }
 
   /**
@@ -119,30 +128,45 @@ export class FirebaseSettingsPersister {
    * tiebreaker; in practice both hands match. Non-fatal: a failed mirror
    * leaves a stale badge, not broken settings.
    */
-  private async mirrorActiveProp(settings: AppSettings): Promise<void> {
+  private async mirrorActiveProp(
+    settings: AppSettings,
+    ownerId: string
+  ): Promise<void> {
     const activeProp = settings.leftPropType;
-    if (!activeProp || activeProp === this.lastMirroredActiveProp) return;
+    if (!activeProp) return;
+    if (
+      this.lastMirroredActiveProp?.userId === ownerId &&
+      this.lastMirroredActiveProp.activeProp === activeProp
+    ) {
+      return;
+    }
 
     const user = auth.currentUser;
     if (!user) return;
+    // The settings write above was awaited, so the account can have changed
+    // since. Mirroring now would stamp this payload's prop onto whoever is
+    // signed in instead of the account the settings belong to.
+    if (user.uid !== ownerId) return;
     // Guests are excluded from Browse Creators, so the badge is useless for
     // them — and this merge write would MINT a skeleton users/{uid} doc
     // (activeProp only, no displayName) whenever the real doc doesn't exist
     // (anonymous dev sessions skip doc creation). Those skeletons render as
     // "Unknown" in the admin users tab.
     if (user.isAnonymous) return;
-    const userId = user.uid;
 
     try {
       const firestore = await getFirestoreInstance();
+      // Re-check: awaiting the Firestore instance is another chance for the
+      // account to change under this write.
+      if (auth.currentUser?.uid !== ownerId) return;
       await trackWrite(() =>
         setDoc(
-          doc(firestore, `users/${userId}`),
+          doc(firestore, `users/${ownerId}`),
           { activeProp },
           { merge: true }
         )
       );
-      this.lastMirroredActiveProp = activeProp;
+      this.lastMirroredActiveProp = { userId: ownerId, activeProp };
     } catch (error) {
       console.error(
         "❌ [FirebaseSettingsPersister] Failed to mirror activeProp:",
@@ -204,21 +228,39 @@ export class FirebaseSettingsPersister {
    */
   onSettingsChange(callback: (settings: AppSettings) => void): () => void {
     // Clean up any existing subscription
-    if (this.unsubscribe) {
-      this.unsubscribe();
-      this.unsubscribe = null;
-    }
+    this.cancelActiveSubscription?.();
+
+    // The snapshot listener is created AFTER an await, so a caller that
+    // unsubscribes while the doc ref is still resolving would otherwise leave
+    // this method to open a live listener no one holds a handle to. `cancelled`
+    // is what the pending creation checks; `active` is this call's own handle,
+    // never a shared field, so two calls cannot cancel each other's listener.
+    let cancelled = false;
+    let active: Unsubscribe | null = null;
+
+    const cancel = () => {
+      cancelled = true;
+      if (active) {
+        active();
+        active = null;
+      }
+      if (this.cancelActiveSubscription === cancel) {
+        this.cancelActiveSubscription = null;
+      }
+    };
+    this.cancelActiveSubscription = cancel;
 
     // Start async subscription setup
     this.getSettingsDocRef()
       .then((docRef) => {
-        if (!docRef) {
-          return; // No user, no subscription
+        if (cancelled || !docRef) {
+          return; // Torn down, or no user: no subscription
         }
 
-        this.unsubscribe = onSnapshot(
+        active = onSnapshot(
           docRef,
           (snapshot) => {
+            if (cancelled) return;
             if (snapshot.exists()) {
               const data = snapshot.data();
               // Remove Firestore metadata fields
@@ -244,8 +286,15 @@ export class FirebaseSettingsPersister {
             toast.error("Lost connection to settings. Please refresh.");
           }
         );
+
+        // Cancelled while onSnapshot was being wired up.
+        if (cancelled) {
+          active();
+          active = null;
+        }
       })
       .catch((error) => {
+        if (cancelled) return;
         console.error(
           "❌ [FirebaseSettingsPersister] Failed to initialize settings subscription:",
           error
@@ -253,11 +302,6 @@ export class FirebaseSettingsPersister {
         toast.error("Failed to connect to settings.");
       });
 
-    return () => {
-      if (this.unsubscribe) {
-        this.unsubscribe();
-        this.unsubscribe = null;
-      }
-    };
+    return cancel;
   }
 }

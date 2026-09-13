@@ -156,6 +156,11 @@ class SettingsState {
   // Newest edit inside the queued offline payload, so a successful replay
   // releases exactly those pins instead of holding them for the session.
   private queuedOfflineEdit: { userId: string; sequence: number } | null = null;
+  // Distinguishes queue entries this page load wrote from ones a previous load
+  // left behind; edit sequence numbers are only comparable within a session.
+  private readonly sessionId = `${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 10)}`;
   private pendingFirebaseSave: Promise<void> | null = null;
   // Bumped by cleanup(). Continuations from a torn-down session captured the
   // old value and must not mutate the new one's flags, queue bookkeeping, or
@@ -237,7 +242,7 @@ class SettingsState {
 
     const syncUserId = auth.currentUser?.uid;
     if (syncUserId && this.firebasePersistence) {
-      await this.syncFromFirebase();
+      await this.syncFromFirebase(generation);
       if (
         this.lifecycleGeneration !== generation ||
         auth.currentUser?.uid !== syncUserId
@@ -269,13 +274,27 @@ class SettingsState {
     }
   }
 
-  async syncFromFirebase(): Promise<void> {
+  /**
+   * @param generation lifecycle generation of the caller. The UID check alone
+   * cannot fence a sign-out and sign-in to the SAME account — the stale load's
+   * UID still matches — so a late result would apply an old document over
+   * newer state. The caller's outer check runs only after this whole method
+   * resolves, which is far too late.
+   */
+  async syncFromFirebase(
+    generation: number = this.lifecycleGeneration
+  ): Promise<void> {
     if (!this.firebasePersistence || !auth.currentUser) return;
     const userId = auth.currentUser.uid;
 
     try {
       const firebaseSettings = await this.firebasePersistence.loadSettings();
-      if (auth.currentUser?.uid !== userId) return;
+      if (
+        this.lifecycleGeneration !== generation ||
+        auth.currentUser?.uid !== userId
+      ) {
+        return;
+      }
 
       if (firebaseSettings) {
         // Browser-local settings are shared by every identity that uses this
@@ -697,10 +716,7 @@ class SettingsState {
     }
 
     const generation = this.lifecycleGeneration;
-    this.saveTokenCounter += 1;
-    const saveToken = this.saveTokenCounter;
-    this.activeSaveToken = saveToken;
-    this.isSavingToFirebase = true;
+    const saveToken = this.claimWriteSlot();
 
     const settingsToSave = this.getSettingsForPersistence(userId);
     // The payload is a snapshot, so only edits made up to this point are on
@@ -739,19 +755,35 @@ class SettingsState {
         // document is still older than local state.
         this.queueOfflineChange(settingsToSave, userId, payloadSequence);
       })
-      .finally(() => {
-        // Only the write that owns the flags may clear them.
-        if (this.activeSaveToken !== saveToken) return;
-        this.isSavingToFirebase = false;
-        this.pendingFirebaseSave = null;
-        this.activeSaveToken = 0;
+      .finally(() => this.releaseWriteSlot(saveToken, generation));
+  }
 
-        if (this.lifecycleGeneration !== generation) return;
-        if (this.resaveWhenIdle) {
-          this.resaveWhenIdle = false;
-          this.saveToFirebaseWithRetry();
-        }
-      });
+  /**
+   * Take exclusive ownership of the single write slot. Both the debounced save
+   * and the offline replay go through here: a replay that only *checked* the
+   * slot without claiming it left `pendingFirebaseSave` null, so an edit made
+   * mid-replay started a concurrent write — the exact overlap serialization
+   * exists to prevent.
+   */
+  private claimWriteSlot(): number {
+    this.saveTokenCounter += 1;
+    this.activeSaveToken = this.saveTokenCounter;
+    this.isSavingToFirebase = true;
+    return this.activeSaveToken;
+  }
+
+  private releaseWriteSlot(saveToken: number, generation: number): void {
+    // Only the write that owns the flags may clear them.
+    if (this.activeSaveToken !== saveToken) return;
+    this.isSavingToFirebase = false;
+    this.pendingFirebaseSave = null;
+    this.activeSaveToken = 0;
+
+    if (this.lifecycleGeneration !== generation) return;
+    if (this.resaveWhenIdle) {
+      this.resaveWhenIdle = false;
+      this.saveToFirebaseWithRetry();
+    }
   }
 
   private offlineQueueKey(userId: string): string {
@@ -769,10 +801,24 @@ class SettingsState {
       // Belt and braces alongside write serialization: a payload can only
       // replace a queued one that is the same age or older. An older snapshot
       // must never become what a reconnect replays.
+      //
+      // The comparison is scoped to this session. `sequence` counts edits in
+      // memory and restarts at zero on reload, so comparing it against a
+      // sequence persisted by an EARLIER session rejects the newer payload and
+      // loses the edit entirely — a queued 5 from last session would beat this
+      // session's 1. A queue entry from any other session is by definition
+      // older than what this session is writing now.
       const existing = localStorage.getItem(this.offlineQueueKey(userId));
       if (existing) {
-        const queued = JSON.parse(existing) as { sequence?: unknown };
-        if (typeof queued?.sequence === "number" && queued.sequence > sequence) {
+        const queued = JSON.parse(existing) as {
+          sequence?: unknown;
+          session?: unknown;
+        };
+        if (
+          queued?.session === this.sessionId &&
+          typeof queued.sequence === "number" &&
+          queued.sequence > sequence
+        ) {
           return;
         }
       }
@@ -780,6 +826,7 @@ class SettingsState {
       const queueEntry = {
         settings,
         sequence,
+        session: this.sessionId,
         timestamp: Date.now(),
       };
       localStorage.setItem(
@@ -816,7 +863,21 @@ class SettingsState {
           normalizeLegacyAppSettings(queueEntry.settings),
           userId
         );
-        await this.firebasePersistence.saveSettings(settings);
+
+        // Claim the slot before awaiting. Checking it once and leaving it free
+        // let an edit made DURING the replay start a concurrent write; if that
+        // newer write landed first, the replay's older payload settled last and
+        // won on the server.
+        const replayToken = this.claimWriteSlot();
+        const replay = this.firebasePersistence
+          .saveSettings(settings)
+          .finally(() => this.releaseWriteSlot(replayToken, generation));
+        // The slot holds a non-rejecting view; a replay failure surfaces
+        // through the await below and leaves the queue in place.
+        this.pendingFirebaseSave = replay.catch(() => {});
+
+        await replay;
+
         if (
           this.lifecycleGeneration !== generation ||
           auth.currentUser?.uid !== userId

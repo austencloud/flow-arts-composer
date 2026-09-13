@@ -83,6 +83,17 @@ async function flushMicrotasks(): Promise<void> {
   for (let i = 0; i < 5; i += 1) await Promise.resolve();
 }
 
+/**
+ * Replay the offline queue on ONE service instance. Dispatching a real
+ * `online` event is unusable here: every loadSettingsService() call re-imports
+ * the module, and each instance stays registered on the shared jsdom window,
+ * so one event drives every instance against the same persister mock.
+ */
+function drainOfflineQueue(service: unknown): Promise<void> {
+  return (service as { processOfflineQueue(): Promise<void> })
+    .processOfflineQueue();
+}
+
 describe("settings edited while a remote copy is in flight", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -254,7 +265,8 @@ describe("settings edited while a remote copy is in flight", () => {
     await flushMicrotasks();
 
     // Back online: the queued payload replays successfully.
-    window.dispatchEvent(new Event("online"));
+    persister.saveSettings.mockResolvedValue();
+    await drainOfflineQueue(service);
     await flushMicrotasks();
 
     // The server now holds this edit, so another device's later change must
@@ -379,6 +391,92 @@ describe("writes that settle out of order", () => {
     });
   });
 
+  it("does not start a concurrent write for an edit made during an offline replay", async () => {
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    // Queued after init, so the replay is driven by the reconnect below rather
+    // than by init's own drain.
+    localStorage.setItem(
+      `${LEGACY_QUEUE_KEY}:user-b`,
+      JSON.stringify({
+        settings: { hapticFeedback: true, reducedMotion: false },
+        sequence: 4,
+        session: "a-previous-page-load",
+        timestamp: Date.now(),
+      })
+    );
+
+    persister.saveSettings.mockClear();
+    const replay = deferred<void>();
+    persister.saveSettings.mockReturnValueOnce(replay.promise);
+
+    // Reconnect. Driven directly rather than through an `online` event:
+    // every earlier loadSettingsService() instance is still listening on the
+    // shared jsdom window and would replay against the same mock.
+    const replayDone = drainOfflineQueue(service);
+    await flushMicrotasks();
+    expect(persister.saveSettings).toHaveBeenCalledTimes(1);
+
+    // The user edits while the replay is still open.
+    await service.updateSetting("reducedMotion", true);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    // A second write here could settle before the replay, letting the older
+    // replayed payload win on the server.
+    expect(persister.saveSettings).toHaveBeenCalledTimes(1);
+
+    replay.resolve();
+    await replayDone;
+    await flushMicrotasks();
+
+    expect(persister.saveSettings).toHaveBeenCalledTimes(2);
+    expect(persister.saveSettings.mock.calls[1][0]).toMatchObject({
+      reducedMotion: true,
+    });
+  });
+
+  it("queues a failed edit whose sequence is lower than a previous page load's", async () => {
+    // A queue entry left by an earlier page load, stamped with that session's
+    // much higher edit sequence.
+    localStorage.setItem(
+      `${LEGACY_QUEUE_KEY}:user-b`,
+      JSON.stringify({
+        settings: { hapticFeedback: true },
+        sequence: 5,
+        session: "a-previous-page-load",
+        timestamp: Date.now(),
+      })
+    );
+
+    // Still offline, so init's replay fails and leaves that entry in place —
+    // which is exactly when its stale sequence gets compared against this
+    // session's. This reload's edit counter starts at zero.
+    persister.saveSettings.mockRejectedValue(new Error("offline"));
+
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    const stillQueued = JSON.parse(
+      localStorage.getItem(`${LEGACY_QUEUE_KEY}:user-b`) ?? "{}"
+    );
+    expect(stillQueued.sequence).toBe(5);
+
+    await service.updateSetting("reducedMotion", true);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+
+    // Sequence 1 from this session must not be judged "older" than the 5 a
+    // previous session persisted — that would silently drop the edit.
+    const queued = JSON.parse(
+      localStorage.getItem(`${LEGACY_QUEUE_KEY}:user-b`) ?? "{}"
+    );
+    expect(queued.settings).toMatchObject({ reducedMotion: true });
+  });
+
   it("refuses to let an older payload replace a newer queued one", async () => {
     const service = await loadSettingsService();
     await service.initializeFirebaseSync();
@@ -472,6 +570,31 @@ describe("session lifecycle fencing", () => {
     // Every subscription that was opened must have been closed; an orphaned
     // handle leaks a live Firestore listener for the page's lifetime.
     expect(persister.unsubscribeCount).toBe(persister.subscribeCount);
+  });
+
+  it("drops a load that resolves after the same account signed out and back in", async () => {
+    const staleLoad = deferred<RemoteSettings | null>();
+    persister.loadSettings.mockReturnValueOnce(staleLoad.promise);
+
+    const service = await loadSettingsService();
+    const staleInit = service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    service.cleanup();
+    auth.currentUser = { uid: "user-b" };
+    persister.loadSettings.mockResolvedValueOnce({ reducedMotion: true });
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+    expect(service.currentSettings.reducedMotion).toBe(true);
+
+    // The stale load carries a DIFFERENT value, and its UID check still
+    // passes, so only a generation check can stop it landing on top of the
+    // newer document.
+    staleLoad.resolve({ reducedMotion: false });
+    await staleInit;
+    await flushMicrotasks();
+
+    expect(service.currentSettings.reducedMotion).toBe(true);
   });
 
   it("re-registers the online retry listener after a sign-out and sign-in", async () => {
