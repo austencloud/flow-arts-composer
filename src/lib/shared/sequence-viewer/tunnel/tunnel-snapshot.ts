@@ -158,6 +158,7 @@ const RawTunnelSnapshotSchema = z.preprocess(
           .object({
             mode: z.enum(["hands", "spectrum", "custom"]),
             custom: z.object({ left: z.string(), right: z.string() }),
+            performers: z.record(z.string(), z.unknown()).optional(),
           })
           .optional(),
         spectrum: z.boolean().optional(),
@@ -258,7 +259,7 @@ export function captureTunnelSnapshot(deps: SnapshotDeps): TunnelSnapshot {
     tunnel: {
       config: clone(controller.config),
       gridVisible: controller.gridVisible,
-      colors: controller.colors,
+      colors: clone(controller.colors),
       section: controller.section,
       presetRecipe: controller.presetRecipe,
     },

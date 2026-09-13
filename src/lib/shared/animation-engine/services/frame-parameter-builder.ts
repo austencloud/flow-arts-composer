@@ -26,6 +26,7 @@ import {
   spotlightFactor,
   tunnelColorFromHex,
   tunnelPropColor,
+  tunnelPerformerPair,
   type TunnelLayerSelection,
   type TunnelPropColorPair,
 } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
@@ -340,7 +341,7 @@ export class FrameParameterBuilder {
       fp.propColors = this.getExtendedPropColors(
         basePropColors,
         layerCount,
-        fp.props.tunnelSpectrum ?? true,
+        (fp.props.tunnelSpectrum ?? true) && !fp.props.tunnelPropColors,
         fp.props.tunnelSelectedLayer ?? null
       );
     } else {
@@ -689,10 +690,10 @@ export class FrameParameterBuilder {
       const family = li + 1;
       const left = spectrum
         ? tunnelPropColor(2 + li * 2, layerCount).rgb01
-        : base[0]!;
+        : (base[2 + li * 2] ?? base[0]!);
       const right = spectrum
         ? tunnelPropColor(3 + li * 2, layerCount).rgb01
-        : base[1]!;
+        : (base[3 + li * 2] ?? base[1]!);
       out[2 + li * 2] = dim(left, family);
       out[3 + li * 2] = dim(right, family);
     }
@@ -708,7 +709,7 @@ export class FrameParameterBuilder {
   private getCustomPropFlamePair(
     colors: TunnelPropColorPair
   ): PropFlameColor[] {
-    const signature = `${colors.left}:${colors.right}`;
+    const signature = JSON.stringify(colors);
     if (
       signature === this.customPropColorsSignature &&
       this.customPropFlamePair
@@ -716,10 +717,16 @@ export class FrameParameterBuilder {
       return this.customPropFlamePair;
     }
     this.customPropColorsSignature = signature;
-    this.customPropFlamePair = [
-      tunnelColorFromHex(colors.left).rgb01,
-      tunnelColorFromHex(colors.right).rgb01,
-    ];
+    this.customPropFlamePair = Array.from(
+      { length: colors.performers?.length ?? 1 },
+      (_, index) => {
+        const pair = tunnelPerformerPair(colors, index);
+        return [
+          tunnelColorFromHex(pair.left).rgb01,
+          tunnelColorFromHex(pair.right).rgb01,
+        ];
+      }
+    ).flat();
     return this.customPropFlamePair;
   }
 
