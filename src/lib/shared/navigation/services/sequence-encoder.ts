@@ -40,6 +40,17 @@ import {
   detectLegacySequenceFormat,
   encodeLegacySequence,
 } from "./legacy-sequence-codec";
+import {
+  INLINE_PREFIX,
+  decodeOnce,
+  hasReadableQrEnvelope,
+  hasReadableUrlEnvelope,
+  isInlineEncoded,
+} from "./inline-qr-envelope";
+
+// The envelope owner holds this; re-exported because eight call sites import it
+// from the encoder.
+export { isInlineEncoded } from "./inline-qr-envelope";
 
 const LOCATION_ENCODE: Record<GridLocation, string> = {
   [GridLocation.NORTH]: "no",
@@ -155,8 +166,6 @@ PROP_TYPE_DECODE["R"] = PropType.BUUGENG;
 // prop, sword, instead of letting an existing link fall through to a missing
 // prop.
 PROP_TYPE_DECODE["Y"] = PropType.SWORD;
-
-const INLINE_PREFIX = "s~";
 
 type FloatWireFormat = "token" | "numeric";
 
@@ -761,14 +770,8 @@ export function generateSequenceRoutePath(sequence: SequenceData): string {
  * `decodeURIComponent` rejects a `%` that is not followed by two hex digits.
  */
 function sequenceRouteIdCandidates(id: string): readonly string[] {
-  if (!id.includes("%")) return [id];
-
-  try {
-    const decoded = decodeURIComponent(id);
-    return decoded === id ? [id] : [id, decoded];
-  } catch {
-    return [id];
-  }
+  const decoded = decodeOnce(id);
+  return decoded === id ? [id] : [id, decoded];
 }
 
 function isInlineUrlEncoded(candidate: string): boolean {
@@ -782,27 +785,71 @@ function isInlineUrlEncoded(candidate: string): boolean {
   );
 }
 
+/** Which decoder a candidate belongs to, or null when it names neither. */
+function classifyRouteIdCandidate(
+  candidate: string
+): "inlineQr" | "encoded" | null {
+  if (isInlineEncoded(candidate)) return "inlineQr";
+  if (isInlineUrlEncoded(candidate)) return "encoded";
+  return null;
+}
+
+/** Whether the delimiters this candidate's decoder needs are unescaped. */
+function isDecodable(candidate: string, kind: "inlineQr" | "encoded"): boolean {
+  return kind === "inlineQr"
+    ? hasReadableQrEnvelope(candidate)
+    : hasReadableUrlEnvelope(candidate);
+}
+
+function routeIdResult(
+  kind: "inlineQr" | "encoded",
+  candidate: string
+): SequenceRouteIdParseResult {
+  return kind === "inlineQr"
+    ? { encoded: null, inlineQr: candidate, legacyId: null }
+    : { encoded: candidate, inlineQr: null, legacyId: null };
+}
+
 /**
  * Classify a `/sequence/[id]` route parameter.
  *
- * The inline-QR test runs before the URL-encoding test on purpose. An `s~`
- * payload whose envelope is `raw:` still contains the flat encoding's pipes, so
- * the pipe heuristic used to claim it and hand it to the URL decoder, which
- * silently read `s~raw:iiSS` as the header and produced a sequence with the
- * wrong seed orientations and props instead of the one on the card.
+ * Two things decide the answer, and both are load-bearing.
+ *
+ * **Which decoder.** The inline-QR test runs before the URL-encoding test. An
+ * `s~` payload whose envelope is `raw:` still contains the flat encoding's
+ * pipes, so the pipe heuristic used to claim it and hand it to the URL decoder,
+ * which silently read `s~raw:iiSS` as the header and produced a sequence with
+ * the wrong seed orientations and props instead of the one on the card.
+ *
+ * **Which spelling.** A recognizable prefix is not proof that a candidate is
+ * readable: `s~` needs no escaping, so a double-encoded `s~q1%3A…` link matched
+ * the inline test while its envelope was still escaped, and the QR decoder then
+ * failed on `q1%3A`. So a candidate is taken only when its own delimiters are
+ * intact, and the once-decoded spelling gets the same test before the escaped
+ * one is accepted as a last resort. That ordering is what keeps a genuine
+ * base45 `%4A` in the body from being rewritten to `J`.
  */
 export function parseSequenceRouteId(id: string): SequenceRouteIdParseResult {
   if (!id) {
     return { encoded: null, inlineQr: null, legacyId: null };
   }
 
-  for (const candidate of sequenceRouteIdCandidates(id)) {
-    if (isInlineEncoded(candidate)) {
-      return { encoded: null, inlineQr: candidate, legacyId: null };
+  const candidates = sequenceRouteIdCandidates(id);
+
+  for (const candidate of candidates) {
+    const kind = classifyRouteIdCandidate(candidate);
+    if (kind && isDecodable(candidate, kind)) {
+      return routeIdResult(kind, candidate);
     }
-    if (isInlineUrlEncoded(candidate)) {
-      return { encoded: candidate, inlineQr: null, legacyId: null };
-    }
+  }
+
+  // No spelling is readable. Keep the historical classification of the id as it
+  // arrived rather than inventing a decode: an `s~` id is still an inline
+  // payload even when we cannot make sense of its envelope, and its decoder
+  // reports the failure better than this parser can.
+  for (const candidate of candidates) {
+    const kind = classifyRouteIdCandidate(candidate);
+    if (kind) return routeIdResult(kind, candidate);
   }
 
   return { encoded: null, inlineQr: null, legacyId: id };
@@ -836,10 +883,6 @@ export async function encodeSequenceForQR(
 
   const compressed = compressForQR(flatEncoded);
   return `${INLINE_PREFIX}${compressed}`;
-}
-
-export function isInlineEncoded(code: string): boolean {
-  return code.startsWith(INLINE_PREFIX);
 }
 
 export async function decodeSequenceFromQR(

@@ -168,6 +168,57 @@ describe("parseSequenceRouteId", () => {
     expect(parseSequenceRouteId(param).encoded).toBe("d1:AbC");
   });
 
+  /**
+   * The `s~` prefix needs no escaping, so a double-encoded inline link still
+   * looks inline while its envelope delimiter is escaped. Matching on the prefix
+   * alone handed `s~q1%3A…` to the QR decoder, which cannot read `q1%3A`.
+   */
+  it.each([
+    ["q1", PRODUCTION_FLAT_QR],
+    ["r1", PRODUCTION_RECIPE_QR],
+    ["q1 with percents in the body", PRODUCTION_NUMERIC_FLOAT_QR],
+    ["raw", "s~raw:iiSS|noeac0:soweu0"],
+  ])(
+    "unescapes a double-encoded %s envelope before handing it over",
+    async (_label, payload) => {
+      const param = routeParamFrom(
+        `/sequence/${encodeURIComponent(encodeURIComponent(payload))}`
+      );
+      expect(param).not.toBe(payload);
+      expect(param).toContain("%3A");
+
+      expect(parseSequenceRouteId(param).inlineQr).toBe(payload);
+      await expect(decodeSequenceFromQR(payload)).resolves.toHaveProperty(
+        "steps"
+      );
+    }
+  );
+
+  it("unescapes a double-encoded raw: share link's beat separators", () => {
+    const payload = "raw:iiSS|noeac0:soweu0";
+    const param = routeParamFrom(
+      `/sequence/${encodeURIComponent(encodeURIComponent(payload))}`
+    );
+    expect(param).toContain("%7C");
+    expect(parseSequenceRouteId(param).encoded).toBe(payload);
+  });
+
+  it("keeps genuine base45 percents when the envelope is already readable", () => {
+    // The other half of the same rule: `%4A` here is payload, not an escape,
+    // and decoding it would rewrite the body to `J`.
+    const parsed = parseSequenceRouteId(
+      sequenceRouteParam(PRODUCTION_NUMERIC_FLOAT_QR)
+    );
+    expect(parsed.inlineQr).toBe(PRODUCTION_NUMERIC_FLOAT_QR);
+    expect(parsed.inlineQr).toContain("%4A");
+  });
+
+  it("hands an unreadable s~ id to the QR decoder rather than guessing", () => {
+    // No recognizable envelope in either spelling: stay inline and let the
+    // decoder report the failure.
+    expect(parseSequenceRouteId("s~mystery").inlineQr).toBe("s~mystery");
+  });
+
   it("treats an empty id as nothing to resolve", () => {
     expect(parseSequenceRouteId("")).toEqual({
       encoded: null,
