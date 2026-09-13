@@ -1,8 +1,11 @@
 import { flushSync } from "svelte";
 import { page } from "vitest/browser";
 import { render } from "vitest-browser-svelte";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Message } from "$lib/shared/messaging/domain/models/message-models";
+import { MemoryDeliveryRepository } from "$test-helpers/inbox/memory-delivery-repository";
+import type { MessageDeliveryState } from "../../state/message-delivery-state.svelte";
+import { createMessageDeliveryState } from "../../state/message-delivery-state.svelte";
 import { inboxState } from "../../state/inbox-state.svelte";
 import MessageComposer from "./MessageComposer.svelte";
 
@@ -15,6 +18,11 @@ const mocks = vi.hoisted(() => ({
   saveDraft: vi.fn(),
   draftFor: vi.fn(),
   showUserError: vi.fn(),
+  activeUserId: "user-a" as string | null,
+  // Set by the account-ownership tests: `activeUserId` and `ready` are runes on
+  // the real state, and only a real reactive write wakes the composer's
+  // hydration effect. The other tests keep the cheap stub above.
+  real: null as unknown,
 }));
 
 vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
@@ -29,14 +37,45 @@ vi.mock("$lib/shared/messaging/services/messenger", () => ({
   },
 }));
 
-vi.mock("../../context/message-delivery-context", () => ({
-  getMessageDeliveryContext: () => ({
-    ready: true,
-    draftFor: mocks.draftFor,
-    saveDraft: mocks.saveDraft,
-    queueMessage: mocks.queueMessage,
-  }),
-}));
+vi.mock("../../context/message-delivery-context", () => {
+  type Delivery = {
+    ready: boolean;
+    activeUserId: string | null;
+    draftFor: (conversationId: string) => unknown;
+    saveDraft: (...args: unknown[]) => Promise<void>;
+    queueMessage: (...args: unknown[]) => Promise<string>;
+  };
+  const stub: Delivery = {
+    get ready() {
+      return true;
+    },
+    get activeUserId() {
+      return mocks.activeUserId;
+    },
+    draftFor: (conversationId: string) => mocks.draftFor(conversationId),
+    saveDraft: (...args: unknown[]) => mocks.saveDraft(...args),
+    queueMessage: (...args: unknown[]) => mocks.queueMessage(...args),
+  };
+  const delivery: Delivery = {
+    get ready() {
+      return ((mocks.real as Delivery | null) ?? stub).ready;
+    },
+    get activeUserId() {
+      return ((mocks.real as Delivery | null) ?? stub).activeUserId;
+    },
+    draftFor: (conversationId) =>
+      ((mocks.real as Delivery | null) ?? stub).draftFor(conversationId),
+    saveDraft: (...args) =>
+      ((mocks.real as Delivery | null) ?? stub).saveDraft(
+        ...(args as [string, never])
+      ),
+    queueMessage: (...args) =>
+      ((mocks.real as Delivery | null) ?? stub).queueMessage(
+        ...(args as [never])
+      ),
+  };
+  return { getMessageDeliveryContext: () => delivery };
+});
 
 vi.mock("$lib/shared/application/get-error-handler", () => ({
   getErrorHandler: () => ({ showUserError: mocks.showUserError }),
@@ -93,6 +132,13 @@ function dispatchKey(key: string): void {
   flushSync();
 }
 
+/** Real delivery states built by the account-ownership tests, disposed after. */
+const realStates: MessageDeliveryState[] = [];
+
+afterEach(() => {
+  realStates.splice(0).forEach((state) => state.dispose());
+});
+
 describe("MessageComposer editing", () => {
   beforeEach(() => {
     inboxState.clearEditingMessage();
@@ -111,6 +157,8 @@ describe("MessageComposer editing", () => {
     mocks.draftFor.mockReset();
     mocks.draftFor.mockReturnValue(undefined);
     mocks.showUserError.mockReset();
+    mocks.activeUserId = "user-a";
+    mocks.real = null;
   });
 
   it("enables native spelling suggestions in the message field", async () => {
@@ -241,6 +289,70 @@ describe("MessageComposer editing", () => {
       "conversation-2",
       expect.objectContaining({ content: "Meant for the first thread" })
     );
+  });
+
+  it("never writes a pending draft into another account's ledger", async () => {
+    const repository = new MemoryDeliveryRepository();
+    repository.drafts.set("user-b:conversation-1", {
+      id: "user-b:conversation-1",
+      userId: "user-b",
+      conversationId: "conversation-1",
+      content: "Second account's own draft",
+      updatedAt: 1,
+    });
+    const state = createMessageDeliveryState({
+      repository,
+      coordinator: { deliver: async () => undefined },
+      isOnline: () => true,
+    });
+    realStates.push(state);
+    await state.activate("user-a");
+    mocks.real = state;
+
+    render(MessageComposer, { conversationId: "conversation-1" });
+    await page
+      .getByRole("textbox", { name: "Message input" })
+      .fill("Typed while the first account was signed in");
+
+    // The account changes inside the autosave window. A draft id is
+    // `<userId>:<conversationId>`, so writing this text now would file it under
+    // the second account — and the composer must re-read from that account's
+    // ledger even though the conversation did not change.
+    await state.activate("user-b");
+    flushSync();
+
+    await expect
+      .element(page.getByRole("textbox", { name: "Message input" }))
+      .toHaveValue("Second account's own draft");
+
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    expect(
+      [...repository.drafts.values()].map((draft) => draft.content)
+    ).toEqual(["Second account's own draft"]);
+  });
+
+  it("keeps a failed save for a closed thread out of the open thread", async () => {
+    mocks.saveDraft.mockRejectedValueOnce(new Error("IndexedDB unavailable"));
+    const screen = render(MessageComposer, {
+      conversationId: "conversation-1",
+    });
+    await page
+      .getByRole("textbox", { name: "Message input" })
+      .fill("First thread text");
+    await screen.rerender({ conversationId: "conversation-2" });
+
+    await vi.waitFor(() => {
+      expect(mocks.saveDraft).toHaveBeenCalledWith(
+        "conversation-1",
+        expect.objectContaining({ content: "First thread text" })
+      );
+    });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // The warning and the error report belong to the thread that failed, which
+    // is no longer on screen.
+    expect(document.body.textContent).not.toContain("Draft not saved");
+    expect(mocks.showUserError).not.toHaveBeenCalled();
   });
 
   it("opens the latest editable message with Arrow Up and cancels with Escape", async () => {

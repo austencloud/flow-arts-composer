@@ -3,6 +3,7 @@ import { render } from "vitest-browser-svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Message } from "$lib/shared/messaging/domain/models/message-models";
 import type { ConversationPreview } from "$lib/shared/messaging/domain/models/conversation-models";
+import { createReactiveAccountDouble } from "$test-helpers/inbox/reactive-account-double.svelte";
 import { inboxState } from "../state/inbox-state.svelte";
 import InboxDrawer from "./InboxDrawer.svelte";
 
@@ -18,7 +19,14 @@ const mocks = vi.hoisted(() => ({
   markAsRead: vi.fn(),
   handleModuleChange: vi.fn(),
   markAllNotificationsRead: vi.fn(),
+  account: null as ReturnType<typeof createReactiveAccountDouble> | null,
 }));
+
+/** The drawer reads the signed-in account through this double. */
+function account(): ReturnType<typeof createReactiveAccountDouble> {
+  if (!mocks.account) throw new Error("The account double is not set up");
+  return mocks.account;
+}
 
 vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
   getHapticFeedback: () => ({ trigger: vi.fn() }),
@@ -26,8 +34,12 @@ vi.mock("$lib/shared/application/get-haptic-feedback", () => ({
 
 vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   authState: {
-    user: { uid: "current-user", displayName: "Austen", photoURL: null },
-    isAdmin: false,
+    get user() {
+      return account().authState.user;
+    },
+    get isAdmin() {
+      return account().authState.isAdmin;
+    },
     isFullAccount: true,
     loading: false,
     initialized: true,
@@ -220,6 +232,7 @@ function openConversation(name: string): void {
 
 describe("InboxDrawer thread subscriptions", () => {
   beforeEach(() => {
+    mocks.account = createReactiveAccountDouble("current-user");
     mocks.listeners.length = 0;
     mocks.getConversation.mockReset();
     mocks.getConversation.mockImplementation(async (id: string) =>
@@ -303,6 +316,97 @@ describe("InboxDrawer thread subscriptions", () => {
       "conversation-b",
     ]);
     expect(mocks.markAsRead.mock.calls.flat()).toEqual(["conversation-b"]);
+  });
+
+  it("drops a conversation load that finishes after another account signs in", async () => {
+    let releasePaul: (() => void) | undefined;
+    const paulLoaded = new Promise<void>((resolve) => {
+      releasePaul = resolve;
+    });
+    mocks.getConversation.mockImplementation(async (id: string) => {
+      if (id === "conversation-a") await paulLoaded;
+      return conversation(id, "Paul");
+    });
+
+    render(InboxDrawer);
+    openConversation("Paul");
+
+    // The account changes while the lookup is still in flight — the delivery
+    // state is now someone else's, so this thread is nobody's.
+    account().setAccount("second-user");
+    flushSync();
+    releasePaul?.();
+    await paulLoaded;
+    await vi.waitFor(() =>
+      expect(mocks.getConversation).toHaveBeenCalledTimes(1)
+    );
+
+    expect(inboxState.selectedConversation).toBeNull();
+    expect(mocks.listeners).toEqual([]);
+    expect(mocks.markAsRead).not.toHaveBeenCalled();
+  });
+
+  it("drops the open thread when the signed-in account changes", async () => {
+    render(InboxDrawer);
+
+    openConversation("Paul");
+    await vi.waitFor(() => expect(listenerFor("conversation-a")).toBeTruthy());
+
+    account().setAccount("second-user");
+    flushSync();
+
+    await vi.waitFor(() => {
+      expect(listenerFor("conversation-a").active).toBe(false);
+      expect(inboxState.selectedConversation).toBeNull();
+    });
+  });
+
+  it("ignores a snapshot that arrives after sign-out", async () => {
+    render(InboxDrawer);
+
+    openConversation("Paul");
+    await vi.waitFor(() => expect(listenerFor("conversation-a")).toBeTruthy());
+    listenerFor("conversation-a").emit([
+      message("conversation-a", "Read before sign-out"),
+    ]);
+    await vi.waitFor(() => expect(inboxState.messages).toHaveLength(1));
+
+    account().setAccount(null);
+    flushSync();
+
+    // A snapshot still in flight when the session ended must not repopulate the
+    // signed-out inbox.
+    listenerFor("conversation-a").emit([
+      message("conversation-a", "Arrived after sign-out"),
+    ]);
+    flushSync();
+
+    expect(inboxState.messages).toEqual([]);
+    expect(inboxState.selectedConversation).toBeNull();
+  });
+
+  it("keeps the live listener when the same conversation is reopened", async () => {
+    render(InboxDrawer);
+
+    openConversation("Paul");
+    await vi.waitFor(() => expect(mocks.listeners).toHaveLength(1));
+    clickByLabel("Back to conversations");
+    openConversation("Paul");
+    await vi.waitFor(() => expect(mocks.listeners).toHaveLength(2));
+
+    // Both listeners share one conversation id, which is also the messenger's
+    // subscription key. Tearing the first one down must not take the live one
+    // with it.
+    const [first, second] = mocks.listeners;
+    expect(first?.active).toBe(false);
+    expect(second?.active).toBe(true);
+
+    second?.emit([message("conversation-a", "Still delivering")]);
+    await vi.waitFor(() => {
+      expect(inboxState.messages.map((entry) => entry.content)).toEqual([
+        "Still delivering",
+      ]);
+    });
   });
 
   it("stops listening when the inbox closes", async () => {

@@ -69,23 +69,35 @@
   let hapticService: HapticFeedback | undefined;
 
   /**
-   * The open thread owns exactly one message listener.
+   * The open thread owns exactly one message listener, and it belongs to one
+   * signed-in account.
    *
    * Message subscriptions are keyed by conversation inside the messenger, so
    * switching threads used to leave the previous conversation's listener
    * attached: its next snapshot called setMessages and replaced the thread the
    * user was actually reading with the one they had left. The generation
-   * counter is the second half of the guard — a selection that resolved out of
-   * order, or a snapshot that arrives between the unsubscribe and its teardown,
-   * must not write into a thread it no longer owns.
+   * counter and the owner are the other half of the guard — a selection that
+   * resolved out of order, a snapshot that arrives around a teardown, or a
+   * lookup begun by an account that has since signed out must not write into a
+   * thread it no longer owns.
    */
   let unsubscribeThreadMessages: (() => void) | null = null;
   let threadGeneration = 0;
+  let deliveryOwnerId: string | null = null;
+
+  function threadOwner(): string | null {
+    return authState.user?.uid ?? null;
+  }
 
   function stopThreadSubscription(): void {
     threadGeneration++;
     unsubscribeThreadMessages?.();
     unsubscribeThreadMessages = null;
+  }
+
+  /** True while `generation` still owns the thread for the same account. */
+  function ownsThread(generation: number, owner: string | null): boolean {
+    return generation === threadGeneration && owner === threadOwner();
   }
 
   // Media query for responsive behavior
@@ -125,7 +137,21 @@
   });
 
   $effect(() => {
-    const userId = authState.user?.uid;
+    const userId = authState.user?.uid ?? null;
+
+    // The signed-in account owns the open thread as well as the outbox. When it
+    // changes — sign-out, or a second account signing in — the thread belongs to
+    // nobody: drop its listener, invalidate every in-flight lookup, and clear
+    // the conversation so the previous account's messages cannot stay on screen.
+    // The first assignment is not a change: clearing on mount would tear down a
+    // share the app was launched into.
+    if (userId !== deliveryOwnerId) {
+      const hadOwner = deliveryOwnerId !== null;
+      deliveryOwnerId = userId;
+      stopThreadSubscription();
+      if (hadOwner && inboxState.selectedConversation) inboxState.backToList();
+    }
+
     if (!userId) {
       messageDeliveryState.deactivate();
       return;
@@ -272,14 +298,15 @@
     // has not finished loading yet.
     stopThreadSubscription();
     const generation = threadGeneration;
+    const owner = threadOwner();
 
     try {
       const conversation =
         await conversationService.getConversation(conversationId);
-      // Another conversation (or closing the inbox) won the race while this
-      // lookup was in flight. Loading it now would swap the thread under the
-      // user and mark a conversation they never saw as read.
-      if (generation !== threadGeneration || !conversation) return;
+      // Another conversation, a closed inbox, or a changed account won the race
+      // while this lookup was in flight. Loading it now would swap the thread
+      // under the user and mark a conversation they never saw as read.
+      if (!ownsThread(generation, owner) || !conversation) return;
 
       inboxState.selectConversation(conversation);
 
@@ -288,7 +315,7 @@
       unsubscribeThreadMessages = messagingService.subscribeToMessages(
         conversationId,
         (messages) => {
-          if (generation !== threadGeneration) return;
+          if (!ownsThread(generation, owner)) return;
           inboxState.setMessages(messages);
           inboxState.setLoadingMessages(false);
           void messageDeliveryState
@@ -299,9 +326,21 @@
         }
       );
 
-      // Mark as read
+      // Mark as read. Re-checked rather than assumed: the subscribe above is
+      // synchronous, but an account change can still land between it and here,
+      // and the read receipt belongs to the account that opened the thread.
+      if (!ownsThread(generation, owner)) return;
       await messagingService.markAsRead(conversationId);
     } catch (error) {
+      // A superseded lookup's failure is not the current thread's problem. It
+      // must not raise a toast over the conversation the user is now reading.
+      if (!ownsThread(generation, owner)) {
+        console.warn(
+          "Ignored a failure from a superseded conversation lookup:",
+          error
+        );
+        return;
+      }
       console.error("Failed to load conversation:", error);
       toast.error("Failed to load conversation");
     }
