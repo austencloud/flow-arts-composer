@@ -333,13 +333,51 @@ describe("F2: publicHandPaths / publicSoloProps ownership takeover", () => {
     // Anything stronger than takeover prevention has to be a trusted writer.
     expect(firestoreRules).not.toMatch(/\b(sha256|hashing|crypto)\s*\(/i);
 
-    // The convergence policy the fix must preserve: last honest writer merges.
+    // The documented convergence policy any fix has to reckon with — NOT one
+    // the rules-only fix preserves; see the next probe.
     const convergence = syncer.slice(
       syncer.indexOf("// Write all artifacts in parallel"),
       syncer.indexOf("// Write all artifacts in parallel") + 320
     );
     expect(convergence).toContain("{ merge: true }");
     expect(convergence).toContain("merge so we don't overwrite existing");
+  });
+
+  // CORRECTION (second independent review, 2026-09-13). The report previously
+  // said the rules-only fix "preserves the documented convergence policy for
+  // the create path". It does not: `setDoc(..., { merge: true })` against an
+  // EXISTING document is evaluated as an `update`, and convergence is by
+  // definition the existing-document case. Adding
+  // `resource.data.ownerId == request.auth.uid` to `update` therefore denies
+  // every honest second publisher. Worse, the denial is invisible.
+  it("CORRECTION: the convergence write is a merge, and a denial on it is silent", () => {
+    const syncer = readFileSync(
+      resolve(ROOT, "src/lib/features/library/services/public-index-syncer.ts"),
+      "utf8"
+    );
+
+    // Convergence goes through setDoc+merge, so on an existing document the
+    // rules engine evaluates `update`, not `create`.
+    expect(syncer).toMatch(
+      /setDoc\(\s*doc\(firestore, a\.collectionPath, a\.docId\),\s*a\.data,\s*\{ merge: true \}\s*\)/
+    );
+
+    // allSettled never rejects, so a per-write permission-denied is absorbed
+    // here and never reaches the caller...
+    expect(syncer).toContain("await Promise.allSettled(");
+    const fanOut = syncer.slice(
+      syncer.indexOf("await Promise.allSettled("),
+      syncer.indexOf("await Promise.allSettled(") + 400
+    );
+    expect(fanOut).not.toContain("catch");
+    expect(fanOut).not.toContain("console");
+
+    // ...and the call site's own catch only fires if the whole method rejects,
+    // which allSettled guarantees it will not. Net effect: a denied artifact
+    // write produces no error, no warning, and no user-visible symptom.
+    expect(syncer).toMatch(
+      /this\.syncArtifactsToPublic\([^)]*\)\.catch\(\s*\(err\)\s*=>/
+    );
   });
 });
 
