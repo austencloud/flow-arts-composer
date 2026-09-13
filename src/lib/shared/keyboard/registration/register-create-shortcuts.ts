@@ -23,8 +23,25 @@ import type { SequenceTransformCommandId } from "$lib/shared/create/domain/seque
 import { getAllPropTypes } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
 import { filterPremiumCosmeticProps } from "$lib/shared/subscription/domain/premium-prop-access";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { isWidgetOwnedKeyboardTarget } from "../domain/shortcut-target-resolution";
 
 const debug = createComponentLogger("CreateShortcuts");
+
+/**
+ * The manager dismisses the top drawer and cancels the browser default for any
+ * single-key match before the action runs, and `condition` is the only thing
+ * that can stop the match. So the bare navigation and adjustment keys below
+ * must yield whenever a widget already owns them: with the Customize drawer
+ * open, ArrowDown on a Hand Relationship radio used to close the whole drawer
+ * instead of moving the selection.
+ */
+function singleKeyShortcutAllowed(
+  state: ReturnType<typeof createKeyboardShortcutState>
+): boolean {
+  if (!state.settings.enableSingleKeyShortcuts) return false;
+  if (typeof document === "undefined") return true;
+  return !isWidgetOwnedKeyboardTarget(document.activeElement);
+}
 
 async function executeSequenceShortcut(
   action: SequenceTransformCommandId,
@@ -133,12 +150,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "workspace",
     priority: "medium",
-    condition: () => {
-      // Only when edit panel is NOT open
-      return state.settings.enableSingleKeyShortcuts;
-      // TODO: Add check for edit panel state
-      // && !isEditPanelOpen();
-    },
+    condition: () => singleKeyShortcutAllowed(state),
     action: () => {
       debug.log("Arrow Up - Grid navigation (not yet implemented)");
       // TODO: Integrate with step grid navigation
@@ -155,10 +167,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "workspace",
     priority: "medium",
-    condition: () => {
-      return state.settings.enableSingleKeyShortcuts;
-      // TODO: Add check for edit panel state
-    },
+    condition: () => singleKeyShortcutAllowed(state),
     action: () => {
       debug.log("Arrow Down - Grid navigation (not yet implemented)");
       // TODO: Integrate with step grid navigation
@@ -175,9 +184,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "workspace",
     priority: "medium",
-    condition: () => {
-      return state.settings.enableSingleKeyShortcuts;
-    },
+    condition: () => singleKeyShortcutAllowed(state),
     action: () => {
       debug.log("Arrow Left - Grid navigation (not yet implemented)");
       // TODO: Integrate with step grid navigation
@@ -194,9 +201,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "workspace",
     priority: "medium",
-    condition: () => {
-      return state.settings.enableSingleKeyShortcuts;
-    },
+    condition: () => singleKeyShortcutAllowed(state),
     action: () => {
       debug.log("Arrow Right - Grid navigation (not yet implemented)");
       // TODO: Integrate with step grid navigation
@@ -215,11 +220,7 @@ export function registerCreateShortcuts(
     context: ["create", "edit-panel"],
     scope: "editing",
     priority: "high", // Higher priority than grid navigation
-    condition: () => {
-      // Only when edit panel IS open
-      return state.settings.enableSingleKeyShortcuts;
-      // TODO: Add check: && isEditPanelOpen();
-    },
+    condition: () => singleKeyShortcutAllowed(state),
     action: () => {
       debug.log("Arrow Left - Previous beat (not yet implemented)");
       // TODO: Integrate with edit panel navigation
@@ -237,10 +238,7 @@ export function registerCreateShortcuts(
     context: ["create", "edit-panel"],
     scope: "editing",
     priority: "high", // Higher priority than grid navigation
-    condition: () => {
-      return state.settings.enableSingleKeyShortcuts;
-      // TODO: Add check: && isEditPanelOpen();
-    },
+    condition: () => singleKeyShortcutAllowed(state),
     action: () => {
       debug.log("Arrow Right - Next beat (not yet implemented)");
       // TODO: Integrate with edit panel navigation
@@ -278,9 +276,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
-    condition: () => {
-      return state.settings.enableSingleKeyShortcuts;
-    },
+    condition: () => singleKeyShortcutAllowed(state),
     action: () => {
       debug.log("Plus - Add beat (not yet implemented)");
       // TODO: Determine logic for which prop color to add
@@ -607,9 +603,7 @@ export function registerCreateShortcuts(
     context: ["create", "edit-panel"],
     scope: "editing",
     priority: "low",
-    condition: () => {
-      return state.settings.enableSingleKeyShortcuts;
-    },
+    condition: () => singleKeyShortcutAllowed(state),
     action: () => {
       debug.log("[ - Decrease value (not yet implemented)");
       // TODO: Integrate with edit panel controls
@@ -627,9 +621,7 @@ export function registerCreateShortcuts(
     context: ["create", "edit-panel"],
     scope: "editing",
     priority: "low",
-    condition: () => {
-      return state.settings.enableSingleKeyShortcuts;
-    },
+    condition: () => singleKeyShortcutAllowed(state),
     action: () => {
       debug.log("] - Increase value (not yet implemented)");
       // TODO: Integrate with edit panel controls

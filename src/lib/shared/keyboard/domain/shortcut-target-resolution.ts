@@ -64,6 +64,52 @@ export function isEditableKeyboardTarget(target: EventTarget | null): boolean {
   ].includes(target.type);
 }
 
+const KEY_OWNING_LAYER_SELECTOR =
+  'dialog[open], [role="dialog"], [role="alertdialog"], [role="radiogroup"]';
+
+const FOCUSABLE_CONTROL_SELECTOR = [
+  "button",
+  "a[href]",
+  "input",
+  "select",
+  "textarea",
+  "summary",
+  '[role="button"]',
+  '[role="link"]',
+  '[role="menuitem"]',
+  '[role="option"]',
+  '[role="tab"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="switch"]',
+  '[role="slider"]',
+  '[role="spinbutton"]',
+  '[role="combobox"]',
+  '[role="textbox"]',
+  '[role="treeitem"]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ");
+
+/**
+ * Returns whether a bare key pressed right now belongs to the focused widget
+ * rather than to a module-wide single-key shortcut. That is the case inside an
+ * open dialog or drawer (the layer owns everything within it, including its
+ * own focusable container), inside a roving-tabindex radiogroup (its arrows
+ * move the selection), or on any control the user has Tabbed to. Only neutral
+ * focus, such as <body> or a skip-link landmark, leaves the key free.
+ *
+ * Without this boundary the manager treats ArrowDown on a drawer's radio as a
+ * grid-navigation shortcut, dismisses the drawer, and the user watches the
+ * panel they were adjusting vanish under their fingers.
+ */
+export function isWidgetOwnedKeyboardTarget(
+  target: EventTarget | null
+): boolean {
+  if (!(target instanceof Element)) return false;
+  if (target.closest(KEY_OWNING_LAYER_SELECTOR)) return true;
+  return target.matches(FOCUSABLE_CONTROL_SELECTOR);
+}
+
 function getLayerZIndex(layer: HTMLElement): number {
   const value = layer.ownerDocument.defaultView?.getComputedStyle(layer).zIndex;
   const parsed = Number.parseInt(value ?? "", 10);
