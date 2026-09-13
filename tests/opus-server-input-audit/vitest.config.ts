@@ -8,6 +8,7 @@
  */
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vitest/config";
 
 const projectRoot = path.resolve(
@@ -16,6 +17,10 @@ const projectRoot = path.resolve(
 );
 
 export default defineConfig({
+  // Needed for the `.svelte.ts` rune modules that some handlers reach through
+  // their import graph. The suite itself renders nothing.
+  plugins: [sveltekit()],
+
   test: {
     environment: "node",
     globals: true,
@@ -28,6 +33,20 @@ export default defineConfig({
       "$app/environment": path.resolve(
         projectRoot,
         "tests/opus-server-input-audit/helpers/app-environment-stub.ts"
+      ),
+      // SvelteKit generates these at build time. Empty stubs keep the audit
+      // offline and push the handlers onto their "not configured" branches.
+      "$env/static/public": path.resolve(
+        projectRoot,
+        "tests/opus-server-input-audit/helpers/env-static-public-stub.ts"
+      ),
+      "$env/dynamic/private": path.resolve(
+        projectRoot,
+        "tests/opus-server-input-audit/helpers/env-dynamic-stub.ts"
+      ),
+      "$env/dynamic/public": path.resolve(
+        projectRoot,
+        "tests/opus-server-input-audit/helpers/env-dynamic-stub.ts"
       ),
     },
     pool: "forks",
