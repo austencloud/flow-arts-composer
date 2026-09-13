@@ -49,6 +49,9 @@ export class MediaPipeDetector {
 
   // State
   private _isDetecting = false;
+  // Bumped by every stop and every start, so a session still waiting on the
+  // model load can tell whether anyone is still interested in its frames.
+  private _sessionId = 0;
   private _frameCallback: ((frame: DetectionFrame) => void) | null = null;
   private _animationFrameId: number | null = null;
   private _videoElement: HTMLVideoElement | null = null;
@@ -97,12 +100,20 @@ export class MediaPipeDetector {
     onFrame: (frame: DetectionFrame) => void,
     options?: { mirrored?: boolean; gridMode?: GridMode }
   ): Promise<void> {
+    // End the previous session and claim this one before anything async. The
+    // first start waits on a CDN download that can take seconds, and whoever
+    // stops tracking in the meantime (the user leaving Train, a grid-mode
+    // restart) bumps the session id — without that, the load finishes and
+    // starts a frame loop the stop can no longer cancel, pushing detections
+    // into a session that is already gone.
+    this.stopDetection();
+    const session = this._sessionId;
+
     if (!this.isInitialized) {
       await this.initialize();
-    }
-
-    if (this._isDetecting) {
-      this.stopDetection();
+      if (session !== this._sessionId || !this.isInitialized) {
+        return;
+      }
     }
 
     this._videoElement = video;
@@ -591,6 +602,7 @@ export class MediaPipeDetector {
   }
 
   stopDetection(): void {
+    this._sessionId++;
     this._isDetecting = false;
     this._frameCallback = null;
     this._videoElement = null;
