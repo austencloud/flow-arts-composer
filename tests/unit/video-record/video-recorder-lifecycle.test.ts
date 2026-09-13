@@ -256,8 +256,8 @@ describe("VideoRecorder stop integrity", () => {
 
     // Hold the finalization inside its IndexedDB write, then let the real write
     // through, so the rollback has something real to undo.
-    const cacheReached = gate<void>();
-    const releaseCache = gate<void>();
+    const cacheReached = gate();
+    const releaseCache = gate();
     const writeToCache = recorder.cacheRecording.bind(recorder);
     vi.spyOn(recorder, "cacheRecording").mockImplementation(
       async (cacheId, blob, duration) => {

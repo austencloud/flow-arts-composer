@@ -95,6 +95,12 @@ function createFakeCameraManager() {
     },
     async start(): Promise<MediaStream> {
       calls.start += 1;
+      // The real manager releases whatever it is holding before opening the
+      // next camera, so a consumer that takes the instance over ends the
+      // previous consumer's stream. Modelled here so a panel that held a stream
+      // and was superseded is tested against tracks that are already dead.
+      held?.getTracks().forEach((track) => track.stop());
+      held = null;
       const ticket = (ticketCounter += 1);
       const stream = await startGate.promise;
       if (ticket === ticketCounter) {
@@ -244,6 +250,54 @@ describe("VideoRecordPanel camera acquisition", () => {
       newStream.getTracks().every((track) => track.readyState === "live")
     ).toBe(true);
     expect(camera.calls.stop).toBe(stopsAtTeardown);
+  });
+
+  it("leaves alone a camera another consumer opened before this panel tore down", async () => {
+    const screen = render(VideoRecordPanel, { sequence: null });
+    await waitFor(() => camera.calls.initialize > 0, "initialize was called");
+    camera.initializeGate.resolve();
+    await waitFor(() => camera.calls.start > 0, "start was called");
+
+    // The other consumer takes the shared instance while this panel is still
+    // mid-handshake, so by teardown the camera belongs to somebody else. Late
+    // callback guards cannot help here: teardown itself is the danger.
+    const newStream = await anotherConsumerAcquires();
+
+    await screen.unmount();
+
+    expect(
+      newStream.getTracks().every((track) => track.readyState === "live")
+    ).toBe(true);
+    expect(camera.calls.stop).toBe(0);
+    expect(camera.heldStream).toBe(newStream);
+  });
+
+  it("leaves alone a camera another consumer took over from this panel", async () => {
+    const screen = render(VideoRecordPanel, { sequence: null });
+    await waitFor(() => camera.calls.initialize > 0, "initialize was called");
+    camera.initializeGate.resolve();
+    await waitFor(() => camera.calls.start > 0, "start was called");
+
+    const panelStream = canvasStream();
+    camera.startGate.resolve(panelStream);
+    await waitFor(
+      () => camera.heldStream === panelStream,
+      "panel holds camera"
+    );
+
+    // The other consumer opens the camera, which ends this panel's stream the
+    // way the real manager does when it takes the instance over.
+    const newStream = await anotherConsumerAcquires();
+    expect(
+      panelStream.getTracks().every((track) => track.readyState === "ended")
+    ).toBe(true);
+
+    await screen.unmount();
+
+    expect(
+      newStream.getTracks().every((track) => track.readyState === "live")
+    ).toBe(true);
+    expect(camera.calls.stop).toBe(0);
   });
 
   it("still opens the camera for a panel that stays mounted", async () => {
