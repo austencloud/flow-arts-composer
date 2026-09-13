@@ -35,10 +35,7 @@ const cloudMocks = vi.hoisted(() => ({
   markMissing: vi.fn(),
 }));
 
-vi.mock(
-  "$lib/shared/browse/services/cloud-thumbnail-cache",
-  () => cloudMocks
-);
+vi.mock("$lib/shared/browse/services/cloud-thumbnail-cache", () => cloudMocks);
 
 const GALLERY_SIZE = 40;
 
@@ -131,9 +128,9 @@ describe("shared thumbnail tier coverage", () => {
       )
     );
 
-    expect(results.every((r) => r.fromCache && r.url?.startsWith("/thumbnails/"))).toBe(
-      true
-    );
+    expect(
+      results.every((r) => r.fromCache && r.url?.startsWith("/thumbnails/"))
+    ).toBe(true);
     expect(render).not.toHaveBeenCalled();
     // One manifest fetch for the whole page, not one per card.
     expect(fetchMock).toHaveBeenCalledOnce();
@@ -176,14 +173,38 @@ describe("shared thumbnail tier coverage", () => {
     // Each patch is a value a user or an embedding surface can actually
     // produce today. All of them fall off the shared cache.
     const collapsing: Array<[string, Partial<ThumbnailRenderInput>]> = [
-      ["mandala off (viewer image panel)", { visibility: { ...base.visibility, showMandala: false } }],
-      ["start position as left column (per-length layout pick)", { startPositionLayout: "column" }],
-      ["grid dots hidden", { visibility: { ...base.visibility, showGrid: false } }],
-      ["hand points: active only", { visibility: { ...base.visibility, handPointVisibility: "active" } }],
-      ["non-radial points on", { visibility: { ...base.visibility, showNonRadialPoints: true } }],
-      ["custom hand palette", { primaryPropColors: { left: "#00e5ff", right: "#ff3d71" } }],
-      ["hand-path mode", { visibility: { ...base.visibility, handPathMode: true } }],
-      ["one hand hidden", { visibility: { ...base.visibility, showLeftMotion: false } }],
+      [
+        "mandala off (viewer image panel)",
+        { visibility: { ...base.visibility, showMandala: false } },
+      ],
+      [
+        "start position as left column (per-length layout pick)",
+        { startPositionLayout: "column" },
+      ],
+      [
+        "grid dots hidden",
+        { visibility: { ...base.visibility, showGrid: false } },
+      ],
+      [
+        "hand points: active only",
+        { visibility: { ...base.visibility, handPointVisibility: "active" } },
+      ],
+      [
+        "non-radial points on",
+        { visibility: { ...base.visibility, showNonRadialPoints: true } },
+      ],
+      [
+        "custom hand palette",
+        { primaryPropColors: { left: "#00e5ff", right: "#ff3d71" } },
+      ],
+      [
+        "hand-path mode",
+        { visibility: { ...base.visibility, handPathMode: true } },
+      ],
+      [
+        "one hand hidden",
+        { visibility: { ...base.visibility, showLeftMotion: false } },
+      ],
       ["word hidden", { addWord: false }],
       ["step numbers hidden", { addStepNumbers: false }],
       ["start position excluded", { includeStartPosition: false }],
@@ -206,7 +227,10 @@ describe("shared thumbnail tier coverage", () => {
     // A cloud object exists for this exact hash — but the orchestrator's
     // cloud steps are gated on usesDefaults, so it is never asked for.
     cloudMocks.getCachedUrl.mockReturnValue("https://cdn.example/thumb.webp");
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ keys: [] }))));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ keys: [] })))
+    );
 
     const personal: ThumbnailRenderInput = {
       ...defaultInput("AB"),

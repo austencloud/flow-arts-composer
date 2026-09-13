@@ -97,7 +97,10 @@ describe("thumbnail cache key vs. rendered image", () => {
 
   it("DEFECT: cardMode changes the layout but is absent from both hash branches", async () => {
     const standard: ThumbnailRenderInput = { ...galleryInput };
-    const playingCard: ThumbnailRenderInput = { ...galleryInput, cardMode: true };
+    const playingCard: ThumbnailRenderInput = {
+      ...galleryInput,
+      cardMode: true,
+    };
 
     const a = deriveKey(standard);
     const b = deriveKey(playingCard);
@@ -138,9 +141,9 @@ describe("thumbnail cache key vs. rendered image", () => {
     const baseline = hash({});
 
     expect(hash({ lightMode: true })).not.toBe(baseline);
-    expect(hash({ leftPropType: PropType.FAN, rightPropType: PropType.FAN })).not.toBe(
-      baseline
-    );
+    expect(
+      hash({ leftPropType: PropType.FAN, rightPropType: PropType.FAN })
+    ).not.toBe(baseline);
     expect(hash({ variant: "wordcard" })).not.toBe(baseline);
     expect(hash({ sequenceId: "public-2" })).not.toBe(baseline);
     expect(hash({ visibility: { showQRCode: true } })).not.toBe(baseline);
@@ -169,8 +172,17 @@ describe("cache-key hash strength", () => {
     for (let i = 0; words.length < wordCount; i++) {
       const a = LETTERS[i % LETTERS.length]!;
       const b = LETTERS[Math.floor(i / LETTERS.length) % LETTERS.length]!;
-      const c = LETTERS[Math.floor(i / (LETTERS.length * LETTERS.length)) % LETTERS.length]!;
-      words.push(i < LETTERS.length ? a : i < LETTERS.length ** 2 ? `${a}${b}` : `${a}${b}${c}`);
+      const c =
+        LETTERS[
+          Math.floor(i / (LETTERS.length * LETTERS.length)) % LETTERS.length
+        ]!;
+      words.push(
+        i < LETTERS.length
+          ? a
+          : i < LETTERS.length ** 2
+            ? `${a}${b}`
+            : `${a}${b}${c}`
+      );
     }
 
     const hashes: string[] = [];
