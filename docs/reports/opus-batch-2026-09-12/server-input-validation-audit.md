@@ -2,7 +2,9 @@
 
 **Date:** 2026-09-13
 **Base SHA:** `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main` at start; branch was level with it)
-**Final SHA:** see the branch tip of `claude/server-input-validation-audit-su9h2z`
+**Final SHA:** `0fdf435683de392bb5783a852bfcb2cb4260a29c` on
+`claude/server-input-validation-audit-su9h2z` — the commit carrying all the tests and
+this report. Only one commit follows it, filling in this line.
 **Scope:** non-payment server request validation and resource bounds
 **Nature:** read-only. No production code was changed. Everything added is test and report material.
 
