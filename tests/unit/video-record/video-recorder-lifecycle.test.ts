@@ -63,6 +63,15 @@ function settle(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+/** A promise the test opens by hand, for holding an await open. */
+function gate(): { promise: Promise<void>; resolve: () => void } {
+  let resolve!: () => void;
+  const promise = new Promise<void>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
+
 beforeEach(() => {
   clock = 1_000_000;
   objectUrlCounter = 0;
@@ -237,6 +246,49 @@ describe("VideoRecorder stop integrity", () => {
     // not hand a torn-down panel a result it would show as a finished video.
     expect(URL.createObjectURL).not.toHaveBeenCalled();
     // Nor should it reach storage.
+    await expect(recorder.getCachedRecording(id)).resolves.toBeNull();
+  });
+
+  it("rolls back a recording cancelled while the cache write was still open", async () => {
+    // Before the fix the cancel lands after the map entry is gone and warns.
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const recorder = new VideoRecorder();
+
+    // Hold the finalization inside its IndexedDB write, then let the real write
+    // through, so the rollback has something real to undo.
+    const cacheReached = gate<void>();
+    const releaseCache = gate<void>();
+    const writeToCache = recorder.cacheRecording.bind(recorder);
+    vi.spyOn(recorder, "cacheRecording").mockImplementation(
+      async (cacheId, blob, duration) => {
+        cacheReached.resolve();
+        await releaseCache.promise;
+        await writeToCache(cacheId, blob, duration);
+      }
+    );
+
+    const id = await recorder.startRecording(fakeStream());
+    const media = latestRecorder();
+    media.emitChunk();
+
+    const stop = withTimeout(recorder.stopRecording(id), "cache-window stop");
+    await settle();
+    media.flush();
+    await cacheReached.promise;
+
+    // The panel tears down here, after the recorder has fully flushed and while
+    // IndexedDB is mid-write. This is the last moment a cancel can land.
+    recorder.cancelRecording(id);
+    releaseCache.resolve();
+
+    const result = await stop;
+    expect(result.success).toBe(false);
+    expect(result.blobUrl).toBeUndefined();
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+
+    // The write did happen, so this only passes if the finalization noticed the
+    // cancellation afterwards and removed the discarded take.
+    await settle();
     await expect(recorder.getCachedRecording(id)).resolves.toBeNull();
   });
 });
