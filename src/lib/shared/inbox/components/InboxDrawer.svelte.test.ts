@@ -90,12 +90,14 @@ vi.mock("$lib/shared/messaging/services/messenger", () => ({
   },
 }));
 
-vi.mock("$lib/shared/navigation-coordinator/navigation-coordinator.svelte", () => ({
-  moduleSections: () => [],
-  handleSectionChange: vi.fn(),
-  handleModuleChange: mocks.handleModuleChange,
-}));
-
+vi.mock(
+  "$lib/shared/navigation-coordinator/navigation-coordinator.svelte",
+  () => ({
+    moduleSections: () => [],
+    handleSectionChange: vi.fn(),
+    handleModuleChange: mocks.handleModuleChange,
+  })
+);
 
 vi.mock("../get-message-delivery-repository", () => ({
   getMessageDeliveryRepository: () => ({
@@ -292,12 +294,14 @@ describe("InboxDrawer thread subscriptions", () => {
     // attach a listener, or mark a thread the user never reached as read.
     releasePaul?.();
     await paulLoaded;
-    await vi.waitFor(() => expect(mocks.getConversation).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() =>
+      expect(mocks.getConversation).toHaveBeenCalledTimes(2)
+    );
 
     expect(inboxState.selectedConversation?.id).toBe("conversation-b");
-    expect(
-      mocks.listeners.map((listener) => listener.conversationId)
-    ).toEqual(["conversation-b"]);
+    expect(mocks.listeners.map((listener) => listener.conversationId)).toEqual([
+      "conversation-b",
+    ]);
     expect(mocks.markAsRead.mock.calls.flat()).toEqual(["conversation-b"]);
   });
 
