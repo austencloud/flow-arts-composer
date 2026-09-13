@@ -9,7 +9,8 @@
  *
  * This only gets a say when static letters are in the candidate pool at all,
  * which BuildOptions.allowStaticSteps controls — on by default only when the
- * caller set a turn pattern or a layer target. LetterClassifier additionally
+ * caller set a turn pattern, a layer target, or a no-dash hand-relationship
+ * LOOP with turns available. LetterClassifier additionally
  * treats ζ, η, τ and ⊕ as Type 6; those are synthesized position placeholders
  * rather than alphabet letters, and never reach the pool.
  */
@@ -47,8 +48,10 @@ export class Type6Constraint implements IConstraint {
       };
     }
 
-    const turns = context.turnAllocation;
-    if (!turns || (turns.left <= 0 && turns.right <= 0)) {
+    const turns = context.assignedTurns ?? context.turnAllocation;
+    const leftTurns = typeof turns?.left === "number" ? turns.left : 0;
+    const rightTurns = typeof turns?.right === "number" ? turns.right : 0;
+    if (leftTurns <= 0 && rightTurns <= 0) {
       return {
         score: 0,
         satisfied: false,
