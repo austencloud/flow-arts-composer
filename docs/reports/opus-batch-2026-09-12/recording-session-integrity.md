@@ -12,20 +12,22 @@ recording-specific tests only.
   `e19878a5`.
 - Cancel-during-finalize and self-end reproduction: `838113d7`. Fix:
   `c1305fb1`.
-- Cache-window cancellation reproduction: `a28ec6a7`. Fix: `56a987a4`, the
-  final code SHA.
+- Cache-window cancellation reproduction: `a28ec6a7`. Fix: `56a987a4`.
+- Teardown-ownership reproduction and TS2558 fix: `f65a696d`. Fix:
+  `d67cabd3`, the final code SHA.
 - Branch: `claude/fix-recording-lifecycle-tum13f`. Its head is the commit that
   last edited this report.
 - Read, never edited, for contract alignment:
-  `claude/camera-resource-lifecycle-sdoeg6` at `39f0271b`.
+  `claude/camera-resource-lifecycle-sdoeg6`, at `39f0271b` and then at
+  `7700457c`.
 
 Defect numbers are identifiers, matching the commit messages, not a reading
 order. Defects 1, 2, 5, 6 and 7 are in `video-recorder.ts` and are covered by
-the first before-and-after table. Defects 3 and 4 are in
-`VideoRecordPanel.svelte` and have their own. Defects 4, 5, 6 and 7 were found
-by review inside earlier fixes on this branch rather than in the code it
-started from: 4 inside the fix for 3, 5 and 6 inside the fix for 1, and 7
-inside the fix for 5.
+the first before-and-after table. Defects 3, 4 and 8 are in
+`VideoRecordPanel.svelte` and have their own. Defects 4, 5, 6, 7 and 8 were
+found by review inside earlier fixes on this branch rather than in the code it
+started from: 4 inside the fix for 3, 5 and 6 inside the fix for 1, 7 inside
+the fix for 5, and 8 inside the fix for 4.
 
 ## Owned files
 
@@ -35,7 +37,7 @@ inside the fix for 5.
 | `src/lib/shared/video-record/components/VideoRecordPanel.svelte`         | Camera acquisition lifecycle guard        |
 | `tests/unit/video-record/video-recorder-lifecycle.test.ts`               | New. 11 lifecycle tests                   |
 | `tests/unit/video-record/fake-media-recorder.ts`                         | New. Controllable MediaRecorder fake      |
-| `src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts` | New. 5 browser component tests            |
+| `src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts` | New. 7 browser component tests            |
 | `docs/reports/opus-batch-2026-09-12/recording-session-integrity.md`      | This report                               |
 
 Nothing under `camera-manager`, `CameraPreview`, MediaPipe, `video-export`, or
@@ -211,13 +213,67 @@ when the event has already fired, which is the edge the removed inactive branch
 used to cover. The cross-session case checks that the handler rewiring did not
 let one session's chunks reach another session's blob.
 
+## The test files were not being type-checked
+
+The independent review of `5fc424aa` found a `gate<void>()` call against a
+non-generic `gate()` helper in the recorder test: `TS2558`, two call sites.
+Vitest strips types without checking them, so eleven tests passed on code that
+does not compile.
+
+The reason it survived is structural, and worth recording. `tsconfig.json`
+overrides the SvelteKit config's `include` with `src/**` only, so nothing in the
+repository type-checks `tests/` at all — `npm run check`, `check:fast` and
+`check:tsc` all skip it. The earlier "narrow type proof" on this branch ran
+`tsc` over `video-recorder.ts` alone, which is exactly the file that was fine.
+A component test under `src/` like `VideoRecordPanel.svelte.test.ts` _is_
+covered; anything under `tests/` is not.
+
+The type proof used from now on covers the tests as well, via a scratchpad
+config, since a second root `tsconfig.*` is shared surface this scope does not
+own:
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "types": ["vite/client", "vitest/globals"],
+    "paths": {
+      "$lib": ["./src/lib"],
+      "$lib/*": ["./src/lib/*"],
+      "$app/environment": ["./tests/setup/stubs/app-environment.ts"],
+      "$app/navigation": ["./tests/setup/stubs/app-navigation.ts"],
+      "$app/state": ["./tests/setup/stubs/app-state.ts"],
+      "$app/stores": ["./tests/setup/stubs/app-stores.ts"],
+      "$env/dynamic/public": ["./tests/setup/stubs/env-dynamic-public.ts"],
+      "$env/static/public": ["./tests/setup/stubs/env-static-public.ts"]
+    }
+  },
+  "include": [
+    "tests/unit/video-record/**/*.ts",
+    "src/lib/shared/video-record/**/*.ts"
+  ]
+}
+```
+
+Written to the project root as a throwaway file and run with `npx tsc -p`. It
+reproduces the reported error verbatim —
+`video-recorder-lifecycle.test.ts(259,31): error TS2558: Expected 0 type
+arguments, but got 1` — and exits clean once the type arguments are removed. The
+`paths` block is there because the config's own `include` drops the SvelteKit
+ambient declarations, so `$app/*` and `$env/*` are pointed at the same stubs the
+vitest config uses.
+
 ## Other verification
 
 | Check                                                                                   | Result                       |
 | --------------------------------------------------------------------------------------- | ---------------------------- |
+| `tsc -p` narrow config above, over the recording tests and service                      | clean                        |
 | `tsc --noEmit --strict` on `video-recorder.ts` (self-contained, imports only `./types`) | clean                        |
 | `eslint src/lib/shared/video-record/services/video-recorder.ts`                         | clean                        |
-| `prettier --check` on `video-recorder.ts` and both new unit-test files                  | clean                        |
+| `prettier --check` on every changed file except the pre-existing panel wrapping         | clean                        |
+| `npm run check:fast`                                                                    | no `video-record` diagnostic |
 | `vitest run tests/unit/shared src/lib/shared/video-record tests/unit/video-record`      | 13 files, 85 tests, all pass |
 
 `tests/unit/shared/firestore/firestore-crud.test.ts` and
@@ -307,52 +363,117 @@ silently and leave their spinner up. Once `isCameraAcquisitionCancelled` is on
 their sentinel string into this file, which is the duplicate their predicate
 exists to prevent.
 
+## Defect 8: teardown itself still stopped the shared camera
+
+Found by the independent review of `5fc424aa`, and the sharpest version of
+defect 4. Defect 4 removed the global `stop()` from the paths that run _after_
+the panel's attempt was cancelled, and kept the one in `onDestroy` on the
+argument that the panel still owned the attempt at that instant. The review's
+correction: it does not. Another surface reaching the same singleton can take
+the camera over at any point, including before this panel closes, and a
+late-callback guard says nothing about teardown itself, because teardown is the
+moment of the damage.
+
+Measured before the fix, with the other consumer acquiring first and the panel
+closing second:
+
+- panel mid-handshake when the other consumer acquired: the other consumer's
+  tracks went to `readyState === "ended"` on the panel's close
+- panel holding a stream the other consumer took over: same, on top of its own
+  already-dead tracks
+
+The two defect-4 tests did not catch this because both unmount the panel before
+the other consumer acquires.
+
+Fix: the panel never calls `stop()`. Teardown releases only the stream this
+panel was handed. An acquisition still in flight is covered by the `destroyed`
+checks in `initializeCamera`, which release the stream as it arrives, so nothing
+is left running either way — confirmed against the real manager below, since
+dropping the call also drops the ticketed manager's cancel signal.
+
+### The scoped calls this wants, and cannot make yet
+
+`claude/camera-resource-lifecycle-sdoeg6` at `7700457c` adds exactly the
+ownership primitives this panel needs: `initialize()` returns a
+`CameraAcquisition` handle, `start(handle)` refuses a handshake that was
+cancelled or taken over, `abandonAcquisition(handle)` gives up only that
+handshake and no-ops once another consumer owns the instance, and
+`releaseStream(stream)` stops the tracks it is handed while clearing the
+manager's own state only if that is still the stream it handed out. `stop()`
+keeps its instance-wide meaning for panels that own their own manager.
+
+None of those exist on `origin/main`, so this branch cannot call them and
+compile. The integration dependency is recorded at the call site in
+`VideoRecordPanel.svelte` rather than in prose only. Once the camera branch
+lands, the panel should capture the handle from `initialize()`, pass it to
+`start(handle)`, and replace the teardown with `abandonAcquisition(handle)` when
+no stream arrived and `releaseStream(stream)` when one did. That buys two things
+track-level release cannot: the handshake is cancelled immediately instead of
+the camera opening and closing a moment later, and the manager's own `_stream`
+and `_isActive` stop going stale.
+
 ### Before and after
 
 `vitest run --config tests/config/vitest.components.config.ts
 src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts`
 
-| Test                                                                 | At `f50841d7`'s parent | At `639ea6312d` | Now  |
-| -------------------------------------------------------------------- | ---------------------- | --------------- | ---- |
-| does not open the camera when destroyed while enumerating devices    | fail                   | pass            | pass |
-| ends a stream that arrives after the panel is destroyed              | fail                   | pass            | pass |
-| leaves a newer consumer's camera alone when this start is rejected   | not written            | fail            | pass |
-| leaves a newer consumer's camera alone when this stream arrives late | not written            | fail            | pass |
-| still opens the camera for a panel that stays mounted                | pass                   | pass            | pass |
+| Test                                                                 | At `f50841d7`'s parent | At `639ea6312d` | At `5fc424aa` | Now  |
+| -------------------------------------------------------------------- | ---------------------- | --------------- | ------------- | ---- |
+| does not open the camera when destroyed while enumerating devices    | fail                   | pass            | pass          | pass |
+| ends a stream that arrives after the panel is destroyed              | fail                   | pass            | pass          | pass |
+| leaves a newer consumer's camera alone when this start is rejected   | not written            | fail            | pass          | pass |
+| leaves a newer consumer's camera alone when this stream arrives late | not written            | fail            | pass          | pass |
+| leaves alone a camera another consumer opened before teardown        | not written            | not written     | fail          | pass |
+| leaves alone a camera another consumer took over from this panel     | not written            | not written     | fail          | pass |
+| still opens the camera for a panel that stays mounted                | pass                   | pass            | pass          | pass |
 
 Defect 3: 2 failed, 1 passed, then 3 passed. Defect 4: 2 failed, 3 passed, then
-5 passed. The last row is the control throughout: it would catch a guard that
-simply stopped acquiring cameras.
+5 passed. Defect 8: 2 failed, 5 passed, then 7 passed. The last row is the
+control throughout: it would catch a guard that simply stopped acquiring
+cameras.
 
 The tests stand in a contract-faithful fake for the camera manager rather than
 the real one, so they do not break when the camera agent changes it, and so
-they assert what this consumer owes the contract. The fake now models the
-singleton the way the ticketed manager behaves: one instance across consumers,
-each `start()` taking a ticket, and a start that settles after a newer one took
-over never becoming the held stream. That is what makes a stray global stop
-visible, as somebody else's tracks ending. The streams it hands back are real
-`MediaStream`s from `canvas.captureStream()`, so teardown is read off the
-tracks' own `readyState` rather than off a spy, and no camera permission is
-involved.
+they assert what this consumer owes the contract. The fake models the singleton
+the way the real manager behaves: one instance across consumers, each `start()`
+taking a ticket, a start that settles after a newer one took over never becoming
+the held stream, and a newer `start()` releasing whatever was held first. That
+is what makes a stray global stop visible, as somebody else's tracks ending. The
+streams it hands back are real `MediaStream`s from `canvas.captureStream()`, so
+teardown is read off the tracks' own `readyState` rather than off a spy, and no
+camera permission is involved.
 
 ### Cross-branch integration check
 
-Because the fake could in principle flatter the guard, the correction was also
-run against the real ticketed manager, on a local throwaway merge of this branch
-with `claude/camera-resource-lifecycle-sdoeg6` (never pushed, branch deleted
-after). A scratch test mounted `VideoRecordPanel` with no mock of
-`get-camera-manager`, stubbed `navigator.mediaDevices` so `getUserMedia` could
-be held open, unmounted the panel mid-acquisition, let a second consumer acquire
-the singleton, then released the panel's abandoned `getUserMedia`.
+Because the fake could in principle flatter the guard, each correction was also
+run against the real manager, on a local throwaway merge of this branch with
+`claude/camera-resource-lifecycle-sdoeg6` (never pushed, branch deleted after,
+no unrelated ancestry carried onto this branch). A scratch test mounted
+`VideoRecordPanel` with no mock of `get-camera-manager` and stubbed
+`navigator.mediaDevices` so `getUserMedia` could be held open.
+
+For defect 4, against the ticketed manager at `39f0271b`:
 
 - pre-correction panel: the next consumer's tracks ended, the assertion "the
   next consumer's camera survived the stale attempt" failed
 - corrected panel: the abandoned stream ended, the next consumer's tracks stayed
   `live`, and `manager.isActive` stayed true
 
-On that merged tree the camera agent's own suites also pass unchanged:
-`camera-manager.test.ts` plus this branch's recorder tests, 18 tests, and the
-`PerformancePreview` and `VideoRecordPanel` component suites, 7 tests.
+For defect 8, against the handle-based manager at `7700457c`, with the other
+consumer acquiring before the panel closes:
+
+- pre-correction panel: "teardown did not touch the other consumer's camera"
+  failed
+- corrected panel: the other consumer's tracks stayed `live` and `isActive`
+  stayed true, the panel's own abandoned request was still released when it
+  landed, and a panel closing mid-acquisition with nobody replacing it still
+  left nothing running. That last case is the one that could have regressed,
+  since dropping the `stop()` also drops that manager's cancel signal; it passes
+  both before and after, because the panel's own late guard closes the stream.
+
+On that merged tree both agents' suites pass unchanged: `camera-manager.test.ts`
+plus this branch's recorder tests, 27 tests, and the `PerformancePreview` and
+`VideoRecordPanel` component suites, 10 tests.
 
 ### Environment note
 
@@ -456,21 +577,20 @@ different route. It is not new to this change — the callback carries no
 completion signal — and it is no longer papered over by a duration that kept
 climbing.
 
-`onDestroy` still calls `cameraService.stop()`, and the camera manager is a
-module-level singleton shared with `PerformancePreview`. If both panels are
-mounted at once, that stop takes the camera from the other one. This is the
-pre-existing coupling, unchanged by this branch, and it is load-bearing: the
-ticketed manager reads a `stop()` during the handshake as the cancel signal.
-Defect 4 removed the part that reached past the panel's own ownership window;
-making acquisition per-consumer would remove the rest and belongs to the camera
-manager's owner.
+The panel no longer calls `cameraService.stop()` anywhere, which also gives up
+the only cancel signal the ticketed manager currently exposes to it. A panel
+closing mid-handshake therefore lets its acquisition finish and releases the
+stream as it arrives, so the camera is open for a moment longer than a cancel
+would have allowed. Measured against the real manager on the throwaway merge:
+nothing is left running either way. `abandonAcquisition(handle)` closes that
+gap properly, and is follow-up 5.
 
-`releaseOwnStream` on the late-resolve path no longer tells the manager that
-the stream it may still be holding is dead. Against the ticketed manager this
-cannot happen, because an invalidated start rejects rather than delivering.
-Against a manager without ticketing it leaves `_stream` pointing at ended
-tracks until the next `start()`, which releases it anyway. The device is freed
-either way, and that is the trade for never touching another panel's camera.
+`releaseOwnStream` never tells the manager that the stream it may still be
+holding is dead. While this panel is the current holder, that leaves `_stream`
+pointing at ended tracks and `_isActive` true until the next `start()`, which
+releases it anyway. The device is freed regardless, and that is the trade for
+never touching another panel's camera; `releaseStream(stream)` in the same
+follow-up removes the trade.
 
 ## Follow-ups, not fixed here
 
@@ -513,15 +633,30 @@ either way, and that is the trade for never touching another panel's camera.
    when a stream was actually delivered, but the victim would be the same. For
    the camera or export owner. Read from that branch, not reproduced.
 
-5. **Adopt `isCameraAcquisitionCancelled` in this panel's `catch`.** One line,
-   once the symbol is on `main`, so a still-mounted panel whose start was
-   superseded stops painting the cancellation text as a camera error. See the
-   alignment note under defect 4.
+5. **Adopt the camera branch's scoped calls in this panel.** Blocked only on
+   `claude/camera-resource-lifecycle-sdoeg6` reaching `main`, and written out at
+   the call site in `VideoRecordPanel.svelte`: capture the `CameraAcquisition`
+   handle from `initialize()`, pass it to `start(handle)`, and replace the
+   teardown with `abandonAcquisition(handle)` or `releaseStream(stream)`. Same
+   merge brings `isCameraAcquisitionCancelled`, which is the one line that stops
+   a still-mounted superseded panel painting the cancellation text as a camera
+   error. See defect 8 and the alignment note under defect 4. Verified to work
+   against that branch on a throwaway merge; not adoptable here because none of
+   the symbols exist on `main`.
 
 6. **Manager-side cancellation, already in flight elsewhere.** On `main` the
    manager has none: `stop()` clears `_stream` and `_isActive`, but an in-flight
    `start()` that resolves afterwards sets them again, so it comes back to life
    after being stopped. `claude/camera-resource-lifecycle-sdoeg6` fixes exactly
-   that with per-start tickets, and this branch's guard is written to be correct
-   against both. Nothing left for this scope; noted so the two branches are not
-   read as duplicating each other.
+   that with per-start tickets and acquisition handles, and this branch's guard
+   is written to be correct against both. Nothing left for this scope; noted so
+   the two branches are not read as duplicating each other.
+
+7. **Nothing type-checks `tests/`.** `tsconfig.json` narrows the SvelteKit
+   config's `include` to `src/**`, so `npm run check`, `check:fast` and
+   `check:tsc` all skip the test suite, and a test that does not compile still
+   passes under vitest. That is how the `TS2558` above survived a review round.
+   Widening the include, or adding a committed test-only tsconfig to the check
+   scripts, is a repository-wide call and a shared-surface change this scope
+   does not own. Measured: the narrow config in the section above reproduces the
+   error the root config cannot see.
