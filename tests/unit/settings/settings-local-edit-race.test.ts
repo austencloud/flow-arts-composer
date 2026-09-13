@@ -438,6 +438,98 @@ describe("writes that settle out of order", () => {
     });
   });
 
+  it("keeps a newer failed payload when an older replay's success settles after it", async () => {
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    const queueKey = `${LEGACY_QUEUE_KEY}:user-b`;
+    localStorage.setItem(
+      queueKey,
+      JSON.stringify({
+        settings: { hapticFeedback: true, reducedMotion: false },
+        sequence: 7,
+        session: "a-previous-page-load",
+        timestamp: Date.now(),
+      })
+    );
+
+    persister.saveSettings.mockClear();
+    const oldReplay = deferred<void>();
+    persister.saveSettings
+      .mockReturnValueOnce(oldReplay.promise)
+      .mockRejectedValueOnce(new Error("offline"));
+
+    const draining = drainOfflineQueue(service);
+    await flushMicrotasks();
+    expect(persister.saveSettings).toHaveBeenCalledTimes(1);
+
+    // The user edits mid-replay; the write coalesces behind the open replay.
+    await service.updateSetting("reducedMotion", true);
+    await vi.advanceTimersByTimeAsync(DEBOUNCE_MS);
+    await flushMicrotasks();
+    expect(persister.saveSettings).toHaveBeenCalledTimes(1);
+
+    // The old replay succeeds. Releasing its slot immediately starts the
+    // coalesced newer save, which fails fast and queues the newer payload —
+    // all before the replay's own continuation resumes.
+    oldReplay.resolve();
+    await draining;
+    await flushMicrotasks();
+
+    expect(persister.saveSettings).toHaveBeenCalledTimes(2);
+
+    // That continuation must not clear a queue entry it never replayed, nor
+    // release pins belonging to the newer edit. Losing this drops the user's
+    // choice from the server, the queue, and the pin set at once.
+    const queued = JSON.parse(localStorage.getItem(queueKey) ?? "null");
+    expect(queued?.settings).toMatchObject({ reducedMotion: true });
+    expect(service.currentSettings.reducedMotion).toBe(true);
+  });
+
+  it("leaves a queue entry that was replaced while the replay was open", async () => {
+    const service = await loadSettingsService();
+    await service.initializeFirebaseSync();
+    await flushMicrotasks();
+
+    const queueKey = `${LEGACY_QUEUE_KEY}:user-b`;
+    localStorage.setItem(
+      queueKey,
+      JSON.stringify({
+        settings: { reducedMotion: false },
+        sequence: 7,
+        session: "a-previous-page-load",
+        timestamp: Date.now(),
+      })
+    );
+
+    persister.saveSettings.mockClear();
+    const oldReplay = deferred<void>();
+    persister.saveSettings.mockReturnValueOnce(oldReplay.promise);
+
+    const draining = drainOfflineQueue(service);
+    await flushMicrotasks();
+
+    // Another tab writes a newer payload to the shared key while this replay
+    // is open. Ordering alone cannot prevent this — only entry identity can.
+    localStorage.setItem(
+      queueKey,
+      JSON.stringify({
+        settings: { reducedMotion: true },
+        sequence: 2,
+        session: "another-tab",
+        timestamp: Date.now(),
+      })
+    );
+
+    oldReplay.resolve();
+    await draining;
+    await flushMicrotasks();
+
+    const queued = JSON.parse(localStorage.getItem(queueKey) ?? "null");
+    expect(queued?.settings).toMatchObject({ reducedMotion: true });
+  });
+
   it("queues a failed edit whose sequence is lower than a previous page load's", async () => {
     // A queue entry left by an earlier page load, stamped with that session's
     // much higher edit sequence.
