@@ -17,17 +17,108 @@ import { UndoManager, UndoOperationType } from "../../../services/undo-manager";
 import { createUndoController } from "../undo-controller.svelte";
 import { removeStep } from "../../../services/step-operations/step-removal-handler";
 import { createSequenceState } from "../../sequence-state-orchestrator.svelte";
+import { createSequence } from "$lib/shared/create/services/sequence-domain-manager";
+import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
+import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
+import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import {
+  HandSide,
+  MotionType,
+  Orientation,
+  RotationDirection,
+} from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import {
+  GridLocation,
+  GridMode,
+  GridPosition,
+} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
+/**
+ * Canonical alpha1 -> alpha3 shift: left hand south to west, right hand north
+ * to east. Both hands are visible, so the sequence takes the real start-position
+ * and reversal paths through setCurrentSequence instead of the derivation
+ * failure branch.
+ */
+function shiftMotion(hand: HandSide, start: GridLocation, end: GridLocation) {
+  return createMotionData({
+    hand,
+    motionType: MotionType.PRO,
+    rotationDirection: RotationDirection.CLOCKWISE,
+    startLocation: start,
+    endLocation: end,
+    arrowLocation: end,
+    startOrientation: Orientation.IN,
+    endOrientation: Orientation.IN,
+    gridMode: GridMode.DIAMOND,
+    turns: 0,
+  });
+}
+
+function staticMotion(hand: HandSide, at: GridLocation) {
+  return createMotionData({
+    hand,
+    motionType: MotionType.STATIC,
+    rotationDirection: RotationDirection.NO_ROTATION,
+    startLocation: at,
+    endLocation: at,
+    arrowLocation: at,
+    startOrientation: Orientation.IN,
+    endOrientation: Orientation.IN,
+    gridMode: GridMode.DIAMOND,
+    turns: 0,
+  });
+}
+
+function alpha1StartPosition() {
+  return createStartPositionData({
+    id: "start-alpha1",
+    startPosition: GridPosition.ALPHA1,
+    endPosition: GridPosition.ALPHA1,
+    gridPosition: GridPosition.ALPHA1,
+    motions: {
+      [HandSide.LEFT]: staticMotion(HandSide.LEFT, GridLocation.SOUTH),
+      [HandSide.RIGHT]: staticMotion(HandSide.RIGHT, GridLocation.NORTH),
+    },
+  });
+}
+
+function canonicalStep(stepNumber: number) {
+  return createStepData({
+    id: `step-${stepNumber}`,
+    stepNumber,
+    startPosition: GridPosition.ALPHA1,
+    endPosition: GridPosition.ALPHA3,
+    motions: {
+      [HandSide.LEFT]: shiftMotion(
+        HandSide.LEFT,
+        GridLocation.SOUTH,
+        GridLocation.WEST
+      ),
+      [HandSide.RIGHT]: shiftMotion(
+        HandSide.RIGHT,
+        GridLocation.NORTH,
+        GridLocation.EAST
+      ),
+    },
+  });
+}
+
 function makeSequence(word: string, stepCount: number): SequenceData {
+  const startPosition = alpha1StartPosition();
   return {
+    ...createSequence({ name: word, word, length: 0 }),
+    // A stable id across edits: the orchestrator treats a changed id as loading
+    // a different sequence and drops the selection.
     id: "seq-1",
     word,
-    steps: Array.from({ length: stepCount }, (_, index) => ({
-      id: `step-${index + 1}`,
-      stepNumber: index + 1,
-      motions: {},
-    })),
+    gridMode: GridMode.DIAMOND,
+    steps: Array.from({ length: stepCount }, (_, index) =>
+      canonicalStep(index + 1)
+    ),
+    startPosition,
+    startingPosition: startPosition,
   } as unknown as SequenceData;
 }
 
@@ -147,6 +238,79 @@ describe("Create history: undo/redo round trips", () => {
     expect(presses).toBe(50);
     expect(workspace.currentSequence?.word).toBe("W5");
   });
+
+  it("bounds the redo stack at the undo cap within one tab", () => {
+    // The redo stack has no cap of its own. It does not need one here: entries
+    // only reach it one press at a time from an undo stack that is already
+    // capped, so draining a saturated tab lands exactly at the cap.
+    const manager = new UndoManager();
+    for (let i = 0; i < 200; i++) {
+      manager.pushUndo(UndoOperationType.ADD_BEAT, {
+        sequence: makeSequence(`C${i}`, 1),
+        selectedStepNumber: null,
+        activeSection: "construct" as never,
+        timestamp: 0,
+      });
+    }
+    expect(manager.undoHistory).toHaveLength(50);
+
+    let presses = 0;
+    while (
+      manager.undo("construct", {
+        sequence: makeSequence("now", 1),
+        selectedStepNumber: null,
+        activeSection: "construct" as never,
+        timestamp: 0,
+      })
+    ) {
+      presses++;
+    }
+    expect(presses).toBe(50);
+    expect(manager.redoHistory).toHaveLength(50);
+  });
+
+  it("keeps another tab's redo alive, so the combined stack can pass the cap", () => {
+    // pushUndo only invalidates the redo entries of the tab that pushed —
+    // deliberate, since the tabs hold independent sequences. The consequence is
+    // that the persisted redo stack grows by one cap per tab that has been
+    // saturated and drained, so it is bounded by cap x tabs, not by cap.
+    const manager = new UndoManager();
+    const drain = (section: string) => {
+      while (
+        manager.undo(section, {
+          sequence: makeSequence("now", 1),
+          selectedStepNumber: null,
+          activeSection: section as never,
+          timestamp: 0,
+        })
+      ) {
+        /* drain this tab */
+      }
+    };
+    const saturate = (section: string) => {
+      for (let i = 0; i < 60; i++) {
+        manager.pushUndo(UndoOperationType.ADD_BEAT, {
+          sequence: makeSequence(`${section}${i}`, 1),
+          selectedStepNumber: null,
+          activeSection: section as never,
+          timestamp: 0,
+        });
+      }
+    };
+
+    saturate("construct");
+    drain("construct");
+    expect(manager.redoHistory).toHaveLength(50);
+
+    saturate("generate");
+    expect(manager.redoHistory).toHaveLength(50); // construct's future survives
+    drain("generate");
+    expect(manager.redoHistory).toHaveLength(100);
+
+    // Still reachable in both directions, which is the point of keeping them.
+    expect(manager.getLastRedoEntry("construct")).not.toBeNull();
+    expect(manager.getLastRedoEntry("generate")).not.toBeNull();
+  });
 });
 
 describe("Create history: one delete is one history entry", () => {
@@ -196,13 +360,45 @@ describe("Create history: one delete is one history entry", () => {
 });
 
 describe("Create history: clearing animation cannot outlive the state it clears", () => {
+  /**
+   * The real orchestrator, wired the way the Construct tab wires it.
+   * clearSequenceCompletely() waits out the 300ms step-grid transition before
+   * nulling the sequence, and the undo controller fires it without awaiting.
+   */
+  function realWorkspace() {
+    return createSequenceState({
+      tabId: "construct",
+      ReversalDetector: reversalDetector,
+    });
+  }
+
+  /**
+   * A canonical fixture reaches the real start-position and reversal paths, so
+   * these traces must run without a single recoverable-error log. A fixture
+   * that fell back to the derivation failure branch would still satisfy the
+   * assertions below while exercising a path the app never takes.
+   */
+  function watchForRecoverableErrors() {
+    // spyOn without a mock implementation keeps writing to stderr; this
+    // observes the noise rather than hiding it.
+    return {
+      warn: vi.spyOn(console, "warn"),
+      error: vi.spyOn(console, "error"),
+    };
+  }
+
+  function expectQuiet(spies: ReturnType<typeof watchForRecoverableErrors>) {
+    expect(spies.warn).not.toHaveBeenCalled();
+    expect(spies.error).not.toHaveBeenCalled();
+    spies.warn.mockRestore();
+    spies.error.mockRestore();
+  }
+
   it("does not wipe a redone sequence that lands during the clear animation", async () => {
     vi.useFakeTimers();
+    const spies = watchForRecoverableErrors();
     try {
-      // Real orchestrator: clearSequenceCompletely() waits out the 300ms
-      // step-grid transition before nulling the sequence, and the undo
-      // controller fires it without awaiting.
-      const sequenceState = createSequenceState({ tabId: "construct" });
+      const sequenceState = realWorkspace();
       const manager = new UndoManager();
       const controller = createUndoController({
         UndoManager: manager,
@@ -226,6 +422,7 @@ describe("Create history: clearing animation cannot outlive the state it clears"
 
       await vi.advanceTimersByTimeAsync(1000);
       expect(sequenceState.currentSequence?.word).toBe("A");
+      expectQuiet(spies);
     } finally {
       vi.useRealTimers();
     }
@@ -233,8 +430,9 @@ describe("Create history: clearing animation cannot outlive the state it clears"
 
   it("does not wipe a sequence created during the clear animation", async () => {
     vi.useFakeTimers();
+    const spies = watchForRecoverableErrors();
     try {
-      const sequenceState = createSequenceState({ tabId: "construct" });
+      const sequenceState = realWorkspace();
       sequenceState.setCurrentSequence(makeSequence("A", 1));
 
       const clearing = sequenceState.clearSequenceCompletely();
@@ -245,6 +443,7 @@ describe("Create history: clearing animation cannot outlive the state it clears"
       await clearing;
 
       expect(sequenceState.currentSequence?.word).toBe("B");
+      expectQuiet(spies);
     } finally {
       vi.useRealTimers();
     }
@@ -252,8 +451,9 @@ describe("Create history: clearing animation cannot outlive the state it clears"
 
   it("still clears when nothing else claimed the workspace", async () => {
     vi.useFakeTimers();
+    const spies = watchForRecoverableErrors();
     try {
-      const sequenceState = createSequenceState({ tabId: "construct" });
+      const sequenceState = realWorkspace();
       sequenceState.setCurrentSequence(makeSequence("A", 1));
 
       const clearing = sequenceState.clearSequenceCompletely();
@@ -261,6 +461,7 @@ describe("Create history: clearing animation cannot outlive the state it clears"
       await clearing;
 
       expect(sequenceState.currentSequence).toBeNull();
+      expectQuiet(spies);
     } finally {
       vi.useRealTimers();
     }

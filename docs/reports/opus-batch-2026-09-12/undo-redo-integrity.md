@@ -19,11 +19,23 @@ Five further findings are reported below without runtime edits.
 
 ## Revisions
 
-- Base: `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`)
-- Final code change: `92e507095b60e5677b87965049087b3dfaa6cfc5`
-- Final branch head: `b80f1b88` (this report) — verification below ran against
-  `92e5070`, which carries every code and test change
+- Base: `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at the start)
+- Merged: `6e4c1b5aa` (`origin/main` after PR #49) — no conflict, and it does
+  not touch either fixed file
 - Branch: `claude/undo-redo-integrity-fy8xr2`
+- Final SHA: see the last commit on that branch; the verification below ran on
+  the working tree that became it
+
+### Review revision (post local review of `f2f7d9ef`)
+
+- Fixtures rebuilt from canonical factory data; the `motions: {}` placeholders
+  that pushed `setCurrentSequence` into its derivation failure branch are gone,
+  and the three orchestrator tests now assert stderr stays silent rather than
+  suppressing it.
+- The F3/F5 "unbounded redo stack" claim was wrong and is corrected below with
+  measured bounds and two new tests.
+- Code fixes unchanged: no new evidence called for a change, and the
+  before/after proof still holds against the canonical fixtures.
 
 ## Files owned by this task
 
@@ -31,7 +43,7 @@ Five further findings are reported below without runtime edits.
 | - | - |
 | `src/lib/features/create/shared/state/sequence-state-orchestrator.svelte.ts` | +15 lines: `clearSequenceCompletely` ownership guard |
 | `src/lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte` | -2/+7 lines: removed the duplicate delete snapshot |
-| `src/lib/features/create/shared/state/create-module/__tests__/undo-redo-integrity.test.ts` | New, 268 lines |
+| `src/lib/features/create/shared/state/create-module/__tests__/undo-redo-integrity.test.ts` | New, 469 lines |
 
 No instruction file, no shared history primitive, and no other agent's path was
 modified. `src/lib/shared/history/command-stack.svelte.ts` was audited and left
@@ -138,11 +150,11 @@ All commands run in this cloud checkout; no laptop, no dev server, no browser.
 
 | Command | Result |
 | - | - |
-| `npx vitest run --config tests/config/vitest.config.ts src/lib/features/create/shared/state/create-module/__tests__/undo-redo-integrity.test.ts` | 8/8 passed |
-| Same file with both fixes reverted (`git stash`) | 3 failed / 5 passed — the three defect guards |
-| `npx vitest run --config tests/config/vitest.config.ts src/lib/features/create src/lib/shared/create src/lib/shared/history src/lib/features/assemble-lab` | 53 files, 371 tests passed |
+| `npx vitest run --config tests/config/vitest.config.ts src/lib/features/create/shared/state/create-module/__tests__/undo-redo-integrity.test.ts` | 10/10 passed, no stderr |
+| Same file with both fixed sources reverted to the base commit | 3 failed / 7 passed — the three defect guards |
+| `npx vitest run --config tests/config/vitest.config.ts src/lib/features/create src/lib/shared/create src/lib/shared/history src/lib/features/assemble-lab` | 53 files, 373 tests passed |
 | `npm run check:fast` at `HEAD` | 582 errors, 44 warnings |
-| `npm run check:fast` with the three files reverted to `origin/main` | 582 errors, 44 warnings — identical baseline, no new errors |
+| `npm run check:fast` with the fixed sources reverted to the base commit | 582 errors, 44 warnings — identical baseline, no new errors |
 | `npm run check:fast`, filtered to the changed files | no errors or warnings in any of them |
 | `npx eslint` on the changed `.ts` files | clean (the `.svelte` file is in the eslint ignore list) |
 
@@ -158,17 +170,38 @@ a coordinator re-adding the duplicate push.
 
 ### Tests added
 
-`undo-redo-integrity.test.ts`, 8 cases:
+`undo-redo-integrity.test.ts`, 10 cases:
 
 - three-edit trace, undo to the start and redo to the end, asserting the exact
   sequence at every step;
 - redo future dropped when a new edit lands on an undo;
 - 55 edits against the 50-entry limit — 50 presses available, oldest forgotten;
+- redo bounded at the undo cap within one tab (200 pushes, drained);
+- another tab's redo survives a push, so the combined stack reaches 2x the cap;
 - one `removeStep` call records exactly one entry and one effective undo;
 - source contract: `handleStepDelete` delegates without pushing;
 - redo inside the clear window survives (real orchestrator);
 - a sequence created inside the clear window survives (real orchestrator);
 - an unraced clear still clears (real orchestrator).
+
+### Fixtures
+
+Sequences are built from the project factories — `createSequence`,
+`createStepData`, `createStartPositionData`, `createMotionData` — as a canonical
+alpha1 -> alpha3 shift (left south to west, right north to east) with an
+explicit alpha1 start position and both hands visible. The three
+orchestrator tests construct it with the real `reversalDetector`, matching how
+the Construct tab wires `createSequenceState`.
+
+An earlier revision used `motions: {}` placeholder steps. Those are not
+renderable, so `setCurrentSequence` fell into `startPositionDeriver`'s failure
+branch and logged `Failed to derive start position from first beat` on every
+call. The assertions still passed, but they were passing on a path the app never
+takes. The canonical fixtures run the real start-position and reversal paths
+instead. Rather than silencing that output, the three orchestrator tests now
+assert it never happens: they spy on `console.warn`/`console.error` without a
+mock implementation — so anything logged still reaches stderr — and fail if
+either was called.
 
 Evidence classes: the orchestrator, manager, controller and removal handler are
 the shipping implementations. The workspace stand-in in the first group is a
@@ -230,11 +263,45 @@ Not fixed because it is unreachable: `CreateModuleState.jumpToState` and
 `UndoController.jumpToState` have no `.svelte` caller anywhere in the tree. It
 is latent, not live, and fixing it would be speculative work on dead API.
 
-**F3 — the redo stack is unbounded and fully persisted.** `pushUndo` trims
-`_undoHistory` to 50 but nothing trims `_redoHistory`, and `saveHistory()`
-`JSON.stringify`s both complete stacks — every entry carrying a full sequence
-snapshot — into `localStorage` on every push, undo, redo and clear. A quota
-error is caught and logged, so persistence fails silently from then on.
+**F3 — the redo stack has no cap of its own, but it is not a memory-growth bug.**
+An earlier draft of this report called `_redoHistory` "unbounded". That was
+wrong, and the correction is the measured bound below.
+
+`pushUndo` trims `_undoHistory` to 50; nothing trims `_redoHistory`. It does not
+need trimming within a tab: entries reach redo one press at a time from an
+already-capped undo stack, so a saturated tab drains to exactly the cap.
+Measured on the real `UndoManager` (200 pushes, then undo until it refuses):
+
+```
+single section:   undo stack 50 -> 50 undo presses -> redo 50
+```
+
+The reachable way past the cap is cross-tab, because `pushUndo` invalidates redo
+only for the section that pushed — deliberate, and the reason the tabs can hold
+independent futures. Measured, saturating and draining one tab at a time:
+
+```
+drain construct:  redo  50
+60 generate pushes: redo 50   (construct's future survives, by design)
+drain generate:   redo 100
+drain a third section stamp: redo 150
+```
+
+So the bound is `50 x (distinct section stamps)`, not 50 and not unbounded. In
+practice two stamps reach `UndoManager` — `construct` and `generate`, with
+`spell` routed into `generate` and `assemble` going to `CommandStack` instead —
+so the real ceiling is ~100 entries. Reaching it takes 50+ edits and 50 undo
+presses in each of two tabs: reachable, but not a trace a user falls into.
+
+What is worth knowing is the persisted payload, not the entry count:
+`saveHistory()` `JSON.stringify`s both complete stacks — every entry carrying a
+full sequence snapshot — into `localStorage` on every push, undo, redo and
+clear. At the ceiling that is ~150 snapshots serialized per keystroke-level
+edit. A quota error is caught and logged, so persistence then fails silently.
+That is the cost worth measuring if this is ever revisited; the redo count is
+not.
+
+Both bounds are now pinned by tests in `undo-redo-integrity.test.ts`.
 
 **F4 — history survives a reload that the sequence does not.** `UndoManager`'s
 constructor reloads both stacks from `localStorage`, and nothing clears them when
@@ -248,10 +315,14 @@ flagged rather than claimed.
 (`assemble-history-controller.ts`, `composer-editor-state.svelte.ts`). Behaviour
 is correct, including `_redoStack.length = 0` on a `$state` array — Svelte's
 proxy has an explicit `length` branch in its `set` trap, so reactivity does fire.
-Gaps worth knowing: a command whose `undo()`/`execute()` throws is dropped from
-both stacks (popped before the push that would re-file it), and `_redoStack` is
-unbounded there too. Neither is a reproduced user-facing defect, so no change
-was made.
+One gap worth knowing: a command whose `undo()`/`execute()` throws is dropped
+from both stacks — it is popped before the push that would re-file it. Not a
+reproduced user-facing defect, so no change was made.
+
+An earlier draft also called `CommandStack._redoStack` unbounded. That was
+wrong. `record()` clears redo outright and `undo()` moves one entry at a time
+off a stack already capped at `maxEntries`, so redo can never exceed the cap.
+Measured: 200 `record()` calls, then undo until refused — 50 presses, redo 50.
 
 Also noted while tracing, below the bar for action: `UndoController`'s
 `undoHistory`/`redoHistory` getters return plain arrays without touching
@@ -271,3 +342,5 @@ to the singleton manager with `onChange` and never unsubscribes; and
   suites were not run; the change does not cross type or build boundaries and
   `check:fast` shows an unchanged baseline.
 - F1 and F4 remain open in the tree.
+- Local integration (`wt:finish`) has not been run and is not claimed; that step
+  waits on the local review branch.
