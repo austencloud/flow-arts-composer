@@ -1,7 +1,7 @@
 # Tunnel performer colors
 
 Implemented on `codex/performer-colors` in `C:/tka-performer-colors`.
-Not yet integrated into main: the required full browser viewport pass is incomplete.
+The user explicitly requested merge with the incomplete browser pass documented below.
 
 ## Behavior
 
@@ -53,7 +53,7 @@ No claim of full browser or video-output verification is made.
 
 ## Remaining work
 
-Complete the browser pass through the shipping tunnel route, then run the
+Complete the browser pass through the shipping tunnel route. Local integration uses the
 repository's guarded finish command from the primary checkout:
 
 `npm run wt:finish -- codex/performer-colors --route /create/tunnel`
@@ -61,4 +61,4 @@ repository's guarded finish command from the primary checkout:
 The temporary fixture and MCP bridge were removed, and task-owned server,
 bridge, and browser processes were stopped. Automatic approval review rejected
 deleting the temporary `.color-chrome` profile, so that untracked directory
-remains in the worktree and must not be staged or committed.
+was preserved outside the worktree at `C:/tka-performer-colors-browser-profile`.
