@@ -1,13 +1,29 @@
 ---
-status: active
+status: backlog
 value: 3
 effort: L
-remaining: 'Stage 1 only: route exists dev-only/noindex as designed. Media production, integration, review, and release stages not done. Gated on the video-001 program.'
-depends_on: ""
+remaining: "Stage 1 only, and Stage 1 is confirmed done as designed: +page.server.ts errors 404 outside dev and +page.svelte emits robots noindex,follow in production (re-verified 2026-09-13). Media production, integration, review and release stages are not started; no LessonMediaRequest or ApprovedLessonMediaPackage type exists in src/ yet. Gated on VIDEO-001 - the app requests and presents approved media, it does not produce it. Fixture-complete is not publish-ready."
+depends_on: "2026-07-27-video-001-production-system-program.md"
 plan_path: ""
-tags: []
-last_triaged: 2026-08-02
+tags: [learn, lesson, video, blocked-media-gate]
+last_triaged: 2026-09-13
 ---
+
+<!--
+Reconciliation note, 2026-09-13. Two corrections, no scope change.
+
+1. `depends_on` was empty while the body has always declared VIDEO-001 as the
+   dependency. The queue skips a spec whose `depends_on` names an unshipped
+   spec, so an empty field was ranking this as unblocked work. VIDEO-001 lives
+   at `backlog/2026-07-27-video-001-production-system-program.md` and is not
+   shipped; this spec is correctly blocked.
+2. The read-only drift detector classified this DIVERGENT (53 topical commits
+   of 913 touching its paths, 3 on named files). Adjudicated as a FALSE
+   POSITIVE -- the sample subjects are MPFB thumb orientation, avatar staff
+   grips and first-session lifecycle analytics, none of which is this lesson.
+   That is the detector's documented "broad paths" mode. The production gate
+   below is real and stays.
+-->
 # Staff Choreography First Lesson: Product Spec
 
 **Date:** 2026-07-27  

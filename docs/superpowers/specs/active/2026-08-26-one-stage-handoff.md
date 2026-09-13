@@ -2,7 +2,7 @@
 status: active
 value: 4
 effort: S
-remaining: "Two open items: the app shell's 4K root-font ramp, and the wedged :5173 dev server (Agent Hub restart)."
+remaining: "Nothing in this handoff's own scope - all seven phases landed in 2686a4cb8 and the spec is shipped. Its two carried-over items are not Stage work and should not be picked up from here. (1) The app shell's 4K root-font ramp is shell-wide and currently OWNED BY NOBODY: 2026-08-06-app-shell-4k-lockstep-scaling-design.md says it was superseded by 2026-08-27-logical-pixel-responsive-composition-design.md, and that successor does not exist anywhere in the repository - no file, no commit, no reference. src/app.css also has no html:has(...) root ramp and no 1680 seam, so the mechanism the note describes is not there either. Someone has to write the shell spec before this is actionable. (2) The wedged :5173 dev server is Austen's Agent Hub, not repository work. Close this handoff once item 1 has an owner."
 tags: [stage, 3d, handoff, 4k]
 last_triaged: 2026-08-26
 ---
