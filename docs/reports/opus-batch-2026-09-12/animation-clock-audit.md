@@ -8,7 +8,7 @@ resume, drift across many loops, and pose discontinuities.
 | --- | --- |
 | Date | 2026-09-13 |
 | Base SHA | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`) |
-| Final SHA | `<filled on the final push of this branch>` |
+| Final SHA | `dd46ad64b4c68636f66a03f2ffa0f8c74bd70804` — every deliverable is complete at this commit; the line itself is recorded by its child commit |
 | Branch | `claude/animation-clock-audit-ri0dna` |
 | Production code changed | none |
 
