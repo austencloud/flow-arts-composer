@@ -6,6 +6,7 @@
 
 import type { ConstraintType, ConstraintMode } from "./constraint-types.js";
 import type { MotionData } from "../../core/types/sequence-engine-types.js";
+import type { TurnValue } from "../turns/TurnMaterializer.js";
 
 export type { MotionData };
 
@@ -46,6 +47,9 @@ export interface ConstraintContext {
 
   /** Turn allocation for this step's motions */
   turnAllocation?: { left: number; right: number };
+
+  /** Exact assignments: floats become zero turns on static and dash motions. */
+  assignedTurns?: { left: TurnValue; right: TurnValue };
 
   /** Grid mode (e.g. "diamond", "box") */
   gridMode?: string;
