@@ -40,6 +40,10 @@ export class ConceptProgressTracker {
   private initialized = false;
   private initializingUserId: string | null = null;
   private initPromise: Promise<void> | null = null;
+  // Bumped by every new sign-in attempt and by disconnect(). An attempt only
+  // touches tracker state while its own generation is still current, so a slow
+  // attempt for user A cannot land after a later one for user B has taken over.
+  private syncGeneration = 0;
 
   constructor(persister?: UserKnowledgeProfilePersister) {
     this.persister = persister ?? null;
@@ -54,7 +58,8 @@ export class ConceptProgressTracker {
    * Never rejects: the one caller (TikaModule's auth effect) fires it without
    * awaiting, so a rejection here would only surface as an unhandled promise.
    * A failed sync is logged and leaves the tracker retryable instead.
-   * Concurrent calls for the same user share the in-flight attempt.
+   * Concurrent calls for the same user share the in-flight attempt; a call for
+   * a different user supersedes the one in flight rather than racing it.
    */
   async initializeForUser(userId: string): Promise<void> {
     if (this.initialized && this.userId === userId) return;
@@ -62,9 +67,12 @@ export class ConceptProgressTracker {
       return this.initPromise;
     }
 
+    const generation = ++this.syncGeneration;
     this.initializingUserId = userId;
-    this.initPromise = this.connectUser(userId).finally(() => {
-      if (this.initializingUserId === userId) {
+    this.initPromise = this.connectUser(userId, generation).finally(() => {
+      // Only the attempt that is still current clears the bookkeeping; a
+      // superseded one must not erase its successor's in-flight promise.
+      if (this.syncGeneration === generation) {
         this.initializingUserId = null;
         this.initPromise = null;
       }
@@ -73,7 +81,12 @@ export class ConceptProgressTracker {
     return this.initPromise;
   }
 
-  private async connectUser(userId: string): Promise<void> {
+  /** True while this attempt is still the tracker's current sign-in attempt. */
+  private isCurrentSync(generation: number): boolean {
+    return this.syncGeneration === generation;
+  }
+
+  private async connectUser(userId: string, generation: number): Promise<void> {
     if (!this.persister) {
       this.userId = userId;
       this.initialized = true;
@@ -89,6 +102,10 @@ export class ConceptProgressTracker {
     // throughout; they are pushed by the next successful attempt.
     try {
       const firestoreProgress = await this.persister.loadProgress(userId);
+      // A sign-out or a sign-in as somebody else happened while this load was
+      // in the air. Adopting the document now would show one account's progress
+      // under another's, and the writes below would carry it there too.
+      if (!this.isCurrentSync(generation)) return;
 
       if (firestoreProgress) {
         // Merge: Firestore wins if newer
@@ -102,11 +119,16 @@ export class ConceptProgressTracker {
         } else {
           // Local is newer (offline edits), push to Firestore
           await this.persister.saveProgress(userId, this.progress);
+          if (!this.isCurrentSync(generation)) return;
         }
       } else {
         // No Firestore data exists - upload current localStorage data
-        if (this.progress.completedConcepts.size > 0 || this.progress.concepts.size > 0) {
+        if (
+          this.progress.completedConcepts.size > 0 ||
+          this.progress.concepts.size > 0
+        ) {
           await this.persister.saveProgress(userId, this.progress);
+          if (!this.isCurrentSync(generation)) return;
         }
       }
     } catch (error) {
@@ -118,9 +140,13 @@ export class ConceptProgressTracker {
         "[ConceptProgressTracker] Initial Firestore sync failed; staying local-only and leaving sync retryable:",
         error
       );
-      this.userId = null;
-      this.initialized = false;
-      this.cleanupFirestoreSubscription();
+      // A superseded attempt reports its own failure but owns none of the
+      // state: clearing userId here would disconnect the user who took over.
+      if (this.isCurrentSync(generation)) {
+        this.userId = null;
+        this.initialized = false;
+        this.cleanupFirestoreSubscription();
+      }
       return;
     }
 
@@ -135,6 +161,11 @@ export class ConceptProgressTracker {
     this.firestoreUnsubscribe = this.persister.subscribeToProgress(
       userId,
       (remoteProgress) => {
+        // A snapshot already in flight when the user signed out or switched
+        // accounts must not land. The persister cancels on unsubscribe, but
+        // this callback owns the tracker's state, so it checks too.
+        if (!this.isCurrentSync(generation)) return;
+
         // Only apply remote changes if they're newer than local
         if (
           remoteProgress.lastUpdated.getTime() >
@@ -146,6 +177,7 @@ export class ConceptProgressTracker {
         }
       },
       (error) => {
+        if (!this.isCurrentSync(generation)) return;
         console.error(
           "[ConceptProgressTracker] Firestore progress subscription failed; cross-device sync is disabled until the next sign-in:",
           error
@@ -158,6 +190,9 @@ export class ConceptProgressTracker {
    * Clean up Firestore subscription. Call on sign-out.
    */
   disconnect(): void {
+    // Invalidate any attempt still in flight before clearing state, or it would
+    // resume after the await and re-connect the account that just signed out.
+    this.syncGeneration++;
     this.cleanupFirestoreSubscription();
     this.userId = null;
     this.initialized = false;
@@ -196,17 +231,16 @@ export class ConceptProgressTracker {
    *
    * Completion is never revoked here — the union of both records wins, which
    * is the definition of completed this class already enforces on write.
+   *
+   * Everything derived from that union is then re-derived from it rather than
+   * trusted: a stored `overallProgress` and badge list were computed by
+   * whichever writer produced the document, and a completed record carrying
+   * less than 100% is the same contradiction one level down.
    */
   private reconcileCompletion(progress: LearningProgress): LearningProgress {
-    let completedSetChanged = false;
-
     for (const [conceptId, concept] of progress.concepts) {
-      if (
-        concept.status === "completed" &&
-        !progress.completedConcepts.has(conceptId)
-      ) {
+      if (concept.status === "completed") {
         progress.completedConcepts.add(conceptId);
-        completedSetChanged = true;
       }
     }
 
@@ -219,17 +253,15 @@ export class ConceptProgressTracker {
         );
         continue;
       }
-      if (existing.status !== "completed") {
-        existing.status = "completed";
-        existing.percentComplete = 100;
-      }
+      existing.status = "completed";
+      existing.percentComplete = 100;
     }
 
-    // Only a set that grew invalidates the stored percentage; leave a
-    // consistent record's own number alone.
-    if (completedSetChanged) {
-      this.updateOverallProgress(progress);
-    }
+    // Both are pure functions of the reconciled state, and both are how the
+    // class computes them on every completion, so recomputing here cannot
+    // invent a number or a badge the normal write path would not have awarded.
+    this.updateOverallProgress(progress);
+    this.checkBadges(progress);
 
     return progress;
   }
@@ -324,11 +356,9 @@ export class ConceptProgressTracker {
 
     // Async Firestore write (fire-and-forget)
     if (this.persister && this.userId) {
-      this.persister
-        .saveProgress(this.userId, this.progress)
-        .catch((error) => {
-          console.error("Failed to save progress to Firestore:", error);
-        });
+      this.persister.saveProgress(this.userId, this.progress).catch((error) => {
+        console.error("Failed to save progress to Firestore:", error);
+      });
     }
   }
 
@@ -360,7 +390,10 @@ export class ConceptProgressTracker {
     const existing = this.progress.concepts.get(conceptId);
     if (existing) return existing;
 
-    return this.createConceptRecord(conceptId, this.getConceptStatus(conceptId));
+    return this.createConceptRecord(
+      conceptId,
+      this.getConceptStatus(conceptId)
+    );
   }
 
   startConcept(conceptId: string): void {
@@ -489,20 +522,23 @@ export class ConceptProgressTracker {
     progress.overallProgress = (completedCount / totalConcepts) * 100;
   }
 
-  private checkBadges(): void {
-    const badges = new Set(this.progress.badges);
-    const completed = this.progress.completedConcepts.size;
+  // Additive by contract: a badge is only ever added, never taken back, and
+  // every threshold reads the reconciled completion set. Parameterized for the
+  // same reason as updateOverallProgress.
+  private checkBadges(progress: LearningProgress = this.progress): void {
+    const badges = new Set(progress.badges);
+    const completed = progress.completedConcepts.size;
 
-    if (this.isCategoryComplete("foundation")) {
+    if (this.isCategoryComplete("foundation", progress)) {
       badges.add("foundation-master");
     }
-    if (this.isCategoryComplete("letters")) {
+    if (this.isCategoryComplete("letters", progress)) {
       badges.add("letter-master");
     }
-    if (this.isCategoryComplete("combinations")) {
+    if (this.isCategoryComplete("combinations", progress)) {
       badges.add("combination-master");
     }
-    if (this.isCategoryComplete("advanced")) {
+    if (this.isCategoryComplete("advanced", progress)) {
       badges.add("advanced-master");
     }
 
@@ -516,23 +552,24 @@ export class ConceptProgressTracker {
     // an empty spread returns -Infinity. reduce is safe for any size, including
     // an empty map (seeds at 0).
     let maxStreak = 0;
-    for (const p of this.progress.concepts.values()) {
+    for (const p of progress.concepts.values()) {
       if (p.bestStreak > maxStreak) maxStreak = p.bestStreak;
     }
     if (maxStreak >= 10) badges.add("streak-10");
     if (maxStreak >= 25) badges.add("streak-25");
     if (maxStreak >= 50) badges.add("streak-50");
 
-    this.progress.badges = Array.from(badges);
+    progress.badges = Array.from(badges);
   }
 
-  private isCategoryComplete(category: string): boolean {
+  private isCategoryComplete(
+    category: string,
+    progress: LearningProgress = this.progress
+  ): boolean {
     const categoryConcepts = TKA_CONCEPTS.filter(
       (c) => c.category === category
     );
-    return categoryConcepts.every((c) =>
-      this.progress.completedConcepts.has(c.id)
-    );
+    return categoryConcepts.every((c) => progress.completedConcepts.has(c.id));
   }
 
   getConceptsDueForReview(): string[] {

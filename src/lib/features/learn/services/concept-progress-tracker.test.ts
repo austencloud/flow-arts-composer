@@ -4,21 +4,28 @@
  * These cover the two records of progress that can silently disagree —
  * `completedConcepts` (what unlocking, counts, badges and TIKA read) versus the
  * per-concept `status` records (what the path and detail views render) — and
- * the sign-in merge, where a failed first load used to leave the tracker
- * writing un-merged local state straight over the server's document.
+ * the sign-in merge, where a failed or superseded first load used to leave the
+ * tracker writing un-merged (or the wrong account's) state to the server.
  *
  * The persister is a hand-rolled double rather than a mock of
  * UserKnowledgeProfilePersister's Firestore calls: the tracker only ever sees
  * its three methods, and the real class would drag firebase/firestore into a
- * jsdom run for nothing. The progress logic under test is the real thing.
+ * jsdom run for nothing. The progress logic under test is the real thing, and
+ * so are TKA_CONCEPTS and the badge thresholds the assertions compute against.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ConceptProgressTracker } from "./concept-progress-tracker";
 import type { UserKnowledgeProfilePersister } from "./user-knowledge-profile-persister";
+import { TKA_CONCEPTS } from "../domain/concepts";
 import type { ConceptProgress, LearningProgress } from "../domain/types";
 
 const STORAGE_KEY = "tka_learning_progress";
+
+/** The overall percentage the tracker derives from a completion count. */
+function expectedOverall(completedCount: number): number {
+  return (completedCount / TKA_CONCEPTS.length) * 100;
+}
 
 function conceptRecord(
   conceptId: string,
@@ -54,49 +61,90 @@ function remoteProgress(
   };
 }
 
+function storedProgress(
+  overrides: Record<string, unknown> = {}
+): Record<string, unknown> {
+  return {
+    concepts: {},
+    completedConcepts: [],
+    overallProgress: 0,
+    totalCorrect: 0,
+    totalTimeSpent: 0,
+    badges: [],
+    lastUpdated: new Date("2026-09-01T00:00:00.000Z").toISOString(),
+    ...overrides,
+  };
+}
+
+function writeStoredProgress(overrides: Record<string, unknown> = {}): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(storedProgress(overrides)));
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 interface FakePersister {
   asPersister: UserKnowledgeProfilePersister;
   loadProgress: ReturnType<typeof vi.fn>;
   saveProgress: ReturnType<typeof vi.fn>;
   subscribeToProgress: ReturnType<typeof vi.fn>;
-  /** Push a remote snapshot into the last registered subscription. */
-  emit(progress: LearningProgress): void;
-  unsubscribeCalls: number;
+  /** Ordered log of "subscribe:<uid>" / "unsubscribe:<uid>" / "save:<uid>". */
+  events: string[];
+  /** The user id of the most recent saveProgress call, if any. */
+  lastSaveOwner(): string | undefined;
+  /** Push a remote snapshot into the subscription registered for a user. */
+  emit(userId: string, progress: LearningProgress): void;
 }
 
 function createFakePersister(
-  load: () => Promise<LearningProgress | null>
+  load: (userId: string) => Promise<LearningProgress | null>
 ): FakePersister {
-  let onRemote: ((progress: LearningProgress) => void) | null = null;
-  const fake: Partial<FakePersister> = { unsubscribeCalls: 0 };
+  const events: string[] = [];
+  const listeners = new Map<string, (progress: LearningProgress) => void>();
 
-  const loadProgress = vi.fn(load);
-  const saveProgress = vi.fn(async () => {});
+  const loadProgress = vi.fn((userId: string) => load(userId));
+  const saveProgress = vi.fn(async (userId: string) => {
+    events.push(`save:${userId}`);
+  });
   const subscribeToProgress = vi.fn(
-    (_userId: string, callback: (progress: LearningProgress) => void) => {
-      onRemote = callback;
+    (userId: string, callback: (progress: LearningProgress) => void) => {
+      events.push(`subscribe:${userId}`);
+      listeners.set(userId, callback);
       return () => {
-        fake.unsubscribeCalls = (fake.unsubscribeCalls ?? 0) + 1;
+        events.push(`unsubscribe:${userId}`);
+        listeners.delete(userId);
       };
     }
   );
 
-  Object.assign(fake, {
+  return {
     loadProgress,
     saveProgress,
     subscribeToProgress,
+    events,
     asPersister: {
       loadProgress,
       saveProgress,
       subscribeToProgress,
     } as unknown as UserKnowledgeProfilePersister,
-    emit(progress: LearningProgress) {
-      if (!onRemote) throw new Error("no subscription registered");
-      onRemote(progress);
+    lastSaveOwner() {
+      const calls = saveProgress.mock.calls;
+      return calls.length ? (calls[calls.length - 1]![0] as string) : undefined;
     },
-  });
-
-  return fake as FakePersister;
+    emit(userId: string, progress: LearningProgress) {
+      const listener = listeners.get(userId);
+      if (!listener)
+        throw new Error(`no subscription registered for ${userId}`);
+      listener(progress);
+    },
+  };
 }
 
 describe("ConceptProgressTracker completion reconciliation", () => {
@@ -108,18 +156,7 @@ describe("ConceptProgressTracker completion reconciliation", () => {
   it("reports a concept completed when only completedConcepts carries it", () => {
     // Shape written by the server-side TIKA verifier: the completed list is
     // updated but no per-concept record lands alongside it.
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        concepts: {},
-        completedConcepts: ["grid", "hand-positions"],
-        overallProgress: 0,
-        totalCorrect: 0,
-        totalTimeSpent: 0,
-        badges: [],
-        lastUpdated: new Date("2026-09-01T00:00:00.000Z").toISOString(),
-      })
-    );
+    writeStoredProgress({ completedConcepts: ["grid", "hand-positions"] });
 
     const tracker = new ConceptProgressTracker();
 
@@ -134,57 +171,93 @@ describe("ConceptProgressTracker completion reconciliation", () => {
   it("adds a concept whose record says completed back into completedConcepts", () => {
     // Shape left behind when a merge write replaces the completedConcepts
     // array but the stale concept records survive.
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        concepts: {
-          grid: conceptRecord("grid", {
-            status: "completed",
-            percentComplete: 100,
-            correctAnswers: 10,
-            totalAttempts: 10,
-            accuracy: 100,
-          }),
-        },
-        completedConcepts: [],
-        overallProgress: 0,
-        totalCorrect: 10,
-        totalTimeSpent: 0,
-        badges: [],
-        lastUpdated: new Date("2026-09-01T00:00:00.000Z").toISOString(),
-      })
-    );
+    writeStoredProgress({
+      concepts: {
+        grid: conceptRecord("grid", {
+          status: "completed",
+          percentComplete: 100,
+          correctAnswers: 10,
+          totalAttempts: 10,
+          accuracy: 100,
+        }),
+      },
+      completedConcepts: [],
+      totalCorrect: 10,
+    });
 
     const tracker = new ConceptProgressTracker();
     const progress = tracker.getProgress();
 
-    expect(progress.completedConcepts.has("grid")).toBe(true);
-    // The stored 0 is stale once the set grows; overall progress is derived.
-    expect(progress.overallProgress).toBeGreaterThan(0);
+    expect([...progress.completedConcepts]).toEqual(["grid"]);
+    expect(progress.overallProgress).toBe(expectedOverall(1));
+  });
+
+  it("derives overallProgress from the reconciled set, not the stored number", () => {
+    // The set already contained the completion, so nothing is *added* here —
+    // the stored 0 is still wrong and must not survive.
+    writeStoredProgress({
+      completedConcepts: ["grid"],
+      overallProgress: 0,
+    });
+
+    expect(new ConceptProgressTracker().getProgress().overallProgress).toBe(
+      expectedOverall(1)
+    );
+  });
+
+  it("raises a completed record that stored less than 100 percent", () => {
+    writeStoredProgress({
+      concepts: {
+        grid: conceptRecord("grid", {
+          status: "completed",
+          percentComplete: 40,
+          correctAnswers: 4,
+        }),
+      },
+      completedConcepts: ["grid"],
+    });
+
+    const record = new ConceptProgressTracker().getConceptProgress("grid");
+    expect(record.status).toBe("completed");
+    expect(record.percentComplete).toBe(100);
+    // Its own answer counts are still its own.
+    expect(record.correctAnswers).toBe(4);
+  });
+
+  it("awards the badges the reconciled completion count has earned", () => {
+    const completed = TKA_CONCEPTS.slice(0, 5).map((concept) => concept.id);
+    writeStoredProgress({ completedConcepts: completed, badges: [] });
+
+    const badges = new ConceptProgressTracker().getProgress().badges;
+
+    expect(badges).toContain("first-five");
+    expect(badges).not.toContain("halfway-there");
+  });
+
+  it("never drops a badge the stored progress already carried", () => {
+    writeStoredProgress({ completedConcepts: [], badges: ["streak-10"] });
+
+    expect(new ConceptProgressTracker().getProgress().badges).toEqual([
+      "streak-10",
+    ]);
   });
 
   it("keeps the stats of a completed record it did not have to synthesize", () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        concepts: {
-          grid: conceptRecord("grid", {
-            status: "in-progress",
-            percentComplete: 40,
-            correctAnswers: 4,
-            totalAttempts: 5,
-            accuracy: 80,
-            bestStreak: 3,
-          }),
-        },
-        completedConcepts: ["grid"],
-        overallProgress: 0,
-        totalCorrect: 4,
-        totalTimeSpent: 90,
-        badges: [],
-        lastUpdated: new Date("2026-09-01T00:00:00.000Z").toISOString(),
-      })
-    );
+    writeStoredProgress({
+      concepts: {
+        grid: conceptRecord("grid", {
+          status: "in-progress",
+          percentComplete: 40,
+          correctAnswers: 4,
+          totalAttempts: 5,
+          accuracy: 80,
+          bestStreak: 3,
+        }),
+      },
+      completedConcepts: ["grid"],
+      totalCorrect: 4,
+      totalTimeSpent: 90,
+    });
 
     const tracker = new ConceptProgressTracker();
     const record = tracker.getConceptProgress("grid");
@@ -196,18 +269,7 @@ describe("ConceptProgressTracker completion reconciliation", () => {
   });
 
   it("does not walk a reconciled completion back below 100% when practised again", () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        concepts: {},
-        completedConcepts: ["grid"],
-        overallProgress: 0,
-        totalCorrect: 0,
-        totalTimeSpent: 0,
-        badges: [],
-        lastUpdated: new Date("2026-09-01T00:00:00.000Z").toISOString(),
-      })
-    );
+    writeStoredProgress({ completedConcepts: ["grid"] });
 
     const tracker = new ConceptProgressTracker();
     tracker.recordPracticeAttempt("grid", true, 5);
@@ -228,6 +290,7 @@ describe("ConceptProgressTracker completion reconciliation", () => {
     tracker.recordPracticeAttempt("grid", false, 1);
     expect(tracker.getConceptProgress("grid").percentComplete).toBe(10);
     expect(tracker.getConceptStatus("grid")).toBe("in-progress");
+    expect(tracker.getProgress().overallProgress).toBe(expectedOverall(0));
   });
 
   it("reconciles a remote snapshot before adopting it", async () => {
@@ -237,6 +300,7 @@ describe("ConceptProgressTracker completion reconciliation", () => {
     await tracker.initializeForUser("user-1");
 
     persister.emit(
+      "user-1",
       remoteProgress({
         completedConcepts: new Set(["grid"]),
         lastUpdated: new Date("2027-01-01T00:00:00.000Z"),
@@ -244,6 +308,7 @@ describe("ConceptProgressTracker completion reconciliation", () => {
     );
 
     expect(tracker.getConceptStatus("grid")).toBe("completed");
+    expect(tracker.getProgress().overallProgress).toBe(expectedOverall(1));
   });
 
   it("reconciles the document adopted by the first load", async () => {
@@ -258,6 +323,7 @@ describe("ConceptProgressTracker completion reconciliation", () => {
     await tracker.initializeForUser("user-1");
 
     expect(tracker.getConceptStatus("grid")).toBe("completed");
+    expect(tracker.getProgress().overallProgress).toBe(expectedOverall(1));
   });
 });
 
@@ -303,7 +369,7 @@ describe("ConceptProgressTracker sign-in merge", () => {
     await tracker.initializeForUser("user-1");
 
     expect(persister.loadProgress).toHaveBeenCalledTimes(2);
-    expect(persister.subscribeToProgress).toHaveBeenCalledTimes(1);
+    expect(persister.events).toEqual(["subscribe:user-1"]);
     expect(tracker.getConceptStatus("grid")).toBe("completed");
   });
 
@@ -332,38 +398,24 @@ describe("ConceptProgressTracker sign-in merge", () => {
   });
 
   it("shares one load between concurrent calls for the same user", async () => {
-    let resolveLoad: ((value: LearningProgress | null) => void) | null = null;
-    const persister = createFakePersister(
-      () =>
-        new Promise<LearningProgress | null>((resolve) => {
-          resolveLoad = resolve;
-        })
-    );
+    const load = deferred<LearningProgress | null>();
+    const persister = createFakePersister(() => load.promise);
     const tracker = new ConceptProgressTracker(persister.asPersister);
 
     const first = tracker.initializeForUser("user-1");
     const second = tracker.initializeForUser("user-1");
 
-    resolveLoad!(null);
+    load.resolve(null);
     await Promise.all([first, second]);
 
     expect(persister.loadProgress).toHaveBeenCalledTimes(1);
-    expect(persister.subscribeToProgress).toHaveBeenCalledTimes(1);
+    expect(persister.events).toEqual(["subscribe:user-1"]);
   });
 
   it("still lets a newer remote document win on a successful sign-in", async () => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        concepts: {},
-        completedConcepts: [],
-        overallProgress: 0,
-        totalCorrect: 0,
-        totalTimeSpent: 0,
-        badges: [],
-        lastUpdated: new Date("2026-01-01T00:00:00.000Z").toISOString(),
-      })
-    );
+    writeStoredProgress({
+      lastUpdated: new Date("2026-01-01T00:00:00.000Z").toISOString(),
+    });
     const persister = createFakePersister(async () =>
       remoteProgress({
         completedConcepts: new Set(["grid"]),
@@ -392,7 +444,7 @@ describe("ConceptProgressTracker sign-in merge", () => {
     await tracker.initializeForUser("user-1");
 
     expect(persister.saveProgress).toHaveBeenCalledTimes(1);
-    expect(persister.subscribeToProgress).toHaveBeenCalledTimes(1);
+    expect(persister.events).toEqual(["save:user-1", "subscribe:user-1"]);
     expect(tracker.getConceptStatus("grid")).toBe("completed");
   });
 
@@ -404,5 +456,157 @@ describe("ConceptProgressTracker sign-in merge", () => {
     tracker.completeConcept("grid");
 
     expect(persister.saveProgress).toHaveBeenCalledTimes(1);
+    expect(persister.lastSaveOwner()).toBe("user-1");
+  });
+});
+
+describe("ConceptProgressTracker account switching", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.restoreAllMocks();
+  });
+
+  function createTwoUserPersister() {
+    const loads = new Map<
+      string,
+      ReturnType<typeof deferred<LearningProgress | null>>
+    >();
+    const persister = createFakePersister((userId) => {
+      const pending = deferred<LearningProgress | null>();
+      loads.set(userId, pending);
+      return pending.promise;
+    });
+    return { persister, loads };
+  }
+
+  it("ignores a load for the previous user that resolves after the next one", async () => {
+    const { persister, loads } = createTwoUserPersister();
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    const a = tracker.initializeForUser("user-a");
+    const b = tracker.initializeForUser("user-b");
+
+    // B answers first and takes ownership; A's slow load lands afterwards.
+    loads.get("user-b")!.resolve(null);
+    await b;
+    loads.get("user-a")!.resolve(
+      remoteProgress({
+        completedConcepts: new Set(["grid"]),
+        lastUpdated: new Date("2027-01-01T00:00:00.000Z"),
+      })
+    );
+    await a;
+
+    // A never subscribes, and B's subscription is never torn down for it.
+    expect(persister.events).toEqual(["subscribe:user-b"]);
+    // A's document is not adopted into the signed-in user's view.
+    expect(tracker.getConceptStatus("grid")).toBe("available");
+
+    tracker.completeConcept("grid");
+    expect(persister.lastSaveOwner()).toBe("user-b");
+  });
+
+  it("lets a stale attempt fail without disconnecting the user that took over", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { persister, loads } = createTwoUserPersister();
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    const a = tracker.initializeForUser("user-a");
+    const b = tracker.initializeForUser("user-b");
+
+    loads.get("user-b")!.resolve(null);
+    await b;
+    loads.get("user-a")!.reject(new Error("offline"));
+    await a;
+
+    expect(persister.events).toEqual(["subscribe:user-b"]);
+
+    tracker.completeConcept("grid");
+    expect(persister.lastSaveOwner()).toBe("user-b");
+  });
+
+  it("hands over cleanly when the previous user's load resolves first", async () => {
+    const { persister, loads } = createTwoUserPersister();
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    const a = tracker.initializeForUser("user-a");
+    loads.get("user-a")!.resolve(null);
+    await a;
+
+    const b = tracker.initializeForUser("user-b");
+    loads.get("user-b")!.resolve(null);
+    await b;
+
+    expect(persister.events).toEqual([
+      "subscribe:user-a",
+      "unsubscribe:user-a",
+      "subscribe:user-b",
+    ]);
+    tracker.completeConcept("grid");
+    expect(persister.lastSaveOwner()).toBe("user-b");
+  });
+
+  it("does not connect a user whose load resolves after disconnect", async () => {
+    const { persister, loads } = createTwoUserPersister();
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    const a = tracker.initializeForUser("user-a");
+    tracker.disconnect();
+    loads.get("user-a")!.resolve(
+      remoteProgress({
+        completedConcepts: new Set(["grid"]),
+        lastUpdated: new Date("2027-01-01T00:00:00.000Z"),
+      })
+    );
+    await a;
+
+    expect(persister.events).toEqual([]);
+    expect(tracker.getConceptStatus("grid")).toBe("available");
+
+    // Signed out: a completion stays on this device only.
+    tracker.completeConcept("grid");
+    expect(persister.saveProgress).not.toHaveBeenCalled();
+  });
+
+  it("drops a snapshot delivered after the user signed out", async () => {
+    const { persister, loads } = createTwoUserPersister();
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    const a = tracker.initializeForUser("user-a");
+    loads.get("user-a")!.resolve(null);
+    await a;
+
+    const listener = persister.subscribeToProgress.mock.calls[0]![1] as (
+      progress: LearningProgress
+    ) => void;
+    tracker.disconnect();
+    listener(
+      remoteProgress({
+        completedConcepts: new Set(["grid"]),
+        lastUpdated: new Date("2027-01-01T00:00:00.000Z"),
+      })
+    );
+
+    expect(tracker.getConceptStatus("grid")).toBe("available");
+  });
+
+  it("can sign back in after disconnect", async () => {
+    const { persister, loads } = createTwoUserPersister();
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    const first = tracker.initializeForUser("user-a");
+    loads.get("user-a")!.resolve(null);
+    await first;
+    tracker.disconnect();
+
+    const second = tracker.initializeForUser("user-a");
+    loads.get("user-a")!.resolve(null);
+    await second;
+
+    expect(persister.events).toEqual([
+      "subscribe:user-a",
+      "unsubscribe:user-a",
+      "subscribe:user-a",
+    ]);
   });
 });
