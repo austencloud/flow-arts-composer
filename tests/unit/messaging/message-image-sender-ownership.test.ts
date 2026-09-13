@@ -40,9 +40,27 @@ const mocks = vi.hoisted(() => ({
     },
   })),
   uploadStarted: vi.fn(),
-  deleteObject: vi.fn(async () => undefined),
+  uploadDenied: vi.fn(),
+  deleteDenied: vi.fn(),
+  /** Objects currently in the bucket, by full path. */
+  objects: new Set<string>(),
   task: null as UploadTaskDouble | null,
 }));
+
+/**
+ * `storage.rules:252-263` for `message-image-staging/{userId}/…`:
+ * `create` only when `resource == null` and the signed-in uid equals the uid in
+ * the path; `delete` only for that same uid; `update` never. A double that
+ * always resolves `deleteObject` hides both halves of this — the denial after
+ * an account switch, and the create that the leftover object then blocks.
+ */
+function uidInPath(path: string): string | undefined {
+  return path.split("/")[1];
+}
+
+function storageError(code: string): Error {
+  return Object.assign(new Error(code), { code });
+}
 
 vi.mock("$lib/shared/auth/firebase", () => ({
   getAuthInstance: async () => {
@@ -65,8 +83,33 @@ vi.mock("firebase/functions", () => ({
 
 vi.mock("firebase/storage", () => ({
   ref: vi.fn((_storage: unknown, path: string) => ({ path })),
-  deleteObject: mocks.deleteObject,
+  deleteObject: vi.fn(async (storageRef: { path: string }) => {
+    if (uidInPath(storageRef.path) !== mocks.currentUid) {
+      mocks.deleteDenied(storageRef.path);
+      throw storageError("storage/unauthorized");
+    }
+    if (!mocks.objects.has(storageRef.path)) {
+      throw storageError("storage/object-not-found");
+    }
+    mocks.objects.delete(storageRef.path);
+  }),
   uploadBytesResumable: vi.fn((storageRef: { path: string }) => {
+    // `resource == null` is part of the create rule: a leftover object makes
+    // the retry a permission failure, not an overwrite.
+    if (mocks.objects.has(storageRef.path)) {
+      mocks.uploadDenied(storageRef.path);
+      const denied = {
+        on(
+          _event: string,
+          _onNext: unknown,
+          onError: (reason: unknown) => void
+        ) {
+          onError(storageError("storage/unauthorized"));
+        },
+        cancel: vi.fn(),
+      };
+      return denied;
+    }
     mocks.uploadStarted(storageRef.path);
     let next: ((snapshot: unknown) => void) | undefined;
     let error: ((reason: unknown) => void) | undefined;
@@ -87,7 +130,11 @@ vi.mock("firebase/storage", () => ({
     mocks.task = {
       emitProgress: (fraction: number) =>
         next?.({ bytesTransferred: fraction * 100, totalBytes: 100 }),
-      complete: () => complete?.(),
+      complete: () => {
+        // A completed upload leaves the object in the bucket.
+        mocks.objects.add(storageRef.path);
+        complete?.();
+      },
       fail: (reason: unknown) => error?.(reason),
       cancel: task.cancel,
     };
@@ -136,7 +183,9 @@ describe("MessageImageSender account ownership", () => {
     mocks.task = null;
     mocks.finalizeCallable.mockClear();
     mocks.uploadStarted.mockClear();
-    mocks.deleteObject.mockClear();
+    mocks.uploadDenied.mockClear();
+    mocks.deleteDenied.mockClear();
+    mocks.objects.clear();
   });
 
   it("refuses to stage under an account that did not queue the send", async () => {
@@ -187,8 +236,9 @@ describe("MessageImageSender account ownership", () => {
       | undefined;
     expect(error?.message).toBe("Image send cancelled.");
     expect(mocks.finalizeCallable).not.toHaveBeenCalled();
-    // The staging object is cleaned up rather than left behind.
-    expect(mocks.deleteObject).toHaveBeenCalled();
+    // Its own account is still signed in, so the staging object is cleaned up
+    // rather than left behind.
+    expect(mocks.objects.size).toBe(0);
   });
 
   it("does not finalize when the account changed during the upload", async () => {
@@ -236,5 +286,45 @@ describe("MessageImageSender account ownership", () => {
     await expect(handle.promise).resolves.toMatchObject({
       messageId: "message-1",
     });
+  });
+
+  it("recovers when the owner signs back in after a denied cleanup", async () => {
+    const stagingPath =
+      "message-image-staging/user-a/conversation-1/message-1/attachment-1";
+
+    // The account switches mid-upload. The sender refuses to finalize, and its
+    // own cleanup cannot run: deleting this path is allowed only for user-a.
+    const abandoned = new MessageImageSender().send(request());
+    await settle();
+    mocks.task?.emitProgress(0.5);
+    mocks.currentUid = "user-b";
+    mocks.task?.complete();
+
+    const error = (await abandoned.promise.catch(
+      (reason: unknown) => reason
+    )) as { code?: string };
+    expect(error.code).toBe("messaging/sender-changed");
+    expect(mocks.finalizeCallable).not.toHaveBeenCalled();
+    // Left behind on purpose, not silently "cleaned up": a delete as the wrong
+    // account would be denied, so the sender does not even attempt it.
+    expect(mocks.objects.has(stagingPath)).toBe(true);
+    expect(mocks.deleteDenied).not.toHaveBeenCalled();
+
+    // user-a signs back in and the outbox retries the same row — same message,
+    // same attachment, so the same staging path. The create rule requires
+    // `resource == null`, so without clearing the slot first this retry is a
+    // permission failure and the image can never be sent.
+    mocks.currentUid = "user-a";
+    const retry = new MessageImageSender().send(request());
+    await settle();
+    mocks.task?.complete();
+
+    await expect(retry.promise).resolves.toMatchObject({
+      messageId: "message-1",
+    });
+    expect(mocks.uploadDenied).not.toHaveBeenCalled();
+    expect(mocks.finalizeCallable).toHaveBeenCalledTimes(1);
+    // And the successful attempt cleans up after itself.
+    expect(mocks.objects.has(stagingPath)).toBe(false);
   });
 });

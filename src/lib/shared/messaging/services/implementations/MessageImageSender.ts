@@ -55,7 +55,26 @@ export class MessageImageSender implements IMessageImageSender {
         `${request.messageId}/${request.attachmentId}`;
       const stagingRef = ref(storage, stagingPath);
 
+      /**
+       * The staging rule allows `delete` only for the account named in the
+       * path. Once a different account is signed in, this client cannot clean
+       * up after the previous one — the request would simply be denied.
+       */
+      const ownerIsSignedIn = () =>
+        !request.expectedUserId ||
+        request.expectedUserId === auth.currentUser?.uid;
+
       try {
+        // Clear the slot before uploading. The path is stable for this message
+        // and attachment, and the rule allows `create` only when
+        // `resource == null` — so an object left by an earlier attempt makes
+        // every retry fail with a permission error rather than a missing one.
+        // An attempt abandoned on an account switch leaves exactly that (see
+        // the guard on the cleanup below), and deleting it is only possible
+        // once its own account is back, which is now. A missing object is the
+        // ordinary case and its error is ignored.
+        await deleteObject(stagingRef).catch(() => undefined);
+
         uploadTask = uploadBytesResumable(stagingRef, request.file, {
           contentType: request.file.type,
           customMetadata: {
@@ -108,7 +127,16 @@ export class MessageImageSender implements IMessageImageSender {
         });
         return result.data;
       } finally {
-        await deleteObject(stagingRef).catch(() => undefined);
+        // Attempted only while this send's own account is still signed in.
+        // After a switch the delete is denied and swallowed, which looks like
+        // cleanup but is not: the object stays either way. It is left for the
+        // owner's next attempt, which clears it above. Nothing here can shorten
+        // that wait, and no bucket lifetime for this prefix is defined in this
+        // repository, so how long an abandoned object lives is a
+        // deployment-side question this code cannot answer.
+        if (ownerIsSignedIn()) {
+          await deleteObject(stagingRef).catch(() => undefined);
+        }
       }
     })();
 
