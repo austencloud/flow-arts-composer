@@ -125,6 +125,32 @@ describe("F1: public render caches accept overwrites (storage.rules)", () => {
     expect(reader).toContain("pictograph-cells/${hash}.webp");
     expect(reader).not.toMatch(/verifyDigest|recomputeHash|subtle\.digest/);
   });
+
+  it("INTENT: open create is deliberate; the CLIENT believes writes are first-write-wins", () => {
+    // The tool page states the open-write policy in so many words, so the
+    // `create` permission is policy, not an oversight.
+    const tool = readFileSync(
+      resolve(ROOT, "src/routes/tools/warm-thumbnails/+page.svelte"),
+      "utf8"
+    );
+    expect(tool).toContain(
+      "accept any authenticated writer, anonymous guests included"
+    );
+
+    // But the uploader documents the contract as first-write-wins, and the
+    // rule never enforces it. That gap is the finding.
+    const uploader = readFileSync(
+      resolve(ROOT, "src/lib/shared/render/services/pictograph-cloud-cache.ts"),
+      "utf8"
+    );
+    expect(uploader).toContain("First-write-wins, deduped per session");
+    expect(
+      allowClause(
+        matchBlock(storageRules, "/pictograph-cells/{fileName}"),
+        "create, update"
+      )
+    ).not.toContain("resource == null");
+  });
 });
 
 // ===========================================================================
@@ -143,7 +169,9 @@ describe("F2: publicHandPaths / publicSoloProps ownership takeover", () => {
       const block = matchBlock(firestoreRules, path);
       const clause = allowClause(block, "create, update");
 
-      expect(clause).toContain("request.resource.data.ownerId == request.auth.uid");
+      expect(clause).toContain(
+        "request.resource.data.ownerId == request.auth.uid"
+      );
       // The stored owner is never consulted, so update is not owner-scoped.
       expect(clause).not.toMatch(/(?<!request\.)\bresource\.data\.ownerId\b/);
       // Delete DOES check the stored owner — the asymmetry inside one block.
@@ -158,7 +186,9 @@ describe("F2: publicHandPaths / publicSoloProps ownership takeover", () => {
   it("publicSequences (the fixed sibling) checks BOTH sides on update", () => {
     const block = matchBlock(firestoreRules, "/publicSequences/{sequenceId}");
     const clause = allowClause(block, "update");
-    expect(clause).toContain("resource.data.get('ownerId', '') == request.auth.uid");
+    expect(clause).toContain(
+      "resource.data.get('ownerId', '') == request.auth.uid"
+    );
     expect(clause).toContain(
       "request.resource.data.get('ownerId', '') == request.auth.uid"
     );
@@ -216,7 +246,9 @@ describe("F3: scan-count integrity rests on a client-chosen deviceId", () => {
     );
     expect(identity).toContain("input.deviceHash");
     // No signed attestation, no server-issued device token, no auth requirement.
-    expect(handler).not.toMatch(/verifyIdToken|requireFirebaseUser|requireFullFirebaseUser/);
+    expect(handler).not.toMatch(
+      /verifyIdToken|requireFirebaseUser|requireFullFirebaseUser/
+    );
     // Auth, when present, is optional metadata only.
     expect(handler).toContain("getOptionalFirebaseUser");
   });
@@ -238,7 +270,9 @@ describe("F3: scan-count integrity rests on a client-chosen deviceId", () => {
       "browsers cannot manufacture\n        // events or spoof geo/device attribution"
     );
     // Client counter writes are indeed closed; the endpoint is the open path.
-    expect(allowClause(withoutNestedMatches(block), "update")).toContain("isAdmin()");
+    expect(allowClause(withoutNestedMatches(block), "update")).toContain(
+      "isAdmin()"
+    );
   });
 });
 
@@ -268,7 +302,10 @@ describe("F4: errorTelemetry reports are rewritable by unauthenticated callers",
 
   it("doc ids are deterministic, so a stranger can address a specific report", () => {
     const reporter = readFileSync(
-      resolve(ROOT, "src/lib/shared/error/services/error-telemetry-reporter.ts"),
+      resolve(
+        ROOT,
+        "src/lib/shared/error/services/error-telemetry-reporter.ts"
+      ),
       "utf8"
     );
     expect(reporter).toMatch(/utcDay|toISOString\(\)\.slice/);
@@ -287,16 +324,24 @@ describe("F5: video collaborator rosters are re-shareable by collaborators", () 
     expect(clause).toContain("'collaboratorIds'");
     expect(clause).toContain("'pendingInviteUserIds'");
     // Entry to that branch requires only being on one of those two lists...
-    expect(clause).toContain("request.auth.uid in collaboratorIds(resource.data)");
-    expect(clause).toContain("request.auth.uid in pendingInviteUserIds(resource.data)");
+    expect(clause).toContain(
+      "request.auth.uid in collaboratorIds(resource.data)"
+    );
+    expect(clause).toContain(
+      "request.auth.uid in pendingInviteUserIds(resource.data)"
+    );
     // ...and the branch is guarded by hasOnly, not by who may grant access.
     expect(clause).toContain("hasOnly");
   });
 
   it("read access is granted purely by membership of those same lists", () => {
     const read = allowClause(block, "read");
-    expect(read).toContain("request.auth.uid in collaboratorIds(resource.data)");
-    expect(read).toContain("request.auth.uid in pendingInviteUserIds(resource.data)");
+    expect(read).toContain(
+      "request.auth.uid in collaboratorIds(resource.data)"
+    );
+    expect(read).toContain(
+      "request.auth.uid in pendingInviteUserIds(resource.data)"
+    );
   });
 
   it("creatorId and visibility ARE frozen for non-creators (the part that holds)", () => {
@@ -314,7 +359,9 @@ describe("F5: video collaborator rosters are re-shareable by collaborators", () 
     // per-collection grant docs (nested under users/{uid}/collections/{id})
     // are read-only to clients and written only by the callable.
     const shares = matchBlock(firestoreRules, "/shares/{recipientId}");
-    expect(allowClause(shares, "create, update, delete").trim()).toBe("if false");
+    expect(allowClause(shares, "create, update, delete").trim()).toBe(
+      "if false"
+    );
     expect(firestoreRules).toContain(
       "Cross-account grants are written by callable functions"
     );
@@ -342,8 +389,13 @@ describe("F6: shop_waitlist accepts unauthenticated arbitrary documents", () => 
 
   it("the sibling public-submission surface routes through the rate-limited API", () => {
     // software_submissions took the safe route; shop_waitlist writes direct.
-    const sibling = matchBlock(firestoreRules, "/software_submissions/{entryId}");
-    expect(allowClause(sibling, "create, update, delete").trim()).toBe("if false");
+    const sibling = matchBlock(
+      firestoreRules,
+      "/software_submissions/{entryId}"
+    );
+    expect(allowClause(sibling, "create, update, delete").trim()).toBe(
+      "if false"
+    );
     const writer = readFileSync(
       resolve(ROOT, "src/lib/features/store/services/waitlist.ts"),
       "utf8"
@@ -363,7 +415,9 @@ describe("notes: lower-severity observations", () => {
     // No get/list split, so an availability check and a full dump are one rule.
     expect(block).not.toContain("allow list:");
     // Contrast: /users splits them and constrains list.
-    const users = withoutNestedMatches(matchBlock(firestoreRules, "/users/{userId}"));
+    const users = withoutNestedMatches(
+      matchBlock(firestoreRules, "/users/{userId}")
+    );
     expect(users).toContain("allow list:");
   });
 
@@ -373,7 +427,10 @@ describe("notes: lower-severity observations", () => {
     expect(clause).not.toContain("hallOfShameRateLimits");
     expect(clause).not.toContain("getAfter");
     // And the counter doc is writable by its own subject.
-    const limits = matchBlock(firestoreRules, "/hallOfShameRateLimits/{limitId}");
+    const limits = matchBlock(
+      firestoreRules,
+      "/hallOfShameRateLimits/{limitId}"
+    );
     expect(allowClause(limits, "read, create, update")).toContain(
       "limitId.matches(request.auth.uid"
     );
@@ -383,7 +440,10 @@ describe("notes: lower-severity observations", () => {
     expect(firestoreRules).toContain(
       "get(/databases/$(database)/documents/userPrivateProfiles/$(request.auth.uid)).data.ageVerifiedAt != null"
     );
-    const profiles = matchBlock(firestoreRules, "/userPrivateProfiles/{userId}");
+    const profiles = matchBlock(
+      firestoreRules,
+      "/userPrivateProfiles/{userId}"
+    );
     const clause = allowClause(profiles, "create, update");
     expect(clause).toContain("isOwner(userId)");
     expect(clause).toContain("'ageVerifiedAt'");
@@ -421,12 +481,16 @@ describe("notes: lower-severity observations", () => {
     }
     // Contrast: neighbours in the same file do cap.
     expect(
-      allowClause(matchBlock(storageRules, "/avatars/{userId}/{fileName}"), "create, update")
+      allowClause(
+        matchBlock(storageRules, "/avatars/{userId}/{fileName}"),
+        "create, update"
+      )
     ).toContain("request.resource.size < 1024 * 1024");
   });
 
   it("N6: /products is declared twice, so tightening one block is a no-op", () => {
-    const declarations = firestoreRules.match(/match \/products\/\{productId\}/g) ?? [];
+    const declarations =
+      firestoreRules.match(/match \/products\/\{productId\}/g) ?? [];
     expect(declarations.length).toBe(2);
   });
 
@@ -461,9 +525,9 @@ describe("verified sound: boundaries that hold in the rule text", () => {
       "/instagramDataDeletionRequests/{confirmationCode}",
       "/userAdminMetadata/{userId}",
     ]) {
-      expect(allowClause(matchBlock(firestoreRules, path), "read, write").trim()).toBe(
-        "if false"
-      );
+      expect(
+        allowClause(matchBlock(firestoreRules, path), "read, write").trim()
+      ).toBe("if false");
     }
     const orders = matchBlock(firestoreRules, "/orders/{orderId}");
     expect(allowClause(orders, "read")).toContain("isAdmin()");
@@ -471,11 +535,16 @@ describe("verified sound: boundaries that hold in the rule text", () => {
   });
 
   it("the r2 presign callables require auth and derive the key server-side", () => {
-    const r2 = readFileSync(resolve(ROOT, "firebase-functions/src/r2/index.ts"), "utf8");
+    const r2 = readFileSync(
+      resolve(ROOT, "firebase-functions/src/r2/index.ts"),
+      "utf8"
+    );
     // Every exported callable starts from requireAuth.
     const callables = r2.match(/export const r2\w+ = onCall/g) ?? [];
     expect(callables.length).toBeGreaterThanOrEqual(8);
-    expect((r2.match(/requireAuth\(request\)/g) ?? []).length).toBe(callables.length);
+    expect((r2.match(/requireAuth\(request\)/g) ?? []).length).toBe(
+      callables.length
+    );
     // The object key is built from sanitized parts, never taken verbatim.
     expect(r2).toContain('s.replace(/[^a-zA-Z0-9_\\-\\.]/g, "")');
     expect(r2).toContain("Cannot access objects outside your own path");
@@ -483,12 +552,19 @@ describe("verified sound: boundaries that hold in the rule text", () => {
 
   it("shared-collection membership is validated in a callable, not by rules", () => {
     const fn = readFileSync(
-      resolve(ROOT, "firebase-functions/src/collections/collectionCollaboration.ts"),
+      resolve(
+        ROOT,
+        "firebase-functions/src/collections/collectionCollaboration.ts"
+      ),
       "utf8"
     );
     expect(fn).toContain("You can add your own sequences or public sequences.");
-    expect(fn).toContain("Publish the sequence before adding it to a public collection.");
-    expect(fn).toContain("Can edit access is required to change this collection.");
+    expect(fn).toContain(
+      "Publish the sequence before adding it to a public collection."
+    );
+    expect(fn).toContain(
+      "Can edit access is required to change this collection."
+    );
   });
 
   it("private message media stays Admin-SDK-written and participant-scoped", () => {
@@ -501,7 +577,9 @@ describe("verified sound: boundaries that hold in the rule text", () => {
       storageRules,
       "/message-images/{conversationId}/{messageId}/{fileName}"
     );
-    expect(allowClause(final, "list, create, update, delete").trim()).toBe("if false");
+    expect(allowClause(final, "list, create, update, delete").trim()).toBe(
+      "if false"
+    );
     expect(allowClause(final, "get")).toContain("isConversationParticipant");
   });
 
