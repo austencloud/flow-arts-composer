@@ -9,11 +9,19 @@ recording-specific tests only.
 - Panel acquisition reproduction: `51e390a8`. Panel acquisition fix:
   `f50841d7`.
 - Cross-consumer reproduction: `71646363`. Cross-consumer correction:
-  `e19878a5`, the final code SHA.
+  `e19878a5`.
+- Cancel-during-finalize and self-end reproduction: `838113d7`. Fix:
+  `c1305fb1`, the final code SHA.
 - Branch: `claude/fix-recording-lifecycle-tum13f`. Its head is the commit that
   last edited this report.
 - Read, never edited, for contract alignment:
   `claude/camera-resource-lifecycle-sdoeg6` at `39f0271b`.
+
+Defect numbers are identifiers, matching the commit messages, not a reading
+order. Defects 1, 2, 5 and 6 are in `video-recorder.ts` and are covered by the
+first before-and-after table. Defects 3 and 4 are in `VideoRecordPanel.svelte`
+and have their own. Defects 4, 5 and 6 were found by review in the fixes for
+1 and 3, not in the code this branch started from.
 
 ## Owned files
 
@@ -21,7 +29,7 @@ recording-specific tests only.
 | ------------------------------------------------------------------------ | ----------------------------------------- |
 | `src/lib/shared/video-record/services/video-recorder.ts`                 | Stop lifecycle and pause accounting fixes |
 | `src/lib/shared/video-record/components/VideoRecordPanel.svelte`         | Camera acquisition lifecycle guard        |
-| `tests/unit/video-record/video-recorder-lifecycle.test.ts`               | New. 7 lifecycle tests                    |
+| `tests/unit/video-record/video-recorder-lifecycle.test.ts`               | New. 10 lifecycle tests                   |
 | `tests/unit/video-record/fake-media-recorder.ts`                         | New. Controllable MediaRecorder fake      |
 | `src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts` | New. 5 browser component tests            |
 | `docs/reports/opus-batch-2026-09-12/recording-session-integrity.md`      | This report                               |
@@ -97,28 +105,76 @@ carrying `state: "paused"` reported `61.5` s.
 Fix: `durationOf(state)` subtracts the still-open pause as well as
 `pausedDuration`, and is floored at zero.
 
+## Defect 5: a cancelled take was still saved
+
+Found by the recording review of `639ea6312d`, in the defect-1 fix rather than
+in the original code. `cancelRecording` cleared the progress interval and
+deleted the map entry, which is everything the old synchronous stop path
+needed. `finalizeRecording` holds the state object directly, so a cancel that
+lands while it is awaiting the stop event changes nothing for it: the delete
+removes a map entry it no longer reads.
+
+Measured before the fix, cancelling between the stop request and the recorder's
+flush: the finalization went on to build the blob, call `URL.createObjectURL`,
+write the take to IndexedDB, and return `success: true`. Every one of those is
+wrong for a discarded take. The object URL is never revoked, because the panel
+only revokes URLs it was handed and it threw this recording away; the discarded
+video sits in the cache; and a panel that cancelled on `onDestroy` gets a
+successful result it would have rendered as a finished video.
+
+Fix: cancellation is ownership state on the recording. `cancelRecording` sets
+`state.cancelled` before anything else, and `finalizeRecording` checks it after
+the await, returning `{ success: false, error: "Recording cancelled" }` without
+creating a URL or touching storage.
+
+## Defect 6: a self-ended recorder was charged for the wait
+
+Same review. Duration was sampled when stop was requested. A recorder that ends
+on its own — dropped camera track, suspended tab — finishes long before anyone
+presses stop, and nothing was recorded in between.
+
+Measured before the fix, recorder ending at 5 s and stop pressed at 20 s:
+`result.duration` was `20`. That is the number `VideoRecordCoordinator` writes
+to the Firestore recording document for a five-second video.
+
+The progress timer kept running across that gap too. Measured: four progress
+updates where two were due, each reporting a duration still climbing, which is
+also a `maxDuration` auto-stop waiting to fire on a recorder that already
+stopped.
+
+Fix: the terminal handlers record `endedAt` and clear the progress timer, and
+`durationOf` measures to `endedAt` when the recorder has ended. Resolving a
+single `now` for the whole calculation fixes an open pause at that moment as
+well, which previously kept widening after the recorder was gone.
+
 ## Before and after
 
-Same test file against both trees, `vitest run --config
+Same test file against each tree, `vitest run --config
 tests/config/vitest.config.ts tests/unit/video-record/video-recorder-lifecycle.test.ts`.
 
-| Test                                                             | Before | After |
-| ---------------------------------------------------------------- | ------ | ----- |
-| keeps the final chunk when the recorder ended on its own         | fail   | pass  |
-| resolves when the recorder already finished and delivered chunks | pass   | pass  |
-| resolves every caller when stop is requested twice in a row      | fail   | pass  |
-| never carries chunks from a finished session into the next one   | pass   | pass  |
-| releases the recording when the recorder fails during stop       | fail   | pass  |
-| excludes paused wall-clock time from the reported duration       | fail   | pass  |
-| keeps progress frozen while paused instead of auto-stopping      | fail   | pass  |
+| Test                                                                 | At base | At `639ea6312d` | Now  |
+| -------------------------------------------------------------------- | ------- | --------------- | ---- |
+| keeps the final chunk when the recorder ended on its own             | fail    | pass            | pass |
+| resolves when the recorder already finished and delivered chunks     | pass    | pass            | pass |
+| resolves every caller when stop is requested twice in a row          | fail    | pass            | pass |
+| never carries chunks from a finished session into the next one       | pass    | pass            | pass |
+| releases the recording when the recorder fails during stop           | fail    | pass            | pass |
+| keeps nothing from a recording cancelled while the stop was flushing | n/a     | fail            | pass |
+| excludes paused wall-clock time from the reported duration           | fail    | pass            | pass |
+| keeps progress frozen while paused instead of auto-stopping          | fail    | pass            | pass |
+| does not charge the recording for the wait before the stop press     | n/a     | fail            | pass |
+| stops reporting progress once the recorder has ended on its own      | n/a     | fail            | pass |
 
-Before: 5 failed, 2 passed. After: 7 passed.
+Defects 1 and 2: 5 failed, 2 passed, then 7 passed. Defects 5 and 6: 3 failed,
+7 passed, then 10 passed. The three marked `n/a` were not written until the
+review named the cases; each was confirmed failing at `639ea6312d` before the
+fix went in.
 
-The two that passed in both directions are deliberate guards rather than
-reproductions. The "already finished" case checks that waiting for the stop
-event does not hang when the event has already fired, which is the edge the
-removed inactive branch used to cover. The cross-session case checks that the
-handler rewiring did not let one session's chunks reach another session's blob.
+Two pass in every column and are deliberate guards rather than reproductions.
+The "already finished" case checks that waiting for the stop event does not hang
+when the event has already fired, which is the edge the removed inactive branch
+used to cover. The cross-session case checks that the handler rewiring did not
+let one session's chunks reach another session's blob.
 
 ## Other verification
 
@@ -127,7 +183,7 @@ handler rewiring did not let one session's chunks reach another session's blob.
 | `tsc --noEmit --strict` on `video-recorder.ts` (self-contained, imports only `./types`) | clean                        |
 | `eslint src/lib/shared/video-record/services/video-recorder.ts`                         | clean                        |
 | `prettier --check` on `video-recorder.ts` and both new unit-test files                  | clean                        |
-| `vitest run tests/unit/shared src/lib/shared/video-record tests/unit/video-record`      | 13 files, 81 tests, all pass |
+| `vitest run tests/unit/shared src/lib/shared/video-record tests/unit/video-record`      | 13 files, 84 tests, all pass |
 
 `tests/unit/shared/firestore/firestore-crud.test.ts` and
 `firestore-get-detailed.test.ts` initially failed to resolve `@tka/tka-types`.
@@ -287,14 +343,16 @@ already prettier-clean.
 
 ## Claim types
 
-Measured, by assertion against the real service: every row in the before/after
-table, and each numeric value quoted above.
+Measured, by assertion against the real service: every row in both
+before/after tables, and each numeric value quoted above. For defects 5 and 6
+that includes the absence as well as the presence — `URL.createObjectURL` not
+called, `getCachedRecording` returning null, the progress array not growing.
 
 Inferred, from reading the code and its callers, not observed at runtime: that
-the lost tail chunk is caused by a dropped camera track specifically, and that
-the inflated duration reaches the Firestore document through
-`VideoRecordCoordinator`. The failure mechanism is reproduced; the real-world
-trigger for it is not.
+a recorder ends on its own because of a dropped camera track specifically, and
+that the inflated durations of defects 2 and 6 reach the Firestore document
+through `VideoRecordCoordinator`. The failure mechanisms are reproduced; the
+real-world triggers for them are not.
 
 For defects 3 and 4, measured: every failing state and every fix, in a real
 Chromium through the browser component harness, with real `MediaStreamTrack`
@@ -325,9 +383,24 @@ fires neither would leave the promise pending. The panel would stay on the
 recording controls with no toast. This was not observed, and no such browser is
 known.
 
-Duration is now frozen when stop is requested rather than when the recorder
-finishes flushing. That is the intended reading, but it makes saved durations
-slightly shorter than before on a recorder that takes time to flush.
+Duration is now frozen at whichever comes first, the stop request or the
+recorder's own terminal event, rather than at the end of the flush. That is the
+intended reading, but it makes saved durations slightly shorter than before on
+a recorder that takes time to flush.
+
+A cancelled finalization resolves with `success: false` rather than rejecting,
+so a caller that only checks `result.success` — which is what both panels do —
+silently does nothing, as it should for a discarded take. A caller that wanted
+to distinguish cancellation from "Recording not found" has to read `error`.
+Both strings are internal; neither is shown to the user today.
+
+`markEnded` clears the progress timer on the recorder's terminal event, so a
+panel whose recorder ends on its own now gets no further progress callbacks at
+all. It keeps showing pause, stop, and cancel for a recording that has already
+finished, which is the same stuck state as follow-up 1 below, reached by a
+different route. It is not new to this change — the callback carries no
+completion signal — and it is no longer papered over by a duration that kept
+climbing.
 
 `onDestroy` still calls `cameraService.stop()`, and the camera manager is a
 module-level singleton shared with `PerformancePreview`. If both panels are
@@ -347,14 +420,17 @@ either way, and that is the trade for never touching another panel's camera.
 
 ## Follow-ups, not fixed here
 
-1. **The auto stop drops its result.** When `maxDuration` is reached the
-   progress interval calls `stopRecording` and discards the resolved
-   `RecordingResult`. `VideoRecordPanel` learns nothing, so it keeps showing
-   pause, stop, and cancel for a recording that has already ended, and a later
-   stop press gets `"Recording not found"`. Fixing it means deciding what the
-   panel should do at the cap, which is a product choice, and probably widening
-   `RecordingProgress` or adding a completion callback. Out of scope for a
-   defect fix. Read from the code, not reproduced in a browser.
+1. **A recording can finish without the panel finding out.** Two routes to the
+   same stuck screen. When `maxDuration` is reached, the progress interval calls
+   `stopRecording` and discards the resolved `RecordingResult`. When the
+   recorder ends on its own, defect 6 now correctly stops the progress timer,
+   and `RecordingProgress` carries no way to say "finished" in either case. The
+   panel keeps showing pause, stop, and cancel for a recording that is over, and
+   a later stop press gets `"Recording not found"`. Fixing it means deciding
+   what the panel should do at the cap and on a dropped camera, which is a
+   product choice, and widening `RecordingProgress` or adding a completion
+   callback. Out of scope for a defect fix. The stuck state is read from the
+   code; the underlying lifecycle of both routes is measured.
 
 2. **Cached blob URLs are not revoked on clear.** `getCachedRecording` records
    its URL in `cachedBlobUrls` and revokes the previous one for the same id, but
