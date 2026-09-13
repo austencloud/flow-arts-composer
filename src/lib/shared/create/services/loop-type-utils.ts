@@ -9,7 +9,10 @@
  * - formatLOOPTypeForDisplay: human-readable formatting of a LOOPType string
  */
 
-import { LOOPType, ROTATED_LOOP_TYPES } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import {
+  LOOPType,
+  ROTATED_LOOP_TYPES,
+} from "$lib/shared/foundation/domain/models/generation/circular-models";
 import {
   DEFAULT_HAND_RELATIONSHIP,
   isHandRelationship,
@@ -28,7 +31,9 @@ import {
  * Parse a LOOPType string into a Set of LOOPComponent values.
  * Uses substring matching against the 6 transformation primitives.
  */
-export function parseLoopComponents(loopType: LOOPType | string | null | undefined): Set<LOOPComponent> {
+export function parseLoopComponents(
+  loopType: LOOPType | string | null | undefined
+): Set<LOOPComponent> {
   const components = new Set<LOOPComponent>();
   if (!loopType) return components;
 
@@ -56,33 +61,69 @@ export function parseLoopComponents(loopType: LOOPType | string | null | undefin
  * inner, SWAP/INVERT compose as outer, and all beta positions are swap
  * fixed points (inversion is position-free).
  */
-const IMPLEMENTED_COMBOS: ReadonlyArray<readonly [ReadonlySet<LOOPComponent>, LOOPType]> = [
+const IMPLEMENTED_COMBOS: ReadonlyArray<
+  readonly [ReadonlySet<LOOPComponent>, LOOPType]
+> = [
   [new Set([LOOPComponent.ROTATED]), LOOPType.ROTATED],
   [new Set([LOOPComponent.MIRRORED]), LOOPType.MIRRORED],
   [new Set([LOOPComponent.FLIPPED]), LOOPType.FLIPPED],
   [new Set([LOOPComponent.SWAPPED]), LOOPType.SWAPPED],
   [new Set([LOOPComponent.INVERTED]), LOOPType.INVERTED],
   [new Set([LOOPComponent.REWOUND]), LOOPType.STRICT_REWOUND],
-  [new Set([LOOPComponent.MIRRORED, LOOPComponent.INVERTED]), LOOPType.MIRRORED_INVERTED],
-  [new Set([LOOPComponent.ROTATED, LOOPComponent.INVERTED]), LOOPType.ROTATED_INVERTED],
-  [new Set([LOOPComponent.SWAPPED, LOOPComponent.INVERTED]), LOOPType.SWAPPED_INVERTED],
-  [new Set([LOOPComponent.MIRRORED, LOOPComponent.ROTATED]), LOOPType.MIRRORED_ROTATED],
-  [new Set([LOOPComponent.MIRRORED, LOOPComponent.SWAPPED]), LOOPType.MIRRORED_SWAPPED],
-  [new Set([LOOPComponent.ROTATED, LOOPComponent.SWAPPED]), LOOPType.ROTATED_SWAPPED],
   [
-    new Set([LOOPComponent.MIRRORED, LOOPComponent.INVERTED, LOOPComponent.ROTATED]),
+    new Set([LOOPComponent.MIRRORED, LOOPComponent.INVERTED]),
+    LOOPType.MIRRORED_INVERTED,
+  ],
+  [
+    new Set([LOOPComponent.ROTATED, LOOPComponent.INVERTED]),
+    LOOPType.ROTATED_INVERTED,
+  ],
+  [
+    new Set([LOOPComponent.SWAPPED, LOOPComponent.INVERTED]),
+    LOOPType.SWAPPED_INVERTED,
+  ],
+  [
+    new Set([LOOPComponent.MIRRORED, LOOPComponent.ROTATED]),
+    LOOPType.MIRRORED_ROTATED,
+  ],
+  [
+    new Set([LOOPComponent.MIRRORED, LOOPComponent.SWAPPED]),
+    LOOPType.MIRRORED_SWAPPED,
+  ],
+  [
+    new Set([LOOPComponent.ROTATED, LOOPComponent.SWAPPED]),
+    LOOPType.ROTATED_SWAPPED,
+  ],
+  [
+    new Set([
+      LOOPComponent.MIRRORED,
+      LOOPComponent.INVERTED,
+      LOOPComponent.ROTATED,
+    ]),
     LOOPType.MIRRORED_INVERTED_ROTATED,
   ],
   [
-    new Set([LOOPComponent.MIRRORED, LOOPComponent.ROTATED, LOOPComponent.SWAPPED]),
+    new Set([
+      LOOPComponent.MIRRORED,
+      LOOPComponent.ROTATED,
+      LOOPComponent.SWAPPED,
+    ]),
     LOOPType.MIRRORED_ROTATED_SWAPPED,
   ],
   [
-    new Set([LOOPComponent.MIRRORED, LOOPComponent.SWAPPED, LOOPComponent.INVERTED]),
+    new Set([
+      LOOPComponent.MIRRORED,
+      LOOPComponent.SWAPPED,
+      LOOPComponent.INVERTED,
+    ]),
     LOOPType.MIRRORED_SWAPPED_INVERTED,
   ],
   [
-    new Set([LOOPComponent.ROTATED, LOOPComponent.SWAPPED, LOOPComponent.INVERTED]),
+    new Set([
+      LOOPComponent.ROTATED,
+      LOOPComponent.SWAPPED,
+      LOOPComponent.INVERTED,
+    ]),
     LOOPType.ROTATED_SWAPPED_INVERTED,
   ],
   [
@@ -96,13 +137,19 @@ const IMPLEMENTED_COMBOS: ReadonlyArray<readonly [ReadonlySet<LOOPComponent>, LO
   ],
 ];
 
-function setsEqual(a: ReadonlySet<LOOPComponent>, b: ReadonlySet<LOOPComponent>): boolean {
+function setsEqual(
+  a: ReadonlySet<LOOPComponent>,
+  b: ReadonlySet<LOOPComponent>
+): boolean {
   if (a.size !== b.size) return false;
   for (const c of a) if (!b.has(c)) return false;
   return true;
 }
 
-function isSuperset(superset: ReadonlySet<LOOPComponent>, subset: ReadonlySet<LOOPComponent>): boolean {
+function isSuperset(
+  superset: ReadonlySet<LOOPComponent>,
+  subset: ReadonlySet<LOOPComponent>
+): boolean {
   for (const c of subset) if (!superset.has(c)) return false;
   return true;
 }
@@ -114,7 +161,9 @@ function isSuperset(superset: ReadonlySet<LOOPComponent>, subset: ReadonlySet<LO
  * callers must treat that as "not supported", never coerce it to a default.
  * An empty set keeps the legacy ROTATED default (the "loop off" placeholder).
  */
-export function generateLOOPType(components: Set<LOOPComponent>): LOOPType | null {
+export function generateLOOPType(
+  components: Set<LOOPComponent>
+): LOOPType | null {
   if (components.size === 0) return LOOPType.ROTATED;
 
   for (const [combo, loopType] of IMPLEMENTED_COMBOS) {
@@ -160,6 +209,37 @@ export interface LoopRhythm {
 }
 
 /**
+ * The inversion period the engine can actually honor, given the mode.
+ *
+ * Inversion is an involution — pro↔anti applied twice restores the original
+ * motions — so an EXPAND inversion has no genuine period-4 orbit. Asked for at
+ * period 4 the fused stage repeats the period-2 motion pattern. Step numbers
+ * and propagated orientation fields need not be identical; the relevant
+ * repetition is the one reduceToMinimalLoop recognizes.
+ * The extra outer pass is not free, though: it wraps the rest of the combo, so
+ * the detector sees only the inversion and every mirrored / swapped / rotated +
+ * inverted combo fails generation outright with
+ * "identity mismatch (expected inverted+swapped, detected inverted)".
+ *
+ * This is the same degeneracy the quartered-rotation gate below and the
+ * quartered-mirror executor guard (tests/unit/loop/mirrored-quartered-guard.ts)
+ * already cover, and the same reasoning the engine records on
+ * loopSpecFromLegacyRhythm: rotation is the only component with a real
+ * period-4 orbit.
+ *
+ * OVERLAY inversion is genuinely period-capable and keeps its interval: it
+ * partitions the FINISHED sequence into `period` blocks and flips the odd ones
+ * in place, so blocks 0 and 2 carry different content and a period-4 overlay is
+ * a real alternating pattern rather than a repeat.
+ */
+export function effectiveInversionInterval(rhythm: LoopRhythm): 2 | 4 {
+  if ((rhythm.inversionMode ?? "expand") === "overlay") {
+    return rhythm.inversionInterval ?? 2;
+  }
+  return 2;
+}
+
+/**
  * Build a symmetric wire-form LOOPSpec from the UI component set + rhythm.
  * Returns null for combos with no implemented mapping (same gate as
  * generateLOOPType — the combo overlay's gating stays the single source
@@ -178,8 +258,10 @@ export function buildLoopSpec(
       prop.rotated = { period: rhythm.rotationInterval ?? 2 };
     } else if (comp === LOOPComponent.INVERTED) {
       prop.inverted = {
-        period: rhythm.inversionInterval ?? 2,
-        ...(rhythm.inversionMode === "overlay" ? { mode: "overlay" as const } : {}),
+        period: effectiveInversionInterval(rhythm),
+        ...(rhythm.inversionMode === "overlay"
+          ? { mode: "overlay" as const }
+          : {}),
       };
     } else if (
       comp === LOOPComponent.MIRRORED ||
@@ -215,9 +297,11 @@ export interface ResolvedLoopConfig {
  *
  *  1. Quartered is coerced to halved for non-ROTATED loop types. Only rotation
  *     has a genuine period-4 orbit; the period-2 transforms (mirror / flip /
- *     swap / invert) asked as quartered extend to a byte-identical double that
+ *     swap / invert) asked as quartered repeat the motion pattern, which
  *     reduceToMinimalLoop strips back to HALF the requested length — the deck's
- *     "I asked for 16 and got 8" bug.
+ *     "I asked for 16 and got 8" bug. The same coercion applies to an EXPAND
+ *     inversion asked for at interval 4 (see effectiveInversionInterval); only
+ *     OVERLAY inversion keeps a real period-4 rhythm.
  *  2. The wire spec makes the orchestrator divide the requested length by the
  *     TRUE expander multiplier (expanderMultiplier), not the raw period (2/4).
  *     Without it, mirror+rotated (true period 4) overshoots to 2× on the halved
@@ -242,7 +326,7 @@ export function resolveLoopConfig(
      * value. Accepts the raw config field, so an unknown string reads as free.
      */
     handRelationship?: string | null;
-  },
+  }
 ): ResolvedLoopConfig {
   const requestedRelationship = rhythmOpts?.handRelationship;
   const relationship = isHandRelationship(requestedRelationship)
@@ -252,17 +336,25 @@ export function resolveLoopConfig(
   const supportsQuartered =
     ROTATED_LOOP_TYPES.has(loopType as LOOPType) && keptAxis === null;
   const period: "halved" | "quartered" =
-    supportsQuartered && requestedPeriod === "quartered" ? "quartered" : "halved";
+    supportsQuartered && requestedPeriod === "quartered"
+      ? "quartered"
+      : "halved";
   const requestedAxis: ReflectionAxis =
     rhythmOpts?.reflectionAxis ??
     (String(loopType).includes("flipped") ? "east-west" : "north-south");
   const diagonal =
     requestedAxis === "northeast-southwest" ||
     requestedAxis === "northwest-southeast";
+  const inversionMode = rhythmOpts?.inversionMode ?? "expand";
   const loopRhythm: LoopRhythm = {
     rotationInterval: period === "quartered" ? 4 : 2,
-    inversionInterval: rhythmOpts?.inversionInterval ?? 2,
-    inversionMode: rhythmOpts?.inversionMode ?? "expand",
+    // Echo the interval the wire will actually carry, not the requested one —
+    // the LOOP card reads this back to pick its rhythm glyphs.
+    inversionInterval: effectiveInversionInterval({
+      inversionInterval: rhythmOpts?.inversionInterval ?? 2,
+      inversionMode,
+    }),
+    inversionMode,
     reflectionAxis: keptAxis && diagonal ? keptAxis : requestedAxis,
   };
   const loopSpecWire =
