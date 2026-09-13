@@ -60,6 +60,7 @@ function routeFor(state: PhoneReviewInteractionState, clientId: string): string 
 const [operation, clientId, ...arguments_] = process.argv.slice(2);
 const file = await stateFile();
 const releaseLock = await acquireLock(file);
+try {
 const state = await readState(file);
 const now = Date.now();
 state.clients = state.clients.filter((client) => now - Date.parse(client.lastSeenAt) < 20_000);
@@ -75,9 +76,7 @@ if (operation === "status") {
   }
   for (const command of state.commands.slice(-10)) console.log(`command ${command.id}\t${command.clientId}\t${command.kind}\t${command.result?.status ?? (command.deliveredAt ? "delivered" : "queued")}\t${command.result?.message ?? ""}`);
   await saveState(file, state);
-  await releaseLock();
-  process.exit(0);
-}
+} else {
 if (!clientId || !["inspect", "click", "set"].includes(operation ?? "")) usage();
 
 const flags = new Map<string, string>();
@@ -92,14 +91,19 @@ const controlName = flags.get("--name");
 if (operation !== "inspect" && (!controlId && !controlName || controlId && controlName)) usage();
 const value = flags.get("--value");
 if ((operation === "set") !== Boolean(value) || [...flags.keys()].some((key) => !["--id", "--name", "--value"].includes(key))) usage();
+const selectedControl = controlId ? state.clients.find((client) => client.id === clientId)?.controls.find((control) => control.id === controlId) : undefined;
+if (controlId && !selectedControl) throw new Error(`Control ${controlId} is not available on ${clientId}. Run status first.`);
 
 const command: PhoneReviewCommand = {
   id: randomUUID(), kind: operation as PhoneReviewCommand["kind"], clientId,
   expectedRoute: routeFor(state, clientId), createdAt: new Date().toISOString(),
   expiresAt: new Date(now + 30_000).toISOString(),
-  ...(controlId ? { controlId } : {}), ...(controlName ? { controlName } : {}), ...(value ? { value } : {}),
+  ...(controlId ? { controlId, controlName: selectedControl!.name } : {}), ...(controlName ? { controlName } : {}), ...(value ? { value } : {}),
 };
 state.commands.push(command);
 await saveState(file, state);
-await releaseLock();
 console.log(`Queued ${command.kind} for ${clientId} on ${command.expectedRoute}; expires in 30 seconds.`);
+}
+} finally {
+  await releaseLock();
+}

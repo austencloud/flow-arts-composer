@@ -48,6 +48,10 @@ export const _reviewDocument = `<!doctype html>
         let generation = 0;
         let interactionPolling = false;
         let clientId = "";
+        let pauseCutoff = Date.now();
+        let generatedControlId = 0;
+        const controlIds = new WeakMap();
+        const deliveredCommandIds = new Set();
         const pathLabel = document.querySelector("#path");
         const preview = document.querySelector("#preview");
         const control = document.querySelector("#control");
@@ -66,7 +70,7 @@ export const _reviewDocument = `<!doctype html>
             return generated;
           } catch { return "review-" + Date.now() + "-" + Math.random().toString(36).slice(2); }
         };
-        const text = (value, max) => String(value || "").replace(/\s+/g, " ").trim().slice(0, max);
+        const text = (value, max) => String(value || "").replace(/\\s+/g, " ").trim().slice(0, max);
         const isVisible = (element) => {
           const style = getComputedStyle(element);
           return style.display !== "none" && style.visibility !== "hidden" && element.getClientRects().length > 0;
@@ -79,8 +83,8 @@ export const _reviewDocument = `<!doctype html>
             const tag = element.tagName.toLowerCase();
             const inputType = tag === "input" ? element.type : undefined;
             if (tag === "input" && !["range", "number", "checkbox", "radio"].includes(inputType)) return [];
-            const id = text(element.id, 160);
-            if (!id) return [];
+            const id = text(element.id || controlIds.get(element) || ("review-control-" + (++generatedControlId)), 160);
+            controlIds.set(element, id);
             if (seen.has(id)) return [];
             seen.add(id);
             const labelledBy = text(element.getAttribute("aria-labelledby"), 160).split(" ").map((id) => text(document.getElementById(id)?.textContent, 120)).join(" ");
@@ -114,30 +118,34 @@ export const _reviewDocument = `<!doctype html>
         const execute = (command) => {
           if (command.kind === "inspect") return { status: "completed", message: "Controls reported" };
           const controls = controlSnapshot();
-          const matches = controls.filter((control) => command.controlId ? control.id === command.controlId : control.name === command.controlName);
+          const matches = controls.filter((control) => (command.controlId ? control.id === command.controlId && control.name === command.controlName : control.name === command.controlName));
           if (matches.length !== 1) return { status: "failed", message: "Control was not uniquely available" };
           const control = matches[0];
           if (control.disabled) return { status: "failed", message: "Control is disabled" };
           const document = preview.contentDocument;
-          const element = document.getElementById(control.id);
+          const element = [...document.querySelectorAll("button, input, select")].find((candidate) => controlIds.get(candidate) === control.id || candidate.id === control.id);
           if (!element) return { status: "failed", message: "Control changed before execution" };
           if (command.kind === "click") { element.click(); return { status: "completed", message: "Clicked " + control.name }; }
           if (control.kind === "select") {
             if (![...element.options].some((option) => option.value === command.value)) return { status: "failed", message: "Select value is unavailable" };
-            element.value = command.value; element.dispatchEvent(new Event("input", { bubbles: true })); element.dispatchEvent(new Event("change", { bubbles: true }));
+            element.value = command.value; element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("input", { bubbles: true })); element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("change", { bubbles: true }));
             return { status: "completed", message: "Set " + control.name };
           }
           if (control.kind !== "input" || !control.inputType) return { status: "failed", message: "Control cannot be set" };
           if (["checkbox", "radio"].includes(control.inputType)) {
             if (!["true", "false"].includes(command.value)) return { status: "failed", message: "Toggle value must be true or false" };
-            element.checked = command.value === "true"; element.dispatchEvent(new Event("input", { bubbles: true })); element.dispatchEvent(new Event("change", { bubbles: true }));
+            element.checked = command.value === "true"; element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("input", { bubbles: true })); element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("change", { bubbles: true }));
             return { status: "completed", message: "Set " + control.name };
           }
           const number = Number(command.value);
           if (!Number.isFinite(number)) return { status: "failed", message: "Numeric value is invalid" };
+          const min = element.min === "" ? -Infinity : Number(element.min);
+          const max = element.max === "" ? Infinity : Number(element.max);
+          const step = element.step === "" || element.step === "any" ? null : Number(element.step);
+          const base = Number.isFinite(min) ? min : 0;
+          if (number < min || number > max || (step && step > 0 && Math.abs((number - base) / step - Math.round((number - base) / step)) > 0.000001)) return { status: "failed", message: "Numeric value is outside this control's constraints" };
           element.value = String(number);
-          if (!element.checkValidity()) return { status: "failed", message: "Numeric value is outside this control's constraints" };
-          element.dispatchEvent(new Event("input", { bubbles: true })); element.dispatchEvent(new Event("change", { bubbles: true }));
+          element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("input", { bubbles: true })); element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("change", { bubbles: true }));
           return { status: "completed", message: "Set " + control.name };
         };
         const pollInteractions = async () => {
@@ -150,6 +158,8 @@ export const _reviewDocument = `<!doctype html>
             const response = await fetch("/api/dev/phone-review-command?clientId=" + encodeURIComponent(clientId) + "&route=" + encodeURIComponent(route), { cache: "no-store" });
             const result = response.ok ? await response.json() : null;
             if (!display.following || pollGeneration !== generation || !result?.command || result.command.clientId !== clientId || result.command.expectedRoute !== iframeRoute() || Date.parse(result.command.expiresAt) <= Date.now()) return;
+            if (deliveredCommandIds.has(result.command.id) || Date.parse(result.command.createdAt) <= pauseCutoff) { deliveredCommandIds.add(result.command.id); await report({ commandId: result.command.id, status: "failed", message: "Command was queued while preview was paused" }); return; }
+            deliveredCommandIds.add(result.command.id);
             const outcome = execute(result.command);
             await report({ commandId: result.command.id, ...outcome });
           } catch {} finally { interactionPolling = false; }
@@ -164,6 +174,7 @@ export const _reviewDocument = `<!doctype html>
         const pause = () => {
           display.following = false;
           generation += 1;
+          pauseCutoff = Date.now();
           try { localStorage.setItem(storageKey, JSON.stringify(display)); } catch {}
           status.textContent = "Preview paused on the displayed route";
           render();
@@ -190,6 +201,7 @@ export const _reviewDocument = `<!doctype html>
         control.addEventListener("click", () => {
           if (display.following) { pause(); return; }
           generation += 1;
+          pauseCutoff = Date.now();
           display.following = true;
           try { localStorage.removeItem(storageKey); } catch {}
           render();
