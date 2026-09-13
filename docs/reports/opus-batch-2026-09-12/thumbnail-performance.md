@@ -3,6 +3,7 @@
 **Date:** 2026-09-13
 **Branch:** `claude/thumbnail-latency-audit-1bmwwq`
 **Base SHA:** `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`, "Merge pull request #48 from austencloud/claude/hand-tunnel-toy")
+**Branch commits:** `7f7b8de0` (key identity + shared-tier coverage), `960879e5` (cold start, cancellation, lifecycle, report)
 **Scope:** read-only audit of the gallery thumbnail path. New tests under
 `tests/unit/opus-thumbnail-audit/` and this report are the only files this task
 owns. **No production file was modified.** `StepStrip`, the carousel, and
