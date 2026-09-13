@@ -1,10 +1,15 @@
 # Notification state integrity — subscription and registration lifetimes
 
-Date: 2026-09-13. Branch: `claude/notification-state-integrity-t5l2ay`.
-Base: `6e4c1b5a` (`origin/main`, "Merge pull request #49 from austencloud/claude/ember-parity-timeout").
-Code commit: `6c17c7f5`. Final commit: `4cff5bb1`, which adds this report and
-applies Prettier formatting to the two new test files — no behavior changed
-after `6c17c7f5`.
+Date: 2026-09-13. Reviewed source branch:
+`claude/notification-state-integrity-t5l2ay`. Local correction branch:
+`codex/opus-notification-reviewed`.
+
+The reviewed source arrived as `6c17c7f5` (code), `4cff5bb1` (report), and
+`32bf2f68` (report bookkeeping). Independent review found additional native
+registration races in that checkpoint. The local integration cherry-picks
+those three scoped commits onto current `main`, then adds the corrections and
+regressions described below. The local implementation correction is
+`e049527252`; the report commit is the branch tip containing this file.
 
 Assignment: investigate and fix up to two reproduced notification state /
 read-marker races. Audit-only for everything else. No push sends, no real
@@ -90,17 +95,31 @@ user id changes, including preview mode and remount).
 **Failure path.** Register as user A (listeners L1 attached, never removed),
 then register as user B (L1 + L2 attached). `PushNotifications.register()`
 emits its registration event to every attached listener, so L1 — still holding
-`userId = "user-a"` — writes this device's **current** token into
-`users/user-a/fcmTokens/…`. The signed-out account stays subscribed to this
-device and keeps receiving its push notifications. Each stale listener also
-runs its own `storeToken` write plus a `pruneStaleDeviceTokens` collection
-read, so the Firestore cost of a registration grows with the number of
-registrations in the session.
+`userId = "user-a"` — attempts to write this device's **current** token into
+`users/user-a/fcmTokens/…`. If Firestore accepts that stale write and the native
+token remains deliverable, the signed-out account can stay subscribed on this
+device. The deterministic test proves the duplicate SDK callback and attempted
+account paths; it does not prove a rules-authorized production write or a push
+delivered on a physical device. Each stale callback also attempts its own
+`storeToken` write and `pruneStaleDeviceTokens` collection read.
 
-**After.** Both listeners are awaited, tracked, and removed before the attempt
-resolves — on success, on registration error, and on a thrown registration
-call. `finish()` resolves only after removal, so a caller's next registration
-starts from a clean slate.
+**First correction, then review.** The source checkpoint awaited both listeners,
+tracked them, and removed them before an attempt resolved. Review reproduced
+four gaps: JavaScript evaluates both arguments to `handles.push(await first,
+await second)` before pushing either, so a rejected second listener loses the
+first handle; overlapping registrations have no shared attempt owner; repeated
+registration callbacks can both enter token storage before `settled` changes;
+and unregistering does not invalidate an in-flight registration or distinguish
+which account owns `currentToken`.
+
+**After local correction.** A generation and owner identify the current native
+attempt. Starting a newer attempt cancels the prior one, while a late
+`unregisterToken(A)` cannot cancel or unregister B's newer attempt/token.
+Listener handles are tracked as each promise resolves, including handles that
+arrive after cancellation, and every completion waits for setup and removal.
+Only one callback can claim an attempt. Ownership is checked after the awaited
+Firestore instance and token hash, before the SDK write starts, and an owning
+unregister invalidates that pending work. The public API is unchanged.
 
 ## Proof
 
@@ -109,7 +128,7 @@ Both suites were written against the unfixed code first.
 | Suite                                                                 | Before fix         | After fix |
 | --------------------------------------------------------------------- | ------------------ | --------- |
 | `tests/unit/notifications/notification-subscription-lifetime.test.ts` | 4 failed, 1 passed | 5 passed  |
-| `tests/unit/push/android-registration-listener-lifetime.test.ts`      | 3 failed, 1 passed | 4 passed  |
+| `tests/unit/push/android-registration-listener-lifetime.test.ts`      | 3 failed, 1 passed | 11 passed |
 
 Pre-fix failures, verbatim:
 
@@ -129,7 +148,27 @@ Pre-fix failures, verbatim:
     (the extra write targeted users/user-a/fcmTokens/… while registering user-b)
 × reports failure without leaving its listeners attached
     AssertionError: expected 1 to be +0
+× removes the first listener when the second listener fails to attach
+    AssertionError: expected 1 to be +0
+× lets only the latest overlapping registration store the shared event
+    AssertionError: expected 'token-b' to be null
+× stores at most once when the native plugin repeats its callback
+    AssertionError: expected setDoc to be called 1 time, but got 2
+× abandons a token write still resolving for a superseded account
+    AssertionError: expected one account path, but got two
+× cancels an in-flight registration when its owner unregisters
+    AssertionError: expected 'token-a' to be null
+× does not unregister the newer account's completed token
+    AssertionError: deleteDoc targeted users/user-a while B owned the token
+× does not disrupt a newer registration when the old owner unregisters
+    AssertionError: PushNotifications.unregister was called once
 ```
+
+The first three added regressions were run together against the reviewed
+checkpoint and failed 3/7. The awaited-storage and unregister cases were each
+run against the implementation with their relevant guard removed and failed
+with the outputs above before that guard was restored. This preserves the red →
+green evidence without claiming one synthetic aggregate run at the old SHA.
 
 The cases that passed before the fix (`still delivers snapshots for a live
 subscription`, `registers the token for the requesting user`) are the
@@ -146,8 +185,16 @@ subscription endpoint, no push send.
 npx vitest run --config tests/config/vitest.config.ts \
   tests/unit/inbox tests/unit/notifications tests/unit/push \
   tests/unit/inbox-notification-navigation.test.ts
-→ 11 files, 45 tests passed
+→ local corrected branch: 11 files, 52 tests passed
 
+prettier --check on the five owned source, test, and report paths
+→ all matched files use Prettier code style
+```
+
+The reviewed source report also recorded these broader diagnostics in its cloud
+container. They were not repeated for the bounded local correction:
+
+```
 npm run check:tsc
 → 1 owned diagnostic, identical on this branch and on main (measured by
   checking out main and re-running):
@@ -215,7 +262,7 @@ All read-only. Each claim below is labelled by how it was established.
   code silently killed the first listener; the new code keeps both, which costs
   a second Firestore listener. The explicit disposer and `cleanup()` are the
   supported way to end one.
-- **Fix 2 resolves after listener removal.** `registerToken` now awaits two
+- **Fix 2 resolves after listener removal.** `registerToken` now awaits both
   `addListener` promises and the `remove()` calls before resolving. If a
   Capacitor version returned a handle whose `remove()` never settles,
   registration would hang; `remove()` rejections are already swallowed, and the
@@ -226,9 +273,11 @@ All read-only. Each claim below is labelled by how it was established.
 
 ## Limitations
 
-- No runtime/browser observation. This is a cloud container with no dev server
-  and no Firebase credentials; every claim above is from code reading plus the
-  deterministic unit suites, not from the running app.
+- No live Firebase or physical-device observation. Every native claim above is
+  from code reading plus deterministic doubles around the real manager. The
+  harness proves which mocked Firestore paths were attempted and which plugin
+  listeners remained; it does not prove that security rules accepted a write,
+  that FCM retained a token, or that Android delivered a notification.
 - The component (browser) suite could not run here: the vitest browser project
   wants Playwright chromium build 1228 and the image provides 1194
   (`npx playwright install` is out of bounds in this environment). The one
@@ -238,9 +287,9 @@ All read-only. Each claim below is labelled by how it was established.
   rather than the code changed here.
 - Fix 2's failure mode depends on Capacitor invoking every attached listener for
   an event. That is the plugin listener contract and is what the test double
-  implements; it was **not** observed on a physical Android device. The leak
-  itself — handles discarded, listeners never removed — is directly visible in
-  the pre-fix source.
+  implements; it was **not** observed on a physical Android device. The original
+  leak and the reviewed checkpoint's partial-handle/overlap gaps are directly
+  visible in source and reproduced through the mocked plugin boundary.
 
 ## Followups (not done, not authorized here)
 
