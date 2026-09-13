@@ -13,37 +13,57 @@ recording-specific tests only.
 - Cancel-during-finalize and self-end reproduction: `838113d7`. Fix:
   `c1305fb1`.
 - Cache-window cancellation reproduction: `a28ec6a7`. Fix: `56a987a4`.
-- Teardown-ownership reproduction and TS2558 fix: `f65a696d`. Fix:
-  `d67cabd3`, the final code SHA.
+- Teardown-ownership reproduction and TS2558 fix: `f65a696d`. Fix: `d67cabd3`.
+- Acquisition-handle integration: `bbdf1d2e`, the final code SHA.
 - Branch: `claude/fix-recording-lifecycle-tum13f`. Its head is the commit that
   last edited this report.
-- Read, never edited, for contract alignment:
-  `claude/camera-resource-lifecycle-sdoeg6`, at `39f0271b` and then at
-  `7700457c`.
+
+## Dependency commits, not owned here
+
+`bbdf1d2e` needs the camera manager's acquisition-handle contract, which is not
+on `main`. Rather than leave the integration as a TODO, this branch merges
+`claude/camera-resource-lifecycle-sdoeg6` at `34af95d9` (merge commit
+`15a967d3`). Those commits belong to the camera agent and are merged pristine.
+No camera-owned file was edited here, before or after the merge.
+
+| Commit     | Subject                                                              |
+| ---------- | -------------------------------------------------------------------- |
+| `34af95d9` | fix(camera): validate acquisition ownership at every async boundary  |
+| `7700457c` | fix(camera): scope a closing panel's teardown to its own acquisition |
+| `39f0271b` | fix(camera): fence the whole initialize-to-start acquisition         |
+| `facdbbda` | docs(reports): camera and tracking lifecycle findings                |
+| `8dce14cb` | fix(train): stop a tracking session that ends while MediaPipe loads  |
+| `49d3f8e3` | fix(train): release a camera stream that arrives after close         |
+
+Merged rather than cherry-picked so the SHAs survive: integrating both branches
+at the root applies this work once, with no duplicate commits to reconcile.
+Everything else on this branch is owned here — `video-recorder.ts`,
+`VideoRecordPanel.svelte`, their tests, and this report.
 
 Defect numbers are identifiers, matching the commit messages, not a reading
 order. Defects 1, 2, 5, 6 and 7 are in `video-recorder.ts` and are covered by
-the first before-and-after table. Defects 3, 4 and 8 are in
-`VideoRecordPanel.svelte` and have their own. Defects 4, 5, 6, 7 and 8 were
-found by review inside earlier fixes on this branch rather than in the code it
-started from: 4 inside the fix for 3, 5 and 6 inside the fix for 1, 7 inside
-the fix for 5, and 8 inside the fix for 4.
+the first before-and-after table. Defects 3, 4, 8 and 9 are in
+`VideoRecordPanel.svelte` and have their own. All but 1, 2 and 3 were found by
+review inside earlier fixes on this branch rather than in the code it started
+from: 4 inside the fix for 3, 5 and 6 inside the fix for 1, 7 inside the fix
+for 5, 8 inside the fix for 4, and 9 inside the fix for 8.
 
 ## Owned files
 
-| File                                                                     | Change                                    |
-| ------------------------------------------------------------------------ | ----------------------------------------- |
-| `src/lib/shared/video-record/services/video-recorder.ts`                 | Stop lifecycle and pause accounting fixes |
-| `src/lib/shared/video-record/components/VideoRecordPanel.svelte`         | Camera acquisition lifecycle guard        |
-| `tests/unit/video-record/video-recorder-lifecycle.test.ts`               | New. 11 lifecycle tests                   |
-| `tests/unit/video-record/fake-media-recorder.ts`                         | New. Controllable MediaRecorder fake      |
-| `src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts` | New. 7 browser component tests            |
-| `docs/reports/opus-batch-2026-09-12/recording-session-integrity.md`      | This report                               |
+| File                                                                     | Change                                       |
+| ------------------------------------------------------------------------ | -------------------------------------------- |
+| `src/lib/shared/video-record/services/video-recorder.ts`                 | Stop lifecycle and pause accounting fixes    |
+| `src/lib/shared/video-record/components/VideoRecordPanel.svelte`         | Camera acquisition lifecycle guard           |
+| `tests/unit/video-record/video-recorder-lifecycle.test.ts`               | New. 11 lifecycle tests                      |
+| `tests/unit/video-record/fake-media-recorder.ts`                         | New. Controllable MediaRecorder fake         |
+| `src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts` | New. 6 browser component tests, real manager |
+| `docs/reports/opus-batch-2026-09-12/recording-session-integrity.md`      | This report                                  |
 
-Nothing under `camera-manager`, `CameraPreview`, MediaPipe, `video-export`, or
-`export-panel` was touched. `recording-persister.ts`, the other three
-`video-record/components/*.svelte` files, and
-`state/video-record-settings.svelte.ts` are unchanged.
+No file under `camera-manager`, `CameraPreview`, MediaPipe, `video-export` or
+`export-panel` was edited here. Those files appear in this branch's tree only
+through the pristine merge above, byte-identical to `34af95d9`.
+`recording-persister.ts`, the other three `video-record/components/*.svelte`
+files, and `state/video-record-settings.svelte.ts` are unchanged.
 
 ## Method
 
@@ -354,14 +374,11 @@ so that silencing cancellation does not also silence a real
 never from the error's identity, so it is correct against the current manager
 and the ticketed one, and it needed no import that does not yet exist on `main`.
 
-One alignment gap remains, for the camera agent to settle rather than for this
-branch to guess. A panel that is still mounted when a newer consumer's `start()`
-invalidates its ticket currently paints the cancellation message as a camera
+That left one gap, closed later in defect 9: a panel still mounted when a newer
+consumer invalidated its start painted the cancellation message as a camera
 error with a retry button, where `CameraPreview` and `PerformancePreview` return
-silently and leave their spinner up. Once `isCameraAcquisitionCancelled` is on
-`main` this becomes one line in the `catch`. Adding it now would mean copying
-their sentinel string into this file, which is the duplicate their predicate
-exists to prevent.
+silently. It is now the same `isCameraAcquisitionCancelled` call all three use,
+not a copy of their sentinel string, and it has its own row in the table below.
 
 ## Defect 8: teardown itself still stopped the shared camera
 
@@ -391,89 +408,92 @@ checks in `initializeCamera`, which release the stream as it arrives, so nothing
 is left running either way — confirmed against the real manager below, since
 dropping the call also drops the ticketed manager's cancel signal.
 
-### The scoped calls this wants, and cannot make yet
+### Defect 9: the panel acquired the camera without owning the acquisition
 
-`claude/camera-resource-lifecycle-sdoeg6` at `7700457c` adds exactly the
-ownership primitives this panel needs: `initialize()` returns a
-`CameraAcquisition` handle, `start(handle)` refuses a handshake that was
-cancelled or taken over, `abandonAcquisition(handle)` gives up only that
-handshake and no-ops once another consumer owns the instance, and
-`releaseStream(stream)` stops the tracks it is handed while clearing the
-manager's own state only if that is still the stream it handed out. `stop()`
-keeps its instance-wide meaning for panels that own their own manager.
+Closed in `bbdf1d2e`, once the merge above put the contract on this branch. The
+`d67cabd3` guard was ownership-safe but track-level, and two things it could not
+do turned out to matter.
 
-None of those exist on `origin/main`, so this branch cannot call them and
-compile. The integration dependency is recorded at the call site in
-`VideoRecordPanel.svelte` rather than in prose only. Once the camera branch
-lands, the panel should capture the handle from `initialize()`, pass it to
-`start(handle)`, and replace the teardown with `abandonAcquisition(handle)` when
-no stream arrived and `releaseStream(stream)` when one did. That buys two things
-track-level release cannot: the handshake is cancelled immediately instead of
-the camera opening and closing a moment later, and the manager's own `_stream`
-and `_isActive` stop going stale.
+`releaseStream(stream)` stops the tracks it is handed _and_ clears the manager's
+`_stream` and `_isActive` while that is still the stream it handed out. Stopping
+tracks by hand does the first half only. Measured against `d67cabd3` on this
+merged tree: after the panel released a stream that arrived post-teardown,
+`manager.isActive` was still `true`, describing a camera that was already dead.
+
+`isCameraAcquisitionCancelled(error)` separates "this panel lost the instance"
+from a device failure. Without it, a panel still on screen when another surface
+took the camera painted the cancellation message as a camera error with a retry
+button, in front of a user whose camera is fine. Measured against `d67cabd3`:
+the `[role="alert"]` error state was rendered.
+
+The panel now stores the `CameraAcquisition` that `initialize()` returns, passes
+it to `start(acquisition)`, and scopes teardown to it: `releaseStream(stream)`
+once a stream arrived, `abandonAcquisition(handle)` while the handshake is still
+pending, and nothing at all for a teardown during `enumerateDevices`, which has
+no handle yet and gives one up as soon as `initialize()` returns. Both releases
+are no-ops on the manager's state once another consumer owns the instance, so
+the ownership property from defect 8 is kept by the contract rather than by this
+panel's restraint. The pending handshake is now cancelled at teardown instead of
+opening a camera the late guard closes a moment later.
 
 ### Before and after
 
 `vitest run --config tests/config/vitest.components.config.ts
 src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts`
 
-| Test                                                                 | At `f50841d7`'s parent | At `639ea6312d` | At `5fc424aa` | Now  |
-| -------------------------------------------------------------------- | ---------------------- | --------------- | ------------- | ---- |
-| does not open the camera when destroyed while enumerating devices    | fail                   | pass            | pass          | pass |
-| ends a stream that arrives after the panel is destroyed              | fail                   | pass            | pass          | pass |
-| leaves a newer consumer's camera alone when this start is rejected   | not written            | fail            | pass          | pass |
-| leaves a newer consumer's camera alone when this stream arrives late | not written            | fail            | pass          | pass |
-| leaves alone a camera another consumer opened before teardown        | not written            | not written     | fail          | pass |
-| leaves alone a camera another consumer took over from this panel     | not written            | not written     | fail          | pass |
-| still opens the camera for a panel that stays mounted                | pass                   | pass            | pass          | pass |
+Defects 3, 4 and 8 were measured against a contract-faithful fake, since the
+real contract was on another branch: 2 failed then 3 passed, 2 failed then 5
+passed, and 2 failed then 7 passed respectively. `bbdf1d2e` replaced that suite
+with one that drives the real `CameraManager`, so those runs are history rather
+than something re-runnable at this head; the behaviours they pinned are all
+covered below.
 
-Defect 3: 2 failed, 1 passed, then 3 passed. Defect 4: 2 failed, 3 passed, then
-5 passed. Defect 8: 2 failed, 5 passed, then 7 passed. The last row is the
-control throughout: it would catch a guard that simply stopped acquiring
-cameras.
+The current suite, six tests, run against `d67cabd3`'s panel and against now,
+both on this merged tree:
 
-The tests stand in a contract-faithful fake for the camera manager rather than
-the real one, so they do not break when the camera agent changes it, and so
-they assert what this consumer owes the contract. The fake models the singleton
-the way the real manager behaves: one instance across consumers, each `start()`
-taking a ticket, a start that settles after a newer one took over never becoming
-the held stream, and a newer `start()` releasing whatever was held first. That
-is what makes a stray global stop visible, as somebody else's tracks ending. The
-streams it hands back are real `MediaStream`s from `canvas.captureStream()`, so
-teardown is read off the tracks' own `readyState` rather than off a spy, and no
-camera permission is involved.
+| Test                                                               | At `d67cabd3` | Now  |
+| ------------------------------------------------------------------ | ------------- | ---- |
+| does not open the camera when destroyed while enumerating devices  | pass          | pass |
+| releases a stream that arrives after the panel is destroyed        | fail          | pass |
+| leaves consumer B's camera alone when a pending panel A tears down | pass          | pass |
+| leaves consumer B's camera alone when B took over from a live A    | pass          | pass |
+| does not show a camera error when B cancels a still-mounted A      | fail          | pass |
+| still opens the camera for a panel that stays mounted              | pass          | pass |
 
-### Cross-branch integration check
+Defect 9: 2 failed, 4 passed, then 6 passed. The two failures are the two things
+handles buy: `manager.isActive` stayed `true` after a raw track stop, and a
+cancellation was rendered as a camera error. The four that pass in both columns
+are regression guards, not reproductions — defect 8 had already made teardown
+ownership-safe, and this checks the handle rewrite did not give that back. The
+last row is the control throughout: it would catch a guard that simply stopped
+acquiring cameras.
 
-Because the fake could in principle flatter the guard, each correction was also
-run against the real manager, on a local throwaway merge of this branch with
-`claude/camera-resource-lifecycle-sdoeg6` (never pushed, branch deleted after,
-no unrelated ancestry carried onto this branch). A scratch test mounted
-`VideoRecordPanel` with no mock of `get-camera-manager` and stubbed
-`navigator.mediaDevices` so `getUserMedia` could be held open.
+These now drive the actual manager rather than a fake, with
+`navigator.mediaDevices` stubbed so `getUserMedia` and `enumerateDevices` can be
+held open. Panel A is the rendered component; consumer B is another surface
+taking the shared singleton, covering both orderings: B arriving while A is
+still pending, and B taking the camera over from a live A. The streams are real
+`MediaStream`s from `canvas.captureStream()`, so teardown is read off the
+tracks' own `readyState` rather than off a spy, and no camera permission is
+involved.
 
-For defect 4, against the ticketed manager at `39f0271b`:
+### Cross-branch checks, now committed rather than scratch
 
-- pre-correction panel: the next consumer's tracks ended, the assertion "the
-  next consumer's camera survived the stale attempt" failed
-- corrected panel: the abandoned stream ended, the next consumer's tracks stayed
-  `live`, and `manager.isActive` stayed true
+While the contract was on another branch, defects 4 and 8 were each checked
+against the real manager on a throwaway merge, with a scratch test that was
+deleted along with the branch. Those runs did their job — each found that the
+pre-correction panel ended the other consumer's tracks, and that the corrected
+one did not — but they were not re-runnable.
 
-For defect 8, against the handle-based manager at `7700457c`, with the other
-consumer acquiring before the panel closes:
+`bbdf1d2e` supersedes them. The manager is on this branch as a merged
+dependency, the committed panel suite drives it directly, and the two orderings
+those scratch tests covered are now rows in the table above. Nothing about the
+integration rests on a check that no longer exists.
 
-- pre-correction panel: "teardown did not touch the other consumer's camera"
-  failed
-- corrected panel: the other consumer's tracks stayed `live` and `isActive`
-  stayed true, the panel's own abandoned request was still released when it
-  landed, and a panel closing mid-acquisition with nobody replacing it still
-  left nothing running. That last case is the one that could have regressed,
-  since dropping the `stop()` also drops that manager's cancel signal; it passes
-  both before and after, because the panel's own late guard closes the stream.
-
-On that merged tree both agents' suites pass unchanged: `camera-manager.test.ts`
-plus this branch's recorder tests, 27 tests, and the `PerformancePreview` and
-`VideoRecordPanel` component suites, 10 tests.
+Both agents' suites pass together on this branch: `camera-manager.test.ts` plus
+this branch's recorder tests, 30 tests under the jsdom config, and the
+`PerformancePreview` and `VideoRecordPanel` component suites, 9 tests in
+Chromium.
 
 ### Environment note
 
@@ -577,20 +597,22 @@ different route. It is not new to this change — the callback carries no
 completion signal — and it is no longer papered over by a duration that kept
 climbing.
 
-The panel no longer calls `cameraService.stop()` anywhere, which also gives up
-the only cancel signal the ticketed manager currently exposes to it. A panel
-closing mid-handshake therefore lets its acquisition finish and releases the
-stream as it arrives, so the camera is open for a moment longer than a cancel
-would have allowed. Measured against the real manager on the throwaway merge:
-nothing is left running either way. `abandonAcquisition(handle)` closes that
-gap properly, and is follow-up 5.
+The panel calls `cameraService.stop()` nowhere. Both trades that cost it
+previously are gone: `abandonAcquisition(handle)` cancels a pending handshake at
+teardown, so the camera no longer opens for a moment before a late guard closes
+it, and `releaseStream(stream)` clears `_stream` and `_isActive` instead of
+leaving them describing a dead camera.
 
-`releaseOwnStream` never tells the manager that the stream it may still be
-holding is dead. While this panel is the current holder, that leaves `_stream`
-pointing at ended tracks and `_isActive` true until the next `start()`, which
-releases it anyway. The device is freed regardless, and that is the trade for
-never touching another panel's camera; `releaseStream(stream)` in the same
-follow-up removes the trade.
+What remains is a dependency rather than a defect. `bbdf1d2e` cannot compile
+against `main`, only against `main` plus the merged camera commits. Integrating
+this branch without them does not fail a test, it fails the build, at the
+`isCameraAcquisitionCancelled` and `CameraAcquisition` imports. The merge is
+part of this branch precisely so that cannot happen by accident.
+
+One ordering is the camera owner's, not this scope's, and is not asserted here:
+an `abandonAcquisition` racing another consumer's `initialize()` while both are
+active. The panel's own two orderings — B arriving mid-handshake, and B taking
+over from a live A — are covered above.
 
 ## Follow-ups, not fixed here
 
@@ -633,24 +655,14 @@ follow-up removes the trade.
    when a stream was actually delivered, but the victim would be the same. For
    the camera or export owner. Read from that branch, not reproduced.
 
-5. **Adopt the camera branch's scoped calls in this panel.** Blocked only on
-   `claude/camera-resource-lifecycle-sdoeg6` reaching `main`, and written out at
-   the call site in `VideoRecordPanel.svelte`: capture the `CameraAcquisition`
-   handle from `initialize()`, pass it to `start(handle)`, and replace the
-   teardown with `abandonAcquisition(handle)` or `releaseStream(stream)`. Same
-   merge brings `isCameraAcquisitionCancelled`, which is the one line that stops
-   a still-mounted superseded panel painting the cancellation text as a camera
-   error. See defect 8 and the alignment note under defect 4. Verified to work
-   against that branch on a throwaway merge; not adoptable here because none of
-   the symbols exist on `main`.
+5. **Done in `bbdf1d2e`, not a follow-up.** Adopting the camera branch's scoped
+   calls was the previous round's open item. It is defect 9 above.
 
-6. **Manager-side cancellation, already in flight elsewhere.** On `main` the
-   manager has none: `stop()` clears `_stream` and `_isActive`, but an in-flight
-   `start()` that resolves afterwards sets them again, so it comes back to life
-   after being stopped. `claude/camera-resource-lifecycle-sdoeg6` fixes exactly
-   that with per-start tickets and acquisition handles, and this branch's guard
-   is written to be correct against both. Nothing left for this scope; noted so
-   the two branches are not read as duplicating each other.
+6. **Integrate the two branches together.** This branch carries
+   `claude/camera-resource-lifecycle-sdoeg6` at `34af95d9` as a merge, because
+   `bbdf1d2e` does not compile without it. Merging both at the root applies
+   those commits once; merging this one alone still brings them. Nothing to fix,
+   recorded so the shared history is not read as a duplicate.
 
 7. **Nothing type-checks `tests/`.** `tsconfig.json` narrows the SvelteKit
    config's `include` to `src/**`, so `npm run check`, `check:fast` and
