@@ -2,8 +2,8 @@
 
 Scope: reproduced concurrency/state defects in `src/lib/shared/inbox`, its tests,
 and — from the third round, explicitly authorized — two named defects in
-`src/lib/shared/messaging/services/messenger.ts`. Nine fixed, one confirmed and
-left to another owner. No production data was written and no message was sent
+`src/lib/shared/messaging/services/messenger.ts`, and — from the sixth round —
+`MessageImageSender`. Eleven fixed, one confirmed and left to another owner. No production data was written and no message was sent
 anywhere; every result below comes from the repository's own test harnesses in
 this cloud container.
 
@@ -15,17 +15,23 @@ Revision history:
 3. `9030cdd5` — F5 (outbox account ownership) and M1/M2 (the two authorized
    messenger fixes). Held: F5 fenced the queue but not the delivery already in
    flight past it.
-4. this revision — F6: every await boundary inside a single delivery is fenced,
-   not just the one that starts it. Also merges `origin/main`'s `withPlainRecords`
-   wrapper into the same file, unchanged.
+4. `71988b7e` — F6: every await boundary inside `deliverOne` is fenced. Also
+   merges `origin/main`'s `withPlainRecords` wrapper into the same file,
+   unchanged. Held: the fence stopped at the coordinator's door.
+5. `c5cf6d0d` — F7: ownership propagated through the coordinator and the
+   messenger, proven with both real. Held: the image-path assessment in it was
+   **wrong**, and the double that backed it never emitted the `finalizing`
+   phase, so it could not see that.
+6. this revision — F8: the two real defects inside `MessageImageSender`, the
+   false claim corrected, and the double fixed to the real call order.
 
 | Field          | Value                                                                                                                                                                                                                           |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Branch         | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                                                                                                         |
 | Base SHA       | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                                                                                                     |
-| Held revisions | `ea203124` (F1 + F2), `eb822199` (adds F3, F4, A1), `9030cdd5` (adds F5, M1, M2), `71988b7e` (adds F6) — all HOLD                                                                                                               |
+| Held revisions | `ea203124` (F1 + F2), `eb822199` (adds F3, F4, A1), `9030cdd5` (adds F5, M1, M2), `71988b7e` (adds F6), `c5cf6d0d` (adds F7) — all HOLD                                                                                         |
 | Merged `main`  | `6e4c1b5a` (unrelated 3D parity test), then `cb4d4210` — which carries `73aafa4a`, the `withPlainRecords` wrapper in this same state file. Auto-merged clean; the wrapper is preserved verbatim, see the integration note below |
-| Final SHA      | `315aa2b5673feb195e472227c96221210f861c97` — this round's correction commit; the branch tip after it only fills in this row and updates this report                                                                             |
+| Final SHA      | `f8db57005ae04fc15a20c84ac0148eba93bcaea6` — this round's correction commit; the branch tip after it only fills in this row and updates this report                                                                             |
 | Owned paths    | `src/lib/shared/inbox/**`, `tests/unit/messaging/*` (three new files), `tests/helpers/inbox/**` (new), plus the two authorized functions in `messaging/services/messenger.ts`                                                   |
 
 Files changed:
@@ -39,10 +45,13 @@ Files changed:
 - `src/lib/shared/inbox/services/contracts/IMessageDeliveryCoordinator.ts` (F7: the `isOwned` hook)
 - `src/lib/shared/inbox/domain/message-delivery-errors.ts` (F7: the cancellation sentinel)
 - `src/lib/shared/messaging/services/messenger.ts` (fixes M1, M2, and F7's pre-dispatch recheck in `sendMessage` — authorized scope: those three functions, nothing else in the file)
+- `src/lib/shared/messaging/services/implementations/MessageImageSender.ts` (fix F8)
+- `src/lib/shared/messaging/services/contracts/IMessageImageSender.ts` (F8: `expectedUserId` on the request)
 - `tests/unit/messaging/message-delivery-activation-race.test.ts` (new; was quarantined, now green against the fix)
 - `tests/unit/messaging/message-delivery-account-ownership.test.ts` (new; proves F5 and F6)
 - `tests/unit/messaging/messenger-subscription-ownership.test.ts` (new; proves M1 and M2 at the real messaging boundary)
 - `tests/unit/messaging/message-delivery-sending-seam.test.ts` (new; proves F7 against the real coordinator and the real `Messenger.sendMessage`)
+- `tests/unit/messaging/message-image-sender-ownership.test.ts` (new; proves F8 against the real `MessageImageSender` in its real call order)
 - `tests/helpers/inbox/reactive-account-double.svelte.ts` (new test helper)
 - `tests/helpers/inbox/memory-delivery-repository.ts` (new test helper)
 - `docs/reports/opus-batch-2026-09-12/inbox-concurrency.md` (this report)
@@ -538,32 +547,86 @@ refusal carry a code that `isMessageDeliveryCancelled` recognises, and
 goes back to `queued` with its attempt **un-counted**, nothing is marked `sent`,
 and the owning account delivers it on its next activation.
 
-### Image path — assessed, partly unguarded
+### Image path — the assessment here was wrong; see F8
 
-`MessageImageSender.send` returns a handle whose `cancel()` sets a flag and
-aborts the upload task. The real sender checks that flag twice: before the upload
-starts, and after it completes, **before** the `finalizeMessageImage` callable
-that commits the message. So cancelling during the upload is safe and is now
-done — the coordinator holds the handle (it previously dropped it) and cancels
-from the progress callback when ownership is lost.
+This section previously said the real sender "checks its cancelled flag again
+before the finalize call that commits the message", and concluded that
+cancelling from the progress callback was therefore safe. That was **false**, and
+independent review caught it: the sender's check runs _before_ the callback that
+raises the cancellation, and nothing re-checks after it. The coordinator's cancel
+could never stop the commit. The image double in the F7 suite never emitted the
+`finalizing` phase, so nothing in that round's evidence could contradict the
+claim. F8 fixes the sender and the double.
 
-Two things this does **not** close, and end-to-end identity safety is therefore
-**not** claimed for the image path:
+---
 
-1. Once `finalizeMessageImage` is away, `cancel()` is a no-op. That is correct —
-   the send is committed and must not be rolled back — but it means an account
-   change in that last window still finalizes under the new account.
-2. `MessageImageSender` reads `auth.currentUser` **after** its own
-   `Promise.all([...])` await (`MessageImageSender.ts:26-32`) and stages the
-   upload under that uid. An account change across that await stages, and later
-   finalizes, as the wrong account regardless of anything the coordinator does.
-   Closing it means an expected-owner parameter on `MessageImageSendRequest` and
-   a check inside that class — a messaging-side contract change outside this
-   round's authorized scope, and the next thing to do here.
+## F8 (fixed) — the image sender's last check ran before the callback that cancels
 
-The measured image test above uses a double that reproduces the real sender's
-cancel contract (flag checked before the committing call); the real class's
-internal behaviour is code-read evidence, not exercised.
+**Severity: high — an image message committed from the wrong account, and
+staged in the wrong account's storage tree.** Raised by independent review of
+`c5cf6d0d`, which also found the claim this report made about it to be false.
+
+### Mechanism
+
+Two defects in `MessageImageSender.send`, both across its own awaits.
+
+**Ordering.** The real sequence is
+(`MessageImageSender.ts:52-79` before the fix):
+
+```
+await upload completes
+if (cancelled) throw                          ← last check
+request.onProgress({ phase: "finalizing" })   ← where the caller cancels
+const finalize = httpsCallable(...)
+await finalize({...})                         ← commits, no recheck
+```
+
+The coordinator (F7) cancels from that callback. The check that would honour it
+had already run one line earlier, so the cancellation was recorded and then
+ignored: `finalize` went out anyway.
+
+**Identity.** `auth.currentUser` is read only after
+`await Promise.all([getAuthInstance(), getStorageInstance(), getFunctionsInstance()])`,
+and the staging path is built from that uid
+(`message-image-staging/<uid>/…`). A send queued by one account and resumed
+after a switch staged into the other account's tree and finalized as it, with
+nothing in the request to say who it belonged to.
+
+### Evidence — measured
+
+`tests/unit/messaging/message-image-sender-ownership.test.ts` drives the real
+class with the storage, functions and auth SDK deferred, in the real call order.
+At `c5cf6d0d`:
+
+| Test                                                            | Failure at `c5cf6d0d`                                                                                                                      |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| does not finalize a send cancelled from the finalizing callback | `expected undefined to be 'Image send cancelled.'` — the promise **resolved**: it committed despite the cancel                             |
+| does not finalize when the account changed during the upload    | `expected undefined to be 'messaging/sender-changed'` — it finalized as the new account                                                    |
+| refuses to stage under an account that did not queue the send   | never rejected; the case timed out waiting. There was no owner check at all, so the uid read after init was used to build the staging path |
+
+The F7 seam suite's image case also fails at `c5cf6d0d` now that its double emits
+`finalizing` in the real order and asserts the request carries its owner
+(`expected undefined to be 'user-a'`).
+
+Two of the five cases pass before and after — "stages under the expected account
+when it is still signed in" and "does not take back a finalize that is already
+away". They are guards: the first that the new check does not block the ordinary
+path, the second that none of this became a rollback.
+
+### The fix
+
+`MessageImageSendRequest` carries `expectedUserId`, which the coordinator sets
+from the outbox row's owner. The sender validates it twice — immediately after
+Firebase init, before the staging path is built from `currentUser`, and again
+immediately before `finalize` — and re-checks `cancelled` **after** the
+finalizing callback as well as before it. A mismatch throws
+`messaging/sender-changed`, which `isMessageDeliveryCancelled` already routes to
+the abandon path: durable row requeued for its own account, attempt un-counted,
+never marked sent.
+
+Once `finalize` is away nothing takes it back. That is deliberate and pinned by
+its own test: cancelling after dispatch still resolves, because the message is
+committed.
 
 ---
 
@@ -697,16 +760,16 @@ unmount, so it is worth doing next.
 
 All run in the cloud container at the final SHA unless noted.
 
-| Command                                                                                     | Result                                                                                                                                               |
-| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer: 3 failed (F3). With the base drawer: 4 failed (F1)                                                               |
-| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)                                                          |
-| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                                                                          |
-| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 29 passed / 29 (8 files). With the merged tip's state module: 3 failed (F6). With `eb822199`'s: 2 failed (F5). With its messenger: 5 failed (M1, M2) |
-| `… tests/unit/messaging tests/unit/inbox …` (the inbox + messaging sweep)                   | 83 passed / 83 (19 files), nothing skipped                                                                                                           |
-| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — unchanged across every revision and after merging `main`, none in the changed files                                       |
-| `prettier --check` on the changed files                                                     | clean                                                                                                                                                |
-| `eslint` on the changed files                                                               | 0 errors, 0 warnings (`tests/**` paths are eslint-ignored by config, which it reports as a warning)                                                  |
+| Command                                                                                     | Result                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer: 3 failed (F3). With the base drawer: 4 failed (F1)                                                                                     |
+| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)                                                                                |
+| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                                                                                                |
+| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 39 passed / 39 (10 files). Reverting each round's sources in turn: 3 failed (F8, plus 1 in the seam suite), 3 failed (F7), 3 failed (F6), 2 failed (F5), 5 failed (M1, M2) |
+| `… tests/unit/messaging tests/unit/inbox …` (the inbox + messaging sweep)                   | 92 passed / 92 (21 files), nothing skipped                                                                                                                                 |
+| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — unchanged across every revision and after merging `main`, none in the changed files                                                             |
+| `prettier --check` on the changed files                                                     | clean                                                                                                                                                                      |
+| `eslint` on the changed files                                                               | 0 errors, 0 warnings (`tests/**` paths are eslint-ignored by config, which it reports as a warning)                                                                        |
 
 Harness note: the container ships Chromium build 1194 at `/opt/pw-browsers`
 while `playwright@1.61.1` expects 1228, so the browser project was run through a
@@ -749,24 +812,31 @@ packages are not prebuilt in a fresh clone.
     account changed under them, and an image upload in that state is cancelled
     (F7). A refusal is recorded as an abandoned delivery, never as a failure the
     user sees, and never as `sent`.
-- **End-to-end identity safety is claimed for text and sequence sends, NOT for
-  images.** The coordinator now cancels an image upload whose account changed, and
-  the real sender checks its cancel flag before the committing call — but
-  `MessageImageSender` reads `auth.currentUser` after its own await and stages
-  under it, and once `finalizeMessageImage` is away nothing can stop it. See the
-  image-path assessment in F7; closing it needs a messaging-side contract change
-  that was outside this round's authorized scope.
+- **Identity is now fenced on the image path too, and the earlier claim about it
+  was wrong.** Round five said the sender already re-checked before committing; it
+  did not, and its own check ran before the callback that raises a cancellation.
+  F8 fixes the sender (owner validated after init and again before `finalize`,
+  cancellation re-checked after the finalizing callback) and the double that hid
+  it. What remains true, deliberately: once `finalize` is dispatched the send is
+  committed and nothing takes it back.
+- **The image evidence is against the real `MessageImageSender`**, with the
+  storage/functions/auth SDK as deferred doubles. It proves the class's own
+  ordering and refusals — not Firebase Storage rules, not what the
+  `finalizeMessageImage` function does server-side. Neither was exercised.
 - **The sending-seam tests use the real coordinator and the real
   `Messenger.sendMessage`**, with the Firebase SDK, the short-code manager and the
   image sender as deferred doubles at their own contracts. They prove the
   pre-network handoff — whether the callable is reached — not what Firebase does
   with it. No emulator and no live project were involved.
-- **One new test is a guard, not a reproduction** in each of three files:
-  "keeps the live listener when the same conversation is reopened" (drawer),
-  "delivers the recovered message once its own account is back" (delivery state)
-  and "never rolls back a send the network already accepted" (sending seam) all
-  pass before and after. They pin behaviour that must not break — in the last
-  case, that this fence never became a rollback — but they did not find a defect.
+- **Some new tests are guards, not reproductions**, and are labelled as such in
+  their sections: "keeps the live listener when the same conversation is reopened"
+  (drawer), "delivers the recovered message once its own account is back"
+  (delivery state), "never rolls back a send the network already accepted"
+  (sending seam), and two in the image-sender suite ("stages under the expected
+  account when it is still signed in", "does not take back a finalize that is
+  already away"). All pass before and after. They pin behaviour that must not
+  break — chiefly that none of these fences became a rollback — but they did not
+  find a defect.
 - **`subscribeToTyping` still has M1's defect.** Same file, same shape, outside
   this round's authorized scope. Named in the M1 section so the next pass can take
   it.
