@@ -35,6 +35,18 @@ interface RecordingState {
   stopped: Promise<void>;
   /** The single in-flight finalization, shared by every caller of stopRecording. */
   stopPromise?: Promise<RecordingResult>;
+  /**
+   * When the recorder actually ended, however it ended. A recorder can finish
+   * long before anyone asks it to — dropped track, suspended tab — and the
+   * minutes a panel then spends showing stale controls are not recorded time.
+   */
+  endedAt: number | null;
+  /**
+   * Set by cancelRecording. A finalization already waiting on the stop event
+   * still holds this state, so it has to be told the take was thrown away
+   * before it mints a blob URL and writes the recording to IndexedDB.
+   */
+  cancelled: boolean;
 }
 
 export class VideoRecorder {
@@ -124,29 +136,33 @@ export class VideoRecorder {
     // the meantime from surfacing as an unhandled rejection.
     void stopped.catch(() => {});
 
-    mediaRecorder.onstop = () => markStopped?.();
-    mediaRecorder.onerror = (event) => {
-      console.error("MediaRecorder error:", event);
-      markFailed?.(new Error("Recording failed"));
-    };
-
-    // Start recording with 100ms chunks for smooth capture
-    mediaRecorder.start(100);
-
-    const startTime = Date.now();
-
     // Store recording state
     const recordingState: RecordingState = {
       recordingId,
       mediaRecorder,
       chunks,
-      startTime,
+      startTime: Date.now(),
       pausedDuration: 0,
       lastPauseTime: null,
       options: { format, quality, maxDuration },
       onProgress,
       stopped,
+      endedAt: null,
+      cancelled: false,
     };
+
+    mediaRecorder.onstop = () => {
+      this.markEnded(recordingState);
+      markStopped?.();
+    };
+    mediaRecorder.onerror = (event) => {
+      console.error("MediaRecorder error:", event);
+      this.markEnded(recordingState);
+      markFailed?.(new Error("Recording failed"));
+    };
+
+    // Start recording with 100ms chunks for smooth capture
+    mediaRecorder.start(100);
 
     this.activeRecordings.set(recordingId, recordingState);
 
@@ -242,13 +258,10 @@ export class VideoRecorder {
   ): Promise<RecordingResult> {
     const { recordingId } = state;
 
-    if (state.progressInterval) {
-      clearInterval(state.progressInterval);
-      state.progressInterval = undefined;
-    }
+    this.clearProgressTimer(state);
 
-    // Freeze the duration at the moment stop was requested, before waiting on
-    // the recorder to flush.
+    // Freeze the duration at the moment stop was requested, or at the moment
+    // the recorder ended if it got there first.
     const duration = this.durationOf(state);
 
     try {
@@ -262,6 +275,18 @@ export class VideoRecorder {
       // Even a failed recorder has to leave the active map, or its id can
       // never be started, cancelled, or stopped again.
       this.activeRecordings.delete(recordingId);
+    }
+
+    if (state.cancelled) {
+      // Thrown away while we were waiting for the recorder to flush. Nothing
+      // here is ours to keep: no object URL for a panel that will never revoke
+      // it, nothing written to storage, and no success for a take the user
+      // discarded.
+      return {
+        success: false,
+        error: "Recording cancelled",
+        recordingId,
+      };
     }
 
     const videoBlob = new Blob(state.chunks, {
@@ -293,11 +318,12 @@ export class VideoRecorder {
       return;
     }
 
-    // Clear progress interval
-    if (state.progressInterval) {
-      clearInterval(state.progressInterval);
-      state.progressInterval = undefined;
-    }
+    // Mark first: a finalization already waiting on the stop event holds this
+    // same state object, and this flag is the only thing that tells it the take
+    // was discarded rather than saved.
+    state.cancelled = true;
+
+    this.clearProgressTimer(state);
 
     // Stop MediaRecorder without saving
     if (state.mediaRecorder.state !== "inactive") {
@@ -462,11 +488,33 @@ export class VideoRecorder {
    * fire on a recording that is not capturing anything.
    */
   private durationOf(state: RecordingState): number {
+    // Once the recorder has ended, its clock has stopped. Measuring to "now"
+    // instead bills the recording for however long the panel sat there before
+    // anyone pressed stop.
+    const now = state.endedAt ?? Date.now();
     const openPause =
-      state.lastPauseTime !== null ? Date.now() - state.lastPauseTime : 0;
-    const elapsed = Date.now() - state.startTime;
+      state.lastPauseTime !== null ? now - state.lastPauseTime : 0;
+    const elapsed = now - state.startTime;
     const activeDuration = elapsed - state.pausedDuration - openPause;
     return Math.max(0, activeDuration) / 1000;
+  }
+
+  /**
+   * The recorder has emitted its terminal event. Freeze the duration clock and
+   * stop the progress timer: whoever ended it, there is nothing left to report,
+   * and a duration that kept climbing here would trip the maxDuration auto-stop
+   * on a recorder that already stopped.
+   */
+  private markEnded(state: RecordingState): void {
+    state.endedAt ??= Date.now();
+    this.clearProgressTimer(state);
+  }
+
+  private clearProgressTimer(state: RecordingState): void {
+    if (state.progressInterval) {
+      clearInterval(state.progressInterval);
+      state.progressInterval = undefined;
+    }
   }
 }
 
