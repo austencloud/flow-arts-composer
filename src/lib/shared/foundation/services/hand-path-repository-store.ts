@@ -1,9 +1,4 @@
-import {
-  doc,
-  getDoc,
-  setDoc,
-  arrayUnion,
-} from "firebase/firestore";
+import { doc, getDoc, setDoc, arrayUnion } from "firebase/firestore";
 import { getFirestoreInstance } from "$lib/shared/auth/firebase";
 import {
   firestoreGet,
@@ -36,7 +31,8 @@ function handPathToDoc(path: HandPathData): Record<string, unknown> {
   if (path.thumbnails !== undefined) raw["thumbnails"] = path.thumbnails;
   if (path.dateCreated !== undefined) raw["dateCreated"] = path.dateCreated;
   if (path.ownerId !== undefined) raw["ownerId"] = path.ownerId;
-  if (path.ownerDisplayName !== undefined) raw["ownerDisplayName"] = path.ownerDisplayName;
+  if (path.ownerDisplayName !== undefined)
+    raw["ownerDisplayName"] = path.ownerDisplayName;
 
   return raw;
 }
@@ -48,7 +44,11 @@ function collectionPath(): string {
 
 export class HandPathRepository {
   async get(id: string): Promise<HandPathData | null> {
-    return firestoreGet(collectionPath(), id, HandPathDataSchema) as Promise<HandPathData | null>;
+    return firestoreGet(
+      collectionPath(),
+      id,
+      HandPathDataSchema
+    ) as Promise<HandPathData | null>;
   }
 
   async getByHash(contentHash: string): Promise<HandPathData | null> {
@@ -63,19 +63,35 @@ export class HandPathRepository {
     const clauses: WhereClause[] = [];
 
     if (filters?.startLocation !== undefined) {
-      clauses.push({ field: "startLocation", op: "==", value: filters.startLocation });
+      clauses.push({
+        field: "startLocation",
+        op: "==",
+        value: filters.startLocation,
+      });
     }
     if (filters?.endLocation !== undefined) {
-      clauses.push({ field: "endLocation", op: "==", value: filters.endLocation });
+      clauses.push({
+        field: "endLocation",
+        op: "==",
+        value: filters.endLocation,
+      });
     }
     if (filters?.impliedGridMode !== undefined) {
-      clauses.push({ field: "impliedGridMode", op: "==", value: filters.impliedGridMode });
+      clauses.push({
+        field: "impliedGridMode",
+        op: "==",
+        value: filters.impliedGridMode,
+      });
     }
     if (filters?.isClosed !== undefined) {
       clauses.push({ field: "isClosed", op: "==", value: filters.isClosed });
     }
     if (filters?.containsBigram !== undefined) {
-      clauses.push({ field: "bigrams", op: "array-contains", value: filters.containsBigram });
+      clauses.push({
+        field: "bigrams",
+        op: "array-contains",
+        value: filters.containsBigram,
+      });
     }
     if (filters?.minLength !== undefined) {
       clauses.push({ field: "length", op: ">=", value: filters.minLength });
@@ -90,23 +106,46 @@ export class HandPathRepository {
     }) as Promise<HandPathData[]>;
   }
 
-  async save(path: HandPathData, provenance?: ArtifactProvenance): Promise<void> {
+  async save(
+    path: HandPathData,
+    provenance?: ArtifactProvenance,
+    expectedOwnerId?: string
+  ): Promise<void> {
     const firestore = await getFirestoreInstance();
     const uid = requireAuth();
+
+    // Identity fence. `uid` is resolved from live auth HERE, after an await,
+    // and it is the PATH this document is written to. A save's side effects
+    // outlive the save: a guest whose sign-in collides with an existing
+    // account would otherwise have these artifacts land in that account's
+    // subtree before they ever consented to the import. Callers that know
+    // which account the work belongs to pass it; the write is refused rather
+    // than re-aimed.
+    if (expectedOwnerId && expectedOwnerId !== uid) {
+      throw new Error(
+        "[HandPathRepository] The signed-in account changed before this write could be attributed."
+      );
+    }
     const docRef = doc(firestore, `users/${uid}/handPaths/${path.id}`);
 
     if (provenance) {
       const existing = await getDoc(docRef);
 
       if (existing.exists()) {
-        await setDoc(docRef, {
-          ...handPathToDoc(path),
-          provenance: {
-            sourceSequenceIds: arrayUnion(...provenance.sourceSequenceIds),
-            isOriginal: provenance.isOriginal,
-            firstSeenAt: existing.data()["provenance"]?.["firstSeenAt"] ?? provenance.firstSeenAt,
+        await setDoc(
+          docRef,
+          {
+            ...handPathToDoc(path),
+            provenance: {
+              sourceSequenceIds: arrayUnion(...provenance.sourceSequenceIds),
+              isOriginal: provenance.isOriginal,
+              firstSeenAt:
+                existing.data()["provenance"]?.["firstSeenAt"] ??
+                provenance.firstSeenAt,
+            },
           },
-        }, { merge: true });
+          { merge: true }
+        );
       } else {
         await setDoc(docRef, {
           ...handPathToDoc(path),

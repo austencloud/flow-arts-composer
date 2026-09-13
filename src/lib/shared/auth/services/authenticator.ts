@@ -29,8 +29,11 @@ import {
   captureAnonymousDrafts,
   notifyUpgradeSignup,
   reportGuestUpgradeLifecycle,
+  upgradeAnonymousWithEmail,
   upgradeAnonymousWithFacebook,
+  upgradeAnonymousWithGoogle,
   upgradeAnonymousWithGoogleCredential,
+  type UpgradeResult,
 } from "./anonymous-upgrade";
 import { promptAnonymousImport } from "$lib/shared/auth/state/anonymous-import-prompt.svelte";
 import { clearPendingLink, stashPendingLink } from "./pending-credential-link";
@@ -73,7 +76,43 @@ export function notePopupCoop(): void {
   );
 }
 
+/**
+ * If the current session is an anonymous guest, route a sign-in through the
+ * in-place upgrade instead, and offer the drafts back on a collision.
+ *
+ * Returns true when it handled the sign-in, false when there was no guest to
+ * upgrade and the caller should proceed with its ordinary path. This is the one
+ * place the "guest signing in must not be abandoned" rule lives for the plain
+ * authenticator entry points; `signInWithGoogleCredential` already inlines the
+ * same shape for the One Tap credential it holds.
+ */
+async function upgradeCurrentGuestWith(
+  upgrade: () => Promise<UpgradeResult>
+): Promise<boolean> {
+  const authInstance = await getAuthInstance();
+  if (!authInstance.currentUser?.isAnonymous) return false;
+  const result = await upgrade();
+  if (result.status === "collision-signed-in") {
+    promptAnonymousImport(result.importable ?? [], result.destinationUid);
+  }
+  return true;
+}
+
 export async function signInWithGoogle(): Promise<void> {
+  // A guest signing in here must UPGRADE, not be replaced. Plain sign-in swaps
+  // the anonymous uid out and abandons everything saved under it. The signup
+  // modal's callers (SocialAuthCompact, AccountPopover) branch on isAnonymous
+  // before calling, so for them this is inert; the retro shell's login dialog
+  // calls straight through and was losing guest work. Guarding at the owner
+  // fixes every caller instead of adding a third copy of the upgrade dance.
+  // upgradeAnonymousWithGoogle() does its own native/desktop/popup routing, so
+  // it must come before the platform branches below. See docs/superpowers/
+  // reviews/2026-09-12-guest-save-continuity-audit.md (F4).
+  const guestUpgrade = await upgradeCurrentGuestWith(
+    upgradeAnonymousWithGoogle
+  );
+  if (guestUpgrade) return;
+
   const { isDesktop } = await import("$lib/shared/desktop/is-desktop");
   if (isDesktop()) {
     const { signInWithDesktopOAuth } =
@@ -127,7 +166,7 @@ export async function signInWithGoogleCredential(
   if (anon?.isAnonymous) {
     const result = await upgradeAnonymousWithGoogleCredential(anon, credential);
     if (result.status === "collision-signed-in") {
-      promptAnonymousImport(result.importable ?? []);
+      promptAnonymousImport(result.importable ?? [], result.destinationUid);
     }
     return;
   }
@@ -141,7 +180,7 @@ export async function signInWithFacebook(): Promise<void> {
   if (authInstance.currentUser?.isAnonymous) {
     const result = await upgradeAnonymousWithFacebook();
     if (result.status === "collision-signed-in") {
-      promptAnonymousImport(result.importable ?? []);
+      promptAnonymousImport(result.importable ?? [], result.destinationUid);
     }
     return;
   }
@@ -178,7 +217,10 @@ export async function signInWithInstagram(): Promise<void> {
   const result = await authenticateWithInstagram("signin");
   if (result.collision) {
     await reportGuestUpgradeLifecycle("collision-signed-in");
-    promptAnonymousImport(drafts);
+    // The Instagram flow does its own sign-in, so the account it landed on is
+    // read from the live user immediately after it completed — the same
+    // "collision result" moment the other providers return explicitly.
+    promptAnonymousImport(drafts, authInstance.currentUser?.uid);
   } else {
     await notifyUpgradeSignup(authInstance.currentUser ?? undefined);
   }
@@ -194,6 +236,14 @@ export async function signInWithEmail(
   password: string
 ): Promise<void> {
   await setAuthPersistence();
+  // Same guest guard as signInWithGoogle. The app's own email form
+  // (EmailPasswordAuth) calls firebase directly and does its own capture, so
+  // this path's only callers today are the retro shells — which had none.
+  const guestUpgrade = await upgradeCurrentGuestWith(() =>
+    upgradeAnonymousWithEmail(email, password)
+  );
+  if (guestUpgrade) return;
+
   await signInWithEmailAndPassword(auth, email, password);
   recordLastAuthMethod("password");
 }
