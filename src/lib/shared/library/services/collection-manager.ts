@@ -52,8 +52,13 @@ import {
   mapDocToCollection,
   batchFetchSequences,
   batchFetchPublicSequences,
+  filterExistingSequenceIds,
   CollectionError,
 } from "$lib/shared/library/services/collection-firestore-mapper";
+
+// One delete commit carries at most this many reverse-membership updates, well
+// under Firestore's 500-writes-per-commit ceiling.
+const DELETE_CLEANUP_CHUNK_SIZE = 200;
 
 // Re-export so existing imports of CollectionError from this module still work
 export { CollectionError };
@@ -540,24 +545,51 @@ export async function deleteCollection(collectionId: string): Promise<void> {
     );
   }
 
-  const batch = writeBatch(firestore);
-  for (const sequenceId of existing.sequenceIds) {
-    const seqRef = doc(firestore, getUserSequencePath(userId, sequenceId));
-    batch.update(seqRef, {
-      collectionIds: arrayRemove(collectionId),
-    });
-  }
-
-  batch.delete(doc(firestore, getUserCollectionPath(userId, collectionId)));
-  batch.set(
-    doc(firestore, `users/${userId}`),
-    {
-      lastActivityDate: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  const memberIds = [...new Set(existing.sequenceIds)];
 
   try {
+    // Firestore fails an entire commit when one `update` targets a document
+    // that doesn't exist, and refuses more than 500 writes per commit. A
+    // collection may hold a saved public sequence the user doesn't own (no
+    // owner document at all) and up to MAX_SEQUENCES_PER_COLLECTION members,
+    // so one unfiltered batch made those collections permanently undeletable.
+    const ownedIds =
+      memberIds.length > 0
+        ? await filterExistingSequenceIds(firestore, userId, memberIds)
+        : new Set<string>();
+    const cleanupIds = memberIds.filter((sequenceId) =>
+      ownedIds.has(sequenceId)
+    );
+
+    // Reverse membership first, the collection document last: arrayRemove is
+    // idempotent, so a failure part-way through leaves a collection the user
+    // can simply delete again instead of sequences pointing at a folder that
+    // no longer exists.
+    for (
+      let offset = 0;
+      offset < cleanupIds.length;
+      offset += DELETE_CLEANUP_CHUNK_SIZE
+    ) {
+      const chunk = cleanupIds.slice(offset, offset + DELETE_CLEANUP_CHUNK_SIZE);
+      const cleanupBatch = writeBatch(firestore);
+      for (const sequenceId of chunk) {
+        cleanupBatch.update(
+          doc(firestore, getUserSequencePath(userId, sequenceId)),
+          { collectionIds: arrayRemove(collectionId) }
+        );
+      }
+      await cleanupBatch.commit();
+    }
+
+    const batch = writeBatch(firestore);
+    batch.delete(doc(firestore, getUserCollectionPath(userId, collectionId)));
+    batch.set(
+      doc(firestore, `users/${userId}`),
+      {
+        lastActivityDate: serverTimestamp(),
+      },
+      { merge: true }
+    );
     await batch.commit();
   } catch (error) {
     console.error("[CollectionManager] Failed to delete collection:", error);
