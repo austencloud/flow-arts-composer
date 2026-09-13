@@ -379,7 +379,11 @@ requested** — this is recorded so the isolation claim is not read as stronger
 than the evidence. A deep clone would be a separate, measurable change with its
 own allocation cost, and should be decided on its own merits.
 
-## Not verified
+## Cloud verification limits
+
+These describe the original cloud run. The independent local browser evidence
+below supersedes its lack of observed frames, but does not establish complete
+visual correctness.
 
 - **No browser verification has run at all.** Not partially, not
   indirectly — zero rendered frames were observed for this branch. This is a
@@ -395,3 +399,49 @@ own allocation cost, and should be decided on its own merits.
   browser project were not run; nothing in the diff touches rules, auth, or a
   Svelte component.
 - **No user or device gate is claimed complete.**
+
+## Independent local browser verification, 2026-09-13
+
+The retained integration branch was merged with current main without conflicts
+at `3d4585800fa688da7e83ad3a8c7b1b2af4c76b8c`. The closest seven Fuse suites
+passed **56 tests**, covering motion fidelity, grid metadata, word derivation,
+motion-frame conversion, reversal, state, and action contracts. Main's later
+inversion and ownership fixes remain intact.
+
+The existing `/test/fuse-motion-fidelity` page was mounted unchanged inside the
+repository's Chromium component harness at 1440×900. The temporary config reused
+the existing component-test configuration, exposed the existing `static/`
+assets, and restricted the run to the one proof test. It imported the real app
+CSS and did not mount the authenticated application shell. All seven cases
+reached the real `PictographContainer` readiness signal, and all **28 fixture
+data checks passed**. Each case produced an SVG with visible props and arrows.
+The final per-pictograph screenshots were directly inspected for float fidelity,
+diamond, box, mixed, skew-right, skew-left, and centric. No horizontal card
+overflow was measured.
+
+**Visual hold: centric arrow placement falls back after an error.** The centric
+case logs `Unsupported placement frame: centric` from
+`src/lib/shared/pictograph/arrow/positioning/placement/domain/placement-frame.ts`.
+`normalizePlacementFrame` accepts canonical, diamond, box, and skewed values;
+it rejects centric. The error reaches `ArrowAdjustmentCalculator.calculateAdjustment`,
+which logs it and returns `new Point(0, 0)`. Consequently the case can report
+renderer-ready and still contain fallback placement. The passing readiness
+test is evidence that the frame painted, not proof of correct centric geometry.
+No renderer or placement behavior was changed during this verification.
+
+The other six screenshots show the requested fixture outputs reaching the
+renderer without that placement error. This is implementation evidence against
+the fixture's fixed inputs, not independent TKA-domain certification: the
+local reviewer had no flow-arts MCP tools available. The actual Fuse workflow,
+playback transitions, and mobile layout were not exercised by this isolated
+proof page. The centric error must be resolved or explicitly scoped before
+claiming complete visual verification.
+
+Evidence is retained outside Git at
+`C:/Users/Austen/.codex/opus-batches/2026-09-12-expanded/fuse-visual/`:
+`<case>-pictograph.png`, `browser-run.log`, and copies of the temporary browser
+test and configuration. Earlier whole-card screenshots in that directory are
+cropped by the test viewport; use the final `-pictograph.png` captures. The
+temporary files were removed from the worktree after capture, and the task's
+browser runner and server exited. No full type/build gate or integration gate
+was run.
