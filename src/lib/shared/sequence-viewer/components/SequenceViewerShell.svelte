@@ -458,7 +458,7 @@
     // Not for a scene share: that session is ABOUT a live 3D take, and a post
     // render left behind by the studio would both stand in for the take and
     // no-op the request that records it.
-    if (postStudioVideoUrl && !target && !share.sceneShare) {
+    if (postStudioVideoUrl && share.postShare && !target && !share.sceneShare) {
       return {
         blobUrl: postStudioVideoUrl,
         exporting: false,
@@ -774,9 +774,8 @@
         studioSurfaces.controls?.setBpm(bpm);
         interactions.handleBpmChange(bpm, "video_export");
       }}
-      onExport={studioSurfaces.active
-        ? undefined
-        : () => interactions.handleVideoExport()}
+      onExport={studioSurfaces.active ? undefined : share.openFilePreparation}
+      exportOpensPreparation
       onCancel={interactions.handleCancelVideoExport}
       onSettingChange={scanInstrumentationEnabled
         ? interactions.handleViewerControlSetting
@@ -1255,13 +1254,14 @@
                   {#if ctx.previewBlobUrl}
                     <VideoPreviewPanel
                       blobUrl={ctx.previewBlobUrl}
-                      saveLabel="Save"
+                      saveLabel="Download video"
                       onDismiss={interactions.handleDismissExportedVideo}
                       onRedownload={() =>
                         void interactions.handleRedownloadExportedVideo()}
                       onSaveToCloud={canSaveFilmToSequence
                         ? saveFilmToSequence
                         : undefined}
+                      cloudSaveLabel="Attach video to sequence"
                     />
                   {:else}
                     <!-- No tempo and no playback mode on the Motion page: the
@@ -1469,10 +1469,16 @@
     isRecordingScene={!share.artShare && ctx.isRecording3D}
     exportProgress={artShareVideo.progress}
     onRequestVideo={artShareVideo.request}
+    onPrepareFile={share.prepareFile}
+    initialEntry={share.initialEntry}
+    preserveSession={share.preserveSession}
+    onSessionResumed={share.markSessionResumed}
     videoLabel={artShareVideo.label}
     initialArtifact={share.artShare ||
     share.sceneShare ||
-    (share.postShare && !!postStudioVideoUrl)
+    (share.postShare && !!postStudioVideoUrl) ||
+    share.initialEntry === "download" ||
+    ctx.viewerState.viewerMode === "animation"
       ? "video"
       : "card"}
     resolvedCardAutoLayout={ctx.resolvedCardAutoLayout}

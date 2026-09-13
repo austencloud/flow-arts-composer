@@ -5,6 +5,16 @@ wholesale. Each row names the behavior owner. Verify the path in current code
 before relying on it. Add a row only for shared behavior or an intentional
 keep-separate decision, not for every component.
 
+Sequence sharing extends `shared/share/components/PostShareSheet.svelte`.
+Searches: share, download, export, send in TKA, transfer to phone, caption.
+The chooser separates interactive sequence links and inbox attachments from
+file preparation. `sequence-viewer/state/viewer-shell-share-state.svelte.ts`
+owns the source session; the sheet composes existing card preview and viewer
+export owners, then reuses `shared/share/services/post-handoff.ts` for delivery.
+Export shortcuts enter that same sheet. Live scene recording retains its stage
+controls. Account connection and publishing require the explicit social route.
+Do not add another renderer or delivery modal for a new sharing entry point.
+
 Sidebar prop pairs compose `SelectedPropPreview.svelte` with
 `PropCompositionPreview.svelte`. Searches: prop button, paired composition,
 fan appearance, primary prop colors. `prop-look.ts` owns build artwork and

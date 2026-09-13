@@ -92,11 +92,11 @@ export function resolveDestinations(ctx: HandoffContext): HandoffDestination[] {
   } else {
     destinations.push({
       id: "send-to-phone",
-      label: "Send to phone",
-      short: "Phone",
+      label: "Transfer to phone",
+      short: "Transfer",
       icon: "fa-solid fa-qrcode",
       primary: true,
-      hint: "Scan, save, post from Instagram",
+      hint: "Upload a file, then scan its QR code",
     });
 
     if (ctx.artifact === "card") {
@@ -156,7 +156,10 @@ export async function shareArtifactNatively(
     case "canceled":
       return { status: "canceled" };
     case "unavailable":
-      return { status: "failed", message: "Sharing files isn't available here" };
+      return {
+        status: "failed",
+        message: "Sharing files isn't available here",
+      };
     default:
       return { status: "failed", message: "Share failed" };
   }
@@ -168,7 +171,7 @@ export async function downloadArtifact(
 ): Promise<HandoffResult> {
   const result = await downloadBlobToDisk(blob, filename);
   return result.success
-    ? { status: "done", message: "Saved" }
+    ? { status: "done", message: "Download started" }
     : { status: "failed", message: "Download failed" };
 }
 
@@ -216,9 +219,7 @@ export async function copyImageAndOpenFacebook(
   }
 
   try {
-    await navigator.clipboard.write([
-      new ClipboardItem({ "image/png": blob }),
-    ]);
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
   } catch {
     return { status: "failed", message: "Couldn't copy the image" };
   }

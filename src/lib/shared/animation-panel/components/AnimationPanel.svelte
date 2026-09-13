@@ -150,6 +150,8 @@
       onHandChange: (hand: "left" | "right") => void;
     };
     onExport?: () => void;
+    /** The host opens the shared file preview instead of rendering immediately. */
+    exportOpensPreparation?: boolean;
     onCancel?: () => void;
     secondaryActions?: (ControlDockLink | ControlDockAction)[];
     /** Compact action at the end of the bottom dock. Export still takes this
@@ -214,6 +216,7 @@
     propChirality,
     handProps,
     onExport,
+    exportOpensPreparation = false,
     onCancel,
     secondaryActions = [],
     dockTrailingAction,
@@ -532,7 +535,7 @@
   // it opens the Export tray first and the tray carries its own confirm.
   function handleExportTrigger(): void {
     if (!onExport) return;
-    if (resolvedPill !== "export") {
+    if (!exportOpensPreparation && resolvedPill !== "export") {
       handlePillSelect("export");
       return;
     }
