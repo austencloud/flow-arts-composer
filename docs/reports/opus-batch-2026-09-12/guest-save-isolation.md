@@ -5,8 +5,8 @@
 its assigned `claude/*` branch; `codex/*` was not available)
 **Session:** `session_01XKgrpvpxBttgxeaNzPKsJC`
 **Base SHA:** `0945738f` (merge of `origin/main` `c4be1619` into the task branch)
-**Final SHA:** see the last commit on the branch; the implementation landed in
-`f48d9877` and the identity-fencing follow-up after it.
+**Final SHA:** `928b77ce` (implementation `f48d9877`, identity-fencing
+follow-up `928b77ce`, plus this report update)
 **Source audit:** `docs/superpowers/reviews/2026-09-12-guest-save-continuity-audit.md`
 (reviewed at `7fabc7d9`)
 
@@ -197,6 +197,22 @@ out the pre-change `src/` and re-running the same tests:
 | First round (F1/F2/F3/F5 behaviour) | **19 failed**, 6 passed (25) — the 6 are guard assertions that must not regress |
 | F4 guard                            | **4 failed**, 3 passed (7) — the 3 are the non-guest control cases              |
 | Identity fencing round              | **9 failed**, 24 passed (33)                                                    |
+
+**Full unit suite** (`pnpm exec vitest run --config tests/config/vitest.config.ts`):
+
+```
+BEFORE (pre-fix baseline, same command)
+  Test Files  3 failed | 1973 passed | 5 skipped (1981)
+       Tests  2 failed | 16004 passed | 106 skipped | 1 todo (16113)
+
+AFTER
+  Test Files  1977 passed | 5 skipped (1982)
+       Tests  16020 passed | 106 skipped | 1 todo (16127)          exit 0
+```
+
+Zero failures. The file count rises by four and the test count by sixteen
+because the two suites that were silently collecting zero tests now run, and
+the new focused suites were added.
 
 **Live Firebase auth emulator** (`pnpm run test:e2e`, `firebase emulators:exec
 --only auth`):
