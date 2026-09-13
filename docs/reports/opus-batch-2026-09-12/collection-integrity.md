@@ -1,14 +1,14 @@
 # Collection Integrity — Opus batch 2026-09-12
 
-Six reproduced collection-integrity defects, each fixed with a repro test that
-fails without the fix and passes on the branch head. D1's fix was reworked
-twice and D4-D6 were found in review; every round carries its own before/after
-evidence.
+Nine reproduced collection-integrity defects, each fixed with a repro test that
+fails without the fix and passes on the branch head. Several were found by
+successive review of this branch's own fixes; every round carries its own
+before/after evidence.
 
 | Field       | Value                                                             |
 | ----------- | ----------------------------------------------------------------- |
 | Base SHA    | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`)         |
-| Fixes SHA   | `1acb4b44` (runtime + tests; this report commits on top)           |
+| Fixes SHA   | `0fa5bc16` (runtime + tests; this report commits on top)           |
 | Branch      | `claude/fix-collection-integrity-nm8fj9`                           |
 | Scope       | collection state, membership bookkeeping, subscription lifecycle   |
 
@@ -26,6 +26,7 @@ Added (tests):
 - `tests/unit/library/collection-manager-delete.test.ts`
 - `tests/unit/library/collection-firestore-mapper-existing-ids.test.ts`
 - `tests/unit/library/collection-manager-subscription-disposal.test.ts`
+- `tests/unit/library/collection-manager-public-member-owner.test.ts`
 
 Nothing else in the working tree was staged. `library-repository.ts`,
 `saved-sequence-ledger.ts`, auth/sync retry, `firestore.rules`, the browse
@@ -300,11 +301,81 @@ FAIL  reads and writes as the same user when the effective uid changes mid-delet
 
 **Fix.** A module-private `readCollectionAs(firestore, userId, collectionId)`
 reads the document under an already-captured uid; `deleteCollection` and
-`updateCollection` both use it, so one uid covers the metadata read and every
-write. `getCollection` itself is unchanged — it is a legitimate standalone read
-and other callers depend on it resolving the current user.
+`updateCollection` both use it, so one uid covers the metadata read and the
+writes **this module issues**. `getCollection` itself is unchanged — it is a
+legitimate standalone read and other callers depend on it resolving the current
+user.
+
+That is narrower than "every write", and an earlier version of this report
+overstated it. Work these operations delegate to still resolves the effective
+user on its own; D6 covers what remains and what is left open.
 
 ---
+
+## D5 — the identity fence missed the path every consumer uses
+
+Raised in review of `ab7642b4`. `update` re-checked `isCurrent` only inside the
+`prepareUpdate` branch — but `prepareExclusively` is awaited on **every** path,
+and mandala, 3D scene and film register no lifecycle at all, so the unchecked
+branch is the one every real consumer takes. Worse, the continuation after that
+await read a live `this.userId`, and `commitWrite` captured `this.generation`
+itself, which by then was the *new* identity's: an edit prepared under one user
+could be saved under the next, and recorded as that user's confirmed baseline.
+
+Separately, the preparation queue was keyed by entry id alone and survived
+`teardown`, so a preparation that never settles (a poster render abandoned at
+sign-out) blocked the next user's edit of a same-id entry for the life of the
+tab.
+
+**Measured failures (before the fix)**:
+
+```
+FAIL  drops a lifecycle-free update when the session ends before it commits
+  expected { id: 'art', name: 'Original', … } to be null
+FAIL  does not block the next user's edit behind a preparation that never settles
+  Error: Test timed out in 30000ms.
+```
+
+**Fix.** Owner and generation are captured before any await in each public
+method and passed into `commitWrite`, so a write is fenced against the identity
+it started under rather than the one current when it finishes. `update` checks
+`isCurrent` inside the exclusive section and again after it, before anything is
+read live or written. The preparation queue is scoped to the generation that
+started it and cleared by `init` and `teardown`.
+
+`npm run check:fast` caught one thing the tests did not: `updatePresentation`
+referenced `generation` without declaring it — a `ReferenceError` on a path with
+no test of its own. Fixed, and the method now captures owner and generation the
+same way as the others.
+
+## D6 — a delegated publish resolves its own user, repeatedly
+
+Also from the `ab7642b4` review, and only partly fixable here.
+`ensurePublicMember` delegates to `getLibraryRepository().publishSequence(id)`,
+which takes **no owner argument** and calls `getWritableUserId()` (plus
+`getSequence` / `setVisibility` / public-index sync) on its own, several times.
+A uid swap while it runs can publish the *new* user's same-id sequence while
+this operation continues writing membership under the captured one.
+
+**Measured failure (before the fix)** — with the uid swapping during a held
+publish, the add resolved successfully and committed its membership
+transaction:
+
+```
+FAIL  refuses the membership write when the signed-in user changes during publish
+  expected 'resolved' to be an instance of Error
+```
+
+**Fix, and what is deliberately left open.** The real fix is an explicit owner
+threaded through `publishSequence`, which lives in `library-repository.ts` —
+another agent's file, and out of scope here. What this module can guarantee is
+that it does not compound the mismatch: `assertStillSignedInAs` runs on both
+sides of the publish (before, to narrow the window; after, to abort), so the
+membership write never lands under a session that ended mid-publish.
+
+**Still open, for the owner of `library-repository.ts`:** `publishSequence`
+should take the owner id its caller captured. The window inside the publish
+itself cannot be closed from here, only detected afterwards.
 
 ## Commands and results
 
@@ -324,10 +395,12 @@ looks like 22 red files but is zero red assertions. `pnpm --recursive --filter
 | `vitest run … src/lib/shared/collections/__tests__/collection-state-overlap.test.ts` (base) | **5 failed / 5** — D1 reproduced                                 |
 | the same file's two both-failure cases, against the first D1 fix             | **2 failed** — the confirmed-baseline defect reproduced          |
 | the same file's identity-change and preparation cases, against the second D1 fix | **6 failed** — D1a and D1b reproduced                       |
+| the lifecycle-free and stuck-queue cases, against the third fix              | **2 failed** (one a 30s timeout) — D5 reproduced                 |
+| `tests/unit/library/collection-manager-public-member-owner.test.ts`, against the pre-D6 manager | **1 failed** — D6 reproduced                 |
 | `vitest run … tests/unit/library/collection-manager-delete.test.ts` (base)                  | **3 failed / 4** — D2 reproduced (2 of them are the defect)      |
 | the same file's uid-swap case, against the pre-D4 manager                    | **1 failed** — D4 reproduced                                     |
 | `vitest run … tests/unit/library/collection-manager-subscription-disposal.test.ts` (base)   | **3 failed / 4** — D3 reproduced                                 |
-| `vitest run … tests/unit/library/ src/lib/shared/collections/__tests__/ src/lib/features/library/{state,services}/__tests__/ plus every CollectionState consumer (tunnel, mandala, scene-3d, film)` (head) | **337 tests, all passing** |
+| `vitest run … tests/unit/library/ src/lib/shared/collections/__tests__/ src/lib/features/library/{state,services}/__tests__/ plus every CollectionState consumer (tunnel, mandala, scene-3d, film)` (head) | **341 tests, all passing** |
 | `vitest run --config tests/config/vitest.config.ts` — full default suite (head)             | **15 672 passed, 106 skipped**; 22 files failed to load, all from unbuilt workspace packages (see below) |
 | Re-run of those 22 files after `pnpm --recursive --filter "./packages/*" run build`          | **22 files, 327 tests, all passing** — the failures were the environment, not this branch |
 | `npm run check:fast` (head)                                                                | 581 errors / 44 warnings repo-wide; **none in any changed or added file** (645 before the workspace packages were built) |
