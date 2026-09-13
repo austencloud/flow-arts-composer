@@ -97,22 +97,39 @@ describe("share/QR flat wire format motion fidelity", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("measured: every plane in the real corpus is dropped by a share round trip", () => {
+  it("measured: plane is the ONLY motion-identity field the corpus loses over the wire", () => {
     const corpus = realCorpusSequences();
     let motionsChecked = 0;
     let planeLosses = 0;
+    const otherLosses: string[] = [];
 
-    for (const { sequence } of corpus) {
+    for (const { label, sequence } of corpus) {
       const back = decodeSequence(encodeSequence(sequence));
       motionsChecked += sequence.steps.length * 2;
-      planeLosses += diffMotionIdentity(sequence, back).filter((line) =>
-        line.includes(".plane:")
-      ).length;
+      for (const line of diffMotionIdentity(sequence, back)) {
+        if (line.includes(".plane:")) planeLosses++;
+        else otherLosses.push(`${label}: ${line}`);
+      }
     }
 
     expect(motionsChecked).toBeGreaterThan(500);
     // The corpus stores `plane: "wall"` on every motion; every one comes back absent.
     expect(planeLosses).toBe(motionsChecked);
+    // Locations, orientations, motion types, rotation directions and turns all
+    // survive the orientation-chaining decoder on real data — the loss is a
+    // field-coverage gap, not a broken derivation.
+    expect(otherLosses).toEqual([]);
+  });
+
+  it("measured: per-beat letters are not carried by the wire format", () => {
+    // Recovered downstream by `navigation/sequence-hydrator.hydrateSequence`,
+    // which re-derives letters and the word for every decoded sequence. Pinned
+    // here so the loss stays a deliberate, recovered one.
+    const corpus = realCorpusSequences();
+    const back = decodeSequence(encodeSequence(corpus[0]!.sequence));
+    expect(corpus[0]!.sequence.steps.some((s) => s.letter !== null)).toBe(true);
+    expect(back.steps.every((s) => s.letter === null)).toBe(true);
+    expect(back.word).toBe("");
   });
 
   it.fails(
