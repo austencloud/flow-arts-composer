@@ -7,7 +7,10 @@ Features frame processing loop for pose estimation and overlay support.
 -->
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
-  import { CameraManager } from "$lib/shared/train/services/camera-manager";
+  import {
+    CameraManager,
+    CAMERA_START_CANCELLED,
+  } from "$lib/shared/train/services/camera-manager";
   import type { Snippet } from "svelte";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
@@ -82,6 +85,15 @@ Features frame processing loop for pose estimation and overlay support.
       }
     } catch (error) {
       isInitializing = false;
+      // A start the manager cancelled for us — the preview unmounted, or a
+      // newer start replaced this one — is not a failure the user should read
+      // about. The camera it opened was already released.
+      if (
+        error instanceof Error &&
+        error.name === CAMERA_START_CANCELLED
+      ) {
+        return;
+      }
       const message =
         error instanceof Error ? error.message : t('train_camera_failed');
       errorMessage = message;
