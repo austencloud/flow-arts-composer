@@ -321,10 +321,36 @@ export class Messenger {
       existingUnsubscribe();
     }
 
+    // The Firestore handle is awaited before onSnapshot can attach, so a caller
+    // that disposes inside that window used to get nothing: the map had no
+    // entry to unsubscribe, the listener attached afterwards and stayed for the
+    // life of the page, and its callback and its error toast still fired. The
+    // disposer is now created first and owns a `disposed` flag, so it works
+    // whenever it is called.
+    let disposed = false;
+    let detach: (() => void) | null = null;
+
+    const dispose = () => {
+      if (!disposed) {
+        disposed = true;
+        detach?.();
+        detach = null;
+      }
+      // Only clear the slot if it is still this subscription's. A stale
+      // disposer must not evict a newer listener for the same conversation,
+      // which is the key this map is indexed by.
+      if (this.messageSubscriptions.get(conversationId) === dispose) {
+        this.messageSubscriptions.delete(conversationId);
+      }
+    };
+
+    this.messageSubscriptions.set(conversationId, dispose);
+
     // Use async IIFE to get firestore instance
     (async () => {
       try {
         const firestore = await getFirestoreInstance();
+        if (disposed) return;
 
         const messagesRef = collection(
           firestore,
@@ -339,6 +365,7 @@ export class Messenger {
           q,
           { includeMetadataChanges: true },
           (snapshot) => {
+            if (disposed) return;
             const messages = snapshot.docs
               .map((docSnap) =>
                 this.mapDocToMessage(
@@ -352,6 +379,9 @@ export class Messenger {
             callback(messages);
           },
           (error) => {
+            // A caller that has already disposed is not waiting on this
+            // conversation any more; its failure is not the user's problem.
+            if (disposed) return;
             // Expected when the user signs out - Firestore revokes access and
             // this listener is about to be torn down by the auth listener.
             // Don't alarm the user with a "lost connection" toast.
@@ -361,8 +391,15 @@ export class Messenger {
           }
         );
 
-        this.messageSubscriptions.set(conversationId, unsubscribe);
+        // Disposed while onSnapshot was being created: detach immediately
+        // rather than leaving an orphan listener attached.
+        if (disposed) {
+          unsubscribe();
+          return;
+        }
+        detach = unsubscribe;
       } catch (error) {
+        if (disposed) return;
         console.error(
           "[Messenger] Failed to initialize messages subscription:",
           error
@@ -371,14 +408,7 @@ export class Messenger {
       }
     })();
 
-    // Return a cleanup function that will unsubscribe when ready
-    return () => {
-      const unsubscribe = this.messageSubscriptions.get(conversationId);
-      if (unsubscribe) {
-        unsubscribe();
-        this.messageSubscriptions.delete(conversationId);
-      }
-    };
+    return dispose;
   }
 
   /**
@@ -386,8 +416,12 @@ export class Messenger {
    */
   async markAsRead(conversationId: string): Promise<void> {
     try {
-      const firestore = await getFirestoreInstance();
+      // Read the account BEFORE the first await. Resolving it afterwards meant
+      // the receipt was filed for whoever was signed in by the time the
+      // Firestore handle came back, which on a sign-out or account switch is
+      // not the person who opened the thread.
       const currentUserId = this.getCurrentUserId();
+      const firestore = await getFirestoreInstance();
 
       // Reset unread count for current user in conversation
       const conversationRef = doc(
