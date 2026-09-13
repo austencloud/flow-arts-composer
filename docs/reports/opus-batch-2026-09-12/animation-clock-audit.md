@@ -137,9 +137,30 @@ The clamp is what keeps a pathological `deltaTime` (see C2) from skipping past
 the new lap entirely. **Known cost:** two existing expectations assert that the
 fallback path calls `calculateStateDurationAware(1)` exactly
 (`animation-playback-controller-boundary-handoff.test.ts:143` and `:174`); they
-would become `1 + overrun` and must be updated in the same change. The audit
-suite's drift assertions are written against current behavior and would need to
-flip to "lap === nominal" at the same time — they are marked in-file.
+would become `1 + overrun` and must be updated in the same change.
+
+**How the audit's drift assertions should be rewritten.** The current
+assertions (`min(lap) > nominal`, `mean(lap) > nominal`, `max − min < 1e-6`)
+record present behavior and must be replaced, but **not** with `lap ===
+nominal`. That expectation would be wrong for a correct clock. Laps are still
+observed on frame boundaries, and once the remainder is carried forward a lap
+inherits a non-zero starting phase, so it needs fewer frames' worth of remaining
+time to close: under fractional or jittered rAF cadences individual observed
+laps straddle nominal — some short, some long — and only their sum is
+constrained. The invariant a correct carry actually provides is on the
+**cumulative phase error**:
+
+```
+|t_N − t_0 − N × nominal|  ≤  one frame of sequence time,  for every N
+```
+
+i.e. bounded and non-accumulating, rather than the linear growth measured today.
+The current behavior fails that bound by construction: the error is one-signed,
+so it equals `N × perLapLoss` and exceeds any fixed bound for large enough `N`.
+A rewritten suite should therefore assert the bound on cumulative phase across
+many laps (and that it does not grow with `N`), keep the jittered-cadence case
+as the one that would expose a one-signed carry, and drop the per-lap
+`min`/`max` assertions entirely rather than invert them.
 
 ### C2 — No maximum timestep: one frame consumes an entire suspended tab
 
@@ -176,14 +197,42 @@ const deltaTime = Math.min(timestamp - lastTimestamp, MAX_FRAME_DELTA_MS);
 ```
 
 with the constant beside the other playback constants in
-`domain/constants/timing.ts` (100 ms ≈ six dropped frames is the usual choice).
-This is independent of gating, and it also removes the same jump after a long GC
-pause or a debugger break. `AnimationLoop`'s consumers are all live-playback
-hosts — the deterministic export drives frames through
-`video-pre-renderer`/the externally-driven render loop, not through this loop —
-so no deliberate large-delta caller is clamped by the change. Installing the
-gate in the remaining hosts is the complementary fix; it is a larger diff and
-still leaves the GC case, so the clamp should land first.
+`domain/constants/timing.ts`. This is independent of gating, and it also removes
+the same jump after a long GC pause or a debugger break. `AnimationLoop`'s
+consumers are all live-playback hosts — the deterministic export drives frames
+through `video-pre-renderer`/the externally-driven render loop, not through this
+loop — so no deliberate large-delta caller is clamped by the change.
+
+**The clamp value is a policy choice, not a derived number, and it is not a
+complete fix.** Three things follow from it and need deciding rather than
+assuming:
+
+- *It trades wall-clock sync for continuity.* Clamping means the playhead
+  deliberately stops tracking elapsed real time across a stall: after a 30 s
+  suspension the sequence is 30 s behind where the wall clock says it should be,
+  permanently. That is the right trade for a looping visual, and the wrong one
+  for anything expected to stay in sync with an external timeline. The
+  alternative policy is catch-up — subdivide the large delta into bounded steps
+  and run them — which preserves sync and lap counts at the cost of a burst of
+  work on the resume frame. A third option is to treat any delta above the
+  threshold as a re-seed (advance nothing, exactly what the gate does today).
+  Which is correct depends on whether playback is meant to be a clock or a
+  loop; that is a product call.
+- *Any threshold is arbitrary.* 100 ms (≈ six dropped frames at 60 Hz) is a
+  common choice, but nothing in this codebase derives it. It must be large
+  enough not to slow playback during ordinary jank and small enough to catch a
+  real stall; both edges are judgement.
+- *It does not recover skipped logical laps.* The measured lap loss above is
+  not fixed by clamping. A suspension spanning three laps still delivers one
+  boundary crossing at most — with a clamp it delivers none, since the frame
+  only advances 100 ms — so `onLoopComplete` under-counts either way and the
+  tempo-practice ramp still misses the laps. Restoring the count needs the
+  catch-up policy, or deriving lap counts from the clock rather than from
+  per-frame boundary crossings (see follow-up 5).
+
+Installing the gate in the remaining hosts is the complementary fix; it is a
+larger diff and still leaves the GC case, so whichever timestep policy is chosen
+should land first.
 
 ### C3 — Next-beat is a dead button in a 0.009-wide band below each beat line
 
@@ -204,9 +253,16 @@ misbehave:
   motion is never shown, while `displayedBeatNumber` still reads `k − 1`.
   Measured at 2.9995 → lands on 4.
 
-Reachability: pausing continuous playback leaves an arbitrary fractional
-position, so roughly 1% of pauses land in the dead band and 0.1% in the skip
-band. The dead band is sticky — no number of presses gets out of it.
+Reachability: pausing continuous playback leaves a fractional position, and the
+two bands together occupy 0.01 of every 1.0 of the position axis — 0.009 dead
+plus 0.001 skip. That is an **interval fraction of the position axis, not a
+measured occurrence rate**: how often a real pause lands there depends on where
+users actually stop, which this audit did not measure and which there is no
+reason to assume is uniform (pauses cluster on intent — at a beat the user wants
+to look at — and the reaction-time distribution behind a button press is not
+flat). Treat 1% as the width of the target, not the probability of hitting it.
+What is established regardless of rate: the dead band is sticky — no number of
+presses gets out of it.
 
 **Bounded fix (one file).** Give the transport a single shared tolerance: snap
 `currentStep` to the nearest integer within `STEP_EPSILON` before computing the
@@ -339,17 +395,31 @@ Stated so the numbers are not read as more than they are.
 - The blank-first-beat case in C5 uses a canonical sequence with placeholder
   motions substituted. Whether real saved sequences reach playback in that shape
   was not measured.
+- Band widths in C3 are interval fractions of the position axis. No occurrence
+  rate was measured: where users actually pause was not observed, and a uniform
+  distribution over the position axis is an assumption this audit does not make.
+- The drift figures in C1 are exact for the cadences the harness dictates. The
+  per-lap loss is bounded by one frame of sequence time under any cadence, but
+  the specific 6.67 ms and 30.09 ms figures belong to those runs, not to a real
+  display.
 
 ## Follow-ups
 
-1. Land C1 and C2 together — they interact through the clamp — and update the
-   two boundary-handoff expectations and the audit's drift assertions in the
-   same change.
-2. C3 and C4 are independent, small, and each confined to one file.
-3. C5 removes a real divergence between the live view and the export sampler;
+1. Land C1 and C2 together — they interact through the clamp on the carried
+   remainder — and in the same change update the two boundary-handoff
+   expectations and rewrite the audit's drift assertions as a cumulative-phase
+   bound (see C1), not as a per-lap equality.
+2. C2 needs its timestep policy chosen before the one-line clamp is written:
+   clamp (drop time, keep continuity), catch-up (keep sync and lap counts, pay
+   a burst on resume), or re-seed. The threshold is a judgement call either way.
+3. C3 and C4 are independent, small, and each confined to one file.
+4. C5 removes a real divergence between the live view and the export sampler;
    worth doing before anything else leans on that parity claim.
-4. C6 needs a product decision first: is step mode a uniform pager, or should it
+5. C6 needs a product decision first: is step mode a uniform pager, or should it
    honour the duration editor?
-5. If C1's clamp lands, consider whether the tempo-practice ramp should count
-   laps from the clock rather than from `onLoopComplete` callbacks, so a
-   suspended tab cannot silently drop laps even with the delta clamp in place.
+6. Lap counting needs its own fix regardless of which timestep policy lands: a
+   clamp does not restore the laps a suspended tab skipped. Deriving the
+   tempo-practice ramp's count from the clock rather than from per-frame
+   `onLoopComplete` crossings is the durable version.
+7. If C3's dead band is judged worth prioritising, measure where users actually
+   pause first — the band width is known, the hit rate is not.
