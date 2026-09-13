@@ -4,7 +4,7 @@
 paths only.
 **Type:** read-only audit. No production code was modified.
 **Base SHA:** `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`)
-**Compatibility check SHA:** `381a83e42e018170d0806bf4260e4305cec6504d`
+**Compatibility check SHA:** `4e38832f437ffca0ae0f02cfca6efc373509b57a`
 (`main`, 2026-09-13). H2 and H5 lifecycle notes below reflect changes present
 at this checkpoint.
 **Branch:** `claude/firestore-cost-audit-8l6vvx`
