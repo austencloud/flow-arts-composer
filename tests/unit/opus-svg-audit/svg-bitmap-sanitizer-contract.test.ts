@@ -28,7 +28,7 @@ function attr(tag: string, name: string): string[] {
   ].map((m) => m[1]!);
 }
 
-describe("sanitizeSvgForBitmap — measured behaviour", () => {
+describe("sanitizeSvgForBitmap: measured behavior", () => {
   it("gives viewBox-only markup intrinsic dimensions from the viewBox", () => {
     const out = sanitizeSvgForBitmap(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 15.5"><path d="M0 0"/></svg>'
@@ -47,7 +47,7 @@ describe("sanitizeSvgForBitmap — measured behaviour", () => {
   it("reads only whitespace-separated viewBox numbers", () => {
     // A comma-separated viewBox is legal SVG. The sanitizer splits on
     // whitespace only, so every number after the first is NaN and the fallback
-    // 100×100 box is injected — a silently wrong aspect ratio, not an error.
+    // 100x100 box is injected: a silently wrong aspect ratio, not an error.
     const out = sanitizeSvgForBitmap(
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0,0,300,15.5"/>'
     );
@@ -83,9 +83,9 @@ describe("sanitizeSvgForBitmap — measured behaviour", () => {
     );
     expect(attr(rootTagOf(out), "width")).toHaveLength(2);
     expect(
-      new DOMParser().parseFromString(out, "image/svg+xml").querySelector(
-        "parsererror"
-      )
+      new DOMParser()
+        .parseFromString(out, "image/svg+xml")
+        .querySelector("parsererror")
     ).not.toBeNull();
   });
 });
@@ -124,7 +124,9 @@ describe("shipped corpus vs. the sanitizer's edges", () => {
       const heights = attr(tag, "height");
 
       if (widths.length !== 1 || heights.length !== 1) {
-        bad.push(`${svg.file}: width×${widths.length} height×${heights.length}`);
+        bad.push(
+          `${svg.file}: width×${widths.length} height×${heights.length}`
+        );
         continue;
       }
       if (

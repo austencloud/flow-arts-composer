@@ -3,7 +3,7 @@
  *
  * The renderers build asset URLs from motion and prop data. When a resolver
  * emits a path that has no file behind it the fetch 404s, the loader rejects,
- * and the pictograph simply renders without that arrow or prop — no console
+ * and the pictograph simply renders without that arrow or prop. No console
  * error reaches the user. These checks walk the resolvers' real output domain
  * and compare it against the files actually on disk.
  *
@@ -129,20 +129,23 @@ describe("full-motion arrow asset resolution", () => {
     ]);
   });
 
-  it.fails("resolves every zero-turn skew combination to a file on disk", () => {
-    // KNOWN DEFECT (audit finding F2). A skewed zero-turn pro or anti resolves
-    // to art that was never drawn for four of the eight slots — e.g.
-    // pro/clock/0 skew+ asks for
-    // static/images/arrows/pro/from_nonradial/pro_0.0_skew+.svg.
-    // The loader rejects on the 404 and the arrow is dropped from the
-    // pictograph without a user-visible error. Delete the `.fails` when the
-    // art lands or the resolver learns to fall back.
-    const zeroTurn = SKEW_COMBOS.filter((combo) => combo.turns === 0);
-    const missing = [...resolvedPaths(zeroTurn)]
-      .filter(([assetPath]) => !exists(assetPath))
-      .map(([assetPath]) => assetPath);
-    expect(missing).toEqual([]);
-  });
+  it.fails(
+    "resolves every zero-turn skew combination to a file on disk",
+    () => {
+      // KNOWN DEFECT (audit finding F2). A skewed zero-turn pro or anti resolves
+      // to art that was never drawn for four of the eight slots, e.g.
+      // pro/clock/0 skew+ asks for
+      // static/images/arrows/pro/from_nonradial/pro_0.0_skew+.svg.
+      // The loader rejects on the 404 and the arrow is dropped from the
+      // pictograph without a user-visible error. Delete the `.fails` when the
+      // art lands or the resolver learns to fall back.
+      const zeroTurn = SKEW_COMBOS.filter((combo) => combo.turns === 0);
+      const missing = [...resolvedPaths(zeroTurn)]
+        .filter(([assetPath]) => !exists(assetPath))
+        .map(([assetPath]) => assetPath);
+      expect(missing).toEqual([]);
+    }
+  );
 
   it("names exactly the four zero-turn skew slots with no art", () => {
     const zeroTurn = SKEW_COMBOS.filter((combo) => combo.turns === 0);
@@ -240,17 +243,20 @@ describe("prop artwork resolution", () => {
     expect(missing).toEqual([]);
   });
 
-  it.fails("gives every prop type the animated artwork its consumers request", () => {
-    // KNOWN DEFECT (audit finding F3). PropPlane2D.svelte and the qr-video
-    // worker-asset-loader build `/images/props/animated/{propType}.svg` from an
-    // arbitrary prop type, and PropSvgLoader does the same under
-    // useGridVersion. Two prop types have no file in that directory:
-    // capsule_baton and fire_double_staff. Both fetches reject.
-    const missing = propTypes
-      .map((propType) => `/images/props/animated/${propType}.svg`)
-      .filter((assetPath) => !exists(assetPath));
-    expect(missing).toEqual([]);
-  });
+  it.fails(
+    "gives every prop type the animated artwork its consumers request",
+    () => {
+      // KNOWN DEFECT (audit finding F3). PropPlane2D.svelte and the qr-video
+      // worker-asset-loader build `/images/props/animated/{propType}.svg` from an
+      // arbitrary prop type, and PropSvgLoader does the same under
+      // useGridVersion. Two prop types have no file in that directory:
+      // capsule_baton and fire_double_staff. Both fetches reject.
+      const missing = propTypes
+        .map((propType) => `/images/props/animated/${propType}.svg`)
+        .filter((assetPath) => !exists(assetPath));
+      expect(missing).toEqual([]);
+    }
+  );
 
   it("names exactly the two animated-artwork gaps that exist today", () => {
     const missing = propTypes

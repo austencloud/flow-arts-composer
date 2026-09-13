@@ -1,5 +1,5 @@
 /**
- * Fragment-reference survival across the shipped prop colour transform
+ * Fragment-reference survival across the shipped prop color transform
  * (Opus batch 2026-09-12 read-only audit).
  *
  * `PropSvgLoader.applyColorToSvg()` calls `applyMotionColorToSvg(..., {
@@ -10,14 +10,19 @@
  * a `<use>` with no target draws nothing, and a `<clipPath>` whose only child
  * is such a `<use>` clips its subject away completely.
  *
- * These tests call the real exported transform — no reimplementation — against
+ * These tests call the real exported transform, not a reimplementation, over
  * the real artwork the loader fetches.
  */
 
 import { describe, it, expect } from "vitest";
 import { applyMotionColorToSvg } from "$lib/shared/utils/svg-color-utils";
 import { SELECTIVE_COLOR_PROP_TYPES } from "@tka/render-core";
-import { listSvgFiles, readSvg, stripComments, type SvgRecord } from "./svg-corpus";
+import {
+  listSvgFiles,
+  readSvg,
+  stripComments,
+  type SvgRecord,
+} from "./svg-corpus";
 
 /** The two directories PropSvgLoader fetches from. */
 const LOADED_PROP_DIRS = [
@@ -30,7 +35,10 @@ const LOADED_PROPS: SvgRecord[] = listSvgFiles("static/images/props")
   .filter((svg) => LOADED_PROP_DIRS.some((dir) => svg.file.startsWith(dir)));
 
 function propTypeOf(svg: SvgRecord): string {
-  return svg.file.split("/").pop()!.replace(/\.svg$/, "");
+  return svg.file
+    .split("/")
+    .pop()!
+    .replace(/\.svg$/, "");
 }
 
 /** Exactly the call PropSvgLoader makes for a left-hand prop in dark mode. */
@@ -39,9 +47,9 @@ function transform(svg: SvgRecord): string {
   return applyMotionColorToSvg(svg.text, "left" as never, {
     makeClassNamesUnique: true,
     themeMode: "dark",
-    selectiveColorMode: (SELECTIVE_COLOR_PROP_TYPES as readonly string[]).includes(
-      propType.toLowerCase()
-    ),
+    selectiveColorMode: (
+      SELECTIVE_COLOR_PROP_TYPES as readonly string[]
+    ).includes(propType.toLowerCase()),
   });
 }
 
@@ -82,7 +90,7 @@ function newlyBroken(
   );
 }
 
-describe("prop colour transform — fragment references", () => {
+describe("prop color transform: fragment references", () => {
   it("covers the artwork the prop loader actually fetches", () => {
     expect(LOADED_PROPS.length).toBeGreaterThan(45);
   });
@@ -114,7 +122,7 @@ describe("prop colour transform — fragment references", () => {
   it.fails("keeps every <use> reference resolvable after the transform", () => {
     // KNOWN DEFECT (audit finding F1). applyColorToSvg() rewrites `id=` and
     // `url(#...)` but not `xlink:href="#..."`, so every `<use>` in the torch
-    // family loses its target the moment a prop is coloured. The authored
+    // family loses its target the moment a prop is colored. The authored
     // black shaft body and the clipped interior detail stop drawing; no error
     // is raised on any surface. Delete the `.fails` when the transform learns
     // to rewrite href fragments (or the artwork stops using `<use>`).
@@ -205,9 +213,8 @@ describe("prop colour transform — fragment references", () => {
           /<use\b[^>]*\b(?:xlink:href|href)\s*=\s*["']#([^"']+)["']/g
         ),
       ].map((child) => child[1]!);
-      const hasOtherGeometry = /<(path|rect|circle|ellipse|polygon|polyline)\b/.test(
-        body
-      );
+      const hasOtherGeometry =
+        /<(path|rect|circle|ellipse|polygon|polyline)\b/.test(body);
       if (
         children.length > 0 &&
         !hasOtherGeometry &&
@@ -220,7 +227,7 @@ describe("prop colour transform — fragment references", () => {
     expect(emptied.length).toBe(3);
 
     // Two of the three are still referenced by a group, and an SVG element
-    // whose clip path has no geometry is not drawn at all — that group's
+    // whose clip path has no geometry is not drawn at all, so that group's
     // interior shading disappears from the pictograph.
     const stillReferenced = emptied.filter((id) =>
       after.includes(`url(#${id})`)

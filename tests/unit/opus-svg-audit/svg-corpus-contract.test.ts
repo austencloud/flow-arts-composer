@@ -1,8 +1,8 @@
 /**
  * SVG asset corpus contract (Opus batch 2026-09-12 read-only audit).
  *
- * Every pictograph surface — the live DOM, the composition worker raster,
- * image export and print — reads the same files under `static/`. A malformed
+ * Every pictograph surface reads the same files under `static/`: the live
+ * DOM, the composition worker raster, image export and print. A malformed
  * viewBox, a duplicate id or a fragment reference with no target does not
  * throw: the decoder silently drops geometry and the pictograph just looks
  * slightly wrong. That is exactly the silent class this suite exists for.
@@ -110,10 +110,11 @@ describe("static SVG corpus", () => {
     // containing width="0". A fifth file joining this set by accident would
     // render nothing with no error anywhere.
     const zeroed = CORPUS.filter(
-      (svg) =>
-        svg.rootWidth !== null && Number.parseFloat(svg.rootWidth) === 0
+      (svg) => svg.rootWidth !== null && Number.parseFloat(svg.rootWidth) === 0
     ).map((svg) => svg.file);
-    expect(zeroed.sort()).toEqual([...INTENTIONAL_ZERO_DIMENSION_ASSETS].sort());
+    expect(zeroed.sort()).toEqual(
+      [...INTENTIONAL_ZERO_DIMENSION_ASSETS].sort()
+    );
   });
 
   it("never repeats an id inside one asset", () => {
@@ -125,7 +126,9 @@ describe("static SVG corpus", () => {
       for (const id of svg.ids) counts.set(id, (counts.get(id) ?? 0) + 1);
       const dupes = [...counts].filter(([, n]) => n > 1);
       if (dupes.length) {
-        bad.push(`${svg.file}: ${dupes.map(([id, n]) => `${id}×${n}`).join(", ")}`);
+        bad.push(
+          `${svg.file}: ${dupes.map(([id, n]) => `${id}×${n}`).join(", ")}`
+        );
       }
     }
     expect(bad).toEqual([]);
@@ -212,10 +215,13 @@ describe("arrow asset geometry contract", () => {
     // parseArrowSvg() reads cx/cy off `#centerPoint`; both color transformers
     // delete it with a `<circle ...>`-specific regex. Any other element type
     // would survive the transform and draw a dot on the pictograph.
-    const marked = arrows.filter((svg) => /id=["']centerPoint["']/.test(svg.text));
+    const marked = arrows.filter((svg) =>
+      /id=["']centerPoint["']/.test(svg.text)
+    );
     expect(marked.length).toBeGreaterThan(0);
     for (const svg of marked) {
-      const tag = svg.text.match(/<[^>]*\bid=["']centerPoint["'][^>]*>/)?.[0] ?? "";
+      const tag =
+        svg.text.match(/<[^>]*\bid=["']centerPoint["'][^>]*>/)?.[0] ?? "";
       expect(tag.startsWith("<circle"), `${svg.file}: ${tag}`).toBe(true);
       expect(tag, svg.file).toMatch(/fill=["']none["']/);
     }
@@ -246,5 +252,25 @@ describe("pictograph prop geometry contract", () => {
       .filter((svg) => svg.box && (svg.box[0] !== 0 || svg.box[1] !== 0))
       .map((svg) => `${svg.file} (${svg.viewBox})`);
     expect(offset).toEqual([]);
+  });
+
+  it("records the animated prop artwork whose box is not at the origin", () => {
+    // PropSvgLoader reads this directory under useGridVersion and derives the
+    // same (width / 2, height / 2) anchor. For these two the box centre is
+    // (minX + width / 2, minY + height / 2), so the anchor sits off by exactly
+    // (-minX, -minY): 30 × 10.1 units for torch, 38.5 × 12.35 for bigtorch.
+    // The animation canvas reaches the same files through svg-generator, which
+    // uses width/height only, so it is unaffected.
+    const offset = CORPUS.filter(
+      (svg) =>
+        svg.file.startsWith("static/images/props/animated/") &&
+        svg.box &&
+        (svg.box[0] !== 0 || svg.box[1] !== 0)
+    ).map((svg) => `${svg.file} (${svg.viewBox})`);
+
+    expect(offset.sort()).toEqual([
+      "static/images/props/animated/bigtorch.svg (-38.5 -12.35 402 57.3)",
+      "static/images/props/animated/torch.svg (-30 -10.1 360 35.7)",
+    ]);
   });
 });
