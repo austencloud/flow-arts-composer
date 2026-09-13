@@ -13,6 +13,12 @@
  * - If a persister is provided, loads from Firestore and merges
  *   (Firestore wins on conflict if its lastUpdated is newer)
  * - Subscribes to Firestore changes for cross-device sync
+ * - Remote writes stay disabled until that first merge succeeds, so a failed
+ *   or offline sign-in can never push un-merged local state over the server's
+ *
+ * Every hydrated snapshot (localStorage, first load, live snapshot, import)
+ * passes through reconcileCompletion, which keeps `completedConcepts` and the
+ * per-concept `status` records from contradicting each other.
  */
 
 import { TKA_CONCEPTS, isConceptUnlocked } from "../domain/concepts";
@@ -32,6 +38,8 @@ export class ConceptProgressTracker {
   private userId: string | null = null;
   private firestoreUnsubscribe: (() => void) | null = null;
   private initialized = false;
+  private initializingUserId: string | null = null;
+  private initPromise: Promise<void> | null = null;
 
   constructor(persister?: UserKnowledgeProfilePersister) {
     this.persister = persister ?? null;
@@ -42,37 +50,82 @@ export class ConceptProgressTracker {
    * Initialize Firestore sync for an authenticated user.
    * Call this when the user signs in.
    * Loads from Firestore, merges with localStorage, and subscribes to changes.
+   *
+   * Never rejects: the one caller (TikaModule's auth effect) fires it without
+   * awaiting, so a rejection here would only surface as an unhandled promise.
+   * A failed sync is logged and leaves the tracker retryable instead.
+   * Concurrent calls for the same user share the in-flight attempt.
    */
   async initializeForUser(userId: string): Promise<void> {
     if (this.initialized && this.userId === userId) return;
+    if (this.initPromise && this.initializingUserId === userId) {
+      return this.initPromise;
+    }
+
+    this.initializingUserId = userId;
+    this.initPromise = this.connectUser(userId).finally(() => {
+      if (this.initializingUserId === userId) {
+        this.initializingUserId = null;
+        this.initPromise = null;
+      }
+    });
+
+    return this.initPromise;
+  }
+
+  private async connectUser(userId: string): Promise<void> {
+    if (!this.persister) {
+      this.userId = userId;
+      this.initialized = true;
+      return;
+    }
+
+    // `this.userId` stays null until the merge below settles. It is what
+    // saveProgress() checks before writing, and a remote write issued before
+    // the first load has landed writes an un-merged local state over the
+    // server's: `completedConcepts` is an array, so a merge write replaces it
+    // wholesale, and a fresh install that failed to load would erase every
+    // completion earned on another device. Local writes keep working
+    // throughout; they are pushed by the next successful attempt.
+    try {
+      const firestoreProgress = await this.persister.loadProgress(userId);
+
+      if (firestoreProgress) {
+        // Merge: Firestore wins if newer
+        const localTimestamp = this.progress.lastUpdated.getTime();
+        const firestoreTimestamp = firestoreProgress.lastUpdated.getTime();
+
+        if (firestoreTimestamp >= localTimestamp) {
+          this.progress = this.reconcileCompletion(firestoreProgress);
+          this.saveToLocalStorage();
+          this.notifySubscribers();
+        } else {
+          // Local is newer (offline edits), push to Firestore
+          await this.persister.saveProgress(userId, this.progress);
+        }
+      } else {
+        // No Firestore data exists - upload current localStorage data
+        if (this.progress.completedConcepts.size > 0 || this.progress.concepts.size > 0) {
+          await this.persister.saveProgress(userId, this.progress);
+        }
+      }
+    } catch (error) {
+      // Offline sign-in, a permission hiccup, a rejected write: none of them
+      // may latch the tracker. Leaving `initialized` set here would block every
+      // later attempt for the rest of the session, so cross-device sync would
+      // stay dead until a reload.
+      console.error(
+        "[ConceptProgressTracker] Initial Firestore sync failed; staying local-only and leaving sync retryable:",
+        error
+      );
+      this.userId = null;
+      this.initialized = false;
+      this.cleanupFirestoreSubscription();
+      return;
+    }
 
     this.userId = userId;
     this.initialized = true;
-
-    if (!this.persister) return;
-
-    // Load from Firestore
-    const firestoreProgress = await this.persister.loadProgress(userId);
-
-    if (firestoreProgress) {
-      // Merge: Firestore wins if newer
-      const localTimestamp = this.progress.lastUpdated.getTime();
-      const firestoreTimestamp = firestoreProgress.lastUpdated.getTime();
-
-      if (firestoreTimestamp >= localTimestamp) {
-        this.progress = firestoreProgress;
-        this.saveToLocalStorage();
-        this.notifySubscribers();
-      } else {
-        // Local is newer (offline edits), push to Firestore
-        await this.persister.saveProgress(userId, this.progress);
-      }
-    } else {
-      // No Firestore data exists - upload current localStorage data
-      if (this.progress.completedConcepts.size > 0 || this.progress.concepts.size > 0) {
-        await this.persister.saveProgress(userId, this.progress);
-      }
-    }
 
     // Subscribe to real-time changes for cross-device sync.
     // subscribeToProgress sets up its document reference asynchronously, so any
@@ -87,7 +140,7 @@ export class ConceptProgressTracker {
           remoteProgress.lastUpdated.getTime() >
           this.progress.lastUpdated.getTime()
         ) {
-          this.progress = remoteProgress;
+          this.progress = this.reconcileCompletion(remoteProgress);
           this.saveToLocalStorage();
           this.notifySubscribers();
         }
@@ -108,6 +161,8 @@ export class ConceptProgressTracker {
     this.cleanupFirestoreSubscription();
     this.userId = null;
     this.initialized = false;
+    this.initializingUserId = null;
+    this.initPromise = null;
   }
 
   private cleanupFirestoreSubscription(): void {
@@ -122,6 +177,79 @@ export class ConceptProgressTracker {
     if (value instanceof Date) return value;
     if (typeof value === "string") return new Date(value);
     return undefined;
+  }
+
+  /**
+   * Reconcile the two records of "completed" that a hydrated progress object
+   * carries.
+   *
+   * `completedConcepts` is the authority everything downstream reads: it gates
+   * unlocking, feeds `overallProgress` and the badge thresholds, and is the
+   * completed list TIKA and the recommender consume. `concepts.get(id).status`
+   * is what the path and detail views render. Nothing inside this class can
+   * make the two disagree, but hydrated state can: a server-side write can add
+   * an id to `completedConcepts` without leaving a per-concept record, and a
+   * merged remote write can replace `completedConcepts` while stale concept
+   * records survive. Either way the user sees a finished lesson offered as
+   * unstarted (`getConceptStatus` falls through to "available"), or a lesson
+   * that renders completed but is missing from every count.
+   *
+   * Completion is never revoked here — the union of both records wins, which
+   * is the definition of completed this class already enforces on write.
+   */
+  private reconcileCompletion(progress: LearningProgress): LearningProgress {
+    let completedSetChanged = false;
+
+    for (const [conceptId, concept] of progress.concepts) {
+      if (
+        concept.status === "completed" &&
+        !progress.completedConcepts.has(conceptId)
+      ) {
+        progress.completedConcepts.add(conceptId);
+        completedSetChanged = true;
+      }
+    }
+
+    for (const conceptId of progress.completedConcepts) {
+      const existing = progress.concepts.get(conceptId);
+      if (!existing) {
+        progress.concepts.set(
+          conceptId,
+          this.createConceptRecord(conceptId, "completed")
+        );
+        continue;
+      }
+      if (existing.status !== "completed") {
+        existing.status = "completed";
+        existing.percentComplete = 100;
+      }
+    }
+
+    // Only a set that grew invalidates the stored percentage; leave a
+    // consistent record's own number alone.
+    if (completedSetChanged) {
+      this.updateOverallProgress(progress);
+    }
+
+    return progress;
+  }
+
+  private createConceptRecord(
+    conceptId: string,
+    status: ConceptStatus
+  ): ConceptProgress {
+    return {
+      conceptId,
+      status,
+      percentComplete: status === "completed" ? 100 : 0,
+      correctAnswers: 0,
+      incorrectAnswers: 0,
+      totalAttempts: 0,
+      accuracy: 0,
+      currentStreak: 0,
+      bestStreak: 0,
+      timeSpentSeconds: 0,
+    };
   }
 
   private loadFromLocalStorage(): LearningProgress {
@@ -149,12 +277,12 @@ export class ConceptProgressTracker {
             nextPracticeAt: this.parseOptionalDate(value.nextPracticeAt),
           });
         }
-        return {
+        return this.reconcileCompletion({
           ...data,
           concepts,
           completedConcepts: new Set(data.completedConcepts || []),
           lastUpdated: new Date(data.lastUpdated),
-        };
+        });
       }
     } catch (error) {
       console.warn("Failed to load learning progress:", error);
@@ -232,19 +360,7 @@ export class ConceptProgressTracker {
     const existing = this.progress.concepts.get(conceptId);
     if (existing) return existing;
 
-    const status = this.getConceptStatus(conceptId);
-    return {
-      conceptId,
-      status,
-      percentComplete: 0,
-      correctAnswers: 0,
-      incorrectAnswers: 0,
-      totalAttempts: 0,
-      accuracy: 0,
-      currentStreak: 0,
-      bestStreak: 0,
-      timeSpentSeconds: 0,
-    };
+    return this.createConceptRecord(conceptId, this.getConceptStatus(conceptId));
   }
 
   startConcept(conceptId: string): void {
@@ -293,9 +409,14 @@ export class ConceptProgressTracker {
     progress.accuracy =
       (progress.correctAnswers / progress.totalAttempts) * 100;
 
-    progress.percentComplete = Math.min(
-      (progress.correctAnswers / 10) * 100,
-      100
+    // Monotonic: correctAnswers only ever grows, so this never lowered the
+    // percentage for a concept whose stats were tracked from the start. A
+    // record reconciled from a bare `completedConcepts` entry has no answer
+    // counts behind its 100, though, and practising it again must not walk a
+    // completed lesson back to 10%.
+    progress.percentComplete = Math.max(
+      progress.percentComplete,
+      Math.min((progress.correctAnswers / 10) * 100, 100)
     );
 
     progress.lastPracticedAt = new Date();
@@ -358,10 +479,14 @@ export class ConceptProgressTracker {
     return nextDate;
   }
 
-  private updateOverallProgress(): void {
+  // Takes the record to update so reconciliation can run on progress that has
+  // not been adopted as `this.progress` yet (the constructor's first load).
+  private updateOverallProgress(
+    progress: LearningProgress = this.progress
+  ): void {
     const totalConcepts = TKA_CONCEPTS.length;
-    const completedCount = this.progress.completedConcepts.size;
-    this.progress.overallProgress = (completedCount / totalConcepts) * 100;
+    const completedCount = progress.completedConcepts.size;
+    progress.overallProgress = (completedCount / totalConcepts) * 100;
   }
 
   private checkBadges(): void {
@@ -472,7 +597,7 @@ export class ConceptProgressTracker {
           nextPracticeAt: this.parseOptionalDate(value.nextPracticeAt),
         });
       }
-      this.progress = {
+      this.progress = this.reconcileCompletion({
         concepts,
         completedConcepts: new Set(data.completedConcepts || []),
         currentConceptId: data.currentConceptId,
@@ -481,7 +606,7 @@ export class ConceptProgressTracker {
         totalTimeSpent: data.totalTimeSpent || 0,
         badges: data.badges || [],
         lastUpdated: new Date(data.lastUpdated || Date.now()),
-      };
+      });
       this.saveProgress();
     } catch (error) {
       console.error("Failed to import progress:", error);
