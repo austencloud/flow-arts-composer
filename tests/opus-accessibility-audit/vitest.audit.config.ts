@@ -26,7 +26,23 @@ export default defineConfig({
 
   optimizeDeps: {
     exclude: ["@austencloud/scene-3d"],
-    include: ["@austencloud/theme", "axe-core"],
+    // Same reason as tests/config/vitest.components.config.ts: the locale
+    // loader's template import stops Vite's dependency scanner, so a dependency
+    // discovered mid-test reloads the page underneath a running spec.
+    include: [
+      "@austencloud/backgrounds",
+      "@austencloud/theme",
+      "@capacitor/core",
+      "@capacitor/haptics",
+      "axe-core",
+      "bits-ui",
+      "dexie",
+      "firebase/app",
+      "firebase/auth",
+      "firebase/firestore",
+      "posthog-js",
+      "zod",
+    ],
   },
 
   resolve: {
