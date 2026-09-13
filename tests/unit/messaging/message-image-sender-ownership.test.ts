@@ -31,6 +31,8 @@ const mocks = vi.hoisted(() => ({
   currentUid: "user-a" as string | null,
   initGate: null as Promise<void> | null,
   releaseInit: null as (() => void) | null,
+  deleteGate: null as Promise<void> | null,
+  releaseDelete: null as (() => void) | null,
   finalizeCallable: vi.fn(async () => ({
     data: {
       messageId: "message-1",
@@ -84,6 +86,13 @@ vi.mock("firebase/functions", () => ({
 vi.mock("firebase/storage", () => ({
   ref: vi.fn((_storage: unknown, path: string) => ({ path })),
   deleteObject: vi.fn(async (storageRef: { path: string }) => {
+    // One-shot: a test parks the pre-upload cleanup without also parking the
+    // cleanup in the sender's `finally`.
+    const gate = mocks.deleteGate;
+    if (gate) {
+      mocks.deleteGate = null;
+      await gate;
+    }
     if (uidInPath(storageRef.path) !== mocks.currentUid) {
       mocks.deleteDenied(storageRef.path);
       throw storageError("storage/unauthorized");
@@ -175,11 +184,26 @@ async function releaseInit(): Promise<void> {
   await settle();
 }
 
+/** Park the next `deleteObject` — the sender's pre-upload slot clearing. */
+function holdNextDelete(): void {
+  mocks.deleteGate = new Promise<void>((resolve) => {
+    mocks.releaseDelete = resolve;
+  });
+}
+
+async function releaseDelete(): Promise<void> {
+  mocks.releaseDelete?.();
+  mocks.releaseDelete = null;
+  await settle();
+}
+
 describe("MessageImageSender account ownership", () => {
   beforeEach(() => {
     mocks.currentUid = "user-a";
     mocks.initGate = null;
     mocks.releaseInit = null;
+    mocks.deleteGate = null;
+    mocks.releaseDelete = null;
     mocks.task = null;
     mocks.finalizeCallable.mockClear();
     mocks.uploadStarted.mockClear();
@@ -326,5 +350,52 @@ describe("MessageImageSender account ownership", () => {
     expect(mocks.finalizeCallable).toHaveBeenCalledTimes(1);
     // And the successful attempt cleans up after itself.
     expect(mocks.objects.has(stagingPath)).toBe(false);
+  });
+
+  it("starts no upload when cancelled during the pre-upload cleanup", async () => {
+    // The cleanup is an await, and during it there is no upload task yet for
+    // `cancel()` to reach — so only a re-check on the far side can stop the
+    // upload from starting anyway.
+    holdNextDelete();
+    const handle = new MessageImageSender().send(request());
+    await settle();
+
+    handle.cancel();
+    await releaseDelete();
+
+    // Asserted before awaiting the promise: an upload that should not exist
+    // never completes in this harness, so waiting first would turn a started
+    // upload into a timeout instead of a failed expectation.
+    expect(mocks.uploadStarted).not.toHaveBeenCalled();
+
+    const error = (await handle.promise.catch((reason: unknown) => reason)) as
+      | Error
+      | undefined;
+    expect(error?.message).toBe("Image send cancelled.");
+    expect(mocks.finalizeCallable).not.toHaveBeenCalled();
+  });
+
+  it("starts no upload when the account changes during the pre-upload cleanup", async () => {
+    holdNextDelete();
+    const handle = new MessageImageSender().send(request());
+    await settle();
+
+    mocks.currentUid = "user-b";
+    await releaseDelete();
+
+    // Not one byte uploaded into the first account's path by the second — and
+    // asserted before the await, for the same reason as above.
+    expect(mocks.uploadStarted).not.toHaveBeenCalled();
+
+    const error = (await handle.promise.catch((reason: unknown) => reason)) as {
+      code?: string;
+    };
+    expect(error.code).toBe("messaging/sender-changed");
+    expect(mocks.finalizeCallable).not.toHaveBeenCalled();
+    // Exactly one denial, and it is the pre-upload cleanup itself: the switch
+    // landed while that request was in flight, so it was evaluated against the
+    // new account. What must not happen is a SECOND, pointless denied attempt
+    // from the `finally` on the way out.
+    expect(mocks.deleteDenied).toHaveBeenCalledTimes(1);
   });
 });

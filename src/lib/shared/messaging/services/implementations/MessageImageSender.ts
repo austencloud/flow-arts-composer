@@ -75,6 +75,19 @@ export class MessageImageSender implements IMessageImageSender {
         // ordinary case and its error is ignored.
         await deleteObject(stagingRef).catch(() => undefined);
 
+        // That cleanup is an await like any other, and the checks above are
+        // stale on this side of it. A cancel raised during it lands while there
+        // is still no upload task for `cancel()` to reach, and an account
+        // change during it would start an upload at this account's path as
+        // somebody else. Nothing has been uploaded yet, so both simply stop.
+        if (cancelled) throw new Error("Image send cancelled.");
+        if (request.expectedUserId) {
+          const signerNow = auth.currentUser?.uid;
+          if (request.expectedUserId !== signerNow) {
+            throw senderChanged(request.expectedUserId, signerNow);
+          }
+        }
+
         uploadTask = uploadBytesResumable(stagingRef, request.file, {
           contentType: request.file.type,
           customMetadata: {
