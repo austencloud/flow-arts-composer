@@ -19,9 +19,9 @@
  *
  * Two amplifiers live in that chain:
  *
- *   H1  getVisibleOwnerNames() runs on EVERY snapshot with no memo, so one
- *       remote write to one public collection re-reads every distinct owner
- *       profile in the feed window.
+ *   H1  getVisibleOwnerNames() runs on EVERY snapshot with no memo, so a
+ *       snapshot in which a SINGLE document changed re-reads every distinct
+ *       owner profile in the feed window.
  *   H3  invalidate() tears the listener down and re-attaches it after a LOCAL
  *       mutation the live listener was already going to deliver, paying the
  *       full cold-attach cost a second time.
@@ -202,9 +202,11 @@ describe("H1 — one remote write re-reads every owner profile in the window", (
     await settle();
     resetCounters();
 
-    // Somebody, anywhere, renames ONE public collection. This is a
-    // collectionGroup listener over all public collections, so every signed-in
-    // client with the feed attached receives this snapshot.
+    // One public collection in the current window is renamed. The listener
+    // fires when the active query RESULT changes — a doc already in the
+    // limit(200) window, or one entering it. (It is not "any write anywhere";
+    // see the scope section of finding H1. This harness emits the snapshot
+    // directly and does not exercise Firestore's query matching.)
     mocks.emit!(snapshot(docs, [docs[7]!]));
     await settle();
 
