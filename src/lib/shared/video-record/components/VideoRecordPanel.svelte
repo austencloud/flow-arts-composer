@@ -9,6 +9,10 @@
   import { browser } from "$app/environment";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { getCameraManager } from "$lib/shared/train/get-camera-manager";
+  import {
+    isCameraAcquisitionCancelled,
+    type CameraAcquisition,
+  } from "$lib/shared/train/services/camera-manager";
   import { getVideoRecorder } from "../services/video-recorder";
   import type {
     RecordingProgress,
@@ -94,6 +98,35 @@
     }
   });
 
+  // Acquiring a camera is two awaits long: initialize() enumerates devices and
+  // start() sits on getUserMedia, which can wait on an unanswered permission
+  // prompt for as long as the user ignores it. Teardown can land anywhere in
+  // there, and onDestroy has nothing to close yet when it does. Without this
+  // flag the camera opens after the panel is gone and stays open.
+  let destroyed = false;
+
+  // The manager is one shared instance: PerformancePreview reaches the same one
+  // through getCameraManager(), and its stop() releases whatever that instance
+  // currently holds, whoever opened it. This panel never calls it. Every
+  // release here is scoped to this panel's own handshake instead: the
+  // acquisition handle for a camera that has not opened yet, the stream itself
+  // once one has. Both are no-ops on the manager's state once another surface
+  // has taken the instance over, so a late teardown cannot close their camera.
+  let acquisition: CameraAcquisition | null = null;
+
+  function releaseOwnCamera() {
+    if (cameraStream) {
+      // Stops these tracks always, and clears the manager's _stream and
+      // _isActive only while this is still the stream it handed out. Stopping
+      // the tracks by hand would leave those fields pointing at a dead camera.
+      cameraService?.releaseStream(cameraStream);
+      cameraStream = null;
+    } else if (acquisition) {
+      cameraService?.abandonAcquisition(acquisition);
+    }
+    acquisition = null;
+  }
+
   async function initializeCamera() {
     if (!cameraService) {
       cameraError = "Camera service not loaded";
@@ -101,17 +134,35 @@
     }
 
     try {
-      await cameraService.initialize({
+      acquisition = await cameraService.initialize({
         facingMode: "user",
         width: 1280,
         height: 720,
         frameRate: 30,
       });
+      if (destroyed) {
+        // Teardown ran while devices were being enumerated, so it had no handle
+        // to give up. Give it up now.
+        releaseOwnCamera();
+        return;
+      }
 
-      const stream = await cameraService.start();
+      const stream = await cameraService.start(acquisition);
+      if (destroyed) {
+        cameraService.releaseStream(stream);
+        acquisition = null;
+        return;
+      }
+
       cameraStream = stream;
       cameraInitialized = true;
     } catch (error) {
+      acquisition = null;
+      // A cancelled acquisition is this panel closing, or another surface
+      // taking the camera; the manager has already released whatever it opened.
+      // Not something to show the user, and never something to answer with a
+      // stop() that would close the camera somebody else is now using.
+      if (destroyed || isCameraAcquisitionCancelled(error)) return;
       cameraError =
         error instanceof Error ? error.message : "Failed to access camera";
     }
@@ -261,11 +312,14 @@
 
   // Cleanup
   onDestroy(() => {
+    destroyed = true;
     if (recordingId) recordService.cancelRecording(recordingId);
     if (recordedVideo?.blobUrl) URL.revokeObjectURL(recordedVideo.blobUrl);
     if (browser) window.removeEventListener("resize", detectLayout);
-    if (cameraService) cameraService.stop();
-    if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
+    // Scoped to this panel: the stream if one arrived, otherwise the handshake
+    // that is still in flight, which cancels the start queued behind it instead
+    // of letting it open a camera nobody will close.
+    releaseOwnCamera();
   });
 </script>
 
