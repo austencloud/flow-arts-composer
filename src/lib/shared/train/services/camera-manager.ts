@@ -85,6 +85,11 @@ export class CameraManager {
   // instance usable by several panels in turn.
   private _acquisition: AcquisitionRecord | null = null;
   private _acquisitionCount = 0;
+  // Which acquisition's `start()` actually opened `_stream`. Being the current
+  // acquisition is not the same as owning the camera: a panel can set itself up
+  // while another panel's stream is live and then close without ever starting.
+  // Releasing on that close would switch off a camera it never opened.
+  private _streamOwner: AcquisitionRecord | null = null;
 
   get isActive(): boolean {
     return this._isActive;
@@ -229,6 +234,7 @@ export class CameraManager {
       }
 
       this._isActive = true;
+      this._streamOwner = claim ?? null;
       if (claim) claim.started = true;
       return this._stream;
     } catch (error) {
@@ -300,13 +306,29 @@ export class CameraManager {
   }
 
   /**
-   * Gives up one consumer's handshake. A no-op once another consumer has taken
-   * the instance over, so a panel closing after its replacement opened the
-   * camera cannot release someone else's stream or cancel their start.
+   * Gives up one consumer's handshake: its pending start is cancelled, and the
+   * camera is released only if this acquisition is the one that opened it.
+   *
+   * Both halves matter. It is a no-op once another consumer has taken the
+   * instance over, so a panel closing after its replacement opened the camera
+   * cannot release someone else's stream. And a panel that set itself up while
+   * another panel's stream was live, then closed without ever calling `start()`,
+   * leaves that stream running — it never opened a camera, so it has none to
+   * switch off.
    */
   abandonAcquisition(acquisition: CameraAcquisition): void {
-    if (this._acquisition !== acquisition) return;
-    this.stop();
+    const record = this._acquisition;
+    if (record !== acquisition) return;
+
+    record.cancelled = true;
+
+    // Invalidate this acquisition's own pending start so a stream that arrives
+    // afterwards is released instead of going live for nobody.
+    this._startTicket++;
+
+    if (this._streamOwner === record) {
+      this._releaseActiveStream();
+    }
   }
 
   /**
@@ -322,6 +344,7 @@ export class CameraManager {
 
     this._startTicket++;
     this._stream = null;
+    this._streamOwner = null;
     if (this._videoElement) {
       this._videoElement.srcObject = null;
     }
@@ -333,6 +356,7 @@ export class CameraManager {
       stopTracks(this._stream);
       this._stream = null;
     }
+    this._streamOwner = null;
 
     if (this._videoElement) {
       this._videoElement.srcObject = null;
