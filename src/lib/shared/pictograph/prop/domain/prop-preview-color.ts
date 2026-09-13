@@ -1,7 +1,31 @@
 import {
   applyColorToSvg,
+  getMotionColor,
   SELECTIVE_COLOR_PROP_TYPES,
 } from "$lib/shared/utils/svg-color-utils";
+import type { HandSide } from "../../shared/domain/enums/pictograph-enums";
+
+/**
+ * Repaint artwork that propSvgLoader has already colored with the default hand
+ * color so it shows the user's chosen color instead. The motion stays left or
+ * right semantically; only the display paint changes. Class and id suffixes
+ * are keyed on the color so two hands can share one host SVG.
+ */
+export function applyHandColorOverride(
+  svg: string,
+  hand: HandSide,
+  propType: string,
+  color: string
+): string {
+  return applyColorToSvg(svg, color, {
+    makeClassNamesUnique: true,
+    colorSuffix: color.replace(/[^a-z0-9]/gi, ""),
+    sourceColors: [getMotionColor(hand, "dark"), getMotionColor(hand, "light")],
+    selectiveColorMode: (
+      SELECTIVE_COLOR_PROP_TYPES as readonly string[]
+    ).includes(propType.toLowerCase()),
+  });
+}
 
 /** Recolor the body without erasing white strings, grips, covers or cutouts. */
 export function colorPropPreview(
