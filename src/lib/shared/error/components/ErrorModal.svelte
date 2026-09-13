@@ -12,6 +12,11 @@ import { onDestroy } from "svelte";
   import { getErrorHandler } from "$lib/shared/application/get-error-handler";
   import { getCurrentError, dismissError } from "../state/error-state.svelte";
   import type { ErrorHandler } from '$lib/shared/application/services/error-handler'
+  import {
+    buildErrorCopyText,
+    formatParamLabel,
+    formatParamValue,
+  } from "../domain/error-report-text";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { FocusTrap } from "$lib/shared/foundation/ui/drawer/focus-trap";
 
@@ -52,48 +57,9 @@ import { onDestroy } from "svelte";
     !!(error?.context.module || error?.context.action || additionalData),
   );
 
-  function formatParamValue(value: unknown): string {
-    if (value === null || value === undefined) return "-";
-    if (Array.isArray(value)) return value.length ? value.join(", ") : "-";
-    return String(value);
-  }
-
-  function formatParamLabel(key: string): string {
-    return key
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (s) => s.toUpperCase())
-      .trim();
-  }
-
-  function buildCopyText(): string {
-    if (!error) return "";
-    const lines: string[] = [];
-    lines.push(`Error: ${error.message}`);
-    if (error.context.module) lines.push(`Module: ${error.context.module}`);
-    if (error.context.action) lines.push(`Action: ${error.context.action}`);
-    if (additionalData) {
-      lines.push("");
-      lines.push("Parameters:");
-      for (const [key, value] of Object.entries(additionalData)) {
-        const display = formatParamValue(value);
-        if (display !== "-")
-          lines.push(`  ${formatParamLabel(key)}: ${display}`);
-      }
-    }
-    if (error.technicalDetails) {
-      lines.push("");
-      lines.push(`Details: ${error.technicalDetails}`);
-    }
-    if (error.stack) {
-      lines.push("");
-      lines.push(error.stack);
-    }
-    return lines.join("\n");
-  }
-
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(buildCopyText());
+      await navigator.clipboard.writeText(buildErrorCopyText(error));
       copied = true;
       clearTimeout(copyResetTimeout);
       copyResetTimeout = setTimeout(() => (copied = false), 2000);
@@ -334,6 +300,9 @@ import { onDestroy } from "svelte";
   }
 
   .error-modal {
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 48px);
     background: linear-gradient(145deg, #1e1e2e 0%, #181825 100%);
     border: 1px solid var(--error-color);
     border-radius: 16px;
@@ -365,6 +334,7 @@ import { onDestroy } from "svelte";
 
   .error-header {
     display: flex;
+    flex-shrink: 0;
     align-items: center;
     gap: 12px;
     padding: 16px 20px;
@@ -441,6 +411,9 @@ import { onDestroy } from "svelte";
 
   .error-body {
     display: flex;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     flex-direction: column;
     gap: 0;
   }
@@ -451,12 +424,14 @@ import { onDestroy } from "svelte";
 
   .error-left {
     flex: 0 0 38%;
+    min-width: 0;
     padding: 24px;
     border-right: 1px solid var(--theme-stroke);
   }
 
   .error-right {
     flex: 1;
+    min-width: 0;
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -475,7 +450,7 @@ import { onDestroy } from "svelte";
 
   .params-grid {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 6px 16px;
     font-size: var(--font-size-sm);
     align-items: baseline;
@@ -483,7 +458,7 @@ import { onDestroy } from "svelte";
 
   .param-label {
     color: var(--theme-text-dim);
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
 
   .param-value {
@@ -560,6 +535,7 @@ import { onDestroy } from "svelte";
 
   .error-actions {
     display: flex;
+    flex-shrink: 0;
     gap: 12px;
     padding: 16px 20px;
     background: rgba(0, 0, 0, 0.2);
@@ -617,8 +593,7 @@ import { onDestroy } from "svelte";
     .error-modal.has-params {
       max-width: 100%;
       border-radius: 16px 16px 0 0;
-      max-height: 90vh;
-      overflow-y: auto;
+      max-height: min(90dvh, calc(100dvh - 24px));
     }
 
     .has-params .error-body {
@@ -626,6 +601,7 @@ import { onDestroy } from "svelte";
     }
 
     .error-left {
+      flex-basis: auto;
       width: 100%;
       border-right: none;
       border-bottom: 1px solid var(--theme-stroke);

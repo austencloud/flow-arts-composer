@@ -119,6 +119,15 @@ export function setupEffects(config: CreateModuleEffectConfig): () => void {
       getStepOperator,
       getCreateModuleState,
       isServicesInitialized,
+      getSequenceRevision: () =>
+        getCreateModuleState()?.getActiveTabSequenceState()
+          .currentSequenceRevision ?? 0,
+      // A prop swap rewrites every motion's propType, which advances the
+      // sequence revision. Workspace playback stops on a revision it did not
+      // start from, so hand it the new baseline — otherwise picking a prop from
+      // the selection panel closes the quick viewer mid-sequence.
+      onPropTypeSequenceRewrite: (fromRevision, toRevision) =>
+        panelState.rebaseWorkspacePlayback(fromRevision, toRevision),
     })
   );
 

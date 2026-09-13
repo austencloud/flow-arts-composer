@@ -88,6 +88,7 @@
             rightPropType={settings.rightPropType}
             hideSoloHeader={true}
             fitWidth={true}
+            posePicker={true}
             onStepClick={(stepIndex) => void chooseStartPose(stepIndex)}
           />
         </div>
