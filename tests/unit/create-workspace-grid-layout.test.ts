@@ -378,7 +378,7 @@ describe("Create workspace action rail contract", () => {
     });
     expect(WORKSPACE_BUTTON_TUTORIAL.share.label).toBe("Share");
     expect(WORKSPACE_BUTTON_TUTORIAL.share.description).toContain(
-      "send the sequence in TKA"
+      "send the sequence in Flow Arts Composer"
     );
     expect(buttonPanelSource).toContain("<SequenceActionsButton");
     expect(buttonPanelSource).toContain("<ShareButton");

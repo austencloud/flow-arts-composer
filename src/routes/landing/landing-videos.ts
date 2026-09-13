@@ -58,7 +58,7 @@ export const LANDING_VIDEOS: LandingVideo[] = [
   },
   {
     src: `${SHOWCASE_BASE}/DFOnnlIRnza.mp4`,
-    performer: "TKA Performer",
+    performer: "Flow Arts Composer Performer",
     label: "Composition",
   },
   {
@@ -93,7 +93,7 @@ export const LANDING_VIDEOS: LandingVideo[] = [
   },
   {
     src: `${SHOWCASE_BASE}/DFvBnkBxs7_.mp4`,
-    performer: "TKA Performer",
+    performer: "Flow Arts Composer Performer",
     label: "Demonstration",
   },
   {

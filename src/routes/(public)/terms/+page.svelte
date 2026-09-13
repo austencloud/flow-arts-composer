@@ -5,7 +5,7 @@
 
 <Seo
   title="Terms of Service | Flow Arts Composer"
-  description="Terms of Service for The Kinetic Alphabet (TKA) application."
+  description="Terms of Service for the Flow Arts Composer application."
   canonical="https://tkaflowarts.com/terms"
 />
 

@@ -262,11 +262,11 @@ export function publishFailureMessage(code: MetaPublishFailureCode): string {
     case "meta/account-type-required":
       return "Direct posting needs an Instagram creator or business account.";
     case "meta/account-type-unverified":
-      return "Reconnect Instagram so TKA can verify this professional account.";
+      return "Reconnect Instagram so Flow Arts Composer can verify this professional account.";
     case "meta/facebook-capability-required":
       return "Connect Facebook to use this Instagram option.";
     case "meta/permission-missing":
-      return "This account has not granted TKA permission to post.";
+      return "This account has not granted Flow Arts Composer permission to post.";
     case "meta/media-rejected":
       return "Meta would not accept this media.";
     case "meta/media-url-not-allowed":

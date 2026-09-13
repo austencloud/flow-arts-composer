@@ -66,7 +66,7 @@ export function buildViewerShareActions(
     },
     {
       id: "send-sequence",
-      label: "Send in TKA",
+      label: "Send in Flow Arts Composer",
       icon: "fa-paper-plane",
       section: "share",
     },
