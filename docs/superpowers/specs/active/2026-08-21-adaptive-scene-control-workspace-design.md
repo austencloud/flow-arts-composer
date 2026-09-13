@@ -1,9 +1,20 @@
+---
+status: active
+value: 2
+effort: XS
+remaining: "The resolver and the three presentations shipped in 21335f9da - do NOT rebuild them. Three acceptance items are unresolved, each needing a decision rather than code first: (1) the five-action desktop rail ceiling is broken at seven entries; Focus avatar has a documented later decision in 2026-09-05-avatar-camera-recovery.md, Presets has none, and neither document names or retires the ceiling. (2) The compact gate is implemented as 500px unconditional / 544px only under 1100px width, not the flat 34rem this spec states - a 1600x540 workspace resolves overlay in code and compact in the text; decide which is right and align them. (3) The 'always-visible playback timeline' clause has no owner: SceneControlWorkspace.svelte:52 leaves that to the host and nothing asserts host compliance. Also unrecorded: runtime verification of the production surfaces and the seven-viewport sweep."
+depends_on: ""
+plan_path: "docs/superpowers/plans/active/2026-08-21-adaptive-scene-control-workspace-plan.md"
+tags: [3d, scene-controls, unresolved-acceptance, needs-product-decision]
+last_triaged: 2026-09-13
+---
+
 # Adaptive Scene Control Workspace
 
-**Status:** Shipped (implementing commit `21335f9da`, 2026-08-23 — two days
-after the date this header originally claimed). Moved out of `active/` on
-2026-09-13 during spec reconciliation. Two stated constraints no longer hold;
-see the divergences below.
+**Status:** Implemented (implementing commit `21335f9da`, 2026-08-23 — two days
+after the date this header originally claimed), with three acceptance items
+UNRESOLVED. Stays in `active/` — see the open items at the end of this header.
+Corrected 2026-09-13 during spec reconciliation.
 
 **Reconciliation evidence (2026-09-13):** the pure resolver is
 `src/lib/shared/3d/domain/scene-control-layout.ts`, with the three presentations
@@ -16,23 +27,45 @@ Compact bottom sheets, the Save Scene backdrop/Escape/button dismissal paths,
 and the single shared `scene-prop-catalog.ts` consumed by both the picker and
 Prop Studio are all present.
 
-**Post-ship divergences:**
+**UNRESOLVED acceptance items (2026-09-13).** Three stated constraints are not
+met by the shipped code. Partial supersession evidence exists for one of them
+and none for the other two, so all three stay open and discoverable.
 
-1. _"The desktop scene rail contains no more than five primary actions."_ The
-   rail now carries seven non-admin entries: Presets was added by `34c0f135b`
-   and Focus avatar by `cfb54c17b` (_fix(viewer): recover avatar focus and
-   continuous camera zoom_, 2026-09-05). Flagged rather than blessed — whether
-   the ceiling still matters is the owner's call, not a reconciliation call.
+1. _"The desktop scene rail contains no more than five primary actions:
+   Performers, Formation, Camera, Scene, Save."_ The rail carries **seven**
+   non-admin entries today (`SceneControlRail.svelte`: Performers, Formation,
+   Focus avatar `:129`, Camera, Scene, Presets `:163`, Save scene `:173`).
+
+   Evidence for each addition, which differs:
+   - **Focus avatar** has a documented later decision.
+     `2026-09-05-avatar-camera-recovery.md` — the spec created by `cfb54c17b`
+     itself — says in its scope paragraph to "Compose it in `SceneControlRail`
+     and `MobileSceneControls`", and records the control measured at all seven
+     viewport tiers. So the addition was deliberate and written down.
+   - **Presets** has none. `34c0f135b` (_feat(3d): add adaptive controls and
+     scene presets_) created this design's own implementation plan,
+     `plans/active/2026-08-21-adaptive-scene-control-workspace-plan.md`, in the
+     same commit — but that plan says only "Convert the scene rail to a
+     controlled top-level tool rail" and never raises or waives the count.
+
+   **Neither document names this five-action ceiling or supersedes it.** A later
+   spec that composes one more control into the rail is evidence that control
+   was wanted; it is not evidence that the ceiling was retired. Whether the
+   ceiling still holds is a product call for the owner — recorded here so the
+   question stays findable, not resolved by reconciliation.
+
 2. _Compact gate._ This document says "width below 48rem, **or** height below
    34rem". The code forces compact on height alone only at 500px
-   (`CRITICALLY_SHALLOW_HEIGHT`); the 544px height gate applies only together
-   with width below 1100px. A 1600x540 workspace is `overlay` in code and
-   `compact` in this text.
+   (`scene-control-layout.ts:30-32` `CRITICALLY_SHALLOW_HEIGHT`); the 544px
+   (34rem) gate applies only together with width below `COMPACT_LANDSCAPE_WIDTH`
+   (1100). A 1600x540 workspace resolves to `overlay` in code and `compact`
+   under this text. No document records the narrowing.
+
 3. _"The shared playback timeline is always visible at the bottom when a loaded
    sequence reports playable steps."_ `SceneControlWorkspace.svelte` owns no
-   timeline — it leaves room for host chrome below the rail. Nothing in the
-   repository asserts that every host complies.
-
+   timeline — `:52` explicitly leaves room for host-owned chrome below the rail.
+   Nothing in the repository asserts that every host complies, so this clause is
+   neither implemented nor testable where it was written.
 
 ## Outcome
 

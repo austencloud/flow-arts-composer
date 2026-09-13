@@ -1,7 +1,18 @@
+---
+status: active
+value: 2
+effort: XS
+remaining: "The workspace shipped in 3519cd6b2 - do NOT rebuild it. Two acceptance clauses are unresolved and need a product decision, not code first: (1) 'Every editable source exposes these actions without an overflow-menu step' - 57e911b78 moved five source actions behind a More menu and fuse-actions-contract.test.ts:68 now asserts that shape; decide whether the overflow is wanted and amend the clause, or treat the test as encoding a regression and change both. (2) 'Until Apply Relationship is selected, the current result remains unchanged' - FuseRelationshipComposer.svelte:52-61 previews every draft onto the combined canvas; only the persisted relationship is untouched. No spec, plan or handoff records a decision to change either; 57e911b78 has an empty commit body and touches no docs. Also unrecorded: the seven-viewport sweep of the workspace."
+depends_on: ""
+plan_path: ""
+tags: [fuse, workspace, unresolved-acceptance, needs-product-decision]
+last_triaged: 2026-09-13
+---
+
 # Fuse 4K Workspace Redesign
 
-**Status:** Shipped, with two clauses of this document superseded by later
-deliberate decisions (recorded below). Moved out of `active/` on 2026-09-13
+**Status:** Implemented, with two acceptance clauses UNRESOLVED. Stays in
+`active/` — see the open items at the end of this header. Corrected 2026-09-13
 during spec reconciliation.
 
 **Reconciliation evidence (2026-09-13):** `3519cd6b2` (_feat(fuse): build a 4K
@@ -15,30 +26,44 @@ double-click + keyboard resize seam, and live SVG transform motion rather than a
 raster crossfade. `fuse-actions-contract.test.ts` (6) and
 `fuse-workspace-split.test.ts` (16) pass.
 
-**Post-ship divergences — the code is right, this document is stale:**
+**UNRESOLVED acceptance items (2026-09-13).** Two clauses of this approved
+design are not met by the shipped code, and **no accepted supersession for
+either could be found**: `57e911b78` (_feat(fuse): clarify responsive workspace
+hierarchy_, 2026-09-03) has an empty commit body and touches no documentation at
+all — no spec, no plan, no handoff records a decision to change them. Until
+someone who owns the product call says otherwise, these are open, not closed.
 
 1. _"Every editable source exposes these actions without an overflow-menu
-   step."_ That held at `3519cd6b2`. `57e911b78` moved Choose saved LOOP, Choose
-   a shape, Build a custom path, View Choreo Card and Save to library back behind
-   a `More` overflow menu (`FuseSourceCard.svelte:344-374,596-606`), and
-   `fuse-actions-contract.test.ts:68` now locks that shape in ("gives desktop
-   sources one primary action and discloses rare actions"). The test is the
-   current contract.
-2. _"Until Apply Relationship is selected, the current result remains
-   unchanged."_ `FuseRelationshipComposer.svelte:52-61` previews every draft
-   change onto the combined canvas; only the **persisted** relationship is left
-   untouched, and `cancelRelationshipPreview` restores the baseline. Live preview
-   was the later choice.
+   step."_ This held at `3519cd6b2`: `git show 3519cd6b2:…/FuseSourceCard.svelte`
+   has visible `Save LOOP` / `Saved LOOP` / `Shape path` buttons. `57e911b78`
+   moved Choose saved LOOP, Choose a shape, Build a custom path, View Choreo
+   Card and Save to library behind a `More` overflow menu
+   (`FuseSourceCard.svelte:344-374,596-606`).
 
-   Label drift in the same area: the commit control reads "Use this
-   relationship", modes are presented as Separate/Linked rather than
-   Independent/Symmetry, the result footer reads "Share", and there is no "Edit
-   Relationship" string. `OptionChipRow` is listed as the owner of transformation
-   selection but Fuse never adopted it — `FuseTransformPicker.svelte` composes
-   `SegmentedControl` + `FilterChipBase` + `FuseRotationDial` instead.
+   `fuse-actions-contract.test.ts:68` ("gives desktop sources one primary action
+   and discloses rare actions") now asserts the overflow shape. **A test records
+   what the implementation does; it is not evidence that the product decision
+   was accepted.** If the overflow menu is the wanted behaviour, amend this
+   clause and say so here; if not, the test encodes a regression and both need
+   changing together. Either way it needs a decision, not a silent close.
 
-Neither divergence is a defect to fix; both are decisions this document
-outlived. Read the tests, not these two clauses.
+2. _"Until Apply Relationship is selected, the current Independent or Symmetry
+   result remains unchanged."_ `FuseRelationshipComposer.svelte:52-61` calls
+   `previewRelationship` on every draft change, which publishes onto the
+   combined canvas (`fuse-state.svelte.ts:1903`). Only the **persisted**
+   relationship is untouched, and `cancelRelationshipPreview` restores the
+   baseline from `relationshipPreviewBaseline`. That is a defensible design, but
+   it is not what this clause says, and nothing records the change of mind.
+
+**Lower-confidence drift in the same area, listed so it is discoverable rather
+than as a work item:** the commit control reads "Use this relationship" not
+"Apply Relationship"; modes are presented as Separate/Linked rather than
+Independent/Symmetry; the result footer reads "Share"; there is no "Edit
+Relationship" string. `OptionChipRow` is named as the owner of transformation
+selection but Fuse never adopted it — `FuseTransformPicker.svelte` composes
+`SegmentedControl` + `FilterChipBase` + `FuseRotationDial` instead. These read
+as ordinary naming evolution; confirm with the owner before treating any of them
+as a defect.
 
 **Approved:** 2026-08-12  
 **Route:** `/create/fuse`
