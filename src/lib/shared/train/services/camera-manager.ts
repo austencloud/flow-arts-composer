@@ -12,6 +12,25 @@ const DEFAULT_CONFIG: CameraConfig = {
   frameRate: 30,
 };
 
+/**
+ * `start()` rejects with this name when the camera was closed (or restarted)
+ * before the request finished. It is the same name the platform uses for an
+ * aborted request, so a consumer can tell "we gave up on this one" apart from
+ * "the camera refused" and skip the error message for a panel that is already
+ * going away.
+ */
+export const CAMERA_START_CANCELLED = "AbortError";
+
+function cameraStartCancelled(): Error {
+  const error = new Error("Camera start was cancelled.");
+  error.name = CAMERA_START_CANCELLED;
+  return error;
+}
+
+function releaseStream(stream: MediaStream): void {
+  stream.getTracks().forEach((track) => track.stop());
+}
+
 export class CameraManager {
   private _stream: MediaStream | null = null;
   private _videoElement: HTMLVideoElement | null = null;
@@ -20,6 +39,12 @@ export class CameraManager {
   private _availableCameras: MediaDeviceInfo[] = [];
   private _canvas: OffscreenCanvas | null = null;
   private _canvasCtx: OffscreenCanvasRenderingContext2D | null = null;
+  // Every start attempt carries a ticket. `stop()` and any newer `start()`
+  // invalidate the outstanding ticket, which is how a request that only
+  // finishes after the panel closed (permission prompt left open, slow USB
+  // camera) learns that nobody wants its stream — without that, the resolved
+  // tracks are never stopped and the camera light stays on until page reload.
+  private _startTicket = 0;
 
   get isActive(): boolean {
     return this._isActive;
@@ -62,6 +87,8 @@ export class CameraManager {
       this.stop();
     }
 
+    const ticket = ++this._startTicket;
+
     const constraints: MediaStreamConstraints = {
       video: {
         facingMode: this._currentConfig.facingMode,
@@ -73,11 +100,24 @@ export class CameraManager {
     };
 
     try {
-      this._stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      if (ticket !== this._startTicket) {
+        releaseStream(stream);
+        throw cameraStartCancelled();
+      }
+
+      this._stream = stream;
 
       if (this._videoElement) {
         this._videoElement.srcObject = this._stream;
         await this._videoElement.play();
+
+        // A close during playback startup already stopped the tracks; don't
+        // come back and claim the camera is live.
+        if (ticket !== this._startTicket) {
+          throw cameraStartCancelled();
+        }
 
         // Update canvas size to match actual video dimensions
         if (this._canvas) {
@@ -91,6 +131,10 @@ export class CameraManager {
       this._isActive = true;
       return this._stream;
     } catch (error) {
+      if (error instanceof Error && error.name === CAMERA_START_CANCELLED) {
+        throw error;
+      }
+
       console.error("Failed to start camera:", error);
 
       // A denied prompt or missing device is an expected user state, not a bug.
@@ -113,8 +157,12 @@ export class CameraManager {
   }
 
   stop(): void {
+    // Invalidate any request still waiting on the permission prompt so its
+    // stream gets released instead of surviving this close.
+    this._startTicket++;
+
     if (this._stream) {
-      this._stream.getTracks().forEach((track) => track.stop());
+      releaseStream(this._stream);
       this._stream = null;
     }
 
