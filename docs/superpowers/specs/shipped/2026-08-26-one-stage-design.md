@@ -9,8 +9,23 @@ last_triaged: 2026-08-26
 
 # One Stage — Design
 
+**Status:** Shipped 2026-08-26. Moved out of `active/` on 2026-09-13; its
+frontmatter has read `status: shipped` with all seven ledger boxes checked since
+2026-08-26, so the file was only ever open by location.
+
+**Reconciliation evidence (2026-09-13):** `2686a4cb8` (_one stage: delete the
+tabs, put the drill on the floor_) deletes `StageViewer.svelte`,
+`SceneStudio.svelte`, and `StageSidebar.svelte` — none exist today.
+`STAGE_TABS` in `src/lib/shared/navigation/config/tab-definitions.ts:1200` holds
+exactly one entry (`scene`). The word "phrase" survives only as `SPACING_PHRASES`
+in `domain/tika-capabilities/arrange-formation.ts`, which is TIKA language
+parsing, not the retired stage vocabulary. `Mark[]` survives only inside
+`domain/formation-migration.ts`, which is the legacy-read path this design kept
+on purpose. The 4K root-font gap recorded at the end of this document remains
+open and belongs to the app shell, not to Stage.
+
 **Date:** 2026-08-26
-**Supersedes the Stage half of:** `active/2026-08-23-stage-formation-choreography-design.md`
+**Supersedes the Stage half of:** `shipped/2026-08-23-stage-formation-choreography-design.md`
 (its Phase 5 proof pass becomes Phase 7 here)
 
 ## 1. The problem

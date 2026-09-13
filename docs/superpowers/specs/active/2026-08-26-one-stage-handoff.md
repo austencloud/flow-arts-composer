@@ -10,7 +10,7 @@ last_triaged: 2026-08-26
 # One Stage — Handoff
 
 **Landed:** `2686a4cb8f` — "one stage: delete the tabs, put the drill on the floor"
-**Spec:** `active/2026-08-26-one-stage-design.md` (status shipped, phases 1-7 ticked)
+**Spec:** `shipped/2026-08-26-one-stage-design.md` (status shipped, phases 1-7 ticked)
 
 ## What is done
 

@@ -5,9 +5,9 @@
 Rate the Ghost's current intelligence from observed behavior and code, without
 accepting the previous 7.5 label as the answer. Define the rubric first, then
 judge whether the system earns its score. The current design is documented in
-[the predictive judgment spec](active/2026-08-06-ghost-predictive-judgment-design.md),
+[the predictive judgment spec](shipped/2026-08-06-ghost-predictive-judgment-design.md),
 which extends the earlier [activity intelligence](2026-08-06-ghost-activity-intelligence-design.md)
-and [experience learning](active/2026-08-06-ghost-experience-learning-design.md)
+and [experience learning](shipped/2026-08-06-ghost-experience-learning-design.md)
 specs. This handoff is for a read-only assessment. Do not change the Ghost until
 Austen explicitly approves the next half-point.
 

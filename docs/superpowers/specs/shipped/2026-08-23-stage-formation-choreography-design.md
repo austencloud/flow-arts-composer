@@ -1,7 +1,21 @@
 # Stage Formation Choreography — Design
 
 **Date:** 2026-08-23
-**Status:** Approved (Austen approved Approach A and the four-section design in conversation, 2026-08-23)
+**Status:** Shipped. All five phases are complete as of 2026-08-26; Phase 5's
+proof pass was absorbed into `2026-08-26-one-stage-design.md` Phase 7. Header
+corrected and the file moved out of `active/` on 2026-09-13 — it still read
+"Approved" while Phases 1–4d had already landed in `1b32c668ff`, `7b0091bdc8`,
+`183fa4cd7f`, and `b80d793708`.
+
+**Reconciliation evidence (2026-09-13):** `Formation`/`FormationSpot` are the
+live model (`src/lib/features/stage/components/SetProperties.svelte:11`,
+`services/tika-director-executor.ts:39` transforms formation spots). The retired
+per-performer `Mark[]` chain survives only in
+`src/lib/features/stage/domain/formation-migration.ts`, which is the legacy
+migration path Phase 4d specified, not a second live model.
+
+**Originally approved:** Austen approved Approach A and the four-section design
+in conversation, 2026-08-23
 **Supersedes:** the per-performer mark-chain movement model in
 `2026-08-20-stage-performance-runtime-design.md` (the runtime's facing/walk-style
 semantics, playhead clock, and rig ownership all carry forward unchanged).
@@ -348,5 +362,11 @@ mutations use today).
       Evidence: 58/58 stage tests; `npm run check` 0 errors 0 warnings; the
       default track still renders line → v-shape at count 8; sidebar scrolls with
       full-size sections at 1920 and 960x412.
-- [ ] **Phase 5 — Proof pass.** Visual verification is the main session's job,
-      never a subagent's.
+- [x] **Phase 5 — Proof pass.** Discharged by `2026-08-26-one-stage-design.md`,
+      which states in its header that it supersedes the Stage half of this
+      design and that "its Phase 5 proof pass becomes Phase 7 here". One Stage's
+      Phase 7 is checked: the reverse-triangle demo (final 16 counts of a
+      64-step sequence, downstage-centre performer stepping backward while the
+      two back performers step forward), the seven-viewport visual sweep, tests,
+      and `npm run check`. Closed 2026-09-13 during spec reconciliation; the
+      proof was performed there rather than here, not skipped.
