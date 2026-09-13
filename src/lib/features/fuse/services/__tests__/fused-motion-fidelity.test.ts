@@ -150,7 +150,9 @@ describe("fuseSequences motion fidelity", () => {
     const left = floatingLeftSolo();
     const right = proRightSolo();
 
-    const canonical = await deriveLettersForSequence(canonicalPair(left, right));
+    const canonical = await deriveLettersForSequence(
+      canonicalPair(left, right)
+    );
     const fused = await deriveLettersForSequence(fuseSequences(left, right));
 
     // Sanity: the pair really is the prefloat-sensitive one.
