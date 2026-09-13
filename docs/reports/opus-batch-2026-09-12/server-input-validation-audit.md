@@ -2,9 +2,10 @@
 
 **Date:** 2026-09-13
 **Base SHA:** `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main` at start; branch was level with it)
-**Final SHA:** `0fdf435683de392bb5783a852bfcb2cb4260a29c` on
-`claude/server-input-validation-audit-su9h2z` — the commit carrying all the tests and
-this report. Only one commit follows it, filling in this line.
+**Branch:** `claude/server-input-validation-audit-su9h2z`
+**Audit commit:** `0fdf4356` — the tests and the first draft of this report.
+**Revision:** this document was corrected after review; see _Review corrections_ below for
+what changed and why.
 **Scope:** non-payment server request validation and resource bounds
 **Nature:** read-only. No production code was changed. Everything added is test and report material.
 
@@ -59,8 +60,8 @@ written. Every test runs offline against mocks.
 
 ### S1 — Presigned R2 upload URLs bind neither size nor content type
 
-**Severity:** security exposure. **Evidence:** measured (URL contents) + inferred (the
-serving step).
+**Severity:** security exposure. **Evidence:** measured (what the signature binds);
+the platform's own ceiling and the serving behaviour are **not established**.
 **Files:** `firebase-functions/src/r2/index.ts:101-110,143-187,193-231`,
 `firebase-functions/src/r2/r2-client.ts:80-93`
 
@@ -91,10 +92,13 @@ either (measured in `r2-presign-size-bound.test.ts`). The payload hash is
 
 Consequences, for the holder of one presigned URL during its 15-minute window:
 
-1. **The size ceiling is advisory.** Declare `contentLength: 1`, then PUT any number of
-   bytes. The 500 MB constant constrains nothing that reaches R2. `r2MultipartStart`
-   does not call `assertFileSize` at all, so the multipart path has no declared ceiling
-   to begin with.
+1. **The application's size ceiling is unenforced.** Declare `contentLength: 1`, then
+   PUT a body of any size the _platform_ still permits: the 500 MB constant constrains
+   nothing that reaches R2, so the only remaining limit is whatever R2 and Cloudflare
+   enforce natively — which this audit did **not** test and does not claim is absent.
+   The finding is "the app's own ceiling does not apply", not "bytes are unlimited".
+   `r2MultipartStart` does not call `assertFileSize` at all, so the multipart path has
+   no declared ceiling to begin with.
 2. **The MIME allowlist is advisory.** Declare `video/mp4`, then PUT with
    `Content-Type: text/html`. `buildKey`'s sanitiser (`[^a-zA-Z0-9_\-\.]` stripped) keeps
    dots, so the caller also chooses the object key's extension — `payload.html` passes
@@ -104,11 +108,12 @@ Consequences, for the holder of one presigned URL during its 15-minute window:
    `pub-f5505ed75927471cb198c54336317370.r2.dev`, so these objects are publicly
    readable.
 
-**What is measured:** that the signature binds only `host`, so neither check survives
-into the upload. **What is inferred:** that R2's public domain then serves the stored
-`text/html` with that Content-Type, which would make this arbitrary content hosting on a
-project domain rather than only a storage-cost problem. Confirming that step needs a
-production probe and was not performed.
+**What is measured:** that the signature binds only `host`, so neither application-level
+check survives into the upload. **What is not established:** (a) what R2 and Cloudflare
+themselves cap an unsigned-payload PUT at, and (b) whether R2's public domain then serves
+the stored `text/html` with that Content-Type — which is what would turn this from a
+storage-cost problem into arbitrary content hosting on a project domain. Both need a
+production probe and neither was performed.
 
 **Reachability:** `requireAuth` (`r2/index.ts:113-118`) only checks that `request.auth`
 exists. Firebase populates `auth` for anonymous sign-ins, and the repository maintains
@@ -194,9 +199,18 @@ The handler's own payload checks are sound and were confirmed: a non-MP4 body �
 hash that is not 64 lowercase hex → 400, an oversized declared `content-length` → 413
 before the body is read, and a post-read byte-length re-check.
 
-**Fix direction:** the route-id keying from S2 fixes the ceiling. Separately, requiring
-an authenticated caller (or at least a present, matching `Origin`) would remove the
-anonymous-write path; that is a product decision about how QR videos are published.
+**Fix direction:** two independent controls, either of which helps on its own.
+
+- **Authentication** is the load-bearing one: requiring an authenticated caller (or at
+  minimum a present, matching `Origin`) removes the anonymous-write path outright, with
+  or without any change to S2. That is a product decision about how QR videos get
+  published.
+- **The route-id keying from S2** restores a real ceiling for whoever _is_ allowed to
+  write.
+
+These are separable. Fixing S2 alone still leaves unauthenticated writes, merely rate
+limited; fixing auth alone still leaves an ineffective ceiling for authenticated callers.
+Neither is a prerequisite for the other.
 
 ---
 
@@ -220,12 +234,23 @@ Measured in `rejected-input-and-error-disclosure.test.ts`. Because the handler c
 own error, `hooks.server.ts`'s `handleError` scrubber — which correctly returns the
 generic message in production — never sees it.
 
-Two things this is **not**: the unbounded `stepSize` on line 30 is _not_ an allocation
+Three things this is **not**. The unbounded `stepSize` on line 30 is _not_ an allocation
 vulnerability, because it is read after the throw and never reaches the renderer (measured:
-`stepSize: 1e9` produces the identical 500). And the disclosure is a function name, not a
-secret. The real cost is that each request consumes an `AI_RENDER` slot before failing
-(measured: 20 × 500, then 429), so the dead route is a free way to exhaust a real quota
-shared with `/api/render-pictograph`.
+`stepSize: 1e9` produces the identical 500). The disclosure is a function name, not a
+secret. And the wasted rate-limit slots are _not_ a shared-quota problem: each request does
+consume an `AI_RENDER` slot before failing (measured: 20 × 500, then 429), but S2 above
+establishes that buckets are keyed by pathname, so `/api/test-render` exhausts only
+`/api/test-render`'s own bucket. It shares the `AI_RENDER` _preset_ with
+`/api/render-pictograph` and `/api/tika/pictograph`, not a quota — those routes have
+distinct fixed pathnames and therefore distinct buckets. An earlier draft of this report
+claimed otherwise, which contradicted its own S2 finding.
+
+So the cost is bounded and small: a dead public route that answers 500 twenty times a
+minute per IP and then 429s. Worth removing for tidiness and to stop advertising an
+internal symbol, not for capacity.
+
+Note also that `/api/test-render` has a **fixed** path, so S2's bypass does not apply to
+it — its own ceiling is correctly enforced, which is what the 429 at request 21 shows.
 
 **Fix direction:** delete the route, or gate it to `dev` like its siblings.
 
@@ -270,24 +295,33 @@ all validate against a regex or a fixed set. `save-pictograph` is the odd one ou
 **Files:** `src/routes/test/qft-page/img/[file]/+server.ts`,
 `src/routes/test/qft-page/frame/[stem]/[index]/+server.ts`
 
-Every other `/test/**` endpoint checks `dev`. These two do not, and two things that look
-like guards are not:
+Every other `/test/**` endpoint checks `dev`. These two do not.
 
-- `svelte.config.js` `routes.exclude` does not list `/test/*`, so the endpoints are
-  compiled into the Worker.
-- `src/routes/test/+layout.ts` redirects away when `!dev`, but it is a `LayoutLoad`, and
-  layout loads do not run for standalone `+server.ts` endpoints.
-
-Re-imported with `dev: false`, both handlers still execute their own logic (measured):
+**Measured:** re-imported with `dev: false`, both handlers still execute their own logic —
 a malformed name → 400 from the route's regex, a well-formed name → 404 from the missing
-file. A dev-guarded sibling returns 403 at the same point.
+file. A dev-guarded sibling returns 403 at the same point. So there is no `dev` check in
+these two handlers, and that part is observed rather than assumed.
 
-**This is not currently an exposure.** The validation is tight — `^[a-z0-9]+\.(gif|jpg)$`
-and `^[a-z0-9]+$` / `^[0-8]$` are anchored and admit no traversal (measured against
-`../secret.gif`, `a/../../x.gif`, `A.GIF`, `file.png`, `a.gif .txt`, `%2e%2e%2fx.gif`) —
-and the private archive under `docs/reference/archive/` is not deployed. What makes it
-worth recording is that nothing in the route enforces either of those facts: the archive
-staying undeployed is what keeps the route harmless, not a check.
+**Inferred, not proven:** that the endpoints are therefore _live in the deployed Worker_.
+That rests on two readings, not on any observation of a deployment:
+
+- `svelte.config.js` `routes.exclude` does not list `/test/*`, which should leave the
+  endpoints in the Worker bundle.
+- `src/routes/test/+layout.ts` redirects away when `!dev`, but it is typed `LayoutLoad`,
+  and SvelteKit does not run layout loads for standalone `+server.ts` endpoints — so it
+  guards the pages under `/test`, not these endpoints.
+
+No build output was inspected and no deployed URL was requested, so "ships to production"
+is a code-and-config inference. Confirming it is a one-line check against a build artefact
+or the live host, which this audit's read-only remit did not cover.
+
+**Either way this is not currently an exposure.** The validation is tight —
+`^[a-z0-9]+\.(gif|jpg)$` and `^[a-z0-9]+$` / `^[0-8]$` are anchored and admit no traversal
+(measured against `../secret.gif`, `a/../../x.gif`, `A.GIF`, `file.png`, a NUL-truncation
+name, and `%2e%2e%2fx.gif`) — and the private archive under `docs/reference/archive/` is
+not deployed. What makes it worth recording is that nothing in the route enforces either
+of those facts: the archive staying undeployed is what keeps the route harmless, not a
+check.
 
 **Fix direction:** add the `dev` guard its siblings have.
 
@@ -451,6 +485,23 @@ $ npx vitest run --config tests/opus-server-input-audit/vitest.config.ts
       Tests  38 passed (38)
 ```
 
+**Portability.** The suite was authored and run on Linux. A review run on Windows reported
+37 pass / 1 fail and one file defect, both now fixed:
+
+- `dev-write-path-composition.test.ts` asserted `toContain("tmp/audit-escape")` against a
+  `path.resolve` result, which emits `\` on Windows. The assertion now normalises
+  separators through a `resolvedPosix` helper. The neighbouring escape assertion was
+  already separator-safe (it compares against `INTENDED_ROOT + path.sep`) and passed on
+  both platforms, so the defect was in how the result was _stated_, not in what was
+  observed — the finding itself is unchanged.
+- `production-reachability.test.ts` carried a **raw NUL byte** at offset 4343, inside the
+  traversal-rejection list. That was meant to be a NUL-truncation test case and is now
+  written as a `\u0000` source escape, leaving every file in the suite pure ASCII
+  (verified: no byte outside `0x09–0x7e` plus newline remains in any suite file).
+
+Re-run after both fixes, on Linux: **38 passed (38)**. The suite has no remaining
+`path.sep`-dependent assertion and no raw control byte.
+
 These tests assert **current** behaviour so each finding is reproducible. They are not a
 specification of desired behaviour: fixing S2 will make
 `rate-limit-key-scope.test.ts` fail, which is the point — whoever fixes it should invert
@@ -468,9 +519,16 @@ reached through `/api/test-render`'s import graph).
   `svelte.config.js` `routes.exclude`, and the per-handler guards — plus, for the two
   `dev`-guard claims, re-importing the handler with `dev: false` and observing that it
   still runs.
-- S1's final step (R2 serving an attacker-chosen Content-Type from the public domain) and
-  R4 (whether R2 resolves `..` in an object key) are **not** established. Both need a
-  request against the real bucket.
+- Three R2 questions are **not** established and all need a request against the real
+  bucket: what R2 and Cloudflare cap an unsigned-payload PUT at (S1), whether R2's public
+  domain serves back an attacker-chosen Content-Type (S1), and whether R2 resolves `..` in
+  an object key (R4).
+- "Ships to production" for the two `/test/qft-page` endpoints (R3) is an inference from
+  `svelte.config.js` and SvelteKit's layout-load semantics. What is measured is only that
+  the handlers contain no `dev` check. No build artefact was inspected and no deployed URL
+  was requested.
+- The suite ran on Linux here and on Windows in review. It was not run on macOS, and no
+  Node version other than the repository's current one was exercised.
 - The rate-limit evidence exercises the in-memory fallback. The Cloudflare native binding
   was not exercised; the claim that the defect carries over rests on reading
   `withRateLimit.ts:70-73`, which passes the identical `identifier` to `limiter.limit`.
@@ -480,18 +538,56 @@ reached through `/api/test-render`'s import graph).
 - Firestore security rules were not read; several findings mention Firestore paths, but
   whether the rules independently constrain them belongs to the security agent's scope.
 
+## Review corrections
+
+A review round on Windows caught four substantive errors in the first draft. Recording
+them here rather than quietly editing them out, because two were the report contradicting
+its own evidence.
+
+1. **R1 claimed `/api/test-render` burns a quota "shared with `/api/render-pictograph`".**
+   Wrong, and it contradicted S2 in the same document: the two routes share the
+   `AI_RENDER` _preset_, but `withRateLimit` keys buckets by pathname, so each fixed-path
+   route has its own. `/api/test-render` exhausts only itself. R1 now says so, and notes
+   that its fixed path means S2's bypass does not apply to it either.
+2. **The follow-up list called S2 "the precondition for S3 being fixable at all".** Wrong.
+   Requiring authentication on `/api/qr-video/[hash]` stops unauthenticated writes whether
+   or not the rate-limit keying is ever corrected. S2 is the prerequisite for an effective
+   per-caller ceiling, not for fixing S3. Both S3 and the follow-up list now treat the two
+   controls as separable.
+3. **S1 said "PUT any number of bytes", implying unlimited.** What is measured is that the
+   _application's_ declared ceiling does not bind. R2's and Cloudflare's own limits were
+   never tested, so the claim is now scoped to the app-level ceiling, and the platform
+   ceiling is listed as an open question for the verification probe.
+4. **R3 presented production reachability as established.** The `dev:false` handler
+   behaviour is measured; that the endpoints are live in the deployed Worker is an
+   inference from `svelte.config.js` and SvelteKit's layout-load semantics. No build
+   output or deployed URL was inspected. R3 now separates the two.
+
+Two test defects from the same review, both fixed and detailed under _Verification →
+Portability_: a `path.sep`-dependent assertion that failed on Windows, and a raw NUL byte
+committed into `production-reachability.test.ts`.
+
+The core S1 / S2 / S3 findings were not affected by any of this — the review confirmed
+them against the same evidence.
+
 ## Follow-ups, in the order I would take them
 
-1. **S2** — key `withRateLimit` on `event.route?.id`. One line, in shared security code,
-   and it is the precondition for S3 being fixable at all.
-2. **S1** — sign `ContentLength` and `ContentType` on the presigned PUT, and give
-   `r2MultipartStart` a bound. Until then the R2 bucket has no enforced upload ceiling
-   for any signed-in user.
-3. **S1 / R4 verification** — one authorised probe against the real bucket settles both
-   the Content-Type serving question and the `..` normalisation question. That probe is
-   outside this audit's read-only remit.
-4. **R1** — delete `/api/test-render` or gate it to `dev`. It cannot succeed, and it
-   burns a shared quota.
-5. **R3** — add the missing `dev` guard to the two `/test/qft-page` endpoints.
-6. **R2** — validate `gridMode` against its two literals and scrub `propType`.
-7. **R5, R6, R7, R8** — small, independent, and safe to batch.
+1. **S2** — key `withRateLimit` on `event.route?.id`. One line, in shared security code.
+   It is the prerequisite for _any_ parameterised route having an effective per-caller
+   ceiling. It is **not** a prerequisite for fixing S3: requiring authentication on
+   `/api/qr-video/[hash]` independently stops unauthenticated writes whether or not the
+   rate limit is ever corrected. The two are separable and can be done in either order.
+2. **S3** — decide whether `/api/qr-video/[hash]` should accept unauthenticated writes at
+   all. Auth is the load-bearing control here; the rate limit is the second line.
+3. **S1** — sign `ContentLength` and `ContentType` on the presigned PUT, and give
+   `r2MultipartStart` a bound. Until then the application's declared upload ceiling and
+   MIME allowlist do not apply to any signed-in user's upload.
+4. **S1 / R4 verification** — one authorised probe against the real bucket settles three
+   open questions at once: what R2 caps an unsigned-payload PUT at, what Content-Type it
+   serves back, and whether it normalises `..` in a key. That probe is outside this
+   audit's read-only remit.
+5. **R1** — delete `/api/test-render` or gate it to `dev`. It cannot succeed on any
+   request, and it advertises an internal symbol on failure.
+6. **R3** — add the missing `dev` guard to the two `/test/qft-page` endpoints.
+7. **R2** — validate `gridMode` against its two literals and scrub `propType`.
+8. **R5, R6, R7, R8** — small, independent, and safe to batch.
