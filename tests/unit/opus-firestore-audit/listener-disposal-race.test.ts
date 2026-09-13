@@ -189,8 +189,8 @@ describe("subscribeToAllPublicCollections is the correct counter-example", () =>
     await flush();
 
     // public-collection-loader.ts re-checks `disposed` after attaching and
-    // immediately unsubscribes. This is the fix shape the six racing call
-    // sites in the audit need.
+    // immediately unsubscribes. This is the fix shape the seven racing call
+    // sites listed in the audit report need.
     const leaked = mocks.listeners.filter((l) => l.active);
     expect(leaked).toHaveLength(0);
   });

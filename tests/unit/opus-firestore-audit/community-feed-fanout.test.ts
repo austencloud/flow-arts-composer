@@ -54,7 +54,8 @@ vi.mock("firebase/firestore", () => ({
   query: vi.fn((ref: unknown, ...clauses: unknown[]) => [ref, ...clauses]),
   where: vi.fn((field: unknown, op: string, value: unknown) => {
     if (op === "in") mocks.pendingWhereIn = value as string[];
-    if (field === "ownerId" && op === "==") mocks.pendingOwnerId = value as string;
+    if (field === "ownerId" && op === "==")
+      mocks.pendingOwnerId = value as string;
     return { field, op, value };
   }),
   getCountFromServer: vi.fn(async () => {
@@ -125,7 +126,10 @@ function collectionDoc(
     data: () => ({
       name: id,
       isPublic: true,
-      sequenceIds: Array.from({ length: memberCount }, (_, i) => `${id}-seq-${i}`),
+      sequenceIds: Array.from(
+        { length: memberCount },
+        (_, i) => `${id}-seq-${i}`
+      ),
       sequenceCount: memberCount,
     }),
   };
