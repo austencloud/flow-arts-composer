@@ -146,10 +146,19 @@ self.addEventListener("fetch", (event) => {
   // looking at an old forest or Autumn build forever after one visit. Online
   // loads therefore wait for the current model and replace the offline copy;
   // a failed connection or timeout still falls back to the last working scene.
+  //
+  // /draco/ and /basis/ are one pair, not two rules: they are the geometry
+  // decoder and the KTX2 texture transcoder that every optimized GLB needs
+  // before its first byte decodes (see DECODER_RUNTIME_URLS in
+  // src/lib/shared/3d/scene-boot/scene-asset-manifest.ts, which warms both
+  // together). Only /draco/ was listed here, so offline a scene had its models
+  // AND its geometry decoder cached and still died on the network-only
+  // transcoder — a full model cache that could not draw a single texture.
   if (
     /\/models\/.*\.glb$/.test(url.pathname) ||
     /\/models\/.*\.ktx2$/.test(url.pathname) ||
-    url.pathname.startsWith("/draco/")
+    url.pathname.startsWith("/draco/") ||
+    url.pathname.startsWith("/basis/")
   ) {
     event.respondWith(networkFirstDedicated(event.request, ASSETS_3D_CACHE));
     return;
@@ -263,14 +272,30 @@ async function cacheFirstDedicated(request, cacheName) {
 
 async function networkFirstDedicated(request, cacheName) {
   const cache = await caches.open(cacheName);
+  let response;
   try {
-    const response = await fetchWithTimeout(request, 10000);
-    if (response.ok) await cache.put(request, response.clone());
-    return response;
+    response = await fetchWithTimeout(request, 10000);
   } catch {
+    // Only a FETCH failure is an offline signal. The cache write below is
+    // deliberately outside this try: it used to live inside it, so a rejecting
+    // Cache.put — quota exhausted on a phone full of models, or a 206 partial,
+    // both of which reject rather than resolve — threw away a perfectly good
+    // 200 and answered with the previous scene, or a bare 503 when nothing was
+    // cached yet. A storage problem must never be reported as no network.
     const cached = await cache.match(request);
     return cached || new Response("Offline", { status: 503 });
   }
+  if (response.ok) {
+    // Still awaited: the worker may be terminated once respondWith settles, and
+    // finishing the write here is what makes the next offline load work.
+    try {
+      await cache.put(request, response.clone());
+    } catch {
+      // Full storage / unsupported response: keep the offline copy we already
+      // have and serve the live one. Nothing else to do from inside the SW.
+    }
+  }
+  return response;
 }
 
 async function networkFirst(request) {
