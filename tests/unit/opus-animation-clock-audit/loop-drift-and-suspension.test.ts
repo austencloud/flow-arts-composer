@@ -246,6 +246,64 @@ describe("animation clock — loop-boundary drift", () => {
   });
 });
 
+describe("animation clock — start hold, seamless vs freeform", () => {
+  it("plays the seamless start hold on the first lap only", () => {
+    const sequence = withStepDurations(
+      canonicalSeamlessSequence("rotated", 0),
+      REAL_DURATIONS
+    );
+    const rig = (activeRig = buildRig(sequence));
+    rig.controller.togglePlayback();
+
+    const beforeFirstLap: number[] = [];
+    while (rig.lapTimes.length === 0) {
+      rig.clock.runFrames(1, FRAME_MS);
+      beforeFirstLap.push(rig.state.currentStep);
+    }
+    // Lap 1 opens on the held start pose (position below beat 1).
+    expect(beforeFirstLap.filter((step) => step < 1).length).toBeGreaterThan(10);
+
+    const afterFirstLap: number[] = [];
+    while (rig.lapTimes.length < 3) {
+      rig.clock.runFrames(1, FRAME_MS);
+      afterFirstLap.push(rig.state.currentStep);
+    }
+    // Later laps restart at beat 1 — the hold is never shown again.
+    expect(afterFirstLap.some((step) => step < 1)).toBe(false);
+    expect(Math.min(...afterFirstLap)).toBeCloseTo(1, 2);
+  });
+
+  it("replays the freeform start hold every lap and adds a one-beat end hold", () => {
+    const sequence = withStepDurations(
+      canonicalFreeformSequence("rotated", 0),
+      REAL_DURATIONS
+    );
+    const rig = (activeRig = buildRig(sequence));
+    const totalSteps = rig.state.totalSteps;
+    rig.controller.togglePlayback();
+
+    while (rig.lapTimes.length === 0) rig.clock.runFrames(1, FRAME_MS);
+
+    const secondLap: number[] = [];
+    while (rig.lapTimes.length < 2) {
+      rig.clock.runFrames(1, FRAME_MS);
+      secondLap.push(rig.state.currentStep);
+    }
+
+    // Start hold: positions below beat 1 appear again on lap 2.
+    const holdFrames = secondLap.filter((step) => step < 1);
+    expect(holdFrames.length).toBeGreaterThan(10);
+    // End hold: the playhead parks on the end beat for a whole beat of time.
+    const endFrames = secondLap.filter(
+      (step) => Math.abs(step - (totalSteps + 1)) < 1e-9
+    );
+    expect(endFrames.length).toBeGreaterThan(10);
+    // At 60fps a one-beat hold is ~60 frames at either end.
+    expect(holdFrames.length).toBeGreaterThan(45);
+    expect(endFrames.length).toBeGreaterThan(45);
+  });
+});
+
 describe("animation clock — speed changes", () => {
   it("advances sequence time in proportion to the speed multiplier", () => {
     // Unit durations everywhere, so position advances at a constant rate and
