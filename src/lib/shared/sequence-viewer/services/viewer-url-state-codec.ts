@@ -11,16 +11,18 @@ import {
   compressForURL,
   decompressFromURL,
 } from "$lib/shared/navigation/services/sequence-codec";
+// The param names live in their own dependency-free module so the root layout's
+// url-parameter-policy can read them without pulling this codec's fflate
+// compression stack onto every route's hydration path. Re-exported below so
+// existing importers keep working.
+import { VIEWER_STATE_PARAM_NAMES } from "./viewer-url-state-params";
 
 export type SliceId = "vw" | "fx" | "an" | "ex" | "t3" | "cd" | "tn" | "ps";
 export type SlicePayloads = Partial<Record<SliceId, unknown>>;
 
 const BLOB_SLICE_IDS: readonly SliceId[] = ["fx", "an", "ex", "t3", "cd", "tn", "ps"];
 
-// Viewer mode rides on `pane`, not `vm`: printed QR cards already own `vm`
-// as the BROWSE view-mode code (`short-code-manager.ts` prints `vm=hsb`),
-// and physical artifacts cannot be re-parameterized.
-export const VIEWER_STATE_PARAM_NAMES = ["pane", "split", "fx", "cols", "s"] as const;
+export { VIEWER_STATE_PARAM_NAMES };
 
 export interface ViewerUrlParamPatch {
   set: Record<string, string>;
