@@ -9,6 +9,7 @@ import { FireTipTracker } from "../fire-tip-tracker";
 import { DEFAULT_FIRE_CONFIG } from "../../domain/types/fire-types";
 import type { FireFrameInput } from "../../domain/types/fire-types";
 import {
+  computeResidualHeatFloor,
   decayResidualHeat,
   FIRE_RESIDUAL_PEAK_HEAT,
 } from "../fire/fire-emitter-fade";
@@ -59,7 +60,8 @@ class FakeFireRenderer {
     this.residualHeat = decayResidualHeat(
       this.residualHeat,
       CINEMATIC_TEMPERATURE_DISSIPATION,
-      1
+      1,
+      computeResidualHeatFloor(1)
     );
   }
 }

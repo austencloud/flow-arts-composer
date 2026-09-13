@@ -27,6 +27,7 @@
 
 import { FireFrameCache } from "./fire-frame-cache";
 import {
+  computeResidualHeatFloor,
   decayResidualHeat,
   FIRE_RESIDUAL_PEAK_HEAT,
 } from "./fire-emitter-fade";
@@ -1177,13 +1178,18 @@ export class WebGLFireRenderer {
 
     // With no tips there were no splats above, so this frame only cools what is
     // already burning. Track that decay with the same dissipation the solver
-    // applies, so hasResidualFire() reports false the moment the plume stops
-    // being visible instead of after a guessed timeout.
+    // applies and stop at the heat where the display pass goes dark, so
+    // hasResidualFire() reports false the moment the plume stops being visible
+    // rather than after a guessed timeout.
     if (tips.length === 0) {
+      const displayIntensity = useReaction
+        ? computeFireEmissionMultiplier(config.brightness)
+        : config.intensity;
       this.residualHeat = decayResidualHeat(
         this.residualHeat,
         temperatureDissipation,
-        subSteps
+        subSteps,
+        computeResidualHeatFloor(displayIntensity)
       );
     }
 
