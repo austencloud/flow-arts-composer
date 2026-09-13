@@ -13,7 +13,15 @@
  * the plugins' behaviour.
  */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 const h = vi.hoisted(() => ({
   invoke: vi.fn(async () => 49_152),
@@ -57,8 +65,12 @@ beforeEach(() => {
   h.invoke.mockResolvedValue(49_152);
   h.open.mockResolvedValue(undefined);
   h.listen.mockImplementation(
-    async (_event: string, handler: (e: { payload: { id_token: string } }) => void) => {
-      emitCallback = (idToken: string) => handler({ payload: { id_token: idToken } });
+    async (
+      _event: string,
+      handler: (e: { payload: { id_token: string } }) => void
+    ) => {
+      emitCallback = (idToken: string) =>
+        handler({ payload: { id_token: idToken } });
       return h.unlisten;
     }
   );
