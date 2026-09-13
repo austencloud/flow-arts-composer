@@ -41,10 +41,17 @@ export const _reviewDocument = `<!doctype html>
     <script>
       (() => {
         const storageKey = "tka-phone-review-paused-target";
+        const clientStorageKey = "tka-phone-review-client-id";
         const defaultTarget = { path: "/create", revision: 0 };
         let display = { following: true, displayedPath: defaultTarget.path, displayedRevision: defaultTarget.revision };
         let polling = false;
         let generation = 0;
+        let interactionPolling = false;
+        let clientId = "";
+        let pauseCutoff = Date.now();
+        let generatedControlId = 0;
+        const controlIds = new WeakMap();
+        const deliveredCommandIds = new Set();
         const pathLabel = document.querySelector("#path");
         const preview = document.querySelector("#preview");
         const control = document.querySelector("#control");
@@ -54,16 +61,120 @@ export const _reviewDocument = `<!doctype html>
           if (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//") || path.includes("#")) return false;
           try { const url = new URL(path, location.origin); const decoded = decodeURIComponent(url.pathname); return url.origin === location.origin && decoded !== "/review" && !decoded.startsWith("/review/"); } catch { return false; }
         };
+        const getClientId = () => {
+          try {
+            const saved = sessionStorage.getItem(clientStorageKey);
+            if (saved && /^[a-zA-Z0-9-]{8,80}$/.test(saved)) return saved;
+            const generated = crypto.randomUUID ? crypto.randomUUID() : "review-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+            sessionStorage.setItem(clientStorageKey, generated);
+            return generated;
+          } catch { return "review-" + Date.now() + "-" + Math.random().toString(36).slice(2); }
+        };
+        const text = (value, max) => String(value || "").replace(/\\s+/g, " ").trim().slice(0, max);
+        const isVisible = (element) => {
+          const style = getComputedStyle(element);
+          return style.display !== "none" && style.visibility !== "hidden" && element.getClientRects().length > 0;
+        };
+        const controlSnapshot = () => {
+          const document = preview.contentDocument;
+          if (!document) return [];
+          const seen = new Set();
+          return [...document.querySelectorAll("button, input, select")].filter(isVisible).slice(0, 80).flatMap((element) => {
+            const tag = element.tagName.toLowerCase();
+            const inputType = tag === "input" ? element.type : undefined;
+            if (tag === "input" && !["range", "number", "checkbox", "radio"].includes(inputType)) return [];
+            const id = text(element.id || controlIds.get(element) || ("review-control-" + (++generatedControlId)), 160);
+            controlIds.set(element, id);
+            if (seen.has(id)) return [];
+            seen.add(id);
+            const labelledBy = text(element.getAttribute("aria-labelledby"), 160).split(" ").map((id) => text(document.getElementById(id)?.textContent, 120)).join(" ");
+            const label = element.labels?.[0]?.textContent;
+            const name = text(element.getAttribute("aria-label") || labelledBy || label || (tag === "button" ? element.textContent : ""), 180);
+            if (!name) return [];
+            const control = { id, name, kind: tag, disabled: Boolean(element.disabled) || element.getAttribute("aria-disabled") === "true" || element.matches(":disabled") };
+            if (tag === "input") control.inputType = inputType;
+            if (tag === "select") control.options = [...element.options].slice(0, 30).map((option) => text(option.value, 100));
+            return [control];
+          });
+        };
+        const iframeRoute = () => {
+          try {
+            const url = new URL(preview.contentWindow?.location.href || "", location.origin);
+            url.searchParams.delete("reviewRevision");
+            return url.pathname + (url.search || "");
+          } catch { return display.displayedPath; }
+        };
+        const client = () => ({
+          id: clientId,
+          label: (matchMedia("(max-width: 600px)").matches ? "phone" : "desktop") + " " + innerWidth + "×" + innerHeight,
+          viewport: matchMedia("(max-width: 600px)").matches ? "phone" : "desktop",
+          route: iframeRoute(),
+          controls: controlSnapshot(),
+          lastSeenAt: new Date().toISOString(),
+        });
+        const report = async (result) => {
+          try { await fetch("/api/dev/phone-review-controls", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ client: client(), ...(result ? { result } : {}) }) }); } catch {}
+        };
+        const execute = (command) => {
+          if (command.kind === "inspect") return { status: "completed", message: "Controls reported" };
+          const controls = controlSnapshot();
+          const matches = controls.filter((control) => (command.controlId ? control.id === command.controlId && control.name === command.controlName : control.name === command.controlName));
+          if (matches.length !== 1) return { status: "failed", message: "Control was not uniquely available" };
+          const control = matches[0];
+          if (control.disabled) return { status: "failed", message: "Control is disabled" };
+          const document = preview.contentDocument;
+          const element = [...document.querySelectorAll("button, input, select")].find((candidate) => controlIds.get(candidate) === control.id || candidate.id === control.id);
+          if (!element) return { status: "failed", message: "Control changed before execution" };
+          if (command.kind === "click") { element.click(); return { status: "completed", message: "Clicked " + control.name }; }
+          if (control.kind === "select") {
+            if (![...element.options].some((option) => option.value === command.value)) return { status: "failed", message: "Select value is unavailable" };
+            element.value = command.value; element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("input", { bubbles: true })); element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("change", { bubbles: true }));
+            return { status: "completed", message: "Set " + control.name };
+          }
+          if (control.kind !== "input" || !control.inputType) return { status: "failed", message: "Control cannot be set" };
+          if (["checkbox", "radio"].includes(control.inputType)) {
+            if (!["true", "false"].includes(command.value)) return { status: "failed", message: "Toggle value must be true or false" };
+            element.checked = command.value === "true"; element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("input", { bubbles: true })); element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("change", { bubbles: true }));
+            return { status: "completed", message: "Set " + control.name };
+          }
+          const number = Number(command.value);
+          if (!Number.isFinite(number)) return { status: "failed", message: "Numeric value is invalid" };
+          const min = element.min === "" ? -Infinity : Number(element.min);
+          const max = element.max === "" ? Infinity : Number(element.max);
+          const step = element.step === "" || element.step === "any" ? null : Number(element.step);
+          const base = Number.isFinite(min) ? min : 0;
+          if (number < min || number > max || (step && step > 0 && Math.abs((number - base) / step - Math.round((number - base) / step)) > 0.000001)) return { status: "failed", message: "Numeric value is outside this control's constraints" };
+          element.value = String(number);
+          element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("input", { bubbles: true })); element.dispatchEvent(new (element.ownerDocument.defaultView || window).Event("change", { bubbles: true }));
+          return { status: "completed", message: "Set " + control.name };
+        };
+        const pollInteractions = async () => {
+          if (!display.following || interactionPolling) return;
+          interactionPolling = true;
+          const pollGeneration = generation;
+          try {
+            await report();
+            const route = iframeRoute();
+            const response = await fetch("/api/dev/phone-review-command?clientId=" + encodeURIComponent(clientId) + "&route=" + encodeURIComponent(route), { cache: "no-store" });
+            const result = response.ok ? await response.json() : null;
+            if (!display.following || pollGeneration !== generation || !result?.command || result.command.clientId !== clientId || result.command.expectedRoute !== iframeRoute() || Date.parse(result.command.expiresAt) <= Date.now()) return;
+            if (deliveredCommandIds.has(result.command.id) || Date.parse(result.command.createdAt) <= pauseCutoff) { deliveredCommandIds.add(result.command.id); await report({ commandId: result.command.id, status: "failed", message: "Command was queued while preview was paused" }); return; }
+            deliveredCommandIds.add(result.command.id);
+            const outcome = execute(result.command);
+            await report({ commandId: result.command.id, ...outcome });
+          } catch {} finally { interactionPolling = false; }
+        };
         const source = () => display.displayedPath + (display.displayedPath.includes("?") ? "&" : "?") + "reviewRevision=" + display.displayedRevision;
         const render = () => {
           pathLabel.textContent = display.displayedPath;
           control.textContent = display.following ? "Pause" : "Follow";
           control.dataset.primary = String(!display.following);
-          if (preview.dataset.source !== source()) { preview.src = source(); preview.dataset.source = source(); }
+          if (preview.dataset.source !== source()) { generation += 1; preview.src = source(); preview.dataset.source = source(); }
         };
         const pause = () => {
           display.following = false;
           generation += 1;
+          pauseCutoff = Date.now();
           try { localStorage.setItem(storageKey, JSON.stringify(display)); } catch {}
           status.textContent = "Preview paused on the displayed route";
           render();
@@ -90,6 +201,7 @@ export const _reviewDocument = `<!doctype html>
         control.addEventListener("click", () => {
           if (display.following) { pause(); return; }
           generation += 1;
+          pauseCutoff = Date.now();
           display.following = true;
           try { localStorage.removeItem(storageKey); } catch {}
           render();
@@ -102,9 +214,12 @@ export const _reviewDocument = `<!doctype html>
             status.textContent = "Preview paused on the saved route";
           }
         } catch {}
+        clientId = getClientId();
+        preview.addEventListener("load", () => { if (display.following) void report(); });
         render();
-        if (display.following) { void poll(); }
+        if (display.following) { void poll(); void pollInteractions(); }
         window.setInterval(() => void poll(), 3000);
+        window.setInterval(() => void pollInteractions(), 1000);
       })();
     </script>
   </body>
