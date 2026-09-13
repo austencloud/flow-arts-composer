@@ -1,6 +1,7 @@
 # Firebase Rules Security Audit — Handoff (2026-09-13)
 
-**Branch:** `claude/firebase-security-audit-03y1e7` (pushed) · **Tip:** `db61e6a4`
+**Branch:** `claude/firebase-security-audit-03y1e7` (pushed) · **Audit work ends at
+`db61e6a4`**; the branch tip is this handoff's own commit (`git log -1`).
 **Base:** `c4be16199e390e8bdab766051a0042c7827b8d30` (fresh `origin/main`)
 **Full findings report:** `docs/reports/opus-batch-2026-09-12/security-rules-audit.md`
 
