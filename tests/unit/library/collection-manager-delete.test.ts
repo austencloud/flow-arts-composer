@@ -15,6 +15,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => {
   const store = new Map<string, Record<string, unknown>>();
   const commits: number[] = [];
+  // Successive effective uids. With one entry every call sees the same user;
+  // with two, the first call captures "user-1" and every later call sees the
+  // swapped-in user, which is what an anonymous->Google upgrade looks like from
+  // inside a half-finished operation.
+  const uids: string[] = ["user-1"];
   const ARRAY_REMOVE = Symbol("arrayRemove");
 
   type Op =
@@ -73,7 +78,7 @@ const mocks = vi.hoisted(() => {
     };
   }
 
-  return { store, commits, ARRAY_REMOVE, makeBatch };
+  return { store, commits, uids, ARRAY_REMOVE, makeBatch };
 });
 
 vi.mock("firebase/firestore", () => ({
@@ -120,11 +125,13 @@ vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => {
   }
 
   return {
-    getAuthenticatedUserId: () => "user-1",
+    getAuthenticatedUserId: vi.fn(() =>
+      mocks.uids.length > 1 ? mocks.uids.shift()! : mocks.uids[0]!
+    ),
     mapDocToCollection: (data: Record<string, unknown>, id: string) => ({
       id,
       name: data["name"] ?? "",
-      ownerId: "user-1",
+      ownerId: data["ownerId"] ?? "user-1",
       kind: data["kind"] ?? "manual",
       sequenceIds: data["sequenceIds"] ?? [],
       sequenceCount: data["sequenceCount"] ?? 0,
@@ -171,6 +178,7 @@ describe("deleteCollection", () => {
     vi.clearAllMocks();
     mocks.store.clear();
     mocks.commits.length = 0;
+    mocks.uids.splice(0, mocks.uids.length, "user-1");
     mocks.store.set("users/user-1", {});
     // One case swaps in a failing batch; put the working one back so test
     // order can't decide the outcome.
@@ -240,6 +248,36 @@ describe("deleteCollection", () => {
     expect(mocks.store.get("users/user-1/sequences/sequence-0")).toEqual({
       collectionIds: ["other"],
     });
+  });
+
+  it("reads and writes as the same user when the effective uid changes mid-delete", async () => {
+    // The signed-in user's own collection, and a same-id collection belonging
+    // to the uid that swaps in after the write user has been captured.
+    seedCollection(["own-1"], ["own-1"]);
+    mocks.store.set("users/user-2/collections/collection-1", {
+      name: "Someone else's folder",
+      ownerId: "user-2",
+      kind: "manual",
+      sequenceIds: ["own-2"],
+      sequenceCount: 1,
+    });
+    mocks.store.set("users/user-1/sequences/own-2", {
+      collectionIds: ["collection-1", "other"],
+    });
+    mocks.uids.splice(0, mocks.uids.length, "user-1", "user-2");
+
+    await deleteCollection("collection-1");
+
+    // The delete acted on the captured user's collection and its members.
+    expect(mocks.store.has(COLLECTION_PATH)).toBe(false);
+    expect(mocks.store.get("users/user-1/sequences/own-1")).toEqual({
+      collectionIds: ["other"],
+    });
+    // Not the membership of the other user's same-id collection.
+    expect(mocks.store.get("users/user-1/sequences/own-2")).toEqual({
+      collectionIds: ["collection-1", "other"],
+    });
+    expect(mocks.store.has("users/user-2/collections/collection-1")).toBe(true);
   });
 
   it("refuses to delete a system collection", async () => {

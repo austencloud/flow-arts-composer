@@ -381,6 +381,28 @@ export async function syncSmartCollectionCount(
   }
 }
 
+/**
+ * Read one collection document under an already-captured uid.
+ *
+ * `getCollection` resolves the effective user itself, so calling it after an
+ * await can read one user's document and then write under another's — the
+ * effective uid changes on the anonymous->Google upgrade, on sign-out, and when
+ * admin preview is toggled. Anything that reads metadata and then writes
+ * captures the uid once and passes it here.
+ */
+async function readCollectionAs(
+  firestore: Firestore,
+  userId: string,
+  collectionId: string
+): Promise<LibraryCollection | null> {
+  const snapshot = await getDoc(
+    doc(firestore, getUserCollectionPath(userId, collectionId))
+  );
+  return snapshot.exists()
+    ? mapDocToCollection(snapshot.data(), collectionId)
+    : null;
+}
+
 export async function getCollection(
   collectionId: string
 ): Promise<LibraryCollection | null> {
@@ -414,7 +436,7 @@ export async function updateCollection(
 ): Promise<LibraryCollection> {
   const firestore = await getFirestoreInstance();
   const userId = getAuthenticatedUserId();
-  const existing = await getCollection(collectionId);
+  const existing = await readCollectionAs(firestore, userId, collectionId);
 
   if (!existing) {
     throw new CollectionError(
@@ -531,7 +553,7 @@ export async function updateCollection(
 export async function deleteCollection(collectionId: string): Promise<void> {
   const firestore = await getFirestoreInstance();
   const userId = getAuthenticatedUserId();
-  const existing = await getCollection(collectionId);
+  const existing = await readCollectionAs(firestore, userId, collectionId);
 
   if (!existing) {
     return;

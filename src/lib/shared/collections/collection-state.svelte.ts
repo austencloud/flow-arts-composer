@@ -30,10 +30,15 @@ export class CollectionState<T extends CollectionEntry> {
   private localLoaded = false;
   private startedFor: string | null = null;
   private previewRevision = 0;
-  // Which optimistic edit is currently on display for an entry, so a failed
-  // write only rolls back if nothing newer has replaced it.
-  private writeRevision = 0;
-  private readonly writeRevisions = new Map<string, number>();
+  // The last value the repository is known to hold for an entry — the only
+  // thing a failed write may fall back to. Absent means "not persisted".
+  private readonly confirmed = new Map<string, T>();
+  // Repository mutations still in flight per entry, so the display is settled
+  // once, by whichever one finishes last.
+  private readonly inFlight = new Map<string, number>();
+  // Where an optimistically removed entry sat, so a failed delete can put the
+  // confirmed entry back in its old place.
+  private readonly removedBefore = new Map<string, string | undefined>();
 
   constructor(
     private readonly repo: FirebaseCollectionRepository<T>,
@@ -74,6 +79,10 @@ export class CollectionState<T extends CollectionEntry> {
     try {
       const firebaseEntries = await this.repo.load(userId);
       this.ownedCollection = firebaseEntries;
+      // Everything just loaded is by definition what the repository holds, and
+      // is the baseline a failed write falls back to.
+      this.confirmed.clear();
+      for (const entry of firebaseEntries) this.confirmed.set(entry.id, entry);
       await this.migrateFromLocalStorage(userId, firebaseEntries);
     } finally {
       this.ownedLoading = false;
@@ -139,7 +148,9 @@ export class CollectionState<T extends CollectionEntry> {
     const persisted = this.localRepo.load();
     if (persisted.length === 0) return;
     const known = new Set(this.ownedCollection.map((e) => e.id));
-    this.ownedCollection.push(...persisted.filter((e) => !known.has(e.id)));
+    const restored = persisted.filter((e) => !known.has(e.id));
+    this.ownedCollection.push(...restored);
+    for (const entry of restored) this.confirmed.set(entry.id, entry);
   }
 
   teardown(): void {
@@ -148,7 +159,9 @@ export class CollectionState<T extends CollectionEntry> {
     this.userId = null;
     this.localLoaded = false;
     this.startedFor = null;
-    this.writeRevisions.clear();
+    this.confirmed.clear();
+    this.inFlight.clear();
+    this.removedBefore.clear();
     this.stopReadOnlyPreview();
   }
 
@@ -159,57 +172,77 @@ export class CollectionState<T extends CollectionEntry> {
   }
 
   /**
-   * Write one optimistic edit into the list, resolving the slot by identity at
-   * the moment of the write rather than trusting an index captured earlier.
-   *
-   * Every write here is awaited — the Firestore round trip, and an async
-   * `prepareUpdate` before it — so another gallery action can land in between
-   * and shift every index after it. Returns what a rollback needs (the
-   * displaced entry plus a token identifying this write), or null when the
-   * entry is gone because a delete landed first: the edit is then dropped
-   * instead of resurrecting it.
+   * Show one optimistic edit, resolving the slot by id at the moment of the
+   * write rather than trusting an index captured earlier. Every write here is
+   * awaited — the repository round trip, and an async `prepareUpdate` before it
+   * — so another gallery action can land in between and shift every index after
+   * it. False means the entry is gone because a delete landed first: the edit
+   * is then dropped instead of resurrecting it.
    */
-  private applyEntry(next: T): { displaced: T; revision: number } | null {
+  private showEntry(next: T): boolean {
     const idx = this.ownedCollection.findIndex((e) => e.id === next.id);
-    if (idx === -1) return null;
-    const displaced = this.ownedCollection[idx]!;
+    if (idx === -1) return false;
     this.ownedCollection[idx] = next;
-    const revision = ++this.writeRevision;
-    this.writeRevisions.set(next.id, revision);
-    return { displaced, revision };
+    return true;
   }
 
   /**
-   * Undo one optimistic edit after its write failed. Rolling back at the index
-   * captured before the await used to drop the old entry on top of whichever
-   * entry had moved into that slot — one entry duplicated, the other silently
-   * gone from the gallery. Re-find the slot by id instead, and only roll back
-   * the newest write for that entry: a later edit supersedes this one, and an
-   * entry deleted meanwhile stays deleted. (Identity can't stand in for the
-   * revision — `$state` hands back a proxy, never the object we wrote.)
+   * Run one repository mutation for an entry and settle the display when it is
+   * the last one outstanding for that id.
+   *
+   * Two overlapping writes can both fail, and the loser of that race is not a
+   * safe fallback: rolling back to whatever value the failed edit displaced
+   * leaves an optimistic name on screen that the repository never accepted.
+   * Settling against `confirmed` instead means the gallery always lands on what
+   * was actually persisted, whichever order the failures arrive in. While
+   * another write for the same entry is still in flight nothing is settled —
+   * that write owns the display until it, too, resolves.
    */
-  private rollbackEntry(previous: T, id: string, revision: number): void {
-    if (this.writeRevisions.get(id) !== revision) return;
-    this.writeRevisions.delete(id);
+  private async commitWrite(
+    id: string,
+    write: () => Promise<void>,
+    onPersisted: () => void
+  ): Promise<void> {
+    this.inFlight.set(id, (this.inFlight.get(id) ?? 0) + 1);
+    try {
+      await write();
+      onPersisted();
+    } finally {
+      const remaining = (this.inFlight.get(id) ?? 1) - 1;
+      if (remaining > 0) {
+        this.inFlight.set(id, remaining);
+      } else {
+        this.inFlight.delete(id);
+        this.settleEntry(id);
+      }
+    }
+  }
+
+  /** Bring one entry's display back in line with what the repository holds. */
+  private settleEntry(id: string): void {
+    const persisted = this.confirmed.get(id);
+    const followingId = this.removedBefore.get(id);
+    this.removedBefore.delete(id);
     const idx = this.ownedCollection.findIndex((e) => e.id === id);
-    if (idx === -1) return;
-    this.ownedCollection[idx] = previous;
-  }
 
-  /**
-   * Put an optimistically removed entry back after a failed delete.
-   * `followingId` is the entry it sat in front of: while that neighbour is
-   * still present the entry lands in exactly its old place, and otherwise it
-   * goes to the end rather than at a stale index that now belongs to another
-   * entry.
-   */
-  private restoreEntry(entry: T, followingId: string | undefined): void {
-    if (this.ownedCollection.some((e) => e.id === entry.id)) return;
+    if (!persisted) {
+      // Never persisted (or successfully deleted): it does not belong here.
+      if (idx !== -1) this.ownedCollection.splice(idx, 1);
+      return;
+    }
+    if (idx !== -1) {
+      this.ownedCollection[idx] = persisted;
+      return;
+    }
+    // Optimistically removed, but the delete failed. `followingId` is the entry
+    // it sat in front of: while that neighbour is still there it lands in
+    // exactly its old place, otherwise at the end rather than at a stale index
+    // that now belongs to another entry.
     const neighbourIdx = followingId
       ? this.ownedCollection.findIndex((e) => e.id === followingId)
       : -1;
-    if (neighbourIdx === -1) this.ownedCollection.push(entry);
-    else this.ownedCollection.splice(neighbourIdx, 0, entry);
+    if (neighbourIdx === -1) this.ownedCollection.push(persisted);
+    else this.ownedCollection.splice(neighbourIdx, 0, persisted);
   }
 
   async add(entry: Omit<T, "id" | "createdAt">): Promise<T> {
@@ -225,15 +258,15 @@ export class CollectionState<T extends CollectionEntry> {
     }
     this.ownedCollection.unshift(full);
 
-    if (this.userId) {
-      try {
-        await this.repo.save(this.userId, full);
-      } catch (error) {
-        const idx = this.ownedCollection.findIndex((e) => e.id === full.id);
-        if (idx !== -1) this.ownedCollection.splice(idx, 1);
-        throw error;
-      }
+    const userId = this.userId;
+    if (userId) {
+      await this.commitWrite(
+        full.id,
+        () => this.repo.save(userId, full),
+        () => this.confirmed.set(full.id, full)
+      );
     } else {
+      this.confirmed.set(full.id, full);
       this.localRepo.save(this.ownedCollection);
     }
     return full;
@@ -244,18 +277,21 @@ export class CollectionState<T extends CollectionEntry> {
     this.ensureLocalLoaded();
     const idx = this.ownedCollection.findIndex((e) => e.id === id);
     if (idx === -1) return;
-    const [removed] = this.ownedCollection.splice(idx, 1);
+    this.ownedCollection.splice(idx, 1);
     // Remember the neighbour it sat in front of, not its index: the list can
     // move while the delete is in flight.
-    const followingId = this.ownedCollection[idx]?.id;
-    if (this.userId) {
-      try {
-        await this.repo.remove(this.userId, id);
-      } catch (error) {
-        if (removed) this.restoreEntry(removed, followingId);
-        throw error;
-      }
+    this.removedBefore.set(id, this.ownedCollection[idx]?.id);
+
+    const userId = this.userId;
+    if (userId) {
+      await this.commitWrite(
+        id,
+        () => this.repo.remove(userId, id),
+        () => this.confirmed.delete(id)
+      );
     } else {
+      this.confirmed.delete(id);
+      this.removedBefore.delete(id);
       this.localRepo.save(this.ownedCollection);
     }
   }
@@ -272,16 +308,17 @@ export class CollectionState<T extends CollectionEntry> {
     const prev = this.ownedCollection[idx]!;
     if (prev.name === trimmed) return prev;
     const next = { ...prev, name: trimmed } as T;
-    const write = this.applyEntry(next);
-    if (!write) return null;
-    if (this.userId) {
-      try {
-        await this.repo.save(this.userId, next);
-      } catch (error) {
-        this.rollbackEntry(write.displaced, id, write.revision);
-        throw error;
-      }
+    if (!this.showEntry(next)) return null;
+
+    const userId = this.userId;
+    if (userId) {
+      await this.commitWrite(
+        id,
+        () => this.repo.save(userId, next),
+        () => this.confirmed.set(id, next)
+      );
     } else {
+      this.confirmed.set(id, next);
       this.localRepo.save(this.ownedCollection);
     }
     return next;
@@ -309,19 +346,19 @@ export class CollectionState<T extends CollectionEntry> {
     if (this.lifecycle?.prepareUpdate) {
       next = await this.lifecycle.prepareUpdate(previous, next);
     }
-    // prepareUpdate can await, so resolve the slot again here. A null means the
+    // prepareUpdate can await, so resolve the slot again here. False means the
     // entry was deleted while it ran: drop the edit rather than write it back.
-    const write = this.applyEntry(next);
-    if (!write) return null;
+    if (!this.showEntry(next)) return null;
 
-    if (this.userId) {
-      try {
-        await this.repo.save(this.userId, next);
-      } catch (error) {
-        this.rollbackEntry(write.displaced, id, write.revision);
-        throw error;
-      }
+    const userId = this.userId;
+    if (userId) {
+      await this.commitWrite(
+        id,
+        () => this.repo.save(userId, next),
+        () => this.confirmed.set(id, next)
+      );
     } else {
+      this.confirmed.set(id, next);
       this.localRepo.save(this.ownedCollection);
     }
     return next;
@@ -340,23 +377,26 @@ export class CollectionState<T extends CollectionEntry> {
     this.ensureLocalLoaded();
     const idx = this.ownedCollection.findIndex((entry) => entry.id === id);
     if (idx === -1) return null;
+    const userId = this.userId;
+    const savePresentation = this.repo.savePresentation;
+    // Refuse before showing anything: an unsupported repository has no write to
+    // roll back from.
+    if (userId && !savePresentation) {
+      throw new Error("This collection cannot update presentation separately.");
+    }
+
     const previous = this.ownedCollection[idx]!;
     const next = { ...previous, ...patch, id, createdAt: previous.createdAt } as T;
-    const write = this.applyEntry(next);
-    if (!write) return null;
+    if (!this.showEntry(next)) return null;
 
-    if (this.userId) {
-      if (!this.repo.savePresentation) {
-        this.rollbackEntry(write.displaced, id, write.revision);
-        throw new Error("This collection cannot update presentation separately.");
-      }
-      try {
-        await this.repo.savePresentation(this.userId, next);
-      } catch (error) {
-        this.rollbackEntry(write.displaced, id, write.revision);
-        throw error;
-      }
+    if (userId && savePresentation) {
+      await this.commitWrite(
+        id,
+        () => savePresentation(userId, next),
+        () => this.confirmed.set(id, next)
+      );
     } else {
+      this.confirmed.set(id, next);
       this.localRepo.save(this.ownedCollection);
     }
     return next;
@@ -379,6 +419,7 @@ export class CollectionState<T extends CollectionEntry> {
     for (const entry of toMigrate) {
       await this.repo.save(userId, entry);
       this.ownedCollection.push(entry);
+      this.confirmed.set(entry.id, entry);
     }
 
     this.localRepo.clear();
