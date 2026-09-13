@@ -7,15 +7,16 @@ real camera.
 ## Result
 
 Two defects found, reproduced with failing tests against the real lifecycle
-code, and fixed. Three review rounds then added corrections — the
+code, and fixed. Four review rounds then added corrections — the
 initialize-to-start window, the playback-failure leak, the cancellation identity,
 the `PerformancePreview` consumer guard, handle/stream-scoped teardown so a panel
-closing late cannot stop a camera another surface owns, and ownership validated at
+closing late cannot stop a camera another surface owns, ownership validated at
 every async boundary so a stale start cannot install itself into the acquisition
-that replaced it — each with its own before/after evidence (see **Review
-round**). The resulting teardown and
-cancellation surface is written out under **CameraManager teardown and
-cancellation contract** for the consumers this branch does not own.
+that replaced it, and stream ownership so abandoning a setup cannot release a
+camera it never opened — each with its own before/after evidence (see **Review
+round**). The resulting teardown and cancellation surface is written out under
+**CameraManager teardown and cancellation contract**; the recording agent is
+implementing `VideoRecordPanel` against it.
 
 Two findings in `TrainModePanel.svelte` remain **reported, not changed**; proving
 them needs the practice surface mounted with a camera.
@@ -30,9 +31,11 @@ them needs the practice surface mounted with a camera.
 |                                            | cancellation identity, PerformancePreview guard    |
 | `7700457c`                                 | cross-branch round: handle/stream-scoped teardown  |
 |                                            | so no stale panel stops a shared camera            |
-| this commit (branch head)                  | independent-review round: ownership validated at   |
+| `34af95d9`                                 | independent-review round: ownership validated at   |
 |                                            | every async boundary, cancellation wins over a     |
 |                                            | post-teardown native error, component test seam    |
+| this commit (branch head)                  | stream ownership: abandoning a setup no longer     |
+|                                            | releases a camera it never opened                  |
 
 Branch: `claude/camera-resource-lifecycle-sdoeg6`.
 
@@ -57,8 +60,9 @@ Added (tests):
   plus its `PerformancePreviewLifecycleHarness.svelte`
 
 `VideoRecordPanel.svelte` has the same consumer-side hole and is **not** touched
-here — it belongs to the recording-session-integrity agent; the exact change it
-needs is written out under **Hand-off**. Nothing else was touched. No instruction
+here — it belongs to the recording-session-integrity agent, which is implementing
+it against this branch; the exact change and the semantics it relies on are under
+**Hand-off**. Nothing else was touched. No instruction
 file, no `main`, no deploy, no live data.
 
 ## Defect 1 — a camera stream that arrives after the close is never released
@@ -227,17 +231,36 @@ and rejects as cancellation.
 
 ### Releasing — pick by what you own
 
-| Situation                                          | Call                         | Effect                                                                                              |
-| -------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------- |
-| You own the camera now and want it off             | `stop()`                     | **Instance-wide.** Releases whatever this instance holds and cancels an unstarted handshake.        |
-| You are closing and may be stale (shared instance) | `abandonAcquisition(handle)` | Releases only if your handshake is still the current one; otherwise a no-op.                        |
-| You hold a stream you no longer want               | `releaseStream(stream)`      | Always stops that stream's tracks; clears instance state only while it is still the current stream. |
+| Situation                                          | Call                         | Effect                                                                                                                   |
+| -------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| You own the camera now and want it off             | `stop()`                     | **Instance-wide.** Releases whatever this instance holds, whoever opened it, and cancels an unstarted handshake.         |
+| You are closing and may be stale (shared instance) | `abandonAcquisition(handle)` | Cancels that handshake's pending start; releases the camera **only if that handshake opened it**. No-op once superseded. |
+| You hold a stream you no longer want               | `releaseStream(stream)`      | Always stops that stream's tracks; clears instance state only while it is still the current stream.                      |
 
 So a panel on `getCameraManager()` must **not** call `stop()` in a teardown that
 can run after another surface has opened the camera: `stop()` would switch theirs
 off. Use the handle, or the stream you were handed. A panel with its own
 `new CameraManager()` (`CameraPreview`, `ScanCardSheet`) has no one to collide
 with and `stop()` stays correct there.
+
+### Ownership, spelled out
+
+Being the current acquisition is not the same as owning the camera. The instance
+tracks both: `_acquisition` is whoever set up last, and the stream separately
+remembers which acquisition's `start()` opened it.
+
+- **A takeover is completed by `start()`, not by `initialize()`.** Initializing
+  makes you the current acquisition and invalidates a pending start, but it does
+  not touch a stream that is already live — the previous panel is still using it.
+  Your `start()` is what releases theirs and replaces it.
+- **`abandonAcquisition(handle)` releases only a camera that handle opened.** A
+  panel that initialized while another panel's stream was live and then closed
+  without starting leaves that stream running.
+- **After a takeover you cannot reclaim silently.** `start(handle)` for a
+  handshake that is no longer current rejects as cancellation; initialize again
+  to acquire the camera.
+- `stop()` is the deliberate exception to all of this, which is why it is only
+  for the consumer that currently owns the camera.
 
 ### Intentional cancellation, distinct from device failure
 
@@ -440,7 +463,35 @@ from `canvas.captureStream()`, so `srcObject` and `track.stop()` behave like the
 real thing: `Tests 3 passed (3)`, **exit 0**, no unhandled errors. Still no real
 camera.
 
-### 7. HandLandmarker fencing — already fixed, now proved for remount
+### 7. Final contract hole: abandoning a setup killed a camera it never opened
+
+`abandonAcquisition()` delegated to `stop()` once it confirmed the handle was
+still current — and "current acquisition" is not "owner of the live stream". So:
+panel A live on its stream; panel B calls `initialize()` (B is now the current
+acquisition) and closes without ever calling `start()`; `abandonAcquisition(B)`
+reached `stop()` and switched off A's camera. That contradicts the handshake-only
+promise the call is documented with.
+
+The live stream now records which acquisition's `start()` opened it, and
+`abandonAcquisition()` releases the camera only when that is the handle being
+abandoned. Everything else it does is unchanged: mark the handshake cancelled and
+invalidate its own pending start. `stop()` keeps its instance-wide meaning.
+
+Deferred regression, before (at `7700457c`/`34af95d9`) and after:
+
+```
+× keeps a live stream when a later setup is abandoned without ever starting
+  → expected false to be true        (the live panel's track was already ended)
+Tests  1 failed | 18 passed (19)     exit 1
+```
+
+After: `Tests 19 passed (19)`, exit 0. The test also checks the follow-through —
+the panel that does own the camera can still release it with
+`releaseStream()` afterwards — and the existing "current owner abandons its
+acquisition does release the camera" case stays green, so the narrowing did not
+turn `abandonAcquisition` into a no-op for the owner.
+
+### 8. HandLandmarker fencing — already fixed, now proved for remount
 
 The reviewed revision already had the generation/disposal fencing (`8dce14cb`):
 concurrent callers share one load, and a load that lands after `dispose()` closes
@@ -485,9 +536,9 @@ The manager-level fence already stops a camera from being opened after that
 panel's teardown, so this guard is about the panel's own error state, the stream
 it receives, and not disturbing whoever owns the camera next.
 
-**Integration dependency.** This branch changes the shared manager that
-`VideoRecordPanel` uses, so the two branches have to land in either order with
-these facts in mind:
+**Integration dependency.** The recording agent is implementing the handle
+integration against this branch, so these are the facts its change depends on —
+not a follow-up for later:
 
 - `initialize()` now returns a `CameraAcquisition` instead of `void`. Ignoring the
   return value still compiles and still works, so `VideoRecordPanel` is not broken
@@ -495,10 +546,14 @@ these facts in mind:
 - `initialize()` invalidates a start still in flight on that instance. If both
   panels are ever mounted at once, the one that initializes last owns the camera —
   the other's start rejects as cancellation rather than stealing the preview.
+- `abandonAcquisition(handle)` is safe to call unconditionally at teardown: it
+  cancels that handshake's pending start, releases the camera only if that
+  handshake opened it, and does nothing at all once another panel has taken over.
+  So `VideoRecordPanel` needs no "am I still current?" check of its own.
 - Until `VideoRecordPanel` adopts the targeted calls, its teardown `stop()` can
-  still release a camera another surface owns. That is the recording agent's
-  change to make; nothing in this branch can fix it from the manager side, because
-  `stop()` carries no caller identity by design.
+  still release a camera another surface owns. Nothing in this branch can fix that
+  from the manager side, because `stop()` carries no caller identity by design —
+  which is exactly why the handle calls exist.
 
 ## Verification run
 
@@ -511,7 +566,7 @@ npx vitest run --config tests/config/vitest.config.ts \
   src/lib/features/train/services/media-pipe-detector.test.ts \
   src/lib/features/train/services/hand-landmarker.test.ts \
   tests/unit/camera-permission-boundary.test.ts
-→ Test Files 4 passed (4), Tests 29 passed (29), exit 0
+→ Test Files 4 passed (4), Tests 30 passed (30), exit 0
 ```
 
 Component suite (chromium, `tests/config/vitest.components.config.ts`):

@@ -448,6 +448,25 @@ describe("CameraManager lifecycle", () => {
       expect(camera.isActive).toBe(false);
     });
 
+    it("keeps a live stream when a later setup is abandoned without ever starting", async () => {
+      const camera = new CameraManager();
+      const live = await goLive(camera, "live-panel");
+
+      // A second panel sets itself up — it becomes the current acquisition — and
+      // then closes before asking for the camera. It opened nothing, so it has
+      // nothing to release.
+      const neverStarted = await camera.initialize();
+      camera.abandonAcquisition(neverStarted);
+
+      expect(isLive(live.stream)).toBe(true);
+      expect(camera.isActive).toBe(true);
+
+      // The panel that does own the camera can still release it afterwards.
+      camera.releaseStream(live.stream as unknown as MediaStream);
+      expect(isLive(live.stream)).toBe(false);
+      expect(camera.isActive).toBe(false);
+    });
+
     it("releases the camera when the current owner abandons its acquisition", async () => {
       const camera = new CameraManager();
       const only = await goLive(camera, "only-panel");
