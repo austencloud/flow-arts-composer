@@ -264,6 +264,10 @@ export class VideoRecorder {
     // the recorder ended if it got there first.
     const duration = this.durationOf(state);
 
+    // The recording stays in the active map for the whole finalization, not
+    // just until the stop event. Everything below is awaited, so a panel can
+    // tear down at any point in it, and cancelRecording can only mark a
+    // recording it can still find.
     try {
       if (state.mediaRecorder.state !== "inactive") {
         state.mediaRecorder.stop();
@@ -271,39 +275,50 @@ export class VideoRecorder {
       // Waiting for the `stop` event — never just for "inactive" — is what
       // guarantees the final `dataavailable` is already in `chunks`.
       await state.stopped;
-    } finally {
-      // Even a failed recorder has to leave the active map, or its id can
-      // never be started, cancelled, or stopped again.
-      this.activeRecordings.delete(recordingId);
-    }
 
-    if (state.cancelled) {
-      // Thrown away while we were waiting for the recorder to flush. Nothing
-      // here is ours to keep: no object URL for a panel that will never revoke
-      // it, nothing written to storage, and no success for a take the user
-      // discarded.
+      if (state.cancelled) {
+        // Thrown away while we were waiting for the recorder to flush. Nothing
+        // was written and no URL was minted, so there is nothing to undo.
+        return this.cancelledResult(recordingId);
+      }
+
+      const videoBlob = new Blob(state.chunks, {
+        type: state.mediaRecorder.mimeType,
+      });
+
+      // Cache the recording
+      await this.cacheRecording(recordingId, videoBlob, duration);
+
+      if (state.cancelled) {
+        // The cancel landed while IndexedDB was writing. The take is already
+        // in the cache, so put it back the way it was.
+        await this.clearCachedRecording(recordingId);
+        return this.cancelledResult(recordingId);
+      }
+
+      // Minted after the last cancellation check, and with nothing awaited
+      // between the two, so a discarded take can never own an object URL that
+      // its panel is no longer around to revoke.
+      const blobUrl = URL.createObjectURL(videoBlob);
+
       return {
-        success: false,
-        error: "Recording cancelled",
+        success: true,
+        videoBlob,
+        blobUrl,
+        duration,
         recordingId,
       };
+    } finally {
+      // However this ended, failure included, the id has to leave the active
+      // map or nothing can be started, cancelled, or stopped for it again.
+      this.activeRecordings.delete(recordingId);
     }
+  }
 
-    const videoBlob = new Blob(state.chunks, {
-      type: state.mediaRecorder.mimeType,
-    });
-
-    // Create blob URL
-    const blobUrl = URL.createObjectURL(videoBlob);
-
-    // Cache the recording
-    await this.cacheRecording(recordingId, videoBlob, duration);
-
+  private cancelledResult(recordingId: string): RecordingResult {
     return {
-      success: true,
-      videoBlob,
-      blobUrl,
-      duration,
+      success: false,
+      error: "Recording cancelled",
       recordingId,
     };
   }
@@ -415,7 +430,13 @@ export class VideoRecorder {
         const transaction = db.transaction(STORE_NAME, "readwrite");
         const store = transaction.objectStore(STORE_NAME);
         store.delete(recordingId);
-        resolve();
+        // Resolve on the transaction, not on the call: finalizeRecording uses
+        // this to undo a cached take, and returning before the delete commits
+        // would report a rollback that has not happened yet. A failed clear is
+        // still not worth surfacing, so every outcome resolves.
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => resolve();
+        transaction.onabort = () => resolve();
       });
     } catch {
       // Ignore errors
