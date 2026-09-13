@@ -24,9 +24,15 @@ its next iteration, and `BackgroundVideoEncoder.cancel()` rejects a pending
 `finish()` a turn later. The cancelled attempt therefore outlives the click, and
 `ExportOrchestrator` had no notion of _which_ attempt anything belonged to.
 
-Four observable defects fell out of that, plus one hygiene issue. All are fixed
-in commit `12bb216b`, guarded by ten new assertions, five of which fail on the
-base implementation.
+Four observable defects fell out of that, plus one hygiene issue, fixed in
+commit `12bb216b`. Review of that commit found two more — a host cancel path that
+bypassed the service entirely, leaving defect 1 reachable, and a hole the fix
+itself introduced — corrected in the follow-up and written up under
+[Corrections after review of `08796d0b`](#corrections-after-review-of-08796d0b).
+
+Twelve assertions guard the result: six fail on the code they were written
+against, five guard behaviour that was already correct, and one documents the
+service boundary the host must respect.
 
 ---
 
@@ -112,6 +118,74 @@ Not separately tested — there is no stable observable difference in jsdom.
 
 ---
 
+## Corrections after review of `08796d0b`
+
+Two gaps the first pass missed, both raised in review and fixed here.
+
+### 6. Closing the panel mid-export still raised a failure
+
+`SequenceDrawerHost.handleClose` cancelled the **video** orchestrator directly
+rather than going through `ExportOrchestrator.cancelExport()`:
+
+```js
+if (videoExportOrchestrator?.isExporting()) {
+  videoExportOrchestrator.cancelExport(); // bypasses the run marking
+  exportProgress = null;
+}
+```
+
+So `run.canceled` stayed false and defect 1 was still fully reachable — closing
+the export panel during an export produced the error toast and error haptic that
+the Cancel button no longer did. Fixing the service alone left the bug in place
+through the other door.
+
+`handleClose` now routes through `exportOrchestrator.cancelExport()` (falling
+back to the direct call only if the export orchestrator is somehow absent),
+which is the same door `handleCancelExport` already used. This is the single
+authorised host change on this branch; nothing else in that file was touched.
+
+`cancelExport()` also now documents that it is the only supported way to stop an
+export, and a test — _cannot attribute a cancel that bypassed it_ — pins the
+boundary: a bypassing cancel resolves as a failure, and there is no signal that
+would let the service recognise it after the fact (the video orchestrator looks
+identical here and after a genuine encoder failure). That test passes both
+before and after; it documents why the host must route through the service
+rather than reproducing a defect.
+
+**Coverage limitation, stated plainly:** the host fix itself has no automated
+test. `SequenceDrawerHost` is a coordinator with a very large dependency graph
+(DI container, navigation, sequence services), so mounting it in the browser
+component project is not justified under `component-test-discipline.md`, and a
+source-text scan for the forbidden call would be a test that mirrors
+implementation. The fix is verified by inspection and by `check:fast` showing no
+new diagnostics. The durable guard is the doc comment at the call site people
+read.
+
+### 7. A cancel aimed at a queued retry was dropped
+
+The run-serialisation added in `12bb216b` parks a retry in
+`while (this.activeRun?.canceled) await this.activeRun.settled` — before it owns
+an `ExportRun`. A `cancelExport()` during that window had nothing to mark, so
+the queued attempt woke up and launched a full export the user had already
+called off.
+
+Reachability is currently gated by the host (`performExport`'s own `isExporting`
+flag means the only consumer cannot queue a retry), so this was a latent
+contract hole rather than a live defect — but it was introduced by the previous
+commit, so it is fixed rather than documented away.
+
+`cancelExport()` now bumps a `cancelEpoch`; a queued attempt captures the epoch
+before waiting and, on waking, returns `{ success: true, canceled: true }` if it
+moved. Marking a run cannot express this — there is no run yet — which is why
+the counter exists alongside the per-run flag.
+
+Covered by: _honours a cancel aimed at an attempt that is still queued_. On the
+pre-correction service that test does not merely assert the wrong value: the
+queued attempt starts a real run nobody settles and the test hangs to the 30 s
+timeout, which is the defect exactly.
+
+---
+
 ## Design notes on the fix
 
 - **Run identity, not a message match.** `ExportRun` carries `canceled` and a
@@ -192,20 +266,22 @@ so the next pass does not re-derive them.
 
 ## Commands run
 
-| Command                                                                                                                                                                                | Result                                                                                                                                                                                                                            |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm install --frozen-lockfile`                                                                                                                                                       | ok (`node_modules` was absent in this container)                                                                                                                                                                                  |
-| `npx vitest run --config tests/config/vitest.config.ts src/lib/shared/export-panel/services/__tests__/export-orchestrator.lifecycle.test.ts` **against base `export-orchestrator.ts`** | **5 failed / 5 passed** — the four defects above plus the cancel-idempotence assertion                                                                                                                                            |
-| same command **after the fix**                                                                                                                                                         | **10 passed**                                                                                                                                                                                                                     |
-| `npx vitest run … src/lib/shared/video-export src/lib/shared/export-panel`                                                                                                             | **7 files, 45 tests passed** (the 5 pre-existing suites in these directories plus the new one)                                                                                                                                    |
-| `npm run check:fast`                                                                                                                                                                   | 645 errors / 44 warnings project-wide (pre-existing baseline); **zero diagnostics on any `export-panel` or `video-export` path**                                                                                                  |
-| `npx eslint <changed files>`                                                                                                                                                           | clean                                                                                                                                                                                                                             |
-| `npx prettier --check <changed files>`                                                                                                                                                 | new test file clean. `export-orchestrator.ts` still fails `--check`, as it did **before** this branch (verified against `HEAD~1`); reformatting it wholesale would bury a 90-line behavioural diff under an unrelated style diff. |
+| Command                                                                                                                                                                                | Result                                                                                                                                                                                                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm install --frozen-lockfile`                                                                                                                                                       | ok (`node_modules` was absent in this container)                                                                                                                                                                                                                      |
+| `npx vitest run --config tests/config/vitest.config.ts src/lib/shared/export-panel/services/__tests__/export-orchestrator.lifecycle.test.ts` **against base `export-orchestrator.ts`** | **5 failed / 5 passed** — the four defects above plus the cancel-idempotence assertion                                                                                                                                                                                |
+| same command **after `12bb216b`**                                                                                                                                                      | **10 passed**                                                                                                                                                                                                                                                         |
+| same command, review additions, **against `08796d0b`'s `export-orchestrator.ts`**                                                                                                      | **1 failed / 11 passed** — _honours a cancel aimed at an attempt that is still queued_ hangs to the 30 s timeout, because the queued attempt starts a run nobody settles                                                                                              |
+| same command **after the correction**                                                                                                                                                  | **12 passed**                                                                                                                                                                                                                                                         |
+| `npx vitest run … src/lib/shared/video-export src/lib/shared/export-panel`                                                                                                             | **7 files, 47 tests passed** (the 5 pre-existing suites in these directories plus the new one)                                                                                                                                                                        |
+| `npm run check:fast`                                                                                                                                                                   | 645 errors / 44 warnings project-wide, unchanged from before this branch; **zero diagnostics on any changed file** (`export-panel`, `video-export`, `SequenceDrawerHost`)                                                                                             |
+| `npx eslint <changed files>`                                                                                                                                                           | clean (`SequenceDrawerHost.svelte` matches an eslint ignore pattern)                                                                                                                                                                                                  |
+| `npx prettier --check <changed files>`                                                                                                                                                 | new test file clean. `export-orchestrator.ts` and `SequenceDrawerHost.svelte` still fail `--check`, as both did **before** this branch (each verified against its `HEAD` copy); reformatting either wholesale would bury the behavioural diff under an unrelated one. |
 
 Not run, and why: full `npm run check` / `npm run build` (this change crosses no
 project-wide type or build boundary, and `check:fast` already covers the changed
-files), and any browser pass (no rendered-surface change — the diff is one
-service file and one test).
+files), and any browser pass (nothing rendered changed — the diff is one service
+file, one five-line branch inside an existing handler, and one test file).
 
 ---
 
@@ -213,6 +289,9 @@ service file and one test).
 
 - `src/lib/shared/export-panel/services/export-orchestrator.ts` (modified)
 - `src/lib/shared/export-panel/services/__tests__/export-orchestrator.lifecycle.test.ts` (new)
+- `src/lib/features/create/shared/components/coordinators/SequenceDrawerHost.svelte`
+  (modified — the single authorised host change, `handleClose`'s cancel call site
+  only; see correction 6)
 - `docs/reports/opus-batch-2026-09-12/export-reliability.md` (this file)
 
 Nothing else was touched; no other agent's work was reverted or edited.

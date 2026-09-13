@@ -50,6 +50,11 @@ interface ExportRun {
 
 export class ExportOrchestrator {
   private activeRun: ExportRun | null = null;
+  /**
+   * Bumped by every cancelExport(). An attempt queued behind a cancelled run has
+   * no ExportRun of its own yet, so this is what a cancel aimed at it can move.
+   */
+  private cancelEpoch = 0;
   private videoOrchestrator: IVideoExportOrchestrator | null = null;
   private preparedStaticShare: PreparedStaticShare | null = null;
   private staticShareInFlight: {
@@ -84,8 +89,16 @@ export class ExportOrchestrator {
     // Nothing is awaited on the ordinary path (no run, or a run that is merely
     // busy), so the mobile static path still reaches navigator.share() inside the
     // tap's transient activation.
+    const queuedAtEpoch = this.cancelEpoch;
     while (this.activeRun?.canceled) {
       await this.activeRun.settled;
+      // A cancel that lands while this attempt is queued belongs to this
+      // attempt: it has not started, so honour it rather than launching an
+      // export the user has already called off. Marking a run cannot express
+      // this — there is no run yet — hence the epoch.
+      if (this.cancelEpoch !== queuedAtEpoch) {
+        return { success: true, canceled: true };
+      }
     }
     if (this.activeRun) {
       return { success: false, error: "Export already in progress" };
@@ -143,7 +156,17 @@ export class ExportOrchestrator {
     }
   }
 
+  /**
+   * The only supported way to stop an export.
+   *
+   * Cancelling the video orchestrator directly leaves the run this orchestrator
+   * is awaiting unmarked, so it resolves as a failure and the caller raises an
+   * error for something the user deliberately did. Every host cancel path —
+   * the Cancel button, closing the panel, tearing the surface down — goes
+   * through here.
+   */
   cancelExport(): void {
+    this.cancelEpoch += 1;
     const run = this.activeRun;
     if (run) {
       run.canceled = true;

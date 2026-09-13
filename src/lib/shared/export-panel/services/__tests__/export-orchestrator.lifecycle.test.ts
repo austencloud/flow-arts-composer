@@ -248,6 +248,22 @@ describe("ExportOrchestrator cancellation", () => {
     expect(await retried).toEqual({ success: true });
   });
 
+  it("cannot attribute a cancel that bypassed it — every host path must use cancelExport()", async () => {
+    const { orchestrator, video } = makeOrchestrator();
+
+    const run = startAnimationExport(orchestrator);
+    await flush();
+
+    // Reaching past the orchestrator straight into the video orchestrator is
+    // exactly what SequenceDrawerHost.handleClose used to do, and there is no
+    // signal that lets the run be recognised as cancelled after the fact: the
+    // video orchestrator looks identical here and after a genuine failure.
+    video.cancelExport();
+    video.landCancel();
+
+    expect(await run).toEqual({ success: false, error: "Export cancelled" });
+  });
+
   it("ignores a cancel when nothing is running", async () => {
     const { orchestrator, video } = makeOrchestrator();
 
@@ -301,6 +317,37 @@ describe("ExportOrchestrator run identity", () => {
 
     video.finishNewest();
     expect(await second).toEqual({ success: true });
+  });
+
+  it("honours a cancel aimed at an attempt that is still queued", async () => {
+    const { orchestrator, video } = makeOrchestrator();
+
+    const first = startAnimationExport(orchestrator);
+    await flush();
+    orchestrator.cancelExport();
+
+    // The retry is parked behind the cancelled run and has no run of its own
+    // yet, so there is nothing for a second cancel to mark.
+    const queued = startAnimationExport(orchestrator);
+    await flush();
+    expect(video.runs).toHaveLength(1);
+
+    orchestrator.cancelExport();
+    video.landCancel();
+
+    expect(await first).toEqual({ success: true, canceled: true });
+    // The queued attempt must not launch an export the user already called off.
+    expect(await queued).toEqual({ success: true, canceled: true });
+    await flush();
+    expect(video.runs).toHaveLength(1);
+    expect(orchestrator.isExporting()).toBe(false);
+
+    // …and the orchestrator is still usable afterwards.
+    const later = startAnimationExport(orchestrator);
+    await flush();
+    expect(video.runs).toHaveLength(2);
+    video.finishNewest();
+    expect(await later).toEqual({ success: true });
   });
 
   it("never lets a superseded run's completion clear the newer run's flag", async () => {
