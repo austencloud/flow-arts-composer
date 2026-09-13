@@ -864,6 +864,21 @@ class SettingsState {
           userId
         );
 
+        // Identity of the entry actually being replayed, captured before any
+        // await. Everything the success path does is scoped to THIS entry:
+        // by the time it runs, the queue may hold a different, newer payload.
+        const replayedEntry = {
+          session: queueEntry.session as unknown,
+          sequence: queueEntry.sequence as unknown,
+        };
+        // The pins this payload covers, also captured now. Reading
+        // `queuedOfflineEdit` afterwards could release pins belonging to a
+        // newer edit that was queued in the meantime.
+        const replayedPinSequence =
+          this.queuedOfflineEdit?.userId === userId
+            ? this.queuedOfflineEdit.sequence
+            : null;
+
         // Claim the slot before awaiting. Checking it once and leaving it free
         // let an edit made DURING the replay start a concurrent write; if that
         // newer write landed first, the replay's older payload settled last and
@@ -871,32 +886,68 @@ class SettingsState {
         const replayToken = this.claimWriteSlot();
         const replay = this.firebasePersistence
           .saveSettings(settings)
+          // Settle the replay's own bookkeeping BEFORE the slot is released.
+          // Releasing first synchronously starts the coalesced newer save, and
+          // if that save failed fast it queued a newer payload that this block
+          // would then delete.
+          .then(() => {
+            if (
+              this.lifecycleGeneration !== generation ||
+              auth.currentUser?.uid !== userId
+            ) {
+              return;
+            }
+            // The replayed payload is now on the server, so the edits it
+            // carried no longer need protection from the account document.
+            if (replayedPinSequence !== null) {
+              this.releaseConfirmedLocalEdits(userId, replayedPinSequence);
+            }
+            this.clearReplayedOfflineQueue(userId, replayedEntry);
+          })
           .finally(() => this.releaseWriteSlot(replayToken, generation));
         // The slot holds a non-rejecting view; a replay failure surfaces
         // through the await below and leaves the queue in place.
         this.pendingFirebaseSave = replay.catch(() => {});
 
         await replay;
-
-        if (
-          this.lifecycleGeneration !== generation ||
-          auth.currentUser?.uid !== userId
-        ) {
-          return;
-        }
-        // The replayed payload is now on the server, so the edits it carried
-        // no longer need protection from the account document.
-        if (this.queuedOfflineEdit?.userId === userId) {
-          this.releaseConfirmedLocalEdits(
-            userId,
-            this.queuedOfflineEdit.sequence
-          );
-        }
-        this.clearOfflineQueue(userId);
       }
     } catch (error) {
       console.error("Failed to process offline queue:", error);
     }
+  }
+
+  /**
+   * Clear the queue only if it still holds the entry that was just replayed.
+   * A failed write during the replay can have replaced it with a newer payload,
+   * and deleting that would drop the user's edit from the server, the queue,
+   * and the pin set at once.
+   */
+  private clearReplayedOfflineQueue(
+    userId: string,
+    replayed: { session: unknown; sequence: unknown }
+  ): void {
+    if (!browser) return;
+
+    try {
+      const current = localStorage.getItem(this.offlineQueueKey(userId));
+      if (!current) return;
+
+      const entry = JSON.parse(current) as {
+        session?: unknown;
+        sequence?: unknown;
+      };
+      if (
+        entry?.session !== replayed.session ||
+        entry?.sequence !== replayed.sequence
+      ) {
+        return; // Superseded by a newer payload; leave it for the next replay.
+      }
+    } catch {
+      // An unreadable entry is not one we can claim to have replayed.
+      return;
+    }
+
+    this.clearOfflineQueue(userId);
   }
 
   private clearOfflineQueue(userId: string): void {
