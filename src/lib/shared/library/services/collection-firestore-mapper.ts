@@ -193,6 +193,38 @@ export async function batchFetchSequences(
 }
 
 /**
+ * Which of these ids exist as documents in the user's own library.
+ *
+ * A collection can legitimately point at a sequence the user doesn't own — a
+ * saved public sequence from someone else — and Firestore fails an entire
+ * batch when one `update` targets a missing document. Membership bookkeeping
+ * therefore has to know which owner documents are actually there before it
+ * writes. Chunked to the 30-item `in` limit like the fetch helpers above, and
+ * billed only for the documents that come back.
+ */
+export async function filterExistingSequenceIds(
+  firestore: Firestore,
+  userId: string,
+  sequenceIds: readonly string[]
+): Promise<Set<string>> {
+  const existing = new Set<string>();
+  const uniqueIds = [...new Set(sequenceIds)];
+
+  for (let i = 0; i < uniqueIds.length; i += BATCH_SIZE) {
+    const chunk = uniqueIds.slice(i, i + BATCH_SIZE);
+    const sequencesRef = collection(firestore, `users/${userId}/sequences`);
+    const snapshot = await getDocs(
+      query(sequencesRef, where(documentId(), "in", chunk))
+    );
+    for (const docSnap of snapshot.docs) {
+      existing.add(docSnap.id);
+    }
+  }
+
+  return existing;
+}
+
+/**
  * Fetch sequences from the public index by ID, optionally scoped to one owner.
  * Used when a sequence ID doesn't resolve in the user's own library,
  * e.g. when they've favorited someone else's public sequence. Public
