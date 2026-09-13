@@ -7,17 +7,21 @@ real camera.
 ## Result
 
 Two defects found, reproduced with failing tests against the real lifecycle
-code, and fixed. Two further defects were found by code trace in
-`TrainModePanel.svelte`; they are **reported, not changed**, because proving
-them needs a mounted Svelte runtime and a camera, neither of which this session
-can exercise honestly.
+code, and fixed. A review round then added four more corrections — the
+initialize-to-start window, the playback-failure leak, the cancellation identity,
+and the `PerformancePreview` consumer guard — each with its own before/after
+evidence (see **Review round**). Two findings in `TrainModePanel.svelte` remain
+**reported, not changed**; proving them needs the practice surface mounted with a
+camera.
 
-| SHA                                        | What                                            |
-| ------------------------------------------ | ----------------------------------------------- |
-| `c4be16199e390e8bdab766051a0042c7827b8d30` | base (`origin/main` at session start)           |
-| `49d3f8e3`                                 | fix 1 — camera stream released on close/restart |
-| `8dce14cb`                                 | fix 2 — tracking session cancelled during load  |
-| this commit                                | this report (branch head)                       |
+| SHA                                        | What                                               |
+| ------------------------------------------ | -------------------------------------------------- |
+| `c4be16199e390e8bdab766051a0042c7827b8d30` | base (`origin/main` at session start)              |
+| `49d3f8e3`                                 | fix 1 — camera stream released on close/restart    |
+| `8dce14cb`                                 | fix 2 — tracking session cancelled during load     |
+| `facdbbda`                                 | first report revision                              |
+| this commit (branch head)                  | review round: acquisition fence, playback cleanup, |
+|                                            | cancellation identity, PerformancePreview guard    |
 
 Branch: `claude/camera-resource-lifecycle-sdoeg6`.
 
@@ -29,15 +33,22 @@ Changed:
 - `src/lib/shared/train/components/CameraPreview.svelte`
 - `src/lib/features/train/services/media-pipe-detector.ts`
 - `src/lib/features/train/services/hand-landmarker.ts`
+- `src/lib/shared/export-panel/components/single-media/PerformancePreview.svelte`
+  (narrow lifecycle guard only, authorized in the review round after the export
+  batch was integrated)
 
 Added (tests):
 
 - `src/lib/shared/train/services/camera-manager.test.ts`
 - `src/lib/features/train/services/media-pipe-detector.test.ts`
 - `src/lib/features/train/services/hand-landmarker.test.ts`
+- `src/lib/shared/export-panel/components/single-media/PerformancePreview.svelte.test.ts`
+  plus its `PerformancePreviewLifecycleHarness.svelte`
 
-Nothing else was touched. No instruction file, no `main`, no deploy, no live
-data.
+`VideoRecordPanel.svelte` has the same consumer-side hole and is **not** touched
+here — it belongs to the recording-session-integrity agent; the exact change it
+needs is written out under **Hand-off**. Nothing else was touched. No instruction
+file, no `main`, no deploy, no live data.
 
 ## Defect 1 — a camera stream that arrives after the close is never released
 
@@ -66,10 +77,11 @@ with no check that anyone still wanted it. Three orderings leaked:
 
 Each attempt takes a ticket (`_startTicket`); `stop()` and every newer
 `start()` invalidate it. An attempt that comes back on an invalidated ticket
-stops the tracks it was handed and rejects with an `AbortError`-named error
-(exported as `CAMERA_START_CANCELLED`), which `CameraPreview` treats as "we
-cancelled this one" rather than a camera failure, so a closing panel shows no
-error text.
+stops the tracks it was handed and rejects with a cancellation error, which
+`CameraPreview` treats as "we cancelled this one" rather than a camera failure,
+so a closing panel shows no error text. (The first round spelled that error as a
+native `AbortError`; the review round replaced it with a distinct
+`CameraAcquisitionCancelled` — see item 3 under **Review round**.)
 
 ### Evidence
 
@@ -178,24 +190,153 @@ Vitest 4 a hoisted `vi.mock` factory for an external dependency only serves the
 which dies in jsdom on `appendChild`. The test registers the stub with
 `vi.doMock` in `beforeEach` and warms the subject's import once.
 
+## Review round
+
+Four corrections, each with a failing-first run against the reviewed revision
+(`facdbbda`) and a passing run afterwards. The before runs were produced by
+restoring the reviewed file in place and re-running the same suite; for the
+camera suite the cancellation check was swapped for the reviewed code's identity
+(a native `AbortError` name) so the whole file could execute.
+
+### 1. The initialize-to-start window
+
+Consumers acquire the camera in two awaits — `await initialize()` then
+`await start()` — and the panel can unmount between them. The ticket from the
+first round only covered a request already in flight, so a teardown landing in
+that gap opened a **new** camera afterwards, with the teardown already finished
+and nothing left to close it. `PerformancePreview` and `VideoRecordPanel` both
+have that shape, and they share one instance through `getCameraManager()`.
+
+The manager now treats `initialize()` → `start()` as one acquisition. A `stop()`
+inside it cancels the acquisition: `initialize()` rejects (so the caller never
+walks into its `start()`), and a `start()` requested afterwards refuses without
+calling `getUserMedia`. The next `initialize()` re-arms the instance, which is
+what keeps the shared singleton usable for the next panel. A `stop()` after the
+camera went live is an ordinary release and still leaves a later `start()` free
+to work, so pause/resume and `switchCamera()` keep working — two tests pin that
+down so the fence cannot grow into a refusal of normal restarts.
+
+Before (reviewed revision, same suite):
+
+```
+× refuses the start queued behind an initialize the owner abandoned
+  → expected "vi.fn()" to not be called at all, but actually been called 1 times
+× refuses a start requested after the owner released the camera
+  → expected "vi.fn()" to not be called at all, but actually been called 1 times
+✓ re-arms the shared manager for the next panel that initializes
+✓ still allows a start after the camera was released while live
+```
+
+Those two `getUserMedia` calls are the leak: a camera opened after teardown.
+
+### 2. A playback failure left the tracks live
+
+`getUserMedia` hands over a live stream before `video.play()` is awaited. A
+`play()` rejection — autoplay policy, or the native `AbortError` raised when the
+element is torn down mid-load — threw straight past the assignment, so the
+manager held a live stream, reported `isActive === false`, and the consumer
+showed an error over a camera that was still on. Any failure after the handover
+now releases the stream it was handed, checked against the stream it actually
+assigned so a newer start's stream is never stolen.
+
+Before: `× releases the camera when playback fails to start → expected true to be false`
+(the fake track was still `live`).
+
+### 3. Cancellation identity
+
+The first round reused the platform's `AbortError` name for "we cancelled this".
+`getUserMedia` and `play()` both raise native `AbortError`s for real failures, so
+`CameraPreview` was swallowing those too — a genuinely broken camera would have
+sat on "initializing" with no message. There is now a
+`CameraAcquisitionCancelled` class with a `CAMERA_ACQUISITION_CANCELLED` code and
+an `isCameraAcquisitionCancelled()` guard (code-based, so it survives bundle
+boundaries); consumers test that instead of a name.
+
+Before: `× reports a native AbortError from the device as a camera failure →
+expected true to be false` — the device's `AbortError` was classified as our own
+cancellation.
+
+### 4. PerformancePreview consumer guard
+
+Authorized in this round (export batch already integrated; `VideoRecordPanel`
+deliberately left alone). `initializeCamera()` now checks a `destroyed` flag after
+each await, stops a stream that arrives after the close, and ignores a
+cancellation error instead of writing it into `error`.
+
+Proved in the browser against the real component:
+
+```
+npx vitest run --config <components config> \
+  src/lib/shared/export-panel/components/single-media/PerformancePreview.svelte.test.ts
+```
+
+| test                                                        | before                                           | after |
+| ----------------------------------------------------------- | ------------------------------------------------ | ----- |
+| does not open the camera when the panel closes during setup | × start called 1 time after the panel closed     | ✓     |
+| releases a stream that arrives after the panel closed       | × track still `live` ('live' instead of 'ended') | ✓     |
+
+The component mounts through a small harness that supplies the export panel
+state it reads from context and can unmount the preview mid-flight.
+
+### 5. HandLandmarker fencing — already fixed, now proved for remount
+
+The reviewed revision already had the generation/disposal fencing (`8dce14cb`):
+concurrent callers share one load, and a load that lands after `dispose()` closes
+its own landmarker. The remount case the review names — unmount and re-enter
+Train while the model is downloading, so two loads are genuinely in flight — is
+now pinned by its own test:
+
+```
+keeps one landmarker when Train remounts while the model is loading
+  at c4be1619 (pre-fix): × expected [ …, … ] to have a length of 1 but got 2
+  at HEAD:              ✓
+```
+
+Two landmarkers were built and **both stayed open** before the fix; now the
+abandoned one closes itself and exactly one survives for the live panel.
+
+## Hand-off: VideoRecordPanel (recording-session-integrity agent)
+
+`src/lib/shared/video-record/components/VideoRecordPanel.svelte` needs the same
+narrow guard. Precise change, nothing else:
+
+1. Add `let destroyed = false;` beside the other camera locals, and set it first
+   in the existing `onDestroy`.
+2. In `initializeCamera()`, after `await cameraService.initialize({...})`:
+   `if (destroyed) return;`
+3. After `const stream = await cameraService.start();`:
+   `if (destroyed) { cameraService.stop(); stream.getTracks().forEach((t) => t.stop()); return; }`
+   — its `onDestroy` already stops `cameraStream`, but `cameraStream` is still
+   `null` at teardown on this ordering, which is exactly the leak.
+4. In the `catch`, return early for
+   `isCameraAcquisitionCancelled(err)` (imported from
+   `$lib/shared/train/services/camera-manager`) instead of writing it into
+   `cameraError`.
+
+The manager-level fence already stops a camera from being opened after that
+panel's teardown, so this guard is about the panel's own error state and the
+stream it receives, not about the leak itself.
+
 ## Verification run
 
-All three files together, project config (jsdom, the environment CI uses):
+Project config (jsdom, the environment CI uses), all owned suites plus the one
+pre-existing suite that touches this code:
 
 ```
 npx vitest run --config tests/config/vitest.config.ts \
   src/lib/shared/train/services/camera-manager.test.ts \
   src/lib/features/train/services/media-pipe-detector.test.ts \
-  src/lib/features/train/services/hand-landmarker.test.ts
-→ Test Files 3 passed (3), Tests 13 passed (13)
+  src/lib/features/train/services/hand-landmarker.test.ts \
+  tests/unit/camera-permission-boundary.test.ts
+→ Test Files 4 passed (4), Tests 22 passed (22)
 ```
 
-Regression check on the one pre-existing suite that touches this code:
-
-```
-npx vitest run --config tests/config/vitest.config.ts tests/unit/camera-permission-boundary.test.ts
-→ Tests 2 passed (2)
-```
+Component suite (chromium, `tests/config/vitest.components.config.ts`):
+`PerformancePreview.svelte.test.ts` → 2 passed. In this container the run needed
+a Playwright `executablePath` override (`/opt/pw-browsers/chromium-1194/chrome-linux/chrome`):
+the pinned Playwright expects a headless-shell build the image does not carry.
+That override lived in a throwaway config and is **not** committed — CI and the
+laptop run the file with the project config unchanged.
 
 Types and lint:
 
@@ -204,24 +345,28 @@ Types and lint:
   diagnostics in any changed or added file. The gate still reports pre-existing
   project-wide errors that do not name these files.
 - `npm run check:fast` — 582 errors / 44 warnings project-wide, **none** in
-  `src/lib/shared/train/**` or `src/lib/features/train/services/**` (filtered
-  by path). That total is the checkout's baseline, not a diff measurement.
-- `npx eslint` on all six changed/added `.ts` files — clean. `.svelte` files are
+  `src/lib/shared/train/**`, `src/lib/features/train/services/**` or
+  `src/lib/shared/export-panel/components/single-media/**` (filtered by path).
+  That total is the checkout's baseline — identical before and after this round,
+  so this branch adds none — not a diff measurement.
+- `npx eslint` on every changed/added `.ts` file — clean. `.svelte` files are
   outside this repo's eslint scope (ignore pattern).
 
 ## Evidence classes
 
-- **Measured:** every test result above, the type and lint runs. All of it is
-  mocked at the device boundary: fake `MediaStreamTrack`s, a deferred
-  `getUserMedia`, a stubbed MediaPipe, a hand-driven animation-frame queue. The
-  code under test is the real `CameraManager`, `MediaPipeDetector` and
-  `HandLandmarker`.
-- **Not measured:** no real camera, no GPU delegate, no browser. Nothing here
-  proves device behaviour — in particular, "the camera light goes out" is the
-  documented consequence of stopping every track, not something this session
-  observed. Real-device and browser verification is still outstanding.
-- **Inferred (code trace):** the two `TrainModePanel` findings below, and the
-  claim that each leak ordering is reachable from the listed consumers.
+- **Measured:** every test result above, the type and lint runs. The device
+  boundary is mocked throughout: fake `MediaStreamTrack`s, a deferred
+  `getUserMedia` and `enumerateDevices`, a rejectable `play()`, a stubbed
+  MediaPipe, a hand-driven animation-frame queue. The code under test is the real
+  `CameraManager`, `MediaPipeDetector`, `HandLandmarker` and — in the browser
+  suite — the real `PerformancePreview` component.
+- **Not measured:** no real camera, no GPU delegate. Nothing here proves device
+  behaviour — in particular, "the camera light goes out" is the documented
+  consequence of stopping every track, not something this session observed.
+  Real-device verification is still outstanding.
+- **Inferred (code trace):** the two `TrainModePanel` findings below, the
+  `VideoRecordPanel` hand-off, and the claim that each leak ordering is reachable
+  from the listed consumers.
 
 ## Findings reported, not fixed
 
@@ -287,13 +432,18 @@ assignment's scope.
 
 ## Limitations
 
-- No real camera, no browser, no device validation; nothing above may be read as
-  real-device proof.
+- No real camera and no device validation; nothing above may be read as
+  real-device proof. Headless chromium ran the `PerformancePreview` suite, with
+  the camera manager stubbed — that is a real Svelte runtime, not a real device.
 - The "camera light stays on" consequence is inferred from the
   `MediaStreamTrack.stop()` contract plus the observed track state in the tests.
-- `npm run check:fast`'s 582-error baseline was not compared against a clean
-  `main` run; the claim made here is only that no error names a file this branch
-  touches.
-- Findings A, B and C are code-trace results with no runtime reproduction.
+- `npm run check:fast`'s 582-error total is identical before and after this
+  branch's changes in this checkout; it was not compared against a separate clean
+  `main` run, so the claim is "this branch adds none", not a baseline audit.
+- Findings A, B and C are code-trace results with no runtime reproduction, as is
+  the `VideoRecordPanel` hand-off.
 - Not claimed: any user-facing or device gate, visual verification, or
   `wt:finish` integration (cloud session, no primary checkout).
+- The component suite needed a local Playwright `executablePath` override here;
+  that override is not committed, so nothing about the project's test
+  configuration changed.

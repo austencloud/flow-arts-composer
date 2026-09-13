@@ -12,22 +12,38 @@ const DEFAULT_CONFIG: CameraConfig = {
   frameRate: 30,
 };
 
-/**
- * `start()` rejects with this name when the camera was closed (or restarted)
- * before the request finished. It is the same name the platform uses for an
- * aborted request, so a consumer can tell "we gave up on this one" apart from
- * "the camera refused" and skip the error message for a panel that is already
- * going away.
- */
-export const CAMERA_START_CANCELLED = "AbortError";
+export const CAMERA_ACQUISITION_CANCELLED = "CAMERA_ACQUISITION_CANCELLED";
 
-function cameraStartCancelled(): Error {
-  const error = new Error("Camera start was cancelled.");
-  error.name = CAMERA_START_CANCELLED;
-  return error;
+/**
+ * Thrown when *we* gave up on opening the camera — the panel that asked for it
+ * unmounted, or a newer start replaced this one. Deliberately not the platform's
+ * `AbortError`: `getUserMedia` and `video.play()` both raise a native
+ * `AbortError` for real hardware and playback failures, and a consumer that
+ * silences cancellation by name would silence those too and leave the user
+ * staring at a preview that never starts.
+ */
+export class CameraAcquisitionCancelled extends Error {
+  readonly code = CAMERA_ACQUISITION_CANCELLED;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "CameraAcquisitionCancelled";
+  }
 }
 
-function releaseStream(stream: MediaStream): void {
+/** Survives bundle boundaries, where `instanceof` alone can fail. */
+export function isCameraAcquisitionCancelled(
+  error: unknown
+): error is CameraAcquisitionCancelled {
+  if (error instanceof CameraAcquisitionCancelled) return true;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === CAMERA_ACQUISITION_CANCELLED
+  );
+}
+
+function stopTracks(stream: MediaStream): void {
   stream.getTracks().forEach((track) => track.stop());
 }
 
@@ -45,6 +61,14 @@ export class CameraManager {
   // camera) learns that nobody wants its stream — without that, the resolved
   // tracks are never stopped and the camera light stays on until page reload.
   private _startTicket = 0;
+  // Consumers acquire the camera in two awaits — `initialize()` then `start()` —
+  // and the panel can unmount between them. A `stop()` anywhere inside that
+  // handshake cancels it, so the start already queued on the next line refuses
+  // instead of opening a camera whose owner has gone and whose teardown has
+  // already run. The next `initialize()` re-arms the manager, which matters
+  // because several panels share one instance through `getCameraManager()`.
+  private _acquiring = false;
+  private _acquisitionCancelled = false;
 
   get isActive(): boolean {
     return this._isActive;
@@ -60,6 +84,8 @@ export class CameraManager {
 
   async initialize(config?: Partial<CameraConfig>): Promise<void> {
     this._currentConfig = { ...DEFAULT_CONFIG, ...config };
+    this._acquiring = true;
+    this._acquisitionCancelled = false;
 
     // Enumerate available cameras
     try {
@@ -67,6 +93,15 @@ export class CameraManager {
       this._availableCameras = devices.filter((d) => d.kind === "videoinput");
     } catch (error) {
       console.warn("Could not enumerate cameras:", error);
+    }
+
+    if (this._acquisitionCancelled) {
+      // The owner tore down while we were enumerating devices. Rejecting here
+      // is what keeps the caller from walking straight into its `start()`.
+      this._acquiring = false;
+      throw new CameraAcquisitionCancelled(
+        "Camera setup was cancelled before it finished."
+      );
     }
 
     this._videoElement = document.createElement("video");
@@ -83,11 +118,21 @@ export class CameraManager {
   }
 
   async start(): Promise<MediaStream> {
+    if (this._acquisitionCancelled) {
+      this._acquiring = false;
+      throw new CameraAcquisitionCancelled(
+        "Camera was released before it started."
+      );
+    }
+
     if (this._stream) {
-      this.stop();
+      this._releaseStream();
     }
 
     const ticket = ++this._startTicket;
+    // Tracks we took ownership of, so a failure on the way to "live" can hand
+    // them back instead of leaving the camera on with nobody holding it.
+    let openedStream: MediaStream | null = null;
 
     const constraints: MediaStreamConstraints = {
       video: {
@@ -103,11 +148,14 @@ export class CameraManager {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       if (ticket !== this._startTicket) {
-        releaseStream(stream);
-        throw cameraStartCancelled();
+        stopTracks(stream);
+        throw new CameraAcquisitionCancelled(
+          "Camera was released while it was starting."
+        );
       }
 
       this._stream = stream;
+      openedStream = stream;
 
       if (this._videoElement) {
         this._videoElement.srcObject = this._stream;
@@ -116,7 +164,9 @@ export class CameraManager {
         // A close during playback startup already stopped the tracks; don't
         // come back and claim the camera is live.
         if (ticket !== this._startTicket) {
-          throw cameraStartCancelled();
+          throw new CameraAcquisitionCancelled(
+            "Camera was released while it was starting."
+          );
         }
 
         // Update canvas size to match actual video dimensions
@@ -129,9 +179,20 @@ export class CameraManager {
       }
 
       this._isActive = true;
+      this._acquiring = false;
       return this._stream;
     } catch (error) {
-      if (error instanceof Error && error.name === CAMERA_START_CANCELLED) {
+      this._acquiring = false;
+
+      // Anything that fails after `getUserMedia` handed us a stream still has
+      // live tracks — a `play()` rejection (autoplay policy, or the native
+      // AbortError when the element is torn down mid-load) used to leave the
+      // camera on with no owner and no way back to it.
+      if (openedStream && this._stream === openedStream) {
+        this._releaseStream();
+      }
+
+      if (isCameraAcquisitionCancelled(error)) {
         throw error;
       }
 
@@ -157,12 +218,26 @@ export class CameraManager {
   }
 
   stop(): void {
+    // A stop inside the initialize() → start() handshake is a teardown: the
+    // owner is gone, so cancel the acquisition rather than let its start open a
+    // camera afterwards. A stop after the camera went live is an ordinary
+    // release and leaves a later start free to work (pause/resume,
+    // switchCamera).
+    if (this._acquiring) {
+      this._acquisitionCancelled = true;
+      this._acquiring = false;
+    }
+
     // Invalidate any request still waiting on the permission prompt so its
     // stream gets released instead of surviving this close.
     this._startTicket++;
 
+    this._releaseStream();
+  }
+
+  private _releaseStream(): void {
     if (this._stream) {
-      releaseStream(this._stream);
+      stopTracks(this._stream);
       this._stream = null;
     }
 

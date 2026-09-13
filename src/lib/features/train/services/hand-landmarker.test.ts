@@ -153,6 +153,30 @@ describe("HandLandmarker load lifecycle", () => {
     expect(created[1]?.close).not.toHaveBeenCalled();
   });
 
+  it("keeps one landmarker when Train remounts while the model is loading", async () => {
+    // TrainModePanel disposes the shared landmarker on unmount and asks for it
+    // again on mount. Both loads are in flight at once here; only the one the
+    // live panel is waiting on may survive.
+    const landmarker = new HandLandmarker();
+
+    const firstVisit = landmarker.initialize();
+    // Wait until the first load is building its landmarker before the unmount,
+    // so both loads are genuinely in flight together.
+    await waitForPendingCreation();
+    landmarker.dispose();
+    const secondVisit = landmarker.initialize();
+
+    await completeAllCreations();
+    await Promise.all([firstVisit, secondVisit]);
+
+    expect(created).toHaveLength(2);
+    const open = created.filter(
+      (instance) => instance.close.mock.calls.length === 0
+    );
+    expect(open).toHaveLength(1);
+    expect(landmarker.isInitialized).toBe(true);
+  });
+
   it("can retry after a failed load", async () => {
     const landmarker = new HandLandmarker();
 

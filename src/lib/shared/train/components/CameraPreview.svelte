@@ -9,7 +9,7 @@ Features frame processing loop for pose estimation and overlay support.
   import { onMount, onDestroy } from "svelte";
   import {
     CameraManager,
-    CAMERA_START_CANCELLED,
+    isCameraAcquisitionCancelled,
   } from "$lib/shared/train/services/camera-manager";
   import type { Snippet } from "svelte";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
@@ -87,8 +87,9 @@ Features frame processing loop for pose estimation and overlay support.
       isInitializing = false;
       // A start the manager cancelled for us — the preview unmounted, or a
       // newer start replaced this one — is not a failure the user should read
-      // about. The camera it opened was already released.
-      if (error instanceof Error && error.name === CAMERA_START_CANCELLED) {
+      // about. The camera it opened was already released. A native AbortError
+      // from the device or from playback is a real failure and still shows.
+      if (isCameraAcquisitionCancelled(error)) {
         return;
       }
       const message =
