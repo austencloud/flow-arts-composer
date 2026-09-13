@@ -9,6 +9,47 @@ import { normalizePersistedGenerationConfig } from "../domain/generator-persiste
 beforeEach(() => localStorage.clear());
 
 describe("Hand relationship in the Generate config", () => {
+  it("restores an older setup with default relationships instead of inheriting the live constraints", () => {
+    const state = createGenerationConfigState();
+    state.updateConfig({
+      handRelationship: "mirrored",
+      handRelationshipInverted: true,
+      matchHandTurns: true,
+      inversionInterval: 4,
+    });
+    state.replaceConfig({ length: 16, level: 3, loopEnabled: false });
+    expect(state.config.handRelationship).toBe("free");
+    expect(state.config.handRelationshipInverted).toBe(false);
+    expect(state.config.matchHandTurns).toBe(false);
+    expect(state.config.inversionInterval).toBeUndefined();
+    expect(state.config.length).toBe(16);
+    expect(createGenerationConfigState().config.handRelationship).toBe("free");
+  });
+
+  it("round-trips relationship settings through a saved setup and ignores malformed saved fields", () => {
+    const state = createGenerationConfigState();
+    state.updateConfig({
+      handRelationship: "flipped",
+      handRelationshipInverted: true,
+      matchHandTurns: true,
+    });
+    const saved = JSON.parse(JSON.stringify(state.config));
+    state.resetConfig();
+    state.replaceConfig(saved);
+    expect(state.config.handRelationship).toBe("flipped");
+    expect(state.config.handRelationshipInverted).toBe(true);
+    expect(state.config.matchHandTurns).toBe(true);
+    state.replaceConfig({
+      ...saved,
+      handRelationship: "sideways",
+      handRelationshipInverted: undefined,
+      matchHandTurns: "yes",
+    });
+    expect(state.config.handRelationship).toBe("free");
+    expect(state.config.handRelationshipInverted).toBe(false);
+    expect(state.config.matchHandTurns).toBe(false);
+  });
+
   it("starts Free and not inverted", () => {
     expect(GENERATE_DEFAULT_CONFIG.handRelationship).toBe("free");
     expect(GENERATE_DEFAULT_CONFIG.handRelationshipInverted).toBe(false);
@@ -84,14 +125,20 @@ describe("Match turns in the Generate config", () => {
     first.updateConfig({ matchHandTurns: true });
     const second = createGenerationConfigState();
     expect(second.config.matchHandTurns).toBe(true);
-    expect(uiConfigToGenerationOptions(second.config).matchHandTurns).toBe(true);
+    expect(uiConfigToGenerationOptions(second.config).matchHandTurns).toBe(
+      true
+    );
     second.resetConfig();
     expect(second.config.matchHandTurns).toBe(false);
   });
 
   it("drops a non-boolean persisted value", () => {
-    expect(normalizePersistedGenerationConfig({ matchHandTurns: "yes" })).toEqual({});
-    expect(normalizePersistedGenerationConfig({ matchHandTurns: true })).toEqual({
+    expect(
+      normalizePersistedGenerationConfig({ matchHandTurns: "yes" })
+    ).toEqual({});
+    expect(
+      normalizePersistedGenerationConfig({ matchHandTurns: true })
+    ).toEqual({
       matchHandTurns: true,
     });
   });

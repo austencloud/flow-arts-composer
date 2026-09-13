@@ -2,9 +2,7 @@ import type {
   SequenceStep,
   MotionData,
 } from "../../core/types/sequence-engine-types.js";
-import {
-  getInvertedLetter,
-} from "../position-maps/strict-loop-position-maps.js";
+import { getInvertedLetter } from "../position-maps/strict-loop-position-maps.js";
 import { translateHandPath } from "../position-maps/circular-position-maps.js";
 import { gridPositionDeriver } from "../../core/positions/GridPositionDeriver.js";
 import { updateStepOrientations } from "./orientation-helpers.js";
@@ -26,8 +24,7 @@ export class FusedExecutor {
     if (flags.flip) count++;
     if (flags.invert) count++;
     this.flipCount = count;
-    this.spatialReflectionCount =
-      Number(flags.mirror) + Number(flags.flip);
+    this.spatialReflectionCount = Number(flags.mirror) + Number(flags.flip);
   }
 
   execute(sequence: SequenceStep[], period: number): SequenceStep[] {
@@ -76,7 +73,10 @@ export class FusedExecutor {
       leftSource,
       previousStep.motions.left
     );
-    const rightMotion = this.transformMotion(rightSource, previousStep.motions.right);
+    const rightMotion = this.transformMotion(
+      rightSource,
+      previousStep.motions.right
+    );
 
     const endPosition = gridPositionDeriver.getGridPositionFromLocations(
       leftMotion.endLocation,
@@ -119,6 +119,16 @@ export class FusedExecutor {
       endLocation: endLocation as MotionData["endLocation"],
       rotationDirection: rotationDirection as MotionData["rotationDirection"],
       motionType: motionType as MotionData["motionType"],
+      ...(matchingMotion.prefloatRotationDirection !== undefined && {
+        prefloatRotationDirection: (flipRotDir
+          ? flipRotationDirection(matchingMotion.prefloatRotationDirection)
+          : matchingMotion.prefloatRotationDirection) as MotionData["rotationDirection"],
+      }),
+      ...(matchingMotion.prefloatMotionType !== undefined && {
+        prefloatMotionType: (this.flags.invert
+          ? invertMotionType(matchingMotion.prefloatMotionType)
+          : matchingMotion.prefloatMotionType) as MotionData["motionType"],
+      }),
     };
   }
 

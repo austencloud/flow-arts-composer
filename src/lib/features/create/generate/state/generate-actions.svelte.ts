@@ -18,6 +18,7 @@ import { generationOrchestrator } from "$lib/shared/create/services/generation-o
 import { captureGenerationErrorContext } from "$lib/shared/create/utils/generation-error-context";
 import {
   levelToDifficulty,
+  uiConfigToGenerationOptions,
   type UIGenerationConfig,
 } from "../shared/utils/config-mapper";
 import {
@@ -400,24 +401,38 @@ export function createGenerationActionsState(
         (config?.loopType as LOOPType) || LOOPType.STRICT_REWOUND;
       const period = (config?.period as Period) || Period.HALVED;
 
-      // Generate the word sequence WITHOUT engine-level LOOP. Word-based
-      // generation can't auto-append bridges to reach LOOP-compatible end
-      // positions (the word's letters are fixed), so we take the two-step
-      // approach: generate the word freeform, then extend with bridges if
-      // LOOP is requested. This mirrors the MCP engine path for non-loop
-      // and the old spell path's Path B for loop.
-      const generationOptions: GenerationOptions = {
-        mode: GenerationMode.FREEFORM,
-        length: finalLetters.length, // Ignored when word is set, but required by the type
-        word: expandedWord,
-        gridMode: (config?.gridMode ?? "diamond") as GridMode,
-        propType: PropType.STAFF,
-        difficulty: levelToDifficulty(config?.level ?? 2),
-        turnIntensity: config?.turnIntensity ?? 1.0,
-        constraintPreset: config?.constraintPreset ?? "smooth",
-        handPathMode: config?.handPathMode ?? "mixed",
-        motionTypeFilter: config?.motionTypeFilter ?? null,
-      };
+      // The legacy post-hoc extender can add unconstrained bridge motions.
+      // Keep constrained spells in the engine for the entire LOOP so their
+      // bridges and extensions obey the same relationship and turn settings.
+      const constrainHands =
+        !!config &&
+        ((config.handRelationship != null &&
+          config.handRelationship !== "free") ||
+          config.matchHandTurns === true);
+      const generationOptions: GenerationOptions = config
+        ? {
+            ...uiConfigToGenerationOptions(
+              {
+                ...config,
+                loopEnabled: isLoop && constrainHands,
+              },
+              PropType.STAFF
+            ),
+            length: finalLetters.length,
+            word: expandedWord,
+          }
+        : {
+            mode: GenerationMode.FREEFORM,
+            length: finalLetters.length, // Ignored when word is set, but required by the type
+            word: expandedWord,
+            gridMode: "diamond" as GridMode,
+            propType: PropType.STAFF,
+            difficulty: levelToDifficulty(2),
+            turnIntensity: 1.0,
+            constraintPreset: "smooth",
+            handPathMode: "mixed",
+            motionTypeFilter: null,
+          };
       errorContext = {
         ...captureGenerationErrorContext(generationOptions),
         inputWord: errorContext.word,
@@ -430,7 +445,7 @@ export function createGenerationActionsState(
       // If LOOP is requested, apply it post-hoc via the bridge-aware extender.
       // This path can add a single bridge letter to make the sequence land at
       // a LOOP-compatible end position when the word itself doesn't.
-      if (isLoop) {
+      if (isLoop && !constrainHands) {
         generatedSequence = await applySpellLoopExtension(
           generatedSequence,
           loopType,
