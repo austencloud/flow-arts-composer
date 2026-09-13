@@ -121,7 +121,10 @@
           } else if (upgrade.status === "collision-signed-in") {
             // The email already had an account and they're now signed into it:
             // a sign-in outcome, not a new account.
-            promptAnonymousImport(upgrade.importable ?? []);
+            promptAnonymousImport(
+              upgrade.importable ?? [],
+              upgrade.destinationUid
+            );
           }
         } else {
           const result = await createUserWithEmailAndPassword(
@@ -148,10 +151,17 @@
           ? auth.currentUser.uid
           : null;
         const drafts = anonUid ? await captureAnonymousDrafts(anonUid) : [];
-        await signInWithEmailAndPassword(auth, email, password);
+        const signedIn = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
         resetAttempts();
         if (drafts.length > 0) {
-          promptAnonymousImport(drafts);
+          // The account this sign-in actually landed on, taken from the auth
+          // result itself — the offer is about THAT account, not whichever one
+          // is current by the time the user answers the dialog.
+          promptAnonymousImport(drafts, signedIn.user.uid);
         }
       }
 

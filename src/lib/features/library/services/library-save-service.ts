@@ -41,7 +41,11 @@ import type { R2VideoUploader } from "../../../shared/share/services/r2-video-up
 import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
 import { markSequenceSyncStatus } from "./library-sync-retry";
 import { computeHash } from "$lib/shared/library/services/sequence-content-hasher";
-import { recordSavedSequenceId } from "$lib/shared/library/services/saved-sequence-ledger";
+import {
+  getOwnedSequenceIdSet,
+  recordSavedSequenceId,
+  recordUnownedSequenceId,
+} from "$lib/shared/library/services/saved-sequence-ledger";
 import { clearSequenceDeletionIntent } from "$lib/shared/library/services/sequence-persistence-coordinator";
 import { reportPostHogLifecycleEvent } from "$lib/shared/analytics/services/posthog-lifecycle-reporter";
 import {
@@ -137,23 +141,43 @@ export class LibrarySaveService {
     // so it's always allowed. A brand-new save past the cap is blocked and routes
     // the guest to sign up. Full accounts are never capped. Gated here (before the
     // expensive thumbnail render) so all callers of saveSequence share the limit.
+    //
+    // Counted from THIS guest's ledger, not `db.sequences.count()`. Dexie is a
+    // flat table that is never cleared on sign-out, so the raw count includes
+    // every prior session's rows on this device: a user who signed in, saved
+    // three sequences and signed out would come back as a guest to a library
+    // that reads EMPTY (the browse engine filters by the same ledger) and a cap
+    // that reads FULL — every guest save refused with a limit message about
+    // sequences they cannot see. The read side and the cap side must count the
+    // same set. See docs/superpowers/reviews/
+    // 2026-09-12-guest-save-continuity-audit.md (F1).
+    //
+    // `isFullAccount`, the uid and the ledger are read as ONE snapshot, before
+    // the Dexie await below. Reading the tier before an await and the uid after
+    // it mixes two identities: a sign-in landing in that window would decide the
+    // cap as a guest but count a full account's ledger (or the reverse), which
+    // is the same time-of-check/time-of-use mistake the retry pass makes at its
+    // write boundary.
+    const saverUid = authState.effectiveUserId;
     const isFullAccount = isFullAccountUser(
       authState.isAuthenticated,
       authState.isAnonymous
     );
+    const ownedIds = getOwnedSequenceIdSet(saverUid);
     const alreadySavedLocally = await db.sequences.get(resolvedSequence.id);
     if (!isFullAccount) {
-      if (!alreadySavedLocally) {
-        const guestCount = await db.sequences.count();
-        if (guestCount >= GUEST_SAVE_CAP) {
-          // The modal explains the limit. A second toast repeats the same ask.
-          authDrawerState.show("signup", "save-limit");
-          throw new LibraryError(
-            `Guest save limit reached (${GUEST_SAVE_CAP}).`,
-            "GUEST_CAP",
-            resolvedSequence.id
-          );
-        }
+      // Already this guest's own sequence → an update, never a new save.
+      if (
+        !ownedIds.has(resolvedSequence.id) &&
+        ownedIds.size >= GUEST_SAVE_CAP
+      ) {
+        // The modal explains the limit. A second toast repeats the same ask.
+        authDrawerState.show("signup", "save-limit");
+        throw new LibraryError(
+          `Guest save limit reached (${GUEST_SAVE_CAP}).`,
+          "GUEST_CAP",
+          resolvedSequence.id
+        );
       }
     }
 
@@ -266,7 +290,21 @@ export class LibrarySaveService {
     // captures EXACTLY this session's own drafts (saved-sequence-ledger),
     // instead of sweeping every row out of the flat, never-cleared Dexie store
     // (which could import a prior user's library on a shared device).
-    recordSavedSequenceId(authState.effectiveUserId, sequenceId);
+    // The SNAPSHOT uid, not a fresh read. The cap was decided against this
+    // account's ledger; recording the save against a different one (a sign-in
+    // that landed during the Dexie write) would leave the row owned by nobody
+    // the cap ever consulted, and invisible to the account that made it.
+    //
+    // With NO identity, recordSavedSequenceId() no-ops — which used to leave
+    // the row owned by nobody at all: the guest library read and the background
+    // retry both filter by ledger, so it was durable in Dexie and reachable by
+    // nothing. Park it instead; the next anonymous identity this browser
+    // provisions adopts it (guest-identity), and a full account never does.
+    if (saverUid) {
+      recordSavedSequenceId(saverUid, sequenceId);
+    } else {
+      recordUnownedSequenceId(sequenceId);
+    }
 
     // Now that the local write has landed (persisted === true past the throw
     // above), it's honest to tell a public-visibility save it was kept private.
@@ -278,7 +316,7 @@ export class LibrarySaveService {
 
     // Step 2: Create any new tags
     emitProgress(2);
-    await this.createNewTags(tags);
+    await this.createNewTags(tags, saverUid);
 
     const syncMetadata = {
       name,
@@ -286,19 +324,39 @@ export class LibrarySaveService {
       visibility,
       tags,
       notes: notes ?? "",
+      // The account that made this save, fenced at the repository's write
+      // boundary. The cloud sync below is fire-and-forget and the thumbnail
+      // follow-up is slower still, so both can land well after the user has
+      // signed in — and a guest signing into an EXISTING account produces a
+      // collision, where the whole point is that their work moves only if they
+      // consent to the import. Without this fence the background sync would
+      // quietly write the guest's sequence into that account first, making the
+      // consent prompt moot.
+      expectedOwnerId: saverUid,
     };
 
     // Step 3: Background Firestore sync (non-blocking)
     // If offline, the sequence is already in Dexie and the user sees success.
     emitProgress(3);
-    const initialCloudSync = this.syncToFirestore(sequenceToSave, syncMetadata);
+    // No uid means no account to attribute this to, and an unfenced write is
+    // exactly what must not happen: the sync is fire-and-forget, so a uid
+    // arriving later (a late guest provision, a sign-in) would be silently
+    // adopted as the owner. The Dexie row is already durable and stays
+    // pending; it syncs on the owner's own terms once one exists.
+    const initialCloudSync = saverUid
+      ? this.syncToFirestore(sequenceToSave, {
+          ...syncMetadata,
+          expectedOwnerId: saverUid,
+        })
+      : this.deferCloudSync(sequenceToSave.id);
 
     // Thumbnail work is an enhancement to an already-durable save. A slow or
     // blocked upload must never hold the save overlay open. Once the image is
     // ready, patch the local row and then the cloud document.
     void this.generateAndAttachThumbnail(
       sequenceToSave,
-      initialCloudSync
+      initialCloudSync,
+      saverUid
     ).catch((error) =>
       console.warn("[LibrarySaveService] Thumbnail follow-up failed:", error)
     );
@@ -319,15 +377,18 @@ export class LibrarySaveService {
 
     // Fire-and-forget: decompose the sequence into hand paths and solo props
     // so they're independently queryable in the user's artifact repositories.
-    const currentUserId = authState.effectiveUserId;
+    // The SNAPSHOT uid, not a fresh read. This fires after the local write and
+    // runs four Firestore writes of its own; re-reading live auth here is the
+    // same mistake as everywhere else in this chain, and it decides whose
+    // subtree the artifacts land in.
     if (
       this.artifactExtractor &&
-      currentUserId &&
+      saverUid &&
       sequenceToSave.leftSoloProp &&
       sequenceToSave.rightSoloProp
     ) {
       this.artifactExtractor
-        .extract(sequenceToSave, currentUserId)
+        .extract(sequenceToSave, saverUid)
         .catch((err) =>
           console.error("Artifact extraction failed (non-blocking):", err)
         );
@@ -356,16 +417,26 @@ export class LibrarySaveService {
     // The event is server-captured under the verified Firebase uid; delivery
     // failure is observable but cannot undo work already durable in the library.
     try {
-      await reportPostHogLifecycleEvent({
-        event: "sequence_save",
-        properties: {
-          sequenceId,
-          stepCount: sequenceToSave.sequenceLength ?? 0,
-          visibility,
-          durability: isFullAccount ? "cloud" : "local",
-          source: options.analyticsSource ?? "unspecified",
+      await reportPostHogLifecycleEvent(
+        {
+          event: "sequence_save",
+          properties: {
+            sequenceId,
+            stepCount: sequenceToSave.sequenceLength ?? 0,
+            visibility,
+            durability: isFullAccount ? "cloud" : "local",
+            source: options.analyticsSource ?? "unspecified",
+          },
         },
-      });
+        // The account that made this save. The reporter stamps the LIVE uid as
+        // the event owner, so without this a guest save followed by a sign-in
+        // is attributed to the account they signed into. `null` is passed
+        // through deliberately rather than collapsed to `undefined`: a save
+        // that completed with no identity has no account to attribute, and an
+        // omitted argument means "unscoped", which would hand the milestone to
+        // whichever full account is signed in by the time this runs.
+        saverUid ?? null
+      );
     } catch (error) {
       console.warn(
         "[LibrarySaveService] Could not deliver save lifecycle event:",
@@ -427,6 +498,7 @@ export class LibrarySaveService {
       tags: string[];
       notes: string;
       thumbnailUrl?: string;
+      expectedOwnerId?: string;
     }
   ): Promise<boolean> {
     try {
@@ -451,9 +523,20 @@ export class LibrarySaveService {
     }
   }
 
+  /**
+   * There is no owner to attribute a cloud write to, so don't make one. The
+   * local row is already durable; leaving it "pending" hands it to the
+   * ownership-scoped retry rather than to whoever signs in next.
+   */
+  private async deferCloudSync(sequenceId: string): Promise<boolean> {
+    await markSequenceSyncStatus(sequenceId, "pending");
+    return false;
+  }
+
   private async generateAndAttachThumbnail(
     sequence: SequenceData,
-    initialCloudSync: Promise<boolean>
+    initialCloudSync: Promise<boolean>,
+    expectedOwnerId: string | null
   ): Promise<void> {
     const thumbnailUrl = await this.generateAndUploadThumbnail(sequence);
     if (!thumbnailUrl) return;
@@ -476,7 +559,16 @@ export class LibrarySaveService {
     // patched Dexie row and carries the thumbnail on its next bounded pass.
     if (!(await initialCloudSync)) return;
 
-    await this.libraryRepository.attachThumbnail(sequence.id, thumbnailUrl);
+    // The slowest write in the save: a render plus an upload have completed
+    // since the user pressed save, so the account can easily have changed.
+    // attachThumbnail resolves the uid it writes under AFTER its own awaits,
+    // so it is fenced to the account that made the save like everything else.
+    if (!expectedOwnerId) return;
+    await this.libraryRepository.attachThumbnail(
+      sequence.id,
+      thumbnailUrl,
+      expectedOwnerId
+    );
   }
 
   /**
@@ -539,21 +631,29 @@ export class LibrarySaveService {
   /**
    * Create any new tags that don't exist in the system
    */
-  private async createNewTags(tags: string[]): Promise<void> {
+  private async createNewTags(
+    tags: string[],
+    ownerUid: string | null
+  ): Promise<void> {
     if (tags.length === 0) {
+      return;
+    }
+    // No owner, no cloud tag. Tags live under users/{uid}; writing them with no
+    // established owner would either fail or attach to whoever signs in next.
+    if (!ownerUid) {
       return;
     }
 
     try {
       for (const tagName of tags) {
         const normalized = tagName.toLowerCase().trim();
-        const existing = await findTagByName(normalized);
+        const existing = await findTagByName(normalized, ownerUid);
 
         if (!existing) {
           // Create new tag with random color
           const randomColor =
             TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
-          await createUserTag(normalized, { color: randomColor });
+          await createUserTag(normalized, { color: randomColor }, ownerUid);
         }
       }
     } catch (error) {

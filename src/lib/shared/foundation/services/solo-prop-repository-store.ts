@@ -116,10 +116,22 @@ export class SoloPropRepository {
 
   async save(
     soloProp: SoloPropData,
-    provenance?: ArtifactProvenance
+    provenance?: ArtifactProvenance,
+    expectedOwnerId?: string
   ): Promise<void> {
     const firestore = await getFirestoreInstance();
     const uid = requireAuth();
+
+    // Identity fence — see HandPathRepository.save for the reasoning. `uid` is
+    // the PATH this artifact is written to, resolved from live auth after an
+    // await, so an account change between the save and this side effect would
+    // silently redirect it into the new account's subtree.
+    if (expectedOwnerId && expectedOwnerId !== uid) {
+      throw new Error(
+        "[SoloPropRepository] The signed-in account changed before this write could be attributed."
+      );
+    }
+
     const docRef = doc(firestore, `users/${uid}/soloProps/${soloProp.id}`);
 
     if (provenance) {

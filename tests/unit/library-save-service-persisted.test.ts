@@ -5,6 +5,7 @@ const dbGetMock = vi.fn().mockResolvedValue(undefined);
 const dbCountMock = vi.fn().mockResolvedValue(0);
 const dbUpdateMock = vi.fn().mockResolvedValue(1);
 const clearDeletionIntentMock = vi.fn();
+const ledgerIdsMock = vi.fn().mockReturnValue([] as string[]);
 const reportLifecycleMock = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("$lib/shared/persistence/database/tka-database", () => ({
@@ -16,6 +17,16 @@ vi.mock("$lib/shared/persistence/database/tka-database", () => ({
       update: (...a: unknown[]) => dbUpdateMock(...a),
     },
   },
+}));
+vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
+  recordSavedSequenceId: vi.fn(),
+  getSavedSequenceIds: (...a: unknown[]) => ledgerIdsMock(...a),
+  getOwnedSequenceIdSet: (...a: unknown[]) =>
+    new Set(ledgerIdsMock(...a) as string[]),
+  removeSavedSequenceIds: vi.fn(),
+  recordUnownedSequenceId: vi.fn(),
+  getUnownedSequenceIds: () => [],
+  adoptUnownedSequenceIds: () => [],
 }));
 vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   authState: {
@@ -106,7 +117,11 @@ function makeRepository(o: Record<string, unknown> = {}) {
 describe("LibrarySaveService.saveSequence - durable-save contract", () => {
   it("opens only the account modal at the guest limit and writes nothing", async () => {
     (authState as any).isAnonymous = true;
-    dbCountMock.mockResolvedValue(3);
+    // The cap counts what THIS guest owns (saved-sequence-ledger), not every
+    // row in the flat, never-cleared Dexie table — that raw count included a
+    // prior session's rows and refused saves for a library that read empty.
+    // Reaching the limit is now expressed the way the guest reaches it.
+    ledgerIdsMock.mockReturnValue(["own-1", "own-2", "own-3"]);
     const service = new LibrarySaveService(null, null, makeRepository(), null);
     await expect(
       service.saveSequence(makeSequence(), makeOptions())
@@ -122,6 +137,7 @@ describe("LibrarySaveService.saveSequence - durable-save contract", () => {
     vi.clearAllMocks();
     dbGetMock.mockResolvedValue(undefined);
     dbCountMock.mockResolvedValue(0);
+    ledgerIdsMock.mockReturnValue([]);
     // clearAllMocks preserves implementations set here; restore full-account auth.
     (authState as any).isAuthenticated = true;
     (authState as any).isAnonymous = false;
@@ -153,16 +169,22 @@ describe("LibrarySaveService.saveSequence - durable-save contract", () => {
     expect(result.sequenceId).toBe("seq-1");
     expect(clearDeletionIntentMock).toHaveBeenCalledOnce();
     expect(clearDeletionIntentMock).toHaveBeenCalledWith("seq-1");
-    expect(reportLifecycleMock).toHaveBeenCalledWith({
-      event: "sequence_save",
-      properties: {
-        sequenceId: "seq-1",
-        stepCount: 1,
-        visibility: "private",
-        durability: "cloud",
-        source: "unspecified",
+    // The second argument is the acting account. The reporter stamps the LIVE
+    // uid as the event owner, so a save followed by a sign-in would otherwise
+    // put this milestone in the account they signed into.
+    expect(reportLifecycleMock).toHaveBeenCalledWith(
+      {
+        event: "sequence_save",
+        properties: {
+          sequenceId: "seq-1",
+          stepCount: 1,
+          visibility: "private",
+          durability: "cloud",
+          source: "unspecified",
+        },
       },
-    });
+      "u1"
+    );
   });
 
   it("writes the sequence to Dexie (db.sequences.put) so a guest library can read it back", async () => {
@@ -291,9 +313,13 @@ describe("LibrarySaveService.saveSequence - durable-save contract", () => {
       thumbnails: [thumbnailUrl],
     });
     expect(repository.saveSequenceWithMetadata).toHaveBeenCalledOnce();
+    // The third argument is the identity fence: the thumbnail patch is aimed at
+    // the account that made the save, not at whoever is signed in by the time
+    // the render and upload finish.
     expect(repository.attachThumbnail).toHaveBeenCalledWith(
       "seq-1",
-      thumbnailUrl
+      thumbnailUrl,
+      "u1"
     );
   });
 });
@@ -311,6 +337,7 @@ describe("LibrarySaveService.saveSequence - publication-moment intent capture", 
     dbPutMock.mockResolvedValue(undefined);
     dbGetMock.mockResolvedValue(undefined);
     dbCountMock.mockResolvedValue(0);
+    ledgerIdsMock.mockReturnValue([]);
     (authState as any).isAuthenticated = true;
     (authState as any).isAnonymous = false;
   });
