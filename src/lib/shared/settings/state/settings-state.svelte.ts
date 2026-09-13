@@ -140,6 +140,22 @@ class SettingsState {
     { settings: AppSettings | null; userId: string } | undefined;
   private syncInitialized = false;
   private isSavingToFirebase = false;
+  // Keys the signed-in user changed here that Firestore has not confirmed yet.
+  // The account document the initial load returns — and any snapshot echoing an
+  // earlier write — predates these edits, so applying them wholesale reverts
+  // the choice the user just made. `isSavingToFirebase` cannot cover this: the
+  // UI is live during the initial load, and with two overlapping writes the
+  // first one's `finally` clears the flag while the second is still open.
+  // Scoped to the editing UID: browser-local settings are shared by every
+  // identity on this device, so a pre-sign-in edit still yields to the account
+  // document. Each key carries the sequence number of its latest edit, so a
+  // write confirms only the edits its payload actually carried.
+  private unsavedLocalKeys = new Map<keyof AppSettings, number>();
+  private unsavedLocalOwner: string | null = null;
+  private localEditSequence = 0;
+  // Newest edit inside the queued offline payload, so a successful replay
+  // releases exactly those pins instead of holding them for the session.
+  private queuedOfflineEdit: { userId: string; sequence: number } | null = null;
   private pendingFirebaseSave: Promise<void> | null = null;
   private onlineHandler: (() => void) | null = null;
   private firebaseSaveDebounceTimer: ReturnType<typeof setTimeout> | null =
@@ -226,7 +242,12 @@ class SettingsState {
         this.applyRemoteSettings(firebaseSettings, userId);
 
         const localBackground = settingsState.backgroundType;
-        const isUsingDefault = localBackground === BackgroundType.COSMIC;
+        // Cosmic normally means "never chosen", but a user who picked Cosmic
+        // while this load was in flight made a real choice that the account
+        // document cannot know about yet.
+        const isUsingDefault =
+          localBackground === BackgroundType.COSMIC &&
+          !this.hasUnsavedLocalEdit("backgroundType", userId);
 
         const remoteBackgroundType = normalizeBackgroundType(
           firebaseSettings.backgroundType
@@ -270,7 +291,10 @@ class SettingsState {
           }
         }
 
-        if (firebaseSettings.darkMode !== undefined) {
+        if (
+          firebaseSettings.darkMode !== undefined &&
+          !this.hasUnsavedLocalEdit("darkMode", userId)
+        ) {
           const animVisManager = getAnimationVisibilityManager();
           if (animVisManager.isDarkMode() !== firebaseSettings.darkMode) {
             animVisManager.setDarkMode(firebaseSettings.darkMode);
@@ -361,7 +385,8 @@ class SettingsState {
       if (
         Object.prototype.hasOwnProperty.call(merged, key) &&
         key !== "_localTimestamp" &&
-        !excludeFromRealtimeSync.has(key)
+        !excludeFromRealtimeSync.has(key) &&
+        !this.hasUnsavedLocalEdit(key as keyof AppSettings, userId)
       ) {
         settingsState[key as keyof AppSettings] = merged[
           key as keyof AppSettings
@@ -370,10 +395,17 @@ class SettingsState {
     }
     // Optional account slices must be cleared when the authoritative document
     // omits them; a shallow defaults merge cannot remove a stale local value.
-    settingsState.imageExport = remoteSettings.imageExport;
-    settingsState._localTimestamp = undefined;
+    if (!this.hasUnsavedLocalEdit("imageExport", userId)) {
+      settingsState.imageExport = remoteSettings.imageExport;
+    }
+    if (this.unsavedLocalOwner !== userId || this.unsavedLocalKeys.size === 0) {
+      settingsState._localTimestamp = undefined;
+    }
 
-    if (remoteSettings.darkMode !== undefined) {
+    if (
+      remoteSettings.darkMode !== undefined &&
+      !this.hasUnsavedLocalEdit("darkMode", userId)
+    ) {
       const animVisManager = getAnimationVisibilityManager();
       if (animVisManager.isDarkMode() !== remoteSettings.darkMode) {
         animVisManager.setDarkMode(remoteSettings.darkMode);
@@ -382,6 +414,38 @@ class SettingsState {
 
     this.saveSettingsToStorage(settingsState);
     this.publishRemoteApplication(remoteSettings, userId);
+  }
+
+  /** Record an edit this session made but Firestore has not confirmed. */
+  private markLocallyEdited(key: keyof AppSettings): void {
+    const uid = auth.currentUser?.uid ?? null;
+    if (this.unsavedLocalOwner !== uid) {
+      this.unsavedLocalKeys.clear();
+      this.unsavedLocalOwner = uid;
+    }
+    // A signed-out edit belongs to the device, not an account, so it must not
+    // hold off the document restored at the next sign-in.
+    if (!uid) return;
+    this.localEditSequence += 1;
+    this.unsavedLocalKeys.set(key, this.localEditSequence);
+  }
+
+  private hasUnsavedLocalEdit(
+    key: keyof AppSettings,
+    userId: string
+  ): boolean {
+    return this.unsavedLocalOwner === userId && this.unsavedLocalKeys.has(key);
+  }
+
+  /** Drop the pins on edits a now-confirmed write actually carried. */
+  private releaseConfirmedLocalEdits(
+    userId: string,
+    payloadSequence: number
+  ): void {
+    if (this.unsavedLocalOwner !== userId) return;
+    for (const [key, sequence] of this.unsavedLocalKeys) {
+      if (sequence <= payloadSequence) this.unsavedLocalKeys.delete(key);
+    }
   }
 
   private publishRemoteApplication(
@@ -439,6 +503,11 @@ class SettingsState {
     this.syncInitialized = false;
     this.firebasePersistence = null;
     this.lastRemoteApplication = undefined;
+    // The signed-out account's unconfirmed edits must not pin keys against the
+    // next account's document.
+    this.unsavedLocalKeys.clear();
+    this.unsavedLocalOwner = null;
+    this.queuedOfflineEdit = null;
     settingsState.imageExport = undefined;
     settingsState._localTimestamp = undefined;
     this.saveSettingsToStorage(settingsState);
@@ -481,6 +550,7 @@ class SettingsState {
 
     settingsState[key] = value;
 
+    this.markLocallyEdited(key);
     settingsState._localTimestamp = Date.now();
 
     if (key === "backgroundType") {
@@ -514,6 +584,7 @@ class SettingsState {
         settingsState[key as keyof AppSettings] = newSettings[
           key as keyof AppSettings
         ] as never;
+        this.markLocallyEdited(key as keyof AppSettings);
       }
     }
 
@@ -566,6 +637,13 @@ class SettingsState {
     this.isSavingToFirebase = true;
 
     const settingsToSave = this.getSettingsForPersistence(userId);
+    // The payload is a snapshot, so only edits made up to this point are on
+    // their way to the server. The pins stay until the write is CONFIRMED: a
+    // snapshot that arrives while this write is still open is still older than
+    // local state. Anything edited after this line keeps its newer sequence
+    // number and stays pinned for the next write.
+    const payloadSequence = this.localEditSequence;
+
     debug.info("Saving settings to Firebase", {
       propPresetsCount: settingsToSave.propPresets?.length ?? 0,
       selectedPresetIndex: settingsToSave.selectedPresetIndex,
@@ -577,7 +655,11 @@ class SettingsState {
       .saveSettings(settingsToSave)
       .then(() => {
         debug.success("Settings saved to Firebase successfully");
-        if (auth.currentUser?.uid === userId) {
+        this.releaseConfirmedLocalEdits(userId, payloadSequence);
+        if (
+          auth.currentUser?.uid === userId &&
+          !(this.unsavedLocalOwner === userId && this.unsavedLocalKeys.size > 0)
+        ) {
           settingsState._localTimestamp = undefined;
           this.saveSettingsToStorage(settingsState);
         }
@@ -585,7 +667,10 @@ class SettingsState {
       })
       .catch((error) => {
         console.error("❌ [SettingsState] Failed to save to Firebase:", error);
+        // The pins stay: the server never took these edits, so the account
+        // document is still older than local state.
         this.queueOfflineChange(settingsToSave, userId);
+        this.queuedOfflineEdit = { userId, sequence: payloadSequence };
       })
       .finally(() => {
         this.isSavingToFirebase = false;
@@ -632,6 +717,14 @@ class SettingsState {
           userId
         );
         await this.firebasePersistence.saveSettings(settings);
+        // The replayed payload is now on the server, so the edits it carried
+        // no longer need protection from the account document.
+        if (this.queuedOfflineEdit?.userId === userId) {
+          this.releaseConfirmedLocalEdits(
+            userId,
+            this.queuedOfflineEdit.sequence
+          );
+        }
         this.clearOfflineQueue(userId);
       }
     } catch (error) {
@@ -640,6 +733,9 @@ class SettingsState {
   }
 
   private clearOfflineQueue(userId: string): void {
+    if (this.queuedOfflineEdit?.userId === userId) {
+      this.queuedOfflineEdit = null;
+    }
     if (!browser) return;
 
     try {
