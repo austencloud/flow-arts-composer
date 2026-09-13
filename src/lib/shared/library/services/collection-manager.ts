@@ -80,13 +80,10 @@ function sameIds(left: readonly string[], right: readonly string[]): boolean {
 /**
  * Stop if the effective user is no longer the one this operation captured.
  *
- * Work a collection write depends on reaches outside this module:
- * `publishSequence` takes no owner argument and resolves the effective user
- * itself, repeatedly, so after a uid swap it can publish the *new* user's
- * same-id sequence while this operation is still writing under the captured
- * one. Threading an explicit owner through that repository operation is the
- * real fix and belongs to its owner; until then the guarantee available here is
- * to abort rather than commit a membership change under a session that ended.
+ * `publishSequence` now acts as an explicit owner, so the publish itself can no
+ * longer straddle two identities. This covers the remaining gap: the moment
+ * between that work finishing and this module's own membership write, which
+ * must not commit under a session that ended.
  */
 function assertStillSignedInAs(userId: string, subjectId?: string): void {
   let current: string | null = null;
@@ -121,11 +118,12 @@ async function ensurePublicMember(
   if (ownSnapshot.exists()) {
     const { getLibraryRepository } =
       await import("$lib/shared/library/get-library-repository");
-    // Checked on both sides of the publish: before, to narrow the window it
-    // runs in; after, so a swap that happened during it stops here instead of
-    // being compounded by a membership write under the captured uid.
+    // The publish acts as this operation's captured owner, so every read and
+    // write inside it agrees about whose library this is and a uid swap fails
+    // it rather than moving a sequence between libraries. The check afterwards
+    // covers the remaining gap before the membership write itself.
     assertStillSignedInAs(userId, sequenceId);
-    await getLibraryRepository().publishSequence(sequenceId);
+    await getLibraryRepository().publishSequence(sequenceId, userId);
     assertStillSignedInAs(userId, sequenceId);
     return;
   }
