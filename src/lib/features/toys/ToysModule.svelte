@@ -9,6 +9,7 @@
   const tabComponents: Record<string, () => Promise<{ default: any }>> = {
     "shape-matrix": () => import("./tabs/shape-matrix/ShapeMatrixToy.svelte"),
     "third-order": () => import("./tabs/third-order/ThirdOrderToy.svelte"),
+    "hand-tunnel": () => import("./tabs/hand-tunnel/HandTunnelToy.svelte"),
   };
 
   const activeTab = $derived(
