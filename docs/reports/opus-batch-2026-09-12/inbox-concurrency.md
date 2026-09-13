@@ -1,25 +1,34 @@
 # Inbox concurrency and state audit — 2026-09-12 Opus batch
 
 Scope: reproduced concurrency/state defects in `src/lib/shared/inbox` and its
-tests. Two fixed, one reproduced and quarantined, two confirmed outside the
-owned tree. No production data was written and no message was sent anywhere;
-every result below comes from the repository's own test harnesses in this cloud
-container.
+tests. Five fixed, two confirmed outside the owned tree. No production data was
+written and no message was sent anywhere; every result below comes from the
+repository's own test harnesses in this cloud container.
 
-| Field       | Value                                                                                                                                              |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Branch      | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                            |
-| Base SHA    | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                        |
-| Final SHA   | `f4fff16d2ed58a7f2ddd27550a0b5cec1ae420ab` — last code/test/report commit; the branch tip is the one commit after it, which only fills in this row |
-| Owned paths | `src/lib/shared/inbox/**`, `tests/unit/messaging/message-delivery-activation-race.test.ts`                                                         |
+Revision history: the first pass (`ea203124`) shipped F1 and F2 and was held in
+review for missing account ownership. This revision adds F3 (account ownership in
+the drawer), F4 (account ownership in the composer), fixes A1 rather than leaving
+it quarantined, and narrows the claims the review flagged as too broad.
+
+| Field         | Value                                                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Branch        | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                    |
+| Base SHA      | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                |
+| Held revision | `ea203124` (F1 + F2 only; review verdict HOLD)                                                                                             |
+| Merged `main` | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` — merged in to stay current; it touches only an unrelated 3D parity test                        |
+| Final SHA     | `69f6614fe09e553c40000770b92d32e006d926a7` — the correction commit; the branch tip after it only fills in this row and updates this report |
+| Owned paths   | `src/lib/shared/inbox/**`, `tests/unit/messaging/message-delivery-activation-race.test.ts`, `tests/helpers/inbox/**` (both files new)      |
 
 Files changed:
 
-- `src/lib/shared/inbox/components/InboxDrawer.svelte` (fix F1)
-- `src/lib/shared/inbox/components/InboxDrawer.svelte.test.ts` (new, proves F1)
-- `src/lib/shared/inbox/components/messages/MessageComposer.svelte` (fix F2)
-- `src/lib/shared/inbox/components/messages/MessageComposer.svelte.test.ts` (one new case, proves F2)
-- `tests/unit/messaging/message-delivery-activation-race.test.ts` (new, quarantined repro for A1)
+- `src/lib/shared/inbox/components/InboxDrawer.svelte` (fixes F1, F3)
+- `src/lib/shared/inbox/components/InboxDrawer.svelte.test.ts` (new; 8 cases prove F1 and F3)
+- `src/lib/shared/inbox/components/messages/MessageComposer.svelte` (fixes F2, F4)
+- `src/lib/shared/inbox/components/messages/MessageComposer.svelte.test.ts` (3 new cases prove F2 and F4)
+- `src/lib/shared/inbox/state/message-delivery-state.svelte.ts` (fix A1, 20 lines inside `activate()`)
+- `tests/unit/messaging/message-delivery-activation-race.test.ts` (new; was quarantined, now green against the fix)
+- `tests/helpers/inbox/reactive-account-double.svelte.ts` (new test helper)
+- `tests/helpers/inbox/memory-delivery-repository.ts` (new test helper)
 - `docs/reports/opus-batch-2026-09-12/inbox-concurrency.md` (this report)
 
 Nothing else was touched. No instruction file, no `main`, no deploy, no package
@@ -97,6 +106,9 @@ view is still `"list"` for the whole window between the row tap and
 `selectConversation`, so a view-driven teardown would cancel the selection it is
 supposed to set up.
 
+This much was the first pass. It fenced the thread against another _conversation_
+and against a closed inbox, but not against a changed _account_ — F3.
+
 ---
 
 ## F2 (fixed) — an in-flight draft autosave landed on the next conversation
@@ -144,21 +156,139 @@ flushes it (to the thread it was captured for) before the composer rebinds. The
 unmount path flushes instead of dropping it, except while editing, which matches
 the previous behaviour of not persisting edit text as a draft.
 
+The first pass commented that flushing a pending snapshot "is always safe because
+it carries its own thread". That was wrong, and the review caught it: the thread
+was only half the address. F4 carries the rest.
+
 ---
 
-## A1 (reproduced, NOT fixed) — a send during activation is erased from memory
+## F3 (fixed) — the open thread outlived the account that opened it
+
+**Severity: high.** One account's conversation could stay on screen, keep
+receiving snapshots, and collect a read receipt after a different account signed
+in or the session ended. Raised by review of the first pass, then reproduced.
+
+### Mechanism
+
+At `ea203124` the drawer's auth effect switched the delivery user and nothing
+else: it did not stop the thread subscription, did not bump `threadGeneration`,
+and did not clear `selectedConversation`. So after an account change:
+
+1. the previous account's message listener stayed attached and kept calling
+   `setMessages`, including after sign-out;
+2. a `getConversation` begun by the old account still resolved into
+   `selectConversation`, opening its thread under the new one;
+3. `markAsRead` was reached with no re-check, and the messenger resolves the
+   current user _after_ its own await, so the read receipt could be written for
+   whichever account happened to be live by then.
+
+### Evidence — measured
+
+Three new cases in `InboxDrawer.svelte.test.ts`, driven by a rune-backed account
+double (`tests/helpers/inbox/reactive-account-double.svelte.ts`) — a plain
+`vi.mock` object cannot wake the effect that reads `authState.user?.uid`.
+
+| Test                                                                   | Failure at `ea203124`                               |
+| ---------------------------------------------------------------------- | --------------------------------------------------- |
+| drops a conversation load that finishes after another account signs in | `expected { id: 'conversation-a', … } to be null`   |
+| drops the open thread when the signed-in account changes               | `expected true to be false` (listener still active) |
+| ignores a snapshot that arrives after sign-out                         | `expected [ { … } ] to deeply equal []`             |
+
+All three pass against the correction; the other five cases in the file are
+unchanged and still pass.
+
+### The fix
+
+`threadOwner()` is the signed-in uid, and `ownsThread(generation, owner)` is
+checked at **every** asynchronous resumption point: after the `getConversation`
+await, inside the snapshot callback, immediately before `markAsRead`, and in the
+catch. The auth effect now also detects an owner change, stops the subscription
+(which bumps the generation, invalidating in-flight lookups) and clears the
+selected conversation through `inboxState.backToList()`.
+
+Two deliberate narrow choices:
+
+- The **first** owner assignment is not treated as a change. Clearing on mount
+  would tear down a share the app was launched into — `openAttachmentShare`
+  stages its attachment before this effect first runs, and `backToList()` clears
+  those fields.
+- `backToList()` is only called when a conversation is actually selected, for the
+  same reason.
+
+### Residual, not fixed here
+
+`messenger.markAsRead` reads the current user after its own `await`
+(`messaging/services/messenger.ts:387-399`). The call is now fenced, so the
+drawer cannot _start_ one for a superseded owner, but a call already past that
+fence still resolves auth internally. Closing that needs the user id to be a
+parameter of `markAsRead`, which is a messaging-service signature change outside
+this pass's owned paths.
+
+---
+
+## F4 (fixed) — a pending draft could be filed under another account
+
+**Severity: high.** The previous account's unsent text became the new account's
+draft, and the composer kept showing it. Raised by review of the first pass, then
+reproduced.
+
+### Mechanism
+
+F2 gave the pending snapshot a `conversationId`, but a draft id is
+`<userId>:<conversationId>` (`getMessageDraftId`). The write went through
+`messageDeliveryState.saveDraft`, which resolves `activeUserId` **live**, and the
+composer's hydration key was the conversation alone. So an account change inside
+the autosave window filed the old account's text under the new account's id, and
+the hydration effect saw no change to re-read from the new ledger.
+
+### Evidence — measured
+
+`MessageComposer.svelte.test.ts`, using the real `createMessageDeliveryState`
+with an in-memory ledger (`tests/helpers/inbox/memory-delivery-repository.ts`) so
+`activeUserId` and `ready` are real runes:
+
+- _"never writes a pending draft into another account's ledger"_. At
+  `ea203124` the second account's ledger ended up holding
+  `[ "Typed while the first account was signed in" ]` — its own draft,
+  `"Second account's own draft"`, overwritten at `user-b:conversation-1`. With
+  the assertions in their shipped order the same test fails on the re-hydration
+  half instead (the composer kept showing the first account's text until the
+  15-second timeout). Both halves are red at `ea203124`; green after.
+- _"keeps a failed save for a closed thread out of the open thread"_. At
+  `ea203124` the failure of the _previous_ thread's save rendered
+  `"Draft not saved"` under the thread now on screen
+  (`expected '… Draft not saved' not to contain 'Draft not saved'`). Green after.
+
+### The fix
+
+`DraftSnapshot` carries `ownerId` as well as `conversationId`.
+`saveDraftSnapshot` drops a snapshot whose owner is no longer active — it can
+only be written to the wrong ledger — and fences `draftSaveError` /
+`draftFailureReported` behind the snapshot's own `<owner>:<conversation>` key, so
+neither an older success nor an older failure can change the UI of the thread
+now open. The hydration key is that same composite, so an account change
+re-reads the composer from the new account's ledger.
+
+**Accepted loss, stated plainly:** on an account switch the last ≤300ms of typing
+is discarded rather than written. The state exposes no way to write a draft for a
+non-active user, and keeping the text would mean filing it under the wrong
+account. A thread switch still flushes (F2); only an owner switch drops.
+
+---
+
+## A1 (fixed this revision) — a send during activation was erased from memory
 
 **Severity: high where reachable; reachability inferred, not observed.** The
-fix budget for this pass was two defects, so this one ships as a quarantined
-red reproduction instead of a patch.
+first pass left this quarantined under a two-fix budget. Review asked for it to
+be resolved inside inbox ownership, and `state/message-delivery-state.svelte.ts`
+is inside it, so it is fixed rather than carried.
 
-`message-delivery-state.svelte.ts:102-150`: `activate()` clears `outbox`, awaits
-`listDrafts`/`listOutbox`, then **assigns** the loaded rows over whatever is in
-memory. `queueMessage` only needs `activeUserId`, which `activate` sets
-synchronously before its first await, so a send inside that window is written to
-IndexedDB and then erased from the in-memory outbox. `flush()` reads the
-in-memory list, so nothing delivers it this session; the durable row is picked up
-only by a later activation (next app launch).
+`activate()` cleared `outbox`, awaited `listDrafts`/`listOutbox`, then
+**assigned** the loaded rows over whatever was in memory. `queueMessage` only
+needs `activeUserId`, which `activate` sets synchronously before its first await,
+so a send inside that window was written to IndexedDB and then erased from the
+in-memory outbox. `flush()` reads the in-memory list, so nothing delivered it
+that session; the durable row was picked up only by a later activation.
 
 The composer cannot reach this — its textarea is disabled until
 `messageDeliveryState.ready`. `SendAttachmentSheet.svelte:320` and
@@ -169,16 +299,25 @@ the code; it was not observed at runtime.
 
 ### Evidence — measured
 
-`tests/unit/messaging/message-delivery-activation-race.test.ts`
-(`describe.skip`, red when unskipped): with `listOutbox` held open, a queued
-message is present in `state.outboxFor(...)` before the gate opens, the durable
-row `repository.outbox.has("message-1")` is still `true` afterwards, and then
-`expected [] to have a length of 1 but got +0` — the in-memory row is gone and
-`coordinator.deliver` is never called.
+`tests/unit/messaging/message-delivery-activation-race.test.ts`, previously
+`describe.skip`, now running: with `listOutbox` held open, the queued message is
+present in `state.outboxFor(...)` before the gate opens, the durable row is still
+there afterwards, and before the fix the in-memory row was gone
+(`expected [] to have a length of 1 but got +0`) with `coordinator.deliver` never
+called. Green after, and the nine pre-existing `message-delivery-state` cases are
+unchanged and still pass.
 
-Candidate fix (unimplemented): merge the loaded rows with the in-flight ones by
-id (loaded row wins) instead of assigning, and/or gate the share sheets' send
-button on `ready` the way the composer already is.
+### The fix
+
+`activate()` merges instead of assigning: rows queued during the read win over
+the snapshot, keyed by id. The same window can also promote a draft into the
+outbox, and the snapshot predates that deletion, so a draft whose message was
+promoted during the read is dropped rather than restored — otherwise the composer
+would re-offer text whose message is already on its way out.
+
+Gating the share sheets' send button on `ready` would also close the reachable
+path. Not done: it changes share-sheet behaviour (a disabled Send at cold start)
+rather than fixing the state bug, and the state bug is the defect.
 
 ---
 
@@ -194,8 +333,18 @@ that never terminates. Independently confirmed from the code:
 `userInfo.username !== undefined`, and `conversation-manager.ts:96-122` returns
 `{ displayName: "Unknown User" }` with no `username` (`:121`) for a missing or
 unreadable user document. The exit condition is therefore unsatisfiable for that
-participant, and the conversation pays 1 read + 1 write on every snapshot of an
-app-root listener.
+participant, so the conversation **attempts** one `getDoc` and one `updateDoc` on
+every snapshot of an app-root listener, indefinitely.
+
+Wording matters here and the first revision of this report got it wrong. What the
+source proves is the repeated _attempt_: `previewNeedsRefresh` keeps returning the
+same uid and `refreshParticipantInfo` keeps being called. It does not prove a
+billed read and write per snapshot — for an unreadable document the `getDoc` may
+be rejected by rules, the `updateDoc` may fail inside the swallowed `catch`
+(`conversation-mappers.ts:176-181`), and Firestore's own caching and the SDK's
+listener de-duplication sit in between. No billing was measured by this audit and
+none is claimed. The cost-audit branch's own numbers are operation counts against
+a mocked SDK, which is the same distinction.
 
 Not fixed here, for three reasons: both files are in `src/lib/shared/messaging`,
 outside this pass's owned paths; the cost audit already owns the finding and has
@@ -218,7 +367,12 @@ unsubscribes nothing and the `onSnapshot` attaches afterwards. F1's generation
 guard means such a listener can no longer write into the wrong thread — the
 user-visible defect is closed — but the listener itself can still leak on a very
 fast switch. That line is in `messaging`, and it is the same class as the cost
-audit's H2 (`disposed`-flag pattern); it is left to that owner.
+audit's H2 (`disposed`-flag pattern); it is left to that owner. The new test
+"keeps the live listener when the same conversation is reopened" pins the other
+half of this hazard from the inbox side: because the disposer resolves by
+conversation id, tearing down a stale listener must not take a live listener for
+the same conversation with it. That test passes both before and after this
+revision — it is a guard, not a reproduction.
 
 ---
 
@@ -247,15 +401,16 @@ audit's H2 (`disposed`-flag pattern); it is left to that owner.
 
 All run in the cloud container at the final SHA unless noted.
 
-| Command                                                                                                                   | Result                                                                  |
-| ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `vitest run --config tests/config/vitest.components.config.ts src/lib/shared/inbox/components/InboxDrawer.svelte.test.ts` | 4 passed; 4 failed with base `InboxDrawer.svelte` restored              |
-| `… MessageComposer.svelte.test.ts`                                                                                        | 13 passed; the new case failed with base `MessageComposer.svelte`       |
-| `… src/lib/shared/inbox` (all inbox component tests)                                                                      | 45 passed, 4 failed — all 4 pre-existing, see limitations               |
-| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging tests/unit/inbox …`                               | 64 passed / 64 (15 files), plus 1 skipped quarantined file              |
-| `pnpm run check:fast`                                                                                                     | 582 errors / 44 warnings — **identical at base**, none in changed files |
-| `prettier --check` on the changed files                                                                                   | clean                                                                   |
-| `eslint` on the changed files                                                                                             | clean (the `.svelte` and `tests/**` paths are eslint-ignored by config) |
+| Command                                                                                     | Result                                                                                                   |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer restored: 3 failed (F3). With the base drawer: 4 failed (F1)          |
+| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)              |
+| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                              |
+| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 19 passed / 19, including the un-quarantined activation-race case (red before the A1 fix)                |
+| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging tests/unit/inbox …` | 65 passed / 65 (16 files), nothing skipped                                                               |
+| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — **identical at the base SHA**, none in the changed files                      |
+| `prettier --check` on the changed files                                                     | clean                                                                                                    |
+| `eslint` on the changed files                                                               | 0 errors (the `.svelte` and `tests/**` paths are eslint-ignored by config, which it reports as warnings) |
 
 Harness note: the container ships Chromium build 1194 at `/opt/pw-browsers`
 while `playwright@1.61.1` expects 1228, so the browser project was run through a
@@ -266,26 +421,45 @@ packages are not prebuilt in a fresh clone.
 
 ## Regressions and limitations
 
-- **No regressions found.** Every pre-existing assertion in the touched files
-  still passes, the inbox unit suites are green, and `check:fast` reports exactly
-  the same 582/44 as the base SHA.
+- **No regression was observed in the suites that were run.** Every pre-existing
+  assertion in the touched files still passes (12 in the composer, 9 in the
+  delivery state), the inbox unit suites are green, and `check:fast` reports
+  exactly the same 582/44 as the base SHA with no error in a changed file. That is
+  the evidence; it is not a claim that the change cannot regress anything
+  unexercised — in particular nothing here was run in a real browser against real
+  Firestore, and no account switch was exercised on a device.
+- **Deliberate behaviour changes**, each narrower than the defect it closes:
+  - an account switch discards the last ≤300ms of typing rather than filing it
+    under the wrong account (F4);
+  - an account change clears the selected conversation and so returns the drawer
+    to its list (F3);
+  - a draft whose message was promoted into the outbox during activation is no
+    longer restored to the composer (A1).
+- **One new test is a guard, not a reproduction.** "keeps the live listener when
+  the same conversation is reopened" passes at `ea203124` as well as after. It
+  pins the map-keyed-disposer hazard described below; it did not find a defect,
+  and it is listed as a guard rather than counted as a fix.
 - **Pre-existing failures, not mine.** `SequenceMessageCard.svelte.test.ts` (1)
-  and `InboxNotificationItem.svelte.test.ts` (3) fail identically with both
-  changed source files reverted to base — an argument-shape mismatch in a viewer
-  call and three navigation-route assertions. Left alone: they are other
-  components' behaviour and another owner may be mid-change on them.
-- **The drawer test clicks through the DOM**, not the browser driver: the
-  drawer's entrance never reaches Playwright's "stable" condition in the runner,
-  so `locator.click()` times out on controls that are already interactive. The
-  same condition is the likely cause of the driver-based pre-existing failures
-  above; that was not chased down.
-- **Not verified in a real browser against real Firestore.** Everything here is
-  the project's own jsdom and browser-project harnesses with fakes at the
-  service boundary. Claims about what Firestore does with a write that
-  re-triggers its own listener are _not_ made in this report; F1 and F2 are
-  purely client-state defects and are proven at that level.
-- **No visual verification, and none required.** Both fixes change subscription
-  and persistence lifetime, not geometry or markup. A device/UI gate on the real
-  app was not run and is not claimed.
-- **A1 is unfixed on purpose** (two-fix budget). Its red test is quarantined with
-  `describe.skip` and a pointer to this report; unskip it to drive the fix.
+  and `InboxNotificationItem.svelte.test.ts` (3) fail identically with the changed
+  source files reverted to base — an argument-shape mismatch in a viewer call and
+  three navigation-route assertions. Left alone: other components' behaviour, and
+  another owner may be mid-change on them.
+- **Residuals left to the `messaging` owner**, both named above with line
+  references: `markAsRead` resolving auth after its own await, and
+  `subscribeToMessages`' disposer losing an unsubscribe issued before its async
+  attach completes. Each needs a messaging-service change; the inbox-side fences
+  mean neither can now write into the wrong thread, but the listener leak and the
+  late receipt remain possible.
+- **The drawer test clicks through the DOM**, not the browser driver: the drawer's
+  entrance never reaches Playwright's "stable" condition in the runner, so
+  `locator.click()` times out on controls that are already interactive. The same
+  condition is the likely cause of the driver-based pre-existing failures above;
+  that was not chased down.
+- **Two new test helpers duplicate an existing in-memory ledger.**
+  `tests/unit/messaging/message-delivery-state.test.ts` has its own copy of the
+  memory repository. It was left untouched rather than refactored, to avoid
+  churning a file another session may be editing; the helper's doc comment records
+  that.
+- **No visual verification, and none required.** Every change is subscription,
+  ownership and persistence lifetime — no geometry, markup or styling. A
+  device/UI gate on the real app was not run and is not claimed.
