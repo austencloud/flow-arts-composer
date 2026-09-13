@@ -5,7 +5,8 @@ Opus batch 2026-09-12 · settings persistence assignment
 | Field           | Value                                                    |
 | --------------- | -------------------------------------------------------- |
 | Base SHA        | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`) |
-| Final SHA       | `2ca4cb27bb39a1ecb7edb22dfcab065b2793744e`                |
+| Fix SHA         | `2ca4cb27bb39a1ecb7edb22dfcab065b2793744e`                |
+| Final SHA       | `adef7239` (this report)                                  |
 | Branch          | `claude/settings-persistence-defects-yoobmn`              |
 | Defects fixed   | 2 reproduced, 1 shared root cause                         |
 | Environment     | Isolated cloud checkout, Linux, `pnpm` install of the committed lockfile |
