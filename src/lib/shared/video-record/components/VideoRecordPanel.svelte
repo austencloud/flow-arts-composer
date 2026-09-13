@@ -9,6 +9,10 @@
   import { browser } from "$app/environment";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { getCameraManager } from "$lib/shared/train/get-camera-manager";
+  import {
+    isCameraAcquisitionCancelled,
+    type CameraAcquisition,
+  } from "$lib/shared/train/services/camera-manager";
   import { getVideoRecorder } from "../services/video-recorder";
   import type {
     RecordingProgress,
@@ -103,21 +107,24 @@
 
   // The manager is one shared instance: PerformancePreview reaches the same one
   // through getCameraManager(), and its stop() releases whatever that instance
-  // currently holds, whoever opened it. This panel never calls it. Another
-  // surface can take the camera over at any point, including before this panel
-  // tears down, so the only thing teardown may release is the stream this panel
-  // was itself handed.
-  //
-  // INTEGRATION: claude/camera-resource-lifecycle-sdoeg6 adds the scoped calls
-  // this wants. Once that is on main, initialize() returns a CameraAcquisition
-  // handle — capture it, pass it to start(handle), and replace the teardown
-  // below with abandonAcquisition(handle) when no stream arrived and
-  // releaseStream(stream) when one did. That cancels this panel's handshake
-  // early instead of letting the camera open and be closed a moment later, and
-  // clears the manager's own state, which stopping the tracks alone cannot do.
-  // Neither call exists on main yet, so this stays track-level until then.
-  function releaseOwnStream(stream: MediaStream | null) {
-    stream?.getTracks().forEach((track) => track.stop());
+  // currently holds, whoever opened it. This panel never calls it. Every
+  // release here is scoped to this panel's own handshake instead: the
+  // acquisition handle for a camera that has not opened yet, the stream itself
+  // once one has. Both are no-ops on the manager's state once another surface
+  // has taken the instance over, so a late teardown cannot close their camera.
+  let acquisition: CameraAcquisition | null = null;
+
+  function releaseOwnCamera() {
+    if (cameraStream) {
+      // Stops these tracks always, and clears the manager's _stream and
+      // _isActive only while this is still the stream it handed out. Stopping
+      // the tracks by hand would leave those fields pointing at a dead camera.
+      cameraService?.releaseStream(cameraStream);
+      cameraStream = null;
+    } else if (acquisition) {
+      cameraService?.abandonAcquisition(acquisition);
+    }
+    acquisition = null;
   }
 
   async function initializeCamera() {
@@ -127,28 +134,35 @@
     }
 
     try {
-      await cameraService.initialize({
+      acquisition = await cameraService.initialize({
         facingMode: "user",
         width: 1280,
         height: 720,
         frameRate: 30,
       });
-      if (destroyed) return;
-
-      const stream = await cameraService.start();
       if (destroyed) {
-        releaseOwnStream(stream);
+        // Teardown ran while devices were being enumerated, so it had no handle
+        // to give up. Give it up now.
+        releaseOwnCamera();
+        return;
+      }
+
+      const stream = await cameraService.start(acquisition);
+      if (destroyed) {
+        cameraService.releaseStream(stream);
+        acquisition = null;
         return;
       }
 
       cameraStream = stream;
       cameraInitialized = true;
     } catch (error) {
-      // A cancelled attempt owns nothing. The manager releases whatever it had
-      // opened before it rejects, so there is nothing here to clean up and
-      // reaching for its stop() would take down whichever panel acquired the
-      // camera next.
-      if (destroyed) return;
+      acquisition = null;
+      // A cancelled acquisition is this panel closing, or another surface
+      // taking the camera; the manager has already released whatever it opened.
+      // Not something to show the user, and never something to answer with a
+      // stop() that would close the camera somebody else is now using.
+      if (destroyed || isCameraAcquisitionCancelled(error)) return;
       cameraError =
         error instanceof Error ? error.message : "Failed to access camera";
     }
@@ -302,10 +316,10 @@
     if (recordingId) recordService.cancelRecording(recordingId);
     if (recordedVideo?.blobUrl) URL.revokeObjectURL(recordedVideo.blobUrl);
     if (browser) window.removeEventListener("resize", detectLayout);
-    // Only this panel's own stream. An acquisition still in flight is handled
-    // by the destroyed checks in initializeCamera: the stream it opens is
-    // released the moment it arrives, so nothing is left running either way.
-    releaseOwnStream(cameraStream);
+    // Scoped to this panel: the stream if one arrived, otherwise the handshake
+    // that is still in flight, which cancels the start queued behind it instead
+    // of letting it open a camera nobody will close.
+    releaseOwnCamera();
   });
 </script>
 
