@@ -41,7 +41,7 @@ change `scripts/spec-drift-detector.cjs` — it is outside this task's ownership
 
 ## 2. What I did
 
-Adjudicated **24 specs** one at a time against the tree and against git, then
+Adjudicated **23 specs** one at a time against the tree and against git, then
 made precise status / `remaining` / dependency edits. Nothing was bulk
 auto-marked. Where the detector was wrong I said so in the spec rather than
 letting the next agent re-litigate it.
@@ -50,10 +50,19 @@ letting the next agent re-litigate it.
 | --------------------------------------------------- | ----: |
 | Moved `active/` → `shipped/`                        |    10 |
 | Moved `active/` → `archived/`                       |     1 |
-| Status/`remaining`/dependency corrected, stays open |    13 |
+| Status/`remaining`/dependency corrected, stays open |    12 |
+
+Derived from the diff against `c4be1619`, not tallied by hand: 11 renames and 12
+specs edited in place. Two further files changed are cross-reference repairs, not
+adjudications (`INDEX.md` and the ghost-intelligence handoff), so they are not
+counted here.
 
 `active/` went from **156 → 145**; `shipped/` from **589 → 599**.
-Detector actionable count went from **31 → 17**.
+Detector actionable count went from **31 → 18**. That number rising as I
+corrected things is expected, not a regression: a spec I move back to `active/`
+with an honest "implemented, proof outstanding" header reads to the detector as
+`LIKELY_DONE`. The detector measures whether a spec's words match its code; it
+cannot see whether a mandatory gate was taken.
 
 ### 2.1 Closed out — acceptance requirements met, with the evidence dated
 
@@ -70,7 +79,6 @@ Where a row's coverage is incomplete, the gap is named rather than rounded off.
 | `2026-08-06-ghost-experience-learning`            | This session           | `activity-experience.ts` live. `vitest tests/unit/attract/` → **9 files, 68 passed, 2 skipped** — the skips are the env-gated fleet test, exactly as the spec's contract expects. The fleet numbers quoted in the spec body are historical.                                                                                                                                                                                          |
 | `2026-08-06-ghost-predictive-judgment`            | This session           | `activity-prediction.ts` live; same suite, same run. Its 1,000-click and 12-session error figures are historical and were not re-measured.                                                                                                                                                                                                                                                                                           |
 | `2026-08-06-pictograph-arrival-stage`             | This session (partial) | Every timing constant literal (280/350/50ms, 0.58 scrim, 120ms hold); prop rate is `clamp(max(850, deg/360°/s), 850, 2000)` off `staffRotationDelta`. Layout/geometry/state suites pass, and `pictograph-arrival-motion.test.ts` (4 tests) passes after `npm run build:packages` cleared its import failure. **Not run:** the Chromium suite `PictographArrivalStage.svelte.test.ts`. The 2026-08-12 frame trace is historical.      |
-| `2026-08-13-gallery-deck-composer-rebuild`        | This session (partial) | `06d178647`. Ephemeral library-only engine, spec replays before `initialize()`, cap after ordering, no second query on Compose. `gallery-deck-source.test.ts` 14 tests pass. **Not run:** Chromium `FilterRuleStrip.svelte.test.ts`. Two silent-bug items (search/connective/sort replay, full recipe round-trip) rest on the shared engine with no dedicated test.                                                                  |
 | `2026-08-15-grid-layout-transition`               | This session (partial) | `db1454736` + `6c6163b84`. All three superseded FLIP copies provably gone — zero matches for `animate:flip`, `slideIntoPlace`, or the `activeMode === "construct"` branch in `WorkspaceGrid.svelte`. `GridLayoutSignature.test.ts` 12 tests pass. **Not run:** Chromium `layout-flip.svelte.test.ts` (12 blocks). The per-frame runtime table is historical.                                                                         |
 | `2026-08-23-stage-formation-choreography`         | Historical             | Phases 1–4d in `1b32c668ff`/`7b0091bdc8`/`183fa4cd7f`/`b80d793708`; code re-read and still matches. Its one open box, Phase 5's proof pass, was absorbed into One Stage's Phase 7 by that spec's own supersession header. **The proof is One Stage's section 7, dated 2026-08-26** — I ticked the box as bookkeeping and cited that section; I did not verify anything in a browser.                                                 |
 | `2026-08-26-one-stage`                            | Historical             | `2686a4cb8`. Verified by reading code: `StageViewer`/`SceneStudio`/`StageSidebar` deleted, `STAGE_TABS` holds one entry, `Mark[]` survives only in `formation-migration.ts`. The reverse-triangle demo and the seven-viewport sweep in section 7 are the 2026-08-26 record, not a fresh check.                                                                                                                                       |
@@ -116,20 +124,23 @@ with frontmatter naming the open items, so the queue can still see them.
   "Superseded on 2026-08-27; do not implement". See §5 for what that
   supersession turned out to mean.
 
-### 2.4 Rebuild hazards defused — corrected, still open
+### 2.4 Implemented, still open — corrected headers
 
-These are the dangerous ones: a spec that says "approved, not started" over code
-that already ships invites an agent to rewrite live behaviour.
+Mostly rebuild hazards: a spec that says "approved, not started" over code that
+already ships invites an agent to rewrite live behaviour. The last row is a
+different failure — the code is fine and the spec never claimed otherwise, but
+its own mandatory proof was never taken.
 
-| Spec                                              | Claimed                                     | Actually                                                                                                                                                                                                                                                                                                                                       |
-| ------------------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `2026-08-08-sequence-viewer-header-identity`      | "Approved for implementation on 2026-08-08" | Implemented **the same day** in `7bbabbf45`. All 12 planned files exist; `FULL_CHROME_MIN_WIDTH = 1080` and `LABELLED_CHROME_MIN_WIDTH = 1840` are the two density tiers; `WordActionMenu` offers exactly "Copy word" and "Read aloud". Only the seven-viewport sweep is unrecorded.                                                           |
-| `2026-08-09-social-post-handoff`                  | "Approved, unimplemented"                   | Phases 1 **and 2** built; every path in its own "What shipped" table resolves. `META_POSTING_ENABLED` is off pending Meta app review — a real gate, preserved.                                                                                                                                                                                 |
-| `2026-08-14-admin-user-count-presence-repair`     | "Approved for implementation"               | Implemented a month earlier in `ce9121c91`. `schemaVersion: 2` presence is live. Gates 1–2 **re-proved this session**: 9 tests pass. Gates 4–5 need a live admin session and stay open.                                                                                                                                                        |
-| `2026-08-09-ocean-zone-layout`                    | "Draft for review"                          | Approved and substantially executed across five commits; 6 of 10 ledger items done. All four unchecked items re-tested and confirmed still open.                                                                                                                                                                                               |
-| `2026-08-24-multi-email-and-ipad-auth-continuity` | _no `remaining` field at all_               | Outcomes 1–6 built in `20f0395e7`. `email-link-completion.ts:266-276` is outcome 1 verbatim. 15 tests re-run green. Ranked v5/M as fresh work over shipped auth code; re-scored to XS and blocked.                                                                                                                                             |
-| `2026-08-02-shop-unification`                     | "local commits — **NOT pushed**"            | `a422744d6`, `0beba2808` and `e84ee4ab4` are all on `origin/main`. The real gate is `SALES_LIVE = false` pending Stripe payout + Tax registration. Also: the retired route is a **308** (deliberate, documented in the route), not the 301 the IA table claims; two ledger SHAs (`0cfcc0e026`, `5126812d89`) do not resolve — the other 26 do. |
-| `2026-08-06-account-settings-redesign`            | "Implemented and verified"                  | Implemented in `6a818f9f2`, but **criterion 18 was never built**: the visible label is a bare "Connect" (`ConnectedAccounts.svelte:295`) with the provider name only in `actionAriaLabel:296`. Sighted users get no provider-named affordance.                                                                                                 |
+| Spec                                              | Claimed                                     | Actually                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `2026-08-08-sequence-viewer-header-identity`      | "Approved for implementation on 2026-08-08" | Implemented **the same day** in `7bbabbf45`. All 12 planned files exist; `FULL_CHROME_MIN_WIDTH = 1080` and `LABELLED_CHROME_MIN_WIDTH = 1840` are the two density tiers; `WordActionMenu` offers exactly "Copy word" and "Read aloud". Only the seven-viewport sweep is unrecorded.                                                                                                                                                                                                                           |
+| `2026-08-09-social-post-handoff`                  | "Approved, unimplemented"                   | Phases 1 **and 2** built; every path in its own "What shipped" table resolves. `META_POSTING_ENABLED` is off pending Meta app review — a real gate, preserved.                                                                                                                                                                                                                                                                                                                                                 |
+| `2026-08-14-admin-user-count-presence-repair`     | "Approved for implementation"               | Implemented a month earlier in `ce9121c91`. `schemaVersion: 2` presence is live. Gates 1–2 **re-proved this session**: 9 tests pass. Gates 4–5 need a live admin session and stay open.                                                                                                                                                                                                                                                                                                                        |
+| `2026-08-09-ocean-zone-layout`                    | "Draft for review"                          | Approved and substantially executed across five commits; 6 of 10 ledger items done. All four unchecked items re-tested and confirmed still open.                                                                                                                                                                                                                                                                                                                                                               |
+| `2026-08-24-multi-email-and-ipad-auth-continuity` | _no `remaining` field at all_               | Outcomes 1–6 built in `20f0395e7`. `email-link-completion.ts:266-276` is outcome 1 verbatim. 15 tests re-run green. Ranked v5/M as fresh work over shipped auth code; re-scored to XS and blocked.                                                                                                                                                                                                                                                                                                             |
+| `2026-08-02-shop-unification`                     | "local commits — **NOT pushed**"            | `a422744d6`, `0beba2808` and `e84ee4ab4` are all on `origin/main`. The real gate is `SALES_LIVE = false` pending Stripe payout + Tax registration. Also: the retired route is a **308** (deliberate, documented in the route), not the 301 the IA table claims; two ledger SHAs (`0cfcc0e026`, `5126812d89`) do not resolve — the other 26 do.                                                                                                                                                                 |
+| `2026-08-06-account-settings-redesign`            | "Implemented and verified"                  | Implemented in `6a818f9f2`, but **criterion 18 was never built**: the visible label is a bare "Connect" (`ConnectedAccounts.svelte:295`) with the provider name only in `actionAriaLabel:296`. Sighted users get no provider-named affordance.                                                                                                                                                                                                                                                                 |
+| `2026-08-13-gallery-deck-composer-rebuild`        | "Approved and implemented"                  | The code is there and 14 unit tests pass. But this spec's **Visual verification gate was never performed or recorded** — the section is phrased as an instruction and carries no result. No historical proof artifact exists: `06d178647` has an empty commit body, the only other spec that commit touched states its viewport check as a request too, and no handoff or evidence doc covers the surface. **Reverted from `shipped/` on review.** Shared-component unit tests do not discharge a visual gate. |
 
 ### 2.5 Corrected the other way — detector false positives
 
@@ -203,13 +214,23 @@ agent as an implementation task:
 (9), `2026-05-23-firebase-cost-optimization` (9). I read these for context and
 deliberately did not edit them or declare any of their work shipped.
 
-**Excluded as already delivered:** the ten specs in §2.1. Their outstanding
+**Excluded as already delivered:** the nine specs in §2.1. Their outstanding
 evidence is browser-only verification, not product work — tracked in each spec's
 header, not queued here.
-**Excluded as phantom:** `2026-08-26-one-stage-handoff` (score 16) — its own work
-is complete; both carried-over items belong elsewhere (see §5).
 
-After this pass: **95 specs carry frontmatter, 74 unblocked, 21 blocked.**
+**Not excluded — filed:** `2026-08-26-one-stage-handoff` was sitting in `active/`
+at score 16 with `remaining: "Nothing"`, putting finished work at the top of the
+board. Excluding it in this report did not fix the queue, so it has been moved to
+`shipped/` with `status: shipped`. The score-16 phantom is gone from the real
+ranking, not just from this table.
+
+**Not queued as buildable work:** `2026-08-13-gallery-deck-composer-rebuild` is
+back in `active/` (§2.4) but blocked on a browser session, so it does not compete
+for an implementation slot. Two of its Silent-bug items — search text serializing
+and replaying with the structured rule, and the Gallery recipe round-trip — need
+no browser and are cheap to cover; they are named in its `remaining`.
+
+After this pass: **95 specs carry frontmatter, 73 unblocked, 22 blocked.**
 
 ---
 
@@ -226,7 +247,7 @@ and focused contract checks. The one build I did run was
 | `pnpm install --frozen-lockfile --ignore-scripts`                            | exit 0, 21s                                                    |
 | `node scripts/spec-drift-detector.cjs` (shallow)                             | actionable **23**; DIVERGENT 1, WATCH 1, OK 78                 |
 | `node scripts/spec-drift-detector.cjs` (full history)                        | actionable **31**; DIVERGENT 9, WATCH 5, OK 66                 |
-| `node scripts/spec-drift-detector.cjs` (after this pass)                     | actionable **17**; DIVERGENT 2, PHANTOM_OPEN 2, LIKELY_DONE 13 |
+| `node scripts/spec-drift-detector.cjs` (after this pass)                     | actionable **18**; DIVERGENT 2, PHANTOM_OPEN 2, LIKELY_DONE 14 |
 | `vitest run … tests/unit/attract/`                                           | **9 files, 68 passed, 2 skipped**, 69s                         |
 | `vitest run … presence-aggregation.test.ts admin-user-summary-route.test.ts` | **2 files, 9 passed**                                          |
 | `vitest run … tests/unit/auth/email-link-completion.test.ts`                 | **1 file, 15 passed**                                          |
@@ -354,6 +375,6 @@ bury a reconciliation diff under a reformat. One file
 - **`remaining` prose is a judgement.** I wrote each one to be specific enough
   for a cold-start agent, but a field like ocean-zone-layout's ordering of four
   open items is my ranking, not a measurement.
-- **I adjudicated 24 specs against a brief that asked for about 10–15.** The
+- **I adjudicated 23 specs against a brief that asked for about 10–15.** The
   extra nine are the ones the full git history exposed once the clone was
   deepened; stopping at fifteen would have left rebuild hazards in place.

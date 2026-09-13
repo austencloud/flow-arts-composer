@@ -1,13 +1,19 @@
 ---
-status: active
+status: shipped
 value: 4
 effort: S
 remaining: "Nothing. All seven phases landed in 2686a4cb8 and the spec is shipped; neither carried-over item is open work. (1) The app shell's 4K root-font ramp is NOT a gap to fill - it is now refused by policy. a0c8a9a57a (2026-08-27, refactor(responsive): keep logical UI scale stable on wide screens) DELETED the html:has(.mkt-shell)/html:has(.legal-container) ramp at the 1680 seam that this handoff points at, one day after One Stage shipped. .claude/rules/4k-native-layout.md is ENFORCED and says the root stays 16px at every viewport width with browser zoom as the user's scale control; docs/architecture/responsive-design.md:54 forbids a second large-screen typography system outright. A Stage-wide ramp would be exactly that. If /stage reads small at 4K@100%, the sanctioned fix is composition - columns, bands, container queries - not root scale. (2) The wedged :5173 dev server is Austen's Agent Hub, not repository work. This handoff can be filed."
 tags: [stage, 3d, handoff, 4k]
-last_triaged: 2026-08-26
+last_triaged: 2026-09-13
 ---
 
 # One Stage — Handoff
+
+**Filed 2026-09-13 (spec reconciliation).** Moved out of `active/`. Its seven
+phases landed in `2686a4cb8` and its governing spec is shipped; the two items it
+carried forward are both closed, one by policy and one by not being repository
+work at all — see `remaining` above. It sat in `active/` at a queue score of 16,
+which put finished work at the top of the board.
 
 **Landed:** `2686a4cb8f` — "one stage: delete the tabs, put the drill on the floor"
 **Spec:** `shipped/2026-08-26-one-stage-design.md` (status shipped, phases 1-7 ticked)
