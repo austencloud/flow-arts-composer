@@ -62,8 +62,12 @@ export class CollectionState<T extends CollectionEntry> {
   // Where an optimistically removed entry sat, so a failed delete can put the
   // confirmed entry back in its old place.
   private readonly removedBefore = new Map<string, string | undefined>();
-  // One in-flight update preparation per entry id (see prepareExclusively).
-  private readonly preparing = new Map<string, Promise<void>>();
+  // One in-flight update preparation per entry id, scoped to the identity that
+  // started it (see prepareExclusively).
+  private readonly preparing = new Map<
+    string,
+    { generation: number; chain: Promise<void> }
+  >();
   // Bumped by every identity change (init, teardown). Everything above is
   // scoped to one signed-in user, so an operation started before the change may
   // not touch any of it afterwards — see `isCurrent`.
@@ -118,6 +122,7 @@ export class CollectionState<T extends CollectionEntry> {
       this.confirmed.clear();
       this.inFlight.clear();
       this.removedBefore.clear();
+      this.preparing.clear();
       for (const entry of firebaseEntries) this.confirmed.set(entry.id, entry);
       await this.migrateFromLocalStorage(userId, firebaseEntries, generation);
     } finally {
@@ -199,6 +204,7 @@ export class CollectionState<T extends CollectionEntry> {
     this.confirmed.clear();
     this.inFlight.clear();
     this.removedBefore.clear();
+    this.preparing.clear();
     this.stopReadOnlyPreview();
   }
 
@@ -212,17 +218,27 @@ export class CollectionState<T extends CollectionEntry> {
    * Run one entry's update preparation with nothing else preparing that entry,
    * so overlapping updates each start from the value the previous one settled
    * on. A failed preparation releases the next rather than stalling the queue.
+   *
+   * The queue is per identity: a preparation from a signed-out session may
+   * never settle (a poster render that is never going to finish), and chaining
+   * the next user's edit of a same-id entry behind it would block that edit for
+   * the life of the tab.
    */
   private prepareExclusively<R>(id: string, run: () => Promise<R>): Promise<R> {
+    const generation = this.generation;
     const queued = this.preparing.get(id);
-    const task = queued ? queued.then(run, run) : run();
-    const quiet = task.then(
+    const task =
+      queued && queued.generation === generation
+        ? queued.chain.then(run, run)
+        : run();
+    const chain = task.then(
       () => undefined,
       () => undefined
     );
-    this.preparing.set(id, quiet);
-    void quiet.then(() => {
-      if (this.preparing.get(id) === quiet) this.preparing.delete(id);
+    const entry = { generation, chain };
+    this.preparing.set(id, entry);
+    void chain.then(() => {
+      if (this.preparing.get(id) === entry) this.preparing.delete(id);
     });
     return task;
   }
@@ -269,10 +285,10 @@ export class CollectionState<T extends CollectionEntry> {
    */
   private async commitWrite(
     id: string,
+    generation: number,
     write: () => Promise<void>,
     onPersisted: () => void
   ): Promise<void> {
-    const generation = this.generation;
     this.inFlight.set(id, (this.inFlight.get(id) ?? 0) + 1);
     try {
       await write();
@@ -323,7 +339,10 @@ export class CollectionState<T extends CollectionEntry> {
   async add(entry: Omit<T, "id" | "createdAt">): Promise<T> {
     this.assertWritable();
     this.ensureLocalLoaded();
+    // Owner and identity captured together, before any await: every write below
+    // belongs to the user who started this operation or to nobody.
     const generation = this.generation;
+    const userId = this.userId;
     let full = {
       ...entry,
       id: crypto.randomUUID(),
@@ -340,10 +359,10 @@ export class CollectionState<T extends CollectionEntry> {
     }
     this.ownedCollection.unshift(full);
 
-    const userId = this.userId;
     if (userId) {
       await this.commitWrite(
         full.id,
+        generation,
         () => this.repo.save(userId, full),
         () => this.confirmed.set(full.id, full)
       );
@@ -357,6 +376,8 @@ export class CollectionState<T extends CollectionEntry> {
   async remove(id: string): Promise<void> {
     this.assertWritable();
     this.ensureLocalLoaded();
+    const generation = this.generation;
+    const userId = this.userId;
     const idx = this.ownedCollection.findIndex((e) => e.id === id);
     if (idx === -1) return;
     this.ownedCollection.splice(idx, 1);
@@ -364,10 +385,10 @@ export class CollectionState<T extends CollectionEntry> {
     // move while the delete is in flight.
     this.removedBefore.set(id, this.ownedCollection[idx]?.id);
 
-    const userId = this.userId;
     if (userId) {
       await this.commitWrite(
         id,
+        generation,
         () => this.repo.remove(userId, id),
         () => this.confirmed.delete(id)
       );
@@ -384,6 +405,8 @@ export class CollectionState<T extends CollectionEntry> {
   async rename(id: string, name: string): Promise<T | null> {
     this.assertWritable();
     this.ensureLocalLoaded();
+    const generation = this.generation;
+    const userId = this.userId;
     const trimmed = name.trim();
     const idx = this.ownedCollection.findIndex((e) => e.id === id);
     if (idx === -1 || !trimmed) return null;
@@ -392,10 +415,10 @@ export class CollectionState<T extends CollectionEntry> {
     const next = { ...prev, name: trimmed } as T;
     if (!this.showEntry(next)) return null;
 
-    const userId = this.userId;
     if (userId) {
       await this.commitWrite(
         id,
+        generation,
         () => this.repo.save(userId, next),
         () => this.confirmed.set(id, next)
       );
@@ -415,15 +438,21 @@ export class CollectionState<T extends CollectionEntry> {
   ): Promise<T | null> {
     this.assertWritable();
     this.ensureLocalLoaded();
+    const generation = this.generation;
+    const userId = this.userId;
     const idx = this.ownedCollection.findIndex((entry) => entry.id === id);
     if (idx === -1) return null;
 
-    const generation = this.generation;
     // One preparation at a time per entry. prepareUpdate digests the entry's
     // content to mint a revision, so two overlapping preparations would each
     // digest a version that never existed on its own; serialized, the second
     // one starts from the entry the first left behind.
     const next = await this.prepareExclusively(id, async () => {
+      // Reached after at least one await even with no lifecycle — the queue
+      // itself is awaited — so the identity is re-checked here rather than only
+      // on the lifecycle branch. Every real consumer (mandala, 3D scene, film)
+      // runs the lifecycle-free path.
+      if (!this.isCurrent(generation)) return null;
       const slot = this.ownedCollection.findIndex((entry) => entry.id === id);
       if (slot === -1) return null;
       const previous = this.ownedCollection[slot]!;
@@ -463,11 +492,14 @@ export class CollectionState<T extends CollectionEntry> {
     // Null means the entry was deleted, or the session ended, while the
     // lifecycle ran: drop the edit rather than write it back.
     if (!next) return null;
+    // And once more after the outer await, before anything is written: the
+    // identity can change between the preparation settling and this line.
+    if (!this.isCurrent(generation)) return null;
 
-    const userId = this.userId;
     if (userId) {
       await this.commitWrite(
         id,
+        generation,
         () => this.repo.save(userId, next),
         () => this.confirmed.set(id, next)
       );
@@ -489,9 +521,10 @@ export class CollectionState<T extends CollectionEntry> {
   ): Promise<T | null> {
     this.assertWritable();
     this.ensureLocalLoaded();
+    const generation = this.generation;
+    const userId = this.userId;
     const idx = this.ownedCollection.findIndex((entry) => entry.id === id);
     if (idx === -1) return null;
-    const userId = this.userId;
     const savePresentation = this.repo.savePresentation;
     // Refuse before showing anything: an unsupported repository has no write to
     // roll back from.
@@ -506,6 +539,7 @@ export class CollectionState<T extends CollectionEntry> {
     if (userId && savePresentation) {
       await this.commitWrite(
         id,
+        generation,
         () => savePresentation(userId, next),
         () => this.confirmed.set(id, next)
       );
