@@ -5,12 +5,20 @@
   import Seo from "$lib/shared/components/Seo.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import { reducedMotion } from "$lib/shared/transitions/motion";
   import { getTimingDirectionState } from "../_state/timing-direction-state.svelte";
   import TimingDirectionModeCard from "../_components/TimingDirectionModeCard.svelte";
   import {
     getTimingDirectionArticle,
     TIMING_DIRECTION_ARTICLES,
   } from "../_data/timing-direction-articles";
+  import {
+    loadTogetherOppositeExamples,
+    type TogetherOppositeExample,
+  } from "../_data/together-opposite-examples";
 
   let { data }: { data: PageData } = $props();
 
@@ -37,6 +45,64 @@
       ? "/learn/concepts/gamma-motion"
       : "/learn/concepts/dual-shifts-alpha-beta"
   );
+  let togetherOppositeExamples = $state<TogetherOppositeExample[]>([]);
+  let selectedTogetherOppositeExample = $state<string | null>(null);
+  let examplesLoading = $state(false);
+  let examplesError = $state<string | null>(null);
+  let examplesRetry = $state(0);
+  let examplesRequest = 0;
+  let examplePlayer: HTMLElement | undefined = $state();
+
+  $effect(() => {
+    if (article.code !== "TO") {
+      examplesRequest += 1;
+      selectedTogetherOppositeExample = null;
+      togetherOppositeExamples = [];
+      examplesError = null;
+      examplesLoading = false;
+      return;
+    }
+    examplesRetry;
+    const request = ++examplesRequest;
+    examplesLoading = true;
+    examplesError = null;
+    togetherOppositeExamples = [];
+    void loadTogetherOppositeExamples()
+      .then((examples) => {
+        if (request !== examplesRequest || article.code !== "TO") return;
+        if (examples.length === 0) {
+          examplesError = "No matching pictographs are available yet.";
+          return;
+        }
+        togetherOppositeExamples = examples;
+        selectTogetherOppositeExample(examples[0]!);
+      })
+      .catch(() => {
+        if (request !== examplesRequest || article.code !== "TO") return;
+        examplesError = "Examples could not load. Try again.";
+      })
+      .finally(() => {
+        if (request === examplesRequest) examplesLoading = false;
+      });
+  });
+
+  function selectTogetherOppositeExample(
+    example: TogetherOppositeExample,
+    reveal = false
+  ) {
+    selectedTogetherOppositeExample = example.id;
+    playback.selectExample(example.sequence, example.step);
+    if (reveal && window.matchMedia("(max-width: 800px)").matches) {
+      examplePlayer?.scrollIntoView({
+        block: "center",
+        behavior: reducedMotion() ? "instant" : "smooth",
+      });
+    }
+  }
+
+  function retryTogetherOppositeExamples() {
+    examplesRetry += 1;
+  }
   const jsonLd = $derived({
     "@context": "https://schema.org",
     "@graph": [
@@ -115,66 +181,178 @@
     </PanelButton>
   </nav>
 
-  <div class="mode-overview">
-    <div class="mode-copy">
-      <header>
+  {#if article.code === "TO"}
+    <section class="to-reference" aria-labelledby="to-reference-title">
+      <header class="to-header">
         <div class="mode-identity">
           <img src={mode.element.iconPath} alt="" width="44" height="44" />
           <span>{article.code} · {mode.element.element}</span>
         </div>
-        <h1>
-          {article.timing} time <span>{article.direction} direction</span>
-        </h1>
+        <h1 id="to-reference-title">Together time, opposite direction</h1>
         <p class="definition">{article.definition}</p>
       </header>
-      <p>{article.watchFor}</p>
-      <PanelButton
-        href="/learn/concepts/timing-and-direction"
-        accentColor={mode.element.accentColor}
-      >
-        <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-        Try timing and direction
-      </PanelButton>
-    </div>
-    <div class="mode-notes">
-      <section class="practice" aria-labelledby="practice-title">
-        <h2 id="practice-title">In practice</h2>
-        <p>{article.example}</p>
-      </section>
-      <section aria-labelledby="distinction-title">
-        <h2 id="distinction-title">
-          {article.timing === "Quarter"
-            ? "Timing and placement"
-            : "Timing and direction"}
-        </h2>
-        <p>{article.commonMistake}</p>
-      </section>
-      <section aria-labelledby="tka-title">
-        <h2 id="tka-title">In TKA</h2>
-        <p>{article.tkaConnection}</p>
-        <PanelButton href={lessonHref} accentColor={mode.element.accentColor}>
-          <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-          Explore this in TKA
-        </PanelButton>
-      </section>
-    </div>
 
-    <figure class="demonstration">
-      <div class="demo-toolbar">
-        <span>Hand paths</span>
-        {#if browser}
-          <TransportControls
-            isPlaying={playback.playing}
-            onPlaybackToggle={() => (playback.playing = !playback.playing)}
-          />
-        {/if}
+      <div class="to-stage">
+        <figure class="demonstration">
+          <div class="demo-toolbar">
+            <span>Hand paths</span>
+            {#if browser}
+              <TransportControls
+                isPlaying={playback.playing}
+                onPlaybackToggle={() => (playback.playing = !playback.playing)}
+              />
+            {/if}
+          </div>
+          <div
+            class="demo-canvas"
+            bind:this={examplePlayer}
+            use:playback.registerTarget
+          ></div>
+          <figcaption>
+            Drag the bar to follow the selected hand path.
+          </figcaption>
+        </figure>
+
+        <section class="example-picker" aria-labelledby="example-picker-title">
+          <div>
+            <h2 id="example-picker-title">Matching pictographs</h2>
+            <p>Choose a pictograph to follow its hand path.</p>
+          </div>
+          <div
+            class="example-options"
+            aria-label="Together-Opposite examples"
+            aria-busy={examplesLoading}
+          >
+            {#if examplesLoading}
+              <p class="example-status">Loading matching pictographs…</p>
+            {:else if examplesError}
+              <div class="example-status">
+                <p>{examplesError}</p>
+                <PanelButton onclick={retryTogetherOppositeExamples}
+                  >Try again</PanelButton
+                >
+              </div>
+            {:else}
+              {#each togetherOppositeExamples as example (example.id)}
+                <PanelButton
+                  fullWidth
+                  ariaPressed={selectedTogetherOppositeExample === example.id}
+                  ariaLabel={`Show ${example.pictograph.letter} in ${example.gridMode} grid`}
+                  onclick={() => selectTogetherOppositeExample(example, true)}
+                >
+                  <span class="example-pictograph">
+                    <PictographContainer
+                      pictographData={example.pictograph}
+                      gridMode={example.gridMode}
+                      leftPropTypeOverride={PropType.HAND}
+                      rightPropTypeOverride={PropType.HAND}
+                      leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
+                      rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
+                      showGrid={true}
+                      showTKA={true}
+                      showElemental={true}
+                      showPositions={true}
+                      showReversals={false}
+                      showNonRadialPoints={false}
+                      showHandPoints={true}
+                      disableTransitions
+                    />
+                  </span>
+                  <span class="example-label"
+                    ><strong>{example.pictograph.letter}</strong><span
+                      >{example.gridMode === "box" ? "Box" : "Diamond"}</span
+                    ></span
+                  >
+                </PanelButton>
+              {/each}
+            {/if}
+          </div>
+        </section>
       </div>
-      <div class="demo-canvas" use:playback.registerTarget></div>
-      <figcaption>
-        Drag the bar to scrub. The two dots show the relationship.
-      </figcaption>
-    </figure>
-  </div>
+
+      <div class="to-notes">
+        <section>
+          <h2>What stays the same</h2>
+          <p>
+            Both hands arrive on the same beat while their paths travel in
+            opposite senses.
+          </p>
+        </section>
+        <section>
+          <h2>What can change</h2>
+          <p>
+            Letter, start position, grid, and prop rotation can change without
+            changing that hand-path classification.
+          </p>
+        </section>
+        <section>
+          <h2>Practice</h2>
+          <p>{article.example}</p>
+        </section>
+      </div>
+    </section>
+  {:else}
+    <div class="mode-overview">
+      <div class="mode-copy">
+        <header>
+          <div class="mode-identity">
+            <img src={mode.element.iconPath} alt="" width="44" height="44" />
+            <span>{article.code} · {mode.element.element}</span>
+          </div>
+          <h1>
+            {article.timing} time <span>{article.direction} direction</span>
+          </h1>
+          <p class="definition">{article.definition}</p>
+        </header>
+        <p>{article.watchFor}</p>
+        <PanelButton
+          href="/learn/concepts/timing-and-direction"
+          accentColor={mode.element.accentColor}
+        >
+          <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+          Try timing and direction
+        </PanelButton>
+      </div>
+      <div class="mode-notes">
+        <section class="practice" aria-labelledby="practice-title">
+          <h2 id="practice-title">In practice</h2>
+          <p>{article.example}</p>
+        </section>
+        <section aria-labelledby="distinction-title">
+          <h2 id="distinction-title">
+            {article.timing === "Quarter"
+              ? "Timing and placement"
+              : "Timing and direction"}
+          </h2>
+          <p>{article.commonMistake}</p>
+        </section>
+        <section aria-labelledby="tka-title">
+          <h2 id="tka-title">In TKA</h2>
+          <p>{article.tkaConnection}</p>
+          <PanelButton href={lessonHref} accentColor={mode.element.accentColor}>
+            <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+            Explore this in TKA
+          </PanelButton>
+        </section>
+      </div>
+
+      <figure class="demonstration">
+        <div class="demo-toolbar">
+          <span>Hand paths</span>
+          {#if browser}
+            <TransportControls
+              isPlaying={playback.playing}
+              onPlaybackToggle={() => (playback.playing = !playback.playing)}
+            />
+          {/if}
+        </div>
+        <div class="demo-canvas" use:playback.registerTarget></div>
+        <figcaption>
+          Drag the bar to follow the hands through the cycle.
+        </figcaption>
+      </figure>
+    </div>
+  {/if}
 
   <section class="history" aria-labelledby="learning-title">
     <h2 id="learning-title">Learn from other spinners</h2>
@@ -246,6 +424,44 @@
     gap: clamp(1.5rem, 4vw, 4rem);
     align-items: start;
   }
+  .to-reference {
+    max-width: 86rem;
+  }
+  .to-header {
+    max-width: 100%;
+    margin-bottom: 1.5rem;
+  }
+  .to-header h1 {
+    margin-bottom: 0.75rem;
+    text-wrap: balance;
+  }
+  .to-header .definition {
+    max-width: 68ch;
+    margin-bottom: 0;
+  }
+  .to-stage {
+    display: grid;
+    grid-template-columns: minmax(18rem, 1fr) minmax(20rem, 0.9fr);
+    gap: clamp(1rem, 3vw, 2rem);
+    align-items: start;
+  }
+  .to-stage .demonstration {
+    grid-column: auto;
+    grid-row: auto;
+    width: min(100%, 40rem);
+  }
+  .to-notes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--theme-stroke);
+  }
+  .to-notes p {
+    margin: 0;
+    font-size: 1rem;
+  }
   .mode-copy,
   .mode-notes {
     min-width: 0;
@@ -296,6 +512,70 @@
   }
   .mode-notes section + section {
     margin-top: 1.5rem;
+  }
+  .example-picker {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--radius-lg, 0.75rem);
+    background: var(--theme-card-bg);
+  }
+  .example-picker h2 {
+    margin-bottom: 0.25rem;
+  }
+  .example-picker p {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+  }
+  .example-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8.75rem, 1fr));
+    gap: 0.5rem;
+  }
+  .example-options :global(.panel-btn) {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0.35rem;
+    font-size: 0.875rem;
+    line-height: 1.25;
+    text-align: left;
+  }
+  .example-options :global(.panel-btn[aria-pressed="true"]) {
+    outline: 2px solid var(--mode-accent);
+    outline-offset: -2px;
+    background: color-mix(
+      in srgb,
+      var(--mode-accent) 10%,
+      var(--theme-card-bg)
+    );
+  }
+  .example-options :global(.panel-btn:focus-visible) {
+    outline: 3px solid var(--theme-text);
+    outline-offset: 2px;
+  }
+  .example-pictograph {
+    display: block;
+    aspect-ratio: 1;
+  }
+  .example-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.25rem;
+  }
+  .example-status {
+    display: grid;
+    gap: 0.5rem;
+    grid-column: 1 / -1;
+    min-height: 9rem;
+    align-content: center;
+  }
+  .example-status p {
+    margin: 0;
+    font-size: 0.875rem;
   }
   .demonstration {
     grid-column: 2;
@@ -387,7 +667,23 @@
     outline: 3px solid var(--theme-text);
     outline-offset: -3px;
   }
+  @media (max-width: 1100px) {
+    .to-stage {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .to-stage .demonstration {
+      width: min(100%, 30rem);
+      justify-self: center;
+    }
+  }
   @media (max-width: 800px) {
+    .to-stage,
+    .to-notes {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .to-stage .demonstration {
+      justify-self: center;
+    }
     .mode-overview {
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: auto;
@@ -412,6 +708,9 @@
     }
     .page-nav {
       margin-bottom: 1rem;
+    }
+    .example-options {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 </style>

@@ -444,6 +444,7 @@ export function createPerformerPointerInteraction(options: InteractionOptions) {
     let current: Object3D | null = object;
     while (current) {
       if (!current.visible) return false;
+      if (current.userData.performerInteractionExcluded === true) return false;
       if (current === root) break;
       current = current.parent;
     }

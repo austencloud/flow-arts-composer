@@ -5,6 +5,7 @@
   import TimingDirectionIntro from "$lib/features/learn/components/interactive/motions/TimingDirectionIntro.svelte";
   import { reducedMotion } from "$lib/shared/transitions/motion";
   import HandMotionPlayer from "$lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import type { DirectionValue } from "../_data/timing-direction-articles";
   import {
     getTimingDirectionState,
@@ -100,7 +101,7 @@
                     <span class="preview-animation">
                       {#if browser}
                         <HandMotionPlayer
-                          neutralMarkers
+                          primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
                           sequence={mode.motion.sequence}
                           showElementalGlyph
                           ariaLabel={mode.article.name}
