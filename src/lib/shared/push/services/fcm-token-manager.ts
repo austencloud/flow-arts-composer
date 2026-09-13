@@ -32,6 +32,10 @@ export type PushDeviceRegistrationState =
 
 export class FCMTokenManager {
   private currentToken: string | null = null;
+  private currentTokenOwnerId: string | null = null;
+  private nativeRegistrationAttempt = 0;
+  private nativeRegistrationOwnerId: string | null = null;
+  private cancelNativeRegistration: (() => void) | null = null;
 
   async registerToken(userId: string): Promise<string | null> {
     try {
@@ -86,6 +90,7 @@ export class FCMTokenManager {
 
       await this.storeToken(userId, token);
       this.currentToken = token;
+      this.currentTokenOwnerId = userId;
 
       return token;
     } catch (error) {
@@ -96,17 +101,31 @@ export class FCMTokenManager {
 
   async unregisterToken(userId: string): Promise<void> {
     try {
-      if (this.currentToken) {
+      const isAndroid = Capacitor.getPlatform() === "android";
+      if (isAndroid && this.nativeRegistrationOwnerId === userId) {
+        this.nativeRegistrationAttempt++;
+        this.nativeRegistrationOwnerId = null;
+        const cancelRegistration = this.cancelNativeRegistration;
+        this.cancelNativeRegistration = null;
+        cancelRegistration?.();
+      }
+
+      if (this.currentToken && this.currentTokenOwnerId === userId) {
+        const newerNativeRegistrationIsPending =
+          isAndroid &&
+          this.nativeRegistrationOwnerId !== null &&
+          this.nativeRegistrationOwnerId !== userId;
         await this.removeToken(userId, this.currentToken);
 
-        if (Capacitor.getPlatform() === "android") {
+        if (isAndroid && !newerNativeRegistrationIsPending) {
           await PushNotifications.unregister();
-        } else {
+        } else if (!isAndroid) {
           const messaging = getMessaging(app);
           await deleteToken(messaging);
         }
 
         this.currentToken = null;
+        this.currentTokenOwnerId = null;
       }
     } catch (error) {
       console.error("[FCMTokenManager] Token unregistration failed:", error);
@@ -183,47 +202,110 @@ export class FCMTokenManager {
   private async registerNativeAndroidToken(
     userId: string
   ): Promise<string | null> {
-    const permission = await PushNotifications.checkPermissions();
-    if (permission.receive !== "granted") return null;
+    const attempt = ++this.nativeRegistrationAttempt;
+    const cancelPrevious = this.cancelNativeRegistration;
+    this.cancelNativeRegistration = null;
+    this.nativeRegistrationOwnerId = userId;
+    cancelPrevious?.();
+    const ownsAttempt = () =>
+      attempt === this.nativeRegistrationAttempt &&
+      this.nativeRegistrationOwnerId === userId;
+    const clearAttempt = () => {
+      if (!ownsAttempt()) return;
+      this.nativeRegistrationOwnerId = null;
+      this.cancelNativeRegistration = null;
+    };
 
-    await Promise.all(
-      ANDROID_NOTIFICATION_CHANNELS.map((channel) =>
-        PushNotifications.createChannel(channel)
-      )
-    );
+    try {
+      const permission = await PushNotifications.checkPermissions();
+      if (!ownsAttempt()) return null;
+      if (permission.receive !== "granted") {
+        clearAttempt();
+        return null;
+      }
+
+      await Promise.all(
+        ANDROID_NOTIFICATION_CHANNELS.map((channel) =>
+          PushNotifications.createChannel(channel)
+        )
+      );
+      if (!ownsAttempt()) return null;
+    } catch (error) {
+      clearAttempt();
+      throw error;
+    }
 
     // Capacitor listeners are process-global and stack up. These used to be
     // added on every registerToken call and never removed, so the single
     // registration event from a later register() was replayed into every
     // earlier call's closure — each still holding the user id it captured.
-    // A device that registered as one user and then as another wrote its
-    // current token into BOTH accounts, leaving the signed-out one receiving
-    // this device's push notifications.
-    const handles: PluginListenerHandle[] = [];
-    const removeListeners = async (): Promise<void> => {
-      const attached = handles.splice(0);
-      await Promise.all(
-        attached.map((handle) => handle.remove().catch(() => undefined))
-      );
-    };
-
+    // Without an owner fence, a shared SDK event can ask both the old and new
+    // callbacks to store the same token. If both writes are accepted, the old
+    // account remains subscribed to notifications on this device.
     return new Promise((resolve) => {
+      const handles: PluginListenerHandle[] = [];
       let settled = false;
+      let eventClaimed = false;
+      let setupPromise: Promise<void> = Promise.resolve();
+
+      const removeHandle = async (
+        handle: PluginListenerHandle
+      ): Promise<void> => {
+        await handle.remove().catch(() => undefined);
+      };
+      const removeListeners = async (): Promise<void> => {
+        const attached = handles.splice(0);
+        await Promise.all(attached.map(removeHandle));
+      };
       const finish = (token: string | null) => {
         if (settled) return;
         settled = true;
-        // Resolve only once this attempt's listeners are detached, so the
-        // caller's next registration starts from a clean slate.
-        void removeListeners().then(() => resolve(token));
+        if (ownsAttempt()) clearAttempt();
+        // Listener handles can resolve after this attempt is superseded. Wait
+        // for setup to observe cancellation, then detach everything before the
+        // caller can treat the registration as finished.
+        void setupPromise
+          .catch(() => undefined)
+          .then(removeListeners)
+          .then(() => resolve(token));
+      };
+      const claimEvent = (): boolean => {
+        if (settled || eventClaimed || !ownsAttempt()) return false;
+        eventClaimed = true;
+        return true;
+      };
+      const trackListener = async (
+        handlePromise: Promise<PluginListenerHandle>
+      ): Promise<boolean> => {
+        const handle = await handlePromise;
+        if (settled || !ownsAttempt()) {
+          await removeHandle(handle);
+          return false;
+        }
+        handles.push(handle);
+        return true;
       };
 
-      void (async () => {
+      this.cancelNativeRegistration = () => finish(null);
+
+      setupPromise = (async () => {
         try {
-          handles.push(
-            await PushNotifications.addListener("registration", ({ value }) => {
-              void this.storeToken(userId, value, "android-native")
+          const registrationAttached = await trackListener(
+            PushNotifications.addListener("registration", ({ value }) => {
+              if (!claimEvent()) return;
+              void this.storeToken(
+                userId,
+                value,
+                "android-native",
+                () => !settled && ownsAttempt()
+              )
                 .then(() => {
+                  if (settled || !ownsAttempt()) {
+                    finish(null);
+                    return;
+                  }
                   this.currentToken = value;
+                  this.currentTokenOwnerId = userId;
                   finish(value);
                 })
                 .catch((error) => {
@@ -233,21 +315,30 @@ export class FCMTokenManager {
                   );
                   finish(null);
                 });
-            }),
-            await PushNotifications.addListener(
-              "registrationError",
-              ({ error }) => {
-                console.error(
-                  "[FCMTokenManager] Native registration failed:",
-                  error
-                );
-                finish(null);
-              }
-            )
+            })
           );
+          if (!registrationAttached) {
+            finish(null);
+            return;
+          }
 
-          if (settled) {
-            await removeListeners();
+          const registrationErrorAttached = await trackListener(
+            PushNotifications.addListener("registrationError", ({ error }) => {
+              if (!claimEvent()) return;
+              console.error(
+                "[FCMTokenManager] Native registration failed:",
+                error
+              );
+              finish(null);
+            })
+          );
+          if (!registrationErrorAttached) {
+            finish(null);
+            return;
+          }
+
+          if (settled || !ownsAttempt()) {
+            finish(null);
             return;
           }
 
@@ -263,10 +354,13 @@ export class FCMTokenManager {
   private async storeToken(
     userId: string,
     token: string,
-    transport: "web" | "android-native" = "web"
+    transport: "web" | "android-native" = "web",
+    canStore: () => boolean = () => true
   ): Promise<void> {
     const firestore = await getFirestoreInstance();
+    if (!canStore()) return;
     const tokenHash = await this.hashToken(token);
+    if (!canStore()) return;
     const deviceId = getDeviceId();
     const tokensCol = collection(
       firestore,

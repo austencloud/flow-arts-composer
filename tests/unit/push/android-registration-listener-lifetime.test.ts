@@ -21,15 +21,30 @@ type Handler = (payload: never) => void;
 
 const h = vi.hoisted(() => {
   const listeners = new Map<string, Array<{ id: number; handler: Handler }>>();
+  const pendingListenerHandles: Array<{
+    resolve: (handle: { remove: () => Promise<void> }) => void;
+    handle: { remove: () => Promise<void> };
+  }> = [];
+  const pendingFirestore: Array<() => void> = [];
   let nextListenerId = 1;
-  const state = { token: "token-a" };
+  const state = {
+    token: "token-a",
+    rejectEvent: null as string | null,
+    holdNextListenerHandle: false,
+    registrationEventCount: 1,
+    holdFirestore: false,
+  };
 
   const addListener = vi.fn(async (event: string, handler: Handler) => {
+    if (state.rejectEvent === event) {
+      state.rejectEvent = null;
+      throw new Error(`Could not attach ${event}`);
+    }
     const entry = { id: nextListenerId++, handler };
     const forEvent = listeners.get(event) ?? [];
     forEvent.push(entry);
     listeners.set(event, forEvent);
-    return {
+    const handle = {
       remove: async () => {
         listeners.set(
           event,
@@ -37,14 +52,23 @@ const h = vi.hoisted(() => {
         );
       },
     };
+    if (state.holdNextListenerHandle) {
+      state.holdNextListenerHandle = false;
+      return new Promise<typeof handle>((resolve) => {
+        pendingListenerHandles.push({ resolve, handle });
+      });
+    }
+    return handle;
   });
 
   const register = vi.fn(async () => {
     // Capacitor emits one registration event to every attached listener.
-    for (const entry of [...(listeners.get("registration") ?? [])]) {
-      (entry.handler as (payload: { value: string }) => void)({
-        value: state.token,
-      });
+    for (let index = 0; index < state.registrationEventCount; index += 1) {
+      for (const entry of [...(listeners.get("registration") ?? [])]) {
+        (entry.handler as (payload: { value: string }) => void)({
+          value: state.token,
+        });
+      }
     }
   });
 
@@ -60,6 +84,13 @@ const h = vi.hoisted(() => {
     deleteDoc: vi.fn(async () => undefined),
     getDocs: vi.fn(async () => ({ forEach: () => {} })),
     listenerCount: (event: string) => (listeners.get(event) ?? []).length,
+    releaseListenerHandles: () => {
+      for (const pending of pendingListenerHandles.splice(0)) {
+        pending.resolve(pending.handle);
+      }
+    },
+    pendingListenerHandles,
+    pendingFirestore,
   };
 });
 
@@ -96,7 +127,12 @@ vi.mock("firebase/firestore", () => ({
 }));
 
 vi.mock("$lib/shared/auth/firebase", () => ({
-  getFirestoreInstance: async () => ({ name: "firestore" }),
+  getFirestoreInstance: async () => {
+    if (h.state.holdFirestore) {
+      await new Promise<void>((resolve) => h.pendingFirestore.push(resolve));
+    }
+    return { name: "firestore" };
+  },
   app: { name: "app" },
 }));
 
@@ -115,6 +151,12 @@ describe("native Android token registration", () => {
   beforeEach(() => {
     h.listeners.clear();
     h.state.token = "token-a";
+    h.state.rejectEvent = null;
+    h.state.holdNextListenerHandle = false;
+    h.state.registrationEventCount = 1;
+    h.state.holdFirestore = false;
+    h.pendingListenerHandles.length = 0;
+    h.pendingFirestore.length = 0;
     h.setDoc.mockClear();
     h.register.mockClear();
     h.addListener.mockClear();
@@ -168,5 +210,121 @@ describe("native Android token registration", () => {
 
     expect(h.listenerCount("registration")).toBe(0);
     expect(h.listenerCount("registrationError")).toBe(0);
+  });
+
+  it("removes the first listener when the second listener fails to attach", async () => {
+    const manager = new FCMTokenManager();
+    h.state.rejectEvent = "registrationError";
+
+    await expect(manager.registerToken("user-a")).resolves.toBeNull();
+
+    expect(h.listenerCount("registration")).toBe(0);
+    expect(h.listenerCount("registrationError")).toBe(0);
+  });
+
+  it("lets only the latest overlapping registration store the shared event", async () => {
+    const manager = new FCMTokenManager();
+    h.state.holdNextListenerHandle = true;
+
+    const first = manager.registerToken("user-a");
+    await vi.waitFor(() => expect(h.listenerCount("registration")).toBe(1));
+
+    h.state.token = "token-b";
+    const second = manager.registerToken("user-b");
+    await expect(second).resolves.toBe("token-b");
+
+    h.releaseListenerHandles();
+    await expect(first).resolves.toBeNull();
+
+    const paths = writtenTokenPaths();
+    expect(paths).toHaveLength(1);
+    expect(paths[0]).toMatch(/^users\/user-b\/fcmTokens\//);
+    expect(paths.some((path) => path.startsWith("users/user-a/"))).toBe(false);
+    expect(h.listenerCount("registration")).toBe(0);
+    expect(h.listenerCount("registrationError")).toBe(0);
+  });
+
+  it("stores at most once when the native plugin repeats its callback", async () => {
+    const manager = new FCMTokenManager();
+    h.state.registrationEventCount = 2;
+
+    await expect(manager.registerToken("user-a")).resolves.toBe("token-a");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(h.setDoc).toHaveBeenCalledTimes(1);
+    expect(h.listenerCount("registration")).toBe(0);
+    expect(h.listenerCount("registrationError")).toBe(0);
+  });
+
+  it("abandons a token write still resolving for a superseded account", async () => {
+    const manager = new FCMTokenManager();
+    h.state.holdFirestore = true;
+
+    const first = manager.registerToken("user-a");
+    await vi.waitFor(() => expect(h.pendingFirestore).toHaveLength(1));
+
+    h.state.holdFirestore = false;
+    h.state.token = "token-b";
+    const second = manager.registerToken("user-b");
+    await expect(second).resolves.toBe("token-b");
+    await expect(first).resolves.toBeNull();
+
+    for (const release of h.pendingFirestore.splice(0)) release();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const paths = writtenTokenPaths();
+    expect(paths).toHaveLength(1);
+    expect(paths[0]).toMatch(/^users\/user-b\/fcmTokens\//);
+    expect(paths.some((path) => path.startsWith("users/user-a/"))).toBe(false);
+  });
+
+  it("cancels an in-flight registration when its owner unregisters", async () => {
+    const manager = new FCMTokenManager();
+    h.state.holdFirestore = true;
+
+    const registration = manager.registerToken("user-a");
+    await vi.waitFor(() => expect(h.pendingFirestore).toHaveLength(1));
+
+    await manager.unregisterToken("user-a");
+    for (const release of h.pendingFirestore.splice(0)) release();
+
+    await expect(registration).resolves.toBeNull();
+    expect(h.setDoc).not.toHaveBeenCalled();
+    expect(h.listenerCount("registration")).toBe(0);
+    expect(h.listenerCount("registrationError")).toBe(0);
+  });
+
+  it("does not unregister the newer account's completed token", async () => {
+    const manager = new FCMTokenManager();
+    h.state.token = "token-b";
+    await expect(manager.registerToken("user-b")).resolves.toBe("token-b");
+    h.deleteDoc.mockClear();
+    h.unregister.mockClear();
+
+    await manager.unregisterToken("user-a");
+
+    expect(h.deleteDoc).not.toHaveBeenCalled();
+    expect(h.unregister).not.toHaveBeenCalled();
+
+    await manager.unregisterToken("user-b");
+    expect(h.deleteDoc).toHaveBeenCalledTimes(1);
+    expect(h.unregister).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not disrupt a newer registration when the old owner unregisters", async () => {
+    const manager = new FCMTokenManager();
+    await manager.registerToken("user-a");
+    h.unregister.mockClear();
+    h.state.holdNextListenerHandle = true;
+    h.state.token = "token-b";
+
+    const registration = manager.registerToken("user-b");
+    await vi.waitFor(() => expect(h.listenerCount("registration")).toBe(1));
+
+    await manager.unregisterToken("user-a");
+    expect(h.unregister).not.toHaveBeenCalled();
+
+    h.releaseListenerHandles();
+    await expect(registration).resolves.toBe("token-b");
   });
 });
