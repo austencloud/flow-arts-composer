@@ -6,7 +6,8 @@ import { createSequenceData, type SequenceData } from "$lib/shared/foundation/do
 import { MotionType, RotationDirection, Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import { rehydrateMotion } from "$lib/shared/foundation/services/step-deriver";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { FuseOptions } from "./types";
@@ -65,34 +66,24 @@ function tile<T>(items: readonly T[], targetLength: number): T[] {
 	return result;
 }
 
-function buildMotionFromSoloPropStep(
-	step: SoloPropStepData,
-	color: HandSide,
-	gridMode: GridMode
-): ReturnType<typeof createMotionData> {
-	return createMotionData({
-		motionType: step.motionType,
-		rotationDirection: step.rotationDirection,
-		startLocation: step.startLocation,
-		endLocation: step.endLocation,
-		turns: step.turns,
-		startOrientation: step.startOrientation,
-		endOrientation: step.endOrientation,
-		hand: color,
-		gridMode,
-		isVisible: true,
-	});
-}
-
+/**
+ * Describe the combined sequence's frame from the two sources' native frames.
+ *
+ * Must stay symmetric: which source the caller happens to pass as `left` says
+ * nothing about the frame the pair lives in. The classification follows the
+ * canonical derivers (grid-mode-deriver for motions, hand-path-factory for
+ * paths): a CENTER-touching frame wins, otherwise any disagreement — including
+ * a skewed source paired with a square one — is skewed.
+ */
 function resolveFusedGridMode(
 	leftGridMode: GridMode,
 	rightGridMode: GridMode
 ): GridMode {
-	const mixesDiamondAndBox =
-		(leftGridMode === GridMode.DIAMOND && rightGridMode === GridMode.BOX) ||
-		(leftGridMode === GridMode.BOX && rightGridMode === GridMode.DIAMOND);
-
-	return mixesDiamondAndBox ? GridMode.SKEWED : leftGridMode;
+	if (leftGridMode === rightGridMode) return leftGridMode;
+	if (leftGridMode === GridMode.CENTRIC || rightGridMode === GridMode.CENTRIC) {
+		return GridMode.CENTRIC;
+	}
+	return GridMode.SKEWED;
 }
 
 /**
@@ -237,9 +228,13 @@ export function fuseSequences(
 			letter: stepPairings[i]!.letter ?? null,
 			startPosition: null,
 			endPosition: null,
+			// Rehydrate through the canonical owner so the fused motions carry the
+			// same authored fields the two-hand path carries: prefloat provenance
+			// (a float's rotationDirection is noRotation, so dropping it silently
+			// flips pro↔anti in the letter lookup), handPath, skew, and plane.
 			motions: {
-				left: buildMotionFromSoloPropStep(leftStep, HandSide.LEFT, leftGridMode),
-				right: buildMotionFromSoloPropStep(rightStep, HandSide.RIGHT, rightGridMode),
+				left: rehydrateMotion(leftStep, HandSide.LEFT, leftGridMode, PropType.STAFF),
+				right: rehydrateMotion(rightStep, HandSide.RIGHT, rightGridMode, PropType.STAFF),
 			},
 		});
 	}
