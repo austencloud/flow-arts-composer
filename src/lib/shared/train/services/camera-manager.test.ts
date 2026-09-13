@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { CameraManager } from "./camera-manager";
+import { CameraManager, isCameraAcquisitionCancelled } from "./camera-manager";
 
 interface FakeTrack {
   kind: string;
@@ -75,6 +75,7 @@ function createFakeVideoElement() {
       return playDeferred.promise;
     }),
     finishPlay: () => playDeferred?.resolve(),
+    failPlay: (error: unknown) => playDeferred?.reject(error),
     get isPlayPending() {
       return playDeferred !== null;
     },
@@ -82,8 +83,13 @@ function createFakeVideoElement() {
   return element;
 }
 
+function nativeError(name: string, message = name): Error {
+  return Object.assign(new Error(message), { name });
+}
+
 describe("CameraManager lifecycle", () => {
   let getUserMedia: ReturnType<typeof vi.fn>;
+  let enumerateDevices: ReturnType<typeof vi.fn>;
   let videoElement: ReturnType<typeof createFakeVideoElement>;
   let originalCreateElement: typeof document.createElement;
   let originalOffscreenCanvas: unknown;
@@ -102,12 +108,10 @@ describe("CameraManager lifecycle", () => {
           )) as typeof document.createElement;
 
     getUserMedia = vi.fn();
+    enumerateDevices = vi.fn(async () => []);
     Object.defineProperty(navigator, "mediaDevices", {
       configurable: true,
-      value: {
-        getUserMedia,
-        enumerateDevices: vi.fn(async () => []),
-      },
+      value: { getUserMedia, enumerateDevices },
     });
 
     originalOffscreenCanvas = (globalThis as { OffscreenCanvas?: unknown })
@@ -251,5 +255,136 @@ describe("CameraManager lifecycle", () => {
     expect(isLive(backStream)).toBe(true);
     expect(camera.currentConfig.facingMode).toBe("environment");
     expect(camera.isActive).toBe(true);
+  });
+
+  // Consumers acquire the camera in two awaits and unmount in between. These
+  // replay the PerformancePreview / VideoRecordPanel shape: `await initialize()`
+  // then `await start()`, with the panel's teardown `stop()` landing in the
+  // middle. Opening a camera after that teardown is the leak — nothing will
+  // ever close it, because the teardown has already run.
+  describe("initialize-to-start handshake", () => {
+    it("refuses the start queued behind an initialize the owner abandoned", async () => {
+      const camera = new CameraManager();
+      const devices = deferred<MediaDeviceInfo[]>();
+      enumerateDevices.mockReturnValue(devices.promise);
+
+      const acquisition = (async () => {
+        await camera.initialize({ width: 1280, height: 720 });
+        return camera.start();
+      })().catch((error: unknown) => error);
+
+      // The panel unmounted while the device list was still pending.
+      camera.stop();
+      devices.resolve([]);
+      await flushMicrotasks();
+      // Pump playback in case the manager let the start through — the
+      // assertion below, not a timeout, should be what reports that.
+      videoElement.finishPlay();
+      const outcome = await acquisition;
+      await flushMicrotasks();
+
+      expect(getUserMedia).not.toHaveBeenCalled();
+      expect(isCameraAcquisitionCancelled(outcome)).toBe(true);
+      expect(camera.isActive).toBe(false);
+    });
+
+    it("refuses a start requested after the owner released the camera", async () => {
+      const camera = new CameraManager();
+      await camera.initialize();
+
+      // Teardown lands between the two awaits.
+      camera.stop();
+
+      const pending = camera.start().catch((error: unknown) => error);
+      await flushMicrotasks();
+      videoElement.finishPlay();
+      const outcome = await pending;
+
+      expect(getUserMedia).not.toHaveBeenCalled();
+      expect(isCameraAcquisitionCancelled(outcome)).toBe(true);
+      expect(camera.isActive).toBe(false);
+    });
+
+    it("re-arms the shared manager for the next panel that initializes", async () => {
+      const camera = new CameraManager();
+      await camera.initialize();
+      camera.stop();
+
+      // A second panel picks up the same instance from getCameraManager().
+      const stream = createFakeStream("next-panel");
+      getUserMedia.mockResolvedValue(stream);
+      await camera.initialize();
+      const start = camera.start();
+      await flushMicrotasks();
+      videoElement.finishPlay();
+      await start;
+
+      expect(camera.isActive).toBe(true);
+      expect(isLive(stream)).toBe(true);
+    });
+
+    it("still allows a start after the camera was released while live", async () => {
+      const camera = new CameraManager();
+      await camera.initialize();
+
+      const first = createFakeStream("first");
+      const second = createFakeStream("second");
+      getUserMedia.mockResolvedValueOnce(first).mockResolvedValueOnce(second);
+
+      const firstStart = camera.start();
+      await flushMicrotasks();
+      videoElement.finishPlay();
+      await firstStart;
+
+      camera.stop();
+
+      const resume = camera.start();
+      await flushMicrotasks();
+      videoElement.finishPlay();
+      await resume;
+
+      expect(isLive(first)).toBe(false);
+      expect(isLive(second)).toBe(true);
+      expect(camera.isActive).toBe(true);
+    });
+  });
+
+  describe("failure after the stream was handed over", () => {
+    it("releases the camera when playback fails to start", async () => {
+      const camera = new CameraManager();
+      await camera.initialize();
+
+      const stream = createFakeStream("play-fails");
+      getUserMedia.mockResolvedValue(stream);
+
+      const start = camera.start().catch((error: unknown) => error);
+      await flushMicrotasks();
+      // play() rejects with a native AbortError when the element is torn down
+      // mid-load, and with NotAllowedError under autoplay policy.
+      videoElement.failPlay(nativeError("AbortError", "play interrupted"));
+      const outcome = await start;
+      await flushMicrotasks();
+
+      expect(isLive(stream)).toBe(false);
+      expect(camera.isActive).toBe(false);
+      // A real playback failure must stay a failure the consumer can show.
+      expect(isCameraAcquisitionCancelled(outcome)).toBe(false);
+      expect(outcome).toBeInstanceOf(Error);
+    });
+
+    it("reports a native AbortError from the device as a camera failure", async () => {
+      const camera = new CameraManager();
+      await camera.initialize();
+
+      getUserMedia.mockRejectedValue(
+        nativeError("AbortError", "Starting videoinput failed")
+      );
+
+      const outcome = await camera.start().catch((error: unknown) => error);
+
+      expect(isCameraAcquisitionCancelled(outcome)).toBe(false);
+      expect((outcome as Error).message).toBe("Couldn't access your camera.");
+      expect(camera.isActive).toBe(false);
+    });
   });
 });

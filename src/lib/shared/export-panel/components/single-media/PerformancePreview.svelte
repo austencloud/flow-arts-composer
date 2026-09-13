@@ -18,7 +18,10 @@
   import { browser } from "$app/environment";
   import { getExportPanelState } from "../../state/export-panel-state.svelte";
   import { getCameraManager } from "$lib/shared/train/get-camera-manager";
-  import type { CameraManager } from "$lib/shared/train/services/camera-manager";
+  import {
+    isCameraAcquisitionCancelled,
+    type CameraManager,
+  } from "$lib/shared/train/services/camera-manager";
   import { getVideoRecorder } from "$lib/shared/video-record/services/video-recorder";
   import type {
     RecordingProgress,
@@ -38,6 +41,8 @@
   let cameraInitialized = $state(false);
   let videoElement = $state<HTMLVideoElement | null>(null);
   let cameraStream = $state<MediaStream | null>(null);
+  // Plain flag, not state: it only guards the async acquisition below.
+  let destroyed = false;
 
   // Recording state
   let recordingId = $state<string | null>(null);
@@ -75,11 +80,25 @@
         frameRate: 30,
       });
 
+      // Acquiring the camera takes two awaits, and the panel can close in
+      // between — this one shares its CameraManager with other surfaces, so the
+      // stream must not be opened (or kept) for a panel that is already gone.
+      // Teardown has already run by then and would never stop it.
+      if (destroyed) return;
+
       const stream = await cameraService.start();
+      if (destroyed) {
+        cameraService.stop();
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
       cameraStream = stream;
       cameraInitialized = true;
       error = null;
     } catch (err) {
+      // A start the manager cancelled for us is not a failure to report.
+      if (isCameraAcquisitionCancelled(err)) return;
       error = err instanceof Error ? err.message : "Failed to access camera";
     }
   }
@@ -241,6 +260,7 @@
 
   // Cleanup
   onDestroy(() => {
+    destroyed = true;
     if (recordingId) recordService.cancelRecording(recordingId);
     if (recordedVideo?.blobUrl) URL.revokeObjectURL(recordedVideo.blobUrl);
     if (uploadedVideoUrl) URL.revokeObjectURL(uploadedVideoUrl);
