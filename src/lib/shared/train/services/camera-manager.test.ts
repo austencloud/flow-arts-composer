@@ -349,6 +349,84 @@ describe("CameraManager lifecycle", () => {
     });
   });
 
+  // Two panels share one instance through getCameraManager(). A panel that
+  // closes after its replacement has opened the camera must not release it:
+  // the instance-wide stop() would, so the closing panel acts on its own
+  // acquisition handle or its own stream instead.
+  describe("two consumers on one shared instance", () => {
+    async function goLive(camera: CameraManager, id: string) {
+      const stream = createFakeStream(id);
+      getUserMedia.mockResolvedValueOnce(stream);
+      const acquisition = await camera.initialize();
+      const start = camera.start(acquisition);
+      await flushMicrotasks();
+      videoElement.finishPlay();
+      await start;
+      return { stream, acquisition };
+    }
+
+    it("keeps the newer panel's camera when a stale panel releases its own stream", async () => {
+      const camera = new CameraManager();
+      const first = await goLive(camera, "first-panel");
+      const second = await goLive(camera, "second-panel");
+
+      // The first panel's teardown finally runs, long after it lost the camera.
+      camera.releaseStream(first.stream as unknown as MediaStream);
+
+      expect(isLive(second.stream)).toBe(true);
+      expect(camera.isActive).toBe(true);
+    });
+
+    it("keeps the newer panel's camera when a stale panel abandons its acquisition", async () => {
+      const camera = new CameraManager();
+      const first = await camera.initialize();
+      const second = await goLive(camera, "second-panel");
+
+      camera.abandonAcquisition(first);
+
+      expect(isLive(second.stream)).toBe(true);
+      expect(camera.isActive).toBe(true);
+    });
+
+    it("refuses a start whose handshake a newer panel took over", async () => {
+      const camera = new CameraManager();
+      const stale = await camera.initialize();
+      await camera.initialize();
+
+      getUserMedia.mockResolvedValue(createFakeStream("should-not-open"));
+      const outcome = await camera
+        .start(stale)
+        .catch((error: unknown) => error);
+
+      expect(getUserMedia).not.toHaveBeenCalled();
+      expect(isCameraAcquisitionCancelled(outcome)).toBe(true);
+    });
+
+    it("lets stop() release whatever the instance is doing — which is why a stale panel must not call it", async () => {
+      const camera = new CameraManager();
+      await goLive(camera, "first-panel");
+      const second = await goLive(camera, "second-panel");
+
+      // Documents the boundary the targeted calls exist for: stop() is the
+      // instance-wide release, so a late teardown reaching for it takes the
+      // current panel's camera with it.
+      camera.stop();
+
+      expect(isLive(second.stream)).toBe(false);
+      expect(camera.isActive).toBe(false);
+    });
+
+    it("releases the camera when the current owner abandons its acquisition", async () => {
+      const camera = new CameraManager();
+      const only = await goLive(camera, "only-panel");
+
+      camera.abandonAcquisition(only.acquisition);
+
+      expect(isLive(only.stream)).toBe(false);
+      expect(camera.isActive).toBe(false);
+    });
+  });
+
   describe("failure after the stream was handed over", () => {
     it("releases the camera when playback fails to start", async () => {
       const camera = new CameraManager();

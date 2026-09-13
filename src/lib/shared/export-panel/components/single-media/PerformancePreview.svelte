@@ -20,6 +20,7 @@
   import { getCameraManager } from "$lib/shared/train/get-camera-manager";
   import {
     isCameraAcquisitionCancelled,
+    type CameraAcquisition,
     type CameraManager,
   } from "$lib/shared/train/services/camera-manager";
   import { getVideoRecorder } from "$lib/shared/video-record/services/video-recorder";
@@ -73,7 +74,7 @@
     }
 
     try {
-      await cameraService.initialize({
+      const acquisition = await cameraService.initialize({
         facingMode: "user",
         width: 1280,
         height: 720,
@@ -82,14 +83,19 @@
 
       // Acquiring the camera takes two awaits, and the panel can close in
       // between — this one shares its CameraManager with other surfaces, so the
-      // stream must not be opened (or kept) for a panel that is already gone.
-      // Teardown has already run by then and would never stop it.
-      if (destroyed) return;
-
-      const stream = await cameraService.start();
+      // stream must not be opened (or kept) for a panel that is already gone:
+      // teardown has already run by then and would never stop it. Everything
+      // here is scoped to this panel's own handshake and stream, never the
+      // instance-wide stop(), which would switch off a camera another surface
+      // opened in the meantime.
       if (destroyed) {
-        cameraService.stop();
-        stream.getTracks().forEach((track) => track.stop());
+        cameraService.abandonAcquisition(acquisition);
+        return;
+      }
+
+      const stream = await cameraService.start(acquisition);
+      if (destroyed) {
+        cameraService.releaseStream(stream);
         return;
       }
 
@@ -264,8 +270,11 @@
     if (recordingId) recordService.cancelRecording(recordingId);
     if (recordedVideo?.blobUrl) URL.revokeObjectURL(recordedVideo.blobUrl);
     if (uploadedVideoUrl) URL.revokeObjectURL(uploadedVideoUrl);
-    if (cameraService) cameraService.stop();
-    if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
+    // Release only the stream this panel holds. The CameraManager is shared, so
+    // an instance-wide stop() here would switch off a camera another surface
+    // opened; anything still in flight is released by the acquisition path
+    // above, which knows which handshake is ours.
+    if (cameraService && cameraStream) cameraService.releaseStream(cameraStream);
   });
 </script>
 

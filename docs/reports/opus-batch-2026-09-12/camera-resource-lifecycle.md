@@ -7,12 +7,16 @@ real camera.
 ## Result
 
 Two defects found, reproduced with failing tests against the real lifecycle
-code, and fixed. A review round then added four more corrections — the
+code, and fixed. Two review rounds then added corrections — the
 initialize-to-start window, the playback-failure leak, the cancellation identity,
-and the `PerformancePreview` consumer guard — each with its own before/after
-evidence (see **Review round**). Two findings in `TrainModePanel.svelte` remain
-**reported, not changed**; proving them needs the practice surface mounted with a
-camera.
+the `PerformancePreview` consumer guard, and handle/stream-scoped teardown so a
+panel closing late cannot stop a camera another surface owns — each with its own
+before/after evidence (see **Review round**). The resulting teardown and
+cancellation surface is written out under **CameraManager teardown and
+cancellation contract** for the consumers this branch does not own.
+
+Two findings in `TrainModePanel.svelte` remain **reported, not changed**; proving
+them needs the practice surface mounted with a camera.
 
 | SHA                                        | What                                               |
 | ------------------------------------------ | -------------------------------------------------- |
@@ -20,8 +24,10 @@ camera.
 | `49d3f8e3`                                 | fix 1 — camera stream released on close/restart    |
 | `8dce14cb`                                 | fix 2 — tracking session cancelled during load     |
 | `facdbbda`                                 | first report revision                              |
-| this commit (branch head)                  | review round: acquisition fence, playback cleanup, |
+| `39f0271b`                                 | review round: acquisition fence, playback cleanup, |
 |                                            | cancellation identity, PerformancePreview guard    |
+| this commit (branch head)                  | cross-branch round: handle/stream-scoped teardown  |
+|                                            | so no stale panel stops a shared camera            |
 
 Branch: `claude/camera-resource-lifecycle-sdoeg6`.
 
@@ -190,6 +196,56 @@ Vitest 4 a hoisted `vi.mock` factory for an external dependency only serves the
 which dies in jsdom on `appendChild`. The test registers the stub with
 `vi.doMock` in `beforeEach` and warms the subject's import once.
 
+## CameraManager teardown and cancellation contract
+
+Stable surface for every consumer, including the ones this branch does not own.
+`src/lib/shared/train/services/camera-manager.ts` is the only owner of it.
+
+### Acquiring
+
+```ts
+const acquisition = await camera.initialize(config); // CameraAcquisition handle
+const stream = await camera.start(acquisition);
+```
+
+`initialize()` returns a handle for that one handshake (callers that ignore it
+still work; `start()` then falls back to the instance's current acquisition).
+A newer `initialize()` becomes the current acquisition, which is how one shared
+instance serves several panels in turn.
+
+### Releasing — pick by what you own
+
+| Situation                                          | Call                         | Effect                                                                                              |
+| -------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------- |
+| You own the camera now and want it off             | `stop()`                     | **Instance-wide.** Releases whatever this instance holds and cancels an unstarted handshake.        |
+| You are closing and may be stale (shared instance) | `abandonAcquisition(handle)` | Releases only if your handshake is still the current one; otherwise a no-op.                        |
+| You hold a stream you no longer want               | `releaseStream(stream)`      | Always stops that stream's tracks; clears instance state only while it is still the current stream. |
+
+So a panel on `getCameraManager()` must **not** call `stop()` in a teardown that
+can run after another surface has opened the camera: `stop()` would switch theirs
+off. Use the handle, or the stream you were handed. A panel with its own
+`new CameraManager()` (`CameraPreview`, `ScanCardSheet`) has no one to collide
+with and `stop()` stays correct there.
+
+### Intentional cancellation, distinct from device failure
+
+- Class `CameraAcquisitionCancelled`, `name === "CameraAcquisitionCancelled"`,
+  `code === CAMERA_ACQUISITION_CANCELLED` (exported const).
+- Test it with `isCameraAcquisitionCancelled(error)` — it matches on the `code`
+  as well as `instanceof`, so it holds across bundle boundaries. Never match on
+  `error.name === "AbortError"`: `getUserMedia` and `video.play()` raise native
+  `AbortError`s for real hardware and playback failures, and those must stay
+  visible to the user.
+- Thrown **only** for cancellation we caused: by `initialize()` when the
+  handshake was cancelled or taken over, and by `start()` when the handshake was
+  cancelled/taken over before the request, or invalidated while `getUserMedia`
+  or `play()` was pending.
+- Guarantee when it is thrown: nothing from that attempt is left open, and no
+  newer consumer's stream or handshake was touched.
+- Consumer rule: return quietly, show nothing, and do **not** follow it with
+  `stop()` — the manager has already cleaned up that attempt. Every other error
+  from `start()` is a real failure carrying a user-readable message.
+
 ## Review round
 
 Four corrections, each with a failing-first run against the reviewed revision
@@ -278,7 +334,42 @@ npx vitest run --config <components config> \
 The component mounts through a small harness that supplies the export panel
 state it reads from context and can unmount the preview mid-flight.
 
-### 5. HandLandmarker fencing — already fixed, now proved for remount
+### 5. Cross-branch round: no stale instance-wide stop
+
+Raised by the recording agent: a consumer's `destroyed` teardown must not call
+`stop()` on the shared instance after its own start was already cancelled and
+cleaned up — it would switch off a newer consumer's camera. Correct, and the
+first version of the `PerformancePreview` guard did exactly that (`stop()` in the
+destroyed branch, and an unconditional `stop()` in `onDestroy`).
+
+The manager now offers the two targeted calls in the contract above, and
+`PerformancePreview` uses only those: `abandonAcquisition(handle)` when it closes
+mid-handshake, `releaseStream(stream)` for a stream it holds or receives late,
+and no `stop()` anywhere.
+
+Component suite, before (the reviewed revision's guard) and after:
+
+| test                                                                  | before                                  | after |
+| --------------------------------------------------------------------- | --------------------------------------- | ----- |
+| does not open the camera when the panel closes during setup           | × instance-wide `stop()` called 1 time  | ✓     |
+| releases a stream that arrives after the panel closed                 | × instance-wide `stop()` called 2 times | ✓     |
+| releases its own stream on close without stopping the shared instance | × instance-wide `stop()` called 1 time  | ✓     |
+
+Manager suite, four new two-consumer cases (one instance, two panels in turn):
+
+- a stale panel's `releaseStream()` leaves the newer panel's camera live;
+- a stale panel's `abandonAcquisition()` leaves it live too;
+- a `start()` whose handshake a newer panel took over refuses, with
+  `getUserMedia` never called;
+- `abandonAcquisition()` from the current owner does release the camera.
+
+Plus one test that pins the boundary deliberately — `stop()` **does** release the
+current panel's camera, which is precisely why a possibly-stale teardown must use
+the targeted calls instead. There is no before/after for these four: the methods
+did not exist in the reviewed revision, so the failing-first evidence for this
+item is the component table above.
+
+### 6. HandLandmarker fencing — already fixed, now proved for remount
 
 The reviewed revision already had the generation/disposal fencing (`8dce14cb`):
 concurrent callers share one load, and a load that lands after `dispose()` closes
@@ -298,24 +389,30 @@ abandoned one closes itself and exactly one survives for the live panel.
 ## Hand-off: VideoRecordPanel (recording-session-integrity agent)
 
 `src/lib/shared/video-record/components/VideoRecordPanel.svelte` needs the same
-narrow guard. Precise change, nothing else:
+narrow guard, and it shares the instance through `getCameraManager()`, so every
+teardown call has to be scoped to its own handshake — no instance-wide `stop()`
+on a path that can run late. Precise change, nothing else:
 
 1. Add `let destroyed = false;` beside the other camera locals, and set it first
    in the existing `onDestroy`.
-2. In `initializeCamera()`, after `await cameraService.initialize({...})`:
-   `if (destroyed) return;`
-3. After `const stream = await cameraService.start();`:
-   `if (destroyed) { cameraService.stop(); stream.getTracks().forEach((t) => t.stop()); return; }`
-   — its `onDestroy` already stops `cameraStream`, but `cameraStream` is still
-   `null` at teardown on this ordering, which is exactly the leak.
-4. In the `catch`, return early for
-   `isCameraAcquisitionCancelled(err)` (imported from
-   `$lib/shared/train/services/camera-manager`) instead of writing it into
+2. Keep the handle: `const acquisition = await cameraService.initialize({...});`
+   then `if (destroyed) { cameraService.abandonAcquisition(acquisition); return; }`
+3. `const stream = await cameraService.start(acquisition);` then
+   `if (destroyed) { cameraService.releaseStream(stream); return; }` — the
+   existing `onDestroy` stops `cameraStream`, but on this ordering `cameraStream`
+   is still `null` when teardown runs, which is the leak.
+4. In `onDestroy`, replace `cameraService.stop()` +
+   `cameraStream.getTracks()...` with
+   `if (cameraService && cameraStream) cameraService.releaseStream(cameraStream);`
+   — same outcome for this panel, and it cannot take another surface's camera
+   with it.
+5. In the `catch`, return early for `isCameraAcquisitionCancelled(err)` (imported
+   from `$lib/shared/train/services/camera-manager`) instead of writing it into
    `cameraError`.
 
 The manager-level fence already stops a camera from being opened after that
-panel's teardown, so this guard is about the panel's own error state and the
-stream it receives, not about the leak itself.
+panel's teardown, so this guard is about the panel's own error state, the stream
+it receives, and not disturbing whoever owns the camera next.
 
 ## Verification run
 
@@ -328,11 +425,11 @@ npx vitest run --config tests/config/vitest.config.ts \
   src/lib/features/train/services/media-pipe-detector.test.ts \
   src/lib/features/train/services/hand-landmarker.test.ts \
   tests/unit/camera-permission-boundary.test.ts
-→ Test Files 4 passed (4), Tests 22 passed (22)
+→ Test Files 4 passed (4), Tests 27 passed (27)
 ```
 
 Component suite (chromium, `tests/config/vitest.components.config.ts`):
-`PerformancePreview.svelte.test.ts` → 2 passed. In this container the run needed
+`PerformancePreview.svelte.test.ts` → 3 passed. In this container the run needed
 a Playwright `executablePath` override (`/opt/pw-browsers/chromium-1194/chrome-linux/chrome`):
 the pinned Playwright expects a headless-shell build the image does not carry.
 That override lived in a throwaway config and is **not** committed — CI and the

@@ -43,6 +43,21 @@ export function isCameraAcquisitionCancelled(
   );
 }
 
+/**
+ * Identifies one consumer's `initialize()` → `start()` handshake. Panels that
+ * share an instance through `getCameraManager()` hand this back when they close
+ * (`abandonAcquisition`) instead of calling the instance-wide `stop()`, which
+ * would release whatever the *current* panel is doing.
+ */
+export interface CameraAcquisition {
+  readonly id: number;
+}
+
+interface AcquisitionRecord extends CameraAcquisition {
+  cancelled: boolean;
+  started: boolean;
+}
+
 function stopTracks(stream: MediaStream): void {
   stream.getTracks().forEach((track) => track.stop());
 }
@@ -62,13 +77,14 @@ export class CameraManager {
   // tracks are never stopped and the camera light stays on until page reload.
   private _startTicket = 0;
   // Consumers acquire the camera in two awaits — `initialize()` then `start()` —
-  // and the panel can unmount between them. A `stop()` anywhere inside that
-  // handshake cancels it, so the start already queued on the next line refuses
-  // instead of opening a camera whose owner has gone and whose teardown has
-  // already run. The next `initialize()` re-arms the manager, which matters
-  // because several panels share one instance through `getCameraManager()`.
-  private _acquiring = false;
-  private _acquisitionCancelled = false;
+  // and the panel can unmount between them. The current handshake is tracked
+  // here so a `stop()` (or `abandonAcquisition`) inside it cancels the start
+  // already queued on the next line, instead of letting it open a camera whose
+  // owner has gone and whose teardown has already run. A newer `initialize()`
+  // takes over as the current acquisition, which is what keeps one shared
+  // instance usable by several panels in turn.
+  private _acquisition: AcquisitionRecord | null = null;
+  private _acquisitionCount = 0;
 
   get isActive(): boolean {
     return this._isActive;
@@ -82,10 +98,20 @@ export class CameraManager {
     return [...this._availableCameras];
   }
 
-  async initialize(config?: Partial<CameraConfig>): Promise<void> {
+  /**
+   * Prepares the camera and returns the handle for this acquisition. Pass it to
+   * `start()` and to `abandonAcquisition()` so a panel that closes late acts only
+   * on its own handshake.
+   */
+  async initialize(config?: Partial<CameraConfig>): Promise<CameraAcquisition> {
     this._currentConfig = { ...DEFAULT_CONFIG, ...config };
-    this._acquiring = true;
-    this._acquisitionCancelled = false;
+
+    const acquisition: AcquisitionRecord = {
+      id: ++this._acquisitionCount,
+      cancelled: false,
+      started: false,
+    };
+    this._acquisition = acquisition;
 
     // Enumerate available cameras
     try {
@@ -95,10 +121,10 @@ export class CameraManager {
       console.warn("Could not enumerate cameras:", error);
     }
 
-    if (this._acquisitionCancelled) {
-      // The owner tore down while we were enumerating devices. Rejecting here
-      // is what keeps the caller from walking straight into its `start()`.
-      this._acquiring = false;
+    if (acquisition.cancelled || this._acquisition !== acquisition) {
+      // The owner tore down while we were enumerating devices, or another panel
+      // took the camera over. Rejecting here is what keeps the caller from
+      // walking straight into its `start()`.
       throw new CameraAcquisitionCancelled(
         "Camera setup was cancelled before it finished."
       );
@@ -115,18 +141,29 @@ export class CameraManager {
       this._currentConfig.height
     );
     this._canvasCtx = this._canvas.getContext("2d");
+
+    return acquisition;
   }
 
-  async start(): Promise<MediaStream> {
-    if (this._acquisitionCancelled) {
-      this._acquiring = false;
+  /**
+   * Opens the camera. Pass the handle `initialize()` returned so a start that
+   * belongs to a closed panel — or to a handshake another panel has taken over —
+   * refuses instead of opening a camera nobody will close.
+   */
+  async start(acquisition?: CameraAcquisition): Promise<MediaStream> {
+    const claim = (acquisition ?? this._acquisition) as
+      | AcquisitionRecord
+      | null
+      | undefined;
+
+    if (claim && (claim.cancelled || this._acquisition !== claim)) {
       throw new CameraAcquisitionCancelled(
         "Camera was released before it started."
       );
     }
 
     if (this._stream) {
-      this._releaseStream();
+      this._releaseActiveStream();
     }
 
     const ticket = ++this._startTicket;
@@ -179,17 +216,15 @@ export class CameraManager {
       }
 
       this._isActive = true;
-      this._acquiring = false;
+      if (claim) claim.started = true;
       return this._stream;
     } catch (error) {
-      this._acquiring = false;
-
       // Anything that fails after `getUserMedia` handed us a stream still has
       // live tracks — a `play()` rejection (autoplay policy, or the native
       // AbortError when the element is torn down mid-load) used to leave the
       // camera on with no owner and no way back to it.
       if (openedStream && this._stream === openedStream) {
-        this._releaseStream();
+        this._releaseActiveStream();
       }
 
       if (isCameraAcquisitionCancelled(error)) {
@@ -217,25 +252,59 @@ export class CameraManager {
     }
   }
 
+  /**
+   * Releases the camera this instance is holding, whoever opened it. A panel
+   * that shares the instance and may be closing late should use
+   * `abandonAcquisition()` or `releaseStream()` instead — both act only on that
+   * panel's own handshake.
+   */
   stop(): void {
     // A stop inside the initialize() → start() handshake is a teardown: the
     // owner is gone, so cancel the acquisition rather than let its start open a
     // camera afterwards. A stop after the camera went live is an ordinary
     // release and leaves a later start free to work (pause/resume,
     // switchCamera).
-    if (this._acquiring) {
-      this._acquisitionCancelled = true;
-      this._acquiring = false;
+    if (this._acquisition && !this._acquisition.started) {
+      this._acquisition.cancelled = true;
     }
 
     // Invalidate any request still waiting on the permission prompt so its
     // stream gets released instead of surviving this close.
     this._startTicket++;
 
-    this._releaseStream();
+    this._releaseActiveStream();
   }
 
-  private _releaseStream(): void {
+  /**
+   * Gives up one consumer's handshake. A no-op once another consumer has taken
+   * the instance over, so a panel closing after its replacement opened the
+   * camera cannot release someone else's stream or cancel their start.
+   */
+  abandonAcquisition(acquisition: CameraAcquisition): void {
+    if (this._acquisition !== acquisition) return;
+    this.stop();
+  }
+
+  /**
+   * Hands back a stream a consumer received but no longer wants. The tracks are
+   * always stopped; the instance's own state is cleared only while this is still
+   * the stream it handed out, so a late teardown cannot switch off the camera a
+   * newer consumer is using.
+   */
+  releaseStream(stream: MediaStream): void {
+    stopTracks(stream);
+
+    if (this._stream !== stream) return;
+
+    this._startTicket++;
+    this._stream = null;
+    if (this._videoElement) {
+      this._videoElement.srcObject = null;
+    }
+    this._isActive = false;
+  }
+
+  private _releaseActiveStream(): void {
     if (this._stream) {
       stopTracks(this._stream);
       this._stream = null;
