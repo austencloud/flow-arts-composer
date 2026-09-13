@@ -30,6 +30,13 @@
     lastEditableMessage?: Message;
   }
 
+  interface DraftSnapshot {
+    conversationId: string;
+    content: string;
+    replyTo: MessageReplyPreview | null;
+    attachment: PendingMessageAttachment | null;
+  }
+
   let { conversationId, lastEditableMessage }: Props = $props();
 
   const messageDeliveryState = getMessageDeliveryContext();
@@ -44,6 +51,14 @@
   let hydratedConversationId = "";
   let suppressDraftPersistence = false;
   let draftSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * The snapshot a pending autosave is going to write, including the thread it
+   * belongs to. The conversation id has to travel WITH the text: the debounce
+   * can outlive the thread it was typed in, and a save that reads the current
+   * `conversationId` at timer time writes one thread's unsent text into
+   * another's draft — losing the first and overwriting the second.
+   */
+  let pendingDraftSave: DraftSnapshot | null = null;
   let draftSaveError = $state<string | null>(null);
   let draftFailureReported = false;
   const MAX_INPUT_HEIGHT_PX = 120;
@@ -74,9 +89,18 @@
     // Cleanup typing on unmount
     return () => {
       if (typingTimeout) clearTimeout(typingTimeout);
-      if (draftSaveTimer) clearTimeout(draftSaveTimer);
       if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
       window.removeEventListener("resize", handleWindowResize);
+      // A pending autosave carries its own thread, so flushing it is always
+      // safe. The explicit persist below then supersedes it for the thread this
+      // composer is still bound to.
+      if (!inboxState.isEditing && messageDeliveryState.ready) {
+        flushPendingDraftSave();
+      } else {
+        pendingDraftSave = null;
+        if (draftSaveTimer) clearTimeout(draftSaveTimer);
+        draftSaveTimer = null;
+      }
       if (
         !inboxState.isEditing &&
         messageDeliveryState.ready &&
@@ -129,6 +153,11 @@
     if (!messageDeliveryState.ready || !conversationId) return;
     if (hydratedConversationId === conversationId) return;
 
+    // The thread being left may still have an autosave in flight. Write it
+    // before this composer is rebound, so its last keystrokes survive and its
+    // text can never be mistaken for the incoming thread's draft.
+    flushPendingDraftSave();
+
     const draft = messageDeliveryState.draftFor(conversationId);
     suppressDraftPersistence = true;
     hydratedConversationId = conversationId;
@@ -164,22 +193,32 @@
     }
 
     if (draftSaveTimer) clearTimeout(draftSaveTimer);
-    draftSaveTimer = setTimeout(() => {
-      draftSaveTimer = null;
-      void saveDraftSnapshot(content, replyTo, attachment);
-    }, DRAFT_SAVE_DELAY_MS);
+    pendingDraftSave = {
+      conversationId: activeConversationId,
+      content,
+      replyTo,
+      attachment,
+    };
+    draftSaveTimer = setTimeout(flushPendingDraftSave, DRAFT_SAVE_DELAY_MS);
   });
 
-  async function saveDraftSnapshot(
-    content: string,
-    replyTo: MessageReplyPreview | null,
-    attachment: PendingMessageAttachment | null
-  ): Promise<void> {
+  /** Write the pending snapshot now, to the thread it was captured for. */
+  function flushPendingDraftSave(): void {
+    if (draftSaveTimer) {
+      clearTimeout(draftSaveTimer);
+      draftSaveTimer = null;
+    }
+    const pending = pendingDraftSave;
+    pendingDraftSave = null;
+    if (pending) void saveDraftSnapshot(pending);
+  }
+
+  async function saveDraftSnapshot(snapshot: DraftSnapshot): Promise<void> {
     try {
-      await messageDeliveryState.saveDraft(conversationId, {
-        content,
-        replyTo: replyTo ?? undefined,
-        attachment: attachment ?? undefined,
+      await messageDeliveryState.saveDraft(snapshot.conversationId, {
+        content: snapshot.content,
+        replyTo: snapshot.replyTo ?? undefined,
+        attachment: snapshot.attachment ?? undefined,
       });
       draftSaveError = null;
       draftFailureReported = false;
@@ -196,7 +235,12 @@
   }
 
   async function persistCurrentDraft(): Promise<void> {
-    return saveDraftSnapshot(messageText, replyPreview, pendingAttachment);
+    return saveDraftSnapshot({
+      conversationId: hydratedConversationId,
+      content: messageText,
+      replyTo: replyPreview,
+      attachment: pendingAttachment,
+    });
   }
 
   function showComposerFailure(
