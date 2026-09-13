@@ -8,7 +8,8 @@ resume, drift across many loops, and pose discontinuities.
 | --- | --- |
 | Date | 2026-09-13 |
 | Base SHA | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`) |
-| Final SHA | `369275a2376f3d7488ccab2cd025bfb1aecc5f06` — every deliverable is complete at this commit; this line is recorded by its child commit |
+| Final SHA | `6883e8f4a3b9421f98840760a2959e62859a16b9` — every deliverable is complete at this commit; this line is recorded by its child commit |
+| Revision | 2026-09-13, corrections to the C1 post-fix assertion, the C2 clamp's status as policy, and the C3 band figure. Measured results unchanged. |
 | Branch | `claude/animation-clock-audit-ri0dna` |
 | Production code changed | none |
 
