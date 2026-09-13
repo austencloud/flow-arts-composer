@@ -5,8 +5,9 @@
 its assigned `claude/*` branch; `codex/*` was not available)
 **Session:** `session_01XKgrpvpxBttgxeaNzPKsJC`
 **Base SHA:** `0945738f` (merge of `origin/main` `c4be1619` into the task branch)
-**Final SHA:** see the branch head (implementation `f48d9877`, identity fence
-`928b77ce`, offer-binding and visibility corrections after it)
+**Final SHA:** `06d144cc` (implementation `f48d9877`, identity fence
+`928b77ce`, offer-binding + visibility `58012fe5`, collision-result binding and
+unowned/thumbnail fences `06d144cc`)
 **Source audit:** `docs/superpowers/reviews/2026-09-12-guest-save-continuity-audit.md`
 (reviewed at `7fabc7d9`)
 
@@ -272,7 +273,7 @@ BEFORE (pre-fix baseline, same command)
 
 AFTER
   Test Files  1977 passed | 5 skipped (1982)
-       Tests  16027 passed | 106 skipped | 1 todo (16134)          exit 0
+       Tests  16037 passed | 106 skipped | 1 todo (16144)          exit 0
 ```
 
 Zero failures. The file count rises by four and the test count by sixteen
