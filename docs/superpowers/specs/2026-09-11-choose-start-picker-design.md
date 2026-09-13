@@ -33,16 +33,16 @@ touched; they already express "rotate by one".
 
 ## Picker mode visuals
 
-While picking, step tiles drop everything that says "beat": TKA letter, turns
-column, step number, reversal dots, position glyph, TnD, elemental, duration,
-and path-shape glyphs. Arrows stay but dim to the renderer's shared
-`DIMMED_OPACITY` (0.2), so the motion is still readable while the grid and
-props lead and the row reads as poses. The start tile keeps its glyphs so it
-still reads as the current start. Tile positions do not move.
+While picking, step tiles drop everything that says "beat": arrows, TKA
+letter, turns column, step number, reversal dots, position glyph, TnD,
+elemental, duration, and path-shape glyphs. Only the grid and props remain, so
+the row reads as poses. (A dimmed-arrows variant was tried on 2026-09-13 and
+rejected.) The start tile keeps its glyphs so it still reads as the current
+start. Tile positions do not move.
 
 Implementation: `PictographRenderer` takes a `poseOnly` prop. It drives the
 glyph components' existing `visible` props (each fades with its own
-transition), hides the step number, dims the arrows group through its opacity attribute,
+transition), hides the step number, fades the arrows group through its opacity attribute,
 and fades the duration/path-shape layers with a renderer-scoped opacity
 transition, since `ArrowSvg` unmounts on `showArrow`. `PictographContainer`, `StepCell`,
 `WorkspaceGrid`, and `StepGrid` (`posePicker`) pass it through so the grid
