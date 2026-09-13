@@ -76,9 +76,9 @@ describe("parseSequenceRouteId", () => {
 
     const parsed = parseSequenceRouteId(param);
     expect(parsed.inlineQr).toBe(PRODUCTION_NUMERIC_FLOAT_QR);
-    await expect(decodeSequenceFromQR(parsed.inlineQr!)).resolves.toHaveProperty(
-      "steps"
-    );
+    await expect(
+      decodeSequenceFromQR(parsed.inlineQr!)
+    ).resolves.toHaveProperty("steps");
   });
 
   it("does not rewrite a valid-looking escape inside a payload", () => {
