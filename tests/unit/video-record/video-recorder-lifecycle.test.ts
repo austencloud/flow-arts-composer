@@ -288,7 +288,6 @@ describe("VideoRecorder stop integrity", () => {
 
     // The write did happen, so this only passes if the finalization noticed the
     // cancellation afterwards and removed the discarded take.
-    await settle();
     await expect(recorder.getCachedRecording(id)).resolves.toBeNull();
   });
 });
