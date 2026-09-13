@@ -41,12 +41,13 @@ per document in the initial result set and per changed document thereafter.
 
 ## Summary
 
-Nine findings, ranked. Five are measured.
+Nine findings, ranked. Six are measured (H0–H5); the three M-rank findings
+rest on code reading.
 
 | #      | Finding                                                                                                                     | Domain                        | Cost shape                                                  | Evidence |
 | ------ | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------- | -------- |
 | **H0** | Every page load of a signed-in creator scans all of that creator's `publicSequences` mirrors to write nothing               | profile                       | `P` reads **per boot, per device**                          | measured |
-| **H1** | Community feed re-reads every owner profile in its 200-doc window on any snapshot                                           | collections                   | `U` reads per remote write to _any_ public collection       | measured |
+| **H1** | Community feed re-reads every owner profile in its 200-doc window on any snapshot                                           | collections                   | `U` reads per snapshot that changes the feed window         | measured |
 | **H2** | Seven `subscribeTo*` helpers leak their listener when disposed before Firestore resolves                                    | library, collections, profile | one orphaned listener per uid swap, permanent               | measured |
 | **H3** | `communityCollectionsState.invalidate()` pays a full cold re-attach for a local mutation the live listener already delivers | collections                   | `K + Σ⌈m/30⌉ + U` per rename/publish/delete                 | measured |
 | **H4** | Inbox participant refresh never terminates for an unreadable participant                                                    | inbox                         | 1 read + 1 write per conversation **per snapshot**, forever | measured |
@@ -74,31 +75,31 @@ thirty minutes with the Inbox provider mounted throughout.
 Volume assumptions, all **unverified** — substitute a real census before
 quoting any of this:
 
-| Symbol | Assumed | Meaning                                               |
-| ------ | ------: | ----------------------------------------------------- |
-| `P`    |     150 | the creator's own public sequences                    |
-| `G`    |   3,000 | documents in `publicSequences`                        |
-| `N`    |     400 | the creator's lifetime notifications                  |
-| `K`    |     200 | public collections in the feed window (the cap)       |
-| `U`    |      45 | distinct owners across those 200                      |
-| `m`    |      20 | median members per public collection                  |
-| `C`    |      12 | the creator's conversations                           |
-| `X`    |       2 | conversations with an unreadable participant (H4)     |
-| `S`    |      30 | remote public-collection writes during the 30 minutes |
-| `E`    |       8 | inbox snapshots during the 30 minutes                 |
+| Symbol | Assumed | Meaning                                              |
+| ------ | ------: | ---------------------------------------------------- |
+| `P`    |     150 | the creator's own public sequences                   |
+| `G`    |   3,000 | documents in `publicSequences`                       |
+| `N`    |     400 | the creator's lifetime notifications                 |
+| `K`    |     200 | public collections in the feed window (the cap)      |
+| `U`    |      45 | distinct owners across those 200                     |
+| `m`    |      20 | median members per public collection                 |
+| `C`    |      12 | the creator's conversations                          |
+| `X`    |       2 | conversations with an unreadable participant (H4)    |
+| `S`    |      30 | snapshots changing the feed window in the 30 minutes |
+| `E`    |       8 | inbox snapshots during the 30 minutes                |
 
-| Source                                  | Formula                    |         Ops | Finding |
-| --------------------------------------- | -------------------------- | ----------: | ------- |
-| profile doc read at boot                | 1                          |           1 | —       |
-| profile fan-out scan                    | `P`                        |         150 | **H0**  |
-| gallery sync (on `/browse`, TTL cold)   | `G`                        |       3,000 | M7      |
-| own collections listener attach         | own collections            |         ~10 | —       |
-| community feed attach                   | `K + K·⌈m/30⌉`             |         400 | —       |
-| community feed owner names, attach      | `U`                        |          45 | —       |
-| community feed, 30 min of remote writes | `S·(⌈m/30⌉ + U)`           |       1,380 | **H1**  |
-| notification listener attach            | `N`                        |         400 | **H5**  |
-| conversation listener attach            | `min(50,C)`                |          12 | —       |
-| inbox participant tax                   | `E·X` reads + `E·X` writes | 16 r + 16 w | **H4**  |
+| Source                                   | Formula                    |         Ops | Finding |
+| ---------------------------------------- | -------------------------- | ----------: | ------- |
+| profile doc read at boot                 | 1                          |           1 | —       |
+| profile fan-out scan                     | `P`                        |         150 | **H0**  |
+| gallery sync (on `/browse`, TTL cold)    | `G`                        |       3,000 | M7      |
+| own collections listener attach          | own collections            |         ~10 | —       |
+| community feed attach                    | `K + K·⌈m/30⌉`             |         400 | —       |
+| community feed owner names, attach       | `U`                        |          45 | —       |
+| community feed, 30 min of window changes | `S·(⌈m/30⌉ + U)`           |       1,380 | **H1**  |
+| notification listener attach             | `N`                        |         400 | **H5**  |
+| conversation listener attach             | `min(50,C)`                |          12 | —       |
+| inbox participant tax                    | `E·X` reads + `E·X` writes | 16 r + 16 w | **H4**  |
 
 Reads ≈ **5,414**; writes ≈ **16** (≈48 read-equivalents at 3×).
 
@@ -108,10 +109,13 @@ What the shape says, independent of whether the volume assumptions hold:
   per 15 minutes per device**, and only when the user actually lands on
   `/browse`. That is M7's mitigation working.
 - **H1 is the largest line that recurs**, and it scales with _other people's_
-  activity (`S`), not the user's. Double the product's public-collection write
-  rate and this line doubles for every client with the feed attached, while
-  every other line stays flat. It is the only finding in the table with that
-  property, which is why it ranks above the larger one-shot numbers.
+  activity (`S`), not the user's. Because the window is ordered `updatedAt desc`
+  and every collection write stamps `updatedAt`, most public-collection
+  mutations product-wide land in `S`. Double that write rate and this line
+  doubles for every client with the feed attached, while every other line stays
+  flat. It is the only finding in the table with that property, which is why it
+  ranks above the larger one-shot numbers. `S = 30` is an assumption, and it is
+  the assumption this table is most sensitive to.
 - **H0 and H5 are the boot tax**: 550 ops before the user has done anything,
   every page load, every device, and both grow monotonically with account age.
   A user who reloads ten times in a workday pays them ten times.
@@ -229,46 +233,93 @@ offline, so later sign-ins must re-run the idempotent repair. The design goal
 is right. The implementation pays for it by reading everything, every time,
 rather than by recording that the repair already succeeded.
 
-### Likely fix
+### Candidate fix — NOT established as safe
 
-Add a projection watermark to the user document and skip the scan when it
-matches. Concretely: on a fully-successful fan-out, write
-`profileProjectionDigest` (a hash of `{displayName, avatarUrl}`) and
-`profileProjectionSyncedCount` onto `users/{uid}`. At `:343`, skip the call
-when the stored digest equals the digest of the profile about to be projected
-**and** the fan-out's last run reported `skipped === 0`. A steady-state boot
-then costs 0 extra reads instead of `P`.
+A projection watermark is the obvious direction: on a fully-successful fan-out,
+write `profileProjectionDigest` (a hash of `{displayName, avatarUrl}`) onto
+`users/{uid}`; at `:343`, skip the call when the stored digest equals the
+digest of the profile about to be projected and the last run reported
+`skipped === 0`. A steady-state boot would then cost 0 extra reads instead of
+`P`.
 
-**Tradeoffs.** The watermark is client-written, so a client that dies between
-the last transaction and the watermark write re-scans on the next boot — which
-is the correct failure direction (it repairs). It adds two fields to the user
-document, which already has an index exemption story worth checking against
-`firestore-cost-discipline.md`'s field-override gate before adding. It does
-**not** fix the case where a mirror is stale for a reason other than a profile
-change; that case is already only reachable through the `publishing` path,
-which has its own digest/revision machinery
-(`publicProjectionDigest`/`publicProjectionRevision`).
+**This report does not claim that is safe to ship.** The scan being removed is
+a self-healing repair, and a watermark converts "always re-checks" into "trusts
+a stamp." Three failure modes were identified and **none of them was
+investigated far enough to rule out** — each is a prerequisite, not a caveat:
 
-A cheaper interim mitigation, if the watermark is judged too invasive: bound
-the repair scan with `limit(N)` plus a rotating cursor stored on the user doc,
-so a creator with 2,000 sequences repairs 100 per boot instead of reading 2,000.
-This caps the per-boot cost without changing the eventual-consistency
-guarantee — only its latency.
+1. **An older in-flight fan-out can land after a newer watermark.**
+   `refreshPublicSequenceOwnerProfile` is a loop of independent transactions
+   with `PROFILE_PROJECTION_CONCURRENCY = 4`, not one atomic unit, and two
+   devices can run it concurrently. Device A starts a fan-out for profile P1;
+   device B changes the profile to P2, completes, and stamps watermark(P2);
+   device A's remaining chunks then commit P1 values into some mirrors. The
+   watermark says P2, so no later boot re-scans and those mirrors stay stale
+   permanently. Today's unconditional scan is exactly what heals this.
+   **Unverified:** whether the existing `publicProjectionRevision` counter
+   (`public-sequence-persister.ts:891-899`) already orders these writes well
+   enough to make the interleaving harmless.
+
+2. **A mirror created after the watermark may not carry the current
+   projection.** New mirrors get their owner fields from the publish path, and
+   at least one of those paths derives them from a `users/{uid}` read whose
+   failure is swallowed — `library-repository.ts:1277-1292` catches, logs, and
+   falls through to `seq.ownerDisplayName`. A mirror minted during that window
+   carries a stale name that only the repair scan would correct, and the
+   watermark would suppress the scan. **Unverified:** whether every path that
+   creates a `publicSequences` document projects the live profile, and whether
+   any of them can persist a stale one. That audit was not performed here.
+
+3. **Account switches share a device but not a uid.** The watermark would live
+   on `users/{uid}`, but the code reading it does not uniformly use one notion
+   of "current user": `collections-state.svelte.ts:82` distinguishes
+   `authState.effectiveUserId` from `authState.user?.uid` precisely because
+   preview/impersonation and the anonymous→Google uid swap make them diverge.
+   **Unverified:** which uid's watermark is compared against which uid's
+   profile in each of those states, and whether a swap can leave a watermark
+   attributed to the wrong account.
+
+Resolving 1 and 2 is the real work; the read saving is the easy part. Note also
+that adding two fields to the user document should be checked against
+`firestore-cost-discipline.md`'s field-override gate before any index
+implication is assumed.
+
+**A lower-risk interim option,** which preserves the repair semantics entirely:
+bound the scan with `limit(N)` plus a rotating cursor on the user document, so
+a creator with 2,000 mirrors repairs 100 per boot instead of reading 2,000. The
+eventual-consistency guarantee is unchanged — only its latency — and none of
+the three failure modes above apply, because nothing is ever skipped. This is
+the option to reach for if the watermark investigation stalls.
 
 ### Regression test plan
 
-1. Extend `profile-boot-fanout.test.ts`: with a matching watermark on the user
+Gating tests — these must exist and pass **before** a watermark is considered
+shippable, because each pins one of the three unresolved failure modes:
+
+1. Interleaved fan-outs: a run for P1 that commits after a watermark(P2) has
+   been stamped must leave the system in a state a later boot still repairs.
+2. A mirror created after the watermark with a stale owner projection must
+   still converge.
+3. A uid swap (anonymous → linked, and preview-mode entry/exit) must never
+   compare one account's watermark against another account's profile.
+
+Only then, the cost tests:
+
+4. Extend `profile-boot-fanout.test.ts`: with a matching watermark on the user
    doc, `getDocs` call count must be **0**.
-2. With a _differing_ watermark (display name changed), the scan must still run
+5. With a _differing_ watermark (display name changed), the scan must still run
    and still update exactly the stale mirrors — reuse the existing
    "only opens a transaction for mirrors whose projection actually differs"
    case unchanged.
-3. A case where the previous run reported `skipped > 0` must **not** write the
-   watermark, so the next boot re-scans.
+6. A run reporting `skipped > 0` must **not** write the watermark, so the next
+   boot re-scans.
+
+If the interim `limit(N)` + cursor option is taken instead, only a bounded-scan
+test is needed: the scan issues `limit(N)`, and successive boots advance the
+cursor and eventually cover every mirror.
 
 ---
 
-## H1 — One remote write re-reads every owner profile in the community feed
+## H1 — One changed document re-reads every owner profile in the feed window
 
 ### Call chain
 
@@ -288,12 +339,34 @@ BrowseModule.onMount:481  /  CollectionChipsRow:43  /  CommunityCollectionsPanel
 whole current window, unconditionally. There is no memo keyed on owner id, and
 no diffing against the previously-resolved set. (read + measured)
 
-Because the underlying query is a **collection group over all public
-collections**, the snapshot fires for a write by _any_ user anywhere — not only
-for the viewer's own activity. Every client with Browse or the library
-collection picker open pays `U` reads each time anyone in the product renames,
-publishes, reorders, or edits a public collection. (inferred, from the query
-shape at `public-collection-loader.ts:237-242`)
+### Which writes actually trigger this — scope, stated precisely
+
+An earlier draft of this report said the snapshot fires "for a write by any
+user anywhere." That overstates it, and the query shape at
+`public-collection-loader.ts:237-242` does not support it. The listener fires
+only when **the active query result changes** — that is, a write to a document
+already inside the `limit(200)` window, or a write that moves a document into
+it (which also evicts the oldest, as a `removed` change).
+
+What that excludes: writes to collections that are not `isPublic`; writes to a
+public collection sitting outside the window that do not change its ordering
+position; and anything under the legacy root-level `/collections` path, which
+`mapPublicCollectionDoc` discards at `:144-145`.
+
+What keeps the practical reach wide, through a specific mechanism rather than a
+blanket claim: the window is ordered `updatedAt desc`, and **all 17 collection
+write paths in `collection-manager.ts` stamp `updatedAt: serverTimestamp()`**
+(verified by `rg -c 'updatedAt: serverTimestamp\(\)'`). A mutation to any
+public collection therefore lands at the head of the ordering and enters the
+window. So "most mutations to public collections, by anyone" is defensible;
+"any write anywhere" is not. The distinction matters for the fix: bounding the
+_window_ does not reduce H1, because the ordering key is the mutation
+timestamp — only memoising the owner lookup does.
+
+**(inferred, and partly unverified.)** The measurement below emits snapshots
+into the handler directly; it does not exercise Firestore's query matching, so
+which writes reach a given client's window is reasoned from the query shape and
+the `updatedAt` stamping, not observed. Settling it needs the emulator.
 
 ### Reproduction evidence — measured
 
@@ -777,6 +850,28 @@ than on every ref change is the better trade.
 `followed-collections-state.test.ts` covers the resolve semantics; extend it to
 assert that adding one ref to a shelf of `F` issues exactly one
 `getPublicCollection`, and that removing one issues zero.
+
+---
+
+## Ownership — who implements these, and who does not
+
+This audit is read-only and implements nothing. Ownership moved during the
+batch, so findings route as follows:
+
+| Finding                                                        | Primary file                                                                                                              | Owner                          |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| H2 (`subscribeToCollections`, `subscribeToCollection`), H3, M6 | `shared/library/services/collection-manager.ts`, community-collections state                                              | **collection-integrity agent** |
+| H4, H5                                                         | `shared/messaging/*`, `shared/feedback/services/notifier.ts`, `InboxSubscriptionProvider.svelte`                          | **inbox agent**                |
+| H0                                                             | `shared/auth/services/user-document-manager.ts`, `shared/library/services/public-sequence-persister.ts`                   | unassigned at time of writing  |
+| H1                                                             | `features/browse/collections/state/community-collections-state.svelte.ts`                                                 | unassigned at time of writing  |
+| H2 (remaining five sites), M7, M8                              | `library-repository.ts`, `user-repository.ts`, `tag-manager.ts`, `public-sequences-loader.ts`, followed-collections state | unassigned at time of writing  |
+
+The pinned tests in `tests/unit/opus-firestore-audit/` are the handover
+artefact: each carries a `DEFECT PINNED` comment naming the assertion to invert,
+so whichever agent takes a finding inherits a measurement rather than a
+description. The owning agent should also re-read the fix proposals here as
+starting points, not conclusions — H0's in particular is explicitly marked as
+not established safe.
 
 ---
 

@@ -11,7 +11,7 @@
  *   onAuthStateChanged(user)                      auth-state.svelte.ts:548
  *     -> createOrUpdateUserDocument(user)         user-document-manager.ts:77
  *        -> getDoc(users/{uid})                                     1 read
- *        -> if (profileProjectionChanged || hasSavedSequences)      :347
+ *        -> if (profileProjectionChanged || hasSavedSequences)      :343
  *           -> refreshPublicSequenceOwnerProfile()  public-sequence-persister.ts:790
  *              -> getDocs(publicSequences where ownerId == uid)     N reads
  *                 ^ no limit(), no cursor, no watermark
@@ -19,7 +19,7 @@
  * `hasSavedSequences` is `sequenceCount > 0`. It is true for every creator who
  * has ever published, forever. So the guard does not prevent the scan on a
  * steady-state boot where nothing about the profile changed — it guarantees
- * it. The comment at user-document-manager.ts:341 explains why the repair is
+ * it. The comment at user-document-manager.ts:338-340 explains why the repair is
  * unconditional (a prior profile write may have committed while its
  * projection fan-out failed offline), and the *writes* are correctly filtered
  * out when projections already match. The N document READS of the scan are
@@ -163,6 +163,12 @@ describe("H0 — the steady-state boot of an established creator", () => {
 
     // DEFECT PINNED (H0): 300 billed document reads, 0 writes, 0 change.
     // Paid on every page load, by every creator, for the life of the account.
+    //
+    // NOTE for whoever fixes this: the scan is a self-healing repair. The
+    // watermark that would make this 0 is NOT established as safe — see the
+    // three unresolved failure modes in finding H0 (interleaved fan-outs, a
+    // mirror minted after the watermark, uid swaps). Do not invert this
+    // assertion until those have gating tests.
     expect(result).toEqual({
       scanned: 300,
       updated: 0,
