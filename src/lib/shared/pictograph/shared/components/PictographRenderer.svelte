@@ -134,8 +134,8 @@ Usage:
     duration = 1,
     showDuration = true,
     showPathShape = true,
-    // Pose only: keep the grid and props (drawn at their end locations), dim
-    // the arrows, and fade every beat glyph out. Used by the Choose Start
+    // Pose only: keep the grid and props (drawn at their end locations) and
+    // fade the arrows and every beat glyph out. Used by the Choose Start
     // picker so a tile reads as the pose after its beat rather than the beat.
     poseOnly = false,
     // Fires when the grid SVG has loaded (or errored). The grid loads asynchronously
@@ -216,7 +216,7 @@ Usage:
     /** Card annotations are composed by the card's existing overlay layer. */
     showDuration?: boolean;
     showPathShape?: boolean;
-    /** Grid and props lead, arrows dim, beat glyphs fade out (Choose Start). */
+    /** Show only grid and props; arrows and beat glyphs fade out (Choose Start). */
     poseOnly?: boolean;
     /** Fires when the grid finishes loading (or errors). Used by export readiness gating. */
     onGridReady?: () => void;
@@ -278,15 +278,9 @@ Usage:
   // Opacity for dimmed (not hidden) motions - visible enough to see, clearly de-emphasized
   const DIMMED_OPACITY = 0.2;
 
-  // Pose-only keeps the motion readable but clearly secondary to the props.
+  // Pose-only hides the motion entirely so only the pose reads.
   const effectiveArrowOpacity = $derived(
-    Math.min(
-      1,
-      Math.max(
-        0,
-        poseOnly ? Math.min(arrowOpacity, DIMMED_OPACITY) : arrowOpacity
-      )
-    )
+    poseOnly ? 0 : Math.min(1, Math.max(0, arrowOpacity))
   );
 
   // Motions to render (filtered by visibleHand only; visibility controls opacity, not presence)
@@ -813,7 +807,7 @@ Usage:
 
   /* Pose-only transitions for the layers that have no visibility transition
      of their own. The glyph components fade themselves via their `visible`
-     prop; the arrows group dims through its opacity attribute, and the
+     prop; the arrows group fades through its opacity attribute, and the
      duration/path-shape layers fade here. */
   .pictograph-arrows,
   .beat-layer {
