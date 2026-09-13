@@ -52,6 +52,8 @@ export interface PropSpriteSnapshot {
 }
 
 export class Canvas2DImageLoader {
+  private primaryColorRequest: symbol | null = null;
+  private layerColorRequests = new Map<number, symbol>();
   // Image cache
   private leftPropImage: HTMLImageElement | null = null;
   private rightPropImage: HTMLImageElement | null = null;
@@ -153,6 +155,8 @@ export class Canvas2DImageLoader {
     left: HTMLImageElement;
     right: HTMLImageElement;
   }> {
+    const request = Symbol();
+    this.primaryColorRequest = request;
     try {
       // Generate blue and red prop SVGs with different types
       // Pass darkMode to use local preview state instead of global
@@ -187,6 +191,9 @@ export class Canvas2DImageLoader {
         ),
       ]);
 
+      if (this.primaryColorRequest !== request) {
+        return { left: newLeftImage, right: newRightImage };
+      }
       // Capture the outgoing sprites before replacing any of their geometry.
       // The renderer draws these snapshots at their own intrinsic bounds while
       // the incoming sprites draw at the new bounds below.
@@ -246,6 +253,8 @@ export class Canvas2DImageLoader {
     left: HTMLImageElement;
     right: HTMLImageElement;
   }> {
+    const request = Symbol();
+    this.layerColorRequests.set(layerIndex, request);
     try {
       // Generate per-hand prop SVGs with custom colors for this layer. Blue and
       // red can be different prop types (each performer's per-hand prop).
@@ -268,6 +277,10 @@ export class Canvas2DImageLoader {
         ),
       ]);
 
+      // A quick hue drag can finish decoding an old shade after the new one.
+      if (this.layerColorRequests.get(layerIndex) !== request) {
+        return { left: newLeftImage, right: newRightImage };
+      }
       // Ensure arrays are large enough (images + dimensions stay index-aligned)
       while (this.additionalLayerImages.length <= layerIndex) {
         this.additionalLayerImages.push({ left: null, right: null });
@@ -543,6 +556,8 @@ export class Canvas2DImageLoader {
     this.leftPropType = null;
     this.rightPropType = null;
     this.additionalLayerImages.length = 0;
+    this.layerColorRequests.clear();
+    this.primaryColorRequest = null;
     this.additionalLayerDimensions.length = 0;
     this.gridImage = null;
     this.glyphImage = null;
