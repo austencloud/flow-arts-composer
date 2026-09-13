@@ -467,6 +467,31 @@ describe("CameraManager lifecycle", () => {
       expect(camera.isActive).toBe(false);
     });
 
+    it("releases the camera immediately when its owner abandons during playback", async () => {
+      const camera = new CameraManager();
+      const acquisition = await camera.initialize();
+
+      const stream = createFakeStream("still-playing");
+      getUserMedia.mockResolvedValue(stream);
+
+      const start = camera.start(acquisition).catch((error: unknown) => error);
+      await flushMicrotasks();
+      expect(videoElement.isPlayPending).toBe(true);
+
+      // The panel closes while play() is still pending — which it can stay for
+      // as long as the browser likes. The camera has to go out now, not whenever
+      // playback happens to settle.
+      camera.abandonAcquisition(acquisition);
+
+      expect(isLive(stream)).toBe(false);
+      expect(videoElement.srcObject).toBeNull();
+      expect(camera.isActive).toBe(false);
+
+      videoElement.finishPlay();
+      const outcome = await start;
+      expect(isCameraAcquisitionCancelled(outcome)).toBe(true);
+    });
+
     it("releases the camera when the current owner abandons its acquisition", async () => {
       const camera = new CameraManager();
       const only = await goLive(camera, "only-panel");

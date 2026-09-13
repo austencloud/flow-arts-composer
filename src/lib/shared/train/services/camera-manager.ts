@@ -210,6 +210,11 @@ export class CameraManager {
       }
 
       this._stream = stream;
+      // Ownership is recorded the moment the camera is ours, not when playback
+      // finally succeeds: `play()` can stay pending indefinitely, and an
+      // `abandonAcquisition()` inside that window has to find an owner to match
+      // or it leaves the tracks running until playback settles.
+      this._streamOwner = claim ?? null;
       openedStream = stream;
 
       if (this._videoElement) {
@@ -234,7 +239,6 @@ export class CameraManager {
       }
 
       this._isActive = true;
-      this._streamOwner = claim ?? null;
       if (claim) claim.started = true;
       return this._stream;
     } catch (error) {

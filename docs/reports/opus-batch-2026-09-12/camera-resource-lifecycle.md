@@ -7,16 +7,17 @@ real camera.
 ## Result
 
 Two defects found, reproduced with failing tests against the real lifecycle
-code, and fixed. Four review rounds then added corrections — the
+code, and fixed. Five review rounds then added corrections — the
 initialize-to-start window, the playback-failure leak, the cancellation identity,
 the `PerformancePreview` consumer guard, handle/stream-scoped teardown so a panel
 closing late cannot stop a camera another surface owns, ownership validated at
 every async boundary so a stale start cannot install itself into the acquisition
-that replaced it, and stream ownership so abandoning a setup cannot release a
-camera it never opened — each with its own before/after evidence (see **Review
-round**). The resulting teardown and cancellation surface is written out under
-**CameraManager teardown and cancellation contract**; the recording agent is
-implementing `VideoRecordPanel` against it.
+that replaced it, and stream ownership — recorded before the playback await —
+so abandoning a handshake releases exactly the camera it opened, immediately.
+Each correction has its own before/after evidence (see **Review round**). The
+resulting teardown and cancellation surface is written out under **CameraManager
+teardown and cancellation contract**; the recording agent is implementing
+`VideoRecordPanel` against it.
 
 Two findings in `TrainModePanel.svelte` remain **reported, not changed**; proving
 them needs the practice surface mounted with a camera.
@@ -34,8 +35,10 @@ them needs the practice surface mounted with a camera.
 | `34af95d9`                                 | independent-review round: ownership validated at   |
 |                                            | every async boundary, cancellation wins over a     |
 |                                            | post-teardown native error, component test seam    |
-| this commit (branch head)                  | stream ownership: abandoning a setup no longer     |
+| `0e432634`                                 | stream ownership: abandoning a setup no longer     |
 |                                            | releases a camera it never opened                  |
+| this commit (branch head)                  | ownership recorded before the playback await, so   |
+|                                            | abandoning during play releases immediately        |
 
 Branch: `claude/camera-resource-lifecycle-sdoeg6`.
 
@@ -62,8 +65,8 @@ Added (tests):
 `VideoRecordPanel.svelte` has the same consumer-side hole and is **not** touched
 here — it belongs to the recording-session-integrity agent, which is implementing
 it against this branch; the exact change and the semantics it relies on are under
-**Hand-off**. Nothing else was touched. No instruction
-file, no `main`, no deploy, no live data.
+**Hand-off**. Nothing else was touched. No instruction file, no `main`, no deploy,
+no live data.
 
 ## Defect 1 — a camera stream that arrives after the close is never released
 
@@ -256,6 +259,11 @@ remembers which acquisition's `start()` opened it.
 - **`abandonAcquisition(handle)` releases only a camera that handle opened.** A
   panel that initialized while another panel's stream was live and then closed
   without starting leaves that stream running.
+- **Ownership is recorded when the stream is handed over, not when playback
+  succeeds.** `video.play()` can stay pending indefinitely, so the owner is set
+  next to the stream assignment; abandoning inside that window stops the tracks
+  and detaches the element immediately, and the pending `play()` later resolves
+  into a cancellation.
 - **After a takeover you cannot reclaim silently.** `start(handle)` for a
   handshake that is no longer current rejects as cancellation; initialize again
   to acquire the camera.
@@ -491,7 +499,31 @@ the panel that does own the camera can still release it with
 acquisition does release the camera" case stays green, so the narrowing did not
 turn `abandonAcquisition` into a no-op for the owner.
 
-### 8. HandLandmarker fencing — already fixed, now proved for remount
+### 8. Manager boundary: ownership recorded before playback, not after
+
+`_stream` was assigned before `await video.play()`, but `_streamOwner` only after
+it. So for the whole playback window the live stream had no recorded owner: an
+`abandonAcquisition()` from the panel that opened it found no match, skipped the
+release, and left the tracks running until `play()` settled — which has no bound.
+
+The owner is now assigned next to the stream, and the failure paths clear it
+through the same `_releaseActiveStream()` they already used.
+
+Deferred-playback regression, before (at `0e432634`) and after:
+
+```
+× releases the camera immediately when its owner abandons during playback
+  → expected true to be false     (the track was still live right after abandon)
+Tests  1 failed | 19 passed (20)  exit 1
+```
+
+After: `Tests 20 passed (20)`, exit 0. The test requires the tracks ended and
+`srcObject` detached **while `play()` is still pending**, then that the pending
+start settles as `CameraAcquisitionCancelled`. The active-A / initialize-B /
+abandon-B case from round 7 stays green, so recording ownership earlier did not
+re-broaden the release.
+
+### 9. HandLandmarker fencing — already fixed, now proved for remount
 
 The reviewed revision already had the generation/disposal fencing (`8dce14cb`):
 concurrent callers share one load, and a load that lands after `dispose()` closes
@@ -566,7 +598,7 @@ npx vitest run --config tests/config/vitest.config.ts \
   src/lib/features/train/services/media-pipe-detector.test.ts \
   src/lib/features/train/services/hand-landmarker.test.ts \
   tests/unit/camera-permission-boundary.test.ts
-→ Test Files 4 passed (4), Tests 30 passed (30), exit 0
+→ Test Files 4 passed (4), Tests 31 passed (31), exit 0
 ```
 
 Component suite (chromium, `tests/config/vitest.components.config.ts`):
