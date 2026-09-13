@@ -45,6 +45,14 @@ export interface UpgradeResult {
   status: UpgradeStatus;
   /** Drafts captured from the anon session, present only on collision. */
   importable?: AnonymousDraft[];
+  /**
+   * On a collision, the uid of the account we just signed INTO — read from the
+   * auth result itself, the instant the sign-in completed. This is the account
+   * the import offer is about. It is not re-derivable later: a subsequent
+   * "who is signed in now?" lookup answers a different question the moment the
+   * user switches accounts, and would silently re-point the offer.
+   */
+  destinationUid?: string;
 }
 
 const CREDENTIAL_COLLISION = new Set([
@@ -228,10 +236,14 @@ export async function upgradeAnonymousWithGoogleCredential(
     return { status: "linked" };
   } catch (error) {
     if (isCollision(error)) {
-      await signInWithCredential(auth, credential);
+      const signedIn = await signInWithCredential(auth, credential);
       await reportGuestUpgradeLifecycle("collision-signed-in");
       recordLastAuthMethod("google");
-      return { status: "collision-signed-in", importable: drafts };
+      return {
+        status: "collision-signed-in",
+        importable: drafts,
+        destinationUid: signedIn.user.uid,
+      };
     }
     throw error;
   }
@@ -276,11 +288,15 @@ export async function upgradeAnonymousWithGoogle(): Promise<UpgradeResult> {
   } catch (error) {
     if (isCollision(error)) {
       const cred = GoogleAuthProvider.credentialFromError(error as AuthError);
-      if (cred) await signInWithCredential(auth, cred);
-      else throw error;
+      if (!cred) throw error;
+      const signedIn = await signInWithCredential(auth, cred);
       await reportGuestUpgradeLifecycle("collision-signed-in");
       recordLastAuthMethod("google");
-      return { status: "collision-signed-in", importable: drafts };
+      return {
+        status: "collision-signed-in",
+        importable: drafts,
+        destinationUid: signedIn.user.uid,
+      };
     }
     throw error;
   }
@@ -302,11 +318,15 @@ export async function upgradeAnonymousWithFacebook(): Promise<UpgradeResult> {
   } catch (error) {
     if (isCollision(error)) {
       const cred = FacebookAuthProvider.credentialFromError(error as AuthError);
-      if (cred) await signInWithCredential(auth, cred);
-      else throw error;
+      if (!cred) throw error;
+      const signedIn = await signInWithCredential(auth, cred);
       await reportGuestUpgradeLifecycle("collision-signed-in");
       recordLastAuthMethod("facebook");
-      return { status: "collision-signed-in", importable: drafts };
+      return {
+        status: "collision-signed-in",
+        importable: drafts,
+        destinationUid: signedIn.user.uid,
+      };
     }
     // The Facebook email already belongs to a DIFFERENT provider's account
     // (e.g. Google/email). We can't link onto the anon and we don't hold the
@@ -342,34 +362,87 @@ export async function upgradeAnonymousWithEmail(
     return { status: "linked" };
   } catch (error) {
     if (isCollision(error)) {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      const signedIn = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
       await reportGuestUpgradeLifecycle("collision-signed-in");
       recordLastAuthMethod("password");
-      return { status: "collision-signed-in", importable: drafts };
+      return {
+        status: "collision-signed-in",
+        importable: drafts,
+        destinationUid: signedIn.user.uid,
+      };
     }
     throw error;
   }
 }
 
+export interface ImportDraftsResult {
+  /** Drafts written into the account (duplicates are not counted). */
+  imported: number;
+  /**
+   * Drafts that failed for a reason a retry could still fix — offline, a
+   * transient Firestore error. The caller MUST keep these: they are the only
+   * remaining handle on that work.
+   */
+  failed: AnonymousDraft[];
+}
+
 /**
  * Copy captured anon drafts into the currently-signed-in account's library.
- * Swallows ALREADY_EXISTS (duplicate-content guard); rethrows anything else.
- * Returns the count actually imported.
+ *
+ * Every draft is attempted. A single failure used to throw straight out of the
+ * loop, abandoning the drafts behind it AND discarding the count of the ones
+ * already written — so one offline write lost the rest of the guest's work with
+ * no record of what had succeeded. Failures are collected and returned instead,
+ * so the caller can re-offer exactly what is still outstanding. See
+ * docs/superpowers/reviews/2026-09-12-guest-save-continuity-audit.md (F3).
+ *
+ * Visibility travels with the draft. A guest's Dexie row records its saved
+ * visibility ONLY under `pendingSyncMetadata` (SequenceData has no top-level
+ * visibility field), and the repository defaults an unspecified visibility to
+ * "public" — so importing without it republished private guest work to the
+ * community gallery the moment the importing session was a full account.
+ * Private is the fallback when nothing was recorded: an import preserves work,
+ * it does not make a publication decision on the user's behalf (F2).
  */
-export async function importDrafts(drafts: AnonymousDraft[]): Promise<number> {
+export async function importDrafts(
+  drafts: AnonymousDraft[],
+  /**
+   * REQUIRED. An import that cannot name its destination account cannot be
+   * fenced, and an unfenced import is the defect this parameter exists to
+   * prevent — optionality here would let a caller silently opt out of it.
+   */
+  destinationUid: string
+): Promise<ImportDraftsResult> {
   const repo = getLibraryRepository();
   let imported = 0;
+  const failed: AnonymousDraft[] = [];
   for (const draft of drafts) {
     try {
-      await repo.saveSequence(draft);
+      await repo.saveSequence(draft, {
+        visibility: draft.pendingSyncMetadata?.visibility ?? "private",
+        notes: draft.pendingSyncMetadata?.notes ?? "",
+        // The account the user agreed to import INTO. Each write awaits, and
+        // the repository resolves the uid it stamps only after its own await,
+        // so without this a switch between drafts would silently redirect the
+        // remainder into a different account. The repository refuses instead,
+        // and the draft comes back in `failed` rather than landing somewhere
+        // the user never chose.
+        expectedOwnerId: destinationUid,
+      });
       imported += 1;
     } catch (error) {
       const code = (error as { code?: string })?.code;
-      // Skip duplicates and one-count junk during migration; rethrow anything else.
-      if (code !== "ALREADY_EXISTS" && code !== "INVALID_DATA") throw error;
+      // A duplicate is already safe in the account and empty junk can never be
+      // written — neither is retryable, so neither is "failed" work to keep.
+      if (code === "ALREADY_EXISTS" || code === "INVALID_DATA") continue;
+      failed.push(draft);
     }
   }
-  return imported;
+  return { imported, failed };
 }
 
 /**
@@ -380,11 +453,11 @@ export async function upgradeMagicLinkCollision(
   anonUid: string,
   email: string,
   link: string
-): Promise<AnonymousDraft[]> {
+): Promise<{ drafts: AnonymousDraft[]; destinationUid: string }> {
   const auth = await getAuthInstance();
   const drafts = await captureAnonymousDrafts(anonUid);
-  await signInWithEmailLink(auth, email, link);
+  const signedIn = await signInWithEmailLink(auth, email, link);
   await reportGuestUpgradeLifecycle("collision-signed-in");
   recordLastAuthMethod("magic-link");
-  return drafts;
+  return { drafts, destinationUid: signedIn.user.uid };
 }
