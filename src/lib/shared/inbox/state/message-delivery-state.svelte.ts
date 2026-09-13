@@ -143,8 +143,33 @@ export function createMessageDeliveryState(
     ]);
     if (token !== activation || activeUserId !== userId) return;
 
-    drafts = loadedDrafts;
-    outbox = normalized;
+    // Merge, never assign. Both arrays were emptied before the durable read, so
+    // whatever is in them now was written by this same user DURING the read —
+    // the share sheets can queue a message before `ready`, unlike the composer.
+    // Assigning the snapshot over it erased the in-memory row while leaving the
+    // durable one, so `flush()` never saw the message and nothing delivered it
+    // until the next activation.
+    const queuedDuringLoad = outbox;
+    const draftsSavedDuringLoad = drafts;
+    const mergedOutbox = new Map(normalized.map((item) => [item.id, item]));
+    for (const item of queuedDuringLoad) mergedOutbox.set(item.id, item);
+
+    const mergedDrafts = new Map(
+      loadedDrafts.map((draft) => [draft.id, draft])
+    );
+    // A draft promoted into the outbox during the read is already deleted in the
+    // repository; the snapshot predates that, so restoring it would hand the
+    // composer text whose message is on its way out.
+    for (const item of queuedDuringLoad) {
+      mergedDrafts.delete(getMessageDraftId(item.userId, item.conversationId));
+    }
+    for (const draft of draftsSavedDuringLoad)
+      mergedDrafts.set(draft.id, draft);
+
+    drafts = [...mergedDrafts.values()];
+    outbox = [...mergedOutbox.values()].sort(
+      (a, b) => a.createdAt - b.createdAt
+    );
     ready = true;
     requestFlush();
   }

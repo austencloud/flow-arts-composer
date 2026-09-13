@@ -1,16 +1,10 @@
 /**
- * QUARANTINED REPRODUCTION — this suite is red against current `main` and is
- * skipped on purpose. It pins the third finding of
- * `docs/reports/opus-batch-2026-09-12/inbox-concurrency.md`, which that audit
- * deliberately left unfixed (its brief capped the pass at two fixes).
- *
- * `activate()` clears the outbox, awaits the durable read, then ASSIGNS the
- * loaded rows over whatever is in memory. A message queued inside that window —
- * the share sheet's send button is not gated on `ready`, unlike the composer's —
- * is written to IndexedDB and then erased from the in-memory outbox, so its
- * optimistic bubble disappears and nothing flushes it until the next
- * activation. Merging the loaded rows with the in-flight ones (keyed by id,
- * loaded row wins) is the candidate fix. Unskip to drive it.
+ * Reproduction for the activation race fixed in
+ * `docs/reports/opus-batch-2026-09-12/inbox-concurrency.md`: `activate()` used
+ * to ASSIGN the durable snapshot over the in-memory queue, so a message sent
+ * inside the read window (the share sheets have no `ready` gate, unlike the
+ * composer) was persisted and then erased from memory — nothing flushed it
+ * until the next activation.
  */
 import { describe, expect, it, vi } from "vitest";
 import type { IMessageDeliveryCoordinator } from "$lib/shared/inbox/services/contracts/IMessageDeliveryCoordinator";
@@ -68,7 +62,7 @@ class GatedDeliveryRepository implements IMessageDeliveryRepository {
   async purgeUser(): Promise<void> {}
 }
 
-describe.skip("message delivery activation race", () => {
+describe("message delivery activation race", () => {
   it("keeps a message queued while the outbox was still loading", async () => {
     const repository = new GatedDeliveryRepository();
     const deliver = vi.fn(async () => undefined);
