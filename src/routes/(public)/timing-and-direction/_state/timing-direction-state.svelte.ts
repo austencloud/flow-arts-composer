@@ -58,6 +58,8 @@ export function createTimingDirectionState(initialSlug?: string) {
       if (next) selected = next;
       exampleSequence = null;
       step = 0;
+      seekStep = 0;
+      seekVersion += 1;
     },
     selectExample(sequence: SequenceData, nextStep: number) {
       exampleSequence = sequence;

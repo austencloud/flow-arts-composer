@@ -47,28 +47,39 @@
   let selectedTogetherOppositeExample = $state<string | null>(null);
   let examplesLoading = $state(false);
   let examplesError = $state<string | null>(null);
+  let examplesRetry = $state(0);
+  let examplesRequest = 0;
 
   $effect(() => {
     if (article.code !== "TO") {
+      examplesRequest += 1;
       selectedTogetherOppositeExample = null;
       togetherOppositeExamples = [];
       examplesError = null;
+      examplesLoading = false;
       return;
     }
-    if (togetherOppositeExamples.length || examplesLoading || examplesError)
-      return;
+    examplesRetry;
+    const request = ++examplesRequest;
     examplesLoading = true;
+    examplesError = null;
+    togetherOppositeExamples = [];
     void loadTogetherOppositeExamples()
       .then((examples) => {
+        if (request !== examplesRequest || article.code !== "TO") return;
+        if (examples.length === 0) {
+          examplesError = "No matching pictographs are available yet.";
+          return;
+        }
         togetherOppositeExamples = examples;
-        const first = examples[0];
-        if (first) selectTogetherOppositeExample(first);
+        selectTogetherOppositeExample(examples[0]!);
       })
       .catch(() => {
+        if (request !== examplesRequest || article.code !== "TO") return;
         examplesError = "Examples could not load. Try again.";
       })
       .finally(() => {
-        examplesLoading = false;
+        if (request === examplesRequest) examplesLoading = false;
       });
   });
 
@@ -78,8 +89,7 @@
   }
 
   function retryTogetherOppositeExamples() {
-    examplesError = null;
-    togetherOppositeExamples = [];
+    examplesRetry += 1;
   }
   const jsonLd = $derived({
     "@context": "https://schema.org",
@@ -276,53 +286,6 @@
           <p class="definition">{article.definition}</p>
         </header>
         <p>{article.watchFor}</p>
-        {#if article.code === "TO"}
-          <section
-            class="example-picker"
-            aria-labelledby="example-picker-title"
-          >
-            <div>
-              <h2 id="example-picker-title">Choose a matching pictograph</h2>
-              <p>
-                Each option is classified from its hand-path geometry. The
-                player shows those hands; the pictograph keeps the selected prop
-                rotation visible.
-              </p>
-            </div>
-            <div
-              class="example-options"
-              aria-label="Together-Opposite examples"
-            >
-              {#each togetherOppositeExamples as example (example.id)}
-                <button
-                  type="button"
-                  class:selected={selectedTogetherOppositeExample ===
-                    example.id}
-                  aria-pressed={selectedTogetherOppositeExample === example.id}
-                  on:click={() => selectTogetherOppositeExample(example)}
-                >
-                  <span class="example-pictograph">
-                    <PictographContainer
-                      pictographData={example.pictograph}
-                      gridMode={example.gridMode}
-                      leftPropTypeOverride={PropType.HAND}
-                      rightPropTypeOverride={PropType.HAND}
-                      showGrid={true}
-                      showTKA={true}
-                      showElemental={true}
-                      showPositions={true}
-                      showReversals={false}
-                      showNonRadialPoints={false}
-                      showHandPoints={true}
-                      disableTransitions
-                    />
-                  </span>
-                  <span>{example.label}</span>
-                </button>
-              {/each}
-            </div>
-          </section>
-        {/if}
         <PanelButton
           href="/learn/concepts/timing-and-direction"
           accentColor={mode.element.accentColor}
