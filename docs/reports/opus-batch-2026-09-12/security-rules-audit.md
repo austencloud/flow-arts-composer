@@ -12,9 +12,13 @@ authorization audit of Firebase rules and server callable/API boundaries
 | --------------------------------- | ------------------------------------------------- |
 | Base commit (fresh `origin/main`) | `c4be16199e390e8bdab766051a0042c7827b8d30`        |
 | Branch                            | `claude/firebase-security-audit-03y1e7`           |
-| Checkpoint commit                 | `5dc7dfc3` — audit scaffolding                    |
-| Final commit                      | see §8 (this report + the F1/F2 intent assertion) |
+| Checkpoint commit                 | `5dc7dfc3` — audit scaffolding (pushed early)     |
+| Report commit                     | `bd369430` — this report + the F1/F2 intent probe |
+| Final branch tip                  | this SHA-fill commit; `git log -1` on the branch  |
 | Production files changed          | **none** — this was an audit-only assignment      |
+
+All three commits are on `claude/firebase-security-audit-03y1e7` and pushed;
+nothing was pushed to `main` and no pull request was opened.
 
 ### Files this assignment owns (the only files it created)
 
