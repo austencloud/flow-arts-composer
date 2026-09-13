@@ -2,7 +2,7 @@ import { dev } from "$app/environment";
 import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 
-export const reviewDocument = `<!doctype html>
+export const _reviewDocument = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -112,7 +112,7 @@ export const reviewDocument = `<!doctype html>
 
 export const GET: RequestHandler = () => {
   if (!dev) error(404, "Not found");
-  return new Response(reviewDocument, {
+  return new Response(_reviewDocument, {
     headers: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store",
