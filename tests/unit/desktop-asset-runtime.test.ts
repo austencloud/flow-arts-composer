@@ -58,6 +58,28 @@ async function loadRuntime() {
   return await import("$lib/shared/desktop/desktop-asset-runtime");
 }
 
+const STALLED = Symbol("never settled");
+
+/**
+ * The install's own result, or `STALLED` if it is still pending long after the
+ * deadline should have fired. Requires fake `setTimeout`; real microtask turns
+ * are interleaved so anything the install awaits gets a chance to run.
+ */
+async function settleOrStall(
+  install: Promise<boolean>
+): Promise<boolean | typeof STALLED> {
+  return await Promise.race([
+    install,
+    (async () => {
+      for (let i = 0; i < 20; i += 1) {
+        await new Promise((resolve) => setImmediate(resolve));
+        await vi.advanceTimersByTimeAsync(1_000);
+      }
+      return STALLED;
+    })(),
+  ]);
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   h.desktop = true;
@@ -149,22 +171,64 @@ describe("installDesktopAssetRuntime", () => {
 
     const { installDesktopAssetRuntime } = await loadRuntime();
 
-    const stalled = Symbol("never settled");
-    const install = installDesktopAssetRuntime();
-    const raced = Promise.race([
-      install,
-      (async () => {
-        // Real microtask turns: enough for a bounded install to settle, and a
-        // fast, unambiguous failure for an unbounded one.
-        for (let i = 0; i < 20; i += 1) {
-          await new Promise((resolve) => setImmediate(resolve));
-          await vi.advanceTimersByTimeAsync(1_000);
-        }
-        return stalled;
-      })(),
-    ]);
+    await expect(settleOrStall(installDesktopAssetRuntime())).resolves.toBe(
+      false
+    );
+  });
 
-    await expect(raced).resolves.toBe(false);
+  it("resolves false when the headers arrive but the body never does", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+
+    // `fetch` settles on HEADERS. A bound that stops there leaves the body read
+    // unbounded, which is the shape that held boot forever. This stub ignores
+    // the signal entirely, so only the deadline race can rescue it.
+    window.fetch = (async () => ({
+      ok: true,
+      status: 200,
+      json: () => new Promise(() => undefined),
+    })) as unknown as typeof fetch;
+
+    const { installDesktopAssetRuntime } = await loadRuntime();
+
+    await expect(settleOrStall(installDesktopAssetRuntime())).resolves.toBe(
+      false
+    );
+    expect(h.setURLModifier).not.toHaveBeenCalled();
+  });
+
+  it("discards a bundle that finishes reading after the deadline", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+
+    let releaseBody: (() => void) | null = null;
+    const stubFetch = (async () => ({
+      ok: true,
+      status: 200,
+      json: () =>
+        new Promise((resolve) => {
+          releaseBody = () => resolve(MANIFEST);
+        }),
+    })) as unknown as typeof fetch;
+    window.fetch = stubFetch;
+
+    const { installDesktopAssetRuntime, resolveDesktopAssetUrl } =
+      await loadRuntime();
+
+    await expect(settleOrStall(installDesktopAssetRuntime())).resolves.toBe(
+      false
+    );
+
+    // Boot has already continued with network asset loading. A bundle landing
+    // now must not swap the resolver under surfaces that already mounted.
+    releaseBody!();
+    for (let i = 0; i < 20; i += 1) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+
+    expect(h.setURLModifier).not.toHaveBeenCalled();
+    expect(window.fetch).toBe(stubFetch);
+    expect(
+      resolveDesktopAssetUrl("/models/forest/forest-environment.glb")
+    ).toBe("/models/forest/forest-environment.glb");
   });
 
   it("caches the outcome so a second call does not re-read the manifest", async () => {
