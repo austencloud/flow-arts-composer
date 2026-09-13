@@ -22,7 +22,10 @@ import {
   Orientation,
   RotationDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import {
+  GridLocation,
+  GridMode,
+} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 /** Build a closed path from a ring of locations (last entry re-enters the first). */
 function ringSolo(ring: readonly GridLocation[]): SoloPropData {
@@ -99,25 +102,27 @@ describe("fused grid mode", () => {
   });
 
   it("calls a skewed source's pairing skewed from either side", () => {
-    expect(fuseSequences(ringSolo(DIAMOND_RING), ringSolo(SKEWED_RING)).gridMode).toBe(
-      GridMode.SKEWED
-    );
-    expect(fuseSequences(ringSolo(SKEWED_RING), ringSolo(DIAMOND_RING)).gridMode).toBe(
-      GridMode.SKEWED
-    );
-    expect(fuseSequences(ringSolo(BOX_RING), ringSolo(SKEWED_RING)).gridMode).toBe(
-      GridMode.SKEWED
-    );
+    expect(
+      fuseSequences(ringSolo(DIAMOND_RING), ringSolo(SKEWED_RING)).gridMode
+    ).toBe(GridMode.SKEWED);
+    expect(
+      fuseSequences(ringSolo(SKEWED_RING), ringSolo(DIAMOND_RING)).gridMode
+    ).toBe(GridMode.SKEWED);
+    expect(
+      fuseSequences(ringSolo(BOX_RING), ringSolo(SKEWED_RING)).gridMode
+    ).toBe(GridMode.SKEWED);
   });
 
   it("keeps matching frames and a center-touching frame intact", () => {
-    expect(fuseSequences(ringSolo(DIAMOND_RING), ringSolo(DIAMOND_RING)).gridMode).toBe(
-      GridMode.DIAMOND
+    expect(
+      fuseSequences(ringSolo(DIAMOND_RING), ringSolo(DIAMOND_RING)).gridMode
+    ).toBe(GridMode.DIAMOND);
+    expect(fuseSequences(ringSolo(BOX_RING), ringSolo(BOX_RING)).gridMode).toBe(
+      GridMode.BOX
     );
-    expect(fuseSequences(ringSolo(BOX_RING), ringSolo(BOX_RING)).gridMode).toBe(GridMode.BOX);
-    expect(fuseSequences(ringSolo(DIAMOND_RING), ringSolo(CENTRIC_RING)).gridMode).toBe(
-      GridMode.CENTRIC
-    );
+    expect(
+      fuseSequences(ringSolo(DIAMOND_RING), ringSolo(CENTRIC_RING)).gridMode
+    ).toBe(GridMode.CENTRIC);
   });
 
   it("agrees with the canonical motion deriver on a diamond/box pairing", () => {
