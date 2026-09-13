@@ -20,6 +20,7 @@
   import type { ShortCodeSequenceLoader } from "$lib/shared/qr/services/short-code-manager";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
+  import { createRouteLoadFence } from "$lib/shared/navigation/services/route-load-fence";
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
   import { registerLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
@@ -28,7 +29,6 @@
     parsePropsFromURL,
     parseSequenceRouteId,
     decodeSequenceWithCompression,
-    isInlineEncoded,
   } from "$lib/shared/navigation/services/sequence-encoder";
   import { decodeViewMode } from "$lib/shared/browse/domain/browse-view-mode";
   import { getPublicSequenceHashMatcher } from "$lib/shared/sequence-viewer/get-public-sequence-hash-matcher";
@@ -200,6 +200,15 @@
   // Cleanup
   let resizeCleanup: (() => void) | null = null;
 
+  /**
+   * Latest-run-wins guard for the async bootstrap below. `+page.svelte` keys
+   * this component on the route id so a same-route navigation remounts it, but
+   * a remount cannot recall a lookup the outgoing instance already started.
+   * Every `await` in the bootstrap is followed by a staleness check so a reply
+   * that arrives for the previous URL is dropped instead of assigned.
+   */
+  const routeLoad = createRouteLoadFence();
+
   onMount(async () => {
     // The root layout only imports composition-root in app mode, so this
     // standalone route never got the short-code registration and
@@ -254,6 +263,7 @@
   });
 
   onDestroy(() => {
+    routeLoad.dispose();
     resizeCleanup?.();
     if (scanAnalyticsCode) endScanViewerSession("route_unmount");
   });
@@ -380,10 +390,14 @@
    * Fire-and-forget: compute encoderHash, query publicSequences, enrich viewer.
    * If it fails (offline, no match, error), the viewer works fine from URL data alone.
    */
-  async function matchPublicRecord(seq: SequenceData) {
+  async function matchPublicRecord(seq: SequenceData, run: number) {
     try {
       const matcher = getPublicSequenceHashMatcher();
       const result = await matcher.findPublicMatch(seq);
+      // The longest-lived write in the route: a fire-and-forget attribution
+      // lookup started for the previous share link must not re-assign the
+      // sequence the current one already resolved.
+      if (routeLoad.isStale(run)) return;
 
       if (result.matched && result.publicRecord) {
         const pub = result.publicRecord;
@@ -402,17 +416,27 @@
     }
   }
 
-  async function loadReleasedCatalogSequence(id: string): Promise<boolean> {
+  async function loadReleasedCatalogSequence(
+    id: string,
+    run: number
+  ): Promise<boolean> {
     const catalogId = data.meta.catalogId;
     if (data.meta.source !== "catalog" || !catalogId) return false;
 
     try {
       const [catalogSequence] = await loadSequencesByIds(catalogId, [id]);
+      if (routeLoad.isStale(run)) return true;
       if (!catalogSequence) return false;
 
-      sequence = await hydrateSequence(applyUrlMetadata(catalogSequence), {
-        loopDetector,
-      });
+      const hydrated = await hydrateSequence(
+        applyUrlMetadata(catalogSequence),
+        {
+          loopDetector,
+        }
+      );
+      if (routeLoad.isStale(run)) return true;
+
+      sequence = hydrated;
       applyUrlPropPreferences();
       isLoading = false;
       return true;
@@ -421,7 +445,41 @@
     }
   }
 
+  /**
+   * Route bootstrap with a guaranteed floor.
+   *
+   * Every failure used to have to be caught by the branch that produced it, and
+   * one wasn't: route-id parsing threw `URIError` on any legacy QR payload whose
+   * base45 body contains a `%`, escaped every branch below, and left `isLoading`
+   * true forever - a spinner with no error card, no recovery links, and no scan
+   * failure telemetry. A resolution that cannot finish must still end the load.
+   */
   async function initializeRoute() {
+    const run = routeLoad.begin();
+
+    try {
+      await resolveRouteSequence(run);
+    } catch (err) {
+      if (routeLoad.isStale(run)) return;
+      console.error("[SequenceRoute] Route bootstrap failed:", err);
+      if (!sequence) {
+        loadError = "Invalid sequence URL";
+        isLoading = false;
+      }
+    }
+
+    if (routeLoad.isStale(run)) return;
+
+    // Store pending time restore from URL (orchestrator will handle after animation init)
+    if (urlTime) {
+      pendingTimeRestore = urlTime;
+    }
+
+    if (sequence && !loadError) reportScanResolutionSuccess(sequence);
+    else if (loadError) reportScanResolutionFailure();
+  }
+
+  async function resolveRouteSequence(run: number) {
     // Try handoff data first (from Browse gallery)
     handoffData = consumeSequenceRouteHandoff();
 
@@ -435,11 +493,11 @@
 
       if (parsed.encoded) {
         try {
-          let decoded = decodeSequenceWithCompression(parsed.encoded);
-
-          decoded = await hydrateSequence(decoded, {
-            loopDetector,
-          });
+          const decoded = await hydrateSequence(
+            decodeSequenceWithCompression(parsed.encoded),
+            { loopDetector }
+          );
+          if (routeLoad.isStale(run)) return;
 
           sequence = applyUrlMetadata(decoded);
 
@@ -455,8 +513,9 @@
           isLoading = false;
 
           // Background: try to match against public library for attribution
-          void matchPublicRecord(sequence!);
+          void matchPublicRecord(sequence!, run);
         } catch (err) {
+          if (routeLoad.isStale(run)) return;
           console.error(
             "[SequenceRoute] Failed to decode sequence from URL:",
             err
@@ -464,12 +523,17 @@
           loadError = "Invalid sequence URL";
           isLoading = false;
         }
+      } else if (parsed.inlineQr) {
+        // A legacy self-contained QR payload. The short-code manager owns that
+        // envelope (`q1:`/`r1:`/`raw:`) and decodes it with the radio off.
+        await loadSequenceFromId(parsed.inlineQr, run);
       } else if (parsed.legacyId) {
         const loadedFromCatalog = await loadReleasedCatalogSequence(
-          parsed.legacyId
+          parsed.legacyId,
+          run
         );
         if (!loadedFromCatalog) {
-          await loadSequenceFromId(parsed.legacyId);
+          await loadSequenceFromId(parsed.legacyId, run);
         }
       } else {
         loadError = "No sequence data in URL";
@@ -479,43 +543,28 @@
       loadError = "No sequence ID provided";
       isLoading = false;
     }
-
-    // Store pending time restore from URL (orchestrator will handle after animation init)
-    if (urlTime) {
-      pendingTimeRestore = urlTime;
-    }
-
-    if (sequence && !loadError) reportScanResolutionSuccess(sequence);
-    else if (loadError) reportScanResolutionFailure();
   }
 
-  async function loadSequenceFromId(id: string) {
+  async function loadSequenceFromId(id: string, run: number) {
     isLoading = true;
     loadError = null;
     resolvedShortCode = null;
 
     try {
-      if (isInlineEncoded(id)) {
-        try {
-          const decoded = decodeSequenceWithCompression(decodeURIComponent(id));
-          if (decoded) {
-            sequence = await hydrateSequence(decoded, {
-              loopDetector,
-            });
-            isLoading = false;
-            return;
-          }
-        } catch {
-          // Not a valid encoded sequence, continue
-        }
-      }
-
+      // A self-contained `s~` payload goes straight to the short-code manager:
+      // its inline branch is the one decoder that understands the QR envelope
+      // and it resolves offline, before any network leg. The pre-step that used
+      // to sit here handed the payload to the URL decoder instead, which either
+      // threw (`q1:`/`r1:`) or, for a `raw:` envelope, read `s~raw:iiSS` as the
+      // header and returned a plausible but wrong sequence.
       const shortCodeManager = getShortCodeManager();
       let resolvedSequence = await shortCodeManager.resolveShortCode(id);
+      if (routeLoad.isStale(run)) return;
       if (resolvedSequence) resolvedShortCode = id;
 
       if (!resolvedSequence) {
         resolvedSequence = await loadByIdentifier(id);
+        if (routeLoad.isStale(run)) return;
       }
 
       // Try user's Firestore library (e.g. sync room IDs are Firestore doc IDs)
@@ -526,6 +575,7 @@
         } catch {
           // Library lookup failed (not logged in, etc.)
         }
+        if (routeLoad.isStale(run)) return;
       }
 
       if (!resolvedSequence) {
@@ -535,13 +585,17 @@
         return;
       }
 
-      sequence = await hydrateSequence(resolvedSequence, {
+      const hydrated = await hydrateSequence(resolvedSequence, {
         loopDetector,
       });
+      if (routeLoad.isStale(run)) return;
+
+      sequence = hydrated;
       // Apply URL prop preferences (from QR codes with embedded prop info)
       applyUrlPropPreferences();
       isLoading = false;
     } catch (err) {
+      if (routeLoad.isStale(run)) return;
       console.error("[SequenceRoute] Failed to load sequence:", err);
       loadError = "Failed to load sequence";
       isLoading = false;
