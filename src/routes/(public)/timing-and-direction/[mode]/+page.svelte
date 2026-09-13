@@ -667,6 +667,15 @@
     outline: 3px solid var(--theme-text);
     outline-offset: -3px;
   }
+  @media (max-width: 1100px) {
+    .to-stage {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .to-stage .demonstration {
+      width: min(100%, 30rem);
+      justify-self: center;
+    }
+  }
   @media (max-width: 800px) {
     .to-stage,
     .to-notes {
