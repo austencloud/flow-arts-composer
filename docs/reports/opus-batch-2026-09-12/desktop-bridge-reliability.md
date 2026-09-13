@@ -4,12 +4,12 @@ Scope: `src/lib/shared/desktop/**` plus its unit tests. Two reproduced
 lifecycle / error-propagation defects investigated and fixed; the rest of the
 trace is recorded read-only below.
 
-|           |                                                             |
-| --------- | ----------------------------------------------------------- |
-| Base SHA  | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`)  |
-| Final SHA | `e2914629fbb7c1c89844b2f0e13cb8eaff8d7374`                  |
-| Branch    | `claude/desktop-bridge-reliability-6agfgs`                  |
-| Checkout  | isolated cloud container (Linux); no native desktop runtime |
+|                |                                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------------- |
+| Base SHA       | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` (`origin/main`)                                     |
+| Final code SHA | `e2914629fbb7c1c89844b2f0e13cb8eaff8d7374` (this report lands in `63f08294`, one commit later) |
+| Branch         | `claude/desktop-bridge-reliability-6agfgs`                                                     |
+| Checkout       | isolated cloud container (Linux); no native desktop runtime                                    |
 
 ## Owned files
 
