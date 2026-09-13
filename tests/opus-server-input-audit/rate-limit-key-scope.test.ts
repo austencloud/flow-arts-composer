@@ -104,14 +104,20 @@ describe("withRateLimit bucket identity (in-memory fallback backend)", () => {
 describe("in-memory bucket registry growth", () => {
   it("retains one entry per distinct path seen inside the cleanup interval", async () => {
     vi.resetModules();
-    const { checkRateLimit } = await import("$lib/server/security/rate-limiter");
+    const { checkRateLimit } =
+      await import("$lib/server/security/rate-limiter");
 
     // checkRateLimit's Map is private, so measure the observable consequence:
     // every distinct identifier is still allowed on its first call, which is
     // only possible if each one was retained as its own entry.
     let allowed = 0;
     for (let i = 0; i < 5_000; i++) {
-      if (checkRateLimit(`/api/qr-video/${hashForIndex(i)}:ip:${CALLER_IP}`, RATE_LIMITS.GENERAL).allowed) {
+      if (
+        checkRateLimit(
+          `/api/qr-video/${hashForIndex(i)}:ip:${CALLER_IP}`,
+          RATE_LIMITS.GENERAL
+        ).allowed
+      ) {
         allowed++;
       }
     }

@@ -27,7 +27,11 @@ function bucketDouble(): BucketDouble {
   return { put, keys };
 }
 
-function putEvent(hash: string, bucket: BucketDouble, headers: Record<string, string> = {}) {
+function putEvent(
+  hash: string,
+  bucket: BucketDouble,
+  headers: Record<string, string> = {}
+) {
   return fakeEvent({
     url: `https://tkaflowarts.com/api/qr-video/${hash}`,
     method: "PUT",
@@ -52,7 +56,9 @@ describe("qr-video PUT: who may write", () => {
   it("rejects a browser request from another origin", async () => {
     const bucket = bucketDouble();
     const response = await PUT(
-      putEvent(hashForIndex(8), bucket, { origin: "https://evil.example" }) as never
+      putEvent(hashForIndex(8), bucket, {
+        origin: "https://evil.example",
+      }) as never
     );
 
     expect(response.status).toBe(403);
@@ -67,7 +73,9 @@ describe("qr-video PUT: per-caller write ceiling", () => {
     const attempts = RATE_LIMITS.GENERAL.maxRequests * 4;
 
     for (let i = 0; i < attempts; i++) {
-      const response = await PUT(putEvent(hashForIndex(50_000 + i), bucket) as never);
+      const response = await PUT(
+        putEvent(hashForIndex(50_000 + i), bucket) as never
+      );
       expect(response.status).toBe(204);
     }
 

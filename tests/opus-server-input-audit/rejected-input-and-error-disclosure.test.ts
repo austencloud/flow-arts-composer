@@ -47,7 +47,9 @@ describe("/api/test-render is reachable in production and always fails", () => {
     // `stepSize` has no upper bound in the handler, but it is read after the
     // throw, so the missing bound is not reachable. Robustness, not exposure.
     expect(response.status).toBe(500);
-    expect(((await response.json()) as { error: string }).error).toContain("browser-only");
+    expect(((await response.json()) as { error: string }).error).toContain(
+      "browser-only"
+    );
   });
 
   it("still consumes a rate-limit slot per request before failing", async () => {
@@ -94,20 +96,28 @@ describe("/api/software-submissions input parser (the careful shape)", () => {
   it("rejects a JSON __proto__ key as an unexpected field", () => {
     // JSON.parse makes __proto__ an OWN enumerable property, so Object.keys
     // sees it and the allowlist check catches it before any spread.
-    const body = JSON.parse('{"name":"Tool","url":"","notes":"","__proto__":{"isAdmin":true}}');
+    const body = JSON.parse(
+      '{"name":"Tool","url":"","notes":"","__proto__":{"isAdmin":true}}'
+    );
     expect(parseSoftwareSubmission(body).ok).toBe(false);
     expect(({} as Record<string, unknown>).isAdmin).toBeUndefined();
   });
 
   it("bounds every field it accepts", () => {
-    expect(parseSoftwareSubmission({ name: "x".repeat(121), url: "", notes: "" })).toMatchObject({
+    expect(
+      parseSoftwareSubmission({ name: "x".repeat(121), url: "", notes: "" })
+    ).toMatchObject({
       ok: false,
     });
     expect(
       parseSoftwareSubmission({ name: "Tool", url: "h".repeat(501), notes: "" })
     ).toMatchObject({ ok: false });
     expect(
-      parseSoftwareSubmission({ name: "Tool", url: "", notes: "n".repeat(2001) })
+      parseSoftwareSubmission({
+        name: "Tool",
+        url: "",
+        notes: "n".repeat(2001),
+      })
     ).toMatchObject({ ok: false });
   });
 
@@ -123,6 +133,9 @@ describe("/api/software-submissions input parser (the careful shape)", () => {
 
   it("returns only fixed prose, never an internal message", () => {
     const result = parseSoftwareSubmission(42);
-    expect(result).toEqual({ ok: false, error: "That submission could not be read." });
+    expect(result).toEqual({
+      ok: false,
+      error: "That submission could not be read.",
+    });
   });
 });
