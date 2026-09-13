@@ -193,11 +193,25 @@ describe("buildLoopSpec", () => {
       rotationInterval: 2,
     })!;
     expect(expanderMultiplier(wire)).toBe(4);
-    // rot:2 + mir:2 + inv:4 (full triple, independent inversion): x2 * x2 * x4 = 16.
+    // The stage arithmetic itself is unchanged: a spec that really does carry
+    // rot:2 + mir:2 + inv:4 as three expand stages is x2 * x2 * x4 = 16.
+    const rawTriple = {
+      rotated: { period: 2 },
+      mirrored: { period: 2, reflectionAxis: "north-south" as const },
+      inverted: { period: 4 },
+    };
+    expect(expanderMultiplier({ left: rawTriple, right: rawTriple })).toBe(16);
+  });
+
+  it("expanderMultiplier: an expand inversion never reaches that x4 stage", () => {
+    // buildLoopSpec coerces an expand inversion back to period 2
+    // (effectiveInversionInterval), so the triple stays at x4 and a 16-step
+    // request keeps a 4-step seed instead of collapsing to a 1-step one.
     const triple = buildLoopSpec(new Set([C.ROTATED, C.MIRRORED, C.INVERTED]), {
-      rotationInterval: 2, inversionInterval: 4,
+      rotationInterval: 2, inversionInterval: 4, inversionMode: "expand",
     })!;
-    expect(expanderMultiplier(triple)).toBe(16);
+    expect(triple.left?.inverted?.period).toBe(2);
+    expect(expanderMultiplier(triple)).toBe(4);
   });
 });
 

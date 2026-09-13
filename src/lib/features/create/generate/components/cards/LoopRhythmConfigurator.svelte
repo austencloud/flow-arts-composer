@@ -9,6 +9,7 @@
     REFLECTION_AXIS_OPTIONS,
     type LoopRhythmValue,
   } from "./loop-expanded-overlay-model";
+  import { effectiveInversionInterval } from "$lib/shared/create/services/loop-type-utils";
 
   interface Props {
     component: LOOPComponent;
@@ -27,6 +28,14 @@
   );
   const reflectionAxisDetail = $derived(
     REFLECTION_AXIS_DETAILS[props.rhythm.reflectionAxis]
+  );
+  // "Adds length" has no period-4 orbit — inverting twice restores the original
+  // motions, so the generator always uses halfway there. Show the interval the
+  // generator will really use and close the option the engine cannot honor,
+  // rather than letting the control promise a quarter rhythm it never gets.
+  const inversionInterval = $derived(effectiveInversionInterval(props.rhythm));
+  const quarterInversionAvailable = $derived(
+    props.rhythm.inversionMode === "overlay"
   );
 </script>
 
@@ -135,17 +144,19 @@
           id={`${idPrefix}-inversion-timing-label`}>Invert when</span
         >
         <span class="configurator-selection">
-          {props.rhythm.inversionInterval === 4
-            ? "Every quarter"
-            : "At halfway"}
+          {inversionInterval === 4 ? "Every quarter" : "At halfway"}
         </span>
       </div>
       <SegmentedControl
         options={[
           { value: "2", label: "At halfway" },
-          { value: "4", label: "Every quarter" },
+          {
+            value: "4",
+            label: "Every quarter",
+            disabled: !quarterInversionAvailable,
+          },
         ]}
-        value={String(props.rhythm.inversionInterval)}
+        value={String(inversionInterval)}
         onchange={(value) =>
           props.onChange({ inversionInterval: value === "4" ? 4 : 2 })}
         size="sm"

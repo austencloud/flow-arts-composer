@@ -17,6 +17,7 @@ import {
 import {
   buildLoopSpec,
   canExtendCombo,
+  effectiveInversionInterval,
   generateLOOPType,
 } from "$lib/shared/create/services/loop-type-utils";
 
@@ -187,13 +188,13 @@ function describeWordMath(
 
 function describeInversion(rhythm: LoopRhythmValue): string {
   if (rhythm.inversionMode === "overlay") {
-    return rhythm.inversionInterval === 4
+    return effectiveInversionInterval(rhythm) === 4
       ? "Same hand positions — props flip spin direction every quarter."
       : "Same hand positions — props flip spin direction for the second half.";
   }
-  return rhythm.inversionInterval === 4
-    ? "Inverted blocks are added, alternating every quarter."
-    : "The inverted half is added to the sequence.";
+  // Added length always inverts at halfway: inverting twice restores the
+  // original motions, so a quarter rhythm would only repeat the loop.
+  return "The inverted half is added to the sequence.";
 }
 
 function describeApplyAction(

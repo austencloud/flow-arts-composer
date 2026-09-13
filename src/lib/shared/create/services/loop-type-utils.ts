@@ -160,6 +160,36 @@ export interface LoopRhythm {
 }
 
 /**
+ * The inversion period the engine can actually honor, given the mode.
+ *
+ * Inversion is an involution — pro↔anti applied twice restores the original
+ * motions — so an EXPAND inversion has no genuine period-4 orbit. Asked for at
+ * period 4 the fused stage emits [S, inv(S), S, inv(S)], a byte-identical
+ * double of the period-2 result that reduceToMinimalLoop strips straight back.
+ * The extra outer pass is not free, though: it wraps the rest of the combo, so
+ * the detector sees only the inversion and every mirrored / swapped / rotated +
+ * inverted combo fails generation outright with
+ * "identity mismatch (expected inverted+swapped, detected inverted)".
+ *
+ * This is the same degeneracy the quartered-rotation gate below and the
+ * quartered-mirror executor guard (tests/unit/loop/mirrored-quartered-guard.ts)
+ * already cover, and the same reasoning the engine records on
+ * loopSpecFromLegacyRhythm: rotation is the only component with a real
+ * period-4 orbit.
+ *
+ * OVERLAY inversion is genuinely period-capable and keeps its interval: it
+ * partitions the FINISHED sequence into `period` blocks and flips the odd ones
+ * in place, so blocks 0 and 2 carry different content and a period-4 overlay is
+ * a real alternating pattern rather than a repeat.
+ */
+export function effectiveInversionInterval(rhythm: LoopRhythm): 2 | 4 {
+  if ((rhythm.inversionMode ?? "expand") === "overlay") {
+    return rhythm.inversionInterval ?? 2;
+  }
+  return 2;
+}
+
+/**
  * Build a symmetric wire-form LOOPSpec from the UI component set + rhythm.
  * Returns null for combos with no implemented mapping (same gate as
  * generateLOOPType — the combo overlay's gating stays the single source
@@ -178,7 +208,7 @@ export function buildLoopSpec(
       prop.rotated = { period: rhythm.rotationInterval ?? 2 };
     } else if (comp === LOOPComponent.INVERTED) {
       prop.inverted = {
-        period: rhythm.inversionInterval ?? 2,
+        period: effectiveInversionInterval(rhythm),
         ...(rhythm.inversionMode === "overlay" ? { mode: "overlay" as const } : {}),
       };
     } else if (
@@ -217,7 +247,9 @@ export interface ResolvedLoopConfig {
  *     has a genuine period-4 orbit; the period-2 transforms (mirror / flip /
  *     swap / invert) asked as quartered extend to a byte-identical double that
  *     reduceToMinimalLoop strips back to HALF the requested length — the deck's
- *     "I asked for 16 and got 8" bug.
+ *     "I asked for 16 and got 8" bug. The same coercion applies to an EXPAND
+ *     inversion asked for at interval 4 (see effectiveInversionInterval); only
+ *     OVERLAY inversion keeps a real period-4 rhythm.
  *  2. The wire spec makes the orchestrator divide the requested length by the
  *     TRUE expander multiplier (expanderMultiplier), not the raw period (2/4).
  *     Without it, mirror+rotated (true period 4) overshoots to 2× on the halved
@@ -259,10 +291,16 @@ export function resolveLoopConfig(
   const diagonal =
     requestedAxis === "northeast-southwest" ||
     requestedAxis === "northwest-southeast";
+  const inversionMode = rhythmOpts?.inversionMode ?? "expand";
   const loopRhythm: LoopRhythm = {
     rotationInterval: period === "quartered" ? 4 : 2,
-    inversionInterval: rhythmOpts?.inversionInterval ?? 2,
-    inversionMode: rhythmOpts?.inversionMode ?? "expand",
+    // Echo the interval the wire will actually carry, not the requested one —
+    // the LOOP card reads this back to pick its rhythm glyphs.
+    inversionInterval: effectiveInversionInterval({
+      inversionInterval: rhythmOpts?.inversionInterval ?? 2,
+      inversionMode,
+    }),
+    inversionMode,
     reflectionAxis: keptAxis && diagonal ? keptAxis : requestedAxis,
   };
   const loopSpecWire =
