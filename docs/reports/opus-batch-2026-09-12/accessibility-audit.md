@@ -1,10 +1,24 @@
 # Accessibility and responsive-interaction audit — shared drawers, modals, popovers
 
-Read-only audit of the shared dismissible surfaces (`Drawer`, `BaseModal`, the
-filter-chip popovers) and the Create/Browse keyboard paths that run through
-them. No runtime or CSS file was modified. The only files this task owns are
-this report and the isolated browser suite under
-`tests/opus-accessibility-audit/`.
+Audit **and fixes** for the shared dismissible surfaces (`Drawer`, `BaseModal`,
+the filter-chip popovers) and the Create/Browse keyboard paths that run through
+them.
+
+This document was written in two passes and the opening used to say
+"read-only — no runtime or CSS file was modified". That is no longer true and
+the claim is withdrawn:
+
+- **Pass 1 (read-only audit).** Findings F1-F5 and the L1/L2 latent defects
+  below, produced without touching production code.
+- **Pass 2 (implementation, under a later authorization).** F1, F3, F4 and F5
+  were fixed in production code. See § Implementation for the file-by-file diff
+  and its evidence. F2 was deliberately left open. No `BaseModal` or
+  `ErrorModal` file was modified in either pass.
+
+Every finding below is written as it was found, with a **Status** line saying
+what happened to it. Production files this task now owns are listed in
+§ Implementation; the audit suite under `tests/opus-accessibility-audit/` and
+this report remain audit-owned.
 
 | | |
 | --- | --- |
@@ -55,11 +69,9 @@ deliberate: an audit suite that needs an `executablePath` override and a
 CI has to maintain (`.claude/rules/never-hand-roll.md`). Anything worth guarding
 was moved into the gates above.
 
-**Correction to the first version of this report.** It claimed
-`pnpm run test:components:ci` "cannot run here". That was wrong — it is
-runnable in this sandbox by pointing `PLAYWRIGHT_BROWSERS_PATH` at a directory
-that presents the 1194 binaries under the revision-1228 names Playwright 1.61.1
-looks for:
+Running the project's browser gate in this sandbox needs the revision mismatch
+bridged (see below): point `PLAYWRIGHT_BROWSERS_PATH` at a directory presenting
+the 1194 binaries under the revision-1228 names Playwright 1.61.1 looks for:
 
 ```bash
 SHIM=/tmp/pw-shim
@@ -73,13 +85,21 @@ PLAYWRIGHT_BROWSERS_PATH="$SHIM" pnpm run test:components:ci
 All evidence below for the colocated specs was produced that way.
 
 `AUDIT_CHROMIUM_PATH` exists because this sandbox ships Chromium revision 1194
-while `playwright@1.61.1` expects 1228's headless shell. **The project's own
-`pnpm run test:components:ci` cannot run here for the same reason** — it fails
-at `browserType.launch` before any test executes. The audit config mirrors
-`tests/config/vitest.components.config.ts` and adds only the `executablePath`
-override plus an audit-local `$app/environment` stub reporting `browser === true`
-(the shared stub reports `false`, which makes the app's browser-only service
-getters throw). The shared stub is untouched.
+while `playwright@1.61.1` expects 1228's headless shell. **Unpatched, both the
+audit config and the project's own `pnpm run test:components:ci` fail at
+`browserType.launch` before any test executes.** Either one runs once the
+revision mismatch is bridged — the audit config via `AUDIT_CHROMIUM_PATH`, the
+project config via the `PLAYWRIGHT_BROWSERS_PATH` shim shown above. An earlier
+draft of this report said flatly that `test:components:ci` "cannot run here";
+that was a statement about the unpatched default, wrongly written as a permanent
+limitation, and it is corrected here. Everything in § Implementation was run
+through the project config with that shim.
+
+Beyond the browser binary, the audit config differs from
+`tests/config/vitest.components.config.ts` only by an audit-local
+`$app/environment` stub reporting `browser === true` (the shared stub reports
+`false`, which makes the app's browser-only service getters throw). The shared
+stub is untouched.
 
 ## Claim types used below
 
@@ -425,7 +445,7 @@ re-running the same specs:
 | --- | --- | --- |
 | `keyboard-event-drawer-scope.test.ts` (4) | 1 failed, 3 passed | **4 passed** |
 | `Drawer.svelte.test.ts` (5) | 2 failed, 3 passed | **5 passed** |
-| `FilterChipBase.svelte.test.ts` (4) | 3 failed, 1 passed | **4 passed** |
+| `FilterChipBase.svelte.test.ts` (4, now 5 with the focusability guard) | 3 failed, 1 passed | **5 passed** |
 
 The seven specs that pass in *both* columns are the guard cases: single-key
 outside a drawer, modifier combos inside a drawer, no drawer open, Escape on a
@@ -434,8 +454,13 @@ precedence, and no-name-emitted-when-none-supplied.
 
 Other checks:
 
-- `npx svelte-check --tsconfig ./tsconfig.json` — **0 errors, 0 warnings**
-  (whole project).
+- `npx svelte-check --tsconfig ./tsconfig.json --compiler-warnings "state_referenced_locally:ignore"`
+  — **0 errors, 0 warnings** (whole project). Necessary but **not sufficient**
+  for an a11y change: see the compiler-warning section above for a warning this
+  command did not surface.
+- `node tests/opus-accessibility-audit/check-compiler-warnings.mjs` —
+  **0 compiler warnings across 9 files**. This is the check that catches Svelte
+  a11y warnings.
 - `npx vitest run --config tests/config/vitest.config.ts src/lib/shared/keyboard`
   — **29 passed / 7 files**, no regression in the keyboard domain.
 
@@ -458,6 +483,55 @@ tier. One honest caveat: at some emulated viewports Chromium reports `43.9907`
 for the same declared-44px box, so that spec carries a documented 0.5px
 tolerance. That is measurement rounding under viewport emulation, not a product
 change — the declared floor and the pre-fix measurement are identical.
+
+### A compiler warning this work introduced, and how it was fixed
+
+Review caught a real regression in the first implementation push (`bb9840e1`):
+the F4 fix put `onkeydown` on the `role="listbox"` popover div, and Svelte
+raised
+
+```
+src/lib/shared/browse/components/filter-chips/FilterChipBase.svelte:309
+a11y_interactive_supports_focus
+Elements with the 'listbox' interactive role must have a tabindex value
+```
+
+against a baseline of zero compiler warnings. Two things went wrong:
+
+1. **The fix was silenced, not made correct.** The original push carried a
+   `<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->` above
+   that div. Suppression was the wrong instinct, and it was suppressing a
+   *different* rule than the one that actually fired.
+2. **My verification could not have caught it.** I cleared the change with
+   `svelte-check`, which reported "0 errors and 0 warnings" for this exact file
+   while the compiler was warning about it. Compiler a11y warnings did not
+   surface through that path here, so `svelte-check` alone does not clear an
+   a11y change. That is a gap in the evidence I offered, not just a missed
+   warning.
+
+**The fix** (`FilterChipBase.svelte`): the `svelte-ignore` comment is gone and
+the listbox carries `tabindex="-1"`. That is the accessible treatment rather
+than a silencer — a `listbox` is an interactive composite role, and an element
+holding a key handler has to be able to hold focus. `-1` keeps it out of the tab
+sequence (the `role="option"` buttons inside remain the tab stops) while letting
+the container take focus programmatically, which is the WAI-ARIA listbox
+container contract.
+
+**The check is now reproducible**, since `svelte-check` will not do it:
+
+```bash
+node tests/opus-accessibility-audit/check-compiler-warnings.mjs
+# → 0 compiler warning(s) across 9 file(s)   (exit 0)
+```
+
+It asks the Svelte compiler directly about every `.svelte` file this work
+touched. Verified both directions: the pre-fix `FilterChipBase` compiles clean
+(0 warnings), the first implementation push emits the one warning above, and the
+current state emits none.
+
+A regression guard was added to `FilterChipBase.svelte.test.ts` asserting the
+listbox is focusable, bringing that file to 10 specs and the two colocated
+browser files to **15** (the 14 reviewed, plus this guard).
 
 ### Full component gate: no regression attributable to this diff
 
@@ -541,8 +615,8 @@ keeping as regression cover.
 | Focus returns to the trigger button after a `BaseModal` closes | `focus-restore.audit.test.ts` (measured) |
 | Drawer over drawer: one Escape dismisses the inner sheet only | `escape-ownership.audit.test.ts` (measured) |
 | A lone `BaseModal` dismisses on Escape from a focused field | `escape-ownership.audit.test.ts` (measured) |
-| `DrawerHeader` close button meets the 44px pointer floor | measured `44 × 44` at a 375×667 viewport |
-| Every filter-chip popover row meets the 44px pointer floor | measured `150 × 44` for all four rows |
+| `DrawerHeader` close button meets the 44px pointer floor | measured `44 × 44` at 375×667 (pass 1). Re-measured at all seven tiers in pass 2 — see § Implementation |
+| Every filter-chip popover row meets the 44px pointer floor | measured `150 × 44` for all four rows at 375×667 (pass 1). Re-measured at all seven tiers in pass 2 — see § Implementation |
 | Reduced motion is honored by both primitives | `Drawer.css:499-535` and `modal-tokens.css:370-396` disable transitions, animations, `transition-behavior` and `@starting-style` (source); `Drawer.svelte:409-420` and `:441-447` additionally skip the RAF/timer choreography (source) |
 | Swipe-to-dismiss defers to scrollable content | `swipe-to-dismiss.ts:126-184` only arms dismissal at the scroll boundary in the dismiss direction, per placement (source) |
 | Axe (WCAG AAA tag set) over the drawer and chip-popover surfaces | `axe-sweep.audit.test.ts`: zero violations |
@@ -551,7 +625,20 @@ keeping as regression cover.
 
 Taken with `src/app.css` loaded and `applyThemeForBackground(BackgroundType.COSMIC)`
 applied — the shipped default (`background-theme-calculator.ts:getSavedBackgroundType`
-falls back to `COSMIC`) — at a 375×667 CSS viewport.
+falls back to `COSMIC`) — **at a 375×667 CSS viewport only**.
+
+Scope of the viewport evidence, stated once so the two numbers in this report do
+not read as a contradiction:
+
+| Measurement | Viewports |
+| --- | --- |
+| Text contrast (the table below) | **375×667 only.** Contrast was never measured at the other tiers; nothing in this report claims it was. |
+| Pointer-target geometry, pass 1 (audit) | **375×667 only.** |
+| Pointer-target geometry, pass 2 (after the fixes) | **All seven canonical tiers**, via `touched-surface-viewports.audit.test.ts` — see § Implementation. |
+
+The seven-tier pass covers geometry, not colour. Contrast is viewport-invariant
+here (the surfaces carry no per-breakpoint colour rules), but that is reasoning,
+not measurement, and it is not offered as evidence.
 
 | Text | Colour | Composited background | Size | Ratio | AA floor |
 | --- | --- | --- | --- | --- | --- |

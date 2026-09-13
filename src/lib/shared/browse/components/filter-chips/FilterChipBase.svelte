@@ -305,11 +305,20 @@ Popover uses fixed positioning to escape overflow:hidden containers.
 {/if}
 
 {#if children && expanded}
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <!--
+    `tabindex="-1"` is required, not decorative: a `listbox` is an interactive
+    composite role, and once it carries a key handler it has to be able to hold
+    focus (Svelte's `a11y_interactive_supports_focus`). -1 keeps it out of the
+    tab sequence — the `role="option"` buttons inside are the real tab stops —
+    while letting the container take focus programmatically, which is the
+    WAI-ARIA listbox container contract. Suppressing the warning instead would
+    have left a keyboard handler on an element that could never be focused.
+  -->
   <div
     bind:this={popoverEl}
     class="chip-popover"
     role="listbox"
+    tabindex="-1"
     aria-label="{label} options"
     style="top: {popoverTop}px; left: {popoverLeft}px;"
     onkeydown={handleEscape}

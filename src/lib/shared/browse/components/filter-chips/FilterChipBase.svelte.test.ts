@@ -144,6 +144,19 @@ describe("FilterChipBase (dropdown keyboard dismissal)", () => {
     expect(ondismiss).not.toHaveBeenCalled();
   });
 
+  it("keeps the key-handling listbox focusable", async () => {
+    render(FilterChipDropdownTestHarness, { expanded: true, ondismiss: vi.fn() });
+
+    const listbox = document.querySelector<HTMLElement>('[role="listbox"]');
+    expect(listbox, "popover rendered").not.toBeNull();
+
+    // An interactive role carrying a key handler has to be able to hold focus.
+    // -1 keeps it out of the tab sequence; the option buttons are the tab stops.
+    expect(listbox!.getAttribute("tabindex")).toBe("-1");
+    listbox!.focus();
+    expect(document.activeElement, "listbox can take focus").toBe(listbox);
+  });
+
   it("stops one Escape press from also reaching the layer behind the chip", async () => {
     const ondismiss = vi.fn();
     const onOuterEscape = vi.fn();
