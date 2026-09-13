@@ -358,6 +358,7 @@ describe("MessageImageSender account ownership", () => {
     // upload from starting anyway.
     holdNextDelete();
     const handle = new MessageImageSender().send(request());
+    const outcome = handle.promise.catch((reason: unknown) => reason);
     await settle();
 
     handle.cancel();
@@ -368,9 +369,7 @@ describe("MessageImageSender account ownership", () => {
     // upload into a timeout instead of a failed expectation.
     expect(mocks.uploadStarted).not.toHaveBeenCalled();
 
-    const error = (await handle.promise.catch((reason: unknown) => reason)) as
-      | Error
-      | undefined;
+    const error = (await outcome) as Error | undefined;
     expect(error?.message).toBe("Image send cancelled.");
     expect(mocks.finalizeCallable).not.toHaveBeenCalled();
   });
@@ -378,6 +377,7 @@ describe("MessageImageSender account ownership", () => {
   it("starts no upload when the account changes during the pre-upload cleanup", async () => {
     holdNextDelete();
     const handle = new MessageImageSender().send(request());
+    const outcome = handle.promise.catch((reason: unknown) => reason);
     await settle();
 
     mocks.currentUid = "user-b";
@@ -387,7 +387,7 @@ describe("MessageImageSender account ownership", () => {
     // asserted before the await, for the same reason as above.
     expect(mocks.uploadStarted).not.toHaveBeenCalled();
 
-    const error = (await handle.promise.catch((reason: unknown) => reason)) as {
+    const error = (await outcome) as {
       code?: string;
     };
     expect(error.code).toBe("messaging/sender-changed");

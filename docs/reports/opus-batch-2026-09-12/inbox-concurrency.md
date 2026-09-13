@@ -3,9 +3,10 @@
 Scope: reproduced concurrency/state defects in `src/lib/shared/inbox`, its tests,
 and — from the third round, explicitly authorized — two named defects in
 `src/lib/shared/messaging/services/messenger.ts`, and — from the sixth round —
-`MessageImageSender`. Thirteen fixed, one confirmed and left to another owner. No production data was written and no message was sent
-anywhere; every result below comes from the repository's own test harnesses in
-this cloud container.
+`MessageImageSender`. Thirteen fixed, one confirmed and left to another owner.
+No production data was written and no message was sent anywhere; every result
+below comes from the repository's own test harnesses in the original cloud
+checkout or the reviewed local integration.
 
 Revision history:
 
@@ -29,17 +30,19 @@ Revision history:
 7. `2b32ccb9` — F9: staging cleanup that matches the storage rules, so an
    abandoned attempt cannot strand the message. Held: the cleanup await F9 added
    was itself unfenced.
-8. this revision — F10: that gap closed, plus an audit of every await this branch
+8. `10bb7c82` — F10: that gap closed, plus an audit of every await this branch
    introduced.
 
-| Field          | Value                                                                                                                                                                                                                           |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Branch         | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                                                                                                         |
-| Base SHA       | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                                                                                                     |
-| Held revisions | `ea203124` (F1 + F2), `eb822199` (F3, F4, A1), `9030cdd5` (F5, M1, M2), `71988b7e` (F6), `c5cf6d0d` (F7), `3b79c83a` (F8), `2b32ccb9` (F9) — all HOLD                                                                           |
-| Merged `main`  | `6e4c1b5a` (unrelated 3D parity test), then `cb4d4210` — which carries `73aafa4a`, the `withPlainRecords` wrapper in this same state file. Auto-merged clean; the wrapper is preserved verbatim, see the integration note below |
-| Final SHA      | `10bb7c82a32c12339b636a12800bbceef1f607f2` — this round's correction commit; the branch tip after it only fills in this row and updates this report                                                                             |
-| Owned paths    | `src/lib/shared/inbox/**`, `tests/unit/messaging/*` (three new files), `tests/helpers/inbox/**` (new), plus the two authorized functions in `messaging/services/messenger.ts`                                                   |
+| Field              | Value                                                                                                                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Original branch    | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                                                                                                         |
+| Integration branch | `codex/opus-inbox-reviewed`                                                                                                                                                                                                     |
+| Audit base SHA     | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                                                                                                     |
+| Held revisions     | `ea203124` (F1 + F2), `eb822199` (F3, F4, A1), `9030cdd5` (F5, M1, M2), `71988b7e` (F6), `c5cf6d0d` (F7), `3b79c83a` (F8), `2b32ccb9` (F9) — all HOLD                                                                           |
+| Merged `main`      | `6e4c1b5a` (unrelated 3D parity test), then `cb4d4210` — which carries `73aafa4a`, the `withPlainRecords` wrapper in this same state file. Auto-merged clean; the wrapper is preserved verbatim, see the integration note below |
+| Original tip       | `86135cf0e2e8e1b8813bb88767c59dbf0e435d1a`; correction code commit `10bb7c82a32c12339b636a12800bbceef1f607f2`                                                                                                                   |
+| Integration base   | `6f1ee7b7b214069b8f0fa2100390a4daebf4c9fe`; no owned path changed between `cb4d4210` and this base, so the integrated `withPlainRecords` behavior is preserved                                                                  |
+| Owned paths        | `src/lib/shared/inbox/**`, five new `tests/unit/messaging/*` files, `tests/helpers/inbox/**` (new), the listed messaging contract/sender files, plus the three authorized functions in `messaging/services/messenger.ts`        |
 
 Files changed:
 
@@ -58,7 +61,7 @@ Files changed:
 - `tests/unit/messaging/message-delivery-account-ownership.test.ts` (new; proves F5 and F6)
 - `tests/unit/messaging/messenger-subscription-ownership.test.ts` (new; proves M1 and M2 at the real messaging boundary)
 - `tests/unit/messaging/message-delivery-sending-seam.test.ts` (new; proves F7 against the real coordinator and the real `Messenger.sendMessage`)
-- `tests/unit/messaging/message-image-sender-ownership.test.ts` (new; proves F8 and F9 against the real `MessageImageSender`, with a storage double that enforces the real rules)
+- `tests/unit/messaging/message-image-sender-ownership.test.ts` (new; proves F8, F9 and F10 against the real `MessageImageSender`, with a storage double that enforces the real rules)
 - `tests/helpers/inbox/reactive-account-double.svelte.ts` (new test helper)
 - `tests/helpers/inbox/memory-delivery-repository.ts` (new test helper)
 - `docs/reports/opus-batch-2026-09-12/inbox-concurrency.md` (this report)
@@ -924,7 +927,8 @@ unmount, so it is worth doing next.
 
 ## Commands and results
 
-All run in the cloud container at the final SHA unless noted.
+The historical comparison table below was run in the original cloud checkout
+at its final SHA unless noted.
 
 | Command                                                                                     | Result                                                                                                                                                                              |
 | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -937,7 +941,25 @@ All run in the cloud container at the final SHA unless noted.
 | `prettier --check` on the changed files                                                     | clean                                                                                                                                                                               |
 | `eslint` on the changed files                                                               | 0 errors, 0 warnings (`tests/**` paths are eslint-ignored by config, which it reports as a warning)                                                                                 |
 
-Harness note: the container ships Chromium build 1194 at `/opt/pw-browsers`
+The reviewed integration reran the current behavior on base `6f1ee7b7`:
+
+| Command                                                                                                                      | Result                                 |
+| ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging/message-image-sender-ownership.test.ts`              | 8 passed / 8                           |
+| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                                                     | 42 passed / 42 (10 files)              |
+| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging tests/unit/inbox`                                    | 64 passed / 64 (16 files)              |
+| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts …/MessageComposer.svelte.test.ts` | 23 passed / 23 (8 drawer, 15 composer) |
+| `prettier --check` on all 19 owned paths                                                                                     | clean                                  |
+| `eslint` on the 11 changed source/component-test paths                                                                       | 0 errors; 2 ignored-file warnings      |
+
+The first local run of the F10 file exposed a test-only timing error: the two
+new cases attached their rejection handlers after releasing the deferred
+cleanup, so Vitest correctly returned exit 1 for two unhandled rejections even
+though every assertion passed. The integration test attaches each handler
+before releasing the gate. Production code is unchanged by that harness fix,
+and the clean reruns above include both cases.
+
+Original cloud harness note: the container ships Chromium build 1194 at `/opt/pw-browsers`
 while `playwright@1.61.1` expects 1228, so the browser project was run through a
 scratchpad config that only overrides `launchOptions.executablePath`. No browser
 was downloaded and no repository config was changed. `pnpm install
@@ -949,7 +971,7 @@ packages are not prebuilt in a fresh clone.
 - **No regression was observed in the suites that were run.** Every pre-existing
   assertion in the touched files still passes (12 in the composer, 9 in the
   delivery state, 3 in the delivery coordinator), the inbox + messaging sweep is
-  green at 80/80, and `check:fast` reports exactly the same 582/44 as the base SHA
+  green at the reported 95/95, and `check:fast` reports exactly the same 582/44 as the base SHA
   with no error in a changed file. That is the evidence; it is not a claim that
   the change cannot regress anything unexercised. In particular nothing here ran
   in a real browser against real Firestore, and no account switch, sign-out or
