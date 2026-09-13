@@ -1,23 +1,28 @@
 # Inbox concurrency and state audit — 2026-09-12 Opus batch
 
-Scope: reproduced concurrency/state defects in `src/lib/shared/inbox` and its
-tests. Five fixed, two confirmed outside the owned tree. No production data was
-written and no message was sent anywhere; every result below comes from the
-repository's own test harnesses in this cloud container.
+Scope: reproduced concurrency/state defects in `src/lib/shared/inbox`, its tests,
+and — from the third round, explicitly authorized — two named defects in
+`src/lib/shared/messaging/services/messenger.ts`. Eight fixed, one confirmed and
+left to another owner. No production data was written and no message was sent
+anywhere; every result below comes from the repository's own test harnesses in
+this cloud container.
 
-Revision history: the first pass (`ea203124`) shipped F1 and F2 and was held in
-review for missing account ownership. This revision adds F3 (account ownership in
-the drawer), F4 (account ownership in the composer), fixes A1 rather than leaving
-it quarantined, and narrows the claims the review flagged as too broad.
+Revision history:
 
-| Field         | Value                                                                                                                                      |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Branch        | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                    |
-| Base SHA      | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                |
-| Held revision | `ea203124` (F1 + F2 only; review verdict HOLD)                                                                                             |
-| Merged `main` | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` — merged in to stay current; it touches only an unrelated 3D parity test                        |
-| Final SHA     | `69f6614fe09e553c40000770b92d32e006d926a7` — the correction commit; the branch tip after it only fills in this row and updates this report |
-| Owned paths   | `src/lib/shared/inbox/**`, `tests/unit/messaging/message-delivery-activation-race.test.ts`, `tests/helpers/inbox/**` (both files new)      |
+1. `ea203124` — F1 and F2. Held: no account ownership.
+2. `69f6614f` — F3, F4, A1; claims narrowed. Held: the outbox itself still had
+   no account fence, and the messenger residuals were still admitted-not-fixed.
+3. this revision — F5 (outbox account ownership) and M1/M2 (the two authorized
+   messenger fixes), each with a deferred reproduction against the real module.
+
+| Field          | Value                                                                                                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch         | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                                                       |
+| Base SHA       | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                                                   |
+| Held revisions | `ea203124` (F1 + F2), `eb822199` (adds F3, F4, A1) — both HOLD                                                                                                                |
+| Merged `main`  | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` — merged in to stay current; it touches only an unrelated 3D parity test                                                           |
+| Final SHA      | `dce1598493fbcf6334797c586727b87e2bfe3f92` — this round's correction commit; the branch tip after it only fills in this row and updates this report                           |
+| Owned paths    | `src/lib/shared/inbox/**`, `tests/unit/messaging/*` (three new files), `tests/helpers/inbox/**` (new), plus the two authorized functions in `messaging/services/messenger.ts` |
 
 Files changed:
 
@@ -25,8 +30,11 @@ Files changed:
 - `src/lib/shared/inbox/components/InboxDrawer.svelte.test.ts` (new; 8 cases prove F1 and F3)
 - `src/lib/shared/inbox/components/messages/MessageComposer.svelte` (fixes F2, F4)
 - `src/lib/shared/inbox/components/messages/MessageComposer.svelte.test.ts` (3 new cases prove F2 and F4)
-- `src/lib/shared/inbox/state/message-delivery-state.svelte.ts` (fix A1, 20 lines inside `activate()`)
+- `src/lib/shared/inbox/state/message-delivery-state.svelte.ts` (fixes A1, F5)
+- `src/lib/shared/messaging/services/messenger.ts` (fixes M1, M2 — authorized scope: `subscribeToMessages` and `markAsRead`, nothing else in the file)
 - `tests/unit/messaging/message-delivery-activation-race.test.ts` (new; was quarantined, now green against the fix)
+- `tests/unit/messaging/message-delivery-account-ownership.test.ts` (new; proves F5)
+- `tests/unit/messaging/messenger-subscription-ownership.test.ts` (new; proves M1 and M2 at the real messaging boundary)
 - `tests/helpers/inbox/reactive-account-double.svelte.ts` (new test helper)
 - `tests/helpers/inbox/memory-delivery-repository.ts` (new test helper)
 - `docs/reports/opus-batch-2026-09-12/inbox-concurrency.md` (this report)
@@ -215,14 +223,12 @@ Two deliberate narrow choices:
 - `backToList()` is only called when a conversation is actually selected, for the
   same reason.
 
-### Residual, not fixed here
+### Residual, closed in round three
 
-`messenger.markAsRead` reads the current user after its own `await`
-(`messaging/services/messenger.ts:387-399`). The call is now fenced, so the
-drawer cannot _start_ one for a superseded owner, but a call already past that
-fence still resolves auth internally. Closing that needs the user id to be a
-parameter of `markAsRead`, which is a messaging-service signature change outside
-this pass's owned paths.
+`messenger.markAsRead` resolved the reader from live auth _after_ awaiting the
+Firestore handle, so the fence above could stop the drawer starting a receipt for
+a superseded owner but not stop one already past it from being filed under the
+wrong account. That is M2 below.
 
 ---
 
@@ -276,12 +282,12 @@ account. A thread switch still flushes (F2); only an owner switch drops.
 
 ---
 
-## A1 (fixed this revision) — a send during activation was erased from memory
+## A1 (fixed in round two) — a send during activation was erased from memory
 
 **Severity: high where reachable; reachability inferred, not observed.** The
 first pass left this quarantined under a two-fix budget. Review asked for it to
 be resolved inside inbox ownership, and `state/message-delivery-state.svelte.ts`
-is inside it, so it is fixed rather than carried.
+is inside it, so it was fixed rather than carried.
 
 `activate()` cleared `outbox`, awaited `listDrafts`/`listOutbox`, then
 **assigned** the loaded rows over whatever was in memory. `queueMessage` only
@@ -318,6 +324,108 @@ would re-offer text whose message is already on its way out.
 Gating the share sheets' send button on `ready` would also close the reachable
 path. Not done: it changes share-sheet behaviour (a disabled Send at cold start)
 rather than fixing the state bug, and the state bug is the defect.
+
+---
+
+## F5 (fixed) — a parked send landed in, and was sent from, another account's outbox
+
+**Severity: high.** One account's message was inserted into another account's
+live outbox and delivered as that account. Raised by review of `eb822199`, then
+reproduced.
+
+### Mechanism
+
+`queueMessage` captures `activeUserId` at entry (`:257`), then awaits the pending
+draft write (`:261`) and the promotion (`:284`). Both awaits can outlive the
+account that started the send. The resumed call then did
+`drafts = drafts.filter(...)`, `replaceOutbox(item)` and `requestFlush()`
+(`:285-287`) unconditionally — inserting a row stamped `userId: "user-a"` into the
+outbox that now belonged to `user-b`.
+
+`flush()` (`:399-409`) filtered only on status and `nextAttemptAt`, never on
+owner, so the very next flush picked that row up and delivered it while `user-b`
+was signed in.
+
+### Evidence — measured
+
+`tests/unit/messaging/message-delivery-account-ownership.test.ts`, against the
+real `createMessageDeliveryState` with a ledger whose draft writes can be held
+open. At `eb822199`:
+
+| Test                                                              | Failure at `eb822199`                                              |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------ |
+| never leaves one account's queued message in another's outbox     | `expected [ 'user-a' ] to deeply equal []`                         |
+| does not deliver a parked message as the account that replaced it | `expected "vi.fn()" to not be called at all, but … called 1 times` |
+
+The second is the one that matters: the wrong account actually sent it. Both pass
+against the fix. The third case in that file ("delivers the recovered message once
+its own account is back") passes both before and after — it is the no-data-loss
+guard, not a reproduction.
+
+### The fix
+
+`queueMessage` still performs the durable promotion — the row is filed under the
+account that wrote it and is delivered when that account next activates, so
+nothing is lost — but returns before touching in-memory state when
+`activeUserId !== userId`. Every delivery path now reads through `ownedOutbox()`:
+`flush()`, `scheduleNextFlush()`, and `deliverOne()`, which refuses a row the
+active account does not own whatever put it in the array.
+
+The fence is on the **owner**, deliberately not on the activation token: a message
+queued while the _same_ account is re-activating must still reach memory, which is
+exactly what A1's merge depends on.
+
+---
+
+## M1 (fixed, authorized messenger scope) — a subscription attached after its caller disposed
+
+**Severity: high.** A leaked Firestore listener per fast switch, plus a toast for
+a caller that had already moved on.
+
+`subscribeToMessages` (`messenger.ts:314-382` before the fix) awaited
+`getFirestoreInstance()` before `onSnapshot` could attach, and its returned
+disposer looked the listener up in `messageSubscriptions`. Called inside that
+window it found nothing, so the listener attached afterwards and stayed for the
+life of the page; its snapshot callback and both of its toasts still fired. The
+map is keyed by conversation, so a stale disposer could also evict the listener
+that had replaced it.
+
+**The fix** creates the disposer first and gives it a `disposed` flag: the async
+body returns before attaching if disposal already happened, detaches immediately
+if disposal landed while `onSnapshot` was being created, and both handlers plus
+the connect-failure toast check the flag. The disposer clears its map slot only
+when the slot is still its own.
+
+**Evidence — measured.** `tests/unit/messaging/messenger-subscription-ownership.test.ts`,
+against the real `messagingService` with the Firestore SDK mocked and
+`getFirestoreInstance` held open. Four cases, all failing at `eb822199`
+(`expected "vi.fn()" to not be called at all, but actually been called 1 times`)
+and passing after: no attach after disposal; no snapshot or error delivered after
+disposal; no connect-failure toast to a disposed caller; a stale disposer does not
+tear down the live listener for the same conversation.
+
+---
+
+## M2 (fixed, authorized messenger scope) — the read receipt went to whoever was signed in later
+
+**Severity: medium.** A read receipt could be written for the wrong account.
+
+`markAsRead` read `this.getCurrentUserId()` _after_ `await getFirestoreInstance()`
+(`messenger.ts:387-400` before the fix), so `unreadCount.<uid>` and every
+`readBy` entry were stamped with whichever account was live when the handle came
+back.
+
+**The fix** captures the reader before the first await, inside the same `try` so
+the existing silent-failure behaviour is unchanged. No parameter was added:
+`getCurrentUserId()` resolves through `getEffectiveUserId()`, which is
+preview-aware ("View As"), and handing it the drawer's raw `authState.user.uid`
+would have changed that identity. The drawer's own fence decides whether to call
+it at all; this decides who it is for.
+
+**Evidence — measured.** Same file: with the handle held open and the effective
+user changed mid-flight, `updateDoc` is called with `{"unreadCount.user-a": 0}`.
+At `eb822199` that assertion failed (`expected "vi.fn()" to be called with …`) —
+the receipt was filed for `user-b`.
 
 ---
 
@@ -359,20 +467,18 @@ inbox-side consequence is extra snapshot churn through
 `InboxSubscriptionProvider` → `setConversations`, which re-runs the drawer's
 reconcile effect; that effect is a no-op when no outbox row matches.
 
-### Residual in `subscribeToMessages`' own disposer
+### Residual in `subscribeToMessages`' own disposer — closed in round three
 
-`messenger.ts:374-381` returns a disposer that looks the listener up in a map the
-async IIFE has not necessarily populated yet. Calling it during that window
-unsubscribes nothing and the `onSnapshot` attaches afterwards. F1's generation
-guard means such a listener can no longer write into the wrong thread — the
-user-visible defect is closed — but the listener itself can still leak on a very
-fast switch. That line is in `messaging`, and it is the same class as the cost
-audit's H2 (`disposed`-flag pattern); it is left to that owner. The new test
-"keeps the live listener when the same conversation is reopened" pins the other
-half of this hazard from the inbox side: because the disposer resolves by
-conversation id, tearing down a stale listener must not take a live listener for
-the same conversation with it. That test passes both before and after this
-revision — it is a guard, not a reproduction.
+The first two revisions admitted this and left it: the disposer resolved the
+listener through a map the async attach had not necessarily populated, so an
+unsubscribe issued inside that window did nothing and the listener attached
+afterwards and stayed. That is M1 below. The inbox-side generation fence already
+meant such a listener could not write into the wrong thread; M1 stops it existing.
+
+`subscribeToTyping` (`messenger.ts:812-882`) has the identical shape and is **not**
+fixed here — it was not in the authorized scope for this round. It is the same
+three-line `disposed`-flag change, and `MessageThread` does call its disposer on
+unmount, so it is worth doing next.
 
 ---
 
@@ -401,16 +507,16 @@ revision — it is a guard, not a reproduction.
 
 All run in the cloud container at the final SHA unless noted.
 
-| Command                                                                                     | Result                                                                                                   |
-| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer restored: 3 failed (F3). With the base drawer: 4 failed (F1)          |
-| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)              |
-| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                              |
-| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 19 passed / 19, including the un-quarantined activation-race case (red before the A1 fix)                |
-| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging tests/unit/inbox …` | 65 passed / 65 (16 files), nothing skipped                                                               |
-| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — **identical at the base SHA**, none in the changed files                      |
-| `prettier --check` on the changed files                                                     | clean                                                                                                    |
-| `eslint` on the changed files                                                               | 0 errors (the `.svelte` and `tests/**` paths are eslint-ignored by config, which it reports as warnings) |
+| Command                                                                                     | Result                                                                                                         |
+| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer: 3 failed (F3). With the base drawer: 4 failed (F1)                         |
+| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)                    |
+| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                                    |
+| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 27 passed / 27 (8 files). With `eb822199`'s state module: 2 failed (F5). With its messenger: 5 failed (M1, M2) |
+| `… tests/unit/messaging tests/unit/inbox …` (the inbox + messaging sweep)                   | 80 passed / 80 (19 files), nothing skipped                                                                     |
+| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — **identical at the base SHA**, none in the changed files                            |
+| `prettier --check` on the changed files                                                     | clean                                                                                                          |
+| `eslint` on the changed files                                                               | 0 errors, 0 warnings (`tests/**` paths are eslint-ignored by config, which it reports as a warning)            |
 
 Harness note: the container ships Chromium build 1194 at `/opt/pw-browsers`
 while `playwright@1.61.1` expects 1228, so the browser project was run through a
@@ -423,33 +529,47 @@ packages are not prebuilt in a fresh clone.
 
 - **No regression was observed in the suites that were run.** Every pre-existing
   assertion in the touched files still passes (12 in the composer, 9 in the
-  delivery state), the inbox unit suites are green, and `check:fast` reports
-  exactly the same 582/44 as the base SHA with no error in a changed file. That is
-  the evidence; it is not a claim that the change cannot regress anything
-  unexercised — in particular nothing here was run in a real browser against real
-  Firestore, and no account switch was exercised on a device.
+  delivery state, 3 in the delivery coordinator), the inbox + messaging sweep is
+  green at 80/80, and `check:fast` reports exactly the same 582/44 as the base SHA
+  with no error in a changed file. That is the evidence; it is not a claim that
+  the change cannot regress anything unexercised. In particular nothing here ran
+  in a real browser against real Firestore, and no account switch, sign-out or
+  share-target cold start was exercised on a device.
+- **The messenger change is the widest-reach edit in this branch.**
+  `messagingService` is imported by six runtime modules; only its
+  `subscribeToMessages` and `markAsRead` were touched, both behind the tests
+  above, and every inbox component suite that exercises it still passes. It has
+  not been run against the Firestore emulator or a live project.
 - **Deliberate behaviour changes**, each narrower than the defect it closes:
   - an account switch discards the last ≤300ms of typing rather than filing it
     under the wrong account (F4);
   - an account change clears the selected conversation and so returns the drawer
     to its list (F3);
   - a draft whose message was promoted into the outbox during activation is no
-    longer restored to the composer (A1).
-- **One new test is a guard, not a reproduction.** "keeps the live listener when
-  the same conversation is reopened" passes at `ea203124` as well as after. It
-  pins the map-keyed-disposer hazard described below; it did not find a defect,
-  and it is listed as a guard rather than counted as a fix.
+    longer restored to the composer (A1);
+  - a send parked across an account change keeps its durable row but leaves the
+    live outbox, so it is delivered on that account's next activation rather than
+    immediately (F5). Measured as recovered, not lost.
+- **One new test is a guard, not a reproduction** in each of two files:
+  "keeps the live listener when the same conversation is reopened" (drawer) and
+  "delivers the recovered message once its own account is back" (delivery state)
+  both pass before and after. They pin behaviour that must not break; they did not
+  find a defect.
+- **`subscribeToTyping` still has M1's defect.** Same file, same shape, outside
+  this round's authorized scope. Named in the M1 section so the next pass can take
+  it.
 - **Pre-existing failures, not mine.** `SequenceMessageCard.svelte.test.ts` (1)
   and `InboxNotificationItem.svelte.test.ts` (3) fail identically with the changed
   source files reverted to base — an argument-shape mismatch in a viewer call and
   three navigation-route assertions. Left alone: other components' behaviour, and
   another owner may be mid-change on them.
-- **Residuals left to the `messaging` owner**, both named above with line
-  references: `markAsRead` resolving auth after its own await, and
-  `subscribeToMessages`' disposer losing an unsubscribe issued before its async
-  attach completes. Each needs a messaging-service change; the inbox-side fences
-  mean neither can now write into the wrong thread, but the listener leak and the
-  late receipt remain possible.
+- **Plain-record compatibility is preserved.** The delivery state still reads and
+  writes plain `MessageDraftRecord` / `MessageOutboxRecord` objects; the new merge
+  and owner filters use `Map`/`filter` over those records and introduce no class,
+  proxy or identity requirement, so a ledger of plain records (including one built
+  by a `withPlainRecords`-style helper) still round-trips. This is a code-reading
+  claim plus the green `message-delivery-*` suites, not a separate compatibility
+  harness.
 - **The drawer test clicks through the DOM**, not the browser driver: the drawer's
   entrance never reaches Playwright's "stable" condition in the runner, so
   `locator.click()` times out on controls that are already interactive. The same
@@ -459,7 +579,8 @@ packages are not prebuilt in a fresh clone.
   `tests/unit/messaging/message-delivery-state.test.ts` has its own copy of the
   memory repository. It was left untouched rather than refactored, to avoid
   churning a file another session may be editing; the helper's doc comment records
-  that.
+  that. The jsdom config has no `$test-helpers` alias, so unit tests import the
+  helper by relative path; that alias exists only in the browser component config.
 - **No visual verification, and none required.** Every change is subscription,
   ownership and persistence lifetime — no geometry, markup or styling. A
   device/UI gate on the real app was not run and is not claimed.
