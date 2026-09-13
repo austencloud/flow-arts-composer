@@ -2,7 +2,7 @@
 
 Scope: reproduced concurrency/state defects in `src/lib/shared/inbox`, its tests,
 and — from the third round, explicitly authorized — two named defects in
-`src/lib/shared/messaging/services/messenger.ts`. Eight fixed, one confirmed and
+`src/lib/shared/messaging/services/messenger.ts`. Nine fixed, one confirmed and
 left to another owner. No production data was written and no message was sent
 anywhere; every result below comes from the repository's own test harnesses in
 this cloud container.
@@ -12,17 +12,21 @@ Revision history:
 1. `ea203124` — F1 and F2. Held: no account ownership.
 2. `69f6614f` — F3, F4, A1; claims narrowed. Held: the outbox itself still had
    no account fence, and the messenger residuals were still admitted-not-fixed.
-3. this revision — F5 (outbox account ownership) and M1/M2 (the two authorized
-   messenger fixes), each with a deferred reproduction against the real module.
+3. `9030cdd5` — F5 (outbox account ownership) and M1/M2 (the two authorized
+   messenger fixes). Held: F5 fenced the queue but not the delivery already in
+   flight past it.
+4. this revision — F6: every await boundary inside a single delivery is fenced,
+   not just the one that starts it. Also merges `origin/main`'s `withPlainRecords`
+   wrapper into the same file, unchanged.
 
-| Field          | Value                                                                                                                                                                         |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Branch         | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                                                       |
-| Base SHA       | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                                                   |
-| Held revisions | `ea203124` (F1 + F2), `eb822199` (adds F3, F4, A1) — both HOLD                                                                                                                |
-| Merged `main`  | `6e4c1b5a388625d9c95f92e9a717f8ca2ab77f20` — merged in to stay current; it touches only an unrelated 3D parity test                                                           |
-| Final SHA      | `dce1598493fbcf6334797c586727b87e2bfe3f92` — this round's correction commit; the branch tip after it only fills in this row and updates this report                           |
-| Owned paths    | `src/lib/shared/inbox/**`, `tests/unit/messaging/*` (three new files), `tests/helpers/inbox/**` (new), plus the two authorized functions in `messaging/services/messenger.ts` |
+| Field          | Value                                                                                                                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Branch         | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                                                                                                         |
+| Base SHA       | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                                                                                                     |
+| Held revisions | `ea203124` (F1 + F2), `eb822199` (adds F3, F4, A1), `9030cdd5` (adds F5, M1, M2) — all HOLD                                                                                                                                     |
+| Merged `main`  | `6e4c1b5a` (unrelated 3D parity test), then `cb4d4210` — which carries `73aafa4a`, the `withPlainRecords` wrapper in this same state file. Auto-merged clean; the wrapper is preserved verbatim, see the integration note below |
+| Final SHA      | `52bf04665f24df255ef5695ab734cd5f905655f1` — this round's correction commit; the branch tip after it only fills in this row and updates this report                                                                             |
+| Owned paths    | `src/lib/shared/inbox/**`, `tests/unit/messaging/*` (three new files), `tests/helpers/inbox/**` (new), plus the two authorized functions in `messaging/services/messenger.ts`                                                   |
 
 Files changed:
 
@@ -30,10 +34,10 @@ Files changed:
 - `src/lib/shared/inbox/components/InboxDrawer.svelte.test.ts` (new; 8 cases prove F1 and F3)
 - `src/lib/shared/inbox/components/messages/MessageComposer.svelte` (fixes F2, F4)
 - `src/lib/shared/inbox/components/messages/MessageComposer.svelte.test.ts` (3 new cases prove F2 and F4)
-- `src/lib/shared/inbox/state/message-delivery-state.svelte.ts` (fixes A1, F5)
+- `src/lib/shared/inbox/state/message-delivery-state.svelte.ts` (fixes A1, F5, F6)
 - `src/lib/shared/messaging/services/messenger.ts` (fixes M1, M2 — authorized scope: `subscribeToMessages` and `markAsRead`, nothing else in the file)
 - `tests/unit/messaging/message-delivery-activation-race.test.ts` (new; was quarantined, now green against the fix)
-- `tests/unit/messaging/message-delivery-account-ownership.test.ts` (new; proves F5)
+- `tests/unit/messaging/message-delivery-account-ownership.test.ts` (new; proves F5 and F6)
 - `tests/unit/messaging/messenger-subscription-ownership.test.ts` (new; proves M1 and M2 at the real messaging boundary)
 - `tests/helpers/inbox/reactive-account-double.svelte.ts` (new test helper)
 - `tests/helpers/inbox/memory-delivery-repository.ts` (new test helper)
@@ -367,13 +371,92 @@ guard, not a reproduction.
 `queueMessage` still performs the durable promotion — the row is filed under the
 account that wrote it and is delivered when that account next activates, so
 nothing is lost — but returns before touching in-memory state when
-`activeUserId !== userId`. Every delivery path now reads through `ownedOutbox()`:
-`flush()`, `scheduleNextFlush()`, and `deliverOne()`, which refuses a row the
-active account does not own whatever put it in the array.
+`activeUserId !== userId`. `flush()`, `scheduleNextFlush()` and the entry check in
+`deliverOne()` read through `ownedOutbox()`.
 
 The fence is on the **owner**, deliberately not on the activation token: a message
 queued while the _same_ account is re-activating must still reach memory, which is
 exactly what A1's merge depends on.
+
+**Claim corrected in round four.** The round-three text said this made it so a row
+belonging to another account "must never be sent … whatever put it in the array".
+That was too strong, and review was right to reject it: `ownedOutbox()` and
+`deliverOne`'s entry check only decide which deliveries _start_. A delivery that
+had already passed them could still reach the coordinator after the account
+changed, because `deliverOne` awaited its own persistence in between. F6 is that
+gap. What F5 actually closes is the queue: no row enters, is scheduled by, or is
+picked up from another account's live outbox.
+
+---
+
+## F6 (fixed) — a delivery already in flight was handed over as the next account
+
+**Severity: high — a message sent from the wrong account.** Raised by review of
+`9030cdd5`, then reproduced.
+
+### Mechanism
+
+`deliverOne` checked the owner once, at entry. It then wrote the optimistic
+`sending` row — `await repository.putOutbox(sending)` — and called
+`coordinator.deliver(sending, …)` with no recheck. That await is enough:
+
+```
+flush() → deliverOne(A's row)        owner check passes, A is active
+  replaceOutbox(sending)
+  await repository.putOutbox(sending)   ← parks here
+                                        activate("user-b") completes
+  coordinator.deliver(sending)          ← A's row, B signed in
+```
+
+`MessageDeliveryCoordinator.deliver` ends at
+`this.messenger.sendMessage({ … })` (`MessageDeliveryCoordinator.ts:87-93`), and
+`Messenger.sendMessage` resolves the sender from live auth through
+`getCurrentUserId()`. So the parked row is sent **as whoever is signed in now** —
+one account's message posted from another account.
+
+The same shape sat on the other side of the send: if the account changed while
+the coordinator was working, the old code returned without recording the result,
+leaving the durable row `sending`. `activate()` normalizes `sending` back to
+`queued` on the next activation, so that message would have been **sent twice**.
+
+### Evidence — measured
+
+`tests/unit/messaging/message-delivery-account-ownership.test.ts`, real
+`createMessageDeliveryState`, with the ledger's next outbox write held open (and,
+for the third case, the coordinator held mid-send). At `a23127b8` — the merged
+tip that already contains F5:
+
+| Test                                                                             | Failure before F6                                                                                                           |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| does not hand a parked delivery to the coordinator after the account changes     | `expected "vi.fn()" to not be called at all, but … called 1 times`                                                          |
+| delivers a parked message once, on its own account's next activation             | same — it was delivered under the wrong account instead                                                                     |
+| records a send that completed after the account changed, so it is not sent twice | `expected { id: 'message-1', … } to match object { userId: 'user-a', status: 'sent' }` — the durable row was left `sending` |
+
+All three pass against the fix, and the nine pre-existing `message-delivery-state`
+cases (interrupted persistence, transient retry, terminal failure, restart
+normalization) are unchanged and still pass.
+
+### The fix
+
+`ownsDelivery(token, userId)` — generation **and** owner — is now checked after
+every await inside a delivery, not only at its start:
+
+- after the optimistic `sending` write, before the coordinator is called;
+- inside `onProgress` and `onPrepared`;
+- around the terminal write, through `persistDelivery`, which always writes the
+  durable row and mirrors it into the live outbox only while the delivery is
+  still owned.
+
+When the fence trips before the send, the durable row is put back to `queued`
+with its attempt **un-counted** — nothing was attempted — so the owning account
+picks it up on its next activation (measured: delivered exactly once, and not
+before). When ownership is lost after the send, the result is still written to
+that account's durable row, so the message is recorded `sent` and cannot be
+re-sent.
+
+The delivery also stops re-reading its record from the live outbox mid-flight; it
+carries the latest version locally, which is what lets a terminal status reach the
+right durable row after the live outbox has moved on to another account.
 
 ---
 
@@ -507,16 +590,16 @@ unmount, so it is worth doing next.
 
 All run in the cloud container at the final SHA unless noted.
 
-| Command                                                                                     | Result                                                                                                         |
-| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer: 3 failed (F3). With the base drawer: 4 failed (F1)                         |
-| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)                    |
-| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                                    |
-| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 27 passed / 27 (8 files). With `eb822199`'s state module: 2 failed (F5). With its messenger: 5 failed (M1, M2) |
-| `… tests/unit/messaging tests/unit/inbox …` (the inbox + messaging sweep)                   | 80 passed / 80 (19 files), nothing skipped                                                                     |
-| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — **identical at the base SHA**, none in the changed files                            |
-| `prettier --check` on the changed files                                                     | clean                                                                                                          |
-| `eslint` on the changed files                                                               | 0 errors, 0 warnings (`tests/**` paths are eslint-ignored by config, which it reports as a warning)            |
+| Command                                                                                     | Result                                                                                                                                               |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer: 3 failed (F3). With the base drawer: 4 failed (F1)                                                               |
+| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)                                                          |
+| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                                                                          |
+| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 29 passed / 29 (8 files). With the merged tip's state module: 3 failed (F6). With `eb822199`'s: 2 failed (F5). With its messenger: 5 failed (M1, M2) |
+| `… tests/unit/messaging tests/unit/inbox …` (the inbox + messaging sweep)                   | 83 passed / 83 (19 files), nothing skipped                                                                                                           |
+| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — unchanged across every revision and after merging `main`, none in the changed files                                       |
+| `prettier --check` on the changed files                                                     | clean                                                                                                                                                |
+| `eslint` on the changed files                                                               | 0 errors, 0 warnings (`tests/**` paths are eslint-ignored by config, which it reports as a warning)                                                  |
 
 Harness note: the container ships Chromium build 1194 at `/opt/pw-browsers`
 while `playwright@1.61.1` expects 1228, so the browser project was run through a
@@ -550,6 +633,11 @@ packages are not prebuilt in a fresh clone.
   - a send parked across an account change keeps its durable row but leaves the
     live outbox, so it is delivered on that account's next activation rather than
     immediately (F5). Measured as recovered, not lost.
+  - a delivery whose account changes while it is in flight is abandoned before the
+    coordinator is called and its attempt is un-counted, so it is retried rather
+    than sent from the wrong account (F6); one whose account changes _after_ the
+    send still records `sent` on the owning account's durable row, so it is not
+    sent twice.
 - **One new test is a guard, not a reproduction** in each of two files:
   "keeps the live listener when the same conversation is reopened" (drawer) and
   "delivers the recovered message once its own account is back" (delivery state)
@@ -563,6 +651,15 @@ packages are not prebuilt in a fresh clone.
   source files reverted to base — an argument-shape mismatch in a viewer call and
   three navigation-route assertions. Left alone: other components' behaviour, and
   another owner may be mid-change on them.
+- **Integration note — `withPlainRecords`.** `origin/main` gained
+  `73aafa4a` ("persist plain outbox and draft records, not `$state` proxies"),
+  which wraps the repository in `withPlainRecords` inside this same state file.
+  It was merged into this branch and **auto-merged clean**: the wrapper and its
+  `plainRecord` helper are preserved verbatim, and this branch's edits sit in
+  `activate()`, `queueMessage()` and `deliverOne()`, which the wrapper does not
+  touch. Integrate by merging, not by replacing the file — nothing here is a
+  substitute for that fix, and every durable write in the new delivery paths
+  still goes through the wrapped repository, so it keeps unwrapping proxies.
 - **Plain-record compatibility is preserved.** The delivery state still reads and
   writes plain `MessageDraftRecord` / `MessageOutboxRecord` objects; the new merge
   and owner filters use `Map`/`filter` over those records and introduce no class,
