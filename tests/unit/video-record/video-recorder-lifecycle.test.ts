@@ -19,7 +19,6 @@ const originalRevokeObjectURL = URL.revokeObjectURL;
 
 let clock = 0;
 let objectUrlCounter = 0;
-const revokedUrls: string[] = [];
 
 function advanceClock(ms: number): void {
   clock += ms;
@@ -37,11 +36,18 @@ async function blobText(blob: Blob): Promise<string> {
 }
 
 /** Fail fast instead of letting a stranded promise eat the suite timeout. */
-function withTimeout<T>(promise: Promise<T>, label: string, ms = 2000): Promise<T> {
+function withTimeout<T>(
+  promise: Promise<T>,
+  label: string,
+  ms = 2000
+): Promise<T> {
   return Promise.race([
     promise,
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`${label} never settled within ${ms}ms`)), ms)
+      setTimeout(
+        () => reject(new Error(`${label} never settled within ${ms}ms`)),
+        ms
+      )
     ),
   ]);
 }
@@ -60,14 +66,12 @@ function settle(): Promise<void> {
 beforeEach(() => {
   clock = 1_000_000;
   objectUrlCounter = 0;
-  revokedUrls.length = 0;
   FakeMediaRecorder.reset();
   vi.spyOn(Date, "now").mockImplementation(() => clock);
-  globalThis.MediaRecorder = FakeMediaRecorder as unknown as typeof MediaRecorder;
+  globalThis.MediaRecorder =
+    FakeMediaRecorder as unknown as typeof MediaRecorder;
   URL.createObjectURL = vi.fn(() => `blob:fake/${++objectUrlCounter}`);
-  URL.revokeObjectURL = vi.fn((url: string) => {
-    revokedUrls.push(url);
-  });
+  URL.revokeObjectURL = vi.fn();
 });
 
 afterEach(() => {
@@ -91,7 +95,10 @@ describe("VideoRecorder stop integrity", () => {
     expect(media.state).toBe("inactive");
     expect(media.hasPendingEvents).toBe(true);
 
-    const resultPromise = withTimeout(recorder.stopRecording(id), "stopRecording");
+    const resultPromise = withTimeout(
+      recorder.stopRecording(id),
+      "stopRecording"
+    );
     await settle();
     media.flush();
 
@@ -112,7 +119,10 @@ describe("VideoRecorder stop integrity", () => {
     media.endOnItsOwn();
     media.flush();
 
-    const result = await withTimeout(recorder.stopRecording(id), "late stopRecording");
+    const result = await withTimeout(
+      recorder.stopRecording(id),
+      "late stopRecording"
+    );
     expect(result.success).toBe(true);
     expect(await blobText(result.videoBlob!)).toBe(media.delivered.join(""));
   });
@@ -123,8 +133,14 @@ describe("VideoRecorder stop integrity", () => {
     const media = latestRecorder();
     media.emitChunk();
 
-    const first = withTimeout(recorder.stopRecording(id), "first stopRecording");
-    const second = withTimeout(recorder.stopRecording(id), "second stopRecording");
+    const first = withTimeout(
+      recorder.stopRecording(id),
+      "first stopRecording"
+    );
+    const second = withTimeout(
+      recorder.stopRecording(id),
+      "second stopRecording"
+    );
     await settle();
     media.flush();
 
@@ -133,6 +149,9 @@ describe("VideoRecorder stop integrity", () => {
     expect(b.success).toBe(true);
     expect(a.videoBlob!.size).toBe(b.videoBlob!.size);
     expect(await blobText(a.videoBlob!)).toBe(media.delivered.join(""));
+    // One finalization, so one blob URL — a second one would leak, since the
+    // panel only ever revokes the URL it was handed.
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
   });
 
   it("never carries chunks from a finished session into the next one", async () => {
@@ -141,7 +160,10 @@ describe("VideoRecorder stop integrity", () => {
     const firstId = await recorder.startRecording(fakeStream());
     const firstMedia = latestRecorder();
     firstMedia.emitChunk();
-    const firstStop = withTimeout(recorder.stopRecording(firstId), "first session stop");
+    const firstStop = withTimeout(
+      recorder.stopRecording(firstId),
+      "first session stop"
+    );
     await settle();
     firstMedia.flush();
     const firstResult = await firstStop;
@@ -150,7 +172,10 @@ describe("VideoRecorder stop integrity", () => {
     const secondMedia = latestRecorder();
     expect(secondMedia).not.toBe(firstMedia);
     secondMedia.emitChunk();
-    const secondStop = withTimeout(recorder.stopRecording(secondId), "second session stop");
+    const secondStop = withTimeout(
+      recorder.stopRecording(secondId),
+      "second session stop"
+    );
     await settle();
     secondMedia.flush();
     const secondResult = await secondStop;
@@ -170,10 +195,13 @@ describe("VideoRecorder stop integrity", () => {
     const media = latestRecorder();
     media.emitChunk();
 
-    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    const failing = withTimeout(recorder.stopRecording(id), "failing stopRecording").catch(
-      (error: unknown) => error
-    );
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const failing = withTimeout(
+      recorder.stopRecording(id),
+      "failing stopRecording"
+    ).catch((error: unknown) => error);
     await settle();
     media.raiseError("device lost");
 
@@ -200,7 +228,10 @@ describe("VideoRecorder pause accounting", () => {
     // The user walks away for five seconds while paused.
     advanceClock(5000);
 
-    const stop = withTimeout(recorder.stopRecording(id), "paused stopRecording");
+    const stop = withTimeout(
+      recorder.stopRecording(id),
+      "paused stopRecording"
+    );
     await settle();
     media.flush();
     const result = await stop;

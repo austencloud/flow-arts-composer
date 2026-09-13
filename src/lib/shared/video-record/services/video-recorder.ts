@@ -26,6 +26,15 @@ interface RecordingState {
   options: Required<RecordingOptions>;
   onProgress?: (progress: RecordingProgress) => void;
   progressInterval?: number;
+  /**
+   * Settles when the recorder has emitted its `stop` event — which the spec
+   * guarantees comes after the final `dataavailable`. Created at start time so
+   * it is already armed no matter who ends the recorder: the app, the user, or
+   * the browser dropping the camera track.
+   */
+  stopped: Promise<void>;
+  /** The single in-flight finalization, shared by every caller of stopRecording. */
+  stopPromise?: Promise<RecordingResult>;
 }
 
 export class VideoRecorder {
@@ -101,6 +110,26 @@ export class VideoRecorder {
       }
     };
 
+    // Wire the terminal handlers before starting. Attaching them at stop time
+    // instead loses the tail of the recording whenever the recorder ends on its
+    // own (camera track dropped, tab suspended): it is already "inactive" while
+    // its final `dataavailable` is still queued.
+    let markStopped: (() => void) | undefined;
+    let markFailed: ((error: Error) => void) | undefined;
+    const stopped = new Promise<void>((resolve, reject) => {
+      markStopped = resolve;
+      markFailed = reject;
+    });
+    // Nobody is awaiting `stopped` until stopRecording runs; keep a failure in
+    // the meantime from surfacing as an unhandled rejection.
+    void stopped.catch(() => {});
+
+    mediaRecorder.onstop = () => markStopped?.();
+    mediaRecorder.onerror = (event) => {
+      console.error("MediaRecorder error:", event);
+      markFailed?.(new Error("Recording failed"));
+    };
+
     // Start recording with 100ms chunks for smooth capture
     mediaRecorder.start(100);
 
@@ -116,6 +145,7 @@ export class VideoRecorder {
       lastPauseTime: null,
       options: { format, quality, maxDuration },
       onProgress,
+      stopped,
     };
 
     this.activeRecordings.set(recordingId, recordingState);
@@ -138,7 +168,7 @@ export class VideoRecorder {
 
         // Auto-stop if max duration reached
         if (currentDuration >= maxDuration) {
-          this.stopRecording(recordingId);
+          void this.stopRecording(recordingId).catch(() => {});
         }
       }, 100);
 
@@ -195,41 +225,48 @@ export class VideoRecorder {
       };
     }
 
-    // Clear progress interval
+    // A second stop — a double tap, or the user pressing stop just as the
+    // maxDuration auto-stop fires — joins the first finalization instead of
+    // racing it. Racing used to strand the first caller forever and hand the
+    // second one a blob assembled before the last chunk landed.
+    state.stopPromise ??= this.finalizeRecording(state);
+    return state.stopPromise;
+  }
+
+  /**
+   * Ends the recorder and assembles the finished video. Runs at most once per
+   * recording.
+   */
+  private async finalizeRecording(
+    state: RecordingState
+  ): Promise<RecordingResult> {
+    const { recordingId } = state;
+
     if (state.progressInterval) {
       clearInterval(state.progressInterval);
+      state.progressInterval = undefined;
     }
 
-    // Stop MediaRecorder
-    const videoBlob = await new Promise<Blob>((resolve, reject) => {
-      state.mediaRecorder.onstop = () => {
-        const blob = new Blob(state.chunks, {
-          type: state.mediaRecorder.mimeType,
-        });
-        resolve(blob);
-      };
+    // Freeze the duration at the moment stop was requested, before waiting on
+    // the recorder to flush.
+    const duration = this.durationOf(state);
 
-      state.mediaRecorder.onerror = (event) => {
-        console.error("MediaRecorder error:", event);
-        reject(new Error("Recording failed"));
-      };
-
-      // Request stop if still recording
+    try {
       if (state.mediaRecorder.state !== "inactive") {
         state.mediaRecorder.stop();
-      } else {
-        // Already stopped, create blob immediately
-        const blob = new Blob(state.chunks, {
-          type: state.mediaRecorder.mimeType,
-        });
-        resolve(blob);
       }
+      // Waiting for the `stop` event — never just for "inactive" — is what
+      // guarantees the final `dataavailable` is already in `chunks`.
+      await state.stopped;
+    } finally {
+      // Even a failed recorder has to leave the active map, or its id can
+      // never be started, cancelled, or stopped again.
+      this.activeRecordings.delete(recordingId);
+    }
+
+    const videoBlob = new Blob(state.chunks, {
+      type: state.mediaRecorder.mimeType,
     });
-
-    const duration = this.getCurrentDuration(recordingId);
-
-    // Clean up recording state
-    this.activeRecordings.delete(recordingId);
 
     // Create blob URL
     const blobUrl = URL.createObjectURL(videoBlob);
@@ -259,6 +296,7 @@ export class VideoRecorder {
     // Clear progress interval
     if (state.progressInterval) {
       clearInterval(state.progressInterval);
+      state.progressInterval = undefined;
     }
 
     // Stop MediaRecorder without saving
@@ -412,10 +450,23 @@ export class VideoRecorder {
   private getCurrentDuration(recordingId: string): number {
     const state = this.activeRecordings.get(recordingId);
     if (!state) return 0;
+    return this.durationOf(state);
+  }
 
+  /**
+   * Recorded seconds, excluding paused time.
+   *
+   * `pausedDuration` only accumulates on resume, so a pause that is still open
+   * has to be subtracted separately. Without it the timer keeps climbing while
+   * paused — inflating the saved duration and letting the maxDuration auto-stop
+   * fire on a recording that is not capturing anything.
+   */
+  private durationOf(state: RecordingState): number {
+    const openPause =
+      state.lastPauseTime !== null ? Date.now() - state.lastPauseTime : 0;
     const elapsed = Date.now() - state.startTime;
-    const activeDuration = elapsed - state.pausedDuration;
-    return activeDuration / 1000;
+    const activeDuration = elapsed - state.pausedDuration - openPause;
+    return Math.max(0, activeDuration) / 1000;
   }
 }
 

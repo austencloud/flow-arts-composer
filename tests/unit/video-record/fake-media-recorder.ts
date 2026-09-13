@@ -48,7 +48,10 @@ export class FakeMediaRecorder {
     public stream: MediaStream,
     options: { mimeType?: string; videoBitsPerSecond?: number } = {}
   ) {
-    if (options.mimeType && !FakeMediaRecorder.isTypeSupported(options.mimeType)) {
+    if (
+      options.mimeType &&
+      !FakeMediaRecorder.isTypeSupported(options.mimeType)
+    ) {
       throw new DOMException(
         `${options.mimeType} is not supported`,
         "NotSupportedError"
@@ -100,11 +103,6 @@ export class FakeMediaRecorder {
     const payload = this.nextChunkPayload();
     this.deliver(payload);
     return payload;
-  }
-
-  /** Deliver an empty chunk — the browser does this when nothing was captured. */
-  emitEmptyChunk(): void {
-    this.ondataavailable?.({ data: new Blob([], { type: this.mimeType }) });
   }
 
   raiseError(message = "recorder failed"): void {
