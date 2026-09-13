@@ -1,4 +1,4 @@
-import { getContext, setContext } from "svelte";
+import { getContext, setContext, untrack } from "svelte";
 import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
 import { TIMING_DIRECTION_ARTICLES } from "../_data/timing-direction-articles";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -23,7 +23,7 @@ export function createTimingDirectionState(initialSlug?: string) {
   let step = $state(0);
   let target = $state.raw<HTMLElement | null>(null);
   let exampleSequence = $state.raw<SequenceData | null>(null);
-  let seek = $state.raw<((step: number) => void) | null>(null);
+  let seek: ((step: number) => void) | null = null;
   let seekStep = $state(0);
   let seekVersion = $state(0);
 
@@ -72,7 +72,7 @@ export function createTimingDirectionState(initialSlug?: string) {
     },
     registerSeek(next: ((step: number) => void) | null) {
       seek = next;
-      seek?.(seekStep);
+      untrack(() => seek?.(seekStep));
     },
     get target() {
       return target;
