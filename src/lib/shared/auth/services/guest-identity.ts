@@ -26,14 +26,49 @@ export type GuestIdentitySource =
   | "gallery_mount"
   | "thumbnail_upload";
 
+/**
+ * Hand saves that completed with no identity to this ANONYMOUS uid.
+ *
+ * Called from both anonymous paths — a freshly provisioned identity and a
+ * restored one — and from neither full-account path. Never throws: adoption is
+ * a continuity nicety and must not be able to fail a sign-in.
+ */
+function adoptParkedSaves(uid: string, source: GuestIdentitySource): void {
+  try {
+    const adopted = adoptUnownedSequenceIds(uid);
+    if (adopted.length > 0) {
+      captureWhenReady("guest_identity_adopted_unowned_saves", {
+        source,
+        count: adopted.length,
+      });
+    }
+  } catch (adoptionError) {
+    console.warn(
+      "[guest-identity] Could not adopt unowned saves:",
+      adoptionError
+    );
+  }
+}
+
 export async function ensureGuestIdentity(
   source: GuestIdentitySource = "first_persistable_action"
 ): Promise<void> {
   const auth = await getAuthInstance();
   if (auth.currentUser) {
-    if (auth.currentUser.isAnonymous && !restoredRecorded) {
-      restoredRecorded = true;
-      captureWhenReady("guest_identity_restored", { source });
+    if (auth.currentUser.isAnonymous) {
+      // A RESTORED anonymous session is the same guest continuing, so it may
+      // claim saves parked while no identity existed. Without this, a browser
+      // that already holds an anonymous user takes the early return and the
+      // parked rows stay parked forever — invisible and unsyncable, which is
+      // the exact orphaning the park was introduced to end.
+      //
+      // Still anonymous-only: a full account takes neither branch and can
+      // never adopt work it did not make.
+      adoptParkedSaves(auth.currentUser.uid, source);
+      if (!restoredRecorded) {
+        restoredRecorded = true;
+        captureWhenReady("guest_identity_restored", { source });
+      }
     }
     return;
   }
@@ -46,20 +81,7 @@ export async function ensureGuestIdentity(
       // attributed — to a fresh ANONYMOUS identity, i.e. the same person
       // continuing the same guest session. A full-account sign-in never
       // reaches here, so it can never adopt work it did not make.
-      try {
-        const adopted = adoptUnownedSequenceIds(credential.user.uid);
-        if (adopted.length > 0) {
-          captureWhenReady("guest_identity_adopted_unowned_saves", {
-            source,
-            count: adopted.length,
-          });
-        }
-      } catch (adoptionError) {
-        console.warn(
-          "[guest-identity] Could not adopt unowned saves:",
-          adoptionError
-        );
-      }
+      adoptParkedSaves(credential.user.uid, source);
       if (!createdRecorded) {
         createdRecorded = true;
         captureWhenReady("guest_identity_created", { source });

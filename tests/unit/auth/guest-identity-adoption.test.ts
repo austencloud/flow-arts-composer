@@ -15,7 +15,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const signInAnonymouslyMock = vi.fn();
-const currentUser = { value: null as { uid: string } | null };
+const currentUser = {
+  value: null as { uid: string; isAnonymous?: boolean } | null,
+};
 
 vi.mock("firebase/auth", () => ({
   signInAnonymously: (...a: unknown[]) => signInAnonymouslyMock(...a),
@@ -64,10 +66,23 @@ describe("ensureGuestIdentity — adoption of unowned saves", () => {
     expect(getOwnedSequenceIdSet("anon-new").size).toBe(0);
   });
 
-  it("does not adopt when an identity already exists", async () => {
-    // Someone is already signed in, so no anonymous identity is provisioned and
-    // nothing may be attributed to them.
-    currentUser.value = { uid: "already-signed-in" };
+  it("adopts into a RESTORED anonymous identity, not just a fresh one", async () => {
+    // The browser already holds an anonymous user, so ensureGuestIdentity takes
+    // its early return and never calls signInAnonymously. Without adopting
+    // here the parked rows stayed parked forever — invisible and unsyncable,
+    // the exact orphaning the park exists to end.
+    currentUser.value = { uid: "anon-restored", isAnonymous: true };
+    recordUnownedSequenceId("seq-1");
+
+    await ensureGuestIdentity();
+
+    expect(signInAnonymouslyMock).not.toHaveBeenCalled();
+    expect(getOwnedSequenceIdSet("anon-restored").has("seq-1")).toBe(true);
+    expect(getUnownedSequenceIds()).toEqual([]);
+  });
+
+  it("does not adopt into an already signed-in FULL account", async () => {
+    currentUser.value = { uid: "already-signed-in", isAnonymous: false };
     recordUnownedSequenceId("seq-1");
 
     await ensureGuestIdentity();
@@ -100,7 +115,7 @@ describe("adoption is anonymous-only by construction", () => {
     // This test pins the consequence rather than the wiring: a full account
     // signing in over parked saves does not acquire them.
     recordUnownedSequenceId("guest-work");
-    currentUser.value = { uid: "full-account" };
+    currentUser.value = { uid: "full-account", isAnonymous: false };
 
     await ensureGuestIdentity();
 
@@ -113,5 +128,82 @@ describe("adoption is anonymous-only by construction", () => {
 
     expect(adoptUnownedSequenceIds(undefined)).toEqual([]);
     expect(getUnownedSequenceIds()).toEqual(["seq-1"]);
+  });
+});
+
+describe("the park is released only for ledger writes that persisted", () => {
+  /**
+   * `recordSavedSequenceId` swallows quota and private-browsing failures.
+   * Clearing the park on the strength of having CALLED it would drop the id
+   * from both sides — owned by nobody, parked by nobody — which is strictly
+   * worse than the orphaning this mechanism was built to fix.
+   */
+  it("keeps an id parked when its owner-ledger write fails", () => {
+    recordUnownedSequenceId("seq-1");
+    const realSetItem = localStorage.setItem.bind(localStorage);
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation((key: string, value: string) => {
+        // Only the OWNER ledger write fails; the park remains writable.
+        if (key.startsWith("tka-saved-seq-ids:")) {
+          throw new DOMException("quota", "QuotaExceededError");
+        }
+        realSetItem(key, value);
+      });
+
+    try {
+      const adopted = adoptUnownedSequenceIds("anon-1");
+
+      expect(adopted).toEqual([]);
+      expect(getOwnedSequenceIdSet("anon-1").size).toBe(0);
+      // Still claimable by a later attempt, rather than silently gone.
+      expect(getUnownedSequenceIds()).toEqual(["seq-1"]);
+    } finally {
+      setItemSpy.mockRestore();
+    }
+  });
+
+  it("releases only the ids that actually persisted", () => {
+    recordUnownedSequenceId("ok-1");
+    recordUnownedSequenceId("fails");
+    const realSetItem = localStorage.setItem.bind(localStorage);
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation((key: string, value: string) => {
+        if (key.startsWith("tka-saved-seq-ids:") && value.includes("fails")) {
+          throw new DOMException("quota", "QuotaExceededError");
+        }
+        realSetItem(key, value);
+      });
+
+    try {
+      const adopted = adoptUnownedSequenceIds("anon-1");
+
+      expect(adopted).toEqual(["ok-1"]);
+      expect(getUnownedSequenceIds()).toEqual(["fails"]);
+    } finally {
+      setItemSpy.mockRestore();
+    }
+  });
+
+  it("retries successfully once storage recovers", () => {
+    recordUnownedSequenceId("seq-1");
+    const realSetItem = localStorage.setItem.bind(localStorage);
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation((key: string, value: string) => {
+        if (key.startsWith("tka-saved-seq-ids:")) {
+          throw new DOMException("quota", "QuotaExceededError");
+        }
+        realSetItem(key, value);
+      });
+    adoptUnownedSequenceIds("anon-1");
+    setItemSpy.mockRestore();
+
+    const adopted = adoptUnownedSequenceIds("anon-1");
+
+    expect(adopted).toEqual(["seq-1"]);
+    expect(getOwnedSequenceIdSet("anon-1").has("seq-1")).toBe(true);
+    expect(getUnownedSequenceIds()).toEqual([]);
   });
 });

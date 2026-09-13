@@ -5,10 +5,12 @@
 its assigned `claude/*` branch; `codex/*` was not available)
 **Session:** `session_01XKgrpvpxBttgxeaNzPKsJC`
 **Base SHA:** `0945738f` (merge of `origin/main` `c4be1619` into the task branch)
-**Final SHA:** see branch head (implementation `f48d9877`, identity fence
-`928b77ce`, offer-binding + visibility `58012fe5`, collision-result binding and
-unowned/thumbnail fences `06d144cc`, save side-effect chain + unowned adoption
-after that)
+**Final SHA:** `a988b8aa` + this correction commit. Chain: implementation
+`f48d9877` → identity fence `928b77ce` → offer-binding + visibility `58012fe5`
+→ collision-result binding and unowned/thumbnail fences `06d144cc` → save
+side-effect chain + unowned adoption `a988b8aa` → shared-surface note
+`a6a318c3` → tag lookups, lifecycle attribution and adoption durability (this
+commit).
 **Source audit:** `docs/superpowers/reviews/2026-09-12-guest-save-continuity-audit.md`
 (reviewed at `7fabc7d9`)
 
@@ -140,16 +142,18 @@ resolved its own uid from live auth after its own awaits. Each of those uids is
 a Firestore **path**, so an unfenced one does not merely mislabel a document —
 it puts it in someone else's subtree. Audited end to end:
 
-| Step                                                                           | Before                                                                               | Now                                                                               |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| Dexie row                                                                      | no auth                                                                              | unchanged                                                                         |
-| ledger record                                                                  | snapshot uid                                                                         | snapshot uid; parks when unowned (below)                                          |
-| `createNewTags` → `createUserTag`                                              | re-read live auth after `await getFirestoreInstance()`                               | takes the saving uid, fenced after the uid resolve; skipped entirely when unowned |
-| initial cloud sync                                                             | fenced                                                                               | fenced; not attempted when unowned                                                |
-| thumbnail `attachThumbnail`                                                    | re-read live auth                                                                    | fenced                                                                            |
-| artifact extraction                                                            | `authState.effectiveUserId` **re-read**, not the snapshot                            | snapshot uid; skipped when unowned                                                |
-| 4 artifact writes (`HandPathRepository.save` ×2, `SoloPropRepository.save` ×2) | `await getFirestoreInstance()` then `requireAuth()` — the uid is the collection path | `expectedOwnerId` threaded through the extractor, fenced after the uid resolve    |
-| `warmSequenceCells`, analytics, library refresh, nudge                         | no per-account write                                                                 | unchanged                                                                         |
+| Step                                                                           | Before                                                                               | Now                                                                                |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| Dexie row                                                                      | no auth                                                                              | unchanged                                                                          |
+| ledger record                                                                  | snapshot uid                                                                         | snapshot uid; parks when unowned (below)                                           |
+| `createNewTags` → `createUserTag`                                              | re-read live auth after `await getFirestoreInstance()`                               | takes the saving uid, fenced after the uid resolve; skipped entirely when unowned  |
+| initial cloud sync                                                             | fenced                                                                               | fenced; not attempted when unowned                                                 |
+| thumbnail `attachThumbnail`                                                    | re-read live auth                                                                    | fenced                                                                             |
+| artifact extraction                                                            | `authState.effectiveUserId` **re-read**, not the snapshot                            | snapshot uid; skipped when unowned                                                 |
+| 4 artifact writes (`HandPathRepository.save` ×2, `SoloPropRepository.save` ×2) | `await getFirestoreInstance()` then `requireAuth()` — the uid is the collection path | `expectedOwnerId` threaded through the extractor, fenced after the uid resolve     |
+| `createNewTags` → `findTagByName` (lookup, and again inside `createUserTag`)   | re-read live auth after `await getFirestoreInstance()`; the uid is the READ path     | both lookups take the saving uid, fenced after the uid resolves                    |
+| `sequence_save` lifecycle event                                                | **NOT** owner-free: awaits `authStateReady()` then stamps the LIVE uid as `ownerUid` | takes the acting account; a mismatch drops the event rather than misattributing it |
+| `warmSequenceCells`, library refresh, nudge                                    | no per-account write                                                                 | unchanged                                                                          |
 
 ### An unowned save is parked, not orphaned — and only a guest may claim it
 
@@ -285,18 +289,34 @@ pnpm exec vitest run --config tests/config/vitest.config.ts \
   tests/unit/library/guest-save-cap-scoping.test.ts \
   tests/unit/library/library-sync-retry-ownership.test.ts \
   tests/unit/library/write-identity-fence.test.ts \
+  tests/unit/library/save-side-effect-ownership.test.ts \
+  tests/unit/library/artifact-repo-identity-fence.test.ts \
+  tests/unit/library/tag-lookup-identity-fence.test.ts \
+  tests/unit/library/unowned-save-continuity.test.ts \
   tests/unit/auth/anonymous-import-continuity.test.ts \
-  tests/unit/auth/guest-signin-guard.test.ts
-→ Test Files 9 passed (9) · Tests 88 passed (88)
-
-Related-suite sweep (tests/unit/library, tests/unit/auth, the save-service
-persistence suite, the public-by-default contract, browse-engine identity
-switch, share-intake):
-→ Test Files 89 passed (89) · Tests 629 passed (629)
-
-An earlier revision of this report said 54 focused tests; the real number at
-that commit was 52. Counts here are copied from run output, not recalled.
+  tests/unit/auth/guest-signin-guard.test.ts \
+  tests/unit/auth/guest-identity-adoption.test.ts \
+  tests/unit/analytics/lifecycle-owner-attribution.test.ts
+→ Test Files 11 passed (11) · Tests 105 passed (105)
 ```
+
+Related-suite sweep — `tests/unit/library`, `tests/unit/auth`,
+`tests/unit/analytics`, the save-service persistence suite, the
+public-by-default contract, browse-engine identity switch, share-intake:
+
+```
+pnpm exec vitest run --config tests/config/vitest.config.ts \
+  tests/unit/library tests/unit/auth tests/unit/analytics \
+  tests/unit/library-save-service-persisted.test.ts \
+  tests/unit/public-collection-live-choreo-contract.test.ts \
+  tests/unit/browse-engine-identity-switch.test.ts tests/unit/share-intake
+→ Test Files 100 passed (100) · Tests 732 passed (732)
+```
+
+Two earlier revisions of this report miscounted focused tests (54 and 71, when
+the real figures were 52 and 62), and a third listed five paths for a command
+that actually runs eleven files. Counts and commands here are copied from run
+output, not recalled.
 
 **Fails before, passes after** — the required demonstration, done by checking
 out the pre-change `src/` and re-running the same tests:
@@ -315,8 +335,8 @@ BEFORE (pre-fix baseline, same command)
        Tests  2 failed | 16004 passed | 106 skipped | 1 todo (16113)
 
 AFTER
-  Test Files  1981 passed | 5 skipped (1986)
-       Tests  16063 passed | 106 skipped | 1 todo (16170)          exit 0
+  Test Files  1983 passed | 5 skipped (1988)
+       Tests  16080 passed | 106 skipped | 1 todo (16187)          exit 0
 ```
 
 Zero failures. The file count rises by four and the test count by sixteen

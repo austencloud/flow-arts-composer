@@ -73,13 +73,30 @@ export function adoptUnownedSequenceIds(
   if (!uid || typeof window === "undefined") return [];
   const orphans = getUnownedSequenceIds();
   if (orphans.length === 0) return [];
+
   for (const id of orphans) recordSavedSequenceId(uid, id);
+
+  // `recordSavedSequenceId` is best-effort: it swallows quota and
+  // private-browsing failures. Clearing the park on the strength of having
+  // CALLED it would drop the id from both sides on a failed write — the row
+  // would end up owned by nobody and parked by nobody, which is worse than the
+  // orphaning this whole mechanism exists to fix. Read the owner ledger back
+  // and release only what actually persisted.
+  const owned = new Set(getSavedSequenceIds(uid));
+  const adopted = orphans.filter((id) => owned.has(id));
+  const stillParked = orphans.filter((id) => !owned.has(id));
+
   try {
-    localStorage.removeItem(UNOWNED_KEY);
+    if (stillParked.length === 0) {
+      localStorage.removeItem(UNOWNED_KEY);
+    } else {
+      localStorage.setItem(UNOWNED_KEY, JSON.stringify(stillParked));
+    }
   } catch {
-    // Re-adopting the same ids later is idempotent, so a failed clear is safe.
+    // The park is unchanged, so every id stays claimable. Re-adopting an id
+    // that did persist is idempotent, so leaving it parked costs nothing.
   }
-  return orphans;
+  return adopted;
 }
 
 /**

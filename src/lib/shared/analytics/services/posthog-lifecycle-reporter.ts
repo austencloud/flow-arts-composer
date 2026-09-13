@@ -106,7 +106,23 @@ export function initializePostHogLifecycleReporter(): void {
  * ownerUid prevents a later account on the device from claiming the event.
  */
 export async function reportPostHogLifecycleEvent(
-  input: LifecycleEventInput
+  input: LifecycleEventInput,
+  /**
+   * The account the reported milestone actually belongs to.
+   *
+   * This function awaits `authStateReady()` and then reads `auth.currentUser` —
+   * live, after an await — and stamps that uid as the event's owner. For an
+   * event raised by a completed action (a save), the acting account can have
+   * changed by the time this runs: a guest save followed by a sign-in would be
+   * enqueued under the account they signed into, attributing A's milestone to
+   * B. `ownerUid` already exists here to stop a LATER account claiming a queued
+   * event; this closes the same gap at enqueue time.
+   *
+   * Mismatch drops the event rather than misattributing it. Analytics is not
+   * worth a wrong owner, and the alternative — enqueueing under an account that
+   * did not do the thing — corrupts exactly the funnel it is meant to measure.
+   */
+  expectedOwnerId?: string
 ): Promise<void> {
   initializePostHogLifecycleReporter();
   if (typeof auth.authStateReady === "function") {
@@ -115,6 +131,13 @@ export async function reportPostHogLifecycleEvent(
   const ownerUid = auth.currentUser?.uid;
   if (!ownerUid) {
     throw new Error("Lifecycle event has no authenticated owner");
+  }
+  if (expectedOwnerId && expectedOwnerId !== ownerUid) {
+    console.warn(
+      "[lifecycle] Dropping event whose acting account is no longer signed in:",
+      input.event
+    );
+    return;
   }
 
   const envelope: LifecycleEventEnvelope = {

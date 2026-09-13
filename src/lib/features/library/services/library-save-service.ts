@@ -417,16 +417,22 @@ export class LibrarySaveService {
     // The event is server-captured under the verified Firebase uid; delivery
     // failure is observable but cannot undo work already durable in the library.
     try {
-      await reportPostHogLifecycleEvent({
-        event: "sequence_save",
-        properties: {
-          sequenceId,
-          stepCount: sequenceToSave.sequenceLength ?? 0,
-          visibility,
-          durability: isFullAccount ? "cloud" : "local",
-          source: options.analyticsSource ?? "unspecified",
+      await reportPostHogLifecycleEvent(
+        {
+          event: "sequence_save",
+          properties: {
+            sequenceId,
+            stepCount: sequenceToSave.sequenceLength ?? 0,
+            visibility,
+            durability: isFullAccount ? "cloud" : "local",
+            source: options.analyticsSource ?? "unspecified",
+          },
         },
-      });
+        // The account that made this save. The reporter stamps the LIVE uid as
+        // the event owner, so without this a guest save followed by a sign-in
+        // is attributed to the account they signed into.
+        saverUid ?? undefined
+      );
     } catch (error) {
       console.warn(
         "[LibrarySaveService] Could not deliver save lifecycle event:",
@@ -637,7 +643,7 @@ export class LibrarySaveService {
     try {
       for (const tagName of tags) {
         const normalized = tagName.toLowerCase().trim();
-        const existing = await findTagByName(normalized);
+        const existing = await findTagByName(normalized, ownerUid);
 
         if (!existing) {
           // Create new tag with random color

@@ -169,16 +169,22 @@ describe("LibrarySaveService.saveSequence - durable-save contract", () => {
     expect(result.sequenceId).toBe("seq-1");
     expect(clearDeletionIntentMock).toHaveBeenCalledOnce();
     expect(clearDeletionIntentMock).toHaveBeenCalledWith("seq-1");
-    expect(reportLifecycleMock).toHaveBeenCalledWith({
-      event: "sequence_save",
-      properties: {
-        sequenceId: "seq-1",
-        stepCount: 1,
-        visibility: "private",
-        durability: "cloud",
-        source: "unspecified",
+    // The second argument is the acting account. The reporter stamps the LIVE
+    // uid as the event owner, so a save followed by a sign-in would otherwise
+    // put this milestone in the account they signed into.
+    expect(reportLifecycleMock).toHaveBeenCalledWith(
+      {
+        event: "sequence_save",
+        properties: {
+          sequenceId: "seq-1",
+          stepCount: 1,
+          visibility: "private",
+          durability: "cloud",
+          source: "unspecified",
+        },
       },
-    });
+      "u1"
+    );
   });
 
   it("writes the sequence to Dexie (db.sequences.put) so a guest library can read it back", async () => {

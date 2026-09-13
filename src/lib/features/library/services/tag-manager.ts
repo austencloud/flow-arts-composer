@@ -100,8 +100,10 @@ export async function createUserTag(
     }
     const normalizedName = normalizeTagName(name);
 
-    // Check for duplicate
-    const existing = await findTagByName(normalizedName);
+    // Check for duplicate — scoped to the SAME account this tag will be written
+    // under. Unscoped, this second lookup re-resolves live auth and could
+    // answer about a different account than the fence above just approved.
+    const existing = await findTagByName(normalizedName, userId);
     if (existing) {
       return existing;
     }
@@ -236,10 +238,26 @@ export function normalizeTagName(name: string): string {
   return name.trim().toLowerCase();
 }
 
-export async function findTagByName(name: string): Promise<LibraryTag | null> {
+export async function findTagByName(
+  name: string,
+  /**
+   * The account whose tags should be searched. This READ decides a collection
+   * path (`users/{uid}/tags`) from live auth after an await, exactly like the
+   * write does — so an unscoped lookup during a save can answer "does this tag
+   * exist?" about the WRONG account, and a false "no" then creates a duplicate
+   * while a false "yes" returns a stranger's tag id.
+   */
+  expectedOwnerId?: string
+): Promise<LibraryTag | null> {
   try {
     const firestore = await getFirestoreInstance();
     const userId = getAuthenticatedUserId();
+    if (expectedOwnerId && expectedOwnerId !== userId) {
+      throw new TagError(
+        "The signed-in account changed before this tag lookup could be attributed.",
+        "UNAUTHORIZED"
+      );
+    }
     const normalizedName = normalizeTagName(name);
     const tagsRef = collection(firestore, getUserTagsPath(userId));
     const q = query(tagsRef, where("name", "==", normalizedName));
