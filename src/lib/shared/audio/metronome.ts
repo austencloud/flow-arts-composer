@@ -206,12 +206,15 @@ export class Metronome {
           const beat = stepIndex;
           const callbackDelay =
             (this.nextClickTime - this.audioContext.currentTime) * 1000;
-          const callbackID = window.setTimeout(() => {
-            this.pendingCallbacks = this.pendingCallbacks.filter(
-              (id) => id !== callbackID
-            );
-            onStep(beat);
-          }, Math.max(0, callbackDelay));
+          const callbackID = window.setTimeout(
+            () => {
+              this.pendingCallbacks = this.pendingCallbacks.filter(
+                (id) => id !== callbackID
+              );
+              onStep(beat);
+            },
+            Math.max(0, callbackDelay)
+          );
           this.pendingCallbacks.push(callbackID);
         }
 
@@ -249,6 +252,16 @@ export class Metronome {
    */
   tick(isAccent = false): void {
     if (!this.audioContext) return;
+
+    // A context unlocked earlier can be suspended again by the browser — a
+    // backgrounded tab, an iOS audio interruption. Its currentTime freezes, so
+    // without this every later tick queues onto a clock that never advances
+    // and the metronome is silent for the rest of the session: nothing on the
+    // tick path re-unlocks it. The click is still queued rather than dropped,
+    // because the first count-in tick lands while the opening resume() is
+    // still settling and must not be lost.
+    if (this.audioContext.state === "suspended") this.resume();
+
     const now = this.audioContext.currentTime;
     // No scheduler runs on this path, so each tick releases the previous one.
     this.releaseFinishedClicks(now);
