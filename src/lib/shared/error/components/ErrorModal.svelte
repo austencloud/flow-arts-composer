@@ -12,6 +12,11 @@ import { onDestroy } from "svelte";
   import { getErrorHandler } from "$lib/shared/application/get-error-handler";
   import { getCurrentError, dismissError } from "../state/error-state.svelte";
   import type { ErrorHandler } from '$lib/shared/application/services/error-handler'
+  import {
+    buildErrorCopyText,
+    formatParamLabel,
+    formatParamValue,
+  } from "../domain/error-report-text";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { FocusTrap } from "$lib/shared/foundation/ui/drawer/focus-trap";
 
@@ -52,48 +57,9 @@ import { onDestroy } from "svelte";
     !!(error?.context.module || error?.context.action || additionalData),
   );
 
-  function formatParamValue(value: unknown): string {
-    if (value === null || value === undefined) return "-";
-    if (Array.isArray(value)) return value.length ? value.join(", ") : "-";
-    return String(value);
-  }
-
-  function formatParamLabel(key: string): string {
-    return key
-      .replace(/([A-Z])/g, " $1")
-      .replace(/^./, (s) => s.toUpperCase())
-      .trim();
-  }
-
-  function buildCopyText(): string {
-    if (!error) return "";
-    const lines: string[] = [];
-    lines.push(`Error: ${error.message}`);
-    if (error.context.module) lines.push(`Module: ${error.context.module}`);
-    if (error.context.action) lines.push(`Action: ${error.context.action}`);
-    if (additionalData) {
-      lines.push("");
-      lines.push("Parameters:");
-      for (const [key, value] of Object.entries(additionalData)) {
-        const display = formatParamValue(value);
-        if (display !== "-")
-          lines.push(`  ${formatParamLabel(key)}: ${display}`);
-      }
-    }
-    if (error.technicalDetails) {
-      lines.push("");
-      lines.push(`Details: ${error.technicalDetails}`);
-    }
-    if (error.stack) {
-      lines.push("");
-      lines.push(error.stack);
-    }
-    return lines.join("\n");
-  }
-
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(buildCopyText());
+      await navigator.clipboard.writeText(buildErrorCopyText(error));
       copied = true;
       clearTimeout(copyResetTimeout);
       copyResetTimeout = setTimeout(() => (copied = false), 2000);
