@@ -36,13 +36,19 @@ export function createTimingDirectionState(initialSlug?: string) {
       return step;
     },
     followStep(value: number, sequenceId: string | null) {
-      if (sequenceId === selected.motion.sequence.id) step = value;
+      if (sequenceId === selected.motion.sequence.id) {
+        step = value;
+      }
     },
     select(slug: string) {
       const next = timingDirectionPreviews.find(
         (mode) => mode.article.slug === slug
       );
       if (next) selected = next;
+      step = 0;
+    },
+    focusExample() {
+      step = 0;
     },
     get target() {
       return target;

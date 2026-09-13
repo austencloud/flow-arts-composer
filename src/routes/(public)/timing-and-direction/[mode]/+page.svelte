@@ -1,16 +1,23 @@
 <script lang="ts">
   import type { PageData } from "./$types";
   import { browser } from "$app/environment";
+  import { onMount } from "svelte";
   import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
   import Seo from "$lib/shared/components/Seo.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getTimingDirectionState } from "../_state/timing-direction-state.svelte";
   import TimingDirectionModeCard from "../_components/TimingDirectionModeCard.svelte";
   import {
     getTimingDirectionArticle,
     TIMING_DIRECTION_ARTICLES,
   } from "../_data/timing-direction-articles";
+  import {
+    loadTogetherOppositeExamples,
+    type TogetherOppositeExample,
+  } from "../_data/together-opposite-examples";
 
   let { data }: { data: PageData } = $props();
 
@@ -37,6 +44,35 @@
       ? "/learn/concepts/gamma-motion"
       : "/learn/concepts/dual-shifts-alpha-beta"
   );
+  let togetherOppositeExamples = $state<TogetherOppositeExample[]>([]);
+  let selectedTogetherOppositeExample = $state<string | null>(null);
+
+  onMount(() => {
+    let active = true;
+    void loadTogetherOppositeExamples().then((examples) => {
+      if (!active) return;
+      togetherOppositeExamples = examples;
+      const first = examples[0];
+      if (article.code === "TO" && first) {
+        selectedTogetherOppositeExample = first.id;
+        playback.focusExample();
+      }
+    });
+    return () => {
+      active = false;
+    };
+  });
+
+  $effect(() => {
+    if (article.code !== "TO") {
+      selectedTogetherOppositeExample = null;
+    }
+  });
+
+  function selectTogetherOppositeExample(example: TogetherOppositeExample) {
+    selectedTogetherOppositeExample = example.id;
+    playback.focusExample();
+  }
   const jsonLd = $derived({
     "@context": "https://schema.org",
     "@graph": [
@@ -128,6 +164,46 @@
         <p class="definition">{article.definition}</p>
       </header>
       <p>{article.watchFor}</p>
+      {#if article.code === "TO"}
+        <section class="example-picker" aria-labelledby="example-picker-title">
+          <div>
+            <h2 id="example-picker-title">Choose a matching pictograph</h2>
+            <p>
+              Each option is classified from its hand-path geometry. The player
+              shows those hands; the pictograph keeps the selected prop rotation
+              visible.
+            </p>
+          </div>
+          <div class="example-options" aria-label="Together-Opposite examples">
+            {#each togetherOppositeExamples as example (example.id)}
+              <button
+                type="button"
+                class:selected={selectedTogetherOppositeExample === example.id}
+                aria-pressed={selectedTogetherOppositeExample === example.id}
+                on:click={() => selectTogetherOppositeExample(example)}
+              >
+                <span class="example-pictograph">
+                  <PictographContainer
+                    pictographData={example.pictograph}
+                    gridMode={example.gridMode}
+                    leftPropTypeOverride={PropType.HAND}
+                    rightPropTypeOverride={PropType.HAND}
+                    showGrid={true}
+                    showTKA={true}
+                    showElemental={true}
+                    showPositions={true}
+                    showReversals={false}
+                    showNonRadialPoints={false}
+                    showHandPoints={true}
+                    disableTransitions
+                  />
+                </span>
+                <span>{example.label}</span>
+              </button>
+            {/each}
+          </div>
+        </section>
+      {/if}
       <PanelButton
         href="/learn/concepts/timing-and-direction"
         accentColor={mode.element.accentColor}
@@ -297,6 +373,58 @@
   .mode-notes section + section {
     margin-top: 1.5rem;
   }
+  .example-picker {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--radius-lg, 0.75rem);
+    background: var(--theme-card-bg);
+  }
+  .example-picker h2 {
+    margin-bottom: 0.25rem;
+  }
+  .example-picker p {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+  }
+  .example-options {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
+  .example-options button {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0.35rem;
+    color: inherit;
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    text-align: left;
+    cursor: pointer;
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--theme-panel-bg);
+  }
+  .example-options button.selected {
+    outline: 2px solid var(--mode-accent);
+    outline-offset: -2px;
+    background: color-mix(
+      in srgb,
+      var(--mode-accent) 10%,
+      var(--theme-card-bg)
+    );
+  }
+  .example-options button:focus-visible {
+    outline: 3px solid var(--theme-text);
+    outline-offset: 2px;
+  }
+  .example-pictograph {
+    display: block;
+    aspect-ratio: 1;
+  }
   .demonstration {
     grid-column: 2;
     grid-row: 1 / span 2;
@@ -404,6 +532,9 @@
     .sources {
       grid-template-columns: minmax(0, 1fr);
     }
+    .example-options {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
   @media (max-width: 600px) {
     .mode-page {
@@ -412,6 +543,9 @@
     }
     .page-nav {
       margin-bottom: 1rem;
+    }
+    .example-options {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 </style>

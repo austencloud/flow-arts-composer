@@ -45,6 +45,7 @@
         <HandMotionPlayer
           primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
           sequence={playback.selected.motion.sequence}
+          externalStep={playback.step}
           initialStep={playback.step}
           ariaLabel={playback.selected.article.name}
           showElementalGlyph
