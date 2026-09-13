@@ -3,7 +3,7 @@
 Scope: reproduced concurrency/state defects in `src/lib/shared/inbox`, its tests,
 and — from the third round, explicitly authorized — two named defects in
 `src/lib/shared/messaging/services/messenger.ts`, and — from the sixth round —
-`MessageImageSender`. Eleven fixed, one confirmed and left to another owner. No production data was written and no message was sent
+`MessageImageSender`. Twelve fixed, one confirmed and left to another owner. No production data was written and no message was sent
 anywhere; every result below comes from the repository's own test harnesses in
 this cloud container.
 
@@ -22,16 +22,20 @@ Revision history:
    messenger, proven with both real. Held: the image-path assessment in it was
    **wrong**, and the double that backed it never emitted the `finalizing`
    phase, so it could not see that.
-6. this revision — F8: the two real defects inside `MessageImageSender`, the
-   false claim corrected, and the double fixed to the real call order.
+6. `3b79c83a` — F8: the two real defects inside `MessageImageSender`, the false
+   claim corrected, and the double fixed to the real call order. Held: refusing
+   correctly left a staging object that only its own account may delete, and the
+   create rule then blocked that account's retry.
+7. this revision — F9: staging cleanup that matches the storage rules, so an
+   abandoned attempt cannot strand the message.
 
 | Field          | Value                                                                                                                                                                                                                           |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Branch         | `claude/inbox-concurrency-fixes-7fu4t7`                                                                                                                                                                                         |
 | Base SHA       | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main` at session start)                                                                                                                                                     |
-| Held revisions | `ea203124` (F1 + F2), `eb822199` (adds F3, F4, A1), `9030cdd5` (adds F5, M1, M2), `71988b7e` (adds F6), `c5cf6d0d` (adds F7) — all HOLD                                                                                         |
+| Held revisions | `ea203124` (F1 + F2), `eb822199` (adds F3, F4, A1), `9030cdd5` (adds F5, M1, M2), `71988b7e` (adds F6), `c5cf6d0d` (adds F7), `3b79c83a` (adds F8) — all HOLD                                                                   |
 | Merged `main`  | `6e4c1b5a` (unrelated 3D parity test), then `cb4d4210` — which carries `73aafa4a`, the `withPlainRecords` wrapper in this same state file. Auto-merged clean; the wrapper is preserved verbatim, see the integration note below |
-| Final SHA      | `f8db57005ae04fc15a20c84ac0148eba93bcaea6` — this round's correction commit; the branch tip after it only fills in this row and updates this report                                                                             |
+| Final SHA      | `c4f8c9a6e2b832ef93b44c96192057f67c2f0797` — this round's correction commit; the branch tip after it only fills in this row and updates this report                                                                             |
 | Owned paths    | `src/lib/shared/inbox/**`, `tests/unit/messaging/*` (three new files), `tests/helpers/inbox/**` (new), plus the two authorized functions in `messaging/services/messenger.ts`                                                   |
 
 Files changed:
@@ -45,13 +49,13 @@ Files changed:
 - `src/lib/shared/inbox/services/contracts/IMessageDeliveryCoordinator.ts` (F7: the `isOwned` hook)
 - `src/lib/shared/inbox/domain/message-delivery-errors.ts` (F7: the cancellation sentinel)
 - `src/lib/shared/messaging/services/messenger.ts` (fixes M1, M2, and F7's pre-dispatch recheck in `sendMessage` — authorized scope: those three functions, nothing else in the file)
-- `src/lib/shared/messaging/services/implementations/MessageImageSender.ts` (fix F8)
+- `src/lib/shared/messaging/services/implementations/MessageImageSender.ts` (fixes F8, F9)
 - `src/lib/shared/messaging/services/contracts/IMessageImageSender.ts` (F8: `expectedUserId` on the request)
 - `tests/unit/messaging/message-delivery-activation-race.test.ts` (new; was quarantined, now green against the fix)
 - `tests/unit/messaging/message-delivery-account-ownership.test.ts` (new; proves F5 and F6)
 - `tests/unit/messaging/messenger-subscription-ownership.test.ts` (new; proves M1 and M2 at the real messaging boundary)
 - `tests/unit/messaging/message-delivery-sending-seam.test.ts` (new; proves F7 against the real coordinator and the real `Messenger.sendMessage`)
-- `tests/unit/messaging/message-image-sender-ownership.test.ts` (new; proves F8 against the real `MessageImageSender` in its real call order)
+- `tests/unit/messaging/message-image-sender-ownership.test.ts` (new; proves F8 and F9 against the real `MessageImageSender`, with a storage double that enforces the real rules)
 - `tests/helpers/inbox/reactive-account-double.svelte.ts` (new test helper)
 - `tests/helpers/inbox/memory-delivery-repository.ts` (new test helper)
 - `docs/reports/opus-batch-2026-09-12/inbox-concurrency.md` (this report)
@@ -630,6 +634,92 @@ committed.
 
 ---
 
+## F9 (fixed) — refusing correctly stranded the image it refused
+
+**Severity: high — after one account switch, that image message could never be
+sent, by anyone.** Raised by independent review of `3b79c83a`, which found the
+defect F8's fix left behind.
+
+### Mechanism
+
+F8 made the sender refuse after an account switch. The refusal unwinds through
+
+```ts
+} finally {
+  await deleteObject(stagingRef).catch(() => undefined);
+}
+```
+
+which now runs as the _new_ account. `storage.rules:252-263` is explicit:
+
+```
+match /message-image-staging/{userId}/{conversationId}/{messageId}/{attachmentId} {
+  allow create: if … request.auth.uid == userId && resource == null && …;
+  allow delete: if request.auth != null && request.auth.uid == userId && …;
+  allow get, list, update: if false;
+}
+```
+
+`delete` is denied to anyone but the account named in the path, so the cleanup
+failed and `.catch(() => undefined)` swallowed it — the code looked like it had
+cleaned up and had not. The object stayed.
+
+The staging path is stable for a given message and attachment, and `create`
+requires `resource == null` with no `update` allowed. So when the owning account
+signed back in and the outbox retried that row, the upload was **denied**, not
+overwritten. The message was stuck: correct about identity, unusable.
+
+The earlier suite could not see any of this because its `deleteObject` double
+always resolved and its upload double ignored what was already in the bucket.
+
+### Evidence — measured
+
+`tests/unit/messaging/message-image-sender-ownership.test.ts`, with a storage
+double that enforces the two rules above — delete only for the uid in the path,
+create only when nothing is there. At `3b79c83a`, "recovers when the owner signs
+back in after a denied cleanup" fails twice over:
+
+- the sender attempts the cleanup as the wrong account and it is denied
+  (`expected "vi.fn()" to not be called at all, but … called 1 times`);
+- and the owner's retry then rejects:
+  `promise rejected "Error: storage/unauthorized" instead of resolving`.
+
+Green after the fix, with the retry finalizing exactly once and the staging
+object gone.
+
+### The fix
+
+Two changes inside the sender's existing lifecycle — no rule change, nothing
+privileged, no deployment:
+
+- **Clear the slot before uploading.** The path belongs to this message and
+  attachment alone, so a `deleteObject` before `uploadBytesResumable` removes
+  whatever an abandoned earlier attempt left and lets the `create` succeed. A
+  missing object is the ordinary case and its error is ignored.
+- **Only attempt the cleanup while the owner is signed in.** After a switch the
+  delete would be denied anyway; skipping it keeps the code honest about what it
+  did rather than swallowing a failure that looks like success.
+
+### What this cannot do, stated plainly
+
+Cleanup **cannot complete while the owning account is absent**. A client signed
+in as someone else has no permission to delete that object and no privileged
+path to it. So between the abandoned attempt and the owner's return, the staging
+object exists — and if that account never returns, it is never deleted by this
+code.
+
+How long such an object then lives is a bucket-lifetime question this repository
+does not answer: the rules call the prefix "short-lived", but **no lifecycle
+policy for `message-image-staging/` is defined anywhere in this repo**, so any
+expiry is a deployment-side assumption I could not verify. Worth settling
+separately; it is the only remaining exposure on this path, and it is storage
+residue rather than a wrong-account send.
+
+Unchanged and re-verified: a dispatched `finalize` is still never taken back,
+and no send goes out under the wrong account.
+
+---
+
 ## M1 (fixed, authorized messenger scope) — a subscription attached after its caller disposed
 
 **Severity: high.** A leaked Firestore listener per fast switch, plus a toast for
@@ -760,16 +850,16 @@ unmount, so it is worth doing next.
 
 All run in the cloud container at the final SHA unless noted.
 
-| Command                                                                                     | Result                                                                                                                                                                     |
-| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer: 3 failed (F3). With the base drawer: 4 failed (F1)                                                                                     |
-| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)                                                                                |
-| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                                                                                                |
-| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 39 passed / 39 (10 files). Reverting each round's sources in turn: 3 failed (F8, plus 1 in the seam suite), 3 failed (F7), 3 failed (F6), 2 failed (F5), 5 failed (M1, M2) |
-| `… tests/unit/messaging tests/unit/inbox …` (the inbox + messaging sweep)                   | 92 passed / 92 (21 files), nothing skipped                                                                                                                                 |
-| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — unchanged across every revision and after merging `main`, none in the changed files                                                             |
-| `prettier --check` on the changed files                                                     | clean                                                                                                                                                                      |
-| `eslint` on the changed files                                                               | 0 errors, 0 warnings (`tests/**` paths are eslint-ignored by config, which it reports as a warning)                                                                        |
+| Command                                                                                     | Result                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vitest run --config tests/config/vitest.components.config.ts …/InboxDrawer.svelte.test.ts` | 8 passed. With `ea203124`'s drawer: 3 failed (F3). With the base drawer: 4 failed (F1)                                                                              |
+| `… /MessageComposer.svelte.test.ts`                                                         | 15 passed. With `ea203124`'s composer: 2 failed (F4). With the base composer: 1 failed (F2)                                                                         |
+| `… src/lib/shared/inbox` (all inbox component tests)                                        | 51 passed, 4 failed — the same 4 that fail at the base SHA, see limitations                                                                                         |
+| `vitest run --config tests/config/vitest.config.ts tests/unit/messaging`                    | 40 passed / 40 (10 files). Reverting each round's sources in turn: 1 failed (F9), 3 + 1 failed (F8), 3 failed (F7), 3 failed (F6), 2 failed (F5), 5 failed (M1, M2) |
+| `… tests/unit/messaging tests/unit/inbox …` (the inbox + messaging sweep)                   | 93 passed / 93 (21 files), nothing skipped                                                                                                                          |
+| `pnpm run check:fast`                                                                       | 582 errors / 44 warnings — unchanged across every revision and after merging `main`, none in the changed files                                                      |
+| `prettier --check` on the changed files                                                     | clean                                                                                                                                                               |
+| `eslint` on the changed files                                                               | 0 errors, 0 warnings (`tests/**` paths are eslint-ignored by config, which it reports as a warning)                                                                 |
 
 Harness note: the container ships Chromium build 1194 at `/opt/pw-browsers`
 while `playwright@1.61.1` expects 1228, so the browser project was run through a
@@ -820,9 +910,17 @@ packages are not prebuilt in a fresh clone.
   it. What remains true, deliberately: once `finalize` is dispatched the send is
   committed and nothing takes it back.
 - **The image evidence is against the real `MessageImageSender`**, with the
-  storage/functions/auth SDK as deferred doubles. It proves the class's own
-  ordering and refusals — not Firebase Storage rules, not what the
-  `finalizeMessageImage` function does server-side. Neither was exercised.
+  storage/functions/auth SDK as deferred doubles. The storage double now enforces
+  the two staging rules that matter (`delete` only for the uid in the path,
+  `create` only when nothing is there), transcribed from `storage.rules:252-263`
+  — but it is a transcription, not the rules engine. The emulator was not run, and
+  nothing here exercises what `finalizeMessageImage` does server-side.
+- **Staging cleanup cannot complete while the owning account is absent** (F9).
+  The object waits for that account's next attempt, which clears it. If the
+  account never returns, this code never deletes it, and no lifecycle policy for
+  `message-image-staging/` exists in this repository — so its lifetime is a
+  deployment-side assumption I could not verify. It is storage residue, not a
+  wrong-account send.
 - **The sending-seam tests use the real coordinator and the real
   `Messenger.sendMessage`**, with the Firebase SDK, the short-code manager and the
   image sender as deferred doubles at their own contracts. They prove the
