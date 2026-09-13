@@ -1,5 +1,8 @@
 import type { Message } from "$lib/shared/messaging/domain/models/message-models";
-import { describeMessageDeliveryFailure } from "../domain/message-delivery-errors";
+import {
+  describeMessageDeliveryFailure,
+  isMessageDeliveryCancelled,
+} from "../domain/message-delivery-errors";
 import type {
   MessageDraftRecord,
   MessageOutboxRecord,
@@ -417,6 +420,30 @@ export function createMessageDeliveryState(
     outbox = outbox.filter((item) => !deliveredIds.has(item.id));
   }
 
+  /**
+   * Put a delivery back where its own account can pick it up. Nothing was sent,
+   * so the attempt is un-counted: an account switch must not eat into the
+   * backoff budget of a message that never reached the network.
+   */
+  async function abandonDelivery(
+    record: MessageOutboxRecord,
+    attemptCountBeforeTry: number,
+    token: number
+  ): Promise<void> {
+    await persistDelivery(
+      {
+        ...record,
+        status: "queued",
+        attemptCount: attemptCountBeforeTry,
+        progress: undefined,
+        lastError: undefined,
+        nextAttemptAt: undefined,
+        updatedAt: now(),
+      },
+      token
+    );
+  }
+
   async function deliverOne(messageId: string): Promise<void> {
     const item = currentOutbox(messageId);
     if (!item) return;
@@ -443,13 +470,7 @@ export function createMessageDeliveryState(
     // whoever is signed in, so put it back where its own account can recover
     // it. The attempt is un-counted because nothing was attempted.
     if (!ownsDelivery(token, owner)) {
-      await repository.putOutbox({
-        ...sending,
-        status: "queued",
-        attemptCount: item.attemptCount,
-        progress: undefined,
-        updatedAt: now(),
-      });
+      await abandonDelivery(sending, item.attemptCount, token);
       return;
     }
 
@@ -460,6 +481,11 @@ export function createMessageDeliveryState(
 
     try {
       await coordinator.deliver(sending, {
+        // The coordinator's own steps await, and the messenger under it sends
+        // as whoever is signed in at dispatch. It asks this at every boundary
+        // before the network so it can stop rather than send as the wrong
+        // account.
+        isOwned: () => ownsDelivery(token, owner),
         onProgress(progress) {
           if (!ownsDelivery(token, owner)) return;
           const current = currentOutbox(messageId);
@@ -494,6 +520,14 @@ export function createMessageDeliveryState(
         token
       );
     } catch (error) {
+      // Stopped before the network because the account changed — by the
+      // coordinator at one of its own boundaries, or by the messenger refusing
+      // to dispatch. Nothing was sent, so this is not a failure to show or a
+      // retry to back off; the row simply goes back to its account's queue.
+      if (isMessageDeliveryCancelled(error)) {
+        await abandonDelivery(latest, item.attemptCount, token);
+        return;
+      }
       const failure = describeMessageDeliveryFailure(error, isOnline());
       const delay = Math.min(
         MAX_RETRY_DELAY_MS,

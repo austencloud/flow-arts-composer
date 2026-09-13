@@ -155,6 +155,23 @@ export class Messenger {
       const effectiveUser = this.getEffectiveUserInfo();
       const messageId = requestedMessageId ?? crypto.randomUUID();
       const functions = await getFunctionsInstance();
+
+      // The callable runs as whoever the SDK has signed in AT DISPATCH, not as
+      // the account captured above. An account change across the await would
+      // post this message from the new one — with the old one's sender fields.
+      // Refuse instead; the outbox keeps the row for the account that wrote it.
+      // Re-read through the same accessor, so "View As" preview resolves to the
+      // same identity on both sides of the comparison.
+      const signerAtDispatch = this.getEffectiveUserInfo();
+      if (signerAtDispatch.uid !== effectiveUser.uid) {
+        throw Object.assign(
+          new Error(
+            "The signed-in account changed before this message was sent."
+          ),
+          { code: "messaging/sender-changed" }
+        );
+      }
+
       const deliver = httpsCallable<
         {
           messageId: string;

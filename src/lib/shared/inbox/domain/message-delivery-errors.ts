@@ -30,6 +30,30 @@ function getErrorCode(error: unknown): string | undefined {
   return typeof code === "string" ? code : undefined;
 }
 
+/** A delivery abandoned because its account changed. Never a user-facing error. */
+export const DELIVERY_CANCELLED_CODE = "inbox/delivery-cancelled";
+
+/**
+ * The messenger's own refusal, raised when the signed-in account changed
+ * between capturing the sender and dispatching. Recognized here rather than
+ * imported, so the messaging layer keeps no dependency on the inbox.
+ */
+const SENDER_CHANGED_CODE = "messaging/sender-changed";
+
+export function createDeliveryCancelledError(reason: string): Error {
+  return Object.assign(new Error(reason), { code: DELIVERY_CANCELLED_CODE });
+}
+
+/**
+ * True for a delivery that stopped before the network, because the account it
+ * belonged to is no longer the one signed in. It is not a failure: the message
+ * was never attempted and its durable row goes back to the queue untouched.
+ */
+export function isMessageDeliveryCancelled(error: unknown): boolean {
+  const code = getErrorCode(error);
+  return code === DELIVERY_CANCELLED_CODE || code === SENDER_CHANGED_CODE;
+}
+
 export interface MessageDeliveryFailure {
   retryable: boolean;
   message: string;
