@@ -15,7 +15,10 @@ Options: All, Level 1, Level 2, Level 3. Each shows contextual count.
   interface Props {
     activeLevel: number | null;
     onSelect: (level: number | null) => void;
-    getFilteredCount?: (candidateType: BrowseFilterType, candidateValue: BrowseFilterValue) => number;
+    getFilteredCount?: (
+      candidateType: BrowseFilterType,
+      candidateValue: BrowseFilterValue
+    ) => number;
   }
 
   let { activeLevel, onSelect, getFilteredCount }: Props = $props();
@@ -27,7 +30,11 @@ Options: All, Level 1, Level 2, Level 3. Each shows contextual count.
     hapticService = getHapticFeedback() ?? null;
   });
 
-  const label = $derived(activeLevel ? t('browse_filter_level', { level: String(activeLevel) }) : t('browse_chip_level'));
+  const label = $derived(
+    activeLevel
+      ? t("browse_filter_level", { level: String(activeLevel) })
+      : t("browse_chip_level")
+  );
   const isActive = $derived(activeLevel !== null);
 
   // Compute counts lazily when dropdown is open
@@ -41,10 +48,10 @@ Options: All, Level 1, Level 2, Level 3. Each shows contextual count.
   });
 
   const levels: { value: number | null; label: string }[] = [
-    { value: null, label: t('browse_all_levels') },
-    { value: 1, label: t('browse_level_n', { n: '1' }) },
-    { value: 2, label: t('browse_level_n', { n: '2' }) },
-    { value: 3, label: t('browse_level_n', { n: '3' }) },
+    { value: null, label: t("browse_all_levels") },
+    { value: 1, label: t("browse_level_n", { n: "1" }) },
+    { value: 2, label: t("browse_level_n", { n: "2" }) },
+    { value: 3, label: t("browse_level_n", { n: "3" }) },
   ];
 
   function handleToggle() {
@@ -67,7 +74,12 @@ Options: All, Level 1, Level 2, Level 3. Each shows contextual count.
   $effect(() => {
     if (!isOpen) return;
     document.addEventListener("pointerdown", handlePointerDownOutside, true);
-    return () => document.removeEventListener("pointerdown", handlePointerDownOutside, true);
+    return () =>
+      document.removeEventListener(
+        "pointerdown",
+        handlePointerDownOutside,
+        true
+      );
   });
 </script>
 
@@ -79,6 +91,7 @@ Options: All, Level 1, Level 2, Level 3. Each shows contextual count.
     chipColor="var(--semantic-info)"
     mode="dropdown"
     expanded={isOpen}
+    ondismiss={() => (isOpen = false)}
     onclick={handleToggle}
     ghostKind="browse-filter"
   >

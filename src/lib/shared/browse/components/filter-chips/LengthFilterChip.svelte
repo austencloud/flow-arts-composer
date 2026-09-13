@@ -16,11 +16,20 @@ Shows available lengths with contextual counts.
     activeLength: number | null;
     availableLengths: number[];
     onSelect: (length: number | null) => void;
-    getFilteredCount?: (candidateType: BrowseFilterType, candidateValue: BrowseFilterValue) => number;
+    getFilteredCount?: (
+      candidateType: BrowseFilterType,
+      candidateValue: BrowseFilterValue
+    ) => number;
     disabled?: boolean;
   }
 
-  let { activeLength, availableLengths, onSelect, getFilteredCount, disabled = false }: Props = $props();
+  let {
+    activeLength,
+    availableLengths,
+    onSelect,
+    getFilteredCount,
+    disabled = false,
+  }: Props = $props();
 
   let isOpen = $state(false);
   let hapticService: HapticFeedback | null = null;
@@ -29,7 +38,11 @@ Shows available lengths with contextual counts.
     hapticService = getHapticFeedback() ?? null;
   });
 
-  const label = $derived(activeLength ? t('browse_n_steps', { count: String(activeLength) }) : t('browse_chip_length'));
+  const label = $derived(
+    activeLength
+      ? t("browse_n_steps", { count: String(activeLength) })
+      : t("browse_chip_length")
+  );
   const isActive = $derived(activeLength !== null);
 
   // Compute counts lazily when dropdown is open
@@ -62,7 +75,12 @@ Shows available lengths with contextual counts.
   $effect(() => {
     if (!isOpen) return;
     document.addEventListener("pointerdown", handlePointerDownOutside, true);
-    return () => document.removeEventListener("pointerdown", handlePointerDownOutside, true);
+    return () =>
+      document.removeEventListener(
+        "pointerdown",
+        handlePointerDownOutside,
+        true
+      );
   });
 </script>
 
@@ -74,13 +92,14 @@ Shows available lengths with contextual counts.
     chipColor="var(--length-chip-color)"
     mode="dropdown"
     expanded={isOpen}
+    ondismiss={() => (isOpen = false)}
     {disabled}
     onclick={handleToggle}
     ghostKind="browse-filter"
   >
     {#snippet children()}
       <ChipPopoverOption
-        label={t('browse_all_lengths')}
+        label={t("browse_all_lengths")}
         selected={activeLength === null}
         ghostKind="filter-option"
         onclick={() => handleSelect(null)}
@@ -88,7 +107,7 @@ Shows available lengths with contextual counts.
       {#each availableLengths as length}
         {#if !lengthCounts || (lengthCounts[length] ?? 0) > 0}
           <ChipPopoverOption
-            label={t('browse_n_steps', { count: String(length) })}
+            label={t("browse_n_steps", { count: String(length) })}
             selected={activeLength === length}
             count={lengthCounts ? (lengthCounts[length] ?? 0) : null}
             ghostKind="filter-option"
