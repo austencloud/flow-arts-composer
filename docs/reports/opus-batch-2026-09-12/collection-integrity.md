@@ -1,12 +1,14 @@
 # Collection Integrity — Opus batch 2026-09-12
 
-Three reproduced collection-integrity defects, each fixed with a repro test that
-fails on the base commit and passes on the branch head.
+Four reproduced collection-integrity defects, each fixed with a repro test that
+fails without the fix and passes on the branch head. D1's fix was reworked and
+D4 was found in review of `32241bad`; both are covered below with their own
+before/after evidence.
 
 | Field       | Value                                                             |
 | ----------- | ----------------------------------------------------------------- |
 | Base SHA    | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`)         |
-| Final SHA   | `abc775cce241d7c3f5650d7a183e225cdc0508f4`                         |
+| Fixes SHA   | `7f632eb6` (runtime + tests; this report commits on top)           |
 | Branch      | `claude/fix-collection-integrity-nm8fj9`                           |
 | Scope       | collection state, membership bookkeeping, subscription lifecycle   |
 
@@ -63,23 +65,53 @@ AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
 Entry `a` appears twice and the just-saved entry `b` is gone from the gallery —
 silently, while Firestore still holds it. It reappears only on reload.
 
-**Fix.** Resolve the slot by id at the moment of the write (`applyEntry`) and at
-the moment of the rollback (`rollbackEntry`), and stamp each optimistic write
-with a revision so only the newest one for an entry may be rolled back. A failed
-delete is restored next to the neighbour it sat in front of (`restoreEntry`),
-not at a remembered index.
+**Fix — reconcile against the confirmed baseline, not the displaced value.**
 
-Object identity can't stand in for the revision: `ownedCollection` is `$state`,
-so reading a slot returns a proxy, never the object that was written. That was
-verified by running an identity-based version of the fix — it failed even the
-existing non-concurrent rollback tests — before switching to revisions.
+The first version of this fix resolved the slot by id and restored *the value
+the failed write had displaced*, guarded by a per-write revision so only the
+newest write could roll back. Review found that this still loses the persisted
+state whenever **two overlapping mutations both fail**, and the follow-up tests
+confirm it on that version:
 
-Two behaviours are new and deliberate, and are pinned by tests:
+- rename `A → First` then update `First → Second`, both writes rejected: the
+  first rollback is ignored as superseded, the second restores `First` — a name
+  the repository never accepted. Measured: `expected 'First' to be 'A'`.
+- rename `A → Renamed` then delete, both rejected: the delete's rollback puts
+  back the optimistic `Renamed` snapshot it happened to splice out. Measured:
+  `expected [ 'B', 'Renamed' ] to deeply equal [ 'B', 'A' ]`.
+
+The displaced value is only a safe fallback when the write that produced it
+succeeded. So the state now tracks what the repository is **known to hold**:
+
+- `confirmed: Map<id, T>` — seeded from `init`/local hydration/migration, set on
+  every successful save, deleted on a successful remove.
+- `inFlight: Map<id, number>` — mutations outstanding per entry. Nothing is
+  settled while another write for that entry is still running; that write owns
+  the display until it resolves.
+- when the last outstanding write for an entry settles, `settleEntry` puts the
+  confirmed value on screen — replacing it in place, re-inserting it next to the
+  neighbour it sat in front of if a delete had removed it, or dropping it if
+  nothing was ever persisted.
+
+This is order-independent: whichever failure arrives last, the gallery lands on
+what was actually persisted. It also fixes a case the revision model got right
+only by luck — an earlier write succeeding while a later one fails now settles
+to the earlier, persisted value rather than to a displaced optimistic one.
+
+Object identity can't be used for any of this: `ownedCollection` is `$state`, so
+reading a slot returns a proxy, never the object that was written. That was
+measured — an identity-based version failed even the existing non-concurrent
+rollback tests.
+
+Three behaviours are new and deliberate, and are pinned by tests:
 
 - an entry deleted while its own edit is in flight stays deleted (the edit is
   dropped rather than resurrecting the entry);
 - `update` returns `null` without persisting when the entry disappears during
-  `prepareUpdate`, instead of writing it back to Firestore.
+  `prepareUpdate`, instead of writing it back to Firestore;
+- an entry optimistically removed by a failing delete stays off screen until any
+  edit still in flight for it resolves, then returns with the persisted value.
+  Showing it again earlier would mean showing a value that is about to change.
 
 ## D2 — A collection could become permanently undeletable
 
@@ -174,6 +206,37 @@ and `tag-manager.ts:286` — **left alone**, they belong to other agents.
 leaking behaviour for `subscribeToCollections`. Those two assertions must be
 inverted when this branch lands. It is not on this branch and was not edited.
 
+## D4 — Metadata read and writes could resolve to different users
+
+Raised in review of `32241bad`. `deleteCollection` and `updateCollection` both
+capture `const userId = getAuthenticatedUserId()` and then call
+`getCollection(collectionId)`, which resolves the effective user **again** —
+after an await, and with `"read"` access rather than `"write"`. The effective
+uid changes on the anonymous→Google upgrade, on sign-out, and when admin preview
+is toggled, so the metadata read could come from one user's document while every
+write went to another's.
+
+The consequence is concrete for delete: the member list used to clean up reverse
+membership comes from the wrong collection, so the wrong sequences are edited
+and the right ones keep a dangling `collectionIds` entry.
+
+**Measured failure (before the fix)**,
+`tests/unit/library/collection-manager-delete.test.ts` — with the uid swapping
+after capture, the signed-in user's own member keeps its stale membership
+because the delete cleaned the other user's member list instead:
+
+```
+FAIL  reads and writes as the same user when the effective uid changes mid-delete
+  expected { collectionIds: [ 'collection-1', 'other' ] }
+        to deeply equal { collectionIds: [ 'other' ] }
+```
+
+**Fix.** A module-private `readCollectionAs(firestore, userId, collectionId)`
+reads the document under an already-captured uid; `deleteCollection` and
+`updateCollection` both use it, so one uid covers the metadata read and every
+write. `getCollection` itself is unchanged — it is a legitimate standalone read
+and other callers depend on it resolving the current user.
+
 ---
 
 ## Commands and results
@@ -192,12 +255,14 @@ looks like 22 red files but is zero red assertions. `pnpm --recursive --filter
 | Command                                                                                   | Result                                                           |
 | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `vitest run … src/lib/shared/collections/__tests__/collection-state-overlap.test.ts` (base) | **5 failed / 5** — D1 reproduced                                 |
+| the same file's two both-failure cases, against the first D1 fix             | **2 failed** — the confirmed-baseline defect reproduced          |
 | `vitest run … tests/unit/library/collection-manager-delete.test.ts` (base)                  | **3 failed / 4** — D2 reproduced (2 of them are the defect)      |
+| the same file's uid-swap case, against the pre-D4 manager                    | **1 failed** — D4 reproduced                                     |
 | `vitest run … tests/unit/library/collection-manager-subscription-disposal.test.ts` (base)   | **3 failed / 4** — D3 reproduced                                 |
-| `vitest run … tests/unit/library/ src/lib/shared/collections/__tests__/ src/lib/features/library/{state,services}/__tests__/` (head) | **37 files, 219 tests, all passing** |
+| `vitest run … tests/unit/library/ src/lib/shared/collections/__tests__/ src/lib/features/library/{state,services}/__tests__/` (head) | **37 files, 223 tests, all passing** |
 | `vitest run --config tests/config/vitest.config.ts` — full default suite (head)             | **15 672 passed, 106 skipped**; 22 files failed to load, all from unbuilt workspace packages (see below) |
 | Re-run of those 22 files after `pnpm --recursive --filter "./packages/*" run build`          | **22 files, 327 tests, all passing** — the failures were the environment, not this branch |
-| `npm run check:fast` (head)                                                                | 645 errors / 44 warnings repo-wide; **none in any changed or added file** |
+| `npm run check:fast` (head)                                                                | 581 errors / 44 warnings repo-wide; **none in any changed or added file** (645 before the workspace packages were built) |
 | `tsc --noEmit` over the three `tests/unit/library/` files (head)                            | **0 errors in those files** (9 errors, all inside a `node_modules` dependency's own sources) |
 | `firebase emulators:exec --only firestore …`                                                | **could not run** — see limitations                              |
 
