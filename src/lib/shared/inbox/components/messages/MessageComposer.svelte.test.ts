@@ -215,6 +215,34 @@ describe("MessageComposer editing", () => {
     });
   });
 
+  it("saves an in-flight draft to the conversation it was typed in", async () => {
+    const screen = render(MessageComposer, {
+      conversationId: "conversation-1",
+    });
+    await page
+      .getByRole("textbox", { name: "Message input" })
+      .fill("Meant for the first thread");
+
+    // Switching threads inside the autosave debounce window is ordinary use:
+    // tap back, tap another conversation. The pending save must still land on
+    // the thread the text was typed in — writing it to the newly opened thread
+    // both destroys that thread's own draft and stages the text for the wrong
+    // recipient.
+    await screen.rerender({ conversationId: "conversation-2" });
+
+    await vi.waitFor(() => {
+      expect(mocks.saveDraft).toHaveBeenCalledWith("conversation-1", {
+        content: "Meant for the first thread",
+        replyTo: undefined,
+        attachment: undefined,
+      });
+    });
+    expect(mocks.saveDraft).not.toHaveBeenCalledWith(
+      "conversation-2",
+      expect.objectContaining({ content: "Meant for the first thread" })
+    );
+  });
+
   it("opens the latest editable message with Arrow Up and cancels with Escape", async () => {
     const latest = message();
     render(MessageComposer, {
