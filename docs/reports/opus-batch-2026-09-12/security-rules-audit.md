@@ -1015,3 +1015,25 @@ single command, before any rule is changed.
 - [ ] N1–N6: triage; N7 needs no action (already tracked).
 - [ ] Test infra: `tests/config/vitest.rules.config.ts` `singleFork` is inert
       under vitest 4 (§5).
+
+## Independent local integration verification, 2026-09-13
+
+The five approved artifact commits were cherry-picked onto local main
+`ac6df150f0` in a dedicated worktree. Only this report and the five audit
+TypeScript files are task-owned changes. No production rules, application
+handlers, deployment configuration, or live data were modified.
+
+- `pnpm exec vitest run --config tests/opus-security-audit/vitest.audit.config.ts rules-source`:
+  **47 tests passed**, one file. These remain source observations and unit
+  checks, not emulator or deployed-policy evidence.
+- A focused `tsc --noEmit --strict` check with ES2022, ESNext modules, Bundler
+  resolution, Node types, `esModuleInterop`, and `skipLibCheck` passed for all
+  five audit TypeScript files. The initial standalone command omitted the
+  project's strict mode and produced discriminated-union errors in the imported
+  validator; using strict mode resolved that harness mismatch without a source
+  change.
+- All six owned paths passed Prettier and `git diff --check`.
+
+The local reviewer did not start or download emulators. The **52 runtime probes
+remain prepared but unexecuted**. No production access or deployed-policy
+inspection occurred. The harness comment now preserves that same distinction.

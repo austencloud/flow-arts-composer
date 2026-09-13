@@ -4,12 +4,13 @@
  *
  * These probes are ISOLATED from tests/integration/firestore-rules/: they own
  * their own vitest config and never edit firestore.rules or storage.rules. The
- * audit is read-only on production code — every finding is proven by an
- * emulator request, not by reading the rules and guessing.
+ * audit is read-only on production code. These prepared runtime probes have
+ * not been executed; the report distinguishes source observations from
+ * unverified emulator outcomes.
  *
  * Repro tests that demonstrate an OPEN finding are quarantined behind
  * AUDIT_RUN_REPROS=1 so the default run stays green (see `repro` below). Run
- * them with the flag to reproduce the red evidence quoted in the report.
+ * them with the flag to measure whether the inferred finding reproduces.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
