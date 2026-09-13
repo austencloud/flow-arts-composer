@@ -5,6 +5,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { SequenceBuilder } from "../../src/generation/index.js";
+import type { BuildOptions } from "../../src/generation/builder/SequenceBuilder.js";
+import { loopSpecFromWire } from "../../src/loop/loop-spec.js";
 import {
   handRelationshipHolds,
   type HandRelationshipOptions,
@@ -25,6 +27,118 @@ const diamond = () =>
   new SequenceBuilder(new CsvVariationProvider(loadDiamondVariations()));
 const box = () =>
   new SequenceBuilder(new CsvVariationProvider(loadBoxVariations()));
+
+function noDashUnisonLoop(gridMode: "box" | "diamond"): BuildOptions {
+  return {
+    length: 2,
+    gridMode,
+    level: 3,
+    maxTurnIntensity: 1,
+    matchHandTurns: true,
+    leftStartOrientation: "in",
+    rightStartOrientation: "in",
+    constraintOptions: {
+      propContinuity: "maximize",
+      handPathContinuity: "maximize",
+      motionFamily: { exclude: ["dash"] },
+      handRelationship: { map: "identity", inverted: false },
+    },
+    blockedStartPositions:
+      gridMode === "box"
+        ? [
+            "alpha4",
+            "alpha6",
+            "alpha8",
+            "beta2",
+            "beta6",
+            "beta8",
+            "gamma2",
+            "gamma4",
+            "gamma6",
+            "gamma8",
+            "gamma10",
+            "gamma14",
+            "gamma16",
+          ]
+        : [
+            "alpha3",
+            "alpha5",
+            "alpha7",
+            "beta1",
+            "beta3",
+            "beta7",
+            "gamma1",
+            "gamma3",
+            "gamma5",
+            "gamma7",
+            "gamma9",
+            "gamma13",
+            "gamma15",
+          ],
+    loop: {
+      type: LOOPType.ROTATED,
+      period: Period.QUARTERED,
+      requestedTotalLength: 8,
+      useTargetedGeneration: true,
+      loopSpec: loopSpecFromWire({
+        left: { rotated: { period: 4 } },
+        right: { rotated: { period: 4 } },
+      }),
+    },
+  };
+}
+
+describe("quartered unison LOOP without dashes (feedback 1IGhusmP)", () => {
+  it.each(["box", "diamond"] as const)(
+    "closes eight steps on %s while preserving every constraint",
+    (gridMode) => {
+      const options = noDashUnisonLoop(gridMode);
+      const builder = gridMode === "box" ? box() : diamond();
+      for (let run = 0; run < 20; run++) {
+        const result = builder.build(options);
+        expect(result.sequence).toHaveLength(9);
+        expect(isSequenceCircular(result.sequence)).toBe(true);
+        expectRelationship(result.sequence, { map: "identity" });
+        const first = result.sequence[0]!;
+        const last = result.sequence.at(-1)!;
+        expect(options.blockedStartPositions).not.toContain(
+          first.startPosition
+        );
+        for (const hand of ["left", "right"] as const) {
+          expect(first.motions[hand].startOrientation).toBe("in");
+          expect(last.motions[hand].endOrientation).toBe("in");
+        }
+        for (const step of result.sequence.slice(1)) {
+          expect(step.motions.left.turns).toEqual(step.motions.right.turns);
+          for (const hand of ["left", "right"] as const) {
+            expect(step.motions[hand].motionType).not.toBe("dash");
+            if (step.motions[hand].motionType === "static") {
+              expect(step.motions[hand].turns).toBeGreaterThan(0);
+            }
+          }
+        }
+      }
+    }
+  );
+
+  it("honors an explicit ban on static steps", () => {
+    expect(() =>
+      box().build({ ...noDashUnisonLoop("box"), allowStaticSteps: false })
+    ).toThrow();
+  });
+
+  it.each([
+    { level: 1, maxTurnIntensity: 0 },
+    { level: 3, maxTurnIntensity: 0 },
+  ])(
+    "does not pad a zero-turn request with motionless steps ($level)",
+    (overrides) => {
+      expect(() =>
+        box().build({ ...noDashUnisonLoop("box"), ...overrides })
+      ).toThrow();
+    }
+  );
+});
 
 /**
  * Turns are independent per hand, so one hand may have floated. The

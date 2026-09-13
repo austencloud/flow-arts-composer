@@ -43,6 +43,8 @@ import {
   dimHex,
   spotlightFactor,
   tunnelPropColor,
+  tunnelPerformerPair,
+  type TunnelPropColorPair,
   type TunnelLayerSelection,
 } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
@@ -624,7 +626,8 @@ export class AnimationRenderLoop {
           spectrum,
           baseLeft,
           baseRight,
-          params.props.tunnelSelectedLayer ?? null
+          params.props.tunnelSelectedLayer ?? null,
+          params.props.tunnelPropColors
         ),
       });
     }
@@ -649,11 +652,18 @@ export class AnimationRenderLoop {
     spectrum: boolean,
     baseLeft: string,
     baseRight: string,
-    selectedLayer: TunnelLayerSelection = null
+    selectedLayer: TunnelLayerSelection = null,
+    colors?: TunnelPropColorPair | null
   ): string {
     const isLeft = propIndex % 2 === 0;
-    const raw =
-      propIndex <= 1
+    const exact = colors
+      ? tunnelPerformerPair(colors, Math.floor(propIndex / 2))
+      : null;
+    const raw = exact
+      ? isLeft
+        ? exact.left
+        : exact.right
+      : propIndex <= 1
         ? isLeft
           ? baseLeft
           : baseRight
@@ -722,7 +732,8 @@ export class AnimationRenderLoop {
           spectrum,
           baseLeft,
           baseRight,
-          params.props.tunnelSelectedLayer ?? null
+          params.props.tunnelSelectedLayer ?? null,
+          params.props.tunnelPropColors
         ),
       });
     }

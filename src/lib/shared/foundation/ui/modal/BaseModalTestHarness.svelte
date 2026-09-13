@@ -6,21 +6,34 @@
     cancelBeforeOpen = false,
     allowExternalOverlays = false,
     shortContent = false,
+    animation = "none",
   }: {
     cancelBeforeOpen?: boolean;
     allowExternalOverlays?: boolean;
     shortContent?: boolean;
+    animation?: "pop" | "slide" | "none";
   } = $props();
 
   let isOpen = $state(true);
   let openedCount = $state(0);
   let wasNativeOpenWhenNotified = $state(false);
+  let closedCount = $state(0);
+  let wasNativeOpenWhenClosed = $state(true);
 
-  function handleOpened() {
+  function nativeDialogOpen(): boolean {
     const dialog =
       document.querySelector<HTMLDialogElement>("dialog.base-modal");
-    wasNativeOpenWhenNotified = dialog?.open ?? false;
+    return dialog?.open ?? false;
+  }
+
+  function handleOpened() {
+    wasNativeOpenWhenNotified = nativeDialogOpen();
     openedCount += 1;
+  }
+
+  function handleClosed() {
+    wasNativeOpenWhenClosed = nativeDialogOpen();
+    closedCount += 1;
   }
 
   onMount(() => {
@@ -33,10 +46,11 @@
 <BaseModal
   bind:open={isOpen}
   size="fit"
-  animation="none"
+  {animation}
   {allowExternalOverlays}
   labelledBy="base-modal-test-title"
   onopened={handleOpened}
+  onclosed={handleClosed}
 >
   <h2 id="base-modal-test-title">Scrollable modal</h2>
   <div
@@ -44,11 +58,15 @@
     class:tall-content={!shortContent}
     aria-hidden="true"
   ></div>
+  <button type="button" onclick={() => (isOpen = false)}>Close modal</button>
   <button type="button">End of modal</button>
 </BaseModal>
 
 <output data-testid="base-modal-opened-state">
   {openedCount}:{wasNativeOpenWhenNotified}
+</output>
+<output data-testid="base-modal-closed-state">
+  {closedCount}:{wasNativeOpenWhenClosed}
 </output>
 
 <style>

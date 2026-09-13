@@ -491,12 +491,27 @@ export function createSequenceState(services: SequenceStateServices) {
 
   async function clearSequenceCompletely(): Promise<void> {
     try {
+      // Undo and the start-position picker both fire this without awaiting it,
+      // so a redo (or a fresh start-position pick) can land a new sequence
+      // inside the 300ms animation window below. Landing the clear afterwards
+      // wiped that newer sequence AND its saved copy, with no error and no
+      // history entry to get it back. Remember what we agreed to clear.
+      const clearingSequence = coreState.currentSequence;
+
       animationState.startClearing();
 
       // Reduced delay to match the step-grid CSS transition (300ms)
       // This allows the clearing animation and layout transition to happen simultaneously
       // The CSS transition on .step-grid.clearing is 300ms, so we wait for it to complete
       await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Someone else owns the workspace now. Their sequence is not ours to
+      // clear, and their persisted copy is not ours to delete.
+      const sequenceNow = coreState.currentSequence;
+      if (sequenceNow !== null && sequenceNow !== clearingSequence) {
+        animationState.endClearing();
+        return;
+      }
 
       // 🐛 FIX: Cancel any pending auto-save AND prevent new one from being set
       // This prevents a race condition where auto-save fires after clearState(),
