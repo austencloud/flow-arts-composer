@@ -6,6 +6,9 @@ import {
 import { auth } from "$lib/shared/auth/firebase";
 import { GOOGLE_CLIENT_ID } from "$lib/shared/auth/config/google-oauth";
 
+/** How long the loopback redirect may take before the attempt is abandoned. */
+const OAUTH_TIMEOUT_MS = 120_000;
+
 /**
  * Obtain a Google credential via the desktop OAuth bridge: a loopback server
  * (oauth_server.rs) catches the redirect from the system browser, so the
@@ -37,25 +40,34 @@ export async function desktopGoogleCredential(): Promise<OAuthCredential> {
 		resolveToken = resolve;
 		rejectToken = reject;
 	});
-
-	const timeout = setTimeout(() => {
-		rejectToken!(new Error("OAuth timed out after 2 minutes"));
-	}, 120_000);
+	// The caller stops awaiting tokenPromise as soon as any step below throws,
+	// so keep a handler attached: without one, a rejection arriving after that
+	// point surfaces in the WebView as an unhandled rejection.
+	tokenPromise.catch(() => undefined);
 
 	const unlisten = await listen<{ id_token: string }>(
 		"oauth-callback",
 		(event) => {
-			clearTimeout(timeout);
 			resolveToken!(event.payload.id_token);
 		}
 	);
 
-	await open(authUrl.toString());
+	// Registered only once the subscription exists, so a failed listen() has
+	// nothing to clean up.
+	const timeout = setTimeout(() => {
+		rejectToken!(new Error("OAuth timed out after 2 minutes"));
+	}, OAUTH_TIMEOUT_MS);
 
+	// `open()` belongs inside the try: "oauth-callback" is a GLOBAL Tauri
+	// event, so a shell that cannot launch a browser used to leave the
+	// subscription behind, where it would consume a LATER attempt's callback,
+	// plus a two-minute timer that then rejected into nothing.
 	try {
+		await open(authUrl.toString());
 		const idToken = await tokenPromise;
 		return GoogleAuthProvider.credential(idToken);
 	} finally {
+		clearTimeout(timeout);
 		unlisten();
 	}
 }
