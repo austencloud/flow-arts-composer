@@ -46,16 +46,23 @@ interface ControllableRepo extends FirebaseCollectionRepository<CollectionEntry>
 }
 
 function makeRepo(): ControllableRepo {
-  const held = new Set<string>();
-  const pending = new Map<string, Deferred>();
+  // Counted, not a set: an entry can have two writes held at once, which is
+  // the whole point of the both-fail cases.
+  const held = new Map<string, number>();
+  const pending = new Map<string, Deferred[]>();
 
   function gate(id: string): Promise<void> {
-    if (!held.has(id)) return Promise.resolve();
-    held.delete(id);
+    const holds = held.get(id) ?? 0;
+    if (holds === 0) return Promise.resolve();
+    held.set(id, holds - 1);
     return new Promise<void>((resolve, reject) => {
-      pending.set(id, { resolve: () => resolve(), reject });
+      const queue = pending.get(id) ?? [];
+      queue.push({ resolve: () => resolve(), reject });
+      pending.set(id, queue);
     });
   }
+
+  const hold = (id: string) => void held.set(id, (held.get(id) ?? 0) + 1);
 
   const repo: ControllableRepo = {
     async load() {
@@ -71,12 +78,12 @@ function makeRepo(): ControllableRepo {
     },
     saved: [],
     removed: [],
-    holdSave: (id) => void held.add(id),
-    holdRemove: (id) => void held.add(id),
+    holdSave: hold,
+    holdRemove: hold,
+    // Oldest first, so a test settles held writes in the order they were made.
     pending: (id) => {
-      const deferred = pending.get(id);
+      const deferred = pending.get(id)?.shift();
       if (!deferred) throw new Error(`no write held for ${id}`);
-      pending.delete(id);
       return deferred;
     },
   };
@@ -168,6 +175,75 @@ describe("CollectionState overlapping writes", () => {
     await expect(renaming).rejects.toThrow("save denied");
 
     expect(s.collection).toHaveLength(0);
+  });
+
+  it("falls back to the persisted name when both overlapping edits fail", async () => {
+    const a = await s.add({ name: "A" });
+
+    repo.holdSave(a.id);
+    const renaming = s.rename(a.id, "First");
+    await settle();
+
+    repo.holdSave(a.id);
+    const updating = s.update(a.id, { name: "Second" });
+    await settle();
+    expect(s.collection[0]?.name).toBe("Second");
+
+    // Neither write reaches the repository, so "A" is still what it holds.
+    // Rolling back to the displaced value would leave "First" on screen — a
+    // name that was never saved.
+    repo.pending(a.id).reject(new Error("save denied"));
+    await expect(renaming).rejects.toThrow("save denied");
+    repo.pending(a.id).reject(new Error("save denied"));
+    await expect(updating).rejects.toThrow("save denied");
+
+    expect(s.collection[0]?.name).toBe("A");
+    expect(repo.saved.filter((e) => e.id === a.id)).toHaveLength(1);
+  });
+
+  it("restores the persisted entry when a rename and a delete both fail", async () => {
+    const a = await s.add({ name: "A" });
+    const b = await s.add({ name: "B" }); // [b, a]
+
+    repo.holdSave(a.id);
+    const renaming = s.rename(a.id, "Renamed");
+    await settle();
+
+    repo.holdRemove(a.id);
+    const removing = s.remove(a.id);
+    await settle();
+    expect(s.collection.map((e) => e.id)).toEqual([b.id]);
+
+    // Rename fails first, then the delete. The delete's rollback must not put
+    // back the optimistic "Renamed" snapshot it happened to splice out.
+    repo.pending(a.id).reject(new Error("save denied"));
+    await expect(renaming).rejects.toThrow("save denied");
+    repo.pending(a.id).reject(new Error("delete denied"));
+    await expect(removing).rejects.toThrow("delete denied");
+
+    expect(s.collection.map((e) => e.id)).toEqual([b.id, a.id]);
+    expect(s.collection.map((e) => e.name)).toEqual(["B", "A"]);
+  });
+
+  it("keeps a successfully saved edit when a later overlapping edit fails", async () => {
+    const a = await s.add({ name: "A" });
+
+    repo.holdSave(a.id);
+    const renaming = s.rename(a.id, "First");
+    await settle();
+
+    repo.holdSave(a.id);
+    const updating = s.update(a.id, { name: "Second" });
+    await settle();
+
+    // The first write lands; the second doesn't. "First" is what the
+    // repository holds, so it is what the gallery must end up showing.
+    repo.pending(a.id).resolve();
+    await renaming;
+    repo.pending(a.id).reject(new Error("save denied"));
+    await expect(updating).rejects.toThrow("save denied");
+
+    expect(s.collection[0]?.name).toBe("First");
   });
 
   it("keeps the newer edit when an older overlapping write fails", async () => {
