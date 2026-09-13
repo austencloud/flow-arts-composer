@@ -896,6 +896,7 @@
                   <T.Group
                     position.z={performerGridOffset}
                     layers={BASE_SCENE_LAYER}
+                    userData={{ performerInteractionExcluded: true }}
                   >
                     <Grid3D
                       visiblePlanes={explicitPlanes}
