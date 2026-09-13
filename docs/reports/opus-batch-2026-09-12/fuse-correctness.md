@@ -419,7 +419,7 @@ The final per-pictograph screenshots were directly inspected for float fidelity,
 diamond, box, mixed, skew-right, skew-left, and centric. No horizontal card
 overflow was measured.
 
-**Visual hold: centric arrow placement falls back after an error.** The centric
+**Existing limitation: centric arrow placement falls back after an error.** The centric
 case logs `Unsupported placement frame: centric` from
 `src/lib/shared/pictograph/arrow/positioning/placement/domain/placement-frame.ts`.
 `normalizePlacementFrame` accepts canonical, diamond, box, and skewed values;
@@ -434,8 +434,9 @@ renderer without that placement error. This is implementation evidence against
 the fixture's fixed inputs, not independent TKA-domain certification: the
 local reviewer had no flow-arts MCP tools available. The actual Fuse workflow,
 playback transitions, and mobile layout were not exercised by this isolated
-proof page. The centric error must be resolved or explicitly scoped before
-claiming complete visual verification.
+proof page. The baseline comparison below establishes this as an existing
+limitation, not a regression from the scoped Fuse changes. Complete centric
+placement correctness remains unverified.
 
 Evidence is retained outside Git at
 `C:/Users/Austen/.codex/opus-batches/2026-09-12-expanded/fuse-visual/`:
@@ -445,3 +446,40 @@ cropped by the test viewport; use the final `-pictograph.png` captures. The
 temporary files were removed from the worktree after capture, and the task's
 browser runner and server exited. No full type/build gate or integration gate
 was run.
+
+### Fresh main-versus-branch Chromium comparison
+
+A follow-up merged main `04ae3b0436` into this branch at `fa87fe4b6c`.
+The incoming changes concern Learn and fire effects; they do not alter the
+fuser, fixture, or pictograph placement path checked here.
+
+The temporary browser configuration loaded the original fuser directly from
+`git show 04ae3b0436:src/lib/features/fuse/services/sequence-fuser.ts` as a virtual
+module, stripping TypeScript syntax without changing its implementation. The
+same fixture producer ran against that baseline and the reviewed fuser. Both
+outputs were rendered through the unchanged `PictographContainer` with identical
+props. The preparer's public cache was cleared before each render so a result
+from the other version could not mask a difference.
+
+One browser comparison scenario passed across all **14 rendered frames**.
+Every reviewed fixture data assertion passed. All 14 captures were directly
+inspected. Both centric versions emitted the same four placement-error messages;
+the baseline already carried `right.motion.gridMode = centric` despite its
+aggregate sequence mode being diamond. The reviewed version correctly preserves
+the fixture's expected aggregate centric mode. Extracted SVG geometry attributes
+were exactly equal between the two centric frames. Their screenshot channels
+differed by at most one intensity level, with no visible placement change.
+
+The other six reviewed cases emitted no console errors. Float, diamond, box,
+mixed, and skew-left screenshots also differed from their baselines by at most
+one intensity level. Skew-right visibly gained the missing grid points when its
+aggregate mode changed from diamond to the fixture's expected skewed mode;
+its per-hand motion data retained the native diamond/skewed frames. This is
+nonregression evidence for the scoped Fuse changes. It does not certify the
+pre-existing centric fallback as correct or establish untested domain semantics.
+
+Comparison evidence uses `baseline-<case>.png`, `reviewed-<case>.png`, and
+`baseline-comparison.log` in the same evidence directory. Copies of the
+temporary test and configuration are retained there; the baseline source is
+pinned to the stated main commit for reproduction after integration. No
+production renderer changes were made.
