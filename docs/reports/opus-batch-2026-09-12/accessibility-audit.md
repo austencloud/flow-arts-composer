@@ -10,7 +10,7 @@ this report and the isolated browser suite under
 | --- | --- |
 | Base SHA | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`, clean tree at start) |
 | Branch | `claude/accessibility-audit-shared-components-ma20hf` |
-| Final SHA | see `git log -1` on that branch; last commit of this audit |
+| Audit commits | `7ce96b42` (escape-ownership suite), `245f21a1` (chip/naming/focus-restore specs), `9b5b0c6f` (measurements + this report) |
 | Owned paths | `docs/reports/opus-batch-2026-09-12/accessibility-audit.md`, `tests/opus-accessibility-audit/**` |
 | Browser | headless Chromium 1194 (`/opt/pw-browsers/chromium`), Playwright 1.61.1, Vitest 4.0.18 browser mode |
 
