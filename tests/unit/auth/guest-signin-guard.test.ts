@@ -127,11 +127,17 @@ describe("signInWithEmail — guest guard", () => {
     upgradeAnonymousWithEmailMock.mockResolvedValue({
       status: "collision-signed-in",
       importable: drafts,
+      destinationUid: "collided-account",
     });
 
     await signInWithEmail("a@example.com", "pw");
 
-    expect(promptAnonymousImportMock).toHaveBeenCalledWith(drafts);
+    // The offer names the account the collision signed into, carried on the
+    // upgrade result rather than re-derived later.
+    expect(promptAnonymousImportMock).toHaveBeenCalledWith(
+      drafts,
+      "collided-account"
+    );
   });
 
   it("signs in normally when there is no guest session to preserve", async () => {
@@ -169,11 +175,15 @@ describe("signInWithGoogle — guest guard", () => {
     upgradeAnonymousWithGoogleMock.mockResolvedValue({
       status: "collision-signed-in",
       importable: drafts,
+      destinationUid: "collided-account",
     });
 
     await signInWithGoogle();
 
-    expect(promptAnonymousImportMock).toHaveBeenCalledWith(drafts);
+    expect(promptAnonymousImportMock).toHaveBeenCalledWith(
+      drafts,
+      "collided-account"
+    );
   });
 
   it("falls through to the ordinary popup when there is no guest", async () => {

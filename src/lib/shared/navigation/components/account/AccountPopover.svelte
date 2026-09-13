@@ -116,7 +116,7 @@
       if (auth.currentUser?.isAnonymous) {
         const result = await upgradeAnonymousWithGoogle();
         if (result.status === "collision-signed-in") {
-          promptAnonymousImport(result.importable ?? []);
+          promptAnonymousImport(result.importable ?? [], result.destinationUid);
         }
       } else {
         await signInWithGoogle();

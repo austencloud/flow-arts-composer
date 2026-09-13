@@ -304,9 +304,13 @@ describe("LibrarySaveService.saveSequence - durable-save contract", () => {
       thumbnails: [thumbnailUrl],
     });
     expect(repository.saveSequenceWithMetadata).toHaveBeenCalledOnce();
+    // The third argument is the identity fence: the thumbnail patch is aimed at
+    // the account that made the save, not at whoever is signed in by the time
+    // the render and upload finish.
     expect(repository.attachThumbnail).toHaveBeenCalledWith(
       "seq-1",
-      thumbnailUrl
+      thumbnailUrl,
+      "u1"
     );
   });
 });

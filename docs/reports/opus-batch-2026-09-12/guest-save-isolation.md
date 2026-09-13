@@ -109,13 +109,28 @@ then.
   forwards it. Immediately after `getWritableUserId()` — on the far side of the
   await, against the uid actually about to be written — a mismatch throws
   `LibraryError("UNAUTHORIZED")`.
-- The retry passes the uid it selected rows for. The collision import passes the
-  uid **the offer was made about** (see below). The initial cloud sync in
-  `LibrarySaveService` passes the uid that made the save: that write is
-  fire-and-forget and the thumbnail follow-up slower still, so both can land
-  after the guest has signed in — and if that sign-in is a collision, an
-  unfenced background sync would deposit their work into the existing account
-  _before_ the consent prompt, making the prompt moot.
+- Fenced writes, each to the account that actually owns the work:
+  - the **background retry**, to the uid it selected rows for;
+  - the **collision import**, to the uid the offer was made about (below);
+  - the **initial cloud sync**, to the uid that made the save. It is
+    fire-and-forget, so it can land after the guest has signed in — and if that
+    sign-in is a collision, an unfenced sync would deposit their work into the
+    existing account _before_ the consent prompt, making the prompt moot.
+  - the **thumbnail patch** (`attachThumbnail`), to the same saving uid. This
+    is the slowest write in a save — a render plus an upload have completed
+    since the user acted — and sequence ids are not account-scoped, so an
+    unfenced patch would land on whatever the current account holds under that
+    id. `attachThumbnail` gained the same post-`getWritableUserId()` check.
+    **An earlier revision of this report claimed this was already fenced when
+    it was not.** It is now, with tests against the real repository method and
+    against the real thumbnail write.
+- **No uid means no cloud write at all.** `ensureGuestIdentity()` swallows its
+  failures, so a save can legitimately run with no identity. Passing
+  `undefined` as the expected owner made the fence inert, and a uid arriving
+  later — a late guest provision, a sign-in — would simply be adopted as the
+  owner of work that account never made. The Dexie row is already durable, so
+  the sync is deferred instead: the row stays `pending` and belongs to the
+  ownership-scoped retry once an owner exists.
 - A write with no `expectedOwnerId` is unaffected, so ordinary saves that
   resolve their own identity are untouched.
 
@@ -158,13 +173,20 @@ every draft behind it and discarding the count of those already written.
   start bumps it. A run that settles after a dismissal or after a newer offer
   has replaced it returns without touching state, so a slow import cannot
   resurrect stale drafts or clobber newer ones.
-- **The destination is bound at the OFFER, not the answer** (second review
-  follow-up — my first attempt was wrong). The collision has just signed the
-  user into a specific account, and "add these to this account?" means _that_
-  account. Reading the uid at confirm time re-pointed the question: an offer
-  made about B, answered after a switch to C, imported into C — an account the
-  user was never asked about. `promptAnonymousImport` now resolves and stores
-  the destination before it opens the dialog.
+- **The destination comes from the collision auth result, and binds at the
+  OFFER** (this took two attempts). "Add these to this account?" means the
+  account the collision just signed into. Reading the uid at confirm time
+  re-pointed the question — an offer about B, answered after a switch to C,
+  imported into C. My first fix moved the lookup inside
+  `promptAnonymousImport`, which was still wrong twice over: it was another
+  "who is signed in now?" lookup rather than the collision result, and it made
+  the function `async` while every caller fires it without awaiting — so two
+  collisions in flight could interleave between the await and the state write,
+  leaving the generation guard and the drafts from different offers.
+  `UpgradeResult` now carries `destinationUid`, read from the auth result the
+  instant the collision sign-in completed, and all nine offer call sites pass
+  it. `promptAnonymousImport` is synchronous again: generation, destination,
+  drafts and open land in one step.
 - **Confirm fails closed.** If the destination was never bound, or the auth
   read fails at confirm, or the current account no longer matches the one the
   offer was about, nothing is written: the drafts are retained, the offer
@@ -221,12 +243,15 @@ pnpm exec vitest run --config tests/config/vitest.config.ts \
   tests/unit/library/write-identity-fence.test.ts \
   tests/unit/auth/anonymous-import-continuity.test.ts \
   tests/unit/auth/guest-signin-guard.test.ts
-→ Test Files 5 passed (5) · Tests 54 passed (54)
+→ Test Files 5 passed (5) · Tests 62 passed (62)
 
 Related-suite sweep (tests/unit/library, tests/unit/auth, the save-service
 persistence suite, the public-by-default contract, browse-engine identity
 switch, share-intake):
-→ Test Files 85 passed (85) · Tests 593 passed (593)
+→ Test Files 85 passed (85) · Tests 603 passed (603)
+
+An earlier revision of this report said 54 focused tests; the real number at
+that commit was 52. Counts here are copied from run output, not recalled.
 ```
 
 **Fails before, passes after** — the required demonstration, done by checking

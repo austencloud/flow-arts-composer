@@ -252,12 +252,12 @@ export async function completeEmailLinkSignIn(): Promise<EmailLinkCompletionResu
             await import("$lib/shared/auth/services/anonymous-upgrade");
           const { promptAnonymousImport } =
             await import("$lib/shared/auth/state/anonymous-import-prompt.svelte");
-          const drafts = await upgradeMagicLinkCollision(
+          const { drafts, destinationUid } = await upgradeMagicLinkCollision(
             anonUid,
             savedEmail,
             link
           );
-          promptAnonymousImport(drafts);
+          promptAnonymousImport(drafts, destinationUid);
         } else {
           throw linkErr;
         }

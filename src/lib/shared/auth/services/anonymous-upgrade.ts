@@ -45,6 +45,14 @@ export interface UpgradeResult {
   status: UpgradeStatus;
   /** Drafts captured from the anon session, present only on collision. */
   importable?: AnonymousDraft[];
+  /**
+   * On a collision, the uid of the account we just signed INTO — read from the
+   * auth result itself, the instant the sign-in completed. This is the account
+   * the import offer is about. It is not re-derivable later: a subsequent
+   * "who is signed in now?" lookup answers a different question the moment the
+   * user switches accounts, and would silently re-point the offer.
+   */
+  destinationUid?: string;
 }
 
 const CREDENTIAL_COLLISION = new Set([
@@ -228,10 +236,14 @@ export async function upgradeAnonymousWithGoogleCredential(
     return { status: "linked" };
   } catch (error) {
     if (isCollision(error)) {
-      await signInWithCredential(auth, credential);
+      const signedIn = await signInWithCredential(auth, credential);
       await reportGuestUpgradeLifecycle("collision-signed-in");
       recordLastAuthMethod("google");
-      return { status: "collision-signed-in", importable: drafts };
+      return {
+        status: "collision-signed-in",
+        importable: drafts,
+        destinationUid: signedIn.user.uid,
+      };
     }
     throw error;
   }
@@ -276,11 +288,15 @@ export async function upgradeAnonymousWithGoogle(): Promise<UpgradeResult> {
   } catch (error) {
     if (isCollision(error)) {
       const cred = GoogleAuthProvider.credentialFromError(error as AuthError);
-      if (cred) await signInWithCredential(auth, cred);
-      else throw error;
+      if (!cred) throw error;
+      const signedIn = await signInWithCredential(auth, cred);
       await reportGuestUpgradeLifecycle("collision-signed-in");
       recordLastAuthMethod("google");
-      return { status: "collision-signed-in", importable: drafts };
+      return {
+        status: "collision-signed-in",
+        importable: drafts,
+        destinationUid: signedIn.user.uid,
+      };
     }
     throw error;
   }
@@ -302,11 +318,15 @@ export async function upgradeAnonymousWithFacebook(): Promise<UpgradeResult> {
   } catch (error) {
     if (isCollision(error)) {
       const cred = FacebookAuthProvider.credentialFromError(error as AuthError);
-      if (cred) await signInWithCredential(auth, cred);
-      else throw error;
+      if (!cred) throw error;
+      const signedIn = await signInWithCredential(auth, cred);
       await reportGuestUpgradeLifecycle("collision-signed-in");
       recordLastAuthMethod("facebook");
-      return { status: "collision-signed-in", importable: drafts };
+      return {
+        status: "collision-signed-in",
+        importable: drafts,
+        destinationUid: signedIn.user.uid,
+      };
     }
     // The Facebook email already belongs to a DIFFERENT provider's account
     // (e.g. Google/email). We can't link onto the anon and we don't hold the
@@ -342,10 +362,18 @@ export async function upgradeAnonymousWithEmail(
     return { status: "linked" };
   } catch (error) {
     if (isCollision(error)) {
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      const signedIn = await signInWithEmailAndPassword(
+        auth,
+        email.trim(),
+        password
+      );
       await reportGuestUpgradeLifecycle("collision-signed-in");
       recordLastAuthMethod("password");
-      return { status: "collision-signed-in", importable: drafts };
+      return {
+        status: "collision-signed-in",
+        importable: drafts,
+        destinationUid: signedIn.user.uid,
+      };
     }
     throw error;
   }
@@ -420,11 +448,11 @@ export async function upgradeMagicLinkCollision(
   anonUid: string,
   email: string,
   link: string
-): Promise<AnonymousDraft[]> {
+): Promise<{ drafts: AnonymousDraft[]; destinationUid: string }> {
   const auth = await getAuthInstance();
   const drafts = await captureAnonymousDrafts(anonUid);
-  await signInWithEmailLink(auth, email, link);
+  const signedIn = await signInWithEmailLink(auth, email, link);
   await reportGuestUpgradeLifecycle("collision-signed-in");
   recordLastAuthMethod("magic-link");
-  return drafts;
+  return { drafts, destinationUid: signedIn.user.uid };
 }

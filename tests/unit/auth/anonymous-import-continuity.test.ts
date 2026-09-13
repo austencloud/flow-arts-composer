@@ -171,7 +171,7 @@ describe("importDrafts — every draft is attempted", () => {
 describe("confirmAnonymousImport — a failed import stays retryable", () => {
   it("keeps the drafts and re-offers them when the import fails", async () => {
     repoSaveSequenceMock.mockRejectedValue(retryable());
-    await promptAnonymousImport([makeDraft("d1")]);
+    promptAnonymousImport([makeDraft("d1")], "account-B");
 
     await confirmAnonymousImport();
 
@@ -185,14 +185,14 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
 
   it("never rejects, because ConfirmDialog neither awaits nor catches it", async () => {
     repoSaveSequenceMock.mockRejectedValue(retryable());
-    await promptAnonymousImport([makeDraft("d1")]);
+    promptAnonymousImport([makeDraft("d1")], "account-B");
 
     await expect(confirmAnonymousImport()).resolves.toBeUndefined();
   });
 
   it("retrying after the failure clears the prompt once the write succeeds", async () => {
     repoSaveSequenceMock.mockRejectedValueOnce(retryable());
-    await promptAnonymousImport([makeDraft("d1")]);
+    promptAnonymousImport([makeDraft("d1")], "account-B");
 
     await confirmAnonymousImport();
     expect(anonymousImportPrompt.count).toBe(1);
@@ -208,7 +208,7 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
     repoSaveSequenceMock
       .mockResolvedValueOnce({})
       .mockRejectedValueOnce(retryable());
-    await promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")], "account-B");
 
     await confirmAnonymousImport();
 
@@ -220,7 +220,7 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
   });
 
   it("clears the offer on a fully successful import", async () => {
-    await promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")], "account-B");
 
     await confirmAnonymousImport();
 
@@ -233,7 +233,7 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
   });
 
   it("dismissing discards the offer without writing anything", async () => {
-    await promptAnonymousImport([makeDraft("d1")]);
+    promptAnonymousImport([makeDraft("d1")], "account-B");
     cancelAnonymousImport();
 
     expect(anonymousImportPrompt.count).toBe(0);
@@ -244,7 +244,7 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
 
 describe("collision import — destination fencing and staleness", () => {
   it("fences every write to the account the OFFER was made about", async () => {
-    await promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")], "account-B");
 
     await confirmAnonymousImport();
 
@@ -257,7 +257,7 @@ describe("collision import — destination fencing and staleness", () => {
     // The collision signed them into B and the offer asked about B. If they
     // switch to C before answering, "yes" cannot be taken as consent to put
     // their guest work into C — an account they were never asked about.
-    await promptAnonymousImport([makeDraft("d1")]);
+    promptAnonymousImport([makeDraft("d1")], "account-B");
     signedInUid.value = "account-C";
 
     await confirmAnonymousImport();
@@ -278,7 +278,7 @@ describe("collision import — destination fencing and staleness", () => {
       signedInUid.value = "account-C";
       return {};
     });
-    await promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")], "account-B");
 
     await confirmAnonymousImport();
 
@@ -290,7 +290,7 @@ describe("collision import — destination fencing and staleness", () => {
   });
 
   it("fails closed, retaining drafts, when the destination cannot be read at confirm", async () => {
-    await promptAnonymousImport([makeDraft("d1")]);
+    promptAnonymousImport([makeDraft("d1")], "account-B");
     // Auth becomes unreadable between the offer and the answer.
     authReadThrows.value = true;
 
@@ -302,10 +302,10 @@ describe("collision import — destination fencing and staleness", () => {
     expect(anonymousImportPrompt.isOpen).toBe(true);
   });
 
-  it("fails closed when the destination could not be bound at the offer", async () => {
-    authReadThrows.value = true;
-    await promptAnonymousImport([makeDraft("d1")]);
-    authReadThrows.value = false;
+  it("fails closed when the offer carried no destination at all", async () => {
+    // A caller that cannot name the account it signed into must not produce an
+    // importable offer that writes somewhere unnamed.
+    promptAnonymousImport([makeDraft("d1")]);
 
     await confirmAnonymousImport();
 
@@ -313,11 +313,49 @@ describe("collision import — destination fencing and staleness", () => {
     expect(anonymousImportPrompt.count).toBe(1);
   });
 
+  it("binds the destination synchronously, with no await before the state is set", () => {
+    // The offer used to resolve the uid with an await and callers discard the
+    // promise, so two collisions could interleave between the lookup and the
+    // state write — leaving the generation guard and the drafts from different
+    // offers. Everything the offer sets must land in one synchronous step.
+    promptAnonymousImport([makeDraft("d1")], "account-B");
+
+    expect(anonymousImportPrompt.isOpen).toBe(true);
+    expect(anonymousImportPrompt.count).toBe(1);
+    expect(anonymousImportPrompt.destinationUid).toBe("account-B");
+  });
+
+  it("keeps each offer's drafts and destination together when two arrive back to back", () => {
+    promptAnonymousImport([makeDraft("first")], "account-B");
+    promptAnonymousImport(
+      [makeDraft("second-a"), makeDraft("second-b")],
+      "account-C"
+    );
+
+    // The later offer wins outright: its drafts AND its destination, never a
+    // mix of the two.
+    expect(anonymousImportPrompt.count).toBe(2);
+    expect(anonymousImportPrompt.destinationUid).toBe("account-C");
+  });
+
+  it("imports an out-of-order second offer into ITS own account", async () => {
+    promptAnonymousImport([makeDraft("first")], "account-B");
+    promptAnonymousImport([makeDraft("second")], "account-C");
+    signedInUid.value = "account-C";
+
+    await confirmAnonymousImport();
+
+    expect(repoSaveSequenceMock).toHaveBeenCalledTimes(1);
+    expect(repoSaveSequenceMock.mock.calls[0]?.[1]).toMatchObject({
+      expectedOwnerId: "account-C",
+    });
+  });
+
   it("returns a draft the repository refused as still-outstanding, not imported", async () => {
     repoSaveSequenceMock.mockRejectedValue(
       Object.assign(new Error("owner changed"), { code: "UNAUTHORIZED" })
     );
-    await promptAnonymousImport([makeDraft("d1")]);
+    promptAnonymousImport([makeDraft("d1")], "account-B");
 
     await confirmAnonymousImport();
 
@@ -333,7 +371,7 @@ describe("collision import — destination fencing and staleness", () => {
           release = () => resolve({});
         })
     );
-    await promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")], "account-B");
 
     const inFlight = confirmAnonymousImport();
     // confirm awaits the destination-uid read before it writes, so wait until
@@ -359,12 +397,15 @@ describe("collision import — destination fencing and staleness", () => {
             );
         })
     );
-    await promptAnonymousImport([makeDraft("old-1")]);
+    promptAnonymousImport([makeDraft("old-1")], "account-B");
 
     const inFlight = confirmAnonymousImport();
     await vi.waitFor(() => expect(release).toBeTypeOf("function"));
     // A newer collision produces a fresh offer before the old one settles.
-    await promptAnonymousImport([makeDraft("new-1"), makeDraft("new-2")]);
+    promptAnonymousImport(
+      [makeDraft("new-1"), makeDraft("new-2")],
+      "account-B"
+    );
     release!();
     await inFlight;
 

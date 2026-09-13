@@ -93,7 +93,7 @@ async function upgradeCurrentGuestWith(
   if (!authInstance.currentUser?.isAnonymous) return false;
   const result = await upgrade();
   if (result.status === "collision-signed-in") {
-    promptAnonymousImport(result.importable ?? []);
+    promptAnonymousImport(result.importable ?? [], result.destinationUid);
   }
   return true;
 }
@@ -166,7 +166,7 @@ export async function signInWithGoogleCredential(
   if (anon?.isAnonymous) {
     const result = await upgradeAnonymousWithGoogleCredential(anon, credential);
     if (result.status === "collision-signed-in") {
-      promptAnonymousImport(result.importable ?? []);
+      promptAnonymousImport(result.importable ?? [], result.destinationUid);
     }
     return;
   }
@@ -180,7 +180,7 @@ export async function signInWithFacebook(): Promise<void> {
   if (authInstance.currentUser?.isAnonymous) {
     const result = await upgradeAnonymousWithFacebook();
     if (result.status === "collision-signed-in") {
-      promptAnonymousImport(result.importable ?? []);
+      promptAnonymousImport(result.importable ?? [], result.destinationUid);
     }
     return;
   }
@@ -217,7 +217,10 @@ export async function signInWithInstagram(): Promise<void> {
   const result = await authenticateWithInstagram("signin");
   if (result.collision) {
     await reportGuestUpgradeLifecycle("collision-signed-in");
-    promptAnonymousImport(drafts);
+    // The Instagram flow does its own sign-in, so the account it landed on is
+    // read from the live user immediately after it completed — the same
+    // "collision result" moment the other providers return explicitly.
+    promptAnonymousImport(drafts, authInstance.currentUser?.uid);
   } else {
     await notifyUpgradeSignup(authInstance.currentUser ?? undefined);
   }

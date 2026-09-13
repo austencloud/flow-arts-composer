@@ -321,20 +321,31 @@ export class LibrarySaveService {
       // consent to the import. Without this fence the background sync would
       // quietly write the guest's sequence into that account first, making the
       // consent prompt moot.
-      expectedOwnerId: saverUid ?? undefined,
+      expectedOwnerId: saverUid,
     };
 
     // Step 3: Background Firestore sync (non-blocking)
     // If offline, the sequence is already in Dexie and the user sees success.
     emitProgress(3);
-    const initialCloudSync = this.syncToFirestore(sequenceToSave, syncMetadata);
+    // No uid means no account to attribute this to, and an unfenced write is
+    // exactly what must not happen: the sync is fire-and-forget, so a uid
+    // arriving later (a late guest provision, a sign-in) would be silently
+    // adopted as the owner. The Dexie row is already durable and stays
+    // pending; it syncs on the owner's own terms once one exists.
+    const initialCloudSync = saverUid
+      ? this.syncToFirestore(sequenceToSave, {
+          ...syncMetadata,
+          expectedOwnerId: saverUid,
+        })
+      : this.deferCloudSync(sequenceToSave.id);
 
     // Thumbnail work is an enhancement to an already-durable save. A slow or
     // blocked upload must never hold the save overlay open. Once the image is
     // ready, patch the local row and then the cloud document.
     void this.generateAndAttachThumbnail(
       sequenceToSave,
-      initialCloudSync
+      initialCloudSync,
+      saverUid
     ).catch((error) =>
       console.warn("[LibrarySaveService] Thumbnail follow-up failed:", error)
     );
@@ -488,9 +499,20 @@ export class LibrarySaveService {
     }
   }
 
+  /**
+   * There is no owner to attribute a cloud write to, so don't make one. The
+   * local row is already durable; leaving it "pending" hands it to the
+   * ownership-scoped retry rather than to whoever signs in next.
+   */
+  private async deferCloudSync(sequenceId: string): Promise<boolean> {
+    await markSequenceSyncStatus(sequenceId, "pending");
+    return false;
+  }
+
   private async generateAndAttachThumbnail(
     sequence: SequenceData,
-    initialCloudSync: Promise<boolean>
+    initialCloudSync: Promise<boolean>,
+    expectedOwnerId: string | null
   ): Promise<void> {
     const thumbnailUrl = await this.generateAndUploadThumbnail(sequence);
     if (!thumbnailUrl) return;
@@ -513,7 +535,16 @@ export class LibrarySaveService {
     // patched Dexie row and carries the thumbnail on its next bounded pass.
     if (!(await initialCloudSync)) return;
 
-    await this.libraryRepository.attachThumbnail(sequence.id, thumbnailUrl);
+    // The slowest write in the save: a render plus an upload have completed
+    // since the user pressed save, so the account can easily have changed.
+    // attachThumbnail resolves the uid it writes under AFTER its own awaits,
+    // so it is fenced to the account that made the save like everything else.
+    if (!expectedOwnerId) return;
+    await this.libraryRepository.attachThumbnail(
+      sequence.id,
+      thumbnailUrl,
+      expectedOwnerId
+    );
   }
 
   /**

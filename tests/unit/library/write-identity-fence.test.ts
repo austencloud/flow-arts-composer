@@ -143,3 +143,40 @@ describe("saveSequenceWithMetadata — forwards the fence", () => {
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 });
+
+describe("attachThumbnail — the slowest write is fenced too", () => {
+  it("refuses to patch the same sequence id in a switched account", async () => {
+    // A thumbnail render plus an upload have completed since the user saved,
+    // so this is the write most likely to outlive the account that made it.
+    // Sequence ids are not account-scoped, so an unfenced patch would land on
+    // whatever the CURRENT account has under that id.
+    const repo = makeRepo();
+    authStateMock.effectiveUserId = "account-C";
+
+    await expect(
+      repo.attachThumbnail("seq-1", "https://x/t.png", "account-B")
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("refuses when the switch lands inside the Firestore-resolution await", async () => {
+    firestoreGate = new Promise<void>((resolve) => {
+      releaseFirestore = resolve;
+    });
+    const repo = makeRepo();
+
+    const write = repo.attachThumbnail("seq-1", "https://x/t.png", "account-B");
+    authStateMock.effectiveUserId = "account-C";
+    releaseFirestore!();
+
+    await expect(write).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("does not fence a thumbnail write that carries no expected owner", async () => {
+    const repo = makeRepo();
+    authStateMock.effectiveUserId = "account-C";
+
+    await expect(
+      repo.attachThumbnail("seq-1", "https://x/t.png")
+    ).rejects.not.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+});

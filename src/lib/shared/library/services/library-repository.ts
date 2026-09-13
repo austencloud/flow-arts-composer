@@ -867,10 +867,25 @@ export class LibraryRepository {
    */
   async attachThumbnail(
     sequenceId: string,
-    thumbnailUrl: string
+    thumbnailUrl: string,
+    expectedOwnerId?: string
   ): Promise<void> {
     const firestore = await getFirestoreInstance();
     const userId = this.getWritableUserId();
+
+    // Same identity fence as saveSequence, for the same reason: `userId` is
+    // resolved here, after an await, and this is the SLOWEST write in a save —
+    // a thumbnail render plus an upload have completed since the user acted, so
+    // the account can easily have changed. Without this the patch would be
+    // aimed at the current account's copy of this sequence id.
+    if (expectedOwnerId && expectedOwnerId !== userId) {
+      throw new LibraryError(
+        "The signed-in account changed before this thumbnail could be attributed.",
+        "UNAUTHORIZED",
+        sequenceId
+      );
+    }
+
     const existing = await this.getSequence(sequenceId);
     if (!existing) {
       throw new LibraryError("Sequence not found", "NOT_FOUND", sequenceId);

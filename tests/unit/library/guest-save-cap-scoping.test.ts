@@ -246,3 +246,111 @@ describe("guest save — the cloud sync is fenced to the saving account", () => 
     });
   });
 });
+
+describe("guest save — no owner means no cloud write at all", () => {
+  /**
+   * ensureGuestIdentity() swallows its failures (anon provider disabled,
+   * offline), so a save can legitimately run with no uid. Passing `undefined`
+   * as expectedOwnerId in that case makes the fence inert, and the sync is
+   * fire-and-forget: a uid arriving later — a late guest provision, or a
+   * sign-in — would simply be adopted as the owner of work that account never
+   * made. The local row is already durable, so the safe move is not to write.
+   */
+  it("does not attempt the cloud sync when there is no uid to attribute it to", async () => {
+    (authState as any).effectiveUserId = null;
+    const repository = makeRepository();
+    const service = new LibrarySaveService(null, null, repository, null);
+
+    const result = await service.saveSequence(makeSequence(), makeOptions());
+
+    expect(result.persisted).toBe(true); // local row is still durable
+    expect(repository.saveSequenceWithMetadata).not.toHaveBeenCalled();
+  });
+
+  it("never sends an unfenced write, even if a uid appears mid-save", async () => {
+    (authState as any).effectiveUserId = null;
+    // The identity turns up AFTER the save has snapshotted its owner — hooked
+    // to the local write so it lands strictly later, which is the real shape:
+    // a late anonymous provision or a sign-in completing mid-save.
+    dbPutMock.mockImplementationOnce(async () => {
+      (authState as any).effectiveUserId = "arrived-late";
+    });
+    const repository = makeRepository();
+    const service = new LibrarySaveService(null, null, repository, null);
+
+    await service.saveSequence(makeSequence(), makeOptions());
+
+    // "arrived-late" did not make this sequence and must not end up owning it.
+    expect(repository.saveSequenceWithMetadata).not.toHaveBeenCalled();
+  });
+});
+
+describe("guest save — the thumbnail follow-up is fenced too", () => {
+  const thumbnailUrl = "https://assets.example.com/thumbnail.png";
+
+  function makeThumbnailDeps() {
+    return {
+      sharer: {
+        getCardImageBlob: vi
+          .fn()
+          .mockResolvedValue(new Blob(["png"], { type: "image/png" })),
+      } as any,
+      uploader: {
+        uploadSequenceThumbnail: vi
+          .fn()
+          .mockResolvedValue({ url: thumbnailUrl, key: "thumbnail.png" }),
+      } as any,
+    };
+  }
+
+  /**
+   * attachThumbnail is the SLOWEST write in a save — a render plus an upload
+   * have completed since the user acted — and it resolves the uid it writes
+   * under after its own awaits. Same id, different account, is a real
+   * possibility by the time it runs.
+   */
+  it("passes the saving account to the real thumbnail write", async () => {
+    const { sharer, uploader } = makeThumbnailDeps();
+    const repository = makeRepository();
+    const service = new LibrarySaveService(sharer, uploader, repository, null);
+
+    await service.saveSequence(makeSequence(), makeOptions());
+    await vi.waitFor(() =>
+      expect(repository.attachThumbnail).toHaveBeenCalledTimes(1)
+    );
+
+    expect(repository.attachThumbnail).toHaveBeenCalledWith(
+      "seq-1",
+      thumbnailUrl,
+      "guest-current"
+    );
+  });
+
+  it("still names the saving account when the session switched during the upload", async () => {
+    const { sharer, uploader } = makeThumbnailDeps();
+    let releaseUpload: (() => void) | null = null;
+    uploader.uploadSequenceThumbnail = vi.fn(async () => {
+      await new Promise<void>((resolve) => {
+        releaseUpload = resolve;
+      });
+      return { url: thumbnailUrl, key: "thumbnail.png" };
+    });
+    const repository = makeRepository();
+    const service = new LibrarySaveService(sharer, uploader, repository, null);
+
+    await service.saveSequence(makeSequence(), makeOptions());
+    await vi.waitFor(() => expect(releaseUpload).toBeTypeOf("function"));
+
+    // A different account is signed in by the time the upload finishes.
+    (authState as any).isAnonymous = false;
+    (authState as any).effectiveUserId = "switched-account";
+    releaseUpload!();
+
+    await vi.waitFor(() =>
+      expect(repository.attachThumbnail).toHaveBeenCalledTimes(1)
+    );
+    // The repository's own fence rejects this; what matters here is that the
+    // patch is aimed at the saving account, not at whoever is current.
+    expect(repository.attachThumbnail.mock.calls[0]?.[2]).toBe("guest-current");
+  });
+});

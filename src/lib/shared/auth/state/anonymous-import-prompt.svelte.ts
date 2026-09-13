@@ -50,28 +50,27 @@ export const anonymousImportPrompt = {
 /**
  * Open the import offer if there is anything worth importing.
  *
- * Binds the destination account NOW. Every caller reaches here immediately
- * after a collision sign-in, so `currentUser` is the account the drafts would
- * be added to. Resolving it at confirm time instead would mean an offer made
- * for account B, answered after a switch to C, imports into C — an account the
- * user was never asked about.
+ * `destinationUid` is the account the collision signed into, taken from that
+ * auth result and passed in by the caller. It is NOT looked up here. Two
+ * reasons, both load-bearing:
  *
- * Async so the binding is established before the dialog is shown; callers fire
- * and forget, and none of them inspects `isOpen` synchronously afterwards.
+ *  - A later "who is signed in now?" lookup answers a different question. An
+ *    offer made about account B, answered after a switch to C, would import
+ *    into C — an account the user was never asked about.
+ *  - Looking it up would make this function async, and every caller fires it
+ *    without awaiting. Two collisions in flight could then interleave between
+ *    the await and the state write, so the generation guard and the drafts
+ *    could come from different offers. Taking the uid as an argument keeps the
+ *    whole transition — generation, destination, drafts, open — synchronous
+ *    and therefore atomic.
  */
-export async function promptAnonymousImport(
-  drafts: AnonymousDraft[]
-): Promise<void> {
+export function promptAnonymousImport(
+  drafts: AnonymousDraft[],
+  destinationUid?: string
+): void {
   if (!drafts.length) return;
-  let uid: string | null = null;
-  try {
-    uid = (await getAuthInstance()).currentUser?.uid ?? null;
-  } catch {
-    // Leave it null. confirmAnonymousImport fails closed on a null
-    // destination rather than writing somewhere it cannot name.
-  }
   generation += 1;
-  state.destinationUid = uid;
+  state.destinationUid = destinationUid ?? null;
   state.drafts = drafts;
   state.isOpen = true;
 }

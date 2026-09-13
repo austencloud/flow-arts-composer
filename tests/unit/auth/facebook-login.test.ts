@@ -168,22 +168,32 @@ describe("signInWithFacebook", () => {
     upgradeRef.upgradeAnonymousWithFacebook.mockResolvedValueOnce({
       status: "collision-signed-in",
       importable,
+      destinationUid: "collided-account",
     });
 
     await signInWithFacebook();
 
-    expect(promptRef.promptAnonymousImport).toHaveBeenCalledWith(importable);
+    // The offer carries the account the collision signed into, taken from that
+    // auth result — not a later "who is signed in now?" lookup.
+    expect(promptRef.promptAnonymousImport).toHaveBeenCalledWith(
+      importable,
+      "collided-account"
+    );
   });
 
   it("anonymous collision with no importable → prompts with empty array (no throw)", async () => {
     authRef.current.currentUser = { isAnonymous: true };
     upgradeRef.upgradeAnonymousWithFacebook.mockResolvedValueOnce({
       status: "collision-signed-in",
+      destinationUid: "collided-account",
     });
 
     await signInWithFacebook();
 
-    expect(promptRef.promptAnonymousImport).toHaveBeenCalledWith([]);
+    expect(promptRef.promptAnonymousImport).toHaveBeenCalledWith(
+      [],
+      "collided-account"
+    );
   });
 });
 
@@ -207,7 +217,9 @@ describe("signInWithFacebook — account-exists collision (F2)", () => {
 
   it("does not stash on unrelated popup errors", async () => {
     authRef.current.currentUser = { isAnonymous: false };
-    h.signInWithPopup.mockRejectedValueOnce({ code: "auth/popup-closed-by-user" });
+    h.signInWithPopup.mockRejectedValueOnce({
+      code: "auth/popup-closed-by-user",
+    });
 
     await expect(signInWithFacebook()).rejects.toMatchObject({
       code: "auth/popup-closed-by-user",
@@ -218,7 +230,10 @@ describe("signInWithFacebook — account-exists collision (F2)", () => {
 
 describe("consumePendingLinkForUser (F2/F3 resolution)", () => {
   it("links the stashed credential when the signed-in email matches", async () => {
-    stashPendingLink({ providerId: "facebook.com" } as any, "match@example.com");
+    stashPendingLink(
+      { providerId: "facebook.com" } as any,
+      "match@example.com"
+    );
     const user = {
       email: "match@example.com",
       providerData: [fbProvider("google.com")],
@@ -232,7 +247,10 @@ describe("consumePendingLinkForUser (F2/F3 resolution)", () => {
   });
 
   it("keeps the stash and does NOT link when a different account signs in", async () => {
-    stashPendingLink({ providerId: "facebook.com" } as any, "owner@example.com");
+    stashPendingLink(
+      { providerId: "facebook.com" } as any,
+      "owner@example.com"
+    );
     const user = {
       email: "someone-else@example.com",
       providerData: [fbProvider("google.com")],
@@ -246,7 +264,10 @@ describe("consumePendingLinkForUser (F2/F3 resolution)", () => {
   });
 
   it("no-ops (and clears) when the provider is already linked", async () => {
-    stashPendingLink({ providerId: "facebook.com" } as any, "match@example.com");
+    stashPendingLink(
+      { providerId: "facebook.com" } as any,
+      "match@example.com"
+    );
     const user = {
       email: "match@example.com",
       providerData: [fbProvider("facebook.com")],
@@ -260,8 +281,13 @@ describe("consumePendingLinkForUser (F2/F3 resolution)", () => {
   });
 
   it("drops a stale credential when linking throws", async () => {
-    stashPendingLink({ providerId: "facebook.com" } as any, "match@example.com");
-    vi.mocked(linkWithCredential).mockRejectedValueOnce({ code: "auth/invalid-credential" });
+    stashPendingLink(
+      { providerId: "facebook.com" } as any,
+      "match@example.com"
+    );
+    vi.mocked(linkWithCredential).mockRejectedValueOnce({
+      code: "auth/invalid-credential",
+    });
     const user = {
       email: "match@example.com",
       providerData: [fbProvider("google.com")],
@@ -312,7 +338,9 @@ describe("linkFacebookAccount", () => {
 
 describe("getProviderIds (Facebook)", () => {
   it("extracts facebookId", () => {
-    const user = { providerData: [fbProvider("facebook.com", "fb-123")] } as any;
+    const user = {
+      providerData: [fbProvider("facebook.com", "fb-123")],
+    } as any;
     expect(getProviderIds(user)).toEqual({ facebookId: "fb-123" });
   });
 
@@ -323,7 +351,10 @@ describe("getProviderIds (Facebook)", () => {
         fbProvider("facebook.com", "fb-1"),
       ],
     } as any;
-    expect(getProviderIds(user)).toEqual({ googleId: "g-1", facebookId: "fb-1" });
+    expect(getProviderIds(user)).toEqual({
+      googleId: "g-1",
+      facebookId: "fb-1",
+    });
   });
 
   it("returns empty object when no oauth providers", () => {
@@ -334,7 +365,10 @@ describe("getProviderIds (Facebook)", () => {
 
 describe("updateFacebookProfilePictureIfNeeded", () => {
   it("does nothing when there is no facebook provider", async () => {
-    const user = { providerData: [fbProvider("google.com")], photoURL: null } as any;
+    const user = {
+      providerData: [fbProvider("google.com")],
+      photoURL: null,
+    } as any;
     await updateFacebookProfilePictureIfNeeded(user);
     expect(h.updateProfile).not.toHaveBeenCalled();
   });
