@@ -94,6 +94,18 @@
     }
   });
 
+  // Acquiring a camera is two awaits long: initialize() enumerates devices and
+  // start() sits on getUserMedia, which can wait on an unanswered permission
+  // prompt for as long as the user ignores it. Teardown can land anywhere in
+  // there, and onDestroy has nothing to close yet when it does. Without this
+  // flag the camera opens after the panel is gone and stays open.
+  let destroyed = false;
+
+  function releaseCamera(stream: MediaStream | null) {
+    cameraService?.stop();
+    stream?.getTracks().forEach((track) => track.stop());
+  }
+
   async function initializeCamera() {
     if (!cameraService) {
       cameraError = "Camera service not loaded";
@@ -107,11 +119,23 @@
         height: 720,
         frameRate: 30,
       });
+      if (destroyed) return;
 
       const stream = await cameraService.start();
+      if (destroyed) {
+        releaseCamera(stream);
+        return;
+      }
+
       cameraStream = stream;
       cameraInitialized = true;
     } catch (error) {
+      // A failure after teardown can still have opened something: start()
+      // assigns the manager's stream before it awaits play().
+      if (destroyed) {
+        releaseCamera(null);
+        return;
+      }
       cameraError =
         error instanceof Error ? error.message : "Failed to access camera";
     }
@@ -261,11 +285,11 @@
 
   // Cleanup
   onDestroy(() => {
+    destroyed = true;
     if (recordingId) recordService.cancelRecording(recordingId);
     if (recordedVideo?.blobUrl) URL.revokeObjectURL(recordedVideo.blobUrl);
     if (browser) window.removeEventListener("resize", detectLayout);
-    if (cameraService) cameraService.stop();
-    if (cameraStream) cameraStream.getTracks().forEach((track) => track.stop());
+    releaseCamera(cameraStream);
   });
 </script>
 
