@@ -7,19 +7,20 @@
   Owned by tests/opus-accessibility-audit. No production behavior lives here.
 -->
 <script lang="ts">
+  import { onMount } from "svelte";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
 
   let drawerOpen = $state(true);
   let modalOpen = $state(false);
 
-  // Open the modal only after the drawer has registered, so the modal is
-  // genuinely the most-recently-opened layer.
-  $effect(() => {
-    if (drawerOpen && !modalOpen) {
-      const id = setTimeout(() => (modalOpen = true), 60);
-      return () => clearTimeout(id);
-    }
+  // Open the modal once, after the drawer has registered, so the modal is
+  // genuinely the most-recently-opened layer. Deliberately NOT an $effect keyed
+  // on the open flags: that would re-open the modal the moment a test dismissed
+  // it, and the test would read the re-opened modal as "never dismissed".
+  onMount(() => {
+    const id = setTimeout(() => (modalOpen = true), 60);
+    return () => clearTimeout(id);
   });
 </script>
 
@@ -33,4 +34,5 @@
   {/snippet}
   <label for="audit-modal-field">Modal field</label>
   <input id="audit-modal-field" type="text" />
+  <button type="button" data-testid="modal-action">Modal action</button>
 </BaseModal>
