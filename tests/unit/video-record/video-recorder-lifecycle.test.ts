@@ -213,6 +213,32 @@ describe("VideoRecorder stop integrity", () => {
     expect(recorder.isRecording(id)).toBe(false);
     consoleError.mockRestore();
   });
+
+  it("keeps nothing from a recording cancelled while the stop was still flushing", async () => {
+    const recorder = new VideoRecorder();
+    const id = await recorder.startRecording(fakeStream());
+    const media = latestRecorder();
+    media.emitChunk();
+
+    const stop = withTimeout(recorder.stopRecording(id), "cancelled stop");
+    await settle();
+
+    // The take is thrown away before the recorder finished flushing: the user
+    // hit cancel, or the panel was destroyed. The finalization already under
+    // way still holds this recording's state.
+    recorder.cancelRecording(id);
+    media.flush();
+
+    const result = await stop;
+    expect(result.success).toBe(false);
+    expect(result.videoBlob).toBeUndefined();
+    expect(result.blobUrl).toBeUndefined();
+    // A discarded take must not mint an object URL nobody will revoke, and must
+    // not hand a torn-down panel a result it would show as a finished video.
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    // Nor should it reach storage.
+    await expect(recorder.getCachedRecording(id)).resolves.toBeNull();
+  });
 });
 
 describe("VideoRecorder pause accounting", () => {
@@ -266,5 +292,66 @@ describe("VideoRecorder pause accounting", () => {
     expect(recorder.getRecordingState(id)).toBe("paused");
 
     recorder.cancelRecording(id);
+  });
+});
+
+describe("VideoRecorder self-ended recordings", () => {
+  it("does not charge the recording for the wait between the recorder ending and the stop press", async () => {
+    const recorder = new VideoRecorder();
+    const id = await recorder.startRecording(fakeStream(), {
+      maxDuration: 600,
+    });
+    const media = latestRecorder();
+
+    media.emitChunk();
+    advanceClock(5000);
+
+    // The camera track drops at five seconds. The recorder is finished; the
+    // panel still shows recording controls and nobody presses stop yet.
+    media.endOnItsOwn();
+    media.flush();
+
+    // Fifteen seconds later the user notices and presses stop.
+    advanceClock(15_000);
+    const result = await withTimeout(
+      recorder.stopRecording(id),
+      "late stopRecording"
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.duration).toBeCloseTo(5, 2);
+  });
+
+  it("stops reporting progress once the recorder has ended on its own", async () => {
+    const recorder = new VideoRecorder();
+    const progress: Array<{ currentDuration: number; state: string }> = [];
+    const id = await recorder.startRecording(
+      fakeStream(),
+      { maxDuration: 600 },
+      (update) => progress.push({ ...update })
+    );
+    const media = latestRecorder();
+
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    expect(progress.length).toBeGreaterThan(0);
+
+    advanceClock(5000);
+    media.endOnItsOwn();
+    media.flush();
+    const updatesAtEnd = progress.length;
+
+    // The timer has nothing left to report: no clock of this recording is
+    // running, and a duration that kept climbing here could trip the
+    // maxDuration auto-stop on a recorder that already stopped.
+    advanceClock(60_000);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    expect(progress.length).toBe(updatesAtEnd);
+
+    const result = await withTimeout(
+      recorder.stopRecording(id),
+      "stop after self-end"
+    );
+    expect(result.duration).toBeCloseTo(5, 2);
   });
 });
