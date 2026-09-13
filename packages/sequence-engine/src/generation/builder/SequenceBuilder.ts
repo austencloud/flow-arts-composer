@@ -270,9 +270,10 @@ export interface BuildOptions {
    * static step carrying turns is a real figure, and a turn pattern that calls
    * for one cannot be built without this.
    *
-   * Defaults to on when `turnPattern` or `targetLayerPattern` is set — the two
-   * cases where the turns were asked for rather than rolled — and off
-   * otherwise. Set it explicitly to override either way. Even when on, a
+   * Defaults to on for a turn pattern, a layer target, or a hand-relationship
+   * LOOP that excludes dashes and can carry turns. Those LOOPs may need a
+   * stationary-hand step to reach the closing position. Set it explicitly to
+   * override either way. Even when on, a
    * static step still has to clear Type6Constraint, which refuses level 1
    * outright and refuses any step whose hands both sit at zero turns.
    */
@@ -1323,16 +1324,30 @@ export class SequenceBuilder {
   /**
    * Whether static letters may be used as ordinary steps.
    *
-   * On when the caller asked for particular turns — a turn pattern or a layer
-   * target — because a static step is then a deliberate figure rather than an
-   * accident. Off for undirected generation, where a random allocation puts
-   * turns on most steps at level 2 and up and would scatter α, β and γ through
-   * every sequence. An explicit value wins over both.
+   * A no-dash unison LOOP cannot rotate a two-step seed by a quarter turn
+   * using shifts alone. A static step with prop turns supplies the missing
+   * path without breaking the requested hand relationship. Undirected
+   * generation keeps its moving-hand default; an explicit value always wins.
    */
   private resolveAllowStaticSteps(options: BuildOptions): boolean {
+    const motionFamily =
+      options.constraintOptions?.motionFamily ??
+      (options.constraintPreset
+        ? getPresetOptions(options.constraintPreset)?.motionFamily
+        : undefined);
+    const constrainedLoopWithTurns =
+      options.loop &&
+      options.constraintOptions?.handRelationship &&
+      motionFamily?.exclude?.includes("dash") &&
+      options.level > 1 &&
+      options.maxTurnIntensity !== 0;
     return (
       options.allowStaticSteps ??
-      Boolean(options.turnPattern || options.targetLayerPattern)
+      Boolean(
+        options.turnPattern ||
+          options.targetLayerPattern ||
+          constrainedLoopWithTurns
+      )
     );
   }
 

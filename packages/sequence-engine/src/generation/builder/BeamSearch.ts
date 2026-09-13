@@ -257,6 +257,10 @@ export class BeamSearch {
       ...base,
       level: this.options.level,
       turnAllocation: this.turnsAt(base.stepIndex),
+      assignedTurns: {
+        left: this.activeTurnSource?.at(base.stepIndex, "left"),
+        right: this.activeTurnSource?.at(base.stepIndex, "right"),
+      },
       gridMode: this.gridMode,
     };
   }

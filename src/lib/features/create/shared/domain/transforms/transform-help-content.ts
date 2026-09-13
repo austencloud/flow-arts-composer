@@ -150,7 +150,7 @@ export const actionHelpContent: ActionHelpItem[] = [
     color: "#06b6d4",
     shortDesc: "Pick the start pose",
     fullDesc:
-      "Changes where the sequence starts. While choosing, every tile shows only its pose. Tap the pose you want to start from and the sequence reorders to begin there. Sequences that don't loop drop the steps before it.",
+      "Changes where the sequence starts. While choosing, every tile shows only the pose it ends in. Tap the pose you want to start from and the sequence reorders to begin there. Sequences that don't loop drop the steps before it.",
     category: "tool",
   },
 ];

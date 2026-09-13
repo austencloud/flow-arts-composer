@@ -87,6 +87,8 @@
     onGridScrollRefChange: (el: HTMLDivElement | undefined) => void;
     // CellRenderer pass-through props
     showStepNumbers: boolean;
+    /** Choose Start picker: step cells render as poses. */
+    posePicker?: boolean;
     crossfadeActive: boolean;
     transitionMode: "crossfade" | "swap";
     isBrowseSoloMode: boolean;
@@ -133,6 +135,7 @@
     clickableStart = false,
     onGridScrollRefChange,
     showStepNumbers,
+    posePicker = false,
     crossfadeActive,
     transitionMode,
     isBrowseSoloMode,
@@ -189,6 +192,7 @@
         cell={startCell}
         showDurBadge={false}
         {showStepNumbers}
+        {posePicker}
         {activeDarkMode}
         {crossfadeActive}
         {transitionMode}
@@ -213,6 +217,7 @@
         cell={startCell}
         showDurBadge={false}
         {showStepNumbers}
+        {posePicker}
         {activeDarkMode}
         {crossfadeActive}
         {transitionMode}
@@ -312,6 +317,7 @@
                           {cell}
                           showDurBadge={true}
                           {showStepNumbers}
+                          {posePicker}
                           {activeDarkMode}
                           {crossfadeActive}
                 {transitionMode}
@@ -337,6 +343,7 @@
                           {cell}
                           showDurBadge={true}
                           {showStepNumbers}
+                          {posePicker}
                           {activeDarkMode}
                           {crossfadeActive}
                 {transitionMode}
@@ -398,6 +405,7 @@
                         {cell}
                         showDurBadge={true}
                         {showStepNumbers}
+                        {posePicker}
                         {activeDarkMode}
                         {crossfadeActive}
                 {transitionMode}
@@ -423,6 +431,7 @@
                         {cell}
                         showDurBadge={true}
                         {showStepNumbers}
+                        {posePicker}
                         {activeDarkMode}
                         {crossfadeActive}
                 {transitionMode}
@@ -484,6 +493,7 @@
               {cell}
               showDurBadge={true}
               {showStepNumbers}
+              {posePicker}
               {activeDarkMode}
               {crossfadeActive}
                 {transitionMode}
@@ -509,6 +519,7 @@
               {cell}
               showDurBadge={true}
               {showStepNumbers}
+              {posePicker}
               {activeDarkMode}
               {crossfadeActive}
                 {transitionMode}
@@ -598,6 +609,7 @@
             {cell}
             showDurBadge={true}
             {showStepNumbers}
+            {posePicker}
             {activeDarkMode}
             {crossfadeActive}
                 {transitionMode}
@@ -623,6 +635,7 @@
             {cell}
             showDurBadge={true}
             {showStepNumbers}
+            {posePicker}
             {activeDarkMode}
             {crossfadeActive}
                 {transitionMode}

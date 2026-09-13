@@ -50,10 +50,57 @@ export interface MessageDeliveryState {
   handleOnline(): void;
 }
 
+/**
+ * IndexedDB structured-clones what it stores and throws DataCloneError on the
+ * Proxy that `$state` wraps around plain objects. Every record that reaches the
+ * repository is proxied somewhere: it arrived as reactive input
+ * (inboxState.shareAttachment, a composer's pendingAttachment), or the delivery
+ * loop read it back out of the reactive `outbox`/`drafts` arrays, where a
+ * shallow spread still leaves the attachment, reply preview, and prepared
+ * attachments proxied. Not `$state.snapshot`: that structured-clones every Blob
+ * it meets, and an image attachment carries its File here.
+ */
+function plainRecord<T>(value: T): T {
+  if (Array.isArray(value)) return value.map(plainRecord) as T;
+  if (
+    value === null ||
+    typeof value !== "object" ||
+    Object.getPrototypeOf(value) !== Object.prototype
+  ) {
+    return value;
+  }
+  const copy: Record<string, unknown> = {};
+  for (const key of Object.keys(value)) {
+    copy[key] = plainRecord((value as Record<string, unknown>)[key]);
+  }
+  return copy as T;
+}
+
+/** Every write crosses into IndexedDB as a plain record, whoever hands it over. */
+function withPlainRecords(
+  repository: IMessageDeliveryRepository
+): IMessageDeliveryRepository {
+  return {
+    listDrafts: (userId) => repository.listDrafts(userId),
+    getDraft: (userId, conversationId) =>
+      repository.getDraft(userId, conversationId),
+    putDraft: (draft) => repository.putDraft(plainRecord(draft)),
+    deleteDraft: (userId, conversationId) =>
+      repository.deleteDraft(userId, conversationId),
+    listOutbox: (userId) => repository.listOutbox(userId),
+    putOutbox: (item) => repository.putOutbox(plainRecord(item)),
+    deleteOutbox: (messageId) => repository.deleteOutbox(messageId),
+    promoteDraftToOutbox: (draftId, item) =>
+      repository.promoteDraftToOutbox(draftId, plainRecord(item)),
+    purgeUser: (userId) => repository.purgeUser(userId),
+  };
+}
+
 export function createMessageDeliveryState(
   dependencies: MessageDeliveryStateDependencies
 ): MessageDeliveryState {
-  const { repository, coordinator } = dependencies;
+  const repository = withPlainRecords(dependencies.repository);
+  const { coordinator } = dependencies;
   const isOnline =
     dependencies.isOnline ??
     (() => typeof navigator === "undefined" || navigator.onLine);

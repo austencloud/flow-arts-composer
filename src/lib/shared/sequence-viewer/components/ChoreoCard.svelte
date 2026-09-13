@@ -81,6 +81,8 @@
     // Visibility toggles
     showWord?: boolean;
     showStepNumbers?: boolean;
+    /** Choose Start picker: step cells render as poses (grid and props only). */
+    posePicker?: boolean;
     showDifficultyLevel?: boolean;
     includeStartPosition?: boolean;
     showNotes?: boolean;
@@ -160,6 +162,7 @@
     sequence,
     showWord = true,
     showStepNumbers = true,
+    posePicker = false,
     showDifficultyLevel = true,
     includeStartPosition = true,
     showNotes = true,
@@ -1016,6 +1019,7 @@
           gridScrollRef = el;
         }}
         {showStepNumbers}
+        {posePicker}
         {crossfadeActive}
         transitionMode={crossfader.transitionMode}
         {isBrowseSoloMode}

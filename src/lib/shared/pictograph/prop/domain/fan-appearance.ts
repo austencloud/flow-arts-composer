@@ -1,4 +1,5 @@
 import { PropType } from "./enums/prop-type";
+import type { ThemeMode } from "../../../utils/svg-color-utils";
 
 export const FAN_BUILDS = [
   "pictograph",
@@ -239,6 +240,111 @@ export function applyFanFrameColor(svg: string, color: string): string {
       return filled.replace(/>$/, ` stroke="${color}">`);
     }
   );
+}
+
+/**
+ * The rod-built fans (fire, flat-grip, lotus) were tuned on a dark pictograph,
+ * where the pale kevlar wicks anchor the silhouette and the frame can stay a
+ * hairline. On a light pictograph, the choreo sheet and its PDF, those wicks
+ * vanish into the paper and only a faint web of frame is left. This is the
+ * light palette: wicks take a printable kevlar gold under a dark wrap, and the
+ * frame's strokes grow together so the fan still reads at sheet-cell scale.
+ * Dark artwork passes through untouched.
+ */
+export const FAN_PAPER_CONTRAST = {
+  wickFill: "#d9b25a",
+  wickStroke: "#4a2f14",
+  wickStrokeWidth: 2.2,
+  /** Width for a frame that authored none (the SVG default of 1). */
+  frameHairlineWidth: 2.4,
+  /** Multiplies every authored frame width so rails stay heavier than spines. */
+  frameStrokeScale: 1.6,
+} as const;
+
+const WICK_GROUP_PATTERN =
+  /<g\b(?=[^>]*\bdata-(?:fire-wick|fan-wicks)=(?:"[^"]*"|'[^']*'))[^>]*>/gi;
+const FRAME_GROUP_PATTERN = /<g\b(?=[^>]*\bdata-fan-frame=(?:""|''))[^>]*>/i;
+
+function setAttribute(tag: string, name: string, value: string): string {
+  const attribute = new RegExp(`\\b${name}=(?:"[^"]*"|'[^']*')`, "i");
+  if (attribute.test(tag)) {
+    return tag.replace(attribute, `${name}="${value}"`);
+  }
+  return tag.replace(/\s*\/?>$/, (end) => ` ${name}="${value}"${end.trim()}`);
+}
+
+function scaleStrokeWidth(
+  tag: string,
+  scale: number,
+  fallback: number
+): string {
+  const authored = tag.match(/\bstroke-width=(?:"([^"]*)"|'([^']*)')/i);
+  const width = authored ? parseFloat(authored[1] ?? authored[2] ?? "") : NaN;
+  const scaled = Number.isFinite(width) ? width * scale : fallback;
+  return setAttribute(tag, "stroke-width", formatWidth(scaled));
+}
+
+function formatWidth(value: number): string {
+  return String(Math.round(value * 100) / 100);
+}
+
+/** Index just past the `</g>` that closes the group opened at `openIndex`. */
+function groupEnd(svg: string, openIndex: number): number {
+  const token = /<g\b|<\/g\s*>/gi;
+  token.lastIndex = openIndex;
+  let depth = 0;
+  for (let match = token.exec(svg); match; match = token.exec(svg)) {
+    depth += match[0].startsWith("</") ? -1 : 1;
+    if (depth === 0) return match.index + match[0].length;
+  }
+  return svg.length;
+}
+
+export function applyFanPaperContrast(
+  svg: string,
+  themeMode: ThemeMode
+): string {
+  if (themeMode !== "light") return svg;
+  const {
+    wickFill,
+    wickStroke,
+    wickStrokeWidth,
+    frameHairlineWidth,
+    frameStrokeScale,
+  } = FAN_PAPER_CONTRAST;
+
+  const withWicks = svg.replace(WICK_GROUP_PATTERN, (tag) =>
+    setAttribute(
+      setAttribute(setAttribute(tag, "fill", wickFill), "stroke", wickStroke),
+      "stroke-width",
+      formatWidth(wickStrokeWidth)
+    )
+  );
+
+  const frameOpen = withWicks.match(FRAME_GROUP_PATTERN);
+  if (frameOpen?.index === undefined) return withWicks;
+  // Only a stroke-drawn frame needs weight; the solid Day plate already reads.
+  if (!/\bfill=(?:"none"|'none')/i.test(frameOpen[0])) return withWicks;
+
+  const start = frameOpen.index;
+  const end = groupEnd(withWicks, start);
+  const group = withWicks.slice(start, end);
+  const openTag = scaleStrokeWidth(
+    frameOpen[0],
+    frameStrokeScale,
+    frameHairlineWidth
+  );
+  // Parts without a width inherit the group's; parts that set one scale with it.
+  const body = group
+    .slice(frameOpen[0].length)
+    .replace(
+      /<(?:path|ellipse|circle|line|polyline|polygon|rect)\b[^>]*>/gi,
+      (tag) =>
+        /\bstroke-width=/i.test(tag)
+          ? scaleStrokeWidth(tag, frameStrokeScale, frameHairlineWidth)
+          : tag
+    );
+  return withWicks.slice(0, start) + openTag + body + withWicks.slice(end);
 }
 
 export function fanPreviewImage(appearance: FanAppearance): string {

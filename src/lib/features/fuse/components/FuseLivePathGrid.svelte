@@ -16,6 +16,7 @@
     showMandala = false,
     highlightedStepIndex = null,
     onStepClick,
+    posePicker = false,
     leftPropType,
     rightPropType,
   }: {
@@ -27,6 +28,8 @@
     showMandala?: boolean;
     highlightedStepIndex?: number | null;
     onStepClick?: (stepIndex: number) => void;
+    /** Choose Start picker: step tiles render as the pose after their beat. */
+    posePicker?: boolean;
     leftPropType?: PropType;
     rightPropType?: PropType;
   } = $props();
@@ -66,6 +69,7 @@
     pictographData={step}
     disableTransitions={true}
     disableContentTransitions={true}
+    poseOnly={posePicker}
     showGrid={true}
     showTKA={false}
     showReversals={true}
@@ -86,7 +90,6 @@
 
 <div
   class="live-path-grid"
-  class:pose-picker={!!onStepClick}
   style:--live-grid-columns={gridColumns}
   style:--live-grid-rows={gridRows}
   style:--live-cell-size={`${safeCellSize}px`}
@@ -205,22 +208,6 @@
     cursor: pointer;
   }
 
-  /*
-    Choose Start picker: each tile is the pose after its step, so arrows,
-    reversal dots, and step numbers fade out and only the prop remains. The
-    dots and numbers carry their own opacity transitions; the arrows group
-    gets one here.
-  */
-  .live-path-grid .step-cell :global(.pictograph-arrows) {
-    transition: opacity var(--duration-fast, 150ms) ease;
-  }
-
-  .live-path-grid.pose-picker .step-cell :global(.pictograph-arrows),
-  .live-path-grid.pose-picker .step-cell :global(.reversal-indicators),
-  .live-path-grid.pose-picker .step-cell :global(.beat-number) {
-    opacity: 0;
-  }
-
   .first-step-choice {
     z-index: 1;
     box-shadow: inset 0 0 0 2px
@@ -294,8 +281,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .live-cell,
-    .live-path-grid .step-cell :global(.pictograph-arrows) {
+    .live-cell {
       transition: none;
     }
   }

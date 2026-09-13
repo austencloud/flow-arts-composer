@@ -8,6 +8,8 @@ import {
   MATCH_HAND_TURNS_HINT,
   MATCH_HAND_TURNS_LABEL,
   MATCH_HAND_TURNS_LEVEL_HINT,
+  ELEMENT_ROW_LABELS,
+  TND_ROW_LABELS,
   describeHandRelationship,
   handRelationshipToEngine,
   isHandRelationship,
@@ -79,6 +81,8 @@ describe("hand relationship vocabulary", () => {
       MATCH_HAND_TURNS_LABEL,
       MATCH_HAND_TURNS_HINT,
       MATCH_HAND_TURNS_LEVEL_HINT,
+      ...Object.values(TND_ROW_LABELS),
+      ...Object.values(ELEMENT_ROW_LABELS),
     ].join(" ");
     expect(copy.toLowerCase()).not.toContain("hybrid");
     expect(copy).not.toContain("—");

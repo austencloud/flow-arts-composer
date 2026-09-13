@@ -57,6 +57,7 @@ import {
 import {
   spotlightFactor,
   tunnelPropColor,
+  tunnelPerformerPair,
 } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 
 /**
@@ -856,12 +857,19 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
     for (let i = 0; i < layerCount; i++) {
       const rings = this.layerRings[i]!;
       const tails = this.layerTails[i]!;
-      const leftLayerRgb = spectrum
-        ? hexToRgb(tunnelPropColor(2 + i * 2, layerCount).hex)
-        : ([bR, bG, bB] as [number, number, number]);
-      const rightLayerRgb = spectrum
-        ? hexToRgb(tunnelPropColor(3 + i * 2, layerCount).hex)
-        : ([rR, rG, rB] as [number, number, number]);
+      const exact = params.tunnelPropColors
+        ? tunnelPerformerPair(params.tunnelPropColors, i + 1)
+        : null;
+      const leftLayerRgb = exact
+        ? hexToRgb(exact.left)
+        : spectrum
+          ? hexToRgb(tunnelPropColor(2 + i * 2, layerCount).hex)
+          : ([bR, bG, bB] as [number, number, number]);
+      const rightLayerRgb = exact
+        ? hexToRgb(exact.right)
+        : spectrum
+          ? hexToRgb(tunnelPropColor(3 + i * 2, layerCount).hex)
+          : ([rR, rG, rB] as [number, number, number]);
       // Layer i is copy arm i+1 — dim it when another performer is spotlit.
       const f =
         (params.additionalLayers?.[i]?.opacity ?? 1) *

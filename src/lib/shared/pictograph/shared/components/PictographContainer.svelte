@@ -105,6 +105,8 @@ with pre-prepared data for better performance.
     // Transparent background: skip the background fill so the glyph floats
     // on the host surface (decorative embeds on dark tiles).
     transparentBackground = false,
+    // Choose Start picker: grid and props only, every beat glyph fades out.
+    poseOnly = false,
     // Explicit prop types for export/thumbnail rendering
     // When provided, passed to PictographPreparer for consistency during async operations
     fanAppearanceOverride = undefined,
@@ -178,6 +180,7 @@ with pre-prepared data for better performance.
     printMode?: boolean;
     /** Skip the background fill so the glyph floats on the host surface. */
     transparentBackground?: boolean;
+    poseOnly?: boolean;
     /** Explicit prop type for the left hand. Export/thumbnail rendering provides this for consistency. */
     fanAppearanceOverride?: FanAppearance;
     leftPropTypeOverride?: PropType;
@@ -698,6 +701,7 @@ with pre-prepared data for better performance.
         showPositions={effectiveShowPositions}
         handPointVisibility={effectiveHandPointVisibility}
         {activeLocations}
+        {poseOnly}
         {stepNumber}
         {showStepNumber}
         {previewMode}
@@ -748,6 +752,7 @@ with pre-prepared data for better performance.
             showPositions={effectiveShowPositions}
             handPointVisibility={effectiveHandPointVisibility}
             {activeLocations}
+            {poseOnly}
             {stepNumber}
             {showStepNumber}
             {previewMode}

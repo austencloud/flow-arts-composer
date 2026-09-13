@@ -101,6 +101,7 @@
     rightPropTypeOverride = undefined,
     leftColorOverride = undefined,
     rightColorOverride = undefined,
+    posePicker = false,
     sequenceWord = "",
     arrivalRequest = null,
     edgePadding = 16,
@@ -146,6 +147,8 @@
     rightPropTypeOverride?: PropType;
     leftColorOverride?: string;
     rightColorOverride?: string;
+    /** Choose Start picker: step tiles render as poses; the start tile does not. */
+    posePicker?: boolean;
     sequenceWord?: string;
     arrivalRequest?: PictographArrivalRequest | null;
     edgePadding?: number;
@@ -1015,6 +1018,7 @@
                     {rightPropTypeOverride}
                     {leftColorOverride}
                     {rightColorOverride}
+                    poseOnly={posePicker}
                     onContentReady={() => noteContentReady(stepIndex, waveBand)}
                   />
                 </div>
@@ -1128,6 +1132,7 @@
               {rightPropTypeOverride}
               {leftColorOverride}
               {rightColorOverride}
+              poseOnly={posePicker}
               onContentReady={() => noteContentReady(index, waveBand)}
             />
           </div>

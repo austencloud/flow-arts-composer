@@ -159,9 +159,9 @@
     onAuditionCompleted?: (requestId: number) => void;
     onAuditionDismiss?: (requestId: number) => void;
     /**
-     * Choose Start picker. Step tiles drop arrows, letters, numbers, and
-     * glyphs so each reads as the pose after its beat; the start tile keeps
-     * its glyphs so it still reads as the current start.
+     * Choose Start picker. Step tiles render pose-only (grid and props) so
+     * each reads as the pose after its beat; the start tile keeps its glyphs
+     * so it still reads as the current start.
      */
     posePicker?: boolean;
   }>();
@@ -765,11 +765,7 @@
   }
 </script>
 
-<div
-  class="step-grid-container"
-  class:pose-picker={posePicker}
-  bind:this={containerRef}
->
+<div class="step-grid-container" bind:this={containerRef}>
   {#if steps.length === 0 && (!startPosition || startPosition.isBlank)}
     <div class="empty-grid-message">
       <span class="empty-icon">📋</span>
@@ -812,6 +808,7 @@
       {rightPropTypeOverride}
       {leftColorOverride}
       {rightColorOverride}
+      {posePicker}
       {sequenceWord}
       arrivalRequest={activeArrivalRequest}
       bind:scrollContainerRef
@@ -871,47 +868,5 @@
 
   .empty-text {
     font-weight: 500;
-  }
-
-  /*
-    Choose Start picker: fade every "beat" layer on step tiles so only grid
-    and props remain. ArrowSvg removes arrows with an {#if} when told to, so
-    opacity on the layer groups is what makes the fade run both ways. The
-    glyph components carry their own opacity transitions; only the arrows
-    group and path-shape glyph need one added here.
-  */
-  .step-grid-container :global(.step-cell .pictograph-arrows),
-  .step-grid-container :global(.step-cell .path-shape-glyph) {
-    transition: opacity var(--duration-fast, 150ms) ease;
-  }
-
-  .step-grid-container.pose-picker
-    :global(.step-cell:not(.start-tile .step-cell) .pictograph-arrows),
-  .step-grid-container.pose-picker
-    :global(.step-cell:not(.start-tile .step-cell) .tka-glyph),
-  .step-grid-container.pose-picker
-    :global(.step-cell:not(.start-tile .step-cell) .turns-column),
-  .step-grid-container.pose-picker
-    :global(.step-cell:not(.start-tile .step-cell) .beat-number),
-  .step-grid-container.pose-picker
-    :global(.step-cell:not(.start-tile .step-cell) .reversal-indicators),
-  .step-grid-container.pose-picker
-    :global(.step-cell:not(.start-tile .step-cell) .position-glyph),
-  .step-grid-container.pose-picker
-    :global(.step-cell:not(.start-tile .step-cell) .tnd-glyph),
-  .step-grid-container.pose-picker
-    :global(.step-cell:not(.start-tile .step-cell) .elemental-glyph),
-  .step-grid-container.pose-picker
-    :global(.step-cell:not(.start-tile .step-cell) .duration-glyph),
-  .step-grid-container.pose-picker
-    :global(.step-cell:not(.start-tile .step-cell) .path-shape-glyph) {
-    opacity: 0;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .step-grid-container :global(.step-cell .pictograph-arrows),
-    .step-grid-container :global(.step-cell .path-shape-glyph) {
-      transition: none;
-    }
   }
 </style>

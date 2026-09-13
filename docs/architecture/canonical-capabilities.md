@@ -24,6 +24,13 @@ colors. New color-bearing annotations consume that resolved pair rather than
 introducing baked blue/red or purple. Explicit artwork palettes retain their
 existing override semantics.
 
+Tunnel performer colors extend `sequence-viewer/tunnel/tunnel-prop-colors.ts`.
+Searches: performer colors, shared hue, custom prop pair, layer colors.
+`TunnelViewController` maps stable performer IDs to rendered stage order.
+Textures, trails, LED sampling, prop-matched effects, and export consume that
+resolved palette through `tunnelPerformerPair`. `TunnelColorSettings` composes
+`LabeledColorPairPicker`, `SegmentedControl`, and `ScrubbableNumber` for editing.
+
 Standalone 3D workspaces compose `shared/3d/components/Viewer3DFullscreen.svelte`,
 which owns the scene canvas, adaptive `SceneControlWorkspace`, and shared
 timeline/tempo controls. Local character generators extend its HUD and inspector

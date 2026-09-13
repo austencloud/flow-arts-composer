@@ -28,6 +28,7 @@ import {
 import {
   tunnelColorFromHex,
   tunnelPropColor,
+  tunnelPerformerPair,
   type TunnelPropColorPair,
 } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 
@@ -155,13 +156,15 @@ export class LedSampler {
     if (layers && layers.length > 0) {
       const spectrum =
         (config.tunnelSpectrum ?? true) && !config.tunnelPropColors;
-      const exact = config.tunnelPropColors;
       for (
         let li = 0;
         li < layers.length && count < LED_SAMPLER_MAX_LEDS;
         li++
       ) {
         const layer = layers[li]!;
+        const exact = config.tunnelPropColors
+          ? tunnelPerformerPair(config.tunnelPropColors, li + 1)
+          : null;
         if (layer.leftProp) {
           const propIndex = 2 + li * 2;
           count = this.emitProp(

@@ -15,6 +15,7 @@ import type { GenerationOptions } from "../shared/domain/models/generate-models"
 import { GenerationMode } from "../shared/domain/models/generate-models";
 import type { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
 import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
+import { captureGenerationErrorContext } from "$lib/shared/create/utils/generation-error-context";
 import {
   levelToDifficulty,
   type UIGenerationConfig,
@@ -100,8 +101,10 @@ export function createGenerationActionsState(
 
     isGenerating = true;
     generationError = null;
+    let errorContext: Record<string, unknown> = {};
 
     try {
+      errorContext = captureGenerationErrorContext(options, getConfig?.());
       // Pre-flight viability check. Rejects combos that the LOOP algebra
       // forbids (e.g. quartered mirrored), preventing silent period-2
       // downgrade. See docs/superpowers/specs/2026-04-19-loop-period-viability-design.md.
@@ -125,6 +128,9 @@ export function createGenerationActionsState(
             severity: "warning",
             context: {
               module: "create",
+              tab: "generate",
+              action: "generateSequence",
+              additionalData: errorContext,
             },
           });
           isGenerating = false;
@@ -257,24 +263,7 @@ export function createGenerationActionsState(
             module: "create",
             tab: "generate",
             action: "generateSequence",
-            additionalData: {
-              mode: options.mode,
-              length: options.length,
-              gridMode: options.gridMode,
-              difficulty: options.difficulty,
-              loopType: options.loopType,
-              period: options.period,
-              constraintPreset: options.constraintPreset,
-              handPathMode: options.handPathMode,
-              motionTypeFilter: options.motionTypeFilter,
-              turnIntensity: options.turnIntensity,
-              startPosition: options.startPosition?.startPosition ?? null,
-              endPosition: options.endPosition?.startPosition ?? null,
-              blockedStartPositions: options.blockedStartPositions,
-              mustContainLetters: options.mustContainLetters,
-              mustNotContainLetters: options.mustNotContainLetters,
-              propType: options.propType,
-            },
+            additionalData: errorContext,
           },
         });
       }
@@ -299,15 +288,19 @@ export function createGenerationActionsState(
     spellState.setGenerating(true);
     spellState.clearError();
     generationError = null;
+    let errorContext: Record<string, unknown> = {};
 
     try {
+      const config = getConfig?.();
+      errorContext = captureGenerationErrorContext(
+        { word: spellState.inputWord },
+        config
+      );
       // Lazy-resolve services
       if (!spellOrchestrator) {
         spellOrchestrator =
           getVariationExplorationOrchestrator() as VariationExplorationOrchestrator;
       }
-
-      const config = getConfig?.();
 
       // Parse word with bridge letters
       const parseResult = await spellOrchestrator.parseWord(
@@ -425,6 +418,11 @@ export function createGenerationActionsState(
         handPathMode: config?.handPathMode ?? "mixed",
         motionTypeFilter: config?.motionTypeFilter ?? null,
       };
+      errorContext = {
+        ...captureGenerationErrorContext(generationOptions),
+        inputWord: errorContext.word,
+        uiConfig: errorContext.uiConfig,
+      };
 
       let generatedSequence =
         await generationOrchestrator.generateSequence(generationOptions);
@@ -539,21 +537,7 @@ export function createGenerationActionsState(
             module: "create",
             tab: "generate",
             action: "spellGenerate",
-            additionalData: (() => {
-              const cfg = getConfig?.();
-              return {
-                word: spellState.inputWord,
-                gridMode: cfg?.gridMode,
-                difficulty: cfg?.level,
-                constraintPreset: cfg?.constraintPreset,
-                handPathMode: cfg?.handPathMode,
-                motionTypeFilter: cfg?.motionTypeFilter,
-                turnIntensity: cfg?.turnIntensity,
-                loopEnabled: cfg?.loopEnabled,
-                loopType: cfg?.loopType,
-                period: cfg?.period,
-              };
-            })(),
+            additionalData: errorContext,
           },
         });
       }

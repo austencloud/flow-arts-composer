@@ -24,6 +24,7 @@ import {
 import { applyTorchContrastPalette } from "../domain/torch-contrast";
 import {
   applyFanFrameColor,
+  applyFanPaperContrast,
   fanAppearanceArtwork,
   isFanPropType,
   normalizeFanAppearance,
@@ -160,8 +161,16 @@ export class PropSvgLoader {
       // Apply color transformation with current theme mode. Physical fan
       // builds own their material colors, so only the marked frame group
       // takes the hand color; the generic recolor would paint the wicks too.
+      // Those materials were tuned on a dark pictograph; a light one (the
+      // choreo sheet, its PDF) gets the paper palette so the fan still reads.
       const coloredSvgText = fanArtworkPath
-        ? applyFanFrameColor(originalSvgText, getMotionColor(color, themeMode))
+        ? applyFanPaperContrast(
+            applyFanFrameColor(
+              originalSvgText,
+              getMotionColor(color, themeMode)
+            ),
+            themeMode
+          )
         : this.applyColorToSvg(originalSvgText, color, themeMode, propType);
       const sizedSvgText =
         fanArtworkPath && propType.toLowerCase() === "bigfan"

@@ -10,6 +10,7 @@
   import { getBaseMotionColors } from "$lib/shared/animation-engine/services/svg-generator";
   import {
     tunnelPropColor,
+    tunnelPerformerPair,
     type TunnelPropColorMode,
     type TunnelPropColorPair,
   } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
@@ -37,6 +38,8 @@
     rightPropType,
     colorMode,
     customPropColors,
+    exactPropColors = null,
+    renderedArms = [],
     renderedInstanceCount,
     short = false,
     onCastChange,
@@ -53,6 +56,8 @@
     rightPropType: PropType;
     colorMode: TunnelPropColorMode;
     customPropColors: TunnelPropColorPair;
+    exactPropColors?: TunnelPropColorPair | null;
+    renderedArms?: readonly number[];
     renderedInstanceCount: number;
     short?: boolean;
     onCastChange: (count: number) => void;
@@ -222,14 +227,16 @@
     const layerCount = Math.max(0, renderedInstanceCount - 1);
     return arms.map((arm) => ({
       arm,
-      left:
-        colorMode === "custom"
+      left: exactPropColors
+        ? tunnelPerformerPair(exactPropColors, renderedArms.indexOf(arm)).left
+        : colorMode === "custom"
           ? customPropColors.left
           : colorMode !== "spectrum" || arm === 0
             ? baseMotionColors.left
             : tunnelPropColor(arm * 2, layerCount).hex,
-      right:
-        colorMode === "custom"
+      right: exactPropColors
+        ? tunnelPerformerPair(exactPropColors, renderedArms.indexOf(arm)).right
+        : colorMode === "custom"
           ? customPropColors.right
           : colorMode !== "spectrum" || arm === 0
             ? baseMotionColors.right

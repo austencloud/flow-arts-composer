@@ -55,7 +55,7 @@ describe("workspace playback", () => {
     state.startWorkspacePlayback(draft, 7);
     draft.steps.push({ id: "two", stepNumber: 2 } as StepData);
     expect(state.workspacePlayback?.sequence.steps).toHaveLength(1);
-    expect(state.workspacePlayback?.sourceSequenceRevision).toBe(7);
+    expect(state.workspacePlaybackSourceRevision).toBe(7);
     state.stopWorkspacePlayback();
     expect(draft.steps).toHaveLength(2);
     expect(state.workspacePlayback).toBeNull();
@@ -97,6 +97,37 @@ describe("workspace playback", () => {
     expect(state.isDurationPreviewMode).toBe(false);
     expect(state.optionAudition).toBeNull();
     expect(state.workspacePlayback).not.toBeNull();
+  });
+
+  it("re-bases onto a revision the session did not cause, without replacing it", () => {
+    const state = createState();
+    state.startWorkspacePlayback(sequence(), 7, "construct");
+    const session = state.workspacePlayback;
+
+    state.rebaseWorkspacePlayback(7, 9);
+    state.syncWorkspacePlaybackSource("construct", 9);
+
+    expect(state.workspacePlayback).toBe(session);
+    expect(state.workspacePlaybackSourceRevision).toBe(9);
+  });
+
+  it("ignores a re-base whose starting point is not the live baseline", () => {
+    const state = createState();
+    state.startWorkspacePlayback(sequence(), 7, "construct");
+
+    state.rebaseWorkspacePlayback(6, 9);
+
+    expect(state.workspacePlaybackSourceRevision).toBe(7);
+    state.syncWorkspacePlaybackSource("construct", 9);
+    expect(state.workspacePlayback).toBeNull();
+    expect(state.workspacePlaybackSourceRevision).toBeNull();
+  });
+
+  it("ignores a re-base while nothing is playing", () => {
+    const state = createState();
+    state.rebaseWorkspacePlayback(1, 2);
+    expect(state.workspacePlayback).toBeNull();
+    expect(state.workspacePlaybackSourceRevision).toBeNull();
   });
 
   it("does not enter playback with only a starting position", () => {

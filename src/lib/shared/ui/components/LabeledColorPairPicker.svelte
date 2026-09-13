@@ -103,7 +103,7 @@
             type="text"
             value={entry.value.toUpperCase()}
             maxlength="7"
-            pattern="#[0-9a-fA-F]{6}"
+            pattern={"#[0-9a-fA-F]{6}"}
             spellcheck="false"
             autocomplete="off"
             oninput={(event) => {

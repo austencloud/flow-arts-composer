@@ -513,12 +513,33 @@
     return `Rendering ${videoLabel.toLowerCase()}…`;
   });
 
+  /**
+   * Send in TKA opens the inbox drawer, which lives outside the native modal
+   * top layer this sheet sits in. Opened while the sheet is still up, the
+   * drawer is painted beneath the sheet and made inert by it, so the sheet
+   * closes first and the handoff runs from onClosed, once the dialog has left
+   * the top layer. A reopen before then drops the handoff with the session.
+   */
+  let pendingHandoff: (() => void) | null = null;
+
+  function handOffAfterClose(action: () => void): void {
+    pendingHandoff = action;
+    onClose();
+  }
+
+  function runPendingHandoff(): void {
+    const action = pendingHandoff;
+    pendingHandoff = null;
+    action?.();
+  }
+
   // A closed sheet owns nothing. Every open starts a clean public-content draft.
   let wasOpen = false;
   $effect(() => {
     if (isOpen === wasOpen) return;
     wasOpen = isOpen;
     if (!isOpen) return;
+    pendingHandoff = null;
     shareDraft.start({
       availableArtifacts,
       initialArtifact,
@@ -968,7 +989,7 @@
         short: "Send",
         icon: "fa-solid fa-paper-plane",
         ready: !!sequence,
-        run: () => onSendInTka?.(),
+        run: () => handOffAfterClose(() => onSendInTka?.()),
       });
     }
     if (postUrl) {
@@ -1173,6 +1194,7 @@
   {isOpen}
   ariaLabel="Share this sequence"
   {onClose}
+  onClosed={runPendingHandoff}
   narrow={!!qrDataUrl}
 >
   {#snippet children(surface)}
