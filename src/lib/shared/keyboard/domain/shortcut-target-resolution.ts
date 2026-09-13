@@ -64,6 +64,79 @@ export function isEditableKeyboardTarget(target: EventTarget | null): boolean {
   ].includes(target.type);
 }
 
+const OPEN_LAYER_SELECTOR =
+  'dialog[open], [role="dialog"], [role="alertdialog"]';
+
+const KEY_OWNING_LAYER_SELECTOR = `${OPEN_LAYER_SELECTOR}, [role="radiogroup"]`;
+
+const SHORTCUT_PASSTHROUGH_SELECTOR = "[data-keyboard-shortcuts-passthrough]";
+
+const FOCUSABLE_CONTROL_SELECTOR = [
+  "button",
+  "a[href]",
+  "input",
+  "select",
+  "textarea",
+  "summary",
+  '[role="button"]',
+  '[role="link"]',
+  '[role="menuitem"]',
+  '[role="option"]',
+  '[role="tab"]',
+  '[role="checkbox"]',
+  '[role="radio"]',
+  '[role="switch"]',
+  '[role="slider"]',
+  '[role="spinbutton"]',
+  '[role="combobox"]',
+  '[role="textbox"]',
+  '[role="treeitem"]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(", ");
+
+/**
+ * Returns whether a bare key pressed right now belongs to the focused widget
+ * rather than to a module-wide single-key shortcut. That is the case inside an
+ * open dialog or drawer (the layer owns everything within it, including its
+ * own focusable container), inside a roving-tabindex radiogroup (its arrows
+ * move the selection), or on any control the user has Tabbed to. Only neutral
+ * focus, such as <body> or a skip-link landmark, leaves the key free.
+ *
+ * Without this boundary the manager treats ArrowDown on a drawer's radio as a
+ * grid-navigation shortcut, dismisses the drawer, and the user watches the
+ * panel they were adjusting vanish under their fingers.
+ */
+export function isWidgetOwnedKeyboardTarget(
+  target: EventTarget | null
+): boolean {
+  if (!(target instanceof Element)) return false;
+  if (target.closest(KEY_OWNING_LAYER_SELECTOR)) return true;
+  return target.matches(FOCUSABLE_CONTROL_SELECTOR);
+}
+
+/**
+ * Returns whether the focused element sits inside an open dialog or drawer
+ * that is foreign to a module-wide single-key shortcut. Unlike
+ * `isWidgetOwnedKeyboardTarget`, a focusable control on its own does not
+ * count: a shortcut with real behavior, such as Backspace deleting the
+ * selected step, has to keep working on the step cell the user just clicked.
+ *
+ * A layer that is part of the shortcut's own surface opts back in by carrying
+ * `data-keyboard-shortcuts-passthrough` on itself or on an ancestor of the
+ * focused element inside it. The create step editor is a drawer on every
+ * viewport, and deleting the selected step is exactly what Backspace means
+ * there. A layer nested inside a passthrough one is foreign again.
+ */
+export function isLayerOwnedKeyboardTarget(
+  target: EventTarget | null
+): boolean {
+  if (!(target instanceof Element)) return false;
+  const layer = target.closest(OPEN_LAYER_SELECTOR);
+  if (!layer) return false;
+  const passthrough = target.closest(SHORTCUT_PASSTHROUGH_SELECTOR);
+  return !(passthrough && layer.contains(passthrough));
+}
+
 function getLayerZIndex(layer: HTMLElement): number {
   const value = layer.ownerDocument.defaultView?.getComputedStyle(layer).zIndex;
   const parsed = Number.parseInt(value ?? "", 10);
