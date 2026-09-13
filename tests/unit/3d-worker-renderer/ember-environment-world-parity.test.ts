@@ -103,6 +103,12 @@ function createWorld(bundle = assets()): {
   };
 }
 
+// Parsing the authored GLBs through meshopt takes 25-35 s on a loaded CI
+// runner, right at vitest's 30 s default, and this file gates the production
+// deploy. Give the real asset parse the budget it needs instead of letting
+// runner speed decide whether main is green.
+vi.setConfig({ testTimeout: 120_000 });
+
 describe("Ember renderer-neutral production world", () => {
   it("preserves the completed foreground and keeps the cooled plate above its footing", async () => {
     const loader = geometryLoader();
