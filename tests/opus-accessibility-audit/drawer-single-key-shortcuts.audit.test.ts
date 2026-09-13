@@ -16,8 +16,14 @@
  *
  * The Create module registers bare ArrowUp/Down/Left/Right as single-key
  * shortcuts (register-create-shortcuts.ts:131,153,173,192 — all with
- * `modifiers: []`, none with `preserveDrawers`), which is exactly the key a
- * keyboard user presses to move through the options inside a sheet.
+ * `modifiers: []`, none with `preserveDrawers`, and all with stub actions).
+ *
+ * Note on scope, corrected in review: the prop sheet's hand switcher is a
+ * `role="tablist"` with NO arrow-key handler today
+ * (PropSelectionSheet.svelte:150-178), so arrows do not currently navigate
+ * anything inside a drawer. The defect is that a key which does nothing useful
+ * silently destroys the surface — and that it would make arrow navigation
+ * inoperable the moment that tablist grows the handler APG expects.
  *
  * This spec reproduces that registration shape against the real manager and the
  * real Drawer. Audit evidence, not a production gate.

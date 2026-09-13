@@ -1,8 +1,14 @@
 <!--
-  Audit harness: a Drawer with a BaseModal opened on top of it — the shape of
-  every "open a sheet, then confirm/name something" flow in the product
-  (e.g. Browse collections sheet -> rename modal, Create save prompt ->
-  overwrite confirm).
+  Audit harness: a Drawer with a BaseModal opened on top of it.
+
+  SYNTHETIC. Corrected in review: this does not reproduce a known product route.
+  No component renders both primitives at once — the only file containing both
+  (ProfilePhotoPicker.svelte:243-316) puts them in mutually exclusive
+  {#if isDesktop} branches. The harness exists to exercise the shared
+  primitives' Escape arbitration when two layers are open, which is a real
+  defect regardless of which route reaches it. See F2 in
+  docs/reports/opus-batch-2026-09-12/accessibility-audit.md for what is and is
+  not claimed about reachability.
 
   Owned by tests/opus-accessibility-audit. No production behavior lives here.
 -->

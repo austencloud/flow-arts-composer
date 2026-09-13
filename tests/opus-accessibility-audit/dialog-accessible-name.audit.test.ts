@@ -28,8 +28,15 @@ function settle(ms = 150) {
 
 /**
  * Resolve the accessible name of an element from the author-supplied sources a
- * dialog can use: `aria-labelledby`, `aria-label`, `title`. A native `<dialog>`
- * has no content-derived name, so an empty result here is an unnamed dialog.
+ * dialog can use: `aria-labelledby`, `aria-label`, `title`.
+ *
+ * LIMIT, stated plainly: this inspects DOM attributes. It does NOT read the
+ * browser's computed accessibility tree. For a native `<dialog>` those three
+ * attributes are the complete set of author-supplied naming paths (a dialog
+ * derives no name from its contents under accname), so an empty result is a
+ * well-founded conclusion — but an authoritative check would need a CDP
+ * accessibility snapshot or `getComputedAccessibleNode()`, neither of which this
+ * harness exposes. Do not quote a result here as an AX-tree finding.
  */
 function accessibleName(el: Element): string {
   const labelledBy = el.getAttribute("aria-labelledby");

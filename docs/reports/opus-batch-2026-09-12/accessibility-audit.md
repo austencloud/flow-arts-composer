@@ -9,6 +9,7 @@ this report and the isolated browser suite under
 | | |
 | --- | --- |
 | Base SHA | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`, clean tree at start) |
+| Re-checked against | `origin/main` `6e4c1b5a` — `git diff` over every audited path (`foundation/ui`, `keyboard`, `filter-chips`, `features/browse`, `prop-type`, `error`, `navigation`) is **empty**, so every finding still applies unchanged. The review named `8a01a80c`, which is not reachable from this remote; if that is a newer main, the findings should be re-checked against it. |
 | Branch | `claude/accessibility-audit-shared-components-ma20hf` |
 | Audit commits | `7ce96b42` (escape-ownership suite), `245f21a1` (chip/naming/focus-restore specs), `9b5b0c6f` (measurements + this report) |
 | Owned paths | `docs/reports/opus-batch-2026-09-12/accessibility-audit.md`, `tests/opus-accessibility-audit/**` |
@@ -32,6 +33,30 @@ Result on the audited SHA, stable across repeated runs:
 Each failing spec is a finding below. Each passing spec is either a control that
 isolates a cause or a behavior this audit verified as correct (§ Verified
 correct).
+
+### This suite is not a regression gate
+
+**Nothing in CI runs these specs.** No workflow references
+`tests/opus-accessibility-audit/vitest.audit.config.ts`, and the
+`component-tests` job (`.github/workflows/web-ci.yml:143`) runs
+`test:components:ci`, whose config globs only `src/**/*.svelte.{test,spec}.ts` —
+which never matches `tests/opus-accessibility-audit/**/*.audit.test.ts`. The
+isolated config was the right call for an audit (it needs an `executablePath`
+override and a `browser === true` environment stub that the shared config must
+not carry), but the consequence is that these six failures are a **point-in-time
+snapshot, not a guard**: the defects can be reintroduced after they are fixed and
+nothing will notice.
+
+Making them a real gate is deliberate follow-up work and is outside this
+audit-only task's ownership. Two options, in preference order:
+
+1. When each defect is fixed, colocate its spec as
+   `src/lib/shared/foundation/ui/Drawer.svelte.test.ts` (and siblings) so the
+   existing `component-tests` job picks it up with no CI change. This needs the
+   harnesses to work under the shared `$app/environment` stub, or that stub to
+   gain a browser-true variant.
+2. Add a CI step invoking this config. Cheaper, but it leaves a second browser
+   project to maintain, which `.claude/rules/never-hand-roll.md` argues against.
 
 `AUDIT_CHROMIUM_PATH` exists because this sandbox ships Chromium revision 1194
 while `playwright@1.61.1` expects 1228's headless shell. **The project's own
@@ -86,12 +111,41 @@ Ordered by user impact. Every finding is reproducible from the command above.
 
 ### F2 — With a modal open over a drawer, Escape dismisses the drawer underneath and leaves the modal open
 
-**Severity: high — Escape acts on the wrong layer, and the layer the user is looking at does not respond at all.**
+**Severity: medium as shipped — the primitive-level defect is measured, but no
+product route that reaches it has been demonstrated. High if such a route exists
+or is introduced.**
 
-- **Route / steps:** any flow where a `BaseModal` opens while a `Drawer` is
-  already open — e.g. `/browse` collections sheet → a rename/confirm modal;
-  `/create` step-editor drawer → a confirm modal. Press <kbd>Esc</kbd>. The
-  sheet behind closes; the modal stays.
+> **Correction (review pass).** The first version of this report asserted product
+> routes ("`/browse` collections sheet → a rename/confirm modal", "`/create`
+> step-editor drawer → a confirm modal") that were never verified. They are
+> withdrawn. What follows is what the evidence actually supports.
+
+- **What is proven:** a `BaseModal` and a `Drawer` open at the same time, with
+  the drawer opened first, mis-route Escape. This is a defect in the shared
+  primitives, reproduced in a synthetic harness
+  (`harnesses/DrawerUnderModalHarness.svelte`).
+- **Reachability in the product (source, not measured):** no single component
+  renders both simultaneously — the only file containing both,
+  `ProfilePhotoPicker.svelte:243-316`, puts them in mutually exclusive
+  `{#if isDesktop}` branches. Cross-component stacking is the plausible path:
+  app-level modals are mounted in `MainApplication.svelte` (`SupportModal` at
+  `:693`, `AuthModal` at `:676`) and can in principle open while a feature drawer
+  is open, which the drawer's own focus trap explicitly permits by keeping the
+  navigation sidebar and bottom navigation out of `inert`
+  (`focus-trap.ts:20-26`), and `SupportModal` is opened from exactly those
+  surfaces (`ModuleSwitcher.svelte:336`, `AccountPopover.svelte:142`).
+  **I did not drive that path in a browser, and whether the drawer survives the
+  interaction that opens the modal is unverified.** Treat it as a hypothesis for
+  whoever fixes this, not as a reproduction.
+- **Out of scope of the measured case:** `AuthModal` uses
+  `allowExternalOverlays` (`AuthModal.svelte:146`), which takes a different code
+  path inside `BaseModal` — a non-modal `dialog.show()` plus its own
+  `svelte:window` Escape handler (`BaseModal.svelte:172-186, 222-225`). Nothing
+  here establishes how that variant behaves over a drawer.
+- `ErrorModal` is **not** an instance of this pattern and is not cited as one: it
+  does not use `BaseModal` at all, and is a correctly named, hand-rolled
+  `role="alertdialog" aria-modal="true" aria-labelledby="error-title"`
+  (`ErrorModal.svelte:197-199`).
 - **Contract violated:** `escape-routing.md` rules 2 and 3 — *"The most recently
   opened registered modal or drawer claims the key"* and *"one Escape press
   never closes two layers."* It does worse than closing two: it closes the wrong
@@ -130,12 +184,28 @@ Ordered by user impact. Every finding is reproducible from the command above.
 
 ### F3 — A bare Arrow key pressed inside an open Drawer dismisses the drawer
 
-**Severity: high on `/create` — arrow keys are how a keyboard user moves through the options a sheet exists to present.**
+**Severity: medium-high on `/create` — an inert key silently destroys the surface the user is working in.**
+
+> **Correction (review pass).** The first version of this report justified the
+> severity by saying arrow keys are how a keyboard user moves through the prop
+> sheet's options. That is false as shipped: the sheet's hand switcher is a
+> `role="tablist"` with **no arrow-key handler at all**
+> (`PropSelectionSheet.svelte:150-178`; the only `onkeydown` anywhere in
+> `PropSelectionSheet`/`PropGrid`/`PropGridButton` is `PropGrid.svelte:679`,
+> which handles Escape only). Arrows do not navigate anything in that sheet
+> today. The real complaint is narrower and still real: a key that does nothing
+> useful destroys the sheet.
 
 - **Route / steps:** `/create` with any drawer open — the prop picker
   (`PropSelectionSheet.svelte`, reached from `StepEditorCoordinator.svelte:575`),
   the generation settings drawer, the save prompt — focus any control inside it
   and press <kbd>→</kbd>. The sheet dismisses.
+- **Why it still matters:** a keyboard or switch user pressing an arrow inside a
+  sheet is doing the ordinary thing — it is the APG-expected key for a tablist,
+  and the sheet *should* grow that handler. Today it neither navigates nor is
+  ignored; it silently closes the surface. And when the tablist does gain arrow
+  support, this defect turns that feature inoperable rather than merely useless,
+  so it is worth fixing first.
 - **Cause (source):**
   - `keyboard-shortcut-manager.ts:295` — `if (shortcut.isSingleKey &&
     !shortcut.preserveDrawers && hasOpenDrawers()) dismissTopDrawer();` runs
@@ -152,9 +222,6 @@ Ordered by user impact. Every finding is reproducible from the command above.
     disappears. `enableSingleKeyShortcuts` defaults to `true`
     (`shortcut-settings-codec.ts:15`), and
     `KeyboardShortcutCoordinator.svelte:48` registers these on every session.
-  - Concretely reachable inside the prop sheet: its Left/Right hand switcher is
-    a `role="tablist"` (`PropSelectionSheet.svelte:150-178`), and arrow keys are
-    the APG-standard way to move between its tabs.
 - **Evidence (measured):** `drawer-single-key-shortcuts.audit.test.ts` — a
   shortcut registered through the real `KeyboardShortcutManager` with the exact
   shape of `create.grid-nav-right` dismisses the real `Drawer` when
@@ -183,11 +250,20 @@ Ordered by user impact. Every finding is reproducible from the command above.
 - **Evidence (measured):** `filter-chip-popover-dismissal.audit.test.ts` — after
   <kbd>Esc</kbd> the trigger still reports `aria-expanded="true"` and the
   `role="listbox"` panel is still mounted.
-- **Bounded fix:** handle Escape once in `FilterChipBase` (it owns the popover
-  and already owns `expanded`): on Escape, call the consumer's toggle and return
-  focus to the trigger button. Four call sites then inherit it, and the second
-  duplicated implementation that `.claude/rules/never-hand-roll.md` warns about
-  is avoided.
+- **Bounded fix:** `expanded` is a **controlled input prop**
+  (`FilterChipBase.svelte:38, 73` — a plain `$props()` field, not `$bindable`),
+  and the open/closed state lives in each consumer (`isOpen` in
+  `LengthFilterChip.svelte:25`). So `FilterChipBase` cannot close its own
+  popover by mutating `expanded`; that write would not reach the consumer and
+  the panel would stay rendered. The fix is to **add a dismiss callback** to
+  `FilterChipBase` — e.g. an `ondismiss?: () => void` prop invoked from a
+  keydown handler on Escape, alongside returning focus to the trigger button —
+  and have each of the four chips pass `() => (isOpen = false)`. That keeps one
+  keyboard implementation in the primitive (per
+  `.claude/rules/never-hand-roll.md`) while respecting the existing controlled
+  contract. Reusing the existing `onclick` toggle is the smaller variant of the
+  same change, but a dedicated dismiss callback is clearer than routing a
+  keyboard dismissal through a prop named for a click.
 
 ### F5 — Shared dialog surfaces ship without accessible names
 
@@ -201,21 +277,47 @@ Ordered by user impact. Every finding is reproducible from the command above.
   a name from the header the consumer already renders, and
   `DrawerHeader.svelte:92` gives its `<h2>` **no `id`**, so a consumer has
   nothing to point `aria-labelledby` at without hand-writing one.
-- **Consumers with neither prop (source census at base SHA):** a file-level grep
-  over the 57 files rendering `<Drawer` and the 54 rendering `<BaseModal` found
-  12 and 6 respectively with no `labelledBy`/`ariaLabel`/`aria-label` anywhere in
-  the file. (File-level, so it is a lower bound on named consumers and an upper
-  bound on unnamed instances; each name below was then confirmed by reading the
-  component.) The ones on the audited routes:
-  - `src/lib/features/browse/gallery-home/GalleryFilterSheet.svelte:88` (Browse Filters)
-  - `src/lib/features/browse/shared/components/GalleryTab.svelte:97` (Browse sort/jump)
-  - `src/lib/features/browse/collections/components/AllLibraryView.svelte`
-  - `src/lib/features/create/shared/components/dialogs/SavePromptDialog.svelte:40` (Create save confirm)
-  - `src/lib/shared/sequence-viewer/components/SequenceDrawer.svelte`
-  - `src/lib/shared/navigation/components/account/MyPropsDrawer.svelte`
-- **Evidence (measured):** `dialog-accessible-name.audit.test.ts` reproduces
-  `GalleryFilterSheet`'s exact composition and resolves the dialog's
-  author-supplied name to `""` while its `<h2>` reads `"Filters"`.
+- **Census (corrected in review pass).** The first version of this report used a
+  file-level grep and reported "12 `Drawer` and 6 `BaseModal` consumers". That
+  number was wrong twice over: `<Drawer` also matches `<DrawerHeader`, and a
+  `[^>]*?>` tag match truncates at the `>` inside an arrow function, so tags like
+  `SupportModal`'s (which *does* pass `labelledBy`) were misread as unnamed. The
+  census below is instance-level, parsed with a brace- and quote-aware scan of
+  each open tag:
+
+  | Primitive | Instances | With no `labelledBy`/`ariaLabel` on the tag |
+  | --- | --- | --- |
+  | `Drawer` | 56 | **9** |
+  | `BaseModal` | 59 | **12** |
+
+  Still approximate in one direction: an instance could in principle receive a
+  name through spread props, which this scan would not see. Every entry cited
+  below was opened and confirmed by hand.
+
+  On or near the audited routes:
+  - `src/lib/features/browse/gallery-home/GalleryFilterSheet.svelte:88` — Browse Filters (`Drawer`)
+  - `src/lib/features/browse/shared/components/GalleryTab.svelte:97` — Browse sort/jump (`Drawer`)
+  - `src/lib/features/browse/collections/components/AllLibraryView.svelte:296` — Browse sort/jump, collections host (`Drawer`)
+  - `src/lib/features/create/shared/components/dialogs/SavePromptDialog.svelte:40` — Create save confirm (`Drawer`)
+  - `src/lib/shared/sequence-viewer/components/SequenceDrawer.svelte:246` (`Drawer`)
+  - `src/lib/shared/navigation/components/account/MyPropsDrawer.svelte:197` — **a `BaseModal`, not a `Drawer`**, despite the filename; it renders a `DrawerHeader` inside a `BaseModal` with no `labelledBy`
+
+  Explicitly **not** in this census: `SupportModal.svelte:22` passes
+  `labelledBy="support-modal-title"`, and `ErrorModal.svelte:197-199` is a
+  separate hand-rolled `role="alertdialog"` that is correctly named. Neither is a
+  gap.
+- **Evidence (measured, with a stated limit):**
+  `dialog-accessible-name.audit.test.ts` reproduces `GalleryFilterSheet`'s exact
+  composition and resolves the dialog's name to `""` while its `<h2>` reads
+  `"Filters"`. **The helper inspects DOM attributes (`aria-labelledby`,
+  `aria-label`, `title`) — it does not read the browser's computed accessibility
+  tree.** For a native `<dialog>` those attributes are the complete set of
+  author-supplied naming paths (a dialog derives no name from its contents under
+  accname), so an empty result is a well-founded conclusion rather than a
+  guess — but it is an attribute check, not an AX-tree read. An authoritative
+  confirmation would need a CDP accessibility snapshot or
+  `getComputedAccessibleNode()`, neither of which this Vitest browser harness
+  exposes; that check was not run and no AX-tree result is claimed.
 - **Worth noting:** `axe-sweep.audit.test.ts` runs the project's own AAA axe
   helper over the same markup and reports **no violations** — axe's
   `aria-dialog-name` rule matches `[role="dialog"]`, not a native `<dialog>`
@@ -225,7 +327,7 @@ Ordered by user impact. Every finding is reproducible from the command above.
   `$props.id()`) and publish it, then let `Drawer` fall back to it; or give
   `Drawer`/`BaseModal` a `title` prop that populates `aria-label` when no
   `labelledBy` is supplied. Either keeps the name with the primitive instead of
-  asking 18 consumers to remember.
+  asking 21 call sites to remember.
 
 ---
 
