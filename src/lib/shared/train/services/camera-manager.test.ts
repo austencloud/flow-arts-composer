@@ -96,7 +96,10 @@ describe("CameraManager lifecycle", () => {
     document.createElement = ((tagName: string) =>
       tagName.toLowerCase() === "video"
         ? videoElement
-        : originalCreateElement.call(document, tagName)) as typeof document.createElement;
+        : originalCreateElement.call(
+            document,
+            tagName
+          )) as typeof document.createElement;
 
     getUserMedia = vi.fn();
     Object.defineProperty(navigator, "mediaDevices", {
@@ -210,9 +213,7 @@ describe("CameraManager lifecycle", () => {
       name: "NotAllowedError",
     });
     const stream = createFakeStream("after-retry");
-    getUserMedia
-      .mockRejectedValueOnce(denial)
-      .mockResolvedValueOnce(stream);
+    getUserMedia.mockRejectedValueOnce(denial).mockResolvedValueOnce(stream);
 
     await expect(camera.start()).rejects.toThrow(/browser permissions/i);
     expect(camera.isActive).toBe(false);
