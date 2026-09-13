@@ -120,18 +120,23 @@ function createShortCodeDouble() {
 }
 
 /**
- * Stands in for `MessageImageSender` at its contract: it reports progress while
- * uploading and exposes the cancel handle the real one uses to stop before its
- * committing `finalizeMessageImage` call.
+ * Stands in for `MessageImageSender` at its REAL call order, which an earlier
+ * revision of this double got wrong and so could not catch: check the cancel
+ * flag, emit `finalizing`, check again, then commit. Leaving the `finalizing`
+ * tick out hid the fact that a cancellation raised from that callback used to
+ * arrive after the sender's last check.
+ * `message-image-sender-ownership.test.ts` drives the real class.
  */
 function createImageSenderDouble() {
   const cancel = vi.fn();
   let emitProgress: (() => void) | undefined;
   let finish: (() => void) | undefined;
+  let expectedUserId: string | undefined;
   const finalized = vi.fn();
   const sender: IMessageImageSender = {
     send(request: MessageImageSendRequest): MessageImageSendHandle {
       let cancelled = false;
+      expectedUserId = request.expectedUserId;
       const uploaded = new Promise<void>((resolve) => {
         finish = resolve;
       });
@@ -139,8 +144,10 @@ function createImageSenderDouble() {
         request.onProgress?.({ phase: "uploading", fraction: 0.5 });
       const promise = (async () => {
         await uploaded;
-        // The real sender checks its cancelled flag here, before the callable
-        // that commits the message.
+        if (cancelled) throw new Error("Image send cancelled.");
+        request.onProgress?.({ phase: "finalizing", fraction: 1 });
+        // The check that matters: after the callback where a caller cancels,
+        // and immediately before the call that commits.
         if (cancelled) throw new Error("Image send cancelled.");
         finalized();
         return {
@@ -163,6 +170,7 @@ function createImageSenderDouble() {
     sender,
     cancel,
     finalized,
+    expectedUserId: () => expectedUserId,
     progress: () => emitProgress?.(),
     finishUpload: () => finish?.(),
   };
@@ -303,6 +311,9 @@ describe("account ownership at the real sending seam", () => {
 
     expect(image.cancel).toHaveBeenCalled();
     expect(image.finalized).not.toHaveBeenCalled();
+    // The sender is told whose send this is, so it can refuse across its own
+    // awaits — the coordinator cannot see those from out here.
+    expect(image.expectedUserId()).toBe("user-a");
     expect(repository.outbox.get("message-1")).toMatchObject({
       userId: "user-a",
       status: "queued",

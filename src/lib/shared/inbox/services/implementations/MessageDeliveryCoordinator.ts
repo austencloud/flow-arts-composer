@@ -54,12 +54,17 @@ export class MessageDeliveryCoordinator implements IMessageDeliveryCoordinator {
         file: attachment.file,
         content: item.content,
         replyTo: item.replyTo,
+        // Cancelling from out here cannot cover the sender's own awaits — it
+        // reads the signed-in account after Firebase init and commits after its
+        // finalizing callback. The row's account travels with the request so
+        // the sender can refuse at both of those points itself.
+        expectedUserId: item.userId,
         onProgress: (progress) => {
-          // The upload is the only window where stopping is still honest: the
-          // image sender checks its own cancelled flag again before the
-          // finalize call that commits the message. Once finalize is away,
-          // cancel() is a no-op and this delivery is committed — see the image
-          // path assessment in the audit report.
+          // Cancelling here stops an upload in flight, and — because the sender
+          // re-checks after this callback — also a cancellation raised on the
+          // finalizing tick, which is the last moment before it commits. Once
+          // the finalize callable is away nothing can take it back, and nothing
+          // here pretends otherwise.
           if (hooks.isOwned?.() === false) upload.handle?.cancel();
           hooks.onProgress?.({
             label:
