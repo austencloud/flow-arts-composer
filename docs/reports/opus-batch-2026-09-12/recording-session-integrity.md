@@ -11,17 +11,21 @@ recording-specific tests only.
 - Cross-consumer reproduction: `71646363`. Cross-consumer correction:
   `e19878a5`.
 - Cancel-during-finalize and self-end reproduction: `838113d7`. Fix:
-  `c1305fb1`, the final code SHA.
+  `c1305fb1`.
+- Cache-window cancellation reproduction: `a28ec6a7`. Fix: `56a987a4`, the
+  final code SHA.
 - Branch: `claude/fix-recording-lifecycle-tum13f`. Its head is the commit that
   last edited this report.
 - Read, never edited, for contract alignment:
   `claude/camera-resource-lifecycle-sdoeg6` at `39f0271b`.
 
 Defect numbers are identifiers, matching the commit messages, not a reading
-order. Defects 1, 2, 5 and 6 are in `video-recorder.ts` and are covered by the
-first before-and-after table. Defects 3 and 4 are in `VideoRecordPanel.svelte`
-and have their own. Defects 4, 5 and 6 were found by review in the fixes for
-1 and 3, not in the code this branch started from.
+order. Defects 1, 2, 5, 6 and 7 are in `video-recorder.ts` and are covered by
+the first before-and-after table. Defects 3 and 4 are in
+`VideoRecordPanel.svelte` and have their own. Defects 4, 5, 6 and 7 were found
+by review inside earlier fixes on this branch rather than in the code it
+started from: 4 inside the fix for 3, 5 and 6 inside the fix for 1, and 7
+inside the fix for 5.
 
 ## Owned files
 
@@ -29,7 +33,7 @@ and have their own. Defects 4, 5 and 6 were found by review in the fixes for
 | ------------------------------------------------------------------------ | ----------------------------------------- |
 | `src/lib/shared/video-record/services/video-recorder.ts`                 | Stop lifecycle and pause accounting fixes |
 | `src/lib/shared/video-record/components/VideoRecordPanel.svelte`         | Camera acquisition lifecycle guard        |
-| `tests/unit/video-record/video-recorder-lifecycle.test.ts`               | New. 10 lifecycle tests                   |
+| `tests/unit/video-record/video-recorder-lifecycle.test.ts`               | New. 11 lifecycle tests                   |
 | `tests/unit/video-record/fake-media-recorder.ts`                         | New. Controllable MediaRecorder fake      |
 | `src/lib/shared/video-record/components/VideoRecordPanel.svelte.test.ts` | New. 5 browser component tests            |
 | `docs/reports/opus-batch-2026-09-12/recording-session-integrity.md`      | This report                               |
@@ -127,6 +131,35 @@ Fix: cancellation is ownership state on the recording. `cancelRecording` sets
 the await, returning `{ success: false, error: "Recording cancelled" }` without
 creating a URL or touching storage.
 
+## Defect 7: the cancellation window closed too early
+
+Found by the re-review of `0d7504b4`, in the defect-5 fix. Marking cancellation
+on the state only helps for as long as a canceller can find the state.
+`finalizeRecording` deleted its map entry as soon as the stop event landed,
+which is one await short of the end: `cacheRecording` is still ahead of it, and
+an IndexedDB write is not instant. A panel torn down in that window called
+`cancelRecording`, which found no recording, logged `No recording found with ID`
+and returned.
+
+Measured before the fix, cancelling after the recorder had fully flushed and
+while the cache write was open: the finalization persisted the discarded take,
+minted the object URL, and returned `success: true`. The same three wrong
+outcomes as defect 5, through the one gap its fix left open.
+
+Fix: the entry stays in `activeRecordings` for the whole finalization and is
+removed in a `finally`, so `cancelRecording` can reach a recording that is
+mid-write. After the cache write the finalization rechecks, and if the cancel
+landed there it clears the row it just wrote before returning the cancelled
+result. The object URL is minted after that last check with nothing awaited
+between the two, so the URL window is closed by construction rather than by
+another rollback.
+
+`clearCachedRecording` also now resolves on its transaction rather than on the
+call. It is the rollback path and it was reporting completion before the delete
+committed. This one is reasoning about the IndexedDB contract, not a measured
+fix: reverted on its own, the test still passes, because fake-indexeddb orders
+the read-back after the write either way.
+
 ## Defect 6: a self-ended recorder was charged for the wait
 
 Same review. Duration was sampled when stop was requested. A recorder that ends
@@ -152,23 +185,25 @@ well, which previously kept widening after the recorder was gone.
 Same test file against each tree, `vitest run --config
 tests/config/vitest.config.ts tests/unit/video-record/video-recorder-lifecycle.test.ts`.
 
-| Test                                                                 | At base | At `639ea6312d` | Now  |
-| -------------------------------------------------------------------- | ------- | --------------- | ---- |
-| keeps the final chunk when the recorder ended on its own             | fail    | pass            | pass |
-| resolves when the recorder already finished and delivered chunks     | pass    | pass            | pass |
-| resolves every caller when stop is requested twice in a row          | fail    | pass            | pass |
-| never carries chunks from a finished session into the next one       | pass    | pass            | pass |
-| releases the recording when the recorder fails during stop           | fail    | pass            | pass |
-| keeps nothing from a recording cancelled while the stop was flushing | n/a     | fail            | pass |
-| excludes paused wall-clock time from the reported duration           | fail    | pass            | pass |
-| keeps progress frozen while paused instead of auto-stopping          | fail    | pass            | pass |
-| does not charge the recording for the wait before the stop press     | n/a     | fail            | pass |
-| stops reporting progress once the recorder has ended on its own      | n/a     | fail            | pass |
+| Test                                                                 | At base | At `639ea6312d` | At `0d7504b4` | Now  |
+| -------------------------------------------------------------------- | ------- | --------------- | ------------- | ---- |
+| keeps the final chunk when the recorder ended on its own             | fail    | pass            | pass          | pass |
+| resolves when the recorder already finished and delivered chunks     | pass    | pass            | pass          | pass |
+| resolves every caller when stop is requested twice in a row          | fail    | pass            | pass          | pass |
+| never carries chunks from a finished session into the next one       | pass    | pass            | pass          | pass |
+| releases the recording when the recorder fails during stop           | fail    | pass            | pass          | pass |
+| keeps nothing from a recording cancelled while the stop was flushing | n/a     | fail            | pass          | pass |
+| rolls back a recording cancelled while the cache write was open      | n/a     | n/a             | fail          | pass |
+| excludes paused wall-clock time from the reported duration           | fail    | pass            | pass          | pass |
+| keeps progress frozen while paused instead of auto-stopping          | fail    | pass            | pass          | pass |
+| does not charge the recording for the wait before the stop press     | n/a     | fail            | pass          | pass |
+| stops reporting progress once the recorder has ended on its own      | n/a     | fail            | pass          | pass |
 
 Defects 1 and 2: 5 failed, 2 passed, then 7 passed. Defects 5 and 6: 3 failed,
-7 passed, then 10 passed. The three marked `n/a` were not written until the
-review named the cases; each was confirmed failing at `639ea6312d` before the
-fix went in.
+7 passed, then 10 passed. Defect 7: 1 failed, 10 passed, then 11 passed, stable
+over three consecutive runs. Each row marked `n/a` was written only once a
+review named the case, and each was confirmed failing against the tree in the
+column to its right before its fix went in.
 
 Two pass in every column and are deliberate guards rather than reproductions.
 The "already finished" case checks that waiting for the stop event does not hang
@@ -183,7 +218,7 @@ let one session's chunks reach another session's blob.
 | `tsc --noEmit --strict` on `video-recorder.ts` (self-contained, imports only `./types`) | clean                        |
 | `eslint src/lib/shared/video-record/services/video-recorder.ts`                         | clean                        |
 | `prettier --check` on `video-recorder.ts` and both new unit-test files                  | clean                        |
-| `vitest run tests/unit/shared src/lib/shared/video-record tests/unit/video-record`      | 13 files, 84 tests, all pass |
+| `vitest run tests/unit/shared src/lib/shared/video-record tests/unit/video-record`      | 13 files, 85 tests, all pass |
 
 `tests/unit/shared/firestore/firestore-crud.test.ts` and
 `firestore-get-detailed.test.ts` initially failed to resolve `@tka/tka-types`.
@@ -344,9 +379,18 @@ already prettier-clean.
 ## Claim types
 
 Measured, by assertion against the real service: every row in both
-before/after tables, and each numeric value quoted above. For defects 5 and 6
-that includes the absence as well as the presence — `URL.createObjectURL` not
+before/after tables, and each numeric value quoted above. For defects 5, 6 and
+7 that includes the absence as well as the presence — `URL.createObjectURL` not
 called, `getCachedRecording` returning null, the progress array not growing.
+Defect 7's rollback is measured against a real write: the test lets the actual
+IndexedDB put through before cancelling, so the read-back can only come up
+empty if the finalization noticed and deleted it.
+
+Reasoned but not measured: `clearCachedRecording` resolving on its transaction
+instead of on the call. Reverting that line alone leaves the test passing,
+because fake-indexeddb orders the read-back after the write regardless. It is
+kept because the rollback path should not report completion before its delete
+commits, and it is called out here rather than counted as evidence.
 
 Inferred, from reading the code and its callers, not observed at runtime: that
 a recorder ends on its own because of a dropped camera track specifically, and
@@ -394,6 +438,16 @@ silently does nothing, as it should for a discarded take. A caller that wanted
 to distinguish cancellation from "Recording not found" has to read `error`.
 Both strings are internal; neither is shown to the user today.
 
+Defect 7 keeps the recording in `activeRecordings` for the whole finalization,
+so between the stop event and the end of the cache write `getRecordingState`
+reports `"stopped"` where it used to report `"idle"`, and `isRecording` is false
+throughout either way. Nothing in the app reads that window — both panels track
+their own state and neither polls after pressing stop — and `"stopped"` is the
+more truthful answer for a recording that is still being written. A second
+`stopRecording` in that window now joins the same finalization instead of being
+told the recording does not exist, which is the behaviour the defect-1 fix
+intended all along.
+
 `markEnded` clears the progress timer on the recorder's terminal event, so a
 panel whose recorder ends on its own now gets no further progress callbacks at
 all. It keeps showing pause, stop, and cancel for a recording that has already
@@ -436,8 +490,11 @@ either way, and that is the trade for never touching another panel's camera.
    its URL in `cachedBlobUrls` and revokes the previous one for the same id, but
    `clearCachedRecording` and `clearAllCachedRecordings` delete the IndexedDB
    rows without revoking anything in that map. Each cleared recording keeps one
-   object URL alive for the life of the document. Read from the code, not
-   measured.
+   object URL alive for the life of the document. Defect 7's rollback does not
+   hit this: it clears a row nothing has read back yet, so there is no entry in
+   `cachedBlobUrls` to revoke. Read from the code, not measured.
+   `clearAllCachedRecordings` also still resolves before its transaction
+   commits, the shape defect 7 corrected in its sibling. Nothing calls it today.
 
 3. **MIME fallback can throw instead of falling back.** `startRecording` checks
    `isTypeSupported` for the preferred type and for `video/webm`, then uses
