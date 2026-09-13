@@ -22,8 +22,14 @@ engine. Is that swap behaviour-preserving, and where is it not?
 | Periods | halved (2) and quartered (4) |
 | Seeds per (type, period) | 288 — 2 grid modes × 3 seed lengths × 4 turn profiles × 3 start-orientation profiles × 4 canonical chains |
 | Total executor invocations | ≈ 39,000 across the committed suites (17.9k in the parity matrix, 21.6k in the pipeline-configuration sweep) |
-| Byte-identical behaviour at period 2 | **14 of 16 types** |
-| Byte-identical behaviour at period 4 | **1 of 15 types** (pure `rotated`; quartered rewound has no valid seed) |
+| Equal on the compared projection at period 2 | **14 of 16 types** |
+| Equal on the compared projection at period 4 | **1 of 15 types** (pure `rotated`; quartered rewound has no valid seed) |
+
+"Equal on the compared projection" is not "byte-identical objects": the
+comparison is a named field projection, defined in §3, that deliberately omits
+`id`, the pre-derivation `letter` and the reversal flags, and does not look at
+the remaining `Step`/`Motion` fields at all. Read every equality claim below
+with that scope.
 
 Four findings, in descending order of how much they should change the plan:
 
@@ -92,9 +98,15 @@ The orientation algebra is still triplicated:
 combinations plus every grid-location pair at the boundary turn counts and finds
 **zero** disagreement, so this duplication is currently inert. That result also
 matters methodologically: it means every LOOP difference reported below is
-attributable to executor logic, not to orientation drift. It is also the cheap
-half of the unification — three identical implementations that can be collapsed
-with no behaviour risk, independent of anything in Phase 3.
+attributable to executor logic, not to orientation drift.
+
+That is a statement about *output over sampled inputs*, and only that. It does
+not mean the three files are interchangeable or that collapsing them is free:
+the app's copy exports three functions the other two do not, the engine
+deliberately inlined its copy to *drop* a dependency on `@tka/render-core`, and
+`mcp-server-pkg`'s vendor directory has three further live imports beyond the
+orientation path. §6 step 2 works through what a collapse would actually
+involve.
 
 Git history is uninformative here: every executor file on both sides last
 changed in the same squashed merge (`a12df677`), so per-file drift cannot be
@@ -126,14 +138,57 @@ dated from the repository.
   and `positionCloses`. Those are implementation-independent, so they identify
   *which* side is wrong.
 
-**Representation vs semantics.** Differences in step `id`, the pre-derivation
-`letter`, and the stored `leftReversal`/`rightReversal` flags are classified as
-representation and excluded from the semantic verdict, because both production
-pipelines overwrite or re-derive them immediately after execution
-(`SequenceBuilder.applyLoop` re-derives letters from motions;
-`SequenceExtender.extendSequence` does the same; reversals are derived on read
-by `deriveReversals`). Concretely: the app executors renumber `id` to
-`step-N` and the engine's do not — that is noise, not divergence.
+**Exact comparison scope.** Every "equal" / "diverges" verdict in this report is
+computed over this projection and nothing else
+(`tests/unit/opus-sequence-parity/harness/parity-diff.ts`):
+
+- **Compared, and a difference counts as divergence:** output length, and per
+  step `startPosition`, `endPosition`, `stepNumber`, plus for each of
+  `motions.left` and `motions.right` — `motionType`, `startLocation`,
+  `endLocation`, `rotationDirection`, `turns`, `startOrientation`,
+  `endOrientation`, `prefloatMotionType`, `prefloatRotationDirection`.
+  (`undefined` and `null` are normalised to one absence.)
+- **Compared, but reported separately and never counted as divergence:** `id`,
+  the pre-derivation `letter`, `leftReversal`, `rightReversal`. Both production
+  pipelines overwrite or re-derive these immediately after execution
+  (`SequenceBuilder.applyLoop` re-derives letters from motions;
+  `SequenceExtender.extendSequence` does the same; reversals are derived on read
+  by `deriveReversals`). Concretely: the app executors renumber `id` to
+  `step-N` and the engine's do not.
+- **Not compared at all:** every other field on `Step`/`StepData` (`duration`,
+  `gridMode`, `isBlank`, `variation`, `isBridge`, `betaSwapped`, `category`) and
+  every app view field on `MotionData` (`isVisible`, `propType`,
+  `arrowLocation`, `hand`, placement data, `handPath`, `skewSteps`, `skewDir`,
+  `pathShape`, `segment`, `plane`). Both sides spread `...sourceStep` /
+  `...sourceMotion`, so these are expected to carry through unchanged — but this
+  audit did **not** assert that, so an equality claim here says nothing about
+  them.
+
+So "14 of 16 types agree" means: over the corpus, on the first bullet's fields,
+zero differences. It does not mean the two outputs are interchangeable objects.
+
+**What this method cannot establish.** Everything here is *semantic equality of
+function output over a sampled input space*. That is a different thing from
+"safe to swap", and nothing in this report should be read as the latter. In
+particular this audit says nothing about:
+
+- **Module-boundary and packaging effects** — import graphs, export surfaces,
+  `package.json` `exports` conditions, tree-shaking, bundle size, SSR/browser
+  condition resolution, or whether a workspace package still builds under its
+  own `tsconfig` after a change.
+- **Dependency direction** — which package ends up depending on which, and
+  whether that reintroduces a dependency someone deliberately removed.
+- **Type-level compatibility** — the two sides are structurally assignable
+  today (`StepData extends Step`), but narrower app unions (e.g. `MotionType`
+  without `"shift"`) and required app view fields are not exercised by a
+  runtime differential.
+- **Runtime and lifecycle** — module singleton construction order, the
+  `browser`-only guards in `get-loop-executors.ts`, or anything that only
+  appears once a real surface mounts.
+- **Unsampled inputs** — see the coverage bounds in §4.1.
+
+A "the outputs match" result is therefore a *necessary* condition for a safe
+migration, never a sufficient one.
 
 ---
 
@@ -141,7 +196,8 @@ by `deriveReversals`). Concretely: the app executors renumber `id` to
 
 ### 4.1 Period 2 (halved)
 
-Byte-identical on every one of 288 seeds, for 14 of 16 types:
+Equal on the compared projection (§3) on every one of 288 seeds, for 14 of 16
+types:
 
 `rotated`, `mirrored`, `flipped`, `swapped`, `inverted`, `swapped_inverted`,
 `rotated_inverted`, `mirrored_swapped`, `mirrored_inverted`, `rotated_swapped`,
@@ -160,7 +216,7 @@ The two exceptions are D1 (§5.1).
 
 ### 4.2 Period 4 (quartered)
 
-Only pure `rotated` is byte-identical. The rest split into:
+Only pure `rotated` is equal on the compared projection. The rest split into:
 
 - **Length-only divergence** (engine returns exactly twice the app's length on
   the seeds whose turn total already closes orientation): `mirrored`,
@@ -256,15 +312,22 @@ mirror/flip/swap/invert, false once rotation is absorbed into the same group.
 | --- | --- | --- |
 | App Generate (`generation-orchestrator` → `SequenceBuilder`) | always supplies a `loopSpecWire` from `resolveLoopConfig`, which keeps non-rotation components at period 2 | **not affected** |
 | `mcp-server/` (local dev MCP) via engine `executeLOOP` | `loopSpecFromLegacy` | fails loudly: `success:false`, `"Cannot close orientation on an open position pattern (alpha3 -> alpha7)"` |
-| `mcp-server-pkg/` (published `@austencloud/tka-domain-mcp`) via `loop-adapter.executeLOOP` → `loopExecutorSelector.getExecutor()` | `loopSpecFromLegacy` | **silently wrong**: returns the open sequence with `isCircular: true`; the adapter has no `closeOrientationCycle` stage |
+| `mcp-server-pkg/` source (packaged as `@austencloud/tka-domain-mcp`) via `loop-adapter.executeLOOP` → `loopExecutorSelector.getExecutor()` | `loopSpecFromLegacy` | **source inference, not executed:** the adapter has no `closeOrientationCycle` stage and sets `isCircular: true` unconditionally, so on this source it would return the open sequence without an error |
 | App extend flow | app executors | **not affected** (app is correct here) |
 
-`downstream-reach.test.ts` locks the first three rows. The
-`mcp-server-pkg` row is *inferred* from reading
-`mcp-server-pkg/src/core/loop/loop-adapter.ts` (lines 102–155: the same
-`getExecutor` call, no closure stage, unconditional `isCircular: true`); this
-session did not execute the published package, so treat it as a strong
-inference rather than a measurement.
+`downstream-reach.test.ts` locks the first two rows and the fourth.
+
+**The `mcp-server-pkg` row is source inference only.** It comes from reading
+`mcp-server-pkg/src/core/loop/loop-adapter.ts` at this SHA (lines 102–155: the
+same `getExecutor` call, no closure stage, `isCircular: true` returned
+unconditionally). This session did **not** execute that package, did not build
+it, and did not check any published npm version. So the honest statement is:
+*if* a deployed build corresponds to this source and *if* a caller requests
+quartered `rotated_inverted`, the source has no stage that would catch the open
+LOOP. Whether any published version matches this source, and whether any real
+caller makes that request, is **unverified**. Confirming it needs either a
+build-and-invoke of `mcp-server-pkg` or a check of the published artifact —
+neither of which was in scope for a read-only audit.
 
 ### 5.3 D3 — two mechanisms for "don't emit a literal repeat"
 
@@ -307,15 +370,48 @@ turns a clear error into a silently different-length sequence. Locked in
 
 ### 5.5 Seed-admission divergence (no defect, but a migration hazard)
 
-The app executors each gate on their start/end position pair before running;
-the engine's fused path has **no** seed validation. On the corpus the engine
-accepted every seed the app accepted (0 refusals), so the gate is strictly
-wider on the engine side. Those gates are today the only place where an invalid
-extend request is refused with a domain message
+The app executors each gate on their start/end position pair before running.
+The engine's behaviour depends on which stage plan the spec produces: the fused
+path performs **no** seed validation, while a separate `StrictRotatedExecutor`
+stage does validate. So the two gates are **not** ordered — neither is uniformly
+wider. Measured over all 650 canonical diamond one-step seeds, per LOOP type,
+counting only seeds the app **rejected** and then asking what the engine does
+with them:
+
+| LOOP type / period | app rejected | engine accepted | of those, open (non-closing) |
+| --- | --- | --- | --- |
+| `inverted` halved | 560 | 560 | 512 |
+| `mirrored` halved | 560 | 560 | 0 |
+| `swapped` halved | 536 | 536 | 416 |
+| `rotated` halved | 560 | **0** (engine rejected all 560) | — |
+| `mirrored_rotated` halved | 572 | 12 (engine rejected 560) | 0 |
+| `mirrored_rotated_inverted_swapped` halved | 560 | **0** (engine rejected all 560) | — |
+| `strict_rewound` quartered | 576 | 576 | 0 (returns the halved 2-pass result — D4) |
+
+**Counterexample, engine wider.** Canonical one-step seed `A` `alpha3→alpha5`
+with `inverted`, halved. App: `"Invalid position pair for inverted LOOP:
+alpha3 → alpha5…"`. Engine: accepts, returns 3 entries, ends at `alpha7` — an
+open LOOP, no error.
+
+**Counterexample, engine narrower.** The same seed with `rotated`, halved: the
+app rejects it *and* so does the engine, because that spec gives `ROTATED` its
+own `StrictRotatedExecutor` stage, which validates the pair. Same for
+`mirrored_rotated_inverted_swapped` halved, where the engine rejected all 560
+app-rejected seeds.
+
+These numbers come from an ad-hoc probe at this SHA over
+`buildChains("diamond", 1)`; they are **not** locked by a committed test (see
+§9). The committed matrix separately shows 0 engine refusals among
+*app-accepted* seeds — which is observed inclusion in one direction only, and
+was previously over-read here as a strict ordering.
+
+**Migration hazard.** Those per-executor gates are today the only place where an
+invalid extend request is refused with a domain message
 (`"For a mirrored LOOP from alpha3, the sequence must end at alpha7"`). After
-the executors are deleted, `LOOPValidator` still gates the UI, but
-`generateExtensionSteps` would have no second line of defence — an invalid seed
-reaching it would yield an open LOOP instead of an error.
+the executors are deleted, `LOOPValidator` still gates the UI, but for the
+LOOP types whose spec takes the fused path, `generateExtensionSteps` would have
+no second line of defence — an invalid seed reaching it would yield an open
+LOOP instead of an error.
 
 ### 5.6 Selector coverage gap
 
@@ -349,11 +445,32 @@ a bug fix with a refactor.
 
 1. **Delete the three dead executors (§5.7).** No behaviour change; shrinks the
    Phase 3 surface by ~470 lines before any risky work starts.
-2. **Collapse the three orientation copies (optional, zero risk).** They are
-   proven identical over the full documented input space, so pointing the app
-   and `packages/render-core` at the engine's copy (or vice versa) is a pure
-   deletion. Doing it here removes the last non-LOOP reason
-   `mcp-server-pkg/vendor/sequence-engine/` exists, which Phase 4.B wants gone.
+2. **Consider collapsing the three orientation copies — separately, and not as
+   a "free" change.** The three agree on every sampled input (§2), so the
+   *behavioural* risk of collapsing them is low. That is the only thing this
+   audit establishes, and it is not the whole risk:
+   - **Dependency direction.** The engine's copy carries the comment *"Inlined
+     from @tka/render-core to remove that dependency."* Pointing it back at
+     `@tka/render-core` reverses a decision someone made on purpose; pointing
+     `render-core` at the engine creates the opposite edge. Either way the
+     package graph changes and that needs its own review.
+   - **The app copy is not a subset.** `src/lib/shared/render/core/calculations/orientation.ts`
+     additionally exports `deriveMotionType` (used by
+     `navigation/services/sequence-encoder.ts`,
+     `navigation/services/legacy-sequence-codec.ts`,
+     `combination/services/variant-generator.ts`),
+     `deriveHandOrbitalDirection` (`pictograph/shared/domain/utils/tnd-deriver.ts`)
+     and `canonicalOrientation` (`pictograph/prop/services/prop-rot-angle-manager.ts`).
+     Those need a home before the file can go.
+   - **It does not empty the vendor directory.** Only
+     `OrientationPropagator` reaches the orientation math.
+     `mcp-server-pkg/vendor/sequence-engine/` also still supplies
+     `TransitionGraph` (`src/core/letter-transition-graph.ts`),
+     `SequenceEngineTypes` (three importers) and `ISequenceDataProvider`
+     (`src/adapters/NodeDataProvider.ts`), and `mcp-server-pkg/tsconfig.json`
+     lists `vendor/sequence-engine/**/*.ts` in `include`. Phase 4.B's "delete
+     the vendor dir" needs all four addressed, plus a packaging check — none of
+     which this audit covers.
 3. **Fix D1 in place, app-side, before migrating anything.** Compose
    `SWAPPED_POSITION_MAP` after `VERTICAL_MIRROR_POSITION_MAP` in
    `mirrored-swapped-inverted-loop-executor.ts` and the matching path in
@@ -365,9 +482,10 @@ a bug fix with a refactor.
 4. **Fix D2 in the engine.** `FusedExecutor.createCopiedStep` must not be used
    when `ROTATED` is absorbed into the fused group — either give `ROTATED` its
    own stage whenever it is present at the group's period, or make the copy
-   pass advance positions the way the transform pass does. This also fixes the
-   published MCP package's silent wrong answer, which is the only user-visible
-   consequence found in this audit that ships today.
+   pass advance positions the way the transform pass does. It would also close
+   the gap described in §5.2 for `mcp-server-pkg`'s adapter — but note that gap
+   is a source inference: no deployed version was checked, and no user-visible
+   consequence was observed by this audit.
 5. **Decide the period-4 product rule (D3) explicitly.** "Quartered mirrored of
    a zero-turn seed" is 2 passes under the app's guard and 4 under a uniform
    period-4 expansion. Pick one, write it down, and make both paths implement
@@ -390,8 +508,13 @@ a bug fix with a refactor.
    converted from a divergence lock into an equality assertion in the same
    commit.
 
-Steps 1–4 are each shippable on their own. Step 5 is the only one that needs
-Austen.
+Steps 1, 3 and 4 are each shippable on their own. Step 2 is a separate piece of
+work with its own packaging review, not a warm-up. Step 5 is the only one that
+needs Austen.
+
+None of these steps is authorised by this audit; it is read-only and produced no
+runtime change. Each one needs its own verification beyond output equality — see
+"What this method cannot establish" in §3.
 
 ---
 
@@ -450,12 +573,24 @@ they do, those tests fail and name what changed. That is the intended signal.
   `.env.example` declares the key, so this is environment configuration, not a
   code defect. The file is untouched by this branch. It is the only error the
   gate reports under `src/` or `tests/`.
-- **No browser, no emulators, no production data.** Every claim here is from
-  unit-level execution of the two code paths. Specifically **not verified**:
-  whether any stored Firestore sequence already carries a D1-shaped step; what
-  the published `@austencloud/tka-domain-mcp` returns when actually invoked
-  (§5.2 marks that row as inferred from source); any visual or runtime
-  behaviour of the Generate or extend surfaces.
+- **No browser, no emulators, no production data, no deployed artifacts.** Every
+  claim here is from unit-level execution of the two code paths. Specifically
+  **not verified**: whether any stored Firestore sequence already carries a
+  D1-shaped step; what any published or deployed
+  `@austencloud/tka-domain-mcp` build does (§5.2 is source inference, and no
+  npm version was inspected); any visual or runtime behaviour of the Generate or
+  extend surfaces.
+- **Output equality is not migration safety.** §3's "What this method cannot
+  establish" lists what a differential over function output leaves untested —
+  module boundaries, packaging and `exports` resolution, bundle/tree-shaking
+  effects, dependency direction, type-level narrowing, and singleton/lifecycle
+  behaviour. Every migration step in §6 needs verification of those in its own
+  right; none of them is de-risked by this report alone.
+- **The §5.5 seed-gate table is from an ad-hoc probe, not a committed test.**
+  It is reproducible at this SHA (all 650 canonical diamond one-step seeds via
+  `buildChains("diamond", 1)`, each run through both paths), but no assertion
+  guards it, so it can silently go stale. Folding it into the committed suite
+  is deliberately deferred until the independent full-suite review lands.
 - **Coverage bounds** are stated in §4.1 and apply to every "parity holds"
   claim: float (`"fl"`) turns, centric/interradial start orientations, seeds
   longer than three steps, skewed/trigrid dataframes and asymmetric per-prop
@@ -467,7 +602,7 @@ they do, those tests fail and name what changed. That is the intended signal.
 - **I did not attempt to decide which side is canonical for D3.** The app's
   answer is shorter and closes; the engine's is twice as long and also closes.
   That is a product decision about what "quartered" means for an order-2
-  transform, and it is step 4 of §6 for a reason.
+  transform, and it is step 5 of §6 for a reason.
 - **Scope discipline.** Another agent owns the Generate inverted-controls fix.
   This branch touches no runtime file; the only overlap is that §5.6 and §5.7
   describe app Generate files, as findings, not edits.

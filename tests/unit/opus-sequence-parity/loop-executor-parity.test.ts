@@ -221,7 +221,12 @@ describe("LOOP executor parity — halved (period 2)", () => {
   /** Documented in the report as divergence D1. */
   const DIVERGENT = ["mirrored_rotated_inverted_swapped", "mirrored_swapped_inverted"];
 
-  it("reaches byte-identical behaviour on 14 of 16 LOOP types", () => {
+  // "Equal" here means equal on the projection `compareOutputs` scores as
+  // semantic (length, positions, stepNumber, and the nine compared motion
+  // fields per hand) — NOT byte-identical objects. `id`, the pre-derivation
+  // `letter` and the reversal flags are reported but never counted, and the
+  // remaining Step/Motion fields are not compared at all.
+  it("agrees on the compared projection for 14 of 16 LOOP types", () => {
     expect(
       typesWhere(AppPeriod.HALVED, (c) => c.identical === c.samples)
     ).toEqual(FULL_PARITY);
