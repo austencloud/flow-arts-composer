@@ -371,6 +371,69 @@ captured.
 
 ---
 
+## Shared library dependencies (for parallel sessions)
+
+`src/lib/shared/library/services/library-repository.ts` is shared surface and
+another session is working in it concurrently (`session_01GJf6RRkVEeYeWT2CvZGm7T`,
+correcting the `ensurePublicMember` → `publishSequence` live-auth chain). What
+this session did there, so that work can extend it rather than collide with it
+or duplicate the pattern:
+
+**My footprint is small and localised** — 16 added lines, 1 changed, across
+three methods. No other method in that file was touched.
+
+| Method                     | Change                                                                                             |
+| -------------------------- | -------------------------------------------------------------------------------------------------- |
+| `saveSequence`             | added `overrides.expectedOwnerId`; fence block immediately after `getWritableUserId()` (~line 405) |
+| `saveSequenceWithMetadata` | added `metadata.expectedOwnerId`; forwards it to `saveSequence`                                    |
+| `attachThumbnail`          | added a third `expectedOwnerId?` parameter; same fence after `getWritableUserId()` (~line 874)     |
+
+**The convention, if the public path needs the same guarantee.** Every one of
+these resolves its uid from live auth _after_ an await, and that uid is either
+stamped as `ownerId` or used as the document path. A caller that selected work
+for a specific account cannot prove that account is still current by the time
+the write runs, so the check belongs on the repository side of the await:
+
+```ts
+const userId = this.getWritableUserId();
+if (overrides?.expectedOwnerId && overrides.expectedOwnerId !== userId) {
+  throw new LibraryError(
+    "The signed-in account changed before this write could be attributed.",
+    "UNAUTHORIZED",
+    sequence.id
+  );
+}
+```
+
+Optional by design: a write with no `expectedOwnerId` behaves exactly as before,
+so adding the parameter to another method cannot change existing callers. The
+same shape is mirrored (with a plain `Error`, no `LibraryError` dependency) in
+`HandPathRepository.save` and `SoloPropRepository.save`.
+
+**Still resolving live auth, NOT fenced, and NOT mine.** Listed for the
+collection owner's convenience, not as an audit finding — I did not trace these
+and make no claim about whether they need the fence:
+
+- `publishSequence` (`:1364`), `unpublishSequence` (`:1387`), `setVisibility`
+  (`:1354`), `setVisibilityBatch` (`:1799`)
+- `updateSequence` (`:1001`), `getSequenceStrict` (`:939`), `getSequences`
+  (`:1148`), `getSequencePage` (`:1160`), `hasMatchingContent` (`:986`),
+  `getLibraryStats` (`:1632`), the two `subscribeTo*` methods, and the
+  public-index sync path
+
+**Other shared files this session changed**, each additive and optional-param
+only: `saved-sequence-ledger.ts` (three new exports for the unowned state),
+`guest-identity.ts` (adoption call), `hand-path-repository-store.ts` and
+`solo-prop-repository-store.ts` (third `expectedOwnerId?` param),
+`tag-manager.ts` (third `expectedOwnerId?` param on `createUserTag`), and
+`anonymous-upgrade.ts` / `anonymous-import-prompt.svelte.ts` (guest-upgrade
+path, this session's domain). One shared **test** file was edited:
+`tests/unit/public-collection-live-choreo-contract.test.ts`, where
+`library-sync-retry.ts` was removed from the public-by-default regex list, with
+the reasoning recorded in the file.
+
+---
+
 ## Limitations — stated honestly
 
 - **Mocks do not cover the real persistence identity boundary, and I am not
