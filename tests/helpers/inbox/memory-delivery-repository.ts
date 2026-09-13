@@ -21,6 +21,8 @@ export class MemoryDeliveryRepository implements IMessageDeliveryRepository {
   private releaseListOutbox: (() => void) | null = null;
   private draftWriteGate: Promise<void> | null = null;
   private releaseDraftWrite: (() => void) | null = null;
+  private outboxWriteGate: Promise<void> | null = null;
+  private releaseOutboxWrite: (() => void) | null = null;
 
   /** Make every `listOutbox` wait until `openOutboxRead()` is called. */
   holdOutboxRead(): void {
@@ -33,6 +35,23 @@ export class MemoryDeliveryRepository implements IMessageDeliveryRepository {
     this.releaseListOutbox?.();
     this.releaseListOutbox = null;
     this.listOutboxGate = null;
+  }
+
+  /**
+   * Hold only the NEXT `putOutbox` open. One-shot on purpose: the delivery loop
+   * persists several times, and a test that parks the optimistic "sending"
+   * write still needs the writes after it to complete.
+   */
+  holdNextOutboxWrite(): void {
+    this.outboxWriteGate = new Promise<void>((resolve) => {
+      this.releaseOutboxWrite = resolve;
+    });
+  }
+
+  openOutboxWrite(): void {
+    this.releaseOutboxWrite?.();
+    this.releaseOutboxWrite = null;
+    this.outboxWriteGate = null;
   }
 
   /** Make every draft write wait until `openDraftWrites()` is called. */
@@ -85,6 +104,11 @@ export class MemoryDeliveryRepository implements IMessageDeliveryRepository {
   }
 
   async putOutbox(item: MessageOutboxRecord): Promise<void> {
+    const gate = this.outboxWriteGate;
+    if (gate) {
+      this.outboxWriteGate = null;
+      await gate;
+    }
     this.outbox.set(item.id, structuredClone(item));
   }
 
