@@ -1,12 +1,30 @@
 ---
 status: active
 value: 5
-effort: M
+effort: XS
+remaining: "Outcomes 1-6 are BUILT, in 20f0395e7 (feat(auth): add in-app email code sign-in, 2026-08-25) - do not re-implement them. Outcome 7 is the only product work left and it is Austen's, not an agent's: John's older Google UID stays canonical, the Live.com address becomes its Firebase primary email, and his duplicate Firestore work is copied before the second UID is deleted. That mutates production identity data. Verification still owed: a Firebase Auth emulator run proving a Google-provider email plus a different primary email return the same UID, the auth-surface viewport sweep with measured touch input font sizes, and physical iPad proof of the native software keyboard - which no desktop emulator can supply."
+depends_on: "external: Austen's decision on the production UID consolidation, plus a physical iPad session"
+plan_path: ""
 tags: ["auth", "firebase", "ios", "ipad", "pwa", "account-merge"]
-last_triaged: 2026-08-24
+last_triaged: 2026-09-13
 ---
 
 # Multi-email and iPad auth continuity
+
+**Status (reconciled 2026-09-13):** implemented except outcome 7. This spec
+carried no `remaining` field, so the queue ranked it as fresh v5/M work over
+auth code that already ships. Evidence: `20f0395e7` extended
+`magicLinkStateStore.ts` (+163) and `sendMagicLink.ts` (+184) for the six-digit
+code lifecycle, rewrote `EmailLinkAuth.svelte` (+361) and the magic-link email
+template, retabbed `EmailAuthTabs.svelte`, and applied the iOS floor in
+`EmailPasswordAuth.svelte:342-344` with the WebKit rationale in a comment.
+`email-link-completion.ts:266-276` is outcome 1 verbatim: a signed-in user who
+does not already own the saved email goes through `linkWithCredential`, not the
+plain sign-in path. `tests/unit/auth/email-link-completion.test.ts` -- 15 tests,
+re-run green at `c4be1619`, including "uses signInWithEmailLink when the saved
+email already belongs to the current user" (outcome 2). Function-side coverage
+lives in `firebase-functions/src/auth/magicLinkStateStore.test.ts` and
+`sendMagicLink.test.ts`.
 
 ## Field report
 

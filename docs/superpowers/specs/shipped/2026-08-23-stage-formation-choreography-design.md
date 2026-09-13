@@ -1,7 +1,21 @@
 # Stage Formation Choreography — Design
 
 **Date:** 2026-08-23
-**Status:** Approved (Austen approved Approach A and the four-section design in conversation, 2026-08-23)
+**Status:** Shipped. All five phases are complete as of 2026-08-26; Phase 5's
+proof pass was absorbed into `2026-08-26-one-stage-design.md` Phase 7. Header
+corrected and the file moved out of `active/` on 2026-09-13 — it still read
+"Approved" while Phases 1–4d had already landed in `1b32c668ff`, `7b0091bdc8`,
+`183fa4cd7f`, and `b80d793708`.
+
+**Reconciliation evidence (2026-09-13):** `Formation`/`FormationSpot` are the
+live model (`src/lib/features/stage/components/SetProperties.svelte:11`,
+`services/tika-director-executor.ts:39` transforms formation spots). The retired
+per-performer `Mark[]` chain survives only in
+`src/lib/features/stage/domain/formation-migration.ts`, which is the legacy
+migration path Phase 4d specified, not a second live model.
+
+**Originally approved:** Austen approved Approach A and the four-section design
+in conversation, 2026-08-23
 **Supersedes:** the per-performer mark-chain movement model in
 `2026-08-20-stage-performance-runtime-design.md` (the runtime's facing/walk-style
 semantics, playhead clock, and rig ownership all carry forward unchanged).
@@ -348,5 +362,19 @@ mutations use today).
       Evidence: 58/58 stage tests; `npm run check` 0 errors 0 warnings; the
       default track still renders line → v-shape at count 8; sidebar scrolls with
       full-size sections at 1920 and 960x412.
-- [ ] **Phase 5 — Proof pass.** Visual verification is the main session's job,
-      never a subagent's.
+- [x] **Phase 5 — Proof pass.** Discharged by `2026-08-26-one-stage-design.md`,
+      which states in its header that it supersedes the Stage half of this
+      design and that "its Phase 5 proof pass becomes Phase 7 here".
+      **The proof is historical, recorded on 2026-08-26** in that document's
+      section 7, "What shipped (2026-08-26)" — read it there rather than
+      treating this box as fresh evidence. What section 7 records: the
+      reverse-triangle demo as the default document (line at count 0, triangle
+      arriving on 32 over 16 counts, triangle turned inside out arriving on 64
+      over 16 counts), formation direction judged on the drill chart rather
+      than the 3D frame because the default camera looks from the backstage
+      side, and a seven-viewport sweep (1920, 2560, 3840, 1440x900, 820x1180,
+      960x412, 375x667) that found and fixed three real responsive defects.
+      The box was ticked here on 2026-09-13 during spec reconciliation as a
+      bookkeeping correction: the proof was performed under the superseding
+      spec in August and was never reflected back into this ledger. **No
+      browser verification was performed in the 2026-09-13 pass.**

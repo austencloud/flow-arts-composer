@@ -1,8 +1,15 @@
 # The Ghost learns what activities are worth doing
 
 **Date:** 2026-08-06
-**Status:** implemented and verified
+**Status:** Shipped. Implemented and verified.
 **Extends:** `2026-08-06-ghost-activity-intelligence-design.md`
+
+**Reconciliation 2026-09-13:** owner module
+`src/lib/shared/attract/domain/activity-experience.ts` is present and live.
+Re-ran `vitest run --config tests/config/vitest.config.ts tests/unit/attract/`
+against `c4be1619`: 9 files, 68 tests passed, 2 skipped (the env-gated fleet
+test, exactly as this spec's contract expects). Moved out of `active/` — it had
+been declaring itself implemented since 2026-08-06.
 
 ## The 7.0 target
 
