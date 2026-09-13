@@ -479,6 +479,71 @@ describe("ConceptProgressTracker account switching", () => {
     return { persister, loads };
   }
 
+  it("writes nothing to the previous user while the next one's load is in flight", async () => {
+    const { persister, loads } = createTwoUserPersister();
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    const a = tracker.initializeForUser("user-a");
+    loads.get("user-a")!.resolve(null);
+    await a;
+    expect(persister.events).toEqual(["subscribe:user-a"]);
+
+    // B signs in; B's load has not resolved yet.
+    const b = tracker.initializeForUser("user-b");
+
+    // A Learn action inside that window must not reach anyone's document —
+    // least of all the account that just signed out.
+    tracker.completeConcept("grid");
+    expect(persister.saveProgress.mock.calls.map((call) => call[0])).toEqual(
+      []
+    );
+    // It is still recorded locally.
+    expect(tracker.getConceptStatus("grid")).toBe("completed");
+
+    // A's ownership was retired the moment the switch started, before the
+    // await, which is what closes the window.
+    expect(persister.events).toEqual([
+      "subscribe:user-a",
+      "unsubscribe:user-a",
+    ]);
+
+    loads.get("user-b")!.resolve(null);
+    await b;
+
+    // Once B owns the tracker, writes resume as B: first the deferred push of
+    // what happened during the window, then the next action. (That the
+    // window's progress goes to B at all is the unnamespaced-cache issue in
+    // the report's follow-ups — one device's storage is not scoped per
+    // account. This test pins only who the writes are addressed to.)
+    tracker.completeConcept("hand-positions");
+    expect(persister.saveProgress.mock.calls.map((call) => call[0])).toEqual([
+      "user-b",
+      "user-b",
+    ]);
+  });
+
+  it("does not write to the previous user when the switch is to a load that fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const { persister, loads } = createTwoUserPersister();
+    const tracker = new ConceptProgressTracker(persister.asPersister);
+
+    const a = tracker.initializeForUser("user-a");
+    loads.get("user-a")!.resolve(null);
+    await a;
+
+    const b = tracker.initializeForUser("user-b");
+    loads.get("user-b")!.reject(new Error("offline"));
+    await b;
+
+    tracker.completeConcept("grid");
+
+    expect(persister.saveProgress).not.toHaveBeenCalled();
+    expect(persister.events).toEqual([
+      "subscribe:user-a",
+      "unsubscribe:user-a",
+    ]);
+  });
+
   it("ignores a load for the previous user that resolves after the next one", async () => {
     const { persister, loads } = createTwoUserPersister();
     const tracker = new ConceptProgressTracker(persister.asPersister);
