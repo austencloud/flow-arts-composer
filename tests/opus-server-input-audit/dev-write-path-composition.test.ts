@@ -50,6 +50,17 @@ function escapesIntendedRoot(target: string): boolean {
   );
 }
 
+/**
+ * Resolve, then state the result in forward slashes.
+ *
+ * `path.resolve` emits the host separator, so a `toContain("tmp/audit-escape")`
+ * written against POSIX fails on Windows for a reason that has nothing to do
+ * with the endpoint under audit.
+ */
+function resolvedPosix(target: string): string {
+  return path.resolve(target).split(path.sep).join("/");
+}
+
 describe("/api/dev/save-pictograph composes its path from unvalidated fields", () => {
   beforeEach(() => {
     writes.length = 0;
@@ -89,7 +100,7 @@ describe("/api/dev/save-pictograph composes its path from unvalidated fields", (
 
     expect(response.status).toBe(200);
     expect(escapesIntendedRoot(dirs[0]!)).toBe(true);
-    expect(path.resolve(dirs[0]!)).toContain("tmp/audit-escape");
+    expect(resolvedPosix(dirs[0]!)).toContain("tmp/audit-escape");
   });
 
   it("follows `propType` out of the static tree through the filename", async () => {
