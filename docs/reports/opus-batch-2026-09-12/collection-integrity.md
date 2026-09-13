@@ -1,14 +1,14 @@
 # Collection Integrity — Opus batch 2026-09-12
 
-Four reproduced collection-integrity defects, each fixed with a repro test that
-fails without the fix and passes on the branch head. D1's fix was reworked and
-D4 was found in review of `32241bad`; both are covered below with their own
-before/after evidence.
+Six reproduced collection-integrity defects, each fixed with a repro test that
+fails without the fix and passes on the branch head. D1's fix was reworked
+twice and D4-D6 were found in review; every round carries its own before/after
+evidence.
 
 | Field       | Value                                                             |
 | ----------- | ----------------------------------------------------------------- |
 | Base SHA    | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`)         |
-| Fixes SHA   | `7f632eb6` (runtime + tests; this report commits on top)           |
+| Fixes SHA   | `1acb4b44` (runtime + tests; this report commits on top)           |
 | Branch      | `claude/fix-collection-integrity-nm8fj9`                           |
 | Scope       | collection state, membership bookkeeping, subscription lifecycle   |
 
@@ -112,6 +112,73 @@ Three behaviours are new and deliberate, and are pinned by tests:
 - an entry optimistically removed by a failing delete stays off screen until any
   edit still in flight for it resolves, then returns with the persisted value.
   Showing it again earlier would mean showing a value that is about to change.
+
+### D1a — the baseline was not scoped to the signed-in user
+
+Raised in review of `2b1a7be6`. `confirmed`, `inFlight` and `removedBefore`
+describe one user's gallery, but nothing stopped an operation started under a
+previous identity from writing into them. A write held across a sign-out
+resolves after `teardown()` and `init(B)`: `onPersisted` put A's entry into B's
+confirmed map, and `settleEntry` then either **appended A's art to B's gallery**
+or replaced B's entry when the ids collided. `init` had the same shape
+independently — a slow `repo.load(A)` resolving after `init(B)` assigned A's
+entries straight over B's list (that one predates this branch).
+
+**Measured failures (before the fix)**:
+
+```
+FAIL  does not let a write held across a sign-out land in the next user's gallery
+  expected [ 'A-renamed' ] to deeply equal [ 'B-art' ]
+FAIL  does not insert the previous user's entry into a gallery that has no such id
+  expected [ 'b-only', 'shared' ] to deeply equal [ 'b-only' ]
+FAIL  does not let a slow load for the previous user paint over the current one
+  expected [ 'A-art' ] to deeply equal [ 'B-art' ]
+```
+
+**Fix.** A `generation` counter, bumped by `init` and `teardown`. Every await
+that can outlive an identity — the repository write inside `commitWrite`, the
+`repo.load` in `init`, each step of the guest migration, `prepareAdd`,
+`prepareUpdate` — captures it and checks `isCurrent` before touching the list,
+the baseline or the in-flight counts. The write's own error still propagates to
+the caller; only the shared state is fenced. `add` throws rather than filing a
+prepared entry under whoever signed in during preparation.
+
+Two cases in this area already held before the fix and are pinned anyway: a
+*failed* held write, and a failed held delete, when the next user happens to
+have an entry with the same id. `init` re-seeds `confirmed` from the new user's
+load, which masked them.
+
+### D1b — `prepareUpdate` wrote back a stale snapshot
+
+Also from the `2b1a7be6` review. `update` built its result from the entry as it
+was when the call started, then handed it to `prepareUpdate` (which regenerates
+a poster and mints a revision digest — slow). A `rename` landing **and
+persisting** in that window was silently undone when the prepared snapshot was
+written back: both operations reported success, one of them had no effect.
+
+```
+FAIL  rebases a prepared update onto a rename that landed while it was preparing
+  expected { name: 'Original', … } to match object { name: 'Renamed', … }
+```
+
+**Fix, two parts.** Preparation is serialized per entry id
+(`prepareExclusively`) so the second of two overlapping updates starts from the
+value the first settled on — necessary because `prepareTunnelRevision` digests
+the entry's content, and two concurrent preparations would each digest a
+version that never existed on its own:
+
+```
+FAIL  prepares one update at a time per entry, each from the last settled value
+  expected [ 'one/-', '-/-' ] to deeply equal [ 'one/-' ]
+```
+
+A rename does not go through preparation, so it can still land inside that
+window; the prepared result is therefore also rebased onto the current entry —
+the caller's patch and the lifecycle's contribution (`contributedFields`,
+diffed against what the lifecycle was handed) applied over current values. The
+rebase only pulls fields neither the patch nor the lifecycle claimed, so a
+minted digest still describes the content it was computed over. Fields a
+lifecycle *deletes* are not tracked; enrichment adds and replaces.
 
 ## D2 — A collection could become permanently undeletable
 
@@ -256,13 +323,15 @@ looks like 22 red files but is zero red assertions. `pnpm --recursive --filter
 | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `vitest run … src/lib/shared/collections/__tests__/collection-state-overlap.test.ts` (base) | **5 failed / 5** — D1 reproduced                                 |
 | the same file's two both-failure cases, against the first D1 fix             | **2 failed** — the confirmed-baseline defect reproduced          |
+| the same file's identity-change and preparation cases, against the second D1 fix | **6 failed** — D1a and D1b reproduced                       |
 | `vitest run … tests/unit/library/collection-manager-delete.test.ts` (base)                  | **3 failed / 4** — D2 reproduced (2 of them are the defect)      |
 | the same file's uid-swap case, against the pre-D4 manager                    | **1 failed** — D4 reproduced                                     |
 | `vitest run … tests/unit/library/collection-manager-subscription-disposal.test.ts` (base)   | **3 failed / 4** — D3 reproduced                                 |
-| `vitest run … tests/unit/library/ src/lib/shared/collections/__tests__/ src/lib/features/library/{state,services}/__tests__/` (head) | **37 files, 223 tests, all passing** |
+| `vitest run … tests/unit/library/ src/lib/shared/collections/__tests__/ src/lib/features/library/{state,services}/__tests__/ plus every CollectionState consumer (tunnel, mandala, scene-3d, film)` (head) | **337 tests, all passing** |
 | `vitest run --config tests/config/vitest.config.ts` — full default suite (head)             | **15 672 passed, 106 skipped**; 22 files failed to load, all from unbuilt workspace packages (see below) |
 | Re-run of those 22 files after `pnpm --recursive --filter "./packages/*" run build`          | **22 files, 327 tests, all passing** — the failures were the environment, not this branch |
 | `npm run check:fast` (head)                                                                | 581 errors / 44 warnings repo-wide; **none in any changed or added file** (645 before the workspace packages were built) |
+| full default suite                                                                          | last measured at `32241bad`; the rounds after it were verified with the targeted runs above, not re-run in full |
 | `tsc --noEmit` over the three `tests/unit/library/` files (head)                            | **0 errors in those files** (9 errors, all inside a `node_modules` dependency's own sources) |
 | `firebase emulators:exec --only firestore …`                                                | **could not run** — see limitations                              |
 
