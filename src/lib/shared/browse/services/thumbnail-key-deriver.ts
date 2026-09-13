@@ -233,6 +233,12 @@ function checkInputUsesDefaults(
     return false;
   // Any custom text means not using defaults
   if (input.customNotesText !== undefined) return false;
+  // The 5:7 playing-card layout is a different image, and the shared hash branch
+  // below cannot express it (it names only the gallery/wordcard dimensions). Keep
+  // card renders in the personal class so a card-layout raster can never be
+  // uploaded to, or served from, the shared static/cloud tiers, which hold one
+  // layout per variant.
+  if (input.cardMode) return false;
   // A custom hand palette is personal: it must never be served from, or
   // uploaded to, the shared static/cloud tiers.
   if (input.primaryPropColors) return false;
@@ -326,6 +332,10 @@ function buildFullHashInput(input: ThumbnailRenderInput): object {
     handPathMode: input.visibility?.handPathMode,
     // Sequence mandalas in empty cells
     showMandala: input.visibility?.showMandala,
+    // 5:7 playing-card layout. Present only when set, so every existing key stays
+    // byte-identical (same shape as `colors` above) — a card render gets its own
+    // identity without cold-starting the standard-layout cache.
+    ...(input.cardMode && { cardMode: true }),
     // Motion visibility (blue/red hand filtering)
     showLeftMotion: input.visibility?.showLeftMotion,
     showRightMotion: input.visibility?.showRightMotion,
