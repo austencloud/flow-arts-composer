@@ -43,37 +43,70 @@ function canvasStream(): MediaStream {
 }
 
 /**
+ * The shape the camera manager rejects an invalidated start with. The guard
+ * under test deliberately does not key off this: it decides from its own
+ * teardown, so it is correct both before and after the named cancellation type
+ * lands on main. This only stands in for what the panel will actually catch.
+ */
+function cancellationError(): Error {
+  const error = new Error("Camera was released while it was starting.");
+  error.name = "CameraAcquisitionCancelled";
+  (error as Error & { code?: string }).code = "CAMERA_ACQUISITION_CANCELLED";
+  return error;
+}
+
+/**
  * Stands in for CameraManager on its public contract: initialize, then start
- * returns the stream, and stop ends the tracks it handed out.
+ * returns the stream, and stop ends the stream the manager currently holds.
+ *
+ * One instance is shared by every consumer, as `getCameraManager()` is a
+ * singleton, and each start takes a ticket. A start that only settles after a
+ * newer one has taken over never becomes the held stream, which is how the
+ * ticketed manager behaves and what makes a stray global `stop()` from a stale
+ * consumer visible: it would end somebody else's tracks.
  */
 function createFakeCameraManager() {
   const calls = { initialize: 0, start: 0, stop: 0 };
-  const initializeGate = gate<void>();
-  const startGate = gate<MediaStream>();
-  let handedOut: MediaStream | null = null;
+  let initializeGate = gate<void>();
+  let startGate = gate<MediaStream>();
+  let ticketCounter = 0;
+  let held: MediaStream | null = null;
 
   const manager = {
     calls,
-    initializeGate,
-    startGate,
-    get handedOutStream() {
-      return handedOut;
+    get initializeGate() {
+      return initializeGate;
+    },
+    get startGate() {
+      return startGate;
+    },
+    get heldStream() {
+      return held;
+    },
+    /** Arm a fresh pair of gates for the next consumer's acquisition. */
+    rearm(): void {
+      initializeGate = gate<void>();
+      startGate = gate<MediaStream>();
     },
     isActive: false,
     async initialize(): Promise<void> {
       calls.initialize += 1;
-      return initializeGate.promise;
+      await initializeGate.promise;
     },
     async start(): Promise<MediaStream> {
       calls.start += 1;
+      const ticket = (ticketCounter += 1);
       const stream = await startGate.promise;
-      handedOut = stream;
-      manager.isActive = true;
+      if (ticket === ticketCounter) {
+        held = stream;
+        manager.isActive = true;
+      }
       return stream;
     },
     stop(): void {
       calls.stop += 1;
-      handedOut?.getTracks().forEach((track) => track.stop());
+      held?.getTracks().forEach((track) => track.stop());
+      held = null;
       manager.isActive = false;
     },
   };
@@ -106,6 +139,22 @@ async function drain(): Promise<void> {
   for (let i = 0; i < 5; i += 1) {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
+}
+
+/**
+ * A different panel takes the shared manager. `PerformancePreview` reaches the
+ * same singleton through `getCameraManager()`, so this is what mounting one
+ * while a stale acquisition is still outstanding looks like.
+ */
+async function anotherConsumerAcquires(): Promise<MediaStream> {
+  camera.rearm();
+  const initializing = camera.initialize();
+  camera.initializeGate.resolve();
+  await initializing;
+
+  const starting = camera.start();
+  camera.startGate.resolve(canvasStream());
+  return starting;
 }
 
 beforeEach(() => {
@@ -141,6 +190,60 @@ describe("VideoRecordPanel camera acquisition", () => {
     const states = stream.getTracks().map((track) => track.readyState);
     expect(states.length).toBeGreaterThan(0);
     expect(states.every((state) => state === "ended")).toBe(true);
+  });
+
+  it("leaves a newer consumer's camera alone when this panel's start is rejected", async () => {
+    const screen = render(VideoRecordPanel, { sequence: null });
+    await waitFor(() => camera.calls.initialize > 0, "initialize was called");
+    camera.initializeGate.resolve();
+    await waitFor(() => camera.calls.start > 0, "start was called");
+    const stalePanelStart = camera.startGate;
+
+    // Teardown cancels this panel's acquisition. That stop is legitimate: the
+    // panel still owns the attempt at this instant.
+    await screen.unmount();
+    const stopsAtTeardown = camera.calls.stop;
+
+    const newStream = await anotherConsumerAcquires();
+
+    // Now the manager rejects the start it invalidated, having already released
+    // whatever that attempt had opened. The panel owns nothing here, so it must
+    // not reach for the shared manager's stop().
+    stalePanelStart.reject(cancellationError());
+    await drain();
+
+    expect(
+      newStream.getTracks().every((track) => track.readyState === "live")
+    ).toBe(true);
+    expect(camera.calls.stop).toBe(stopsAtTeardown);
+    expect(camera.heldStream).toBe(newStream);
+  });
+
+  it("leaves a newer consumer's camera alone when this panel's stream arrives late", async () => {
+    const screen = render(VideoRecordPanel, { sequence: null });
+    await waitFor(() => camera.calls.initialize > 0, "initialize was called");
+    camera.initializeGate.resolve();
+    await waitFor(() => camera.calls.start > 0, "start was called");
+    const stalePanelStart = camera.startGate;
+
+    await screen.unmount();
+    const stopsAtTeardown = camera.calls.stop;
+
+    const newStream = await anotherConsumerAcquires();
+
+    // A manager without ticketing still hands the late stream over. The panel
+    // owns exactly that stream, so it ends those tracks and nothing else.
+    const staleStream = canvasStream();
+    stalePanelStart.resolve(staleStream);
+    await drain();
+
+    expect(
+      staleStream.getTracks().every((track) => track.readyState === "ended")
+    ).toBe(true);
+    expect(
+      newStream.getTracks().every((track) => track.readyState === "live")
+    ).toBe(true);
+    expect(camera.calls.stop).toBe(stopsAtTeardown);
   });
 
   it("still opens the camera for a panel that stays mounted", async () => {
