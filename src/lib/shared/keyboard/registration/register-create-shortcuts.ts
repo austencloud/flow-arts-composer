@@ -23,7 +23,10 @@ import type { SequenceTransformCommandId } from "$lib/shared/create/domain/seque
 import { getAllPropTypes } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
 import { filterPremiumCosmeticProps } from "$lib/shared/subscription/domain/premium-prop-access";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { isWidgetOwnedKeyboardTarget } from "../domain/shortcut-target-resolution";
+import {
+  isLayerOwnedKeyboardTarget,
+  isWidgetOwnedKeyboardTarget,
+} from "../domain/shortcut-target-resolution";
 
 const debug = createComponentLogger("CreateShortcuts");
 
@@ -41,6 +44,20 @@ function singleKeyShortcutAllowed(
   if (!state.settings.enableSingleKeyShortcuts) return false;
   if (typeof document === "undefined") return true;
   return !isWidgetOwnedKeyboardTarget(document.activeElement);
+}
+
+/**
+ * Backspace and Delete really delete the selected step, so they cannot yield
+ * to every focusable control the way the placeholders do: the step cell the
+ * user just clicked is a focusable control, and Backspace on it is the
+ * feature. They yield only inside an open dialog or drawer that is foreign to
+ * the sequence. With the Customize drawer open on /create/generate, Backspace
+ * on the Inverted chip used to close the drawer and delete a step behind it.
+ * The step editor marks its body as passthrough so the key stays live there.
+ */
+function deleteShortcutAllowed(): boolean {
+  if (typeof document === "undefined") return true;
+  return !isLayerOwnedKeyboardTarget(document.activeElement);
 }
 
 async function executeSequenceShortcut(
@@ -294,6 +311,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
+    condition: () => deleteShortcutAllowed(),
     action: async () => {
       debug.log("Backspace key pressed!");
 
@@ -368,6 +386,7 @@ export function registerCreateShortcuts(
     context: "create",
     scope: "sequence-management",
     priority: "medium",
+    condition: () => deleteShortcutAllowed(),
     action: async () => {
       const ref = getCreateModuleRef();
       if (!ref) return;

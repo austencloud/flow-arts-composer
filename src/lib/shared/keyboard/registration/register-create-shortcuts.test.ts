@@ -141,3 +141,118 @@ describe("create arrow shortcuts yield to a focused widget", () => {
     expect(conditionOf(registered, "create.grid-nav-down")).toBe(true);
   });
 });
+
+/**
+ * Backspace and Delete really delete the selected step, so they cannot use the
+ * arrow boundary above: a step cell is a focusable control, and "focus a cell,
+ * press Backspace" is the feature. They yield only when focus sits inside an
+ * open dialog or drawer layer that has nothing to do with the sequence, such as
+ * the Customize drawer on /create/generate. The step editor is a drawer on
+ * every viewport, so it opts back in with `data-keyboard-shortcuts-passthrough`
+ * on its body: deleting the selected step is exactly what Backspace means there.
+ */
+const DELETE_SHORTCUT_IDS = [
+  "create.delete-beat",
+  "create.delete-beat-delete-key",
+] as const;
+
+describe("create delete shortcuts yield to a foreign open layer", () => {
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("run from neutral focus", () => {
+    const registered = registerAll();
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    for (const id of DELETE_SHORTCUT_IDS) {
+      expect(conditionOf(registered, id), id).toBe(true);
+    }
+  });
+
+  it("run while a step cell outside any layer has focus", () => {
+    const registered = registerAll();
+    const host = mount(
+      `<div role="button" tabindex="0" aria-label="Step 3">step</div>`
+    );
+    host.querySelector<HTMLElement>('[role="button"]')!.focus();
+
+    for (const id of DELETE_SHORTCUT_IDS) {
+      expect(conditionOf(registered, id), id).toBe(true);
+    }
+  });
+
+  it("skip while a toggle chip inside an open drawer has focus", () => {
+    const registered = registerAll();
+    const host = mount(`
+      <dialog open aria-modal="true" tabindex="-1" aria-label="Customize">
+        <button type="button" aria-pressed="false">Inverted</button>
+      </dialog>
+    `);
+    host.querySelector("button")!.focus();
+
+    for (const id of DELETE_SHORTCUT_IDS) {
+      expect(conditionOf(registered, id), id).toBe(false);
+    }
+  });
+
+  it("skip while the drawer container itself holds focus", () => {
+    const registered = registerAll();
+    const host = mount(
+      `<dialog open aria-modal="true" tabindex="-1"></dialog>`
+    );
+    host.querySelector<HTMLDialogElement>("dialog")!.focus();
+
+    for (const id of DELETE_SHORTCUT_IDS) {
+      expect(conditionOf(registered, id), id).toBe(false);
+    }
+  });
+
+  it("skip while a control inside a role=dialog layer has focus", () => {
+    const registered = registerAll();
+    const host = mount(`
+      <div role="dialog" aria-label="Settings">
+        <button type="button">Save</button>
+      </div>
+    `);
+    host.querySelector("button")!.focus();
+
+    for (const id of DELETE_SHORTCUT_IDS) {
+      expect(conditionOf(registered, id), id).toBe(false);
+    }
+  });
+
+  it("run while a control inside the step editor drawer has focus", () => {
+    const registered = registerAll();
+    const host = mount(`
+      <dialog open aria-modal="true" tabindex="-1" aria-label="Step editor panel">
+        <div class="editor-body" data-keyboard-shortcuts-passthrough>
+          <button type="button" aria-label="Add blue turn">+</button>
+        </div>
+      </dialog>
+    `);
+    host.querySelector("button")!.focus();
+
+    for (const id of DELETE_SHORTCUT_IDS) {
+      expect(conditionOf(registered, id), id).toBe(true);
+    }
+  });
+
+  it("skip while a layer nested inside the step editor has focus", () => {
+    const registered = registerAll();
+    const host = mount(`
+      <dialog open aria-modal="true" tabindex="-1" aria-label="Step editor panel">
+        <div class="editor-body" data-keyboard-shortcuts-passthrough>
+          <div role="dialog" aria-label="Choose a prop">
+            <button type="button">Staff</button>
+          </div>
+        </div>
+      </dialog>
+    `);
+    host.querySelector("button")!.focus();
+
+    for (const id of DELETE_SHORTCUT_IDS) {
+      expect(conditionOf(registered, id), id).toBe(false);
+    }
+  });
+});

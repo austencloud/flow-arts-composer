@@ -521,7 +521,12 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
           onClose={handleActiveClose}
         />
       {:else}
-        <div class="editor-body">
+        <!--
+          Backspace and Delete keep deleting the selected step from inside
+          this non-modal editor. Every other open drawer or dialog swallows
+          them; see isLayerOwnedKeyboardTarget in the keyboard domain.
+        -->
+        <div class="editor-body" data-keyboard-shortcuts-passthrough>
           <div class="top-zone">
             <Crossfade key={selectionMode} fill duration={DURATION.fast}>
               {#if isMultiSelect}
