@@ -2,9 +2,9 @@
 status: shipped
 value: 5
 effort: L
-remaining: "None. Phases 1-7 shipped 2026-08-26. Open gap: the app shell has no 4K root-font ramp, so /stage type does not step at 3840 (see the handoff)."
+remaining: "None. Phases 1-7 shipped 2026-08-26. The 4K root-font-ramp gap this field recorded on 2026-08-26 is no longer open work: a0c8a9a57a (2026-08-27) deleted the html:has(...) ramp the note pointed at, and .claude/rules/4k-native-layout.md now holds the root at 16px at every viewport width. /stage type still does not step at 3840, and under current policy it is not supposed to - the sanctioned response to a wide canvas is composition, not root scale. The original note is preserved in the body at section 7 with a dated correction beside it."
 tags: [stage, 3d, formations, unification]
-last_triaged: 2026-08-26
+last_triaged: 2026-09-13
 ---
 
 # One Stage — Design

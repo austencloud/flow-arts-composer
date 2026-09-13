@@ -364,9 +364,17 @@ mutations use today).
       full-size sections at 1920 and 960x412.
 - [x] **Phase 5 — Proof pass.** Discharged by `2026-08-26-one-stage-design.md`,
       which states in its header that it supersedes the Stage half of this
-      design and that "its Phase 5 proof pass becomes Phase 7 here". One Stage's
-      Phase 7 is checked: the reverse-triangle demo (final 16 counts of a
-      64-step sequence, downstage-centre performer stepping backward while the
-      two back performers step forward), the seven-viewport visual sweep, tests,
-      and `npm run check`. Closed 2026-09-13 during spec reconciliation; the
-      proof was performed there rather than here, not skipped.
+      design and that "its Phase 5 proof pass becomes Phase 7 here".
+      **The proof is historical, recorded on 2026-08-26** in that document's
+      section 7, "What shipped (2026-08-26)" — read it there rather than
+      treating this box as fresh evidence. What section 7 records: the
+      reverse-triangle demo as the default document (line at count 0, triangle
+      arriving on 32 over 16 counts, triangle turned inside out arriving on 64
+      over 16 counts), formation direction judged on the drill chart rather
+      than the 3D frame because the default camera looks from the backstage
+      side, and a seven-viewport sweep (1920, 2560, 3840, 1440x900, 820x1180,
+      960x412, 375x667) that found and fixed three real responsive defects.
+      The box was ticked here on 2026-09-13 during spec reconciliation as a
+      bookkeeping correction: the proof was performed under the superseding
+      spec in August and was never reflected back into this ledger. **No
+      browser verification was performed in the 2026-09-13 pass.**
