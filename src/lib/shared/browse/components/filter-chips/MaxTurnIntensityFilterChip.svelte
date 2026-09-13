@@ -16,11 +16,20 @@ Shows available turn-intensity ceilings with contextual counts.
     activeIntensity: number | null;
     availableIntensities: number[];
     onSelect: (intensity: number | null) => void;
-    getFilteredCount?: (candidateType: BrowseFilterType, candidateValue: BrowseFilterValue) => number;
+    getFilteredCount?: (
+      candidateType: BrowseFilterType,
+      candidateValue: BrowseFilterValue
+    ) => number;
     disabled?: boolean;
   }
 
-  let { activeIntensity, availableIntensities, onSelect, getFilteredCount, disabled = false }: Props = $props();
+  let {
+    activeIntensity,
+    availableIntensities,
+    onSelect,
+    getFilteredCount,
+    disabled = false,
+  }: Props = $props();
 
   let isOpen = $state(false);
   let hapticService: HapticFeedback | null = null;
@@ -32,7 +41,9 @@ Shows available turn-intensity ceilings with contextual counts.
   // Turn ceilings can be halves (1.5), so render "≤N" verbatim — never coerce to an integer.
   const fmt = (n: number) => `≤${n}`;
 
-  const label = $derived(activeIntensity !== null ? fmt(activeIntensity) : t('browse_chip_max_turns'));
+  const label = $derived(
+    activeIntensity !== null ? fmt(activeIntensity) : t("browse_chip_max_turns")
+  );
   const isActive = $derived(activeIntensity !== null);
 
   // Compute counts lazily when dropdown is open
@@ -40,7 +51,10 @@ Shows available turn-intensity ceilings with contextual counts.
     if (!isOpen || !getFilteredCount) return null;
     const counts: Record<number, number> = {};
     for (const intensity of availableIntensities) {
-      counts[intensity] = getFilteredCount(BrowseFilterType.MAX_TURN_INTENSITY, intensity);
+      counts[intensity] = getFilteredCount(
+        BrowseFilterType.MAX_TURN_INTENSITY,
+        intensity
+      );
     }
     return counts;
   });
@@ -65,7 +79,12 @@ Shows available turn-intensity ceilings with contextual counts.
   $effect(() => {
     if (!isOpen) return;
     document.addEventListener("pointerdown", handlePointerDownOutside, true);
-    return () => document.removeEventListener("pointerdown", handlePointerDownOutside, true);
+    return () =>
+      document.removeEventListener(
+        "pointerdown",
+        handlePointerDownOutside,
+        true
+      );
   });
 </script>
 
@@ -78,13 +97,14 @@ Shows available turn-intensity ceilings with contextual counts.
       chipColor="var(--max-turn-intensity-chip-color)"
       mode="dropdown"
       expanded={isOpen}
+      ondismiss={() => (isOpen = false)}
       {disabled}
       onclick={handleToggle}
       ghostKind="browse-filter"
     >
       {#snippet children()}
         <ChipPopoverOption
-          label={t('browse_all_turn_intensities')}
+          label={t("browse_all_turn_intensities")}
           selected={activeIntensity === null}
           ghostKind="filter-option"
           onclick={() => handleSelect(null)}
