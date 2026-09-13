@@ -5,7 +5,7 @@
 
 <Seo
   title="Privacy Policy | Flow Arts Composer"
-  description="Privacy Policy for The Kinetic Alphabet (TKA) application."
+  description="Privacy Policy for the Flow Arts Composer application."
   canonical="https://tkaflowarts.com/privacy"
 />
 

@@ -27,7 +27,7 @@
   <title>Support · The Kinetic Alphabet</title>
   <meta
     name="description"
-    content="The Kinetic Alphabet is a continuously growing project with 4 years of development behind it. Donations help make this work possible."
+    content="Flow Arts Composer is a continuously growing project with 4 years of development behind it. Donations help make this work possible."
   />
   <meta name="robots" content="noindex" />
 </svelte:head>

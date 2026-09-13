@@ -184,7 +184,7 @@ export const WORKSPACE_BUTTON_TUTORIAL: Record<
   share: {
     label: "Share",
     description:
-      "Share a card, send the sequence in TKA, copy a link, or download the card.",
+      "Share a card, send the sequence in Flow Arts Composer, copy a link, or download the card.",
     colorClass: "info",
   },
   save: {

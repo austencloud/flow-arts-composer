@@ -533,7 +533,7 @@
   });
 
   /**
-   * Send in TKA opens the inbox drawer, which lives outside the native modal
+   * Send in Flow Arts Composer opens the inbox drawer, which lives outside the native modal
    * top layer this sheet sits in. Opened while the sheet is still up, the
    * drawer is painted beneath the sheet and made inert by it, so the sheet
    * closes first and the handoff runs from onClosed, once the dialog has left
@@ -691,7 +691,7 @@
     if (next === "video") requestVideoForPreparedFile();
   }
 
-  /** File choices are intentionally lazy, so Copy link and Send in TKA stay fast. */
+  /** File choices are intentionally lazy, so Copy link and Send in Flow Arts Composer stay fast. */
   function beginFilePreparation(
     intent: "download" | "share" = "download"
   ): void {
@@ -1307,8 +1307,8 @@
                   onclick={() => handOffAfterClose(() => onSendInTka?.())}
                 >
                   <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                  <span>Send in TKA</span>
-                  <small>Attach this sequence to a TKA message</small>
+                  <span>Send in Flow Arts Composer</span>
+                  <small>Attach this sequence to a message</small>
                 </button>
               {/if}
               <button

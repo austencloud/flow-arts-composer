@@ -185,7 +185,7 @@ describe("SequenceViewerShell host contract", () => {
     );
     expect(shellSource).toContain("createViewerShellShareState");
     expect(shellModelSource).toContain('label: "Share Sequence…"');
-    expect(shellModelSource).toContain('label: "Send in TKA"');
+    expect(shellModelSource).toContain('label: "Send in Flow Arts Composer"');
     expect(shellModelSource).toMatch(
       /label:\s*linkCopied\s*\?\s*"Copied"\s*:\s*"Copy Link"/
     );

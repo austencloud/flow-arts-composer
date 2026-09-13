@@ -197,7 +197,7 @@
     },
   ];
 
-  const TITLE = "The History of Flow Arts Software | The Kinetic Alphabet";
+  const TITLE = "The History of Flow Arts Software | Flow Arts Composer";
   const DESCRIPTION =
     "Flow artists have been building software for over a decade: reference apps, spinning simulators, AR effects, and community platforms. Who built the tools, what they do, and where they are now.";
   const URL = "https://tkaflowarts.com/roots/software";

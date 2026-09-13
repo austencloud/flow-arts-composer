@@ -281,7 +281,7 @@
         export is driven by the viewer in the real app; this harness only simulates
         its progress states.
         {#if tkaHandoffCount}
-          Send in TKA selected {tkaHandoffCount} time{tkaHandoffCount === 1
+          Send in Flow Arts Composer selected {tkaHandoffCount} time{tkaHandoffCount === 1
             ? ""
             : "s"}.
         {/if}
