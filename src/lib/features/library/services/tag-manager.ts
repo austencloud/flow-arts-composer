@@ -27,7 +27,10 @@ import { toast } from "$lib/shared/toast/state/toast-state.svelte";
 import { isPermissionDeniedError } from "$lib/shared/auth/utils/is-permission-denied-error";
 import type { LibraryTag, CreateTagOptions } from "../domain/models/tag";
 import { createTag } from "../domain/models/tag";
-import { getUserTagsPath, getUserTagPath } from "$lib/shared/library/data/firestore-paths";
+import {
+  getUserTagsPath,
+  getUserTagPath,
+} from "$lib/shared/library/data/firestore-paths";
 
 /**
  * Error class for tag operations
@@ -73,14 +76,28 @@ function mapDocToTag(docData: DocumentData, id: string): LibraryTag {
   };
 }
 
-
 export async function createUserTag(
   name: string,
-  options: CreateTagOptions = {}
+  options: CreateTagOptions = {},
+  /**
+   * The account this tag belongs to. A save's tag creation runs after the
+   * sequence write and awaits Firestore itself, so `getAuthenticatedUserId()`
+   * below can resolve a DIFFERENT account than the one that made the save —
+   * a guest whose sign-in collided would otherwise seed tags into the existing
+   * account before consenting to any import. Callers that know the owner pass
+   * it and the write is refused rather than re-aimed.
+   */
+  expectedOwnerId?: string
 ): Promise<LibraryTag> {
   try {
     const firestore = await getFirestoreInstance();
     const userId = getAuthenticatedUserId();
+    if (expectedOwnerId && expectedOwnerId !== userId) {
+      throw new TagError(
+        "The signed-in account changed before this tag could be attributed.",
+        "UNAUTHORIZED"
+      );
+    }
     const normalizedName = normalizeTagName(name);
 
     // Check for duplicate
@@ -215,7 +232,6 @@ export async function deleteTag(tagId: string): Promise<void> {
   }
 }
 
-
 export function normalizeTagName(name: string): string {
   return name.trim().toLowerCase();
 }
@@ -246,7 +262,6 @@ export async function findTagByName(name: string): Promise<LibraryTag | null> {
     return null;
   }
 }
-
 
 export async function incrementUseCount(tagId: string): Promise<void> {
   try {
@@ -280,8 +295,9 @@ export async function decrementUseCount(tagId: string): Promise<void> {
   }
 }
 
-
-export function subscribeToTags(callback: (tags: LibraryTag[]) => void): () => void {
+export function subscribeToTags(
+  callback: (tags: LibraryTag[]) => void
+): () => void {
   const userId = getAuthenticatedUserId();
   let unsubscribe: Unsubscribe | null = null;
 

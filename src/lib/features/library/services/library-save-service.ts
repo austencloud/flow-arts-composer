@@ -44,6 +44,7 @@ import { computeHash } from "$lib/shared/library/services/sequence-content-hashe
 import {
   getOwnedSequenceIdSet,
   recordSavedSequenceId,
+  recordUnownedSequenceId,
 } from "$lib/shared/library/services/saved-sequence-ledger";
 import { clearSequenceDeletionIntent } from "$lib/shared/library/services/sequence-persistence-coordinator";
 import { reportPostHogLifecycleEvent } from "$lib/shared/analytics/services/posthog-lifecycle-reporter";
@@ -293,7 +294,17 @@ export class LibrarySaveService {
     // account's ledger; recording the save against a different one (a sign-in
     // that landed during the Dexie write) would leave the row owned by nobody
     // the cap ever consulted, and invisible to the account that made it.
-    recordSavedSequenceId(saverUid, sequenceId);
+    //
+    // With NO identity, recordSavedSequenceId() no-ops — which used to leave
+    // the row owned by nobody at all: the guest library read and the background
+    // retry both filter by ledger, so it was durable in Dexie and reachable by
+    // nothing. Park it instead; the next anonymous identity this browser
+    // provisions adopts it (guest-identity), and a full account never does.
+    if (saverUid) {
+      recordSavedSequenceId(saverUid, sequenceId);
+    } else {
+      recordUnownedSequenceId(sequenceId);
+    }
 
     // Now that the local write has landed (persisted === true past the throw
     // above), it's honest to tell a public-visibility save it was kept private.
@@ -305,7 +316,7 @@ export class LibrarySaveService {
 
     // Step 2: Create any new tags
     emitProgress(2);
-    await this.createNewTags(tags);
+    await this.createNewTags(tags, saverUid);
 
     const syncMetadata = {
       name,
@@ -366,15 +377,18 @@ export class LibrarySaveService {
 
     // Fire-and-forget: decompose the sequence into hand paths and solo props
     // so they're independently queryable in the user's artifact repositories.
-    const currentUserId = authState.effectiveUserId;
+    // The SNAPSHOT uid, not a fresh read. This fires after the local write and
+    // runs four Firestore writes of its own; re-reading live auth here is the
+    // same mistake as everywhere else in this chain, and it decides whose
+    // subtree the artifacts land in.
     if (
       this.artifactExtractor &&
-      currentUserId &&
+      saverUid &&
       sequenceToSave.leftSoloProp &&
       sequenceToSave.rightSoloProp
     ) {
       this.artifactExtractor
-        .extract(sequenceToSave, currentUserId)
+        .extract(sequenceToSave, saverUid)
         .catch((err) =>
           console.error("Artifact extraction failed (non-blocking):", err)
         );
@@ -607,8 +621,16 @@ export class LibrarySaveService {
   /**
    * Create any new tags that don't exist in the system
    */
-  private async createNewTags(tags: string[]): Promise<void> {
+  private async createNewTags(
+    tags: string[],
+    ownerUid: string | null
+  ): Promise<void> {
     if (tags.length === 0) {
+      return;
+    }
+    // No owner, no cloud tag. Tags live under users/{uid}; writing them with no
+    // established owner would either fail or attach to whoever signs in next.
+    if (!ownerUid) {
       return;
     }
 
@@ -621,7 +643,7 @@ export class LibrarySaveService {
           // Create new tag with random color
           const randomColor =
             TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
-          await createUserTag(normalized, { color: randomColor });
+          await createUserTag(normalized, { color: randomColor }, ownerUid);
         }
       }
     } catch (error) {

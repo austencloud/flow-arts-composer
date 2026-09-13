@@ -1,5 +1,6 @@
 import { signInAnonymously } from "firebase/auth";
 import { getAuthInstance } from "$lib/shared/auth/firebase";
+import { adoptUnownedSequenceIds } from "$lib/shared/library/services/saved-sequence-ledger";
 import {
   captureExceptionWhenReady,
   captureWhenReady,
@@ -38,7 +39,27 @@ export async function ensureGuestIdentity(
   }
   if (inFlight) return inFlight;
   inFlight = signInAnonymously(auth)
-    .then(() => {
+    .then((credential) => {
+      // A save can complete before any identity exists (this function swallows
+      // its own failures, and callers must not lose the user's work over it).
+      // Those rows are parked as unowned; this is the one moment they can be
+      // attributed — to a fresh ANONYMOUS identity, i.e. the same person
+      // continuing the same guest session. A full-account sign-in never
+      // reaches here, so it can never adopt work it did not make.
+      try {
+        const adopted = adoptUnownedSequenceIds(credential.user.uid);
+        if (adopted.length > 0) {
+          captureWhenReady("guest_identity_adopted_unowned_saves", {
+            source,
+            count: adopted.length,
+          });
+        }
+      } catch (adoptionError) {
+        console.warn(
+          "[guest-identity] Could not adopt unowned saves:",
+          adoptionError
+        );
+      }
       if (!createdRecorded) {
         createdRecorded = true;
         captureWhenReady("guest_identity_created", { source });

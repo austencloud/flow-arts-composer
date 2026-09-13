@@ -44,6 +44,9 @@ vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
   getOwnedSequenceIdSet: () => new Set(["deleting-sequence", "live-sequence"]),
   recordSavedSequenceId: vi.fn(),
   removeSavedSequenceIds: vi.fn(),
+  recordUnownedSequenceId: vi.fn(),
+  getUnownedSequenceIds: () => [],
+  adoptUnownedSequenceIds: () => [],
 }));
 vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
   toast: { info: vi.fn() },

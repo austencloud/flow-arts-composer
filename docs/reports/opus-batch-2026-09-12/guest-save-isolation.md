@@ -5,9 +5,10 @@
 its assigned `claude/*` branch; `codex/*` was not available)
 **Session:** `session_01XKgrpvpxBttgxeaNzPKsJC`
 **Base SHA:** `0945738f` (merge of `origin/main` `c4be1619` into the task branch)
-**Final SHA:** `06d144cc` (implementation `f48d9877`, identity fence
+**Final SHA:** see branch head (implementation `f48d9877`, identity fence
 `928b77ce`, offer-binding + visibility `58012fe5`, collision-result binding and
-unowned/thumbnail fences `06d144cc`)
+unowned/thumbnail fences `06d144cc`, save side-effect chain + unowned adoption
+after that)
 **Source audit:** `docs/superpowers/reviews/2026-09-12-guest-save-continuity-audit.md`
 (reviewed at `7fabc7d9`)
 
@@ -130,8 +131,48 @@ then.
   `undefined` as the expected owner made the fence inert, and a uid arriving
   later — a late guest provision, a sign-in — would simply be adopted as the
   owner of work that account never made. The Dexie row is already durable, so
-  the sync is deferred instead: the row stays `pending` and belongs to the
-  ownership-scoped retry once an owner exists.
+  the sync is not attempted.
+
+### The whole side-effect chain, not just the sequence write
+
+A save fans out well past the primary document, and **every** downstream write
+resolved its own uid from live auth after its own awaits. Each of those uids is
+a Firestore **path**, so an unfenced one does not merely mislabel a document —
+it puts it in someone else's subtree. Audited end to end:
+
+| Step                                                                           | Before                                                                               | Now                                                                               |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| Dexie row                                                                      | no auth                                                                              | unchanged                                                                         |
+| ledger record                                                                  | snapshot uid                                                                         | snapshot uid; parks when unowned (below)                                          |
+| `createNewTags` → `createUserTag`                                              | re-read live auth after `await getFirestoreInstance()`                               | takes the saving uid, fenced after the uid resolve; skipped entirely when unowned |
+| initial cloud sync                                                             | fenced                                                                               | fenced; not attempted when unowned                                                |
+| thumbnail `attachThumbnail`                                                    | re-read live auth                                                                    | fenced                                                                            |
+| artifact extraction                                                            | `authState.effectiveUserId` **re-read**, not the snapshot                            | snapshot uid; skipped when unowned                                                |
+| 4 artifact writes (`HandPathRepository.save` ×2, `SoloPropRepository.save` ×2) | `await getFirestoreInstance()` then `requireAuth()` — the uid is the collection path | `expectedOwnerId` threaded through the extractor, fenced after the uid resolve    |
+| `warmSequenceCells`, analytics, library refresh, nudge                         | no per-account write                                                                 | unchanged                                                                         |
+
+### An unowned save is parked, not orphaned — and only a guest may claim it
+
+**I reported this wrongly before.** I wrote that an unowned row "belongs to the
+ownership-scoped retry once an owner exists". It did not:
+`recordSavedSequenceId(null, …)` no-ops, and both the guest library read and the
+background retry filter by ledger — so the row was durable in Dexie and
+reachable by **nothing**. Invisible and unsyncable, not adopted.
+
+The fix is an explicit unowned state rather than a silent one:
+
+- `saved-sequence-ledger` gains `recordUnownedSequenceId` /
+  `getUnownedSequenceIds` / `adoptUnownedSequenceIds`. A save with no identity
+  parks its id there instead of dropping it.
+- `ensureGuestIdentity` adopts the parked ids **when it provisions a new
+  anonymous identity** — the same person continuing the same guest session.
+  After adoption the row satisfies the same `getOwnedSequenceIdSet` predicate
+  the library read and the retry use, so it is visible and syncable.
+- **A full account never adopts.** The boundary is structural: adoption lives
+  inside the anonymous-provisioning branch, which a full-account sign-in never
+  enters. Auto-adopting across an account boundary is the exact class of bug
+  this work removes, so it is not done "helpfully" for a signed-in user.
+- Adoption clears the park, so two identities cannot both claim the same row.
 - A write with no `expectedOwnerId` is unaffected, so ordinary saves that
   resolve their own identity are untouched.
 
@@ -187,7 +228,9 @@ every draft behind it and discarding the count of those already written.
   `UpgradeResult` now carries `destinationUid`, read from the auth result the
   instant the collision sign-in completed, and all nine offer call sites pass
   it. `promptAnonymousImport` is synchronous again: generation, destination,
-  drafts and open land in one step.
+  drafts and open land in one step. `importDrafts`' destination is **required**,
+  not optional — an import that cannot name its account cannot be fenced, and
+  optionality would let a caller silently opt out.
 - **Confirm fails closed.** If the destination was never bound, or the auth
   read fails at confirm, or the current account no longer matches the one the
   offer was about, nothing is written: the drafts are retained, the offer
@@ -244,12 +287,12 @@ pnpm exec vitest run --config tests/config/vitest.config.ts \
   tests/unit/library/write-identity-fence.test.ts \
   tests/unit/auth/anonymous-import-continuity.test.ts \
   tests/unit/auth/guest-signin-guard.test.ts
-→ Test Files 5 passed (5) · Tests 62 passed (62)
+→ Test Files 9 passed (9) · Tests 88 passed (88)
 
 Related-suite sweep (tests/unit/library, tests/unit/auth, the save-service
 persistence suite, the public-by-default contract, browse-engine identity
 switch, share-intake):
-→ Test Files 85 passed (85) · Tests 603 passed (603)
+→ Test Files 89 passed (89) · Tests 629 passed (629)
 
 An earlier revision of this report said 54 focused tests; the real number at
 that commit was 52. Counts here are copied from run output, not recalled.
@@ -272,8 +315,8 @@ BEFORE (pre-fix baseline, same command)
        Tests  2 failed | 16004 passed | 106 skipped | 1 todo (16113)
 
 AFTER
-  Test Files  1977 passed | 5 skipped (1982)
-       Tests  16037 passed | 106 skipped | 1 todo (16144)          exit 0
+  Test Files  1981 passed | 5 skipped (1986)
+       Tests  16063 passed | 106 skipped | 1 todo (16170)          exit 0
 ```
 
 Zero failures. The file count rises by four and the test count by sixteen

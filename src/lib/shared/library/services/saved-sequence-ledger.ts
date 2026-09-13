@@ -15,6 +15,74 @@
 const PREFIX = "tka-saved-seq-ids:";
 
 /**
+ * Saves made while NO identity existed at all.
+ *
+ * `ensureGuestIdentity()` swallows its failures (anon provider disabled,
+ * offline), so a save can legitimately complete with `effectiveUserId === null`.
+ * `recordSavedSequenceId(null, …)` no-ops, which used to leave the row owned by
+ * nobody: the guest library read filters by ledger and the background retry
+ * filters by ledger, so the row was invisible AND unsyncable — durable in Dexie
+ * and reachable by nothing.
+ *
+ * These ids are parked here instead, and adopted by the NEXT ANONYMOUS identity
+ * this browser provisions (see `adoptUnownedSequenceIds`, called only from
+ * guest-identity). That is the same person continuing the same guest session.
+ * A full account signing in must never adopt them — it did not make them, and
+ * auto-adoption across an account boundary is the whole class of bug this work
+ * exists to remove.
+ */
+const UNOWNED_KEY = "tka-unowned-seq-ids";
+
+/** Park a save that completed with no identity to attribute it to. */
+export function recordUnownedSequenceId(id: string): void {
+  if (!id || typeof window === "undefined") return;
+  try {
+    const ids = new Set(getUnownedSequenceIds());
+    ids.add(id);
+    localStorage.setItem(UNOWNED_KEY, JSON.stringify([...ids]));
+  } catch {
+    // Private browsing / quota. The Dexie row still exists; it simply stays
+    // unattributed, which is the safe direction.
+  }
+}
+
+export function getUnownedSequenceIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(UNOWNED_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.filter((x): x is string => typeof x === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Hand every parked id to `uid` and clear the park.
+ *
+ * ONLY call this for a freshly provisioned ANONYMOUS identity. Calling it for a
+ * full account would attribute work to an account that did not make it.
+ * Returns the ids adopted, for logging and tests.
+ */
+export function adoptUnownedSequenceIds(
+  uid: string | null | undefined
+): string[] {
+  if (!uid || typeof window === "undefined") return [];
+  const orphans = getUnownedSequenceIds();
+  if (orphans.length === 0) return [];
+  for (const id of orphans) recordSavedSequenceId(uid, id);
+  try {
+    localStorage.removeItem(UNOWNED_KEY);
+  } catch {
+    // Re-adopting the same ids later is idempotent, so a failed clear is safe.
+  }
+  return orphans;
+}
+
+/**
  * The ids `uid` owns locally, as a Set for membership tests.
  *
  * Every reader that asks "is this local Dexie row MINE?" needs a set, not the

@@ -79,6 +79,9 @@ vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
     new Set(ledger.get(uid ?? "") ?? []),
   recordSavedSequenceId: vi.fn(),
   removeSavedSequenceIds: vi.fn(),
+  recordUnownedSequenceId: vi.fn(),
+  getUnownedSequenceIds: () => [],
+  adoptUnownedSequenceIds: () => [],
 }));
 vi.mock("$lib/shared/auth/state/auth-state.svelte", () => ({
   authState: authStateMock,

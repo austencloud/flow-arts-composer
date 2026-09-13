@@ -410,7 +410,12 @@ export interface ImportDraftsResult {
  */
 export async function importDrafts(
   drafts: AnonymousDraft[],
-  destinationUid?: string
+  /**
+   * REQUIRED. An import that cannot name its destination account cannot be
+   * fenced, and an unfenced import is the defect this parameter exists to
+   * prevent — optionality here would let a caller silently opt out of it.
+   */
+  destinationUid: string
 ): Promise<ImportDraftsResult> {
   const repo = getLibraryRepository();
   let imported = 0;

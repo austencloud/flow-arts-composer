@@ -61,6 +61,9 @@ vi.mock("$lib/shared/library/services/saved-sequence-ledger", () => ({
   getOwnedSequenceIdSet: vi.fn().mockReturnValue(new Set()),
   recordSavedSequenceId: vi.fn(),
   removeSavedSequenceIds: vi.fn(),
+  recordUnownedSequenceId: vi.fn(),
+  getUnownedSequenceIds: () => [],
+  adoptUnownedSequenceIds: () => [],
 }));
 
 const { importDrafts } =
