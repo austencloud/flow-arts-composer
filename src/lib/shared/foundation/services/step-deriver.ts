@@ -73,7 +73,16 @@ function derivePrefloatRotation(
   return undefined;
 }
 
-function rehydrateMotion(
+/**
+ * Canonical solo-step → motion rehydration. Exported because Fuse composes its
+ * two hands in their own per-hand grid frames (a 45° adjustment can leave one
+ * source on Box while its partner stays on Diamond) and so cannot go through
+ * `deriveSteps`, which resolves one frame per step. Everything else about the
+ * motion — prefloat provenance, handPath, skew, plane, arrow seed — must stay
+ * identical to the two-hand path, so the fuser reuses this instead of building
+ * its own motions.
+ */
+export function rehydrateMotion(
   step: SoloPropStepData,
   color: HandSide,
   gridMode: GridMode,
