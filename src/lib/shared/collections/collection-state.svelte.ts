@@ -2,6 +2,29 @@ import type { CollectionEntry } from "./collection-entry";
 import type { FirebaseCollectionRepository } from "./firebase-collection-repository";
 import type { LocalCollectionRepository } from "./local-collection-repository";
 
+/**
+ * What `prepareUpdate` added or changed, relative to the entry it was handed.
+ *
+ * A rebase needs the lifecycle's contribution separately from the caller's
+ * patch: every other field has to come from the entry's current value, not from
+ * the snapshot the update started with. Fields the lifecycle deletes outright
+ * are not tracked — enrichment adds and replaces, it does not remove.
+ */
+function contributedFields<T extends CollectionEntry>(
+  input: T,
+  prepared: T
+): Partial<T> {
+  if (input === prepared) return {};
+  const contribution: Record<string, unknown> = {};
+  const before = input as unknown as Record<string, unknown>;
+  for (const [key, value] of Object.entries(
+    prepared as unknown as Record<string, unknown>
+  )) {
+    if (before[key] !== value) contribution[key] = value;
+  }
+  return contribution as Partial<T>;
+}
+
 export interface CollectionEntryLifecycle<T extends CollectionEntry> {
   /** Enrich a newly allocated entry before either reactive state or persistence sees it. */
   prepareAdd?(entry: T): Promise<T>;
@@ -39,6 +62,12 @@ export class CollectionState<T extends CollectionEntry> {
   // Where an optimistically removed entry sat, so a failed delete can put the
   // confirmed entry back in its old place.
   private readonly removedBefore = new Map<string, string | undefined>();
+  // One in-flight update preparation per entry id (see prepareExclusively).
+  private readonly preparing = new Map<string, Promise<void>>();
+  // Bumped by every identity change (init, teardown). Everything above is
+  // scoped to one signed-in user, so an operation started before the change may
+  // not touch any of it afterwards — see `isCurrent`.
+  private generation = 0;
 
   constructor(
     private readonly repo: FirebaseCollectionRepository<T>,
@@ -73,19 +102,26 @@ export class CollectionState<T extends CollectionEntry> {
    * user's data never becomes this singleton's write target.
    */
   async init(userId: string): Promise<void> {
+    const generation = ++this.generation;
     this.userId = userId;
     this.startedFor = userId;
     this.ownedLoading = true;
     try {
       const firebaseEntries = await this.repo.load(userId);
+      // A slower load for the user we just switched away from must not paint
+      // their saved art into whoever is signed in now.
+      if (!this.isCurrent(generation)) return;
       this.ownedCollection = firebaseEntries;
       // Everything just loaded is by definition what the repository holds, and
-      // is the baseline a failed write falls back to.
+      // is the baseline a failed write falls back to. Bookkeeping from the
+      // previous identity goes with it.
       this.confirmed.clear();
+      this.inFlight.clear();
+      this.removedBefore.clear();
       for (const entry of firebaseEntries) this.confirmed.set(entry.id, entry);
-      await this.migrateFromLocalStorage(userId, firebaseEntries);
+      await this.migrateFromLocalStorage(userId, firebaseEntries, generation);
     } finally {
-      this.ownedLoading = false;
+      if (this.isCurrent(generation)) this.ownedLoading = false;
     }
   }
 
@@ -159,6 +195,7 @@ export class CollectionState<T extends CollectionEntry> {
     this.userId = null;
     this.localLoaded = false;
     this.startedFor = null;
+    this.generation++;
     this.confirmed.clear();
     this.inFlight.clear();
     this.removedBefore.clear();
@@ -169,6 +206,38 @@ export class CollectionState<T extends CollectionEntry> {
     if (this.isReadOnlyPreview) {
       throw new Error("Saved Art is read-only while previewing another user");
     }
+  }
+
+  /**
+   * Run one entry's update preparation with nothing else preparing that entry,
+   * so overlapping updates each start from the value the previous one settled
+   * on. A failed preparation releases the next rather than stalling the queue.
+   */
+  private prepareExclusively<R>(id: string, run: () => Promise<R>): Promise<R> {
+    const queued = this.preparing.get(id);
+    const task = queued ? queued.then(run, run) : run();
+    const quiet = task.then(
+      () => undefined,
+      () => undefined
+    );
+    this.preparing.set(id, quiet);
+    void quiet.then(() => {
+      if (this.preparing.get(id) === quiet) this.preparing.delete(id);
+    });
+    return task;
+  }
+
+  /**
+   * Is the identity this operation started under still the one on screen?
+   *
+   * Every await here outlives the signed-in user: a held write, a slow load, or
+   * an async lifecycle step can resolve after a sign-out or a uid swap. The
+   * list, the confirmed baseline and the in-flight bookkeeping all belong to one
+   * user, so an operation from a previous identity must touch none of them —
+   * otherwise one person's saved art lands in another person's gallery.
+   */
+  private isCurrent(generation: number): boolean {
+    return this.generation === generation;
   }
 
   /**
@@ -203,17 +272,23 @@ export class CollectionState<T extends CollectionEntry> {
     write: () => Promise<void>,
     onPersisted: () => void
   ): Promise<void> {
+    const generation = this.generation;
     this.inFlight.set(id, (this.inFlight.get(id) ?? 0) + 1);
     try {
       await write();
-      onPersisted();
+      // A write that outlived its session still succeeded or failed for its own
+      // user; it just has no claim on the state of whoever is here now. The
+      // error still propagates to the caller either way.
+      if (this.isCurrent(generation)) onPersisted();
     } finally {
-      const remaining = (this.inFlight.get(id) ?? 1) - 1;
-      if (remaining > 0) {
-        this.inFlight.set(id, remaining);
-      } else {
-        this.inFlight.delete(id);
-        this.settleEntry(id);
+      if (this.isCurrent(generation)) {
+        const remaining = (this.inFlight.get(id) ?? 1) - 1;
+        if (remaining > 0) {
+          this.inFlight.set(id, remaining);
+        } else {
+          this.inFlight.delete(id);
+          this.settleEntry(id);
+        }
       }
     }
   }
@@ -248,6 +323,7 @@ export class CollectionState<T extends CollectionEntry> {
   async add(entry: Omit<T, "id" | "createdAt">): Promise<T> {
     this.assertWritable();
     this.ensureLocalLoaded();
+    const generation = this.generation;
     let full = {
       ...entry,
       id: crypto.randomUUID(),
@@ -255,6 +331,12 @@ export class CollectionState<T extends CollectionEntry> {
     } as T;
     if (this.lifecycle?.prepareAdd) {
       full = await this.lifecycle.prepareAdd(full);
+      // Signed out (or swapped user) while the entry was being prepared: it
+      // belongs to a session that is gone, and saving it now would file it
+      // under whoever is here instead.
+      if (!this.isCurrent(generation)) {
+        throw new Error("Saved Art session ended before the save completed");
+      }
     }
     this.ownedCollection.unshift(full);
 
@@ -336,19 +418,51 @@ export class CollectionState<T extends CollectionEntry> {
     const idx = this.ownedCollection.findIndex((entry) => entry.id === id);
     if (idx === -1) return null;
 
-    const previous = this.ownedCollection[idx]!;
-    let next = {
-      ...previous,
-      ...patch,
-      id,
-      createdAt: previous.createdAt,
-    } as T;
-    if (this.lifecycle?.prepareUpdate) {
-      next = await this.lifecycle.prepareUpdate(previous, next);
-    }
-    // prepareUpdate can await, so resolve the slot again here. False means the
-    // entry was deleted while it ran: drop the edit rather than write it back.
-    if (!this.showEntry(next)) return null;
+    const generation = this.generation;
+    // One preparation at a time per entry. prepareUpdate digests the entry's
+    // content to mint a revision, so two overlapping preparations would each
+    // digest a version that never existed on its own; serialized, the second
+    // one starts from the entry the first left behind.
+    const next = await this.prepareExclusively(id, async () => {
+      const slot = this.ownedCollection.findIndex((entry) => entry.id === id);
+      if (slot === -1) return null;
+      const previous = this.ownedCollection[slot]!;
+      const patched = {
+        ...previous,
+        ...patch,
+        id,
+        createdAt: previous.createdAt,
+      } as T;
+
+      if (!this.lifecycle?.prepareUpdate) {
+        return this.showEntry(patched) ? patched : null;
+      }
+
+      const prepared = await this.lifecycle.prepareUpdate(previous, patched);
+      if (!this.isCurrent(generation)) return null;
+
+      // A rename does not go through preparation, so it can still land in this
+      // window — and it is a real edit, not a conflict. Rebase onto the entry
+      // as it stands now (the caller's patch and whatever prepareUpdate
+      // contributed, over current values) instead of writing back the whole
+      // snapshot this call started from, which would silently undo it.
+      const current = this.ownedCollection.find((entry) => entry.id === id);
+      if (!current) return null;
+      const rebased = {
+        ...current,
+        ...patch,
+        ...contributedFields(patched, prepared),
+        id,
+        createdAt: current.createdAt,
+      } as T;
+      // Shown inside the exclusive section so the next preparation for this
+      // entry starts from the value this one settled on.
+      return this.showEntry(rebased) ? rebased : null;
+    });
+
+    // Null means the entry was deleted, or the session ended, while the
+    // lifecycle ran: drop the edit rather than write it back.
+    if (!next) return null;
 
     const userId = this.userId;
     if (userId) {
@@ -408,7 +522,8 @@ export class CollectionState<T extends CollectionEntry> {
 
   private async migrateFromLocalStorage(
     userId: string,
-    existing: T[]
+    existing: T[],
+    generation: number
   ): Promise<void> {
     const localEntries = this.localRepo.load();
     if (localEntries.length === 0) return;
@@ -418,6 +533,10 @@ export class CollectionState<T extends CollectionEntry> {
 
     for (const entry of toMigrate) {
       await this.repo.save(userId, entry);
+      // Stop at the identity change rather than pushing guest entries into the
+      // next user's gallery; the local copy stays put so the migration can
+      // finish the next time this user signs in.
+      if (!this.isCurrent(generation)) return;
       this.ownedCollection.push(entry);
       this.confirmed.set(entry.id, entry);
     }
