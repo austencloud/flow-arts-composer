@@ -5,8 +5,8 @@
 its assigned `claude/*` branch; `codex/*` was not available)
 **Session:** `session_01XKgrpvpxBttgxeaNzPKsJC`
 **Base SHA:** `0945738f` (merge of `origin/main` `c4be1619` into the task branch)
-**Final SHA:** `928b77ce` (implementation `f48d9877`, identity-fencing
-follow-up `928b77ce`, plus this report update)
+**Final SHA:** see the branch head (implementation `f48d9877`, identity fence
+`928b77ce`, offer-binding and visibility corrections after it)
 **Source audit:** `docs/superpowers/reviews/2026-09-12-guest-save-continuity-audit.md`
 (reviewed at `7fabc7d9`)
 
@@ -71,14 +71,31 @@ name, unprompted.
   the account changes between rows.
 - Every write carries `expectedOwnerId` (see the fence below).
 
-**Reverted during this session:** I first changed the `?? "public"` visibility
-fallback to `?? "private"`. `tests/unit/public-collection-live-choreo-contract.test.ts`
-pins a deliberate **public-by-default save contract** and names
-`library-sync-retry.ts` in its file list. That is a product decision, not an
-isolation defect, so the fallback is back to `public` and the docblock says why.
-Ownership scoping decides _whose_ rows are written, not what visibility they
-get. The full-suite run is what caught this — it is recorded here rather than
-quietly dropped.
+**Visibility fallback — I got this wrong twice before landing it.** I first
+changed the metadata-less fallback from `?? "public"` to `?? "private"`. The
+full suite caught `tests/unit/public-collection-live-choreo-contract.test.ts`,
+whose "public-by-default save contract" names `library-sync-retry.ts` in a
+regex file list, and I reverted on that basis. That deference was misplaced:
+the regex asserts the literal **absence of the string** `?? "private"`, which
+is not the same claim as "a user's public save stays public" — and only the
+second is a product contract.
+
+Final state: the fallback is `private`, and the source-only requirement is
+replaced by behavioural tests.
+
+- `library-sync-retry.ts` is removed from that regex list, with the reason in
+  place. It is not a user save surface; it is an unattended background pass
+  that re-sends rows a user saved earlier. The other five surfaces stay pinned.
+- **Compatibility:** a save through `LibrarySaveService` has always stamped
+  `pendingSyncMetadata`, so every row a real user created since that field
+  existed carries its recorded visibility and is replayed **unchanged, public
+  included**. No expressed public intent is downgraded. Only a row that
+  recorded nothing behaves differently — those predate the field, so no user
+  ever chose, and publishing them manufactures an intent that cannot be
+  evidenced.
+- Pinned by three live tests in `library-sync-retry-ownership.test.ts`:
+  recorded public replays public, recorded private replays private, and a row
+  with no recorded intent is not published.
 
 ### Identity fence at the write boundary (review follow-up)
 
@@ -93,7 +110,12 @@ then.
   await, against the uid actually about to be written — a mismatch throws
   `LibraryError("UNAUTHORIZED")`.
 - The retry passes the uid it selected rows for. The collision import passes the
-  uid signed in when the user confirmed.
+  uid **the offer was made about** (see below). The initial cloud sync in
+  `LibrarySaveService` passes the uid that made the save: that write is
+  fire-and-forget and the thumbnail follow-up slower still, so both can land
+  after the guest has signed in — and if that sign-in is a collision, an
+  unfenced background sync would deposit their work into the existing account
+  _before_ the consent prompt, making the prompt moot.
 - A write with no `expectedOwnerId` is unaffected, so ordinary saves that
   resolve their own identity are untouched.
 
@@ -136,6 +158,19 @@ every draft behind it and discarding the count of those already written.
   start bumps it. A run that settles after a dismissal or after a newer offer
   has replaced it returns without touching state, so a slow import cannot
   resurrect stale drafts or clobber newer ones.
+- **The destination is bound at the OFFER, not the answer** (second review
+  follow-up — my first attempt was wrong). The collision has just signed the
+  user into a specific account, and "add these to this account?" means _that_
+  account. Reading the uid at confirm time re-pointed the question: an offer
+  made about B, answered after a switch to C, imported into C — an account the
+  user was never asked about. `promptAnonymousImport` now resolves and stores
+  the destination before it opens the dialog.
+- **Confirm fails closed.** If the destination was never bound, or the auth
+  read fails at confirm, or the current account no longer matches the one the
+  offer was about, nothing is written: the drafts are retained, the offer
+  re-opens, and the user is told. The previous version caught the auth failure
+  and proceeded with `destinationUid` undefined — an unfenced write, which is
+  precisely what this work exists to prevent.
 
 ### F1 — the guest cap counted the whole device
 
@@ -186,7 +221,12 @@ pnpm exec vitest run --config tests/config/vitest.config.ts \
   tests/unit/library/write-identity-fence.test.ts \
   tests/unit/auth/anonymous-import-continuity.test.ts \
   tests/unit/auth/guest-signin-guard.test.ts
-→ Test Files 5 passed (5) · Tests 45 passed (45)
+→ Test Files 5 passed (5) · Tests 54 passed (54)
+
+Related-suite sweep (tests/unit/library, tests/unit/auth, the save-service
+persistence suite, the public-by-default contract, browse-engine identity
+switch, share-intake):
+→ Test Files 85 passed (85) · Tests 593 passed (593)
 ```
 
 **Fails before, passes after** — the required demonstration, done by checking
@@ -207,7 +247,7 @@ BEFORE (pre-fix baseline, same command)
 
 AFTER
   Test Files  1977 passed | 5 skipped (1982)
-       Tests  16020 passed | 106 skipped | 1 todo (16127)          exit 0
+       Tests  16027 passed | 106 skipped | 1 todo (16134)          exit 0
 ```
 
 Zero failures. The file count rises by four and the test count by sixteen

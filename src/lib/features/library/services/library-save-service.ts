@@ -313,6 +313,15 @@ export class LibrarySaveService {
       visibility,
       tags,
       notes: notes ?? "",
+      // The account that made this save, fenced at the repository's write
+      // boundary. The cloud sync below is fire-and-forget and the thumbnail
+      // follow-up is slower still, so both can land well after the user has
+      // signed in — and a guest signing into an EXISTING account produces a
+      // collision, where the whole point is that their work moves only if they
+      // consent to the import. Without this fence the background sync would
+      // quietly write the guest's sequence into that account first, making the
+      // consent prompt moot.
+      expectedOwnerId: saverUid ?? undefined,
     };
 
     // Step 3: Background Firestore sync (non-blocking)
@@ -454,6 +463,7 @@ export class LibrarySaveService {
       tags: string[];
       notes: string;
       thumbnailUrl?: string;
+      expectedOwnerId?: string;
     }
   ): Promise<boolean> {
     try {

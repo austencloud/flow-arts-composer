@@ -197,17 +197,62 @@ describe("retryPendingSyncs — account isolation", () => {
     });
   });
 
-  it("leaves the public-by-default contract alone for a row with no recorded intent", async () => {
+  /**
+   * Behavioural replacement for the source-text requirement that
+   * tests/unit/public-collection-live-choreo-contract.test.ts used to place on
+   * this file. That regex asserted the literal absence of `?? "private"`, which
+   * is not the same claim as "a user's public save stays public" — and it is
+   * the second claim that is the actual product contract.
+   *
+   * Compatibility: a save made through LibrarySaveService ALWAYS stamps
+   * pendingSyncMetadata, so every row a real user created since that field
+   * existed carries its recorded visibility and is replayed unchanged, public
+   * included. Only a row that recorded nothing behaves differently, and for
+   * those there is no user intent to preserve — publishing them would be
+   * manufacturing one.
+   */
+  it("replays a recorded PUBLIC intent as public", async () => {
+    rows.push(
+      makeRow({
+        id: "owned-by-b",
+        pendingSyncMetadata: { visibility: "public", notes: "" },
+      })
+    );
+    ledger.set("account-B", ["owned-by-b"]);
+
+    await retryPendingSyncs();
+
+    expect(saveSequenceWithMetadataMock.mock.calls[0]?.[1]?.visibility).toBe(
+      "public"
+    );
+  });
+
+  it("replays a recorded PRIVATE intent as private", async () => {
+    rows.push(
+      makeRow({
+        id: "owned-by-b",
+        pendingSyncMetadata: { visibility: "private", notes: "" },
+      })
+    );
+    ledger.set("account-B", ["owned-by-b"]);
+
+    await retryPendingSyncs();
+
+    expect(saveSequenceWithMetadataMock.mock.calls[0]?.[1]?.visibility).toBe(
+      "private"
+    );
+  });
+
+  it("does not publish a row that recorded no visibility intent at all", async () => {
     rows.push(makeRow({ id: "owned-by-b", pendingSyncMetadata: undefined }));
     ledger.set("account-B", ["owned-by-b"]);
 
     await retryPendingSyncs();
 
-    // Ownership scoping decides WHOSE rows are written, not what visibility
-    // they get. Public-by-default is a product decision pinned on this file by
-    // name in tests/unit/public-collection-live-choreo-contract.test.ts.
+    // Pre-pendingSyncMetadata legacy: nobody ever chose. An unattended
+    // background pass must not be what decides to publish it.
     expect(saveSequenceWithMetadataMock.mock.calls[0]?.[1]?.visibility).toBe(
-      "public"
+      "private"
     );
   });
 

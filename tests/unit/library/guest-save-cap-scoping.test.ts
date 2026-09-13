@@ -132,6 +132,7 @@ beforeEach(() => {
   getSavedSequenceIdsMock.mockReturnValue([]);
   (authState as any).isAuthenticated = true;
   (authState as any).isAnonymous = true;
+  (authState as any).effectiveUserId = "guest-current";
 });
 
 describe("guest save cap — scoped to the guest's own ledger", () => {
@@ -188,5 +189,60 @@ describe("guest save cap — scoped to the guest's own ledger", () => {
     await expect(
       service.saveSequence(makeSequence(), makeOptions())
     ).resolves.toMatchObject({ persisted: true, isGuest: false });
+  });
+});
+
+describe("guest save — the cloud sync is fenced to the saving account", () => {
+  /**
+   * The Dexie write is synchronous-ish; the Firestore sync is fire-and-forget
+   * and can land long after it. If the guest signs into an EXISTING account in
+   * that window the result is a COLLISION, where the entire contract is that
+   * their work moves only if they consent to the import. An unfenced background
+   * sync would write the sequence into that account first and make the consent
+   * prompt meaningless.
+   */
+  it("passes the saving account through to the repository write", async () => {
+    const repository = makeRepository();
+    const service = new LibrarySaveService(null, null, repository, null);
+
+    await service.saveSequence(makeSequence(), makeOptions());
+
+    expect(repository.saveSequenceWithMetadata).toHaveBeenCalledTimes(1);
+    expect(repository.saveSequenceWithMetadata.mock.calls[0][1]).toMatchObject({
+      expectedOwnerId: "guest-current",
+    });
+  });
+
+  it("does not follow an account switch that lands while the sync is deferred", async () => {
+    // Hold the cloud write open, switch accounts underneath it, then release.
+    let release: (() => void) | null = null;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const repository = makeRepository({
+      saveSequenceWithMetadata: vi.fn(async () => {
+        await gate;
+        return {};
+      }),
+    });
+    const service = new LibrarySaveService(null, null, repository, null);
+
+    const save = service.saveSequence(makeSequence(), makeOptions());
+    await vi.waitFor(() =>
+      expect(repository.saveSequenceWithMetadata).toHaveBeenCalled()
+    );
+
+    // The guest signs into a pre-existing account mid-flight.
+    (authState as any).isAnonymous = false;
+    (authState as any).effectiveUserId = "collided-account";
+    release!();
+    await save;
+
+    // The write still carries the uid that MADE the save, so the repository's
+    // fence refuses it rather than depositing guest work into the account the
+    // user has not yet consented to import into.
+    expect(repository.saveSequenceWithMetadata.mock.calls[0][1]).toMatchObject({
+      expectedOwnerId: "guest-current",
+    });
   });
 });

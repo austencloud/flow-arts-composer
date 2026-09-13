@@ -28,10 +28,15 @@ vi.mock("$lib/shared/toast/state/toast-state.svelte", () => ({
 }));
 /** The account the import would write into, swapped mid-flight by tests. */
 const signedInUid = { value: "account-B" as string | undefined };
+/** Simulates an auth lookup that cannot answer. */
+const authReadThrows = { value: false };
 vi.mock("$lib/shared/auth/firebase", () => ({
-  getAuthInstance: async () => ({
-    currentUser: signedInUid.value ? { uid: signedInUid.value } : null,
-  }),
+  getAuthInstance: async () => {
+    if (authReadThrows.value) throw new Error("auth unavailable");
+    return {
+      currentUser: signedInUid.value ? { uid: signedInUid.value } : null,
+    };
+  },
 }));
 vi.mock("$lib/shared/auth/services/pending-credential-link", () => ({
   stashPendingLink: vi.fn(),
@@ -84,6 +89,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   repoSaveSequenceMock.mockResolvedValue({});
   signedInUid.value = "account-B";
+  authReadThrows.value = false;
   cancelAnonymousImport();
 });
 
@@ -165,7 +171,7 @@ describe("importDrafts — every draft is attempted", () => {
 describe("confirmAnonymousImport — a failed import stays retryable", () => {
   it("keeps the drafts and re-offers them when the import fails", async () => {
     repoSaveSequenceMock.mockRejectedValue(retryable());
-    promptAnonymousImport([makeDraft("d1")]);
+    await promptAnonymousImport([makeDraft("d1")]);
 
     await confirmAnonymousImport();
 
@@ -179,14 +185,14 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
 
   it("never rejects, because ConfirmDialog neither awaits nor catches it", async () => {
     repoSaveSequenceMock.mockRejectedValue(retryable());
-    promptAnonymousImport([makeDraft("d1")]);
+    await promptAnonymousImport([makeDraft("d1")]);
 
     await expect(confirmAnonymousImport()).resolves.toBeUndefined();
   });
 
   it("retrying after the failure clears the prompt once the write succeeds", async () => {
     repoSaveSequenceMock.mockRejectedValueOnce(retryable());
-    promptAnonymousImport([makeDraft("d1")]);
+    await promptAnonymousImport([makeDraft("d1")]);
 
     await confirmAnonymousImport();
     expect(anonymousImportPrompt.count).toBe(1);
@@ -202,7 +208,7 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
     repoSaveSequenceMock
       .mockResolvedValueOnce({})
       .mockRejectedValueOnce(retryable());
-    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+    await promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
 
     await confirmAnonymousImport();
 
@@ -214,7 +220,7 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
   });
 
   it("clears the offer on a fully successful import", async () => {
-    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+    await promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
 
     await confirmAnonymousImport();
 
@@ -226,8 +232,8 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
     );
   });
 
-  it("dismissing discards the offer without writing anything", () => {
-    promptAnonymousImport([makeDraft("d1")]);
+  it("dismissing discards the offer without writing anything", async () => {
+    await promptAnonymousImport([makeDraft("d1")]);
     cancelAnonymousImport();
 
     expect(anonymousImportPrompt.count).toBe(0);
@@ -237,8 +243,8 @@ describe("confirmAnonymousImport — a failed import stays retryable", () => {
 });
 
 describe("collision import — destination fencing and staleness", () => {
-  it("fences every write to the account signed in when the user confirmed", async () => {
-    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+  it("fences every write to the account the OFFER was made about", async () => {
+    await promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
 
     await confirmAnonymousImport();
 
@@ -247,14 +253,32 @@ describe("collision import — destination fencing and staleness", () => {
     }
   });
 
-  it("keeps fencing to the confirming account even if the session changes mid-import", async () => {
+  it("refuses entirely when the account changed between the offer and the answer", async () => {
+    // The collision signed them into B and the offer asked about B. If they
+    // switch to C before answering, "yes" cannot be taken as consent to put
+    // their guest work into C — an account they were never asked about.
+    await promptAnonymousImport([makeDraft("d1")]);
+    signedInUid.value = "account-C";
+
+    await confirmAnonymousImport();
+
+    expect(repoSaveSequenceMock).not.toHaveBeenCalled();
+    expect(anonymousImportPrompt.count).toBe(1);
+    expect(anonymousImportPrompt.isOpen).toBe(true);
+    expect(showToastMock).toHaveBeenCalledWith(
+      expect.stringContaining("different account"),
+      "error"
+    );
+  });
+
+  it("keeps fencing to the offered account when the session changes mid-import", async () => {
     // The repository is what ultimately refuses; what matters here is that the
     // expected owner never follows the switch.
     repoSaveSequenceMock.mockImplementationOnce(async () => {
       signedInUid.value = "account-C";
       return {};
     });
-    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+    await promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
 
     await confirmAnonymousImport();
 
@@ -265,11 +289,35 @@ describe("collision import — destination fencing and staleness", () => {
     ).toBe(true);
   });
 
+  it("fails closed, retaining drafts, when the destination cannot be read at confirm", async () => {
+    await promptAnonymousImport([makeDraft("d1")]);
+    // Auth becomes unreadable between the offer and the answer.
+    authReadThrows.value = true;
+
+    await confirmAnonymousImport();
+
+    // An unfenced write is exactly what must not happen here.
+    expect(repoSaveSequenceMock).not.toHaveBeenCalled();
+    expect(anonymousImportPrompt.count).toBe(1);
+    expect(anonymousImportPrompt.isOpen).toBe(true);
+  });
+
+  it("fails closed when the destination could not be bound at the offer", async () => {
+    authReadThrows.value = true;
+    await promptAnonymousImport([makeDraft("d1")]);
+    authReadThrows.value = false;
+
+    await confirmAnonymousImport();
+
+    expect(repoSaveSequenceMock).not.toHaveBeenCalled();
+    expect(anonymousImportPrompt.count).toBe(1);
+  });
+
   it("returns a draft the repository refused as still-outstanding, not imported", async () => {
     repoSaveSequenceMock.mockRejectedValue(
       Object.assign(new Error("owner changed"), { code: "UNAUTHORIZED" })
     );
-    promptAnonymousImport([makeDraft("d1")]);
+    await promptAnonymousImport([makeDraft("d1")]);
 
     await confirmAnonymousImport();
 
@@ -285,7 +333,7 @@ describe("collision import — destination fencing and staleness", () => {
           release = () => resolve({});
         })
     );
-    promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
+    await promptAnonymousImport([makeDraft("d1"), makeDraft("d2")]);
 
     const inFlight = confirmAnonymousImport();
     // confirm awaits the destination-uid read before it writes, so wait until
@@ -311,12 +359,12 @@ describe("collision import — destination fencing and staleness", () => {
             );
         })
     );
-    promptAnonymousImport([makeDraft("old-1")]);
+    await promptAnonymousImport([makeDraft("old-1")]);
 
     const inFlight = confirmAnonymousImport();
     await vi.waitFor(() => expect(release).toBeTypeOf("function"));
     // A newer collision produces a fresh offer before the old one settles.
-    promptAnonymousImport([makeDraft("new-1"), makeDraft("new-2")]);
+    await promptAnonymousImport([makeDraft("new-1"), makeDraft("new-2")]);
     release!();
     await inFlight;
 

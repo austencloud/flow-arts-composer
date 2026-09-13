@@ -63,13 +63,25 @@ describe("collection-to-print contract", () => {
 
 describe("public-by-default save contract", () => {
   it("does not override sequence saves to private in user save surfaces", () => {
+    // A USER save surface: the user performed a save, so "no explicit choice"
+    // means the product default, public.
+    //
+    // library-sync-retry.ts was removed from this list. It is not a save
+    // surface — it is an unattended background pass that re-sends rows a user
+    // saved earlier, and it carries each row's RECORDED visibility through
+    // unchanged. Public intent recorded by any of the surfaces below still
+    // syncs public. Its `?? "private"` applies only to a row that recorded no
+    // visibility at all (pre-pendingSyncMetadata legacy), where there is no
+    // user intent to default toward and publishing would invent one.
+    // Behaviour is pinned by the live tests in
+    // tests/unit/library/library-sync-retry-ownership.test.ts rather than by
+    // matching source text here.
     const saveSurfaces = [
       "src/lib/features/create/shared/components/StandardWorkspaceLayout.svelte",
       "src/lib/features/create/shared/components/coordinators/VideoRecordCoordinator.svelte",
       "src/lib/features/browse/collections/components/ScanCardSheet.svelte",
       "src/lib/shared/sequence-viewer/state/library-action-handler.svelte.ts",
       "src/lib/features/retro/win95/adapters/notation-adapter.ts",
-      "src/lib/features/library/services/library-sync-retry.ts",
     ];
 
     for (const relativePath of saveSurfaces) {

@@ -133,11 +133,12 @@ let retryInFlight = false;
  * through the same ledger; a full account reads Firestore), so skipping them
  * hides nothing that was showing. Adopting them is the bug.
  *
- * Ownership scoping decides WHOSE rows are written; it deliberately does not
- * touch WHAT visibility they get. An unspecified visibility still falls back to
- * public, per the public-by-default save contract that
- * tests/unit/public-collection-live-choreo-contract.test.ts pins on this file
- * by name. Changing that would be a product decision, not an isolation fix.
+ * Visibility travels with the row. A recorded intent — public or private — is
+ * carried through unchanged, so the public-by-default behaviour of a real user
+ * save is preserved end to end. Only a row that recorded NOTHING falls back,
+ * and it falls back to private: those rows predate pendingSyncMetadata, so no
+ * user ever expressed a visibility for them, and an unattended pass must not
+ * manufacture publication intent it cannot evidence.
  */
 export async function retryPendingSyncs(): Promise<void> {
   if (retryInFlight) return;
@@ -179,7 +180,16 @@ export async function retryPendingSyncs(): Promise<void> {
         await repo.saveSequenceWithMetadata(sequence, {
           name: sequence.name,
           displayName: sequence.displayName,
-          visibility: sequence.pendingSyncMetadata?.visibility ?? "public",
+          // Private when the row recorded NO intent. Every save made through
+          // LibrarySaveService stamps pendingSyncMetadata, so a row without it
+          // predates that field — nobody ever expressed a visibility for it.
+          // Public-by-default is a rule about what a USER's save means; this is
+          // an unattended background pass with no user in the loop, and
+          // inventing publication intent it cannot evidence is not the same
+          // decision. A recorded "public" still syncs public, so no expressed
+          // intent is downgraded; only the unknowable case changes, and it
+          // changes to the recoverable side.
+          visibility: sequence.pendingSyncMetadata?.visibility ?? "private",
           tags: [...sequence.tags],
           notes: sequence.pendingSyncMetadata?.notes ?? "",
           thumbnailUrl: sequence.thumbnails[0],
@@ -209,8 +219,10 @@ export async function retryPendingSyncs(): Promise<void> {
             await db.sequences.update(sequence.id, {
               syncStatus: "failed",
               pendingSyncMetadata: {
+                // Same reasoning as the write above: recording "public" here
+                // would hand the next pass an intent nobody expressed.
                 visibility:
-                  sequence.pendingSyncMetadata?.visibility ?? "public",
+                  sequence.pendingSyncMetadata?.visibility ?? "private",
                 notes: sequence.pendingSyncMetadata?.notes ?? "",
                 blockedReason: permanent.code,
               },

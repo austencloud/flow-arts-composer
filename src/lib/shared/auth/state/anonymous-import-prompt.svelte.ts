@@ -6,9 +6,21 @@ import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
 interface ImportPromptState {
   isOpen: boolean;
   drafts: AnonymousDraft[];
+  /**
+   * The account this offer is ABOUT, resolved when the offer is made — not when
+   * the user answers it. The collision has just signed them into a specific
+   * account; that account is what "add these to this account?" means. Reading
+   * the uid at confirm time instead would silently re-point the question at
+   * whatever account they switched to in between.
+   */
+  destinationUid: string | null;
 }
 
-const state = $state<ImportPromptState>({ isOpen: false, drafts: [] });
+const state = $state<ImportPromptState>({
+  isOpen: false,
+  drafts: [],
+  destinationUid: null,
+});
 
 /**
  * Bumped by every state transition of this prompt (a new offer, a dismissal,
@@ -29,12 +41,37 @@ export const anonymousImportPrompt = {
   get count() {
     return state.drafts.length;
   },
+  /** The account this offer targets; null when it could not be resolved. */
+  get destinationUid() {
+    return state.destinationUid;
+  },
 };
 
-/** Open the import offer if there is anything worth importing. */
-export function promptAnonymousImport(drafts: AnonymousDraft[]): void {
+/**
+ * Open the import offer if there is anything worth importing.
+ *
+ * Binds the destination account NOW. Every caller reaches here immediately
+ * after a collision sign-in, so `currentUser` is the account the drafts would
+ * be added to. Resolving it at confirm time instead would mean an offer made
+ * for account B, answered after a switch to C, imports into C — an account the
+ * user was never asked about.
+ *
+ * Async so the binding is established before the dialog is shown; callers fire
+ * and forget, and none of them inspects `isOpen` synchronously afterwards.
+ */
+export async function promptAnonymousImport(
+  drafts: AnonymousDraft[]
+): Promise<void> {
   if (!drafts.length) return;
+  let uid: string | null = null;
+  try {
+    uid = (await getAuthInstance()).currentUser?.uid ?? null;
+  } catch {
+    // Leave it null. confirmAnonymousImport fails closed on a null
+    // destination rather than writing somewhere it cannot name.
+  }
   generation += 1;
+  state.destinationUid = uid;
   state.drafts = drafts;
   state.isOpen = true;
 }
@@ -60,18 +97,37 @@ export async function confirmAnonymousImport(): Promise<void> {
   // import has actually settled.
   state.isOpen = false;
 
-  // This import belongs to this offer and to the account signed in at the
-  // moment the user agreed. Anything that changes either of those invalidates
-  // the result we are about to write back.
+  // This import belongs to this offer. A newer offer or a dismissal
+  // invalidates the result we are about to write back.
   generation += 1;
   const startedAt = generation;
 
-  let destinationUid: string | undefined;
+  // The account the offer was made about, bound at promptAnonymousImport().
+  const destinationUid = state.destinationUid;
+
+  // Fail CLOSED on anything that means we cannot prove where this is going.
+  // An unfenced write is the failure mode this whole change exists to prevent,
+  // so an unknown or changed destination keeps the drafts and re-offers rather
+  // than guessing. The rows are still on the device either way.
+  let currentUid: string | null = null;
+  let authReadFailed = false;
   try {
-    destinationUid = (await getAuthInstance()).currentUser?.uid;
+    currentUid = (await getAuthInstance()).currentUser?.uid ?? null;
   } catch {
-    // Can't read the destination — leave it undefined and let the write go
-    // unfenced rather than blocking a legitimate import on an auth hiccup.
+    authReadFailed = true;
+  }
+
+  if (!destinationUid || authReadFailed || currentUid !== destinationUid) {
+    if (startedAt !== generation) return;
+    state.drafts = drafts;
+    state.isOpen = true;
+    showToast(
+      currentUid && destinationUid && currentUid !== destinationUid
+        ? "You're signed into a different account now. Your guest sequences are still on this device — sign back in to add them."
+        : "Couldn't confirm which account to add these to. They're still on this device — try again.",
+      "error"
+    );
+    return;
   }
 
   let imported = 0;
@@ -97,6 +153,7 @@ export async function confirmAnonymousImport(): Promise<void> {
   }
 
   state.drafts = failed;
+  if (failed.length === 0) state.destinationUid = null;
   if (failed.length > 0) {
     // Re-offer exactly what is still outstanding. "Not now" still dismisses.
     state.isOpen = true;
@@ -111,4 +168,5 @@ export function cancelAnonymousImport(): void {
   generation += 1;
   state.isOpen = false;
   state.drafts = [];
+  state.destinationUid = null;
 }
