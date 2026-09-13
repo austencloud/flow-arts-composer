@@ -17,10 +17,17 @@ import {
   MAX_VIDEO_FILE_SIZE,
 } from "../../firebase-functions/src/r2/r2-client";
 
-const client = getR2Client("test-account", "AKIAAUDITKEY", "audit-secret-value");
+const client = getR2Client(
+  "test-account",
+  "AKIAAUDITKEY",
+  "audit-secret-value"
+);
 const BUCKET = "tka-assets-audit";
 
-async function signedHeadersFor(key: string, contentType: string): Promise<string[]> {
+async function signedHeadersFor(
+  key: string,
+  contentType: string
+): Promise<string[]> {
   const url = await getPresignedPutUrl(client, BUCKET, key, contentType);
   const signed = new URL(url).searchParams.get("X-Amz-SignedHeaders") ?? "";
   return signed.split(";").filter(Boolean);
@@ -28,7 +35,10 @@ async function signedHeadersFor(key: string, contentType: string): Promise<strin
 
 describe("what the presigned PUT URL binds", () => {
   it("signs host only — not content-length, not content-type", async () => {
-    const headers = await signedHeadersFor("users/uid-1/videos/seq-1/clip.mp4", "video/mp4");
+    const headers = await signedHeadersFor(
+      "users/uid-1/videos/seq-1/clip.mp4",
+      "video/mp4"
+    );
 
     expect(headers).toEqual(["host"]);
     // Both checks performed at presign time bind nothing in the signature: the
@@ -46,18 +56,28 @@ describe("what the presigned PUT URL binds", () => {
       "users/uid-1/thumbnails/seq-1/thumb.png",
       "image/png"
     );
-    const params = [...new URL(url).searchParams.keys()].map((k) => k.toLowerCase());
+    const params = [...new URL(url).searchParams.keys()].map((k) =>
+      k.toLowerCase()
+    );
 
     expect(params).not.toContain("content-type");
     expect(params.some((k) => k.includes("content-type"))).toBe(false);
-    expect(new URL(url).searchParams.get("X-Amz-Content-Sha256")).toBe("UNSIGNED-PAYLOAD");
+    expect(new URL(url).searchParams.get("X-Amz-Content-Sha256")).toBe(
+      "UNSIGNED-PAYLOAD"
+    );
   });
 
   it("yields the same URL for a 1-byte and a ceiling-sized declaration", async () => {
     // The callable's only size input is `contentLength`, and it never reaches
     // the signer — the two presign calls differ in nothing but wall-clock time.
-    const tiny = await signedHeadersFor("users/uid-1/videos/seq-1/clip.mp4", "video/mp4");
-    const huge = await signedHeadersFor("users/uid-1/videos/seq-1/clip.mp4", "video/mp4");
+    const tiny = await signedHeadersFor(
+      "users/uid-1/videos/seq-1/clip.mp4",
+      "video/mp4"
+    );
+    const huge = await signedHeadersFor(
+      "users/uid-1/videos/seq-1/clip.mp4",
+      "video/mp4"
+    );
 
     expect(tiny).toEqual(huge);
     expect(MAX_VIDEO_FILE_SIZE).toBe(500 * 1024 * 1024);
@@ -87,17 +107,24 @@ describe("ownership prefix check against traversal-shaped keys", () => {
     key.startsWith(`users/${callerUid}/`);
 
   it("rejects a key that plainly names another user", () => {
-    expect(ownedByPrefix("uid-attacker", "users/uid-victim/videos/a/clip.mp4")).toBe(false);
+    expect(
+      ownedByPrefix("uid-attacker", "users/uid-victim/videos/a/clip.mp4")
+    ).toBe(false);
   });
 
   it("accepts a key that climbs out of the caller's prefix with ..", () => {
     expect(
-      ownedByPrefix("uid-attacker", "users/uid-attacker/../uid-victim/videos/a/clip.mp4")
+      ownedByPrefix(
+        "uid-attacker",
+        "users/uid-attacker/../uid-victim/videos/a/clip.mp4"
+      )
     ).toBe(true);
   });
 
   it("accepts a key with an embedded newline or control character", () => {
-    expect(ownedByPrefix("uid-attacker", "users/uid-attacker/\n../x")).toBe(true);
+    expect(ownedByPrefix("uid-attacker", "users/uid-attacker/\n../x")).toBe(
+      true
+    );
   });
 
   it("signs a traversal-shaped key without complaint", async () => {
