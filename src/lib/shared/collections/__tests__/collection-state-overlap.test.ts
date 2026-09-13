@@ -41,6 +41,7 @@ interface Deferred {
 interface ControllableRepo
   extends FirebaseCollectionRepository<CollectionEntry> {
   saved: CollectionEntry[];
+  savedBy: { userId: string; entry: CollectionEntry }[];
   removed: string[];
   remoteByUser: Map<string, CollectionEntry[]>;
   holdSave(id: string): void;
@@ -76,15 +77,17 @@ function makeRepo(): ControllableRepo {
       await gate(loadKey(userId));
       return [...(repo.remoteByUser.get(userId) ?? [])];
     },
-    async save(_uid, entry) {
+    async save(uid, entry) {
       await gate(entry.id);
       repo.saved.push(entry);
+      repo.savedBy.push({ userId: uid, entry });
     },
     async remove(_uid, id) {
       await gate(id);
       repo.removed.push(id);
     },
     saved: [],
+    savedBy: [],
     removed: [],
     remoteByUser: new Map(),
     holdSave: hold,
@@ -504,6 +507,77 @@ describe("CollectionState update preparation", () => {
       notes: "one",
       poster: "poster-2",
     });
+  });
+
+  it("drops a lifecycle-free update when the session ends before it commits", async () => {
+    // Mandala, 3D scene and film collections register no lifecycle, so this is
+    // the path every real consumer takes. The preparation queue is still
+    // awaited, which is enough of a gap for a sign-out to land in.
+    const state = new CollectionState<ArtEntry>(
+      repo as unknown as ControllableRepo & {
+        load(userId: string): Promise<ArtEntry[]>;
+      },
+      new LocalCollectionRepository("tka:test-nolifecycle", 1, makeStorage())
+    );
+
+    repo.remoteByUser.set("user-1", [
+      { id: "art", name: "Original", createdAt: 1 },
+    ]);
+    repo.remoteByUser.set("user-2", [
+      { id: "art", name: "Someone else's", createdAt: 2 },
+    ]);
+    await state.init("user-1");
+
+    const updating = state.update("art", { notes: "new choreography" });
+    // Synchronous teardown lands in the gap the awaited queue opens.
+    state.teardown();
+    await state.init("user-2");
+
+    expect(await updating).toBeNull();
+    expect(repo.savedBy.filter((s) => s.userId === "user-2")).toEqual([]);
+    expect(state.collection).toEqual([
+      { id: "art", name: "Someone else's", createdAt: 2 },
+    ]);
+  });
+
+  it("does not block the next user's edit behind a preparation that never settles", async () => {
+    const started: string[] = [];
+    const stuck = gateway();
+    const state = new CollectionState<ArtEntry>(
+      repo as unknown as ControllableRepo & {
+        load(userId: string): Promise<ArtEntry[]>;
+      },
+      new LocalCollectionRepository("tka:test-stuck", 1, makeStorage()),
+      {
+        async prepareUpdate(_previous, next) {
+          started.push(next.name);
+          // The first user's preparation is never released.
+          if (started.length === 1) await stuck.passed;
+          return next;
+        },
+      }
+    );
+
+    repo.remoteByUser.set("user-1", [
+      { id: "art", name: "A-art", createdAt: 1 },
+    ]);
+    repo.remoteByUser.set("user-2", [
+      { id: "art", name: "B-art", createdAt: 2 },
+    ]);
+    await state.init("user-1");
+
+    void state.update("art", { notes: "abandoned" }).catch(() => undefined);
+    await settle();
+    expect(started).toEqual(["A-art"]);
+
+    state.teardown();
+    await state.init("user-2");
+
+    // Same entry id, new identity: this must not queue behind the abandoned
+    // preparation, which is never going to resolve.
+    const result = await state.update("art", { notes: "mine" });
+    expect(result).toMatchObject({ name: "B-art", notes: "mine" });
+    expect(started).toEqual(["A-art", "B-art"]);
   });
 
   it("drops a prepared update when the session ends while it prepares", async () => {

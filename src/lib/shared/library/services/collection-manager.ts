@@ -78,6 +78,33 @@ function sameIds(left: readonly string[], right: readonly string[]): boolean {
 }
 
 /**
+ * Stop if the effective user is no longer the one this operation captured.
+ *
+ * Work a collection write depends on reaches outside this module:
+ * `publishSequence` takes no owner argument and resolves the effective user
+ * itself, repeatedly, so after a uid swap it can publish the *new* user's
+ * same-id sequence while this operation is still writing under the captured
+ * one. Threading an explicit owner through that repository operation is the
+ * real fix and belongs to its owner; until then the guarantee available here is
+ * to abort rather than commit a membership change under a session that ended.
+ */
+function assertStillSignedInAs(userId: string, subjectId?: string): void {
+  let current: string | null = null;
+  try {
+    current = getAuthenticatedUserId();
+  } catch {
+    current = null;
+  }
+  if (current !== userId) {
+    throw new CollectionError(
+      "Signed-in user changed while updating the collection",
+      "UNAUTHORIZED",
+      subjectId
+    );
+  }
+}
+
+/**
  * Make one member readable through the public index before a public collection
  * points at it. Own-library sequences are published through the repository so
  * moderation, minimum length, composition, and mirror shape stay canonical.
@@ -94,7 +121,12 @@ async function ensurePublicMember(
   if (ownSnapshot.exists()) {
     const { getLibraryRepository } =
       await import("$lib/shared/library/get-library-repository");
+    // Checked on both sides of the publish: before, to narrow the window it
+    // runs in; after, so a swap that happened during it stops here instead of
+    // being compounded by a membership write under the captured uid.
+    assertStillSignedInAs(userId, sequenceId);
     await getLibraryRepository().publishSequence(sequenceId);
+    assertStillSignedInAs(userId, sequenceId);
     return;
   }
 
