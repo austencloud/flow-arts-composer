@@ -155,18 +155,14 @@ describe("sw.js 3D asset freshness", () => {
   it("replaces a cached model online and uses that model offline", async () => {
     const h = createSwHarness();
     const modelUrl = "/models/forest/forest-environment.glb";
-    await h.seedCache(
-      h.constants.assets3dCacheName,
-      modelUrl,
-      "old forest"
-    );
+    await h.seedCache(h.constants.assets3dCacheName, modelUrl, "old forest");
     h.route(modelUrl, respondWith("current forest"));
 
     const online = await h.dispatchFetch(`${ORIGIN}${modelUrl}`);
     expect(await online!.text()).toBe("current forest");
-    expect(
-      await h.cacheBody(h.constants.assets3dCacheName, modelUrl)
-    ).toBe("current forest");
+    expect(await h.cacheBody(h.constants.assets3dCacheName, modelUrl)).toBe(
+      "current forest"
+    );
 
     h.routes.delete(modelUrl);
     const offline = await h.dispatchFetch(`${ORIGIN}${modelUrl}`);
@@ -188,9 +184,7 @@ describe("sw.js 3D asset freshness", () => {
 
     // Storage is full: every write into the 3D cache rejects.
     const cache = await h.caches.open(h.constants.assets3dCacheName);
-    vi.spyOn(cache, "put").mockRejectedValue(
-      new Error("Quota exceeded.")
-    );
+    vi.spyOn(cache, "put").mockRejectedValue(new Error("Quota exceeded."));
 
     const res = await h.dispatchFetch(`${ORIGIN}${modelUrl}`);
     expect(res!.status).toBe(200);
