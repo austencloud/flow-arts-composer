@@ -83,6 +83,7 @@ import {
   validateLOOPSpec,
 } from "../../loop/loop-spec.js";
 import { loopExecutorSelector } from "../../loop/execution/LOOPExecutorSelector.js";
+import { getLOOPSpecExpansionMultiplier } from "../../loop/execution/spec-executor.js";
 import { closeOrientationCycle } from "../../loop/execution/orientation-cycle.js";
 import { findLetterByMotions } from "../../loop/LetterLookup.js";
 import {
@@ -123,6 +124,36 @@ function shouldForcePeriod4OrientationCycle(
   const periodNum = periodToNumber(loop.period);
   if (periodNum !== 4) return false;
   return !ROTATED_LOOP_TYPES.has(loop.type);
+}
+
+/**
+ * Can this seed length still carry the spec's overlay stages?
+ *
+ * An overlay stage partitions the expanded (pre-orientation-closure) sequence
+ * into `period` equal blocks and flips the odd ones, so it throws outright when
+ * the step count is not divisible by that period. The requested-length re-roll
+ * below shrinks the seed by whatever expansion orientation closure turned out
+ * to need, and it keeps the shrunken seed for every later attempt — so once it
+ * lands on a seed too short for the overlay period, all forty attempts throw
+ * ("Overlay inversion requires the step count (2) to be divisible by the
+ * period (4)"). Reject such a seed here instead: orientation closure varies
+ * with the seed, so re-rolling can still reach the requested length.
+ *
+ * No overlay stage in the spec means no constraint, so every pre-existing
+ * request keeps its exact behavior.
+ */
+function seedSupportsOverlayStages(
+  loopSpec: LOOPSpec | undefined,
+  seedLength: number
+): boolean {
+  if (!loopSpec) return true;
+  const components = allActiveComponents(loopSpec);
+  const expandedLength = seedLength * getLOOPSpecExpansionMultiplier(loopSpec);
+  for (const componentSpec of components.values()) {
+    if (componentSpec.mode !== "overlay") continue;
+    if (expandedLength % componentSpec.period !== 0) return false;
+  }
+  return true;
 }
 
 /**
@@ -439,14 +470,17 @@ export class SequenceBuilder {
           const actualLength = result.sequence.length - 1;
           const actualMultiplier = actualLength / seedLength;
 
+          const nextSeedLength = requestedTotalLength / actualMultiplier;
+
           if (
             Number.isInteger(actualMultiplier) &&
             actualMultiplier >= 1 &&
-            requestedTotalLength % actualMultiplier === 0
+            requestedTotalLength % actualMultiplier === 0 &&
+            seedSupportsOverlayStages(workingOptions.loop?.loopSpec, nextSeedLength)
           ) {
             workingOptions = {
               ...options,
-              length: requestedTotalLength / actualMultiplier,
+              length: nextSeedLength,
               loop: {
                 ...options.loop!,
                 minimumExpansionMultiplier: actualMultiplier,
