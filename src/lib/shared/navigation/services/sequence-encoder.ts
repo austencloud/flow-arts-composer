@@ -750,26 +750,62 @@ export function generateSequenceRoutePath(sequence: SequenceData): string {
   return `/sequence/${encodeURIComponent(encoded)}`;
 }
 
+/**
+ * The spellings a `/sequence/[id]` parameter may arrive under.
+ *
+ * The router hands the parameter over already percent-decoded — SvelteKit's
+ * `decode_params` runs `decodeURIComponent` over every matched segment — so the
+ * id itself is always the first candidate. A second decode survives only as a
+ * fallback for historically double-encoded links, and never throws: a legacy
+ * QR payload is base45 (RFC 9285), whose alphabet includes `%`, and
+ * `decodeURIComponent` rejects a `%` that is not followed by two hex digits.
+ */
+function sequenceRouteIdCandidates(id: string): readonly string[] {
+  if (!id.includes("%")) return [id];
+
+  try {
+    const decoded = decodeURIComponent(id);
+    return decoded === id ? [id] : [id, decoded];
+  } catch {
+    return [id];
+  }
+}
+
+function isInlineUrlEncoded(candidate: string): boolean {
+  return (
+    candidate.startsWith("d1:") ||
+    candidate.startsWith("raw:") ||
+    candidate.startsWith("z:") ||
+    // A flat encoding that was short enough to skip compression keeps its beat
+    // separators, so a pipe is the remaining tell for an uncompressed blob.
+    candidate.includes("|")
+  );
+}
+
+/**
+ * Classify a `/sequence/[id]` route parameter.
+ *
+ * The inline-QR test runs before the URL-encoding test on purpose. An `s~`
+ * payload whose envelope is `raw:` still contains the flat encoding's pipes, so
+ * the pipe heuristic used to claim it and hand it to the URL decoder, which
+ * silently read `s~raw:iiSS` as the header and produced a sequence with the
+ * wrong seed orientations and props instead of the one on the card.
+ */
 export function parseSequenceRouteId(id: string): SequenceRouteIdParseResult {
   if (!id) {
-    return { encoded: null, legacyId: null };
+    return { encoded: null, inlineQr: null, legacyId: null };
   }
 
-  const decoded = decodeURIComponent(id);
-
-  if (
-    decoded.startsWith("d1:") ||
-    decoded.startsWith("raw:") ||
-    decoded.startsWith("z:")
-  ) {
-    return { encoded: decoded, legacyId: null };
+  for (const candidate of sequenceRouteIdCandidates(id)) {
+    if (isInlineEncoded(candidate)) {
+      return { encoded: null, inlineQr: candidate, legacyId: null };
+    }
+    if (isInlineUrlEncoded(candidate)) {
+      return { encoded: candidate, inlineQr: null, legacyId: null };
+    }
   }
 
-  if (decoded.includes("|")) {
-    return { encoded: decoded, legacyId: null };
-  }
-
-  return { encoded: null, legacyId: id };
+  return { encoded: null, inlineQr: null, legacyId: id };
 }
 
 export async function encodeSequenceForQR(

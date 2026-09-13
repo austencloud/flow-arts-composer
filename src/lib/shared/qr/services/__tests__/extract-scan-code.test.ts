@@ -24,6 +24,21 @@ describe("extractScanCode", () => {
 		expect(extractScanCode("https://tka.run/s~r1:abcXYZ")).toBe("s~r1:abcXYZ");
 	});
 
+	it("unescapes a percent-encoded inline payload from a normalized link", () => {
+		// base45 (RFC 9285) emits space, `%`, `+` and `/`. Any link that has been
+		// through a URL normalizer arrives escaped, and the escapes are not part
+		// of the payload the QR decoder has to read.
+		const payload = "s~q1:A 9396V$GYO1%4AOAOC/B8.T70";
+		const link = `https://tka.run/${encodeURIComponent(payload)}`;
+
+		expect(new URL(link).pathname).toContain("%20");
+		expect(extractScanCode(link)).toBe(payload);
+	});
+
+	it("keeps a malformed escape rather than throwing", () => {
+		expect(extractScanCode("https://tka.run/s~q1:A%*J")).toBe("s~q1:A%*J");
+	});
+
 	it("accepts a bare code", () => {
 		expect(extractScanCode("ab3d")).toBe("AB3D");
 	});

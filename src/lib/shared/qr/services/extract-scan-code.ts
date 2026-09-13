@@ -13,6 +13,23 @@ function isValidCode(candidate: string): boolean {
 	return /^[0-9a-zA-Z]{4,6}$/.test(candidate);
 }
 
+/**
+ * `URL.pathname` keeps its percent escapes. A short code never has any, but a
+ * legacy `s~` payload is base45 (RFC 9285) and its alphabet includes space,
+ * `%`, `+` and `/` — so any link that has been through a URL normalizer arrives
+ * as `s~q1:A%20B…`, and handing that to the QR decoder fails on the first
+ * character that is not in the alphabet. Malformed escapes keep the raw text
+ * rather than throwing: a scan loop must be able to reject junk, not crash on it.
+ */
+function decodeSegment(segment: string): string {
+	if (!segment.includes("%")) return segment;
+	try {
+		return decodeURIComponent(segment);
+	} catch {
+		return segment;
+	}
+}
+
 export function extractScanCode(rawValue: string): string | null {
 	const raw = rawValue.trim();
 	if (!raw) return null;
@@ -31,7 +48,9 @@ export function extractScanCode(rawValue: string): string | null {
 		if (!TKA_HOSTS.has(url.hostname.toLowerCase())) return null;
 		const segments = url.pathname.split("/").filter(Boolean);
 		// Both TKA.RUN/{code} and tka.run/q/{code} appear in the wild.
-		const candidate = segments[0]?.toLowerCase() === "q" ? (segments[1] ?? "") : (segments[0] ?? "");
+		const candidate = decodeSegment(
+			segments[0]?.toLowerCase() === "q" ? (segments[1] ?? "") : (segments[0] ?? "")
+		);
 		if (candidate.toLowerCase().startsWith("s~")) return candidate;
 		return isValidCode(candidate) ? candidate.toUpperCase() : null;
 	}

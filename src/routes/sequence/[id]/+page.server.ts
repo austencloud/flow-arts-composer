@@ -1,6 +1,8 @@
 import type { PageServerLoad } from "./$types";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   parseSequenceRouteId,
+  decodeSequenceFromQR,
   decodeSequenceWithCompression,
 } from "$lib/shared/navigation/services/sequence-encoder";
 import {
@@ -205,6 +207,26 @@ async function loadPublishedMeta(
   return fallback;
 }
 
+function buildInlineMeta(
+  decoded: SequenceData,
+  fallback: SequenceRouteMeta
+): SequenceRouteMeta {
+  return {
+    ...fallback,
+    word:
+      cleanSequenceText(decoded.word, 120) ??
+      cleanSequenceText(decoded.name, 120) ??
+      fallback.word,
+    creator:
+      cleanSequenceText(decoded.ownerDisplayName, 120) ?? fallback.creator,
+    stepCount: Array.isArray(decoded.steps)
+      ? toPositiveInteger(decoded.steps.length)
+      : null,
+    thumbnailUrl: firstTrustedThumbnail(decoded),
+    source: "inline",
+  };
+}
+
 export const load: PageServerLoad = async ({ params, url }) => {
   const fallback = createUnverifiedMeta(url);
   let meta = fallback;
@@ -212,24 +234,25 @@ export const load: PageServerLoad = async ({ params, url }) => {
   try {
     const parsed = parseSequenceRouteId(params.id);
 
-    if (parsed.encoded) {
+    if (parsed.inlineQr) {
+      // A legacy self-contained QR payload carries its own compression
+      // envelope. It is never a Firestore document id - base45 emits `/`, which
+      // no document id may contain - so resolving it would spend a collection
+      // read on a lookup that cannot hit.
       try {
-        const decoded = decodeSequenceWithCompression(parsed.encoded);
-        meta = {
-          ...fallback,
-          word:
-            cleanSequenceText(decoded.word, 120) ??
-            cleanSequenceText(decoded.name, 120) ??
-            fallback.word,
-          creator:
-            cleanSequenceText(decoded.ownerDisplayName, 120) ??
-            fallback.creator,
-          stepCount: Array.isArray(decoded.steps)
-            ? toPositiveInteger(decoded.steps.length)
-            : null,
-          thumbnailUrl: firstTrustedThumbnail(decoded),
-          source: "inline",
-        };
+        meta = buildInlineMeta(
+          await decodeSequenceFromQR(parsed.inlineQr),
+          fallback
+        );
+      } catch {
+        meta = { ...fallback, source: "inline" };
+      }
+    } else if (parsed.encoded) {
+      try {
+        meta = buildInlineMeta(
+          decodeSequenceWithCompression(parsed.encoded),
+          fallback
+        );
       } catch {
         meta = { ...fallback, source: "inline" };
       }

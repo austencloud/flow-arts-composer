@@ -106,6 +106,12 @@ export interface URLPropOptions {
 export interface SequenceRouteIdParseResult {
   /** Non-null if the ID is a self-contained encoded sequence */
   encoded: string | null;
+  /**
+   * Non-null if the ID is a legacy self-contained QR payload (`s~…`). It
+   * carries its own compression envelope (`q1:`, `r1:` or `raw:`) and must go
+   * to the QR decoder; the URL decoder cannot read one.
+   */
+  inlineQr: string | null;
   /** Non-null if the ID is a legacy session/Firebase ID or plain word */
   legacyId: string | null;
 }

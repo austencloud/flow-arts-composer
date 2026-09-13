@@ -28,7 +28,6 @@
     parsePropsFromURL,
     parseSequenceRouteId,
     decodeSequenceWithCompression,
-    isInlineEncoded,
   } from "$lib/shared/navigation/services/sequence-encoder";
   import { decodeViewMode } from "$lib/shared/browse/domain/browse-view-mode";
   import { getPublicSequenceHashMatcher } from "$lib/shared/sequence-viewer/get-public-sequence-hash-matcher";
@@ -421,7 +420,36 @@
     }
   }
 
+  /**
+   * Route bootstrap with a guaranteed floor.
+   *
+   * Every failure used to have to be caught by the branch that produced it, and
+   * one wasn't: route-id parsing threw `URIError` on any legacy QR payload whose
+   * base45 body contains a `%`, escaped every branch below, and left `isLoading`
+   * true forever - a spinner with no error card, no recovery links, and no scan
+   * failure telemetry. A resolution that cannot finish must still end the load.
+   */
   async function initializeRoute() {
+    try {
+      await resolveRouteSequence();
+    } catch (err) {
+      console.error("[SequenceRoute] Route bootstrap failed:", err);
+      if (!sequence) {
+        loadError = "Invalid sequence URL";
+        isLoading = false;
+      }
+    }
+
+    // Store pending time restore from URL (orchestrator will handle after animation init)
+    if (urlTime) {
+      pendingTimeRestore = urlTime;
+    }
+
+    if (sequence && !loadError) reportScanResolutionSuccess(sequence);
+    else if (loadError) reportScanResolutionFailure();
+  }
+
+  async function resolveRouteSequence() {
     // Try handoff data first (from Browse gallery)
     handoffData = consumeSequenceRouteHandoff();
 
@@ -464,6 +492,10 @@
           loadError = "Invalid sequence URL";
           isLoading = false;
         }
+      } else if (parsed.inlineQr) {
+        // A legacy self-contained QR payload. The short-code manager owns that
+        // envelope (`q1:`/`r1:`/`raw:`) and decodes it with the radio off.
+        await loadSequenceFromId(parsed.inlineQr);
       } else if (parsed.legacyId) {
         const loadedFromCatalog = await loadReleasedCatalogSequence(
           parsed.legacyId
@@ -479,14 +511,6 @@
       loadError = "No sequence ID provided";
       isLoading = false;
     }
-
-    // Store pending time restore from URL (orchestrator will handle after animation init)
-    if (urlTime) {
-      pendingTimeRestore = urlTime;
-    }
-
-    if (sequence && !loadError) reportScanResolutionSuccess(sequence);
-    else if (loadError) reportScanResolutionFailure();
   }
 
   async function loadSequenceFromId(id: string) {
@@ -495,21 +519,12 @@
     resolvedShortCode = null;
 
     try {
-      if (isInlineEncoded(id)) {
-        try {
-          const decoded = decodeSequenceWithCompression(decodeURIComponent(id));
-          if (decoded) {
-            sequence = await hydrateSequence(decoded, {
-              loopDetector,
-            });
-            isLoading = false;
-            return;
-          }
-        } catch {
-          // Not a valid encoded sequence, continue
-        }
-      }
-
+      // A self-contained `s~` payload goes straight to the short-code manager:
+      // its inline branch is the one decoder that understands the QR envelope
+      // and it resolves offline, before any network leg. The pre-step that used
+      // to sit here handed the payload to the URL decoder instead, which either
+      // threw (`q1:`/`r1:`) or, for a `raw:` envelope, read `s~raw:iiSS` as the
+      // header and returned a plausible but wrong sequence.
       const shortCodeManager = getShortCodeManager();
       let resolvedSequence = await shortCodeManager.resolveShortCode(id);
       if (resolvedSequence) resolvedShortCode = id;
