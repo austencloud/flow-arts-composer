@@ -34,7 +34,10 @@ import { describe, expect, it } from "vitest";
 import { SequenceBuilder } from "../../src/generation/builder/SequenceBuilder.js";
 import { LOOPType, Period } from "../../src/loop/loop-types.js";
 import { loopSpecFromWire } from "../../src/loop/loop-spec.js";
-import { CsvVariationProvider, loadDiamondVariations } from "../helpers/csv-variations.js";
+import {
+  CsvVariationProvider,
+  loadDiamondVariations,
+} from "../helpers/csv-variations.js";
 
 /** Level 3 supplies the half turns that make orientation closure extend. */
 const LEVEL = 3;

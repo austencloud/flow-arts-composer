@@ -135,7 +135,9 @@ describe("buildLoopCardDisplay — reflection axis", () => {
     expect(
       resolveEffectiveAxis(new Set([LOOPComponent.MIRRORED]), undefined)
     ).toBe("north-south");
-    expect(resolveEffectiveAxis(new Set([LOOPComponent.ROTATED]), undefined)).toBeNull();
+    expect(
+      resolveEffectiveAxis(new Set([LOOPComponent.ROTATED]), undefined)
+    ).toBeNull();
   });
 });
 

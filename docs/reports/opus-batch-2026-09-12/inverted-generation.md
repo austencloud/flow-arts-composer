@@ -9,6 +9,10 @@ inverted LOOP options.
 - **Commits:** `163f7fa5` (app: expand-inversion interval), `20668ea4`
   (engine: overlay seed re-roll)
 
+The measurements below belong to the original cloud investigation. Section 11
+records the independent current-main integration checks and supersedes the
+historical limitations where explicitly stated.
+
 ---
 
 ## 1. What "the inverted options" actually are
@@ -24,10 +28,10 @@ Two separate things carry that name in the Generate tab, and both were checked.
 **The two rhythm controls on the Inverted card**
 (`LoopRhythmConfigurator.svelte`, shown when INVERTED is selected):
 
-| Control | Options | Field |
-| --- | --- | --- |
-| Invert when | At halfway / Every quarter | `inversionInterval: 2 \| 4` |
-| Build the sequence | Adds length / On top | `inversionMode: "expand" \| "overlay"` |
+| Control            | Options                    | Field                                  |
+| ------------------ | -------------------------- | -------------------------------------- |
+| Invert when        | At halfway / Every quarter | `inversionInterval: 2 \| 4`            |
+| Build the sequence | Adds length / On top       | `inversionMode: "expand" \| "overlay"` |
 
 The second pair is where both defects were. They are a 2×2, and only one cell
 of the four worked reliably before this branch.
@@ -46,7 +50,7 @@ alternating blocks of the finished sequence in place (length unchanged,
 
 ---
 
-## 2. What was *not* broken (measured, no change made)
+## 2. What was _not_ broken (measured, no change made)
 
 ### 2.1 `INVERTED_LETTER_MAP` is exactly right
 
@@ -70,10 +74,10 @@ labelled letter matching what the engine's own `findLetterByMotions` derives
 from that step's motions (float resolved through prefloat data, as
 `LetterLookup` does).
 
-| Sweep | Result |
-| --- | --- |
-| 8 inverted combos × 60 builds, level 1, len 8 | 0 violations |
-| 8 inverted combos × 40 builds, levels 2 and 3, len 8 and 16 | 0 violations |
+| Sweep                                                         | Result                                       |
+| ------------------------------------------------------------- | -------------------------------------------- |
+| 8 inverted combos × 60 builds, level 1, len 8                 | 0 violations                                 |
+| 8 inverted combos × 40 builds, levels 2 and 3, len 8 and 16   | 0 violations                                 |
 | Letter labels, 8 inverted + 7 non-inverted combos, levels 1–3 | 0 mislabelled of 9 727 steps, 0 unresolvable |
 
 Start/end continuity, hand and prop direction, and step validity are sound for
@@ -96,13 +100,14 @@ No change made.
 ### Root cause
 
 Inversion is an involution: applying pro↔anti twice restores the original
-motions. An *expand* inversion therefore has no genuine period-4 orbit. Asked
+motions. An _expand_ inversion therefore has no genuine period-4 orbit. Asked
 for at period 4 the fused stage emits `[S, inv(S), S, inv(S)]`.
 
 Proven at the executor level, not inferred: 25 real generated seeds run through
 `executeSymmetricSpec` with `{inverted: {period: 2}}` and
-`{inverted: {period: 4}}` — the period-4 output was a **literal byte-identical
-doubling** of the period-2 output in **25/25** samples.
+`{inverted: {period: 4}}`: the cloud investigation reported a **repeated
+motion pattern** in **25/25** samples. This is not evidence of byte identity
+across full entries: numbering and propagated orientation fields can differ.
 
 `reduceToMinimalLoop` then strips that doubling back, and the extra outer pass
 wraps the rest of the combo so `LOOPDetector` sees only the inversion.
@@ -114,15 +119,15 @@ picking "Every quarter" with "Adds length" handed the engine that period.
 
 Requested length 16, level 1, 12 builds each:
 
-| Combo | Result before |
-| --- | --- |
-| `mirrored_inverted` | 0/12 — `identity mismatch (expected inverted+reflection, detected inverted)` |
-| `swapped_inverted` | 0/12 — `identity mismatch (expected inverted+swapped, detected inverted)` |
-| `mirrored_swapped_inverted` | 0/12 — `identity mismatch (expected inverted+reflection+swapped, detected inverted)` |
-| `rotated_swapped_inverted` | 0/12 — `identity mismatch (expected inverted+rotated+swapped, detected inverted)` |
-| `mirrored_inverted_rotated` | rejected — expansion 16, seed 1 |
-| `mirrored_rotated_inverted_swapped` | rejected — expansion 16, seed 1 |
-| `inverted`, `rotated_inverted` | built, but the reduced result is the halved inversion — the option did nothing |
+| Combo                               | Result before                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------ |
+| `mirrored_inverted`                 | 0/12 — `identity mismatch (expected inverted+reflection, detected inverted)`         |
+| `swapped_inverted`                  | 0/12 — `identity mismatch (expected inverted+swapped, detected inverted)`            |
+| `mirrored_swapped_inverted`         | 0/12 — `identity mismatch (expected inverted+reflection+swapped, detected inverted)` |
+| `rotated_swapped_inverted`          | 0/12 — `identity mismatch (expected inverted+rotated+swapped, detected inverted)`    |
+| `mirrored_inverted_rotated`         | rejected — expansion 16, seed 1                                                      |
+| `mirrored_rotated_inverted_swapped` | rejected — expansion 16, seed 1                                                      |
+| `inverted`, `rotated_inverted`      | built, but the reduced result is the halved inversion — the option did nothing       |
 
 At length 8 all six failing combos were rejected earlier still, by the
 orchestrator's `Seed too short for an inversion combo` guard, because the
@@ -135,7 +140,7 @@ setting. That is the reported "weird results".
 
 `effectiveInversionInterval()` in
 `src/lib/shared/create/services/loop-type-utils.ts` — the file that already
-documents itself as *"THE single source of truth"* for exactly this class of
+documents itself as _"THE single source of truth"_ for exactly this class of
 length-invariance guard, and already coerces quartered→halved for non-rotation
 types on the same reasoning. It returns the requested interval for `overlay` and
 2 for `expand`.
@@ -179,14 +184,14 @@ offered only with "On top".
 
 ### Measured, 100 builds per configuration, Diamond dataset
 
-| Configuration | Built before | Built after | Overlay throws before |
-| --- | --- | --- | --- |
-| `inverted`, len 8, level 3 | 14/100 | **100/100** | 86 |
-| `inverted`, len 12, level 3 | 4/100 | **91/100** | 96 |
-| `inverted`, len 16, level 3 | 100/100 | 100/100 | 0 |
-| `swapped_inverted`, len 8, level 3 | 36/100 | **100/100** | 64 |
-| `rotated_swapped_inverted`, len 8, level 3 | 34/100 | **100/100** | 66 |
-| `mirrored_swapped_inverted`, len 8, level 3 | 29/100 | **100/100** | 71 |
+| Configuration                               | Built before | Built after | Overlay throws before |
+| ------------------------------------------- | ------------ | ----------- | --------------------- |
+| `inverted`, len 8, level 3                  | 14/100       | **100/100** | 86                    |
+| `inverted`, len 12, level 3                 | 4/100        | **91/100**  | 96                    |
+| `inverted`, len 16, level 3                 | 100/100      | 100/100     | 0                     |
+| `swapped_inverted`, len 8, level 3          | 36/100       | **100/100** | 64                    |
+| `rotated_swapped_inverted`, len 8, level 3  | 34/100       | **100/100** | 66                    |
+| `mirrored_swapped_inverted`, len 8, level 3 | 29/100       | **100/100** | 71                    |
 
 Zero overlay-divisibility throws across all 700 builds after the fix. The
 residual 9/100 at length 12 is the ordinary
@@ -242,7 +247,7 @@ rather than patched on a guess.
 
 3. **`inverted` alone with "On top" produces no detectable inversion
    structure.** With overlay and no other component the expansion multiplier is
-   1, so the seed *is* the whole sequence and the two halves are unrelated
+   1, so the seed _is_ the whole sequence and the two halves are unrelated
    content; the overlay then flips one half in place. The result is a valid
    closed loop (positions and orientations close — measured), but it is
    structurally indistinguishable from an ordinary sequence, and
@@ -251,29 +256,28 @@ rather than patched on a guess.
    product question about overlay semantics, which the brief explicitly puts
    out of scope.
 
-4. **Float motions do not invert.** At level 3 a `fl` turn makes
-   `motionType: "float"`, which `invertMotionType` leaves alone, and
-   `prefloatMotionType` is copied unchanged — so a float step's inverted
-   counterpart is byte-identical and keeps the same letter (Δ→Δ where the letter
-   map says Δ→Σ). Physically defensible (a float has no pro/anti to flip) and
-   the result stays internally consistent — the label always matches the
-   motions — so no change was made. Flagged as an open question for the domain
-   owner.
+4. **Historical float-field observation, superseded on integration.** The
+   cloud investigation at its base SHA reported unchanged `prefloatMotionType`.
+   Current main's `FusedExecutor` and `overlay-inversion.ts` transform present
+   `prefloatMotionType` and `prefloatRotationDirection` fields. Those changes
+   are preserved by the scoped integration. The old observation therefore
+   does not establish a remaining defect on current main, and this report
+   makes no new domain claim about the resulting letters.
 
 ---
 
 ## 7. Files owned by this task
 
-| File | Change |
-| --- | --- |
-| `src/lib/shared/create/services/loop-type-utils.ts` | `effectiveInversionInterval`; applied in `buildLoopSpec` and `resolveLoopConfig` |
-| `src/lib/features/create/generate/components/cards/LoopRhythmConfigurator.svelte` | Shows the effective interval; disables "Every quarter" in expand mode |
-| `src/lib/features/create/generate/components/cards/loop-expanded-overlay-model.ts` | Caption uses the effective interval |
-| `packages/sequence-engine/src/generation/builder/SequenceBuilder.ts` | `seedSupportsOverlayStages` guard in the exact-length re-roll |
-| `tests/unit/loop/inverted-expand-interval.test.ts` | New — 29 assertions, Defect 1 |
-| `packages/sequence-engine/tests/generation/overlay-seed-reroll.test.ts` | New — 3 assertions, Defect 2 |
-| `tests/unit/services/loop-type-utils.test.ts` | Split one assertion so the engine's ×16 stage arithmetic is still covered on a raw wire, plus a new assertion for the coercion |
-| `src/lib/features/create/generate/components/cards/__tests__/loop-card-display.test.ts` | The quartered-icon case now uses overlay (where period 4 is real) and gains a sibling asserting expand shows halved |
+| File                                                                                    | Change                                                                                                                         |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `src/lib/shared/create/services/loop-type-utils.ts`                                     | `effectiveInversionInterval`; applied in `buildLoopSpec` and `resolveLoopConfig`                                               |
+| `src/lib/features/create/generate/components/cards/LoopRhythmConfigurator.svelte`       | Shows the effective interval; disables "Every quarter" in expand mode                                                          |
+| `src/lib/features/create/generate/components/cards/loop-expanded-overlay-model.ts`      | Caption uses the effective interval                                                                                            |
+| `packages/sequence-engine/src/generation/builder/SequenceBuilder.ts`                    | `seedSupportsOverlayStages` guard in the exact-length re-roll                                                                  |
+| `tests/unit/loop/inverted-expand-interval.test.ts`                                      | New — 29 assertions, Defect 1                                                                                                  |
+| `packages/sequence-engine/tests/generation/overlay-seed-reroll.test.ts`                 | New — 3 assertions, Defect 2                                                                                                   |
+| `tests/unit/services/loop-type-utils.test.ts`                                           | Split one assertion so the engine's ×16 stage arithmetic is still covered on a raw wire, plus a new assertion for the coercion |
+| `src/lib/features/create/generate/components/cards/__tests__/loop-card-display.test.ts` | The quartered-icon case now uses overlay (where period 4 is real) and gains a sibling asserting expand shows halved            |
 
 Two existing assertions were changed. Both had asserted the behaviour proven
 defective here (that an expand inversion reaches period 4 / shows a quartered
@@ -285,18 +289,18 @@ rather than losing one.
 
 ## 8. Commands and results
 
-| Command | Result |
-| --- | --- |
-| `pnpm install --frozen-lockfile --ignore-scripts` | ok |
-| `npm run build:packages` | ok |
-| `npx vitest run` (in `packages/sequence-engine`), baseline | 52 files, 449 tests passed |
-| `npx vitest run` (in `packages/sequence-engine`), after | 53 files, 452 tests passed |
-| `npx vitest run --config tests/config/vitest.config.ts tests/unit/loop/inverted-expand-interval.test.ts`, **pre-fix** | **19 of 29 failed**, including 6 of 8 end-to-end combo builds |
-| same, post-fix | 29 passed |
-| `npx vitest run tests/generation/overlay-seed-reroll.test.ts`, **pre-fix** | **3 of 3 failed** with `Overlay inversion requires the step count (2) to be divisible by the period (4).` |
-| same, post-fix | 3 passed |
-| `npx vitest run --config tests/config/vitest.config.ts tests/unit/services/loop-type-utils.test.ts tests/unit/loop src/lib/features/create/generate` | 34 files, 251 tests passed |
-| `npx vitest run --config tests/config/vitest.config.ts` (full app unit suite) | 1973 files, 16006 passed, 106 skipped, 0 failed (715 s) |
+| Command                                                                                                                                              | Result                                                                                                    |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `pnpm install --frozen-lockfile --ignore-scripts`                                                                                                    | ok                                                                                                        |
+| `npm run build:packages`                                                                                                                             | ok                                                                                                        |
+| `npx vitest run` (in `packages/sequence-engine`), baseline                                                                                           | 52 files, 449 tests passed                                                                                |
+| `npx vitest run` (in `packages/sequence-engine`), after                                                                                              | 53 files, 452 tests passed                                                                                |
+| `npx vitest run --config tests/config/vitest.config.ts tests/unit/loop/inverted-expand-interval.test.ts`, **pre-fix**                                | **19 of 29 failed**, including 6 of 8 end-to-end combo builds                                             |
+| same, post-fix                                                                                                                                       | 29 passed                                                                                                 |
+| `npx vitest run tests/generation/overlay-seed-reroll.test.ts`, **pre-fix**                                                                           | **3 of 3 failed** with `Overlay inversion requires the step count (2) to be divisible by the period (4).` |
+| same, post-fix                                                                                                                                       | 3 passed                                                                                                  |
+| `npx vitest run --config tests/config/vitest.config.ts tests/unit/services/loop-type-utils.test.ts tests/unit/loop src/lib/features/create/generate` | 34 files, 251 tests passed                                                                                |
+| `npx vitest run --config tests/config/vitest.config.ts` (full app unit suite)                                                                        | 1973 files, 16006 passed, 106 skipped, 0 failed (715 s)                                                   |
 
 Both fixes were verified fail-before / pass-after by stashing only the source
 change and re-running the same test file.
@@ -314,12 +318,12 @@ configurator was mounted directly in the project's own browser test harness
 1194 and Playwright 1.61 wants 1228). All four `inversionMode` × interval states
 at 375×667 and 1440×900.
 
-| State | Quarter segment | Selection pill | `aria-checked` |
-| --- | --- | --- | --- |
-| expand / 4 | `disabled`, opacity 0.45 | "At halfway" | halfway |
-| expand / 2 | `disabled`, opacity 0.45 | "At halfway" | halfway |
-| overlay / 4 | enabled, opacity 1 | "Every quarter" | quarter |
-| overlay / 2 | enabled, opacity 1 | "At halfway" | halfway |
+| State       | Quarter segment          | Selection pill  | `aria-checked` |
+| ----------- | ------------------------ | --------------- | -------------- |
+| expand / 4  | `disabled`, opacity 0.45 | "At halfway"    | halfway        |
+| expand / 2  | `disabled`, opacity 0.45 | "At halfway"    | halfway        |
+| overlay / 4 | enabled, opacity 1       | "Every quarter" | quarter        |
+| overlay / 2 | enabled, opacity 1       | "At halfway"    | halfway        |
 
 - The two expand screenshots are byte-identical at each viewport, so a config
   persisted with interval 4 is indistinguishable from interval 2 — the control
@@ -349,10 +353,53 @@ file used to drive them was removed and is not part of the diff.
 - **Two pre-existing component-test failures** in
   `LOOPExpandedOverlay.svelte.test.ts` ("applies and closes a Single LOOP that
   has no settings", "keeps Combo transactional") time out in this container
-  waiting on the *Swapped* picker button. Verified as pre-existing: they fail
+  waiting on the _Swapped_ picker button. Verified as pre-existing: they fail
   identically with the three changed source files checked out at the base SHA.
   Not investigated further — they are outside this task's domain.
 - **Box grid** was spot-checked through the shared code path, but the 100-build
   rate tables are Diamond only.
 - The Firestore feedback item itself was not read — no emulator or credentials
   in this environment. The investigation worked from the quoted text.
+
+## 11. Independent local integration review, 2026-09-13
+
+The three cloud commits were cherry-picked into a dedicated worktree based on
+local main `84ea8901ca`. Main's newer hand-relationship validation, eligible-start
+selection, and prefloat-field transforms remain intact. The reroll guard applies
+cleanly and checks structural expansion before the existing overlay stage;
+orientation closure remains after that stage. Raw spec callers and initially
+invalid seed sizes are outside this guard's scope.
+
+Focused checks on this integration tree passed:
+
+- App Vitest config: 74 tests across `inverted-expand-interval`,
+  `loop-type-utils`, and `loop-card-display`.
+- Engine package Vitest config: 305 tests across `overlay-seed-reroll`,
+  `hand-relationship-build`, and `hand-relationship-loop-identity`.
+- Chromium component harness: two viewport scenarios at 375×667 and 1440×900.
+  Real clicks switched from persisted expand/4 to overlay/4, then overlay/2,
+  back to overlay/4, and finally expand again. Assertions verified the enabled
+  state and selected radio value. The fixture rerendered the real
+  `LoopRhythmConfigurator` from its own change callbacks and used the real
+  `buildLoopOverlayModel` caption.
+
+All eight final screenshots were inspected after selection animations settled.
+The disabled quarter option and halfway selection agree in expand mode. Both
+overlay intervals remain selectable. Labels and captions are readable, no
+horizontal component overflow was measured, and every segment is 44px high.
+Caption height stays constant across states within each viewport (49.59px at
+375 wide, 32.80px at 1440 wide). This proves the changed control and its
+transitions in isolation; it does not prove full Generate-route integration.
+
+The fixture supplied a dark background and the existing app-wide `border-box`
+reset. Its first run lacked that reset and detected an 8px harness overflow;
+the corrected fixture passed without a production CSS change. The temporary
+fixture was removed after verification. Screenshots are retained outside Git at
+`C:/Users/Austen/.codex/opus-batches/2026-09-12-expanded/inverted-visual/`, named
+`<viewport>-<state>.png` for states `expand-persisted-quarter`, `overlay-quarter`,
+`overlay-half`, and `expand-after-overlay-quarter`.
+
+These are independent implementation checks. Flow-arts MCP tools were
+unavailable to the local reviewer, so this review adds no independent domain
+certification. The full Svelte check and guarded integration remain the
+coordinator's final gates.

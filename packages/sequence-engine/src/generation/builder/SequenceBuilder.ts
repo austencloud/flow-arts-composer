@@ -477,7 +477,10 @@ export class SequenceBuilder {
             Number.isInteger(actualMultiplier) &&
             actualMultiplier >= 1 &&
             requestedTotalLength % actualMultiplier === 0 &&
-            seedSupportsOverlayStages(workingOptions.loop?.loopSpec, nextSeedLength)
+            seedSupportsOverlayStages(
+              workingOptions.loop?.loopSpec,
+              nextSeedLength
+            )
           ) {
             workingOptions = {
               ...options,

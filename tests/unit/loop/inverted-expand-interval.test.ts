@@ -27,7 +27,10 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { SequenceBuilder } from "@tka/sequence-engine/generation";
-import { Period as EnginePeriod, loopSpecFromWire } from "@tka/sequence-engine/loop";
+import {
+  Period as EnginePeriod,
+  loopSpecFromWire,
+} from "@tka/sequence-engine/loop";
 import {
   buildLoopSpec,
   effectiveInversionInterval,
