@@ -68,6 +68,26 @@
   // Haptic feedback service
   let hapticService: HapticFeedback | undefined;
 
+  /**
+   * The open thread owns exactly one message listener.
+   *
+   * Message subscriptions are keyed by conversation inside the messenger, so
+   * switching threads used to leave the previous conversation's listener
+   * attached: its next snapshot called setMessages and replaced the thread the
+   * user was actually reading with the one they had left. The generation
+   * counter is the second half of the guard — a selection that resolved out of
+   * order, or a snapshot that arrives between the unsubscribe and its teardown,
+   * must not write into a thread it no longer owns.
+   */
+  let unsubscribeThreadMessages: (() => void) | null = null;
+  let threadGeneration = 0;
+
+  function stopThreadSubscription(): void {
+    threadGeneration++;
+    unsubscribeThreadMessages?.();
+    unsubscribeThreadMessages = null;
+  }
+
   // Media query for responsive behavior
   let mediaQuery: MediaQueryList | null = null;
   function handleMediaChange(e: MediaQueryListEvent) {
@@ -94,7 +114,14 @@
   onDestroy(() => {
     mediaQuery?.removeEventListener("change", handleMediaChange);
     window.removeEventListener("online", messageDeliveryState.handleOnline);
+    stopThreadSubscription();
     messageDeliveryState.dispose();
+  });
+
+  // Closing the inbox ends the thread, wherever the close came from: the header
+  // button, Escape, a notification that navigates away, or a module switch.
+  $effect(() => {
+    if (!inboxState.isOpen) stopThreadSubscription();
   });
 
   $effect(() => {
@@ -241,15 +268,27 @@
   }
 
   async function handleConversationSelect(conversationId: string) {
+    // Opening a thread supersedes whatever was open, including a selection that
+    // has not finished loading yet.
+    stopThreadSubscription();
+    const generation = threadGeneration;
+
     try {
       const conversation =
         await conversationService.getConversation(conversationId);
-      if (conversation) {
-        inboxState.selectConversation(conversation);
+      // Another conversation (or closing the inbox) won the race while this
+      // lookup was in flight. Loading it now would swap the thread under the
+      // user and mark a conversation they never saw as read.
+      if (generation !== threadGeneration || !conversation) return;
 
-        // Subscribe to messages
-        inboxState.setLoadingMessages(true);
-        messagingService.subscribeToMessages(conversationId, (messages) => {
+      inboxState.selectConversation(conversation);
+
+      // Subscribe to messages
+      inboxState.setLoadingMessages(true);
+      unsubscribeThreadMessages = messagingService.subscribeToMessages(
+        conversationId,
+        (messages) => {
+          if (generation !== threadGeneration) return;
           inboxState.setMessages(messages);
           inboxState.setLoadingMessages(false);
           void messageDeliveryState
@@ -257,11 +296,11 @@
             .catch((error) =>
               console.error("Failed to reconcile message outbox:", error)
             );
-        });
+        }
+      );
 
-        // Mark as read
-        await messagingService.markAsRead(conversationId);
-      }
+      // Mark as read
+      await messagingService.markAsRead(conversationId);
     } catch (error) {
       console.error("Failed to load conversation:", error);
       toast.error("Failed to load conversation");
@@ -278,6 +317,7 @@
 
   function handleBack() {
     hapticService?.trigger("selection");
+    stopThreadSubscription();
     inboxState.backToList();
   }
 
@@ -286,6 +326,7 @@
   // destination list happens to look like the one being left (both empty).
   function handleToggleNotifications() {
     hapticService?.trigger("selection");
+    stopThreadSubscription();
     inboxState.setTab(
       inboxState.activeTab === "notifications" ? "messages" : "notifications"
     );
@@ -330,6 +371,7 @@
 
   function handleGroupLeft() {
     hapticService?.trigger("success");
+    stopThreadSubscription();
     inboxState.backToList();
   }
 
