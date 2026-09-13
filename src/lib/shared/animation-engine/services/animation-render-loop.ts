@@ -1681,8 +1681,20 @@ export class AnimationRenderLoop {
           isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
         };
 
-        // Fire and charcoal can now run simultaneously on different tips
-        if (activeFireRenderer && fireTips.length > 0) {
+        // Fire and charcoal can now run simultaneously on different tips.
+        //
+        // A renderer with no tips this frame is still driven, with an empty tip
+        // list, while it holds live fire or sparks. Switching a fire-capable
+        // prop to hands removes every tip at once (hands have no tip points),
+        // and both canvases keep their last frame under
+        // preserveDrawingBuffer:true — so dropping the call there is what left
+        // dead fire stuck on the animation canvas. An empty tip list injects
+        // nothing and lets what is already burning age out; each renderer
+        // reports when there is nothing visible left and the calls stop.
+        if (
+          activeFireRenderer &&
+          (fireTips.length > 0 || activeFireRenderer.hasResidualFire())
+        ) {
           if (tipResult.gapDetected) {
             activeFireRenderer.clearSimulation();
           }
@@ -1691,7 +1703,11 @@ export class AnimationRenderLoop {
             params.fireConfig!
           );
         }
-        if (activeCharcoalRenderer && charcoalTips.length > 0) {
+        if (
+          activeCharcoalRenderer &&
+          (charcoalTips.length > 0 ||
+            activeCharcoalRenderer.hasActiveParticles())
+        ) {
           if (tipResult.gapDetected) {
             activeCharcoalRenderer.clearSimulation();
           }

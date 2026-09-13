@@ -424,6 +424,20 @@ export class CharcoalSparkRenderer {
 		}
 	}
 
+	/**
+	 * True while sparks emitted earlier are still alive. The render loop keeps
+	 * calling renderCharcoal() with an empty tip list for as long as this holds,
+	 * so a shower already in the air finishes falling when its prop is swapped
+	 * for hands instead of freezing on the canvas. Mirrors the fire renderer's
+	 * hasResidualFire().
+	 */
+	hasActiveParticles(): boolean {
+		for (const p of this.particles) {
+			if (p.active) return true;
+		}
+		return false;
+	}
+
 	dispose(): void {
 		this.cleanup();
 	}
