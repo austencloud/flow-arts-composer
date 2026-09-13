@@ -21,8 +21,11 @@ exactly one entry (`scene`). The word "phrase" survives only as `SPACING_PHRASES
 in `domain/tika-capabilities/arrange-formation.ts`, which is TIKA language
 parsing, not the retired stage vocabulary. `Mark[]` survives only inside
 `domain/formation-migration.ts`, which is the legacy-read path this design kept
-on purpose. The 4K root-font gap recorded at the end of this document remains
-open and belongs to the app shell, not to Stage.
+on purpose. On the 4K root-font gap recorded at the end of this document: it is
+**not open work**. See the dated correction beside it in section 7 —
+`a0c8a9a57a` (2026-08-27) deleted the `html:has(...)` ramp that note hands the
+problem to, and `.claude/rules/4k-native-layout.md` now holds the root at 16px
+at every viewport width. The frontmatter `remaining` says the same.
 
 **Date:** 2026-08-26
 **Supersedes the Stage half of:** `shipped/2026-08-23-stage-formation-choreography-design.md`
