@@ -1274,9 +1274,17 @@ export function subscribeToCollections(
 ): () => void {
   const userId = getAuthenticatedUserId("read");
   let unsubscribe: Unsubscribe | null = null;
+  // The listener attaches a microtask after this function returns, so a caller
+  // that disposes first (collections-state tears down synchronously on a uid
+  // swap or sign-out) would run a disposer with nothing to dispose and leave an
+  // orphaned onSnapshot billing reads for the life of the tab. Same flag
+  // discipline as subscribeToAllPublicCollections.
+  let disposed = false;
 
   getFirestoreInstance()
     .then((firestore) => {
+      if (disposed) return;
+
       const collectionsRef = collection(
         firestore,
         getUserCollectionsPath(userId)
@@ -1308,6 +1316,11 @@ export function subscribeToCollections(
           toast.error("Couldn't load collections. Check your connection.");
         }
       );
+
+      if (disposed) {
+        unsubscribe();
+        unsubscribe = null;
+      }
     })
     .catch((error) => {
       if (error.code === "permission-denied") {
@@ -1325,9 +1338,9 @@ export function subscribeToCollections(
     });
 
   return () => {
-    if (unsubscribe) {
-      unsubscribe();
-    }
+    disposed = true;
+    unsubscribe?.();
+    unsubscribe = null;
   };
 }
 
@@ -1337,9 +1350,14 @@ export function subscribeToCollection(
 ): () => void {
   const userId = getAuthenticatedUserId("read");
   let unsubscribe: Unsubscribe | null = null;
+  // Same disposal race as subscribeToCollections above: a detail view closed
+  // before Firestore initializes must not leave its listener attached.
+  let disposed = false;
 
   getFirestoreInstance()
     .then((firestore) => {
+      if (disposed) return;
+
       const docRef = doc(
         firestore,
         getUserCollectionPath(userId, collectionId)
@@ -1369,6 +1387,11 @@ export function subscribeToCollection(
           toast.error("Couldn't load collection. Check your connection.");
         }
       );
+
+      if (disposed) {
+        unsubscribe();
+        unsubscribe = null;
+      }
     })
     .catch((error) => {
       if (error.code === "permission-denied") {
@@ -1386,9 +1409,9 @@ export function subscribeToCollection(
     });
 
   return () => {
-    if (unsubscribe) {
-      unsubscribe();
-    }
+    disposed = true;
+    unsubscribe?.();
+    unsubscribe = null;
   };
 }
 
