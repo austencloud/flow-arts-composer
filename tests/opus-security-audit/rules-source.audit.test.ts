@@ -17,7 +17,7 @@
  *
  * Read-only audit: firestore.rules and storage.rules are read, never written.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -29,6 +29,10 @@ import {
 const ROOT = resolve(__dirname, "../..");
 const firestoreRules = readFileSync(resolve(ROOT, "firestore.rules"), "utf8");
 const storageRules = readFileSync(resolve(ROOT, "storage.rules"), "utf8");
+
+function exists(relativePath: string): boolean {
+  return existsSync(resolve(ROOT, relativePath));
+}
 
 /**
  * Return the body of a `match <path> {` block, brace-balanced, so an assertion
@@ -79,6 +83,106 @@ function allowClause(block: string, verbs: string): string {
   expect(found, `allow clause not found: "allow ${verbs}"`).not.toBeNull();
   return found?.[1] ?? "";
 }
+
+// ===========================================================================
+// SCOPE LIMITATION (raised by independent review, 2026-09-13) — THE REALTIME
+// DATABASE WAS NOT AUDITED, AND CANNOT BE FROM SOURCE.
+//
+// firebase.json declares a database rules file that does not exist in the
+// repository. The only RTDB policy under source control is a PARTIAL
+// imperative script that pushes rules for three top-level keys, while live
+// clients read and write several more. So this audit covers Firestore and
+// Storage only; the deployed RTDB policy is unknown from source and was NOT
+// resolved by touching production. These probes pin the gap so the report
+// cannot overstate its coverage.
+// ===========================================================================
+describe("SCOPE: the Realtime Database is outside this audit's evidence", () => {
+  const rtdbScriptPath = "scripts/update-rtdb-rules.mjs";
+
+  it("firebase.json points at a database rules file that is not in the repo", () => {
+    const firebaseJson = JSON.parse(
+      readFileSync(resolve(ROOT, "firebase.json"), "utf8")
+    ) as { database?: { rules?: string } };
+
+    expect(firebaseJson.database?.rules).toBe("database.rules.json");
+    // ...and there is no such file. There is no declarative RTDB source of
+    // truth to audit, and `firebase deploy --only database` cannot succeed.
+    expect(exists("database.rules.json")).toBe(false);
+  });
+
+  it("the only source-controlled RTDB policy is a partial imperative script", () => {
+    expect(exists(rtdbScriptPath)).toBe(true);
+    const script = readFileSync(resolve(ROOT, rtdbScriptPath), "utf8");
+
+    // It sets rules through the Admin SDK, not from a reviewable rules file,
+    // and needs a service-account key this audit must never read.
+    expect(script).toContain("admin.database().setRules(newRules)");
+    expect(script).toContain("serviceAccountKey.json");
+
+    // Exactly three top-level keys are covered.
+    for (const covered of ["presence", "gallery-sessions", "sync-rooms"]) {
+      expect(script).toContain(covered);
+    }
+  });
+
+  it("live clients use RTDB paths the script never covers", () => {
+    // Declared in the connect module's own constants file.
+    const connectPaths = readFileSync(
+      resolve(
+        ROOT,
+        "src/lib/features/connect/domain/models/connect-constants.ts"
+      ),
+      "utf8"
+    );
+    for (const path of [
+      "sync-sessions",
+      "invites",
+      "friends",
+      "users",
+      "presence",
+    ]) {
+      expect(connectPaths).toContain(`'${path}'`);
+    }
+
+    // And the museum persister writes a per-user subtree.
+    const museum = readFileSync(
+      resolve(
+        ROOT,
+        "src/lib/features/museum/scenes/procedural/services/museum-persister.ts"
+      ),
+      "utf8"
+    );
+    expect(museum).toContain("museums/${userId}/meta");
+    expect(museum).toContain("museums/${userId}/exhibits");
+
+    // The uncovered set: everything above minus what the script pushes.
+    const script = readFileSync(resolve(ROOT, rtdbScriptPath), "utf8");
+    for (const uncovered of [
+      "sync-sessions",
+      "invites",
+      "friends",
+      "museums",
+    ]) {
+      expect(script).not.toContain(uncovered);
+    }
+  });
+
+  it("no RTDB probe exists in this suite — the gap is unmeasured, not cleared", () => {
+    for (const file of [
+      "tests/opus-security-audit/firestore-authz.audit.test.ts",
+      "tests/opus-security-audit/storage-authz.audit.test.ts",
+    ]) {
+      const contents = readFileSync(resolve(ROOT, file), "utf8");
+      expect(contents).not.toContain("firebase/database");
+      expect(contents).not.toContain("database:");
+    }
+    // The emulator config carries no database emulator either.
+    const firebaseJson = JSON.parse(
+      readFileSync(resolve(ROOT, "firebase.json"), "utf8")
+    ) as { emulators?: Record<string, unknown> };
+    expect(Object.keys(firebaseJson.emulators ?? {})).not.toContain("database");
+  });
+});
 
 // ===========================================================================
 // F1 — shared, world-readable render caches in Cloud Storage accept an
@@ -205,6 +309,38 @@ describe("F2: publicHandPaths / publicSoloProps ownership takeover", () => {
     expect(syncer).toContain("docId: hp.contentHash");
     expect(syncer).toContain("docId: soloProp.contentHash");
   });
+
+  // CORRECTION (independent review, 2026-09-13). The first draft proposed
+  // `request.resource.data.contentHash == soloPropId` as the id/payload
+  // binding. It is not one: BOTH sides are attacker-supplied — the field comes
+  // from the request body and the id from the document path — so the check
+  // only asserts that two chosen values agree. First-writer poisoning (create
+  // publicSoloProps/<hash of real content> carrying arbitrary `steps`)
+  // survives it untouched.
+  it("CORRECTION: an id==field check binds nothing — both sides are caller-supplied", () => {
+    const syncer = readFileSync(
+      resolve(ROOT, "src/lib/features/library/services/public-index-syncer.ts"),
+      "utf8"
+    );
+    // The hash is a field the writer puts in the body...
+    expect(syncer).toContain("contentHash: soloProp.contentHash");
+    // ...and the same value is the document id. A rule comparing the two
+    // compares the caller against the caller.
+    expect(syncer).toContain("docId: soloProp.contentHash");
+
+    // Rules cannot recompute a digest — there is no SHA-256 in the CEL
+    // surface — so no rules-only expression can bind the id to `steps`.
+    // Anything stronger than takeover prevention has to be a trusted writer.
+    expect(firestoreRules).not.toMatch(/\b(sha256|hashing|crypto)\s*\(/i);
+
+    // The convergence policy the fix must preserve: last honest writer merges.
+    const convergence = syncer.slice(
+      syncer.indexOf("// Write all artifacts in parallel"),
+      syncer.indexOf("// Write all artifacts in parallel") + 320
+    );
+    expect(convergence).toContain("{ merge: true }");
+    expect(convergence).toContain("merge so we don't overwrite existing");
+  });
 });
 
 // ===========================================================================
@@ -251,6 +387,36 @@ describe("F3: scan-count integrity rests on a client-chosen deviceId", () => {
     );
     // Auth, when present, is optional metadata only.
     expect(handler).toContain("getOptionalFirebaseUser");
+  });
+
+  // CORRECTION (independent review, 2026-09-13). This is NOT an authorization
+  // bypass. Scanning a QR card is anonymous by design — there is no
+  // authenticated identity to impersonate and no permission boundary crossed.
+  // It is an anti-abuse / data-integrity weakness on an intentionally open
+  // endpoint, and it is ranked and worded that way.
+  it("CORRECTION: the endpoint is intentionally anonymous — no authz boundary here", () => {
+    const handler = readFileSync(
+      resolve(ROOT, "src/routes/api/physical-cards/scan/+server.ts"),
+      "utf8"
+    );
+    // Auth is read opportunistically and never gates the request...
+    expect(handler).toContain("getOptionalFirebaseUser");
+    expect(handler).toContain("userId: scanner?.uid ?? null");
+    // ...so no branch denies an unauthenticated caller.
+    expect(handler).not.toMatch(/requireFullFirebaseUser|requireFirebaseUser/);
+
+    // A server-minted device token would NOT fix this on its own: if issuance
+    // is itself open, the token rotates exactly as freely as the UUID does.
+    // The concrete mitigation is a ceiling keyed on something the attacker
+    // cannot mint — the shortCode. Today no such preset exists.
+    const rateLimiter = readFileSync(
+      resolve(ROOT, "src/lib/server/security/rate-limiter.ts"),
+      "utf8"
+    );
+    expect(rateLimiter).toContain("CARD_SCAN");
+    expect(rateLimiter).not.toContain("CARD_SCAN_PER_CODE");
+    // The two keys in use are the client UUID's hash and the caller IP.
+    expect(handler).toMatch(/RATE_LIMITS\.GENERAL,\s*"ip"/);
   });
 
   it("geo provenance IS correctly server-only (the part that holds)", () => {
@@ -309,6 +475,50 @@ describe("F4: errorTelemetry reports are rewritable by unauthenticated callers",
       "utf8"
     );
     expect(reporter).toMatch(/utcDay|toISOString\(\)\.slice/);
+  });
+
+  // CORRECTION (independent review, 2026-09-13). The first draft of this
+  // report proposed hasOnly(['count','lastSeenAt']). That field set is wrong
+  // twice over: there is no `lastSeenAt` (the reporter writes `lastSeen`), and
+  // the recurrence payload carries three more fields. Shipping that rule would
+  // have broken every recurrence update in production. Pin the REAL payload
+  // here so any future proposal is checked against it.
+  it("CORRECTION: the real recurrence payload is count + lastSeen + three more", () => {
+    const reporter = readFileSync(
+      resolve(
+        ROOT,
+        "src/lib/shared/error/services/error-telemetry-reporter.ts"
+      ),
+      "utf8"
+    );
+    const updateCall = reporter.slice(
+      reporter.indexOf("await updateDoc(docRef, {"),
+      reporter.indexOf("} catch (err) {")
+    );
+
+    for (const field of [
+      "count: increment(1)",
+      "lastSeen: serverTimestamp()",
+      "lastStack",
+      "lastAdditionalData",
+      "lastUserId",
+    ]) {
+      expect(updateCall).toContain(field);
+    }
+    // The field the first draft invented does not exist anywhere.
+    expect(reporter).not.toContain("lastSeenAt");
+
+    // And the honest consequence: three of the five recurrence fields carry
+    // caller-supplied content, so an allowlist that keeps the reporter working
+    // still permits a stranger to rewrite stack, context and attributed user.
+    // Only `count` and `lastSeen` are constrainable to a monotonic shape.
+    for (const attackerControlled of [
+      "lastStack",
+      "lastAdditionalData",
+      "lastUserId",
+    ]) {
+      expect(updateCall).toContain(attackerControlled);
+    }
   });
 });
 
@@ -385,6 +595,46 @@ describe("F6: shop_waitlist accepts unauthenticated arbitrary documents", () => 
   it("reads and edits stay closed, so this is write amplification not disclosure", () => {
     expect(allowClause(block, "read")).toContain("isAdmin()");
     expect(allowClause(block, "update, delete").trim()).toBe("if false");
+  });
+
+  // CORRECTION (independent review, 2026-09-13). The first draft's evidence
+  // line claimed "the same write as an ordinary user [is] asserted closed".
+  // That was false twice: no probe asserts the authenticated create, and the
+  // create clause has NO auth predicate, so an authenticated caller passes on
+  // exactly the same terms as a signed-out one. There is no auth boundary here
+  // to be closed — open create is the intended policy.
+  it("CORRECTION: create is auth-agnostic — a signed-in caller is not more restricted", () => {
+    const clause = allowClause(block, "create");
+    expect(clause).not.toContain("request.auth");
+    expect(clause).not.toContain("isFullUser");
+    expect(clause).not.toContain("isAuthenticated");
+    // Only the email field is constrained; nothing distinguishes callers.
+    expect(clause.replace(/\s+/g, " ").trim()).toBe(
+      "if request.resource.data.email is string && request.resource.data.email.size() > 3 && request.resource.data.email.size() < 320"
+    );
+  });
+
+  // CORRECTION: a hasOnly allowlist bounds each document's SHAPE. It does not
+  // bound how many well-formed signups one caller can create, so it is not by
+  // itself an answer to write amplification — the rate-limited server route is.
+  it("CORRECTION: the sibling's real control is the rate limiter, not the shape check", () => {
+    const rateLimiter = readFileSync(
+      resolve(ROOT, "src/lib/server/security/rate-limiter.ts"),
+      "utf8"
+    );
+    expect(rateLimiter).toContain("SOFTWARE_SUBMISSION");
+    const handler = readFileSync(
+      resolve(ROOT, "src/routes/api/software-submissions/+server.ts"),
+      "utf8"
+    );
+    expect(handler).toContain("withRateLimit");
+    // shop_waitlist has no such route — the client writes Firestore directly.
+    const writer = readFileSync(
+      resolve(ROOT, "src/lib/features/store/services/waitlist.ts"),
+      "utf8"
+    );
+    expect(writer).not.toContain("withRateLimit");
+    expect(writer).not.toMatch(/fetch\(\s*["'`]\/api\//);
   });
 
   it("the sibling public-submission surface routes through the rate-limited API", () => {

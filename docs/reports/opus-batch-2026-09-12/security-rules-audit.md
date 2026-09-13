@@ -25,8 +25,8 @@ nothing was pushed to `main` and no pull request was opened.
 ```
 tests/opus-security-audit/harness.ts
 tests/opus-security-audit/vitest.audit.config.ts
-tests/opus-security-audit/rules-source.audit.test.ts        (offline, 37 probes, green)
-tests/opus-security-audit/firestore-authz.audit.test.ts     (31 emulator probes, see §3)
+tests/opus-security-audit/rules-source.audit.test.ts        (offline, 46 probes, green)
+tests/opus-security-audit/firestore-authz.audit.test.ts     (33 emulator probes, see §3)
 tests/opus-security-audit/storage-authz.audit.test.ts       (19 emulator probes, see §3)
 docs/reports/opus-batch-2026-09-12/security-rules-audit.md  (this file)
 ```
@@ -45,6 +45,54 @@ was excluded.
 declarations under `firebase-functions/src/`, and the client writers/readers for
 every collection named in a finding.
 
+### ⚠ Scope limitation — the Realtime Database was NOT audited
+
+**This is a Firestore and Cloud Storage audit. It is not a full Firebase
+authorization audit, and must not be cited as one.** The Realtime Database is
+in active production use and this audit produced no evidence about it at all.
+
+Why it could not be covered from source:
+
+| Fact                                                                                                                                                                                  | Evidence                                                               |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `firebase.json` declares `"database": { "rules": "database.rules.json" }`                                                                                                             | `firebase.json:6-8`                                                    |
+| **That file does not exist in the repository.** There is no declarative RTDB rules source of truth to review, and `firebase deploy --only database` cannot succeed against this tree. | `ls database.rules.json` → No such file                                |
+| The only source-controlled RTDB policy is a **partial imperative script** that pushes rules through the Admin SDK                                                                     | `scripts/update-rtdb-rules.mjs`, `admin.database().setRules(newRules)` |
+| That script needs `serviceAccountKey.json`, a credential this audit must never read                                                                                                   | same file, line 4                                                      |
+| It covers **three** top-level keys: `presence`, `gallery-sessions`, `sync-rooms`                                                                                                      | same file                                                              |
+| No `database` emulator is configured, and neither probe file touches RTDB                                                                                                             | `firebase.json` `emulators` block; both audit test files               |
+
+Live clients use these RTDB paths. Only `presence` appears in the script:
+
+| Path                                                                         | Client                                                                                          | Covered by the script? |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ---------------------- |
+| `presence/{userId}`                                                          | `shared/presence/services/presence-tracker.ts`, `features/connect/services/presence-tracker.ts` | yes                    |
+| `sync-rooms/{roomId}`                                                        | `shared/lan-sync/services/sync-room-broadcaster.ts`, `sync-room-discovery.ts`                   | yes                    |
+| `sync-sessions/{sessionId}`                                                  | `features/connect/services/session-manager.ts`                                                  | **no**                 |
+| `invites/{recipientUserId}/{inviteId}`                                       | `features/connect/services/invite-handler.ts`                                                   | **no**                 |
+| `friends/{userId}/{friendId}`                                                | `features/connect/services/friendship-manager.ts`                                               | **no**                 |
+| `users/{userId}` (RTDB mirror for search — distinct from Firestore `/users`) | `features/connect/domain/models/connect-constants.ts`                                           | **no**                 |
+| `museums/{userId}/meta`, `museums/{userId}/exhibits/{slotId}`                | `features/museum/scenes/procedural/services/museum-persister.ts`                                | **no**                 |
+
+Path names are from `connect-constants.ts` and `museum-persister.ts:17-61`.
+
+**What this audit therefore cannot say.** Nothing about who can read another
+user's friends list, invites, sync sessions, or museum contents. Those five
+subtrees have no reviewable policy in this repository, so their authorization
+posture is **unknown from source** — not "fine", and not "broken". A missing
+declarative file also means whatever is deployed drifted from source at some
+point, and source no longer describes it.
+
+**Deployed RTDB policy was deliberately not resolved.** Reading it requires
+either production credentials or a live database call, both outside this
+assignment's authorization. Do not close this gap by querying production. The
+right first step is to export the deployed rules into a committed
+`database.rules.json` under whatever credential process you already use, then
+audit that file the way this report audits `firestore.rules`.
+
+Assertions pinning every claim in this section: `rules-source.audit.test.ts` →
+`SCOPE: the Realtime Database is outside this audit's evidence` (4 probes).
+
 ---
 
 ## 2. Evidence classes
@@ -62,6 +110,26 @@ Every claim below carries one of these labels. Nothing is asserted without one.
 finding's exploitability depends on rules-engine evaluation semantics rather than
 on rule text, it is labeled INFERRED and says so. §3 explains why, and §9 says
 exactly what a reviewer still has to confirm.
+
+### Corrections log — independent review of `54e9b40f`, 2026-09-13
+
+An independent reviewer re-ran the source suite (37/37 green at the time,
+matching) and raised five defects in this report. **All five were verified
+against the code and all five were correct.** Each is fixed in place below, with
+a marked `CORRECTED` block at the point of the error rather than a silent edit,
+and each is now pinned by a new assertion so it cannot drift back. The source
+suite is 46/46 after the corrections.
+
+| #   | What was wrong                                                                                                                                                                                                                       | Where fixed                            | Severity of the error                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- | ------------------------------------------------------------------ |
+| 1   | RTDB exclusion was a one-line footnote in §8. It is a limitation on the whole report: the rules file `firebase.json` names does not exist, and five live subtrees have no reviewable policy.                                         | New §1 "⚠ Scope limitation"; §8 item 6 | **High** — the report read as a full Firebase audit and is not one |
+| 2   | F5's proposed `contentHash == soloPropId` binding compares two caller-supplied values and binds nothing. First-writer poisoning survives it.                                                                                         | F5 "Safe fix"                          | **High** — a fix that reads secure and is not                      |
+| 3   | F3's proposed allowlist named `lastSeenAt`, which does not exist; the real recurrence payload has five fields. Shipping it would have broken every recurrence update in production.                                                  | F3 "Safe fix"                          | **High** — would have caused an outage                             |
+| 4   | F4 was listed among authorization findings without noting the endpoint is anonymous by design, and led with an HMAC device token that rotates as freely as the UUID it replaces.                                                     | F4 severity line and "Safe fix"        | **Medium** — misclassification + a weak lead recommendation        |
+| 5   | F6's evidence claimed an authenticated junk write was "asserted closed". No probe asserted it, and it is not closed — the rule has no auth predicate. The proposed allowlist was also implied to bound volume; it bounds shape only. | F6 "Evidence", "Bound", "Safe fix"     | **Medium** — a false evidence claim                                |
+
+Findings **F1 (videos), F2 (storage caches) and F3 (telemetry, as a finding)**
+were reviewed and stand as written; only F3's proposed remediation changed.
 
 ---
 
@@ -102,7 +170,7 @@ Both emulator probe files load and collect cleanly and fail only on the missing
 listener, which confirms they are runnable elsewhere:
 
 ```
-firestore-authz.audit.test.ts   31 collected · Error: connect ECONNREFUSED 127.0.0.1:8080
+firestore-authz.audit.test.ts   33 collected · Error: connect ECONNREFUSED 127.0.0.1:8080
 storage-authz.audit.test.ts     19 collected · Error: connect ECONNREFUSED 127.0.0.1:8080
 ```
 
@@ -357,28 +425,69 @@ tampering and write amplification, **not** disclosure.
 key hash needs the error key). Cannot read existing reports, cannot delete them,
 cannot flip the admin triage flag.
 
-**Safe fix.** Keep the pre-auth create; constrain the update to the recurrence
-shape it exists for, and cap the payload:
+**Safe fix.**
+
+> **CORRECTED 2026-09-13 after independent review.** The first draft of this
+> report proposed `hasOnly(['count', 'lastSeenAt'])`. **That was wrong and
+> shipping it would have broken production.** There is no `lastSeenAt` field —
+> the reporter writes `lastSeen` — and the recurrence payload carries three
+> more fields besides. Every recurrence update in the live app would have
+> started failing `permission-denied`, which the reporter's own
+> `isMissingDocError()` then misreads as "no doc yet" and retries as a `setDoc`,
+> silently resetting `count` to 1 and wiping `firstSeen`. Do not use the old
+> snippet. The real payload is now pinned by a test so this cannot drift again.
+
+The actual recurrence write (`error-telemetry-reporter.ts:89-95`) is:
+
+```ts
+await updateDoc(docRef, {
+  count: increment(1),
+  lastSeen: serverTimestamp(),
+  lastStack, // caller-supplied
+  lastAdditionalData, // caller-supplied
+  lastUserId, // caller-supplied
+});
+```
+
+So an allowlist that keeps the reporter working must name all five:
 
 ```
 allow update: if request.resource.data.diff(resource.data).affectedKeys()
-    .hasOnly(['count', 'lastSeenAt'])
+    .hasOnly(['count', 'lastSeen', 'lastStack', 'lastAdditionalData', 'lastUserId'])
   && request.resource.data.count is int
-  && request.resource.data.count > resource.data.count
-  && request.resource.data.count <= resource.data.count + 1;
+  && request.resource.data.count == resource.data.count + 1
+  && request.resource.data.lastSeen == request.time;
 ```
 
-**Precedent in this repo:** `appMetrics` solves the identical
-"unauthenticated counter bump" problem this exact way — `hasOnly(['totalGenerated'])`
-plus `== resource.data.totalGenerated + 1`, with `create, delete: if false`. If
-`create` also needs bounding, the `shop_waitlist` fix in F6 applies here too.
+**Be honest about what that buys.** It stops wholesale document replacement and
+pins the counter to a genuine +1, but three of the five fields are
+caller-supplied content by design, so a stranger who can derive a doc id can
+still overwrite the stack trace, the context blob, and the attributed user id
+of someone else's report. Rules cannot distinguish an honest recurrence from a
+forged one here, because both are unauthenticated by construction.
+
+If that residue matters, the field set is the wrong boundary and the write
+should move behind a server route (the same shape `software_submissions` uses)
+so the payload is attributed and rate-limited. That is a product call: it costs
+the pre-auth reporting that this collection exists to provide.
+
+**Precedent for the counter half:** `appMetrics` solves the identical
+"unauthenticated counter bump" problem this way — `hasOnly(['totalGenerated'])`
+plus `== resource.data.totalGenerated + 1`, with `create, delete: if false`.
+It works there because the document is _only_ a counter; `errorTelemetry`
+carries content alongside its counter, which is what makes this the harder case.
 
 ---
 
 ### F4 — Scan-count integrity rests on a client-chosen UUID, so the server-side move did not close the counter
 
-**Severity: medium.** Analytics/journey-map integrity plus Firestore write cost.
-Also contradicts a claim written into `firestore.rules`.
+**Severity: medium. NOT an authorization bypass — anti-abuse and data
+integrity.** Scanning a QR card is anonymous by design: there is no
+authenticated identity to impersonate and no permission boundary crossed. What
+is weak is the abuse control on an intentionally open endpoint, and the
+integrity of the analytics it feeds. It also contradicts a claim written into
+`firestore.rules`. Classified this way after independent review — the first
+draft listed it among authorization findings without that distinction.
 
 **Paths:** `src/routes/api/physical-cards/scan/+server.ts` (POST) → writes
 `shortcodes/{code}.scanCount`, `shortcodes/{code}.dailyScans.{day}`,
@@ -437,16 +546,26 @@ identities and therefore events.
 (both are existence-checked), cannot read anything back (`scanEvents` is
 `read: if isAdmin()`). Cost and integrity, not disclosure.
 
-**Safe fix.** Make the actor key server-attested rather than client-asserted.
-The smallest version: issue an opaque device token from a server endpoint
-(HMAC over a server secret + issue time), require it on scan ingest, and key
-`CARD_SCAN` on the verified token instead of on `hashPrivateValue(body.deviceId)`.
-Keep `deviceId` for the dedup id if the "one device, one card, one day, one place"
-semantics are wanted, but derive the rate-limit key from the attested value.
-Failing that, add a per-`shortCode` ceiling (`RATE_LIMITS` preset keyed on
-`shortCode`) so one code's counter cannot be driven by rotation alone. Either way
-the rules-file comment should be narrowed to the geo claim it can actually
-support.
+**Safe fix — a per-`shortCode` ceiling.** Add a `RATE_LIMITS` preset keyed on
+the `shortCode` itself, so one card's counter cannot be driven past a bound no
+matter how many device identities a caller mints. The `shortCode` is the one
+value in the request the attacker cannot invent (it is existence-checked against
+Firestore), which is exactly what makes it a usable key. This is concrete,
+local, and needs no new infrastructure.
+
+> **CORRECTED 2026-09-13 after independent review.** The first draft led with
+> "issue an opaque device token from a server endpoint (HMAC over a server
+> secret + issue time)" and treated the per-`shortCode` ceiling as the fallback.
+> That ranking was backwards. **A freely-issued token rotates exactly as
+> cheaply as the UUID does** — the attacker just calls the issuing endpoint in a
+> loop. An HMAC device token only helps if _issuance itself_ is attested (App
+> Check / Play Integrity / reCAPTCHA Enterprise) or hard-limited, which is a
+> substantially larger change than the finding warrants. The ceiling is the
+> real mitigation; attestation is the optional upgrade.
+
+Separately, narrow the `scanEvents` rules-file comment to the geo claim it can
+actually support. "Browsers cannot manufacture events or spoof geo/device
+attribution" is true of geo and false of device attribution and event count.
 
 ---
 
@@ -507,32 +626,51 @@ collection: only the writer (`public-index-syncer.ts`), a migration script
 user-visible impact today. It is a trap primed for whenever a Browse/discovery
 consumer ships. Requires a full (non-anonymous) account.
 
-**Safe fix.** Split create from update and bind the id, mirroring the
-already-shipped `sequenceRevisions` / `tunnel-collection/revisions` pattern
-(content-addressed create, immutable thereafter):
+**Safe fix.**
+
+> **CORRECTED 2026-09-13 after independent review.** The first draft proposed
+> `request.resource.data.contentHash == soloPropId` as an id↔payload binding.
+> **It is not one.** Both sides are caller-supplied — the field comes from the
+> request body, the id from the document path — so the check only asserts that
+> two attacker-chosen values agree. First-writer poisoning survives it
+> completely: create `publicSoloProps/<hash of the real content>` carrying
+> arbitrary `steps`, with `contentHash` set to match the path, and it passes.
+> The draft also described the strict form as merely a convergence tradeoff,
+> which understated that it did not deliver the integrity property it claimed.
+
+Rules cannot recompute a digest — there is no SHA-256 in the rules language —
+so **no rules-only expression can bind the document id to `steps` /
+`locations`.** There are two honest options:
+
+**Option A (recommended, rules-only): narrow the claim to takeover
+prevention.** Fix what rules actually can fix — the missing owner check — and
+say plainly that content integrity is unenforced:
 
 ```
-match /publicSoloProps/{soloPropId} {
-  allow read: if true;
-  allow create: if isFullUser()
-    && request.resource.data.ownerId == request.auth.uid
-    && request.resource.data.contentHash == soloPropId;
-  // Content-addressed documents are immutable; convergence is a no-op create.
-  allow update: if isFullUser()
-    && resource.data.ownerId == request.auth.uid
-    && request.resource.data.ownerId == request.auth.uid
-    && request.resource.data.contentHash == soloPropId;
-  allow delete: if isAuthenticated()
-    && resource.data.ownerId == request.auth.uid;
-}
+// Convergence stays: an honest second publisher of the same shape still
+// creates. What closes is a NON-OWNER rewriting a document already stored.
+allow create: if isFullUser()
+  && request.resource.data.ownerId == request.auth.uid;
+allow update: if isFullUser()
+  && resource.data.ownerId == request.auth.uid
+  && request.resource.data.ownerId == request.auth.uid;
 ```
 
-Note this changes convergence semantics (a second publisher of the same shape can
-no longer re-stamp `ownerId`), so it needs the `{ merge: true }` writer to tolerate
-a permission-denied on an already-present hash — a product call, not a pure
-rules change. The minimal rules-only version is to add
-`resource.data.ownerId == request.auth.uid` to `update` and leave convergence to
-`create`.
+This preserves the documented convergence policy at
+`public-index-syncer.ts:385-389` (_"merge so we don't overwrite existing
+documents"_, `{ merge: true }`) for the create path, and changes only the case
+where a stranger overwrites a stored document. It does **not** stop first-writer
+poisoning — a bad first writer still owns that hash slot. Ship it knowing that.
+
+**Option B (closes integrity, costs a round trip): a trusted writer.** Move the
+artifact fan-out behind a callable that recomputes the digest server-side and
+writes with the Admin SDK, then set `allow create, update: if false`. This is
+the only way the id actually means what it claims. The repo already uses this
+shape for `shares` (`create, update, delete: if false` + the collection
+callables) and for `scanEvents`.
+
+Either way, do not ship the `contentHash == soloPropId` form — it reads like a
+binding and is not one, which is worse than leaving the gap documented.
 
 ---
 
@@ -566,12 +704,24 @@ setDoc(doc(db, "shop_waitlist", "attacker-chosen-id"), {
   `software_submissions` is `create, update, delete: if false` and routes through
   the rate-limited API, while `waitlist.ts` writes `shop_waitlist` directly.
 - PREPARED (runtime) — `firestore-authz.audit.test.ts` → "finding 3": a
-  signed-out `setDoc` with 50 KB of unrelated fields succeeds; reads, edits and
-  the same write as an ordinary user are asserted closed.
+  signed-out `setDoc` with 50 KB of unrelated fields succeeds; **reads and edits**
+  are asserted closed (signed-out and ordinary-user `getDoc`, signed-out
+  `updateDoc`, admin `getDoc` succeeds).
+
+> **CORRECTED 2026-09-13 after independent review.** This evidence line
+> previously ended "…reads, edits **and the same write as an ordinary user** are
+> asserted closed." That was false on both counts: no probe asserted the
+> authenticated create, and it is not closed — the create clause has no auth
+> predicate, so a signed-in caller passes on identical terms to a signed-out
+> one. **There is no auth boundary here to be closed.** Two probes were added
+> to back the corrected claim: one asserting the junk create succeeds as
+> signed-out, full user, _and_ anonymous guest; one asserting ten well-formed
+> signups all succeed.
 
 **Bound.** Write-only: `read` is admin-only and `update, delete` are `false`, so
 there is no disclosure and no way to alter an existing signup. Impact is storage
-and cost plus junk in the launch list.
+and cost plus junk in the launch list. Open create is intentional policy — the
+gap is the unbounded document _shape_, not the absence of a login.
 
 **Safe fix.** Add the allowlist the comment already claims, and keep it open:
 
@@ -583,6 +733,13 @@ allow create: if request.resource.data.keys().hasOnly(['email', 'source', 'creat
   && request.resource.data.get('source', '') is string
   && request.resource.data.get('source', '').size() <= 64;
 ```
+
+**What the allowlist does and does not do.** It bounds each document to a few
+small fields, which removes the 1 MiB-per-write amplification. It does **not**
+bound how many well-formed signups one caller can create — a rules-layer shape
+check has no notion of volume, and Firestore rules cannot rate-limit. So the
+allowlist fixes payload abuse only; flooding the list with valid-looking
+addresses stays open.
 
 **Better, and the repo's own precedent:** route it through the rate-limited
 server API the way `software_submissions` does (`/api/software-submissions`,
@@ -677,9 +834,9 @@ PREPARED runtime controls in the two emulator files.
 | `npm i -g firebase-tools@latest`                                                                                                                             | exit 0 — firebase-tools **15.30.0**                                                                                |
 | `firebase emulators:exec --only firestore,storage --project the-kinetic-alphabet "npx vitest run --config tests/opus-security-audit/vitest.audit.config.ts"` | **exit 1 — blocked.** `Failed to make request to .../cloud-firestore-emulator-v1.22.0.jar`; egress policy 403 (§3) |
 | `curl -sS "$HTTPS_PROXY/__agentproxy/status"`                                                                                                                | 5 hosts `connect_rejected` / `403 to CONNECT` (§3)                                                                 |
-| `npx vitest run --config tests/opus-security-audit/vitest.audit.config.ts rules-source`                                                                      | **37 passed / 37**, 1 file, ~0.3 s                                                                                 |
+| `npx vitest run --config tests/opus-security-audit/vitest.audit.config.ts rules-source`                                                                      | **46 passed / 46**, 1 file, ~0.9 s                                                                                 |
 | `npx tsc --noEmit` over `tests/opus-security-audit/**/*.ts` (project `tsconfig.json`, explicit `typeRoots`)                                                  | **clean, 0 errors** across all 4 files                                                                             |
-| `npx vitest run … firestore-authz --testTimeout=8000`                                                                                                        | 31 collected, suite fails at `ECONNREFUSED 127.0.0.1:8080` (expected: no emulator)                                 |
+| `npx vitest run … firestore-authz --testTimeout=8000`                                                                                                        | 33 collected, suite fails at `ECONNREFUSED 127.0.0.1:8080` (expected: no emulator)                                 |
 | `npx vitest run … storage-authz --testTimeout=8000`                                                                                                          | 19 collected, suite fails at `ECONNREFUSED 127.0.0.1:8080` (expected: no emulator)                                 |
 | `npx prettier --check tests/opus-security-audit docs/reports/opus-batch-2026-09-12`                                                                          | **clean** (after one `--write` pass; formatting only, all 37 probes still green afterwards)                        |
 | `npx eslint tests/opus-security-audit`                                                                                                                       | **not applicable** — `tests/` is in the global `ignores` of `eslint.config.js:29`                                  |
@@ -729,14 +886,21 @@ from `tests/config/`, so the shipped `npm run test:rules` scripts are untouched.
 5. **Deployed rules were not inspected.** Everything is against the rule files at
    `c4be1619`. If production is running an older or hand-edited deployment, the
    live picture differs.
-6. **Not covered:** the Realtime Database rules (`database.rules.json` is
-   referenced by `firebase.json` but was not part of this assignment's scope),
-   the Stripe extension's own internal rules, and guest local retry/upgrade
-   (another agent's domain).
+6. **The Realtime Database is entirely uncovered** — and could not be covered
+   from source, because the rules file `firebase.json` names does not exist.
+   This is a scope limitation on the whole report, not a footnote: see §1,
+   "⚠ Scope limitation". **This report is not a full Firebase authorization
+   audit and must not be cited as one.** Five live RTDB subtrees
+   (`sync-sessions`, `invites`, `friends`, `users`, `museums`) have no
+   reviewable policy in this repository.
+7. **Also not covered:** the Stripe extension's own internal rules, and guest
+   local retry/upgrade (another agent's domain).
 
 **Not claimed:** no user or device gate was exercised. No browser, no dev server,
 no emulator, no deployed environment, no live data was touched. No finding here
-has been confirmed against a running system.
+has been confirmed against a running system. No claim is made about the deployed
+Firestore, Storage, or Realtime Database policy — only about the rule files at
+`c4be1619`.
 
 **Recommended next step:** run the two prepared emulator files on a machine where
 `storage.googleapis.com` is reachable — first plain (controls green, current
@@ -748,16 +912,27 @@ single command, before any rule is changed.
 
 ## 9. Reviewer checklist
 
-- [ ] Run the prepared emulator suite (§3) and confirm the 50 probes' outcomes.
+- [ ] **RTDB (highest — it is a coverage hole, not a finding):** export the
+      deployed rules into a committed `database.rules.json`, then audit
+      `sync-sessions`, `invites`, `friends`, `users`, `museums`. Nothing in this
+      report speaks to them. See §1 "⚠ Scope limitation".
+- [ ] Run the prepared emulator suite (§3) and confirm the 52 probes' outcomes.
 - [ ] F1: decide roster-delta rule vs. moving invite/accept to a callable.
 - [ ] F2: confirm the intended contract is first-writer-wins (the uploader
       docstring and `prepared-qrs` both say so), then split create from update.
-- [ ] F3: confirm the `errorTelemetry` update path only ever needs a counter bump.
-- [ ] F4: product call on device attestation vs. a per-`shortCode` ceiling; and
-      narrow the rules-file comment to the geo claim it supports.
-- [ ] F5: product call on content-addressed convergence semantics before the
-      stricter rule lands.
-- [ ] F6: allowlist in rules, or move behind the rate-limited API.
+- [ ] F3: use the **corrected** five-field allowlist — the original
+      `['count','lastSeenAt']` snippet would have broken the live reporter. Then
+      decide whether the caller-supplied residue (`lastStack`,
+      `lastAdditionalData`, `lastUserId`) is acceptable or the write moves
+      server-side.
+- [ ] F4: add the per-`shortCode` ceiling (the concrete mitigation); treat
+      device attestation as an optional upgrade, not the lead fix. Narrow the
+      `scanEvents` rules-file comment to the geo claim it supports.
+- [ ] F5: choose Option A (rules-only, takeover prevention, integrity stays
+      documented-open) or Option B (trusted writer, closes integrity). **Do not
+      ship the `contentHash == soloPropId` form** — it binds nothing.
+- [ ] F6: allowlist bounds shape only; the rate-limited API is what bounds
+      volume. Decide which problem you are solving.
 - [ ] N1–N6: triage; N7 needs no action (already tracked).
 - [ ] Test infra: `tests/config/vitest.rules.config.ts` `singleFork` is inert
       under vitest 4 (§5).

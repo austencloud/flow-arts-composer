@@ -464,6 +464,40 @@ describe("finding 3: shop_waitlist accepts unauthenticated arbitrary documents",
     await assertSucceeds(getDoc(doc(adminDb(), "shop_waitlist/e1")));
   });
 
+  // CORRECTION (independent review, 2026-09-13). The report's first draft said
+  // "the same write as an ordinary user [is] asserted closed". Nothing asserted
+  // it, and it is not closed: the create clause has no auth predicate, so a
+  // signed-in caller passes on identical terms. Assert BOTH outcomes so the
+  // claim can never drift back.
+  it("MEASURED: an authenticated caller writes the same junk — create is auth-agnostic", async () => {
+    const junk = "x".repeat(50_000);
+    const payload = { email: "a@b.co", junkPayload: junk, forged: "yes" };
+
+    await assertSucceeds(
+      setDoc(doc(signedOutDb(), "shop_waitlist/signed-out-id"), payload)
+    );
+    await assertSucceeds(
+      setDoc(doc(attackerDb(), "shop_waitlist/full-user-id"), payload)
+    );
+    await assertSucceeds(
+      setDoc(doc(guestDb(), "shop_waitlist/guest-id"), payload)
+    );
+  });
+
+  // CORRECTION: a shape allowlist bounds each document, not the number of
+  // them. Volume is not a rules-layer problem — this probe records that a
+  // well-formed caller can still create entries without limit.
+  it("MEASURED: a shape allowlist would not bound volume — valid signups are unlimited", async () => {
+    const db = signedOutDb();
+    for (let i = 0; i < 10; i += 1) {
+      await assertSucceeds(
+        setDoc(doc(db, `shop_waitlist/wellformed-${i}`), {
+          email: `person${i}@example.com`,
+        })
+      );
+    }
+  });
+
   repro(
     "REPRO (red while open): the document shape should be allowlisted",
     async () => {
