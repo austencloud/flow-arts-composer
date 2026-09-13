@@ -68,6 +68,18 @@ export class ConceptProgressTracker {
     }
 
     const generation = ++this.syncGeneration;
+
+    // Retire the previous account's ownership now, not when the new load
+    // resolves. `this.userId` is what saveProgress() writes as, so leaving it
+    // pointing at the outgoing user would send every completion earned during
+    // the new load's await to the *previous* user's document — a window that
+    // does not exist once the tracker is either connected or disconnected.
+    // Local writes continue throughout; the new user's first successful merge
+    // pushes them.
+    if (this.userId !== null && this.userId !== userId) {
+      this.retireRemoteOwnership();
+    }
+
     this.initializingUserId = userId;
     this.initPromise = this.connectUser(userId, generation).finally(() => {
       // Only the attempt that is still current clears the bookkeeping; a
@@ -84,6 +96,16 @@ export class ConceptProgressTracker {
   /** True while this attempt is still the tracker's current sign-in attempt. */
   private isCurrentSync(generation: number): boolean {
     return this.syncGeneration === generation;
+  }
+
+  /**
+   * Stop acting for whoever is connected: no remote writes (saveProgress needs
+   * `userId`), no snapshots, and no early return out of the next attempt.
+   */
+  private retireRemoteOwnership(): void {
+    this.cleanupFirestoreSubscription();
+    this.userId = null;
+    this.initialized = false;
   }
 
   private async connectUser(userId: string, generation: number): Promise<void> {
@@ -141,11 +163,9 @@ export class ConceptProgressTracker {
         error
       );
       // A superseded attempt reports its own failure but owns none of the
-      // state: clearing userId here would disconnect the user who took over.
+      // state: retiring here would disconnect the user who took over.
       if (this.isCurrentSync(generation)) {
-        this.userId = null;
-        this.initialized = false;
-        this.cleanupFirestoreSubscription();
+        this.retireRemoteOwnership();
       }
       return;
     }
@@ -193,9 +213,7 @@ export class ConceptProgressTracker {
     // Invalidate any attempt still in flight before clearing state, or it would
     // resume after the await and re-connect the account that just signed out.
     this.syncGeneration++;
-    this.cleanupFirestoreSubscription();
-    this.userId = null;
-    this.initialized = false;
+    this.retireRemoteOwnership();
     this.initializingUserId = null;
     this.initPromise = null;
   }
