@@ -351,25 +351,57 @@ export async function upgradeAnonymousWithEmail(
   }
 }
 
+export interface ImportDraftsResult {
+  /** Drafts written into the account (duplicates are not counted). */
+  imported: number;
+  /**
+   * Drafts that failed for a reason a retry could still fix — offline, a
+   * transient Firestore error. The caller MUST keep these: they are the only
+   * remaining handle on that work.
+   */
+  failed: AnonymousDraft[];
+}
+
 /**
  * Copy captured anon drafts into the currently-signed-in account's library.
- * Swallows ALREADY_EXISTS (duplicate-content guard); rethrows anything else.
- * Returns the count actually imported.
+ *
+ * Every draft is attempted. A single failure used to throw straight out of the
+ * loop, abandoning the drafts behind it AND discarding the count of the ones
+ * already written — so one offline write lost the rest of the guest's work with
+ * no record of what had succeeded. Failures are collected and returned instead,
+ * so the caller can re-offer exactly what is still outstanding. See
+ * docs/superpowers/reviews/2026-09-12-guest-save-continuity-audit.md (F3).
+ *
+ * Visibility travels with the draft. A guest's Dexie row records its saved
+ * visibility ONLY under `pendingSyncMetadata` (SequenceData has no top-level
+ * visibility field), and the repository defaults an unspecified visibility to
+ * "public" — so importing without it republished private guest work to the
+ * community gallery the moment the importing session was a full account.
+ * Private is the fallback when nothing was recorded: an import preserves work,
+ * it does not make a publication decision on the user's behalf (F2).
  */
-export async function importDrafts(drafts: AnonymousDraft[]): Promise<number> {
+export async function importDrafts(
+  drafts: AnonymousDraft[]
+): Promise<ImportDraftsResult> {
   const repo = getLibraryRepository();
   let imported = 0;
+  const failed: AnonymousDraft[] = [];
   for (const draft of drafts) {
     try {
-      await repo.saveSequence(draft);
+      await repo.saveSequence(draft, {
+        visibility: draft.pendingSyncMetadata?.visibility ?? "private",
+        notes: draft.pendingSyncMetadata?.notes ?? "",
+      });
       imported += 1;
     } catch (error) {
       const code = (error as { code?: string })?.code;
-      // Skip duplicates and one-count junk during migration; rethrow anything else.
-      if (code !== "ALREADY_EXISTS" && code !== "INVALID_DATA") throw error;
+      // A duplicate is already safe in the account and empty junk can never be
+      // written — neither is retryable, so neither is "failed" work to keep.
+      if (code === "ALREADY_EXISTS" || code === "INVALID_DATA") continue;
+      failed.push(draft);
     }
   }
-  return imported;
+  return { imported, failed };
 }
 
 /**

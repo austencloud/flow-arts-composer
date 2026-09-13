@@ -41,7 +41,10 @@ import type { R2VideoUploader } from "../../../shared/share/services/r2-video-up
 import type { LibraryRepository } from "$lib/shared/library/services/library-repository";
 import { markSequenceSyncStatus } from "./library-sync-retry";
 import { computeHash } from "$lib/shared/library/services/sequence-content-hasher";
-import { recordSavedSequenceId } from "$lib/shared/library/services/saved-sequence-ledger";
+import {
+  getOwnedSequenceIdSet,
+  recordSavedSequenceId,
+} from "$lib/shared/library/services/saved-sequence-ledger";
 import { clearSequenceDeletionIntent } from "$lib/shared/library/services/sequence-persistence-coordinator";
 import { reportPostHogLifecycleEvent } from "$lib/shared/analytics/services/posthog-lifecycle-reporter";
 import {
@@ -137,23 +140,35 @@ export class LibrarySaveService {
     // so it's always allowed. A brand-new save past the cap is blocked and routes
     // the guest to sign up. Full accounts are never capped. Gated here (before the
     // expensive thumbnail render) so all callers of saveSequence share the limit.
+    //
+    // Counted from THIS guest's ledger, not `db.sequences.count()`. Dexie is a
+    // flat table that is never cleared on sign-out, so the raw count includes
+    // every prior session's rows on this device: a user who signed in, saved
+    // three sequences and signed out would come back as a guest to a library
+    // that reads EMPTY (the browse engine filters by the same ledger) and a cap
+    // that reads FULL — every guest save refused with a limit message about
+    // sequences they cannot see. The read side and the cap side must count the
+    // same set. See docs/superpowers/reviews/
+    // 2026-09-12-guest-save-continuity-audit.md (F1).
     const isFullAccount = isFullAccountUser(
       authState.isAuthenticated,
       authState.isAnonymous
     );
     const alreadySavedLocally = await db.sequences.get(resolvedSequence.id);
     if (!isFullAccount) {
-      if (!alreadySavedLocally) {
-        const guestCount = await db.sequences.count();
-        if (guestCount >= GUEST_SAVE_CAP) {
-          // The modal explains the limit. A second toast repeats the same ask.
-          authDrawerState.show("signup", "save-limit");
-          throw new LibraryError(
-            `Guest save limit reached (${GUEST_SAVE_CAP}).`,
-            "GUEST_CAP",
-            resolvedSequence.id
-          );
-        }
+      const ownedIds = getOwnedSequenceIdSet(authState.effectiveUserId);
+      // Already this guest's own sequence → an update, never a new save.
+      if (
+        !ownedIds.has(resolvedSequence.id) &&
+        ownedIds.size >= GUEST_SAVE_CAP
+      ) {
+        // The modal explains the limit. A second toast repeats the same ask.
+        authDrawerState.show("signup", "save-limit");
+        throw new LibraryError(
+          `Guest save limit reached (${GUEST_SAVE_CAP}).`,
+          "GUEST_CAP",
+          resolvedSequence.id
+        );
       }
     }
 

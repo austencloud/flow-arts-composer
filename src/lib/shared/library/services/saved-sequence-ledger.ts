@@ -14,6 +14,27 @@
  */
 const PREFIX = "tka-saved-seq-ids:";
 
+/**
+ * The ids `uid` owns locally, as a Set for membership tests.
+ *
+ * Every reader that asks "is this local Dexie row MINE?" needs a set, not the
+ * array: the guest library read (create-browse-engine), the anon draft capture
+ * (anonymous-upgrade), the guest save cap, and the background sync retry. The
+ * first two each built `new Set(getSavedSequenceIds(uid))` inline; this is the
+ * shared owner for that read so the cap and the retry don't become a third and
+ * fourth copy of the same predicate.
+ *
+ * An unknown uid, a null uid, or unreadable storage all yield an EMPTY set.
+ * Every caller must treat empty as "owns nothing here" — never as "owns
+ * everything", which is exactly the conflation that let one account's rows be
+ * replayed into another's library.
+ */
+export function getOwnedSequenceIdSet(
+  uid: string | null | undefined
+): ReadonlySet<string> {
+  return new Set(getSavedSequenceIds(uid));
+}
+
 export function recordSavedSequenceId(
   uid: string | null | undefined,
   id: string

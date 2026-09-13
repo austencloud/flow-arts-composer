@@ -23,6 +23,8 @@ import { SequenceNormalizationError } from "$lib/shared/library/services/sequenc
 import { PublicDuplicateError } from "$lib/shared/library/services/public-sequence-persister";
 import { ContentModerationError } from "$lib/features/moderation/errors/content-moderation-error";
 import { isSequenceDeletionIntended } from "$lib/shared/library/services/sequence-persistence-coordinator";
+import { getOwnedSequenceIdSet } from "$lib/shared/library/services/saved-sequence-ledger";
+import { authState } from "$lib/shared/auth/state/auth-state.svelte";
 
 export type SequenceSyncStatus = "synced" | "pending" | "failed";
 
@@ -109,36 +111,75 @@ let hasShownFailureToast = false;
 let retryInFlight = false;
 
 /**
- * One bounded pass over every Dexie sequence currently marked pending/failed:
- * retry its Firestore sync once, update its syncStatus with the outcome.
- * No-ops if a pass is already running or there's nothing to retry.
+ * One bounded pass over the sequences the SIGNED-IN ACCOUNT owns locally that
+ * are currently marked pending/failed: retry each one's Firestore sync once and
+ * update its syncStatus with the outcome. No-ops if a pass is already running or
+ * there's nothing to retry.
+ *
+ * Ownership is not optional here. This pass writes through
+ * `repo.saveSequenceWithMetadata`, which resolves its uid from
+ * `authState.effectiveUserId` at write time and stamps that uid as the
+ * sequence's `ownerId`. Dexie is flat, not uid-scoped, and never cleared on
+ * sign-out, so an unfiltered sweep hands whatever rows this browser happens to
+ * hold to whoever is signed in NOW. Account A saves offline, signs out, B signs
+ * in on the same device — and the next boot or reconnect writes A's sequence
+ * into B's library under B's name. Scoping to the per-uid ledger is what keeps
+ * this a retry rather than a transfer. See docs/superpowers/reviews/
+ * 2026-09-12-guest-save-continuity-audit.md (F5).
+ *
+ * A row with no ledger entry for the current uid is SKIPPED, not adopted. That
+ * deliberately excludes another account's rows and any pre-ledger legacy row —
+ * neither is visible in this account's library either (a guest reads Dexie
+ * through the same ledger; a full account reads Firestore), so skipping them
+ * hides nothing that was showing. Adopting them is the bug.
  */
 export async function retryPendingSyncs(): Promise<void> {
   if (retryInFlight) return;
   retryInFlight = true;
 
   try {
+    // Resolved once per pass, before any await, so a sign-out mid-pass cannot
+    // retarget rows already selected under the previous identity.
+    const ownerUid = authState.effectiveUserId;
+    const ownedIds = getOwnedSequenceIdSet(ownerUid);
+    if (!ownerUid || ownedIds.size === 0) return;
+
     const stale = await db.sequences
       .filter(
         (s) =>
           (s.syncStatus === "pending" || s.syncStatus === "failed") &&
           // A typed permanent rejection needs a user action, not another
           // attempt — skip until the next explicit save clears the reason.
-          !s.pendingSyncMetadata?.blockedReason
+          !s.pendingSyncMetadata?.blockedReason &&
+          // Only rows THIS account recorded as its own.
+          ownedIds.has(s.id)
       )
       .toArray();
     if (stale.length === 0) return;
+
+    // The account could have changed while Dexie was read. Writing now would
+    // stamp the new uid onto rows selected for the old one.
+    if (authState.effectiveUserId !== ownerUid) return;
 
     const repo = getLibraryRepository();
 
     for (const sequence of stale) {
       if (isSequenceDeletionIntended(sequence.id)) continue;
+      // Each write awaits, so the account can change between rows. Stop the
+      // pass rather than finish it under a different uid.
+      if (authState.effectiveUserId !== ownerUid) return;
       const wasAlreadyFailed = sequence.syncStatus === "failed";
       try {
         await repo.saveSequenceWithMetadata(sequence, {
           name: sequence.name,
           displayName: sequence.displayName,
-          visibility: sequence.pendingSyncMetadata?.visibility ?? "public",
+          // Private, not public, when the row recorded no intent. A save made
+          // through LibrarySaveService always stamps pendingSyncMetadata, so a
+          // row without it is a legacy row whose visibility nobody recorded —
+          // and an unattended background pass must not be what decides to
+          // publish it to the community gallery. Guessing "private" is
+          // recoverable by re-saving; guessing "public" is not.
+          visibility: sequence.pendingSyncMetadata?.visibility ?? "private",
           tags: [...sequence.tags],
           notes: sequence.pendingSyncMetadata?.notes ?? "",
           thumbnailUrl: sequence.thumbnails[0],
@@ -160,8 +201,11 @@ export async function retryPendingSyncs(): Promise<void> {
             await db.sequences.update(sequence.id, {
               syncStatus: "failed",
               pendingSyncMetadata: {
+                // Same conservative default as the write above: recording
+                // "public" here would hand the next pass a publication intent
+                // the user never expressed.
                 visibility:
-                  sequence.pendingSyncMetadata?.visibility ?? "public",
+                  sequence.pendingSyncMetadata?.visibility ?? "private",
                 notes: sequence.pendingSyncMetadata?.notes ?? "",
                 blockedReason: permanent.code,
               },
