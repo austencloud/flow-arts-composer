@@ -221,6 +221,13 @@ export async function copyPreparedLink(
       await navigator.clipboard.write([
         new ClipboardItem({ "text/plain": textBlob }),
       ]);
+      const url = await preparedUrl;
+      // Some embedded browsers acknowledge promised items without delivering
+      // them. Complete the plain-text write where allowed; Safari may reject
+      // this later write, but has already delivered the gesture-bound item.
+      if (navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url).catch(() => {});
+      }
       return { status: "done", message: "Link copied" };
     } catch {
       return { status: "failed", message: "Couldn't copy link" };
