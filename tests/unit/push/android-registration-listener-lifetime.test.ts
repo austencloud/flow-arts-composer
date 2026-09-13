@@ -26,6 +26,7 @@ const h = vi.hoisted(() => {
     handle: { remove: () => Promise<void> };
   }> = [];
   const pendingFirestore: Array<() => void> = [];
+  const pendingTokenDeletes: Array<() => void> = [];
   let nextListenerId = 1;
   const state = {
     token: "token-a",
@@ -33,6 +34,7 @@ const h = vi.hoisted(() => {
     holdNextListenerHandle: false,
     registrationEventCount: 1,
     holdFirestore: false,
+    holdTokenDelete: false,
   };
 
   const addListener = vi.fn(async (event: string, handler: Handler) => {
@@ -81,7 +83,11 @@ const h = vi.hoisted(() => {
     createChannel: vi.fn(async () => undefined),
     unregister: vi.fn(async () => undefined),
     setDoc: vi.fn(async () => undefined),
-    deleteDoc: vi.fn(async () => undefined),
+    deleteDoc: vi.fn(async () => {
+      if (state.holdTokenDelete) {
+        await new Promise<void>((resolve) => pendingTokenDeletes.push(resolve));
+      }
+    }),
     getDocs: vi.fn(async () => ({ forEach: () => {} })),
     listenerCount: (event: string) => (listeners.get(event) ?? []).length,
     releaseListenerHandles: () => {
@@ -91,6 +97,7 @@ const h = vi.hoisted(() => {
     },
     pendingListenerHandles,
     pendingFirestore,
+    pendingTokenDeletes,
   };
 });
 
@@ -155,8 +162,10 @@ describe("native Android token registration", () => {
     h.state.holdNextListenerHandle = false;
     h.state.registrationEventCount = 1;
     h.state.holdFirestore = false;
+    h.state.holdTokenDelete = false;
     h.pendingListenerHandles.length = 0;
     h.pendingFirestore.length = 0;
+    h.pendingTokenDeletes.length = 0;
     h.setDoc.mockClear();
     h.register.mockClear();
     h.addListener.mockClear();
@@ -326,5 +335,45 @@ describe("native Android token registration", () => {
 
     h.releaseListenerHandles();
     await expect(registration).resolves.toBe("token-b");
+  });
+
+  it("does not unregister a different account that completes during token deletion", async () => {
+    const manager = new FCMTokenManager();
+    await manager.registerToken("user-a");
+    h.unregister.mockClear();
+    h.state.holdTokenDelete = true;
+
+    const staleUnregister = manager.unregisterToken("user-a");
+    await vi.waitFor(() => expect(h.pendingTokenDeletes).toHaveLength(1));
+
+    h.state.token = "token-b";
+    await manager.registerToken("user-b");
+    h.state.holdTokenDelete = false;
+    for (const release of h.pendingTokenDeletes.splice(0)) release();
+    await staleUnregister;
+
+    expect(h.unregister).not.toHaveBeenCalled();
+    await manager.unregisterToken("user-b");
+    expect(h.unregister).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not erase a same-owner registration that completes during token deletion", async () => {
+    const manager = new FCMTokenManager();
+    await manager.registerToken("user-a");
+    h.unregister.mockClear();
+    h.state.holdTokenDelete = true;
+
+    const staleUnregister = manager.unregisterToken("user-a");
+    await vi.waitFor(() => expect(h.pendingTokenDeletes).toHaveLength(1));
+
+    h.state.token = "token-a-new";
+    await manager.registerToken("user-a");
+    h.state.holdTokenDelete = false;
+    for (const release of h.pendingTokenDeletes.splice(0)) release();
+    await staleUnregister;
+
+    expect(h.unregister).not.toHaveBeenCalled();
+    await manager.unregisterToken("user-a");
+    expect(h.unregister).toHaveBeenCalledTimes(1);
   });
 });

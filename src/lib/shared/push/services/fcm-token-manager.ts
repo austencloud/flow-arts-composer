@@ -111,19 +111,26 @@ export class FCMTokenManager {
       }
 
       if (this.currentToken && this.currentTokenOwnerId === userId) {
-        const newerNativeRegistrationIsPending =
-          isAndroid &&
-          this.nativeRegistrationOwnerId !== null &&
-          this.nativeRegistrationOwnerId !== userId;
-        await this.removeToken(userId, this.currentToken);
+        const token = this.currentToken;
+        const registrationAttempt = this.nativeRegistrationAttempt;
+        const stillOwnsToken = () =>
+          this.currentToken === token &&
+          this.currentTokenOwnerId === userId &&
+          (!isAndroid ||
+            this.nativeRegistrationAttempt === registrationAttempt);
 
-        if (isAndroid && !newerNativeRegistrationIsPending) {
+        await this.removeToken(userId, token);
+        if (!stillOwnsToken()) return;
+
+        if (isAndroid) {
+          if (this.nativeRegistrationOwnerId !== null) return;
           await PushNotifications.unregister();
-        } else if (!isAndroid) {
+        } else {
           const messaging = getMessaging(app);
           await deleteToken(messaging);
         }
 
+        if (!stillOwnsToken()) return;
         this.currentToken = null;
         this.currentTokenOwnerId = null;
       }
