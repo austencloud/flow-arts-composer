@@ -8,9 +8,10 @@ Opus batch 2026-09-12 · settings persistence assignment
 | Fix SHA (round 1) | `2ca4cb27bb39a1ecb7edb22dfcab065b2793744e`              |
 | Fix SHA (round 2) | `0e90e7a6` — review corrections                         |
 | Fix SHA (round 3) | `50d4548c` — async-boundary corrections                 |
-| Final SHA       | the branch head; this report is the commit after `50d4548c` |
+| Fix SHA (round 4) | `eebc71e3` — replay-cleanup regression                  |
+| Final SHA       | the branch head; this report is the commit after `eebc71e3` |
 | Branch          | `claude/settings-persistence-defects-yoobmn`              |
-| Defects fixed   | 11 — 2 reproduced originally, 4 in review round 2, 5 in round 3 |
+| Defects fixed   | 12 — 2 originally, 4 in round 2, 5 in round 3, 1 self-inflicted regression in round 4 |
 | Environment     | Isolated cloud checkout, Linux, `pnpm` install of the committed lockfile |
 
 ## Owned files
@@ -19,7 +20,7 @@ Opus batch 2026-09-12 · settings persistence assignment
 | ------------------------------------------------------------- | ------------------ |
 | `src/lib/shared/settings/state/settings-state.svelte.ts`       | Modified           |
 | `src/lib/shared/settings/services/firebase-settings-persister.ts` | Modified        |
-| `tests/unit/settings/settings-local-edit-race.test.ts`         | Added (14 tests)   |
+| `tests/unit/settings/settings-local-edit-race.test.ts`         | Added (16 tests)   |
 | `tests/unit/settings/firebase-settings-persister.test.ts`      | Added (6 tests)    |
 | `docs/reports/opus-batch-2026-09-12/settings-sync-integrity.md` | Added (this file)  |
 
@@ -242,6 +243,51 @@ mirror (re-checked again after awaiting the Firestore instance), and
 `lastMirroredActiveProp` is scoped to that owner so an account switch is not
 suppressed by the cache.
 
+## Review round 4 — a regression this work introduced (`eebc71e3`)
+
+### Defect 12 — an offline replay deletes a newer payload it never replayed
+
+Round 3 made `processOfflineQueue` claim the write slot, releasing it in the
+replay's `.finally`. That `.finally` settles **before** the `await replay`
+continuation in the same method, and `releaseWriteSlot` synchronously starts
+the coalesced save waiting behind it. The resulting order, with an old queued
+payload replaying and a fresh `reducedMotion` edit behind it:
+
+1. the old replay succeeds;
+2. its `.finally` releases the slot and **synchronously starts** the newer save;
+3. the newer save rejects fast and queues its own payload, overwriting
+   `queuedOfflineEdit`;
+4. only then does the replay's continuation resume — reading the now-mutated
+   `queuedOfflineEdit`, releasing pins belonging to the **newer** edit, and
+   calling `clearOfflineQueue`, which deletes the **newer** payload.
+
+The user's edit ended up on no server, in no queue, and behind no pin. This is
+strictly worse than the defect round 3 set out to fix, and it was introduced by
+that fix. Reproduced: expected the queue to hold `reducedMotion: true`, got an
+empty queue and two saves.
+
+**Two independent defences**, each verified load-bearing by mutation:
+
+- *Ordering.* The replay's bookkeeping moved into a `.then` attached **before**
+  the `.finally`, so it completes while the slot is still held and nothing of
+  ours can interleave.
+- *Identity.* The replayed entry's `session` + `sequence`, and the pin sequence
+  it covers, are captured **before** the await. Cleanup releases only the
+  captured pin sequence — never the mutable `queuedOfflineEdit` — and clears
+  the queue only if it still holds that exact entry
+  (`clearReplayedOfflineQueue`). This covers a replacement that ordering cannot
+  prevent, such as another tab writing the shared key mid-replay.
+
+Mutation results: reverting the ordering alone still passes (the identity guard
+carries it); gutting the identity guard alone still passes the ordering test
+(the ordering carries it) **but fails the dedicated another-tab test**. So both
+are live, and neither is dead code.
+
+The lesson generalises past this defect: `releaseWriteSlot` re-enters the write
+path synchronously, so **any** state a continuation reads after awaiting a
+slot-holding promise may already belong to a later write. Capture what you need
+before the await.
+
 ## Verification
 
 All commands run in the isolated cloud checkout with the project's own config.
@@ -280,6 +326,13 @@ Measured: 9 of 11 fail on base `6e4c1b5a`; 5 of 11 fail on round 1 `c33e6bbd`;
 | does not mirror activeProp onto an account that signed in mid-write | ✗ fail  | ✓ pass     |
 | mirrors again for a different account with the same prop         | ✗ fail     | ✓ pass     |
 | writes settings and the activeProp mirror to the same account    | ✓ pass     | ✓ pass     |
+
+**Round 4 tests**, run against round 3 (`fba83d65`) and the fix (`eebc71e3`):
+
+| Test                                                            | `fba83d65` | `eebc71e3` |
+| ---------------------------------------------------------------- | ---------- | ---------- |
+| keeps a newer failed payload when an older replay settles after it | ✗ fail   | ✓ pass     |
+| leaves a queue entry that was replaced while the replay was open | ✗ fail     | ✓ pass     |
 
 Measured: 5 of 6 persister tests and 2 of 3 new state tests fail on
 `a9d7a6e8`. The reload test initially passed on `a9d7a6e8` for the wrong
@@ -323,9 +376,9 @@ Notes on two of the review-round tests:
 
 | Scope                                                   | Result           |
 | -------------------------------------------------------- | ---------------- |
-| `tests/unit/settings/` (incl. 7 pre-existing sync tests) | 36/36 pass       |
-| `tests/unit/share`, `collections/settings-checkpoint`, `prop-studio-lightweight-bootstrap`, `profile-stage-prop-contract`, `browse-engine-identity-switch`, `animation-engine`, `offline-cache-orchestrator`, `prop-system`, `auth` | 121 files, 873/873 pass |
-| Full default Vitest project (`vitest run --config tests/config/vitest.config.ts`) | 1974 files passed, 5 skipped; **15995 tests passed**, 106 skipped, 1 todo, **0 failed** (918 s) on `50d4548c`. Round 2 measured 15986 passed / 0 failed; round 1, 15981 / 0. |
+| `tests/unit/settings/` (incl. 7 pre-existing sync tests) | 38/38 pass       |
+| `tests/unit/share`, `collections/settings-checkpoint`, `offline-cache-orchestrator`, `prop-system`, `auth`, `animation-engine` | 118 files, 862/862 pass |
+| Full default Vitest project (`vitest run --config tests/config/vitest.config.ts`) | 1974 files passed, 5 skipped; **15997 tests passed**, 106 skipped, 1 todo, **0 failed** (781 s) on `eebc71e3`. Round 3 measured 15995 / 0; round 2, 15986 / 0; round 1, 15981 / 0. |
 | `svelte-fast-check --tsconfig ./tsconfig.json`           | 582 errors / 44 warnings, **identical to the measured base count**; zero reference the changed files |
 
 The 582 type errors are a pre-existing project-wide baseline, measured on this
@@ -339,12 +392,13 @@ The first full-suite run on `50d4548c` reported `Errors 1 error` alongside
 body. Neither of the two prior full runs (rounds 1 and 2) printed that line, so
 it is treated as possibly introduced here rather than dismissed.
 
-It did not reproduce in three subsequent runs: `tests/unit` alone, `src`
-co-located tests alone, and an identical full-suite re-run (1974 files, 15995
-passed, 0 failed, **no error line**, and a grep for "unhandled" across the
-captured output matching nothing). It is therefore **not root-caused** — only
-observed once and non-reproducing. Recorded here rather than claimed resolved.
-If it recurs, the likeliest suspects are the promise plumbing added to
+It did not reproduce in four subsequent runs: `tests/unit` alone, `src`
+co-located tests alone, an identical full-suite re-run on `50d4548c`, and the
+round-4 full run on `eebc71e3` (1974 files, 15997 passed, 0 failed, **no error
+line**, and a grep for "unhandled" across the captured output matching zero
+times in both full runs). It is therefore **not root-caused** — observed once
+and non-reproducing across four runs. Recorded here rather than claimed
+resolved. If it recurs, the likeliest suspects are the promise plumbing in
 `processOfflineQueue` (a replay whose rejection is consumed both by `await` and
 by the non-rejecting slot view) and the deliberately rejecting `saveSettings`
 mocks in the new tests.
