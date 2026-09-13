@@ -2,15 +2,33 @@
 status: shipped
 value: 5
 effort: L
-remaining: "None. Phases 1-7 shipped 2026-08-26. Open gap: the app shell has no 4K root-font ramp, so /stage type does not step at 3840 (see the handoff)."
+remaining: "None. Phases 1-7 shipped 2026-08-26. The 4K root-font-ramp gap this field recorded on 2026-08-26 is no longer open work: a0c8a9a57a (2026-08-27) deleted the html:has(...) ramp the note pointed at, and .claude/rules/4k-native-layout.md now holds the root at 16px at every viewport width. /stage type still does not step at 3840, and under current policy it is not supposed to - the sanctioned response to a wide canvas is composition, not root scale. The original note is preserved in the body at section 7 with a dated correction beside it."
 tags: [stage, 3d, formations, unification]
-last_triaged: 2026-08-26
+last_triaged: 2026-09-13
 ---
 
 # One Stage — Design
 
+**Status:** Shipped 2026-08-26. Moved out of `active/` on 2026-09-13; its
+frontmatter has read `status: shipped` with all seven ledger boxes checked since
+2026-08-26, so the file was only ever open by location.
+
+**Reconciliation evidence (2026-09-13):** `2686a4cb8` (_one stage: delete the
+tabs, put the drill on the floor_) deletes `StageViewer.svelte`,
+`SceneStudio.svelte`, and `StageSidebar.svelte` — none exist today.
+`STAGE_TABS` in `src/lib/shared/navigation/config/tab-definitions.ts:1200` holds
+exactly one entry (`scene`). The word "phrase" survives only as `SPACING_PHRASES`
+in `domain/tika-capabilities/arrange-formation.ts`, which is TIKA language
+parsing, not the retired stage vocabulary. `Mark[]` survives only inside
+`domain/formation-migration.ts`, which is the legacy-read path this design kept
+on purpose. On the 4K root-font gap recorded at the end of this document: it is
+**not open work**. See the dated correction beside it in section 7 —
+`a0c8a9a57a` (2026-08-27) deleted the `html:has(...)` ramp that note hands the
+problem to, and `.claude/rules/4k-native-layout.md` now holds the root at 16px
+at every viewport width. The frontmatter `remaining` says the same.
+
 **Date:** 2026-08-26
-**Supersedes the Stage half of:** `active/2026-08-23-stage-formation-choreography-design.md`
+**Supersedes the Stage half of:** `shipped/2026-08-23-stage-formation-choreography-design.md`
 (its Phase 5 proof pass becomes Phase 7 here)
 
 ## 1. The problem
@@ -243,6 +261,18 @@ see, all fixed:
    is not rendered below the shared 768x544 scene-control breakpoint; the deeper
    offset is now paid in the matching container query, and the card is bounded
    by its panel and scrolls inside itself.
+
+> **Correction, 2026-09-13 (spec reconciliation).** The closing note below is
+> one day out of date. `a0c8a9a57a` (2026-08-27, _refactor(responsive): keep
+> logical UI scale stable on wide screens_) removed the
+> `html:has(.mkt-shell)` / `html:has(.legal-container)` root-font ramp from
+> `src/app.css` entirely. The "same `html:has(...)` mechanism" this note hands
+> the problem to no longer exists, and `.claude/rules/4k-native-layout.md`
+> (ENFORCED) now holds the root at 16px at every viewport width, with
+> `docs/architecture/responsive-design.md:54` forbidding a second large-screen
+> typography system. The gap is closed by refusal, not left for a successor:
+> wide viewports are for composition, and browser zoom is the user's scale
+> control.
 
 **Known gap, deliberately not taken on here:** at 4K@100% the Stage's type does
 not step. The app shell has no root-font ramp — `src/app.css` scopes it to
