@@ -4,6 +4,11 @@
 the review bar in the parent document and loads the selected application path in
 a same-origin iframe.
 
+An installed home-screen app on `dev.tkaflowarts.com` redirects its ordinary
+`/create` launch to `/review`. Reload an already-open install once to pick up
+this behavior. Browser tabs and explicit deep links keep their normal routes.
+The preview iframe never redirects itself back into the review page.
+
 Set the path from an agent or terminal:
 
 ```powershell
