@@ -4,6 +4,9 @@
 paths only.
 **Type:** read-only audit. No production code was modified.
 **Base SHA:** `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`)
+**Compatibility check SHA:** `381a83e42e018170d0806bf4260e4305cec6504d`
+(`main`, 2026-09-13). H2 and H5 lifecycle notes below reflect changes present
+at this checkpoint.
 **Branch:** `claude/firestore-cost-audit-8l6vvx`
 **Date:** 2026-09-13
 
@@ -41,20 +44,22 @@ per document in the initial result set and per changed document thereafter.
 
 ## Summary
 
-Nine findings, ranked. Six are measured (H0–H5); the three M-rank findings
-rest on code reading.
+Nine findings, ranked. H0, H1, H3, H4, and H5 are measured against production
+modules with mocked Firestore. H2's five remaining sites and the three M-rank
+findings rest on code reading; H2's two corrected collection-manager sites are
+covered by executable compatibility tests.
 
-| #      | Finding                                                                                                                     | Domain                        | Cost shape                                                  | Evidence |
-| ------ | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------- | -------- |
-| **H0** | Every page load of a signed-in creator scans all of that creator's `publicSequences` mirrors to write nothing               | profile                       | `P` reads **per boot, per device**                          | measured |
-| **H1** | Community feed re-reads every owner profile in its 200-doc window on any snapshot                                           | collections                   | `U` reads per snapshot that changes the feed window         | measured |
-| **H2** | Seven `subscribeTo*` helpers leak their listener when disposed before Firestore resolves                                    | library, collections, profile | one orphaned listener per uid swap, permanent               | measured |
-| **H3** | `communityCollectionsState.invalidate()` pays a full cold re-attach for a local mutation the live listener already delivers | collections                   | `K + Σ⌈m/30⌉ + U` per rename/publish/delete                 | measured |
-| **H4** | Inbox participant refresh never terminates for an unreadable participant                                                    | inbox                         | 1 read + 1 write per conversation **per snapshot**, forever | measured |
-| **H5** | App-root notification listener attaches with no `limit()`                                                                   | inbox                         | `N` reads per boot, `N` growing monotonically               | measured |
-| **M6** | `communityCollectionsState.teardown()` has no production caller                                                             | collections                   | collection-group listener outlives sign-out                 | read     |
-| **M7** | Browse gallery query on `publicSequences` has no `where()` and no `limit()`                                                 | browse                        | `G` reads per sync; rule violation                          | read     |
-| **M8** | Followed-collections shelf re-resolves and re-counts every follow on any follow-ref change                                  | collections                   | `F × (1 + ⌈m/30⌉)` per follow/unfollow                      | read     |
+| #      | Finding                                                                                                                     | Domain           | Cost shape                                                  | Evidence |
+| ------ | --------------------------------------------------------------------------------------------------------------------------- | ---------------- | ----------------------------------------------------------- | -------- |
+| **H0** | Every page load of a signed-in creator scans all of that creator's `publicSequences` mirrors to write nothing               | profile          | `P` reads **per boot, per device**                          | measured |
+| **H1** | Community feed re-reads every owner profile in its 200-doc window on any snapshot                                           | collections      | `U` reads per snapshot that changes the feed window         | measured |
+| **H2** | Five `subscribeTo*` helpers still leak their listener when disposed before Firestore resolves                               | library, profile | one orphaned listener per early disposal, permanent         | read     |
+| **H3** | `communityCollectionsState.invalidate()` pays a full cold re-attach for a local mutation the live listener already delivers | collections      | `K + Σ⌈m/30⌉ + U` per rename/publish/delete                 | measured |
+| **H4** | Inbox participant refresh never terminates for an unreadable participant                                                    | inbox            | 1 read + 1 write per conversation **per snapshot**, forever | measured |
+| **H5** | App-root notification listener attaches with no `limit()`                                                                   | inbox            | `N` reads per boot, `N` growing monotonically               | measured |
+| **M6** | `communityCollectionsState.teardown()` has no production caller                                                             | collections      | collection-group listener outlives sign-out                 | read     |
+| **M7** | Browse gallery query on `publicSequences` has no `where()` and no `limit()`                                                 | browse           | `G` reads per sync; rule violation                          | read     |
+| **M8** | Followed-collections shelf re-resolves and re-counts every follow on any follow-ref change                                  | collections      | `F × (1 + ⌈m/30⌉)` per follow/unfollow                      | read     |
 
 Variables: `P` = one creator's public sequences. `U` = distinct owners in the
 community feed window. `K` = public collections in the window (≤200). `m` =
@@ -147,10 +152,12 @@ deliberate and correct, and three of them are the reason the Browse path is
   an unrelated collection update re-counts only the changed document.
   **Measured:** a one-document change costs 2 count queries, not 80
   (`community-feed-fanout.test.ts`, "re-runs getVisibleOwnerNames…").
-- **`subscribeToAllPublicCollections` / `subscribeToPublicCollection`
-  disposal.** These two carry the `disposed` flag the other seven lack, and
-  are the correct fix template. **Measured**
-  (`listener-disposal-race.test.ts`, final suite).
+- **Deferred collection-listener disposal.**
+  `subscribeToAllPublicCollections`, `subscribeToPublicCollection`,
+  `subscribeToCollections`, and `subscribeToCollection` carry a disposal flag.
+  The two collection-manager cases are now directly measured by
+  `listener-disposal-race.test.ts`; the public-loader cases remain the fix
+  template. **Measured.**
 - **`countPublicMembers`** uses aggregate count queries rather than downloading
   member documents, and correctly filters on `ownerId` to avoid cross-user id
   collisions. (read)
@@ -426,7 +433,7 @@ moderation bug, not just a staleness bug.
 
 ---
 
-## H2 — Seven subscription helpers leak on disposal before Firestore resolves
+## H2 — Five subscription helpers still leak on early disposal
 
 ### The defect shape
 
@@ -441,35 +448,34 @@ export function subscribeToCollections(cb) {
 }
 ```
 
-— `collection-manager.ts:1240-1300`
+This was the original shape in `collection-manager.ts`. Both collection-manager
+subscriptions now guard the deferred attach. The same unguarded shape remains
+in the five functions listed below.
 
 A caller that disposes before the promise settles runs the disposer while
 `unsubscribe` is still `null`. The disposer no-ops; the listener then attaches
 with nothing holding a reference to it. The orphan bills a read for every
 subsequent change to its result set for the lifetime of the tab.
 
-### The trigger is a real, routine code path
+### The race window
 
-`collections-state.ensureStarted()` calls `this.teardown()` **synchronously**
-when the uid changes (`collections-state.svelte.ts:65,70`). The comment at
-`collection-manager.ts:1264-1272` already documents the anonymous→Google uid
-swap and sign-out as expected events on this path. Because
-`getFirestoreInstance()` is a promise, the `.then()` body is deferred to a
-microtask even when Firestore is already initialised — so a teardown issued in
-the same synchronous tick as the subscribe **always** loses the race, not just
-under slow-network conditions. (read + measured)
+Because `getFirestoreInstance()` is a promise, the attach runs after the helper
+returns. Any caller that disposes in that window loses the cleanup reference in
+the five unguarded helpers. The original collection-state uid-swap trigger is
+now protected by the collection-manager fix. Trigger frequency for each
+remaining helper depends on its caller lifetime and was not measured. (read)
 
 ### Affected sites (read)
 
-| File                                            | Line | Function                  |
-| ----------------------------------------------- | ---- | ------------------------- |
-| `shared/library/services/collection-manager.ts` | 1240 | `subscribeToCollections`  |
-| `shared/library/services/collection-manager.ts` | 1302 | `subscribeToCollection`   |
-| `shared/library/services/library-repository.ts` | 1374 | `subscribeToLibrary`      |
-| `shared/library/services/library-repository.ts` | 1538 | `subscribeToSequence`     |
-| `shared/community/services/user-repository.ts`  | 597  | `subscribeToUsers`        |
-| `shared/community/services/user-repository.ts`  | 877  | `subscribeToFollowStatus` |
-| `features/library/services/tag-manager.ts`      | 286  | `subscribeToTags`         |
+| Status    | File                                            | Function                  |
+| --------- | ----------------------------------------------- | ------------------------- |
+| fixed     | `shared/library/services/collection-manager.ts` | `subscribeToCollections`  |
+| fixed     | `shared/library/services/collection-manager.ts` | `subscribeToCollection`   |
+| remaining | `shared/library/services/library-repository.ts` | `subscribeToLibrary`      |
+| remaining | `shared/library/services/library-repository.ts` | `subscribeToSequence`     |
+| remaining | `shared/community/services/user-repository.ts`  | `subscribeToUsers`        |
+| remaining | `shared/community/services/user-repository.ts`  | `subscribeToFollowStatus` |
+| remaining | `features/library/services/tag-manager.ts`      | `subscribeToTags`         |
 
 **Not affected** (verified, do not change): `public-collection-loader.ts:215`
 and `:332` carry a `disposed` flag and re-check it after attaching;
@@ -479,19 +485,25 @@ sufficient;`followed-collections.ts:64` returns `Promise<Unsubscribe>` so the
 caller owns the race, and `followed-collections-state.svelte.ts:67-73` handles
 it correctly.
 
-### Reproduction evidence — measured
+### Compatibility evidence — measured + read
 
 `tests/unit/opus-firestore-audit/listener-disposal-race.test.ts`
 
-- _"leaks the listener when disposed before Firestore resolves"_: dispose, then
-  release the Firestore promise → one listener attached at
-  `users/uid-under-test/collections`, still `active`.
+- _"does not attach subscribeToCollections after early disposal"_: dispose,
+  then release the Firestore promise → **0** listeners attached.
+- _"does not attach subscribeToCollection after early disposal"_: the detail
+  subscription has the same result → **0** listeners attached.
 - _"disposes correctly when Firestore resolves first"_: the same code path with
-  the ordering reversed tears down cleanly — which is why this never shows up
-  in manual testing.
+  the ordering reversed attaches once and tears down cleanly.
 - _"subscribeToAllPublicCollections … tears the listener down even when
   disposed before Firestore resolves"_: **0** leaked. The counter-example is
   measured rather than asserted.
+
+The remaining count of five is source-reviewed rather than executed in this
+suite. Each listed helper awaits `getFirestoreInstance()`, assigns its
+`onSnapshot` disposer afterward, and returns a cleanup that only checks the
+eventual disposer; none records an early-disposal flag. The report therefore
+does not claim that all five were dynamically triggered in this audit.
 
 `subscribeToUsers` deserves a specific note: its snapshot handler calls
 `getFollowingIds(currentUserId)` (up to 500 reads) and then
@@ -501,7 +513,7 @@ expensive orphan in the set. (read)
 
 ### Likely fix
 
-Apply the `public-collection-loader.ts` template verbatim to all seven:
+Apply the guarded deferred-attach shape to the remaining five:
 
 ```ts
 let disposed = false;
@@ -514,18 +526,15 @@ getFirestoreInstance().then((firestore) => {
 return () => { disposed = true; unsubscribe?.(); unsubscribe = null; };
 ```
 
-**Tradeoffs.** None of substance — it is strictly additive and the template
-already ships in this codebase. The only judgement call is whether to extract
-it into a shared `createDeferredSubscription()` helper. Given seven sites and
-`.claude/rules/never-hand-roll.md`'s second-use rule, extracting an owner is
-the better call than seven copies; `public-collection-loader.ts` would then
-become its first consumer rather than its template.
+**Tradeoffs.** The guard is additive and already ships in this codebase. A
+shared helper may reduce repeated lifecycle code, but extracting one should be
+weighed against the different query setup and error paths at the five sites.
 
 ### Regression test plan
 
-Invert the pinned assertions in `listener-disposal-race.test.ts`
-(`active` → `false`, leak count → 0) and parameterise the suite over all seven
-exported helpers so a newly-added subscription without the guard fails.
+Add deferred-disposal regressions for the remaining five exported helpers as
+each production fix lands. Keep the two collection-manager assertions at zero
+attachments so their fixed behavior cannot regress.
 
 ---
 
@@ -702,9 +711,10 @@ schedule. (read)
 - _"does apply a bound at its default"_: the default `maxCount = 20` **does**
   emit `limit(20)` — so the unbounded shape is the app-root caller's choice,
   not a `Notifier` defect. The fix belongs at the call site.
-- _"keeps only one listener alive across resubscribes"_: `Notifier` holds a
-  single module-level `unsubscribe` and tears the previous listener down. This
-  is correct and is pinned so a refactor cannot regress it into a pile-up.
+- _"gives each subscription an independently owned disposer"_: two
+  subscriptions attach independently and each returned disposer tears down
+  exactly its own listener. Listener replacement belongs to the caller's
+  lifecycle.
 
 ### Likely fix
 
@@ -830,8 +840,8 @@ unfollowing one collection therefore re-reads and re-counts the entire shelf:
 `F × (1 + ⌈m/30⌉)` operations. (read)
 
 Ranked M because `F` is small for a typical user and the module is otherwise
-exemplary — it has the epoch guard, the disposal-race handling H2's seven sites
-lack, batched owner names, and a localStorage mirror for synchronous paint. It
+exemplary — it has an epoch guard, caller-owned asynchronous disposal, batched
+owner names, and a localStorage mirror for synchronous paint. It
 is listed because the fix is the same memo shape as H1 and H3, and because it
 is the third instance of the same "re-resolve everything on any change"
 pattern in this domain.
@@ -866,12 +876,11 @@ batch, so findings route as follows:
 | H1                                                             | `features/browse/collections/state/community-collections-state.svelte.ts`                                                 | unassigned at time of writing  |
 | H2 (remaining five sites), M7, M8                              | `library-repository.ts`, `user-repository.ts`, `tag-manager.ts`, `public-sequences-loader.ts`, followed-collections state | unassigned at time of writing  |
 
-The pinned tests in `tests/unit/opus-firestore-audit/` are the handover
-artefact: each carries a `DEFECT PINNED` comment naming the assertion to invert,
-so whichever agent takes a finding inherits a measurement rather than a
-description. The owning agent should also re-read the fix proposals here as
-starting points, not conclusions — H0's in particular is explicitly marked as
-not established safe.
+The tests in `tests/unit/opus-firestore-audit/` are the handover artefact. Some
+pin current defects while others preserve corrected behavior; each finding's
+evidence section states which kind it is. The owning agent should also re-read
+the fix proposals here as starting points, not conclusions — H0's in
+particular is explicitly marked as not established safe.
 
 ---
 
@@ -884,9 +893,10 @@ dependency of two findings and is deliberately not analysed:
   and `user-document-manager.ts:88` skips minting a public profile for
   anonymous guests outside production — so guest/anonymous accounts take a
   different path through the profile fan-out than this audit measured.
-- H2's disposal race is triggered most often by the anonymous→Google uid swap,
-  which is that agent's domain. The leak is real independent of how the swap
-  behaves, but the _frequency_ of the trigger depends on it.
+- H2's two collection-manager subscriptions formerly shared the
+  anonymous→Google uid-swap trigger with guest-save logic. Those two are now
+  guarded; the remaining five helpers still need their own caller-lifetime
+  analysis.
 
 No recommendation here should be implemented in a way that changes guest-save
 behaviour without coordinating with that work.

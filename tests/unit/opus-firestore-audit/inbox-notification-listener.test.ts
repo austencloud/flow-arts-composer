@@ -93,7 +93,11 @@ beforeEach(() => {
 describe("H5 — the app-root inbox notification listener", () => {
   it("attaches with no limit() when called the way InboxSubscriptionProvider calls it", async () => {
     // Exactly the production call: InboxSubscriptionProvider.svelte:89-95.
-    notificationService.subscribeToNotifications("uid-1", () => {}, 0);
+    const dispose = notificationService.subscribeToNotifications(
+      "uid-1",
+      () => {},
+      0
+    );
     await flush();
 
     expect(mocks.attachedTo).toEqual(["users/uid-1/notifications"]);
@@ -108,36 +112,43 @@ describe("H5 — the app-root inbox notification listener", () => {
     expect(clauses.some((c) => (c as { kind?: string }).kind === "limit")).toBe(
       false
     );
+    dispose();
   });
 
   it("does apply a bound at its default, so only the app-root caller is unbounded", async () => {
     // The default (maxCount = 20) is the safe shape. The Inbox provider opts
     // out of it deliberately; the fix is a page-size + cursor there, not a
     // change to this default.
-    notificationService.subscribeToNotifications("uid-2", () => {});
+    const dispose = notificationService.subscribeToNotifications(
+      "uid-2",
+      () => {}
+    );
     await flush();
 
     const clauses = mocks.queries.at(-1)!;
     expect(clauses).toContainEqual({ kind: "limit", n: 20 });
+    dispose();
   });
 
-  it("keeps only one listener alive across resubscribes (no listener pile-up)", async () => {
-    // Notifier holds a single module-level `unsubscribe`, so a re-subscribe
-    // tears the previous one down. This is the correct half of the design and
-    // is pinned so a future refactor cannot silently regress it into a leak.
-    //
-    // `notificationService` is a module singleton shared across this file, so
-    // normalize first: one subscribe, then reset the counters, so what is
-    // measured is exactly one resubscribe cycle.
-    notificationService.subscribeToNotifications("uid-3", () => {}, 0);
-    await flush();
-    mocks.attachedTo.length = 0;
-    mocks.unsubscribes = 0;
-
-    notificationService.subscribeToNotifications("uid-3", () => {}, 0);
+  it("gives each subscription an independently owned disposer", async () => {
+    const disposeFirst = notificationService.subscribeToNotifications(
+      "uid-3",
+      () => {},
+      0
+    );
+    const disposeSecond = notificationService.subscribeToNotifications(
+      "uid-3",
+      () => {},
+      0
+    );
     await flush();
 
-    expect(mocks.attachedTo).toHaveLength(1);
-    expect(mocks.unsubscribes).toBe(1); // the prior listener, torn down
+    expect(mocks.attachedTo).toHaveLength(2);
+
+    disposeFirst();
+    expect(mocks.unsubscribes).toBe(1);
+
+    disposeSecond();
+    expect(mocks.unsubscribes).toBe(2);
   });
 });

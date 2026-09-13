@@ -3,9 +3,9 @@
  * (docs/reports/opus-batch-2026-09-12/firestore-cost.md, finding H2).
  *
  * READ-ONLY AUDIT ARTEFACT. These tests assert the behaviour production has
- * TODAY, not the behaviour it should have. Each one names the defect it pins
- * and the assertion to invert once the fix lands, so a fixing change is forced
- * to update this file rather than quietly leave the leak in place.
+ * TODAY. The two collection-manager subscriptions originally covered by H2
+ * now carry disposal guards; the remaining five affected helpers are tracked
+ * by source review in the audit report.
  *
  * The defect shape:
  *
@@ -108,7 +108,10 @@ vi.mock("$lib/shared/library/services/collection-firestore-mapper", () => ({
   batchFetchPublicSequences: vi.fn(),
 }));
 
-import { subscribeToCollections } from "$lib/shared/library/services/collection-manager";
+import {
+  subscribeToCollection,
+  subscribeToCollections,
+} from "$lib/shared/library/services/collection-manager";
 import { subscribeToAllPublicCollections } from "$lib/features/library/services/public-collection-loader";
 
 /** Let every already-queued microtask run. */
@@ -119,8 +122,8 @@ beforeEach(() => {
   mocks.releaseFirestore = null;
 });
 
-describe("subscribeToCollections disposal race (collection-manager.ts:1240)", () => {
-  it("leaks the listener when disposed before Firestore resolves", async () => {
+describe("collection-manager deferred listener disposal", () => {
+  it("does not attach subscribeToCollections after early disposal", async () => {
     const dispose = subscribeToCollections(() => {});
 
     // The realistic trigger: collections-state.ensureStarted() calls
@@ -134,33 +137,21 @@ describe("subscribeToCollections disposal race (collection-manager.ts:1240)", ()
     mocks.releaseFirestore?.();
     await flush();
 
-    expect(mocks.listeners).toHaveLength(1);
-
-    // DEFECT PINNED: the listener attached after its disposer already ran and
-    // no reference survives to stop it. Invert to `false` when a `disposed`
-    // flag is added to subscribeToCollections.
-    expect(mocks.listeners[0]!.active).toBe(true);
-    expect(mocks.listeners[0]!.path).toBe("users/uid-under-test/collections");
+    // FIX VERIFIED: collection-manager checks `disposed` before attaching.
+    expect(mocks.listeners).toHaveLength(0);
   });
 
-  it("leaks one listener per uid swap, so leaks accumulate", async () => {
-    // Three rapid ensureStarted()/teardown() cycles — what a sign-out,
-    // sign-in, then preview-user swap produces inside one tab.
-    for (let i = 0; i < 3; i++) {
-      const dispose = subscribeToCollections(() => {});
-      dispose();
-    }
+  it("does not attach subscribeToCollection after early disposal", async () => {
+    const dispose = subscribeToCollection("collection-1", () => {});
+    dispose();
 
-    // Each subscribe captured its own resolver; releasing the last one is
-    // enough because every getFirestoreInstance() promise here is independent.
-    // Release all of them by draining the mock's recorded resolvers.
+    expect(mocks.listeners).toHaveLength(0);
+
     mocks.releaseFirestore?.();
     await flush();
 
-    // Only the most recent resolver is retained by this simple mock, so this
-    // asserts the *floor* on the leak, not its ceiling.
-    const leaked = mocks.listeners.filter((l) => l.active);
-    expect(leaked.length).toBeGreaterThanOrEqual(1);
+    // FIX VERIFIED: the detail subscription uses the same guard.
+    expect(mocks.listeners).toHaveLength(0);
   });
 
   it("disposes correctly when Firestore resolves first (the non-racing path)", async () => {
@@ -189,8 +180,8 @@ describe("subscribeToAllPublicCollections is the correct counter-example", () =>
     await flush();
 
     // public-collection-loader.ts re-checks `disposed` after attaching and
-    // immediately unsubscribes. This is the fix shape the seven racing call
-    // sites listed in the audit report need.
+    // immediately unsubscribes. The collection-manager functions now use the
+    // same lifecycle shape; five other helpers listed in the report do not.
     const leaked = mocks.listeners.filter((l) => l.active);
     expect(leaked).toHaveLength(0);
   });
