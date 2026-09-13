@@ -5,11 +5,11 @@ scoped Fuse tests. Excluded by assignment and respected here: shared
 generation/LOOP transforms, the shared renderer, the playback carousel,
 persistence, prop colors.
 
-|           |                                                            |
-| --------- | ---------------------------------------------------------- |
-| Base SHA  | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`) |
-| Branch    | `claude/fuse-sequence-composition-fix-smdu2c`              |
-| Final SHA | `8b9daccaf3fbe21166bcc8f1b412c1097c2a49b6`                 |
+|                   |                                                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Base SHA          | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`)                                                               |
+| Branch            | `claude/fuse-sequence-composition-fix-smdu2c`                                                                            |
+| Final runtime SHA | `8b9daccaf3fbe21166bcc8f1b412c1097c2a49b6` — the last commit touching runtime code; every commit after it is this report |
 
 ## Owned files
 
