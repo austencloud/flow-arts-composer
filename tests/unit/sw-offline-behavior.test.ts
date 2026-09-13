@@ -172,6 +172,76 @@ describe("sw.js 3D asset freshness", () => {
     const offline = await h.dispatchFetch(`${ORIGIN}${modelUrl}`);
     expect(await offline!.text()).toBe("current forest");
   });
+
+  // Fix: a FAILED cache write must never decide the response. The 3D rule used
+  // to `await cache.put(...)` inside the same try that wraps the network fetch,
+  // so a rejecting write — Cache.put rejects with QuotaExceededError on a
+  // device at its storage limit, and with a TypeError for a 206 partial —
+  // threw the good 200 away and fell into the offline branch. The user got the
+  // OLD scene back (or a bare 503 with nothing cached) while the network was
+  // perfectly healthy and the bytes were already in hand.
+  it("still serves the fresh model when the cache write fails (quota)", async () => {
+    const h = createSwHarness();
+    const modelUrl = "/models/forest/forest-environment.glb";
+    await h.seedCache(h.constants.assets3dCacheName, modelUrl, "old forest");
+    h.route(modelUrl, respondWith("current forest"));
+
+    // Storage is full: every write into the 3D cache rejects.
+    const cache = await h.caches.open(h.constants.assets3dCacheName);
+    vi.spyOn(cache, "put").mockRejectedValue(
+      new Error("Quota exceeded.")
+    );
+
+    const res = await h.dispatchFetch(`${ORIGIN}${modelUrl}`);
+    expect(res!.status).toBe(200);
+    expect(await res!.text()).toBe("current forest");
+  });
+
+  it("returns the fetched decoder when the cache write fails and nothing is cached", async () => {
+    const h = createSwHarness();
+    const decoderUrl = "/draco/draco_decoder.wasm";
+    h.route(decoderUrl, respondWith("wasm bytes"));
+
+    const cache = await h.caches.open(h.constants.assets3dCacheName);
+    vi.spyOn(cache, "put").mockRejectedValue(new Error("Quota exceeded."));
+
+    const res = await h.dispatchFetch(`${ORIGIN}${decoderUrl}`);
+    expect(res!.status).toBe(200); // was 503 "Offline" on a healthy network
+    expect(await res!.text()).toBe("wasm bytes");
+  });
+
+  // Fix: /basis/ (the Basis Universal / KTX2 transcoder) is the other half of
+  // the decoder runtime that every optimized GLB needs — see
+  // src/lib/shared/3d/scene-boot/scene-asset-manifest.ts DECODER_RUNTIME_URLS,
+  // which warms /draco/ and /basis/ as one pair. Only /draco/ was routed into
+  // the 3D asset cache, so offline the geometry decoder was there and the
+  // texture transcoder was network-only: every KTX2-textured scene failed to
+  // decode with a full model cache sitting right next to it.
+  it("keeps the KTX2/Basis transcoder offline alongside the Draco decoder", async () => {
+    const h = createSwHarness();
+    const draco = "/draco/draco_decoder.wasm";
+    const basis = "/basis/basis_transcoder.wasm";
+    h.route(draco, respondWith("draco bytes"));
+    h.route(basis, respondWith("basis bytes"));
+
+    expect(await (await h.dispatchFetch(`${ORIGIN}${draco}`))!.text()).toBe(
+      "draco bytes"
+    );
+    expect(await (await h.dispatchFetch(`${ORIGIN}${basis}`))!.text()).toBe(
+      "basis bytes"
+    );
+
+    // Network down: both decoders must still come out of the 3D asset cache.
+    h.routes.delete(draco);
+    h.routes.delete(basis);
+
+    const dracoOffline = await h.dispatchFetch(`${ORIGIN}${draco}`);
+    expect(await dracoOffline!.text()).toBe("draco bytes");
+
+    const basisOffline = await h.dispatchFetch(`${ORIGIN}${basis}`);
+    expect(basisOffline).not.toBeNull(); // was null: the SW never handled it
+    expect(await basisOffline!.text()).toBe("basis bytes");
+  });
 });
 
 describe("sw.js /images/* stale-while-revalidate", () => {
