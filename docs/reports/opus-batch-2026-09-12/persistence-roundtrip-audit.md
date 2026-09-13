@@ -17,6 +17,8 @@ set):
 | `490b3227d822a99c3e1fd28f634ca72e71a50d61` | this report |
 | `3a18a7400377daf2066e2b02e71463d5b4f67326` | SHA bookkeeping in this report |
 | `9f06f0a9f41baad4b6f934bc598081dde86f4bc6` | tightened the wire corpus assertion (P4) |
+| `ef3735e436bd79ea57e5e96f521d2e30318ce3f2` | first revision, the one sent for independent review |
+| `929ca92b81e41e5211795d57d71913d19d32114b` | **the seven review corrections** — the substantive content of this revision |
 
 **Owned paths (exclusive):**
 
