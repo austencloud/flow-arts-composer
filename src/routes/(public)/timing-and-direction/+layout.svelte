@@ -27,6 +27,11 @@
   $effect(() => {
     if (page.params.mode) playback.select(page.params.mode);
   });
+
+  $effect(() => {
+    playback.pendingSeek.version;
+    playback.runPendingSeek();
+  });
 </script>
 
 <div use:renderGateTarget={gate}>
@@ -44,13 +49,14 @@
       {#if browser}
         <HandMotionPlayer
           primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-          sequence={playback.selected.motion.sequence}
+          sequence={playback.sequence}
           initialStep={playback.step}
           ariaLabel={playback.selected.article.name}
           showElementalGlyph
           externalPlaying={playback.playing}
           onExternalPlayingChange={(value) => (playback.playing = value)}
           onStepChange={playback.followStep}
+          onSeekRef={playback.registerSeek}
           playbackGate={gate}
           framed={false}
         />
