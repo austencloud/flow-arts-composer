@@ -11,7 +11,17 @@ shipped: 2026-08-02
 ---
 # Native Release Surface Hardening
 
-**Status:** Approved for implementation on 2026-08-01
+**Status:** Shipped 2026-08-02 in `685f9a202` (_fix(release): gate internal
+native surfaces_). The body header previously still read "Approved for
+implementation on 2026-08-01" while this file's own frontmatter already carried
+`status: shipped` / `shipped: 2026-08-02`; corrected 2026-09-13 during spec
+reconciliation.
+
+**Reconciliation evidence (2026-09-13):** `src/config/feature-flags.ts:216`
+declares the `coven` dev feature with `routePatterns: ["src/routes/coven/"]`;
+`src/config/vite-plugin-feature-gate.ts` carries the client-build emptying pass
+(`685f9a202`); `scripts/verify-native-release-surface.mjs` is present and wired
+into `npm run build:native`.
 
 ## Incident
 

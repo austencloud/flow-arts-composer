@@ -1,7 +1,31 @@
+---
+status: active
+value: 3
+effort: M
+remaining: "Six of ten ledger items are done and in the tree. Four are genuinely open, in this order: (1) wire fauna cluster anchors to the zone anchor points - fish-compute.ts still divides cluster centres into an even ring and knows nothing about zones; (2) write scripts/verify-ocean-zone-layout.mjs and get it green - the file does not exist, so the exclusion/spacing contract is unenforced; (3) decimate boat.glb and octopus.glb and place them in wreck-hollow-southeast - the zone is declared in scripts/ocean-zone-layout.json but no placement references either asset; (4) stage crack/rim-light treatment. Items 2 and 1 are worth doing first: 2 is cheap and protects the work already banked."
+depends_on: ""
+plan_path: ""
+tags: [3d, ocean, scene-composition, blender]
+last_triaged: 2026-09-13
+---
+
 # Ocean Zone Layout — Intentional Composition Pass
 
 **Date:** 2026-08-09
-**Status:** Draft for review
+**Status:** In progress -- approved and substantially executed, not a draft. The
+header read "Draft for review" until 2026-09-13 while six of the ten ledger
+items below had already been checked off and five commits had landed against the
+contract. Corrected during spec reconciliation.
+
+**Reconciliation evidence (2026-09-13):** `scripts/ocean-zone-layout.json` is the
+finalized contract (v1, seed 840917, with `placementRules` and
+`heroPresentations`). Executing commits: `672366b53` (per-hero staging
+directives), `393d757d6` (zone recompose tooling + placement updates),
+`4267e5020` (re-ground 348 placements onto the sculpted terrain), `7ed1fd408`
+(proscenium + stage clearance), `c6c18c541` (compose the reef from a per-asset
+facts index). Each of the four unchecked ledger items was re-tested against the
+tree and all four are still genuinely open -- see `remaining` in the frontmatter.
+
 **Owner scene:** `src/lib/shared/3d/environments/scenes/ocean/`
 **Template precedent:** Forest ground ecology (`2aef59b53b`, `scripts/forest-ground-life-layout.json` + verify/contact-sheet loop)
 

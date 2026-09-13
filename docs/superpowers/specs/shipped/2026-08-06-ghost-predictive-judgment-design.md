@@ -1,8 +1,16 @@
 # The Ghost predicts what its choices will do
 
 **Date:** 2026-08-06
-**Status:** implemented and verified
+**Status:** Shipped. Implemented and verified.
 **Extends:** `2026-08-06-ghost-experience-learning-design.md`
+
+**Reconciliation 2026-09-13:** the pure forecasting module this spec adds beside
+activity experience is present at
+`src/lib/shared/attract/domain/activity-prediction.ts`. Re-ran
+`vitest run --config tests/config/vitest.config.ts tests/unit/attract/` against
+`c4be1619`: 9 files, 68 tests passed, 2 skipped (env-gated fleet test). Moved
+out of `active/`. Note: the fleet numbers quoted under Verification below are
+the original 2026-08 measurements and were not re-measured in this pass.
 
 ## The 7.5 target
 

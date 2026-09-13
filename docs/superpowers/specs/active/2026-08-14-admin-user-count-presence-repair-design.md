@@ -1,7 +1,32 @@
+---
+status: active
+value: 3
+effort: XS
+remaining: "Code shipped 2026-08-15 in ce9121c91; verification gates 1-2 re-proved 2026-09-13 (9 tests green). Only gates 4 and 5 are left, and both need a live admin session: a read-only RTDB query showing an active user stays active when another connection disappears, and the admin page showing the Auth total, the profile boundary and the live active count at the required viewports. Do NOT re-implement presence aggregation or the user-summary endpoint."
+depends_on: "external: a live admin claim plus an authenticated browser session against production RTDB"
+plan_path: ""
+tags: [admin, presence, analytics, verification-only]
+last_triaged: 2026-09-13
+---
+
 # Admin User Counts and Multi-Connection Presence
 
-**Date:** 2026-08-14  
-**Status:** Approved for implementation  
+**Date:** 2026-08-14
+
+**Status:** IMPLEMENTED 2026-08-15 in `ce9121c91` (_fix(admin): repair user count
+and presence aggregation_). Header corrected 2026-09-13 during spec
+reconciliation; it still read "Approved for implementation" a month after the
+repair landed, which made this document a rebuild hazard over live admin code.
+
+**Reconciliation evidence (2026-09-13):** `ce9121c91` created both new
+deliverables -- `src/lib/shared/presence/domain/presence-aggregation.ts` and
+`src/routes/api/admin/user-summary/+server.ts`. The version-two presence node is
+live: `presence-tracker.ts:307,335` writes `schemaVersion: 2` and
+`presence-aggregation.ts:21` reads it, with the legacy flat-record path retained
+as designed. Verification gates 1 and 2 were re-run at `c4be1619`:
+`vitest run --config tests/config/vitest.config.ts tests/unit/presence-aggregation.test.ts tests/unit/admin-user-summary-route.test.ts`
+-> 2 files, 9 tests passed. Gates 4 and 5 remain unproven and stay open.
+
 **Surface:** Admin module, User Management
 
 ## Observed failure

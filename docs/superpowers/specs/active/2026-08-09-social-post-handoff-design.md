@@ -1,7 +1,34 @@
+---
+status: active
+value: 4
+effort: S
+remaining: "Phases 1 and 2 are built and in the tree; nothing here needs implementing. What is left is Austen's: the Meta app configuration and review for instagram_business_content_publish, pages_manage_posts and publish_video (docs/reference/meta-posting-e2e-checklist.md), after which META_POSTING_ENABLED flips. Also unrecorded: the four device proofs under Verification (phone navigator.share of a real video File into Instagram; desktop QR scanned to a real camera roll; prefilled caption with a simplified LOOP word; sheet interactive within one frame while a render runs) and the seven-viewport sweep of the sheet."
+depends_on: "external: Meta app review for instagram_business_content_publish, pages_manage_posts, publish_video"
+plan_path: ""
+tags: [share, social, meta, instagram, blocked-external]
+last_triaged: 2026-09-13
+---
+
 # Social Post Handoff — Design
 
 **Date:** 2026-08-09
-**Status:** Approved, unimplemented
+**Status:** Phase 1 and Phase 2 BUILT; blocked only on Meta app review. This
+header read "Approved, unimplemented" until 2026-09-13 even though the Phase 2
+section below has listed what shipped since 2026-08-09 and Post Studio was wired
+into the sheet on 2026-08-23. Corrected during spec reconciliation.
+
+**Reconciliation evidence (2026-09-13):** every path in the Phase 2 "What
+shipped" table exists -- `firebase-functions/src/share/metaConnect.ts`,
+`publishToMeta.ts`, `metaGraphClient.ts`, `metaPublishPolicy.ts`,
+`src/lib/shared/share/services/meta-publish.ts`,
+`src/lib/server/auth/meta-oauth-proxy.ts`, and
+`docs/reference/meta-posting-e2e-checklist.md`. The sheet lives at
+`src/lib/shared/share/components/PostShareSheet.svelte` and still gates on
+`META_POSTING_ENABLED` (lines 60, 327, 617). `sharePost()` is the Post Studio
+seam at `sequence-viewer/state/viewer-shell-share-state.svelte.ts:117`. The kill
+switch is deliberately off and must stay off until review lands -- that is a
+preserved gate, not drift.
+
 **Goal:** Collapse the distance between "I'm looking at this animation in the sequence viewer" and "it's posted on my Instagram/Facebook" to one tap on phone and roughly three clicks on desktop.
 
 ---

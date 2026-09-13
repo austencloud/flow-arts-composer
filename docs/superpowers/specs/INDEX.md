@@ -288,7 +288,7 @@ Complete enough to hand to an executor, and nothing supersedes them.
 | --- | --- | --- | --- | --- |
 | [`2026-09-01-composer-showcase-range-design.md`](./2026-09-01-composer-showcase-range-design.md) | design | **OPEN** | no commit after 0437aeedb7 matches the range brief | Widen the Composer page beyond four beats |
 | [`2026-08-21-composer-3d-showcase-film-design.md`](./2026-08-21-composer-3d-showcase-film-design.md) | design | **IN-FLIGHT** | 0437aeedb7 turned the public page into a live showcase | Successor: 2026-09-01-composer-showcase-range-design.md |
-| [`2026-08-21-composer-presentation-mockup-handoff.md`](./2026-08-21-composer-presentation-mockup-handoff.md) | handoff | **SHIPPED** | 2c432e6d6e + 2ee83956aa | Successor: specs/active/2026-08-27-composer-presentation-promotion-plan.md |
+| [`2026-08-21-composer-presentation-mockup-handoff.md`](./2026-08-21-composer-presentation-mockup-handoff.md) | handoff | **SHIPPED** | 2c432e6d6e + 2ee83956aa | Successor: specs/shipped/2026-08-27-composer-presentation-promotion-plan.md |
 | [`2026-08-23-composer-presentation-fable-handoff.md`](./2026-08-23-composer-presentation-fable-handoff.md) | handoff | **SHIPPED** | 8ec8a09c54 promote reviewed presentation |  |
 
 ### creators  <sub>3 shipped</sub>
