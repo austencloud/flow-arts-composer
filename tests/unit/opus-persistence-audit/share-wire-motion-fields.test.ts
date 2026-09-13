@@ -39,11 +39,13 @@ import {
   verifySequenceRoundTrip,
 } from "$lib/shared/navigation/services/sequence-encoder";
 import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { ensureComposition, hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
 import {
+  asStoredDocument,
   buildSequence,
   diffMotionIdentity,
   makeStep,
@@ -97,28 +99,62 @@ describe("share/QR flat wire format motion fidelity", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("measured: plane is the ONLY motion-identity field the corpus loses over the wire", () => {
+  it("measured: TWO hash-basis fields diverge over the wire — plane is dropped, handPath is synthesized", () => {
+    // An earlier revision of this file omitted `handPath` from the compared
+    // set and concluded "plane is the only field that diverges". That was
+    // wrong: `handPath` is in the V3 hash basis
+    // (`sequence-content-hasher.ts:198`), and the decoder assigns it a value
+    // the source did not have. Both directions move the identity hash.
     const corpus = realCorpusSequences();
     let motionsChecked = 0;
-    let planeLosses = 0;
-    const otherLosses: string[] = [];
+    let planeDropped = 0;
+    let handPathSynthesized = 0;
+    const otherDivergences: string[] = [];
 
     for (const { label, sequence } of corpus) {
       const back = decodeSequence(encodeSequence(sequence));
       motionsChecked += sequence.steps.length * 2;
       for (const line of diffMotionIdentity(sequence, back)) {
-        if (line.includes(".plane:")) planeLosses++;
-        else otherLosses.push(`${label}: ${line}`);
+        if (line.includes(".plane:")) planeDropped++;
+        else if (line.includes(".handPath:")) handPathSynthesized++;
+        else otherDivergences.push(`${label}: ${line}`);
       }
     }
 
     expect(motionsChecked).toBeGreaterThan(500);
-    // The corpus stores `plane: "wall"` on every motion; every one comes back absent.
-    expect(planeLosses).toBe(motionsChecked);
-    // Locations, orientations, motion types, rotation directions and turns all
-    // survive the orientation-chaining decoder on real data — the loss is a
-    // field-coverage gap, not a broken derivation.
-    expect(otherLosses).toEqual([]);
+    // Every generated motion carries `plane: "wall"`; every one comes back absent.
+    expect(planeDropped).toBe(motionsChecked);
+    // Every generated motion carries `handPath: null`; the decoder derives
+    // cw/ccw/dash for every one via `getHandpathDirection`.
+    expect(handPathSynthesized).toBe(motionsChecked);
+    // Everything else — locations, orientations, motion types, rotation
+    // directions, turns — survives the orientation-chaining decoder, so this
+    // is field coverage, not a broken derivation.
+    expect(otherDivergences).toEqual([]);
+  });
+
+  it("measured: the composition round trip diverges on neither field", () => {
+    // The contrast that localizes both divergences to the WIRE format. Same
+    // fixtures, same comparison, through save/read instead of encode/decode.
+    for (const { label, sequence } of realCorpusSequences()) {
+      const back = hydrate(asStoredDocument(ensureComposition(sequence)));
+      expect(diffMotionIdentity(sequence, back).map((l) => `${label}: ${l}`)).toEqual([]);
+    }
+  });
+
+  it("measured: handPath is unset on every generated motion — a generator property, not a corpus survey", () => {
+    // Bounds the finding above. The synthesis is only observable because the
+    // source value is null. How many STORED documents carry a null handPath is
+    // not measurable from here, so no prevalence is claimed either way.
+    const corpus = realCorpusSequences();
+    const values = new Set<unknown>();
+    for (const { sequence } of corpus) {
+      for (const step of sequence.steps) {
+        values.add(step.motions.left.handPath ?? null);
+        values.add(step.motions.right.handPath ?? null);
+      }
+    }
+    expect([...values]).toEqual([null]);
   });
 
   it("measured: per-beat letters are not carried by the wire format", () => {
@@ -158,14 +194,23 @@ describe("share/QR flat wire format input validation", () => {
     );
   });
 
-  it("measured: turns are parsed without any range check", () => {
-    // A public, attacker-supplied surface (scanned QR / pasted URL). Turns are a
-    // bounded domain quantity; the decoder accepts any finite number.
+  it("measured: a very large finite turn count is accepted verbatim", () => {
+    // This is the whole measurement, and its scope is deliberately narrow: the
+    // decoder's guard is shape-only (`/^-?(?:\d+(?:\.\d*)?|\.\d+)$/` plus
+    // `Number.isFinite`), so a huge finite value passes through unchanged on a
+    // public, attacker-supplied surface (scanned QR / pasted URL).
+    //
+    // NO CLAIM IS MADE ABOUT WHAT THE LEGAL SET IS. `Motion.turns` is typed
+    // `number | "fl"` (`packages/tka-types/src/motion.ts:30`) with no bound,
+    // and `rg` for a turns validator across `packages/tka-types`,
+    // `packages/sequence-engine` and `src/lib/shared/pictograph` finds none —
+    // only prose in `IOrientationPropagator.ts:21` ("0, 0.5, 1, 1.5, 2, etc.").
+    // There is therefore nothing in-repo to bind a range check to, and this
+    // audit will not invent a palette. Whether an upper bound exists at all is
+    // an OPEN QUESTION for the canonical domain owner (Flow Arts MCP), which
+    // was not reachable from this checkout. No `it.fails` is written for it:
+    // that would assert a policy nobody has approved.
     const decoded = decodeSequence("iiSS|nonox0|nonoc999999999999");
     expect(decoded.steps[0]!.motions.left.turns).toBe(999999999999);
-  });
-
-  it.fails("SHOULD PASS AFTER FIX: an out-of-domain turn count is refused", () => {
-    expect(() => decodeSequence("iiSS|nonox0|nonoc999999999999")).toThrow();
   });
 });

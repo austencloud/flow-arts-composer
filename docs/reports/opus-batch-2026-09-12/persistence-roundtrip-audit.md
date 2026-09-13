@@ -51,12 +51,29 @@ Two fixture sources, kept separate on purpose:
 1. Hand-authored beats built through the real factories, used when a defect
    needs one minimal readable example.
 2. `tests/fixtures/loop-audit/real-loop-fixtures.json` — 45 sequences, 432
-   content beats, captured from documents the app produced (legacy `blue`/`red`
-   motion keys, inline `stepNumber: 0` start entries, `plane: "wall"` on every
-   motion). **In every differential test that uses it, the corpus is the
-   authoritative side**: it is a recording of real output, not data this audit
-   invented, so where a round trip disagrees with it the round trip is the
-   suspect.
+   content beats (legacy `blue`/`red` motion keys, inline `stepNumber: 0` start
+   entries, `plane: "wall"` and `handPath: null` on every motion).
+
+**What that corpus is, precisely.** It is **generated fixture output, not
+captured Firestore documents.** `scripts/generate-loop-audit-fixtures.mjs`
+drives the production generation path — the canonical
+`DiamondPictographDataframe.csv` dataset through `SequenceBuilder` (beam search
++ LOOP seam targeting) into `executeLOOPSpec`, the same pipeline behind MCP
+`generate_sequence` and the app's circular generation — and commits the result.
+
+So in a differential test it is authoritative for **what the canonical
+generator emits**: 45 builder-validated sequences this audit did not author, so
+where a round trip disagrees with it the round trip is the suspect. It is **not**
+a sample of stored data. It supports no statement about how many saved
+documents exist in any shape, and a field it happens to leave unset is a
+property of the generator, not of user data. An earlier revision of this report
+called it "a recording of real output" and drew prevalence from it; that was
+wrong and the affected claims below are now marked conditional.
+
+An earlier revision also compared a field set that omitted `handPath`, which is
+in the V3 hash basis. `MOTION_IDENTITY_FIELDS` is now a **superset** of that
+basis, so no hash-affecting divergence can hide behind a short list — and
+correcting it changed a finding (see P4).
 
 ---
 
@@ -69,13 +86,14 @@ dev server, no emulator, no browser.
 | --- | --- |
 | `pnpm install --prefer-offline` | ok (23.5s) |
 | `npx tsc --build packages/tsconfig.build.json` | exit 0 — required before vitest; `@tka/tka-types` resolves to built output |
-| `npx vitest run --config tests/config/vitest.config.ts tests/unit/opus-persistence-audit` | **6 files, 36 tests, all passing** |
-| `npx vitest run --config tests/config/vitest.config.ts src/lib/shared/library/services/__tests__/sequence-persistence-normalizer.test.ts` | 32 passed — existing suite unaffected |
+| `npx vitest run --config tests/config/vitest.config.ts tests/unit/opus-persistence-audit` | **6 files, 39 tests, all passing** (9 of them quarantined `it.fails` repros) |
+| `npx vitest run --config tests/config/vitest.config.ts .../sequence-persistence-normalizer.test.ts src/lib/shared/foundation` | 10 files, 139 passed — the normalizer suite plus every adjacent foundation suite, unaffected |
 | `node scripts/tsc-gate.mjs` | 1 owned error, **not in any audited or added file** (see Limitations) |
 
 The audit suite is green by construction: every assertion that pins *current*
-behaviour passes, and every assertion describing *correct* behaviour is marked
-`it.fails`. See "Quarantine convention" below.
+behaviour passes, and every assertion describing a *contract the codebase
+already states* is marked `it.fails`. See "Quarantine convention" below for why
+that qualifier matters and which two repros were removed under it.
 
 ---
 
@@ -109,16 +127,30 @@ different hash means `fork: true`, and the fork branch
 - A start-bearing sequence hashes identically across save → read → save.
 - A start-less sequence does not: `computeHash(seq)` ≠
   `computeHash(hydrate(stored))`.
-- Over the real corpus: **0/45 drift when a start position is stored, 45/45
-  drift when it is not.** The only variable between the two runs is the stored
-  start position, which isolates the cause.
+- A controlled experiment over the generated corpus: **0/45 drift when a start
+  position is stored, 45/45 when it is not.** Both runs use the same fixtures
+  and the test removes `startPosition` itself, so the single variable isolates
+  the MECHANISM.
 
-**Inferred (impact):** one silent duplicate library document — defaulting to
-public — per affected sequence, on its first no-op re-save. The duplicate then
-stabilises (it was read back with a start position), so this is one extra
-document per sequence, not unbounded growth. That a start-less sequence reaches
-the save path is not hypothetical: `tests/unit/services/ensure-composition-start-position.test.ts`
-builds exactly that shape and calls it "the bug's shape".
+**Exposure is conditional, and the 45/45 is not prevalence.** The corpus run is
+a synthetic removal from generated fixtures, not a survey: every fixture **as
+generated** carries a start position and is therefore not exposed (pinned by
+`"a start-bearing sequence is the shape the generator actually emits"`). This
+audit did **not** identify a runtime producer that hands `saveSequence` a
+start-less sequence, and had no corpus access to count stored documents in that
+shape. `tests/unit/services/ensure-composition-start-position.test.ts` builds
+the shape and calls it "the bug's shape", which shows the shape was considered
+worth defending against — it is a test fixture, not a producer, and it is not
+evidence of prevalence.
+
+So: the ordering defect is **confirmed and latent**. Its blast radius depends
+entirely on whether such a producer exists.
+
+**Inferred (impact, conditional on a producer existing):** one silent duplicate
+library document — defaulting to public — per affected sequence, on its first
+no-op re-save. The duplicate then stabilises (it was read back with a start
+position), so it would be one extra document per sequence, not unbounded
+growth.
 
 **Minimal repro:** `content-hash-operation-order.test.ts` →
 `"SHOULD PASS AFTER FIX: hashing a startPosition-less sequence survives one
@@ -267,7 +299,9 @@ the renderer's input.
 (`src/lib/shared/navigation/services/sequence-encoder.ts:163-215`) emits exactly
 `${startLoc}${endLoc}${rotation}${turns}`, plus one prefloat byte for a float.
 No byte encodes `plane`, `skewSteps`, or `skewDir`, and `decodeMotion`
-(`sequence-encoder.ts:261-360`) never restores them.
+(`sequence-encoder.ts:261-360`) never restores them. Separately, `decodeMotion`
+**synthesizes** `handPath` via `getHandpathDirection` for every motion, whether
+or not the source had one.
 
 Two consumers care:
 
@@ -280,6 +314,9 @@ Two consumers care:
 - `skewSteps`/`skewDir` are carried by `sequence-decomposer.ts:49`, hashed at
   `sequence-content-hasher.ts:204`, and authored by
   `src/lib/features/choreo-card/services/hand-path-data-builder.ts:200`.
+- `handPath` is hashed at `sequence-content-hasher.ts:198`
+  (`handPath: m.handPath ?? null`), so `null` and `"ccw"` are different
+  identities for the same physical movement.
 
 `verifySequenceRoundTrip` (`sequence-encoder.ts:941-968`) lists `skewSteps` and
 `skewDir` among the fields it compares — but it compares `decode(x)` against
@@ -292,10 +329,28 @@ encoder, so an encode-side loss is structurally invisible to it.
   encodes to `iiSS|nonox0:sosox0|noeac0:sowec0|easoc0:wenoc0` — the same bytes
   it would produce without any of them — and decodes with all three absent;
 - `verifySequenceRoundTrip` on that encoding returns `ok: true`;
-- over the real corpus: **plane lost on 864/864 motions**, and it is the *only*
-  motion-identity field lost. Locations, orientations, motion types, rotation
-  directions, and turns all survive the orientation-chaining decoder on real
-  data, so this is a field-coverage gap rather than a broken derivation.
+- over the generated corpus, **two** hash-basis fields diverge on 864/864
+  motions: `plane` is **dropped** (`"wall"` → absent) and `handPath` is
+  **synthesized** (`null` → `cw`/`ccw`/`dash`). Nothing else diverges —
+  locations, orientations, motion types, rotation directions and turns all
+  survive the orientation-chaining decoder, so this is field coverage rather
+  than a broken derivation;
+- the same fixtures through the **composition** round trip diverge on neither
+  field, which localizes both to the wire format.
+
+**Correction.** An earlier revision of this report claimed plane was the *only*
+divergence. That was an artefact of a compared field set that omitted
+`handPath`; the set is now a superset of the V3 hash basis and the claim is
+replaced by the two-field measurement above. The `handPath` divergence is a
+gain, not a loss — but it moves the identity hash in exactly the same way, so a
+sequence shared by QR and re-imported takes a **different V3 identity from its
+original** whenever the source's `handPath` was unset.
+
+**Bounding the `handPath` half.** The synthesis is only observable because the
+source value is `null`, and `null` on every generated motion is a property of
+the generator (pinned by a dedicated assertion). How many **stored** documents
+carry an unset `handPath` is not measurable from this checkout, so no prevalence
+is claimed in either direction.
 
 **Not yet biting, and why.** Every motion in the corpus is `plane: "wall"`,
 which the V3 hasher's `?? Plane.wall` default absorbs, so no stored identity
@@ -330,7 +385,7 @@ skew and shares it, so I am not claiming a live user-visible break there.
 
 ---
 
-### P5 — Medium · `createSequenceData` drops `birthday` and `createdAt`; restored local state carries strings behind `Date`-typed fields
+### P5 — Medium · `createSequenceData` drops `birthday`; restored local state carries strings behind `Date`-typed fields (plus one unresolved `createdAt` policy)
 
 **Traced.** `createSequenceData`
 (`src/lib/shared/foundation/domain/models/sequence-data.ts:254-379`) copies
@@ -347,7 +402,11 @@ The function is the ingress constructor for persisted and imported data:
 - `src/lib/shared/persistence/services/dexie-persistence-service.ts:441` —
   restoring the in-progress sequence from localStorage;
 - `src/lib/features/create/shared/services/deep-link-sequence-handler.ts:104` —
-  an imported share link;
+  inside `loadFromPendingEdit`, which parses the `PENDING_EDIT_KEY`
+  **localStorage** blob. **Correction:** an earlier revision of this report
+  called this "an imported share link". It is not. `loadFromDeepLink` (:64-76)
+  calls `setSequence(deepLinkData.sequence)` directly, so a direct share link
+  **bypasses this constructor entirely**;
 - `src/lib/shared/qr/services/short-code-payload-hydrator.ts:99` — an embedded
   short-code payload;
 - `src/lib/features/choreo-card/services/sequence-render-hydrator.ts:67`.
@@ -365,21 +424,50 @@ The localStorage path adds a second problem: state is written with
   but `restored.dateAdded` is a `string`, not a `Date`, behind a `Date`-typed
   field.
 
-**Bounded blast radius, stated honestly.** For an *existing* library document
+**`createdAt` is an UNRESOLVED POLICY QUESTION, not a defect.** An earlier
+revision of this report bundled it with `birthday` and quarantined an
+`it.fails` asserting it should survive. That `it.fails` has been **removed**,
+because it dressed an unapproved product decision as a validated remediation.
+`library-sequence.ts:132-133` defines `createdAt` as "When added to THIS user's
+library (may differ from birthday)" — a membership timestamp owned by the
+receiving library, not a property of the imported content. Carrying an imported
+payload's value through unconditionally would assert someone else's membership
+date as this user's. Three defensible contracts exist:
+
+  (a) drop it and let `createLibrarySequence` stamp the receiving library's own
+      value — today's behaviour, arguably already correct;
+  (b) carry it only for a same-user restore (the localStorage path) and drop it
+      for cross-user imports;
+  (c) carry it always.
+
+The owner picks. The suite now pins (a) as current behaviour so a deliberate
+move is a reviewed change rather than a silent one.
+
+**`birthday` blast radius, stated honestly.** For an *existing* library document
 the loss is absorbed: `library-repository.ts:498-503` re-saves as
 `{ ...existing, ...sequence }`, and because `createSequenceData` omits the key
 entirely rather than setting `undefined`, the stored `birthday` survives the
-spread. The loss bites (a) when an imported payload becomes a **new** document —
+spread. It bites when an imported payload becomes a **new** document —
 `createLibrarySequence` stamps `birthday: options.birthday ?? now`
 (`library-sequence.ts:177`), so an imported sequence's real creation date is
-replaced by today's; and (b) for any consumer that calls a `Date` method on a
-restored `dateAdded`. Browse ordering reads `birthday ?? createdAt ?? dateAdded`
-(`browse-section-manager.ts:202`, `navigator.ts:237`), so a string there sorts
-but does not format.
+replaced by today's.
+
+**The `dateAdded` string is a type-contract violation with NO demonstrated
+failing consumer.** The two are separated deliberately. The declared type says
+`Date` and the runtime value is a `string`, which makes every consumer's
+correctness depend on remembering to coerce — that is worth fixing. But the
+known consumers *do* coerce: `browse-date.ts:12` and
+`browse-section-manager.ts:203` both run
+`candidate instanceof Date ? candidate : new Date(candidate)`, and a measured
+assertion confirms `resolveBrowseDate` returns the correct `Date` from a
+restored sequence. This audit found no consumer that calls a `Date` method on
+the restored value unguarded. An earlier revision said a string "sorts but does
+not format"; that was asserted, not demonstrated, and is withdrawn.
 
 **Minimal repros:** `sequence-data-field-coverage.test.ts` →
 `"SHOULD PASS AFTER FIX: birthday survives the ingress constructor"` and
-`"… a restored sequence's timestamps are usable as Dates"`.
+`"SHOULD PASS AFTER FIX (type contract, not a demonstrated failure): a restored
+sequence's timestamps are Dates"`.
 
 **Bounded remediation.** Add the two missing passthrough lines to
 `createSequenceData` (mechanical, matching the `dateAdded` line immediately
@@ -393,25 +481,41 @@ new shared capability; `never-hand-roll.md` says extend the existing owner —
 
 ---
 
-### P6 — Low · The wire decoder accepts an unbounded turn count
+### P6 — Low · The wire decoder's turn guard is shape-only — legal range is an open question
 
-**Measured** (`share-wire-motion-fields.test.ts`):
+**Measured, and this is the whole measurement**
+(`share-wire-motion-fields.test.ts`):
 `decodeSequence("iiSS|nonox0|nonoc999999999999")` yields
 `turns === 999999999999`. **Traced:** `decodeMotion` validates the shape with
-`/^-?(?:\d+(?:\.\d*)?|\.\d+)$/` and `Number.isFinite`
-(`sequence-encoder.ts:281-303`) but applies no domain range.
+`/^-?(?:\d+(?:\.\d*)?|\.\d+)$/` plus `Number.isFinite`
+(`sequence-encoder.ts:281-303`) and applies no range check. That is a public,
+attacker-supplied surface (scanned QR, pasted URL).
 
-Turns are a bounded domain quantity, and this is a public, attacker-supplied
-surface (scanned QR, pasted URL). Everything else malformed is refused with a
-typed error — empty input, an unknown location pair, a non-numeric turn, a
-malformed duration — all measured in the same file, so this is one gap in an
-otherwise strict decoder, not a general validation absence.
+**What is NOT established: that any particular value is illegal.** An earlier
+revision of this report asserted "turns are a bounded domain quantity" and
+proposed range-checking against "the domain's legal set". Neither is supported:
 
-**Remediation:** range-check the parsed turn against the domain's legal set in
-`decodeMotion`, next to the existing `Number.isFinite` guard. Ground the legal
-set in the Flow Arts MCP domain source rather than in a constant invented here —
-I did not have MCP access in this checkout, so this report deliberately does not
-state what the bound is.
+- `Motion.turns` is typed `number | "fl"`
+  (`packages/tka-types/src/motion.ts:30`) with no bound;
+- `rg` for a turns validator across `packages/tka-types`,
+  `packages/sequence-engine`, and `src/lib/shared/pictograph` finds **none** —
+  only prose in `IOrientationPropagator.ts:21` ("0, 0.5, 1, 1.5, 2, etc.") and
+  a comment in `OrientationCalculator.ts:321` about quarter turns.
+
+There is therefore nothing in-repo to bind a check to, and **this audit will not
+invent a turn palette**. Whether an upper bound exists at all — and whether
+quarter turns, negative turns, or arbitrary fractions are legal — belongs to the
+canonical domain owner (Flow Arts MCP), which was not reachable from this
+checkout. No `it.fails` is written for it: quarantining a bound nobody has
+defined would assert a policy as a validated fix.
+
+**Remediation, gated:** first get the legal set from the canonical domain source
+(or a decision that there is no bound). *Then* a range check next to the
+existing `Number.isFinite` guard is a two-line change. Until that decision
+exists this stays an **unresolved feature-specific policy question**, not an
+actionable defect. Everything else malformed *is* refused with a typed error —
+empty input, an unknown location pair, a non-numeric turn, a malformed duration,
+all measured in the same file — so the decoder is otherwise strict.
 
 ---
 
@@ -420,16 +524,18 @@ state what the bound is.
 Recorded as passing assertions in `composition-roundtrip-parity.test.ts` so a
 later change cannot quietly undo them.
 
-- **The composition round trip is semantically lossless on real data.** Across
-  all 45 corpus sequences (432 beats, 864 motions), `ensureComposition` → drop
-  `steps` → `hydrate` produces **zero** differences in any motion-identity
-  field, preserves every per-beat letter, and preserves the authored plane.
-  Whatever else is wrong above, the core compositional model does not lose
-  movement data.
-- **The orientation chain reproduces real data.** The wire format stores no
-  per-beat orientation and recomputes it from the start-position seed through
+- **The composition round trip is semantically lossless on canonical generator
+  output.** Across all 45 corpus sequences (432 beats, 864 motions),
+  `ensureComposition` → drop `steps` → `hydrate` produces **zero** differences
+  across a field set that is a superset of the V3 hash basis — `handPath` and
+  `plane` included — and preserves every per-beat letter. Whatever else is wrong
+  above, the core compositional model does not lose movement data. Scope: this
+  is generator output, so it is evidence about the model, not about the stored
+  corpus.
+- **The orientation chain reproduces generator output.** The wire format stores
+  no per-beat orientation and recomputes it from the start-position seed through
   `calculateEndOrientation`. On the corpus that derivation reproduces every
-  stored `startOrientation` and `endOrientation` exactly.
+  `startOrientation` and `endOrientation` exactly.
 - **Turn fidelity over the wire is intact**, including halves (`1.5`, `0.5`) and
   the float sentinel (`turns: "fl"` round-trips as `"fl"`).
 - **Malformed wire input is refused, not repaired** (five cases measured).
@@ -466,6 +572,22 @@ green either way. `tests/unit/opus-persistence-audit/fixtures.ts` contains no
 assertions and is not collected as a test file (the vitest `include` glob only
 matches `*.{test,spec}.{js,ts}`).
 
+**A quarantined repro is a defect test, never a fix, and never a proposal.**
+There are **9** of them (down from 11 in the first revision). Two were removed
+in review because they asserted contracts nobody has approved:
+
+| Removed | Why |
+| --- | --- |
+| `createdAt survives the ingress constructor` | `createdAt` is the receiving library's membership timestamp; preserving an imported value is a product decision with at least three defensible answers (P5). |
+| `an out-of-domain turn count is refused` | No legal turn set exists in-repo to bind to, and inventing one is not this audit's call (P6). |
+
+Both are now pinned as **measured current behaviour plus a stated open
+question**. The rule this enforces: an `it.fails` may only encode a contract the
+codebase already states (a documented invariant like `birthday`'s "NEVER
+changes after being set", a declared type, or a field the hash basis already
+reads). Where the right answer is a policy choice, the suite records the choice
+that exists and names the decision instead of pre-empting it.
+
 ---
 
 ## Regressions and limitations
@@ -480,11 +602,29 @@ matches `*.{test,spec}.{js,ts}`).
   Pre-existing and environment-derived: it is a missing public env var in this
   cloud checkout, in a feature this audit never touched. **Zero** diagnostics in
   any added file.
-- **No corpus access.** Every claim about live data is a claim about *shape*,
-  never about counts. I cannot say how many stored documents carry a legacy
-  step-0 entry (P2), how many were saved without a start position (P1), or how
-  many solo cards have been scanned into libraries (P3). Sizing those needs a
-  read-only corpus query, which is outside this scope.
+- **No corpus access, and no fixture that substitutes for it.** Every claim
+  about live data is a claim about *shape*, never about counts. The
+  `real-loop-fixtures.json` set is generated output from the production
+  generator, so it gives breadth over canonical generation and **zero**
+  information about stored documents. I cannot say how many stored documents
+  carry a legacy step-0 entry (P2), how many were saved without a start position
+  (P1), how many carry an unset `handPath` (P4), or how many solo cards have
+  been scanned into libraries (P3). Sizing any of those needs a read-only corpus
+  query, which is outside this scope.
+- **No producer identified for P1's trigger shape.** The ordering defect is
+  confirmed; a runtime path that hands `saveSequence` a start-less sequence is
+  not. P1's severity is conditional on one existing, and finding out is the
+  first thing worth doing before the fix.
+- **Corrections applied after independent review** (this revision). The first
+  revision (`ef3735e4`) overstated four things, all now fixed in place: it
+  described the fixture corpus as captured Firestore documents; it read P1's
+  synthetic 45/45 as prevalence; it compared a field set that omitted `handPath`
+  and so wrongly called `plane` the only wire divergence; and it cited
+  `deep-link-sequence-handler.ts:104` as a share-link path when it is a
+  localStorage pending-edit path. Two `it.fails` repros asserting unapproved
+  policy were removed. The three strongest findings — the solo printed-card
+  intake reach (P3), the serializer field loss (P4), and the hash-before-compose
+  ordering defect (P1) — survive the review unchanged in substance.
 - **No runtime or browser observation.** P3's user-visible effect (a phantom
   second prop) is inferred from `getSequenceMotionVisibility` being the
   renderer's input, not seen. Confirming it needs the in-app browser pass this
@@ -521,4 +661,14 @@ matches `*.{test,spec}.{js,ts}`).
    schema touch is acceptable.
 4. **P4 step 1** (stop the detector from lying) before multi-plane authoring
    ships; **P4 step 2** with it.
-5. **P5**, **P6** — mechanical.
+5. **P5 (`birthday` + the `dateAdded` type contract)** — mechanical. The
+   `createdAt` question is a **decision, not a task**: answer it before touching
+   that field.
+6. **P6** — **blocked on a domain decision**, not on engineering. Get the legal
+   turn set (or "there is no bound") from the canonical domain source first; the
+   code change afterwards is two lines.
+
+**No item above is authorized by this audit.** The branch contains defect tests
+and analysis only; every remediation is a proposal for the owner of the affected
+module, and P1–P3 all land in `src/lib/shared/library/**` or
+`src/lib/shared/foundation/**`, which a concurrent agent was working in.

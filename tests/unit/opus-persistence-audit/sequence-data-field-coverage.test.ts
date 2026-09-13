@@ -6,31 +6,56 @@
  * (`sequence-data.ts:254-379`). Four declared `SequenceData` fields have no
  * line: `birthday`, `createdAt`, `syncStatus`, `pendingSyncMetadata`. The last
  * two are local-only sync bookkeeping the persistence layer strips anyway, so
- * dropping them is at worst undocumented. `birthday` is not — it is documented
- * as "Original creation date of the sequence (never changes after being set)"
- * and `public-index-syncer.ts:233` falls back to `new Date()` when it is absent.
+ * dropping them is at worst undocumented.
  *
- * The function is the ingress constructor for persisted and imported data:
+ * `birthday` is the one clear defect. It is documented as "Original creation
+ * date of the sequence … NEVER changes after being set"
+ * (`library-sequence.ts:123-129`), so a constructor that drops it contradicts a
+ * stated invariant, and `public-index-syncer.ts:233` falls back to `new Date()`
+ * when it is absent.
+ *
+ * `createdAt` is NOT the same case, and this file does not treat it as one.
+ * `library-sequence.ts:132-133` defines it as "When added to THIS user's
+ * library (may differ from birthday)" — a membership timestamp owned by the
+ * receiving library, not a property of the imported content. Carrying an
+ * imported source's `createdAt` through unconditionally would assert someone
+ * else's membership date as this user's, which is a PRODUCT DECISION nobody has
+ * approved. It is recorded below as measured behaviour plus an open question,
+ * with deliberately no `it.fails`: quarantining an unapproved contract would
+ * dress a policy choice up as a validated fix.
+ *
+ * Where the constructor sits in the ingress paths (each verified this pass):
  *   - `dexie-persistence-service.ts:441` — restoring the in-progress sequence
- *     from localStorage;
- *   - `deep-link-sequence-handler.ts:104` — an imported share link;
- *   - `short-code-payload-hydrator.ts:99` — an embedded short-code payload;
+ *     from localStorage. The live one for the timestamp case below.
+ *   - `deep-link-sequence-handler.ts:104` — inside `loadFromPendingEdit`, which
+ *     parses the PENDING_EDIT_KEY localStorage blob. NOT the deep-link branch:
+ *     `loadFromDeepLink` (:64-76) calls `setSequence(deepLinkData.sequence)`
+ *     directly, so a direct share link bypasses this constructor entirely.
+ *   - `short-code-payload-hydrator.ts:99` — an embedded short-code payload.
  *   - `sequence-render-hydrator.ts:67` — choreo-card rendering.
  *
- * The localStorage path adds a second problem it cannot see: the state is
- * stored with `JSON.stringify` (`dexie-persistence-service.ts:400`) and read
- * back with `JSON.parse`, so every `Date` arrives as an ISO string.
- * `createSequenceData` copies `dateAdded` through untouched, so the restored
- * object's `dateAdded` is typed `Date` and is a `string` at runtime.
+ * The localStorage path adds a TYPE-CONTRACT breach: state is stored with
+ * `JSON.stringify` (`dexie-persistence-service.ts:399`) and read with
+ * `JSON.parse`, so every `Date` arrives as an ISO string, and
+ * `createSequenceData` copies `dateAdded` through untouched. The restored
+ * object's `dateAdded` is declared `Date` and is a `string` at runtime.
  *
- * QUARANTINE: `it.fails` marks the assertions that should pass once the
- * constructor covers the declared fields and revives timestamps. This file is
- * green while the defect is live.
+ * That is a type-contract violation, and this file is careful not to inflate it
+ * into user harm. The Browse consumers coerce defensively —
+ * `browse-date.ts:12` and `browse-section-manager.ts:203` both do
+ * `candidate instanceof Date ? candidate : new Date(candidate)` — and this
+ * audit found NO consumer that calls a `Date` method on the restored value
+ * unguarded. The lying type is real; a demonstrated failure is not.
+ *
+ * QUARANTINE: `it.fails` marks assertions that should pass once the constructor
+ * covers `birthday` and stops handing out strings behind a `Date` type. This
+ * file is green while the defects are live.
  */
 import { describe, expect, it } from "vitest";
 
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { resolveBrowseDate } from "$lib/shared/browse/services/browse-date";
 
 import { buildSequence, makeStep } from "./fixtures";
 
@@ -69,9 +94,20 @@ describe("createSequenceData field coverage", () => {
     expect(out.birthday).toEqual(BIRTHDAY);
   });
 
-  it.fails("SHOULD PASS AFTER FIX: createdAt survives the ingress constructor", () => {
+  it("measured + UNRESOLVED POLICY: createdAt is dropped, and whether it should be is not settled", () => {
+    // Deliberately NOT an `it.fails`. See the header: `createdAt` is this
+    // user's library-membership timestamp, so "preserve whatever the imported
+    // payload carried" is a product decision, not an obvious repair. Three
+    // defensible contracts exist and the owner has to pick one:
+    //   (a) drop it here and let `createLibrarySequence` stamp the receiving
+    //       library's own `createdAt` — today's behaviour, arguably correct;
+    //   (b) carry it only when the ingress is a same-user restore (the
+    //       localStorage path) and drop it for cross-user imports;
+    //   (c) carry it always — which asserts another user's membership date.
+    // This test pins (a) as the current behaviour so any deliberate move to
+    // (b) or (c) is a visible, reviewed change rather than a silent one.
     const out = createSequenceData({ createdAt: CREATED_AT } as Partial<SequenceData>);
-    expect(out.createdAt).toEqual(CREATED_AT);
+    expect(out.createdAt).toBeUndefined();
   });
 });
 
@@ -92,9 +128,22 @@ describe("localStorage sequence-state round trip", () => {
     expect(restored.birthday).toBeUndefined();
   });
 
+  it("measured: the known Browse consumers coerce, so no failing consumer is demonstrated", () => {
+    // The counterweight to the assertion above. `resolveBrowseDate` is the
+    // owner of "the date that orders and groups a sequence on Browse surfaces",
+    // and it handles the string case explicitly. Recorded so the type-contract
+    // finding is never read as a live user-visible break.
+    const restored = throughLocalStorage(dated());
+    expect(resolveBrowseDate(restored)).toEqual(DATE_ADDED);
+  });
+
   it.fails(
-    "SHOULD PASS AFTER FIX: a restored sequence's timestamps are usable as Dates",
+    "SHOULD PASS AFTER FIX (type contract, not a demonstrated failure): a restored sequence's timestamps are Dates",
     () => {
+      // Quarantined as a TYPE-CONTRACT repair: the declared type says `Date`
+      // and the value is a `string`, which makes every consumer's correctness
+      // depend on remembering to coerce. No consumer is currently known to get
+      // that wrong — this is defence in depth, not an outage.
       const restored = throughLocalStorage(dated());
       expect(restored.dateAdded).toBeInstanceOf(Date);
       expect((restored.dateAdded as Date).getTime()).toBe(DATE_ADDED.getTime());

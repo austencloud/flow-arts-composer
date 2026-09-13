@@ -9,10 +9,18 @@
  *   author steps -> `ensureComposition` -> drop `steps` (the owner document
  *   shape, `library-repository.ts:592-600`) -> `hydrate` on read.
  *
- * Comparison is semantic, over `MOTION_IDENTITY_FIELDS`. It is deliberately not
- * a byte or deep-equality comparison: `deriveSteps` legitimately mints new step
- * ids, rebuilds placement data, and re-derives `gridMode` and the reversal
- * flags, all of which the V2/V3 hash basis already excludes as derived.
+ * Comparison is semantic, over `MOTION_IDENTITY_FIELDS` — a superset of the V3
+ * hash basis, so nothing that would move the identity hash can hide behind a
+ * short list. It is deliberately not a byte or deep-equality comparison:
+ * `deriveSteps` legitimately mints new step ids, rebuilds placement data, and
+ * re-derives `gridMode` and the reversal flags, all of which the V2/V3 hash
+ * basis already excludes as derived.
+ *
+ * SCOPE OF THE CORPUS: `real-loop-fixtures.json` is GENERATED output from
+ * `scripts/generate-loop-audit-fixtures.mjs` (production `SequenceBuilder` →
+ * `executeLOOPSpec` over the canonical CSV dataset), not captured Firestore
+ * documents. It gives breadth over canonical generator output. It is not a
+ * survey of stored data, and nothing here infers prevalence from it.
  */
 import { describe, expect, it } from "vitest";
 
@@ -26,7 +34,7 @@ import {
   realCorpusSequences,
 } from "./fixtures";
 
-describe("composition round trip over the real LOOP corpus", () => {
+describe("composition round trip over the generated LOOP corpus", () => {
   const corpus = realCorpusSequences();
 
   it("preserves every motion-identity field, on every beat, in every fixture", () => {
@@ -48,18 +56,23 @@ describe("composition round trip over the real LOOP corpus", () => {
     }
   });
 
-  it("preserves the authored plane, which the wire format does not", () => {
+  it("preserves both hash-basis fields the wire format gets wrong: plane and handPath", () => {
     const planes = new Set<unknown>();
+    const handPaths = new Set<unknown>();
     for (const { sequence } of corpus) {
       const back = hydrate(asStoredDocument(ensureComposition(sequence)));
       for (const step of back.steps) {
         planes.add(step.motions.left.plane);
         planes.add(step.motions.right.plane);
+        handPaths.add(step.motions.left.handPath ?? null);
+        handPaths.add(step.motions.right.handPath ?? null);
       }
     }
-    // The whole corpus is wall-plane; the point is that the value arrives at
-    // all, since the V3 identity hash reads it.
+    // Every generated motion is wall-plane with an unset handPath. The point is
+    // that both values arrive UNCHANGED, since the V3 identity hash reads both
+    // — the wire format drops the first and invents the second.
     expect([...planes]).toEqual(["wall"]);
+    expect([...handPaths]).toEqual([null]);
   });
 });
 

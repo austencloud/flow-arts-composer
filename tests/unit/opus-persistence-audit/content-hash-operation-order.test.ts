@@ -20,6 +20,21 @@
  * path ("8. Hash the normalized data — after every field it covers is final"),
  * but the owner save path does not route through it.
  *
+ * ## What is proven here, and what is NOT
+ *
+ * PROVEN: the ordering defect. Given a sequence with no `startPosition`, the
+ * hash stamped at save time does not describe the document that save writes,
+ * and the next read/save cycle produces a different hash.
+ *
+ * NOT PROVEN: that anything reaches the save path in that shape. The corpus
+ * run below strips `startPosition` itself — it is a controlled variable that
+ * isolates the MECHANISM across 45 generated sequences, NOT a survey of stored
+ * documents and NOT evidence of a current producer. This audit did not find a
+ * runtime path that hands `saveSequence` a start-less sequence, and did not
+ * have corpus access to count them. Exposure is therefore conditional: the
+ * defect is real and latent, and becomes live only for whatever producer emits
+ * that shape.
+ *
  * QUARANTINE: the "should" assertions below are marked `it.fails`, so this file
  * is GREEN while the defect is live and turns RED the moment it is fixed —
  * whoever fixes it is told to flip the marker. `it(...)` blocks pin the
@@ -79,10 +94,12 @@ describe("content hash operation order (library-repository.saveSequence)", () =>
     }
   );
 
-  it("measured: the drift is isolated to the derived start position, not to composition in general", async () => {
-    // Differential over the checked-in LOOP corpus. The corpus is authoritative:
-    // it captures documents the app produced. The only variable between the two
-    // runs is whether the document carries its own start position.
+  it("measured: the drift is caused by the derived start position, not by composition in general", async () => {
+    // A controlled experiment over 45 generated sequences, NOT a survey of
+    // stored data. Both runs use the same fixtures; the single variable is
+    // whether the document carries its own start position, which this test
+    // removes itself. That isolates the mechanism. It says nothing about how
+    // many real documents are start-less — see the header.
     const corpus = realCorpusSequences();
     expect(corpus.length).toBeGreaterThan(20);
 
@@ -104,5 +121,13 @@ describe("content hash operation order (library-repository.saveSequence)", () =>
 
     expect(driftWithStart).toBe(0);
     expect(driftWithoutStart).toBe(corpus.length);
+  });
+
+  it("measured: a start-bearing sequence is the shape the generator actually emits", async () => {
+    // The counterpart to the experiment above: every fixture as generated
+    // carries a start position and is therefore NOT exposed to this defect.
+    // Recorded so the 45/45 number above can never be read as prevalence.
+    const corpus = realCorpusSequences();
+    expect(corpus.every(({ sequence }) => sequence.startPosition !== undefined)).toBe(true);
   });
 });

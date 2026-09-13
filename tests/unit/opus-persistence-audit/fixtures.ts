@@ -10,8 +10,23 @@
  *   2. `realCorpusSequences()` — the checked-in LOOP corpus
  *      (`tests/fixtures/loop-audit/real-loop-fixtures.json`), which stores
  *      motions under the LEGACY `blue`/`red` keys with an inline
- *      `stepNumber: 0` start entry. Used when a claim needs breadth over data
- *      the app actually produced rather than data this file invented.
+ *      `stepNumber: 0` start entry.
+ *
+ * ## What the corpus is, and is NOT
+ *
+ * It is GENERATED FIXTURE OUTPUT, not captured Firestore documents.
+ * `scripts/generate-loop-audit-fixtures.mjs` drives the production generation
+ * path — the canonical `DiamondPictographDataframe.csv` dataset through
+ * `SequenceBuilder` (beam search + LOOP seam targeting) into `executeLOOPSpec`,
+ * the same pipeline behind MCP `generate_sequence` and the app's circular
+ * generation — and commits the result.
+ *
+ * So it is authoritative for **what the canonical generator emits**: breadth
+ * over 45 builder-validated sequences and 432 beats that no test here authored.
+ * It is NOT evidence about the stored corpus. It says nothing about how many
+ * saved documents exist in any shape, and a field it happens to leave unset
+ * (see `handPath`) is a property of the generator, not of user data. No claim
+ * below infers prevalence from it.
  *
  * Nothing here asserts. Comparison helpers below are SEMANTIC: they name the
  * motion fields that define a movement and compare those, never whole objects
@@ -209,10 +224,21 @@ export function realCorpusSequences(): CorpusSequence[] {
 // Semantic comparison
 
 /**
- * The fields that define a movement. Everything omitted is either a viewer
- * preference (`propType`), render state (`isVisible`, `arrowLocation`,
- * placement data), or re-derived on every load (`gridMode`, reversal flags) —
- * the same exclusions `sequence-content-hasher.ts` documents for V2/V3.
+ * The fields that define a movement.
+ *
+ * This set is a SUPERSET of the V3 identity-hash basis
+ * (`sequence-content-hasher.ts:extractMotion`): every field the hash reads is
+ * here, so no hash-affecting divergence can hide behind a short list.
+ * `handPath` is in the basis and belongs here for exactly that reason — it was
+ * missing from an earlier revision of this file, which made a
+ * "plane is the only field that diverges" claim look true when it was not.
+ *
+ * Everything omitted is either a viewer preference (`propType`), render state
+ * (`isVisible`, `arrowLocation`, placement data), or re-derived on every load
+ * (`gridMode`, reversal flags) — the same exclusions
+ * `sequence-content-hasher.ts` documents for V2/V3. `prefloatMotionType` is
+ * NOT in the hash basis but is kept here: it is authored domain data the
+ * decomposer deliberately preserves.
  */
 export const MOTION_IDENTITY_FIELDS = [
   "motionType",
@@ -222,7 +248,23 @@ export const MOTION_IDENTITY_FIELDS = [
   "startOrientation",
   "endOrientation",
   "turns",
+  "handPath",
   "prefloatMotionType",
+  "skewSteps",
+  "skewDir",
+  "plane",
+] as const;
+
+/** The subset of the above that the ACTIVE (V3) identity hash actually reads. */
+export const V3_HASH_MOTION_FIELDS = [
+  "motionType",
+  "rotationDirection",
+  "startLocation",
+  "endLocation",
+  "startOrientation",
+  "endOrientation",
+  "turns",
+  "handPath",
   "skewSteps",
   "skewDir",
   "plane",
