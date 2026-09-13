@@ -104,9 +104,8 @@ vi.mock("$lib/shared/auth/services/device-id-service", () => ({
   getDeviceId: () => "device-1",
 }));
 
-const { FCMTokenManager } = await import(
-  "$lib/shared/push/services/fcm-token-manager"
-);
+const { FCMTokenManager } =
+  await import("$lib/shared/push/services/fcm-token-manager");
 
 function writtenTokenPaths(): string[] {
   return h.setDoc.mock.calls.map((call) => call[0] as unknown as string);

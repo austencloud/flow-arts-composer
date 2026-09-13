@@ -21,7 +21,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type SnapshotListener = {
-  next: (snapshot: { docs: Array<{ id: string; data: () => unknown }> }) => void;
+  next: (snapshot: {
+    docs: Array<{ id: string; data: () => unknown }>;
+  }) => void;
   error: (error: unknown) => void;
   detached: boolean;
 };
@@ -229,9 +231,8 @@ describe("Notifier.subscribeToNotifications lifetime", () => {
     h.listeners.at(-1)!.next(snapshotOf(["n1", "n2"]));
 
     expect(received).toHaveBeenCalledTimes(1);
-    expect(received.mock.calls[0]![0].map((n: { id: string }) => n.id)).toEqual([
-      "n1",
-      "n2",
-    ]);
+    expect(received.mock.calls[0]![0].map((n: { id: string }) => n.id)).toEqual(
+      ["n1", "n2"]
+    );
   });
 });
