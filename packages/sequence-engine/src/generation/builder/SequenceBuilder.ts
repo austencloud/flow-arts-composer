@@ -467,7 +467,8 @@ export class SequenceBuilder {
 
         const validationFailure = this.getLOOPValidationFailure(
           result,
-          workingOptions.loop!
+          workingOptions.loop!,
+          workingOptions.constraintOptions?.handRelationship
         );
         if (!validationFailure) return result;
         lastFailure = validationFailure;
@@ -484,7 +485,8 @@ export class SequenceBuilder {
 
   private getLOOPValidationFailure(
     result: BuildResult,
-    loop: LoopOptions
+    loop: LoopOptions,
+    handRelationship?: HandRelationshipOptions
   ): string | undefined {
     const first = result.sequence[0];
     const last = result.sequence[result.sequence.length - 1];
@@ -535,6 +537,15 @@ export class SequenceBuilder {
         : "identity mismatch (expected rewound, detected non-rewound)";
     }
 
+    // A constrained relationship can absorb a LOOP component or make the
+    // transported reflection use different axes per hand. Verify the requested
+    // construction, rather than requiring the detector's preferred label.
+    if (handRelationship) {
+      return this.matchesRequestedLOOP(result, loop)
+        ? undefined
+        : "identity mismatch (requested LOOP construction does not match the result)";
+    }
+
     const detected = loopDetectorClass.detectLOOPType(result.sequence);
     const actualRaw = new Set<string>();
     for (const propSpec of [detected.spec?.left, detected.spec?.right]) {
@@ -581,6 +592,71 @@ export class SequenceBuilder {
     return undefined;
   }
 
+  private matchesRequestedLOOP(
+    result: BuildResult,
+    loop: LoopOptions
+  ): boolean {
+    const steps = result.sequence.slice(1);
+    const multiplier = result.loop?.orientationCycleMultiplier;
+    if (!multiplier || steps.length === 0) return false;
+    const seedCount = Math.round(steps.length / multiplier);
+    if (seedCount < 1) return false;
+
+    // Closure can repeat the construction and minimization can shorten it.
+    // Recover its original seed, then ask the same canonical executor to prove
+    // every resulting motion against the returned cycle, including turns.
+    const seed = [
+      result.sequence[0]!,
+      ...Array.from({ length: seedCount }, (_, i) => ({
+        ...steps[i % steps.length]!,
+        stepNumber: i + 1,
+      })),
+    ].map((step) => ({
+      ...step,
+      motions: {
+        left: { ...step.motions.left },
+        right: { ...step.motions.right },
+      },
+    }));
+    const rebuilt = (
+      loop.loopSpec
+        ? loopExecutorSelector.executeSpec(seed, loop.loopSpec)
+        : loopExecutorSelector
+            .getExecutor(loop.type)
+            .executeLOOP(seed, loop.period)
+    ).slice(1);
+    const count = Math.max(steps.length, rebuilt.length);
+    if (
+      rebuilt.length === 0 ||
+      count % Math.min(steps.length, rebuilt.length) !== 0
+    ) {
+      return false;
+    }
+    const fields = [
+      "startLocation",
+      "endLocation",
+      "motionType",
+      "rotationDirection",
+      "turns",
+      "prefloatMotionType",
+      "prefloatRotationDirection",
+    ] as const;
+    for (let i = 0; i < count; i++) {
+      const actual = steps[i % steps.length]!;
+      const expected = rebuilt[i % rebuilt.length]!;
+      for (const side of ["left", "right"] as const) {
+        if (
+          fields.some(
+            (field) =>
+              actual.motions[side][field] !== expected.motions[side][field]
+          )
+        ) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
   /**
    * The detector's axis is directly comparable to the declared axis only when
    * reflection is the location transform for that expansion. A sequential
@@ -663,7 +739,8 @@ export class SequenceBuilder {
       const constrainedStart = this.constrainStartForLoopType(
         options.loop.type,
         effectiveStartPosition,
-        options.gridMode
+        options.gridMode,
+        options.constraintOptions?.handRelationship
       );
       if (constrainedStart) {
         effectiveStartPosition = constrainedStart;
@@ -883,7 +960,8 @@ export class SequenceBuilder {
       const constrainedStart = this.constrainStartForLoopType(
         options.loop.type,
         effectiveStartPosition,
-        options.gridMode
+        options.gridMode,
+        options.constraintOptions?.handRelationship
       );
       if (constrainedStart) {
         effectiveStartPosition = constrainedStart;
@@ -930,6 +1008,9 @@ export class SequenceBuilder {
       reachabilityPool,
       constraintSet.hard
     );
+    const eligibleStarts = new Set(
+      hardConstraintFiltered.map((variation) => variation.startPosition)
+    );
 
     // A LOOP's target depends on its start. Search each start→end relation as
     // its own problem so backward reachability can keep soft preferences from
@@ -940,7 +1021,9 @@ export class SequenceBuilder {
             this.buildLoopPositionMap(options.loop!, options.gridMode)
           )
             .filter(
-              ([start]) => !searchOptions.blockedStartPositions?.has(start)
+              ([start]) =>
+                eligibleStarts.has(start) &&
+                !searchOptions.blockedStartPositions?.has(start)
             )
             .map(([start, ends]) => ({
               start,
@@ -1345,8 +1428,8 @@ export class SequenceBuilder {
       options.allowStaticSteps ??
       Boolean(
         options.turnPattern ||
-          options.targetLayerPattern ||
-          constrainedLoopWithTurns
+        options.targetLayerPattern ||
+        constrainedLoopWithTurns
       )
     );
   }
@@ -1468,7 +1551,8 @@ export class SequenceBuilder {
           rightTurn.rotationDirection as Motion["rotationDirection"],
         startOrientation: pd.rightMotion
           .startOrientation as Motion["startOrientation"],
-        endOrientation: pd.rightMotion.endOrientation as Motion["endOrientation"],
+        endOrientation: pd.rightMotion
+          .endOrientation as Motion["endOrientation"],
         turns: rightTurn.turns as Motion["turns"],
         plane: "wall" as Motion["plane"],
         ...(rightTurn.prefloatMotionType && {
@@ -1527,9 +1611,10 @@ export class SequenceBuilder {
       "left",
       leftStartOrientation
     );
-    const rightStartOrientation = (orientationOverrides?.rightStartOrientation ||
-      shaped[0]?.motions.right.endOrientation ||
-      "in") as Orientation;
+    const rightStartOrientation =
+      (orientationOverrides?.rightStartOrientation ||
+        shaped[0]?.motions.right.endOrientation ||
+        "in") as Orientation;
     propagated = propagator.propagateForColor(
       propagated,
       "right",
@@ -1756,8 +1841,12 @@ export class SequenceBuilder {
   private constrainStartForLoopType(
     loopType: LOOPType,
     currentStartPosition?: string,
-    gridMode?: string
+    gridMode?: string,
+    handRelationship?: HandRelationshipOptions
   ): string | undefined {
+    // The hard relationship already determines eligible starts. Pinning beta
+    // here can exclude every valid start and cannot remove that symmetry.
+    if (handRelationship) return undefined;
     // Grid modes occupy disjoint grid points: diamond uses the cardinal
     // (odd-index) positions (beta1/3/5/7…), box uses the intercardinal
     // (even-index) ones (beta2/4/6/8…). A start pinned here MUST exist in the
@@ -1830,7 +1919,8 @@ export class SequenceBuilder {
     if (
       (loopType === LOOPType.ROTATED_SWAPPED ||
         loopType === LOOPType.ROTATED_SWAPPED_INVERTED) &&
-      startPosition.startsWith("alpha")
+      startPosition.startsWith("alpha") &&
+      !loopSpec
     ) {
       return positions;
     }
