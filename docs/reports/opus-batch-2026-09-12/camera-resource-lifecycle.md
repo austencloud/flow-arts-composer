@@ -7,11 +7,13 @@ real camera.
 ## Result
 
 Two defects found, reproduced with failing tests against the real lifecycle
-code, and fixed. Two review rounds then added corrections — the
+code, and fixed. Three review rounds then added corrections — the
 initialize-to-start window, the playback-failure leak, the cancellation identity,
-the `PerformancePreview` consumer guard, and handle/stream-scoped teardown so a
-panel closing late cannot stop a camera another surface owns — each with its own
-before/after evidence (see **Review round**). The resulting teardown and
+the `PerformancePreview` consumer guard, handle/stream-scoped teardown so a panel
+closing late cannot stop a camera another surface owns, and ownership validated at
+every async boundary so a stale start cannot install itself into the acquisition
+that replaced it — each with its own before/after evidence (see **Review
+round**). The resulting teardown and
 cancellation surface is written out under **CameraManager teardown and
 cancellation contract** for the consumers this branch does not own.
 
@@ -26,8 +28,11 @@ them needs the practice surface mounted with a camera.
 | `facdbbda`                                 | first report revision                              |
 | `39f0271b`                                 | review round: acquisition fence, playback cleanup, |
 |                                            | cancellation identity, PerformancePreview guard    |
-| this commit (branch head)                  | cross-branch round: handle/stream-scoped teardown  |
+| `7700457c`                                 | cross-branch round: handle/stream-scoped teardown  |
 |                                            | so no stale panel stops a shared camera            |
+| this commit (branch head)                  | independent-review round: ownership validated at   |
+|                                            | every async boundary, cancellation wins over a     |
+|                                            | post-teardown native error, component test seam    |
 
 Branch: `claude/camera-resource-lifecycle-sdoeg6`.
 
@@ -211,7 +216,14 @@ const stream = await camera.start(acquisition);
 `initialize()` returns a handle for that one handshake (callers that ignore it
 still work; `start()` then falls back to the instance's current acquisition).
 A newer `initialize()` becomes the current acquisition, which is how one shared
-instance serves several panels in turn.
+instance serves several panels in turn, and it invalidates any start still in
+flight — that start would otherwise come back and install its stream into the
+video element and canvas the new `initialize()` just replaced.
+
+`start()` re-checks ownership after **every** await (`getUserMedia`, then
+`video.play()`): same start ticket, same acquisition, acquisition not cancelled.
+Anything else means this attempt was superseded, and it releases what it opened
+and rejects as cancellation.
 
 ### Releasing — pick by what you own
 
@@ -240,8 +252,15 @@ with and `stop()` stays correct there.
   handshake was cancelled or taken over, and by `start()` when the handshake was
   cancelled/taken over before the request, or invalidated while `getUserMedia`
   or `play()` was pending.
-- Guarantee when it is thrown: nothing from that attempt is left open, and no
-  newer consumer's stream or handshake was touched.
+- Whose error wins: while the attempt is still current, a native failure stays a
+  native failure with its mapped message — including a native `AbortError` from
+  the device. Once the attempt has been invalidated, **every** error from it
+  becomes `CameraAcquisitionCancelled` (the original is kept as `cause`), because
+  a `play()` rejection after a teardown is caused by that teardown, and surfacing
+  it would fire `onCameraError` on a panel that has already closed.
+- Guarantee when it is thrown: nothing from that attempt is left open, nothing was
+  installed into a newer acquisition's video element or canvas, and no newer
+  consumer's stream or handshake was touched.
 - Consumer rule: return quietly, show nothing, and do **not** follow it with
   `stop()` — the manager has already cleaned up that attempt. Every other error
   from `start()` is a real failure carrying a user-readable message.
@@ -369,7 +388,59 @@ the targeted calls instead. There is no before/after for these four: the methods
 did not exist in the reviewed revision, so the failing-first evidence for this
 item is the component table above.
 
-### 6. HandLandmarker fencing — already fixed, now proved for remount
+### 6. Independent review: two uncovered orderings, and a green suite that exited 1
+
+All three findings were real. Nothing here was caught by the 25 lifecycle tests
+that were passing at `7700457c`, which is the point.
+
+**6a. A stale start installed itself into the acquisition that replaced it.**
+`initialize()` replaces `_videoElement` and `_canvas` and takes over
+`_acquisition`, but it did not touch `_startTicket`, and `start()` only re-checked
+the ticket after its awaits. So: A starts and waits on the permission prompt, B
+initializes, A resolves — A attached its stream to **B's** video element, set
+`_isActive` and reported success. `initialize()` now invalidates in-flight starts,
+and `start()` validates ticket _and_ acquisition identity after every await.
+
+**6b. A cancelled acquisition reported a real camera failure.** `stop()` while
+`play()` was pending, then the native `AbortError` that teardown itself causes:
+the post-play ownership check was skipped (the rejection jumped straight to the
+catch), and the catch mapped it to "Couldn't access your camera." — a real error
+for a panel that had already closed, which in Practice means `onCameraError` and
+`trainState.setError` after teardown. An invalidated attempt now rejects as
+`CameraAcquisitionCancelled` whatever the underlying error was.
+
+Both reproduce on `7700457c` with the deferred regressions added here:
+
+```
+× does not install a stale start into the acquisition that replaced it
+  → expected { id: 'stale', … } to be null   (the new panel's video element held
+                                              the stale stream)
+× reports a playback AbortError after a close as cancellation, not a camera failure
+  → expected false to be true                (it was a mapped camera failure)
+Tests  2 failed | 16 passed (18)
+```
+
+After: `Tests 18 passed (18)`, exit 0. The existing "reports a native AbortError
+from the device as a camera failure" test stays green, so the new rule does not
+over-cancel real device errors.
+
+**6c. The component suite passed its assertions and still exited 1.** The fake
+stream was a plain `{ getTracks }` object, and the component assigns it to a real
+`video.srcObject`, which throws:
+
+```
+TypeError: Failed to set the 'srcObject' property on 'HTMLMediaElement':
+  The provided value is not of type '(MediaSourceHandle or MediaStream)'.
+Tests  3 passed (3)      → process exit 1 (unhandled error in the page)
+```
+
+My previous report said "3 passed" and did not mention the exit code — that was
+an incomplete claim, corrected here. The fake now hands out a real `MediaStream`
+from `canvas.captureStream()`, so `srcObject` and `track.stop()` behave like the
+real thing: `Tests 3 passed (3)`, **exit 0**, no unhandled errors. Still no real
+camera.
+
+### 7. HandLandmarker fencing — already fixed, now proved for remount
 
 The reviewed revision already had the generation/disposal fencing (`8dce14cb`):
 concurrent callers share one load, and a load that lands after `dispose()` closes
@@ -414,6 +485,21 @@ The manager-level fence already stops a camera from being opened after that
 panel's teardown, so this guard is about the panel's own error state, the stream
 it receives, and not disturbing whoever owns the camera next.
 
+**Integration dependency.** This branch changes the shared manager that
+`VideoRecordPanel` uses, so the two branches have to land in either order with
+these facts in mind:
+
+- `initialize()` now returns a `CameraAcquisition` instead of `void`. Ignoring the
+  return value still compiles and still works, so `VideoRecordPanel` is not broken
+  by this branch at any point.
+- `initialize()` invalidates a start still in flight on that instance. If both
+  panels are ever mounted at once, the one that initializes last owns the camera —
+  the other's start rejects as cancellation rather than stealing the preview.
+- Until `VideoRecordPanel` adopts the targeted calls, its teardown `stop()` can
+  still release a camera another surface owns. That is the recording agent's
+  change to make; nothing in this branch can fix it from the manager side, because
+  `stop()` carries no caller identity by design.
+
 ## Verification run
 
 Project config (jsdom, the environment CI uses), all owned suites plus the one
@@ -425,11 +511,13 @@ npx vitest run --config tests/config/vitest.config.ts \
   src/lib/features/train/services/media-pipe-detector.test.ts \
   src/lib/features/train/services/hand-landmarker.test.ts \
   tests/unit/camera-permission-boundary.test.ts
-→ Test Files 4 passed (4), Tests 27 passed (27)
+→ Test Files 4 passed (4), Tests 29 passed (29), exit 0
 ```
 
 Component suite (chromium, `tests/config/vitest.components.config.ts`):
-`PerformancePreview.svelte.test.ts` → 3 passed. In this container the run needed
+`PerformancePreview.svelte.test.ts` → 3 passed, **exit 0**, no unhandled page
+errors (checked explicitly after the earlier green-but-exit-1 run; see review
+round 6c). In this container the run needed
 a Playwright `executablePath` override (`/opt/pw-browsers/chromium-1194/chrome-linux/chrome`):
 the pinned Playwright expects a headless-shell build the image does not carry.
 That override lived in a throwaway config and is **not** committed — CI and the
@@ -544,3 +632,6 @@ assignment's scope.
 - The component suite needed a local Playwright `executablePath` override here;
   that override is not committed, so nothing about the project's test
   configuration changed.
+- Test exit codes are now checked, not just the pass lines: the green-but-exit-1
+  component run at `7700457c` is why. Earlier rounds in this report quoted pass
+  counts only.

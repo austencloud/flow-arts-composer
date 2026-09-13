@@ -25,8 +25,8 @@ export const CAMERA_ACQUISITION_CANCELLED = "CAMERA_ACQUISITION_CANCELLED";
 export class CameraAcquisitionCancelled extends Error {
   readonly code = CAMERA_ACQUISITION_CANCELLED;
 
-  constructor(message: string) {
-    super(message);
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
     this.name = "CameraAcquisitionCancelled";
   }
 }
@@ -113,6 +113,12 @@ export class CameraManager {
     };
     this._acquisition = acquisition;
 
+    // A new acquisition supersedes any start still waiting on the permission
+    // prompt. Without this, that start comes back and installs its stream into
+    // the video element and canvas this call is about to replace — the new
+    // panel's preview would be showing the old panel's camera.
+    this._startTicket++;
+
     // Enumerate available cameras
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
@@ -171,6 +177,13 @@ export class CameraManager {
     // them back instead of leaving the camera on with nobody holding it.
     let openedStream: MediaStream | null = null;
 
+    // Checked after every await, not just the first: between them the owner can
+    // close, a newer start can take the camera, and a newer `initialize()` can
+    // replace the video element and canvas this attempt is installing into.
+    const superseded = () =>
+      ticket !== this._startTicket ||
+      (claim ? claim.cancelled || this._acquisition !== claim : false);
+
     const constraints: MediaStreamConstraints = {
       video: {
         facingMode: this._currentConfig.facingMode,
@@ -184,7 +197,7 @@ export class CameraManager {
     try {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      if (ticket !== this._startTicket) {
+      if (superseded()) {
         stopTracks(stream);
         throw new CameraAcquisitionCancelled(
           "Camera was released while it was starting."
@@ -200,7 +213,7 @@ export class CameraManager {
 
         // A close during playback startup already stopped the tracks; don't
         // come back and claim the camera is live.
-        if (ticket !== this._startTicket) {
+        if (superseded()) {
           throw new CameraAcquisitionCancelled(
             "Camera was released while it was starting."
           );
@@ -229,6 +242,17 @@ export class CameraManager {
 
       if (isCameraAcquisitionCancelled(error)) {
         throw error;
+      }
+
+      // A failure that arrives after this attempt was superseded is our own
+      // cancellation, whatever it says. `video.play()` rejects with a native
+      // AbortError precisely because the element was torn down — reporting that
+      // as a camera failure fires onCameraError on a panel that already closed.
+      if (superseded()) {
+        throw new CameraAcquisitionCancelled(
+          "Camera was released while it was starting.",
+          { cause: error }
+        );
       }
 
       console.error("Failed to start camera:", error);
