@@ -30,9 +30,29 @@ describe("Together-Opposite article examples", () => {
         ({ pictograph }) => deriveTnDFromPictograph(pictograph).tndMode
       )
     ).toEqual([TnDMode.TOG_OPP, TnDMode.TOG_OPP]);
+    for (const example of examples) {
+      expect(
+        example.sequence.steps.every(
+          (step) => deriveTnDFromPictograph(step).tndMode === TnDMode.TOG_OPP
+        )
+      ).toBe(true);
+      const matched = example.sequence.steps[example.step]!;
+      expect(matched.motions.left.startLocation).toBe(
+        example.pictograph.motions.left?.startLocation
+      );
+      expect(matched.motions.left.endLocation).toBe(
+        example.pictograph.motions.left?.endLocation
+      );
+      expect(matched.motions.right.startLocation).toBe(
+        example.pictograph.motions.right?.startLocation
+      );
+      expect(matched.motions.right.endLocation).toBe(
+        example.pictograph.motions.right?.endLocation
+      );
+    }
   });
 
-  it("keeps one readable representative for each matching letter and grid", async () => {
+  it("keeps one readable representative for each matching letter", async () => {
     const variants = await getAllLetterVariants(Letter.D, GridMode.DIAMOND);
     const examples = selectTogetherOppositeExamples(
       [...variants, ...variants].map((pictograph) => ({
@@ -42,6 +62,9 @@ describe("Together-Opposite article examples", () => {
     );
 
     expect(new Set(examples.map(({ id }) => id)).size).toBe(examples.length);
+    expect(
+      new Set(examples.map(({ pictograph }) => pictograph.letter)).size
+    ).toBe(examples.length);
     expect(
       examples.every(
         ({ pictograph }) =>

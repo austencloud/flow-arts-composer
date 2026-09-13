@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { PageData } from "./$types";
   import { browser } from "$app/environment";
-  import { onMount } from "svelte";
   import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
   import Seo from "$lib/shared/components/Seo.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
@@ -46,32 +45,41 @@
   );
   let togetherOppositeExamples = $state<TogetherOppositeExample[]>([]);
   let selectedTogetherOppositeExample = $state<string | null>(null);
-
-  onMount(() => {
-    let active = true;
-    void loadTogetherOppositeExamples().then((examples) => {
-      if (!active) return;
-      togetherOppositeExamples = examples;
-      const first = examples[0];
-      if (article.code === "TO" && first) {
-        selectedTogetherOppositeExample = first.id;
-        playback.focusExample();
-      }
-    });
-    return () => {
-      active = false;
-    };
-  });
+  let examplesLoading = $state(false);
+  let examplesError = $state<string | null>(null);
 
   $effect(() => {
     if (article.code !== "TO") {
       selectedTogetherOppositeExample = null;
+      togetherOppositeExamples = [];
+      examplesError = null;
+      return;
     }
+    if (togetherOppositeExamples.length || examplesLoading || examplesError)
+      return;
+    examplesLoading = true;
+    void loadTogetherOppositeExamples()
+      .then((examples) => {
+        togetherOppositeExamples = examples;
+        const first = examples[0];
+        if (first) selectTogetherOppositeExample(first);
+      })
+      .catch(() => {
+        examplesError = "Examples could not load. Try again.";
+      })
+      .finally(() => {
+        examplesLoading = false;
+      });
   });
 
   function selectTogetherOppositeExample(example: TogetherOppositeExample) {
     selectedTogetherOppositeExample = example.id;
-    playback.focusExample();
+    playback.selectExample(example.sequence, example.step);
+  }
+
+  function retryTogetherOppositeExamples() {
+    examplesError = null;
+    togetherOppositeExamples = [];
   }
   const jsonLd = $derived({
     "@context": "https://schema.org",
@@ -151,106 +159,218 @@
     </PanelButton>
   </nav>
 
-  <div class="mode-overview">
-    <div class="mode-copy">
-      <header>
+  {#if article.code === "TO"}
+    <section class="to-reference" aria-labelledby="to-reference-title">
+      <header class="to-header">
         <div class="mode-identity">
           <img src={mode.element.iconPath} alt="" width="44" height="44" />
           <span>{article.code} · {mode.element.element}</span>
         </div>
-        <h1>
-          {article.timing} time <span>{article.direction} direction</span>
-        </h1>
+        <h1 id="to-reference-title">Together time, opposite direction</h1>
         <p class="definition">{article.definition}</p>
       </header>
-      <p>{article.watchFor}</p>
-      {#if article.code === "TO"}
+
+      <div class="to-stage">
+        <figure class="demonstration">
+          <div class="demo-toolbar">
+            <span>Hand paths</span>
+            {#if browser}
+              <TransportControls
+                isPlaying={playback.playing}
+                onPlaybackToggle={() => (playback.playing = !playback.playing)}
+              />
+            {/if}
+          </div>
+          <div class="demo-canvas" use:playback.registerTarget></div>
+          <figcaption>
+            Drag the bar to follow the selected hand path.
+          </figcaption>
+        </figure>
+
         <section class="example-picker" aria-labelledby="example-picker-title">
           <div>
-            <h2 id="example-picker-title">Choose a matching pictograph</h2>
+            <h2 id="example-picker-title">Matching pictographs</h2>
             <p>
-              Each option is classified from its hand-path geometry. The player
-              shows those hands; the pictograph keeps the selected prop rotation
-              visible.
+              Pick a letter to seek its exact hand path. The card shows its prop
+              rotation, which can differ while the hand relationship stays
+              Together-Opposite.
             </p>
           </div>
-          <div class="example-options" aria-label="Together-Opposite examples">
-            {#each togetherOppositeExamples as example (example.id)}
-              <button
-                type="button"
-                class:selected={selectedTogetherOppositeExample === example.id}
-                aria-pressed={selectedTogetherOppositeExample === example.id}
-                on:click={() => selectTogetherOppositeExample(example)}
-              >
-                <span class="example-pictograph">
-                  <PictographContainer
-                    pictographData={example.pictograph}
-                    gridMode={example.gridMode}
-                    leftPropTypeOverride={PropType.HAND}
-                    rightPropTypeOverride={PropType.HAND}
-                    showGrid={true}
-                    showTKA={true}
-                    showElemental={true}
-                    showPositions={true}
-                    showReversals={false}
-                    showNonRadialPoints={false}
-                    showHandPoints={true}
-                    disableTransitions
-                  />
-                </span>
-                <span>{example.label}</span>
-              </button>
-            {/each}
+          <div
+            class="example-options"
+            aria-label="Together-Opposite examples"
+            aria-busy={examplesLoading}
+          >
+            {#if examplesLoading}
+              <p class="example-status">Loading matching pictographs…</p>
+            {:else if examplesError}
+              <div class="example-status">
+                <p>{examplesError}</p>
+                <PanelButton onclick={retryTogetherOppositeExamples}
+                  >Try again</PanelButton
+                >
+              </div>
+            {:else}
+              {#each togetherOppositeExamples as example (example.id)}
+                <PanelButton
+                  fullWidth
+                  ariaPressed={selectedTogetherOppositeExample === example.id}
+                  onclick={() => selectTogetherOppositeExample(example)}
+                >
+                  <span class="example-pictograph">
+                    <PictographContainer
+                      pictographData={example.pictograph}
+                      gridMode={example.gridMode}
+                      leftPropTypeOverride={PropType.HAND}
+                      rightPropTypeOverride={PropType.HAND}
+                      showGrid={true}
+                      showTKA={true}
+                      showElemental={true}
+                      showPositions={true}
+                      showReversals={false}
+                      showNonRadialPoints={false}
+                      showHandPoints={true}
+                      disableTransitions
+                    />
+                  </span>
+                  <span>{example.label}</span>
+                </PanelButton>
+              {/each}
+            {/if}
           </div>
         </section>
-      {/if}
-      <PanelButton
-        href="/learn/concepts/timing-and-direction"
-        accentColor={mode.element.accentColor}
-      >
-        <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-        Try timing and direction
-      </PanelButton>
-    </div>
-    <div class="mode-notes">
-      <section class="practice" aria-labelledby="practice-title">
-        <h2 id="practice-title">In practice</h2>
-        <p>{article.example}</p>
-      </section>
-      <section aria-labelledby="distinction-title">
-        <h2 id="distinction-title">
-          {article.timing === "Quarter"
-            ? "Timing and placement"
-            : "Timing and direction"}
-        </h2>
-        <p>{article.commonMistake}</p>
-      </section>
-      <section aria-labelledby="tka-title">
-        <h2 id="tka-title">In TKA</h2>
-        <p>{article.tkaConnection}</p>
-        <PanelButton href={lessonHref} accentColor={mode.element.accentColor}>
-          <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
-          Explore this in TKA
-        </PanelButton>
-      </section>
-    </div>
-
-    <figure class="demonstration">
-      <div class="demo-toolbar">
-        <span>Hand paths</span>
-        {#if browser}
-          <TransportControls
-            isPlaying={playback.playing}
-            onPlaybackToggle={() => (playback.playing = !playback.playing)}
-          />
-        {/if}
       </div>
-      <div class="demo-canvas" use:playback.registerTarget></div>
-      <figcaption>
-        Drag the bar to follow the hands through the cycle.
-      </figcaption>
-    </figure>
-  </div>
+
+      <div class="to-notes">
+        <section>
+          <h2>What stays the same</h2>
+          <p>
+            Both hands arrive on the same beat while their paths travel in
+            opposite senses.
+          </p>
+        </section>
+        <section>
+          <h2>What can change</h2>
+          <p>
+            Letter, start position, grid, and prop rotation can change without
+            changing that hand-path classification.
+          </p>
+        </section>
+        <section>
+          <h2>Practice</h2>
+          <p>{article.example}</p>
+        </section>
+      </div>
+    </section>
+  {:else}
+    <div class="mode-overview">
+      <div class="mode-copy">
+        <header>
+          <div class="mode-identity">
+            <img src={mode.element.iconPath} alt="" width="44" height="44" />
+            <span>{article.code} · {mode.element.element}</span>
+          </div>
+          <h1>
+            {article.timing} time <span>{article.direction} direction</span>
+          </h1>
+          <p class="definition">{article.definition}</p>
+        </header>
+        <p>{article.watchFor}</p>
+        {#if article.code === "TO"}
+          <section
+            class="example-picker"
+            aria-labelledby="example-picker-title"
+          >
+            <div>
+              <h2 id="example-picker-title">Choose a matching pictograph</h2>
+              <p>
+                Each option is classified from its hand-path geometry. The
+                player shows those hands; the pictograph keeps the selected prop
+                rotation visible.
+              </p>
+            </div>
+            <div
+              class="example-options"
+              aria-label="Together-Opposite examples"
+            >
+              {#each togetherOppositeExamples as example (example.id)}
+                <button
+                  type="button"
+                  class:selected={selectedTogetherOppositeExample ===
+                    example.id}
+                  aria-pressed={selectedTogetherOppositeExample === example.id}
+                  on:click={() => selectTogetherOppositeExample(example)}
+                >
+                  <span class="example-pictograph">
+                    <PictographContainer
+                      pictographData={example.pictograph}
+                      gridMode={example.gridMode}
+                      leftPropTypeOverride={PropType.HAND}
+                      rightPropTypeOverride={PropType.HAND}
+                      showGrid={true}
+                      showTKA={true}
+                      showElemental={true}
+                      showPositions={true}
+                      showReversals={false}
+                      showNonRadialPoints={false}
+                      showHandPoints={true}
+                      disableTransitions
+                    />
+                  </span>
+                  <span>{example.label}</span>
+                </button>
+              {/each}
+            </div>
+          </section>
+        {/if}
+        <PanelButton
+          href="/learn/concepts/timing-and-direction"
+          accentColor={mode.element.accentColor}
+        >
+          <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+          Try timing and direction
+        </PanelButton>
+      </div>
+      <div class="mode-notes">
+        <section class="practice" aria-labelledby="practice-title">
+          <h2 id="practice-title">In practice</h2>
+          <p>{article.example}</p>
+        </section>
+        <section aria-labelledby="distinction-title">
+          <h2 id="distinction-title">
+            {article.timing === "Quarter"
+              ? "Timing and placement"
+              : "Timing and direction"}
+          </h2>
+          <p>{article.commonMistake}</p>
+        </section>
+        <section aria-labelledby="tka-title">
+          <h2 id="tka-title">In TKA</h2>
+          <p>{article.tkaConnection}</p>
+          <PanelButton href={lessonHref} accentColor={mode.element.accentColor}>
+            <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
+            Explore this in TKA
+          </PanelButton>
+        </section>
+      </div>
+
+      <figure class="demonstration">
+        <div class="demo-toolbar">
+          <span>Hand paths</span>
+          {#if browser}
+            <TransportControls
+              isPlaying={playback.playing}
+              onPlaybackToggle={() => (playback.playing = !playback.playing)}
+            />
+          {/if}
+        </div>
+        <div class="demo-canvas" use:playback.registerTarget></div>
+        <figcaption>
+          Drag the bar to follow the hands through the cycle.
+        </figcaption>
+      </figure>
+    </div>
+  {/if}
 
   <section class="history" aria-labelledby="learning-title">
     <h2 id="learning-title">Learn from other spinners</h2>
@@ -322,6 +442,39 @@
     gap: clamp(1.5rem, 4vw, 4rem);
     align-items: start;
   }
+  .to-reference {
+    max-width: 86rem;
+  }
+  .to-header {
+    max-width: 68ch;
+    margin-bottom: 1.5rem;
+  }
+  .to-header h1 {
+    margin-bottom: 0.75rem;
+  }
+  .to-stage {
+    display: grid;
+    grid-template-columns: minmax(18rem, 1fr) minmax(20rem, 0.9fr);
+    gap: clamp(1rem, 3vw, 2rem);
+    align-items: start;
+  }
+  .to-stage .demonstration {
+    grid-column: auto;
+    grid-row: auto;
+    width: min(100%, 40rem);
+  }
+  .to-notes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--theme-stroke);
+  }
+  .to-notes p {
+    margin: 0;
+    font-size: 1rem;
+  }
   .mode-copy,
   .mode-notes {
     min-width: 0;
@@ -389,26 +542,20 @@
   }
   .example-options {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.5rem;
   }
-  .example-options button {
+  .example-options :global(.panel-btn) {
     display: grid;
     gap: 0.35rem;
     min-width: 0;
     min-height: 44px;
     padding: 0.35rem;
-    color: inherit;
-    font: inherit;
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     line-height: 1.25;
     text-align: left;
-    cursor: pointer;
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--radius-md, 0.5rem);
-    background: var(--theme-panel-bg);
   }
-  .example-options button.selected {
+  .example-options :global(.panel-btn[aria-pressed="true"]) {
     outline: 2px solid var(--mode-accent);
     outline-offset: -2px;
     background: color-mix(
@@ -417,13 +564,24 @@
       var(--theme-card-bg)
     );
   }
-  .example-options button:focus-visible {
+  .example-options :global(.panel-btn:focus-visible) {
     outline: 3px solid var(--theme-text);
     outline-offset: 2px;
   }
   .example-pictograph {
     display: block;
     aspect-ratio: 1;
+  }
+  .example-status {
+    display: grid;
+    gap: 0.5rem;
+    grid-column: 1 / -1;
+    min-height: 9rem;
+    align-content: center;
+  }
+  .example-status p {
+    margin: 0;
+    font-size: 0.875rem;
   }
   .demonstration {
     grid-column: 2;
@@ -516,6 +674,13 @@
     outline-offset: -3px;
   }
   @media (max-width: 800px) {
+    .to-stage,
+    .to-notes {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .to-stage .demonstration {
+      justify-self: center;
+    }
     .mode-overview {
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: auto;
@@ -531,9 +696,6 @@
     }
     .sources {
       grid-template-columns: minmax(0, 1fr);
-    }
-    .example-options {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   @media (max-width: 600px) {

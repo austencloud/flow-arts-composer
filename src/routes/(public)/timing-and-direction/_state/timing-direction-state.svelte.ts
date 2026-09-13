@@ -1,6 +1,7 @@
 import { getContext, setContext } from "svelte";
 import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
 import { TIMING_DIRECTION_ARTICLES } from "../_data/timing-direction-articles";
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
 export const timingDirectionPreviews = TIMING_DIRECTION_ARTICLES.map(
   (article) => ({
@@ -21,6 +22,10 @@ export function createTimingDirectionState(initialSlug?: string) {
   let playing = $state(true);
   let step = $state(0);
   let target = $state.raw<HTMLElement | null>(null);
+  let exampleSequence = $state.raw<SequenceData | null>(null);
+  let seek = $state.raw<((step: number) => void) | null>(null);
+  let seekStep = $state(0);
+  let seekVersion = $state(0);
 
   return {
     get selected() {
@@ -35,8 +40,14 @@ export function createTimingDirectionState(initialSlug?: string) {
     get step() {
       return step;
     },
+    get sequence() {
+      return exampleSequence ?? selected.motion.sequence;
+    },
+    get pendingSeek() {
+      return { step: seekStep, version: seekVersion };
+    },
     followStep(value: number, sequenceId: string | null) {
-      if (sequenceId === selected.motion.sequence.id) {
+      if (sequenceId === (exampleSequence ?? selected.motion.sequence).id) {
         step = value;
       }
     },
@@ -45,10 +56,21 @@ export function createTimingDirectionState(initialSlug?: string) {
         (mode) => mode.article.slug === slug
       );
       if (next) selected = next;
+      exampleSequence = null;
       step = 0;
     },
-    focusExample() {
-      step = 0;
+    selectExample(sequence: SequenceData, nextStep: number) {
+      exampleSequence = sequence;
+      step = nextStep;
+      seekStep = nextStep;
+      seekVersion += 1;
+    },
+    runPendingSeek() {
+      seek?.(seekStep);
+    },
+    registerSeek(next: ((step: number) => void) | null) {
+      seek = next;
+      seek?.(seekStep);
     },
     get target() {
       return target;
