@@ -88,10 +88,7 @@ Features frame processing loop for pose estimation and overlay support.
       // A start the manager cancelled for us — the preview unmounted, or a
       // newer start replaced this one — is not a failure the user should read
       // about. The camera it opened was already released.
-      if (
-        error instanceof Error &&
-        error.name === CAMERA_START_CANCELLED
-      ) {
+      if (error instanceof Error && error.name === CAMERA_START_CANCELLED) {
         return;
       }
       const message =
