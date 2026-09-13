@@ -13,7 +13,7 @@ import {
   getDocs,
   type CollectionReference,
 } from "firebase/firestore";
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, type PluginListenerHandle } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { getFirestoreInstance, app } from "$lib/shared/auth/firebase";
 import { getDeviceId } from "$lib/shared/auth/services/device-id-service";
@@ -192,30 +192,71 @@ export class FCMTokenManager {
       )
     );
 
+    // Capacitor listeners are process-global and stack up. These used to be
+    // added on every registerToken call and never removed, so the single
+    // registration event from a later register() was replayed into every
+    // earlier call's closure — each still holding the user id it captured.
+    // A device that registered as one user and then as another wrote its
+    // current token into BOTH accounts, leaving the signed-out one receiving
+    // this device's push notifications.
+    const handles: PluginListenerHandle[] = [];
+    const removeListeners = async (): Promise<void> => {
+      const attached = handles.splice(0);
+      await Promise.all(
+        attached.map((handle) => handle.remove().catch(() => undefined))
+      );
+    };
+
     return new Promise((resolve) => {
       let settled = false;
       const finish = (token: string | null) => {
         if (settled) return;
         settled = true;
-        resolve(token);
+        // Resolve only once this attempt's listeners are detached, so the
+        // caller's next registration starts from a clean slate.
+        void removeListeners().then(() => resolve(token));
       };
 
-      void PushNotifications.addListener("registration", ({ value }) => {
-        void this.storeToken(userId, value, "android-native")
-          .then(() => {
-            this.currentToken = value;
-            finish(value);
-          })
-          .catch((error) => {
-            console.error("[FCMTokenManager] Token storage failed:", error);
-            finish(null);
-          });
-      });
-      void PushNotifications.addListener("registrationError", ({ error }) => {
-        console.error("[FCMTokenManager] Native registration failed:", error);
-        finish(null);
-      });
-      void PushNotifications.register();
+      void (async () => {
+        try {
+          handles.push(
+            await PushNotifications.addListener("registration", ({ value }) => {
+              void this.storeToken(userId, value, "android-native")
+                .then(() => {
+                  this.currentToken = value;
+                  finish(value);
+                })
+                .catch((error) => {
+                  console.error(
+                    "[FCMTokenManager] Token storage failed:",
+                    error
+                  );
+                  finish(null);
+                });
+            }),
+            await PushNotifications.addListener(
+              "registrationError",
+              ({ error }) => {
+                console.error(
+                  "[FCMTokenManager] Native registration failed:",
+                  error
+                );
+                finish(null);
+              }
+            )
+          );
+
+          if (settled) {
+            await removeListeners();
+            return;
+          }
+
+          await PushNotifications.register();
+        } catch (error) {
+          console.error("[FCMTokenManager] Native registration failed:", error);
+          finish(null);
+        }
+      })();
     });
   }
 
