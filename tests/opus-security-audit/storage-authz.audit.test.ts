@@ -84,7 +84,9 @@ describe("controls: per-user object boundaries hold", () => {
     for (const path of paths) {
       await seedObject(path);
       await assertFails(getBytes(ref(attackerStorage(), path)));
-      await assertFails(uploadBytes(ref(attackerStorage(), path), ATTACKER_BYTES, WEBP));
+      await assertFails(
+        uploadBytes(ref(attackerStorage(), path), ATTACKER_BYTES, WEBP)
+      );
     }
   });
 
@@ -120,7 +122,9 @@ describe("controls: per-user object boundaries hold", () => {
   it("public artifact posters are owner-write only", async () => {
     const path = `public-artifacts/${VICTIM_UID}/artifact-1/v1_${"a".repeat(64)}.webp`;
     await seedObject(path);
-    await assertFails(uploadBytes(ref(attackerStorage(), path), ATTACKER_BYTES, WEBP));
+    await assertFails(
+      uploadBytes(ref(attackerStorage(), path), ATTACKER_BYTES, WEBP)
+    );
     await assertSucceeds(getBytes(ref(signedOutStorage(), path)));
   });
 });
@@ -138,38 +142,57 @@ describe("finding A: the public pictograph cell cache is overwritable", () => {
     await seedObject(CELL, VICTIM_BYTES);
     expect(await byteLength(CELL)).toBe(VICTIM_BYTES.byteLength);
 
-    await assertSucceeds(uploadBytes(ref(attackerStorage(), CELL), ATTACKER_BYTES, WEBP));
+    await assertSucceeds(
+      uploadBytes(ref(attackerStorage(), CELL), ATTACKER_BYTES, WEBP)
+    );
     expect(await byteLength(CELL)).toBe(ATTACKER_BYTES.byteLength);
   });
 
   it("MEASURED: an ANONYMOUS session can do the same", async () => {
     await seedObject(CELL, VICTIM_BYTES);
-    await assertSucceeds(uploadBytes(ref(guestStorage(), CELL), ATTACKER_BYTES, WEBP));
+    await assertSucceeds(
+      uploadBytes(ref(guestStorage(), CELL), ATTACKER_BYTES, WEBP)
+    );
     expect(await byteLength(CELL)).toBe(ATTACKER_BYTES.byteLength);
   });
 
   it("the guards that do hold: signed-out writes, non-webp, oversize, delete", async () => {
-    await assertFails(uploadBytes(ref(signedOutStorage(), CELL), ATTACKER_BYTES, WEBP));
+    await assertFails(
+      uploadBytes(ref(signedOutStorage(), CELL), ATTACKER_BYTES, WEBP)
+    );
     await assertFails(
       uploadBytes(ref(attackerStorage(), CELL), ATTACKER_BYTES, {
         contentType: "text/html",
       })
     );
     await assertFails(
-      uploadBytes(ref(attackerStorage(), CELL), new Uint8Array(200 * 1024), WEBP)
+      uploadBytes(
+        ref(attackerStorage(), CELL),
+        new Uint8Array(200 * 1024),
+        WEBP
+      )
     );
     await seedObject(CELL);
     await assertFails(deleteObject(ref(attackerStorage(), CELL)));
   });
 
-  repro("REPRO (red while open): an existing cell must not be replaceable", async () => {
-    await seedObject(CELL, VICTIM_BYTES);
-    await assertFails(uploadBytes(ref(attackerStorage(), CELL), ATTACKER_BYTES, WEBP));
-    await assertFails(uploadBytes(ref(guestStorage(), CELL), ATTACKER_BYTES, WEBP));
-    // A FIRST write by any signed-in renderer must keep working.
-    await env.clearStorage();
-    await assertSucceeds(uploadBytes(ref(attackerStorage(), CELL), ATTACKER_BYTES, WEBP));
-  });
+  repro(
+    "REPRO (red while open): an existing cell must not be replaceable",
+    async () => {
+      await seedObject(CELL, VICTIM_BYTES);
+      await assertFails(
+        uploadBytes(ref(attackerStorage(), CELL), ATTACKER_BYTES, WEBP)
+      );
+      await assertFails(
+        uploadBytes(ref(guestStorage(), CELL), ATTACKER_BYTES, WEBP)
+      );
+      // A FIRST write by any signed-in renderer must keep working.
+      await env.clearStorage();
+      await assertSucceeds(
+        uploadBytes(ref(attackerStorage(), CELL), ATTACKER_BYTES, WEBP)
+      );
+    }
+  );
 });
 
 // ===========================================================================
@@ -186,44 +209,71 @@ describe("finding B: crowd-sourced thumbnail caches are overwritable", () => {
       await seedObject(path, VICTIM_BYTES);
       expect(await byteLength(path)).toBe(VICTIM_BYTES.byteLength);
 
-      await assertSucceeds(uploadBytes(ref(attackerStorage(), path), ATTACKER_BYTES, WEBP));
+      await assertSucceeds(
+        uploadBytes(ref(attackerStorage(), path), ATTACKER_BYTES, WEBP)
+      );
       expect(await byteLength(path)).toBe(ATTACKER_BYTES.byteLength);
 
       // And anonymously.
-      await assertSucceeds(uploadBytes(ref(guestStorage(), path), VICTIM_BYTES, WEBP));
+      await assertSucceeds(
+        uploadBytes(ref(guestStorage(), path), VICTIM_BYTES, WEBP)
+      );
     }
   });
 
   it("the replaced object stays world-readable, so the swap reaches every viewer", async () => {
     await seedObject(VARIANT, VICTIM_BYTES);
-    await assertSucceeds(uploadBytes(ref(attackerStorage(), VARIANT), ATTACKER_BYTES, WEBP));
-    const bytes = await assertSucceeds(getBytes(ref(signedOutStorage(), VARIANT)));
+    await assertSucceeds(
+      uploadBytes(ref(attackerStorage(), VARIANT), ATTACKER_BYTES, WEBP)
+    );
+    const bytes = await assertSucceeds(
+      getBytes(ref(signedOutStorage(), VARIANT))
+    );
     expect((bytes as ArrayBuffer).byteLength).toBe(ATTACKER_BYTES.byteLength);
   });
 
   it("the manifest and shop covers stay admin-write only (the gate that holds)", async () => {
     await assertFails(
-      uploadBytes(ref(attackerStorage(), "thumbnails/manifest.json"), ATTACKER_BYTES, {
-        contentType: "application/json",
-      })
+      uploadBytes(
+        ref(attackerStorage(), "thumbnails/manifest.json"),
+        ATTACKER_BYTES,
+        {
+          contentType: "application/json",
+        }
+      )
     );
     await assertFails(
-      uploadBytes(ref(attackerStorage(), "shop-covers/prod-1/0.png"), ATTACKER_BYTES, {
-        contentType: "image/png",
-      })
+      uploadBytes(
+        ref(attackerStorage(), "shop-covers/prod-1/0.png"),
+        ATTACKER_BYTES,
+        {
+          contentType: "image/png",
+        }
+      )
     );
     await assertSucceeds(
-      uploadBytes(ref(adminStorage(), "thumbnails/manifest.json"), ATTACKER_BYTES, {
-        contentType: "application/json",
-      })
+      uploadBytes(
+        ref(adminStorage(), "thumbnails/manifest.json"),
+        ATTACKER_BYTES,
+        {
+          contentType: "application/json",
+        }
+      )
     );
   });
 
-  repro("REPRO (red while open): a published thumbnail must not be replaceable", async () => {
-    await seedObject(VARIANT, VICTIM_BYTES);
-    await assertFails(uploadBytes(ref(attackerStorage(), VARIANT), ATTACKER_BYTES, WEBP));
-    await assertFails(uploadBytes(ref(guestStorage(), VARIANT), ATTACKER_BYTES, WEBP));
-  });
+  repro(
+    "REPRO (red while open): a published thumbnail must not be replaceable",
+    async () => {
+      await seedObject(VARIANT, VICTIM_BYTES);
+      await assertFails(
+        uploadBytes(ref(attackerStorage(), VARIANT), ATTACKER_BYTES, WEBP)
+      );
+      await assertFails(
+        uploadBytes(ref(guestStorage(), VARIANT), ATTACKER_BYTES, WEBP)
+      );
+    }
+  );
 });
 
 // ===========================================================================
@@ -311,7 +361,10 @@ describe("finding D: uncapped owner-scoped upload prefixes", () => {
     );
     await assertFails(
       uploadBytes(
-        ref(attackerStorage(), `pronunciation-corpus/${ATTACKER_UID}/s1/001.wav`),
+        ref(
+          attackerStorage(),
+          `pronunciation-corpus/${ATTACKER_UID}/s1/001.wav`
+        ),
         new Uint8Array(6 * 1024 * 1024),
         { contentType: "audio/wav" }
       )

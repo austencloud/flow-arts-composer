@@ -111,8 +111,14 @@ describe("controls: cross-tenant boundaries that hold", () => {
 
   it("a private collection is unreadable by a non-owner, public one is world-readable", async () => {
     await seed([
-      [`users/${VICTIM_UID}/collections/private-col`, { name: "P", isPublic: false }],
-      [`users/${VICTIM_UID}/collections/public-col`, { name: "U", isPublic: true }],
+      [
+        `users/${VICTIM_UID}/collections/private-col`,
+        { name: "P", isPublic: false },
+      ],
+      [
+        `users/${VICTIM_UID}/collections/public-col`,
+        { name: "U", isPublic: true },
+      ],
     ]);
 
     await assertFails(
@@ -128,9 +134,15 @@ describe("controls: cross-tenant boundaries that hold", () => {
       [`userPrivateProfiles/${VICTIM_UID}`, { email: "victim@example.com" }],
     ]);
 
-    await assertFails(getDoc(doc(attackerDb(), `userPrivateProfiles/${VICTIM_UID}`)));
-    await assertSucceeds(getDoc(doc(victimDb(), `userPrivateProfiles/${VICTIM_UID}`)));
-    await assertSucceeds(getDoc(doc(adminDb(), `userPrivateProfiles/${VICTIM_UID}`)));
+    await assertFails(
+      getDoc(doc(attackerDb(), `userPrivateProfiles/${VICTIM_UID}`))
+    );
+    await assertSucceeds(
+      getDoc(doc(victimDb(), `userPrivateProfiles/${VICTIM_UID}`))
+    );
+    await assertSucceeds(
+      getDoc(doc(adminDb(), `userPrivateProfiles/${VICTIM_UID}`))
+    );
   });
 
   it("a client cannot self-grant role/isAdmin on its own public profile", async () => {
@@ -168,7 +180,12 @@ describe("controls: cross-tenant boundaries that hold", () => {
     await seed([
       [
         `users/${VICTIM_UID}`,
-        { publicProfileVersion: 2, displayName: "V", role: "user", isAdmin: false },
+        {
+          publicProfileVersion: 2,
+          displayName: "V",
+          role: "user",
+          isAdmin: false,
+        },
       ],
     ]);
 
@@ -243,7 +260,9 @@ describe("controls: cross-tenant boundaries that hold", () => {
       setDoc(doc(attackerDb(), "orders/o1"), { status: "paid", total: 0 })
     );
     // Meta/Instagram provider tokens have no client read path.
-    await assertFails(getDoc(doc(attackerDb(), `metaPublishConnections/${VICTIM_UID}`)));
+    await assertFails(
+      getDoc(doc(attackerDb(), `metaPublishConnections/${VICTIM_UID}`))
+    );
   });
 });
 
@@ -311,25 +330,30 @@ describe("finding 1: publicSoloProps / publicHandPaths ownership takeover", () =
   it("a guest (anonymous) account is correctly blocked — isFullUser() holds", async () => {
     await seedVictimArtifacts();
     await assertFails(
-      updateDoc(doc(guestDb(), `publicSoloProps/${HASH}`), { ownerId: ANON_UID })
+      updateDoc(doc(guestDb(), `publicSoloProps/${HASH}`), {
+        ownerId: ANON_UID,
+      })
     );
   });
 
-  repro("REPRO (red while open): a non-owner must not overwrite these docs", async () => {
-    await seedVictimArtifacts();
-    await assertFails(
-      updateDoc(doc(attackerDb(), `publicSoloProps/${HASH}`), {
-        ownerId: ATTACKER_UID,
-        steps: ["attacker-payload"],
-      })
-    );
-    await assertFails(
-      updateDoc(doc(attackerDb(), `publicHandPaths/${HASH}`), {
-        ownerId: ATTACKER_UID,
-        locations: ["attacker-payload"],
-      })
-    );
-  });
+  repro(
+    "REPRO (red while open): a non-owner must not overwrite these docs",
+    async () => {
+      await seedVictimArtifacts();
+      await assertFails(
+        updateDoc(doc(attackerDb(), `publicSoloProps/${HASH}`), {
+          ownerId: ATTACKER_UID,
+          steps: ["attacker-payload"],
+        })
+      );
+      await assertFails(
+        updateDoc(doc(attackerDb(), `publicHandPaths/${HASH}`), {
+          ownerId: ATTACKER_UID,
+          locations: ["attacker-payload"],
+        })
+      );
+    }
+  );
 
   repro("REPRO (red while open): deletion is equally unguarded", async () => {
     // delete requires resource.data.ownerId == uid, so this one already holds;
@@ -363,23 +387,31 @@ describe("finding 2: Hall of Shame submission cap is not enforceable", () => {
   it("MEASURED: one account creates far more than the 3/day client limit", async () => {
     const db = attackerDb();
     for (let i = 0; i < 8; i += 1) {
-      await assertSucceeds(setDoc(doc(db, `hallOfShame/flood-${i}`), entry(`flood-${i}`)));
+      await assertSucceeds(
+        setDoc(doc(db, `hallOfShame/flood-${i}`), entry(`flood-${i}`))
+      );
     }
   });
 
   it("MEASURED: the subject can reset its own rate-limit counter to zero", async () => {
     const limitId = `${ATTACKER_UID}_2026-09-13`;
-    await seed([[`hallOfShameRateLimits/${limitId}`, { count: 3, userId: ATTACKER_UID }]]);
+    await seed([
+      [`hallOfShameRateLimits/${limitId}`, { count: 3, userId: ATTACKER_UID }],
+    ]);
 
     await assertSucceeds(
-      updateDoc(doc(attackerDb(), `hallOfShameRateLimits/${limitId}`), { count: 0 })
+      updateDoc(doc(attackerDb(), `hallOfShameRateLimits/${limitId}`), {
+        count: 0,
+      })
     );
   });
 
   it("the moderation status itself stays admin-only (the gate that does hold)", async () => {
     await seed([["hallOfShame/pending-1", entry("pending-1")]]);
     await assertFails(
-      updateDoc(doc(attackerDb(), "hallOfShame/pending-1"), { status: "approved" })
+      updateDoc(doc(attackerDb(), "hallOfShame/pending-1"), {
+        status: "approved",
+      })
     );
     await assertSucceeds(
       updateDoc(doc(adminDb(), "hallOfShame/pending-1"), { status: "approved" })
@@ -426,18 +458,23 @@ describe("finding 3: shop_waitlist accepts unauthenticated arbitrary documents",
     await seed([["shop_waitlist/e1", { email: "a@b.co" }]]);
     await assertFails(getDoc(doc(signedOutDb(), "shop_waitlist/e1")));
     await assertFails(getDoc(doc(attackerDb(), "shop_waitlist/e1")));
-    await assertFails(updateDoc(doc(signedOutDb(), "shop_waitlist/e1"), { email: "c@d.co" }));
+    await assertFails(
+      updateDoc(doc(signedOutDb(), "shop_waitlist/e1"), { email: "c@d.co" })
+    );
     await assertSucceeds(getDoc(doc(adminDb(), "shop_waitlist/e1")));
   });
 
-  repro("REPRO (red while open): the document shape should be allowlisted", async () => {
-    await assertFails(
-      setDoc(doc(signedOutDb(), "shop_waitlist/shape-probe"), {
-        email: "a@b.co",
-        junkPayload: "x".repeat(50_000),
-      })
-    );
-  });
+  repro(
+    "REPRO (red while open): the document shape should be allowlisted",
+    async () => {
+      await assertFails(
+        setDoc(doc(signedOutDb(), "shop_waitlist/shape-probe"), {
+          email: "a@b.co",
+          junkPayload: "x".repeat(50_000),
+        })
+      );
+    }
+  );
 });
 
 // ===========================================================================
@@ -464,25 +501,38 @@ describe("finding 4: errorTelemetry reports are rewritable by anyone", () => {
 
   it("the admin triage flag is the one field that is protected", async () => {
     await seed([
-      ["errorTelemetry/20260913_abcdef", { message: "real failure", resolved: false }],
-    ]);
-    await assertFails(
-      updateDoc(doc(signedOutDb(), "errorTelemetry/20260913_abcdef"), { resolved: true })
-    );
-    await assertFails(getDoc(doc(signedOutDb(), "errorTelemetry/20260913_abcdef")));
-  });
-
-  repro("REPRO (red while open): a report should not be rewritable by a stranger", async () => {
-    await seed([
-      ["errorTelemetry/20260913_abcdef", { message: "real failure", count: 12 }],
+      [
+        "errorTelemetry/20260913_abcdef",
+        { message: "real failure", resolved: false },
+      ],
     ]);
     await assertFails(
       updateDoc(doc(signedOutDb(), "errorTelemetry/20260913_abcdef"), {
-        message: "overwritten",
-        count: 0,
+        resolved: true,
       })
     );
+    await assertFails(
+      getDoc(doc(signedOutDb(), "errorTelemetry/20260913_abcdef"))
+    );
   });
+
+  repro(
+    "REPRO (red while open): a report should not be rewritable by a stranger",
+    async () => {
+      await seed([
+        [
+          "errorTelemetry/20260913_abcdef",
+          { message: "real failure", count: 12 },
+        ],
+      ]);
+      await assertFails(
+        updateDoc(doc(signedOutDb(), "errorTelemetry/20260913_abcdef"), {
+          message: "overwritten",
+          count: 0,
+        })
+      );
+    }
+  );
 });
 
 // ===========================================================================
@@ -558,14 +608,17 @@ describe("finding 5: video collaborator rosters are re-shareable by collaborator
     await assertFails(getDoc(doc(thirdPartyDb(), "videos/vid-2")));
   });
 
-  repro("REPRO (red while open): roster changes should be the creator's alone", async () => {
-    await seedPrivateVideo();
-    await assertFails(
-      updateDoc(doc(attackerDb(), "videos/vid-1"), {
-        collaboratorIds: [ATTACKER_UID, THIRD_PARTY_UID],
-      })
-    );
-  });
+  repro(
+    "REPRO (red while open): roster changes should be the creator's alone",
+    async () => {
+      await seedPrivateVideo();
+      await assertFails(
+        updateDoc(doc(attackerDb(), "videos/vid-1"), {
+          collaboratorIds: [ATTACKER_UID, THIRD_PARTY_UID],
+        })
+      );
+    }
+  );
 });
 
 // ===========================================================================
@@ -580,7 +633,9 @@ describe("finding 6: the username index is enumerable, not just checkable", () =
       ["usernames/bob", { userId: THIRD_PARTY_UID, username: "Bob" }],
     ]);
 
-    const snap = await assertSucceeds(getDocs(collection(guestDb(), "usernames")));
+    const snap = await assertSucceeds(
+      getDocs(collection(guestDb(), "usernames"))
+    );
     expect(snap.size).toBe(2);
     expect(snap.docs.map((d) => d.data().userId).sort()).toEqual(
       [THIRD_PARTY_UID, VICTIM_UID].sort()
@@ -600,12 +655,15 @@ describe("finding 6: the username index is enumerable, not just checkable", () =
     await assertFails(deleteDoc(doc(attackerDb(), "usernames/alice")));
   });
 
-  repro("REPRO (red while open): availability checks need get, not list", async () => {
-    await seed([["usernames/alice", { userId: VICTIM_UID }]]);
-    await assertFails(getDocs(collection(guestDb(), "usernames")));
-    // A single-document availability check must keep working.
-    await assertSucceeds(getDoc(doc(guestDb(), "usernames/alice")));
-  });
+  repro(
+    "REPRO (red while open): availability checks need get, not list",
+    async () => {
+      await seed([["usernames/alice", { userId: VICTIM_UID }]]);
+      await assertFails(getDocs(collection(guestDb(), "usernames")));
+      // A single-document availability check must keep working.
+      await assertSucceeds(getDoc(doc(guestDb(), "usernames/alice")));
+    }
+  );
 });
 
 // ===========================================================================
