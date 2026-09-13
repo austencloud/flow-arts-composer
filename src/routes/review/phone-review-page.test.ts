@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { reviewDocument } from "./+server";
+import { _reviewDocument } from "./+server";
 
-const script = reviewDocument.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+const script = _reviewDocument.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 if (!script)
   throw new Error("Phone review document is missing its client script");
 
