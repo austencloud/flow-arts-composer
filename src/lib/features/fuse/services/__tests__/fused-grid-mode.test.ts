@@ -3,9 +3,20 @@
  *
  * The combined sequence's `gridMode` is the frame the pair lives in. Which
  * source the caller passes as `left` is a hand assignment, not a frame, so the
- * resolution must be symmetric — and it must agree with the canonical
- * classifiers (`grid-mode-deriver` for motions, `hand-path-factory` for paths)
- * about what "skewed" and "centric" mean.
+ * resolution must be symmetric.
+ *
+ * On what the labels mean, the equivalence with the canonical classifiers is
+ * partial and worth stating precisely:
+ *   - "skewed" matches all three — `grid-mode-deriver.deriveGridMode` (motions),
+ *     `step-deriver.deriveStepGridMode` (per step) and
+ *     `hand-path-factory.deriveGridMode` (paths) all call a mixed or
+ *     cardinal↔intercardinal pairing skewed, and the last test below pins that
+ *     against the motion deriver directly.
+ *   - "centric" matches only two of them. `hand-path-factory` and
+ *     `step-deriver` return CENTRIC for a CENTER-touching path, but
+ *     `grid-mode-deriver` has no CENTER branch at all: it warns and falls back
+ *     to DIAMOND. Fuse follows the two that model CENTER, so the centric case
+ *     below is deliberately NOT asserted against `deriveGridMode`.
  *
  * The old table only knew the diamond+box pair and otherwise fell through to
  * the LEFT source's frame, so a skewed source read as diamond when it arrived

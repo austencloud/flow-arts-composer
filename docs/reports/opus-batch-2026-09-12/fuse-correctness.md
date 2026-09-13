@@ -23,42 +23,71 @@ persistence, prop colors.
 Nothing else was touched. `docs/reports/opus-batch-2026-09-12/fuse-correctness.md`
 is this report.
 
+## Corrections after independent review
+
+An independent review of `7c9a6fee` approved both runtime fixes and flagged four
+overstatements in this report plus two gaps in the fidelity test. All six are
+corrected above; no runtime file changed in that round, so the approved
+`sequence-fuser.ts` and `step-deriver.ts` are byte-identical to what was
+reviewed.
+
+| Raised                                                                                                                                         | Where it is now                                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `readonly` does not prove runtime output isolation; `tile` aliases the source objects, and only "no mutation during the call" was demonstrated | contracts table row 1, and new limitation L7                                                                                                                    |
+| No runtime deep clone was requested or added                                                                                                   | stated in L7                                                                                                                                                    |
+| `solo-prop-sequence-adapter` does not copy `plane`, so the "every sibling preserves it" claim is wrong                                         | defect 1 "What was wrong" now carries a per-field table naming the omission                                                                                     |
+| The fidelity test named `plane` but neither supplied nor asserted it, and never asserted `arrowLocation`                                       | both now supplied with non-default values and asserted, plus a canonical field-for-field parity test; defect 1 "Proof" lists the measured pre-fix value of each |
+| `grid-mode-deriver` has no CENTRIC handling, unlike the other two classifiers                                                                  | defect 2 "Fix" now separates the skewed equivalence (all three) from the centric one (two of three), and the test header says the same                          |
+| No browser proof has run — keep that explicit                                                                                                  | "Not verified" now states it absolutely rather than as a soft caveat                                                                                            |
+
+One follow-up is deliberately **not** done, because this round was scoped to the
+report and tests: the doc comment above `resolveFusedGridMode` in
+`sequence-fuser.ts` still reads "the classification follows the canonical
+derivers (grid-mode-deriver for motions, hand-path-factory for paths)", which
+carries the same imprecision about `CENTRIC` that this report just corrected.
+Editing it would mean touching an approved runtime file for a comment, so it is
+recorded here instead and should be tightened the next time that file is opened.
+
 ## Contracts established for `fuseSequences`
 
 Measured on the fixed build unless marked otherwise. "Measured" means an
 assertion or a printed probe value from a run in this session; "inferred" means
 read from code without a runtime observation.
 
-| Contract                               | Status                                                                                                                                                                                    | Evidence            |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| Component step order                   | Holds. Sources are tiled cyclically in source order; a 2-step source against a 4-step source yields left `n,s,n,s` against right `n,e,s,w`.                                               | measured (probe)    |
-| Hand assignment                        | Holds. Left source motions carry `hand: "left"`, right carry `hand: "right"`, including when the _same_ `SoloPropData` object is passed on both sides.                                    | measured (probe)    |
-| Input immutability                     | Holds. Neither source's `steps` nor `handPath` is mutated. The result reuses the source `SoloPropStepData` objects by reference, which is safe because the interface is fully `readonly`. | measured (probe)    |
-| Joins / seam                           | Holds when the LCM is reached. `isCircular` is measured with `isSeamlesslyLoopable`, not asserted.                                                                                        | measured (probe)    |
-| One-step sources                       | Handled. A 1-step source tiles to the partner's length; 1×1 yields a 1-step fuse.                                                                                                         | measured (probe)    |
-| Different-length sources               | Handled up to `maxSteps`; see limitation L1 for the truncation path.                                                                                                                      | measured (probe)    |
-| Duration                               | **Does not hold** — see limitation L2.                                                                                                                                                    | measured (probe)    |
-| Orientation                            | Carried through unchanged from each source step.                                                                                                                                          | measured            |
-| Authored motion fields                 | Was broken; fixed — defect 1.                                                                                                                                                             | measured, red→green |
-| Combined grid frame                    | Was order-dependent; fixed — defect 2.                                                                                                                                                    | measured, red→green |
-| Solo-prop identity of the tiled result | **Does not hold** — see limitation L3.                                                                                                                                                    | measured (probe)    |
-| Start position                         | Never populated — see limitation L4.                                                                                                                                                      | measured (probe)    |
+| Contract                                  | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Evidence            |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Component step order                      | Holds. Sources are tiled cyclically in source order; a 2-step source against a 4-step source yields left `n,s,n,s` against right `n,e,s,w`.                                                                                                                                                                                                                                                                                                                                                                                                                                                     | measured (probe)    |
+| Hand assignment                           | Holds. Left source motions carry `hand: "left"`, right carry `hand: "right"`, including when the _same_ `SoloPropData` object is passed on both sides.                                                                                                                                                                                                                                                                                                                                                                                                                                          | measured (probe)    |
+| No mutation of the inputs during the call | Holds, and that is the exact extent of the claim. Neither source's `steps` nor `handPath` differed before and after a `fuseSequences` call. The result is **not** isolated from its inputs: `tile` aliases the source `SoloPropStepData` objects into the returned solo props, measured as `mixed.leftSoloProp.steps[0] === two.steps[0]`. `readonly` on the interface is a compile-time annotation and proves nothing about runtime output isolation — a caller reaching the aliased objects through a cast or plain JS could mutate shared state. No deep clone was added; see limitation L7. | measured (probe)    |
+| Joins / seam                              | Holds when the LCM is reached. `isCircular` is measured with `isSeamlesslyLoopable`, not asserted.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | measured (probe)    |
+| One-step sources                          | Handled. A 1-step source tiles to the partner's length; 1×1 yields a 1-step fuse.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | measured (probe)    |
+| Different-length sources                  | Handled up to `maxSteps`; see limitation L1 for the truncation path.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | measured (probe)    |
+| Duration                                  | **Does not hold** — see limitation L2.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | measured (probe)    |
+| Orientation                               | Carried through unchanged from each source step.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | measured            |
+| Authored motion fields                    | Was broken; fixed — defect 1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | measured, red→green |
+| Combined grid frame                       | Was order-dependent; fixed — defect 2.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | measured, red→green |
+| Solo-prop identity of the tiled result    | **Does not hold** — see limitation L3.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | measured (probe)    |
+| Start position                            | Never populated — see limitation L4.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | measured (probe)    |
 
 ## Defect 1 — authored motion fields dropped, producing a silently wrong word
 
 ### What was wrong
 
 `fuseSequences` built its combined motions with a private
-`buildMotionFromSoloPropStep` that carried only eight fields. Every sibling
-builder in the codebase carries more:
+`buildMotionFromSoloPropStep` that carried only eight fields. The sibling
+builders carry more, though not all of them carry the same set:
 
-- `step-deriver.rehydrateMotion` (the two-hand assembly path)
-- `solo-prop-sequence-adapter.buildMotion` (the Fuse _source card_ path)
-- `sequence-decomposer.motionToSoloPropStep` (the inverse direction)
+| Field                                       | `step-deriver.rehydrateMotion` | `solo-prop-sequence-adapter.buildMotion` | `sequence-decomposer.motionToSoloPropStep` | old fuser                                                  |
+| ------------------------------------------- | ------------------------------ | ---------------------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
+| `prefloatMotionType`                        | yes                            | yes                                      | yes                                        | **dropped**                                                |
+| `handPath`                                  | yes                            | yes                                      | yes                                        | **dropped**                                                |
+| `skewSteps` / `skewDir`                     | yes                            | yes                                      | yes                                        | **dropped**                                                |
+| `plane`                                     | yes                            | **no**                                   | yes                                        | **dropped**                                                |
+| `arrowLocation` seeded from `startLocation` | yes                            | yes                                      | n/a (inverse direction)                    | **dropped** — left at `createMotionData`'s `NORTH` default |
 
-all preserve `prefloatMotionType`, `handPath`, `skewSteps`, `skewDir` and
-`plane`, and seed `arrowLocation` from `startLocation`. The fuser dropped all of
-them.
+So `plane` is not a field every sibling preserves: `solo-prop-sequence-adapter`
+omits it, which an earlier draft of this report got wrong. The fuser now routes
+through `rehydrateMotion`, which does carry it.
 
 `prefloatMotionType` is load-bearing. A float's `rotationDirection` is
 `noRotation`, so the prefloat type is the only surviving record of the pro-vs-anti
@@ -100,20 +129,44 @@ blue anti ccw w→n + red pro cw e→s  →  C
 blue pro  cw  w→n + red pro cw e→s  →  A
 ```
 
-Before the fix:
+Every authored field the fixtures supply is now both **supplied and asserted**,
+including `plane` (`wheel` on the left hand, `floor` on the right — non-default
+values, so a dropped field is distinguishable from a carried one) and
+`arrowLocation`. An earlier draft named `plane` in its header comment without
+supplying or asserting it, and never asserted `arrowLocation` at all; both gaps
+are closed.
 
-```
-× keeps the authored float/skew/handPath fields on both fused hands
-  AssertionError: expected undefined to be 'anti'
-× derives the same word as the canonical two-hand assembly
-  AssertionError: expected 'AAAA' to be 'CCCC'
-```
+The three tests are:
+
+1. `keeps every supplied authored field on both fused hands` — per-field
+   assertions on both hands, including the derived
+   `prefloatRotationDirection` (the value the CSV lookup actually matches on)
+   and `arrowLocation`.
+2. `produces the same authored fields as the canonical two-hand assembly` —
+   compares all fourteen carried fields, on both hands, on every step, against
+   `step-deriver.deriveSteps` output for the same pair. `gridMode` is
+   deliberately excluded and the exclusion is stated in the test.
+3. `derives the same word as the canonical two-hand assembly`.
+
+Before the fix, all three fail. Each assertion was also confirmed individually
+red by printing the pre-fix motion values (the suite stops at the first failing
+assertion, so the printed probe is what establishes the rest):
+
+| Field                | pre-fix value         | supplied / expected              |
+| -------------------- | --------------------- | -------------------------------- |
+| `prefloatMotionType` | `undefined`           | `anti`                           |
+| `handPath`           | `null`                | `cw`                             |
+| `skewSteps`          | `null`                | `0`                              |
+| `skewDir`            | `null`                | `+`                              |
+| `plane`              | `undefined`           | `wheel` (left) / `floor` (right) |
+| `arrowLocation`      | `n` on **both** hands | `w` (left) / `e` (right)         |
+| derived word         | `AAAA`                | `CCCC`                           |
 
 The reference value `CCCC` is not hand-written: the test assembles the identical
 solo pair through the canonical `step-deriver.deriveSteps` owner and derives its
 word the same way, so the assertion is Fuse-vs-canonical, not Fuse-vs-opinion.
 
-After the fix both pass.
+After the fix all three pass.
 
 ### Fix
 
@@ -194,12 +247,25 @@ After the fix all five pass.
 
 ### Fix
 
-A symmetric table matching the three canonical classifiers
-(`grid-mode-deriver.deriveGridMode`, `step-deriver.deriveStepGridMode`,
-`hand-path-factory.deriveGridMode`): equal frames pass through, a
-center-touching frame wins, any other disagreement is skewed. The pre-existing
-diamond+box → skewed result is unchanged, so this completes the table rather
-than reinterpreting it.
+A symmetric table: equal frames pass through, a center-touching frame wins, any
+other disagreement is skewed. The pre-existing diamond+box → skewed result is
+unchanged, so this completes the table rather than reinterpreting it.
+
+The equivalence with the canonical classifiers is **partial**, and the earlier
+phrasing ("matching the three canonical classifiers") overstated it:
+
+- **Skewed** matches all three. `grid-mode-deriver.deriveGridMode`,
+  `step-deriver.deriveStepGridMode` and `hand-path-factory.deriveGridMode` all
+  call a mixed or cardinal↔intercardinal pairing skewed. The last assertion in
+  the grid-mode test pins this against `deriveGridMode` directly.
+- **Centric** matches only two. `hand-path-factory` and `step-deriver` return
+  `CENTRIC` for a `CENTER`-touching path, but `grid-mode-deriver` has **no
+  `CENTER` branch at all** — verified by grep, it contains no reference to
+  `CENTER` or `CENTRIC` — and falls through to its `console.warn` +
+  `DIAMOND` default. Fuse follows the two classifiers that model `CENTER`,
+  which is a deliberate choice, not a derived equivalence. The centric case in
+  the test is therefore asserted against Fuse's own contract and explicitly not
+  against `deriveGridMode`.
 
 ## Commands and results
 
@@ -209,11 +275,12 @@ All run in this cloud checkout. `pnpm install --frozen-lockfile` and
 
 | Command                                                                                                                                                                                                                                                                                                                                                                                         | Result                                                                                                                                                                                                                  |
 | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npx vitest run --config tests/config/vitest.config.ts src/lib/features/fuse/services/__tests__/fused-motion-fidelity.test.ts` (pre-fix)                                                                                                                                                                                                                                                        | 2 failed — `undefined` vs `'anti'`; `'AAAA'` vs `'CCCC'`                                                                                                                                                                |
-| same, post-fix                                                                                                                                                                                                                                                                                                                                                                                  | 2 passed                                                                                                                                                                                                                |
+| `npx vitest run --config tests/config/vitest.config.ts src/lib/features/fuse/services/__tests__/fused-motion-fidelity.test.ts` (pre-fix)                                                                                                                                                                                                                                                        | 3 failed — `undefined` vs `'anti'`; `step 1 left prefloatMotionType` in the canonical-parity test; `'AAAA'` vs `'CCCC'`                                                                                                 |
+| pre-fix probe printing the fused motion values directly (scratch test, not committed)                                                                                                                                                                                                                                                                                                           | `arrowLocation: n` on both hands; `plane: undefined`; `skewSteps`, `skewDir`, `handPath` all `null` — confirms each new assertion is individually red, not masked by the first failure                                  |
+| same, post-fix                                                                                                                                                                                                                                                                                                                                                                                  | 3 passed                                                                                                                                                                                                                |
 | `…/fused-grid-mode.test.ts` (grid resolver reverted to its pre-fix form)                                                                                                                                                                                                                                                                                                                        | 3 failed, 2 passed                                                                                                                                                                                                      |
 | same, post-fix                                                                                                                                                                                                                                                                                                                                                                                  | 5 passed                                                                                                                                                                                                                |
-| `npx vitest run … src/lib/features/fuse/services/__tests__/`                                                                                                                                                                                                                                                                                                                                    | 4 files, 16 tests passed                                                                                                                                                                                                |
+| `npx vitest run … src/lib/features/fuse/services/__tests__/`                                                                                                                                                                                                                                                                                                                                    | 4 files, 17 tests passed                                                                                                                                                                                                |
 | `npx vitest run …` over `tests/unit/SequenceFuser.test.ts`, `tests/unit/StepDeriver.test.ts`, `tests/unit/fuse/`, `tests/unit/SequenceDecomposer.test.ts`, `tests/unit/reversal-derivation-parity.test.ts`, `tests/unit/hand-arc-reversal-impact.test.ts`, `tests/unit/content-hash-v2-fork-proof.test.ts`, `src/lib/shared/library/services/__tests__/sequence-persistence-normalizer.test.ts` | 17 files, 188 tests passed                                                                                                                                                                                              |
 | `npm run test:ci` (whole default Vitest project)                                                                                                                                                                                                                                                                                                                                                | 1974 files passed, 5 skipped; 15982 tests passed, 106 skipped, 1 todo, **0 failed**; exit 0; 724 s                                                                                                                      |
 | `npm run check:fast` on the branch                                                                                                                                                                                                                                                                                                                                                              | 582 errors, 44 warnings                                                                                                                                                                                                 |
@@ -301,15 +368,29 @@ hands produces correct per-hand motions but two solo props sharing one `id`
 (measured). `soloPropToSequence` uses `soloProp.id` as the sequence id, so this
 is an identity smell rather than a demonstrated failure.
 
+**L7 — the returned solo props alias the source step objects.** `tile` copies
+references, not values, so `fused.leftSoloProp.steps[i]` is the very same object
+as the source's step (measured: `=== two.steps[0]`). What was demonstrated is
+only that `fuseSequences` does not mutate its inputs during the call; the output
+is not isolated from them afterwards. `readonly` on `SoloPropStepData` is erased
+at runtime and does not prevent a caller from mutating a shared step through a
+cast or from plain JavaScript. **No runtime deep clone was added and none was
+requested** — this is recorded so the isolation claim is not read as stronger
+than the evidence. A deep clone would be a separate, measurable change with its
+own allocation cost, and should be decided on its own merits.
+
 ## Not verified
 
-- **No browser verification.** This is a cloud container with no dev server and
-  no Chrome DevTools MCP. Defect 2 changes a value the renderer consumes
-  (`sequence.gridMode` on skewed and centric pairings) and defect 1 changes
-  `arrowLocation` seeding on fused motions. Both changes move Fuse _toward_ what
-  the canonical path already produces for the source cards, but neither has been
-  observed rendered. A skewed/centric fuse and a float fuse should be looked at
-  on a real surface before this is considered visually confirmed.
+- **No browser verification has run at all.** Not partially, not
+  indirectly — zero rendered frames were observed for this branch. This is a
+  cloud container with no dev server and no Chrome DevTools MCP, and port 5173
+  is Austen's and must not be started here. Defect 2 changes a value the
+  renderer consumes (`sequence.gridMode` on skewed and centric pairings) and
+  defect 1 changes `arrowLocation` seeding on fused motions. Both changes move
+  Fuse _toward_ what the canonical path already produces for the source cards,
+  but that is an argument, not an observation. A skewed fuse, a centric fuse and
+  a float fuse must each be looked at on a real surface before any part of this
+  is described as visually confirmed.
 - **Firebase-emulator suites** (`test:rules`, `test:e2e`) and the component
   browser project were not run; nothing in the diff touches rules, auth, or a
   Svelte component.
