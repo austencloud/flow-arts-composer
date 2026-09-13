@@ -1814,7 +1814,7 @@
 
   .motion-settings-layer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     overflow-x: hidden;
     overflow-y: auto;
   }

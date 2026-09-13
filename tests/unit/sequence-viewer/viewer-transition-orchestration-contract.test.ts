@@ -207,11 +207,17 @@ describe("Sequence Viewer transition orchestration contract", () => {
   });
 
   it("keeps collapsed production panes mounted, hidden, and inert", () => {
-    expect(splitPane).toContain('inert={layout.focusedPane === "image"}');
-    expect(splitPane).toContain('inert={layout.focusedPane === "animation"}');
-    expect(splitPane).toContain('aria-hidden={layout.focusedPane === "image"}');
     expect(splitPane).toContain(
-      'aria-hidden={layout.focusedPane === "animation"}'
+      'inert={layout.focusedPane === "image" || !animationPanelReady}'
+    );
+    expect(splitPane).toContain(
+      'inert={layout.focusedPane === "animation" || !previewPanelReady}'
+    );
+    expect(splitPane).toContain(
+      'aria-hidden={layout.focusedPane === "image" || !animationPanelReady}'
+    );
+    expect(splitPane).toContain(
+      'aria-hidden={layout.focusedPane === "animation" || !previewPanelReady}'
     );
     expect(splitPane).not.toContain("{#if layout.focusedPane");
   });
@@ -538,9 +544,10 @@ describe("Sequence Viewer transition orchestration contract", () => {
     // by hand gets one direction right and the other wrong.
     const autoAnchored = (marker: string) => {
       const bodies = rulesSelecting(marker);
-      expect(bodies.length, `${marker} has no composed-width rule`).toBeGreaterThan(
-        0
-      );
+      expect(
+        bodies.length,
+        `${marker} has no composed-width rule`
+      ).toBeGreaterThan(0);
       expect(
         bodies.some((body) => body.includes("margin-left: auto")),
         `${marker} is anchored by hand`

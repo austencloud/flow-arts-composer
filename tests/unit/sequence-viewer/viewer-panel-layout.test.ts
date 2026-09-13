@@ -140,6 +140,37 @@ describe("resolveViewerPanelDirection", () => {
 });
 
 describe("isViewerPaneReadyToReveal", () => {
+  it("does not expose a newly focused Card while its track is still a sliver", () => {
+    const input = {
+      pane: "image",
+      focusedPane: "image",
+      direction: "horizontal",
+      width: 6,
+      height: 847,
+      stageWidth: 762,
+      stageHeight: 847,
+    } as const;
+    expect(resolveViewerPaneRevealReady(input)).toBe(false);
+    expect(resolveViewerPaneRevealReady({ ...input, width: 240 })).toBe(true);
+    // A reversal must close the gate again rather than latching readiness.
+    expect(resolveViewerPaneRevealReady({ ...input, width: 35 })).toBe(false);
+  });
+
+  it("allows a settled compact viewport without accepting an opening sliver", () => {
+    const input = {
+      pane: "animation",
+      focusedPane: "animation",
+      direction: "horizontal",
+      width: 640,
+      height: 196,
+      stageWidth: 640,
+      stageHeight: 200,
+    } as const;
+    expect(resolveViewerPaneRevealReady(input)).toBe(true);
+    expect(resolveViewerPaneRevealReady({ ...input, height: 20 })).toBe(false);
+    expect(resolveViewerPaneRevealReady({ ...input, width: 0 })).toBe(false);
+  });
+
   it("requires readable geometry on both panel axes instead of a timer", () => {
     expect(isViewerPaneReadyToReveal("horizontal", 239, 900)).toBe(false);
     expect(isViewerPaneReadyToReveal("horizontal", 240, 239)).toBe(false);

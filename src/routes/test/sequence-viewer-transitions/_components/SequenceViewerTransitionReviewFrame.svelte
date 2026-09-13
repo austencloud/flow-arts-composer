@@ -199,7 +199,9 @@
     if (!element) return 0;
     let opacity = 1;
     while (element) {
-      opacity *= Number.parseFloat(getComputedStyle(element).opacity) || 0;
+      const style = getComputedStyle(element);
+      if (style.visibility === "hidden" || style.display === "none") return 0;
+      opacity *= Number.parseFloat(style.opacity) || 0;
       element = element.parentElement;
     }
     return opacity;
@@ -1054,6 +1056,9 @@
         await wait(dwell);
         setTracePhase("workspace-return");
         (await waitForControl("Exit practice mode", version)).click();
+        // A round trip is not complete if Practice silently leaves the user
+        // in Side by Side instead of restoring the surface that opened it.
+        await waitForModeCommit(source, version);
         await wait(dwell);
       }
     } else {
