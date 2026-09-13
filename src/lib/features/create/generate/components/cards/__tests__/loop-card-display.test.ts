@@ -135,18 +135,34 @@ describe("buildLoopCardDisplay — reflection axis", () => {
     expect(
       resolveEffectiveAxis(new Set([LOOPComponent.MIRRORED]), undefined)
     ).toBe("north-south");
-    expect(resolveEffectiveAxis(new Set([LOOPComponent.ROTATED]), undefined)).toBeNull();
+    expect(
+      resolveEffectiveAxis(new Set([LOOPComponent.ROTATED]), undefined)
+    ).toBeNull();
   });
 });
 
 describe("buildLoopCardDisplay — inversion", () => {
-  it("reaches the quartered inversion icon at interval 4", () => {
+  it("reaches the quartered inversion icon at interval 4 on top", () => {
     const display = buildLoopCardDisplay({
       loopEnabled: true,
       loopType: LOOPType.INVERTED,
       inversionInterval: 4,
+      inversionMode: "overlay",
     });
     expect(display.inversionPeriod).toBe(Period.QUARTERED);
+  });
+
+  // Only overlay inversion has a real period-4 orbit; an expand inversion is
+  // coerced back to halfway (see effectiveInversionInterval), so the card must
+  // not show a quartered glyph the generator will never produce.
+  it("shows halved for an expand inversion asked for at interval 4", () => {
+    const display = buildLoopCardDisplay({
+      loopEnabled: true,
+      loopType: LOOPType.INVERTED,
+      inversionInterval: 4,
+      inversionMode: "expand",
+    });
+    expect(display.inversionPeriod).toBe(Period.HALVED);
   });
 
   it("defaults inversion to halved", () => {
