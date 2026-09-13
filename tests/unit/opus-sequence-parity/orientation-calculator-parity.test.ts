@@ -1,16 +1,20 @@
 /**
- * Orientation math parity: the app's copy vs the engine's copy.
+ * Orientation math parity across all THREE copies in the repository.
  *
- * `src/lib/shared/render/core/calculations/orientation.ts` and
- * `packages/sequence-engine/src/core/orientation/OrientationCalculator.ts` are
- * two independent copies of the same end-orientation algebra. Every LOOP
- * executor on both sides propagates orientations through its own copy
- * (app: `prop/services/orientation-calculator`; engine:
+ *   app          `src/lib/shared/render/core/calculations/orientation.ts`
+ *   engine       `packages/sequence-engine/src/core/orientation/OrientationCalculator.ts`
+ *   render-core  `packages/render-core/src/calculations/orientation.ts`
+ *                — reached by `mcp-server-pkg` through its still-live
+ *                  `vendor/sequence-engine/services/implementations/OrientationPropagator.ts`
+ *
+ * These are independent copies of the same end-orientation algebra. Every LOOP
+ * executor propagates orientations through one of them (app:
+ * `prop/services/orientation-calculator`; engine:
  * `loop/execution/orientation-helpers`), so if the copies ever disagreed,
  * every downstream LOOP parity result would be contaminated by that
  * disagreement rather than by executor logic.
  *
- * This suite exhausts the documented input space and proves the two agree,
+ * This suite exhausts the documented input space and proves all three agree,
  * which (a) makes the executor differential in
  * `loop-executor-parity.test.ts` attributable to executor logic alone, and
  * (b) locks the duplication against future drift until it is deleted.
@@ -23,6 +27,7 @@ import { describe, expect, it } from "vitest";
 
 import { calculateEndOrientation as appCalculate } from "$lib/shared/render/core/calculations/orientation";
 import { calculateEndOrientation as engineCalculate } from "@tka/sequence-engine/core";
+import { calculateEndOrientation as renderCoreCalculate } from "@tka/render-core";
 
 /** Every grid location a hand can occupy, including centre. */
 const LOCATIONS = ["n", "e", "s", "w", "ne", "se", "sw", "nw", "c"] as const;
@@ -53,8 +58,8 @@ const TURNS: ReadonlyArray<number | "fl"> = [
   0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, "fl",
 ];
 
-describe("orientation calculator parity (app copy vs engine copy)", () => {
-  it("agrees on every (motionType × rotation × turns × orientation) combination", () => {
+describe("orientation calculator parity (app vs engine vs render-core)", () => {
+  it("all three copies agree on every (motionType × rotation × turns × orientation) combination", () => {
     const mismatches: string[] = [];
     let cases = 0;
 
@@ -85,9 +90,10 @@ describe("orientation calculator parity (app copy vs engine copy)", () => {
               cases++;
               const appResult = appCalculate(input);
               const engineResult = engineCalculate(input);
-              if (appResult !== engineResult) {
+              const renderCoreResult = renderCoreCalculate(input);
+              if (appResult !== engineResult || appResult !== renderCoreResult) {
                 mismatches.push(
-                  `${JSON.stringify(input)} → app=${appResult} engine=${engineResult}`
+                  `${JSON.stringify(input)} → app=${appResult} engine=${engineResult} render-core=${renderCoreResult}`
                 );
               }
             }
@@ -101,7 +107,7 @@ describe("orientation calculator parity (app copy vs engine copy)", () => {
     expect(mismatches.slice(0, 10)).toEqual([]);
   });
 
-  it("agrees on every grid-location pair at the boundary turn counts", () => {
+  it("all three copies agree on every grid-location pair at the boundary turn counts", () => {
     const mismatches: string[] = [];
 
     for (const startLocation of LOCATIONS) {
@@ -118,9 +124,10 @@ describe("orientation calculator parity (app copy vs engine copy)", () => {
             };
             const appResult = appCalculate(input);
             const engineResult = engineCalculate(input);
-            if (appResult !== engineResult) {
+            const renderCoreResult = renderCoreCalculate(input);
+            if (appResult !== engineResult || appResult !== renderCoreResult) {
               mismatches.push(
-                `${JSON.stringify(input)} → app=${appResult} engine=${engineResult}`
+                `${JSON.stringify(input)} → app=${appResult} engine=${engineResult} render-core=${renderCoreResult}`
               );
             }
           }
