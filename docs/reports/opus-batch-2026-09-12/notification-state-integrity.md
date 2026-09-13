@@ -8,8 +8,9 @@ The reviewed source arrived as `6c17c7f5` (code), `4cff5bb1` (report), and
 `32bf2f68` (report bookkeeping). Independent review found additional native
 registration races in that checkpoint. The local integration cherry-picks
 those three scoped commits onto current `main`, then adds the corrections and
-regressions described below. The local implementation correction is
-`e049527252`; the report commit is the branch tip containing this file.
+regressions described below. The local implementation corrections are
+`e049527252` and `ea5fa49a11`; the report commit is the branch tip containing
+this file.
 
 Assignment: investigate and fix up to two reproduced notification state /
 read-marker races. Audit-only for everything else. No push sends, no real
@@ -120,6 +121,10 @@ arrive after cancellation, and every completion waits for setup and removal.
 Only one callback can claim an attempt. Ownership is checked after the awaited
 Firestore instance and token hash, before the SDK write starts, and an owning
 unregister invalidates that pending work. The public API is unchanged.
+An unregister also captures its token, owner, and native-attempt generation
+across the awaited Firestore delete. It rechecks all three before calling the
+process-global native unregister and again before clearing local token state,
+so a registration that finishes during that delete remains intact.
 
 ## Proof
 
@@ -128,7 +133,7 @@ Both suites were written against the unfixed code first.
 | Suite                                                                 | Before fix         | After fix |
 | --------------------------------------------------------------------- | ------------------ | --------- |
 | `tests/unit/notifications/notification-subscription-lifetime.test.ts` | 4 failed, 1 passed | 5 passed  |
-| `tests/unit/push/android-registration-listener-lifetime.test.ts`      | 3 failed, 1 passed | 11 passed |
+| `tests/unit/push/android-registration-listener-lifetime.test.ts`      | 3 failed, 1 passed | 13 passed |
 
 Pre-fix failures, verbatim:
 
@@ -162,6 +167,10 @@ Pre-fix failures, verbatim:
     AssertionError: deleteDoc targeted users/user-a while B owned the token
 × does not disrupt a newer registration when the old owner unregisters
     AssertionError: PushNotifications.unregister was called once
+× does not unregister a different account that completes during token deletion
+    AssertionError: PushNotifications.unregister was called once
+× does not erase a same-owner registration that completes during token deletion
+    AssertionError: PushNotifications.unregister was called once
 ```
 
 The first three added regressions were run together against the reviewed
@@ -169,6 +178,8 @@ checkpoint and failed 3/7. The awaited-storage and unregister cases were each
 run against the implementation with their relevant guard removed and failed
 with the outputs above before that guard was restored. This preserves the red →
 green evidence without claiming one synthetic aggregate run at the old SHA.
+The final two cases were run together against `e049527252` and failed 2/13
+before the post-delete token/owner/generation checks were added.
 
 The cases that passed before the fix (`still delivers snapshots for a live
 subscription`, `registers the token for the requesting user`) are the
@@ -185,7 +196,7 @@ subscription endpoint, no push send.
 npx vitest run --config tests/config/vitest.config.ts \
   tests/unit/inbox tests/unit/notifications tests/unit/push \
   tests/unit/inbox-notification-navigation.test.ts
-→ local corrected branch: 11 files, 52 tests passed
+→ local corrected branch: 11 files, 54 tests passed
 
 prettier --check on the five owned source, test, and report paths
 → all matched files use Prettier code style
