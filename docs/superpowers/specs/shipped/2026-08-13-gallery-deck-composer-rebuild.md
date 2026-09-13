@@ -1,7 +1,21 @@
 # Canonical Gallery Workspace in Deck Releaser
 
 **Date:** 2026-08-13  
-**Status:** Approved and implemented
+**Status:** Shipped. Moved out of `active/` on 2026-09-13 during spec
+reconciliation.
+
+**Reconciliation evidence (2026-09-13):** all six named owners resolve.
+`06d178647` (_feat(deck-releaser): add gallery composition and turn review_)
+rewrote `GalleryComposeBoard.svelte` and `gallery-deck-source.ts`. The
+composition contract is literal in the source: the engine is ephemeral and
+library-only (`persistKey: null`, single `my-library` source, `engine.destroy()`
+on unmount), the saved spec replays before `engine.initialize()`, the shared
+`FilterWorkspace`/`GalleryDrill`/`BrowsePanel` operate on that engine directly,
+the card cap is applied after ordering, and Compose hands over the visible slice
+with no second query. `gallery-deck-source.ts` exports nothing beyond the deck
+boundary. `gallery-deck-source.test.ts`: 14 tests pass, covering canonical order,
+the cap, legacy-filter normalization and the legacy-to-spec migration. The
+seven-viewport responsive contract remains browser-only evidence.
 
 ## Outcome
 

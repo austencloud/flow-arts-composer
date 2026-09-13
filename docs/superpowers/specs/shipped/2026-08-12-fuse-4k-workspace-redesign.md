@@ -1,6 +1,45 @@
 # Fuse 4K Workspace Redesign
 
-**Status:** Implemented and verified  
+**Status:** Shipped, with two clauses of this document superseded by later
+deliberate decisions (recorded below). Moved out of `active/` on 2026-09-13
+during spec reconciliation.
+
+**Reconciliation evidence (2026-09-13):** `3519cd6b2` (_feat(fuse): build a 4K
+one-hand LOOP workspace_) landed the workspace, the relationship composer, the
+solo-loop generator and the tests; `57e911b78` and `33ab2c0d2` reshaped it
+afterwards. Verified present: the canonical shared transform actions behind
+`Adjust path` with no parallel implementation, First Beat as the only action that
+expands into the larger chooser, atomic symmetry application at the state layer,
+the 1,400 CSS px wide-tier cap (`FuseLayout.svelte:74`), the pointer +
+double-click + keyboard resize seam, and live SVG transform motion rather than a
+raster crossfade. `fuse-actions-contract.test.ts` (6) and
+`fuse-workspace-split.test.ts` (16) pass.
+
+**Post-ship divergences — the code is right, this document is stale:**
+
+1. _"Every editable source exposes these actions without an overflow-menu
+   step."_ That held at `3519cd6b2`. `57e911b78` moved Choose saved LOOP, Choose
+   a shape, Build a custom path, View Choreo Card and Save to library back behind
+   a `More` overflow menu (`FuseSourceCard.svelte:344-374,596-606`), and
+   `fuse-actions-contract.test.ts:68` now locks that shape in ("gives desktop
+   sources one primary action and discloses rare actions"). The test is the
+   current contract.
+2. _"Until Apply Relationship is selected, the current result remains
+   unchanged."_ `FuseRelationshipComposer.svelte:52-61` previews every draft
+   change onto the combined canvas; only the **persisted** relationship is left
+   untouched, and `cancelRelationshipPreview` restores the baseline. Live preview
+   was the later choice.
+
+   Label drift in the same area: the commit control reads "Use this
+   relationship", modes are presented as Separate/Linked rather than
+   Independent/Symmetry, the result footer reads "Share", and there is no "Edit
+   Relationship" string. `OptionChipRow` is listed as the owner of transformation
+   selection but Fuse never adopted it — `FuseTransformPicker.svelte` composes
+   `SegmentedControl` + `FilterChipBase` + `FuseRotationDial` instead.
+
+Neither divergence is a defect to fix; both are decisions this document
+outlived. Read the tests, not these two clauses.
+
 **Approved:** 2026-08-12  
 **Route:** `/create/fuse`
 
