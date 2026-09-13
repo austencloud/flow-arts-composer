@@ -5,12 +5,12 @@
 its assigned `claude/*` branch; `codex/*` was not available)
 **Session:** `session_01XKgrpvpxBttgxeaNzPKsJC`
 **Base SHA:** `0945738f` (merge of `origin/main` `c4be1619` into the task branch)
-**Final SHA:** `a988b8aa` + this correction commit. Chain: implementation
+**Final SHA:** `6a97e1b3` + this correction commit. Chain: implementation
 `f48d9877` → identity fence `928b77ce` → offer-binding + visibility `58012fe5`
 → collision-result binding and unowned/thumbnail fences `06d144cc` → save
 side-effect chain + unowned adoption `a988b8aa` → shared-surface note
-`a6a318c3` → tag lookups, lifecycle attribution and adoption durability (this
-commit).
+`a6a318c3` → tag lookups, lifecycle attribution and adoption durability
+`6a97e1b3` → explicit-null saver and post-session-await recheck (this commit).
 **Source audit:** `docs/superpowers/reviews/2026-09-12-guest-save-continuity-audit.md`
 (reviewed at `7fabc7d9`)
 
@@ -142,18 +142,43 @@ resolved its own uid from live auth after its own awaits. Each of those uids is
 a Firestore **path**, so an unfenced one does not merely mislabel a document —
 it puts it in someone else's subtree. Audited end to end:
 
-| Step                                                                           | Before                                                                               | Now                                                                                |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| Dexie row                                                                      | no auth                                                                              | unchanged                                                                          |
-| ledger record                                                                  | snapshot uid                                                                         | snapshot uid; parks when unowned (below)                                           |
-| `createNewTags` → `createUserTag`                                              | re-read live auth after `await getFirestoreInstance()`                               | takes the saving uid, fenced after the uid resolve; skipped entirely when unowned  |
-| initial cloud sync                                                             | fenced                                                                               | fenced; not attempted when unowned                                                 |
-| thumbnail `attachThumbnail`                                                    | re-read live auth                                                                    | fenced                                                                             |
-| artifact extraction                                                            | `authState.effectiveUserId` **re-read**, not the snapshot                            | snapshot uid; skipped when unowned                                                 |
-| 4 artifact writes (`HandPathRepository.save` ×2, `SoloPropRepository.save` ×2) | `await getFirestoreInstance()` then `requireAuth()` — the uid is the collection path | `expectedOwnerId` threaded through the extractor, fenced after the uid resolve     |
-| `createNewTags` → `findTagByName` (lookup, and again inside `createUserTag`)   | re-read live auth after `await getFirestoreInstance()`; the uid is the READ path     | both lookups take the saving uid, fenced after the uid resolves                    |
-| `sequence_save` lifecycle event                                                | **NOT** owner-free: awaits `authStateReady()` then stamps the LIVE uid as `ownerUid` | takes the acting account; a mismatch drops the event rather than misattributing it |
-| `warmSequenceCells`, library refresh, nudge                                    | no per-account write                                                                 | unchanged                                                                          |
+| Step                                                                           | Before                                                                               | Now                                                                                              |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| Dexie row                                                                      | no auth                                                                              | unchanged                                                                                        |
+| ledger record                                                                  | snapshot uid                                                                         | snapshot uid; parks when unowned (below)                                                         |
+| `createNewTags` → `createUserTag`                                              | re-read live auth after `await getFirestoreInstance()`                               | takes the saving uid, fenced after the uid resolve; skipped entirely when unowned                |
+| initial cloud sync                                                             | fenced                                                                               | fenced; not attempted when unowned                                                               |
+| thumbnail `attachThumbnail`                                                    | re-read live auth                                                                    | fenced                                                                                           |
+| artifact extraction                                                            | `authState.effectiveUserId` **re-read**, not the snapshot                            | snapshot uid; skipped when unowned                                                               |
+| 4 artifact writes (`HandPathRepository.save` ×2, `SoloPropRepository.save` ×2) | `await getFirestoreInstance()` then `requireAuth()` — the uid is the collection path | `expectedOwnerId` threaded through the extractor, fenced after the uid resolve                   |
+| `createNewTags` → `findTagByName` (lookup, and again inside `createUserTag`)   | re-read live auth after `await getFirestoreInstance()`; the uid is the READ path     | both lookups take the saving uid, fenced after the uid resolves                                  |
+| `sequence_save` lifecycle event                                                | **NOT** owner-free: awaits `authStateReady()` then stamps the LIVE uid as `ownerUid` | takes the acting account; mismatch drops the event, including after the session-id await (below) |
+| `warmSequenceCells`, library refresh, nudge                                    | no per-account write                                                                 | unchanged                                                                                        |
+
+### The lifecycle event is fenced at the enqueue boundary, not just the entry
+
+`ownerUid` already existed on a queued event to stop a LATER account claiming
+it. Two gaps remained on the way INTO the queue, and both are now closed:
+
+- **A null saver is explicit, not "unscoped".** The save passed
+  `saverUid ?? undefined`, and an omitted expected owner means unscoped, so a
+  save completed with no identity was enqueued under whichever account was
+  signed in by the time the reporter ran. `expectedOwnerId` is now
+  `string | null | undefined` with three distinct states: a uid attributes or
+  drops; **`null` always drops** — there is no account such a milestone can
+  honestly belong to; omitted stays unscoped for the two callers whose event is
+  raised by the current session itself (`anonymous-upgrade`, `ArtPane`). The
+  save path passes `saverUid ?? null`.
+- **The owner is re-checked after the session-id await.**
+  `getCurrentPostHogSessionId()` initialises PostHog on first use, so it is a
+  real await window; a switch landing inside it paired the acting account's
+  event with the NEW account's replay session id. The uid is compared again on
+  the far side of it, immediately before `enqueueLifecycleEvent`.
+
+Both are driven through the real reporter, and the null case additionally
+through the real save service with the reporter unmocked
+(`tests/unit/library/save-analytics-attribution.test.ts`) — a mocked reporter
+can only assert the argument, not what is done with it.
 
 ### An unowned save is parked, not orphaned — and only a guest may claim it
 
@@ -168,15 +193,26 @@ The fix is an explicit unowned state rather than a silent one:
 - `saved-sequence-ledger` gains `recordUnownedSequenceId` /
   `getUnownedSequenceIds` / `adoptUnownedSequenceIds`. A save with no identity
   parks its id there instead of dropping it.
-- `ensureGuestIdentity` adopts the parked ids **when it provisions a new
-  anonymous identity** — the same person continuing the same guest session.
-  After adoption the row satisfies the same `getOwnedSequenceIdSet` predicate
-  the library read and the retry use, so it is visible and syncable.
+- `ensureGuestIdentity` adopts the parked ids for **any anonymous identity it
+  ends the call holding** — both the one it freshly provisions and a **restored**
+  anonymous user it finds already present and early-returns on. Restored
+  adoption is supported: without it, a browser that already held an anonymous
+  user never provisioned a new one, so parked rows stayed parked forever —
+  precisely the orphaning the park exists to end. Either way it is the same
+  person continuing the same guest session. After adoption the row satisfies the
+  same `getOwnedSequenceIdSet` predicate the library read and the retry use, so
+  it is visible and syncable.
 - **A full account never adopts.** The boundary is structural: adoption lives
-  inside the anonymous-provisioning branch, which a full-account sign-in never
-  enters. Auto-adopting across an account boundary is the exact class of bug
-  this work removes, so it is not done "helpfully" for a signed-in user.
-- Adoption clears the park, so two identities cannot both claim the same row.
+  inside `ensureGuestIdentity`'s anonymous branches, which a full-account
+  sign-in never enters. Auto-adopting across an account boundary is the exact
+  class of bug this work removes, so it is not done "helpfully" for a signed-in
+  user.
+- Adoption releases only the ids whose **owner-ledger write is read back as
+  persisted**, so two identities cannot both claim the same row. If rewriting
+  the park itself then fails (quota, private browsing), owned ids are left
+  parked **on purpose**: re-adopting an id that already persisted is idempotent,
+  whereas dropping it from both sides would leave it owned by nobody and parked
+  by nobody — strictly worse than the orphaning being fixed.
 - A write with no `expectedOwnerId` is unaffected, so ordinary saves that
   resolve their own identity are untouched.
 
@@ -293,11 +329,12 @@ pnpm exec vitest run --config tests/config/vitest.config.ts \
   tests/unit/library/artifact-repo-identity-fence.test.ts \
   tests/unit/library/tag-lookup-identity-fence.test.ts \
   tests/unit/library/unowned-save-continuity.test.ts \
+  tests/unit/library/save-analytics-attribution.test.ts \
   tests/unit/auth/anonymous-import-continuity.test.ts \
   tests/unit/auth/guest-signin-guard.test.ts \
   tests/unit/auth/guest-identity-adoption.test.ts \
   tests/unit/analytics/lifecycle-owner-attribution.test.ts
-→ Test Files 11 passed (11) · Tests 105 passed (105)
+→ Test Files 12 passed (12) · Tests 111 passed (111)
 ```
 
 Related-suite sweep — `tests/unit/library`, `tests/unit/auth`,
@@ -310,7 +347,7 @@ pnpm exec vitest run --config tests/config/vitest.config.ts \
   tests/unit/library-save-service-persisted.test.ts \
   tests/unit/public-collection-live-choreo-contract.test.ts \
   tests/unit/browse-engine-identity-switch.test.ts tests/unit/share-intake
-→ Test Files 100 passed (100) · Tests 732 passed (732)
+→ Test Files 101 passed (101) · Tests 738 passed (738)
 ```
 
 Two earlier revisions of this report miscounted focused tests (54 and 71, when
@@ -321,11 +358,12 @@ output, not recalled.
 **Fails before, passes after** — the required demonstration, done by checking
 out the pre-change `src/` and re-running the same tests:
 
-| Stage                               | Pre-change result                                                               |
-| ----------------------------------- | ------------------------------------------------------------------------------- |
-| First round (F1/F2/F3/F5 behaviour) | **19 failed**, 6 passed (25) — the 6 are guard assertions that must not regress |
-| F4 guard                            | **4 failed**, 3 passed (7) — the 3 are the non-guest control cases              |
-| Identity fencing round              | **9 failed**, 24 passed (33)                                                    |
+| Stage                               | Pre-change result                                                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| First round (F1/F2/F3/F5 behaviour) | **19 failed**, 6 passed (25) — the 6 are guard assertions that must not regress                              |
+| F4 guard                            | **4 failed**, 3 passed (7) — the 3 are the non-guest control cases                                           |
+| Identity fencing round              | **9 failed**, 24 passed (33)                                                                                 |
+| Analytics attribution round         | **3 failed**, 8 passed (11) — explicit-null saver, save-path attribution, and the post-session-await recheck |
 
 **Full unit suite** (`pnpm exec vitest run --config tests/config/vitest.config.ts`):
 
@@ -335,13 +373,26 @@ BEFORE (pre-fix baseline, same command)
        Tests  2 failed | 16004 passed | 106 skipped | 1 todo (16113)
 
 AFTER
-  Test Files  1983 passed | 5 skipped (1988)
-       Tests  16080 passed | 106 skipped | 1 todo (16187)          exit 0
+  Test Files  1984 passed | 5 skipped (1989)
+       Tests  16086 passed | 106 skipped | 1 todo (16193)          exit 0
 ```
 
-Zero failures. The file count rises by four and the test count by sixteen
-because the two suites that were silently collecting zero tests now run, and
-the new focused suites were added.
+Zero failures. Against that baseline the file count rises by eight
+(1981 → 1989) and the test count by eighty (16113 → 16193), because the two
+suites that were silently collecting zero tests now run, and the new focused
+suites were added.
+
+**One honest caveat on that run.** The first execution of this command after
+the analytics change reported `1 failed | 1983 passed` — and I had piped it
+through `tail -8`, so the failing test's identity was not captured and I cannot
+name it. An immediate re-run of the identical command, captured in full, is the
+green result above with no `FAIL` line anywhere in its output. Every suite that
+touches the changed paths passes repeatedly and deterministically (the 12
+focused files, the 101-file related sweep, and the three remaining
+reporter-dependent suites, each run after the change). I am recording the
+unidentified single failure rather than omitting it; what I can evidence is that
+the same command is green on re-run and that no changed-path suite is flaky
+across the runs above.
 
 **Live Firebase auth emulator** (`pnpm run test:e2e`, `firebase emulators:exec
 --only auth`):
@@ -495,6 +546,13 @@ the reasoning recorded in the file.
 - `src/lib/shared/auth/services/anonymous-upgrade.ts` — `importDrafts` result shape, visibility, destination uid
 - `src/lib/shared/auth/state/anonymous-import-prompt.svelte.ts` — retained drafts, generation, destination uid
 - `src/lib/shared/auth/services/authenticator.ts` — `upgradeCurrentGuestWith` guard
+- `src/lib/shared/auth/services/email-link-completion.ts` — collision destination through the magic-link path
+- `src/lib/shared/auth/services/guest-identity.ts` — adoption of parked saves (fresh and restored anonymous)
+- `src/lib/features/library/services/tag-manager.ts` — `expectedOwnerId` on both tag lookups and the tag write
+- `src/lib/features/library/services/artifact-extractor.ts` — threads the saving uid to the artifact writes
+- `src/lib/shared/foundation/services/hand-path-repository-store.ts`, `solo-prop-repository-store.ts` — `expectedOwnerId` fence after `requireAuth()`
+- `src/lib/shared/analytics/services/posthog-lifecycle-reporter.ts` — acting-owner fence, explicit null, post-session-await recheck
+- `src/lib/shared/auth/components/EmailPasswordAuth.svelte`, `SocialAuthCompact.svelte`, `src/lib/shared/navigation/components/account/AccountPopover.svelte` — guest-entry call sites for the guard above
 - `src/lib/shared/library/services/library-repository.ts` — **narrow, authorised**: `expectedOwnerId` fence only
 
 **Tests**
@@ -502,10 +560,19 @@ the reasoning recorded in the file.
 - `tests/unit/library/guest-save-cap-scoping.test.ts` (new)
 - `tests/unit/library/library-sync-retry-ownership.test.ts` (new)
 - `tests/unit/library/write-identity-fence.test.ts` (new)
+- `tests/unit/library/save-side-effect-ownership.test.ts` (new)
+- `tests/unit/library/artifact-repo-identity-fence.test.ts` (new)
+- `tests/unit/library/tag-lookup-identity-fence.test.ts` (new)
+- `tests/unit/library/unowned-save-continuity.test.ts` (new)
+- `tests/unit/library/save-analytics-attribution.test.ts` (new)
 - `tests/unit/auth/anonymous-import-continuity.test.ts` (new)
 - `tests/unit/auth/guest-signin-guard.test.ts` (new)
+- `tests/unit/auth/guest-identity-adoption.test.ts` (new)
+- `tests/unit/analytics/lifecycle-owner-attribution.test.ts` (new)
 - `tests/unit/library-save-service-persisted.test.ts` — cap test re-expressed in ledger terms
 - `tests/unit/library/library-sync-retry-deletion-intent.test.ts` — repaired + ledger ownership
+- `tests/unit/auth/facebook-login.test.ts`, `google-one-tap-login.test.ts` — updated for the guest-entry guard
+- `tests/unit/public-collection-live-choreo-contract.test.ts` — retry removed from the source-regex list, replaced by behavioural tests
 - `tests/integration/auth-upgrade/anonymous-upgrade.e2e.test.ts` — repaired, updated, extended
 - `tests/config/vitest.e2e.config.ts` — `$env` aliases
 - `tests/unit/audit/*` — the intentionally-red audit repros, deleted; replaced by the passing suites above

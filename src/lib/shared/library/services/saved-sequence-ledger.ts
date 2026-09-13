@@ -24,9 +24,10 @@ const PREFIX = "tka-saved-seq-ids:";
  * filters by ledger, so the row was invisible AND unsyncable — durable in Dexie
  * and reachable by nothing.
  *
- * These ids are parked here instead, and adopted by the NEXT ANONYMOUS identity
- * this browser provisions (see `adoptUnownedSequenceIds`, called only from
- * guest-identity). That is the same person continuing the same guest session.
+ * These ids are parked here instead, and adopted by the next ANONYMOUS identity
+ * this browser holds — freshly provisioned or restored from a previous visit
+ * (see `adoptUnownedSequenceIds`, called only from guest-identity). That is the
+ * same person continuing the same guest session.
  * A full account signing in must never adopt them — it did not make them, and
  * auto-adoption across an account boundary is the whole class of bug this work
  * exists to remove.
@@ -61,11 +62,11 @@ export function getUnownedSequenceIds(): string[] {
 }
 
 /**
- * Hand every parked id to `uid` and clear the park.
+ * Hand every parked id to `uid` and release the ids that persisted.
  *
- * ONLY call this for a freshly provisioned ANONYMOUS identity. Calling it for a
- * full account would attribute work to an account that did not make it.
- * Returns the ids adopted, for logging and tests.
+ * ONLY call this for an ANONYMOUS identity — provisioned now or restored from a
+ * previous visit. Calling it for a full account would attribute work to an
+ * account that did not make it. Returns the ids adopted, for logging and tests.
  */
 export function adoptUnownedSequenceIds(
   uid: string | null | undefined

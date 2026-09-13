@@ -121,10 +121,27 @@ export async function reportPostHogLifecycleEvent(
    * Mismatch drops the event rather than misattributing it. Analytics is not
    * worth a wrong owner, and the alternative — enqueueing under an account that
    * did not do the thing — corrupts exactly the funnel it is meant to measure.
+   *
+   * Three states, deliberately distinct:
+   * - a uid: attribute to that account or drop.
+   * - `null`: the action ran with NO identity. There is no account this
+   *   milestone can honestly belong to, so it is always dropped. Passing
+   *   `uid ?? undefined` here would silently reopen the gap — whoever happens
+   *   to be signed in by now would claim it.
+   * - omitted: unscoped. For callers whose event is raised by the current
+   *   session itself rather than by an earlier completed action.
    */
-  expectedOwnerId?: string
+  expectedOwnerId?: string | null
 ): Promise<void> {
   initializePostHogLifecycleReporter();
+  if (expectedOwnerId !== undefined && !expectedOwnerId) {
+    // Explicit "no acting account". Distinct from an omitted argument.
+    console.warn(
+      "[lifecycle] Dropping event raised with no acting account:",
+      input.event
+    );
+    return;
+  }
   if (typeof auth.authStateReady === "function") {
     await auth.authStateReady();
   }
@@ -146,6 +163,20 @@ export async function reportPostHogLifecycleEvent(
     occurredAt: new Date().toISOString(),
   } as LifecycleEventEnvelope;
   const sessionId = await getCurrentPostHogSessionId().catch(() => null);
+
+  // The session lookup initialises PostHog on first use, so it can await for a
+  // long time. A switch landing in THAT window would pair the acting account's
+  // event with the new account's replay session id, so the owner is re-checked
+  // on the far side of it — the same fence, at the enqueue boundary.
+  const ownerAtEnqueue = auth.currentUser?.uid;
+  if (ownerAtEnqueue !== ownerUid) {
+    console.warn(
+      "[lifecycle] Dropping event whose account changed during session lookup:",
+      input.event
+    );
+    return;
+  }
+
   enqueueLifecycleEvent({ ownerUid, envelope, sessionId });
   await flushPostHogLifecycleOutbox();
 }

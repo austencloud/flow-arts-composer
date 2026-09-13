@@ -16,6 +16,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const currentUid = { value: "account-B" as string | undefined };
 let releaseAuthReady: (() => void) | null = null;
 let authReadyGate: Promise<void> | null = null;
+let releaseSession: (() => void) | null = null;
+let sessionGate: Promise<void> | null = null;
+let sessionEntered = false;
 const enqueueMock = vi.fn();
 
 vi.mock("$app/environment", () => ({ browser: true }));
@@ -41,8 +44,14 @@ vi.mock("$lib/shared/analytics/services/posthog-lifecycle-outbox", () => ({
   deferLifecycleEvent: vi.fn(),
   removeLifecycleEvent: vi.fn(),
 }));
+// Deferrable on purpose: this helper initialises PostHog on first use, so the
+// real one can await for a long time and an account switch can land inside it.
 vi.mock("$lib/shared/analytics/services/posthog", () => ({
-  getCurrentPostHogSessionId: vi.fn().mockResolvedValue("session-1"),
+  getCurrentPostHogSessionId: async () => {
+    sessionEntered = true;
+    if (sessionGate) await sessionGate;
+    return `session-for-${currentUid.value}`;
+  },
 }));
 
 const { reportPostHogLifecycleEvent } =
@@ -58,6 +67,9 @@ beforeEach(() => {
   currentUid.value = "account-B";
   authReadyGate = null;
   releaseAuthReady = null;
+  sessionGate = null;
+  releaseSession = null;
+  sessionEntered = false;
 });
 
 describe("reportPostHogLifecycleEvent — owner attribution", () => {
@@ -95,7 +107,46 @@ describe("reportPostHogLifecycleEvent — owner attribution", () => {
     expect(enqueueMock).not.toHaveBeenCalled();
   });
 
-  it("still enqueues when no expected owner is supplied", async () => {
+  it("drops it when the sign-in lands INSIDE the session-id await", async () => {
+    sessionGate = new Promise<void>((resolve) => {
+      releaseSession = resolve;
+    });
+
+    const report = reportPostHogLifecycleEvent(saveEvent, "account-B");
+    // getCurrentPostHogSessionId initialises PostHog on first use, so this is a
+    // real window. Enqueuing here would pair B's event with C's replay session.
+    await vi.waitFor(() => expect(sessionEntered).toBe(true));
+    currentUid.value = "account-C";
+    releaseSession!();
+    await report;
+
+    expect(enqueueMock).not.toHaveBeenCalled();
+  });
+
+  it("pairs the event with the acting account's OWN session id", async () => {
+    await reportPostHogLifecycleEvent(saveEvent, "account-B");
+
+    expect(enqueueMock.mock.calls[0]?.[0]).toMatchObject({
+      ownerUid: "account-B",
+      sessionId: "session-for-account-B",
+    });
+  });
+
+  it("drops an event whose acting account was explicitly null", async () => {
+    // A save can complete with no identity at all. There is no account it can
+    // honestly belong to, so it is never attributed to whoever is signed in by
+    // the time the reporter runs.
+    currentUid.value = "account-C";
+
+    await reportPostHogLifecycleEvent(saveEvent, null);
+
+    expect(enqueueMock).not.toHaveBeenCalled();
+  });
+
+  it("still enqueues when no expected owner is supplied at all", async () => {
+    // An OMITTED argument stays unscoped — for callers whose event is raised by
+    // the current session itself. That is a different state from an explicit
+    // null, which is why `uid ?? undefined` at a call site is a defect.
     currentUid.value = "account-C";
 
     await reportPostHogLifecycleEvent(saveEvent);

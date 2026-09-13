@@ -430,8 +430,12 @@ export class LibrarySaveService {
         },
         // The account that made this save. The reporter stamps the LIVE uid as
         // the event owner, so without this a guest save followed by a sign-in
-        // is attributed to the account they signed into.
-        saverUid ?? undefined
+        // is attributed to the account they signed into. `null` is passed
+        // through deliberately rather than collapsed to `undefined`: a save
+        // that completed with no identity has no account to attribute, and an
+        // omitted argument means "unscoped", which would hand the milestone to
+        // whichever full account is signed in by the time this runs.
+        saverUid ?? null
       );
     } catch (error) {
       console.warn(

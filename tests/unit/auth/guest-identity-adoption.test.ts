@@ -1,16 +1,17 @@
 /**
- * Unowned saves are adopted by a fresh ANONYMOUS identity, and by nothing else.
+ * Unowned saves are adopted by an ANONYMOUS identity, and by nothing else.
  *
  * A save can complete before any identity exists, because `ensureGuestIdentity`
  * swallows its own failures rather than losing the user's work. Those rows are
- * parked as unowned. The only moment they can be honestly attributed is when
- * this browser provisions a new anonymous identity — the same person continuing
- * the same guest session.
+ * parked as unowned. They can be honestly attributed whenever this browser ends
+ * up holding an anonymous identity — one provisioned now, or one restored from
+ * a previous visit — which is the same person continuing the same guest session.
  *
  * A full account signing in must never adopt them. It did not make them, and
  * auto-adoption across an account boundary is the entire class of bug this work
- * exists to remove. The boundary is structural: adoption lives inside the
- * anonymous-provisioning path, which a full-account sign-in never enters.
+ * exists to remove. The boundary is structural: adoption lives inside
+ * ensureGuestIdentity's anonymous branches, which a full-account sign-in never
+ * enters.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -109,9 +110,10 @@ describe("ensureGuestIdentity — adoption of unowned saves", () => {
 
 describe("adoption is anonymous-only by construction", () => {
   it("is not reachable from any full-account sign-in path", async () => {
-    // The only production caller of adoptUnownedSequenceIds is inside
-    // ensureGuestIdentity's signInAnonymously().then(...). A full-account
-    // sign-in never provisions an anonymous identity, so it never reaches it.
+    // The only production callers of adoptUnownedSequenceIds are inside
+    // ensureGuestIdentity's two anonymous branches — the restored-identity
+    // early return and signInAnonymously().then(...). A full-account sign-in
+    // enters neither, so it never reaches adoption.
     // This test pins the consequence rather than the wiring: a full account
     // signing in over parked saves does not acquire them.
     recordUnownedSequenceId("guest-work");
