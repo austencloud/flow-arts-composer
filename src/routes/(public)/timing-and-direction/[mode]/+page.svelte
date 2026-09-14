@@ -695,7 +695,7 @@
   .to-reference {
     max-width: 86rem;
     display: grid;
-    grid-template-columns: minmax(22rem, 34rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
     gap: 1.5rem;
     align-items: start;
   }
