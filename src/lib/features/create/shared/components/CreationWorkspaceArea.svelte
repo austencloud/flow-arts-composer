@@ -54,6 +54,7 @@
   let readyPlayback = $state.raw<typeof playback>(null);
   let retainedPlayback = $state.raw<typeof playback>(null);
   let retainedPlaybackKey = $state<string | null>(null);
+  let playbackRun = $state(0);
   let playbackStep = $state(0);
   const playbackKeys = new WeakMap<object, string>();
   const loadWorkspacePlayback = () =>
@@ -73,12 +74,17 @@
   });
 
   $effect(() => {
-    if (!playback || !playbackKey || playbackKey === retainedPlaybackKey)
-      return;
+    if (!playback || !playbackKey) return;
+
+    // Play has always restarted the sequence. Reuse the prepared engine, but
+    // give it a fresh load identity so it returns to the first beat first.
+    playbackRun += 1;
+    readyPlayback = null;
+
+    if (playbackKey === retainedPlaybackKey) return;
 
     retainedPlayback = playback;
     retainedPlaybackKey = playbackKey;
-    readyPlayback = null;
   });
 
   onDestroy(() => panelState.stopWorkspacePlayback());
@@ -170,7 +176,10 @@
         props={{
           sequence: session.sequence,
           active: playbackKey === retainedPlaybackKey,
-          onready: () => (readyPlayback = session),
+          run: playbackRun,
+          onready: (readyRun: number) => {
+            if (playback && readyRun === playbackRun) readyPlayback = session;
+          },
           onStepChange: (step: number) => (playbackStep = Math.floor(step)),
         }}
         onStatusChange={(status) => {

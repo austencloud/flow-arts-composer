@@ -6,12 +6,15 @@
   let {
     sequence,
     active,
+    run,
     onready,
     onStepChange,
   }: {
     sequence: SequenceData;
     active: boolean;
-    onready: () => void;
+    /** Advances for every explicit Play so a retained engine restarts cleanly. */
+    run: number;
+    onready: (run: number) => void;
     onStepChange?: (step: number) => void;
   } = $props();
 
@@ -25,6 +28,7 @@
       <div class="player-stage">
         <InlineAnimationPlayer
           {sequence}
+          sequenceLoadKey={`${sequence.id}:${run}`}
           chrome="minimal"
           fill
           scrubbable
@@ -32,8 +36,9 @@
           autoPlayDelay={0}
           playbackAllowed={active}
           resumeWhenPlaybackAllowed
-          onCanvasInitialized={onready}
-          onLoadError={onready}
+          onCanvasInitialized={() => onready(run)}
+          onReady={() => onready(run)}
+          onLoadError={() => onready(run)}
           onStepChange={(step) => {
             currentStep = step;
             onStepChange?.(step);
