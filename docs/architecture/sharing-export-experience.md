@@ -98,6 +98,9 @@ to a card merely because an old sheet default used that artifact.
 - The selected settings remain visible in a compact summary. Editing is available
   through Video settings, with ordinary repeats labelled plainly. Preserve valid
   explicit user choices; do not quietly replace them with a guessed preference.
+- Download card follows the same shape: a Card settings summary (theme and
+  footer) opens the full card editor that the viewer's Card tab uses, so the
+  card is chosen as it is downloaded rather than through a footer-only override.
 - Offer only settings consumed by the current renderer. At research time the 2D
   `exportAnimation` method omitted `quality`, while `export3DAnimation` consumed it.
   Standard/Cinema was therefore misleading on the 2D route.
