@@ -31,6 +31,7 @@
           autoPlay={active}
           autoPlayDelay={0}
           playbackAllowed={active}
+          resumeWhenPlaybackAllowed
           onCanvasInitialized={onready}
           onLoadError={onready}
           onStepChange={(step) => {

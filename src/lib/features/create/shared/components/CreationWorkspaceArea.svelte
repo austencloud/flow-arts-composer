@@ -53,13 +53,32 @@
   const playback = $derived(panelState.workspacePlayback);
   let readyPlayback = $state.raw<typeof playback>(null);
   let retainedPlayback = $state.raw<typeof playback>(null);
+  let retainedPlaybackKey = $state<string | null>(null);
   let playbackStep = $state(0);
+  const playbackKeys = new WeakMap<object, string>();
   const loadWorkspacePlayback = () =>
     import("../workspace-panel/components/WorkspacePlayback.svelte");
 
+  const playbackKey = $derived.by(() => {
+    if (!playback) return null;
+    const knownKey = playbackKeys.get(playback);
+    if (knownKey) return knownKey;
+    const key = [
+      playback.sourceTab,
+      panelState.workspacePlaybackSourceRevision,
+      playback.sequence.id,
+    ].join(":");
+    playbackKeys.set(playback, key);
+    return key;
+  });
+
   $effect(() => {
-    if (playback) retainedPlayback = playback;
-    else if (readyPlayback !== retainedPlayback) retainedPlayback = null;
+    if (!playback || !playbackKey || playbackKey === retainedPlaybackKey)
+      return;
+
+    retainedPlayback = playback;
+    retainedPlaybackKey = playbackKey;
+    readyPlayback = null;
   });
 
   onDestroy(() => panelState.stopWorkspacePlayback());
@@ -150,7 +169,7 @@
         active
         props={{
           sequence: session.sequence,
-          active: playback === session && readyPlayback === session,
+          active: playbackKey === retainedPlaybackKey,
           onready: () => (readyPlayback = session),
           onStepChange: (step: number) => (playbackStep = Math.floor(step)),
         }}
@@ -192,14 +211,14 @@
   />
   <div class="workspace-content">
     <DualSourceCrossfade
-      active={playback && readyPlayback === playback ? "second" : "first"}
+      active={playbackKey === retainedPlaybackKey &&
+      readyPlayback === retainedPlayback
+        ? "second"
+        : "first"}
       first={card}
       second={animation}
-      onsettled={(source) => {
-        if (source === "first" && !playback) retainedPlayback = null;
-      }}
     />
-    {#if playback && readyPlayback !== playback}
+    {#if playback && readyPlayback !== retainedPlayback}
       <div class="playback-loading" role="status">Loading playback…</div>
     {/if}
   </div>
