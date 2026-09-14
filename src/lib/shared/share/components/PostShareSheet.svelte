@@ -1454,6 +1454,7 @@
   onClosed={runPendingHandoff}
   narrow={!!qrDataUrl}
   compact={shareRoute === "home" && !qrDataUrl}
+  focused={shareRoute === "download" || shareRoute === "publish"}
 >
   {#snippet children(surface)}
     {#if instagramReviewOpen && reviewPreviewUrl}
@@ -1590,6 +1591,7 @@
         {:else if shareRoute === "download"}
           <div
             class="sheet-scroll"
+            class:download-route={true}
             class:video-preparation={artifact === "video"}
             class:has-preview={previewReady || !!animationPreviewUrl}
           >
@@ -1777,7 +1779,7 @@
                       >
                         <label
                           >Resolution <select
-                            value={exportOptions.videoResolution}
+                            value={String(exportOptions.videoResolution)}
                             onchange={(event) =>
                               exportOptions.setVideoResolution(
                                 Number(
@@ -1793,7 +1795,7 @@
                         >
                         <label
                           >Frame rate <select
-                            value={exportOptions.videoFps}
+                            value={String(exportOptions.videoFps)}
                             onchange={(event) =>
                               exportOptions.setVideoFps(
                                 Number(event.currentTarget.value) as VideoFps
@@ -1919,7 +1921,7 @@
             {/if}
           </footer>
         {:else if shareRoute === "publish"}
-          <div class="sheet-scroll">
+          <div class="sheet-scroll publish-route">
             <button
               type="button"
               class="back-to-chooser"
@@ -2141,6 +2143,15 @@
     font: inherit;
     font-size: 1.125rem;
     cursor: pointer;
+  }
+  .repeat-stepper {
+    justify-content: flex-end;
+  }
+  .repeat-stepper > span {
+    margin-right: auto;
+  }
+  .publish-preview {
+    max-height: 20rem;
   }
   .ready-delivery {
     display: flex;
@@ -2811,6 +2822,17 @@
       align-items: start;
       gap: 1.25rem;
       padding: 1.125rem 1.5rem;
+    }
+    .sheet-scroll.download-route,
+    .sheet-scroll.publish-route {
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+      max-width: 42rem;
+      margin-inline: auto;
+    }
+    .sheet-scroll.download-route .stage {
+      height: clamp(18rem, 42dvh, 24rem);
     }
     .share-intents {
       padding: 1.75rem;
