@@ -238,7 +238,7 @@
     line-height: 1.5;
   }
   p {
-    color: var(--theme-text-muted);
+    color: var(--theme-text-dim);
     line-height: 1.5;
     font-size: var(--font-size-min, 14px);
   }
@@ -318,7 +318,7 @@
     fill: var(--theme-text);
   }
   text {
-    fill: var(--theme-text-muted);
+    fill: var(--theme-text-dim);
     font-size: 12px;
   }
   .hand {
@@ -342,7 +342,7 @@
   }
   output {
     font-variant-numeric: tabular-nums;
-    color: var(--theme-text-muted);
+    color: var(--theme-text-dim);
   }
   input {
     width: 100%;
