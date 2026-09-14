@@ -10,6 +10,7 @@
     narrow?: boolean;
     compact?: boolean;
     expanded?: boolean;
+    focused?: boolean;
     children: Snippet<[surface: "modal" | "drawer"]>;
   }
   let {
@@ -20,6 +21,7 @@
     narrow = false,
     compact = false,
     expanded = false,
+    focused = false,
     children,
   }: Props = $props();
   const headingId = $props.id();
@@ -28,7 +30,7 @@
 <!-- The native modal layer keeps editor toolbars behind sharing on phones too. -->
 <BaseModal
   open={isOpen}
-  class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${compact ? " share-sheet-modal--compact" : ""}${expanded ? " share-sheet-modal--expanded" : ""}`}
+  class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${compact ? " share-sheet-modal--compact" : ""}${expanded ? " share-sheet-modal--expanded" : ""}${focused ? " share-sheet-modal--focused" : ""}`}
   size={compact ? "fit" : "full"}
   position="center"
   animation="pop"
@@ -91,6 +93,9 @@
     width: min(32rem, calc(100vw - 2rem));
     height: fit-content;
     max-height: calc(var(--viewport-height, 100dvh) - 2rem);
+  }
+  :global(dialog.base-modal.share-sheet-modal--focused[data-size]) {
+    width: min(42rem, calc(100vw - 2rem));
   }
   :global(dialog.base-modal.share-sheet-modal--expanded[data-size]) {
     width: calc(100vw - 1rem);
