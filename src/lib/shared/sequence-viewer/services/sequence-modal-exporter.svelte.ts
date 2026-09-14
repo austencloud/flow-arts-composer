@@ -171,6 +171,8 @@ export class SequenceModalExporter {
   private _progress = $state<VideoExportProgress | null>(null);
   private _error = $state<string | null>(null);
   private _previewBlobUrl = $state<string | null>(null);
+  /** Invalidates callbacks and completions from canceled/superseded exports. */
+  private _exportVersion = 0;
 
   private _videoExportOrchestrator: IVideoExportOrchestrator | null = null;
   private _sequenceRenderer: SequenceRenderer | null = null;
@@ -208,6 +210,7 @@ export class SequenceModalExporter {
     deps: VideoExportDependencies,
     callbacks: ExportCallbacks
   ): Promise<void> {
+    const exportVersion = ++this._exportVersion;
     this._isExporting = true;
     this._error = null;
     this._progress = { progress: 0, stage: "capturing" };
@@ -223,6 +226,7 @@ export class SequenceModalExporter {
         deps.playbackController,
         deps.panelState,
         (progress) => {
+          if (exportVersion !== this._exportVersion) return;
           this._progress = progress;
           if (progress.totalFrames) {
             capturedFrameCount = progress.totalFrames;
@@ -280,8 +284,10 @@ export class SequenceModalExporter {
         );
       }
 
+      if (exportVersion !== this._exportVersion) return;
       this._previewBlobUrl = URL.createObjectURL(blob);
     } catch (error) {
+      if (exportVersion !== this._exportVersion) return;
       if ((error as Error).message !== "Export cancelled") {
         console.error(
           "[SequenceModalExporter] Animation export failed:",
@@ -291,6 +297,7 @@ export class SequenceModalExporter {
         callbacks.onError(this._error);
       }
     } finally {
+      if (exportVersion !== this._exportVersion) return;
       this._isExporting = false;
       this._progress = null;
     }
@@ -301,6 +308,7 @@ export class SequenceModalExporter {
     deps: Video3DExportDependencies,
     callbacks: ExportCallbacks
   ): Promise<void> {
+    const exportVersion = ++this._exportVersion;
     const exporter = getOffline3DExporter() as Offline3DExporter;
     if (!exporter) {
       this._error = "3D export services not ready.";
@@ -329,6 +337,7 @@ export class SequenceModalExporter {
           setExportCurrentStep: deps.setExportCurrentStep,
         },
         (progress) => {
+          if (exportVersion !== this._exportVersion) return;
           this._progress = progress;
           if (progress.stage === "complete") {
             callbacks.onHaptic("success");
@@ -345,14 +354,17 @@ export class SequenceModalExporter {
         }
       );
 
+      if (exportVersion !== this._exportVersion) return;
       this._previewBlobUrl = URL.createObjectURL(blob);
     } catch (error) {
+      if (exportVersion !== this._exportVersion) return;
       if ((error as Error).message !== "Export cancelled") {
         console.error("[SequenceModalExporter] 3D export failed:", error);
         this._error = "3D export failed. Please try again.";
         callbacks.onError(this._error);
       }
     } finally {
+      if (exportVersion !== this._exportVersion) return;
       this._activeExporter = null;
       this._isExporting = false;
       this._progress = null;
@@ -472,6 +484,7 @@ export class SequenceModalExporter {
     // Raw field, not the lazy getter — never instantiate the orchestrator
     // just to cancel an export that was never started (dispose() runs this
     // on unmount, possibly before deferred registrations have loaded).
+    this._exportVersion += 1;
     this._videoExportOrchestrator?.cancelExport();
     this._activeExporter?.cancel();
     this._activeExporter = null;
