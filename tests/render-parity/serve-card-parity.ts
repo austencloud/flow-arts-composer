@@ -6,6 +6,8 @@ import { resolve, extname } from "node:path";
 import { PNG } from "pngjs";
 import pixelmatch from "pixelmatch";
 import { cardParityCases } from "./card-parity-cases";
+import { cardProfileCases } from "./card-profile-cases";
+import { cardReviewDocument, type CardReviewEntry } from "./card-review-document";
 import {
   cardParityMetrics,
   assertCardParity,
@@ -58,7 +60,9 @@ await build({
   },
 });
 
-const cases = cardParityCases();
+const profileCases = cardProfileCases();
+const cases = [...cardParityCases(), ...profileCases];
+const reviewEntries: CardReviewEntry[] = [];
 const results: Array<{
   name: string;
   adapter: string;
@@ -74,6 +78,13 @@ const server = createServer(async (request, response) => {
       const chunks: Buffer[] = [];
       for await (const chunk of request) chunks.push(Buffer.from(chunk));
       const body = Buffer.concat(chunks).toString();
+      if (request.url === "/profile-complete") {
+        if (reviewEntries.length !== profileCases.length)
+          throw new Error("Profile review is incomplete");
+        await writeFile(resolve(out, "card-profiles.html"), cardReviewDocument(reviewEntries));
+        response.end("card-profiles.html");
+        return;
+      }
       if (request.url === "/complete" || request.url === "/failed") {
         console.log(
           request.url === "/failed" ? body : JSON.stringify(results, null, 2)
@@ -83,7 +94,7 @@ const server = createServer(async (request, response) => {
           JSON.stringify(results, null, 2)
         );
         if (request.url === "/complete") {
-          if (results.length !== cases.length * 2 || !negativeControlPassed)
+          if (results.length !== cardParityCases().length * 2 || !negativeControlPassed)
             throw new Error(
               "Incomplete parity run or missing negative control"
             );
@@ -99,6 +110,7 @@ const server = createServer(async (request, response) => {
       const { name, png } = JSON.parse(body);
       const testCase = cases.find((testCase) => testCase.name === name);
       if (!testCase) throw new Error("Unknown card parity case");
+      const isProfile = profileCases.some((testCase) => testCase.name === name);
       if (request.url === "/negative-control") {
         const baseline = PNG.sync.read(
           await readFile(resolve(out, name + "-composer.png"))
@@ -138,7 +150,8 @@ const server = createServer(async (request, response) => {
           testCase.options as any
         );
         const b = PNG.sync.read(mcp);
-        if (a.width !== b.width || a.height !== b.height)
+        const sameDimensions = a.width === b.width && a.height === b.height;
+        if (!sameDimensions && !isProfile)
           throw new Error(
             name +
               ": dimensions differ: " +
@@ -151,11 +164,11 @@ const server = createServer(async (request, response) => {
               b.height
           );
         const diff = new PNG({ width: a.width, height: a.height });
-        const count = pixelmatch(a.data, b.data, diff.data, a.width, a.height, {
+        const count = sameDimensions ? pixelmatch(a.data, b.data, diff.data, a.width, a.height, {
           threshold: 0.1,
-        });
+        }) : null;
         const diffBytes = PNG.sync.write(diff);
-        const diffPercent = +((100 * count) / (a.width * a.height)).toFixed(4);
+        const diffPercent = count === null ? null : +((100 * count) / (a.width * a.height)).toFixed(4);
         await Promise.all([
           writeFile(resolve(out, name + "-composer.png"), browserBytes),
           writeFile(resolve(out, name + "-" + adapter + ".png"), mcp),
@@ -164,19 +177,31 @@ const server = createServer(async (request, response) => {
             diffBytes
           ),
         ]);
-        results.push({
+        if (!isProfile) results.push({
           regions: cardParityMetrics(a, b, testCase),
           name,
           adapter,
-          diffPercent,
+          diffPercent: diffPercent!,
           width: a.width,
           height: a.height,
         });
         comparisons.push({
           adapter,
           diffPercent,
+          width: b.width,
+          height: b.height,
           mcp: "data:image/png;base64," + mcp.toString("base64"),
-          diff: "data:image/png;base64," + diffBytes.toString("base64"),
+          diff: sameDimensions ? "data:image/png;base64," + diffBytes.toString("base64") : "",
+        });
+      }
+      if (isProfile) {
+        const entry = profileCases.find((entry) => entry.name === name)!;
+        const prior = reviewEntries.findIndex((entry) => entry.name === name);
+        if (prior >= 0) reviewEntries.splice(prior, 1);
+        reviewEntries.push({
+          name, description: entry.description, options: testCase.options,
+          composer: png, width: a.width, height: a.height,
+          comparisons: comparisons.map(({ mcp, ...comparison }) => ({ ...comparison, png: mcp })),
         });
       }
       response.setHeader("Content-Type", "application/json");
@@ -187,6 +212,7 @@ const server = createServer(async (request, response) => {
     if (url.pathname === "/") {
       results.length = 0;
       negativeControlPassed = false;
+      reviewEntries.length = 0;
     }
     if (url.pathname === "/favicon.ico") {
       response.statusCode = 204;

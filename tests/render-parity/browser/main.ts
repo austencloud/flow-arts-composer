@@ -1,4 +1,5 @@
 import { cardParityCases } from "../card-parity-cases";
+import { cardProfileCases } from "../card-profile-cases";
 import { renderComposerCard } from "../render-composer-card";
 
 async function asPng(canvas: HTMLCanvasElement | OffscreenCanvas) {
@@ -15,18 +16,36 @@ async function asPng(canvas: HTMLCanvasElement | OffscreenCanvas) {
   });
 }
 
+async function postCard(name: string, png: string) {
+  const response = await fetch("/compare", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name, png }),
+  });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.error ?? "Comparison failed");
+  return result;
+}
+
+/** Product presets render first so the saved review exists even when a parity fixture fails. */
+async function runProfileReview() {
+  for (const testCase of cardProfileCases()) {
+    await postCard(testCase.name, await asPng(await renderComposerCard(testCase)));
+  }
+  const saved = await fetch("/profile-complete", { method: "POST" });
+  if (!saved.ok) throw new Error(await saved.text());
+  const note = document.createElement("p");
+  note.textContent = "Saved side-by-side review: " + (await saved.text());
+  document.querySelector("#results")!.append(note);
+}
+
 async function runComparison() {
   try {
+    await runProfileReview();
     for (const testCase of cardParityCases()) {
       const canvas = await renderComposerCard(testCase);
       const png = await asPng(canvas);
-      const response = await fetch("/compare", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: testCase.name, png }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Comparison failed");
+      const result = await postCard(testCase.name, png);
       for (const comparison of result.comparisons) {
         const section = document.createElement("section");
         const title = document.createElement("h2");
