@@ -115,14 +115,14 @@ describe("buildGalleryVisibility — per-length QR/mandala choice", () => {
     expect(v?.showMandala).toBe(true);
   });
 
-  it("guest gets no QR; a 'qr' pick degrades to mandala", () => {
+  it("allows a guest to request a public prepared QR without authorizing generation", () => {
     const v = buildGalleryVisibility({
       sequence: four,
       compositionManager: source({ choice: "qr" }),
       isAuthenticated: false,
       allowQR: true,
     } as any);
-    expect(v?.showQRCode).toBe(false);
+    expect(v?.showQRCode).toBe(true);
     expect(v?.showMandala).toBe(true);
   });
 });

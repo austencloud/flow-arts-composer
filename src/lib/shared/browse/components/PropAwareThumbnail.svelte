@@ -75,7 +75,7 @@
     showRightMotion?: boolean;
     // Skip IntersectionObserver and load immediately (use in modals/pickers)
     eager?: boolean;
-    /** Allow QR codes in physical card previews. Gallery thumbnails stay QR-free. */
+    /** Allow a QR when this card has a prepared public scan asset. */
     allowQR?: boolean;
     /** Use 5:7 playing card layout for physical card export (different from lightMode/printMode) */
     cardMode?: boolean;
@@ -196,7 +196,7 @@
       handPathMode,
       showLeftMotion,
       showRightMotion,
-      allowQR: cardMode && allowQR,
+      allowQR,
       cardMode,
       compositionManager,
       isAuthenticated: authState.isAuthenticated,
@@ -392,6 +392,17 @@
         skipCache: shouldSkipCache,
         priority,
         signal: requestController.signal,
+        // Scrolling gallery cards may upgrade from a ready prepared SVG, but
+        // they must never warm cells or allocate a short code on a cache miss.
+        qrPolicy:
+          variant === "gallery" && !cardMode ? "prepared-only" : undefined,
+        onPreview: (preview) => {
+          if (requestIsCurrent() && preview.url) {
+            displayedKey = preview.key;
+            thumbnailUrl = preview.url;
+            status = { state: "complete", url: preview.url };
+          }
+        },
         onStatusChange: (s) => {
           if (requestIsCurrent()) {
             status = s;

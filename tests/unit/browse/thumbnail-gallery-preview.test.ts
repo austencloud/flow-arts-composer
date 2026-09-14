@@ -65,13 +65,14 @@ function harness() {
   );
   const queue = new ThumbnailRenderQueue();
   const metrics = new ThumbnailMetricsCollector();
+  const hasPreparedQR = vi.fn(async () => true);
   const orchestrator = new ThumbnailRenderOrchestrator(
     queue,
-    { render } as never,
+    { render, hasPreparedQR } as never,
     cache as never,
     metrics
   );
-  return { local, cache, render, queue, metrics, orchestrator };
+  return { local, cache, render, hasPreparedQR, queue, metrics, orchestrator };
 }
 
 beforeEach(() => {
@@ -194,6 +195,68 @@ describe("gallery previews under a cold QR backlog", () => {
     expect(result.url).toBe(onPreview.mock.calls[0]![0].url);
     expect(h.local.has(deriveKey(input).hash)).toBe(false);
     expect(URL.revokeObjectURL).toHaveBeenCalledOnce();
+  });
+
+  it("upgrades a gallery preview only when prepared QR artwork is available", async () => {
+    const h = harness();
+    h.render.mockImplementation(
+      async (_sequence, _input, renderOptions?: { qrLookup?: string }) => ({
+        blob: new Blob([
+          renderOptions?.qrLookup === "prepared-only" ? "QR" : "preview",
+        ]),
+        qrConsistent: true,
+      })
+    );
+    const onPreview = vi.fn();
+
+    const result = await h.orchestrator.getThumbnail({
+      sequence,
+      input,
+      skipCache: true,
+      qrPolicy: "prepared-only",
+      onPreview,
+    });
+
+    expect(onPreview).toHaveBeenCalledOnce();
+    expect(result.key.hash).toBe(deriveKey(input).hash);
+    expect(h.render).toHaveBeenLastCalledWith(
+      sequence,
+      expect.objectContaining({
+        visibility: expect.objectContaining({ showQRCode: true }),
+      }),
+      { qrLookup: "prepared-only" },
+      expect.any(Function),
+      expect.any(AbortSignal),
+      expect.any(Function),
+      expect.any(Function)
+    );
+  });
+
+  it("keeps the no-QR preview and leaves the QR key empty on a prepared miss", async () => {
+    const h = harness();
+    h.hasPreparedQR.mockResolvedValue(false);
+    h.render.mockImplementation(
+      async (_sequence, _input, renderOptions?: { qrLookup?: string }) => ({
+        blob: new Blob([renderOptions?.qrLookup ? "preview" : "preview"]),
+        qrConsistent: !renderOptions?.qrLookup,
+      })
+    );
+    const onPreview = vi.fn();
+
+    const result = await h.orchestrator.getThumbnail({
+      sequence,
+      input,
+      skipCache: true,
+      qrPolicy: "prepared-only",
+      onPreview,
+    });
+
+    const qrKey = deriveKey(input);
+    expect(onPreview).toHaveBeenCalledOnce();
+    expect(result.key.inputs.visibility?.showQRCode).toBe(false);
+    expect(h.local.has(qrKey.hash)).toBe(false);
+    expect(h.orchestrator.getCached(qrKey.hash)).toBeNull();
+    expect(h.render).toHaveBeenCalledOnce();
   });
 
   it("finishes a large batch without starting QR work or poisoning QR keys", async () => {

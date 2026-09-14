@@ -63,7 +63,7 @@ export interface ThumbnailRequest {
   signal?: AbortSignal;
 
   /** Gallery previews may reuse a QR image, but must not prepare scan assets. */
-  qrPolicy?: "generate" | "cache-only" | "background";
+  qrPolicy?: "generate" | "cache-only" | "background" | "prepared-only";
 
   /** Paint a separately cached preview while its QR version is prepared. */
   onPreview?: (preview: ThumbnailResult) => void;
@@ -357,7 +357,11 @@ export class ThumbnailRenderOrchestrator {
   }
 
   async getThumbnail(request: ThumbnailRequest): Promise<ThumbnailResult> {
-    if (request.qrPolicy !== "background") return this.loadThumbnail(request);
+    if (
+      request.qrPolicy !== "background" &&
+      request.qrPolicy !== "prepared-only"
+    )
+      return this.loadThumbnail(request);
 
     const preview = await this.loadThumbnail({
       ...request,
@@ -373,12 +377,28 @@ export class ThumbnailRenderOrchestrator {
     if (request.signal?.aborted) throw cancellationError(request.signal);
     request.onPreview?.(preview);
 
-    // The preview stays visible, without a loading overlay. Only one QR warm
+    // A gallery miss is ordinary. Do this check before handing work to the
+    // renderer so it doesn't compose another QR-free image after the preview
+    // already painted. Fail closed for older/lightweight renderer harnesses:
+    // prepared-only must never fall through to QR generation.
+    if (request.qrPolicy === "prepared-only") {
+      const hasPreparedQR = await this.renderer.hasPreparedQR?.(
+        request.sequence,
+        request.input,
+        request.signal
+      );
+      if (!hasPreparedQR) return preview;
+      if (request.signal?.aborted) throw cancellationError(request.signal);
+    }
+
+    // The preview stays visible, without a loading overlay. Only one QR lookup
     // runs at a time, on a separate queue that cannot block new preview jobs.
+    // Gallery browsing is prepared-only; full card flows retain generation.
     const final = await this.loadThumbnail(
       {
         ...request,
-        qrPolicy: "generate",
+        qrPolicy:
+          request.qrPolicy === "prepared-only" ? "prepared-only" : "generate",
         onStatusChange: undefined,
       },
       undefined,
@@ -589,7 +609,9 @@ export class ThumbnailRenderOrchestrator {
           const { blob, qrConsistent } = await this.renderer.render(
             request.sequence,
             key.inputs,
-            undefined, // use default render options
+            request.qrPolicy === "prepared-only"
+              ? { qrLookup: "prepared-only" }
+              : undefined,
             (progress) => {
               if (signal.aborted || request.signal?.aborted) return;
               reportActivity();
