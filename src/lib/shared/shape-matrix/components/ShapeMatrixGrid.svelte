@@ -121,6 +121,7 @@
   );
   const effectivePainter = $derived(painter ?? defaultPainter);
   const painterArtKey = $derived(effectivePainter.cacheKey ?? "");
+  const geometryArtKey = $derived(data?.geometryKey ?? "arc:tips");
 
   /* The reveal answers a token CHANGE after mount. The token the grid mounts
      with (a restored roll, or zero) is a state to show, not a roll to replay. */
@@ -244,14 +245,14 @@
                 >
                   <ShapeMatrixMandalaArt
                     paint={headerPaint(rf, "right")}
-                    artKey={`right:${keyOf(rf)}:${painterArtKey}`}
+                    artKey={`right:${keyOf(rf)}:${geometryArtKey}:${painterArtKey}`}
                     alt={`right ${labelOf(rf)}`}
                   />
                 </button>
               {:else}
                 <ShapeMatrixMandalaArt
                   paint={headerPaint(rf, "right")}
-                  artKey={`right:${keyOf(rf)}:${painterArtKey}`}
+                  artKey={`right:${keyOf(rf)}:${geometryArtKey}:${painterArtKey}`}
                   alt={`right ${labelOf(rf)}`}
                 />
               {/if}
@@ -280,14 +281,14 @@
                 >
                   <ShapeMatrixMandalaArt
                     paint={headerPaint(bf, "left")}
-                    artKey={`left:${keyOf(bf)}:${painterArtKey}`}
+                    artKey={`left:${keyOf(bf)}:${geometryArtKey}:${painterArtKey}`}
                     alt={`left ${labelOf(bf)}`}
                   />
                 </button>
               {:else}
                 <ShapeMatrixMandalaArt
                   paint={headerPaint(bf, "left")}
-                  artKey={`left:${keyOf(bf)}:${painterArtKey}`}
+                  artKey={`left:${keyOf(bf)}:${geometryArtKey}:${painterArtKey}`}
                   alt={`left ${labelOf(bf)}`}
                 />
               {/if}
@@ -321,7 +322,7 @@
                     <span class="artwork">
                       <ShapeMatrixMandalaArt
                         paint={cellPaint(bf, rf)}
-                        artKey={`${key}:${painterArtKey}`}
+                        artKey={`${key}:${geometryArtKey}:${painterArtKey}`}
                         claim={claimSelected && selectedKey === key}
                       />
                     </span>
