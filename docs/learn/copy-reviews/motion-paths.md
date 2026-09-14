@@ -188,3 +188,22 @@ The final viewer-button check exposed that the public guide does not host the ap
 - Verified 0-, 1-, and 2-turn selections, timing/direction changes, keyboard activation, retained Hybrid selection, switching back to Arc, and paused startup with reduced motion. A real AABB gallery selection loaded its word and notation into the explorer.
 - Checked equivalent 200% reflow at 720×450 CSS pixels through viewport emulation; native browser zoom was not measured.
 - Screenshots are stored outside the repository in `C:/Users/Austen/.codex/visualizations/2026/09/13/motion-path-matrix`. User review of the revised selection experience remains pending.
+
+## September 14: replace the disconnected demonstrations
+
+Review state: DRAFT under Austen’s delegated editorial authorization. User review pending.
+Austen rejected the lower demos as unclear and visually overwhelming, then explicitly requested starting over. This is a further substantial correction round in the same task. The lead applied the Teacher briefing inline; no improvement or approval is inferred.
+
+The top explorer remains the selection owner. One explanation now receives its displayed sequence and trace selection. A chosen movement compares Arc and Concave simultaneously, using a solid and dashed line in the selected hand’s actual color. One scrubber moves both markers at the same time. Two canonical mandalas show that hand across the same complete sequence. Dashes and static hands explicitly report unchanged routes. The four demos, their tabs, their state, and their demo-only tests are removed.
+
+Ownership ledger: keep MotionPathExplorer and ShapeMatrixGrid for selection, MotionPathTransitionStage for playback and notation; compose interpolatePropAngles and applySequencePathPreview for the route diagram; reuse SequenceMandala for whole-sequence geometry and one-tip rendering; getSettings owns hand colors; native labelled range/select provide keyboard and touch interaction. The SVG is a new presentation of canonical calculations, not a new interpolation system. The existing GuideShell and theme tokens own layout and typography. No new notation glyphs are drawn. Rejected: multiple disconnected toys, tab navigation between them, third-order simulation, pretend save/restore workflow. Wide layouts compare movement and whole-sequence drawings side by side; narrow layouts stack the drawings beneath the scrubber.
+
+Copy and evidence:
+- “Change the path. See what it draws.” / “Same endpoints, different routes” / “Compare one movement from your sequence above.” Describe the selected sequence preview; endpoint preservation is tested against PropInterpolator.
+- “Look at” / “Step [number] · Left/Right hand” / “Drag to follow the hand” / percentage identify the selected motion and its time directly.
+- “The hand reaches the same endpoint by a different route.” Supported by PropInterpolator and endpoint tests.
+- “This is a dash. Both settings keep its route straight.” / “This hand stays at its grid point with either setting.” Supported by sequence-path-policy and verified fixed-path behavior.
+- “Across the whole sequence” / “The same hand’s complete trace.” / “The same hand, tracing one staff tip.” SequenceMandala receives the entire selected sequence, selected hand, and tipEnds=1; hand traces use tipDx=0.
+- “Each movement contributes to the full drawing.” / “The staff keeps its rotation as the hand takes a different route.” Geometry calculator and PropInterpolator preserve authored rotations under path changes.
+
+AI-bust review: clean. Copy names the action and visible result; no claims of learning efficacy or ease. Detailed third-order and persistence reference remains collapsed. No new domain claims about third order are introduced.
