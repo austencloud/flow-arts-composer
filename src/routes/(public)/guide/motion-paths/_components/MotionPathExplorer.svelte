@@ -206,6 +206,7 @@
                 transitionKey={explorer.transitionKey}
                 scope={explorer.scope}
                 playing={explorer.playing}
+                trace={explorer.trace}
                 leftPropType={PropType.STAFF}
                 rightPropType={PropType.STAFF}
                 onplayingchange={(value) => (explorer.playing = value)}

@@ -29,7 +29,7 @@
 <BaseModal
   open={isOpen}
   class={`share-sheet-modal${narrow ? " share-sheet-modal--narrow" : ""}${compact ? " share-sheet-modal--compact" : ""}${expanded ? " share-sheet-modal--expanded" : ""}`}
-  size="full"
+  size={compact ? "fit" : "full"}
   position="center"
   animation="pop"
   labelledBy={headingId}
@@ -60,17 +60,18 @@
     backdrop-filter: none;
     border: 1px solid var(--theme-stroke);
     border-radius: 1.25rem;
+    interpolate-size: allow-keywords;
     transition:
       width var(--transition-normal),
       height var(--transition-normal);
   }
-  :global(.share-sheet-modal .modal-content-wrapper),
-  :global(.share-sheet-modal .modal-body) {
+  :global(dialog.share-sheet-modal[data-size="full"] .modal-content-wrapper),
+  :global(dialog.share-sheet-modal[data-size="full"] .modal-body) {
     height: 100%;
     min-height: 0;
   }
-  :global(.share-sheet-modal .modal-body) {
-    overflow-y: auto;
+  :global(dialog.share-sheet-modal[data-size="full"] .modal-body) {
+    overflow-y: hidden;
     overflow-x: hidden;
   }
   :global(dialog.base-modal.share-sheet-modal--narrow[data-size]) {
@@ -79,12 +80,8 @@
   }
   :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
     width: min(32rem, calc(100vw - 2rem));
-    height: auto;
+    height: fit-content;
     max-height: calc(var(--viewport-height, 100dvh) - 2rem);
-  }
-  :global(.share-sheet-modal--compact .modal-content-wrapper),
-  :global(.share-sheet-modal--compact .modal-body) {
-    height: auto;
   }
   :global(dialog.base-modal.share-sheet-modal--expanded[data-size]) {
     width: calc(100vw - 1rem);
@@ -94,7 +91,7 @@
   @media (max-width: 899px) {
     :global(dialog.base-modal.share-sheet-modal[data-size]) {
       width: min(38rem, 100vw);
-      height: calc(var(--viewport-height, 100dvh) - 0.75rem);
+      height: min(56rem, calc(var(--viewport-height, 100dvh) - 0.75rem));
       max-height: calc(var(--viewport-height, 100dvh) - 0.75rem);
       margin-block: auto 0;
       border-radius: 1.25rem 1.25rem 0 0;
@@ -102,7 +99,7 @@
     }
     :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
       width: min(32rem, calc(100vw - 1rem));
-      height: auto;
+      height: fit-content;
       max-height: calc(var(--viewport-height, 100dvh) - 0.75rem);
       margin: auto auto 0;
       border: 1px solid var(--theme-stroke);
@@ -112,7 +109,7 @@
   @media (min-width: 600px) and (max-width: 899px) {
     :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
       width: min(32rem, calc(100vw - 3rem));
-      height: auto;
+      height: fit-content;
       max-height: calc(var(--viewport-height, 100dvh) - 3rem);
       margin: auto;
       border: 1px solid var(--theme-stroke);
