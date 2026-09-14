@@ -535,7 +535,7 @@
 
   .control-rail {
     display: grid;
-    align-content: start;
+    align-items: stretch;
     min-width: 0;
     padding: 0.5rem;
     border-left: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
@@ -548,6 +548,11 @@
     padding: 0.25rem;
     overflow: hidden;
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+  }
+
+  .with-controls .strip-zone {
+    flex: none;
+    height: clamp(3.75rem, 18cqw, 6.5rem);
   }
 
   @container (max-width: 28rem) {

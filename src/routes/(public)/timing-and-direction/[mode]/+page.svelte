@@ -957,8 +957,8 @@
     );
   }
   .player-controls {
-    display: grid;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
     gap: 0.5rem;
     min-width: 0;
   }
@@ -966,7 +966,7 @@
     width: 100%;
   }
   .player-controls :global(.transport-controls) {
-    margin: 0;
+    margin: auto 0 0;
   }
   .turn-controls {
     display: grid;
@@ -1263,6 +1263,7 @@
   }
   @container (max-width: 28rem) {
     .player-controls {
+      display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       align-items: center;
     }
@@ -1270,6 +1271,7 @@
       grid-column: 1 / -1;
     }
     .player-controls :global(.transport-controls) {
+      margin: 0;
       justify-self: center;
     }
   }
