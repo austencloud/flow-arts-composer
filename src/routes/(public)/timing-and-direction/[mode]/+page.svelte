@@ -8,6 +8,7 @@
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import PropTurnsControl from "$lib/features/create/shared/components/sequence-actions/PropTurnsControl.svelte";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
+  import SequenceShowcasePreview from "$lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
@@ -367,11 +368,20 @@
       <div class="to-stage">
         <figure class="demonstration">
           <div class="demo-toolbar">
-            <span
-              >{playback.propDisplay === "staff"
-                ? "With props"
-                : "Hand paths"}</span
-            >
+            <h2>{selectedLoop?.word ?? "Four-count loop"}</h2>
+            <div class="display-switch">
+              <SegmentedControl
+                options={[
+                  { value: "staff", label: "With props" },
+                  { value: "hands", label: "Hands" },
+                ]}
+                value={playback.propDisplay}
+                onchange={(value) => (playback.propDisplay = value)}
+                ariaLabel="Player display"
+                density="tight"
+                color="accent"
+              />
+            </div>
             {#if browser}
               <TransportControls
                 isPlaying={playback.playing}
@@ -379,71 +389,36 @@
               />
             {/if}
           </div>
-          <div
-            class="demo-canvas"
-            bind:this={examplePlayer}
-            use:playback.registerTarget
-          ></div>
-          <figcaption>Choose a count to hold the player there.</figcaption>
+          <div class="to-showcase" bind:this={examplePlayer}>
+            <SequenceShowcasePreview
+              word={selectedLoop?.word ?? "Together-Opposite"}
+              sequence={selectedLoop ? playback.sequence : null}
+              alwaysLive
+              playbackActive={playback.playing}
+              externalPlaying={playback.playing}
+              initialStep={playback.step}
+              onExternalPlayingChange={(value) => {
+                if (value !== playback.playing) playback.togglePlayback();
+              }}
+              onStepChange={playback.followStep}
+              onSeekRef={playback.registerSeek}
+              onCellClick={(stepNumber) => selectCount(stepNumber - 1)}
+              singlePlay={!turnLoopClosed}
+              leftPropType={playback.propDisplay === "hands"
+                ? PropType.HAND
+                : PropType.STAFF}
+              rightPropType={playback.propDisplay === "hands"
+                ? PropType.HAND
+                : PropType.STAFF}
+              railLeftPropType={PropType.STAFF}
+              railRightPropType={PropType.STAFF}
+              primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+            />
+          </div>
+          <figcaption>Tap a pictograph to pause on that count.</figcaption>
         </figure>
 
         <div class="to-workbench">
-          <section class="count-strip" aria-labelledby="counts-title">
-            <div class="strip-heading">
-              <div>
-                <h2 id="counts-title">
-                  {selectedLoop?.word ?? "Four-count loop"}
-                </h2>
-              </div>
-              <div class="display-switch">
-                <SegmentedControl
-                  options={[
-                    { value: "staff", label: "With props" },
-                    { value: "hands", label: "Hands" },
-                  ]}
-                  value={playback.propDisplay}
-                  onchange={(value) => (playback.propDisplay = value)}
-                  ariaLabel="Player display"
-                  density="tight"
-                  color="accent"
-                />
-              </div>
-            </div>
-            <div class="pictograph-strip" aria-label="Loop counts">
-              {#each playback.sequence.steps as pictograph, index (`${playback.sequence.id}-${index}`)}
-                <button
-                  type="button"
-                  class:current={currentStripStep === index}
-                  aria-current={currentStripStep === index ? "step" : undefined}
-                  aria-label={`Show count ${index + 1}`}
-                  onclick={() => selectCount(index)}
-                >
-                  <span class="count-number">{index + 1}</span>
-                  <span class="strip-pictograph">
-                    <PictographContainer
-                      pictographData={pictograph}
-                      stepNumberOverride={false}
-                      darkMode={true}
-                      gridMode={selectedLoop?.gridMode ?? GridMode.DIAMOND}
-                      leftPropTypeOverride={PropType.STAFF}
-                      rightPropTypeOverride={PropType.STAFF}
-                      leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
-                      rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
-                      showGrid={true}
-                      showTKA={true}
-                      showElemental={false}
-                      showPositions={false}
-                      showReversals={false}
-                      showNonRadialPoints={false}
-                      showHandPoints={true}
-                      disableTransitions
-                    />
-                  </span>
-                </button>
-              {/each}
-            </div>
-          </section>
-
           <section
             class="turn-disclosure"
             aria-labelledby="turn-controls-title"
@@ -756,14 +731,12 @@
     gap: 1.25rem;
     min-width: 0;
   }
-  .count-strip,
   .turn-disclosure {
     padding: 1rem;
     border: 1px solid var(--theme-stroke);
     border-radius: var(--radius-lg, 0.75rem);
     background: var(--theme-card-bg);
   }
-  .strip-heading,
   .library-heading,
   .turn-scope {
     display: flex;
@@ -776,51 +749,28 @@
     font-size: 1rem;
   }
   .display-switch {
-    width: min(100%, 15rem);
-    flex: 0 1 15rem;
+    width: 12rem;
   }
-  .pictograph-strip {
+  .to-stage .demo-toolbar {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 1rem;
-    margin-top: 1rem;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.75rem;
   }
-  .pictograph-strip button {
-    position: relative;
-    min-width: 0;
-    min-height: 0;
-    padding: 0.25rem;
-    color: var(--theme-text);
-    background: transparent;
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--radius-md, 0.5rem);
-    cursor: pointer;
+  .to-stage .demo-toolbar h2 {
+    margin: 0;
   }
-  .pictograph-strip button.current {
-    border-color: var(--mode-accent);
-    outline: 2px solid var(--mode-accent);
-    outline-offset: -2px;
-    background: color-mix(
-      in srgb,
-      var(--mode-accent) 12%,
-      var(--theme-card-bg)
-    );
-  }
-  .pictograph-strip button:focus-visible {
-    outline: 3px solid var(--theme-text);
-    outline-offset: 2px;
-  }
-  .count-number {
-    display: block;
-    padding: 0.25rem 0.25rem 0;
-    font-size: 0.875rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    text-align: left;
-  }
-  .strip-pictograph {
-    display: block;
+  .to-showcase {
+    width: 100%;
     aspect-ratio: 1;
+  }
+  .to-showcase :global(.sequence-preview) {
+    height: 100%;
+    aspect-ratio: auto;
+    border-color: color-mix(
+      in srgb,
+      var(--mode-accent) 55%,
+      var(--theme-stroke)
+    );
   }
   .turn-controls {
     display: grid;
@@ -1131,16 +1081,17 @@
     .page-nav {
       margin-bottom: 1rem;
     }
-    .strip-heading,
     .library-heading {
       display: grid;
       grid-template-columns: minmax(0, 1fr);
     }
     .display-switch {
       width: 100%;
+      grid-column: 1 / -1;
+      grid-row: 2;
     }
-    .pictograph-strip {
-      gap: 0.375rem;
+    .to-stage .demo-toolbar {
+      grid-template-columns: minmax(0, 1fr) auto;
     }
     .turn-pairs {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
