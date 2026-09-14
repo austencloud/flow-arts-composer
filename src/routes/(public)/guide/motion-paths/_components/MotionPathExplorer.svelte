@@ -7,11 +7,14 @@
   import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import MotionPathTurnControls from "./MotionPathTurnControls.svelte";
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import ElementChipRow from "$lib/shared/shape-matrix/components/ElementChipRow.svelte";
   import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
-  import { matrixFiltersForTurn } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  import {
+    matrixFiltersForTurns,
+    type MatrixLabelMode,
+  } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
   import {
     flowerKey,
     type Flower,
@@ -37,19 +40,24 @@
   let playerFailed = $state(false);
   let matrixData = $state<ShapeMatrixData | null>(null);
   let matrixError = $state<string | null>(null);
-  let turnBand = $state<TurnValue>(0);
+  let leftTurn = $state<TurnValue>(0);
+  let rightTurn = $state<TurnValue>(0);
+  let labelMode = $state<MatrixLabelMode>("turns");
   let displayedSequence = $state<SequenceData | null>(null);
   let stageSeek = $state<((step: number) => void) | null>(null);
   let mounted = true;
   let matrixRequest = 0;
-  const matrixAxis = $derived(
-    matrixData
-      ? applyFilter(matrixData.axis, matrixFiltersForTurn(turnBand).left, false)
-      : []
+  const matrixFilters = $derived(matrixFiltersForTurns(leftTurn, rightTurn));
+  const rowAxis = $derived(
+    matrixData ? applyFilter(matrixData.axis, matrixFilters.left, false) : []
+  );
+  const colAxis = $derived(
+    matrixData ? applyFilter(matrixData.axis, matrixFilters.right, false) : []
   );
 
-  function chooseTurnBand(value: string): void {
-    turnBand = Number(value) as TurnValue;
+  function chooseTurn(hand: "left" | "right", value: TurnValue): void {
+    if (hand === "left") leftTurn = value;
+    else rightTurn = value;
     explorer.clearMatrixPair();
   }
 
@@ -104,10 +112,7 @@
   <div class="explorer-workspace">
     <section class="shape-picker" aria-labelledby="shape-picker-title">
       <div class="picker-heading">
-        <div>
-          <h3 id="shape-picker-title">Choose a sequence</h3>
-          <p>Pick a shape pairing and its hand timing and direction.</p>
-        </div>
+        <h3 id="shape-picker-title">Sequence</h3>
         <PanelButton onclick={() => (pickerOpen = true)}
           >Browse sequences</PanelButton
         >
@@ -118,22 +123,19 @@
         <ElementChipRow
           selected={explorer.selectedMode}
           columns={3}
+          compact
           onpick={(mode) =>
             explorer.chooseHandRelationship(mode, buildMatrixSequence)}
         />
       </div>
 
       <div class="turn-picker">
-        <span class="control-label">Turns</span>
-        <SegmentedControl
-          options={[
-            { value: "0", label: "0 turns" },
-            { value: "1", label: "1 turn" },
-            { value: "2", label: "2 turns" },
-          ]}
-          value={String(turnBand)}
-          ariaLabel="Shape Matrix turns"
-          onchange={chooseTurnBand}
+        <MotionPathTurnControls
+          {leftTurn}
+          {rightTurn}
+          {labelMode}
+          onturn={chooseTurn}
+          onlabelmodechange={(value) => (labelMode = value)}
         />
       </div>
 
@@ -150,8 +152,8 @@
         {:else}
           <ShapeMatrixGrid
             data={matrixData}
-            rowAxis={matrixAxis}
-            colAxis={matrixAxis}
+            {rowAxis}
+            {colAxis}
             maxCellPx={108}
             selectedPair={explorer.selectedPair}
             onselect={(pair) =>
@@ -168,22 +170,30 @@
           <PanelButton onclick={explorer.retryMatrixSelection}
             >Try again</PanelButton
           >
-        {:else if !explorer.selectedPair}
-          <span>Pick a cell to compare its sequence.</span>
+        {:else}
+          <span
+            >{explorer.selectedPair
+              ? "Matrix previews use Arc."
+              : "Pick a cell. Matrix previews use Arc."}</span
+          >
         {/if}
       </div>
-      <p class="arc-reference">Matrix previews use Arc.</p>
     </section>
 
     <div class="comparison">
       <div class="motion-column">
-        <div class="word">
-          <TKAWordGlyph
-            word={explorer.sequence.word}
-            height={28}
-            darkMode
-            fitToParent
-          />
+        <div class="transport">
+          <span class="stage-label">Animation</span>
+          <PanelButton
+            disabled={!ready || playerFailed}
+            onclick={() => (explorer.playing = !explorer.playing)}
+          >
+            {explorer.playing ? "Pause" : "Play"}
+          </PanelButton>
+          <PanelButton
+            ariaPressed={explorer.guides}
+            onclick={explorer.toggleGuides}>Path lines</PanelButton
+          >
         </div>
         <div class="motion-stage" aria-label="Selected path animation">
           <div class="animation">
@@ -236,18 +246,6 @@
               />
             {/if}
           </div>
-        </div>
-        <div class="transport">
-          <PanelButton
-            disabled={!ready || playerFailed}
-            onclick={() => (explorer.playing = !explorer.playing)}
-          >
-            {explorer.playing ? "Pause" : "Play"}
-          </PanelButton>
-          <PanelButton
-            ariaPressed={explorer.guides}
-            onclick={explorer.toggleGuides}>Path lines</PanelButton
-          >
         </div>
       </div>
 
@@ -316,60 +314,57 @@
     container-type: inline-size;
     min-width: 0;
   }
-  .shape-picker {
+  .explorer-workspace,
+  .shape-picker,
+  .comparison {
     display: grid;
-    gap: var(--spacing-md, 16px);
-    margin-bottom: var(--spacing-xl, 32px);
-  }
-  .explorer-workspace {
-    display: grid;
-    gap: var(--spacing-xl, 32px);
     align-items: start;
+    gap: var(--spacing-lg, 24px);
+    min-width: 0;
   }
-  .picker-heading {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: end;
-    justify-content: space-between;
+  .shape-picker {
     gap: var(--spacing-sm, 8px);
   }
+  .picker-heading,
+  .transport {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
+    min-height: 44px;
+  }
+  .picker-heading {
+    justify-content: space-between;
+  }
   .picker-heading h3,
-  .picker-heading p {
+  .stage-label {
     margin: 0;
-  }
-  .picker-heading h3 {
     color: var(--theme-text);
-    font-size: var(--font-size-lg, 18px);
+    font-size: var(--font-size-min, 14px);
+    font-weight: 650;
   }
-  .picker-heading p,
-  .comparison-note,
-  .scope-note {
-    color: var(--theme-text-muted);
-    font-size: var(--font-size-sm, 14px);
-    line-height: 1.6;
+  .stage-label {
+    margin-right: auto;
   }
-  .picker-heading p {
-    margin-top: var(--spacing-xs, 4px);
-  }
-  .relationship-picker {
-    display: grid;
-    gap: var(--spacing-xs, 4px);
-  }
+  .relationship-picker,
   .turn-picker {
     display: grid;
     gap: var(--spacing-xs, 4px);
-    max-width: 22rem;
+    min-width: 0;
+  }
+  .turn-picker {
+    margin-block: var(--spacing-xs, 4px);
+    container-type: inline-size;
   }
   .control-label {
     color: var(--theme-text-muted);
     font-size: var(--font-size-sm, 14px);
   }
   .matrix-stage {
-    height: min(70cqw, 34rem);
-    min-height: 18rem;
+    aspect-ratio: 1;
+    min-width: 0;
     overflow: hidden;
     border: 1px solid var(--theme-stroke);
-    border-radius: 14px;
+    border-radius: 12px;
     background: var(--theme-panel-bg);
   }
   .matrix-status {
@@ -394,29 +389,19 @@
     flex-wrap: wrap;
     align-items: center;
     gap: var(--spacing-sm, 8px);
-    min-height: 44px;
-    color: var(--theme-text-muted);
-    font-size: var(--font-size-sm, 14px);
-  }
-  .arc-reference {
-    margin: 0;
+    min-height: 2.8em;
     color: var(--theme-text-muted);
     font-size: var(--font-size-compact, 12px);
-  }
-  .comparison {
-    display: grid;
-    gap: var(--spacing-lg, 24px);
-    align-items: center;
+    line-height: 1.4;
   }
   .motion-column,
   .path-column {
     min-width: 0;
+    width: 100%;
   }
-  .word {
-    display: flex;
-    justify-content: center;
-    height: 32px;
-    margin-bottom: var(--spacing-sm, 8px);
+  .motion-column {
+    max-width: 580px;
+    margin-inline: auto;
   }
   .animation {
     position: relative;
@@ -424,11 +409,9 @@
   }
   .motion-stage {
     width: 100%;
-    max-width: 540px;
-    margin-inline: auto;
   }
   .sequence-rail {
-    height: clamp(4.25rem, 13cqw, 6.5rem);
+    height: clamp(4.25rem, 7cqw, 6rem);
     min-width: 0;
     margin-top: var(--spacing-xs, 4px);
     overflow: hidden;
@@ -445,36 +428,50 @@
     color: var(--theme-text-muted);
   }
   .transport {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--spacing-sm, 8px);
-    margin-top: var(--spacing-sm, 8px);
+    margin-bottom: var(--spacing-sm, 8px);
+  }
+  .path-column :global(.path-header) {
+    align-items: center;
     min-height: 44px;
+    margin-bottom: var(--spacing-sm, 8px);
+  }
+  .path-column :global(.rt-section-label) {
+    font-size: var(--font-size-min, 14px);
+    font-weight: 650;
+    flex-shrink: 0;
+  }
+  .path-column :global(.path-shape-grid) {
+    margin-top: 0;
   }
   .trace-choice {
-    display: grid;
-    gap: var(--spacing-xs, 4px);
-    max-width: 320px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm, 8px);
     margin-top: var(--spacing-md, 16px);
   }
+  .trace-choice :global(.segmented-control) {
+    flex: 1;
+  }
+  .comparison-note,
+  .scope-note {
+    color: var(--theme-text-muted);
+    font-size: var(--font-size-sm, 14px);
+    line-height: 1.6;
+  }
   .comparison-note {
-    min-height: 3.2em;
-    margin-bottom: 0;
+    margin-block: var(--spacing-sm, 8px) 0;
   }
   .scope-note {
-    margin-block: var(--spacing-lg, 24px);
+    margin-block: var(--spacing-lg, 24px) 0;
   }
-  @container (min-width: 680px) {
-    .comparison {
-      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-    }
+  @container (min-width: 640px) {
     .shape-picker {
-      grid-template-columns: minmax(15rem, 0.45fr) minmax(0, 1fr);
-      align-items: start;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      column-gap: var(--spacing-lg, 24px);
     }
     .picker-heading {
-      grid-column: 1 / -1;
+      grid-column: 1;
+      grid-row: 1;
     }
     .relationship-picker {
       grid-column: 1;
@@ -486,52 +483,32 @@
     }
     .matrix-stage {
       grid-column: 2;
-      grid-row: 2 / span 2;
-      height: min(46cqw, 34rem);
+      grid-row: 1 / span 3;
     }
-    .picker-feedback,
-    .arc-reference {
-      grid-column: 1 / -1;
-    }
-  }
-  @container (min-width: 1000px) {
-    .explorer-workspace {
-      display: grid;
-      grid-template-columns: minmax(22rem, 26rem) minmax(0, 1fr);
-    }
-    .shape-picker {
-      grid-column: 1;
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      margin: 0;
-    }
-    .picker-heading,
-    .picker-feedback,
-    .arc-reference,
-    .relationship-picker,
-    .turn-picker,
-    .matrix-stage {
-      grid-column: auto;
-      grid-row: auto;
-    }
-    .relationship-picker {
-      position: static;
-    }
-    .matrix-stage {
-      height: min(25cqw, 25rem);
-      min-height: 20rem;
+    .picker-feedback {
+      grid-column: 2;
     }
     .comparison {
-      grid-column: 2;
-      grid-row: 1;
-    }
-    .scope-note {
-      grid-column: auto;
+      grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
     }
   }
-  @media (prefers-reduced-motion: reduce) {
+  @container (min-width: 1100px) {
+    .explorer-workspace {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.4fr) minmax(0, 1fr);
+    }
+    .comparison {
+      display: contents;
+    }
+    .shape-picker {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm, 8px);
+    }
+    .shape-picker > * {
+      width: 100%;
+    }
     .matrix-stage {
-      scroll-behavior: auto;
+      flex: none;
     }
   }
 </style>
