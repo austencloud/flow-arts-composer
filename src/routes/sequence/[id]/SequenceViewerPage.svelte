@@ -564,7 +564,7 @@
       if (resolvedSequence) resolvedShortCode = id;
 
       if (!resolvedSequence) {
-        resolvedSequence = await loadByIdentifier(id);
+        resolvedSequence = await loadByIdentifier(id, { wordFallback: false });
         if (routeLoad.isStale(run)) return;
       }
 
@@ -607,6 +607,7 @@
       // Apply URL prop preferences (from QR codes with embedded prop info)
       applyUrlPropPreferences();
       isLoading = false;
+      if (!resolvedShortCode) void canonicalizeAddress(hydrated, run);
     } catch (err) {
       if (routeLoad.isStale(run)) return;
       console.error("[SequenceRoute] Failed to load sequence:", err);
@@ -630,6 +631,31 @@
       return;
     }
     void goto("/browse/gallery");
+  }
+
+  /**
+   * Rewrite a document-id address to the sequence's short code.
+   *
+   * The route accepts a raw document id so library, sync-room and legacy links
+   * keep working, but the legacy imports use the word itself as their id, so
+   * `/sequence/DCKΨ-` reads as if typing a word were the way in. It never is:
+   * two variations of one word share nothing but the word, and only the code
+   * names one of them. The lookup is a read of the existing code (never a
+   * mint), it runs after the sequence is already on screen, and a sequence
+   * without a code simply keeps the address it arrived on.
+   */
+  async function canonicalizeAddress(seq: SequenceData, run: number) {
+    let code: string | null = null;
+    try {
+      code = await getShortCodeManager().findExistingCodeForSequence(seq);
+    } catch {
+      return;
+    }
+    if (!code || routeLoad.isStale(run)) return;
+    resolvedShortCode = code;
+    mutateCurrentUrl((url) => {
+      url.pathname = `/sequence/${code}`;
+    });
   }
 
   function updateUrlParam(key: string, value: string) {
