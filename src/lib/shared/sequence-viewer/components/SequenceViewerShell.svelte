@@ -18,6 +18,8 @@
   Do NOT rebuild scan-specific header/body variants — extend this shell.
 -->
 <script lang="ts">
+  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
   import { onDestroy, onMount, untrack, type Snippet } from "svelte";
   import { createViewerStudioSurfaces } from "../state/viewer-studio-surfaces.svelte";
   import { setViewerStudioSurfaces } from "../context/viewer-studio-surfaces-context";
@@ -1499,6 +1501,8 @@
       ? persistCardPresentation
       : undefined}
     onSendInTka={() => share.sendToInbox()}
+    needsAccountForFiles={!authState.isFullAccount}
+    onRequestAccount={() => authDrawerState.show("signup", "export")}
     onOpenPostStudio={canAccessPostStudio()
       ? () => layout.selectViewerMode("post-studio")
       : undefined}

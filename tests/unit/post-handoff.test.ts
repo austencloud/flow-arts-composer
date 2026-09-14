@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const detectPlatform = vi.hoisted(() => vi.fn(() => "desktop"));
 const supportsNativeFileShare = vi.hoisted(() => vi.fn(() => true));
@@ -15,8 +15,12 @@ vi.mock("$lib/shared/foundation/services/file-downloader", async () => {
   return { ...actual, supportsNativeFileShare, canNativeShareFile };
 });
 
-const { buildArtifactFilename, copyPreparedLink, resolveDestinations } =
-  await import("$lib/shared/share/services/post-handoff");
+const {
+  buildArtifactFilename,
+  copyLink,
+  copyPreparedLink,
+  resolveDestinations,
+} = await import("$lib/shared/share/services/post-handoff");
 
 function pngBlob(): Blob {
   return new Blob(["x"], { type: "image/png" });
@@ -292,5 +296,55 @@ describe("prepared link clipboard handoff", () => {
       message: "Couldn't copy link",
     });
     expect(writeText).not.toHaveBeenCalled();
+  });
+});
+
+describe("direct link copy", () => {
+  const originalExecCommand = document.execCommand;
+  const mockedCreateElement = document.createElement;
+
+  beforeEach(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    document.execCommand = originalExecCommand;
+    // The global setup stubs createElement with plain objects; the selection
+    // fallback appends a real textarea, so restore jsdom's own for this file.
+    document.createElement =
+      Object.getPrototypeOf(document).createElement.bind(document);
+  });
+
+  afterEach(() => {
+    document.createElement = mockedCreateElement;
+  });
+
+  it("copies through a selection when the Clipboard API refuses", async () => {
+    const writeText = vi.fn(async () => {
+      throw new DOMException("Write permission denied.", "NotAllowedError");
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    let selected = "";
+    document.execCommand = vi.fn(() => {
+      selected = document.querySelector("textarea")?.value ?? "";
+      return true;
+    });
+
+    await expect(
+      copyLink("https://tkaflowarts.com/sequence/ABCD")
+    ).resolves.toEqual({ status: "done", message: "Link copied" });
+    expect(writeText).toHaveBeenCalledOnce();
+    expect(selected).toBe("https://tkaflowarts.com/sequence/ABCD");
+    expect(document.querySelector("textarea")).toBeNull();
+  });
+
+  it("reports failure honestly when every clipboard path is closed", async () => {
+    document.execCommand = vi.fn(() => false);
+    await expect(
+      copyLink("https://tkaflowarts.com/sequence/ABCD")
+    ).resolves.toEqual({ status: "failed", message: "Couldn't copy link" });
   });
 });
