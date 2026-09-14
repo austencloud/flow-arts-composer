@@ -2718,6 +2718,12 @@
     .stage.showing-media {
       height: clamp(12rem, 38dvh, 26rem);
     }
+    .sheet-scroll.video-preparation.has-preview .preview-column {
+      align-self: stretch;
+    }
+    .sheet-scroll.video-preparation.has-preview .stage {
+      flex: 1 0 auto;
+    }
     .share-dock {
       display: flex;
       align-items: center;
