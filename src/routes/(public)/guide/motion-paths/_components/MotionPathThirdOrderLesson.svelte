@@ -222,6 +222,7 @@
           suppress2DOverlays
           visibilityManagerOverride={lessonVisibility}
           effectsConfigState={lessonEffects}
+          tipEffectMap={{}}
           fillContainer
         />
       </div>
@@ -254,6 +255,7 @@
             suppress2DOverlays
             visibilityManagerOverride={lessonVisibility}
             effectsConfigState={lessonEffects}
+            tipEffectMap={{}}
             fillContainer
           />
         </div>

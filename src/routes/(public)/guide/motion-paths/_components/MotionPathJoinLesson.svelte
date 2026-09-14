@@ -81,6 +81,7 @@
           fill
           interactive
           hoverHint="none"
+          disableContextMenu
           beatIndicators={false}
           hideTkaGlyph
           leftPropType={PropType.STAFF}
@@ -109,8 +110,9 @@
           showControls={false}
           chrome="minimal"
           fill
-          interactive
+          interactive={false}
           hoverHint="none"
+          disableContextMenu
           beatIndicators={false}
           hideTkaGlyph
           leftPropType={PropType.STAFF}

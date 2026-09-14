@@ -93,6 +93,7 @@
       rightPropType={PropType.STAFF}
       visibilityManagerOverride={playbackScope.visibility}
       effectsConfigState={playbackScope.effects}
+      tipEffectMap={{}}
       trailSettingsOverride={trails}
       autoPlay={false}
       externalPlaying={playing}
@@ -106,6 +107,7 @@
       showControls={false}
       backgroundAlpha={0}
       disableContextMenu
+      hoverHint="none"
       beatIndicators={false}
       fill
     />
