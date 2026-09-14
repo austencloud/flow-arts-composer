@@ -924,6 +924,10 @@
         toolPanelElement,
         buttonPanelElement,
         panelState,
+        // Playback owns the workspace while the tools collapse. Keeping their
+        // viewport metrics current during that motion invalidates every overlay
+        // for a panel the user cannot see.
+        isToolPanelVisible: () => !panelState.workspacePlayback,
       });
     }
   });

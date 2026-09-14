@@ -45,7 +45,7 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy, onMount, untrack } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import { flexPresence, growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import ResizeHandle from "./ResizeHandle.svelte";
@@ -88,6 +88,9 @@
   let activeDragIndex = $state<number | null>(null);
   let manuallySizedPanels = $state<Set<string | number>>(new Set());
   let handleValues = $state<number[]>([]);
+  const hasResizeHandles = $derived(
+    !flattened && panels.slice(0, -1).some((panel) => panel.resizable !== false)
+  );
 
   // Initialize sizes from panel defaults - only when panel count changes
   // Use untrack to prevent reactive cascade when sizes is bindable
@@ -100,8 +103,11 @@
     });
   });
 
-  onMount(() => {
-    if (!containerRef) return;
+  $effect(() => {
+    if (!containerRef || !hasResizeHandles) {
+      handleValues = [];
+      return;
+    }
 
     let scheduledFrame = 0;
     const scheduleRefresh = () => {
@@ -116,7 +122,9 @@
       if (!containerRef) return;
       resizeObserver.disconnect();
       resizeObserver.observe(containerRef);
-      for (const panel of containerRef.querySelectorAll(":scope > .panel-wrapper")) {
+      for (const panel of containerRef.querySelectorAll(
+        ":scope > .panel-wrapper"
+      )) {
         resizeObserver.observe(panel);
       }
       scheduleRefresh();
@@ -136,6 +144,7 @@
     void panels;
     void direction;
     void gap;
+    if (!hasResizeHandles) return;
 
     const firstFrame = requestAnimationFrame(refreshHandleValues);
     const settledTimer = setTimeout(refreshHandleValues, DURATION.emphasis);
@@ -292,9 +301,13 @@
   }
 
   function refreshHandleValues(): void {
-    handleValues = panels.slice(0, -1).map((_, index) =>
-      measureHandleValue(index)
-    );
+    if (!hasResizeHandles) {
+      handleValues = [];
+      return;
+    }
+    handleValues = panels
+      .slice(0, -1)
+      .map((_, index) => measureHandleValue(index));
   }
 
   // A keyed panel keeps its captured definition while its outro runs. Reading
@@ -339,8 +352,9 @@
       containerRef.querySelectorAll<HTMLElement>(":scope > .panel-wrapper")
     );
     return (
-      wrappers.find((wrapper) => (wrapper.dataset.panelId ?? "") === String(key)) ??
-      null
+      wrappers.find(
+        (wrapper) => (wrapper.dataset.panelId ?? "") === String(key)
+      ) ?? null
     );
   }
 
@@ -429,7 +443,8 @@
       element.style.flexBasis = basis;
     };
     const onTransitionEnd = (event: TransitionEvent) => {
-      if (event.target !== element || event.propertyName !== "flex-basis") return;
+      if (event.target !== element || event.propertyName !== "flex-basis")
+        return;
       settle();
     };
     const safety = setTimeout(settle, DURATION.emphasis + DURATION.instant);

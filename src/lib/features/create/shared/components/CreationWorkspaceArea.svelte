@@ -54,6 +54,8 @@
   let readyPlayback = $state.raw<typeof playback>(null);
   let retainedPlayback = $state.raw<typeof playback>(null);
   let playbackStep = $state(0);
+  const loadWorkspacePlayback = () =>
+    import("../workspace-panel/components/WorkspacePlayback.svelte");
 
   $effect(() => {
     if (playback) retainedPlayback = playback;
@@ -118,6 +120,10 @@
 
 <svelte:window onkeydown={stopOnEscape} />
 
+<!-- Warm the player code while the editable workspace is stable. This leaves
+     its engine unmounted until Play, so hidden playback cannot consume frames. -->
+<LazyMount loader={loadWorkspacePlayback} prefetch />
+
 {#snippet card()}
   {#key navigationState.activeTab}
     <WorkspacePanel
@@ -140,8 +146,7 @@
     {#key retainedPlayback}
       {@const session = retainedPlayback}
       <LazyMount
-        loader={() =>
-          import("../workspace-panel/components/WorkspacePlayback.svelte")}
+        loader={loadWorkspacePlayback}
         active
         props={{
           sequence: session.sequence,

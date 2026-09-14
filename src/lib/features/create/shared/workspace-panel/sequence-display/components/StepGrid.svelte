@@ -97,6 +97,7 @@
     onAuditionCompleted,
     onAuditionDismiss,
     posePicker = false,
+    observeScroll = true,
   } = $props<{
     steps: ReadonlyArray<StepData> | StepData[];
     startPosition?: StartPositionData | StepData | null;
@@ -164,6 +165,8 @@
      * so it still reads as the current start.
      */
     posePicker?: boolean;
+    /** The hidden editor does not need to recompute overflow while playback owns the stage. */
+    observeScroll?: boolean;
   }>();
 
   // State management
@@ -688,16 +691,22 @@
   $effect(() => {
     if (!scrollContainerRef) return;
 
+    if (!observeScroll) {
+      scrollState.setScrollContainer(null);
+      return;
+    }
+
     scrollState.setScrollContainer(scrollContainerRef);
 
     const scrollResizeObserver = new ResizeObserver(() => {
-      scrollState.checkScrollbar();
+      scrollState.scheduleScrollbarCheck();
     });
 
     scrollResizeObserver.observe(scrollContainerRef);
 
     return () => {
       scrollResizeObserver.disconnect();
+      scrollState.setScrollContainer(null);
     };
   });
 
