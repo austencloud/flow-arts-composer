@@ -232,6 +232,7 @@
           steps={sequence.steps}
           startPosition={sequence.startPosition ?? sequence.startingPosition}
           bpm={120}
+          draftKey={`slice:${sequence.id}`}
           onSave={handleSave}
           onClose={() => {}}
         />

@@ -43,6 +43,7 @@
   import type { OrchestratorContext } from "$lib/shared/sequence-viewer/domain/viewer-orchestrator-context";
   import SequenceViewerShell from "$lib/shared/sequence-viewer/components/SequenceViewerShell.svelte";
   import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+  import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
   import { initialViewerModeForUrl } from "$lib/shared/sequence-viewer/services/viewer-modes";
 
   import {
@@ -170,6 +171,14 @@
   let sequence = $state<SequenceData | null>(null);
   /** The route id, when it resolved as a short code. Share reuses it. */
   let resolvedShortCode = $state<string | null>(null);
+  // Send to a friend flips inboxState.isOpen, but the drawer it expects lives
+  // in MainApplication, which this route never mounts. Mount it here on first
+  // open (and keep it) so a signed-in viewer's send actually shows a picker,
+  // without paying the conversation subscription on every viewer visit.
+  let inboxHostMounted = $state(false);
+  $effect(() => {
+    if (inboxState.isOpen) inboxHostMounted = true;
+  });
   let isLoading = $state(true);
   let loadError = $state<string | null>(null);
   let handoffData = $state<SequenceRouteHandoff | null>(null);
@@ -776,6 +785,19 @@
       reason={authDrawerState.reason}
       onClose={() => authDrawerState.hide()}
     />
+  {/await}
+{/if}
+
+<!-- Same gap for the signed-in half of that flow: "Send to a friend" opens the
+     inbox picker, which MainApplication mounts and this route does not. The
+     subscription provider comes with it — the picker lists
+     inboxState.conversations, and only the provider fills them. -->
+{#if inboxHostMounted}
+  {#await import("$lib/shared/inbox/components/InboxSubscriptionProvider.svelte") then mod}
+    <mod.default />
+  {/await}
+  {#await import("$lib/shared/inbox/components/InboxDrawer.svelte") then mod}
+    <mod.default />
   {/await}
 {/if}
 

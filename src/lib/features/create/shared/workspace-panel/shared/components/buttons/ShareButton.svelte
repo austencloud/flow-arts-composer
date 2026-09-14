@@ -664,5 +664,7 @@
   availableArtifacts={["card"]}
   canCreateLink={hasFullAccount}
   onSendInTka={hasFullAccount ? sendSequenceToInbox : undefined}
+  needsAccountForFiles={!hasFullAccount}
+  onRequestAccount={() => authDrawerState.show("signup", "share-sequence")}
   onClose={() => (postSheetOpen = false)}
 />

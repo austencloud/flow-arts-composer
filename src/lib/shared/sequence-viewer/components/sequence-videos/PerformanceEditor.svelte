@@ -32,6 +32,7 @@
       steps={sequence.steps}
       startPosition={sequence.startPosition ?? sequence.startingPosition}
       initialStepMap={workspace.mappingVideo.beatMap}
+      draftKey={`${sequence.id}:${workspace.mappingVideo.id}`}
       {bpm}
       onSave={workspace.saveStepMap}
       onClose={workspace.returnToBrowsing}
