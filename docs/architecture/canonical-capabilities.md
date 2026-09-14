@@ -42,6 +42,12 @@ colors. New color-bearing annotations consume that resolved pair rather than
 introducing baked blue/red or purple. Explicit artwork palettes retain their
 existing override semantics.
 
+Compact turn/ratio pickers reuse
+`shared/shape-matrix/app/components/TurnNotationControls.svelte`. Searches:
+turn notation, ratios picker, left turn, right turn. It composes the canonical
+matrix turn labels and `ShapeMatrixValueScroller`; callers provide their turn
+palette, colors, and selection callbacks.
+
 Tunnel performer colors extend `sequence-viewer/tunnel/tunnel-prop-colors.ts`.
 Searches: performer colors, shared hue, custom prop pair, layer colors.
 `TunnelViewController` maps stable performer IDs to rendered stage order.

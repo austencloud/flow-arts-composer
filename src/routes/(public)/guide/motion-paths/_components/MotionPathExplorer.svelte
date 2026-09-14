@@ -7,7 +7,7 @@
   import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import MotionPathTurnControls from "./MotionPathTurnControls.svelte";
+  import TurnNotationControls from "$lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
   import ShapeMatrixGrid from "$lib/shared/shape-matrix/components/ShapeMatrixGrid.svelte";
   import ElementChipRow from "$lib/shared/shape-matrix/components/ElementChipRow.svelte";
   import { applyFilter } from "$lib/shared/shape-matrix/domain/filter-flower-axis";
@@ -133,7 +133,7 @@
         </div>
 
         <div class="turn-picker">
-          <MotionPathTurnControls
+          <TurnNotationControls
             {leftTurn}
             {rightTurn}
             {labelMode}
