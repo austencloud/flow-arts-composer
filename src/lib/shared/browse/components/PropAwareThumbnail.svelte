@@ -36,6 +36,7 @@
   import {
     buildGalleryRenderInput,
     deriveThumbnailSequenceName,
+    galleryQrPolicy,
     galleryStepCount,
   } from "$lib/shared/browse/services/gallery-render-input";
   import { repairThumbnailCaches } from "$lib/shared/browse/services/thumbnail-repair";
@@ -392,10 +393,14 @@
         skipCache: shouldSkipCache,
         priority,
         signal: requestController.signal,
-        // Scrolling gallery cards may upgrade from a ready prepared SVG, but
-        // they must never warm cells or allocate a short code on a cache miss.
-        qrPolicy:
-          variant === "gallery" && !cardMode ? "prepared-only" : undefined,
+        // A signed-in reader sees the preview first, then the separate
+        // background queue prepares the exact scan-ready QR. Guests only reuse
+        // public prepared artwork, so scrolling can never allocate a code.
+        qrPolicy: galleryQrPolicy({
+          variant,
+          cardMode,
+          isAuthenticated: authState.isAuthenticated,
+        }),
         onPreview: (preview) => {
           if (requestIsCurrent() && preview.url) {
             displayedKey = preview.key;

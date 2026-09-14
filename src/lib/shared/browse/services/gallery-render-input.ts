@@ -78,6 +78,23 @@ export interface BuildGalleryRenderInputParams {
 }
 
 /**
+ * Gallery cards may prepare a missing QR only for a signed-in reader. Guests
+ * can still draw public artwork that was prepared earlier, but never trigger
+ * scan-cell warming or short-code allocation while they scroll.
+ */
+export function galleryQrPolicy({
+  variant,
+  cardMode,
+  isAuthenticated,
+}: Pick<
+  BuildGalleryRenderInputParams,
+  "variant" | "cardMode" | "isAuthenticated"
+>): "background" | "prepared-only" | undefined {
+  if (variant !== "gallery" || cardMode) return undefined;
+  return isAuthenticated ? "background" : "prepared-only";
+}
+
+/**
  * Beat count used for QR gating (>1 → a spare cell exists) and start-position
  * layout selection. Mirrors PropAwareThumbnail: steps length wins over the
  * stored sequenceLength; empty steps (Community sequences) fall through to it.

@@ -3,6 +3,7 @@ import {
   buildGalleryRenderInput,
   buildGalleryVisibility,
   deriveThumbnailSequenceName,
+  galleryQrPolicy,
   type GalleryCompositionSource,
 } from "$lib/shared/browse/services/gallery-render-input";
 import type { InfoCellChoice } from "$lib/shared/sequence-viewer/services/info-cell-display";
@@ -137,6 +138,38 @@ describe("buildGalleryVisibility — per-length QR/mandala choice", () => {
     } as any);
     expect(v?.showQRCode).toBe(false);
     expect(v?.showMandala).toBe(true);
+  });
+});
+
+describe("galleryQrPolicy", () => {
+  it("prepares a missing gallery QR in the background for signed-in readers", () => {
+    expect(
+      galleryQrPolicy({
+        variant: "gallery",
+        cardMode: false,
+        isAuthenticated: true,
+      })
+    ).toBe("background");
+  });
+
+  it("lets a guest reuse public preparation without starting generation", () => {
+    expect(
+      galleryQrPolicy({
+        variant: "gallery",
+        cardMode: false,
+        isAuthenticated: false,
+      })
+    ).toBe("prepared-only");
+  });
+
+  it("does not apply gallery QR scheduling to physical cards", () => {
+    expect(
+      galleryQrPolicy({
+        variant: "gallery",
+        cardMode: true,
+        isAuthenticated: true,
+      })
+    ).toBeUndefined();
   });
 });
 
