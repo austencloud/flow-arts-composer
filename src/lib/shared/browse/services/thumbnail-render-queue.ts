@@ -32,11 +32,30 @@ export interface ThumbnailQueueOptions {
 
 interface QueuedTask<T> {
   id: string;
+  /**
+   * Per-task identity. IDs deduplicate concurrent requests for one thumbnail,
+   * but they cannot own bookkeeping: a cancelled task keeps running until its
+   * work observes the abort, and a returning card may already have started a
+   * fresh task under the same ID by then. Slot, controller and consumer
+   * accounting are therefore keyed by token so the older task's cleanup can
+   * only ever remove its own state.
+   */
+  token: number;
   execute: (signal: AbortSignal, reportActivity: () => void) => Promise<T>;
   resolve: (value: T) => void;
   reject: (error: Error) => void;
   priority: number;
   exclusive: boolean;
+}
+
+interface ActiveTask {
+  id: string;
+  controller: AbortController;
+}
+
+interface PendingTask {
+  token: number;
+  promise: Promise<unknown>;
 }
 
 // A QR-bearing thumbnail also warms its canonical scan cells before composing.
@@ -81,11 +100,10 @@ function cancellationError(signal?: AbortSignal): Error {
 
 export class ThumbnailRenderQueue {
   private queue: QueuedTask<unknown>[] = [];
-  private activeCount = 0;
-  private activeIds = new Set<string>();
-  private activeControllers = new Map<string, AbortController>();
-  private pendingPromises = new Map<string, Promise<unknown>>();
-  private consumerCounts = new Map<string, number>();
+  private activeTasks = new Map<number, ActiveTask>();
+  private pendingTasks = new Map<string, PendingTask>();
+  private consumerCounts = new Map<number, number>();
+  private nextToken = 0;
   private maxConcurrent = DEFAULT_MAX_CONCURRENT;
   private activeExclusive = false;
 
@@ -94,20 +112,21 @@ export class ThumbnailRenderQueue {
     execute: (signal: AbortSignal, reportActivity: () => void) => Promise<T>,
     options: ThumbnailQueueOptions = {}
   ): Promise<T> {
-    const {
-      priority = Infinity,
-      consumerSignal,
-      exclusive = false,
-    } = options;
+    const { priority = Infinity, consumerSignal, exclusive = false } = options;
     if (consumerSignal?.aborted) {
       return Promise.reject(cancellationError(consumerSignal));
     }
 
-    let corePromise = this.pendingPromises.get(id) as Promise<T> | undefined;
+    const pending = this.pendingTasks.get(id);
+    let corePromise = pending?.promise as Promise<T> | undefined;
+    let token = pending?.token ?? 0;
     if (!corePromise) {
+      token = ++this.nextToken;
+      const taskToken = token;
       corePromise = new Promise<T>((resolve, reject) => {
         const task: QueuedTask<T> = {
           id,
+          token: taskToken,
           execute,
           resolve,
           reject,
@@ -126,59 +145,90 @@ export class ThumbnailRenderQueue {
         this.processQueue();
       });
 
-      this.pendingPromises.set(id, corePromise);
+      this.pendingTasks.set(id, { token: taskToken, promise: corePromise });
 
       // Clean up on either outcome without creating an ignored rejected promise.
       // finally() returns a child promise that preserves the original rejection;
       // callers handled `corePromise`, but that unobserved child surfaced globally.
-      const forgetPending = () => {
-        if (this.pendingPromises.get(id) === corePromise) {
-          this.pendingPromises.delete(id);
-        }
-      };
+      const forgetPending = () => this.forgetPendingTask(id, taskToken);
       void corePromise.then(forgetPending, forgetPending);
     }
 
-    return this.attachConsumer(id, corePromise, consumerSignal);
+    return this.attachConsumer(token, corePromise, consumerSignal);
   }
 
   cancel(id: string): void {
-    this.consumerCounts.delete(id);
-    this.cancelCoreTask(id);
+    // Cancel every task still registered under this ID: the queued one, plus an
+    // active task that was already released but has not observed its abort yet.
+    for (const token of this.tokensFor(id)) {
+      this.consumerCounts.delete(token);
+      this.cancelTask(token);
+    }
   }
 
   cancelAll(): void {
     this.consumerCounts.clear();
     const queuedTasks = this.queue.splice(0);
     for (const task of queuedTasks) {
-      this.pendingPromises.delete(task.id);
+      this.forgetPendingTask(task.id, task.token);
       task.reject(new DOMException("Cancelled", "AbortError"));
     }
 
     // Abort all actively running renders so they bail out between beats
-    for (const controller of this.activeControllers.values()) {
-      controller.abort();
+    for (const [token, active] of this.activeTasks) {
+      this.forgetPendingTask(active.id, token);
+      active.controller.abort();
     }
   }
 
-  private cancelCoreTask(id: string): void {
-    const index = this.queue.findIndex((t) => t.id === id);
+  /** Tokens of every task currently registered under one thumbnail ID. */
+  private tokensFor(id: string): number[] {
+    const tokens = this.queue
+      .filter((task) => task.id === id)
+      .map((task) => task.token);
+    for (const [token, active] of this.activeTasks) {
+      if (active.id === id) tokens.push(token);
+    }
+    return tokens;
+  }
+
+  /** Drop the dedup entry only when it still belongs to this task. */
+  private forgetPendingTask(id: string, token: number): void {
+    if (this.pendingTasks.get(id)?.token === token) {
+      this.pendingTasks.delete(id);
+    }
+  }
+
+  private cancelTask(token: number): void {
+    const index = this.queue.findIndex((task) => task.token === token);
     if (index !== -1) {
       const [task] = this.queue.splice(index, 1);
-      this.pendingPromises.delete(id);
-      task?.reject(new DOMException("Cancelled", "AbortError"));
+      if (task) {
+        this.forgetPendingTask(task.id, task.token);
+        task.reject(new DOMException("Cancelled", "AbortError"));
+      }
       return;
     }
 
-    this.activeControllers.get(id)?.abort();
+    const active = this.activeTasks.get(token);
+    if (!active) return;
+
+    // Release the ID before aborting. An active render cannot always observe the
+    // abort immediately (the renderer awaits its document read first), and while
+    // it lingers a card that scrolls back would otherwise deduplicate onto this
+    // dying task and inherit its AbortError — or its inactivity deadline. The
+    // task keeps its slot and its own bookkeeping until it settles; it simply
+    // stops being the task a new request for this thumbnail joins.
+    this.forgetPendingTask(active.id, token);
+    active.controller.abort();
   }
 
   private attachConsumer<T>(
-    id: string,
+    token: number,
     corePromise: Promise<T>,
     signal?: AbortSignal
   ): Promise<T> {
-    this.consumerCounts.set(id, (this.consumerCounts.get(id) ?? 0) + 1);
+    this.consumerCounts.set(token, (this.consumerCounts.get(token) ?? 0) + 1);
 
     return new Promise<T>((resolve, reject) => {
       let settled = false;
@@ -186,7 +236,7 @@ export class ThumbnailRenderQueue {
         if (settled) return false;
         settled = true;
         signal?.removeEventListener("abort", onAbort);
-        this.releaseConsumer(id, cancelCoreIfLast);
+        this.releaseConsumer(token, cancelCoreIfLast);
         return true;
       };
       const onAbort = () => {
@@ -205,23 +255,27 @@ export class ThumbnailRenderQueue {
     });
   }
 
-  private releaseConsumer(id: string, cancelCoreIfLast: boolean): void {
-    const count = this.consumerCounts.get(id);
+  private releaseConsumer(token: number, cancelCoreIfLast: boolean): void {
+    const count = this.consumerCounts.get(token);
     if (count === undefined) return;
     if (count > 1) {
-      this.consumerCounts.set(id, count - 1);
+      this.consumerCounts.set(token, count - 1);
       return;
     }
 
-    this.consumerCounts.delete(id);
-    if (cancelCoreIfLast) this.cancelCoreTask(id);
+    this.consumerCounts.delete(token);
+    if (cancelCoreIfLast) this.cancelTask(token);
   }
 
   getStats(): QueueStats {
+    const activeIds = new Set<string>();
+    for (const active of this.activeTasks.values()) {
+      activeIds.add(active.id);
+    }
     return {
       queued: this.queue.length,
-      active: this.activeCount,
-      activeIds: Array.from(this.activeIds),
+      active: this.activeTasks.size,
+      activeIds: Array.from(activeIds),
     };
   }
 
@@ -233,7 +287,7 @@ export class ThumbnailRenderQueue {
 
   private async processQueue(): Promise<void> {
     // Don't exceed max concurrent
-    if (this.activeCount >= this.maxConcurrent || this.activeExclusive) {
+    if (this.activeTasks.size >= this.maxConcurrent || this.activeExclusive) {
       return;
     }
 
@@ -241,7 +295,7 @@ export class ThumbnailRenderQueue {
     // run it alone. Later ordinary thumbnails cannot leapfrog it and recreate
     // the QR warm-up contention this queue is meant to prevent.
     const nextTask = this.queue[0];
-    if (nextTask?.exclusive && this.activeCount > 0) {
+    if (nextTask?.exclusive && this.activeTasks.size > 0) {
       return;
     }
 
@@ -250,12 +304,10 @@ export class ThumbnailRenderQueue {
       return;
     }
 
-    this.activeCount++;
     this.activeExclusive = task.exclusive;
-    this.activeIds.add(task.id);
 
     const controller = new AbortController();
-    this.activeControllers.set(task.id, controller);
+    this.activeTasks.set(task.token, { id: task.id, controller });
 
     // Fill the remaining capacity synchronously. This matters after an
     // exclusive task releases a backed-up queue: one completion should restore
@@ -296,10 +348,10 @@ export class ThumbnailRenderQueue {
     } finally {
       deadlineClosed = true;
       if (timeoutId !== undefined) clearTimeout(timeoutId);
-      this.activeCount--;
       if (task.exclusive) this.activeExclusive = false;
-      this.activeIds.delete(task.id);
-      this.activeControllers.delete(task.id);
+      // Token-keyed: a cancelled task that settles late cannot remove the slot
+      // or the controller of the retry now running under the same ID.
+      this.activeTasks.delete(task.token);
 
       // Process next item in queue
       this.processQueue();

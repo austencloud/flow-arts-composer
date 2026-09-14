@@ -1,0 +1,147 @@
+/**
+ * AUDIT (read-only): which handlers still execute when `dev` is false.
+ *
+ * Two things decide whether a `/test/**` or `/api/dev/**` endpoint is a
+ * production surface:
+ *
+ *  1. `svelte.config.js` routes.exclude does not list `/test/*`, so those
+ *     endpoints are compiled into the Cloudflare Worker.
+ *  2. `src/routes/test/+layout.ts` redirects away from `/test` when `!dev`,
+ *     but it is a `LayoutLoad` — layout loads do not run for standalone
+ *     `+server.ts` endpoints, so it guards pages only.
+ *
+ * That leaves the per-handler `dev` check as the only gate. These tests
+ * re-import each handler with `dev: false` and record which ones stop.
+ */
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+/** Re-import a handler module with `$app/environment` reporting production. */
+async function inProduction<T>(loader: () => Promise<T>): Promise<T> {
+  vi.resetModules();
+  vi.doMock("$app/environment", () => ({
+    dev: false,
+    browser: false,
+    building: false,
+    version: "audit",
+  }));
+  return loader();
+}
+
+beforeEach(() => {
+  vi.resetModules();
+});
+
+afterEach(() => {
+  vi.doUnmock("$app/environment");
+  vi.resetModules();
+});
+
+describe("dev guards that DO stop the handler in production", () => {
+  it("/api/dev/save-pictograph refuses before composing any path", async () => {
+    const { POST } = await inProduction(
+      () => import("../../src/routes/api/dev/save-pictograph/+server")
+    );
+    const response = await POST({
+      request: new Request("https://tkaflowarts.com/api/dev/save-pictograph", {
+        method: "POST",
+        body: JSON.stringify({
+          letter: "A",
+          variation: 1,
+          gridMode: "../../../../tmp/x",
+          base64: "",
+        }),
+      }),
+    } as never);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("/api/bake-clip refuses before touching the filesystem", async () => {
+    const { POST } = await inProduction(
+      () => import("../../src/routes/api/bake-clip/+server")
+    );
+    await expect(
+      POST({
+        request: new Request(
+          "https://tkaflowarts.com/api/bake-clip?effort=a&name=b.mp4",
+          {
+            method: "POST",
+            body: new Uint8Array(4),
+          }
+        ),
+        url: new URL(
+          "https://tkaflowarts.com/api/bake-clip?effort=a&name=b.mp4"
+        ),
+      } as never)
+    ).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+describe("/test/qft-page endpoints ship without a dev guard", () => {
+  it("still validates and answers a request when dev is false", async () => {
+    const { GET } = await inProduction(
+      () => import("../../src/routes/test/qft-page/img/[file]/+server")
+    );
+
+    // A dev-guarded sibling would refuse here. This one runs its own regex,
+    // which is what answers — so the handler is live in the Worker bundle.
+    await expect(
+      GET({ params: { file: "../../../etc/passwd" } } as never)
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("reaches its filesystem read for a well-formed name, and 404s", async () => {
+    const { GET } = await inProduction(
+      () => import("../../src/routes/test/qft-page/img/[file]/+server")
+    );
+
+    // 404 (not 403) means the handler executed and the archive simply is not
+    // on disk — the private archive is not deployed, which is what keeps this
+    // from being an exposure today rather than any check in the route.
+    await expect(
+      GET({ params: { file: "nosuchimage.gif" } } as never)
+    ).rejects.toMatchObject({
+      status: 404,
+    });
+  });
+
+  it("applies the same shape to the frame endpoint", async () => {
+    const { GET } = await inProduction(
+      () =>
+        import("../../src/routes/test/qft-page/frame/[stem]/[index]/+server")
+    );
+
+    await expect(
+      GET({ params: { stem: "../etc", index: "0" } } as never)
+    ).rejects.toMatchObject({ status: 400 });
+    await expect(
+      GET({ params: { stem: "nosuchstem", index: "0" } } as never)
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it("rejects every traversal shape its regex is meant to exclude", async () => {
+    const { GET } = await inProduction(
+      () => import("../../src/routes/test/qft-page/img/[file]/+server")
+    );
+
+    // The NUL case is written as a \u0000 source escape rather than a raw
+    // byte, so this file stays pure ASCII and survives every editor, diff and
+    // checkout unchanged. It is the classic truncation trick: a reader that
+    // stopped at the NUL would see ".gif"; the anchored regex sees the whole
+    // string and refuses it.
+    for (const name of [
+      "../secret.gif",
+      "a/../../x.gif",
+      "A.GIF",
+      "file.png",
+      "a.gif\u0000.txt",
+      "%2e%2e%2fx.gif",
+    ]) {
+      await expect(
+        GET({ params: { file: name } } as never)
+      ).rejects.toMatchObject({
+        status: 400,
+      });
+    }
+  });
+});

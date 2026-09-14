@@ -175,11 +175,17 @@ describe("signInWithGoogleCredential (One Tap / FedCM)", () => {
     upgradeRef.upgradeAnonymousWithGoogleCredential.mockResolvedValueOnce({
       status: "collision-signed-in",
       importable,
+      destinationUid: "collided-account",
     });
 
     await signInWithGoogleCredential("id-token-123");
 
-    expect(promptRef.promptAnonymousImport).toHaveBeenCalledWith(importable);
+    // The offer carries the account the collision signed into, taken from that
+    // auth result — not a later "who is signed in now?" lookup.
+    expect(promptRef.promptAnonymousImport).toHaveBeenCalledWith(
+      importable,
+      "collided-account"
+    );
     expect(h.signInWithCredential).not.toHaveBeenCalled();
   });
 
@@ -187,10 +193,14 @@ describe("signInWithGoogleCredential (One Tap / FedCM)", () => {
     authRef.current.currentUser = { isAnonymous: true, uid: "anon-1" };
     upgradeRef.upgradeAnonymousWithGoogleCredential.mockResolvedValueOnce({
       status: "collision-signed-in",
+      destinationUid: "collided-account",
     });
 
     await signInWithGoogleCredential("id-token-123");
 
-    expect(promptRef.promptAnonymousImport).toHaveBeenCalledWith([]);
+    expect(promptRef.promptAnonymousImport).toHaveBeenCalledWith(
+      [],
+      "collided-account"
+    );
   });
 });

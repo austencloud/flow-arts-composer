@@ -1,7 +1,45 @@
+---
+status: active
+value: 3
+effort: XS
+remaining: "Verification only - the code shipped in 06d178647 and must NOT be rebuilt. What is owed is this spec's own Visual verification gate, which has never been performed or recorded: inspect the production surface at 1920x1080, 2560x1440, 3840x2160, 1440x900, 820x1180, 960x412 and 375x667, and confirm canonical LOOP/period presentation, visible result counts, 44px controls, no horizontal overflow, stable grid geometry and an unobscured Compose action. Two Silent-bug items also have no dedicated test and rest on the shared Browse engine: search text serializing and replaying with the structured rule, and the Gallery recipe round-trip restoring the canonical rule and card limit - both are cheap to cover without a browser."
+depends_on: "external: a browser session against the production Deck Releaser surface"
+plan_path: ""
+tags: [deck-releaser, gallery, browse, verification-only]
+last_triaged: 2026-09-13
+---
+
 # Canonical Gallery Workspace in Deck Releaser
 
 **Date:** 2026-08-13  
-**Status:** Approved and implemented
+**Status:** Implemented, NOT verified. Stays in `active/` — this document's
+own Visual verification section is a mandatory gate that has never been
+performed or recorded anywhere.
+
+**Correction, 2026-09-13.** An earlier pass of this reconciliation moved this
+spec to `shipped/` on the strength of its code and unit tests. That was wrong,
+and it is reverted. The Visual verification section below is written as an
+instruction ("Inspect the production surface at…") and carries **no result** —
+no measurements, no screenshots, no dated record. I searched for a historical
+proof artifact and found none: `06d178647` has an empty commit body, the only
+other spec it touched (`2026-08-13-deck-releaser-motion-system.md`) states its
+own viewport check as a request rather than a record, and no handoff or evidence
+document covers this surface. Shared-component unit tests do not discharge a
+visual gate. A spec whose own mandatory proof was never taken is not shipped.
+
+**Reconciliation evidence (2026-09-13):** all six named owners resolve.
+`06d178647` (_feat(deck-releaser): add gallery composition and turn review_)
+rewrote `GalleryComposeBoard.svelte` and `gallery-deck-source.ts`. The
+composition contract is literal in the source: the engine is ephemeral and
+library-only (`persistKey: null`, single `my-library` source, `engine.destroy()`
+on unmount), the saved spec replays before `engine.initialize()`, the shared
+`FilterWorkspace`/`GalleryDrill`/`BrowsePanel` operate on that engine directly,
+the card cap is applied after ordering, and Compose hands over the visible slice
+with no second query. `gallery-deck-source.ts` exports nothing beyond the deck
+boundary. `gallery-deck-source.test.ts`: 14 tests pass, covering canonical order,
+the cap, legacy-filter normalization and the legacy-to-spec migration. That is
+the deck boundary only — it is not, and cannot be, the visual proof this
+document requires.
 
 ## Outcome
 

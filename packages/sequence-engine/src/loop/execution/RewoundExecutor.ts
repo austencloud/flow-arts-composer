@@ -7,13 +7,18 @@
  */
 
 import type { ILOOPExecutor } from "./ILOOPExecutor.js";
-import type { SequenceStep, MotionData } from "../../core/types/sequence-engine-types.js";
+import type {
+  SequenceStep,
+  MotionData,
+} from "../../core/types/sequence-engine-types.js";
 import type { Period } from "../loop-types.js";
 
 export class RewoundExecutor implements ILOOPExecutor {
   executeLOOP(sequence: SequenceStep[], _period: Period): SequenceStep[] {
     if (sequence.length < 2) {
-      throw new Error("Sequence must have at least 2 steps (start position + 1 step)");
+      throw new Error(
+        "Sequence must have at least 2 steps (start position + 1 step)"
+      );
     }
 
     const startPosition = sequence.shift();
@@ -63,13 +68,13 @@ export class RewoundExecutor implements ILOOPExecutor {
       endPosition: sourceStep.startPosition,
       motions: {
         left: this.createRewoundMotion(
-        sourceStep.motions.left,
-        previousStep.motions.left
-      ),
+          sourceStep.motions.left,
+          previousStep.motions.left
+        ),
         right: this.createRewoundMotion(
-        sourceStep.motions.right,
-        previousStep.motions.right
-      ),
+          sourceStep.motions.right,
+          previousStep.motions.right
+        ),
       },
     };
   }
@@ -90,6 +95,14 @@ export class RewoundExecutor implements ILOOPExecutor {
       startLocation: previousMotion.endLocation,
       endLocation: sourceMotion.startLocation,
       rotationDirection: reversedRotation,
+      ...(sourceMotion.prefloatRotationDirection !== undefined && {
+        prefloatRotationDirection:
+          sourceMotion.prefloatRotationDirection === "cw"
+            ? ("ccw" as MotionData["rotationDirection"])
+            : sourceMotion.prefloatRotationDirection === "ccw"
+              ? ("cw" as MotionData["rotationDirection"])
+              : sourceMotion.prefloatRotationDirection,
+      }),
       startOrientation: sourceMotion.endOrientation,
       endOrientation: sourceMotion.startOrientation,
     };

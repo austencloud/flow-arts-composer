@@ -175,7 +175,9 @@ export function keysEqual(a: ThumbnailCacheKey, b: ThumbnailCacheKey): boolean {
   return a.hash === b.hash;
 }
 
-export function getVariantDefaults(variant: ThumbnailVariant): CompositionDefaults {
+export function getVariantDefaults(
+  variant: ThumbnailVariant
+): CompositionDefaults {
   return variant === "wordcard" ? WORDCARD_DEFAULTS : GALLERY_DEFAULTS;
 }
 
@@ -220,24 +222,37 @@ function checkInputUsesDefaults(
   )
     return false;
   // startPositionLayout: "row" is the default, "column" is non-default
-  if (input.startPositionLayout !== undefined && input.startPositionLayout !== "row")
+  if (
+    input.startPositionLayout !== undefined &&
+    input.startPositionLayout !== "row"
+  )
     return false;
   if (
     input.addDifficultyLevel !== undefined &&
     input.addDifficultyLevel !== defaults.addDifficultyLevel
   )
     return false;
-  if (input.addUserInfo !== undefined && input.addUserInfo !== defaults.addUserInfo)
+  if (
+    input.addUserInfo !== undefined &&
+    input.addUserInfo !== defaults.addUserInfo
+  )
     return false;
   if (input.showNotes !== undefined && input.showNotes !== defaults.showNotes)
     return false;
   // Any custom text means not using defaults
   if (input.customNotesText !== undefined) return false;
+  // The 5:7 playing-card layout is a different image, and the shared hash branch
+  // below cannot express it (it names only the gallery/wordcard dimensions). Keep
+  // card renders in the personal class so a card-layout raster can never be
+  // uploaded to, or served from, the shared static/cloud tiers, which hold one
+  // layout per variant.
+  if (input.cardMode) return false;
   // A custom hand palette is personal: it must never be served from, or
   // uploaded to, the shared static/cloud tiers.
   if (input.primaryPropColors) return false;
   // LOOP glyph strip is on by default; hiding it is a non-default render
-  if (input.showLoopGlyph !== undefined && input.showLoopGlyph !== true) return false;
+  if (input.showLoopGlyph !== undefined && input.showLoopGlyph !== true)
+    return false;
   // Visibility settings affect rendered appearance - check if any are non-default
   if (input.visibility) {
     // Canonical (shared-cacheable) visibility values. These MUST match the
@@ -256,15 +271,32 @@ function checkInputUsesDefaults(
       showMandala: true, // Product default: sequence mandalas fill empty cells
     };
     // If any visibility setting differs from default, not using defaults
-    if (input.visibility.showTKA !== undefined && input.visibility.showTKA !== defaultVisibility.showTKA)
+    if (
+      input.visibility.showTKA !== undefined &&
+      input.visibility.showTKA !== defaultVisibility.showTKA
+    )
       return false;
-    if (input.visibility.showReversals !== undefined && input.visibility.showReversals !== defaultVisibility.showReversals)
+    if (
+      input.visibility.showReversals !== undefined &&
+      input.visibility.showReversals !== defaultVisibility.showReversals
+    )
       return false;
-    if (input.visibility.showGrid !== undefined && input.visibility.showGrid !== defaultVisibility.showGrid)
+    if (
+      input.visibility.showGrid !== undefined &&
+      input.visibility.showGrid !== defaultVisibility.showGrid
+    )
       return false;
-    if (input.visibility.showNonRadialPoints !== undefined && input.visibility.showNonRadialPoints !== defaultVisibility.showNonRadialPoints)
+    if (
+      input.visibility.showNonRadialPoints !== undefined &&
+      input.visibility.showNonRadialPoints !==
+        defaultVisibility.showNonRadialPoints
+    )
       return false;
-    if (input.visibility.handPointVisibility !== undefined && input.visibility.handPointVisibility !== defaultVisibility.handPointVisibility)
+    if (
+      input.visibility.handPointVisibility !== undefined &&
+      input.visibility.handPointVisibility !==
+        defaultVisibility.handPointVisibility
+    )
       return false;
     // showQRCode is intentionally NOT a disqualifier: the QR is the Firebase
     // short code (content-hash-deduped globally → identical for all signed-in
@@ -272,13 +304,25 @@ function checkInputUsesDefaults(
     // distinct from the no-QR card via the `qr` hash field + `_qr` storage path,
     // not by falling out of the shared cache. (Was a disqualifier — that forced
     // every signed-in default-settings card to local-render forever.)
-    if (input.visibility.handPathMode !== undefined && input.visibility.handPathMode !== false)
+    if (
+      input.visibility.handPathMode !== undefined &&
+      input.visibility.handPathMode !== false
+    )
       return false;
-    if (input.visibility.showMandala !== undefined && input.visibility.showMandala !== defaultVisibility.showMandala)
+    if (
+      input.visibility.showMandala !== undefined &&
+      input.visibility.showMandala !== defaultVisibility.showMandala
+    )
       return false;
-    if (input.visibility.showLeftMotion !== undefined && input.visibility.showLeftMotion !== true)
+    if (
+      input.visibility.showLeftMotion !== undefined &&
+      input.visibility.showLeftMotion !== true
+    )
       return false;
-    if (input.visibility.showRightMotion !== undefined && input.visibility.showRightMotion !== true)
+    if (
+      input.visibility.showRightMotion !== undefined &&
+      input.visibility.showRightMotion !== true
+    )
       return false;
   }
 
@@ -326,6 +370,10 @@ function buildFullHashInput(input: ThumbnailRenderInput): object {
     handPathMode: input.visibility?.handPathMode,
     // Sequence mandalas in empty cells
     showMandala: input.visibility?.showMandala,
+    // 5:7 playing-card layout. Present only when set, so every existing key stays
+    // byte-identical (same shape as `colors` above) — a card render gets its own
+    // identity without cold-starting the standard-layout cache.
+    ...(input.cardMode && { cardMode: true }),
     // Motion visibility (blue/red hand filtering)
     showLeftMotion: input.visibility?.showLeftMotion,
     showRightMotion: input.visibility?.showRightMotion,

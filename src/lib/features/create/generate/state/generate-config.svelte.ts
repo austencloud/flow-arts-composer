@@ -345,7 +345,7 @@ export function createGenerationConfigState(
   // Strips undefined values so callers (e.g. Firestore favorite configs missing
   // newer fields like loopEnabled) can't accidentally overwrite current values.
   // Also migrates legacy "strict_*" loop types to their modern equivalents.
-  function updateConfig(updates: Partial<UIGenerationConfig>) {
+  function updateConfig(updates: Partial<UIGenerationConfig>, replace = false) {
     updates = normalizePersistedGenerationConfig(updates);
     const cleaned: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(updates)) {
@@ -363,13 +363,15 @@ export function createGenerationConfigState(
     // card descriptor and every handler closure inside it. Effects that read one
     // of those callbacks then saw a fresh function identity and re-ran, so a
     // no-op update could re-arm the very effect that issued it.
+    const replacement = replace ? { ...DEFAULT_CONFIG, ...cleaned } : undefined;
     const current = config as unknown as Record<string, unknown>;
-    const changed = Object.keys(cleaned).some(
-      (key) => !Object.is(cleaned[key], current[key])
-    );
+    const incoming = (replacement ?? cleaned) as Record<string, unknown>;
+    const changed = Object.keys(
+      replacement ? { ...current, ...incoming } : cleaned
+    ).some((key) => !Object.is(incoming[key], current[key]));
     if (!changed) return;
 
-    config = reconcileLoopLength({ ...config, ...cleaned });
+    config = reconcileLoopLength(replacement ?? { ...config, ...cleaned });
 
     // Auto-clear duration template if it's no longer valid for the current length
     if (config.durationTemplateId) {
@@ -380,6 +382,12 @@ export function createGenerationConfigState(
     }
 
     saveConfig(config);
+  }
+
+  // A saved setup replaces the recipe. Fields added since it was saved use
+  // their defaults instead of silently retaining the previous recipe's limits.
+  function replaceConfig(saved: Partial<UIGenerationConfig>) {
+    updateConfig(saved, true);
   }
 
   /**
@@ -471,6 +479,7 @@ export function createGenerationConfigState(
 
     // Actions
     updateConfig,
+    replaceConfig,
     resetConfig,
     clearSavedConfig: clearConfig,
 
