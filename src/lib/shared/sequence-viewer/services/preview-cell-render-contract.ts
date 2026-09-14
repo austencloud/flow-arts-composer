@@ -90,6 +90,9 @@ export function resolvePreviewCellRender(
     showTnD: suppressOverlays ? false : (options.showTnD ?? false),
     showElemental: suppressOverlays ? false : (options.showElemental ?? false),
     showPositions: suppressOverlays ? false : (options.showPositions ?? false),
+    showHandColorKey: suppressOverlays
+      ? false
+      : (options.showHandColorKey ?? true),
   };
 
   const visibility: LayerVisibility = {

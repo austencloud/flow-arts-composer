@@ -29,6 +29,7 @@ export interface ChoreoCardRenderLifecycleDeps {
   readonly showTnD: boolean;
   readonly showElemental: boolean;
   readonly showPositions: boolean;
+  readonly showHandColorKey: boolean;
   readonly showGrid: boolean;
   readonly showLeftMotion: boolean;
   readonly showRightMotion: boolean;
@@ -85,6 +86,7 @@ export function createChoreoCardRenderLifecycle(
       showTnD: deps.showTnD,
       showElemental: deps.showElemental,
       showPositions: deps.showPositions,
+      showHandColorKey: deps.showHandColorKey,
       showGrid: deps.showGrid,
       showLeftMotion: deps.showLeftMotion,
       showRightMotion: deps.showRightMotion,

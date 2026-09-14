@@ -665,7 +665,7 @@ export class LayerCompositor {
     stepNumber: number,
     coreOffset: number
   ): void {
-    if (stepNumber !== 0) return;
+    if (stepNumber !== 0 || options.showHandColorKey === false) return;
     drawHandColorKey(
       ctx,
       options.size,

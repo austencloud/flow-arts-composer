@@ -69,6 +69,8 @@ export interface SequenceExportOptions {
     showTnD?: boolean;
     showElemental?: boolean;
     showPositions?: boolean;
+    /** L/R colour key on the start cell. Default: true. */
+    showHandColorKey?: boolean;
     showReversals?: boolean;
     showNonRadialPoints?: boolean;
     showTurnNumbers?: boolean;

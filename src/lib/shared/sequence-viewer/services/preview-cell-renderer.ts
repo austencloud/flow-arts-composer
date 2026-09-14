@@ -72,6 +72,8 @@ export interface PreviewCellRenderOptions {
 
   /** Show start/end position letters (alpha/beta/gamma labels) */
   showPositions?: boolean;
+  /** L/R colour key on the start cell. Default: true. */
+  showHandColorKey?: boolean;
 
   /** When true, renders hand path visualization: HAND props, float arrows for shifts,
    *  no TKA overlay, no reversals. Shows pure spatial trajectory. */
