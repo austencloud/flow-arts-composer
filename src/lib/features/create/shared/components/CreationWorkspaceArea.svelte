@@ -51,6 +51,8 @@
 
   const optionAudition = $derived(panelState.optionAudition);
   const playback = $derived(panelState.workspacePlayback);
+  const playbackPreparation = $derived(panelState.workspacePlaybackPreparation);
+  const playbackCandidate = $derived(playbackPreparation ?? playback);
   let readyPlayback = $state.raw<typeof playback>(null);
   let retainedPlayback = $state.raw<typeof playback>(null);
   let retainedPlaybackKey = $state<string | null>(null);
@@ -61,20 +63,20 @@
     import("../workspace-panel/components/WorkspacePlayback.svelte");
 
   const playbackKey = $derived.by(() => {
-    if (!playback) return null;
-    const knownKey = playbackKeys.get(playback);
+    if (!playbackCandidate) return null;
+    const knownKey = playbackKeys.get(playbackCandidate);
     if (knownKey) return knownKey;
     const key = [
-      playback.sourceTab,
+      playbackCandidate.sourceTab,
       panelState.workspacePlaybackSourceRevision,
-      playback.sequence.id,
+      playbackCandidate.sequence.id,
     ].join(":");
-    playbackKeys.set(playback, key);
+    playbackKeys.set(playbackCandidate, key);
     return key;
   });
 
   $effect(() => {
-    const session = playback;
+    const session = playbackCandidate;
     const key = playbackKey;
     if (!session || !key) return;
 
@@ -101,7 +103,7 @@
   });
 
   function stopOnEscape(event: KeyboardEvent) {
-    if (event.key === "Escape" && playback) {
+    if (event.key === "Escape" && playbackCandidate) {
       event.preventDefault();
       panelState.stopWorkspacePlayback();
     }
@@ -182,7 +184,9 @@
           active: playback !== null && playbackKey === retainedPlaybackKey,
           run: playbackRun,
           onready: (readyRun: number) => {
-            if (playback && readyRun === playbackRun) readyPlayback = session;
+            if (!playbackCandidate || readyRun !== playbackRun) return;
+            readyPlayback = session;
+            panelState.confirmWorkspacePlaybackReady(playbackCandidate);
           },
           onStepChange: (step: number) => (playbackStep = Math.floor(step)),
         }}
@@ -232,7 +236,7 @@
       first={card}
       second={animation}
     />
-    {#if playback && readyPlayback !== retainedPlayback}
+    {#if playbackCandidate && readyPlayback !== retainedPlayback}
       <div class="playback-loading" role="status">Loading playback…</div>
     {/if}
   </div>

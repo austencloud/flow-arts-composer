@@ -32,10 +32,23 @@ function sequence(): SequenceData {
   };
 }
 
+function startPlayback(
+  state: PanelCoordinationState,
+  sourceSequence = sequence(),
+  revision = 1,
+  sourceTab = "construct"
+) {
+  state.startWorkspacePlayback(sourceSequence, revision, sourceTab);
+  const prepared = state.workspacePlaybackPreparation;
+  expect(prepared).not.toBeNull();
+  state.confirmWorkspacePlaybackReady(prepared!);
+  return prepared!;
+}
+
 describe("workspace playback", () => {
   it("keeps Generate playback until its source tab or document changes", () => {
     const state = createState();
-    state.startWorkspacePlayback(sequence(), 7, "generate");
+    startPlayback(state, sequence(), 7, "generate");
     const session = state.workspacePlayback;
     state.syncWorkspacePlaybackSource("generate", 7);
     expect(state.workspacePlayback).toBe(session);
@@ -44,7 +57,7 @@ describe("workspace playback", () => {
     state.syncWorkspacePlaybackSource("construct", 7);
     expect(state.workspacePlayback).toBeNull();
 
-    state.startWorkspacePlayback(sequence(), 7, "generate");
+    startPlayback(state, sequence(), 7, "generate");
     state.syncWorkspacePlaybackSource("generate", 8);
     expect(state.workspacePlayback).toBeNull();
   });
@@ -52,7 +65,7 @@ describe("workspace playback", () => {
   it("holds a fixed document without mutating the draft", () => {
     const state = createState();
     const draft = sequence();
-    state.startWorkspacePlayback(draft, 7);
+    startPlayback(state, draft, 7);
     draft.steps.push({ id: "two", stepNumber: 2 } as StepData);
     expect(state.workspacePlayback?.sequence.steps).toHaveLength(1);
     expect(state.workspacePlaybackSourceRevision).toBe(7);
@@ -64,7 +77,7 @@ describe("workspace playback", () => {
   it("restores an open step editor after Stop, and ignores repeated starts", () => {
     const state = createState();
     state.openStepEditorPanel();
-    state.startWorkspacePlayback(sequence(), 1);
+    startPlayback(state);
     const original = state.workspacePlayback;
     state.startWorkspacePlayback(sequence(), 2);
     expect(state.workspacePlayback).toBe(original);
@@ -76,7 +89,7 @@ describe("workspace playback", () => {
   it("hands off to another panel without restoring a competing editor", () => {
     const state = createState();
     state.openStepEditorPanel();
-    state.startWorkspacePlayback(sequence(), 1);
+    startPlayback(state);
     state.openSequenceViewer();
     state.stopWorkspacePlayback();
     expect(state.workspacePlayback).toBeNull();
@@ -87,7 +100,7 @@ describe("workspace playback", () => {
   it("excludes held-option auditions and duration previews during playback", () => {
     const state = createState();
     state.enterDurationPreviewMode(sequence());
-    state.startWorkspacePlayback(sequence(), 1);
+    startPlayback(state);
     state.enterOptionAudition({
       sequence: sequence(),
       sourceSequenceRevision: 1,
@@ -101,7 +114,7 @@ describe("workspace playback", () => {
 
   it("re-bases onto a revision the session did not cause, without replacing it", () => {
     const state = createState();
-    state.startWorkspacePlayback(sequence(), 7, "construct");
+    startPlayback(state, sequence(), 7, "construct");
     const session = state.workspacePlayback;
 
     state.rebaseWorkspacePlayback(7, 9);
@@ -113,7 +126,7 @@ describe("workspace playback", () => {
 
   it("ignores a re-base whose starting point is not the live baseline", () => {
     const state = createState();
-    state.startWorkspacePlayback(sequence(), 7, "construct");
+    startPlayback(state, sequence(), 7, "construct");
 
     state.rebaseWorkspacePlayback(6, 9);
 
@@ -134,5 +147,35 @@ describe("workspace playback", () => {
     const state = createState();
     state.startWorkspacePlayback({ ...sequence(), steps: [] }, 0);
     expect(state.workspacePlayback).toBeNull();
+  });
+
+  it("keeps the editor stable until the matching prepared player is ready", () => {
+    const state = createState();
+    state.openStepEditorPanel();
+    state.startWorkspacePlayback(sequence(), 3, "generate");
+    const prepared = state.workspacePlaybackPreparation;
+
+    expect(state.workspacePlayback).toBeNull();
+    expect(prepared).not.toBeNull();
+    expect(state.isStepEditorPanelOpen).toBe(false);
+
+    state.stopWorkspacePlayback();
+    state.confirmWorkspacePlaybackReady(prepared!);
+
+    expect(state.workspacePlayback).toBeNull();
+    expect(state.workspacePlaybackPreparation).toBeNull();
+    expect(state.isStepEditorPanelOpen).toBe(true);
+  });
+
+  it("does not activate a prepared player after its source changes", () => {
+    const state = createState();
+    state.startWorkspacePlayback(sequence(), 3, "generate");
+    const prepared = state.workspacePlaybackPreparation;
+
+    state.syncWorkspacePlaybackSource("generate", 4);
+    state.confirmWorkspacePlaybackReady(prepared!);
+
+    expect(state.workspacePlayback).toBeNull();
+    expect(state.workspacePlaybackPreparation).toBeNull();
   });
 });
