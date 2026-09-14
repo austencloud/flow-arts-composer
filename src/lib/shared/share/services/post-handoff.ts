@@ -65,31 +65,27 @@ export interface HandoffContext {
 /**
  * Which destinations this device can actually honor.
  *
- * Gated on the DEVICE, not the capability — desktop Chrome implements
- * `navigator.share`, so capability detection alone would offer a native share
- * that pops the Windows share sheet. That is the same gate
- * `shareOrDownloadBlob` makes, for the same reason.
+ * Download is a separate explicit action. Offer the system share sheet on any
+ * device that supports the file, rather than treating desktop as incapable.
  */
 export function resolveDestinations(ctx: HandoffContext): HandoffDestination[] {
   const isMobile = detectPlatform() !== "desktop";
   const destinations: HandoffDestination[] = [];
 
-  if (isMobile) {
-    const shareable =
-      supportsNativeFileShare() &&
-      (!ctx.blob || canNativeShareFile(ctx.blob, ctx.filename));
-
-    if (shareable) {
-      destinations.push({
-        id: "native-share",
-        label: "Share",
-        short: "Share",
-        icon: "fa-solid fa-share-nodes",
-        primary: true,
-        hint: "Opens Instagram, Facebook, Messages…",
-      });
-    }
-  } else {
+  const shareable =
+    supportsNativeFileShare() &&
+    (!ctx.blob || canNativeShareFile(ctx.blob, ctx.filename));
+  if (shareable) {
+    destinations.push({
+      id: "native-share",
+      label: "Share to another app",
+      short: "Share to another app",
+      icon: "fa-solid fa-share-nodes",
+      primary: true,
+      hint: "Choose an app on this device",
+    });
+  }
+  if (!isMobile) {
     destinations.push({
       id: "send-to-phone",
       label: "Transfer to phone",
@@ -137,8 +133,8 @@ export interface HandoffResult {
 }
 
 /**
- * Native file share. The one-tap post: the caption rides in `text`, so
- * Instagram opens with it pre-filled.
+ * Hand the file and optional caption to the device's share sheet. The receiving
+ * app decides which supplied fields it accepts.
  */
 export async function shareArtifactNatively(
   blob: Blob,
