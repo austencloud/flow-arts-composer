@@ -697,24 +697,26 @@
                           ariaLabel={loop.word}
                           onclick={() => selectTogetherOppositeLoop(loop, true)}
                         >
-                          <ChoreoCard
-                            sequence={loop.sequence}
-                            showMandala={true}
-                            includeStartPosition={true}
-                            startPositionLayoutOverride="row"
-                            columnCount={2}
-                            showQRCode={false}
-                            showWord={true}
-                            showDifficultyLevel={false}
-                            showNotes={false}
-                            showLoopGlyph={false}
-                            handPathMode={playback.propDisplay === "hands"}
-                            darkMode={true}
-                            leftPropType={displayPropType}
-                            rightPropType={displayPropType}
-                            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-                            fitWidth={true}
-                          />
+                          <div class="loop-card" aria-hidden="true" inert>
+                            <ChoreoCard
+                              sequence={loop.sequence}
+                              showMandala={true}
+                              includeStartPosition={true}
+                              startPositionLayoutOverride="row"
+                              columnCount={2}
+                              showQRCode={false}
+                              showWord={true}
+                              showDifficultyLevel={false}
+                              showNotes={false}
+                              showLoopGlyph={false}
+                              handPathMode={playback.propDisplay === "hands"}
+                              darkMode={true}
+                              leftPropType={displayPropType}
+                              rightPropType={displayPropType}
+                              primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+                              fitWidth={true}
+                            />
+                          </div>
                         </PanelButton>
                       {/each}
                     </div>
@@ -1013,8 +1015,14 @@
   }
   .spin-column :global(.panel-btn) {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     min-height: 0;
     padding: 0.25rem;
+  }
+  .loop-card {
+    width: 100%;
+    aspect-ratio: 5 / 8;
+    pointer-events: none;
   }
   .spin-column :global(.panel-btn[aria-pressed="true"]) {
     outline: 2px solid var(--mode-accent);
