@@ -28,6 +28,8 @@ export interface PictographVisibilityOptions {
   showTnD?: boolean;
   showElemental?: boolean;
   showPositions?: boolean;
+  /** L/R colour key on start positions. Default: true. */
+  showHandColorKey?: boolean;
   showReversals?: boolean;
   showNonRadialPoints?: boolean;
   /** Dark Mode - dark background, inverted grid, white text/outlines */
