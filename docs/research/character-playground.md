@@ -2,7 +2,13 @@
 
 `/test/character-playground` replaces the retired Avatar Bake Off. Old links redirect, preserving the chosen character when its file is available.
 
-The route mounts the shared `Viewer3DFullscreen` workspace with isolated, seeded viewer state. That owner supplies the canvas, `SceneControlWorkspace`, performer management, formations, camera controls, complete scene/environment picker, `UnifiedTimeline`, and tempo controls. The host adds a Randomize action and a generator information panel through the workspace's existing snippet slots. It does not maintain a separate scene toolbar or a list of six sequence choices.
+The route mounts the shared `Viewer3DFullscreen` workspace with isolated, seeded viewer state. That owner supplies the canvas, `SceneControlWorkspace`, performer management, formations, camera controls, complete scene/environment picker, `UnifiedTimeline`, and tempo controls. The host adds the creator through the workspace's existing inspector and compact mobile sheet slots. It does not maintain a separate scene toolbar or a list of six sequence choices.
+
+## Creator controls
+
+The local creator has bounded, real MPFB inputs: feminine or masculine body presentation; young adult, middle age, or older adult; height, weight, muscle, proportions, and face variation; plus six verified hair assets and three presentation-matched outfit assets. Hair and clothes are allowlists, never client-provided asset paths. Skin remains automatically selected from MPFB's matching official system texture because its current asset naming couples texture race and presentation; the UI does not misrepresent that as an independent skin-tone control.
+
+`POST /test/character-playground/generate` still accepts an empty body for the old random-generation flow. A JSON body must exactly match the bounded creator contract. The server writes that object into the generation job and passes only that file path to the runner. The runner validates it again before Blender starts. `generation.json` records both requested and resolved controls; the intake-compatible provenance source note repeats the resolved controls and seed for reproduction.
 
 `SequencePickerModal` opens the existing community/library browser. It applies sequences through `viewer.loadSequenceScoped`, including the shared undo history and multi-selection behavior. The app's `AnimationPlaybackController` supplies the fractional playhead with ephemeral animation and visibility state. A verified combination fixture is only the initial sequence. Changes from either sequence picker update the same viewer state and playback controller.
 

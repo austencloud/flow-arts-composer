@@ -23,6 +23,7 @@ parser.add_argument("--source", type=Path, required=True)
 parser.add_argument("--assets", type=Path, required=True)
 parser.add_argument("--output", type=Path, required=True)
 parser.add_argument("--seed", type=int)
+parser.add_argument("--options", type=Path)
 args = parser.parse_args(sys.argv[sys.argv.index("--") + 1:])
 args.output.mkdir(parents=True, exist_ok=True)
 
@@ -59,6 +60,8 @@ hair = "ponytail01"
 outfit = "female_sportsuit01"
 skin = "young_caucasian_female"
 details = {}
+requested_options = None
+age = "young"
 if args.seed is not None:
     rng = random.Random(args.seed)
     spec = RandomizationService.get_default_phenotype_spec()
@@ -70,10 +73,26 @@ if args.seed is not None:
     macros = RandomizationService.randomize_macro_info_dict(spec, rng)
     gender = "female" if macros["gender"] < 0.5 else "male"
     race = max(macros["race"], key=macros["race"].get)
-    age = "young" if macros["age"] < 0.5 else "middleage"
+    age = "young" if macros["age"] < 0.625 else "middleage" if macros["age"] < 0.875 else "old"
     skin = f"{age}_{race}_{gender}"
     hair = rng.choice(["short01", "short02", "short03", "bob01", "ponytail01", "afro01"])
     outfit = rng.choice(["female_casualsuit01", "female_casualsuit02", "female_sportsuit01"] if gender == "female" else ["male_casualsuit01", "male_casualsuit02", "male_casualsuit03"])
+    if args.options:
+        requested_options = json.loads(args.options.read_text())
+        presentation = requested_options["presentation"]
+        gender = "female" if presentation == "feminine" else "male"
+        macros.update(
+            gender=0.0 if presentation == "feminine" else 1.0,
+            age={"young": 0.5, "middleage": 0.75, "old": 1.0}[requested_options["age"]],
+            height=requested_options["height"],
+            weight=requested_options["weight"],
+            muscle=requested_options["muscle"],
+            proportions=requested_options["proportions"],
+        )
+        age = requested_options["age"]
+        skin = f"{age}_{race}_{gender}"
+        hair = requested_options["hair"]
+        outfit = requested_options["outfit"]
 body = HumanService.create_human(macro_detail_dict=macros)
 body.name = "MPFB Proof"
 if args.seed is not None:
@@ -81,10 +100,18 @@ if args.seed is not None:
     sections = {name: section.get("categories", []) for name, section in target_data.items()
                 if name in ["head", "nose", "eyes", "mouth", "chin", "ears"]}
     detail_spec = RandomizationService.get_default_detail_spec(list(sections))
-    for section in detail_spec["sections"].values():
-        section.update(min=1, max=3, deviation=0.3)
-    details = RandomizationService.pick_random_details(detail_spec, sections, rng)
-    TargetService.bulk_load_targets(body, details)
+    intensity = requested_options["face"] if requested_options else 0.5
+    # A zero-value face control promises the base face, rather than a subtle
+    # random morph that would be invisible until a later comparison.
+    if intensity > 0:
+        for section in detail_spec["sections"].values():
+            section.update(
+                min=1,
+                max=1 + round(intensity * 2) if requested_options else 3,
+                deviation=0.1 + intensity * 0.4 if requested_options else 0.3,
+            )
+        details = RandomizationService.pick_random_details(detail_spec, sections, rng)
+        TargetService.bulk_load_targets(body, details)
 HumanService.set_character_skin(
     asset("skins", skin + ".mhmat"), body, skin_type="GAMEENGINE"
 )
@@ -160,6 +187,14 @@ rigs = [o for o in bpy.context.selected_objects if o.type == "ARMATURE"]
 (args.output / "generation.json").write_text(json.dumps({
     "mpfbVersion": list(mpfb.VERSION), "blenderVersion": bpy.app.version_string,
     "seed": args.seed, "macros": macros, "details": details,
+    "requestedOptions": requested_options,
+    "resolvedControls": {
+        "presentation": "feminine" if macros["gender"] < 0.5 else "masculine",
+        "age": age, "height": macros.get("height"), "weight": macros["weight"],
+        "muscle": macros["muscle"], "proportions": macros.get("proportions"),
+        "hair": hair, "outfit": outfit,
+        "face": requested_options["face"] if requested_options else None,
+    },
     "handFrameVersion": 2,
     "skin": skin, "rig": "mixamo", "assets": parts,
     "bones": {r.name: [b.name for b in r.data.bones] for r in rigs},
