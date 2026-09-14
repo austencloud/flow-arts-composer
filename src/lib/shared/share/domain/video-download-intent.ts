@@ -1,0 +1,41 @@
+export interface PendingVideoDownload {
+  pending: boolean;
+  sheetOpen: boolean;
+  requestVersion: number;
+  pendingRequestVersion: number | null;
+  currentSettingsKey: string;
+  requestedSettingsKey: string | null;
+  currentSourceKey: string;
+  requestedSourceKey: string | null;
+  status: "idle" | "rendering" | "ready" | "canceled" | "failed";
+  hasBlob: boolean;
+}
+
+export function shouldDeliverPendingVideo(
+  value: PendingVideoDownload
+): boolean {
+  return (
+    value.pending &&
+    value.sheetOpen &&
+    value.status === "ready" &&
+    value.hasBlob &&
+    value.pendingRequestVersion === value.requestVersion &&
+    value.currentSettingsKey === value.requestedSettingsKey &&
+    value.currentSourceKey === value.requestedSourceKey
+  );
+}
+
+export function videoDownloadSettingsKey(value: {
+  resolution: number;
+  fps: number;
+  repeats: number;
+  quality: string;
+  is3DExport: boolean;
+}): string {
+  return [
+    value.resolution,
+    value.fps,
+    value.repeats,
+    value.is3DExport ? value.quality : "",
+  ].join("|");
+}

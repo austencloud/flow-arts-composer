@@ -150,7 +150,7 @@ export function buildViewerShareDetails(
   return {
     url,
     title,
-    text: `TKA sequence: ${title}`,
+    text: `Flow Arts Composer sequence: ${title}`,
     activityMetadata: {
       sequenceId: sequence?.id,
       sequenceWord: sequence?.word,
