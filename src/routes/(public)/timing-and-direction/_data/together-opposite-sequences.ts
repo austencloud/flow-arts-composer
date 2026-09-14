@@ -128,7 +128,7 @@ export async function adjustTogetherOppositeLoop(
   const result = applyVariationDescriptor(loop.sequence, { turnPattern }, []);
   return processReversals(
     updateSequenceData(result.sequence, {
-      id: `${loop.sequence.id}-turns-${turnPattern}-${crypto.randomUUID()}`,
+      id: `${loop.id}-${crypto.randomUUID()}`,
       metadata: {
         ...result.sequence.metadata,
         // applyVariationDescriptor compares against its input, which is useful
@@ -187,7 +187,7 @@ export async function transformTogetherOppositeLoop(
   const { familyId: _staleFamilyId, ...metadata } = transformed.metadata;
   const tndMode = deriveTnDFromPictograph(transformed.steps[0]!).tndMode;
   const withWord = updateSequenceData(transformed, {
-    id: `${loop.sequence.id}-${transform}-${crypto.randomUUID()}`,
+    id: `${loop.id}-${crypto.randomUUID()}`,
     word: deriveWord(transformed),
     metadata: {
       ...metadata,
