@@ -22,7 +22,8 @@ import {
 } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 
 export const ISOLATION_STEP_COUNT = 4;
-export const ISOLATION_STAFF_LENGTH_CM = 104;
+// Match the unscaled production fire-double-staff.glb (900 mm).
+export const ISOLATION_STAFF_LENGTH_CM = 90;
 export const DEFAULT_TORSO_KEYFRAMES = [0, -0.08, -0.42, -0.94] as const;
 export interface TorsoKeyframe {
   phase: number;
@@ -177,9 +178,9 @@ export const ISOLATION_SEQUENCE: SequenceData = createSequenceData({
     endPosition: GridPosition.ALPHA1,
     gridPosition: GridPosition.ALPHA1,
     motions: {
-      [HandSide.RIGHT]: undefined,
-      [HandSide.LEFT]: motion(
-        HandSide.LEFT,
+      [HandSide.LEFT]: undefined,
+      [HandSide.RIGHT]: motion(
+        HandSide.RIGHT,
         GridLocation.SOUTH,
         GridLocation.SOUTH
       ),
@@ -197,9 +198,9 @@ export const ISOLATION_SEQUENCE: SequenceData = createSequenceData({
         motions: {
           // An absent motion sends the free arm through the rig's rest path, not a
           // visible-but-hidden second prop.
-          [HandSide.RIGHT]: undefined,
-          [HandSide.LEFT]: motion(
-            HandSide.LEFT,
+          [HandSide.LEFT]: undefined,
+          [HandSide.RIGHT]: motion(
+            HandSide.RIGHT,
             from,
             path[(index + 1) % path.length]!
           ),
