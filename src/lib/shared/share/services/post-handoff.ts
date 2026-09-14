@@ -142,7 +142,7 @@ export async function shareArtifactNatively(
   caption: string
 ): Promise<HandoffResult> {
   const result = await shareBlobNatively(blob, filename, {
-    title: "TKA Sequence",
+    title: "Flow Arts Composer sequence",
     text: caption,
   });
 
