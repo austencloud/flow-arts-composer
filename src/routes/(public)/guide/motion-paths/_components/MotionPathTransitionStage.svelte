@@ -207,11 +207,28 @@
       fallbackKey: layer.key,
     });
   }
+
+  function playerCallbacks(source: Source, key: string) {
+    // A player's teardown can run after its snippet's layer becomes null.
+    // Capture its identity now so late callbacks cannot touch the replacement.
+    return {
+      onStepChange: (step: number) => handleStep(source, key, step),
+      onSeekRef: (seek: ((step: number) => void) | null) => {
+        if (layerFor(source)?.key !== key) return;
+        if (source === "first") firstSeek = seek;
+        else secondSeek = seek;
+      },
+      onReady: () => markSequenceReady(source, key),
+      onCanvasInitialized: () => markCanvasReady(source, key),
+      onLoadError: () => handleLoadError(source, key),
+    };
+  }
 </script>
 
 {#snippet player(source: Source, layer: Layer | null)}
   {#if layer}
     {#key layer.key}
+      {@const callbacks = playerCallbacks(source, layer.key)}
       <InlineAnimationPlayer
         sequence={layer.sequence}
         visibilityManagerOverride={scope.visibility}
@@ -231,15 +248,7 @@
         externalBpm={48}
         backgroundAlpha={0}
         onExternalPlayingChange={onplayingchange}
-        onStepChange={(step) => handleStep(source, layer.key, step)}
-        onSeekRef={(seek) => {
-          if (layerFor(source)?.key !== layer.key) return;
-          if (source === "first") firstSeek = seek;
-          else secondSeek = seek;
-        }}
-        onReady={() => markSequenceReady(source, layer.key)}
-        onCanvasInitialized={() => markCanvasReady(source, layer.key)}
-        onLoadError={() => handleLoadError(source, layer.key)}
+        {...callbacks}
         showControls={false}
         showPositionGlyph
         beatIndicators={false}
