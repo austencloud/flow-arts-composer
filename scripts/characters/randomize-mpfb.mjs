@@ -27,6 +27,14 @@ try {
     : undefined;
   if (optionsFile && !requestedOptions)
     throw new Error("Invalid character generation options");
+  const normalizedOptionsFile = requestedOptions
+    ? resolve(jobDirectory, "normalized-options.json")
+    : "";
+  if (requestedOptions)
+    await writeFile(
+      normalizedOptionsFile,
+      JSON.stringify(requestedOptions, null, 2)
+    );
   const result = await promisify(execFile)(
     blender,
     [
@@ -45,7 +53,7 @@ try {
       generated,
       "--seed",
       seedText,
-      ...(optionsFile ? ["--options", optionsFile] : []),
+      ...(normalizedOptionsFile ? ["--options", normalizedOptionsFile] : []),
     ],
     {
       timeout: 120_000,

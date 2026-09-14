@@ -29,6 +29,7 @@ vi.mock("node:fs/promises", () => {
   return { ...functions, default: functions };
 });
 import { GET, POST } from "./+server";
+import { DEFAULT_GENERATION_OPTIONS } from "../generation-options";
 
 function event(
   origin = "https://localhost:5173",
@@ -122,9 +123,10 @@ describe("local character generator boundary", () => {
       expect.stringContaining("requested-options.json"),
       expect.any(String)
     );
-    expect(JSON.parse(mocks.writeFile.mock.calls[0]?.[1] as string)).toEqual(
-      options
-    );
+    expect(JSON.parse(mocks.writeFile.mock.calls[0]?.[1] as string)).toEqual({
+      ...DEFAULT_GENERATION_OPTIONS,
+      ...options,
+    });
     const args = mocks.exec.mock.calls[0]?.[1] as string[];
     expect(args.some((arg) => arg.endsWith("requested-options.json"))).toBe(
       true
