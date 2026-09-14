@@ -111,34 +111,35 @@
 <section class="explorer" aria-label="Motion path comparison">
   <div class="explorer-workspace">
     <section class="shape-picker" aria-labelledby="shape-picker-title">
-      <div class="picker-heading">
-        <h3 id="shape-picker-title">Sequence</h3>
-        <PanelButton onclick={() => (pickerOpen = true)}
-          >Browse sequences</PanelButton
-        >
-      </div>
+      <div class="source-controls">
+        <div class="picker-heading">
+          <h3 id="shape-picker-title">Sequence</h3>
+          <PanelButton onclick={() => (pickerOpen = true)}
+            >Browse sequences</PanelButton
+          >
+        </div>
 
-      <div class="relationship-picker">
-        <span class="control-label">Timing and direction</span>
-        <ElementChipRow
-          selected={explorer.selectedMode}
-          columns={3}
-          compact
-          onpick={(mode) =>
-            explorer.chooseHandRelationship(mode, buildMatrixSequence)}
-        />
-      </div>
+        <div class="relationship-picker">
+          <span class="control-label">Timing and direction</span>
+          <ElementChipRow
+            selected={explorer.selectedMode}
+            columns={3}
+            compact
+            onpick={(mode) =>
+              explorer.chooseHandRelationship(mode, buildMatrixSequence)}
+          />
+        </div>
 
-      <div class="turn-picker">
-        <MotionPathTurnControls
-          {leftTurn}
-          {rightTurn}
-          {labelMode}
-          onturn={chooseTurn}
-          onlabelmodechange={(value) => (labelMode = value)}
-        />
+        <div class="turn-picker">
+          <MotionPathTurnControls
+            {leftTurn}
+            {rightTurn}
+            {labelMode}
+            onturn={chooseTurn}
+            onlabelmodechange={(value) => (labelMode = value)}
+          />
+        </div>
       </div>
-
       <div class="matrix-stage" aria-busy={!matrixData && !matrixError}>
         {#if matrixError}
           <div class="matrix-status error" role="alert">
@@ -322,6 +323,11 @@
     gap: var(--spacing-lg, 24px);
     min-width: 0;
   }
+  .source-controls {
+    display: grid;
+    gap: var(--spacing-sm, 8px);
+    min-width: 0;
+  }
   .shape-picker {
     gap: var(--spacing-sm, 8px);
   }
@@ -469,21 +475,13 @@
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       column-gap: var(--spacing-lg, 24px);
     }
-    .picker-heading {
+    .source-controls {
       grid-column: 1;
       grid-row: 1;
     }
-    .relationship-picker {
-      grid-column: 1;
-      grid-row: 2;
-    }
-    .turn-picker {
-      grid-column: 1;
-      grid-row: 3;
-    }
     .matrix-stage {
       grid-column: 2;
-      grid-row: 1 / span 3;
+      grid-row: 1;
     }
     .picker-feedback {
       grid-column: 2;
