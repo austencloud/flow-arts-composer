@@ -67,6 +67,10 @@ Last audit: 2025-12-27
   } from "../domain/types/tip-effect-types";
   import CanvasContextMenuHost from "./canvas-context-menu/CanvasContextMenuHost.svelte";
   import type { ContextMenuEntry } from "$lib/shared/components/context-menu/context-menu-types";
+  import {
+    resolveDisassemblyArrangement,
+    type DisassemblyArrangement,
+  } from "../services/disassembly-arrangement";
   import SplitCanvasView from "./SplitCanvasView.svelte";
   import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
   import type { QualityTier } from "../domain/types/quality-types";
@@ -124,7 +128,7 @@ Last audit: 2025-12-27
     tipEffortMap: cellTipEffortMap = undefined,
     disableContextMenu = false,
     fillContainer = false,
-    disassemblyLayout = "stacked",
+    disassemblyLayout = "auto",
     disassemblyTarget = null,
     onDisassemblyTargetChange = undefined,
     prewarmEffects = undefined,
@@ -224,7 +228,9 @@ Last audit: 2025-12-27
     disableContextMenu?: boolean;
     fillContainer?: boolean;
     /** How the combined hero and two isolated canvases share their host while
-     *  disassembled. Sidecar is designed for square, fill-mode embeds. */
+     *  disassembled. `auto` (default) measures the host and takes whichever of
+     *  stacked or sidecar gives the hero more room; see
+     *  disassembly-arrangement.ts. */
     disassemblyLayout?: "stacked" | "sidecar" | "auto";
     /** Controlled target for the built-in disassembly state machine. Unlike
      *  externalToggleDisassemble, this keeps AnimatorCanvas as rendering owner. */
@@ -368,8 +374,11 @@ Last audit: 2025-12-27
     | "disassembled"
     | "reassembling";
   let viewState = $state<ViewState>("assembled");
-  let autoLayoutCandidate = $state<"stacked" | "sidecar">("stacked");
-  let disassemblySessionLayout = $state<"stacked" | "sidecar">("stacked");
+  let autoLayoutCandidate = $state<DisassemblyArrangement>("stacked");
+  let disassemblySessionLayout = $state<DisassemblyArrangement>("stacked");
+  let disassemblyHostBox = $state<{ width: number; height: number } | null>(
+    null
+  );
   let contentWrapperEl: HTMLDivElement | undefined = $state();
   let longPressTimer: ReturnType<typeof setTimeout> | null = null;
   let longPressFired = false;
@@ -401,11 +410,18 @@ Last audit: 2025-12-27
       : disassemblyLayout
   );
 
+  // Chrome the arrangement must leave room for: word header plus transport
+  // (8.5rem focused, 7rem otherwise), or just the header when the transport is
+  // relocated. Mirrors the content-wrapper width rules below.
+  const disassemblyChromeHeight = $derived(
+    (hideProgressBar ? 3.5 : focused ? 8.5 : 7) * 16
+  );
+
   function observeDisassemblyHost(node: HTMLElement) {
     const update = () => {
       const { width, height } = node.getBoundingClientRect();
       if (width <= 0 || height <= 0) return;
-      autoLayoutCandidate = width >= height * 1.15 ? "sidecar" : "stacked";
+      disassemblyHostBox = { width, height };
     };
     update();
     const observer = new ResizeObserver(update);
@@ -416,6 +432,24 @@ Last audit: 2025-12-27
       },
     };
   }
+
+  // Pick the arrangement that gives the hero the most room. While assembled
+  // this is a free choice; once disassembled the live arrangement only flips
+  // when the box has settled and the other arrangement clearly wins, so a
+  // divider drag near break-even cannot flap the grid.
+  $effect(() => {
+    if (disassemblyLayout !== "auto") return;
+    const measured = disassemblyHostBox;
+    if (!measured) return;
+    const box = { ...measured, chromeHeight: disassemblyChromeHeight };
+    if (viewState === "assembled") {
+      autoLayoutCandidate = resolveDisassemblyArrangement(box, null);
+      return;
+    }
+    if (viewState !== "disassembled") return;
+    const next = resolveDisassemblyArrangement(box, disassemblySessionLayout);
+    if (next !== disassemblySessionLayout) disassemblySessionLayout = next;
+  });
 
   function beginDisassembly(): void {
     if (viewState !== "assembled") return;
@@ -1405,8 +1439,14 @@ Last audit: 2025-12-27
   /* When split canvases are showing, narrow the content-wrapper so the taller
      layout (hero + split row) fits vertically. The 2:3 aspect ratio means
      width = (available_height - chrome) * 2/3 */
-  .animation-container[data-view="disassembling"] .content-wrapper,
-  .animation-container[data-view="disassembled"] .content-wrapper {
+  .animation-container:not(
+      [data-disassembly-layout="sidecar"]
+    )[data-view="disassembling"]
+    .content-wrapper,
+  .animation-container:not(
+      [data-disassembly-layout="sidecar"]
+    )[data-view="disassembled"]
+    .content-wrapper {
     width: min(calc(100cqw - 12px), calc((100cqh - 7rem) * 2 / 3));
     max-width: calc((100cqh - 7rem) * 2 / 3);
     transition:
@@ -1544,9 +1584,13 @@ Last audit: 2025-12-27
   }
 
   /* Focused + disassembled: content-wrapper narrows for the split row */
-  .animation-container[data-focused][data-view="disassembling"]
+  .animation-container[data-focused]:not(
+      [data-disassembly-layout="sidecar"]
+    )[data-view="disassembling"]
     .content-wrapper,
-  .animation-container[data-focused][data-view="disassembled"]
+  .animation-container[data-focused]:not(
+      [data-disassembly-layout="sidecar"]
+    )[data-view="disassembled"]
     .content-wrapper {
     width: min(calc(100cqw - 12px), calc((100cqh - 8.5rem) * 2 / 3));
     max-width: calc((100cqh - 8.5rem) * 2 / 3);
@@ -1670,6 +1714,66 @@ Last audit: 2025-12-27
     .content-wrapper {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
     column-gap: clamp(0.25rem, 1cqw, 0.75rem);
+  }
+
+  /* Outside fill mode the wrapper sizes itself, so a sidecar block is the 3:2
+     shape bounded by the pane width and the usable height (chrome mirrors the
+     stacked rules above). The hero cell squares against its own grid column:
+     the base 100cqw rule would make it as tall as the whole wrapper. */
+  .animation-container:not(
+      [data-fill]
+    )[data-disassembly-layout="sidecar"][data-view="disassembling"]
+    .content-wrapper,
+  .animation-container:not(
+      [data-fill]
+    )[data-disassembly-layout="sidecar"][data-view="disassembled"]
+    .content-wrapper {
+    width: min(calc(100cqw - 12px), calc((100cqh - 7rem) * 3 / 2));
+    max-width: calc((100cqh - 7rem) * 3 / 2);
+    max-height: none;
+    transition:
+      width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      max-width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+      grid-template-columns var(--transition-dramatic),
+      column-gap var(--transition-dramatic);
+  }
+
+  .animation-container:not(
+      [data-fill]
+    )[data-focused][data-disassembly-layout="sidecar"][data-view="disassembling"]
+    .content-wrapper,
+  .animation-container:not(
+      [data-fill]
+    )[data-focused][data-disassembly-layout="sidecar"][data-view="disassembled"]
+    .content-wrapper {
+    width: min(calc(100cqw - 12px), calc((100cqh - 8.5rem) * 3 / 2));
+    max-width: calc((100cqh - 8.5rem) * 3 / 2);
+  }
+
+  .animation-container:not(
+      [data-fill]
+    )[data-no-progress][data-disassembly-layout="sidecar"][data-view="disassembling"]
+    .content-wrapper,
+  .animation-container:not(
+      [data-fill]
+    )[data-no-progress][data-disassembly-layout="sidecar"][data-view="disassembled"]
+    .content-wrapper {
+    width: min(calc(100cqw - 12px), calc((100cqh - 3.5rem) * 3 / 2));
+    max-width: calc((100cqh - 3.5rem) * 3 / 2);
+  }
+
+  .animation-container:not(
+      [data-fill]
+    )[data-disassembly-layout="sidecar"][data-view="disassembling"]
+    .content-wrapper
+    > :global(.canvas-wrapper),
+  .animation-container:not(
+      [data-fill]
+    )[data-disassembly-layout="sidecar"][data-view="disassembled"]
+    .content-wrapper
+    > :global(.canvas-wrapper) {
+    height: auto;
+    aspect-ratio: 1 / 1;
   }
 
   /* A stage-framed embed deliberately uses a rectangular canvas wrapper. The

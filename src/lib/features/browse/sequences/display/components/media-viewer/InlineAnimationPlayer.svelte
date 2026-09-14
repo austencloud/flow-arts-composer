@@ -127,7 +127,7 @@
     onExternalPlayingChange = undefined,
     chrome = "full",
     fill = false,
-    disassemblyLayout = "stacked",
+    disassemblyLayout = "auto",
     disassemblyTarget = null,
     onDisassemblyTargetChange = undefined,
     showWordHeader = false,
@@ -221,9 +221,9 @@
      * header back in; other minimal hosts keep their current sizing.
      */
     fill?: boolean;
-    /** Arrangement used when the canonical canvas is disassembled. The default
-     *  vertical stack preserves viewer behavior; square embedded stages can
-     *  keep all three canvases inside one atmosphere with the sidecar layout. */
+    /** Arrangement used when the canonical canvas is disassembled. `auto`
+     *  (default) takes whichever of the vertical stack or the sidecar gives the
+     *  hero more room in the host; pass one explicitly to pin it. */
     disassemblyLayout?: "stacked" | "sidecar" | "auto";
     /** Shared stage-level disassembly intent. The canvas still owns the visual
      *  state machine; the host owns whether every retained canvas is open. */
