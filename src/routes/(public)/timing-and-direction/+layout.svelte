@@ -19,6 +19,11 @@
   const playback = createTimingDirectionState(page.params.mode);
   setTimingDirectionState(playback);
   const gate = createRenderActivityGate({ name: "timing-direction-journey" });
+  // Together–Opposite owns the canonical inline showcase player. The other
+  // articles keep this retained canvas, even while route state is changing.
+  const togetherOppositeRoute = $derived(
+    page.params.mode === "together-time-opposite-direction"
+  );
   onDestroy(() => gate.dispose());
   onMount(() => {
     if (reducedMotion()) playback.playing = false;
@@ -47,7 +52,7 @@
     >
       <!-- The animation engine is stubbed out of the production SSR build
            (see SSR_STUBBED_SHARED_RENDER_PATHS), so the canvas mounts client-only. -->
-      {#if browser}
+      {#if browser && !togetherOppositeRoute}
         <HandMotionPlayer
           primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
           sequence={playback.sequence}
