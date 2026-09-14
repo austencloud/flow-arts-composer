@@ -12,6 +12,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
 import {
   ensureDataLoaded,
   ensureDataLoadedAsync,
@@ -856,22 +857,22 @@ export function registerSequenceTools(server: McpServer): void {
       layout: z
         .enum(["grid", "strip"])
         .optional()
-        .default("grid")
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.layout)
         .describe("Layout: grid (square) or strip (single row)"),
       cellSize: z
         .number()
         .optional()
-        .default(900)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize)
         .describe("Size of each pictograph cell in pixels"),
       showStepNumbers: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers)
         .describe("Show step numbers overlaid on each pictograph"),
       showWord: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showWord)
         .describe("Show word header at the top"),
       displayWord: z
         .string()
@@ -880,17 +881,17 @@ export function registerSequenceTools(server: McpServer): void {
       darkMode: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
       showDifficulty: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty)
         .describe("Show difficulty level badge in header"),
       showReversals: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals)
         .describe("Show reversal indicators"),
       loopComponents: z
         .array(
@@ -947,14 +948,14 @@ export function registerSequenceTools(server: McpServer): void {
       bridgeSelections,
       leftStartOrientation,
       rightStartOrientation,
-      layout = "grid",
-      cellSize = 900,
-      showStepNumbers = true,
-      showWord = true,
+      layout = COMPOSER_CARD_EXPORT_PROFILE_V1.layout,
+      cellSize = COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize,
+      showStepNumbers = COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+      showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
       displayWord,
-      darkMode = true,
-      showDifficulty = true,
-      showReversals = true,
+      darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
+      showDifficulty = COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
+      showReversals = COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals,
       loopComponents,
       userName,
       notes,
@@ -1145,8 +1146,11 @@ export function registerSequenceTools(server: McpServer): void {
             showStepNumbers,
             showWord,
             darkMode,
-            padding: 8,
+            padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
             showDifficulty,
+            showFooter: Boolean(notes && notes !== "none"),
+            startPositionLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
             userName,
             notes,
             birthday: birthdayDate,
