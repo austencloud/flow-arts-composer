@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadImage } from "canvas";
+import { loadImage } from "@napi-rs/canvas/node-canvas.js";
 import { getLetterType, isValidLetter } from "@tka/domain";
 import {
   sanitizeSvgForBitmap,
@@ -29,10 +29,22 @@ function resolveGlyphAsset(token: string): GlyphAsset {
   }
 
   const isDash = token.endsWith("-");
-  const assetType =
-    typeNumber === 3 ? 2 :
-    typeNumber === 5 ? 4 :
-    typeNumber;
+  // Tau-Dash is a Type 4 extension, but the card header composes it from the
+  // Type 6 tau artwork plus the shared dash overlay, exactly like the app.
+  if (token === "τ-") {
+    return {
+      path: path.resolve(
+        projectRoot,
+        "static",
+        "images",
+        "letters_trimmed",
+        "Type6",
+        "τ.svg"
+      ),
+      isDash: true,
+    };
+  }
+  const assetType = typeNumber === 3 ? 2 : typeNumber === 5 ? 4 : typeNumber;
   const fileName = isDash ? token.slice(0, -1) : token;
 
   return {
@@ -42,7 +54,7 @@ function resolveGlyphAsset(token: string): GlyphAsset {
       "images",
       "letters_trimmed",
       `Type${assetType}`,
-      `${fileName}.svg`,
+      `${fileName}.svg`
     ),
     isDash,
   };
@@ -54,9 +66,12 @@ function resolveGlyphAsset(token: string): GlyphAsset {
  * and tell the shared header renderer not to apply that browser-only filter.
  */
 function colorGlyphSvg(svg: string, darkMode: boolean): string {
+  if (!darkMode) return sanitizeSvgForBitmap(svg);
   const color = darkMode ? "#e6e6e6" : "#231f20";
-  let prepared = sanitizeSvgForBitmap(svg)
-    .replace(/#000000|#231f20|\bblack\b/gi, color);
+  let prepared = sanitizeSvgForBitmap(svg).replace(
+    /#000000|#231f20|\bblack\b/gi,
+    color
+  );
 
   prepared = prepared.replace(
     /<svg\b([^>]*)>/i,
@@ -65,7 +80,7 @@ function colorGlyphSvg(svg: string, darkMode: boolean): string {
         return match.replace(/\bfill\s*=\s*["'][^"']*["']/i, `fill="${color}"`);
       }
       return `<svg${attributes} fill="${color}">`;
-    },
+    }
   );
 
   return prepared;
@@ -73,7 +88,7 @@ function colorGlyphSvg(svg: string, darkMode: boolean): string {
 
 async function loadGlyph(
   token: string,
-  darkMode: boolean,
+  darkMode: boolean
 ): Promise<GlyphImageData> {
   const cacheKey = `${darkMode ? "dark" : "light"}:${token}`;
   const cached = glyphCache.get(cacheKey);
@@ -85,7 +100,9 @@ async function loadGlyph(
     const image = await loadImage(Buffer.from(colorGlyphSvg(svg, darkMode)));
 
     if (image.width <= 0 || image.height <= 0) {
-      throw new Error(`TKA glyph "${token}" decoded without intrinsic dimensions`);
+      throw new Error(
+        `TKA glyph "${token}" decoded without intrinsic dimensions`
+      );
     }
 
     return {
@@ -114,7 +131,7 @@ async function loadGlyph(
  */
 export async function loadTkaGlyphImages(
   word: string,
-  darkMode: boolean,
+  darkMode: boolean
 ): Promise<Map<string, GlyphImageData> | undefined> {
   const tokens = tokenizeGlyphWord(word);
   if (tokens.length === 0 || tokens.some((token) => !isValidLetter(token))) {
@@ -123,10 +140,9 @@ export async function loadTkaGlyphImages(
 
   const uniqueTokens = [...new Set(tokens)];
   const entries = await Promise.all(
-    uniqueTokens.map(async (token) => [
-      token,
-      await loadGlyph(token, darkMode),
-    ] as const),
+    uniqueTokens.map(
+      async (token) => [token, await loadGlyph(token, darkMode)] as const
+    )
   );
 
   return new Map(entries);

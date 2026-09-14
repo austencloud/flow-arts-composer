@@ -7,6 +7,7 @@
   import { responsiveLayoutManager } from "$lib/shared/create/services/responsive-layout-manager";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
   import { getFuseContext } from "../context/fuse-context";
+  import { loopStartPickTarget } from "$lib/features/create/shared/services/choose-start-analyzer";
 
   let {
     isOpen = $bindable(false),
@@ -40,12 +41,16 @@
     return responsiveLayoutManager.onLayoutChange(update);
   });
 
-  async function chooseFirstStep(stepIndex: number): Promise<void> {
+  /** The tapped tile is the pose after that step; the next step becomes step 1. */
+  async function chooseStartPose(stepIndex: number): Promise<void> {
     if (!side) return;
-    await fuseState.adjustSource(side, {
-      kind: "first-step",
-      step: stepIndex + 1,
-    });
+    const step = loopStartPickTarget(
+      sequence?.steps.length ?? 0,
+      stepIndex + 1
+    );
+    if (step !== null) {
+      await fuseState.adjustSource(side, { kind: "first-step", step });
+    }
     onClose();
   }
 </script>
@@ -54,18 +59,18 @@
   bind:isOpen
   panelName="fuse-first-step"
   closeOnBackdrop={true}
-  ariaLabel="Choose {label} LOOP first step"
+  ariaLabel="Choose {label} LOOP start"
   {onClose}
 >
   <div class="first-step-panel">
     <PanelHeader
-      title="Choose First Step"
+      title="Choose Start"
       subtitle="{label} LOOP"
       {isMobile}
       {onClose}
     />
     <div class="first-step-content">
-      <p>Choose the step that should become step 1.</p>
+      <p>Tap the pose the LOOP should start from.</p>
       {#if sequence}
         <div class="first-step-card themed-scrollbar">
           <ChoreoCard
@@ -83,7 +88,8 @@
             rightPropType={settings.rightPropType}
             hideSoloHeader={true}
             fitWidth={true}
-            onStepClick={(stepIndex) => void chooseFirstStep(stepIndex)}
+            posePicker={true}
+            onStepClick={(stepIndex) => void chooseStartPose(stepIndex)}
           />
         </div>
       {/if}

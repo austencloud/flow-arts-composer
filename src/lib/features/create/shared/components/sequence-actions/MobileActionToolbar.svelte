@@ -218,7 +218,7 @@
           {
             id: "shift-start" as const,
             icon: shiftStartActive ? "xmark" : "forward",
-            label: shiftStartActive ? "Choosing First" : "First Step",
+            label: shiftStartActive ? "Choosing Start" : "Choose Start",
             btnColor: "6, 182, 212",
             action: onShiftStart,
             disabled: !hasSequence || isTransforming || !canShiftStart,

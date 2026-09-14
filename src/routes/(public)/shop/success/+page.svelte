@@ -5,7 +5,7 @@
 </script>
 
 <Seo
-  title="Order Confirmed | The Kinetic Alphabet"
+  title="Order Confirmed | Flow Arts Composer"
   description="Your Kinetic Alphabet order is confirmed. Details and next steps below."
   canonical="https://tkaflowarts.com/shop/success"
   noindex

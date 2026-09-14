@@ -124,6 +124,12 @@ export function registerPictographTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe("Override: show reversal indicators"),
+      showHandColorKey: z
+        .boolean()
+        .optional()
+        .describe(
+          "Render as a start position: adds the L/R hand colour key in the bottom band"
+        ),
       showGrid: z.boolean().optional().describe("Override: show grid"),
       showNonRadialPoints: z
         .boolean()
@@ -229,12 +235,14 @@ export function registerPictographTools(server: McpServer): void {
           showTND: prefs.showTND,
           showPositions: prefs.showPositions,
           showReversals: prefs.showReversals,
+          showHandColorKey: overrides.showHandColorKey,
           showGrid: prefs.showGrid,
           showNonRadialPoints: prefs.showNonRadialPoints,
           showLeftMotion: prefs.showLeftMotion,
           showRightMotion: prefs.showRightMotion,
           leftPropType: prefs.leftPropType,
           rightPropType: prefs.rightPropType,
+          fanAppearance: prefs.fanAppearance,
         };
 
         const renderer = getStandaloneRenderer();
@@ -329,6 +337,12 @@ export function registerPictographTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe("Override: show reversal indicators"),
+      showHandColorKey: z
+        .boolean()
+        .optional()
+        .describe(
+          "Render as a start position: adds the L/R hand colour key in the bottom band"
+        ),
       showGrid: z.boolean().optional().describe("Override: show grid"),
       showNonRadialPoints: z
         .boolean()
@@ -426,12 +440,14 @@ export function registerPictographTools(server: McpServer): void {
           showTND: prefs.showTND,
           showPositions: prefs.showPositions,
           showReversals: prefs.showReversals,
+          showHandColorKey: overrides.showHandColorKey,
           showGrid: prefs.showGrid,
           showNonRadialPoints: prefs.showNonRadialPoints,
           showLeftMotion: prefs.showLeftMotion,
           showRightMotion: prefs.showRightMotion,
           leftPropType: prefs.leftPropType,
           rightPropType: prefs.rightPropType,
+          fanAppearance: prefs.fanAppearance,
         };
 
         const renderer = getStandaloneRenderer();

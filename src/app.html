@@ -1228,13 +1228,6 @@
       // actual resource load. (Replaced the old Sims-style flavor reel.)
       var __tkaFlavorMessages = ["Loading the alphabet…"];
 
-      var __tkaReadyMessages = [
-        "Let's spin.",
-        "Props loaded. You're up.",
-        "Ready to flow.",
-        "All systems go.",
-      ];
-
       // --- Phase A: Resource-tracking loading bar (5% → 70%) ---
       // Uses PerformanceObserver to track real /_app/ resource loads.
       // Self-calibrating: saves observed bytes to localStorage for next visit.
@@ -1377,6 +1370,12 @@
       // Called by SvelteKit components as initialization proceeds.
 
       var __tkaCurrentPercent = 5;
+      function __tkaMarkSplash(label) {
+        try {
+          performance.mark("boot:splash:" + label);
+        } catch (e) {}
+      }
+      __tkaMarkSplash("script-start");
       var __tkaFinished = false;
       var __tkaPhaseBStarted = false; // Phase B owns the bar once it starts
       var __tkaLastTextTime = 0;
@@ -1386,6 +1385,7 @@
         // Monotonic: ignore out-of-order or duplicate calls
         if (percent <= __tkaCurrentPercent || __tkaFinished) return;
         __tkaCurrentPercent = percent;
+        __tkaMarkSplash("checkpoint:" + percent);
 
         // Phase B now owns the bar - prevent late Phase A callbacks from regressing it
         __tkaPhaseBStarted = true;
@@ -1422,22 +1422,20 @@
         var now = Date.now();
 
         if (percent >= 100) {
+          __tkaMarkSplash("shell-handoff");
           __tkaFinished = true;
-          var readyMsg =
-            __tkaReadyMessages[
-              Math.floor(Math.random() * __tkaReadyMessages.length)
-            ];
-          if (text) __tkaCrossfade(text, readyMsg);
           clearTimeout(window.__tkaLoadTimeout);
-          // Hold ready message: 200ms fade-out + 200ms fade-in + 1s visible
-          setTimeout(function () {
-            if (screen) {
-              screen.classList.add("loaded");
-              screen.addEventListener("transitionend", function () {
-                screen.remove();
-              });
-            }
-          }, 1400);
+          // Hand control to the shell immediately. Feature readiness is separate,
+          // so don't announce completion or hold the user behind a success message.
+          if (screen) {
+            __tkaMarkSplash("dismiss-start");
+            screen.classList.add("loaded");
+            screen.addEventListener("transitionend", function (event) {
+              if (event.target !== screen) return;
+              __tkaMarkSplash("removed");
+              screen.remove();
+            });
+          }
         } else if (now - __tkaLastTextTime >= __tkaMinTextGap) {
           if (text) __tkaCrossfade(text, message);
           __tkaLastTextTime = now;
@@ -1448,8 +1446,10 @@
       window.__tkaLoadTimeout = setTimeout(function () {
         var screen = document.getElementById("app-loading");
         if (screen && !screen.classList.contains("loaded")) {
+          __tkaMarkSplash("timeout-dismiss");
           screen.classList.add("loaded");
           screen.addEventListener("transitionend", function () {
+            __tkaMarkSplash("removed");
             screen.remove();
           });
         }

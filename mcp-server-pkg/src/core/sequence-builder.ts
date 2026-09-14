@@ -22,6 +22,7 @@ interface MotionData {
   rotationDirection: string;
   startOrientation: string; // "in" | "out" | "clock" | "counter"
   endOrientation: string; // "in" | "out" | "clock" | "counter"
+  turns?: number | "fl";
 }
 
 interface PictographData {
@@ -42,6 +43,8 @@ export interface SequenceStep {
   leftMotion: MotionData;
   rightMotion: MotionData;
   stepNumber: number;
+  /** Counts the step holds for; the card draws an "N×" badge when it is not 1. */
+  duration?: number;
   /** Whether this step is a bridge letter (interpolated, not user-requested) */
   isBridge?: boolean;
   /** Whether the left-hand motion has a reversal (direction change from previous step) */

@@ -5,9 +5,11 @@
     getSettings,
     updateSettings,
   } from "$lib/shared/application/state/app-state.svelte";
-  import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
+  import {
+    resolveViewingProps,
+    viewingPropLabel,
+  } from "$lib/shared/foundation/services/prop-viewing";
   import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
-  import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
@@ -17,8 +19,10 @@
     sequence = null,
     collectionPropType = null,
     preferences,
+    presentation = "default",
     onUpdate = updateSettings,
   }: {
+    presentation?: "default" | "toolbar" | "none";
     preferences?: import("$lib/shared/settings/domain/app-settings").AppSettings;
     onUpdate?: (
       patch: Partial<
@@ -33,34 +37,47 @@
   const resolved = $derived(
     resolveViewingProps(settings, sequence, collectionPropType)
   );
-  const label = $derived(
-    resolved.config.leftPropType === resolved.config.rightPropType
-      ? getPropTypeDisplayInfo(resolved.config.leftPropType).label
-      : `${getPropTypeDisplayInfo(resolved.config.leftPropType).label} / ${getPropTypeDisplayInfo(resolved.config.rightPropType).label}`
-  );
+  const label = $derived(viewingPropLabel(resolved.config));
   const mixedGallery = $derived(
     settings.propViewingMode === "as-saved" && !sequence && !collectionPropType
   );
   let ownProps = $state(captureActivePropConfig(getSettings()));
   const titleId = $props.id();
+
+  export function show(): void {
+    ownProps = captureActivePropConfig(settings);
+    open = true;
+  }
 </script>
 
-<div class="viewing-control">
-  <PanelButton
-    variant="secondary"
-    onclick={() => {
-      ownProps = captureActivePropConfig(settings);
-      open = true;
-    }}
-  >
-    Viewing: {mixedGallery ? "As saved" : label}
-    {#if !mixedGallery}<span class="source">· {resolved.source}</span>{/if}
-    <i class="fas fa-chevron-down" aria-hidden="true"></i>
-  </PanelButton>
-</div>
+{#if presentation !== "none"}
+  <div class="viewing-control" class:toolbar={presentation === "toolbar"}>
+    <PanelButton
+      variant="secondary"
+      onclick={show}
+      ariaLabel={`Viewing props: ${mixedGallery ? "As saved" : `${label}, ${resolved.source}`}`}
+      ariaExpanded={open}
+    >
+      <span class="prop-label"
+        >{presentation === "default" ? "Viewing: " : ""}{mixedGallery
+          ? "As saved"
+          : label}</span
+      >
+      {#if !mixedGallery && presentation === "default"}<span class="source"
+          >· {resolved.source}</span
+        >{/if}
+      <i class="fas fa-chevron-down" aria-hidden="true"></i>
+    </PanelButton>
+  </div>
+{/if}
 <BaseModal bind:open size="fit" labelledBy={titleId}>
   {#snippet header()}<h2 id={titleId}>Viewing props</h2>{/snippet}
   <div class="choices">
+    {#if !mixedGallery}
+      <p class="current-props">
+        {label}<span class="source"> · {resolved.source}</span>
+      </p>
+    {/if}
     <SegmentedControl
       options={[
         { value: "my-props", label: "My props" },
@@ -94,6 +111,27 @@
   .viewing-control {
     padding: 6px 12px;
     flex: 0 0 auto;
+  }
+  .viewing-control.toolbar {
+    padding: 0;
+    width: 132px;
+  }
+  .toolbar :global(.panel-btn) {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--min-touch-target, 44px);
+    padding: 0 12px;
+    justify-content: space-between;
+  }
+  .toolbar .prop-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .current-props {
+    color: var(--theme-text);
+    overflow-wrap: anywhere;
   }
   .source,
   p {

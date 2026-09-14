@@ -52,7 +52,7 @@ describe("viewer shell model", () => {
 
     expect(idle.map(({ id, label }) => ({ id, label }))).toEqual([
       { id: "share-sequence", label: "Share Sequence…" },
-      { id: "send-sequence", label: "Send in TKA" },
+      { id: "send-sequence", label: "Send in Flow Arts Composer" },
       { id: "copy-link", label: "Copy Link" },
     ]);
     expect(copied[2]).toMatchObject({

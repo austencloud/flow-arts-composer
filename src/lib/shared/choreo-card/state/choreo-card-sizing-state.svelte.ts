@@ -230,6 +230,14 @@ export function createChoreoCardSizingState(
     const hasDestination =
       destination !== null && destination.width > 0 && destination.height > 0;
 
+    // Studio borrows this same Card but no longer supplies a viewer destination.
+    // Release the grid picker's old box too, or it keeps choosing a portrait
+    // layout even after the Card has landed in the wide phone slot.
+    if (!hasDestination && deps.containSizeMotion === null) {
+      motionContainerWidth = null;
+      motionContainerHeight = null;
+    }
+
     // Whether the host pane has reached the box it is heading toward. Decided
     // from geometry rather than from the motion flag, because the incoming
     // Card can mount after the flag has cleared and still find a sliver.

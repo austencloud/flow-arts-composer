@@ -65,19 +65,29 @@ interface ViewerPaneRevealInput {
   direction: ViewerPanelDirection;
   width: number;
   height: number;
+  /** Available stage bounds, so a genuinely short viewport is still usable. */
+  stageWidth?: number;
+  stageHeight?: number;
 }
 
 /**
- * A focused pane owns the full stage and the covered pane stays invisible.
- * Split mode reveals either pane only while its current two-dimensional
- * geometry is readable.
+ * Selection names the destination, not the current geometry. A rapid focus
+ * reversal may still leave the selected pane a sliver for several frames.
+ * Reveal it only once there is room, including on short landscape screens.
  */
 export function resolveViewerPaneRevealReady(
   input: ViewerPaneRevealInput
 ): boolean {
-  if (input.focusedPane === input.pane) return true;
-  if (input.focusedPane !== null) return false;
-  return isViewerPaneReadyToReveal(input.direction, input.width, input.height);
+  if (input.focusedPane !== null && input.focusedPane !== input.pane)
+    return false;
+  const threshold = (available?: number) =>
+    available !== undefined && available > 0
+      ? Math.min(MIN_VIEWER_PANE_REVEAL_SIZE, available * 0.9)
+      : MIN_VIEWER_PANE_REVEAL_SIZE;
+  return (
+    input.width >= threshold(input.stageWidth) &&
+    input.height >= threshold(input.stageHeight)
+  );
 }
 
 function clampFraction(value: number): number {

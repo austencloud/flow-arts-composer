@@ -72,7 +72,7 @@
 
   const globalHint = $derived.by(() => {
     const vm = getAnimationVisibilityManager();
-    if (vm.getMotionAwarePaths()) return "Motion-Aware";
+    if (vm.getMotionAwarePaths()) return "Hybrid";
     const s = vm.getPathShape();
     return s.charAt(0).toUpperCase() + s.slice(1);
   });
@@ -192,7 +192,6 @@
     width: 100%;
   }
 
-
   .turns-row {
     display: flex;
     align-items: center;
@@ -272,7 +271,6 @@
     box-shadow: 0 2px 8px rgba(var(--prop-color-rgb, 239, 68, 68), 0.25);
   }
 
-
   .invert-btn {
     display: flex;
     align-items: center;
@@ -339,7 +337,6 @@
     border-color: rgba(var(--prop-color-rgb, 239, 68, 68), 0.7);
     box-shadow: 0 2px 12px rgba(var(--prop-color-rgb, 239, 68, 68), 0.3);
   }
-
 
   .path-row {
     display: flex;

@@ -68,6 +68,19 @@ describe("bake-off selection", () => {
 });
 
 describe("usable intake entries", () => {
+  it("invalidates the model cache when a character is repaired in place", () => {
+    const model = (sha256: string) =>
+      stagedCandidate(
+        parseIntakeManifest({
+          candidates: [{ ...valid, sha256 }],
+        })[0]!
+      );
+    expect(model("a".repeat(64)).id).toBe(model("b".repeat(64)).id);
+    expect(model("a".repeat(64)).modelUrl).not.toBe(
+      model("b".repeat(64)).modelUrl
+    );
+    expect(model("invalid?hash").modelUrl).toBe(staged[0]!.modelUrl);
+  });
   it("keeps Marcus rejected even when a staged file has complete fingers", () => {
     const entries = parseIntakeManifest({
       candidates: [

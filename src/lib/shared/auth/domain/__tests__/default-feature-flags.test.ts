@@ -50,3 +50,17 @@ describe("Create tab access", () => {
     expect(assemble?.minimumRole).toBe("admin");
   });
 });
+
+describe("Choreo (acts) module default role", () => {
+  it("opens to testers without a runtime override", () => {
+    // The Permission Matrix only renders role cells for tabs and
+    // capabilities. Choreo has no tabs, so its module-level minimum role
+    // can't be lowered from the admin UI, and checkFeatureAccess() runs the
+    // role check on every path. A tester default in code is the only lever.
+    const choreo = getDefaultFeatureConfig("module:choreo");
+
+    expect(choreo).not.toBeNull();
+    expect(choreo?.enabled).toBe(true);
+    expect(choreo?.minimumRole).toBe("tester");
+  });
+});

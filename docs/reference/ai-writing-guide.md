@@ -1,5 +1,13 @@
 # AI Writing Avoidance - Full Reference
 
+## Product and notation names
+
+The app is **Flow Arts Composer**. **TKA** means **The Kinetic Alphabet**, the
+notation system. Never use TKA as shorthand for the app, its accounts, messaging,
+uploads, subscriptions, or support. Use the full product name when naming the app,
+or a clear contextual label such as "Video library" when the name is unnecessary.
+Keep TKA for notation concepts, letters, sequences, and learning material.
+
 Loaded on demand when writing user-facing copy. Core rules are in project CLAUDE.md.
 
 ---

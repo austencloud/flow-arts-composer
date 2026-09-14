@@ -7,7 +7,7 @@
   let { data } = $props();
 
   const p = $derived(data.product);
-  const title = $derived(p?.name ? `${p.name} | The Kinetic Alphabet Shop` : "Shop | The Kinetic Alphabet");
+  const title = $derived(p?.name ? `${p.name} | Flow Arts Composer Shop` : "Shop | Flow Arts Composer");
   const description = $derived(
     p?.description
       ? String(p.description).slice(0, 160)
@@ -28,7 +28,7 @@
           description,
           ...(image ? { image: [image] } : {}),
           url: canonical,
-          brand: { "@type": "Brand", name: "The Kinetic Alphabet" },
+          brand: { "@type": "Brand", name: "Flow Arts Composer" },
           ...(priceUsd != null
             ? {
                 offers: {
@@ -59,7 +59,7 @@
     <meta name="robots" content="noindex" />
   {/if}
   <meta property="og:type" content="product" />
-  <meta property="og:site_name" content="The Kinetic Alphabet" />
+  <meta property="og:site_name" content="Flow Arts Composer" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:url" content={canonical} />

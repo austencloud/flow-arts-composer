@@ -178,8 +178,19 @@
     getPreviewPictographData: () => previewPictographData,
   });
 
-  const prompt = $derived.by(() =>
-    buildPlacementPrompt({
+  const prompt = $derived.by(() => {
+    // Hands have no visible aim. Keep explicit teaching prompts, but suppress
+    // automatic aiming instructions for the hand being placed or edited.
+    const promptHand = aim.dragHand ?? placement.activeHand ?? aim.hoverHand;
+    const usesHands =
+      promptHand === HandSide.LEFT
+        ? leftPropType === PropType.HAND
+        : promptHand === HandSide.RIGHT
+          ? rightPropType === PropType.HAND
+          : leftPropType === PropType.HAND && rightPropType === PropType.HAND;
+    if (canAim && usesHands) return { parts: null, text: "" };
+
+    return buildPlacementPrompt({
       disabled,
       isComplete: placement.isComplete,
       canAim,
@@ -191,8 +202,8 @@
       rightLocation: placement.rightLocation,
       leftNoun,
       rightNoun,
-    })
-  );
+    });
+  });
 
   const pictographData = $derived.by(() =>
     buildPlacementPictographData({

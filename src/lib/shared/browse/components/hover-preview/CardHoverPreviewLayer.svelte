@@ -32,6 +32,11 @@
   import { AnimationVisibilityStateManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
   import { ensureMotionData } from "$lib/shared/sequence-viewer/services/sequence-motion-loader";
+  import {
+    performsStartSlot,
+    resolveCycleBeatIndex,
+    resolvePreviewCycleStep,
+  } from "$lib/shared/timeline/loop-cycle";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import {
     DURATION,
@@ -73,6 +78,11 @@
     sequence: SequenceData;
     orchestrator: SequenceAnimationOrchestrator;
     animState: ReturnType<typeof createAnimationPanelState>;
+    /** Whether this sequence's repeat performs the start pose, by the same
+     *  rule the canonical playback controller applies at its own boundary.
+     *  A seamlessly loopable sequence does not: its cadence stays exactly N
+     *  beats per repeat, with no stillness inserted at the seam. */
+    performsStartSlot: boolean;
   }
 
   // One per layer, not per playback: the canvas stays mounted while variations
@@ -150,7 +160,12 @@
     // would otherwise blank the card for a frame. The beat phase carries over,
     // so the new sequence picks up where the old one was.
     const outgoing = playback;
-    playback = { sequence: hydrated, orchestrator, animState };
+    playback = {
+      sequence: hydrated,
+      orchestrator,
+      animState,
+      performsStartSlot: performsStartSlot(hydrated),
+    };
     dispose(outgoing);
     if (frameId === null) frameId = requestAnimationFrame(tick);
   }
@@ -161,15 +176,37 @@
     void start(target);
   });
 
+  /**
+   * Free-running beats → a float step inside ONE repeat of this sequence.
+   *
+   * Playback time is untouched for a seamlessly loopable sequence: this is the
+   * same `(elapsed % stepCount) + 1` cadence the preview has always run. A
+   * freeform sequence performs the start hold at its seam, exactly as the
+   * canonical controller does when it restarts such a sequence at 0.
+   *
+   * The rail's wrap is solved separately, by StepStrip's loop offset: the
+   * carousel travels FORWARD through the boundary in every case (see the
+   * `loop` prop below), instead of its index falling back to beat 1 — which
+   * StepStrip reads as a backward scrub and hard-cuts (`no-anim`).
+   */
+  function cycleStep(active: Playback, elapsedBeats: number): number {
+    return resolvePreviewCycleStep(
+      elapsedBeats,
+      active.sequence.steps?.length ?? 0,
+      active.performsStartSlot
+    );
+  }
+
   // Drive prop states from the beat counter.
   $effect(() => {
     const position = currentStep;
     const active = playback;
     if (!active || !active.orchestrator.isInitialized()) return;
 
-    const stepCount = active.sequence.steps?.length || 1;
-    const step = (position % stepCount) + 1;
-    active.orchestrator.calculateState(step);
+    // calculateState treats step < 1 as the start position and holds the pose
+    // derived from beat 1's initial angles — the same contract the canonical
+    // players use for beat 0.
+    active.orchestrator.calculateState(cycleStep(active, position));
     const states = active.orchestrator.getCurrentPropStates();
     active.animState.setPropStates(states.left, states.right);
   });
@@ -177,10 +214,17 @@
   const frame = $derived.by(() => {
     const active = playback;
     if (!active) return null;
-    const stepCount = active.sequence.steps?.length || 1;
-    const step = (currentStep % stepCount) + 1;
-    const index = Math.floor(Math.max(0, Math.min(step - 1, stepCount - 1)));
-    return { step, stepData: active.sequence.steps?.[index] ?? null };
+    const stepCount = active.sequence.steps?.length ?? 0;
+    const step = cycleStep(active, currentStep);
+    const index = resolveCycleBeatIndex(step, stepCount);
+    // Start slot: show the pose the rail's Start cell shows. A sequence without
+    // a stored start position keeps the previous fallback (beat 1's pictograph)
+    // rather than blanking the stage.
+    const stepData =
+      index === null
+        ? (active.sequence.startPosition ?? active.sequence.steps?.[0] ?? null)
+        : (active.sequence.steps?.[index] ?? null);
+    return { step, stepData };
   });
 
   let readyFired = false;
@@ -321,6 +365,13 @@
           y: railRight ? 0 : SLIDE.md,
         }}
       >
+        <!-- The rail keeps its Start cell (the card morph pairs against it) and
+             loops, so the carousel always travels forward across the boundary
+             instead of cutting back to beat 1. When the sequence performs the
+             start hold the wrap is one ordinary stride; when it does not — a
+             seamlessly loopable sequence, whose cadence must not gain a beat —
+             the same forward slide carries the Start cell through the focus in
+             one step, marking the seam without costing playback time. -->
         {#await import("$lib/shared/timeline/StepStrip.svelte") then mod}
           <mod.default
             sequence={playback.sequence}
@@ -330,7 +381,8 @@
             fillHeight={true}
             anchor="center"
             orientation={railRight ? "vertical" : "horizontal"}
-            loop={false}
+            includeStartPosition={true}
+            loop={true}
             stepPulse={false}
           />
         {/await}
@@ -408,24 +460,34 @@
      word header becomes the animator's, and the start cell plus the first
      step cells fly into the rail. Only one preview layer exists app-wide and
      the overlay mounts only on the toggling card, so the static names stay
-     unique document-wide. */
+     unique document-wide.
+
+     The looping rail renders repeated copies of a cell (that is what makes the
+     wrap seamless) and a document may carry each view-transition-name only
+     once — so these pair against the focus's own repeat, which StepStrip marks
+     data-cell-instance="primary". */
   .stage {
     view-transition-name: card-morph-stage;
   }
 
-  .rail :global(.step-cell[data-step-number="0"]) {
+  .rail
+    :global(.step-cell[data-cell-instance="primary"][data-step-number="0"]) {
     view-transition-name: card-morph-cell-0;
   }
-  .rail :global(.step-cell[data-step-number="1"]) {
+  .rail
+    :global(.step-cell[data-cell-instance="primary"][data-step-number="1"]) {
     view-transition-name: card-morph-cell-1;
   }
-  .rail :global(.step-cell[data-step-number="2"]) {
+  .rail
+    :global(.step-cell[data-cell-instance="primary"][data-step-number="2"]) {
     view-transition-name: card-morph-cell-2;
   }
-  .rail :global(.step-cell[data-step-number="3"]) {
+  .rail
+    :global(.step-cell[data-cell-instance="primary"][data-step-number="3"]) {
     view-transition-name: card-morph-cell-3;
   }
-  .rail :global(.step-cell[data-step-number="4"]) {
+  .rail
+    :global(.step-cell[data-cell-instance="primary"][data-step-number="4"]) {
     view-transition-name: card-morph-cell-4;
   }
 

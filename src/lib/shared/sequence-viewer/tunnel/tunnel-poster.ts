@@ -48,7 +48,7 @@ function dataUrlBytes(dataUrl: string): number {
  */
 export function encodePosterWithinBudget(
   canvas: HTMLCanvasElement,
-  maxBytes = POSTER_MAX_BYTES,
+  maxBytes = POSTER_MAX_BYTES
 ): string {
   let dataUrl = "";
   for (const quality of POSTER_QUALITIES) {
@@ -75,7 +75,11 @@ export function capturePosterFrame(
     width = POSTER_SIZE,
     height = POSTER_SIZE,
     makeCanvas = defaultFactory,
-  }: { width?: number; height?: number; makeCanvas?: CanvasFactory } = {},
+  }: {
+    width?: number;
+    height?: number;
+    makeCanvas?: CanvasFactory;
+  } = {}
 ): string {
   const sw = source.width;
   const sh = source.height;
@@ -109,7 +113,7 @@ export function capturePosterFrame(
  */
 export function captureTunnelPoster(
   source: HTMLCanvasElement,
-  makeCanvas: CanvasFactory = defaultFactory,
+  makeCanvas: CanvasFactory = defaultFactory
 ): string {
   return capturePosterFrame(source, { makeCanvas });
 }
@@ -132,11 +136,24 @@ export function compositeContainerLayers(
   container: HTMLElement | null | undefined,
   size: number,
   makeCanvas: CanvasFactory = defaultFactory,
+  sortByZIndex = false
 ): HTMLCanvasElement | null {
   if (!container || size <= 0) return null;
   const layers = Array.from(container.querySelectorAll("canvas")).filter(
-    (c) => c.width > 0 && c.height > 0,
+    (c) =>
+      c.width > 0 &&
+      c.height > 0 &&
+      (!sortByZIndex ||
+        (getComputedStyle(c).display !== "none" &&
+          getComputedStyle(c).visibility !== "hidden"))
   );
+  if (sortByZIndex) {
+    layers.sort((left, right) => {
+      const leftZ = Number.parseInt(getComputedStyle(left).zIndex, 10) || 0;
+      const rightZ = Number.parseInt(getComputedStyle(right).zIndex, 10) || 0;
+      return leftZ - rightZ;
+    });
+  }
   if (layers.length === 0) return null;
 
   const target = makeCanvas();
@@ -178,7 +195,7 @@ export function capturePosterFromContainer(
     size?: number;
     budgetBytes?: number;
     makeCanvas?: CanvasFactory;
-  } = {},
+  } = {}
 ): string {
   const target = compositeContainerLayers(container, size, makeCanvas);
   if (!target) return "";

@@ -5,7 +5,10 @@
  */
 
 import type { EffortId } from "$lib/shared/effort/domain/effort-types";
-import type { EffectType, TipEffortMap } from "../domain/types/tip-effect-types";
+import type {
+  EffectType,
+  TipEffortMap,
+} from "../domain/types/tip-effect-types";
 import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
 
 type VisibilityObserver = () => void;
@@ -77,6 +80,7 @@ export class AnimationVisibilityStateManager {
    * setting a shared link most needs to render.
    */
   private persistenceSuspended: boolean = false;
+  private explicitPathDefault: AnimationPathPolicy | null = null;
 
   /**
    * Scoped canvases keep local display flags but share the policy used by the
@@ -84,6 +88,13 @@ export class AnimationVisibilityStateManager {
    * and live prop placement from silently diverging.
    */
   private motionPolicySource: AnimationVisibilityStateManager | null = null;
+
+  private pathSession: {
+    saved: AnimationPathPolicy;
+    preview: AnimationPathPolicy | null;
+    savedPreview: AnimationPathPolicy | null;
+    overrideCount: number;
+  } | null = null;
 
   constructor(options?: { ephemeral?: boolean }) {
     this.ephemeral = options?.ephemeral ?? false;
@@ -142,10 +153,12 @@ export class AnimationVisibilityStateManager {
         if (!("motionAwarePaths" in parsed)) parsed.motionAwarePaths = false;
         // Migrate the former shared path-line flag.
         if (!("leftPathLines" in parsed)) {
-          parsed.leftPathLines = parsed.bluePathLines ?? parsed.pathLines ?? false;
+          parsed.leftPathLines =
+            parsed.bluePathLines ?? parsed.pathLines ?? false;
         }
         if (!("rightPathLines" in parsed)) {
-          parsed.rightPathLines = parsed.redPathLines ?? parsed.pathLines ?? false;
+          parsed.rightPathLines =
+            parsed.redPathLines ?? parsed.pathLines ?? false;
         }
         delete parsed.bluePathLines;
         delete parsed.redPathLines;
@@ -209,11 +222,16 @@ export class AnimationVisibilityStateManager {
     });
   }
 
-
   getVisibility(
     key: Exclude<
       keyof AnimationVisibilitySettings,
-      "gridMode" | "playbackMode" | "speed" | "darkMode" | "effortPreset" | "pathShape" | "tipEffortMap"
+      | "gridMode"
+      | "playbackMode"
+      | "speed"
+      | "darkMode"
+      | "effortPreset"
+      | "pathShape"
+      | "tipEffortMap"
     >
   ): boolean {
     return this.settings[key] as boolean;
@@ -222,7 +240,7 @@ export class AnimationVisibilityStateManager {
   /** Includes the shared policy actually used by prop placement. */
   getSettings(): AnimationVisibilitySettings {
     const source = this.motionPolicySource;
-    if (!source) return { ...this.settings };
+    if (!source) return { ...this.settings, ...this.getPathPolicy() };
     return {
       ...this.settings,
       ...source.getPathPolicy(),
@@ -230,11 +248,15 @@ export class AnimationVisibilityStateManager {
     };
   }
 
-
   setVisibility(
     key: Exclude<
       keyof AnimationVisibilitySettings,
-      "gridMode" | "playbackMode" | "speed" | "effortPreset" | "pathShape" | "tipEffortMap"
+      | "gridMode"
+      | "playbackMode"
+      | "speed"
+      | "effortPreset"
+      | "pathShape"
+      | "tipEffortMap"
     >,
     visible: boolean
   ): void {
@@ -275,11 +297,17 @@ export class AnimationVisibilityStateManager {
    * class and motion-colour cache follow it. `setDarkMode` is called explicitly
    * because `updateSettings` assigns the field without running that sync.
    */
-  replaceAll(next: AnimationVisibilitySettings): void {
-    this.updateSettings(structuredClone(next));
+  replaceAll(
+    next: AnimationVisibilitySettings,
+    restoringBorrowedSettings = false
+  ): void {
+    this.updateSettings({
+      ...structuredClone(next),
+      ...(restoringBorrowedSettings ? this.explicitPathDefault : null),
+    });
+    if (restoringBorrowedSettings) this.explicitPathDefault = null;
     this.setDarkMode(next.darkMode);
   }
-
 
   getGridMode(): GridMode {
     return this.settings.gridMode;
@@ -372,7 +400,6 @@ export class AnimationVisibilityStateManager {
     this.setDarkMode(!this.settings.darkMode);
   }
 
-
   getEffortPreset(): EffortId {
     const source = this.motionPolicySource;
     if (source) return source.getEffortPreset();
@@ -410,7 +437,6 @@ export class AnimationVisibilityStateManager {
     return (this.effectsConfigState?.activeEffect ?? "none") as EffectType;
   }
 
-
   /** Routes policy reads and writes through one owner; `null` restores local ownership. */
   setMotionPolicySource(source: AnimationVisibilityStateManager | null): void {
     this.motionPolicySource = source === this ? null : source;
@@ -418,14 +444,14 @@ export class AnimationVisibilityStateManager {
   }
 
   getPathShape(): "arc" | "linear" | "concave" {
-    const source = this.motionPolicySource;
-    if (source) return source.getPathShape();
-    return this.settings.pathShape;
+    return this.getPathPolicy().pathShape;
   }
 
   getPathPolicy(): AnimationPathPolicy {
     const source = this.motionPolicySource;
     if (source) return source.getPathPolicy();
+    if (this.pathSession)
+      return { ...(this.pathSession.preview ?? this.pathSession.saved) };
     return {
       pathShape: this.settings.pathShape,
       motionAwarePaths: this.settings.motionAwarePaths,
@@ -437,6 +463,11 @@ export class AnimationVisibilityStateManager {
     const source = this.motionPolicySource;
     if (source) {
       source.setPathPolicy(policy);
+      this.notifyObservers();
+      return;
+    }
+    if (this.pathSession) {
+      this.pathSession.preview = { ...policy };
       this.notifyObservers();
       return;
     }
@@ -456,21 +487,21 @@ export class AnimationVisibilityStateManager {
       this.notifyObservers();
       return;
     }
-    this.settings.pathShape = shape;
-    this.saveToStorage();
-    this.notifyObservers();
+    this.setPathPolicy({ ...this.getPathPolicy(), pathShape: shape });
   }
 
   togglePathShape(): void {
-    const cycle: Array<"arc" | "linear" | "concave"> = ["arc", "linear", "concave"];
-    const idx = cycle.indexOf(this.settings.pathShape);
+    const cycle: Array<"arc" | "linear" | "concave"> = [
+      "arc",
+      "linear",
+      "concave",
+    ];
+    const idx = cycle.indexOf(this.getPathShape());
     this.setPathShape(cycle[(idx + 1) % cycle.length]!);
   }
 
   getMotionAwarePaths(): boolean {
-    const source = this.motionPolicySource;
-    if (source) return source.getMotionAwarePaths();
-    return this.settings.motionAwarePaths;
+    return this.getPathPolicy().motionAwarePaths;
   }
 
   setMotionAwarePaths(enabled: boolean): void {
@@ -480,19 +511,103 @@ export class AnimationVisibilityStateManager {
       this.notifyObservers();
       return;
     }
-    this.settings.motionAwarePaths = enabled;
-    this.saveToStorage();
+    this.setPathPolicy({ ...this.getPathPolicy(), motionAwarePaths: enabled });
+  }
+
+  /** A viewer borrows only path behavior; other preferences keep their existing scope. */
+  beginPathSession(
+    saved: AnimationPathPolicy,
+    overrideCount: number
+  ): () => void {
+    const previous = this.pathSession;
+    const session = {
+      saved: { ...saved },
+      preview: null,
+      savedPreview: null,
+      overrideCount,
+    };
+    this.pathSession = session;
+    this.notifyObservers();
+    return () => {
+      if (this.pathSession !== session) return;
+      this.pathSession = previous;
+      this.notifyObservers();
+    };
+  }
+
+  getPathSession(): {
+    preview: AnimationPathPolicy | null;
+    applied: AnimationPathPolicy | null;
+    overrideCount: number;
+  } | null {
+    if (this.motionPolicySource)
+      return this.motionPolicySource.getPathSession();
+    if (!this.pathSession) return null;
+    return {
+      preview: this.pathSession.preview
+        ? { ...this.pathSession.preview }
+        : null,
+      applied: this.pathSession.preview ?? this.pathSession.savedPreview,
+      overrideCount: this.pathSession.overrideCount,
+    };
+  }
+
+  restoreSavedPaths(): void {
+    if (this.motionPolicySource)
+      return this.motionPolicySource.restoreSavedPaths();
+    if (!this.pathSession) return;
+    this.pathSession.preview = null;
+    this.notifyObservers();
+  }
+
+  makePathsDefault(): void {
+    if (this.motionPolicySource)
+      return this.motionPolicySource.makePathsDefault();
+    const policy = this.getPathPolicy();
+    // Preserve other preferences when the viewer was opened from a shared link.
+    if (typeof window !== "undefined" && !this.ephemeral) {
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          ...(this.loadFromStorage() ?? this.getDefaultSettings()),
+          ...policy,
+        })
+      );
+    }
+    this.explicitPathDefault = this.persistenceSuspended ? { ...policy } : null;
+    Object.assign(this.settings, policy);
+    this.notifyObservers();
+  }
+
+  acceptSavedPaths(policy: AnimationPathPolicy): void {
+    if (!this.pathSession) return;
+    const preview = this.pathSession.preview;
+    this.pathSession.saved = { ...policy };
+    this.pathSession.savedPreview = { ...policy };
+    this.pathSession.overrideCount = 0;
+    if (
+      preview?.pathShape === policy.pathShape &&
+      preview?.motionAwarePaths === policy.motionAwarePaths
+    ) {
+      this.pathSession.preview = null;
+    }
     this.notifyObservers();
   }
 
   toggleMotionAwarePaths(): void {
-    this.setMotionAwarePaths(!this.settings.motionAwarePaths);
+    this.setMotionAwarePaths(!this.getMotionAwarePaths());
   }
 
   toggleVisibility(
     key: Exclude<
       keyof AnimationVisibilitySettings,
-      "gridMode" | "playbackMode" | "speed" | "darkMode" | "effortPreset" | "pathShape" | "tipEffortMap"
+      | "gridMode"
+      | "playbackMode"
+      | "speed"
+      | "darkMode"
+      | "effortPreset"
+      | "pathShape"
+      | "tipEffortMap"
     >
   ): void {
     this.setVisibility(key, !(this.settings[key] as boolean));

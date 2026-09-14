@@ -34,7 +34,7 @@ export {
 
 const { NORTH: N, EAST: E, SOUTH: S, WEST: W } = GridLocation;
 
-type Move = readonly [
+export type Move = readonly [
   leftFrom: GridLocation,
   leftTo: GridLocation,
   rightFrom: GridLocation,
@@ -127,76 +127,99 @@ function card(
   };
 }
 
+/**
+ * The raw five-row waypoint tables behind the six reference cards: row 0 is
+ * the start position, rows 1-4 are the beats. Exported so labs that transform
+ * hand paths (rotate, mirror, flip, phase) start from the same geometry the
+ * cards, learn lessons, and printed decks use.
+ */
+export const HAND_PATH_REFERENCE_MOVES: Readonly<
+  Record<HandPathReferenceCardId, readonly Move[]>
+> = {
+  ss: [
+    [S, S, N, N],
+    [S, W, N, E],
+    [W, N, E, S],
+    [N, E, S, W],
+    [E, S, W, N],
+  ],
+  ts: [
+    [S, S, S, S],
+    [S, W, S, W],
+    [W, N, W, N],
+    [N, E, N, E],
+    [E, S, E, S],
+  ],
+  so: [
+    [W, W, W, W],
+    [W, N, W, S],
+    [N, E, S, E],
+    [E, S, E, N],
+    [S, W, N, W],
+  ],
+  to: [
+    [S, S, S, S],
+    [S, W, S, E],
+    [W, N, E, N],
+    [N, E, N, W],
+    [E, S, W, S],
+  ],
+  qo: [
+    [S, S, E, E],
+    [S, W, E, N],
+    [W, N, N, W],
+    [N, E, W, S],
+    [E, S, S, E],
+  ],
+  qs: [
+    [S, S, E, E],
+    [S, E, E, N],
+    [E, N, N, W],
+    [N, W, W, S],
+    [W, S, S, E],
+  ],
+};
+
 export const ALPHA_BETA_HAND_PATH_CARDS = [
-  card(
-    getHandPathReferenceDefinition("ss"),
-    [
-      [S, S, N, N],
-      [S, W, N, E],
-      [W, N, E, S],
-      [N, E, S, W],
-      [E, S, W, N],
-    ],
-    [Letter.A, Letter.A, Letter.A, Letter.A]
-  ),
-  card(
-    getHandPathReferenceDefinition("ts"),
-    [
-      [S, S, S, S],
-      [S, W, S, W],
-      [W, N, W, N],
-      [N, E, N, E],
-      [E, S, E, S],
-    ],
-    [Letter.G, Letter.G, Letter.G, Letter.G]
-  ),
-  card(
-    getHandPathReferenceDefinition("so"),
-    [
-      [W, W, W, W],
-      [W, N, W, S],
-      [N, E, S, E],
-      [E, S, E, N],
-      [S, W, N, W],
-    ],
-    [Letter.D, Letter.J, Letter.D, Letter.J]
-  ),
-  card(
-    getHandPathReferenceDefinition("to"),
-    [
-      [S, S, S, S],
-      [S, W, S, E],
-      [W, N, E, N],
-      [N, E, N, W],
-      [E, S, W, S],
-    ],
-    [Letter.D, Letter.J, Letter.D, Letter.J]
-  ),
+  card(getHandPathReferenceDefinition("ss"), HAND_PATH_REFERENCE_MOVES.ss, [
+    Letter.A,
+    Letter.A,
+    Letter.A,
+    Letter.A,
+  ]),
+  card(getHandPathReferenceDefinition("ts"), HAND_PATH_REFERENCE_MOVES.ts, [
+    Letter.G,
+    Letter.G,
+    Letter.G,
+    Letter.G,
+  ]),
+  card(getHandPathReferenceDefinition("so"), HAND_PATH_REFERENCE_MOVES.so, [
+    Letter.D,
+    Letter.J,
+    Letter.D,
+    Letter.J,
+  ]),
+  card(getHandPathReferenceDefinition("to"), HAND_PATH_REFERENCE_MOVES.to, [
+    Letter.D,
+    Letter.J,
+    Letter.D,
+    Letter.J,
+  ]),
 ] as const satisfies readonly HandPathReferenceCard[];
 
 export const GAMMA_HAND_PATH_CARDS = [
-  card(
-    getHandPathReferenceDefinition("qo"),
-    [
-      [S, S, E, E],
-      [S, W, E, N],
-      [W, N, N, W],
-      [N, E, W, S],
-      [E, S, S, E],
-    ],
-    [null, Letter.P, null, Letter.P]
-  ),
-  card(
-    getHandPathReferenceDefinition("qs"),
-    [
-      [S, S, E, E],
-      [S, E, E, N],
-      [E, N, N, W],
-      [N, W, W, S],
-      [W, S, S, E],
-    ],
-    [null, null, null, null]
-  ),
+  card(getHandPathReferenceDefinition("qo"), HAND_PATH_REFERENCE_MOVES.qo, [
+    null,
+    Letter.P,
+    null,
+    Letter.P,
+  ]),
+  card(getHandPathReferenceDefinition("qs"), HAND_PATH_REFERENCE_MOVES.qs, [
+    null,
+    null,
+    null,
+    null,
+  ]),
 ] as const satisfies readonly HandPathReferenceCard[];
 
 /**

@@ -44,6 +44,12 @@ export type {
   MotionSvgColorOptions,
 } from "./svg-color.js";
 
+export {
+  applyFanFrameColor,
+  applyFanPaperContrast,
+  FAN_PAPER_CONTRAST,
+} from "./fan-appearance.js";
+
 // Viewbox constants
 export {
   VIEWBOX_SIZE,
@@ -143,6 +149,7 @@ export {
 // Grid position
 export {
   getHandPointCoordinates,
+  getNormalHandPointCoordinates,
   getLayer2PointCoordinates,
 } from "./calculations/grid-position.js";
 
@@ -194,3 +201,13 @@ export type {
   ReversalDotPosition,
   ReversalPositions,
 } from "./calculations/reversal-positions.js";
+
+// Start-position hand colour key
+export {
+  HAND_COLOR_KEY,
+  calculateHandColorKeyLayout,
+} from "./calculations/hand-color-key.js";
+export type {
+  HandColorKeyEntry,
+  HandColorKeyLayout,
+} from "./calculations/hand-color-key.js";

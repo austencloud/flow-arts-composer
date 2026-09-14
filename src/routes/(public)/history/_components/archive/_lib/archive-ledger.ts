@@ -117,7 +117,7 @@ export const ARCHIVE_LANES: ArchiveLane[] = [
 		id: "teaching",
 		label: "Teaching & Archives",
 		description:
-			"People and institutions that preserve and teach structured knowledge.",
+			"Lessons, teaching communities, and archives.",
 	},
 	{
 		id: "research",
@@ -179,7 +179,7 @@ const CATALOG_CLASSIFICATION: Record<
 		activity: {
 			status: "active",
 			lastVerifiedYear: 2026,
-			note: "The VTG 4 announcement is dated August 29, 2026. The public web apps were reviewed on September 8, 2026.",
+			note: "VTG 4 was announced on August 29, 2026. The linked apps were checked on September 8, 2026.",
 		},
 	},
 	"nine-square": {
@@ -202,8 +202,6 @@ const CATALOG_CLASSIFICATION: Record<
 		// establish the publications, not current practice.
 		dateLabel: "2012",
 		evidenceBasis: "directly-observed",
-		evidenceNote:
-			"The linked publications establish the works and dates. Current activity is unknown.",
 	},
 	poinotation: {
 		lane: "notation",
@@ -211,8 +209,6 @@ const CATALOG_CLASSIFICATION: Record<
 		firstDocumentedYear: 2016,
 		evidenceBasis: "directly-observed",
 		evidenceLabel: "Repository record",
-		evidenceNote:
-			"The public repository establishes authorship and a machine-readable text format. Adoption and influence are unverified.",
 	},
 	tka: {
 		lane: "notation",
@@ -223,7 +219,7 @@ const CATALOG_CLASSIFICATION: Record<
 		activity: {
 			status: "active",
 			lastVerifiedYear: 2026,
-			note: "The live guide was the latest source reviewed in 2026.",
+			note: "The guide explains the letters and pictographs used in Flow Arts Composer.",
 		},
 	},
 };
@@ -235,7 +231,7 @@ const CATALOG_SOURCE_SUPPORTS: Record<
 	caps: [
 		{
 			supports:
-				"The 2009 discussion, the name Continuous Assembly Patterns, and the participants' own description of the idea.",
+				"The 2009 discussion where participants named and described Continuous Assembly Patterns.",
 			basis: "creators-account",
 		},
 	],
@@ -246,34 +242,34 @@ const CATALOG_SOURCE_SUPPORTS: Record<
 		},
 		{
 			supports:
-				"The contemporary 2009 discussion in which the model was developed and compared.",
+				"The 2009 discussion comparing approaches to modelling poi movement.",
 			basis: "community-attested",
 		},
 	],
 	vtg: [
 		{
 			supports:
-				"The document, its chapter order and bylines, and Noel Yee's account of what the project set out to record.",
+				"The guide and chapter credits, with Noel Yee’s account of the project’s aims.",
 			basis: "directly-observed",
 		},
 		{
 			supports:
-				"Yee’s February 2019 announcement of VTG 3 and his account of its origins in the earlier transition work.",
+				"Yee’s February 2019 VTG 3 announcement and a look back at the earlier transition work.",
 			basis: "creators-account",
 		},
 		{
 			supports:
-				"The publicly shared VTG 3 draft, its six-by-six snapshot grid, separate hand and prop relationships, and credits to Yee, Cantor and McKenney.",
+				"The VTG 3 draft and its six-by-six grid, with separate hand and prop relationships. Credits Yee, Cantor, and McKenney.",
 			basis: "directly-observed",
 		},
 		{
 			supports:
-				"A released VTG Version 3 app, with dated reviews by July 2019. The listing credits MCP and Yee and describes the grid, animations, transitions and quizzes.",
+				"The VTG 3 app listing credits MCP and Yee. Reviews date back to July 2019.",
 			basis: "directly-observed",
 		},
 		{
 			supports:
-				"The original VTG 3 grid and animations in a publicly accessible web app. Its About page credits Yee, Cantor and McKenney.",
+				"The VTG 3 grid with animated patterns. Its About page credits Yee, Cantor, and McKenney.",
 			basis: "directly-observed",
 		},
 		{
@@ -293,21 +289,21 @@ const CATALOG_SOURCE_SUPPORTS: Record<
 		},
 		{
 			supports:
-				"The current VTG 4 reference, its relationship to the VTG 3 grid, and separate treatment of quarter timing and quarter placement.",
+				"The VTG 4 reference and grids, including separate explanations of quarter timing and quarter placement.",
 			basis: "directly-observed",
 		},
 	],
 	"nine-square": [
 		{
 			supports:
-				"The nine-point grid and the eleven-part teaching series attributed to Charlie Cushing.",
+				"Charlie Cushing’s eleven-part series on the nine-point grid.",
 			basis: "directly-observed",
 		},
 	],
 	qft: [
 		{
 			supports:
-				"The original primer, formula, terminology, and contemporary attribution.",
+				"The original primer, including the formula and contributor credits.",
 			basis: "creators-account",
 		},
 		{
@@ -338,7 +334,7 @@ const CATALOG_SOURCE_SUPPORTS: Record<
 	poinotation: [
 		{
 			supports:
-				"The public repository, its authorship, and its machine-readable text format.",
+				"Tiffany Fong’s code and documentation, with examples of the notation.",
 			basis: "directly-observed",
 		},
 	],
@@ -362,7 +358,7 @@ function catalogCitation(
 		href: source.href,
 		supports:
 			claim?.supports ??
-			"The corresponding claim in the existing notation catalog.",
+			"Source for this entry.",
 		basis: claim?.basis ?? "directly-observed",
 	};
 }
@@ -384,10 +380,10 @@ const catalogEntries: ArchiveEntry[] = NOTATION_CATALOG.map((catalogEntry) => {
 		people: catalogEntry.people,
 		summary: catalogEntry.records,
 		evidenceBasis: classification.evidenceBasis,
-		evidenceLabel: classification.evidenceLabel ?? "Catalog source review",
+		evidenceLabel: classification.evidenceLabel ?? "Sources",
 		evidenceShortLabel:
 			catalogEntry.id === "poinotation"
-				? "Repository only"
+				? "Repository"
 				: EVIDENCE_BASIS_LABELS[classification.evidenceBasis],
 		evidenceNote: classification.evidenceNote,
 		citations: catalogEntry.sources.map((source, sourceIndex) =>
@@ -407,12 +403,12 @@ const researchEntries: ArchiveEntry[] = [
 		shortTitle: "Jillings",
 		people: "Anna Jillings (now Anna Semlyen), illustrated by Julie Wilson",
 		summary:
-			"A teaching book with 20 lessons on club swinging and related pole techniques, including alternating timing, grips, and transitions. The complete book and additional articles are free to read on the author's Cosmos Jugglers website.",
+			"Twenty lessons on club swinging and related pole techniques, including alternating timing, grips, and transitions. Read the complete book and further articles free on the author’s Cosmos Jugglers website.",
 		evidenceBasis: "creators-account",
 		evidenceLabel: "Author's online edition",
 		evidenceShortLabel: "Author source",
 		evidenceNote:
-			"The book is dated 1994. Its acknowledgements credit Julie Wilson's illustrations, based on Anna Jillings' sketches. All reading links go to the author's site.",
+			"Published in 1994, with Julie Wilson’s illustrations based on Anna Jillings’ sketches.",
 		// The author serves these files over HTTP; the HTTPS URLs do not load.
 		// Keep this record link-only. The personal reading copy is not a site asset.
 		citations: [
@@ -450,18 +446,18 @@ const researchEntries: ArchiveEntry[] = [
 		activity: {
 			status: "archive-online",
 			lastVerifiedYear: 2026,
-			note: "The lessons and forum archive remain online. The newest visible forum post is from April 2025, while most movement boards last posted between 2018 and 2021.",
+			note: "Lessons and forum discussions remain available in the online archive.",
 		},
 		title: "Home of Poi",
 		shortTitle: "Home of Poi",
 		people: "Malcolm Crawshay and the Home of Poi community",
 		summary:
-			"One of the first online poi schools and once a major gathering place. Malcolm Crawshay launched it in 1998; its lessons and hundreds of thousands of forum posts preserve technique, terminology, safety practice, and debate.",
+			"Malcolm Crawshay launched Home of Poi in 1998 as an online poi school. Its lessons and hundreds of thousands of forum posts document how spinners taught techniques, discussed safety, and debated what to call their moves.",
 		evidenceBasis: "creators-account",
 		evidenceLabel: "Organization history",
 		evidenceShortLabel: "Org source",
 		evidenceNote:
-			"Home of Poi dates its launch to October 26, 1998 and names Malcolm Crawshay as its founder. The forum archive preserves the community's part of the record.",
+			"Home of Poi gives October 26, 1998 as its launch date.",
 		citations: [
 			{
 				label: "Home of Poi: Our mission and values",
@@ -474,14 +470,14 @@ const researchEntries: ArchiveEntry[] = [
 				label: "Home of Poi forum archive",
 				href: "https://www.homeofpoi.com/us/community/forums/",
 				supports:
-					"The archive's scale and sparse recent activity across its public boards.",
+					"Discussions of poi technique, safety, and community life.",
 				basis: "directly-observed",
 			},
 			{
 				label: "How do you define a weave?, 2002",
 				href: "https://www.homeofpoi.com/en/community/forums/topics/120838/How-do-you-define-a-weave",
 				supports:
-					"A 2002 discussion of weave terminology and teaching language in public.",
+					"Spinners discussing how to define and teach a weave in 2002.",
 				basis: "community-attested",
 			},
 		],
@@ -494,32 +490,32 @@ const researchEntries: ArchiveEntry[] = [
 		activity: {
 			status: "active",
 			lastVerifiedYear: 2026,
-			note: "A 2026 workshop post is the latest dated source in this record.",
+			note: "Flow Collective Chicago advertised a Fan Alphabet workshop in 2026.",
 		},
 		title: "Fan Alphabet",
 		shortTitle: "Fan Alphabet",
 		people:
-			"A community teaching vocabulary; Clarissa Ohm is an early documented teacher.",
+			"A community vocabulary. Clarissa Ohm is an early documented teacher.",
 		summary:
-			"A vocabulary for fan relations and transitions. Public lessons show the term in use from at least 2019 through 2026. No reviewed source names a sole inventor.",
+			"A vocabulary for relationships between fans and the transitions that connect them. The linked teaching posts use the name Fan Alphabet in 2019 and 2026.",
 		evidenceBasis: "unresolved",
 		evidenceLabel: "Attribution unresolved",
 		evidenceShortLabel: "Unresolved",
 		evidenceNote:
-			"Origin unresolved. Clarissa Ohm is the earliest documented teacher in the sources reviewed.",
+			"The vocabulary’s origin remains unclear. Clarissa Ohm’s 2019 teaching post is the earliest source linked here.",
 		citations: [
 			{
 				label: "Clarissa Ohm: Intro to Tech Fans discussion, 2019",
 				href: "https://www.reddit.com/r/flowarts/comments/e2kulk",
 				supports:
-					"An early public tutorial sequence naming Fan Alphabet as a planned lesson.",
+					"Ohm’s 2019 tutorial plan includes a Fan Alphabet lesson.",
 				basis: "creators-account",
 			},
 			{
 				label: "Flow Collective Chicago workshop post, 2026",
 				href: "https://www.instagram.com/p/DbjxPAnRUmC/",
 				supports:
-					"A public 2026 fan workshop using the term.",
+					"A 2026 workshop advertised as Fan Alphabet.",
 				basis: "community-attested",
 			},
 		],
@@ -533,12 +529,12 @@ const researchEntries: ArchiveEntry[] = [
 		shortTitle: "QST",
 		people: "Mentive, based on Alex Kurowski's grid",
 		summary:
-			"Mentive's three visual reference documents organize 228 patterns across Quarter “Time” Breaks, Quarter “Time” Advanced, and Quarter Space Beyond. Mentive identifies the documents as his work, based on Alex Kurowski's grid.",
+			"Mentive’s three diagram collections contain 228 patterns, based on Alex Kurowski’s grid. They cover Quarter “Time” Breaks, Quarter “Time” Advanced, and Quarter Space Beyond.",
 		evidenceBasis: "creators-account",
 		evidenceLabel: "Creator attribution and preserved documents",
 		evidenceShortLabel: "Creator source",
 		evidenceNote:
-			"The PDFs were exported from quarterspace.tech on March 15, 2024. That dates these copies, not the system's origin. Mentive identifies himself as the document author and Alex Kurowski's grid as the foundation.",
+			"These PDFs were exported from quarterspace.tech on March 15, 2024. The archive uses that export date. The system’s creation date is unknown. Mentive credits Alex Kurowski’s grid as the basis for his documents.",
 		citations: [
 			{
 				label: 'Quarter “Time” Breaks, complete PDF',
@@ -580,7 +576,7 @@ const researchEntries: ArchiveEntry[] = [
 				pageImagePrefix:
 					"/images/history/quarter-space-tech/breaks",
 				pageCount: 7,
-				note: "56 patterns across seven parts, preserved as seven diagram pages.",
+				note: "56 patterns in seven parts, on seven diagram pages.",
 			},
 			{
 				id: "advanced",
@@ -591,7 +587,7 @@ const researchEntries: ArchiveEntry[] = [
 				pageImagePrefix:
 					"/images/history/quarter-space-tech/advanced",
 				pageCount: 16,
-				note: "64 advanced patterns, preserved as sixteen diagram pages.",
+				note: "64 advanced patterns on sixteen diagram pages.",
 			},
 			{
 				id: "beyond",
@@ -602,7 +598,7 @@ const researchEntries: ArchiveEntry[] = [
 				pageImagePrefix:
 					"/images/history/quarter-space-tech/beyond",
 				pageCount: 27,
-				note: "108 beyond patterns, preserved as twenty-seven diagram pages.",
+				note: "108 patterns on twenty-seven diagram pages.",
 			},
 		],
 	},
@@ -614,13 +610,13 @@ const researchEntries: ArchiveEntry[] = [
 		activity: {
 			status: "active",
 			lastVerifiedYear: 2026,
-			note: "A current camp listing was the latest source reviewed in 2026.",
+			note: "The linked Leviathan Flow Camp listing was checked in 2026.",
 		},
 		title: "PLAYPOI",
 		shortTitle: "PLAYPOI",
 		people: "Nick Woolsey",
 		summary:
-			"A poi movement laboratory and teaching project built around instructional media, workshops, retreats, and community exchange.",
+			"Nick Woolsey’s poi teaching project, founded in fall 2004. It combines instructional videos with workshops and retreats where people practise together.",
 		evidenceBasis: "creators-account",
 		evidenceLabel: "Organization source",
 		evidenceShortLabel: "Org source",
@@ -629,7 +625,7 @@ const researchEntries: ArchiveEntry[] = [
 				label: "About PLAYPOI",
 				href: "https://playpoi.com/about-playpoi/",
 				supports:
-					"The official 2004 launch and the movement-laboratory, media, workshop, and retreat model.",
+					"The story of PLAYPOI’s 2004 launch and its approach to teaching.",
 				basis: "creators-account",
 			},
 			{
@@ -643,7 +639,7 @@ const researchEntries: ArchiveEntry[] = [
 				label: "Leviathan Flow Camp listing",
 				href: "https://playpoi.com/2025/01/08/leviathan-flow-camp-2025/",
 				supports:
-					"A current camp listing reviewed in 2026.",
+					"Details of Leviathan Flow Camp.",
 				basis: "creators-account",
 			},
 		],
@@ -656,18 +652,16 @@ const researchEntries: ArchiveEntry[] = [
 		activity: {
 			status: "active",
 			lastVerifiedYear: 2026,
-			note: "Festival listings were the latest sources reviewed in 2026.",
+			note: "The linked festival listings were checked in 2026.",
 		},
 		title: "Flow Arts Institute",
 		shortTitle: "FAI",
 		people: "Flow Arts Institute",
 		summary:
-			"An education and festival network that publishes resources and brings workshop-based learning into flow-arts gatherings. Its history marks 2007 as the year it became involved with Fire Drums.",
+			"An organization that teaches flow arts through festivals and published resources. Its own history dates its involvement with Fire Drums to 2007.",
 		evidenceBasis: "creators-account",
 		evidenceLabel: "Organization retrospective",
 		evidenceShortLabel: "Org source",
-		evidenceNote:
-			"The 2007 marker dates Fire Drums involvement, according to the organization's retrospective.",
 		citations: [
 			{
 				label: "The History of the Term ‘Flow Arts’",
@@ -680,14 +674,14 @@ const researchEntries: ArchiveEntry[] = [
 				label: "Flow Arts Institute team",
 				href: "https://flowartsinstitute.com/about-us/",
 				supports:
-					"The people and educational organization represented by the entry.",
+					"The team behind the organization and its teaching programs.",
 				basis: "creators-account",
 			},
 			{
 				label: "Flow Arts Institute festival listings, 2026",
 				href: "https://flowartsinstitute.com/",
 				supports:
-					"Festival listings visible during the 2026 review.",
+					"The organization’s festival listings.",
 				basis: "creators-account",
 			},
 		],
@@ -700,13 +694,13 @@ const researchEntries: ArchiveEntry[] = [
 		activity: {
 			status: "active",
 			lastVerifiedYear: 2026,
-			note: "A public event calendar was the latest source reviewed in 2026.",
+			note: "Drexler lists teaching events in his 2026 calendar.",
 		},
 		title: "DrexFactor / Weird Science",
 		shortTitle: "DrexFactor",
 		people: "Ben Drexler",
 		summary:
-			"A public archive of poi theory, tutorials, diagrams, experiments, corrections, and community documents.",
+			"Ben Drexler’s tutorials and writing about poi theory. His Weird Science blog records experiments and discussions, with diagrams and documents from other spinners.",
 		evidenceBasis: "creators-account",
 		evidenceLabel: "Creator archive",
 		evidenceShortLabel: "Creator source",
@@ -724,14 +718,14 @@ const researchEntries: ArchiveEntry[] = [
 				label: "And so it begins, 2009",
 				href: "https://drexfactor.com/weirdscience/2009/10/06/and_so_it_begins",
 				supports:
-					"The written blog's stated purpose: public conversation around the art and science of poi.",
+					"Drexler’s first written blog post explains why he wants to discuss poi’s art and science in public.",
 				basis: "creators-account",
 			},
 			{
 				label: "DrexFactor event calendar, 2026",
 				href: "https://drexfactor.com/calendar/2026",
 				supports:
-					"A public event calendar reviewed in 2026.",
+					"Drexler’s 2026 teaching schedule.",
 				basis: "creators-account",
 			},
 		],
@@ -744,24 +738,22 @@ const researchEntries: ArchiveEntry[] = [
 		activity: {
 			status: "unknown",
 			lastVerifiedYear: 2024,
-			note: "The creators' 2024 development note is the latest dated source in this record.",
+			note: "In 2024, Camacho and Haines described the system as still in development.",
 		},
 		title: "Staff Science",
 		shortTitle: "Staff Science",
 		people: "Jay-J Camacho and Stephen Haines",
 		summary:
-			"A developing contact-staff terminology and teaching project. Its creators say system work began in 2019 and later appeared publicly as a tutorial mini-series.",
+			"Jay-J Camacho and Stephen Haines’ contact-staff terminology and tutorial project. In their 2024 account, they date the work to 2019 and describe teaching it before releasing the mini-series.",
 		evidenceBasis: "creators-account",
 		evidenceLabel: "Creators' account",
 		evidenceShortLabel: "Creator source",
-		evidenceNote:
-			"The creators' 2024 post dates their work on the system to 2019 and describes it as ongoing.",
 		citations: [
 			{
 				label: "Staff Science profile",
 				href: "https://www.instagram.com/staff_science/",
 				supports:
-					"The collaborators behind Staff Science and their description of the mini-series as one part of a larger project.",
+					"Camacho and Haines introduce Staff Science and its tutorial mini-series.",
 				basis: "creators-account",
 			},
 			{
@@ -782,7 +774,7 @@ const researchEntries: ArchiveEntry[] = [
 		shortTitle: "Visual Notes",
 		people: "Charlie Nayler",
 		summary:
-			"Visual annotations layered over contact-staff video, presented by Nayler as an experiment in combining diagrams and footage.",
+			"Charlie Nayler’s experiment with drawing diagrams over contact-staff footage. Arrows annotate the movement as the video plays.",
 		evidenceBasis: "creators-account",
 		evidenceLabel: "Creator-defined experiment",
 		evidenceShortLabel: "Creator source",
@@ -791,7 +783,7 @@ const researchEntries: ArchiveEntry[] = [
 				label: "Visual Notes 01",
 				href: "https://www.instagram.com/p/DW6-yF5DL9F/",
 				supports:
-					"The published annotations, their basic arrow key, and Nayler's statement of intent.",
+					"The annotated video, with an arrow key and Nayler’s explanation of the experiment.",
 				basis: "creators-account",
 			},
 		],
@@ -804,13 +796,13 @@ const researchEntries: ArchiveEntry[] = [
 		activity: {
 			status: "active",
 			lastVerifiedYear: 2026,
-			note: "Public posts from August 2026 are the latest dated sources in this record.",
+			note: "Hatt shared the linked practice notes in August 2026.",
 		},
 		title: "Contact-staff pathway research",
 		shortTitle: "Flowgoesapien",
 		people: "Alex Hatt, publishing as flowgoesapien",
 		summary:
-			"Public practice notes that name and demonstrate contact-staff pathways, including the ‘smudge’ concept.",
+			"Alex Hatt names and demonstrates contact-staff pathways in his practice notes, including a movement he calls a ‘smudge.’",
 		evidenceBasis: "creators-account",
 		evidenceLabel: "Current creator posts",
 		evidenceShortLabel: "Creator source",
@@ -819,14 +811,14 @@ const researchEntries: ArchiveEntry[] = [
 				label: "Smudge concept post",
 				href: "https://www.instagram.com/flowgoesapien/reel/DaE-hUHxnU1/",
 				supports:
-					"Hatt's public definition and demonstration of a contact-staff ‘smudge.’",
+					"Hatt defines and demonstrates a contact-staff ‘smudge.’",
 				basis: "creators-account",
 			},
 			{
 				label: "Alex Hatt / flowgoesapien",
 				href: "https://www.instagram.com/flowgoesapien/",
 				supports:
-					"The creator identity and the surrounding public research practice.",
+					"Hatt’s profile and further contact-staff practice notes.",
 				basis: "creators-account",
 			},
 		],
@@ -910,12 +902,12 @@ export function entrySpanEndYear(entry: ArchiveEntry): number {
 export function activityLabel(entry: ArchiveEntry): string | undefined {
 	if (!entry.activity) return undefined;
 	if (entry.activity.status === "active") {
-		return `Active · verified ${entry.activity.lastVerifiedYear}`;
+		return `Sources checked in ${entry.activity.lastVerifiedYear}`;
 	}
 	if (entry.activity.status === "archive-online") {
-		return "Archive online · community dormant";
+		return "Online archive";
 	}
-	return `Last public trace ${entry.activity.lastVerifiedYear}`;
+	return `Latest source: ${entry.activity.lastVerifiedYear}`;
 }
 
 /**

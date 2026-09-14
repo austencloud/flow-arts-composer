@@ -16,11 +16,25 @@ function injectInternals(
   Object.assign(mgr, fields);
 }
 
+/**
+ * The resizer measures `clientWidth`/`clientHeight`, not the bounding rect: a
+ * transformed rectangle is not the canvas's raster allocation, and transforms
+ * never notify ResizeObserver. jsdom gives a detached div no client box at all,
+ * so a test container has to declare one.
+ */
+function sizeContainer(container: HTMLElement, size: number): void {
+  for (const prop of ["clientWidth", "clientHeight"] as const) {
+    Object.defineProperty(container, prop, {
+      configurable: true,
+      get: () => size,
+    });
+  }
+}
+
 describe("CanvasLifecycleManager", () => {
   it("redraws a paused canvas only after its resized textures are ready", async () => {
     const container = document.createElement("div");
-    container.getBoundingClientRect = () =>
-      ({ width: 320, height: 320 }) as DOMRect;
+    sizeContainer(container, 320);
     let finishResize!: () => void;
     const resize = vi.fn(
       () =>
@@ -47,8 +61,7 @@ describe("CanvasLifecycleManager", () => {
 
   it("does not redraw a player removed while its resize is pending", async () => {
     const container = document.createElement("div");
-    container.getBoundingClientRect = () =>
-      ({ width: 320, height: 320 }) as DOMRect;
+    sizeContainer(container, 320);
     let finishResize!: () => void;
     const resize = () =>
       new Promise<void>((resolve) => {

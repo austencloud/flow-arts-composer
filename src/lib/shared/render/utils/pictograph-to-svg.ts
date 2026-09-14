@@ -1,3 +1,4 @@
+import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 /**
  * Utility for rendering Pictograph component to SVG string
  *
@@ -21,6 +22,7 @@ import { mount, tick, unmount } from "svelte";
  * When provided, these override the global visibility settings
  */
 export interface PictographVisibilityOptions {
+  fanAppearance?: FanAppearance;
   primaryPropColors?: { left: string; right: string } | null;
   showTKA?: boolean; // TKA Glyph includes turn numbers
   showTnD?: boolean;
@@ -132,6 +134,7 @@ export async function renderPictographToSVG(
       componentProps.darkMode = visibilityOptions.darkMode; // Dark Mode controls background/grid
       componentProps.printMode = visibilityOptions.printMode; // Print Mode: pure white background
       // Pass explicit prop types through to PictographPreparer for consistency during async rendering
+      componentProps.fanAppearanceOverride = visibilityOptions.fanAppearance;
       componentProps.leftPropTypeOverride = visibilityOptions.leftPropType;
       componentProps.rightPropTypeOverride = visibilityOptions.rightPropType;
       if (visibilityOptions.showLeftMotion !== undefined) {

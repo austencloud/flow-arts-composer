@@ -32,7 +32,12 @@
 -->
 <script lang="ts">
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { getPropTypeDisplayInfo } from "./prop-type-registry";
+  import PropCompositionPreview from "$lib/shared/pictograph/prop/components/PropCompositionPreview.svelte";
+  import {
+    resolveViewerCustomColorPair,
+    type ViewerCustomColorPair,
+  } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import type { PropLook } from "$lib/shared/pictograph/prop/domain/prop-look";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import type {
     ChiralityHand,
@@ -45,15 +50,19 @@
     propType,
     hands,
     onChange,
+    colors,
+    propLook,
   }: {
     /** The prop whose art the segments preview. */
     propType: PropType;
     /** One entry per hand this picker governs, left first. */
     hands: readonly PropChiralityHandState[];
     onChange: (hand: ChiralityHand, flipped: boolean) => void;
+    colors?: ViewerCustomColorPair | null;
+    propLook?: PropLook;
   } = $props();
 
-  const displayInfo = $derived(getPropTypeDisplayInfo(propType));
+  const palette = $derived(resolveViewerCustomColorPair(colors));
 
   const options = [
     { value: "a" as const, label: "A" },
@@ -72,7 +81,12 @@
   </div>
   <div class="chirality-controls">
     {#each hands as state (state.hand)}
-      <div class="chirality-hand" class:red={state.hand === "right"}>
+      <div
+        class="chirality-hand"
+        class:red={state.hand === "right"}
+        style:--dm-motion-blue={palette.left}
+        style:--dm-motion-red={palette.right}
+      >
         <span class="chirality-hand-label">
           <span class="chirality-hand-dot" aria-hidden="true"></span>
           {state.hand === "right" ? "Right prop" : "Left prop"}
@@ -81,16 +95,24 @@
           {options}
           value={valueFor(state.flipped)}
           onchange={(next) => onChange(state.hand, next === "b")}
-          color={state.hand === "left" ? "blue" : "red"}
+          color={palette[state.hand]}
           semantics="radiogroup"
-          ariaLabel="{state.hand === 'right' ? 'Right' : 'Left'} buugeng chirality"
+          ariaLabel="{state.hand === 'right'
+            ? 'Right'
+            : 'Left'} buugeng chirality"
         >
           {#snippet optionContent(option)}
-            <img
-              src={displayInfo.image}
-              alt=""
-              class="chirality-art"
-              class:mirrored={option === "b"}
+            <PropCompositionPreview
+              {propType}
+              size={40}
+              pairedGlyph
+              singleHand={state.hand}
+              darkBackground
+              useSavedOverrides={false}
+              colors={palette}
+              appearanceOverride={{ propLook }}
+              leftFlipped={option === "b"}
+              rightFlipped={option === "b"}
             />
             <span class="chirality-word">{option === "b" ? "B" : "A"}</span>
           {/snippet}
@@ -216,28 +238,10 @@
     min-width: 0;
   }
 
-  .chirality-art {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
-    flex-shrink: 0;
-  }
-
-  .chirality-art.mirrored {
-    transform: scaleX(-1);
-  }
-
   .chirality-word {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  /* Tint the previews to the hand they belong to, matching CompactPropDisplay.
-     With two controls side by side this is what tells them apart, so it is
-     load-bearing rather than decorative. */
-  .chirality-hand.red .chirality-art {
-    filter: hue-rotate(125deg) saturate(1.2);
   }
 
   /* The summary becomes one readable block before either phrase is forced

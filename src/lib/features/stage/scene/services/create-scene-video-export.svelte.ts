@@ -171,7 +171,7 @@ export function createSceneVideoExport(viewer: Viewer3DState) {
     const filename =
       sanitizeFilename(simplifyRepeatedWord(rawName)) || "sequence";
     await shareOrDownloadBlob(blob, `${filename}-3d.mp4`, {
-      title: "TKA 3D Scene",
+      title: "Flow Arts Composer 3D Scene",
     });
   }
 

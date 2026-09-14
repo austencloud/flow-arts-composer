@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sword: Gladius. Waisted leaf blade to a point, spherical pommel. Hardware st0 -> recolors; gold wick st1 preserved. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 572.3 64">
+<style type="text/css">
+	.st0{fill:#989498;}
+	.st1{fill:#ffd540;}
+</style>
+<defs>
+	<linearGradient id="sheen" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+		<stop offset="0.05" stop-color="#ffffff" stop-opacity="0"/>
+		<stop offset="0.30" stop-color="#ffffff" stop-opacity="0.85"/>
+		<stop offset="0.46" stop-color="#ffffff" stop-opacity="0.05"/>
+		<stop offset="0.62" stop-color="#000000" stop-opacity="0"/>
+		<stop offset="1" stop-color="#000000" stop-opacity="0.5"/>
+	</linearGradient>
+	<linearGradient id="bladeSheen" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+		<stop offset="0.2" stop-color="#ffffff" stop-opacity="0"/>
+		<stop offset="0.4" stop-color="#fffbe0" stop-opacity="0.92"/>
+		<stop offset="0.54" stop-color="#ffffff" stop-opacity="0.1"/>
+		<stop offset="0.68" stop-color="#6b4e00" stop-opacity="0"/>
+		<stop offset="0.92" stop-color="#6b4e00" stop-opacity="0.6"/>
+	</linearGradient>
+</defs>
+
+<!-- Blade (gold wick): leaf with waist, swells then tapers to point -->
+<path class="st1" stroke="#3a2c00" stroke-width="1" stroke-linejoin="round"
+	d="M294 26 C356 30 380 30 412 25 C462 18 524 20 560 29 L566 32 L560 35
+	   C524 44 462 46 412 39 C380 34 356 34 294 38 Z"/>
+<path fill="url(#bladeSheen)"
+	d="M294 26 C356 30 380 30 412 25 C462 18 524 20 560 29 L566 32 L560 35
+	   C524 44 462 46 412 39 C380 34 356 34 294 38 Z"/>
+
+<!-- Guard -->
+<rect class="st0" stroke="#141418" stroke-width="1.3" x="281" y="20" width="12" height="24" rx="3"/>
+<rect fill="url(#sheen)" x="281" y="20" width="12" height="24" rx="3"/>
+
+<!-- Grip -->
+<rect class="st0" stroke="#141418" stroke-width="1.2" x="160" y="26" width="121" height="12" rx="6"/>
+<rect fill="url(#sheen)" x="160" y="26" width="121" height="12" rx="6"/>
+
+<!-- Spherical pommel -->
+<circle class="st0" stroke="#141418" stroke-width="1.3" cx="146" cy="32" r="14"/>
+<circle fill="url(#sheen)" cx="146" cy="32" r="14"/>
+</svg>

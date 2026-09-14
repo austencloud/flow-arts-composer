@@ -30,10 +30,7 @@ even when Svelte recreates the component instance.
   import type { PropPosition } from "../domain/models/prop-position";
   import { getSettings } from "../../../application/state/app-state.svelte";
   import { getAnimationVisibilityManager } from "../../../animation-engine/state/animation-visibility-state.svelte";
-  import {
-    applyColorToSvg,
-    SELECTIVE_COLOR_PROP_TYPES,
-  } from "$lib/shared/utils/svg-color-utils";
+  import { applyHandColorOverride } from "../domain/prop-preview-color";
 
   // Buugeng family - asymmetric props that can be flipped
   const BUUGENG_FAMILY = new Set([
@@ -124,13 +121,12 @@ even when Svelte recreates the component instance.
   const renderedPropType = $derived(propAssets.propType ?? motionData.propType);
   const colorizedArtwork = $derived(
     colorOverride
-      ? applyColorToSvg(propAssets.imageSrc, colorOverride, {
-          makeClassNamesUnique: true,
-          colorSuffix: colorOverride.replace(/[^a-z0-9]/gi, ""),
-          selectiveColorMode: (
-            SELECTIVE_COLOR_PROP_TYPES as readonly string[]
-          ).includes(String(renderedPropType ?? "").toLowerCase()),
-        })
+      ? applyHandColorOverride(
+          propAssets.imageSrc,
+          motionData.hand,
+          String(renderedPropType ?? ""),
+          colorOverride
+        )
       : propAssets.imageSrc
   );
   const renderedArtwork = $derived(colorizedArtwork);

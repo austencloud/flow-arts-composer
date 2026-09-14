@@ -49,6 +49,7 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
   import type { TipEffectMap } from "../domain/types/tip-effect-types";
   import type { AnimationVisibilityStateManager } from "../state/animation-visibility-state.svelte";
   import CanvasSurface from "./CanvasSurface.svelte";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { untrack } from "svelte";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 
@@ -69,6 +70,7 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
     trailSettings = undefined,
     leftPropType = null,
     rightPropType = null,
+    primaryPropColors,
     fanAppearance = undefined,
     tipEffectMap = undefined,
     visibilityManagerOverride = undefined,
@@ -103,6 +105,7 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
     ledConfig?: Partial<LedOverlayConfig>;
     trailSettings?: TrailSettings;
     leftPropType?: string | null;
+    primaryPropColors?: ViewerCustomColorPair;
     rightPropType?: string | null;
     fanAppearance?: FanAppearance;
     tipEffectMap?: TipEffectMap;
@@ -174,6 +177,7 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
 >
   <div class="split-canvas">
     <CanvasSurface
+      {primaryPropColors}
       {leftProp}
       rightProp={null}
       {gridVisible}
@@ -203,6 +207,7 @@ WHAT THE PARENT (AnimatorCanvas) OWNS:
   </div>
   <div class="split-canvas">
     <CanvasSurface
+      {primaryPropColors}
       leftProp={null}
       {rightProp}
       {gridVisible}

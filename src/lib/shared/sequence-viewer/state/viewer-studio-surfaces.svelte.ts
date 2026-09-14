@@ -56,10 +56,19 @@ export function createViewerStudioSurfaces() {
   let externalInspectorTarget = $state.raw<HTMLElement | null>(null);
   let destinations = $state.raw<CanvasDestination[]>([]);
   let inspectorTarget = $state.raw<HTMLElement | null>(null);
+  let inspectorContent = $state<"animation" | "card" | "studio">("animation");
   let movingSurfaces = $state<Record<string, boolean>>({});
   let controls = $state.raw<(() => StudioControls) | null>(null);
   let entry = $state({ position: 0, playing: false, bpm: 60, revision: 0 });
   return {
+    get inspectorContent() {
+      return inspectorContent;
+    },
+    setInspectorContent(content: "animation" | "card" | "studio") {
+      // Keep the selected half while away, so returning never flashes the
+      // animation controls before discovering that the Card was selected.
+      inspectorContent = content;
+    },
     get externalInspectorTarget() {
       return externalInspectorTarget;
     },

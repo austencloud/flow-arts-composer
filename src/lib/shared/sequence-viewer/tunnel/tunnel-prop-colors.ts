@@ -25,11 +25,24 @@ import { normalizeLegacyHandPair } from "@tka/tka-types";
 
 export type TunnelPropColorMode = "hands" | "spectrum" | "custom";
 
-export type TunnelPropColorPair = ViewerCustomColorPair;
+export interface TunnelPropColorPair extends ViewerCustomColorPair {
+  /** Resolved stage order, including the base performer at index zero. */
+  performers?: ViewerCustomColorPair[];
+}
+
+export interface TunnelPerformerColors {
+  mode: "custom" | "hue";
+  custom: ViewerCustomColorPair;
+  hue: number;
+  saturation: number;
+  leftLightness: number;
+  rightLightness: number;
+}
 
 export interface TunnelPropColorState {
   mode: TunnelPropColorMode;
   custom: TunnelPropColorPair;
+  performers?: Record<string, TunnelPerformerColors>;
 }
 
 /** Stable seed for Custom mode. It deliberately uses the dark-stage hand
@@ -60,6 +73,7 @@ export function resolveTunnelPropColorState(
     value && typeof value === "object"
       ? (value as {
           mode?: unknown;
+          performers?: unknown;
           custom?: { left?: unknown; right?: unknown } | null;
         })
       : null;
@@ -74,17 +88,112 @@ export function resolveTunnelPropColorState(
         : "spectrum";
   return {
     mode,
+    ...normalizePerformerEntries(candidate?.performers),
     custom: {
       left: normalizeTunnelHexColor(
         custom?.left,
-        DEFAULT_TUNNEL_CUSTOM_PROP_COLORS.left
+        DEFAULT_TUNNEL_CUSTOM_PROP_COLORS.left.toLowerCase()
       ),
       right: normalizeTunnelHexColor(
         custom?.right,
-        DEFAULT_TUNNEL_CUSTOM_PROP_COLORS.right
+        DEFAULT_TUNNEL_CUSTOM_PROP_COLORS.right.toLowerCase()
       ),
     },
   };
+}
+
+function finite(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+export function normalizePerformerColors(
+  value: unknown
+): TunnelPerformerColors {
+  const v = (
+    value && typeof value === "object" ? value : {}
+  ) as Partial<TunnelPerformerColors>;
+  const percent = (n: unknown, fallback: number) =>
+    Math.max(0, Math.min(100, finite(n, fallback)));
+  return {
+    mode: v.mode === "hue" ? "hue" : "custom",
+    custom: {
+      left: normalizeTunnelHexColor(v.custom?.left, "#8080ff"),
+      right: normalizeTunnelHexColor(v.custom?.right, "#000080"),
+    },
+    hue: ((finite(v.hue, 240) % 360) + 360) % 360,
+    saturation: percent(v.saturation, 100),
+    leftLightness: percent(v.leftLightness, 75),
+    rightLightness: percent(v.rightLightness, 25),
+  };
+}
+
+function normalizePerformerEntries(
+  value: unknown
+): Pick<TunnelPropColorState, "performers"> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const entries = Object.entries(value)
+    .filter(
+      ([id, v]) =>
+        id.length > 0 &&
+        id.length <= 200 &&
+        v &&
+        typeof v === "object" &&
+        ["custom", "hue"].includes((v as TunnelPerformerColors).mode)
+    )
+    .slice(0, 128)
+    .map(([id, v]) => [id, normalizePerformerColors(v)]);
+  return entries.length ? { performers: Object.fromEntries(entries) } : {};
+}
+
+export function resolvePerformerColorPair(
+  value: TunnelPerformerColors
+): ViewerCustomColorPair {
+  const colors = normalizePerformerColors(value);
+  if (colors.mode === "custom") return { ...colors.custom };
+  const shade = (lightness: number) => {
+    const rgb = hslToRgb01(
+      colors.hue,
+      colors.saturation / 100,
+      lightness / 100
+    );
+    return `#${toHex2(rgb.r * 255)}${toHex2(rgb.g * 255)}${toHex2(rgb.b * 255)}`;
+  };
+  return {
+    left: shade(colors.leftLightness),
+    right: shade(colors.rightLightness),
+  };
+}
+
+export function tunnelPerformerPair(
+  colors: TunnelPropColorPair,
+  index: number
+): ViewerCustomColorPair {
+  return (
+    colors.performers?.[index] ?? { left: colors.left, right: colors.right }
+  );
+}
+
+export function buildTunnelRenderColors(
+  state: TunnelPropColorState,
+  performerIds: readonly string[],
+  handColors: ViewerCustomColorPair
+): TunnelPropColorPair | null {
+  if (!performerIds.some((id) => Object.hasOwn(state.performers ?? {}, id))) {
+    return activeTunnelPropColorPair(state);
+  }
+  const performers = performerIds.map((id, index) => {
+    const override = Object.hasOwn(state.performers ?? {}, id)
+      ? state.performers![id]
+      : undefined;
+    if (override) return resolvePerformerColorPair(override);
+    if (state.mode === "custom") return { ...state.custom };
+    if (state.mode === "hands" || index === 0) return { ...handColors };
+    return {
+      left: tunnelPropColor(index * 2, performerIds.length - 1).hex,
+      right: tunnelPropColor(index * 2 + 1, performerIds.length - 1).hex,
+    };
+  });
+  return { ...performers[0]!, performers };
 }
 
 /** Exact pair sent to the engine only while Custom mode is active. */

@@ -16,6 +16,7 @@
     showMandala = false,
     highlightedStepIndex = null,
     onStepClick,
+    posePicker = false,
     leftPropType,
     rightPropType,
   }: {
@@ -27,6 +28,8 @@
     showMandala?: boolean;
     highlightedStepIndex?: number | null;
     onStepClick?: (stepIndex: number) => void;
+    /** Choose Start picker: step tiles render as the pose after their beat. */
+    posePicker?: boolean;
     leftPropType?: PropType;
     rightPropType?: PropType;
   } = $props();
@@ -66,6 +69,7 @@
     pictographData={step}
     disableTransitions={true}
     disableContentTransitions={true}
+    poseOnly={posePicker}
     showGrid={true}
     showTKA={false}
     showReversals={true}
@@ -143,12 +147,12 @@
       <button
         type="button"
         class="live-cell step-cell first-step-choice"
-        class:current-first-step={index === 0}
+        class:current-first-step={index === sequence.steps.length - 1}
         style="grid-column:{stepColumn(index)};grid-row:{stepRow(index)};"
         onclick={() => onStepClick(index)}
-        aria-label={index === 0
-          ? "Step 1 is already first"
-          : `Make step ${index + 1} the new first step`}
+        aria-label={index === sequence.steps.length - 1
+          ? "This pose is already the start"
+          : `Start from the pose after step ${index + 1}`}
       >
         {@render stepPictograph(step, index)}
       </button>

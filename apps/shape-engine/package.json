@@ -1,0 +1,12 @@
+{
+  "name": "@tka/shape-engine-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../../scripts/svelte-kit-sync-if-needed.mjs && vite build --config vite.config.ts && node scripts/copy-assets.mjs",
+    "android:icons": "node scripts/prepare-icons.mjs",
+    "android:sync": "cap sync android",
+    "preview": "vite preview --config vite.config.ts --host 127.0.0.1"
+  }
+}

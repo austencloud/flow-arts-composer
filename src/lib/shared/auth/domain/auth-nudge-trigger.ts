@@ -42,7 +42,7 @@ export const AUTH_NUDGE_TEXTS: Record<AuthNudgeTrigger, string> = {
   "step-cap-guest":
     "Guests can create sequences up to 8 steps. Create a free account for up to 64 steps.",
   // Sequence Actions panel: the Patterns section (Turn Pattern, Direction,
-  // Duration, First Step, Rewind) is an account perk; Transform and Edit stay
+  // Duration, Choose Start, Rewind) is an account perk; Transform and Edit stay
   // free so guests still feel the product. Extend routes to step-cap-guest
   // instead — it adds steps, so the cap copy names the real unlock.
   "patterns-guest":
@@ -120,7 +120,7 @@ const AUTH_PROMPT_CONTENTS: Record<AuthNudgeTrigger, AuthPromptContent> = {
   "patterns-guest": {
     key: "patterns-guest",
     title: "Use pattern tools",
-    body: "A free account adds Turn Pattern, Direction, Duration, First Step, and Rewind.",
+    body: "A free account adds Turn Pattern, Direction, Duration, Choose Start, and Rewind.",
   },
   export: {
     key: "export",

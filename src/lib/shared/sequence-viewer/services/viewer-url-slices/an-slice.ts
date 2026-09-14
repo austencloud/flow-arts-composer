@@ -24,11 +24,9 @@
  * fx's `activeEffect`/`tipEffectMap`. Both are normalized before diffing and
  * always travel together.
  *
- * Capture reads RAW settings, not `getSettings()`. The `motionPolicySource`
- * overlay is installed in exactly one place (`FuseAnimationPreview.svelte:61`, a
- * Fuse preview borrowing another manager's path/effort policy) and never on the
- * global instance the viewer reads. Raw is the user-owned state, and it is what
- * `replaceAll` has to write back on restore.
+ * Capture overlays the viewer's effective path policy on the raw snapshot.
+ * `pathPreview` preserves an explicit Arc override even when its values match
+ * factory defaults. Restoration still uses the original user-owned snapshot.
  */
 import type {
   AnimationSettings,
@@ -55,6 +53,7 @@ interface AnimationSettingsPatch {
 }
 
 export interface AnSlicePayload {
+  pathPreview?: boolean;
   settings?: AnimationSettingsPatch;
   visibility?: Partial<AnimationVisibilitySettings>;
 }
@@ -62,7 +61,10 @@ export interface AnSlicePayload {
 /** The live globals, narrowed to what this slice reads. */
 export interface AnSliceStores {
   settings: Pick<AnimationSettingsState, "snapshot">;
-  visibility: Pick<AnimationVisibilityStateManager, "snapshot">;
+  visibility: Pick<AnimationVisibilityStateManager, "snapshot"> &
+    Partial<
+      Pick<AnimationVisibilityStateManager, "getPathPolicy" | "getPathSession">
+    >;
 }
 
 /** The `tipEffortMap` that `loadFromStorage` derives for a given preset. */
@@ -143,7 +145,9 @@ function captureVisibility(
   const live = normalizedVisibility(snapshot);
   const patch: Partial<AnimationVisibilitySettings> = {};
 
-  for (const key of Object.keys(base) as (keyof AnimationVisibilitySettings)[]) {
+  for (const key of Object.keys(
+    base
+  ) as (keyof AnimationVisibilitySettings)[]) {
     // The mirror pair is one quantity, handled below: both fields or neither.
     if (key === "effortPreset" || key === "tipEffortMap") continue;
     if (full || !deepEqual(live[key], base[key])) {
@@ -173,9 +177,16 @@ export function captureAnSlice(
 ): AnSlicePayload | null {
   const full = options.full === true;
   const settings = captureSettings(stores.settings.snapshot(), full);
-  const visibility = captureVisibility(stores.visibility.snapshot(), full);
+  const visibility = captureVisibility(
+    {
+      ...stores.visibility.snapshot(),
+      ...stores.visibility.getPathPolicy?.(),
+    },
+    full
+  );
 
   const payload: AnSlicePayload = {};
+  if (stores.visibility.getPathSession?.()?.preview) payload.pathPreview = true;
   if (settings) payload.settings = settings;
   if (visibility) payload.visibility = visibility;
 
@@ -194,7 +205,9 @@ export interface AnSliceSeed {
 function assignKnownKeys<T extends object>(target: T, patch: object): void {
   for (const key of Object.keys(target)) {
     if (key in patch) {
-      (target as Record<string, unknown>)[key] = (patch as Record<string, unknown>)[key];
+      (target as Record<string, unknown>)[key] = (
+        patch as Record<string, unknown>
+      )[key];
     }
   }
 }

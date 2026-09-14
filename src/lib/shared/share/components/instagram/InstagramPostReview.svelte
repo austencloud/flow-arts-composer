@@ -58,7 +58,7 @@
 
   function directPublishMessage(): string {
     if (eligibility.reasonCode === "meta/capabilities-missing") {
-      return "Reconnect Instagram so TKA can verify what this account supports.";
+      return "Reconnect Instagram so Flow Arts Composer can verify what this account supports.";
     }
     if (eligibility.reasonCode === "meta/account-mismatch") {
       return "This draft belongs to a different Instagram account.";
@@ -77,7 +77,7 @@
     </button>
     <div class="title-group">
       <span class="eyebrow">Instagram Review</span>
-      <h2>Check the post before it leaves TKA</h2>
+      <h2>Check the post before publishing</h2>
     </div>
     <button
       class="close-button"

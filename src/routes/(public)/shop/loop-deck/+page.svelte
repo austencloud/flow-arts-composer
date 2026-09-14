@@ -18,7 +18,7 @@
     "@type": "Product",
     name: "LOOP Deck",
     description: DESCRIPTION,
-    brand: { "@type": "Brand", name: "The Kinetic Alphabet" },
+    brand: { "@type": "Brand", name: "Flow Arts Composer" },
     url: CANONICAL,
     image: "https://tkaflowarts.com/branding/og-image.png",
     offers: {
@@ -34,17 +34,17 @@
 </script>
 
 <svelte:head>
-  <title>LOOP Deck | The Kinetic Alphabet</title>
+  <title>LOOP Deck | Flow Arts Composer</title>
   <meta name="description" content={DESCRIPTION} />
   <link rel="canonical" href={CANONICAL} />
   <meta property="og:type" content="product" />
-  <meta property="og:site_name" content="The Kinetic Alphabet" />
-  <meta property="og:title" content="LOOP Deck | The Kinetic Alphabet" />
+  <meta property="og:site_name" content="Flow Arts Composer" />
+  <meta property="og:title" content="LOOP Deck | Flow Arts Composer" />
   <meta property="og:description" content={DESCRIPTION} />
   <meta property="og:url" content={CANONICAL} />
   <meta property="og:image" content="https://tkaflowarts.com/branding/og-image.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="LOOP Deck | The Kinetic Alphabet" />
+  <meta name="twitter:title" content="LOOP Deck | Flow Arts Composer" />
   <meta name="twitter:description" content={DESCRIPTION} />
   <meta name="twitter:image" content="https://tkaflowarts.com/branding/og-image.png" />
   {@html `<script type="application/ld+json">${jsonLd}</script>`}

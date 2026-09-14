@@ -38,7 +38,7 @@ interface StateOptions {
   communityFavorites?: CommunityFavorite[];
   sharedSetupId?: string | null;
   activeSetupId?: string | null;
-  activeStatus?: "active" | "modified" | null;
+  activeStatus?: "active" | null;
   setupsLoadError?: string | null;
   pendingAction?: PendingSetupAction | null;
 }
@@ -171,14 +171,15 @@ describe("PresetDrawer", () => {
       .not.toBeInTheDocument();
   });
 
-  it("enables Update only when the applied setup is modified", async () => {
-    const stored = setup("1");
-    const screen = render(
+  it("disables Update on the active row and enables it elsewhere", async () => {
+    const active = setup("1");
+    const other = setup("2");
+    render(
       PresetDrawer,
       props(
         fakeState({
-          setups: [stored],
-          activeSetupId: stored.id,
+          setups: [active, other],
+          activeSetupId: active.id,
           activeStatus: "active",
         })
       )
@@ -194,16 +195,7 @@ describe("PresetDrawer", () => {
       .toBeDisabled();
     await page.getByRole("button", { name: "Actions for Setup 1" }).click();
 
-    await screen.rerender(
-      props(
-        fakeState({
-          setups: [stored],
-          activeSetupId: stored.id,
-          activeStatus: "modified",
-        })
-      )
-    );
-    await page.getByRole("button", { name: "Actions for Setup 1" }).click();
+    await page.getByRole("button", { name: "Actions for Setup 2" }).click();
     await expect
       .element(
         page.getByRole("menuitem", {

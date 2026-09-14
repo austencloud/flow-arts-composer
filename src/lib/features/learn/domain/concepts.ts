@@ -85,6 +85,23 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     ],
   },
   {
+    id: "reading-choreo-cards",
+    order: 3.6,
+    category: "foundation",
+    name: "Reading a Choreo Card",
+    shortName: "Choreo Cards",
+    description: "Find the start, steps, and scan code on a hand-path card.",
+    icon: "fa-id-card",
+    pdfPages: [],
+    prerequisites: ["timing-and-direction"],
+    estimatedMinutes: 4,
+    concepts: [
+      "Start position",
+      "Numbered hand-path steps",
+      "Scan to watch the sequence",
+    ],
+  },
+  {
     id: "rotation-direction",
     order: 4,
     category: "foundation",

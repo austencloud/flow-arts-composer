@@ -56,7 +56,11 @@ class FakeOffscreenCanvas {
   }
 }
 
-function path(hand: "left" | "right", color: string, totalLength = 100): PreparedMandalaPath {
+function path(
+  hand: "left" | "right",
+  color: string,
+  totalLength = 100
+): PreparedMandalaPath {
   return { path2d: {} as Path2D, totalLength, color, hand };
 }
 
@@ -65,12 +69,54 @@ afterEach(() => {
 });
 
 describe("paintMandalaGuide", () => {
+  it("updates the overlap from the active hand colors on the same retained masks", () => {
+    vi.stubGlobal("OffscreenCanvas", FakeOffscreenCanvas);
+    const masks = new MandalaOverlapMasks();
+    const context = fakeContext();
+    const target = {
+      context: context as unknown as MandalaGuideContext,
+      pixelWidth: 200,
+      pixelHeight: 200,
+      dpr: 1,
+    };
+    for (const [left, right, overlap] of [
+      ["#22c55e", "#dc2626", "#7f7642"],
+      ["#ff0000", "#0000ff", "#800080"],
+      ["#0f0", "#0f0", "#00ff00"],
+    ]) {
+      paintMandalaGuide(
+        target,
+        {
+          paths: [path("left", left!), path("right", right!)],
+          scale: 1,
+          strokeWidth: 2.5,
+        },
+        masks
+      );
+      const mask = masks.ensure(200, 200)!
+        .leftCanvas as unknown as FakeOffscreenCanvas;
+      expect(mask.context.fillStyle).toBe(overlap);
+      expect(context.strokes.slice(-2).map((stroke) => stroke.color)).toEqual([
+        left,
+        right,
+      ]);
+    }
+  });
   it("strokes every path around the center at a constant CSS stroke width", () => {
     vi.stubGlobal("OffscreenCanvas", FakeOffscreenCanvas);
     const context = fakeContext();
     paintMandalaGuide(
-      { context: context as unknown as MandalaGuideContext, pixelWidth: 400, pixelHeight: 400, dpr: 2 },
-      { paths: [path("left", "#00f"), path("right", "#f00")], scale: 1.6, strokeWidth: 2.5 },
+      {
+        context: context as unknown as MandalaGuideContext,
+        pixelWidth: 400,
+        pixelHeight: 400,
+        dpr: 2,
+      },
+      {
+        paths: [path("left", "#00f"), path("right", "#f00")],
+        scale: 1.6,
+        strokeWidth: 2.5,
+      },
       new MandalaOverlapMasks()
     );
 
@@ -89,10 +135,21 @@ describe("paintMandalaGuide", () => {
 
   it("dashes a progressive reveal and leaves a guide complete", () => {
     const context = fakeContext();
-    const target = { context: context as unknown as MandalaGuideContext, pixelWidth: 100, pixelHeight: 100, dpr: 1 };
+    const target = {
+      context: context as unknown as MandalaGuideContext,
+      pixelWidth: 100,
+      pixelHeight: 100,
+      dpr: 1,
+    };
     paintMandalaGuide(
       target,
-      { paths: [path("left", "#00f", 200)], scale: 1, strokeWidth: 2.5, reveal: true, progress: 0.25 },
+      {
+        paths: [path("left", "#00f", 200)],
+        scale: 1,
+        strokeWidth: 2.5,
+        reveal: true,
+        progress: 0.25,
+      },
       new MandalaOverlapMasks()
     );
     expect(context.strokes[0]?.dash).toEqual([50, 200]);
@@ -100,7 +157,12 @@ describe("paintMandalaGuide", () => {
     context.strokes.length = 0;
     paintMandalaGuide(
       target,
-      { paths: [path("left", "#00f", 200)], scale: 1, strokeWidth: 2.5, progress: 0.25 },
+      {
+        paths: [path("left", "#00f", 200)],
+        scale: 1,
+        strokeWidth: 2.5,
+        progress: 0.25,
+      },
       new MandalaOverlapMasks()
     );
     expect(context.strokes[0]?.dash).toEqual([]);
@@ -110,7 +172,12 @@ describe("paintMandalaGuide", () => {
     vi.stubGlobal("OffscreenCanvas", FakeOffscreenCanvas);
     const masks = new MandalaOverlapMasks();
     const context = fakeContext();
-    const target = { context: context as unknown as MandalaGuideContext, pixelWidth: 200, pixelHeight: 200, dpr: 1 };
+    const target = {
+      context: context as unknown as MandalaGuideContext,
+      pixelWidth: 200,
+      pixelHeight: 200,
+      dpr: 1,
+    };
 
     paintMandalaGuide(
       target,
@@ -121,7 +188,11 @@ describe("paintMandalaGuide", () => {
 
     paintMandalaGuide(
       target,
-      { paths: [path("left", "#00f"), path("right", "#f00")], scale: 1, strokeWidth: 2.5 },
+      {
+        paths: [path("left", "#00f"), path("right", "#f00")],
+        scale: 1,
+        strokeWidth: 2.5,
+      },
       masks
     );
     const pair = masks.ensure(200, 200)!;

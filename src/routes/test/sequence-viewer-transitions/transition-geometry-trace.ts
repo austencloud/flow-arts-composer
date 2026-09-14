@@ -65,6 +65,10 @@ export interface TransitionGeometrySample {
     sharedTransportCovered?: boolean;
     sharedRasterDensity?: number | null;
     sharedInspectorIdentity?: number;
+    motionInspectorOpacity?: number;
+    cardInspectorOpacity?: number;
+    sharedCardInspectorIdentity?: number;
+    selectedStudioHalf?: string | null;
     sharedCardIdentity?: number;
     sharedTransportIdentity?: number;
     sharedScrubberIdentity?: number;

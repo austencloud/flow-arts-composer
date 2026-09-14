@@ -2,8 +2,8 @@
   /**
    * StandardWorkspaceLayout - Workspace and Tool Panel Layout Container
    *
-   * Uses CSS Grid for smooth, animatable layout transitions.
-   * Workspace is always in DOM but collapses when empty.
+   * Uses the shared PanelGroup for animated workspace and tool-panel transitions.
+   * Both panels stay mounted while their tracks collapse when inactive.
    *
    * Domain: Create module - Layout
    */
@@ -13,6 +13,7 @@
   import UndoButton from "../workspace-panel/shared/components/buttons/UndoButton.svelte";
   import SaveToLibraryButton from "../workspace-panel/shared/components/buttons/SaveToLibraryButton.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
   // CreationWorkspaceArea (85-file subtree) only renders once a sequence exists,
   // so its chunk is deferred via LazyMount — empty/first-paint Create loads skip it.
   import CreationToolPanelSlot from "./CreationToolPanelSlot.svelte";
@@ -68,6 +69,8 @@
   let workspaceContainerRef: HTMLElement | null = $state(null);
   let layoutWrapperRef: HTMLElement | null = $state(null);
   let buttonPanelHeight = $state(0);
+  let panelSizes = $state<number[]>([]);
+  let appliedPanelLayout = $state<string | null>(null);
 
   // DERIVED STATE - Workspace Color Coding & Visibility
 
@@ -102,6 +105,19 @@
       CreateModuleState.assembleTabState?.assembleBuilderState?.phase ===
         "complete"
   );
+  const isWorkspacePlayback = $derived(!!panelState.workspacePlayback);
+
+  $effect(() => {
+    const layoutKey = `${shouldUseSideBySideLayout}:${isAssembleTab}`;
+    if (layoutKey === appliedPanelLayout) return;
+
+    appliedPanelLayout = layoutKey;
+    panelSizes = shouldUseSideBySideLayout
+      ? [1, 1]
+      : isAssembleTab
+        ? [3, 7]
+        : [5, 4];
+  });
 
   // Fuse and Tunnel own complete workspaces inside their tool-panel surface.
   const ownsFullWorkspace = $derived(
@@ -165,15 +181,7 @@
   });
 </script>
 
-<div
-  bind:this={layoutWrapperRef}
-  class="layout-wrapper"
-  class:side-by-side={shouldUseSideBySideLayout}
-  class:workspace-visible={shouldShowWorkspace}
-  class:tool-panel-collapsed={isAssembleComplete}
-  class:generator-active={isGeneratorTab}
-  class:assemble-active={isAssembleTab}
->
+{#snippet workspacePanel()}
   <!-- Workspace Panel - Visible based on tab and content -->
   <div
     bind:this={workspaceContainerRef}
@@ -207,7 +215,10 @@
     </div>
 
     {#if shouldShowWorkspace}
-      <div class="workspace-history-actions">
+      <div
+        class="workspace-history-actions"
+        inert={!!panelState.workspacePlayback}
+      >
         <UndoButton {CreateModuleState} onAction={handleWorkspaceUndo} />
         <UndoButton {CreateModuleState} direction="redo" />
       </div>
@@ -243,7 +254,9 @@
       </div>
     {/if}
   </div>
+{/snippet}
 
+{#snippet toolPanel()}
   <!-- Tool Panel -->
   <div
     class="tool-panel-container"
@@ -274,58 +287,44 @@
       />
     </div>
   </div>
+{/snippet}
+
+<div bind:this={layoutWrapperRef} class="layout-wrapper">
+  <PanelGroup
+    direction={shouldUseSideBySideLayout ? "horizontal" : "vertical"}
+    bind:sizes={panelSizes}
+    gap={0}
+    panels={[
+      {
+        id: "create-workspace",
+        content: workspacePanel,
+        defaultSize: shouldUseSideBySideLayout ? 1 : isAssembleTab ? 3 : 5,
+        fixedSize: !shouldShowWorkspace ? "0px" : undefined,
+        resizable: false,
+      },
+      {
+        id: "create-tool-panel",
+        content: toolPanel,
+        defaultSize: shouldUseSideBySideLayout ? 1 : isAssembleTab ? 7 : 4,
+        fixedSize:
+          isWorkspacePlayback || isAssembleComplete ? "0px" : undefined,
+        resizable: false,
+      },
+    ]}
+  />
 </div>
 
 <!-- Spotlight Modal - Replaced with /sequence/[id] route navigation -->
 
 <style>
   .layout-wrapper {
-    /* CSS Grid for smooth, animatable layout */
-    display: grid;
-    grid-template-rows: 0fr 1fr;
+    display: flex;
     height: 100%;
     width: 100%;
     overflow: hidden;
-    gap: 0;
 
     /* View Transitions API - use unique name to avoid duplicates */
     view-transition-name: create-workspace-layout;
-
-    /* Single smooth transition for ALL layout changes */
-    transition:
-      grid-template-rows 450ms cubic-bezier(0.4, 0, 0.2, 1),
-      grid-template-columns 450ms cubic-bezier(0.4, 0, 0.2, 1),
-      gap 450ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  /* When workspace has content - expand to 5:4 ratio */
-  .layout-wrapper.workspace-visible {
-    grid-template-rows: 5fr 4fr;
-  }
-
-  /* Assemble keeps both surfaces mounted from the first frame. The workspace
-     is an overview; the larger lower region is the actual construction tool. */
-  .layout-wrapper.workspace-visible.assemble-active:not(.side-by-side) {
-    grid-template-rows: 3fr 7fr;
-  }
-
-  /* Side-by-side layout - horizontal instead of vertical */
-  .layout-wrapper.side-by-side {
-    grid-template-rows: 1fr;
-    grid-template-columns: 0fr 1fr;
-  }
-
-  .layout-wrapper.side-by-side.workspace-visible {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  /* Assemble complete: collapse tool panel, workspace takes full height */
-  .layout-wrapper.workspace-visible.tool-panel-collapsed:not(.side-by-side) {
-    grid-template-rows: 1fr 0fr;
-  }
-
-  .layout-wrapper.side-by-side.workspace-visible.tool-panel-collapsed {
-    grid-template-columns: 1fr 0fr;
   }
 
   /* Shared container styles */
@@ -382,6 +381,10 @@
     z-index: 161;
     display: flex;
     pointer-events: auto;
+  }
+
+  .workspace-history-actions[inert] {
+    opacity: 0.45;
   }
 
   /* Collapsed state - invisible but still in layout flow */
@@ -498,12 +501,12 @@
     pointer-events: auto;
   }
 
-  /* Short viewports on Generate tab: give the tool panel a bit more room
-     so the card grid fits comfortably. Default 5fr:4fr (~55:44) becomes
-     1fr:1fr (50:50) on short screens so cards aren't squeezed. */
-  @media (max-height: 850px) {
-    .layout-wrapper.workspace-visible.generator-active:not(.side-by-side) {
-      grid-template-rows: 5fr 4fr;
+  @media (min-width: 1100px) and (min-height: 700px) {
+    /* Match the picker's shared 56px heading row so recovery shares the title's baseline. */
+    .tool-panel-container:has(:global(.start-pos-picker))
+      .clear-recovery-action {
+      top: calc(14px + (56px - var(--min-touch-target, 44px)) / 2);
+      left: clamp(24px, 2.5vw, 64px);
     }
   }
 

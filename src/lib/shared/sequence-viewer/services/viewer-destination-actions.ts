@@ -11,7 +11,7 @@ interface ViewerDestinationInputs {
   getIsAuthenticated: () => boolean;
   canManageSequenceVideos: () => boolean;
   saveSequence: () => Promise<void>;
-  onClose: () => void;
+  onClose: (reason?: "navigate") => void;
   enterVideoUpload: () => void;
 }
 
@@ -47,7 +47,7 @@ export function createViewerDestinationActions(
       returnPath: dependencies.getReturnPath(),
     });
 
-    inputs.onClose();
+    inputs.onClose("navigate");
     dependencies.showToast({
       message:
         preset === "combo-export"
@@ -69,7 +69,7 @@ export function createViewerDestinationActions(
 
     inputs.interactive.hapticService?.trigger("selection");
     dependencies.savePendingEditSequence(sequence);
-    inputs.onClose();
+    inputs.onClose("navigate");
     dependencies.showToast({
       message: "Opening for editing...",
       type: "info",

@@ -44,9 +44,6 @@
     // Labels match the APPLY TO / HandSelector convention (blue=Left, red=Right);
     // colour coding stays via laneColors.
     laneLabels: ["Left", "Right"],
-    // Same sentence as the Customize modal's turn-pattern section, so the two
-    // places you can write a turn pattern read the same way:
-    // "Left turns 1 on every other step".
     sentence: { verb: "turns" },
   };
 

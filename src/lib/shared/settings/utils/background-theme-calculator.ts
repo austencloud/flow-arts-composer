@@ -606,14 +606,14 @@ export function applyThemeFromColors(
   root.style.setProperty("--semantic-info-text", "#60a5fa");
 
   // Domain-specific prop colors (constant)
-  root.style.setProperty("--prop-blue", "#2e3192");
-  root.style.setProperty("--prop-blue-bg", "rgba(46, 49, 146, 0.15)");
-  root.style.setProperty("--prop-blue-border", "rgba(46, 49, 146, 0.4)");
-  root.style.setProperty("--prop-blue-text", "#818cf8");
-  root.style.setProperty("--prop-red", "#ed1c24");
-  root.style.setProperty("--prop-red-bg", "rgba(237, 28, 36, 0.15)");
-  root.style.setProperty("--prop-red-border", "rgba(237, 28, 36, 0.4)");
-  root.style.setProperty("--prop-red-text", "#f87171");
+  root.style.setProperty("--prop-blue", "var(--user-left-color, #2e3192)");
+  root.style.setProperty("--prop-blue-bg", "rgba(var(--user-left-rgb, 46, 49, 146), 0.15)");
+  root.style.setProperty("--prop-blue-border", "rgba(var(--user-left-rgb, 46, 49, 146), 0.4)");
+  root.style.setProperty("--prop-blue-text", "var(--user-left-color, #818cf8)");
+  root.style.setProperty("--prop-red", "var(--user-right-color, #ed1c24)");
+  root.style.setProperty("--prop-red-bg", "rgba(var(--user-right-rgb, 237, 28, 36), 0.15)");
+  root.style.setProperty("--prop-red-border", "rgba(var(--user-right-rgb, 237, 28, 36), 0.4)");
+  root.style.setProperty("--prop-red-text", "var(--user-right-color, #f87171)");
 
   // Feature accent colors (constant) - for branding different app areas
   root.style.setProperty("--feature-edit", "#8b5cf6"); // Purple - editing contexts

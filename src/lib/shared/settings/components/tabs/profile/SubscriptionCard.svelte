@@ -82,7 +82,7 @@
           <i class="fas fa-star" aria-hidden="true"></i>
         </div>
         <div class="premium-info">
-          <span class="premium-label">TKA Premium</span>
+          <span class="premium-label">Flow Arts Composer Premium</span>
           <span class="premium-status">Active</span>
         </div>
         <div class="active-badge">

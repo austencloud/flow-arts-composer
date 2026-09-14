@@ -13,6 +13,7 @@ import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import type { HandSide } from "@tka/tka-types";
+import type { HandColorPair } from "@tka/render-composition";
 
 import {
   GridMode,
@@ -22,7 +23,9 @@ import {
 } from "./enums.js";
 import {
   getLayer2PointCoordinates,
+  getNormalHandPointCoordinates,
   calculatePropPlacement,
+  pictographRequiresStrictHandpoints,
   calculateBetaOffset,
   type BetaOffsetInput,
   type BetaMotionInput,
@@ -31,7 +34,11 @@ import {
   calculateDashLocation,
   type DashLocationInput,
   calculateReversalPositions,
+  calculateHandColorKeyLayout,
+  HAND_COLOR_KEY,
   applyColorToSvg,
+  applyFanFrameColor,
+  applyFanPaperContrast,
   SELECTIVE_COLOR_PROP_TYPES,
   BLUE_COLOR_DARK,
   BLUE_COLOR_LIGHT,
@@ -276,6 +283,8 @@ export interface RenderVisibilityOptions {
   showElemental?: boolean;
   showPositions?: boolean;
   showReversals?: boolean;
+  /** Start-position legend: L/R swatches in the bottom-centre band. */
+  showHandColorKey?: boolean;
   showGrid?: boolean;
   showNonRadialPoints?: boolean;
   showLeftMotion?: boolean;
@@ -283,10 +292,73 @@ export interface RenderVisibilityOptions {
   // Prop type options (null = use default staff)
   leftPropType?: string | null;
   rightPropType?: string | null;
+  /** Physical fan build used when either hand holds fan or bigfan. */
+  fanAppearance?: FanAppearanceInput | null;
+  primaryPropColors?: HandColorPair | null;
   /** When true, use CSS custom properties for colors */
   themeable?: boolean;
   /** When true, omit XML declaration for inline HTML embedding */
   inline?: boolean;
+}
+
+const FAN_BUILDS = [
+  "pictograph",
+  "fire",
+  "flat-grip",
+  "lotus",
+  "day",
+  "moon",
+] as const;
+type FanBuild = (typeof FAN_BUILDS)[number];
+
+export interface FanAppearanceInput {
+  build?: FanBuild;
+  frameColor?: "black" | "white";
+  cover?: "bare" | "covered";
+}
+
+interface ResolvedFanAppearance {
+  build: FanBuild;
+  frameColor: "black" | "white";
+  cover: "bare" | "covered";
+}
+
+const DEFAULT_FAN_APPEARANCE: ResolvedFanAppearance = {
+  build: "fire",
+  frameColor: "black",
+  cover: "bare",
+};
+
+function resolveFanAppearance(
+  value: FanAppearanceInput | null | undefined
+): ResolvedFanAppearance {
+  return {
+    build: FAN_BUILDS.includes(value?.build as FanBuild)
+      ? (value?.build as FanBuild)
+      : DEFAULT_FAN_APPEARANCE.build,
+    frameColor: value?.frameColor === "white" ? "white" : "black",
+    cover: value?.cover === "covered" ? "covered" : "bare",
+  };
+}
+
+function isFanPropType(propType: string | null): boolean {
+  const normalized = propType?.toLowerCase();
+  return normalized === "fan" || normalized === "bigfan";
+}
+
+function fanAppearanceFile(appearance: ResolvedFanAppearance): string | null {
+  if (appearance.build === "pictograph") return null;
+  if (appearance.build === "fire") {
+    return appearance.cover === "covered"
+      ? "fan-fire-covered.svg"
+      : "fan-fire.svg";
+  }
+  if (appearance.build === "day") {
+    return appearance.cover === "covered"
+      ? "fan-day-covered.svg"
+      : "fan-day.svg";
+  }
+  return `fan-${appearance.build}.svg`;
 }
 
 export class StandaloneRenderer {
@@ -378,11 +450,14 @@ export class StandaloneRenderer {
       showElemental = false,
       showPositions = false,
       showReversals = false,
+      showHandColorKey = false,
       showGrid = true,
       showLeftMotion = true,
       showRightMotion = true,
       leftPropType = null,
       rightPropType = null,
+      fanAppearance = null,
+      primaryPropColors = null,
       themeable = false,
       inline = false,
     } = options;
@@ -418,7 +493,9 @@ export class StandaloneRenderer {
         darkMode,
         leftPropType,
         rightPropType,
-        themeable
+        fanAppearance,
+        themeable,
+        primaryPropColors
       );
       if (leftProp)
         svgParts.push(`<g class="svg-prop svg-prop-blue">${leftProp}</g>`);
@@ -431,7 +508,9 @@ export class StandaloneRenderer {
         darkMode,
         leftPropType,
         rightPropType,
-        themeable
+        fanAppearance,
+        themeable,
+        primaryPropColors
       );
       if (rightProp)
         svgParts.push(`<g class="svg-prop svg-prop-red">${rightProp}</g>`);
@@ -444,7 +523,8 @@ export class StandaloneRenderer {
         input.leftMotion,
         gridMode,
         darkMode,
-        themeable
+        themeable,
+        primaryPropColors
       );
       if (leftArrow)
         svgParts.push(`<g class="svg-arrow svg-arrow-blue">${leftArrow}</g>`);
@@ -455,7 +535,8 @@ export class StandaloneRenderer {
         input.rightMotion,
         gridMode,
         darkMode,
-        themeable
+        themeable,
+        primaryPropColors
       );
       if (rightArrow)
         svgParts.push(`<g class="svg-arrow svg-arrow-red">${rightArrow}</g>`);
@@ -496,7 +577,8 @@ export class StandaloneRenderer {
         input.leftMotion?.turns,
         input.rightMotion?.turns,
         darkMode,
-        themeable
+        themeable,
+        primaryPropColors
       );
       if (letterSvg)
         svgParts.push(`<g class="svg-glyph svg-glyph-letter">${letterSvg}</g>`);
@@ -520,7 +602,8 @@ export class StandaloneRenderer {
         input.leftReversal ?? false,
         input.rightReversal ?? false,
         darkMode,
-        themeable
+        themeable,
+        primaryPropColors
       );
       if (reversalSvg)
         svgParts.push(
@@ -528,8 +611,22 @@ export class StandaloneRenderer {
         );
     }
 
+    // 10. Start-position hand colour key (bottom centre)
+    if (showHandColorKey) {
+      const keySvg = this.renderHandColorKey(
+        showLeftMotion && !!input.leftMotion,
+        showRightMotion && !!input.rightMotion,
+        darkMode,
+        themeable,
+        primaryPropColors
+      );
+      if (keySvg)
+        svgParts.push(`<g class="svg-glyph svg-glyph-hand-key">${keySvg}</g>`);
+    }
+
     const xmlDecl = inline ? "" : `<?xml version="1.0" encoding="UTF-8"?>\n`;
-    return `${xmlDecl}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}" width="${VIEWBOX_SIZE}" height="${VIEWBOX_SIZE}" role="img" aria-label="Pictograph${input.letter ? ` for letter ${input.letter}` : ""}">
+    const halo = `<defs><filter id="arrow-halo" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="${darkMode ? "#0a0a0f" : "white"}"/><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="${darkMode ? "#0a0a0f" : "white"}"/><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="${darkMode ? "#0a0a0f" : "white"}"/></filter></defs>`;
+    return `${xmlDecl}<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}" width="${VIEWBOX_SIZE}" height="${VIEWBOX_SIZE}" role="img" aria-label="Pictograph${input.letter ? ` for letter ${input.letter}` : ""}">${halo}
 ${svgParts.join("\n")}
 </svg>`;
   }
@@ -549,6 +646,30 @@ ${svgParts.join("\n")}
       return `var(${cssVar}, ${darkValue})`;
     }
     return darkMode ? darkValue : lightValue;
+  }
+
+  private resolveMotionColor(
+    hand: HandSide,
+    darkMode: boolean,
+    themeable: boolean,
+    customColors?: HandColorPair | null
+  ): string {
+    if (customColors) return customColors[hand];
+    return hand === "left"
+      ? this.resolveColor(
+          "--dm-motion-blue",
+          BLUE_COLOR_DARK,
+          BLUE_COLOR_LIGHT,
+          darkMode,
+          themeable
+        )
+      : this.resolveColor(
+          "--dm-motion-red",
+          RED_COLOR_DARK,
+          RED_COLOR_LIGHT,
+          darkMode,
+          themeable
+        );
   }
 
   // ==========================================================================
@@ -588,7 +709,7 @@ ${svgParts.join("\n")}
       // Solution: Add explicit fill to circles without fill attribute
       const gridColor = this.resolveColor(
         "--dm-grid-point",
-        "#d0d0d0",
+        "#ffffff",
         "#000000",
         darkMode,
         themeable
@@ -686,7 +807,9 @@ ${svgParts.join("\n")}
     darkMode: boolean,
     leftPropType: string | null = null,
     rightPropType: string | null = null,
-    themeable: boolean = false
+    fanAppearance: FanAppearanceInput | null = null,
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     // Get the end location and orientation
     const endLocation = motion.endLocation.toLowerCase() as GridLocation;
@@ -700,6 +823,16 @@ ${svgParts.join("\n")}
       endOrientation,
       gridMode
     );
+    const useStrictHandPoints = pictographRequiresStrictHandpoints(
+      leftPropType ?? "staff",
+      rightPropType ?? "staff"
+    );
+    const propPosition = useStrictHandPoints
+      ? placement
+      : {
+          ...placement,
+          ...getNormalHandPointCoordinates(endLocation, gridMode),
+        };
 
     // Apply beta offset if both props end at the same location
     // Pass BOTH propTypes so hand props get the special "right on right, left on left" logic
@@ -710,21 +843,21 @@ ${svgParts.join("\n")}
       leftPropType,
       rightPropType
     );
-    const finalX = placement.x + betaOffset.x;
-    const finalY = placement.y + betaOffset.y;
+    const finalX = propPosition.x + betaOffset.x;
+    const finalY = propPosition.y + betaOffset.y;
 
     // Determine prop file name - use provided prop type or default to staff
     // Use the current motion's prop type
     const currentPropType =
       motion.hand === "left" ? leftPropType : rightPropType;
-    const propFileName = currentPropType
-      ? `${currentPropType}.svg`
-      : "staff.svg";
-    const propPath = join(
-      this.projectRoot,
-      "static/images/props",
-      propFileName
-    );
+    const fanFile = isFanPropType(currentPropType)
+      ? fanAppearanceFile(resolveFanAppearance(fanAppearance))
+      : null;
+    const propFileName =
+      fanFile ?? (currentPropType ? `${currentPropType}.svg` : "staff.svg");
+    const propPath = fanFile
+      ? join(this.projectRoot, "static/images/props/appearances", propFileName)
+      : join(this.projectRoot, "static/images/props", propFileName);
     if (!existsSync(propPath)) {
       console.error("[Renderer] Prop file not found:", propPath);
       return "";
@@ -750,22 +883,12 @@ ${svgParts.join("\n")}
         height = parts[3] || 100;
       }
 
-      const color =
-        motion.hand === "left"
-          ? this.resolveColor(
-              "--dm-motion-blue",
-              BLUE_COLOR_DARK,
-              BLUE_COLOR_LIGHT,
-              darkMode,
-              themeable
-            )
-          : this.resolveColor(
-              "--dm-motion-red",
-              RED_COLOR_DARK,
-              RED_COLOR_LIGHT,
-              darkMode,
-              themeable
-            );
+      const color = this.resolveMotionColor(
+        motion.hand,
+        darkMode,
+        themeable,
+        customColors
+      );
       const colorSuffix = motion.hand === "left" ? "blue" : "red";
       const selectiveColorMode =
         !!currentPropType &&
@@ -776,13 +899,27 @@ ${svgParts.join("\n")}
       // Use the same color transform as the browser renderer. Its class/ID
       // suffixing is essential here: blue and red copies of props such as fan
       // both define `.st0`, and an unsuffixed red rule recolors both copies.
-      const coloredPropSvg = applyColorToSvg(propSvg, color, {
-        makeClassNamesUnique: true,
-        colorSuffix,
-        selectiveColorMode,
-      });
-      const innerMatch = coloredPropSvg.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
-      const innerContent = innerMatch ? innerMatch[1] : coloredPropSvg;
+      const coloredPropSvg = fanFile
+        ? applyFanFrameColor(propSvg, color)
+        : applyColorToSvg(propSvg, color, {
+            makeClassNamesUnique: true,
+            colorSuffix,
+            selectiveColorMode,
+          });
+      const renderedPropSvg = fanFile
+        ? applyFanPaperContrast(coloredPropSvg, darkMode ? "dark" : "light")
+        : coloredPropSvg;
+      const innerMatch = renderedPropSvg.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
+      let innerContent = innerMatch ? innerMatch[1] : renderedPropSvg;
+
+      // App fan appearances share the regular fan's 260×207 pivot box. Big
+      // Fan enlarges that same artwork inside its canonical 600×566.9 box so
+      // the shared placement math continues to land on the grip.
+      if (fanFile && currentPropType?.toLowerCase() === "bigfan") {
+        width = 600;
+        height = 566.9;
+        innerContent = `<g transform="translate(60 92.3731) scale(1.8461538)">${innerContent}</g>`;
+      }
 
       // The prop's center point is at the middle of its viewBox
       const centerX = width / 2;
@@ -810,7 +947,8 @@ ${svgParts.join("\n")}
     motion: MotionInput,
     gridMode: GridMode,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     const motionType = motion.motionType.toLowerCase();
 
@@ -969,22 +1107,12 @@ ${svgParts.join("\n")}
 
       // Apply color - replace any existing fill colors with the arrow color
       // Arrow SVGs use #2e3192 as their base color
-      const color =
-        motion.hand === "left"
-          ? this.resolveColor(
-              "--dm-motion-blue",
-              BLUE_COLOR_DARK,
-              BLUE_COLOR_LIGHT,
-              darkMode,
-              themeable
-            )
-          : this.resolveColor(
-              "--dm-motion-red",
-              RED_COLOR_DARK,
-              RED_COLOR_LIGHT,
-              darkMode,
-              themeable
-            );
+      const color = this.resolveMotionColor(
+        motion.hand,
+        darkMode,
+        themeable,
+        customColors
+      );
 
       innerContent = innerContent.replace(/#000000/gi, color);
       innerContent = innerContent.replace(/black/gi, color);
@@ -1014,7 +1142,7 @@ ${svgParts.join("\n")}
       // Canvas2D renderer transform order:
       // translate to position → rotate → mirror (if needed) → translate by -center
       const mirrorTransform = shouldMirror ? " scale(-1, 1)" : "";
-      return `<g transform="translate(${finalX}, ${finalY}) rotate(${placement.rotation})${mirrorTransform} translate(${-centerX}, ${-centerY})">
+      return `<g filter="url(#arrow-halo)" transform="translate(${finalX}, ${finalY}) rotate(${placement.rotation})${mirrorTransform} translate(${-centerX}, ${-centerY})">
   ${innerContent}
 </g>`;
     } catch (error) {
@@ -1058,7 +1186,8 @@ ${svgParts.join("\n")}
     letterWidth: number,
     letterHeight: number,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     const parts: string[] = [];
 
@@ -1079,7 +1208,8 @@ ${svgParts.join("\n")}
         topY,
         "blue",
         darkMode,
-        themeable
+        themeable,
+        customColors
       );
       if (topTurnSvg) parts.push(topTurnSvg);
     }
@@ -1092,7 +1222,8 @@ ${svgParts.join("\n")}
         bottomY,
         "red",
         darkMode,
-        themeable
+        themeable,
+        customColors
       );
       if (bottomTurnSvg) parts.push(bottomTurnSvg);
     }
@@ -1109,7 +1240,8 @@ ${svgParts.join("\n")}
     y: number,
     color: "blue" | "red",
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     // Convert turns value to filename
     const filename = turns === "fl" ? "float.svg" : `${turns}.svg`;
@@ -1142,22 +1274,12 @@ ${svgParts.join("\n")}
       // Apply color - turn numbers use CSS class with fill: #010101
       // IMPORTANT: We must convert CSS class fills to inline fills because multiple
       // embedded SVGs with the same class names (.cls-1) will conflict in the document
-      const fillColor =
-        color === "blue"
-          ? this.resolveColor(
-              "--dm-motion-blue",
-              BLUE_COLOR_DARK,
-              BLUE_COLOR_LIGHT,
-              darkMode,
-              themeable
-            )
-          : this.resolveColor(
-              "--dm-motion-red",
-              RED_COLOR_DARK,
-              RED_COLOR_LIGHT,
-              darkMode,
-              themeable
-            );
+      const fillColor = this.resolveMotionColor(
+        color === "blue" ? "left" : "right",
+        darkMode,
+        themeable,
+        customColors
+      );
 
       // Remove the entire <defs><style>...</style></defs> block to avoid CSS conflicts
       innerContent = innerContent.replace(/<defs>[\s\S]*?<\/defs>/gi, "");
@@ -1209,7 +1331,8 @@ ${svgParts.join("\n")}
     leftTurns: number | "fl" | undefined,
     rightTurns: number | "fl" | undefined,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     // Determine the correct type folder for this letter
     const typeFolder = LETTER_TYPE_FOLDER[letter] || "Type1";
@@ -1276,7 +1399,8 @@ ${svgParts.join("\n")}
         width,
         height,
         darkMode,
-        themeable
+        themeable,
+        customColors
       );
 
       // Combine letter and turn numbers in a group
@@ -1652,7 +1776,8 @@ ${turnNumbersSvg}
     leftReversal: boolean,
     rightReversal: boolean,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     // Use shared core calculation for positioning
     const { dots } = calculateReversalPositions(
@@ -1664,27 +1789,56 @@ ${turnNumbersSvg}
     if (dots.length === 0) return "";
 
     const circles = dots.map((dot) => {
-      const fill = themeable
-        ? dot.color === BLUE_COLOR_DARK || dot.color === BLUE_COLOR_LIGHT
-          ? this.resolveColor(
-              "--dm-motion-blue",
-              BLUE_COLOR_DARK,
-              BLUE_COLOR_LIGHT,
-              darkMode,
-              themeable
-            )
-          : this.resolveColor(
-              "--dm-motion-red",
-              RED_COLOR_DARK,
-              RED_COLOR_LIGHT,
-              darkMode,
-              themeable
-            )
-        : dot.color;
+      const hand =
+        dot.color === BLUE_COLOR_DARK || dot.color === BLUE_COLOR_LIGHT
+          ? "left"
+          : "right";
+      const fill = this.resolveMotionColor(
+        hand,
+        darkMode,
+        themeable,
+        customColors
+      );
       return `<circle cx="${dot.cx}" cy="${dot.cy}" r="${dot.r}" fill="${fill}"/>`;
     });
 
     return `<g class="reversal-indicators">${circles.join("\n")}</g>`;
+  }
+
+  /**
+   * Start-position hand colour key. Geometry comes from the shared
+   * calculateHandColorKeyLayout so this matches PictographRenderer exactly.
+   */
+  private renderHandColorKey(
+    showLeft: boolean,
+    showRight: boolean,
+    darkMode: boolean,
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
+  ): string {
+    const layout = calculateHandColorKeyLayout(showLeft, showRight);
+    if (layout.entries.length === 0) return "";
+
+    const textColor = this.resolveColor(
+      "--dm-text-color",
+      "#ffffff",
+      "#231f20",
+      darkMode,
+      themeable
+    );
+    const parts = layout.entries.map((entry) => {
+      const fill = this.resolveMotionColor(
+        entry.hand,
+        darkMode,
+        themeable,
+        customColors
+      );
+      return (
+        `<circle cx="${entry.swatchX}" cy="${layout.centerY}" r="${layout.swatchRadius}" fill="${fill}"/>` +
+        `<text x="${entry.labelX}" y="${layout.baselineY}">${entry.label}</text>`
+      );
+    });
+    return `<g class="hand-color-key" transform="translate(${VIEWBOX_SIZE / 2}, 0)" font-family="${HAND_COLOR_KEY.FONT_FAMILY}" font-size="${HAND_COLOR_KEY.FONT_SIZE}" font-weight="${HAND_COLOR_KEY.FONT_WEIGHT}" fill="${textColor}">${parts.join("")}</g>`;
   }
 
   // ==========================================================================

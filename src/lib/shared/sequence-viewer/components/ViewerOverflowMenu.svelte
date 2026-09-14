@@ -2,15 +2,18 @@
   ViewerOverflowMenu.svelte
 
   Secondary sequence-viewer actions. Bits UI owns menu focus, keyboard
-  navigation, outside-click dismissal, and viewport collision handling.
+  focus, outside-click dismissal, and viewport collision handling.
 -->
 <script lang="ts">
-  import { DropdownMenu } from "bits-ui";
+  import { Popover } from "bits-ui";
   import type { Snippet } from "svelte";
   import type { HTMLButtonAttributes } from "svelte/elements";
   import MotionColorChips from "$lib/shared/components/MotionColorChips.svelte";
   import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
-  import { getSettings, updateSetting } from "$lib/shared/application/state/app-state.svelte";
+  import {
+    getSettings,
+    updateSetting,
+  } from "$lib/shared/application/state/app-state.svelte";
   import {
     shareTarget,
     saveActionLabel,
@@ -23,6 +26,7 @@
     onCopyLink?: () => void;
     linkCopied?: boolean;
     onPropsOpen?: () => void;
+    propsLabel?: string;
     onPublish?: () => void;
     onUnpublish?: () => void;
     onDeleteRequest?: () => void;
@@ -71,6 +75,7 @@
     onCopyLink,
     linkCopied = false,
     onPropsOpen,
+    propsLabel = "Props",
     onPublish,
     onUnpublish,
     onDeleteRequest,
@@ -124,6 +129,7 @@
 
   function handleItemSelect(action: () => void): void {
     pendingCloseReason = "item";
+    handleOpenChange(false);
     action();
   }
 
@@ -207,7 +213,7 @@
     }
     if (onPropsOpen) {
       items.push({
-        label: "Props",
+        label: propsLabel,
         icon: "fa-wand-magic-sparkles",
         action: onPropsOpen,
         dividerBefore: items.length > 0,
@@ -250,8 +256,8 @@
 {#if shouldRender}
   <div class="overflow-wrapper" class:title-trigger={!!trigger}>
     {#if hasMenu}
-      <DropdownMenu.Root open={isOpen} onOpenChange={handleOpenChange}>
-        <DropdownMenu.Trigger onclick={noteTriggerClick}>
+      <Popover.Root open={isOpen} onOpenChange={handleOpenChange}>
+        <Popover.Trigger onclick={noteTriggerClick}>
           {#snippet child({ props })}
             {@const triggerProps = asButtonAttributes(props)}
             <button
@@ -271,13 +277,13 @@
               {/if}
             </button>
           {/snippet}
-        </DropdownMenu.Trigger>
+        </Popover.Trigger>
 
         <!-- The sequence viewer drawer already owns scroll locking. Keep this
              menu inside that boundary and opt out of Bits UI's nested body
              lock, which would disable pointer events on the trigger itself. -->
-        <DropdownMenu.Portal disabled>
-          <DropdownMenu.Content
+        <Popover.Portal disabled>
+          <Popover.Content
             preventScroll={false}
             side={dropDown ? "bottom" : "top"}
             align={menuAlign}
@@ -299,31 +305,32 @@
                 <PrimaryPropColorSettings
                   colors={getSettings().primaryPropColors}
                   darkMode={getSettings().darkMode}
-                  onchange={(colors) => updateSetting("primaryPropColors", colors)}
+                  onchange={(colors) =>
+                    updateSetting("primaryPropColors", colors)}
                 />
               </div>
               {#if hasItems}
-                <DropdownMenu.Separator class="viewer-overflow-divider" />
+                <hr class="viewer-overflow-divider" />
               {/if}
             {/if}
 
             {#each menuItems as item}
               {#if item.dividerBefore}
-                <DropdownMenu.Separator class="viewer-overflow-divider" />
+                <hr class="viewer-overflow-divider" />
               {/if}
-              <DropdownMenu.Item
+              <button
+                type="button"
                 class="viewer-overflow-item {item.className ?? ''}"
                 disabled={item.disabled}
-                textValue={item.label}
-                onSelect={() => handleItemSelect(item.action)}
+                onclick={() => handleItemSelect(item.action)}
               >
                 <i class="fas {item.icon}" aria-hidden="true"></i>
                 <span>{item.label}</span>
-              </DropdownMenu.Item>
+              </button>
             {/each}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
+          </Popover.Content>
+        </Popover.Portal>
+      </Popover.Root>
     {:else if trigger}
       <div class="overflow-trigger title-variant static">
         {@render trigger({ isOpen: false, hasMenu: false })}
@@ -454,7 +461,7 @@
     background: var(--theme-panel-bg, rgba(18, 18, 28, 0.98));
     box-shadow: 0 8px 32px var(--theme-shadow, rgba(0, 0, 0, 0.4));
     outline: none;
-    transform-origin: var(--bits-dropdown-menu-content-transform-origin);
+    transform-origin: var(--bits-popover-content-transform-origin);
   }
 
   :global(.viewer-overflow-popover[data-state="open"]) {
@@ -481,12 +488,12 @@
     white-space: nowrap;
   }
 
-  :global(.viewer-overflow-item[data-highlighted]) {
+  :global(.viewer-overflow-item:is(:hover, :focus-visible)) {
     background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
     color: var(--theme-text, white);
   }
 
-  :global(.viewer-overflow-item[data-disabled]) {
+  :global(.viewer-overflow-item:disabled) {
     cursor: not-allowed;
     opacity: 0.45;
   }
@@ -502,7 +509,7 @@
     color: var(--semantic-error, #ef4444);
   }
 
-  :global(.viewer-overflow-item.delete[data-highlighted]) {
+  :global(.viewer-overflow-item.delete:is(:hover, :focus-visible)) {
     background: color-mix(
       in srgb,
       var(--semantic-error, #ef4444) 10%,
@@ -528,6 +535,7 @@
   }
 
   :global(.viewer-overflow-divider) {
+    border: 0;
     height: 1px;
     margin: 4px 8px;
     background: var(--theme-stroke, rgba(255, 255, 255, 0.1));
@@ -586,7 +594,7 @@
       color: ButtonText;
     }
 
-    :global(.viewer-overflow-item[data-highlighted]) {
+    :global(.viewer-overflow-item:is(:hover, :focus-visible)) {
       background: Highlight;
       color: HighlightText;
     }

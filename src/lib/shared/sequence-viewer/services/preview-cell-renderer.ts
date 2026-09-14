@@ -1,3 +1,4 @@
+import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 /**
  * Preview Cell Renderer
  *
@@ -16,6 +17,7 @@ import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode"
  * All visibility and prop settings that affect the rendered output.
  */
 export interface PreviewCellRenderOptions {
+  fanAppearance?: FanAppearance;
   primaryPropColors?: { left: string; right: string } | null;
   /** Render size in pixels (e.g., 480 for high-res) - this is the height; width = size * widthMultiplier */
   size: number;

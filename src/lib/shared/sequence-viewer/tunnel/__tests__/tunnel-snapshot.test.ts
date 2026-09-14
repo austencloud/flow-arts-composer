@@ -38,6 +38,25 @@ const validSnapshot = {
 };
 
 describe("TunnelSnapshotSchema", () => {
+  it("retains performer colors when a saved or shared snapshot is validated", () => {
+    const raw = structuredClone(validSnapshot);
+    Object.assign(raw.tunnel.colors, {
+      performers: {
+        alice: {
+          mode: "hue",
+          hue: 240,
+          saturation: 100,
+          leftLightness: 75,
+          rightLightness: 25,
+        },
+      },
+    });
+    const parsed = TunnelSnapshotSchema.parse(raw);
+    expect(parsed.tunnel.colors.performers?.alice?.hue).toBe(240);
+    expect(
+      TunnelSnapshotSchema.parse(JSON.parse(JSON.stringify(parsed)))
+    ).toEqual(parsed);
+  });
   it("accepts a well-formed snapshot", () => {
     expect(TunnelSnapshotSchema.safeParse(validSnapshot).success).toBe(true);
   });

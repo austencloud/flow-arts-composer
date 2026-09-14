@@ -57,6 +57,9 @@ describe("Moon fan appearance", () => {
       id: "moon",
       label: "Moon LED",
       image: "/images/props/build-previews/fan-moon-complete.webp",
+      // Each build's photograph frames its fan differently, so the compact
+      // rail scales them to one apparent size rather than one box size.
+      imageScale: 1.54,
       designCredit: {
         originator: "Lighttoys",
         sourceUrl: "https://www.lighttoys.cz/product/moon-fans-ft/",

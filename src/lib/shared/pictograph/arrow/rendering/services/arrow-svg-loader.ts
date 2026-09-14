@@ -39,8 +39,14 @@ const hmrTransformedSvgCache: Map<string, ArrowSvgData> =
   import.meta.hot?.data?.transformedSvgCache ?? new Map();
 
 // Arrow split manifest - loaded lazily, cached permanently
-let hmrSplitManifest: Record<string, { shaftPath: string; tipPath: string; tipBBox: { x: number; y: number; width: number; height: number } }> | null =
-  import.meta.hot?.data?.splitManifest ?? null;
+let hmrSplitManifest: Record<
+  string,
+  {
+    shaftPath: string;
+    tipPath: string;
+    tipBBox: { x: number; y: number; width: number; height: number };
+  }
+> | null = import.meta.hot?.data?.splitManifest ?? null;
 let manifestLoadPromise: Promise<void> | null = null;
 
 // Persist caches before HMR disposal
@@ -129,11 +135,19 @@ export class ArrowSvgLoader {
       return this.transformedSvgCache.get(transformedCacheKey)!;
     }
 
-
+    // Both resources are independent. Once they arrive, transform without
+    // another await so concurrent cards can reuse the first completed result.
+    const [originalSvgText] = await Promise.all([
+      this.fetchSvgContentCached(path),
+      loadSplitManifest(),
+    ]);
+    const preparedWhileFetching =
+      this.transformedSvgCache.get(transformedCacheKey);
+    if (preparedWhileFetching) {
+      this.cacheHits++;
+      return preparedWhileFetching;
+    }
     this.cacheMisses++;
-
-    // Fetch raw SVG (uses raw cache + deduplication)
-    const originalSvgText = await this.fetchSvgContentCached(path);
 
     const parsedSvg = parseArrowSvg(originalSvgText);
 
@@ -162,7 +176,6 @@ export class ArrowSvgLoader {
     };
 
     // Look up split data from manifest
-    await loadSplitManifest();
     if (hmrSplitManifest) {
       // Strip base path to get relative key (e.g. "pro/from_radial/pro_0.0.svg")
       const manifestKey = path.replace(/^.*\/images\/arrows\//, "");

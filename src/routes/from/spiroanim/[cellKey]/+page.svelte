@@ -156,7 +156,7 @@
           analyticsSource="spiroanim"
           {isMobile}
           onClose={handleClose}
-          navigation={{ label: "Back to TKA" }}
+          navigation={{ label: "Back to Flow Arts Composer" }}
           openAppHref="/app"
           contextContent={provenance}
           showFullscreenControls

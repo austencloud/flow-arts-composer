@@ -156,13 +156,17 @@ export function calculatePictographMotionPositions({
           preparedEnd.y - baseEnd.y,
           clampedProgress
         ),
+      // Match the 2D animator: hand symbols travel upright, unlike rotating props.
       rotation:
-        unwrappedRotation +
-        lerp(
-          correctedStartRotation - unwrappedStartRotation,
-          correctedEndRotation - unwrappedEndRotation,
-          clampedProgress
-        ),
+        (hand === "left" ? leftPropType : rightPropType).toLowerCase() ===
+        "hand"
+          ? 0
+          : unwrappedRotation +
+            lerp(
+              correctedStartRotation - unwrappedStartRotation,
+              correctedEndRotation - unwrappedEndRotation,
+              clampedProgress
+            ),
     };
   }
 

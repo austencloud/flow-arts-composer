@@ -132,7 +132,7 @@ export const PRODUCTION_MODULES: Record<ModuleId, boolean> = {
   settings: true, // Settings always available
   choreo_card: true, // Production tool; module definition keeps it admin-only
   word_card: false, // Legacy alias for choreo_card
-  choreo: false, // Choreo sheet builder (route renamed from "write" Jul 2026)
+  choreo: true, // Choreo sheet builder (saved acts); relit Sep 2026, the role gate opens it to testers
   moderation: false, // Content moderation (admin-only)
   arena: false, // Arena pairwise ranking (unreleased)
   festivals: true, // Festival Hub (admin-only via feature flags)

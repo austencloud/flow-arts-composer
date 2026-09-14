@@ -16,6 +16,7 @@
     "@anthropic-ai/sdk": "^0.52.0",
     "@flow-arts/core": "file:../packages/flow-arts-core",
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "@napi-rs/canvas": "^1.0.9",
     "@resvg/resvg-js": "^2.6.0",
     "@tka/domain": "file:../packages/domain",
     "@tka/render-composition": "file:../packages/render-composition",
@@ -23,7 +24,6 @@
     "@tka/sequence-engine": "file:../packages/sequence-engine",
     "@tka/tka-types": "file:../packages/tka-types",
     "@vtg/domain": "file:../packages/vtg-domain",
-    "canvas": "^3.2.1",
     "express": "^5.2.1",
     "jose": "^6.2.4",
     "zod": "^3.25.0"

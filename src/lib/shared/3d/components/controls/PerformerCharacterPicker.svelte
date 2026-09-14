@@ -1,13 +1,11 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
 
-  import {
-    CHARACTER_DEFINITIONS,
-    type CharacterId,
-  } from "$lib/shared/3d/domain/character-model";
+  import { type CharacterId } from "$lib/shared/3d/domain/character-model";
   import type { CharacterInstanceState } from "$lib/shared/3d/state/character-instance-state.svelte";
   import { characterThumbnailUrl } from "../../constants/r2-cdn";
   import CharacterCardLivePreview from "./character-select/CharacterCardLivePreview.svelte";
+  import { getCharacterCatalogContext } from "../../context/character-catalog-context";
 
   interface Props {
     selectedCharacterId: CharacterId | null;
@@ -29,10 +27,15 @@
     onCancelIntent,
   }: Props = $props();
 
-  const personalCharacterId =
-    (CHARACTER_DEFINITIONS.find(
-      (definition) => definition.availability === "local-evaluation"
-    )?.id as CharacterId | undefined) ?? null;
+  const getCatalog = getCharacterCatalogContext();
+  const characters = $derived(getCatalog());
+  const hasSelectedCharacter = $derived(
+    characters.some(({ id }) => id === selectedCharacterId)
+  );
+  const personalCharacterId = $derived(
+    (characters.find((definition) => definition.id === "personal-metaperson")
+      ?.id as CharacterId | undefined) ?? null
+  );
 
   let loadedThumbs = $state(new Set<string>());
   let hoveredCharacterId = $state<CharacterId | null>(null);
@@ -44,7 +47,7 @@
   const restingPreviewCharacterId = $derived(
     personalCharacterId ??
       selectedCharacterId ??
-      (CHARACTER_DEFINITIONS[0]?.id as CharacterId)
+      (characters[0]?.id as CharacterId)
   );
   const livePreviewCharacterId = $derived(
     focusedCharacterId ?? hoveredCharacterId ?? restingPreviewCharacterId
@@ -93,20 +96,19 @@
   }
 
   function moveSelection(event: KeyboardEvent, id: CharacterId): void {
-    const currentIndex = CHARACTER_DEFINITIONS.findIndex(
+    const currentIndex = characters.findIndex(
       (character) => character.id === id
     );
     let nextIndex = currentIndex;
     if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex++;
     else if (event.key === "ArrowLeft" || event.key === "ArrowUp") nextIndex--;
     else if (event.key === "Home") nextIndex = 0;
-    else if (event.key === "End") nextIndex = CHARACTER_DEFINITIONS.length - 1;
+    else if (event.key === "End") nextIndex = characters.length - 1;
     else return;
 
     event.preventDefault();
-    nextIndex =
-      (nextIndex + CHARACTER_DEFINITIONS.length) % CHARACTER_DEFINITIONS.length;
-    const nextCharacter = CHARACTER_DEFINITIONS[nextIndex];
+    nextIndex = (nextIndex + characters.length) % characters.length;
+    const nextCharacter = characters[nextIndex];
     if (!nextCharacter) return;
     const group = (event.currentTarget as HTMLElement).closest(
       ".character-grid"
@@ -126,7 +128,7 @@
 
 <div class="character-picker">
   <div class="character-grid" role="radiogroup" aria-label={groupLabel}>
-    {#each CHARACTER_DEFINITIONS as definition, index (definition.id)}
+    {#each characters as definition, index (definition.id)}
       {@const characterId = definition.id as CharacterId}
       {@const thumbnailUrl = characterThumbnailUrl(definition.id)}
       {@const isPersonalCharacter = personalCharacterId === definition.id}
@@ -145,7 +147,7 @@
         aria-checked={selectedCharacterId === definition.id}
         aria-busy={pendingCharacterId === definition.id}
         tabindex={selectedCharacterId === definition.id ||
-        (selectedCharacterId === null && index === 0)
+        (!hasSelectedCharacter && index === 0)
           ? 0
           : -1}
         data-character-id={definition.id}
@@ -209,7 +211,7 @@
             <i class="fas fa-check"></i>
           </span>
         {/if}
-        {#if definition.availability === "local-evaluation"}
+        {#if isPersonalCharacter}
           <span class="character-personal-badge" aria-hidden="true">You</span>
         {/if}
 

@@ -7,7 +7,6 @@
   import IndeterminateBar from "./IndeterminateBar.svelte";
   import ProgressRing from "./ProgressRing.svelte";
   import ShimmerBlock from "./ShimmerBlock.svelte";
-  import MandalaLoader from "$lib/shared/mandala/components/MandalaLoader.svelte";
 
   interface Props {
     /** Visual variant. Default "bar". */
@@ -18,11 +17,7 @@
     color?: string;
   }
 
-  let {
-    variant = "bar",
-    message = "Loading...",
-    color,
-  }: Props = $props();
+  let { variant = "bar", message = "Loading...", color }: Props = $props();
 </script>
 
 <div class="loading-gate" role="status" aria-label={message}>
@@ -31,26 +26,32 @@
     <div class="centered-message">
       <span class="message-text">{message}</span>
     </div>
-
   {:else if variant === "card"}
     <div class="centered-card">
       <ProgressRing percent={-1} size={40} strokeWidth={3} {color} />
       <span class="message-text">{message}</span>
     </div>
-
   {:else if variant === "skeleton"}
     <div class="skeleton-layout">
       <ShimmerBlock width="40%" height="24px" borderRadius="6px" />
-      <ShimmerBlock width="100%" height="120px" borderRadius="8px" delay={100} />
+      <ShimmerBlock
+        width="100%"
+        height="120px"
+        borderRadius="8px"
+        delay={100}
+      />
       <div class="skeleton-rows">
         <ShimmerBlock width="100%" height="16px" delay={200} />
         <ShimmerBlock width="85%" height="16px" delay={300} />
         <ShimmerBlock width="70%" height="16px" delay={400} />
       </div>
     </div>
-
   {:else if variant === "mandala"}
-    <MandalaLoader {message} />
+    {#await import("$lib/shared/mandala/components/MandalaLoader.svelte")}
+      <IndeterminateBar position="top" {color} />
+    {:then module}
+      <module.default {message} />
+    {/await}
   {/if}
 </div>
 
@@ -65,13 +66,11 @@
     justify-content: center;
   }
 
-
   .centered-message {
     display: flex;
     align-items: center;
     justify-content: center;
   }
-
 
   .centered-card {
     display: flex;
@@ -83,7 +82,6 @@
     border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 16px;
   }
-
 
   .skeleton-layout {
     width: 100%;
@@ -99,7 +97,6 @@
     flex-direction: column;
     gap: 10px;
   }
-
 
   .message-text {
     font-size: var(--font-size-sm, 14px);

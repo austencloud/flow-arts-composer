@@ -21,7 +21,7 @@
     loopType?: LOOPType | null;
     period?: Period | null;
     loopDisplay?: LoopDisplay | null;
-    presentation?: "rail" | "inline";
+    presentation?: "rail" | "inline" | "corners";
   }>();
 
   const hasSteps = $derived((sequence?.steps.length ?? 0) > 0);
@@ -37,6 +37,7 @@
 <div
   class="metadata-rail"
   class:inline={presentation === "inline"}
+  class:corners={presentation === "corners"}
   aria-label="Sequence metadata"
 >
   <div
@@ -79,6 +80,16 @@
     width: max-content;
     max-width: 100%;
     flex: 0 1 auto;
+  }
+
+  .metadata-rail.corners {
+    justify-content: space-between;
+  }
+
+  .metadata-rail.corners .difficulty-slot,
+  .metadata-rail.corners .loop-slot {
+    position: relative;
+    flex: 0 0 auto;
   }
 
   .metadata-rail.inline .difficulty-slot,

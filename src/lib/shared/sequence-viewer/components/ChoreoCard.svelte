@@ -16,6 +16,7 @@
   // Note: transition/animation imports (fade, fly, scale, flip, cubicOut) moved to
   // extracted sub-components (CardHeader, CardFooter, CardGridLayout, CellRenderer).
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { ViewerCustomColorPair } from "../domain/viewer-custom-colors";
   import type { PreviewCellRenderOptions } from "../services/preview-cell-renderer";
   import type { ViewerPaneBox } from "./viewer-panel-layout";
   import { onDestroy, tick } from "svelte";
@@ -80,6 +81,8 @@
     // Visibility toggles
     showWord?: boolean;
     showStepNumbers?: boolean;
+    /** Choose Start picker: step cells render as poses (grid and props only). */
+    posePicker?: boolean;
     showDifficultyLevel?: boolean;
     includeStartPosition?: boolean;
     showNotes?: boolean;
@@ -105,6 +108,7 @@
     // Prop overrides
     leftPropType?: PropType;
     rightPropType?: PropType;
+    primaryPropColors?: ViewerCustomColorPair;
     catDogModeEnabled?: boolean;
     // Step highlighting (for animation sync)
     highlightedStepIndex?: number | null; // 0-indexed step to highlight (null = none)
@@ -158,6 +162,7 @@
     sequence,
     showWord = true,
     showStepNumbers = true,
+    posePicker = false,
     showDifficultyLevel = true,
     includeStartPosition = true,
     showNotes = true,
@@ -169,6 +174,7 @@
     browseViewMode,
     darkMode = false,
     frameColors,
+    primaryPropColors,
     cardAspectRatio,
     customTitleText: requestedTitleText,
     customNotesText = "Created using Flow Arts Composer",
@@ -401,6 +407,9 @@
 
   // True only under a scan-origin /sequence route — cells use the cloud cache.
   const cloudProbeEnabled = getScanCardCloudProbe();
+  const effectivePrimaryPropColors = $derived(
+    cloudProbeEnabled ? null : (primaryPropColors ?? getSettings().primaryPropColors)
+  );
 
   const qrState = createChoreoCardQrState(
     () => ({
@@ -637,9 +646,10 @@
 
     return {
       ...baseOptions,
-      primaryPropColors: cloudProbeEnabled
-        ? null
-        : getSettings().primaryPropColors,
+      fanAppearance: cloudProbeEnabled
+        ? undefined
+        : getSettings().fanAppearance,
+      primaryPropColors: effectivePrimaryPropColors,
       // A scan represents the printed card, not the scanner's personal export
       // toggles. Pin the same canonical visibility used when QR creation
       // verifies cloud assets; retain the sequence's participating hands.
@@ -697,9 +707,10 @@
   renderLifecycle = createChoreoCardRenderLifecycle(
     () => ({
       handPathMode,
-      primaryPropColors: cloudProbeEnabled
-        ? null
-        : getSettings().primaryPropColors,
+      fanAppearance: cloudProbeEnabled
+        ? undefined
+        : getSettings().fanAppearance,
+      primaryPropColors: effectivePrimaryPropColors,
       sequence,
       leftPropType,
       rightPropType,
@@ -977,6 +988,7 @@
       <!-- Grid section with individual pictograph cells -->
       <CardGridLayout
         {sequence}
+        primaryPropColors={effectivePrimaryPropColors}
         {cells}
         {visibleCells}
         {effectiveColumns}
@@ -1007,6 +1019,7 @@
           gridScrollRef = el;
         }}
         {showStepNumbers}
+        {posePicker}
         {crossfadeActive}
         transitionMode={crossfader.transitionMode}
         {isBrowseSoloMode}

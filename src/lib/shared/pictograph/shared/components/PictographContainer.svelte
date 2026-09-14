@@ -41,6 +41,7 @@ with pre-prepared data for better performance.
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PropType } from "../../prop/domain/enums/prop-type";
   import {
+    type FanAppearance,
     fanAppearanceSignature,
     normalizeFanAppearance,
   } from "../../prop/domain/fan-appearance";
@@ -104,8 +105,11 @@ with pre-prepared data for better performance.
     // Transparent background: skip the background fill so the glyph floats
     // on the host surface (decorative embeds on dark tiles).
     transparentBackground = false,
+    // Choose Start picker: grid and props only, every beat glyph fades out.
+    poseOnly = false,
     // Explicit prop types for export/thumbnail rendering
     // When provided, passed to PictographPreparer for consistency during async operations
+    fanAppearanceOverride = undefined,
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
     leftColorOverride = undefined,
@@ -133,7 +137,9 @@ with pre-prepared data for better performance.
     // Optional in-place motion. The current pictograph remains the only
     // renderer while its props travel from the prepared start pose to this step.
     motionStartData = null,
+    motionStep = null,
     motionProgress = null,
+    gridRotation = null,
     directPropPositioning = false,
     arrowOpacity = 1,
   } = $props<{
@@ -174,7 +180,9 @@ with pre-prepared data for better performance.
     printMode?: boolean;
     /** Skip the background fill so the glyph floats on the host surface. */
     transparentBackground?: boolean;
+    poseOnly?: boolean;
     /** Explicit prop type for the left hand. Export/thumbnail rendering provides this for consistency. */
+    fanAppearanceOverride?: FanAppearance;
     leftPropTypeOverride?: PropType;
     /** Explicit prop type for the right hand. Export/thumbnail rendering provides this for consistency. */
     rightPropTypeOverride?: PropType;
@@ -197,8 +205,12 @@ with pre-prepared data for better performance.
     stepNumberOverride?: boolean;
     /** Pictograph whose prepared prop positions define this motion's exact start pose. */
     motionStartData?: PictographData | null;
+    /** Presentation-only travel while the displayed pictograph owns the exact final pose. */
+    motionStep?: StepData | null;
     /** 0..1 interpolation progress. null renders the finished pictograph normally. */
     motionProgress?: number | null;
+    /** Cumulative degrees driven by the caller's motion clock; null uses grid-mode animation. */
+    gridRotation?: number | null;
     /** Direct manipulation has already moved the props; do not replay that move. */
     directPropPositioning?: boolean;
     /** Opacity for the existing pictograph arrow layer. */
@@ -476,7 +488,7 @@ with pre-prepared data for better performance.
       // The fan build picks the prop artwork, so choosing DoodleGrip Fire
       // over the notation fan has to re-prepare every fan pictograph.
       fanAppearance: fanAppearanceSignature(
-        normalizeFanAppearance(settings.fanAppearance)
+        normalizeFanAppearance(fanAppearanceOverride ?? settings.fanAppearance)
       ),
       darkMode: effectiveDarkMode, // Include effective dark mode for color-correct preparation
       leftMotion: leftFingerprint,
@@ -538,7 +550,9 @@ with pre-prepared data for better performance.
           rightPropType: effectiveRightPropType,
           leftBuugengFlipped: getSettings().leftBuugengFlipped ?? false,
           rightBuugengFlipped: getSettings().rightBuugengFlipped ?? false,
-          fanAppearance: normalizeFanAppearance(getSettings().fanAppearance),
+          fanAppearance: normalizeFanAppearance(
+            fanAppearanceOverride ?? getSettings().fanAppearance
+          ),
           showLeftMotion: preparationShowLeftMotion,
           showRightMotion: preparationShowRightMotion,
         };
@@ -589,12 +603,18 @@ with pre-prepared data for better performance.
   });
 
   const motionPropPositionOverrides = $derived.by(() => {
-    if (motionProgress === null || !stepData || !preparedData?._prepared) {
+    const travelingStep = motionStep ?? stepData;
+    if (
+      motionProgress === null ||
+      !travelingStep ||
+      !preparedData?._prepared ||
+      appliedPrepareKey !== prepareKey
+    ) {
       return null;
     }
 
     return calculatePictographMotionPositions({
-      step: stepData,
+      step: travelingStep,
       progress: motionProgress,
       gridMode:
         overrideGridMode ?? preparedData._prepared.gridMode ?? GridMode.DIAMOND,
@@ -681,11 +701,13 @@ with pre-prepared data for better performance.
         showPositions={effectiveShowPositions}
         handPointVisibility={effectiveHandPointVisibility}
         {activeLocations}
+        {poseOnly}
         {stepNumber}
         {showStepNumber}
         {previewMode}
         animateVisibility={liveAnimateVisibility}
         gridModeOverride={overrideGridMode}
+        {gridRotation}
         {visibleHand}
         {arrowsClickable}
         {showArrow}
@@ -730,11 +752,13 @@ with pre-prepared data for better performance.
             showPositions={effectiveShowPositions}
             handPointVisibility={effectiveHandPointVisibility}
             {activeLocations}
+            {poseOnly}
             {stepNumber}
             {showStepNumber}
             {previewMode}
             animateVisibility={liveAnimateVisibility}
             gridModeOverride={overrideGridMode}
+            {gridRotation}
             {visibleHand}
             {arrowsClickable}
             {showArrow}

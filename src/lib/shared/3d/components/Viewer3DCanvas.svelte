@@ -111,6 +111,8 @@
     ) => void;
     onCameraStateChange?: (state: CameraStateSnapshot) => void;
     onPlaybackToggle?: () => void;
+    isLooping?: boolean;
+    onLoopToggle?: () => void;
     onSystemPlaybackChange?: (
       playing: boolean,
       source: "system_3d_loading"
@@ -188,6 +190,8 @@
     onEnvironmentTransitionChange,
     onCameraStateChange,
     onPlaybackToggle,
+    isLooping,
+    onLoopToggle,
     onSystemPlaybackChange,
     onProgressBarSeek,
     playbackMode,
@@ -261,6 +265,9 @@
             getIsPlaying: () => isPlaying,
             getCurrentStep: () => currentStep,
             getTotalSteps: () => sequenceData?.steps.length ?? 0,
+            getIsLooping:
+              isLooping === undefined ? undefined : () => isLooping ?? false,
+            onLoopToggle,
           }
         : undefined,
       onPlaybackModeChange

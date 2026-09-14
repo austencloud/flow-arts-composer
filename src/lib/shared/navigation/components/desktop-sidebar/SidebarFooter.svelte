@@ -9,6 +9,7 @@
   import { getPropTypeDisplayInfo } from "../../../pictograph/prop/domain/prop-type-display-registry";
   import { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
   import AccountRow from "../account/AccountRow.svelte";
+  import SelectedPropPreview from "../buttons/SelectedPropPreview.svelte";
   import { inboxState } from "../../../inbox/state/inbox-state.svelte";
   import { authState } from "../../../auth/state/auth-state.svelte";
   import { commandPaletteState } from "../../../keyboard/state/command-palette-state.svelte";
@@ -35,6 +36,16 @@
   // Prop type display info for the prop button
   const leftPropType = $derived(getSettings()?.leftPropType ?? PropType.STAFF);
   const propDisplayInfo = $derived(getPropTypeDisplayInfo(leftPropType));
+  const rightPropType = $derived(
+    getSettings()?.catDogMode
+      ? (getSettings().rightPropType ?? leftPropType)
+      : leftPropType
+  );
+  const propLabel = $derived(
+    rightPropType === leftPropType
+      ? propDisplayInfo.label
+      : `${propDisplayInfo.label} + ${getPropTypeDisplayInfo(rightPropType).label}`
+  );
 
   // Inbox unread state
   const hasUnread = $derived(inboxState.totalUnreadCount > 0);
@@ -207,17 +218,13 @@
       class="footer-button prop-button"
       class:collapsed={isCollapsed}
       onclick={handlePropClick}
-      aria-label="Change prop type. Current: {propDisplayInfo.label}"
+      aria-label="Change props. Current: {propLabel}"
     >
       <div class="button-icon">
-        <img
-          src={propDisplayInfo.image}
-          alt={propDisplayInfo.label}
-          class="prop-icon-img"
-        />
+        <SelectedPropPreview />
       </div>
       {#if !isCollapsed}
-        <span class="button-label">{propDisplayInfo.label}</span>
+        <span class="button-label">{propLabel}</span>
       {/if}
     </button>
 
@@ -420,13 +427,6 @@
 
   .prop-button .button-icon {
     background: transparent;
-  }
-
-  .prop-icon-img {
-    width: 26px;
-    height: 26px;
-    object-fit: contain;
-    filter: brightness(1.3) saturate(1.3);
   }
 
   .inbox-icon-wrapper {

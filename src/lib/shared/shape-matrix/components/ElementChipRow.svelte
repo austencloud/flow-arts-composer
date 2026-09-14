@@ -21,6 +21,7 @@
     availabilityReady = false,
     disabled = false,
     columns = 6,
+    compact = false,
     onpick,
   }: {
     selected: VtgMode | null;
@@ -29,6 +30,7 @@
     disabled?: boolean;
     /** Tracks in the row. The drill wants all six; a popover wants three. */
     columns?: number;
+    compact?: boolean;
     onpick: (mode: VtgMode | null) => void;
   } = $props();
 
@@ -57,6 +59,7 @@
 >
   {#each chips as c (c.mode)}
     <RelationshipChoiceChip
+      {compact}
       accent={c.el.accentColor}
       icon={c.el.iconPath}
       code={c.el.name}

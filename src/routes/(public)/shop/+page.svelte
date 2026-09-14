@@ -35,7 +35,7 @@
     JSON.stringify({
       "@context": "https://schema.org",
       "@type": "ItemList",
-      name: "The Kinetic Alphabet Shop",
+      name: "Flow Arts Composer Shop",
       description: DESCRIPTION,
       url: `${SITE}/shop`,
       numberOfItems: entries.length,
@@ -67,16 +67,16 @@
 </script>
 
 <svelte:head>
-  <title>Shop | The Kinetic Alphabet</title>
+  <title>Shop | Flow Arts Composer</title>
   <meta name="description" content={DESCRIPTION} />
   <link rel="canonical" href="https://tkaflowarts.com/shop" />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="The Kinetic Alphabet" />
-  <meta property="og:title" content="Shop | The Kinetic Alphabet" />
+  <meta property="og:site_name" content="Flow Arts Composer" />
+  <meta property="og:title" content="Shop | Flow Arts Composer" />
   <meta property="og:description" content={DESCRIPTION} />
   <meta property="og:url" content="https://tkaflowarts.com/shop" />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Shop | The Kinetic Alphabet" />
+  <meta name="twitter:title" content="Shop | Flow Arts Composer" />
   <meta name="twitter:description" content={DESCRIPTION} />
   {@html `<script type="application/ld+json">${jsonLd}</script>`}
 </svelte:head>

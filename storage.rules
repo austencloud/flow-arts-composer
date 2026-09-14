@@ -211,6 +211,20 @@ service firebase.storage {
         && (request.auth.token.admin == true || request.auth.token.role == 'admin');
     }
 
+    // Completed QR artwork + its published scan target. Content-addressed keys
+    // include both themes' canonical cell identities and all QR options.
+    match /prepared-qrs/{fileName} {
+      allow get: if true;
+      allow create: if request.auth != null
+        && resource == null
+        && fileName.matches('^[0-9a-f]{64}[.]json$')
+        && request.resource.contentType == 'application/json'
+        && request.resource.size < 512 * 1024;
+      // First writer wins. A later viewer cannot replace an existing scan QR.
+      allow update, delete: if request.auth != null
+        && (request.auth.token.admin == true || request.auth.token.role == 'admin');
+    }
+
     // POI image library - users upload POV pattern images in the POV Pattern Lab
     // and the binaries land here. Metadata doc lives at
     // /users/{uid}/poi-images/{id} in Firestore.

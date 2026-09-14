@@ -127,8 +127,8 @@ DATUMS = CONTRACT["datums"]
 BED = CONTRACT["bed"]
 CLEFT = CONTRACT["cleft"]
 AVEN = CONTRACT["aven"]
+CONSOLES = CONTRACT["consoles"]
 BED_Y = DATUMS["bed"]
-TERRACE_Y = DATUMS["terrace"]
 BLOCK = graybox["shell"]["block"]
 WING = graybox["shell"]["wing"]
 
@@ -508,6 +508,24 @@ def join_family(name, objs):
     return obj
 
 
+def console_parts(*suffixes) -> list[bpy.types.Object]:
+    """The console bodies, by part. Named rather than prefixed, because the
+    lit face is NOT brass: it keeps the graybox lamp material so the runtime
+    can tune it by name, and it is exported beside the lantern heads."""
+    wanted = {f"_{s}" for s in suffixes}
+    found = [
+        obj
+        for obj in objects_with_prefix("ET_Console_")
+        if any(obj.name.endswith(s) for s in wanted)
+    ]
+    if len(found) != len(CONSOLES) * len(wanted):
+        raise RuntimeError(
+            f"expected {len(CONSOLES) * len(wanted)} console parts for "
+            f"{sorted(wanted)}, found {sorted(o.name for o in found)}"
+        )
+    return found
+
+
 trim_objects = {
     "brass": join_family(
         "ET_Brass",
@@ -515,11 +533,16 @@ trim_objects = {
             *objects_with_prefix("ET_RailPost_"),
             *objects_with_prefix("ET_LampStem_"),
             *objects_with_prefix("ET_Rail"),
+            *console_parts("Panel", "Cap", "LegW", "LegE"),
         ],
     ),
     "stone": join_family(
         "ET_CutStone",
-        [*objects_with_prefix("ET_Letter_"), *objects_with_prefix("ET_Stamp_")],
+        [
+            *objects_with_prefix("ET_Letter_"),
+            *objects_with_prefix("ET_Stamp_"),
+            *objects_with_prefix("ET_ConsoleLetter_"),
+        ],
     ),
     "root": join_family("ET_Roots", objects_with_prefix("ET_Root_")),
     "moss": join_family("ET_Moss", objects_with_prefix("ET_Growth_Moss_")),
@@ -552,6 +575,7 @@ if _moss is not None:
     log(f"moss crowned: {len(_moss.data.polygons)} faces")
 
 lamp_heads = objects_with_prefix("ET_Lamp_")
+console_faces = console_parts("Face")
 sky_disc = bpy.data.objects["ET_Sky"]
 log("trim: " + ", ".join(f"{k} {triangle_count(o)} tris" for k, o in trim_objects.items()))
 
@@ -947,8 +971,18 @@ def build_bake_lights():
     bake_light(
         "BAKE_ExitApproach",
         (exit_door["x"], exit_door["y"] + 4.5, DATUMS["door"] + 4.2),
-        (0.78, 0.84, 0.95), 210.0, 3.0, kind="AREA",
+        (0.78, 0.84, 0.95), 300.0, 3.0, kind="AREA",
         target=(exit_door["x"], exit_door["y"] + 1.0, DATUMS["door"]),
+    )
+    # And one more standing IN the bore, facing back up the ramp. The first
+    # pass lit the ramp floor and left the doorway itself a black recess, which
+    # reads as a dead end rather than a way out; the room's whole last movement
+    # is walking toward a door the visitor cannot yet see through.
+    bake_light(
+        "BAKE_ExitDoor",
+        (exit_door["x"], exit_door["y"] + 0.4, DATUMS["door"] + 1.7),
+        (0.74, 0.82, 0.96), 260.0, 1.3, kind="AREA",
+        target=(exit_door["x"], exit_door["y"] + 4.0, DATUMS["door"] + 0.6),
     )
 
 
@@ -1087,8 +1121,9 @@ except TypeError:
     pass
 
 render_paths: dict[str, str] = {}
-VIEWS = ["terrace-overlook", "ensemble"] if FAST else [
-    "threshold", "ramp-climb", "terrace-overlook", "ensemble", "exit", "overview", "plan",
+VIEWS = ["overlook", "console-stance"] if FAST else [
+    "threshold", "ramp-climb", "overlook", "catwalk-run", "console",
+    "console-stance", "ensemble", "exit", "overview", "plan",
 ]
 CUTAWAY_VIEWS = {"overview", "plan"}
 if RENDER:
@@ -1099,7 +1134,7 @@ if RENDER:
         set_emission(mat_name, strength)
     for view_id in VIEWS:
         spec = next((c for c in CONTRACT["cameras"] if c["id"] == view_id), None)
-        camera = bpy.data.objects.get(spec["name"]) if spec else None
+        camera = bpy.data.objects.get(spec["name"] if spec else f"CAM_{view_id}")
         if camera is None:
             log(f"no camera for view {view_id}")
             continue
@@ -1120,9 +1155,22 @@ if RENDER:
     bake_lights.clear()
 
 # ── Export ──────────────────────────────────────────────────────────────────
-export_objects = [*rock_objects.values(), *trim_objects.values(), *lamp_heads, sky_disc]
+export_objects = [
+    *rock_objects.values(), *trim_objects.values(),
+    *lamp_heads, *console_faces, sky_disc,
+]
 if any(o.type != "MESH" for o in export_objects):
     raise RuntimeError("a non-mesh leaked into the ET_ export set")
+# Anything the graybox authored under ET_ and no family claimed would be
+# dropped here in silence - which is exactly how the first regrade pass
+# would have shipped a room with no consoles on its rail.
+orphans = sorted(
+    o.name
+    for o in scene.objects
+    if o.type == "MESH" and o.name.startswith("ET_") and o not in export_objects
+)
+if orphans:
+    raise RuntimeError(f"graybox meshes claimed by no export family: {orphans}")
 exported_materials = {o.data.materials[0].name for o in export_objects if o.data.materials}
 if len(exported_materials) != len(export_objects):
     log(f"exported materials ({len(exported_materials)}): {sorted(exported_materials)}")
@@ -1193,6 +1241,7 @@ report = {
     "uvMetresPerUnit": m_per_uv,
     "emissiveMaterials": sorted(BAKE_EMISSION),
     "exportObjectCount": len(export_objects),
+    "consoleFaces": sorted(o.name for o in console_faces),
     "exportMaterials": sorted(exported_materials),
     "rawGlbBytes": raw_size,
     "finalGlbBytes": final_size,

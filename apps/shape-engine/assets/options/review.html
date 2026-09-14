@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shape Engine · Four icon directions</title>
+<style>
+  * { box-sizing:border-box }
+  body { margin:0; padding:clamp(24px,4vw,64px); background:#090d16; color:#f1eee7; font:16px/1.5 system-ui,sans-serif }
+  header { max-width:1400px; margin:0 auto 32px }
+  h1 { margin:0 0 6px; font-size:clamp(28px,3vw,44px); letter-spacing:-.035em; font-weight:600 }
+  header p { color:#aeb7c9; margin:0 }
+  main { max-width:1400px; margin:auto; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:24px }
+  article { min-width:0 }
+  .hero { width:100%; aspect-ratio:1; object-fit:contain; border-radius:24%; display:block; background:#030719 }
+  h2 { font-size:18px; font-weight:600; margin:20px 0 6px }
+  article p { color:#aeb7c9; font-size:14px; margin:0; min-height:44px }
+  .small { display:flex; align-items:center; gap:16px; margin-top:24px; min-height:64px }
+  .small img { object-fit:contain; border-radius:24% }
+  .small span { font-size:12px; color:#8f99ad }
+  @media(max-width:1000px) { main {grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media(max-width:460px) {main{grid-template-columns:1fr} }
+</style>
+<header><h1>Shape Engine</h1><p>Four icon directions, shown large and at launcher size.</p></header>
+<main>
+  <article><img class="hero" src="01-luminous-flower.png" alt="Red and blue luminous six-petal flower"><h2>1 · Luminous flower</h2><p>Bright, dimensional, close to the animated trails.</p><div class="small"><img src="01-luminous-flower.png" width="64" height="64" alt="64 pixel preview"><img src="01-luminous-flower.png" width="48" height="48" alt="48 pixel preview"><span>64 / 48 px</span></div></article>
+  <article><img class="hero" src="02-geometric-flower.png" alt="Bold flat red and blue geometric flower"><h2>2 · Geometric flower</h2><p>Clean edges, open space, strong small-size recognition.</p><div class="small"><img src="02-geometric-flower.png" width="64" height="64" alt="64 pixel preview"><img src="02-geometric-flower.png" width="48" height="48" alt="48 pixel preview"><span>64 / 48 px</span></div></article>
+  <article><img class="hero" src="03-woven-ribbon.png" alt="Sculptural red and blue woven trefoil ribbon"><h2>3 · Woven ribbon</h2><p>A tactile knot with a bold, compact silhouette.</p><div class="small"><img src="03-woven-ribbon.png" width="64" height="64" alt="64 pixel preview"><img src="03-woven-ribbon.png" width="48" height="48" alt="48 pixel preview"><span>64 / 48 px</span></div></article>
+  <article><img class="hero" src="04-orbital-flower.png" alt="Two luminous red and blue paths with bright endpoints"><h2>4 · Orbital flower</h2><p>Two moving points and the paths they leave behind.</p><div class="small"><img src="04-orbital-flower.png" width="64" height="64" alt="64 pixel preview"><img src="04-orbital-flower.png" width="48" height="48" alt="48 pixel preview"><span>64 / 48 px</span></div></article>
+</main>
+</html>

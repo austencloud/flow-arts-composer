@@ -8,9 +8,14 @@ Displays:
 - Inline in layout flow (parent controls positioning)
 -->
 <script lang="ts">
-  let { currentStep, totalSteps } = $props<{
+  let {
+    currentStep,
+    totalSteps,
+    appearance = "dots",
+  } = $props<{
     currentStep: number;
     totalSteps: number;
+    appearance?: "dots" | "steps";
   }>();
 
   // Calculate percentage for screen readers
@@ -21,6 +26,7 @@ Displays:
 
 <div
   class="progress-indicator"
+  class:steps={appearance === "steps"}
   role="progressbar"
   aria-valuenow={currentStep}
   aria-valuemin={1}
@@ -37,7 +43,10 @@ Displays:
       ></div>
     {/each}
   </div>
-  <span class="progress-text">{currentStep} / {totalSteps}</span>
+  <span class="progress-text"
+    >{#if appearance === "steps"}Step {currentStep} of {totalSteps}{:else}{currentStep}
+      / {totalSteps}{/if}</span
+  >
 </div>
 
 <style>
@@ -88,6 +97,40 @@ Displays:
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.6));
     font-weight: 500;
     font-variant-numeric: tabular-nums;
+  }
+
+  .progress-indicator.steps {
+    flex-direction: column-reverse;
+    gap: 0.4rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+
+  .steps .progress-dots {
+    gap: 0.3rem;
+  }
+
+  .steps .progress-dot {
+    width: 1.5rem;
+    height: 0.25rem;
+    border-radius: 2px;
+    background: var(--theme-stroke-strong);
+    transform: none;
+    box-shadow: none;
+  }
+
+  .steps .progress-dot.active {
+    background: var(--theme-accent);
+  }
+
+  .steps .progress-dot.completed {
+    background: color-mix(
+      in srgb,
+      var(--theme-accent) 55%,
+      var(--sheet-bg-solid)
+    );
   }
 
   @media (prefers-reduced-motion: reduce) {

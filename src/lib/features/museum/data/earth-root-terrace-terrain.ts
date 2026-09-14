@@ -2,23 +2,40 @@
  * The Root Terrace: the Earth wing (TOGETHER-SAME, cases G, H, I) as the
  * museum walks it, and the terrain program physics reads for it.
  *
- * One idea, from the sealed hallway architecture (2026-08-11): the visitor
- * climbs a terrace ABOVE the performers and never shares a floor with one.
- * The barrier is elevation. The plan is a single ribbon:
+ * The room's subject is three automatons performing the same TOGETHER-SAME
+ * case in unison. The first cut of this plan put the visitor on a terrace
+ * 5.2 m above them and never let them closer: G, H and I read at 9-18 m and
+ * 12-24 degrees below the horizon, which is a diorama, not a performance. The
+ * regrade keeps the "never share a floor with a performer" rule - the barrier
+ * is still elevation - but spends the height budget differently:
  *
- *   west door (0) → vestibule (0) → ramp climbing east (0 → 2.8)
- *   → terrace along the north wall (2.8), the rootbed 5.2 m below it on the
- *     right, G, H and I in a row on the bed, each passed in turn
- *   → corner, descent south along the east wall (2.8 → 1.2)
- *   → landing on the row's axis (1.2): the ensemble sightline, three unison
- *     figures aligned
- *   → descent (1.2 → 0) past a cleft where the floor falls away
- *   → south door (0) to Air.
+ *   west door (0) -> vestibule (0), the hub
+ *     - north: entry ramp climbing east (0 -> +1.8) -> OVERLOOK (+1.8), a
+ *       balcony spur that shows the whole bed at once. Dead end by design:
+ *       it is the reveal, and you come back through it.
+ *     - south: gallery descent falling east (0 -> -1.0) -> ROOT GALLERY (-1.0),
+ *       a 1.5 m catwalk cantilevered over the bed, 1.4 m above it, running the
+ *       row. Three alcoves bump north off it at G, H and I; each holds a
+ *       control console set flush into the rail cap, and the operator reads
+ *       their case at 4.05 m and 24 degrees - close enough to be a duet.
+ *   -> east link (-1.0 -> -1.2) -> landing (-1.2) on the row's axis: the
+ *      ensemble sightline, three unison figures nested away down the row
+ *   -> exit ramp (-1.2 -> 0) past the cleft where the floor falls away
+ *   -> south door (0) to Air.
  *
- * Everything off the ribbon is rock or the bed, and both are blocked: the
- * bed is 2.4 m below the museum datum and 5.2 m below the terrace, with no
- * way down. Both doors sit on the datum, so Fire's growth path arrives level
- * and the Air corridor's 0.6 m step rule holds at the south door.
+ * Everything off the ribbon is rock or the bed, and both are blocked: the bed
+ * is 2.4 m below the museum datum with no way down. Both doors sit on the
+ * datum, so Fire's growth path arrives level and the Air corridor's 0.6 m step
+ * rule holds at the south door.
+ *
+ * Two constraints shape every number here. The terrain program is 2.5D - one
+ * height per (x, z) - so no deck may pass over another, which rules out a
+ * descent tunnelled under the entry ramp. And the traversal step rule rejects
+ * more than 0.6 m between neighbouring walkable tiles at 0.5 m spacing, so
+ * decks at different heights are separated by rock wide enough to guarantee a
+ * blocked tile row between them. The overlook is a spur rather than a through
+ * route because those two rules together leave no corridor for a descent that
+ * both clears the vestibule and stays off the overlook's flank.
  *
  * The Blender shell (scripts/build-earth-root-terrace-graybox.py and
  * -production.py) is carved from the SAME rects this module returns, via the
@@ -47,53 +64,84 @@ import {
 export const EARTH_ROOM_ID = "cave-earth";
 export const FIRE_ROOM_ID = "cave-fire";
 
-// ── Datums (world Y, metres) ────────────────────────────────────────────────
+// -- Datums (world Y, metres) -----------------------------------------------
 /** Both doors: Fire's growth path arrives here and the Air corridor leaves here. */
 export const DOOR_Y = 0;
-/** The terrace deck: the overlook the whole room is built for. */
-export const TERRACE_Y = 2.8;
-/** The ensemble landing on the row's axis, half way down to the door. */
-export const LANDING_Y = 1.2;
-/** The rootbed the performers stand on. 5.2 m below the terrace, no way down. */
+/** The overlook balcony: the whole-bed view, 4.2 m above the performers. */
+export const OVERLOOK_Y = 1.8;
+/** The root gallery catwalk: 1.4 m above the bed, close enough to work a console. */
+export const GALLERY_Y = -1.0;
+/** The ensemble landing on the row's axis, at the foot of the east link. */
+export const LANDING_Y = -1.2;
+/** The rootbed the performers stand on. No way down onto it. */
 export const BED_Y = -2.4;
 /** The cleft beside the exit: the floor falling away toward Air. */
 export const CLEFT_Y = -6.5;
 /** Vault crown over the rootbed. */
 export const BED_CROWN_Y = 9.6;
-/** Crown over the terrace and the east descent. */
-export const TERRACE_CROWN_Y = 7.4;
-/** Crown over the vestibule: a lower cave, so the terrace opens up out of it. */
+/** Crown over the overlook and the east channel. */
+export const OVERLOOK_CROWN_Y = 7.4;
+/** Crown over the vestibule: a lower cave, so the overlook opens up out of it. */
 export const VESTIBULE_CROWN_Y = 5.4;
 /** Top of the daylight aven over the bed. */
 export const AVEN_TOP_Y = 17.0;
 export const AVEN_RADIUS = 3.2;
 /** Brass rail height above the deck it stands on. */
 export const RAIL_HEIGHT = 1.0;
+/**
+ * Consoles are set FLUSH into the rail cap, not stood on it. Anything proud of
+ * the rail eats the 0.11 m of foot clearance the overlook's sightline has over
+ * that same cap, and a vertical screen would make the visitor look at the
+ * screen instead of the performer. The cap is the work surface.
+ */
+export const CONSOLE_CAP_Y = GALLERY_Y + RAIL_HEIGHT;
+export const CONSOLE_WIDTH = 1.6;
+/** Where a person stands back from a railing they are working at. */
+export const CONSOLE_SETBACK = 0.45;
 /** Where the props circle above a performer's feet, for the sightline proofs. */
 export const PROP_CENTRE_ABOVE_FEET = 1.35;
 export const EYE_ABOVE_FLOOR = 1.6;
 
-// ── Plan offsets from the room interior's north-west corner (metres) ────────
+// -- Plan offsets from the room interior's north-west corner (metres) --------
 // The compiled interior is 34 by 24 m; every number below is an offset from
 // its minimum X (west) and minimum Z (north), so the plan lands identically
 // in the standalone cave grid and the whole-museum walk grid.
-const VESTIBULE_RUN = 6; // west door to the ramp foot
-const RAMP_RUN = 10; // 0 → 2.8 over 10 m: a 15.6° climb
-const WALK_NORTH = 2; // rock behind the terrace, north of the deck
-const WALK_WIDTH = 4; // terrace and ramp width
-const VESTIBULE_NORTH = 2; // the vestibule shares the deck's north edge
+const VESTIBULE_RUN = 6; // west door to the ramp foot and the descent head
+const VESTIBULE_NORTH = 2;
 const VESTIBULE_SOUTH = 16.5;
-const EAST_RUN = 3.5; // width of the east route (x), against the east wall
-const DESCENT_A_END = 12; // z offset where the first descent lands
+const WALK_NORTH = 2; // rock behind the north lane, north of the deck
+const WALK_WIDTH = 4; // entry ramp and overlook width
+const ENTRY_RAMP_RUN = 10; // 0 -> 1.8 over 10 m: a 10.2 degree climb
+const OVERLOOK_RUN = 6; // the balcony spur east of the ramp head
+// Every deck edge lands on a quarter-metre, never on a half-metre. Tile
+// centres fall on x.25 and x.75, and the physics provider probes 0.15 m
+// around the player, so a deck edge ON a tile centre makes that whole row
+// unstandable: the collider pushes back off an edge the terrain says is
+// walkable. A 1.5 m catwalk spanning 8.25-9.75 has exactly that fault at both
+// edges, and the headless playtest stalls trying to enter it.
+const GALLERY_NORTH = 8.0;
+const GALLERY_SOUTH = 9.5; // a 1.5 m catwalk: two abreast, or one working
+const GALLERY_DESCENT_RUN = 4; // 0 -> -1.0 over 4 m: a 14.0 degree fall
+const GALLERY_EAST = 30; // flush with the bed's east face and the east channel
+const ALCOVE_DEPTH = 1.0; // bumps NORTH off the catwalk, away from the bed
+const ALCOVE_WIDTH = 3.0; // half of it lands on a half-metre, off the tile grid
+const EAST_RUN = 3.5; // width of the east channel (x), against the east wall
+const EAST_LINK_END = 12; // z offset where the east link reaches the landing
 const LANDING_DEPTH = 2.5;
-const DESCENT_B_END = 20; // z offset where the second descent reaches the datum
+const EXIT_RAMP_END = 20; // z offset where the exit ramp regains the datum
 const BED_WEST = 8;
-const BED_EAST = 29.5;
-const BED_NORTH = WALK_NORTH + WALK_WIDTH; // the bed starts under the terrace rail
+const BED_EAST = 30; // the bed runs to the east channel's west face
+const BED_NORTH = WALK_NORTH + WALK_WIDTH; // the bed starts under the overlook rail
 const BED_SOUTH = 20;
-const STATION_Z = 13; // the performers' row, 7 m south of the rail
-const STATION_XS = [13, 20, 27] as const; // G, H, I west → east
+const STATION_Z = 13; // the performers' row
+const STATION_XS = [13, 20, 27] as const; // G, H, I west -> east
 const OPENER = { x: 4, z: 14.2 };
+// Just inside the west door, on its axis: the visitor faces east into the
+// vestibule with both routes ahead of them - the ramp climbing away on their
+// left, the descent falling away on their right. The isolated-room spawn in
+// vulcan-cave-floor-plan.ts is derived from these same two numbers, so the
+// standalone room and the whole-museum walk start on the same tile.
+const SPAWN = { x: 1.2, z: 12 };
 const CLEFT = { minX: 27.5, maxX: 29.7, minZ: 19.5, maxZ: 24 } as const;
 
 export const EARTH_CASE_LETTERS = ["G", "H", "I"] as const;
@@ -110,6 +158,19 @@ export interface EarthStation {
   floorY: number;
 }
 
+/** One case's control console, set into the gallery rail cap opposite its performer. */
+export interface EarthConsole {
+  letter: EarthCaseLetter;
+  /** Centre of the cap panel, on the gallery's south rail line. */
+  centre: Point2;
+  /** Top of the panel: flush with the rail cap. */
+  capY: number;
+  width: number;
+  /** Where the operator stands to work it. */
+  stand: Point2;
+  standY: number;
+}
+
 export interface EarthRootTerraceLayout {
   /** The room interior, wall tiles excluded. */
   earth: WorldRect;
@@ -124,11 +185,15 @@ export interface EarthRootTerraceLayout {
    */
   floorRects: FloorRect[];
   vestibule: WorldRect;
-  ramp: WorldRect;
-  terrace: WorldRect;
-  descentA: WorldRect;
+  entryRamp: WorldRect;
+  overlook: WorldRect;
+  galleryDescent: WorldRect;
+  gallery: WorldRect;
+  /** The three console bays bumping north off the catwalk, in G, H, I order. */
+  alcoves: WorldRect[];
+  eastLink: WorldRect;
   landing: WorldRect;
-  descentB: WorldRect;
+  exitRamp: WorldRect;
   doorApproach: WorldRect;
   /** The rootbed: blocked, BED_Y, the performers' floor. */
   bed: WorldRect;
@@ -137,12 +202,20 @@ export interface EarthRootTerraceLayout {
   /** The daylight shaft's centre, over the middle case. */
   avenCentre: Point2;
   stations: EarthStation[];
+  consoles: EarthConsole[];
   /** The opener station's dais on the vestibule floor. */
   opener: { centre: Point2; floorY: number };
-  /** The brass rail along every drop edge, RAIL_HEIGHT above the deck under it. */
-  rail: Point2[];
+  /**
+   * The brass rail along every drop edge, RAIL_HEIGHT above the deck under it.
+   * Disjoint runs, because the ribbon has three separate exposed edges: the
+   * north lane over the bed, the gallery's perimeter (stepping around each
+   * alcove), and the east channel's west face.
+   */
+  rails: Point2[][];
   /** The ensemble sightline: where the visitor stands, and where they look. */
   ensemble: { eye: Point2; eyeY: number; target: Point2 };
+  /** Where the visitor enters and which way they face. */
+  spawn: { centre: Point2; floorY: number; yaw: number };
   /** Rects the composed cave terrain routes queries by: the room plus its corridor. */
   bayFootprint: WorldRect[];
   bayBounds: WorldRect;
@@ -160,6 +233,21 @@ const CASE_BINDINGS: Record<EarthCaseLetter, { sequenceId: string; catalogId: st
  */
 export function earthRootTerraceStationOffsets(): { xMetres: number; zMetres: number }[] {
   return STATION_XS.map((x) => ({ xMetres: x, zMetres: STATION_Z }));
+}
+
+/**
+ * Where the visitor starts when this room is walked on its own
+ * (`/museum?room=cave-earth`), as a plan offset for the floor plan's spawn
+ * placement. Without it the picker dropped the visitor on the room's centre
+ * tile, which in this plan is the middle of the rootbed: inside the exhibit,
+ * on a blocked tile, level with the performers.
+ */
+export function earthRootTerraceSpawnOffset(): {
+  xMetres: number;
+  zMetres: number;
+  facing: "east";
+} {
+  return { xMetres: SPAWN.x, zMetres: SPAWN.z, facing: "east" };
 }
 
 function rect(earth: WorldRect, x0: number, z0: number, x1: number, z1: number): WorldRect {
@@ -198,7 +286,7 @@ export function buildEarthRootTerraceLayout(grid: MuseumGrid): EarthRootTerraceL
     );
   }
   // The plan is anchored on the doors the grid actually compiled: the
-  // vestibule must contain the whole west door, and the east route the whole
+  // vestibule must contain the whole west door, and the east channel the whole
   // south door, or the visitor steps off a door tile onto rock.
   const vestibule = rect(earth, 0, VESTIBULE_NORTH, VESTIBULE_RUN, VESTIBULE_SOUTH);
   if (westDoor.min < vestibule.minZ || westDoor.max > vestibule.maxZ) {
@@ -207,44 +295,61 @@ export function buildEarthRootTerraceLayout(grid: MuseumGrid): EarthRootTerraceL
   const eastMinX = earth.maxX - 0.5 - EAST_RUN;
   const eastMaxX = earth.maxX - 0.5;
   if (southDoor.min < eastMinX || southDoor.max > eastMaxX) {
-    throw new Error("Root Terrace layout: the south door lies outside the east route");
+    throw new Error("Root Terrace layout: the south door lies outside the east channel");
   }
 
-  const ramp = rect(
+  // -- North lane: the entry ramp and the overlook spur it ends on.
+  const entryRamp = rect(
     earth,
     VESTIBULE_RUN,
     WALK_NORTH,
-    VESTIBULE_RUN + RAMP_RUN,
+    VESTIBULE_RUN + ENTRY_RAMP_RUN,
     WALK_NORTH + WALK_WIDTH
   );
-  const terrace: WorldRect = {
-    minX: ramp.maxX,
-    maxX: eastMaxX,
-    minZ: ramp.minZ,
-    maxZ: ramp.maxZ,
+  const overlook: WorldRect = {
+    minX: entryRamp.maxX,
+    maxX: entryRamp.maxX + OVERLOOK_RUN,
+    minZ: entryRamp.minZ,
+    maxZ: entryRamp.maxZ,
   };
-  const descentA: WorldRect = {
+
+  // -- South lane: the descent off the vestibule and the catwalk it lands on.
+  const galleryDescent = rect(
+    earth,
+    VESTIBULE_RUN,
+    GALLERY_NORTH,
+    VESTIBULE_RUN + GALLERY_DESCENT_RUN,
+    GALLERY_SOUTH
+  );
+  const gallery = rect(earth, VESTIBULE_RUN + GALLERY_DESCENT_RUN, GALLERY_NORTH, GALLERY_EAST, GALLERY_SOUTH);
+  const alcoves = STATION_XS.map((x) =>
+    rect(earth, x - ALCOVE_WIDTH / 2, GALLERY_NORTH - ALCOVE_DEPTH, x + ALCOVE_WIDTH / 2, GALLERY_NORTH)
+  );
+
+  // -- East channel: cut BELOW the datum, so its west face is a drop to the bed
+  // and its east face is the room's rock wall.
+  const eastLink: WorldRect = {
     minX: eastMinX,
     maxX: eastMaxX,
-    minZ: terrace.maxZ,
-    maxZ: earth.minZ + DESCENT_A_END,
+    minZ: gallery.minZ,
+    maxZ: earth.minZ + EAST_LINK_END,
   };
   const landing: WorldRect = {
     minX: eastMinX,
     maxX: eastMaxX,
-    minZ: descentA.maxZ,
-    maxZ: descentA.maxZ + LANDING_DEPTH,
+    minZ: eastLink.maxZ,
+    maxZ: eastLink.maxZ + LANDING_DEPTH,
   };
-  const descentB: WorldRect = {
+  const exitRamp: WorldRect = {
     minX: eastMinX,
     maxX: eastMaxX,
     minZ: landing.maxZ,
-    maxZ: earth.minZ + DESCENT_B_END,
+    maxZ: earth.minZ + EXIT_RAMP_END,
   };
   const doorApproach: WorldRect = {
     minX: eastMinX,
     maxX: eastMaxX,
-    minZ: descentB.maxZ,
+    minZ: exitRamp.maxZ,
     maxZ: earth.maxZ,
   };
   const bed = rect(earth, BED_WEST, BED_NORTH, BED_EAST, BED_SOUTH);
@@ -252,12 +357,17 @@ export function buildEarthRootTerraceLayout(grid: MuseumGrid): EarthRootTerraceL
 
   const floorRects: FloorRect[] = [
     { id: "vestibule", rect: vestibule, kind: "flat", fromY: DOOR_Y, toY: DOOR_Y },
-    { id: "terrace", rect: terrace, kind: "flat", fromY: TERRACE_Y, toY: TERRACE_Y },
+    { id: "overlook", rect: overlook, kind: "flat", fromY: OVERLOOK_Y, toY: OVERLOOK_Y },
+    { id: "gallery", rect: gallery, kind: "flat", fromY: GALLERY_Y, toY: GALLERY_Y },
+    { id: "alcove-g", rect: alcoves[0]!, kind: "flat", fromY: GALLERY_Y, toY: GALLERY_Y },
+    { id: "alcove-h", rect: alcoves[1]!, kind: "flat", fromY: GALLERY_Y, toY: GALLERY_Y },
+    { id: "alcove-i", rect: alcoves[2]!, kind: "flat", fromY: GALLERY_Y, toY: GALLERY_Y },
     { id: "landing", rect: landing, kind: "flat", fromY: LANDING_Y, toY: LANDING_Y },
     { id: "door-approach", rect: doorApproach, kind: "flat", fromY: DOOR_Y, toY: DOOR_Y },
-    { id: "ramp", rect: ramp, kind: "ramp-x", fromY: DOOR_Y, toY: TERRACE_Y },
-    { id: "descent-a", rect: descentA, kind: "ramp-z", fromY: TERRACE_Y, toY: LANDING_Y },
-    { id: "descent-b", rect: descentB, kind: "ramp-z", fromY: LANDING_Y, toY: DOOR_Y },
+    { id: "entry-ramp", rect: entryRamp, kind: "ramp-x", fromY: DOOR_Y, toY: OVERLOOK_Y },
+    { id: "gallery-descent", rect: galleryDescent, kind: "ramp-x", fromY: DOOR_Y, toY: GALLERY_Y },
+    { id: "east-link", rect: eastLink, kind: "ramp-z", fromY: GALLERY_Y, toY: LANDING_Y },
+    { id: "exit-ramp", rect: exitRamp, kind: "ramp-z", fromY: LANDING_Y, toY: DOOR_Y },
   ];
 
   const stations: EarthStation[] = EARTH_CASE_LETTERS.map((letter, index) => ({
@@ -274,28 +384,87 @@ export function buildEarthRootTerraceLayout(grid: MuseumGrid): EarthRootTerraceL
   }
   const middle = stations[1]!;
   const avenCentre = { x: middle.centre.x, z: middle.centre.z };
+  // The daylight shaft drops onto the middle case. It must clear the catwalk,
+  // or the visitor walks through the column of light instead of watching it
+  // land on a performer.
+  if (avenCentre.z - AVEN_RADIUS < gallery.maxZ) {
+    throw new Error("Root Terrace layout: the aven cuts the gallery catwalk");
+  }
 
-  // The rail runs the whole drop edge: the ramp and terrace's south edge over
-  // the bed, then down the east route's west edge past the bed and the cleft.
-  const rail: Point2[] = [
-    { x: bed.minX, z: bed.minZ },
-    { x: eastMinX, z: bed.minZ },
-    { x: eastMinX, z: earth.maxZ - 0.5 },
+  // One console per case, set into the catwalk's south rail cap directly
+  // opposite its performer, with its alcove behind the operator.
+  const consoles: EarthConsole[] = stations.map((station) => ({
+    letter: station.letter,
+    centre: { x: station.centre.x, z: gallery.maxZ },
+    capY: CONSOLE_CAP_Y,
+    width: CONSOLE_WIDTH,
+    stand: { x: station.centre.x, z: gallery.maxZ - CONSOLE_SETBACK },
+    standY: GALLERY_Y,
+  }));
+  for (const console_ of consoles) {
+    if (!inRectClosed(gallery, console_.stand.x, console_.stand.z)) {
+      throw new Error(`Root Terrace layout: console ${console_.letter} has no deck to stand on`);
+    }
+  }
+
+  // The rail runs every drop edge, and only the drop edges. The east channel's
+  // east face is rock rising, not a fall, and the overlook's east end is the
+  // same, so neither carries brass.
+  const rails: Point2[][] = [
+    // The north lane over the bed: the entry ramp from the bed's west face,
+    // then the overlook spur.
+    [
+      { x: bed.minX, z: bed.minZ },
+      { x: overlook.maxX, z: bed.minZ },
+    ],
+    // The catwalk's south edge, the face the consoles are set into.
+    [
+      { x: bed.minX, z: gallery.maxZ },
+      { x: gallery.maxX, z: gallery.maxZ },
+    ],
+    // The catwalk's north edge, stepping north around each alcove, then on
+    // along the east link's north face.
+    [
+      { x: bed.minX, z: gallery.minZ },
+      ...alcoves.flatMap((a) => [
+        { x: a.minX, z: gallery.minZ },
+        { x: a.minX, z: a.minZ },
+        { x: a.maxX, z: a.minZ },
+        { x: a.maxX, z: gallery.minZ },
+      ]),
+      { x: eastMaxX, z: gallery.minZ },
+    ],
+    // The east channel's west face, past the bed and then the cleft.
+    [
+      { x: eastMinX, z: gallery.maxZ },
+      { x: eastMinX, z: earth.maxZ - 0.5 },
+    ],
   ];
 
-  // Half a metre from the rail line, which is where a person stops at a
-  // railing. It is not a stylistic choice: a rail casts a shadow outward
-  // across whatever is below it, and the further back the eye, the more of
-  // the bed it hides. From the landing's centre the near case is entirely
-  // behind the brass and the sightline crosses the bar at eye level. From
-  // here the bar sits under the sightline, where a railing belongs, and the
-  // three cases nest away down the axis: one shape at three scales.
+  // Half a metre in from the channel's west rail, which is where a person
+  // stops at a railing. It is not a stylistic choice: a rail casts a shadow
+  // outward across whatever is below it, and the further back the eye, the
+  // more of the bed it hides. From here the bar sits under the sightline,
+  // where a railing belongs, and the three cases nest away down the axis:
+  // one shape at three scales.
   const ensembleEye = { x: landing.minX + 0.5, z: earth.minZ + STATION_Z };
   if (!inRectClosed(landing, ensembleEye.x, ensembleEye.z)) {
     throw new Error("Root Terrace layout: the ensemble landing is off the row's axis");
   }
 
-  // ── Corridor from the First Fire. Both wings suppress their tile geometry,
+  // The visitor arrives through the west door facing east, into the vestibule
+  // with both routes ahead: the ramp up on their left, the descent on their
+  // right. Yaw follows the museum compass (look direction sin/cos, 0 = south).
+  const spawn = {
+    centre: { x: earth.minX + SPAWN.x, z: earth.minZ + SPAWN.z },
+    floorY: DOOR_Y,
+    yaw: Math.PI / 2,
+  };
+  if (!inRectClosed(vestibule, spawn.centre.x, spawn.centre.z)) {
+    throw new Error("Root Terrace layout: the spawn point is off the vestibule floor");
+  }
+
+  // -- Corridor from the First Fire. Both wings suppress their tile geometry,
   // so the corridor between them is suppressed too and this module owns it.
   const eb = earthWing.bounds;
   const corridor = fireWing
@@ -322,26 +491,31 @@ export function buildEarthRootTerraceLayout(grid: MuseumGrid): EarthRootTerraceL
     corridor,
     floorRects,
     vestibule,
-    ramp,
-    terrace,
-    descentA,
+    entryRamp,
+    overlook,
+    galleryDescent,
+    gallery,
+    alcoves,
+    eastLink,
     landing,
-    descentB,
+    exitRamp,
     doorApproach,
     bed,
     cleft,
     avenCentre,
     stations,
+    consoles,
     opener: {
       centre: { x: earth.minX + OPENER.x, z: earth.minZ + OPENER.z },
       floorY: DOOR_Y,
     },
-    rail,
+    rails,
     ensemble: {
       eye: ensembleEye,
       eyeY: LANDING_Y + EYE_ABOVE_FLOOR,
       target: { x: stations[0]!.centre.x, z: stations[0]!.centre.z },
     },
+    spawn,
     bayFootprint,
     bayBounds: unionRect(bayFootprint),
   };

@@ -458,6 +458,8 @@
         {rightPropType}
         colorMode={controller.colorMode}
         customPropColors={controller.customPropColors}
+        exactPropColors={controller.exactPropColors}
+        renderedArms={controller.colorStage.map((row) => row.arm)}
         renderedInstanceCount={controller.performerCount}
         short={shortLandscape}
         onCastChange={changeCastCount}

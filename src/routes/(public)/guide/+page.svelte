@@ -36,6 +36,12 @@
       href: "/guide/codex",
       action: "Open the Codex",
     },
+    {
+      title: "Motion paths",
+      description: "Compare hand paths and the mandalas they draw.",
+      href: "/guide/motion-paths",
+      action: "Compare motion paths",
+    },
   ] as const;
 </script>
 

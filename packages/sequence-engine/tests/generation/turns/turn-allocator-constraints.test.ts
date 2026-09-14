@@ -23,3 +23,33 @@ describe("TurnAllocator hard output constraints", () => {
     }
   });
 });
+
+describe("allocateTurns with matchHands", () => {
+  it("gives the left hand the right hand's value on every step, float included", () => {
+    for (let i = 0; i < 20; i++) {
+      const allocation = allocateTurns(8, 3, 3, { matchHands: true });
+      expect(allocation.left).toEqual(allocation.right);
+      expect(allocation.left).toHaveLength(8);
+    }
+  });
+
+  it("still guarantees a turn somewhere when both lanes would roll zeros", () => {
+    let zero = 0;
+    const allocation = allocateTurns(4, 2, 1, {
+      matchHands: true,
+      random: () => (zero++ % 2 === 0 ? 0 : 0.99),
+    });
+    expect(allocation.left).toEqual(allocation.right);
+    expect(allocation.right.some((t) => t !== 0)).toBe(true);
+  });
+
+  it("leaves the hands independent when the flag is off", () => {
+    let seed = 1;
+    const random = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    const allocation = allocateTurns(12, 3, 3, { random });
+    expect(allocation.left).not.toEqual(allocation.right);
+  });
+});

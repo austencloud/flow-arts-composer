@@ -14,7 +14,7 @@ describe("Instagram data deletion status page", () => {
   it("gives a public manual deletion path when Meta checks the URL", () => {
     const html = renderInstagramDataDeletionStatusPage("instructions");
 
-    expect(html).toContain("Delete your TKA data");
+    expect(html).toContain("Delete your Flow Arts Composer data");
     expect(html).toContain("tkaflowarts@gmail.com");
   });
 });

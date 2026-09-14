@@ -294,4 +294,15 @@ describe("dev launcher install guard", () => {
     expect(launcher).toContain("$manageTunnel -and ((-not $tunnelProc)");
     expect(launcher).toContain("while Vite stays online");
   });
+
+  it("tears its own tree down once the pm2 shim is gone", () => {
+    // pm2 on Windows kills only the shim; the launcher must notice and stop
+    // its Vite instead of orphaning it against the next boot.
+    const shim = readFileSync(path.resolve("scripts/start-dev-pm2.cjs"), "utf8");
+    expect(shim).toContain("TKA_PM2_PARENT_PID: String(process.pid)");
+    expect(launcher).toContain("$env:TKA_PM2_PARENT_PID");
+    expect(launcher).toContain("function Test-SupervisorAlive");
+    expect(launcher).toContain("if (-not (Test-SupervisorAlive)) { break }");
+    expect(launcher).toContain("if (-not (Test-SupervisorAlive)) { return $false }");
+  });
 });

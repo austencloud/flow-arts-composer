@@ -22,13 +22,15 @@ import {
   BED_CROWN_Y,
   BED_Y,
   CLEFT_Y,
+  CONSOLE_CAP_Y,
   DOOR_Y,
   EYE_ABOVE_FLOOR,
+  GALLERY_Y,
   LANDING_Y,
+  OVERLOOK_CROWN_Y,
+  OVERLOOK_Y,
   PROP_CENTRE_ABOVE_FEET,
   RAIL_HEIGHT,
-  TERRACE_CROWN_Y,
-  TERRACE_Y,
   VESTIBULE_CROWN_Y,
   buildEarthRootTerraceLayout,
   type EarthRootTerraceLayout,
@@ -97,12 +99,13 @@ export interface EarthRootTerraceBlenderContract {
   };
   datums: {
     door: number;
-    terrace: number;
+    overlook: number;
+    gallery: number;
     landing: number;
     bed: number;
     cleft: number;
     bedCrown: number;
-    terraceCrown: number;
+    overlookCrown: number;
     vestibuleCrown: number;
     avenTop: number;
     avenRadius: number;
@@ -132,8 +135,24 @@ export interface EarthRootTerraceBlenderContract {
     facing: "north";
   }[];
   opener: { blender: BlenderPoint };
-  rail: { points: BlenderPoint2[]; height: number };
+  /**
+   * Disjoint rail runs. The ribbon has separate exposed edges - the north
+   * lane over the bed, the catwalk perimeter stepping around each alcove, and
+   * the east channel's west face - and joining them into one polyline would
+   * stand brass across the openings between them.
+   */
+  rails: { points: BlenderPoint2[]; height: number }[];
+  /** The three control consoles, set flush into the catwalk's south rail cap. */
+  consoles: {
+    letter: string;
+    blender: BlenderPoint2;
+    capZ: number;
+    width: number;
+    stand: BlenderPoint;
+  }[];
   ensemble: { eye: BlenderPoint; target: BlenderPoint };
+  /** Where the visitor arrives, for the graybox walk test. */
+  spawn: { blender: BlenderPoint; yaw: number };
   cameras: BlenderCamera[];
 }
 
@@ -176,14 +195,23 @@ function floorOf(floor: FloorRect, c: Point2, crown: number): BlenderFloor {
   return { id: floor.id, box, kind: "ramp-y", fromZ: floor.toY, toZ: floor.fromY, crown };
 }
 
+// The crown steps three times on the way in: a low vestibule cave, the taller
+// north lane the overlook sits in, and the full bed vault over the catwalk.
+// The visitor ducks out of one and into the next, which is what makes the
+// rootbed read as big when they reach it.
 const FLOOR_CROWN: Record<string, number> = {
   vestibule: VESTIBULE_CROWN_Y,
-  ramp: TERRACE_CROWN_Y,
-  terrace: TERRACE_CROWN_Y,
-  "descent-a": TERRACE_CROWN_Y,
-  landing: TERRACE_CROWN_Y,
-  "descent-b": TERRACE_CROWN_Y,
-  "door-approach": TERRACE_CROWN_Y,
+  "entry-ramp": OVERLOOK_CROWN_Y,
+  overlook: OVERLOOK_CROWN_Y,
+  "gallery-descent": OVERLOOK_CROWN_Y,
+  gallery: BED_CROWN_Y,
+  "alcove-g": BED_CROWN_Y,
+  "alcove-h": BED_CROWN_Y,
+  "alcove-i": BED_CROWN_Y,
+  "east-link": OVERLOOK_CROWN_Y,
+  landing: OVERLOOK_CROWN_Y,
+  "exit-ramp": OVERLOOK_CROWN_Y,
+  "door-approach": OVERLOOK_CROWN_Y,
 };
 
 export function buildEarthRootTerraceBlenderContract(
@@ -203,7 +231,7 @@ export function buildEarthRootTerraceBlenderContract(
 
   const g = layout.stations[0]!.centre;
   const h = layout.stations[1]!.centre;
-  const terraceMidZ = (layout.terrace.minZ + layout.terrace.maxZ) / 2;
+  const rampMidZ = (layout.entryRamp.minZ + layout.entryRamp.maxZ) / 2;
   const camera = (
     id: string,
     position: Point2,
@@ -255,12 +283,13 @@ export function buildEarthRootTerraceBlenderContract(
     },
     datums: {
       door: DOOR_Y,
-      terrace: TERRACE_Y,
+      overlook: OVERLOOK_Y,
+      gallery: GALLERY_Y,
       landing: LANDING_Y,
       bed: BED_Y,
       cleft: CLEFT_Y,
       bedCrown: BED_CROWN_Y,
-      terraceCrown: TERRACE_CROWN_Y,
+      overlookCrown: OVERLOOK_CROWN_Y,
       vestibuleCrown: VESTIBULE_CROWN_Y,
       avenTop: AVEN_TOP_Y,
       avenRadius: AVEN_RADIUS,
@@ -268,7 +297,9 @@ export function buildEarthRootTerraceBlenderContract(
       eyeAboveFloor: EYE_ABOVE_FLOOR,
       propCentreAboveFeet: PROP_CENTRE_ABOVE_FEET,
     },
-    floors: layout.floorRects.map((floor) => floorOf(floor, c, FLOOR_CROWN[floor.id] ?? TERRACE_CROWN_Y)),
+    floors: layout.floorRects.map((floor) =>
+      floorOf(floor, c, FLOOR_CROWN[floor.id] ?? OVERLOOK_CROWN_Y)
+    ),
     bed: boxOf(layout.bed, c),
     cleft: boxOf(layout.cleft, c),
     aven: {
@@ -306,11 +337,19 @@ export function buildEarthRootTerraceBlenderContract(
       facing: "north",
     })),
     opener: { blender: p3(layout.opener.centre, layout.opener.floorY) },
-    rail: { points: layout.rail.map(p2), height: RAIL_HEIGHT },
+    rails: layout.rails.map((run) => ({ points: run.map(p2), height: RAIL_HEIGHT })),
+    consoles: layout.consoles.map((panel) => ({
+      letter: panel.letter,
+      blender: p2(panel.centre),
+      capZ: CONSOLE_CAP_Y,
+      width: panel.width,
+      stand: p3(panel.stand, panel.standY),
+    })),
     ensemble: {
       eye: p3(layout.ensemble.eye, layout.ensemble.eyeY),
       target: p3(layout.ensemble.target, BED_Y + PROP_CENTRE_ABOVE_FEET),
     },
+    spawn: { blender: p3(layout.spawn.centre, layout.spawn.floorY), yaw: layout.spawn.yaw },
     cameras: [
       // Aimed between the wing stamp and the mouth of the ramp, not at the
       // opener. The opener is a runtime station and is not in the shell at
@@ -332,37 +371,46 @@ export function buildEarthRootTerraceBlenderContract(
       // and the climb is what the shot is about.
       camera(
         "ramp-climb",
-        { x: layout.ramp.minX + 6, z: terraceMidZ },
-        DOOR_Y + (TERRACE_Y * 6) / 10 + EYE_ABOVE_FLOOR,
+        { x: layout.entryRamp.minX + 6, z: rampMidZ },
+        DOOR_Y +
+          (OVERLOOK_Y * 6) / (layout.entryRamp.maxX - layout.entryRamp.minX) +
+          EYE_ABOVE_FLOOR,
         h,
         BED_Y + PROP_CENTRE_ABOVE_FEET,
         70
       ),
+      // The overlook's standing point: a metre in from the spur's west end,
+      // half a metre back from its rail. From here the foot line of every
+      // case clears the catwalk rail below by 0.11 m - the tightest number
+      // in the room, and the one the regrade is built around.
       camera(
-        "terrace-overlook",
-        { x: h.x, z: layout.terrace.maxZ - 0.6 },
-        TERRACE_Y + EYE_ABOVE_FLOOR,
+        "overlook",
+        { x: layout.overlook.minX + 1.0, z: layout.overlook.maxZ - 0.5 },
+        OVERLOOK_Y + EYE_ABOVE_FLOOR,
         h,
         BED_Y + PROP_CENTRE_ABOVE_FEET,
         75
       ),
-      // Aimed at the bed floor under the middle case, on a wide lens. The
-      // row runs AWAY from this eye, so its three figures are not side by
-      // side in the frame but stacked in depth: G twelve degrees below the
-      // horizon, I forty-seven. A normal lens holds one end or the other.
-      // Eighty-four degrees holds the whole axis, which is the shot: one
-      // shape at three scales on one line.
+      // The regrade's whole argument in one frame: standing at the middle
+      // console on the catwalk, the case is 4.05 m away and 24 degrees down.
+      // The old terrace read the same performer at 9.2 m and 29 degrees.
       camera(
-        "ensemble",
-        layout.ensemble.eye,
-        layout.ensemble.eyeY,
+        "console",
+        layout.consoles[1]!.stand,
+        GALLERY_Y + EYE_ABOVE_FLOOR,
         h,
-        BED_Y,
-        84
+        BED_Y + PROP_CENTRE_ABOVE_FEET,
+        68
       ),
+      // Aimed at the bed floor under the middle case. The row runs AWAY from
+      // this eye, so its three figures are not side by side in the frame but
+      // stacked in depth. Dropping the landing to -1.2 flattened that axis
+      // from a 12-to-47-degree spread to 4.7-to-22.5, which a normal lens
+      // now holds end to end: one shape at three scales on one line.
+      camera("ensemble", layout.ensemble.eye, layout.ensemble.eyeY, h, BED_Y, 75),
       camera(
         "exit",
-        { x: (layout.descentB.minX + layout.descentB.maxX) / 2, z: layout.descentB.minZ + 1 },
+        { x: (layout.exitRamp.minX + layout.exitRamp.maxX) / 2, z: layout.exitRamp.minZ + 1 },
         LANDING_Y - 0.2 + EYE_ABOVE_FLOOR,
         southDoorCentre,
         DOOR_Y + 1.2,

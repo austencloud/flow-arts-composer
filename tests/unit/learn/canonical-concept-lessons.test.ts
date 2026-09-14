@@ -176,7 +176,14 @@ describe("canonical concept lesson composition", () => {
     expect(positions).toContain("PictographContainer");
     expect(positions).toContain("leftPropType={PropType.HAND}");
     expect(positions).toContain("rightPropType={PropType.HAND}");
-    expect(positions).toContain("TKAWordGlyph");
+    // The readout and every example name the position. The canonical
+    // pictograph already draws the glyph, so a second decorative one beside it
+    // would print the same fact twice.
+    expect(positions).toContain(
+      'built ? POSITION_TYPE_INFO[built].label : "Your position"'
+    );
+    expect(positions).toContain("POSITION_TYPE_INFO[example.kind].label");
+    expect(positions).not.toContain("TKAWordGlyph");
     expect(positions).not.toContain("focusPhase");
     expect(positions).not.toContain("Try it");
     expect(handPlayer).toContain("InlineAnimationPlayer");

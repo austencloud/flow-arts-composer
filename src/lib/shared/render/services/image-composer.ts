@@ -23,6 +23,7 @@ import { blobToImage, canvasToImage, imageToBlob } from "./image-format-converte
 import { createRenderCanvas } from "./create-render-canvas";
 import type { RenderCanvas } from "./types";
 import { findEmptyCellForQR } from "./cell-border-renderer";
+import { renderDurationBadge, stepHasDurationBadge } from "@tka/render-composition";
 import {
   computeCardFrontLayout,
   paintCardFrontBackground,
@@ -194,6 +195,7 @@ export class ImageComposer {
         }
       }
       return {
+        fanAppearance: overrides.fanAppearance,
         primaryPropColors: overrides.primaryPropColors,
         showTKA: overrides.showTKA,
         showTnD: overrides.showTnD,
@@ -230,6 +232,7 @@ export class ImageComposer {
     const appSettings = getSettings();
 
     const globalSettings: PictographVisibilityOptions = {
+      fanAppearance: appSettings.fanAppearance,
       primaryPropColors: appSettings.primaryPropColors,
       showTKA: visibilityManager.getGlyphVisibility("tkaGlyph"),
       showTnD: visibilityManager.getGlyphVisibility("tndGlyph"),
@@ -247,6 +250,7 @@ export class ImageComposer {
 
     if (overrides) {
       return {
+        fanAppearance: overrides.fanAppearance ?? globalSettings.fanAppearance,
         primaryPropColors: overrides.primaryPropColors !== undefined ? overrides.primaryPropColors : globalSettings.primaryPropColors,
         showTKA: overrides.showTKA ?? globalSettings.showTKA,
         showTnD: overrides.showTnD ?? globalSettings.showTnD,
@@ -408,7 +412,7 @@ export class ImageComposer {
       );
 
       const beatDuration = beat.duration ?? 1;
-      if (Math.abs(beatDuration - 1.0) > 0.001) {
+      if (stepHasDurationBadge(beatDuration)) {
         const x = col * stepSize + gridOffsetX;
         const y = row * stepSize + gridOffsetY;
         this.drawDurationBadge(ctx, beatDuration, x, y, stepSize, isDarkMode);
@@ -504,6 +508,7 @@ export class ImageComposer {
     const catDogModeEnabled = !!(leftProp && rightProp && leftProp !== rightProp);
 
     const previewOptions: PreviewCellRenderOptions = {
+      fanAppearance: visibilitySettings.fanAppearance,
       size: stepSize,
       leftPropType: leftProp,
       rightPropType: rightProp,
@@ -598,8 +603,18 @@ export class ImageComposer {
 
           await this.ensureCanvas2DInitialized();
 
-          const pictographCanvas = await this.canvas2DRenderer.renderPictograph(
+          // The direct renderer has no preparer of its own: handed a raw step it
+          // still paints the grid, letter, and turn numbers but silently skips
+          // every prop and arrow. Custom palettes land here (the compositor's
+          // blue/red layer caches must not leak into them), so prepare first,
+          // the same way the compositor branch does.
+          const preparedPictograph = await this.prepareForRaster(
             pictographData,
+            finalVisibilitySettings
+          );
+
+          const pictographCanvas = await this.canvas2DRenderer.renderPictograph(
+            preparedPictograph,
             {
               size: stepSize,
               visibility: finalVisibilitySettings,
@@ -651,25 +666,8 @@ export class ImageComposer {
     cellSize: number,
     isDarkMode: boolean
   ): void {
-    const VIEW_BOX_SIZE = 950;
-    const scale = cellSize / VIEW_BOX_SIZE;
-
-    const formatted = Number.isInteger(duration)
-      ? duration.toString()
-      : duration.toFixed(2).replace(/\.?0+$/, "");
-    const text = `${formatted}×`;
-
-    const fontSize = 52 * scale;
-    const textX = x + 475 * scale;
-    const textY = y + 890 * scale;
-
-    ctx.save();
-    ctx.font = `600 ${fontSize}px Inter, "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = isDarkMode ? "#ffffff" : "#231f20";
-    ctx.fillText(text, textX, textY);
-    ctx.restore();
+    // Shared owner: the MCP card draws the same badge through the same function.
+    renderDurationBadge(ctx, duration, x, y, cellSize, isDarkMode);
   }
 
   getCacheStats() {
@@ -903,6 +901,32 @@ export class ImageComposer {
     return result;
   }
 
+  // Every rasterizer below (the layer compositor and the direct renderer) draws
+  // props and arrows only from `_prepared`; neither prepares on its own. The
+  // preparer is imported lazily because its dependency chain is heavy and
+  // unavailable to unit tests, which inject a fake.
+  private async prepareForRaster(
+    pictographData: StepData | PictographData,
+    visibilitySettings: PictographVisibilityOptions
+  ): Promise<PreparedPictographData> {
+    const themeMode = visibilitySettings.darkMode ? "dark" : "light";
+    const { pictographPreparer: preparer } = await import(
+      "../../pictograph/shared/services/pictograph-preparer"
+    );
+    const prepared = await preparer.prepareSingle(pictographData, {
+      themeMode,
+      fanAppearance: visibilitySettings.fanAppearance,
+      leftPropType: visibilitySettings.leftPropType,
+      rightPropType: visibilitySettings.rightPropType,
+      handPathMode: visibilitySettings.handPathMode ?? false,
+      showLeftMotion: visibilitySettings.showLeftMotion,
+      showRightMotion: visibilitySettings.showRightMotion,
+      leftBuugengFlipped: visibilitySettings.leftBuugengFlipped,
+      rightBuugengFlipped: visibilitySettings.rightBuugengFlipped,
+    });
+    return prepared as unknown as PreparedPictographData;
+  }
+
   private async renderPictographWithLayerCompositor(
     ctx: CanvasRenderingContext2D,
     pictographData: StepData | PictographData,
@@ -920,20 +944,10 @@ export class ImageComposer {
 
     await this.ensureCanvas2DInitialized();
 
-    const themeMode = visibilitySettings.darkMode ? "dark" : "light";
-    const { pictographPreparer: preparer } = await import(
-      "../../pictograph/shared/services/pictograph-preparer"
+    const preparedPictograph = await this.prepareForRaster(
+      pictographData,
+      visibilitySettings
     );
-    const preparedPictograph = await preparer.prepareSingle(pictographData, {
-      themeMode,
-      leftPropType: visibilitySettings.leftPropType,
-      rightPropType: visibilitySettings.rightPropType,
-      handPathMode: visibilitySettings.handPathMode ?? false,
-      showLeftMotion: visibilitySettings.showLeftMotion,
-      showRightMotion: visibilitySettings.showRightMotion,
-      leftBuugengFlipped: visibilitySettings.leftBuugengFlipped,
-      rightBuugengFlipped: visibilitySettings.rightBuugengFlipped,
-    });
 
     const { options: layerOptions, visibility: layerVisibility } = buildCellLayerOptions(
       stepSize,
@@ -941,7 +955,7 @@ export class ImageComposer {
     );
 
     const result = await this.layerCompositor.compose(
-      preparedPictograph as unknown as PreparedPictographData,
+      preparedPictograph,
       layerOptions,
       layerVisibility,
       stepNumber

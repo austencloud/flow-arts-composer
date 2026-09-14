@@ -1,0 +1,58 @@
+import { describe, expect, it } from "vitest";
+import { createViewerShellShareState } from "$lib/shared/sequence-viewer/state/viewer-shell-share-state.svelte";
+
+function createShareState(onDismiss: () => void) {
+  return createViewerShellShareState(
+    {
+      getContext: () =>
+        ({
+          dismissPreview: onDismiss,
+          viewerState: { viewerMode: "animation" },
+        }) as never,
+      getSequence: () => ({}) as never,
+    },
+    {
+      captureScanAction: () => undefined,
+      openSendSequenceSheetWithCard: () => undefined,
+      renderCardPreview: () => Promise.reject(new Error("unused")),
+      sendToStickerLab: () => undefined,
+    } as never
+  );
+}
+
+describe("viewer share file preparation", () => {
+  it("retires an old ordinary video only for the first explicit video preparation", () => {
+    let dismissals = 0;
+    const share = createShareState(() => dismissals++);
+
+    share.selectAction("share-sequence");
+    expect(dismissals).toBe(0);
+    expect(share.prepareFile("card")).toBe(false);
+    expect(dismissals).toBe(0);
+    expect(share.prepareFile("video")).toBe(true);
+    expect(dismissals).toBe(1);
+    expect(share.prepareFile("video")).toBe(false);
+    expect(dismissals).toBe(1);
+
+    share.setPostSheetOpen(false);
+    share.selectAction("share-sequence");
+    expect(share.prepareFile("video")).toBe(true);
+    expect(dismissals).toBe(2);
+  });
+
+  it("marks a live scene take as a resumed share session", () => {
+    const share = createShareState(() => undefined);
+
+    share.shareScene();
+    share.suspendForSceneTake();
+    expect(share.postSheetOpen).toBe(false);
+    expect(share.preserveSession).toBe(true);
+
+    share.resumeAfterSceneTake();
+    expect(share.postSheetOpen).toBe(true);
+    expect(share.preserveSession).toBe(true);
+
+    share.markSessionResumed();
+    expect(share.preserveSession).toBe(false);
+  });
+});

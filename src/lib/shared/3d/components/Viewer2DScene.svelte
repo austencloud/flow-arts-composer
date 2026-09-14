@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   /**
    * Viewer2DScene
    *
@@ -68,8 +69,8 @@
   const leftRot = $derived(isLeftHand ? 0 : (leftPropState?.staffRotationAngle ?? 0));
   const rightRot = $derived(isRightHand ? 0 : (rightPropState?.staffRotationAngle ?? 0));
 
-  const leftColor = getMotionColor(HandSide.LEFT, "dark");
-  const rightColor = getMotionColor(HandSide.RIGHT, "dark");
+  const leftColor = $derived(getSettings().primaryPropColors?.left ?? getMotionColor(HandSide.LEFT, "dark"));
+  const rightColor = $derived(getSettings().primaryPropColors?.right ?? getMotionColor(HandSide.RIGHT, "dark"));
 </script>
 
 <T.AmbientLight intensity={1} />

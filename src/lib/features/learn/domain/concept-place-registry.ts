@@ -99,6 +99,11 @@ export const CONCEPT_RESOURCE_BINDINGS: Readonly<
         label: "Timing and Direction lesson",
         coverage: "focused",
       },
+      {
+        lessonId: "reading-choreo-cards",
+        label: "Reading a Choreo Card lesson",
+        coverage: "focused",
+      },
     ],
     guideRefs: [
       {

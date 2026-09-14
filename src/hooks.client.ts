@@ -4,6 +4,7 @@
 import type { ClientInit, HandleClientError } from "@sveltejs/kit";
 import { browser, dev } from "$app/environment";
 import { Capacitor } from "@capacitor/core";
+import { isRunningAsStandalone } from "$lib/shared/mobile/services/platform-detector";
 import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
 import {
   applyWaitingSwUpdateBeforeStart,
@@ -303,6 +304,23 @@ export const handleError: HandleClientError = ({ error, message, status }) => {
 // has no sync listener, so it was a no-op. Firestore's own persistence queue
 // handles offline writes while a tab is open.)
 export const init: ClientInit = async () => {
+  // Existing home-screen installs still launch /create. Let the dev install
+  // join review without redirecting the app embedded inside that review page.
+  if (
+    browser &&
+    dev &&
+    window.top === window &&
+    window.location.hostname === "dev.tkaflowarts.com" &&
+    ["/", "/create", "/create/"].includes(window.location.pathname) &&
+    !window.location.search &&
+    !window.location.hash &&
+    isRunningAsStandalone()
+  ) {
+    window.location.replace("/review");
+    await new Promise<void>(() => {});
+    return;
+  }
+
   if (
     !browser ||
     dev ||

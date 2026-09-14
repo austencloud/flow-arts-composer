@@ -3,6 +3,8 @@ export const WORKSPACE_REPLAY_COMMANDS = [
   "studio-2d",
   "studio-3d",
   "studio-interrupt",
+  "studio-card-top",
+  "studio-card-bottom",
   "inspector-toggle",
   "inspector-interrupt",
   "practice-2d",
@@ -32,6 +34,11 @@ export const WORKSPACE_GATE_REVIEWS = {
     options: [
       { command: "studio-2d", label: "Replay with 2D" },
       { command: "studio-3d", label: "Replay with 3D", requires3D: true },
+      { command: "studio-card-top", label: "Card ⇄ Studio · top selected" },
+      {
+        command: "studio-card-bottom",
+        label: "Card ⇄ Studio · bottom selected",
+      },
       { command: "studio-interrupt", label: "Stress reversal", primary: true },
     ],
   },

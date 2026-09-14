@@ -6,6 +6,11 @@
  * QR — returns null and the scan loop just keeps looking.
  */
 
+import {
+	decodeOnce,
+	resolveInlineQrPayload,
+} from "$lib/shared/navigation/services/inline-qr-envelope";
+
 const TKA_HOSTS = new Set(["tka.run", "www.tka.run"]);
 
 /** Short codes are 4–6 char base36 (see short-code-manager MIN_CODE_LENGTH). */
@@ -31,8 +36,25 @@ export function extractScanCode(rawValue: string): string | null {
 		if (!TKA_HOSTS.has(url.hostname.toLowerCase())) return null;
 		const segments = url.pathname.split("/").filter(Boolean);
 		// Both TKA.RUN/{code} and tka.run/q/{code} appear in the wild.
-		const candidate = segments[0]?.toLowerCase() === "q" ? (segments[1] ?? "") : (segments[0] ?? "");
-		if (candidate.toLowerCase().startsWith("s~")) return candidate;
+		const segment =
+			segments[0]?.toLowerCase() === "q" ? (segments[1] ?? "") : (segments[0] ?? "");
+
+		// `URL.pathname` keeps its percent escapes, and a legacy `s~` payload is
+		// base45 (RFC 9285) whose alphabet contains `%` — so an escape here may be
+		// the payload's own. The envelope owner decides, and it unescapes only when
+		// that is what makes the `q1:`/`r1:`/`raw:` delimiter readable again: a
+		// double-encoded link (`s~q1%3A…`) is restored, while `%4A` sitting behind
+		// an intact `q1:` is left alone instead of being rewritten to `J`.
+		//
+		// A payload that reached us through a URL normalizer with its envelope
+		// still intact keeps whatever the normalizer escaped (a literal space
+		// becomes `%20`). That case stays ambiguous — `%20` is also three valid
+		// base45 characters — so it is left for the decoder to fail on loudly
+		// rather than guessed at here.
+		if (segment.toLowerCase().startsWith("s~")) return resolveInlineQrPayload(segment);
+
+		// A short code can never contain a `%`, so unescaping one is always safe.
+		const candidate = decodeOnce(segment);
 		return isValidCode(candidate) ? candidate.toUpperCase() : null;
 	}
 

@@ -1,8 +1,10 @@
 import type { CsvDataSet } from "$lib/shared/foundation/domain/models/csv-models";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
 // Module-level cache shared across all instances (defense against non-singleton usage)
 let sharedCsvCache: CsvDataSet | null = null;
 let sharedIsLoaded = false;
+let sharedPendingLoad: Promise<CsvDataSet> | null = null;
 
 const IDB_NAME = "tka-csv-cache";
 const IDB_VERSION = 1;
@@ -61,7 +63,12 @@ export class CsvLoader {
 
   async loadCSVDataSet(): Promise<{
     success: boolean;
-    data?: { diamondData: string; boxData: string; skewedData?: string; trigridData?: string };
+    data?: {
+      diamondData: string;
+      boxData: string;
+      skewedData?: string;
+      trigridData?: string;
+    };
     error?: string;
     sources: {
       diamond: "fetch" | "window" | "cache";
@@ -149,18 +156,51 @@ export class CsvLoader {
    * On successful fetch, persists to IndexedDB for future offline use.
    */
   async loadCsvData(): Promise<CsvDataSet> {
+    const span = bootProfiler.startSpan("csv:load");
     // Check module-level cache first (shared across all instances)
     if (sharedIsLoaded && sharedCsvCache) {
       this.csvData = sharedCsvCache;
       this.isLoaded = true;
+      span("ok", { source: "memory" });
       return sharedCsvCache;
     }
 
     // Check instance cache (for singleton usage)
     if (this.isLoaded && this.csvData) {
+      span("ok", { source: "instance" });
       return this.csvData;
     }
 
+    if (sharedPendingLoad) {
+      try {
+        const data = await sharedPendingLoad;
+        this.csvData = data;
+        this.isLoaded = true;
+        span("ok", { source: "pending" });
+        return data;
+      } catch (error) {
+        span("error", { source: "pending" });
+        throw error;
+      }
+    }
+
+    const pendingLoad = this.loadUncachedCsvData();
+    sharedPendingLoad = pendingLoad;
+    try {
+      const data = await pendingLoad;
+      span("ok", { source: this.resolveSource() });
+      return data;
+    } catch (error) {
+      span("error", { source: "unavailable" });
+      throw error;
+    } finally {
+      if (sharedPendingLoad === pendingLoad) {
+        sharedPendingLoad = null;
+      }
+    }
+  }
+
+  private async loadUncachedCsvData(): Promise<CsvDataSet> {
     // Try window pre-injection
     if (this.isWindowDataAvailable()) {
       const data = window.csvData as CsvDataSet;
@@ -200,9 +240,7 @@ export class CsvLoader {
       const message =
         fetchError instanceof Error ? fetchError.message : "Unknown error";
       console.error("Failed to load CSV data from all sources:", message);
-      throw new Error(
-        `CSV loading failed (offline with no cache): ${message}`
-      );
+      throw new Error(`CSV loading failed (offline with no cache): ${message}`);
     }
   }
 
@@ -215,6 +253,7 @@ export class CsvLoader {
     this.isLoaded = false;
     sharedCsvCache = null;
     sharedIsLoaded = false;
+    sharedPendingLoad = null;
   }
 
   private setMemoryCache(data: CsvDataSet): void {
@@ -256,7 +295,9 @@ export class CsvLoader {
       if (attempt > 0) {
         // 200ms, then 400ms. Long enough to outlast a handoff between cell and
         // wifi, short enough that a genuinely offline visitor still fails fast.
-        await new Promise((resolve) => setTimeout(resolve, 200 * 2 ** (attempt - 1)));
+        await new Promise((resolve) =>
+          setTimeout(resolve, 200 * 2 ** (attempt - 1))
+        );
       }
       try {
         const response = await fetch(url);
@@ -274,32 +315,46 @@ export class CsvLoader {
   }
 
   private async loadFromStaticFiles(): Promise<CsvDataSet> {
-    const [diamondResponse, boxResponse, skewedResponse, trigridResponse] =
-      await Promise.all([
-        CsvLoader.fetchWithRetry(CsvLoader.CSV_FILES.DIAMOND),
-        CsvLoader.fetchWithRetry(CsvLoader.CSV_FILES.BOX),
-        CsvLoader.fetchWithRetry(CsvLoader.CSV_FILES.SKEWED).catch(() => null),
-        CsvLoader.fetchWithRetry(CsvLoader.CSV_FILES.TRIGRID).catch(() => null),
+    const span = bootProfiler.startSpan("csv:fetch");
+    try {
+      const [diamondResponse, boxResponse, skewedResponse, trigridResponse] =
+        await Promise.all([
+          CsvLoader.fetchWithRetry(CsvLoader.CSV_FILES.DIAMOND),
+          CsvLoader.fetchWithRetry(CsvLoader.CSV_FILES.BOX),
+          CsvLoader.fetchWithRetry(CsvLoader.CSV_FILES.SKEWED).catch(
+            () => null
+          ),
+          CsvLoader.fetchWithRetry(CsvLoader.CSV_FILES.TRIGRID).catch(
+            () => null
+          ),
+        ]);
+
+      this.validateResponses(diamondResponse, boxResponse);
+
+      const [diamondData, boxData] = await Promise.all([
+        diamondResponse.text(),
+        boxResponse.text(),
       ]);
 
-    this.validateResponses(diamondResponse, boxResponse);
+      let skewedData: string | undefined;
+      if (skewedResponse?.ok) {
+        skewedData = await skewedResponse.text();
+      }
 
-    const [diamondData, boxData] = await Promise.all([
-      diamondResponse.text(),
-      boxResponse.text(),
-    ]);
+      let trigridData: string | undefined;
+      if (trigridResponse?.ok) {
+        trigridData = await trigridResponse.text();
+      }
 
-    let skewedData: string | undefined;
-    if (skewedResponse?.ok) {
-      skewedData = await skewedResponse.text();
+      span("ok", {
+        hasSkewedData: Boolean(skewedData),
+        hasTrigridData: Boolean(trigridData),
+      });
+      return { diamondData, boxData, skewedData, trigridData };
+    } catch (error) {
+      span("error");
+      throw error;
     }
-
-    let trigridData: string | undefined;
-    if (trigridResponse?.ok) {
-      trigridData = await trigridResponse.text();
-    }
-
-    return { diamondData, boxData, skewedData, trigridData };
   }
 
   private validateResponses(

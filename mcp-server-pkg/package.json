@@ -1,6 +1,6 @@
 {
   "name": "@austencloud/tka-domain-mcp",
-  "version": "2.3.0",
+  "version": "2.5.0",
   "description": "MCP server for The Kinetic Alphabet domain - pictograph rendering, sequence generation, and educational tools",
   "type": "module",
   "main": "dist/index.js",
@@ -15,22 +15,42 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "node build.mjs",
+    "prepare:assets": "node scripts/sync-card-assets.mjs",
+    "build": "npm run prepare:assets && node build.mjs",
+    "test": "npm run build && vitest run",
+    "test:pack": "node scripts/verify-packed-package.mjs",
     "start": "node dist/index.js",
-    "prepublishOnly": "npm run typecheck && npm run build"
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run typecheck && npm run build && npm run test:pack"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "@napi-rs/canvas": "^1.0.9",
     "@resvg/resvg-js": "^2.6.0",
     "zod": "^3.25.0"
   },
+  "peerDependencies": {
+    "jsdom": ">=22",
+    "qr-code-styling": "^1.9.2"
+  },
+  "peerDependenciesMeta": {
+    "jsdom": {
+      "optional": true
+    },
+    "qr-code-styling": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@tka/domain": "file:../packages/domain",
+    "@tka/render-composition": "file:../packages/render-composition",
     "@tka/render-core": "file:../packages/render-core",
     "@tka/sequence-engine": "file:../packages/sequence-engine",
     "@tka/tka-types": "file:../packages/tka-types",
     "@types/node": "^20.0.0",
     "esbuild": "^0.27.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.16"
   },
   "keywords": [
     "mcp",

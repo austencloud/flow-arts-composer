@@ -97,6 +97,8 @@
 	};
 
 	interface Props {
+		/** Explicit card/sequence palette; null retains the canonical theme colors. */
+		primaryPropColors?: { left: string; right: string } | null;
 		sequence: any;
 		mode?: MandalaMode;
 		style?: "stroke" | "filled";
@@ -162,6 +164,7 @@
 		morphChanges = false,
 		tipDx,
 		palette: paletteOverride,
+		primaryPropColors,
 		strokeWidth,
 		gradient,
 		tipEnds,
@@ -471,7 +474,7 @@
 			show,
 			palette: paletteOverride ?? applyMandalaHandColors(
 				effectiveDarkMode ? DARK_MOTION_PALETTE : LIGHT_MOTION_PALETTE,
-				getSettings().primaryPropColors,
+				primaryPropColors === undefined ? getSettings().primaryPropColors : primaryPropColors,
 			),
 			tipDx: effectiveDx,
 			strokeWidth,
