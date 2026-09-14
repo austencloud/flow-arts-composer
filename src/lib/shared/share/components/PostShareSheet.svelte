@@ -1453,48 +1453,51 @@
           <div
             class="sheet-scroll"
             class:video-preparation={artifact === "video"}
+            class:has-preview={previewReady}
           >
             <div class="preview-column">
               {#if !qrDataUrl}
-                <button
-                  type="button"
-                  class="back-to-chooser"
-                  onclick={returnToChooser}
-                >
-                  <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
-                  Back to sharing
-                </button>
-                {#if artifactOptions.length > 1 || onOpenPostStudio}
-                  <div
-                    class="artifact-picker"
-                    class:single-artifact={artifactOptions.length === 1}
+                <div class="preparation-toolbar">
+                  <button
+                    type="button"
+                    class="back-to-chooser"
+                    onclick={returnToChooser}
                   >
-                    {#if artifactOptions.length > 1}
-                      <SegmentedControl
-                        options={artifactOptions}
-                        value={artifact}
-                        onchange={handleArtifactChange}
-                        ariaLabel="What to share"
-                        semantics="radiogroup"
-                        size="sm"
-                        color="accent"
-                      />
-                    {/if}
-                    {#if onOpenPostStudio}
-                      <button
-                        type="button"
-                        class="studio-launch"
-                        onclick={openPostStudio}
-                      >
-                        <i
-                          class="fa-solid fa-wand-magic-sparkles"
-                          aria-hidden="true"
-                        ></i>
-                        Post Studio
-                      </button>
-                    {/if}
-                  </div>
-                {/if}
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                    Back to sharing
+                  </button>
+                  {#if artifactOptions.length > 1 || onOpenPostStudio}
+                    <div
+                      class="artifact-picker"
+                      class:single-artifact={artifactOptions.length === 1}
+                    >
+                      {#if artifactOptions.length > 1}
+                        <SegmentedControl
+                          options={artifactOptions}
+                          value={artifact}
+                          onchange={handleArtifactChange}
+                          ariaLabel="What to share"
+                          semantics="radiogroup"
+                          size="sm"
+                          color="accent"
+                        />
+                      {/if}
+                      {#if onOpenPostStudio}
+                        <button
+                          type="button"
+                          class="studio-launch"
+                          onclick={openPostStudio}
+                        >
+                          <i
+                            class="fa-solid fa-wand-magic-sparkles"
+                            aria-hidden="true"
+                          ></i>
+                          Post Studio
+                        </button>
+                      {/if}
+                    </div>
+                  {/if}
+                </div>
               {/if}
 
               <div
@@ -1632,237 +1635,243 @@
                     {/if}
                   </fieldset>
                 {/if}
-                <div class="caption-block">
-                  <PanelButton ariaExpanded={captionOpen} onclick={openCaption}>
-                    <i class="fa-solid fa-align-left" aria-hidden="true"></i>
-                    Caption
-                    <span class="optional-label">Optional</span>
-                    <i
-                      class={captionOpen
-                        ? "fa-solid fa-chevron-up"
-                        : "fa-solid fa-chevron-down"}
-                      aria-hidden="true"
-                    ></i>
-                  </PanelButton>
-                  {#if captionOpen}
-                    <div transition:growFade={{ axis: "y" }}>
-                      <textarea
-                        id="post-share-caption"
-                        aria-label="Caption"
-                        value={caption}
-                        oninput={(event) => {
-                          shareDraft.caption = (
-                            event.currentTarget as HTMLTextAreaElement
-                          ).value;
-                          shareDraft.captionTouched = true;
-                        }}
-                        rows="3"
-                        placeholder="Write a caption…"
-                      ></textarea>
-                      <div class="preset-toggle">
-                        <PanelButton
-                          disabled={!caption.trim() || busyLocalTile !== null}
-                          onclick={() =>
-                            runLocalTile("copy-caption", () =>
-                              copyCaption(caption)
-                            )}
-                        >
-                          <i class="fa-solid fa-copy" aria-hidden="true"></i>
-                          Copy caption
-                        </PanelButton>
-                        <PanelButton
-                          ariaExpanded={presetsOpen}
-                          onclick={() => (presetsOpen = !presetsOpen)}
-                        >
-                          <i class="fa-solid fa-align-left" aria-hidden="true"
-                          ></i>
-                          Caption presets
-                          <i
-                            class={presetsOpen
-                              ? "fa-solid fa-chevron-up"
-                              : "fa-solid fa-chevron-down"}
-                            aria-hidden="true"
-                          ></i>
-                        </PanelButton>
-                      </div>
-                      {#if presetsOpen}
-                        <div transition:growFade={{ axis: "y" }}>
-                          <div class="presets">
-                            {#each presets as preset (preset.id)}
-                              <!-- Custom text is the implicit none-selected state. -->
-                              <FilterChipBase
-                                label={preset.label}
-                                mode="toggle"
-                                active={caption === preset.text}
-                                size="sm"
-                                onclick={() => applyPreset(preset.text)}
-                                onremove={preset.template
-                                  ? () => removePreset(preset)
-                                  : undefined}
-                                removeAriaLabel={`Delete the preset ${preset.label}`}
-                              />
-                            {/each}
-                            <FilterChipBase
-                              label="Save current"
-                              icon="fa-solid fa-plus"
-                              mode="action"
-                              size="sm"
-                              disabled={!caption.trim()}
-                              onclick={saveCurrentAsPreset}
-                            />
-                          </div>
-                        </div>
-                      {/if}
-                    </div>
-                  {/if}
-                </div>
-
-                {#if publishOpen}
-                  <div class="actions">
-                    {#each networks as plan (plan.key)}
-                      {@render networkButton(plan)}
-                    {/each}
-                  </div>
-                {:else if META_POSTING_ENABLED}
-                  <button
-                    type="button"
-                    class="publish-route"
-                    onclick={() => {
-                      publishOpen = true;
-                      preparePostLink();
-                    }}
-                  >
-                    Publishing options
-                  </button>
-                {/if}
-
-                {#if tileDestinations.length}
-                  <div class="destination-heading">More ways to share</div>
-                  <div class="tiles">
-                    {#each tileDestinations as destination (destination.id)}
-                      <button
-                        type="button"
-                        class="tile"
-                        aria-label={destination.label}
-                        title={destination.hint
-                          ? `${destination.label} · ${destination.hint}`
-                          : destination.label}
-                        disabled={(destination.id !== "copy-caption" &&
-                          !activeBlob) ||
-                          videoSettingsStale ||
-                          busyDestination !== null ||
-                          qrPending}
-                        onclick={() => runDestination(destination.id)}
-                      >
-                        <span class="tile-icon">
-                          {#if busyDestination === destination.id}
+                <div class="delivery-column">
+                  <div class="caption-block">
+                    <PanelButton
+                      ariaExpanded={captionOpen}
+                      onclick={openCaption}
+                    >
+                      <i class="fa-solid fa-align-left" aria-hidden="true"></i>
+                      Caption
+                      <span class="optional-label">Optional</span>
+                      <i
+                        class={captionOpen
+                          ? "fa-solid fa-chevron-up"
+                          : "fa-solid fa-chevron-down"}
+                        aria-hidden="true"
+                      ></i>
+                    </PanelButton>
+                    {#if captionOpen}
+                      <div transition:growFade={{ axis: "y" }}>
+                        <textarea
+                          id="post-share-caption"
+                          aria-label="Caption"
+                          value={caption}
+                          oninput={(event) => {
+                            shareDraft.caption = (
+                              event.currentTarget as HTMLTextAreaElement
+                            ).value;
+                            shareDraft.captionTouched = true;
+                          }}
+                          rows="3"
+                          placeholder="Write a caption…"
+                        ></textarea>
+                        <div class="preset-toggle">
+                          <PanelButton
+                            disabled={!caption.trim() || busyLocalTile !== null}
+                            onclick={() =>
+                              runLocalTile("copy-caption", () =>
+                                copyCaption(caption)
+                              )}
+                          >
+                            <i class="fa-solid fa-copy" aria-hidden="true"></i>
+                            Copy caption
+                          </PanelButton>
+                          <PanelButton
+                            ariaExpanded={presetsOpen}
+                            onclick={() => (presetsOpen = !presetsOpen)}
+                          >
+                            <i class="fa-solid fa-align-left" aria-hidden="true"
+                            ></i>
+                            Caption presets
                             <i
-                              class="fa-solid fa-circle-notch fa-spin"
+                              class={presetsOpen
+                                ? "fa-solid fa-chevron-up"
+                                : "fa-solid fa-chevron-down"}
                               aria-hidden="true"
                             ></i>
-                          {:else if destination.brand}
-                            {@render brandMark(destination.brand)}
-                          {:else}
-                            <i class={destination.icon} aria-hidden="true"></i>
-                          {/if}
-                        </span>
-                        <span class="tile-label">{destination.label}</span>
-                        {#if destination.hint || busyDestination === destination.id || (destination.id === "send-to-phone" && qrError)}
-                          <span class="tile-hint" aria-live="polite">
-                            {busyDestination === destination.id
-                              ? destination.id === "send-to-phone"
-                                ? "Preparing transfer…"
-                                : "Preparing…"
-                              : destination.id === "send-to-phone" && qrError
-                                ? qrError
-                                : destination.hint}
-                          </span>
+                          </PanelButton>
+                        </div>
+                        {#if presetsOpen}
+                          <div transition:growFade={{ axis: "y" }}>
+                            <div class="presets">
+                              {#each presets as preset (preset.id)}
+                                <!-- Custom text is the implicit none-selected state. -->
+                                <FilterChipBase
+                                  label={preset.label}
+                                  mode="toggle"
+                                  active={caption === preset.text}
+                                  size="sm"
+                                  onclick={() => applyPreset(preset.text)}
+                                  onremove={preset.template
+                                    ? () => removePreset(preset)
+                                    : undefined}
+                                  removeAriaLabel={`Delete the preset ${preset.label}`}
+                                />
+                              {/each}
+                              <FilterChipBase
+                                label="Save current"
+                                icon="fa-solid fa-plus"
+                                mode="action"
+                                size="sm"
+                                disabled={!caption.trim()}
+                                onclick={saveCurrentAsPreset}
+                              />
+                            </div>
+                          </div>
                         {/if}
-                      </button>
-                    {/each}
+                      </div>
+                    {/if}
                   </div>
-                {/if}
 
-                {#if publishOpen && (metaStatus.facebookPage || autoPostTargets.length)}
-                  <div class="connections">
-                    {#if metaStatus.facebookPage}
-                      {@const selected = metaStatus.facebookPage}
-                      <!-- Page names are unbounded, so they belong in a dropdown. -->
-                      <div class="page-chip">
-                        <FilterChipBase
-                          label={selected.selectedPageName || "Choose a Page"}
-                          ariaLabel="Which Page to post to"
-                          mode="dropdown"
-                          size="sm"
-                          active={pageChoicePending}
-                          emphasis={pageChoicePending ? "solid" : "soft"}
-                          expanded={pageMenuOpen}
-                          disabled={metaBusy}
-                          onclick={() => (pageMenuOpen = !pageMenuOpen)}
+                  {#if publishOpen}
+                    <div class="actions">
+                      {#each networks as plan (plan.key)}
+                        {@render networkButton(plan)}
+                      {/each}
+                    </div>
+                  {:else if META_POSTING_ENABLED}
+                    <button
+                      type="button"
+                      class="publish-route"
+                      onclick={() => {
+                        publishOpen = true;
+                        preparePostLink();
+                      }}
+                    >
+                      Publishing options
+                    </button>
+                  {/if}
+
+                  {#if tileDestinations.length}
+                    <div class="destination-heading">More ways to share</div>
+                    <div class="tiles">
+                      {#each tileDestinations as destination (destination.id)}
+                        <button
+                          type="button"
+                          class="tile"
+                          aria-label={destination.label}
+                          title={destination.hint
+                            ? `${destination.label} · ${destination.hint}`
+                            : destination.label}
+                          disabled={(destination.id !== "copy-caption" &&
+                            !activeBlob) ||
+                            videoSettingsStale ||
+                            busyDestination !== null ||
+                            qrPending}
+                          onclick={() => runDestination(destination.id)}
                         >
-                          {#snippet iconSnippet()}
-                            {@render brandMark("facebook")}
-                          {/snippet}
-                          {#snippet children()}
-                            {#each facebookPages as page (page.id)}
+                          <span class="tile-icon">
+                            {#if busyDestination === destination.id}
+                              <i
+                                class="fa-solid fa-circle-notch fa-spin"
+                                aria-hidden="true"
+                              ></i>
+                            {:else if destination.brand}
+                              {@render brandMark(destination.brand)}
+                            {:else}
+                              <i class={destination.icon} aria-hidden="true"
+                              ></i>
+                            {/if}
+                          </span>
+                          <span class="tile-label">{destination.label}</span>
+                          {#if destination.hint || busyDestination === destination.id || (destination.id === "send-to-phone" && qrError)}
+                            <span class="tile-hint" aria-live="polite">
+                              {busyDestination === destination.id
+                                ? destination.id === "send-to-phone"
+                                  ? "Preparing transfer…"
+                                  : "Preparing…"
+                                : destination.id === "send-to-phone" && qrError
+                                  ? qrError
+                                  : destination.hint}
+                            </span>
+                          {/if}
+                        </button>
+                      {/each}
+                    </div>
+                  {/if}
+
+                  {#if publishOpen && (metaStatus.facebookPage || autoPostTargets.length)}
+                    <div class="connections">
+                      {#if metaStatus.facebookPage}
+                        {@const selected = metaStatus.facebookPage}
+                        <!-- Page names are unbounded, so they belong in a dropdown. -->
+                        <div class="page-chip">
+                          <FilterChipBase
+                            label={selected.selectedPageName || "Choose a Page"}
+                            ariaLabel="Which Page to post to"
+                            mode="dropdown"
+                            size="sm"
+                            active={pageChoicePending}
+                            emphasis={pageChoicePending ? "solid" : "soft"}
+                            expanded={pageMenuOpen}
+                            disabled={metaBusy}
+                            onclick={() => (pageMenuOpen = !pageMenuOpen)}
+                          >
+                            {#snippet iconSnippet()}
+                              {@render brandMark("facebook")}
+                            {/snippet}
+                            {#snippet children()}
+                              {#each facebookPages as page (page.id)}
+                                <button
+                                  class="page-option"
+                                  class:selected={page.id ===
+                                    selected.selectedPageId}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={page.id ===
+                                    selected.selectedPageId}
+                                  onclick={() => handlePageChange(page.id)}
+                                >
+                                  <span>{page.name}</span>
+                                  {#if page.id === selected.selectedPageId}
+                                    <i
+                                      class="fa-solid fa-check"
+                                      aria-hidden="true"
+                                    ></i>
+                                  {/if}
+                                </button>
+                              {/each}
                               <button
-                                class="page-option"
-                                class:selected={page.id ===
-                                  selected.selectedPageId}
+                                class="page-option page-option--add"
                                 type="button"
                                 role="option"
-                                aria-selected={page.id ===
-                                  selected.selectedPageId}
-                                onclick={() => handlePageChange(page.id)}
+                                aria-selected="false"
+                                disabled={metaBusy}
+                                onclick={changeSharedPages}
                               >
-                                <span>{page.name}</span>
-                                {#if page.id === selected.selectedPageId}
+                                <span>Add a Page…</span>
+                                {#if connectingTarget === "facebook-page"}
                                   <i
-                                    class="fa-solid fa-check"
+                                    class="fa-solid fa-circle-notch fa-spin"
                                     aria-hidden="true"
+                                  ></i>
+                                {:else}
+                                  <i class="fa-solid fa-plus" aria-hidden="true"
                                   ></i>
                                 {/if}
                               </button>
-                            {/each}
-                            <button
-                              class="page-option page-option--add"
-                              type="button"
-                              role="option"
-                              aria-selected="false"
-                              disabled={metaBusy}
-                              onclick={changeSharedPages}
-                            >
-                              <span>Add a Page…</span>
-                              {#if connectingTarget === "facebook-page"}
-                                <i
-                                  class="fa-solid fa-circle-notch fa-spin"
-                                  aria-hidden="true"
-                                ></i>
-                              {:else}
-                                <i class="fa-solid fa-plus" aria-hidden="true"
-                                ></i>
-                              {/if}
-                            </button>
-                          {/snippet}
-                        </FilterChipBase>
-                      </div>
-                    {/if}
+                            {/snippet}
+                          </FilterChipBase>
+                        </div>
+                      {/if}
 
-                    {#each autoPostTargets as target (target.id)}
-                      <FilterChipBase
-                        label={`Disconnect ${target.network}`}
-                        ariaLabel={`Disconnect ${target.account} from ${target.network}`}
-                        icon={connectingTarget === target.id
-                          ? "fa-solid fa-circle-notch fa-spin"
-                          : "fa-solid fa-link-slash"}
-                        mode="action"
-                        size="sm"
-                        disabled={metaBusy}
-                        onclick={() => forgetTarget(target.id)}
-                      />
-                    {/each}
-                  </div>
-                {/if}
+                      {#each autoPostTargets as target (target.id)}
+                        <FilterChipBase
+                          label={`Disconnect ${target.network}`}
+                          ariaLabel={`Disconnect ${target.account} from ${target.network}`}
+                          icon={connectingTarget === target.id
+                            ? "fa-solid fa-circle-notch fa-spin"
+                            : "fa-solid fa-link-slash"}
+                          mode="action"
+                          size="sm"
+                          disabled={metaBusy}
+                          onclick={() => forgetTarget(target.id)}
+                        />
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
               {/if}
             </div>
           </div>
@@ -2490,7 +2499,19 @@
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.75rem;
+  }
+  .preparation-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .delivery-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
   .back-to-chooser {
     align-self: flex-start;
@@ -2505,7 +2526,7 @@
     cursor: pointer;
   }
   .editing-column {
-    margin-top: 1.25rem;
+    margin-top: 0.75rem;
   }
   .stage,
   .stage.showing-media {
@@ -2514,7 +2535,7 @@
     place-items: center;
     grid-template-rows: minmax(0, 1fr);
     grid-template-columns: minmax(0, 1fr);
-    height: clamp(15rem, 38dvh, 26rem);
+    height: clamp(14rem, 36dvh, 24rem);
     min-height: 0;
     padding: 0.75rem;
     border: 1px solid var(--theme-stroke);
@@ -2556,7 +2577,7 @@
     font-size: 0.875rem;
   }
   .disclosure-body {
-    padding: 1rem 0.25rem 0.25rem;
+    padding: 0.75rem 0.25rem 0.25rem;
   }
   .content-heading {
     display: flex;
@@ -2572,8 +2593,8 @@
     color: var(--theme-text-dim);
   }
   textarea {
-    height: 5.5rem;
-    min-height: 5.5rem;
+    height: 4.75rem;
+    min-height: 4.75rem;
     padding: 0.75rem;
     font-size: 1rem;
     border-radius: 0.625rem;
@@ -2595,7 +2616,7 @@
   .actions {
     display: flex;
     flex-direction: column;
-    gap: 0.625rem;
+    gap: 0.5rem;
   }
   .actions:empty {
     display: none;
@@ -2683,25 +2704,67 @@
       display: grid;
       grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 1fr);
       align-items: start;
-      gap: 2rem;
-      padding: 1.5rem 1.75rem;
+      gap: 1.25rem;
+      padding: 1.125rem 1.5rem;
     }
     .share-intents {
       padding: 1.75rem;
     }
     .editing-column {
       margin-top: 0;
-      gap: 1.25rem;
+      gap: 0.875rem;
     }
     .stage,
     .stage.showing-media {
-      height: clamp(12rem, 43dvh, 30rem);
+      height: clamp(12rem, 38dvh, 26rem);
     }
     .share-dock {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
       padding: 1rem 1.75rem;
+    }
+    .share-dock :global(.panel-btn--full-width) {
+      flex: 0 0 auto;
+      width: fit-content;
+      min-width: 11rem;
+      margin-inline-start: auto;
+    }
+    .share-dock .delivery-feedback {
+      order: -1;
+      flex: 1 1 auto;
+      margin: 0;
+      text-align: left;
     }
     .qr-step .sheet-scroll {
       display: block;
+    }
+    .sheet-scroll:not(.has-preview) {
+      grid-template-areas:
+        "toolbar toolbar"
+        "status status"
+        "settings delivery";
+      grid-template-columns: minmax(19rem, 1fr) minmax(19rem, 1fr);
+      align-items: start;
+    }
+    .sheet-scroll:not(.has-preview) .preview-column,
+    .sheet-scroll:not(.has-preview) .editing-column {
+      display: contents;
+    }
+    .sheet-scroll:not(.has-preview) .preparation-toolbar {
+      grid-area: toolbar;
+    }
+    .sheet-scroll:not(.has-preview) .stage {
+      grid-area: status;
+    }
+    .sheet-scroll:not(.has-preview) .video-settings {
+      grid-area: settings;
+    }
+    .sheet-scroll:not(.has-preview) .delivery-column {
+      grid-area: delivery;
+    }
+    .sheet-scroll:not(.has-preview) .stage.video-placeholder {
+      justify-self: stretch;
     }
   }
   @media (max-height: 500px) {
@@ -2715,8 +2778,22 @@
       padding-block: 0.5rem;
     }
   }
-  .stage.video-placeholder {
-    height: 9rem;
+  .sheet-scroll:not(.has-preview) .stage {
+    height: auto;
+    min-height: 0;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.625rem;
+  }
+  .sheet-scroll:not(.has-preview) .stage-pending {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0;
+  }
+  .sheet-scroll:not(.has-preview) .stage-refused span {
+    text-align: left;
   }
   @media (max-width: 899px) {
     .video-preparation .preview-column {
@@ -2725,17 +2802,15 @@
     .video-preparation .editing-column {
       margin-top: 0.75rem;
     }
-    .stage.video-placeholder {
-      height: 3rem;
-      padding: 0.5rem;
+    .sheet-scroll:not(.has-preview) .stage {
+      margin-top: -0.25rem;
     }
-    .video-placeholder .stage-pending {
-      padding: 0.5rem;
-      gap: 0.375rem;
+    .sheet-scroll:not(.has-preview) .stage-refused {
+      align-items: flex-start;
+      flex-direction: column;
     }
-    .video-placeholder .stage-refused > i,
-    .video-placeholder .stage-refused > span {
-      display: none;
+    .sheet-scroll:not(.has-preview) .stage-refused span {
+      text-align: left;
     }
   }
   @media (prefers-reduced-motion: reduce) {
