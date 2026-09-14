@@ -37,6 +37,16 @@
   import { buildTipEffectMap } from "$lib/shared/animation-engine/domain/tip-effect-map";
   import EffectOrchestrator3D from "$lib/shared/3d/effects/EffectOrchestrator3D.svelte";
 
+  export interface AuthoredUpperBodyStance {
+    yawRad: number;
+    segments?: {
+      spine1Rad: number;
+      spine2Rad: number;
+      headLagRad: number;
+    } | null;
+    pitchRad?: number;
+  }
+
   interface Props {
     id: string;
     position: { x: number; y: number; z: number };
@@ -74,6 +84,9 @@
      * resolved here, so nothing downstream re-plans from it.
      */
     onStanceTrack?: (track: StanceYawTrack | null) => void;
+    /** A study can author one pose directly while retaining this component's
+     * production character, hand, grip, and IK ownership. */
+    authoredUpperBodyStance?: AuthoredUpperBodyStance | null;
     onCollisionEvents?: (
       events: CollisionEvent[],
       diagnostics: AvatarPoseDiagnostics,
@@ -127,6 +140,14 @@
       reachMeasurements
     )
   );
+  const renderedUpperBodyStance = $derived(
+    props.authoredUpperBodyStance ?? {
+      yawRad: upperBodyStance.yawRad,
+      segments: upperBodyStance.segments,
+      pitchRad: upperBodyStance.pitchRad,
+    }
+  );
+  const authoredStanceActive = $derived(props.authoredUpperBodyStance != null);
   let readyReported = false;
 
   function captureReach(diagnostics: AvatarPoseDiagnostics): void {
@@ -143,10 +164,16 @@
 
   $effect(() => {
     const sequence = props.sequence;
-    const phase = props.phaseOffsetSteps;
     untrack(() => {
       performerState.loadSequence(sequence);
       performerState.loop = true;
+    });
+  });
+
+  $effect(() => {
+    const phase = props.phaseOffsetSteps;
+    const sequence = props.sequence;
+    untrack(() => {
       if (phase == null) {
         performerState.goToStep(0);
       } else if (sequence.steps.length > 0) {
@@ -161,8 +188,6 @@
         );
         performerState.setProgress(wrapped - Math.floor(wrapped));
       }
-      performerState.speed = props.playbackSpeed ?? 1;
-      if (props.active !== false) performerState.play();
     });
   });
 
@@ -202,11 +227,11 @@
   weldGrip={props.weldGrip ?? false}
   {propLength}
   headDodge={true}
-  stanceYaw={upperBodyStance.yawRad}
-  stanceSegments={upperBodyStance.segments}
-  spinePitchOffset={upperBodyStance.pitchRad}
-  blueHandDepthOffset={upperBodyStance.leftDepthOffsetM}
-  redHandDepthOffset={upperBodyStance.rightDepthOffsetM}
+  stanceYaw={renderedUpperBodyStance.yawRad}
+  stanceSegments={renderedUpperBodyStance.segments ?? null}
+  spinePitchOffset={renderedUpperBodyStance.pitchRad ?? 0}
+  blueHandDepthOffset={authoredStanceActive ? 0 : upperBodyStance.leftDepthOffsetM}
+  redHandDepthOffset={authoredStanceActive ? 0 : upperBodyStance.rightDepthOffsetM}
   showEffects={props.showEffects ?? true}
   {tipEffectMap}
   isPlaying={performerState.isPlaying}
