@@ -117,7 +117,8 @@ function hasTrailTips(map: TipEffectMap | undefined): boolean {
 
 /** A backwards step jump becomes a fire-cache loop boundary only when it
  * crosses the known sequence end into its start window. This excludes seeks
- * such as beat 3 → beat 1. */
+ * such as beat 3 → beat 1. Playback is one-based: a four-count
+ * sequence runs from 1 through 5, then wraps back to 1. */
 export function isConfirmedFireCacheLoop(
   previousStep: number,
   currentStep: number,
@@ -130,8 +131,9 @@ export function isConfirmedFireCacheLoop(
     loopDetected &&
     sequenceSteps !== undefined &&
     sequenceSteps > 0 &&
-    previousStep >= sequenceSteps - 0.5 &&
-    currentStep <= 0.5
+    previousStep >= sequenceSteps + 1 - 0.5 &&
+    currentStep >= 1 &&
+    currentStep <= 1.5
   );
 }
 
@@ -1754,7 +1756,7 @@ export class AnimationRenderLoop {
           ),
           playbackSpeed: params.playbackSpeed,
           sequenceContentHash: params.sequenceContentHash,
-          relativeTime: currentStep,
+          relativeTime: Math.max(0, currentStep - 1),
           isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
         };
 
