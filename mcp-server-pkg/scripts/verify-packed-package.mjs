@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { createCanvas, loadImage } from "canvas";
 
 const packageRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const packageManifest = JSON.parse(
@@ -128,6 +129,29 @@ try {
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
   if (!png.subarray(0, signature.length).equals(signature)) {
     throw new Error("Installed MCP returned invalid PNG data");
+  }
+
+  const renderedImage = await loadImage(png);
+  const inspectionCanvas = createCanvas(
+    renderedImage.width,
+    renderedImage.height
+  );
+  const inspectionContext = inspectionCanvas.getContext("2d");
+  inspectionContext.drawImage(renderedImage, 0, 0);
+  const infoCellPixels = inspectionContext.getImageData(180, 60, 180, 180).data;
+  let mandalaColorPixels = 0;
+  for (let offset = 0; offset < infoCellPixels.length; offset += 4) {
+    const red = infoCellPixels[offset];
+    const green = infoCellPixels[offset + 1];
+    const blue = infoCellPixels[offset + 2];
+    const isBluePath = blue > red * 1.25 && blue > green * 1.1;
+    const isRedPath = red > blue * 1.25 && red > green * 1.5;
+    if (isBluePath || isRedPath) mandalaColorPixels++;
+  }
+  if (mandalaColorPixels < 40) {
+    throw new Error(
+      "Installed MCP left the Composer mandala info cell visually empty"
+    );
   }
 
   if (process.env.MCP_PACK_RENDER_OUTPUT) {

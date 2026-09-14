@@ -193,7 +193,7 @@
     padding: 0 0 var(--spacing-md, 16px);
   }
   .intro p {
-    max-width: 58ch;
+    max-width: none;
     font-size: clamp(16px, 1.3vw, 20px);
     color: var(--theme-text-muted);
   }
