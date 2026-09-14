@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-render-hydrator";
 import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
 import {
   adjustTogetherOppositeLoop,
   adjustTogetherOppositeLoops,
@@ -160,5 +161,46 @@ describe("Together–Opposite four-count loops", () => {
         (loop) => deriveTnDFromPictograph(loop.sequence.steps[0]!).tndMode
       )
     ).toEqual(Array(6).fill(TnDMode.QUARTER_OPP));
+  });
+
+  it("gives consecutive rotations fresh identities and reclassifies each geometry", async () => {
+    const loop = selectTogetherOppositeLoops(sequences)[0]!;
+    const rotated45 = await transformTogetherOppositeLoop(
+      loop,
+      "rotate-clockwise"
+    );
+    const rotated90 = await transformTogetherOppositeLoop(
+      { ...loop, sequence: rotated45 },
+      "rotate-clockwise"
+    );
+
+    expect(rotated45.id).not.toBe(rotated90.id);
+    expect(deriveTnDFromPictograph(rotated45.steps[0]!).tndMode).toBe(
+      TnDMode.QUARTER_OPP
+    );
+    expect(rotated45.metadata?.familyId).toBe("quarter-opp");
+    expect(deriveTnDFromPictograph(rotated90.steps[0]!).tndMode).toBe(
+      TnDMode.SPLIT_OPP
+    );
+    expect(rotated90.metadata?.familyId).toBe("split-opp");
+  });
+
+  it("keeps Together-Opposite classification through mirror, flip, and swap", async () => {
+    const loop = selectTogetherOppositeLoops(sequences)[0]!;
+    const mirrored = await transformTogetherOppositeLoop(loop, "mirror");
+    const flipped = await transformTogetherOppositeLoop(
+      { ...loop, sequence: mirrored },
+      "flip"
+    );
+    const swapped = await transformTogetherOppositeLoop(
+      { ...loop, sequence: flipped },
+      "swap"
+    );
+
+    expect(deriveTnDFromPictograph(swapped.steps[0]!).tndMode).toBe(
+      TnDMode.TOG_OPP
+    );
+    expect(swapped.metadata?.familyId).toBe("tog-opp");
+    expect(swapped.word).toBe(deriveWord(swapped));
   });
 });

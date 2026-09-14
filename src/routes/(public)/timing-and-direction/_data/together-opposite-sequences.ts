@@ -38,6 +38,14 @@ const GROUPS = [
   { gridMode: GridMode.BOX, words: ["MPMP", "NQNQ", "OROR"] },
 ] as const;
 const SPINS = ["Pro-spin", "Anti-spin", "Mixed"] as const;
+const TND_FAMILY_BY_MODE: Readonly<Record<TnDMode, string>> = {
+  [TnDMode.SPLIT_SAME]: "split-same",
+  [TnDMode.SPLIT_OPP]: "split-opp",
+  [TnDMode.TOG_SAME]: "tog-same",
+  [TnDMode.TOG_OPP]: "tog-opp",
+  [TnDMode.QUARTER_SAME]: "quarter-same",
+  [TnDMode.QUARTER_OPP]: "quarter-opp",
+};
 
 export function selectTogetherOppositeLoops(
   sequences: readonly SequenceData[]
@@ -120,7 +128,7 @@ export async function adjustTogetherOppositeLoop(
   const result = applyVariationDescriptor(loop.sequence, { turnPattern }, []);
   return processReversals(
     updateSequenceData(result.sequence, {
-      id: `${loop.id}-turns-${turnPattern}`,
+      id: `${loop.sequence.id}-turns-${turnPattern}-${crypto.randomUUID()}`,
       metadata: {
         ...result.sequence.metadata,
         // applyVariationDescriptor compares against its input, which is useful
@@ -140,15 +148,15 @@ export async function adjustTogetherOppositeLoops(
   stepIndex?: number
 ): Promise<TogetherOppositeLoop[]> {
   return Promise.all(
-    loops.map(async (loop) => ({
-      ...loop,
-      sequence: await adjustTogetherOppositeLoop(
+    loops.map(async (loop) => {
+      const sequence = await adjustTogetherOppositeLoop(
         loop,
         leftTurns,
         rightTurns,
         stepIndex
-      ),
-    }))
+      );
+      return { ...loop, sequence, word: sequence.word };
+    })
   );
 }
 
@@ -176,11 +184,14 @@ export async function transformTogetherOppositeLoop(
       break;
   }
 
+  const { familyId: _staleFamilyId, ...metadata } = transformed.metadata;
+  const tndMode = deriveTnDFromPictograph(transformed.steps[0]!).tndMode;
   const withWord = updateSequenceData(transformed, {
-    id: `${loop.id}-${transform}`,
+    id: `${loop.sequence.id}-${transform}-${crypto.randomUUID()}`,
     word: deriveWord(transformed),
     metadata: {
-      ...transformed.metadata,
+      ...metadata,
+      ...(tndMode ? { familyId: TND_FAMILY_BY_MODE[tndMode] } : {}),
       turnLoopClosed: loopCloses(transformed),
     },
   });
@@ -198,6 +209,7 @@ export async function transformTogetherOppositeLoops(
       return {
         ...loop,
         sequence,
+        word: sequence.word,
         gridMode: sequence.gridMode ?? loop.gridMode,
       };
     })

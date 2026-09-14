@@ -67,6 +67,7 @@
   );
   const spinLabels = ["Pro-spin", "Anti-spin", "Mixed"] as const;
   let togetherOppositeLoops = $state<TogetherOppositeLoop[]>([]);
+  let originalTogetherOppositeLoops = $state<TogetherOppositeLoop[]>([]);
   let selectedTogetherOppositeLoop = $state<string | null>(null);
   let loopsLoading = $state(false);
   let loopsError = $state<string | null>(null);
@@ -157,6 +158,7 @@
       adjustmentError = null;
       selectedTogetherOppositeLoop = null;
       togetherOppositeLoops = [];
+      originalTogetherOppositeLoops = [];
       loopsError = null;
       loopsLoading = false;
       return;
@@ -169,6 +171,7 @@
     loopsLoading = true;
     loopsError = null;
     togetherOppositeLoops = [];
+    originalTogetherOppositeLoops = [];
     void loadTogetherOppositeLoops()
       .then((loops) => {
         if (request !== loopsRequest || article.code !== "TO") return;
@@ -176,6 +179,7 @@
           loopsError = "No Together-Opposite loops are available yet.";
           return;
         }
+        originalTogetherOppositeLoops = loops;
         togetherOppositeLoops = loops;
         untrack(() => selectTogetherOppositeLoop(loops[0]!));
       })
@@ -265,6 +269,25 @@
 
   function resetTurns() {
     void adjustTurns(0, 0);
+  }
+
+  function resetAllLoops() {
+    if (!selectedLoop || originalTogetherOppositeLoops.length === 0) return;
+    adjustmentRequest += 1;
+    adjusting = false;
+    adjustmentError = null;
+    playback.playing = false;
+    togetherOppositeLoops = originalTogetherOppositeLoops;
+    const selected =
+      originalTogetherOppositeLoops.find(
+        (loop) => loop.id === selectedTogetherOppositeLoop
+      ) ?? originalTogetherOppositeLoops[0];
+    if (!selected) return;
+    selectedTogetherOppositeLoop = selected.id;
+    editingStep = 0;
+    syncTurnControls(selected.sequence, editingStep);
+    turnLoopClosed = true;
+    playback.selectExample(selected.sequence, 0);
   }
 
   async function transformAllLoops(transform: TogetherOppositeTransform) {
@@ -451,7 +474,7 @@
               {selectedLoop?.word ?? "Four-count loop"}
               {#if selectedTimingDirectionLabel}
                 <span class="path-mode"
-                  >Hand paths: {selectedTimingDirectionLabel}</span
+                  >All six · Hand paths: {selectedTimingDirectionLabel}</span
                 >
               {/if}
             </h2>
@@ -484,14 +507,16 @@
                 Turns
               </PanelButton>
             </div>
-            <PanelButton
-              bind:ref={actionTrigger}
-              onclick={() => (actionEditorOpen = !actionEditorOpen)}
-              ariaExpanded={actionEditorOpen}
-              disabled={!selectedLoop}
-            >
-              Actions
-            </PanelButton>
+            <div class="action-editor-toggle">
+              <PanelButton
+                bind:ref={actionTrigger}
+                onclick={() => (actionEditorOpen = !actionEditorOpen)}
+                ariaExpanded={actionEditorOpen}
+                disabled={!selectedLoop}
+              >
+                Actions
+              </PanelButton>
+            </div>
             {#if browser}
               <TransportControls
                 isPlaying={playback.playing}
@@ -591,20 +616,11 @@
                         <div class="turn-status" aria-live="polite">
                           {#if adjustmentError}
                             <p>{adjustmentError}</p>
-                          {:else}
-                            {#if selectedTimingDirectionLabel}
-                              <p>
-                                Applies to all six sequences. Current hand
-                                paths:
-                                {selectedTimingDirectionLabel}.
-                              </p>
-                            {/if}
-                            {#if !turnLoopClosed}
-                              <p>
-                                Props finish at a different orientation. Plays
-                                once.
-                              </p>
-                            {/if}
+                          {:else if !turnLoopClosed}
+                            <p>
+                              Props finish at a different orientation. Plays
+                              once.
+                            </p>
                           {/if}
                         </div>
                       </div>
@@ -664,10 +680,10 @@
                         onRotateCCW={() =>
                           void transformAllLoops("rotate-counterclockwise")}
                         onSwap={() => void transformAllLoops("swap")}
+                        onReset={resetAllLoops}
                       />
                       <p class="action-scope">
-                        Applies to all six sequences. The selected card stays in
-                        view.
+                        Reset restores the original six sequences.
                       </p>
                       {#if adjustmentError}
                         <p class="action-scope" aria-live="polite">
@@ -960,7 +976,7 @@
   }
   .to-stage .demo-toolbar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
     gap: 0.5rem;
     min-height: 48px;
     padding-bottom: 0;
@@ -973,7 +989,7 @@
     display: block;
     margin-top: 0.125rem;
     color: var(--theme-text-dim);
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     font-weight: 500;
   }
   .turn-editor-toggle.unavailable {
@@ -1291,6 +1307,22 @@
     }
     .to-stage .demo-toolbar {
       grid-template-columns: minmax(0, 1fr) auto auto;
+    }
+    .to-stage .demo-toolbar h2 {
+      grid-column: 1 / -1;
+      grid-row: 1;
+    }
+    .turn-editor-toggle {
+      grid-column: 1;
+      grid-row: 3;
+    }
+    .action-editor-toggle {
+      grid-column: 2;
+      grid-row: 3;
+    }
+    .to-stage .demo-toolbar > :global(.transport-controls) {
+      grid-column: 3;
+      grid-row: 3;
     }
     .spin-grid {
       gap: 0.375rem;
