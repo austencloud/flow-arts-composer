@@ -111,6 +111,7 @@
 
   let {
     sequence,
+    sequenceLoadKey = null,
     autoPlay = true,
     autoPlayDelay = 300,
     showControls = true,
@@ -164,6 +165,8 @@
     initialStep = null,
   }: {
     sequence: SequenceData;
+    /** Distinguishes a deliberate host reload when selections share an ID. */
+    sequenceLoadKey?: string | null;
     autoPlay?: boolean;
     /** Delay before autoplay begins after a sequence is ready. Most embeds keep
      *  the settled 300ms default; prewarmed dual-source stages pass 0 because
@@ -329,8 +332,9 @@
      *  control, demo acts). Same contract as AnimationPlayer's prop of the
      *  same name. */
     onTogglePlaybackRef?: (toggleFn: () => void) => void;
-    /** Fires after the sequence and its playback services are ready. */
-    onReady?: () => void;
+    /** Fires after the sequence and its playback services are ready. The load
+     * identity lets a retained host reject an older async reload. */
+    onReady?: (loadIdentity: string | null) => void;
     /** Fires after AnimatorCanvas has initialized and painted its first frame.
      *  Heavy dual-source hosts wait for this before revealing a prewarmed
      *  replacement; `onReady` only means the sequence data is loaded. */
@@ -675,7 +679,9 @@
   // Watch for sequence changes and reload animation
   // Only triggers when sequence ID changes, not on every state update
   $effect(() => {
-    const sequenceId = sequence ? getSequenceLoadId(sequence) : null;
+    const sequenceId = sequence
+      ? (sequenceLoadKey ?? getSequenceLoadId(sequence))
+      : null;
 
     if (sequence && servicesReady && sequenceId !== lastLoadedSequenceId) {
       // Use untrack to avoid creating dependency on isPlaying
@@ -696,7 +702,8 @@
     if (!playbackController || !sequence) return;
 
     const loadStartedAt = import.meta.env.DEV ? performance.now() : 0;
-    const loadIdentity = getSequenceLoadId(sequence) ?? "unknown";
+    const loadIdentity =
+      sequenceLoadKey ?? getSequenceLoadId(sequence) ?? "unknown";
     loading = true;
     error = null;
 
@@ -749,7 +756,7 @@
       }
 
       hasLoadedOnce = true;
-      onReady?.();
+      onReady?.(loadIdentity);
     } catch (err) {
       console.error("Failed to load animation:", err);
       error = err instanceof Error ? err.message : "Failed to load animation";

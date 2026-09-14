@@ -3,6 +3,7 @@ import { createMotionPathExplorerState } from "../../../src/routes/(public)/guid
 import { motionPathExamples } from "../../../src/routes/(public)/guide/motion-paths/_data/motion-path-examples";
 import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+import { MODE_ORDER } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 
 const proIn: Flower = {
   style: "pro",
@@ -87,11 +88,13 @@ describe("motion path guide isolation", () => {
   it("keeps the newest matrix realization when an older build finishes late", async () => {
     const explorer = createMotionPathExplorerState();
     const pending: Array<{
+      pair: { left: Flower; right: Flower };
+      mode: string;
       resolve: (sequence: (typeof motionPathExamples)[number]) => void;
     }> = [];
-    const builder = () =>
+    const builder = (pair: { left: Flower; right: Flower }, mode: string) =>
       new Promise<(typeof motionPathExamples)[number]>((resolve) => {
-        pending.push({ resolve });
+        pending.push({ pair, mode, resolve });
       });
     const first = structuredClone(motionPathExamples[0]!);
     first.id = "older-matrix-realization";
@@ -102,12 +105,47 @@ describe("motion path guide isolation", () => {
     explorer.chooseMatrixPair({ left: antiOut, right: antiOut }, builder);
     await Promise.resolve();
 
-    pending[1]!.resolve(newest);
-    await Promise.resolve();
-    pending[0]!.resolve(first);
+    await vi.waitFor(() => expect(pending).toHaveLength(12));
+    const newestSelection = pending.find(
+      (build) => build.pair.left.style === "anti" && build.mode === "SS"
+    );
+    const olderSelection = pending.find(
+      (build) => build.pair.left.style === "pro" && build.mode === "SS"
+    );
+    expect(newestSelection).toBeDefined();
+    expect(olderSelection).toBeDefined();
+
+    newestSelection!.resolve(newest);
+    await vi.waitFor(() =>
+      expect(explorer.sequence.id).toBe("newest-matrix-realization-arc")
+    );
+    olderSelection!.resolve(first);
     await Promise.resolve();
 
     expect(explorer.sequence.id).toBe("newest-matrix-realization-arc");
+  });
+
+  it("reuses a pair's prewarmed relationship instead of rebuilding on its click", async () => {
+    const explorer = createMotionPathExplorerState();
+    const calls: string[] = [];
+    const builder = async (
+      _pair: { left: Flower; right: Flower },
+      mode: string
+    ) => {
+      calls.push(mode);
+      const sequence = structuredClone(motionPathExamples[0]!);
+      sequence.id = `matrix-${mode}`;
+      return sequence;
+    };
+
+    explorer.chooseMatrixPair({ left: proIn, right: antiOut }, builder);
+    await vi.waitFor(() =>
+      expect(calls).toEqual(expect.arrayContaining(MODE_ORDER))
+    );
+    explorer.chooseHandRelationship("TO", builder);
+    await vi.waitFor(() => expect(explorer.sequence.id).toBe("matrix-TO-arc"));
+
+    expect(calls.filter((mode) => mode === "TO")).toHaveLength(1);
   });
 
   it("gives every completed selection a new transition key, even for the same sequence id", () => {
@@ -115,6 +153,25 @@ describe("motion path guide isolation", () => {
     const before = explorer.transitionKey;
     explorer.chooseSequence(structuredClone(motionPathExamples[2]!));
     expect(explorer.transitionKey).not.toBe(before);
+  });
+
+  it("retries a relationship after a transient null build", async () => {
+    const explorer = createMotionPathExplorerState();
+    const recovered = structuredClone(motionPathExamples[0]!);
+    recovered.id = "recovered-relationship";
+    let selectedAttempts = 0;
+    const builder = async (_pair: unknown, mode: string) => {
+      if (mode === "SS" && selectedAttempts++ === 0) return null;
+      return recovered;
+    };
+
+    explorer.chooseMatrixPair({ left: proIn, right: antiOut }, builder);
+    await vi.waitFor(() => expect(explorer.pickerStatus).toBe("error"));
+    explorer.retryMatrixSelection();
+    await vi.waitFor(() =>
+      expect(explorer.sequence.id).toBe("recovered-relationship-arc")
+    );
+    expect(explorer.pickerStatus).toBe("idle");
   });
 
   it("keeps the selected path policy while changing a matrix relationship", async () => {
@@ -132,8 +189,9 @@ describe("motion path guide isolation", () => {
       { left: proIn, right: antiOut },
       async () => realization
     );
-    await Promise.resolve();
-    await Promise.resolve();
+    await vi.waitFor(() =>
+      expect(explorer.sequence.id).toBe("matrix-relationship-hybrid")
+    );
 
     expect(explorer.selectedPath).toBe("hybrid");
     expect(explorer.sequence.id).toBe("matrix-relationship-hybrid");

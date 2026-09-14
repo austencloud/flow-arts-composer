@@ -22,8 +22,8 @@
     type ShapeMatrixData,
   } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
   import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
-  import GuideStepStrip from "../../level-1/_components/GuideStepStrip.svelte";
-  import { sequenceToStrip } from "../../level-1/_data/guide-sequence-adapter";
+  import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { createMotionPathExplorerState } from "../_data/motion-path-explorer-state.svelte";
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
@@ -38,9 +38,10 @@
   let matrixData = $state<ShapeMatrixData | null>(null);
   let matrixError = $state<string | null>(null);
   let turnBand = $state<TurnValue>(0);
+  let displayedSequence = $state<SequenceData | null>(null);
+  let stageSeek = $state<((step: number) => void) | null>(null);
   let mounted = true;
   let matrixRequest = 0;
-  const strip = $derived(sequenceToStrip(explorer.sequence));
   const matrixAxis = $derived(
     matrixData
       ? applyFilter(matrixData.axis, matrixFiltersForTurn(turnBand).left, false)
@@ -184,30 +185,57 @@
             fitToParent
           />
         </div>
-        <div class="animation" aria-label="Selected path animation">
-          {#if browser}
-            <MotionPathTransitionStage
-              sequence={explorer.sequence}
-              transitionKey={explorer.transitionKey}
-              scope={explorer.scope}
-              playing={explorer.playing}
-              leftPropType={PropType.STAFF}
-              rightPropType={PropType.STAFF}
-              onplayingchange={(value) => (explorer.playing = value)}
-              onstepchange={(value) => (explorer.liveStep = value)}
-              onready={() => {
-                ready = true;
-                playerFailed = false;
-              }}
-              onloaderror={() => {
-                ready = true;
-                playerFailed = true;
-              }}
-            />
-          {/if}
-          {#if !ready}<span class="loading" role="status"
-              >Loading animation…</span
-            >{/if}
+        <div class="motion-stage" aria-label="Selected path animation">
+          <div class="animation">
+            {#if browser}
+              <MotionPathTransitionStage
+                sequence={explorer.sequence}
+                transitionKey={explorer.transitionKey}
+                scope={explorer.scope}
+                playing={explorer.playing}
+                leftPropType={PropType.STAFF}
+                rightPropType={PropType.STAFF}
+                onplayingchange={(value) => (explorer.playing = value)}
+                onstepchange={(value) => (explorer.liveStep = value)}
+                onseekref={(seek) => (stageSeek = seek)}
+                ondisplayedsequencechange={(sequence) =>
+                  (displayedSequence = sequence)}
+                onready={() => {
+                  ready = true;
+                  playerFailed = false;
+                }}
+                onloaderror={() => {
+                  ready = true;
+                  playerFailed = true;
+                }}
+              />
+            {/if}
+            {#if !ready}<span class="loading" role="status"
+                >Loading animation…</span
+              >{/if}
+          </div>
+          <div
+            class="sequence-rail"
+            role="group"
+            aria-label="Pictograph timeline"
+            aria-busy={!displayedSequence}
+          >
+            {#if displayedSequence}
+              <StepStrip
+                sequence={displayedSequence}
+                includeStartPosition={false}
+                currentStep={explorer.liveStep}
+                bpm={48}
+                density="compact"
+                fillHeight
+                anchor="center"
+                loop
+                leftPropType={PropType.STAFF}
+                rightPropType={PropType.STAFF}
+                onCellClick={stageSeek ? (step) => stageSeek(step) : null}
+              />
+            {/if}
+          </div>
         </div>
         <div class="transport">
           <PanelButton
@@ -265,19 +293,6 @@
     Changes here stay in this explorer. Your saved paths and defaults stay as
     they were.
   </p>
-  <div class="notation" aria-label="Sequence notation">
-    <GuideStepStrip
-      items={strip}
-      stepLabels={strip.map((_, index) =>
-        index === 0 && explorer.sequence.startPosition
-          ? "Start"
-          : String(index + (explorer.sequence.startPosition ? 0 : 1))
-      )}
-      activeBeat={explorer.liveStep < 1 ? 0 : Math.floor(explorer.liveStep)}
-      render={{ propType: PropType.STAFF, showTKA: true }}
-      picTheme="dark"
-    />
-  </div>
 </section>
 
 {#if pickerOpen}
@@ -406,8 +421,20 @@
   .animation {
     position: relative;
     aspect-ratio: 1;
+  }
+  .motion-stage {
+    width: 100%;
     max-width: 540px;
     margin-inline: auto;
+  }
+  .sequence-rail {
+    height: clamp(4.25rem, 13cqw, 6.5rem);
+    min-width: 0;
+    margin-top: var(--spacing-xs, 4px);
+    overflow: hidden;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
+    background: var(--theme-panel-bg);
   }
   .loading {
     position: absolute;
@@ -437,9 +464,6 @@
   }
   .scope-note {
     margin-block: var(--spacing-lg, 24px);
-  }
-  .notation {
-    min-width: 0;
   }
   @container (min-width: 680px) {
     .comparison {
@@ -501,8 +525,7 @@
       grid-column: 2;
       grid-row: 1;
     }
-    .scope-note,
-    .notation {
+    .scope-note {
       grid-column: auto;
     }
   }
