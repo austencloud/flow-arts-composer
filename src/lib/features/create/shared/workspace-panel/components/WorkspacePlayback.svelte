@@ -36,7 +36,6 @@
           autoPlayDelay={0}
           playbackAllowed={active}
           resumeWhenPlaybackAllowed
-          onCanvasInitialized={() => onready(run)}
           onReady={() => onready(run)}
           onLoadError={() => onready(run)}
           onStepChange={(step) => {
