@@ -235,7 +235,8 @@
   }
 
   .turn-popover {
-    width: min(calc(100vw - 1rem), 30rem);
+    width: max-content;
+    max-width: var(--bits-popover-content-available-width, calc(100vw - 1rem));
     padding: var(--spacing-sm, 8px);
     border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.16));
     border-radius: 10px;
