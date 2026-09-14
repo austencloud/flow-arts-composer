@@ -12,7 +12,9 @@ export interface SequenceCardExportProfile {
   showWord: boolean;
   darkMode: boolean;
   showDifficulty: boolean;
+  showFooter: boolean;
   showReversals: boolean;
+  startPositionLayout: "row" | "column";
   level: number;
 }
 
@@ -25,9 +27,11 @@ export const COMPOSER_CARD_EXPORT_PROFILE_V1: Readonly<SequenceCardExportProfile
     padding: 8,
     showStepNumbers: true,
     showWord: true,
-    darkMode: true,
-    showDifficulty: true,
+    darkMode: false,
+    showDifficulty: false,
+    showFooter: false,
     showReversals: true,
+    startPositionLayout: "row",
     level: 1,
   };
 
@@ -37,8 +41,10 @@ export interface SequenceCardCompositionOptions {
   showStepNumbers: boolean;
   showWord: boolean;
   showDifficulty: boolean;
+  showFooter: boolean;
   showReversals: boolean;
   darkMode: boolean;
+  startPositionLayout: "row" | "column";
 }
 
 export interface SequenceCardLayout {
@@ -96,14 +102,21 @@ export function calculateSequenceCardLayout(
   stepCount: number,
   options: Pick<
     SequenceCardCompositionOptions,
-    "layout" | "cellSize" | "showWord" | "showDifficulty"
+    | "layout"
+    | "cellSize"
+    | "showWord"
+    | "showDifficulty"
+    | "showFooter"
+    | "startPositionLayout"
   >,
 ): SequenceCardLayout {
   const headerHeight =
     options.showWord || options.showDifficulty
       ? calculateHeaderHeight(options.cellSize)
       : 0;
-  const footerHeight = calculateFooterHeight(options.cellSize);
+  const footerHeight = options.showFooter
+    ? calculateFooterHeight(options.cellSize)
+    : 0;
 
   if (options.layout === "strip") {
     return {
@@ -117,7 +130,7 @@ export function calculateSequenceCardLayout(
     };
   }
 
-  const [columns, rows] = getLayout(stepCount - 1, "column");
+  const [columns, rows] = getLayout(stepCount - 1, options.startPositionLayout);
   return {
     width: columns * options.cellSize,
     height: headerHeight + rows * options.cellSize + footerHeight,
@@ -132,8 +145,17 @@ export function calculateSequenceCardLayout(
 export function calculateSequenceCardCell(
   index: number,
   columns: number,
+  startPositionLayout: "row" | "column" = "column",
+  layout: "grid" | "strip" = "grid",
 ): Pick<SequenceCardCell, "index" | "x" | "y"> & { row: number; col: number } {
   if (index === 0) return { index, row: 0, col: 0, x: 0, y: 0 };
+
+  if (layout === "grid" && startPositionLayout === "row") {
+    const stepIndex = index - 1;
+    const row = Math.floor(stepIndex / columns) + 1;
+    const col = stepIndex % columns;
+    return { index, row, col, x: col, y: row };
+  }
 
   const stepColumns = columns - 1;
   const stepIndex = index - 1;
@@ -175,7 +197,12 @@ export async function composeSequenceCard<TStep, TCanvas>(
   for (let index = 0; index < steps.length; index++) {
     const step = steps[index];
     if (!step) continue;
-    const position = calculateSequenceCardCell(index, layout.columns);
+    const position = calculateSequenceCardCell(
+      index,
+      layout.columns,
+      pipeline.options.startPositionLayout,
+      pipeline.options.layout,
+    );
     const cell: SequenceCardCell = {
       index,
       stepNumber: pipeline.getStepNumber(step),
@@ -225,7 +252,11 @@ export async function composeSequenceCard<TStep, TCanvas>(
       difficultyLevel,
     );
   }
-  if (layout.footerHeight > 0 && pipeline.renderFooter) {
+  if (
+    pipeline.options.showFooter &&
+    layout.footerHeight > 0 &&
+    pipeline.renderFooter
+  ) {
     await pipeline.renderFooter(ctx, layout);
   }
   return pipeline.toPng(canvas);

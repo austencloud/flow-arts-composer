@@ -21,6 +21,7 @@ import {
   type LetterStyle,
 } from "./text-renderer.js";
 import {
+  COMPOSER_CARD_EXPORT_PROFILE_V1,
   composeSequenceCard,
   type SequenceCardHeader,
 } from "@tka/render-composition";
@@ -56,18 +57,14 @@ export interface SequenceRenderOptions {
   seedWord?: string;
   leftPropType?: string | null;
   rightPropType?: string | null;
+  /** App export uses a dedicated start row; legacy column cards can opt in. */
+  startPositionLayout?: "row" | "column";
+  /** App export omits the footer; callers may retain it explicitly. */
+  showFooter?: boolean;
 }
-const DEFAULT_OPTIONS: SequenceRenderOptions = {
-  layout: "grid",
-  cellSize: 900,
-  padding: 8,
-  showStepNumbers: true,
-  showWord: true,
-  darkMode: true,
-  showDifficulty: true,
-  level: 1,
-  showReversals: true,
-};
+const DEFAULT_OPTIONS = {
+  ...COMPOSER_CARD_EXPORT_PROFILE_V1,
+} satisfies SequenceRenderOptions;
 
 /** Legacy fallback for callers whose steps do not yet carry turn data. */
 export function resolveRenderedTurns(
@@ -142,7 +139,9 @@ export async function renderSequenceToImage(
     options: {
       ...opts,
       showDifficulty: opts.showDifficulty ?? true,
+      showFooter: opts.showFooter ?? false,
       showReversals: opts.showReversals ?? false,
+      startPositionLayout: opts.startPositionLayout ?? "row",
     },
     createCanvas,
     getContext: (canvas) =>
@@ -210,20 +209,22 @@ export async function renderSequenceToImage(
         opts.loopComponents,
       );
     },
-    renderFooter: (ctx, layout) => {
-      renderUserInfo(
-        ctx as unknown as CanvasRenderingContext2D,
-        {
-          userName: opts.userName,
-          notes: opts.notes,
-          birthday: opts.birthday,
-          word,
-        } satisfies UserExportInfo,
-        layout.width,
-        layout.height,
-        layout.footerHeight,
-        opts.darkMode,
-      );
-    },
+    renderFooter: opts.showFooter
+      ? (ctx, layout) => {
+          renderUserInfo(
+            ctx as unknown as CanvasRenderingContext2D,
+            {
+              userName: opts.userName,
+              notes: opts.notes,
+              birthday: opts.birthday,
+              word,
+            } satisfies UserExportInfo,
+            layout.width,
+            layout.height,
+            layout.footerHeight,
+            opts.darkMode,
+          );
+        }
+      : undefined,
   });
 }
