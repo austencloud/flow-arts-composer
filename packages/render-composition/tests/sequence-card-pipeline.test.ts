@@ -4,9 +4,34 @@ import {
   calculateSequenceCardCell,
   calculateSequenceCardLayout,
   calculateSequenceCardMandalaPlacements,
+  composeSequenceCard,
 } from "../src/sequence-card-pipeline.js";
 
 describe("sequence card pipeline geometry", () => {
+  it("rejects incomplete card exports instead of returning a success image with an error tile", async () => {
+    let encoded = false;
+    await expect(
+      composeSequenceCard({
+        steps: [{ stepNumber: 0 }],
+        word: "A",
+        options: { ...COMPOSER_CARD_EXPORT_PROFILE_V1 },
+        createCanvas: () => ({}),
+        getContext: () =>
+          ({ fillRect() {} }) as unknown as CanvasRenderingContext2D,
+        toPng: () => {
+          encoded = true;
+          return Buffer.from("incomplete");
+        },
+        getStepNumber: (step) => step.stepNumber,
+        calculateDifficultyLevel: () => 1,
+        renderPictograph: async () => {
+          throw new Error("Missing canonical asset");
+        },
+        buildHeader: () => ({ word: "A" }),
+      })
+    ).rejects.toThrow("Missing canonical asset");
+    expect(encoded).toBe(false);
+  });
   it("keeps the start cell at the first slot and reserves the first column below it in column mode", () => {
     expect(calculateSequenceCardCell(0, 4)).toMatchObject({ row: 0, col: 0 });
     expect(calculateSequenceCardCell(1, 4)).toMatchObject({ row: 0, col: 1 });
@@ -83,10 +108,10 @@ describe("sequence card pipeline geometry", () => {
       })
     ).toMatchObject({
       width: 200,
-      height: 333,
+      height: 322,
       columns: 2,
       rows: 3,
-      headerHeight: 33,
+      headerHeight: 22,
       footerHeight: 0,
     });
   });

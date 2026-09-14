@@ -16,7 +16,7 @@ import {
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 // getGlyphCache loaded dynamically to avoid pulling $app/environment into worker bundle
 import { tokenizeWord } from "$lib/shared/pictograph/tka-glyph/utils/word-tokenizer";
-import { compressWord } from "$lib/shared/foundation/utils/word-simplifier";
+import { compressWord } from "@tka/render-composition";
 import { createRenderCanvas } from "./create-render-canvas";
 import type { RenderCanvas } from "./types";
 

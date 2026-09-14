@@ -1,6 +1,11 @@
 // @tka/render-composition — shared choreo card composition
 export * from "./types.js";
 export { tokenizeGlyphWord } from "./glyph-word.js";
+export {
+  compressWord,
+  simplifyRepeatedWord,
+  splitWordLetterUnits,
+} from "./word-display.js";
 export { sanitizeSvgForBitmap } from "./svg-bitmap-sanitize.js";
 export {
   DARK_MONOCHROME_IMAGE_COLOR,
@@ -8,6 +13,13 @@ export {
   drawTintedImage,
 } from "./tinted-image.js";
 export * from "./difficulty-config.js";
+export {
+  analyzeDifficultyMotions,
+  calculateDifficultyLevelFromMotions,
+  type DifficultyAnalysis,
+  type DifficultyMotion,
+  type DifficultyTrigger,
+} from "./difficulty-analysis.js";
 export {
   drawSvgPath,
   drawPathCommands,
@@ -95,6 +107,15 @@ export {
   type HeaderOptions,
   type HeaderWordSideInsetOptions,
 } from "./header-renderer.js";
+export {
+  paintCardFrame,
+  getCardFrameContentInset,
+  type CardFrameOptions,
+} from "./card-frame.js";
+export {
+  calculateCardSurface,
+  type CardSurfaceOptions,
+} from "./card-surface-layout.js";
 export {
   renderFooter,
   loadFooterIcon,

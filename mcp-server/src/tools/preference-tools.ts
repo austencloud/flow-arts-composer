@@ -74,6 +74,14 @@ export function registerPreferenceTools(server: McpServer): void {
         .nullable()
         .optional()
         .describe("Right prop type or null for default"),
+      fanAppearance: z
+        .object({
+          build: z.enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"]),
+          frameColor: z.enum(["black", "white"]),
+          cover: z.enum(["bare", "covered"]),
+        })
+        .optional()
+        .describe("Physical appearance for fan and bigfan props"),
     },
     async (newPrefs) => {
       const before = { ...getPreferences() };
@@ -101,6 +109,8 @@ export function registerPreferenceTools(server: McpServer): void {
         updates.leftPropType = newPrefs.leftPropType;
       if (newPrefs.rightPropType !== undefined)
         updates.rightPropType = newPrefs.rightPropType;
+      if (newPrefs.fanAppearance !== undefined)
+        updates.fanAppearance = newPrefs.fanAppearance;
 
       updatePreferences(updates);
       const current = getPreferences();
@@ -152,6 +162,7 @@ export function registerPreferenceTools(server: McpServer): void {
           `grid:${prefs.showGrid}`,
           `left:${prefs.showLeftMotion}`,
           `right:${prefs.showRightMotion}`,
+          `fan:${prefs.fanAppearance.build}/${prefs.fanAppearance.frameColor}/${prefs.fanAppearance.cover}`,
         ];
         return {
           content: [{ type: "text" as const, text: pairs.join(" ") }],
@@ -181,7 +192,8 @@ Motions:
 
 Props:
   • leftPropType: ${prefs.leftPropType ?? "staff (default)"}
-  • rightPropType: ${prefs.rightPropType ?? "staff (default)"}`;
+  • rightPropType: ${prefs.rightPropType ?? "staff (default)"}
+  • fanAppearance: ${prefs.fanAppearance.build}/${prefs.fanAppearance.frameColor}/${prefs.fanAppearance.cover}`;
 
       return {
         content: [{ type: "text" as const, text: summary }],

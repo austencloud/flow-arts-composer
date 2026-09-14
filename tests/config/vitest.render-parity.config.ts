@@ -62,7 +62,7 @@ export default defineConfig({
 
   test: {
     name: "render-parity",
-    include: ["tests/render-parity/**/*.test.ts"],
+    include: ["tests/render-parity/render-parity.test.ts"],
     // A full-corpus capture/compare renders ~360 pictographs.
     testTimeout: 600_000,
     hookTimeout: 120_000,

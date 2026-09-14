@@ -11,30 +11,16 @@
  */
 
 import { Letter } from "../domain/models/letter";
+import {
+  compressWord as compressPortableWord,
+  simplifyRepeatedWord as simplifyPortableWord,
+  splitWordLetterUnits,
+} from "@tka/render-composition";
 
 /** Every canonical letter value, for {@link isTkaWord}'s membership test. */
 const TKA_LETTER_UNITS: ReadonlySet<string> = new Set<string>(
-  Object.values(Letter),
+  Object.values(Letter)
 );
-
-/**
- * Check if a string can be formed by repeating a pattern
- */
-function canFormByRepeating(s: string, pattern: string): boolean {
-  const patternLen = pattern.length;
-  if (s.length % patternLen !== 0) {
-    return false;
-  }
-
-  for (let i = 0; i < s.length; i += patternLen) {
-    const chunk = s.substring(i, i + patternLen);
-    if (chunk !== pattern) {
-      return false;
-    }
-  }
-
-  return true;
-}
 
 /**
  * Simplify a word by detecting and removing repeated patterns
@@ -49,70 +35,7 @@ function canFormByRepeating(s: string, pattern: string): boolean {
  * 4. If no pattern found, return the original word
  */
 export function simplifyRepeatedWord(word: string): string {
-  if (!word || word.length === 0) {
-    return word;
-  }
-
-  const n = word.length;
-
-  // Try patterns from length 1 to half the word length
-  for (let i = 1; i <= Math.floor(n / 2); i++) {
-    const pattern = word.substring(0, i);
-
-    // Check if word length is divisible by pattern length
-    // and if the word can be formed by repeating this pattern
-    if (n % i === 0 && canFormByRepeating(word, pattern)) {
-      return pattern;
-    }
-  }
-
-  // No repeating pattern found, try palindrome detection
-  return simplifyPalindromicWord(word);
-}
-
-/**
- * Simplify a word with palindromic (ABBA) group structure by removing the mirrored half.
- *
- * Works on letter-unit groups, not raw characters, so "Δ-UY-Ψ-" is one group
- * when group size = 4 tokens.
- *
- * Example:
- * - "Δ-UY-Ψ-Σ-VZ-Ψ-Σ-VZ-Ψ-Δ-UY-Ψ-" (ABBA at G=4) → "Δ-UY-Ψ-Σ-VZ-Ψ-"
- */
-function simplifyPalindromicWord(word: string): string {
-  const tokens = splitIntoLetterUnits(word);
-  const n = tokens.length;
-  if (n < 2) return word;
-
-  for (let g = 1; g <= Math.floor(n / 2); g++) {
-    if (n % g !== 0) continue;
-
-    const numGroups = n / g;
-    if (numGroups < 2) continue;
-
-    // Build group strings for comparison
-    const groups: string[] = [];
-    for (let i = 0; i < numGroups; i++) {
-      groups.push(tokens.slice(i * g, (i + 1) * g).join(""));
-    }
-
-    // Check palindrome: group[i] === group[numGroups - 1 - i]
-    let isPalindrome = true;
-    for (let i = 0; i < Math.floor(numGroups / 2); i++) {
-      if (groups[i] !== groups[numGroups - 1 - i]) {
-        isPalindrome = false;
-        break;
-      }
-    }
-
-    // Must be a true palindrome (not all identical - that's a repeat, already handled)
-    if (isPalindrome && groups[0] !== groups[1]) {
-      const halfCount = Math.ceil(numGroups / 2);
-      return groups.slice(0, halfCount).join("");
-    }
-  }
-
-  return word;
+  return simplifyPortableWord(word);
 }
 
 /**
@@ -125,35 +48,7 @@ function simplifyPalindromicWord(word: string): string {
  * - "A-B-C" → ["A-", "B-", "C"] (3 letters)
  */
 export function splitIntoLetterUnits(word: string): string[] {
-  const units: string[] = [];
-  let i = 0;
-
-  while (i < word.length) {
-    const char = word[i];
-    if (!char) break;
-
-    // Check if current character is a letter. ⊕ is Terra, a Type 6
-    // letter: without it in the class the tokenizer silently DROPS the glyph,
-    // so a word carrying Terra compressed and simplified as if it were absent.
-    if (/[a-zA-Z\u0370-\u03FF\u1F00-\u1FFF\u2295]/.test(char)) {
-      // Check if next character is a dash
-      const nextChar = word[i + 1];
-      if (i + 1 < word.length && nextChar === "-") {
-        // Treat letter+dash as one unit
-        units.push(char + "-");
-        i += 2;
-      } else {
-        // Just the letter
-        units.push(char);
-        i += 1;
-      }
-    } else {
-      // Non-letter character (shouldn't happen in normal TKA words, but handle it)
-      i += 1;
-    }
-  }
-
-  return units;
+  return splitWordLetterUnits(word);
 }
 
 /**
@@ -206,69 +101,16 @@ export interface CompressedSegment {
  * Falls back to a single segment with repeat=1 when no runs are found.
  */
 export function compressWord(word: string): CompressedSegment[] {
-  if (!word) return [];
-  const units = splitIntoLetterUnits(word);
-  if (units.length === 0) return [];
-
-  const segments: CompressedSegment[] = [];
-  let i = 0;
-
-  while (i < units.length) {
-    let bestLen = 0;
-    let bestCount = 0;
-
-    const maxPatternLen = Math.floor((units.length - i) / 2);
-    for (let len = 1; len <= maxPatternLen; len++) {
-      const pattern = units.slice(i, i + len);
-      let count = 1;
-      let j = i + len;
-      while (j + len <= units.length && arraysEqual(units, j, pattern, len)) {
-        count++;
-        j += len;
-      }
-      const minCount = len === 1 ? 4 : 2;
-      if (count >= minCount && len * count > bestLen * bestCount) {
-        bestLen = len;
-        bestCount = count;
-      }
-    }
-
-    if (bestCount >= 2) {
-      segments.push({ tokens: units.slice(i, i + bestLen), repeat: bestCount });
-      i += bestLen * bestCount;
-    } else {
-      segments.push({ tokens: [units[i]!], repeat: 1 });
-      i++;
-    }
-  }
-
-  return mergeUnrepeatedSegments(segments);
-}
-
-function arraysEqual(source: string[], offset: number, pattern: string[], len: number): boolean {
-  for (let k = 0; k < len; k++) {
-    if (source[offset + k] !== pattern[k]) return false;
-  }
-  return true;
-}
-
-function mergeUnrepeatedSegments(segments: CompressedSegment[]): CompressedSegment[] {
-  const merged: CompressedSegment[] = [];
-  for (const seg of segments) {
-    if (seg.repeat === 1 && merged.length > 0 && merged[merged.length - 1]!.repeat === 1) {
-      merged[merged.length - 1]!.tokens.push(...seg.tokens);
-    } else {
-      merged.push(seg);
-    }
-  }
-  return merged;
+  return compressPortableWord(word);
 }
 
 /**
  * Render compressed segments back to a flat display string.
  * Repeated segments get (tokens)×N notation.
  */
-export function compressedToDisplayString(segments: CompressedSegment[]): string {
+export function compressedToDisplayString(
+  segments: CompressedSegment[]
+): string {
   return segments
     .map((seg) => {
       const inner = seg.tokens.join("");

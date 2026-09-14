@@ -1,5 +1,10 @@
 import { renderSmartBorders } from "./border-renderer.js";
-import { calculateFooterHeight, calculateHeaderHeight } from "./dimensions.js";
+import { calculateCardSurface } from "./card-surface-layout.js";
+import {
+  getCardFrameContentInset,
+  paintCardFrame,
+  type CardFrameOptions,
+} from "./card-frame.js";
 import { getLayout } from "./layout-tables.js";
 import { renderStepNumber } from "./step-number-renderer.js";
 import type { CardMandalaPlacement } from "./card-mandala.js";
@@ -39,6 +44,11 @@ export const COMPOSER_CARD_EXPORT_PROFILE_V1: Readonly<SequenceCardExportProfile
   };
 
 export interface SequenceCardCompositionOptions {
+  exportProfile?: "composer" | "print";
+  frame?: CardFrameOptions;
+  columnCount?: number;
+  gridCentering?: "optical" | "geometric";
+  showLoopGlyph?: boolean;
   layout: "grid" | "strip";
   cellSize: number;
   showStepNumbers: boolean;
@@ -52,6 +62,9 @@ export interface SequenceCardCompositionOptions {
 }
 
 export interface SequenceCardLayout {
+  cellSize?: number;
+  gridStartX?: number;
+  indicatorSizeScale?: number;
   width: number;
   height: number;
   columns: number;
@@ -118,37 +131,46 @@ export function calculateSequenceCardLayout(
     | "showDifficulty"
     | "showFooter"
     | "startPositionLayout"
+    | "exportProfile"
+    | "frame"
+    | "columnCount"
+    | "gridCentering"
+    | "showLoopGlyph"
   >
 ): SequenceCardLayout {
-  const headerHeight =
-    options.showWord || options.showDifficulty
-      ? calculateHeaderHeight(options.cellSize)
-      : 0;
-  const footerHeight = options.showFooter
-    ? calculateFooterHeight(options.cellSize)
-    : 0;
-
-  if (options.layout === "strip") {
-    return {
-      width: stepCount * options.cellSize,
-      height: headerHeight + options.cellSize + footerHeight,
-      columns: stepCount,
-      rows: 1,
-      headerHeight,
-      footerHeight,
-      gridStartY: headerHeight,
-    };
+  let [columns, rows] =
+    options.layout === "strip"
+      ? [stepCount, 1]
+      : getLayout(stepCount - 1, options.startPositionLayout);
+  if (options.columnCount && options.layout !== "strip") {
+    columns = options.columnCount;
+    rows =
+      options.startPositionLayout === "row"
+        ? 1 + Math.ceil((stepCount - 1) / columns)
+        : Math.max(1, Math.ceil((stepCount - 1) / Math.max(1, columns - 1)));
   }
-
-  const [columns, rows] = getLayout(stepCount - 1, options.startPositionLayout);
+  const frame = options.frame;
+  const inset = getCardFrameContentInset(frame?.bleedPx ?? 36);
+  const deckCard =
+    options.exportProfile === "print"
+      ? {
+          contentWidth: (frame?.canvasWidth ?? 822) - inset * 2,
+          contentHeight: (frame?.canvasHeight ?? 1122) - inset * 2,
+        }
+      : undefined;
   return {
-    width: columns * options.cellSize,
-    height: headerHeight + rows * options.cellSize + footerHeight,
+    ...calculateCardSurface({
+      columns,
+      rows,
+      cellSize: options.cellSize,
+      deckCard,
+      showHeader:
+        options.showWord || options.showDifficulty || !!options.showLoopGlyph,
+      showFooter: options.showFooter,
+      gridCentering: options.gridCentering,
+    }),
     columns,
     rows,
-    headerHeight,
-    footerHeight,
-    gridStartY: headerHeight,
   };
 }
 
@@ -158,6 +180,7 @@ export function calculateSequenceCardCell(
   startPositionLayout: "row" | "column" = "column",
   layout: "grid" | "strip" = "grid"
 ): Pick<SequenceCardCell, "index" | "x" | "y"> & { row: number; col: number } {
+  if (layout === "strip") return { index, row: 0, col: index, x: index, y: 0 };
   if (index === 0) return { index, row: 0, col: 0, x: 0, y: 0 };
 
   if (layout === "grid" && startPositionLayout === "row") {
@@ -213,9 +236,13 @@ export function calculateSequenceCardMandalaPlacements(
             : "full";
     return {
       ...candidate,
-      x: candidate.col * options.cellSize,
-      y: layout.gridStartY + candidate.row * options.cellSize,
-      cellSize: options.cellSize,
+      x:
+        (layout.gridStartX ?? 0) +
+        candidate.col * (layout.cellSize ?? options.cellSize),
+      y:
+        layout.gridStartY +
+        candidate.row * (layout.cellSize ?? options.cellSize),
+      cellSize: layout.cellSize ?? options.cellSize,
       variant,
     };
   });
@@ -233,7 +260,8 @@ export async function composeSequenceCard<TStep, TCanvas>(
   const layout = calculateSequenceCardLayout(steps.length, pipeline.options);
   const canvas = pipeline.createCanvas(layout.width, layout.height);
   const ctx = pipeline.getContext(canvas);
-  const { cellSize, darkMode } = pipeline.options;
+  const { darkMode } = pipeline.options;
+  const cellSize = layout.cellSize ?? pipeline.options.cellSize;
   ctx.fillStyle = darkMode ? "#0a0a0f" : "#ffffff";
   ctx.fillRect(
     0,
@@ -257,31 +285,22 @@ export async function composeSequenceCard<TStep, TCanvas>(
     const cell: SequenceCardCell = {
       index,
       stepNumber: pipeline.getStepNumber(step),
-      x: position.x * cellSize,
+      x: (layout.gridStartX ?? 0) + position.x * cellSize,
       y: layout.gridStartY + position.y * cellSize,
       cellSize,
       baseOrientation,
     };
     occupiedCells.add(`${position.col},${position.row}`);
-    try {
-      await pipeline.renderPictograph(ctx, step, cell);
-      if (pipeline.options.showStepNumbers) {
-        renderStepNumber(
-          ctx,
-          cell.stepNumber,
-          cell.x,
-          cell.y,
-          cellSize,
-          darkMode
-        );
-      }
-    } catch {
-      ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
-      ctx.fillRect(cell.x, cell.y, cellSize, cellSize);
-      ctx.fillStyle = darkMode ? "#ff6b6b" : "#dc3545";
-      ctx.font = "12px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("Error", cell.x + cellSize / 2, cell.y + cellSize / 2);
+    await pipeline.renderPictograph(ctx, step, cell);
+    if (pipeline.options.showStepNumbers) {
+      renderStepNumber(
+        ctx,
+        cell.stepNumber,
+        cell.x,
+        cell.y,
+        cellSize,
+        darkMode
+      );
     }
   }
 
@@ -299,6 +318,8 @@ export async function composeSequenceCard<TStep, TCanvas>(
     }
   }
 
+  ctx.save();
+  ctx.translate(layout.gridStartX ?? 0, 0);
   renderSmartBorders(ctx, {
     columns: layout.columns,
     rows: layout.rows,
@@ -307,6 +328,7 @@ export async function composeSequenceCard<TStep, TCanvas>(
     occupiedCells,
     darkMode,
   });
+  ctx.restore();
 
   const difficultyLevel = pipeline.calculateDifficultyLevel(steps);
   if (layout.headerHeight > 0 && pipeline.renderHeader) {
@@ -323,6 +345,22 @@ export async function composeSequenceCard<TStep, TCanvas>(
     pipeline.renderFooter
   ) {
     await pipeline.renderFooter(ctx, layout);
+  }
+  if (pipeline.options.exportProfile === "print") {
+    const frame = pipeline.options.frame ?? {
+      accent: "#999999",
+      dark: "#444444",
+    };
+    const framed = pipeline.createCanvas(
+      frame.canvasWidth ?? 822,
+      frame.canvasHeight ?? 1122
+    );
+    paintCardFrame(
+      pipeline.getContext(framed),
+      canvas as unknown as CanvasImageSource,
+      frame
+    );
+    return pipeline.toPng(framed);
   }
   return pipeline.toPng(canvas);
 }

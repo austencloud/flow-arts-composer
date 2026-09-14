@@ -48,6 +48,7 @@ function glyphPath(token: string): string | undefined {
 }
 
 function colorGlyphSvg(svg: string, darkMode: boolean): string {
+  if (!darkMode) return sanitizeSvgForBitmap(svg);
   const color = darkMode ? "#e6e6e6" : "#231f20";
   let prepared = sanitizeSvgForBitmap(svg).replace(
     /#000000|#231f20|\bblack\b/gi,

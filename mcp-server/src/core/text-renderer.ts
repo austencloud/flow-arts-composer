@@ -10,8 +10,7 @@
  * - Contextual captions / humor profile (MCP-specific feature)
  */
 
-import { type CanvasRenderingContext2D, registerFont } from "canvas";
-import * as fs from "fs";
+import { type CanvasRenderingContext2D } from "@napi-rs/canvas/node-canvas.js";
 import {
   renderHeader as sharedRenderHeader,
   renderFooter as sharedRenderFooter,
@@ -20,36 +19,17 @@ import {
   type HeaderOptions,
   type FooterOptions,
   type LOOPComponentId,
+  type CompressedSegment,
+  type LoopInversionPeriod,
+  type LoopReflectionAxis,
+  type LoopRotationPeriod,
   type LetterStyle as SharedLetterStyle,
 } from "@tka/render-composition";
 import { loadTkaGlyphImages } from "./tka-glyph-image-loader.js";
-
-// Try to register Georgia font if available (Windows paths)
-const FONT_PATHS = [
-  "C:\\Windows\\Fonts\\georgia.ttf",
-  "C:\\Windows\\Fonts\\georgiab.ttf", // Bold
-  "/usr/share/fonts/truetype/msttcorefonts/Georgia.ttf", // Linux
-  "/Library/Fonts/Georgia.ttf", // macOS
-];
-
-let georgiaRegistered = false;
+import { ensureGelasioRegistered } from "./gelasio-fonts.js";
 
 export function ensureFontsRegistered(): void {
-  if (georgiaRegistered) return;
-
-  for (const fontPath of FONT_PATHS) {
-    try {
-      if (fs.existsSync(fontPath)) {
-        registerFont(fontPath, {
-          family: "Georgia",
-          weight: fontPath.includes("georgiab") ? "bold" : "normal",
-        });
-        georgiaRegistered = true;
-      }
-    } catch {
-      // Font registration failed, will use fallback
-    }
-  }
+  ensureGelasioRegistered();
 }
 
 export interface TextRenderOptions {
@@ -93,7 +73,13 @@ export async function renderWordHeader(
   showDifficultyBadge: boolean = true,
   darkMode: boolean = true,
   letterStyles?: LetterStyle[],
-  loopComponents?: LOOPComponent[]
+  loopComponents?: LOOPComponent[],
+  rotationPeriod?: LoopRotationPeriod,
+  inversionPeriod?: LoopInversionPeriod,
+  reflectionAxis?: LoopReflectionAxis,
+  overlayComponents?: LOOPComponent[],
+  compressedSegments?: CompressedSegment[],
+  indicatorSizeScale?: number
 ): Promise<void> {
   ensureFontsRegistered();
   const glyphImages = await loadTkaGlyphImages(word, darkMode);
@@ -111,6 +97,11 @@ export async function renderWordHeader(
     loopComponents && loopComponents.length > 0
       ? new Set(loopComponents.map((c) => c as LOOPComponentId))
       : undefined;
+  const overlaySet = overlayComponents?.length
+    ? new Set(
+        overlayComponents.map((component) => component as LOOPComponentId)
+      )
+    : undefined;
 
   const options: HeaderOptions = {
     canvasWidth,
@@ -119,6 +110,12 @@ export async function renderWordHeader(
     difficultyLevel,
     showDifficultyBadge,
     loopComponents: loopSet,
+    rotationPeriod,
+    inversionPeriod,
+    reflectionAxis,
+    overlayComponents: overlaySet,
+    compressedSegments,
+    indicatorSizeScale,
     darkMode,
     letterStyles: sharedLetterStyles,
     glyphImages,

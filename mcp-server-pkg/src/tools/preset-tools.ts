@@ -306,6 +306,21 @@ export function registerPresetTools(server: McpServer): void {
         .optional()
         .describe("Override: grid mode"),
       darkMode: z.boolean().optional().describe("Override: dark mode"),
+      exportProfile: z.enum(["composer", "print"]).optional(),
+      columnCount: z.number().int().min(1).optional(),
+      showDifficulty: z.boolean().optional(),
+      leftPropType: z.string().nullable().optional(),
+      rightPropType: z.string().nullable().optional(),
+      fanAppearance: z
+        .object({
+          build: z
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .optional(),
+          frameColor: z.enum(["black", "white"]).optional(),
+          cover: z.enum(["bare", "covered"]).optional(),
+        })
+        .nullable()
+        .optional(),
       primaryPropColors: primaryPropColorsSchema
         .optional()
         .describe(
@@ -500,13 +515,20 @@ export function registerPresetTools(server: McpServer): void {
               darkMode,
               turnAllocation,
               loopComponents: effectiveComponents,
+              period: config.period === "quartered" ? 4 : 2,
               derivedBeatIndices: loopResult.derivedBeatIndices,
               seedWord: loopResult.seedWord,
-              showDifficulty: COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
               showFooter: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
               startPositionLayout:
                 COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
               level: level as 1 | 2 | 3,
+              exportProfile: input.exportProfile,
+              columnCount: input.columnCount,
+              showDifficulty:
+                input.showDifficulty ?? input.exportProfile === "print",
+              leftPropType: input.leftPropType,
+              rightPropType: input.rightPropType,
+              fanAppearance: input.fanAppearance,
               primaryPropColors: input.primaryPropColors,
             }
           );
@@ -604,11 +626,17 @@ export function registerPresetTools(server: McpServer): void {
           showWord: COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
           darkMode,
           turnAllocation,
-          showDifficulty: COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
           showFooter: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
           startPositionLayout:
             COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
           level: level as 1 | 2 | 3,
+          exportProfile: input.exportProfile,
+          columnCount: input.columnCount,
+          showDifficulty:
+            input.showDifficulty ?? input.exportProfile === "print",
+          leftPropType: input.leftPropType,
+          rightPropType: input.rightPropType,
+          fanAppearance: input.fanAppearance,
           primaryPropColors: input.primaryPropColors,
         });
 

@@ -1,6 +1,8 @@
 import type { DifficultyLevel, GradientStop } from "./types.js";
 
-export const DIFFICULTY_FONT_FAMILY = "Cambria, serif";
+// Gelasio is bundled by the Composer and both MCP renderers, so the badge
+// numeral remains the same when a card is generated away from this browser.
+export const DIFFICULTY_FONT_FAMILY = "Gelasio, Georgia, serif";
 
 export const DIFFICULTY_LEVELS: Record<number, DifficultyLevel> = {
   1: {
