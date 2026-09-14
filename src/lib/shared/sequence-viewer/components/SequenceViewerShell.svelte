@@ -69,12 +69,8 @@
   import { uploadRenderedFilm } from "$lib/shared/video-collaboration/services/upload-rendered-film";
   import { canAccessPostStudio } from "../services/post-studio-access";
   import ChoreoCardContextMenuHost from "./choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
-  import {
-    openSendSequenceSheet,
-    buildSequenceSharePayload,
-    buildThumbnailUrl,
-  } from "$lib/shared/inbox/state/send-sequence-state.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { openSendSequenceSheetWithCard } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  import { getSharer } from "$lib/shared/share/get-sharer";
   import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { sendToStickerLab } from "$lib/shared/sequence-viewer/services/send-to-sticker-lab";
@@ -360,12 +356,17 @@
     {
       getContext: () => ctx,
       getSequence: () => sequence,
-      getDefaultBluePropType: () => settingsService.settings.leftPropType,
     },
     {
-      openSendSequenceSheet,
-      buildSequenceSharePayload,
-      buildThumbnailUrl,
+      openSendSequenceSheetWithCard,
+      // Same inputs the share sheet's own card download uses, so the send
+      // preview matches the card on screen.
+      renderCardPreview: (target) =>
+        getSharer().getCardImageBlob(target, {
+          darkMode: ctx.exportOptions.imageDarkMode,
+          resolvedAutoLayout: ctx.resolvedCardAutoLayout,
+          cardPresentation: cardPresentation.value,
+        }),
       sendToStickerLab,
       captureScanAction: captureViewerAndScanAction,
     }

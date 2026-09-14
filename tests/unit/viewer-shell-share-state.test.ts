@@ -10,13 +10,11 @@ function createShareState(onDismiss: () => void) {
           viewerState: { viewerMode: "animation" },
         }) as never,
       getSequence: () => ({}) as never,
-      getDefaultBluePropType: () => "staff",
     },
     {
       captureScanAction: () => undefined,
-      buildSequenceSharePayload: () => ({}),
-      buildThumbnailUrl: () => "",
-      openSendSequenceSheet: () => undefined,
+      openSendSequenceSheetWithCard: () => undefined,
+      renderCardPreview: () => Promise.reject(new Error("unused")),
       sendToStickerLab: () => undefined,
     } as never
   );

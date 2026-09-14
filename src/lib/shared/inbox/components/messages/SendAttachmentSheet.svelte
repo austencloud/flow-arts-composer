@@ -14,6 +14,7 @@
   import { getShortCodeShareMessage } from "$lib/shared/qr/domain/short-code-error";
   import UserSearchInput from "$lib/shared/user-search/UserSearchInput.svelte";
   import { onMount } from "svelte";
+  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { buildSequenceMessageAttachment } from "../../domain/message-attachment-builders";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { inboxState } from "../../state/inbox-state.svelte";
@@ -476,7 +477,15 @@
 
       <div class="preview-info">
         <span class="preview-kicker">{kicker}</span>
-        <strong class="preview-word">{displayWord || "Attachment"}</strong>
+        {#if payload && displayWord}
+          <!-- The word is TKA letters, so it gets the glyph renderer every
+               other surface uses, not a Latin fallback face. -->
+          <strong class="preview-word" aria-label={displayWord}>
+            <TKAWordGlyph word={displayWord} height={30} darkMode fitToParent />
+          </strong>
+        {:else}
+          <strong class="preview-word">{displayWord || "Attachment"}</strong>
+        {/if}
         <div class="preview-meta">
           {#if payload?.sequenceStepCount}
             <span>{payload.sequenceStepCount} steps</span>
@@ -760,6 +769,7 @@
   }
 
   .preview-word {
+    display: block;
     overflow: hidden;
     margin-top: 0.2rem;
     color: var(--theme-text);
