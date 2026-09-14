@@ -311,6 +311,9 @@
               playbackActive && (alwaysLive || visible) && !ambientCardRevealed,
             resumeWhenPlaybackAllowed: true,
             externalBpm: 60,
+            // A live reference demonstrates the whole sequence, even when the
+            // visitor's workspace is set to repeat an individual count.
+            externalPlaybackMode: alwaysLive ? "continuous" : null,
             externalPlaying,
             onExternalPlayingChange,
             singlePlay,
