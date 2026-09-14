@@ -6,6 +6,7 @@
   import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
   import Seo from "$lib/shared/components/Seo.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import TurnNotationControls from "$lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
   import type { MatrixLabelMode } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
@@ -27,10 +28,14 @@
     TIMING_DIRECTION_ARTICLES,
   } from "../_data/timing-direction-articles";
   import {
-    adjustTogetherOppositeLoop,
+    adjustTogetherOppositeLoops,
     loadTogetherOppositeLoops,
+    transformTogetherOppositeLoops,
+    type TogetherOppositeTransform,
     type TogetherOppositeLoop,
   } from "../_data/together-opposite-sequences";
+  import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+  import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
   let { data }: { data: PageData } = $props();
 
@@ -80,6 +85,8 @@
   let turnLoopClosed = $state(true);
   let turnEditorOpen = $state(false);
   let turnTrigger = $state<HTMLButtonElement | null>(null);
+  let actionEditorOpen = $state(false);
+  let actionTrigger = $state<HTMLButtonElement | null>(null);
   let editingStep = $state(0);
   let examplePlayer: HTMLElement | undefined = $state();
   const selectedLoop = $derived(
@@ -88,6 +95,17 @@
     ) ??
       togetherOppositeLoops[0] ??
       null
+  );
+  const selectedTimingDirection = $derived(
+    selectedLoop
+      ? (deriveTnDFromPictograph(selectedLoop.sequence.steps[0]!).tndMode ??
+          null)
+      : null
+  );
+  const selectedTimingDirectionLabel = $derived(
+    selectedTimingDirection
+      ? TIMING_DIRECTION_LABELS[selectedTimingDirection]
+      : null
   );
   const currentStripStep = $derived(
     Math.max(
@@ -112,6 +130,24 @@
       ),
     },
   ]);
+  const turnsAreReset = $derived(
+    togetherOppositeLoops.every((loop) =>
+      loop.sequence.steps.every(
+        (step) =>
+          (Number(step.motions.left.turns) || 0) === 0 &&
+          (Number(step.motions.right.turns) || 0) === 0
+      )
+    )
+  );
+
+  const TIMING_DIRECTION_LABELS: Record<TnDMode, string> = {
+    [TnDMode.SPLIT_SAME]: "Split-Same",
+    [TnDMode.SPLIT_OPP]: "Split-Opposite",
+    [TnDMode.TOG_SAME]: "Together-Same",
+    [TnDMode.TOG_OPP]: "Together-Opposite",
+    [TnDMode.QUARTER_SAME]: "Quarter-Same",
+    [TnDMode.QUARTER_OPP]: "Quarter-Opposite",
+  };
 
   $effect(() => {
     if (article.code !== "TO") {
@@ -164,11 +200,13 @@
     adjusting = false;
     adjustmentError = null;
     selectedTogetherOppositeLoop = loop.id;
-    leftTurns = 0;
-    rightTurns = 0;
-    turnLoopClosed = true;
     turnEditorOpen = false;
+    actionEditorOpen = false;
     editingStep = 0;
+    syncTurnControls(loop.sequence, editingStep);
+    turnLoopClosed =
+      (loop.sequence.metadata as { turnLoopClosed?: boolean } | undefined)
+        ?.turnLoopClosed !== false;
     playback.selectExample(loop.sequence, 0);
     if (reveal && window.matchMedia("(max-width: 1439px)").matches) {
       examplePlayer?.scrollIntoView({
@@ -197,13 +235,19 @@
       Math.min(playback.sequence.steps.length + 1, playback.step)
     );
     try {
-      const sequence = await adjustTogetherOppositeLoop(
-        { ...selectedLoop, sequence: playback.sequence },
+      const loops = await adjustTogetherOppositeLoops(
+        togetherOppositeLoops,
         nextLeftTurns,
         nextRightTurns,
         applyTo === "current" ? editingStep : undefined
       );
       if (request !== adjustmentRequest) return;
+      togetherOppositeLoops = loops;
+      const selected = loops.find(
+        (loop) => loop.id === selectedTogetherOppositeLoop
+      );
+      if (!selected) return;
+      const sequence = selected.sequence;
       playback.selectExample(sequence, sampledPlaybackStep);
       turnLoopClosed =
         (sequence.metadata as { turnLoopClosed?: boolean } | undefined)
@@ -220,38 +264,65 @@
   }
 
   function resetTurns() {
-    if (!selectedLoop) return;
-    adjustmentRequest += 1;
-    adjusting = false;
-    adjustmentError = null;
-    turnLoopClosed = true;
-    leftTurns = 0;
-    rightTurns = 0;
-    playback.playing = false;
-    playback.selectExample(
-      selectedLoop.sequence,
-      Math.max(
-        0,
-        Math.min(selectedLoop.sequence.steps.length + 1, playback.step)
-      )
+    void adjustTurns(0, 0);
+  }
+
+  async function transformAllLoops(transform: TogetherOppositeTransform) {
+    if (!selectedLoop || adjusting) return;
+    const request = ++adjustmentRequest;
+    const sampledPlaybackStep = Math.max(
+      0,
+      Math.min(playback.sequence.steps.length + 1, playback.step)
     );
+    adjusting = true;
+    adjustmentError = null;
+    playback.playing = false;
+    try {
+      const loops = await transformTogetherOppositeLoops(
+        togetherOppositeLoops,
+        transform
+      );
+      if (request !== adjustmentRequest) return;
+      togetherOppositeLoops = loops;
+      const selected = loops.find(
+        (loop) => loop.id === selectedTogetherOppositeLoop
+      );
+      if (!selected) return;
+      playback.selectExample(selected.sequence, sampledPlaybackStep);
+      syncTurnControls(selected.sequence, editingStep);
+      turnLoopClosed =
+        (selected.sequence.metadata as { turnLoopClosed?: boolean } | undefined)
+          ?.turnLoopClosed !== false;
+    } catch {
+      if (request === adjustmentRequest) {
+        adjustmentError = "Sequence action could not be applied. Try again.";
+      }
+    } finally {
+      if (request === adjustmentRequest) adjusting = false;
+    }
+  }
+
+  function syncTurnControls(
+    sequence: TogetherOppositeLoop["sequence"],
+    index: number
+  ) {
+    const step = sequence.steps[index];
+    leftTurns = Number(step?.motions.left.turns) || 0;
+    rightTurns = Number(step?.motions.right.turns) || 0;
   }
 
   function selectCount(index: number) {
     const step = playback.sequence.steps[index];
     if (!step) return;
-    leftTurns = Number(step.motions.left.turns) || 0;
-    rightTurns = Number(step.motions.right.turns) || 0;
+    syncTurnControls(playback.sequence, index);
     editingStep = index;
     playback.playing = false;
     playback.seekStep(index + 1);
   }
 
   function openTurnEditor() {
-    const step = playback.sequence.steps[currentStripStep];
     editingStep = currentStripStep;
-    leftTurns = Number(step?.motions.left.turns) || 0;
-    rightTurns = Number(step?.motions.right.turns) || 0;
+    syncTurnControls(playback.sequence, editingStep);
     adjustmentError = null;
     playback.playing = false;
     turnEditorOpen = !turnEditorOpen;
@@ -259,9 +330,7 @@
 
   function setApplyTo(value: "all" | "current") {
     applyTo = value;
-    const step = playback.sequence.steps[editingStep];
-    leftTurns = Number(step?.motions.left.turns) || 0;
-    rightTurns = Number(step?.motions.right.turns) || 0;
+    syncTurnControls(playback.sequence, editingStep);
   }
 
   function chooseTurn(hand: "left" | "right", value: TurnValue) {
@@ -378,7 +447,14 @@
           aria-label={`${selectedLoop?.word ?? "Together-Opposite"} sequence player`}
         >
           <div class="demo-toolbar">
-            <h2>{selectedLoop?.word ?? "Four-count loop"}</h2>
+            <h2>
+              {selectedLoop?.word ?? "Four-count loop"}
+              {#if selectedTimingDirectionLabel}
+                <span class="path-mode"
+                  >Hand paths: {selectedTimingDirectionLabel}</span
+                >
+              {/if}
+            </h2>
             <div class="display-switch">
               <SegmentedControl
                 options={[
@@ -408,6 +484,14 @@
                 Turns
               </PanelButton>
             </div>
+            <PanelButton
+              bind:ref={actionTrigger}
+              onclick={() => (actionEditorOpen = !actionEditorOpen)}
+              ariaExpanded={actionEditorOpen}
+              disabled={!selectedLoop}
+            >
+              Actions
+            </PanelButton>
             {#if browser}
               <TransportControls
                 isPlaying={playback.playing}
@@ -486,9 +570,8 @@
                             />
                             <PanelButton
                               onclick={resetTurns}
-                              disabled={adjusting ||
-                                playback.sequence.id ===
-                                  selectedLoop?.sequence.id}>Reset</PanelButton
+                              disabled={adjusting || turnsAreReset}
+                              >Reset</PanelButton
                             >
                           </div>
                           <div aria-busy={adjusting}>
@@ -508,14 +591,89 @@
                         <div class="turn-status" aria-live="polite">
                           {#if adjustmentError}
                             <p>{adjustmentError}</p>
-                          {:else if !turnLoopClosed}
-                            <p>
-                              Props finish at a different orientation. Plays
-                              once.
-                            </p>
+                          {:else}
+                            {#if selectedTimingDirectionLabel}
+                              <p>
+                                Applies to all six sequences. Current hand
+                                paths:
+                                {selectedTimingDirectionLabel}.
+                              </p>
+                            {/if}
+                            {#if !turnLoopClosed}
+                              <p>
+                                Props finish at a different orientation. Plays
+                                once.
+                              </p>
+                            {/if}
                           {/if}
                         </div>
                       </div>
+                    </section>
+                  {/if}
+                </div>
+              {/snippet}
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
+
+        <Popover.Root
+          open={actionEditorOpen}
+          onOpenChange={(open) => (actionEditorOpen = open)}
+        >
+          <Popover.Portal>
+            <Popover.Content
+              customAnchor={actionTrigger ?? undefined}
+              side="bottom"
+              align="end"
+              sideOffset={8}
+              collisionPadding={12}
+              onInteractOutside={(event) => {
+                if (
+                  event.target instanceof Node &&
+                  actionTrigger?.contains(event.target)
+                )
+                  event.preventDefault();
+              }}
+              onCloseAutoFocus={(event) => {
+                event.preventDefault();
+                actionTrigger?.focus();
+              }}
+              forceMount
+            >
+              {#snippet child({ open, wrapperProps, props })}
+                <div {...wrapperProps} style:z-index="50">
+                  {#if open}
+                    <section
+                      {...props}
+                      class="turn-disclosure action-disclosure"
+                      aria-label="Sequence actions"
+                      transition:flyFade={{ y: -6 }}
+                    >
+                      <SequenceTransformActions
+                        hasSequence={!!selectedLoop}
+                        hasSelection={false}
+                        isTransforming={adjusting}
+                        showEditInConstructor={false}
+                        toolbar
+                        actionSubject="all six sequences"
+                        rotationDegrees={45}
+                        onMirror={() => void transformAllLoops("mirror")}
+                        onFlip={() => void transformAllLoops("flip")}
+                        onRotateCW={() =>
+                          void transformAllLoops("rotate-clockwise")}
+                        onRotateCCW={() =>
+                          void transformAllLoops("rotate-counterclockwise")}
+                        onSwap={() => void transformAllLoops("swap")}
+                      />
+                      <p class="action-scope">
+                        Applies to all six sequences. The selected card stays in
+                        view.
+                      </p>
+                      {#if adjustmentError}
+                        <p class="action-scope" aria-live="polite">
+                          {adjustmentError}
+                        </p>
+                      {/if}
                     </section>
                   {/if}
                 </div>
@@ -811,6 +969,13 @@
   .to-stage .demo-toolbar h2 {
     margin: 0;
   }
+  .path-mode {
+    display: block;
+    margin-top: 0.125rem;
+    color: var(--theme-text-dim);
+    font-size: 0.8125rem;
+    font-weight: 500;
+  }
   .turn-editor-toggle.unavailable {
     visibility: hidden;
   }
@@ -842,6 +1007,14 @@
   }
   .turn-status p {
     margin: 0.5rem 0 0;
+    color: var(--theme-text-dim);
+    font-size: 0.875rem;
+  }
+  .action-disclosure {
+    width: min(34rem, calc(100vw - 24px));
+  }
+  .action-scope {
+    margin: 0.75rem 0 0;
     color: var(--theme-text-dim);
     font-size: 0.875rem;
   }
