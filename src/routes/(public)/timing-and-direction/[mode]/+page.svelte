@@ -30,6 +30,9 @@
   let { data }: { data: PageData } = $props();
 
   const playback = getTimingDirectionState();
+  const displayPropType = $derived(
+    playback.propDisplay === "hands" ? PropType.HAND : PropType.STAFF
+  );
 
   const article = $derived(getTimingDirectionArticle(data.mode)!);
   const mode = $derived(
@@ -404,14 +407,8 @@
               onSeekRef={playback.registerSeek}
               onCellClick={(stepNumber) => selectCount(stepNumber - 1)}
               singlePlay={!turnLoopClosed}
-              leftPropType={playback.propDisplay === "hands"
-                ? PropType.HAND
-                : PropType.STAFF}
-              rightPropType={playback.propDisplay === "hands"
-                ? PropType.HAND
-                : PropType.STAFF}
-              railLeftPropType={PropType.STAFF}
-              railRightPropType={PropType.STAFF}
+              leftPropType={displayPropType}
+              rightPropType={displayPropType}
               primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
             />
           </div>
@@ -419,76 +416,79 @@
         </figure>
 
         <div class="to-workbench">
-          <section
-            class="turn-disclosure"
-            aria-labelledby="turn-controls-title"
-          >
-            <div class="turn-disclosure-heading">
-              <h2 id="turn-controls-title">Turns</h2>
-              <PanelButton
-                onclick={openTurnEditor}
-                ariaPressed={turnEditorOpen}
-              >
-                {turnEditorOpen ? "Close" : "Adjust turns"}
-              </PanelButton>
-            </div>
-            {#if turnEditorOpen}
-              <div class="turn-controls" transition:growFade={{ axis: "y" }}>
-                <div class="turn-scope">
-                  <span>Apply to</span>
-                  <SegmentedControl
-                    options={[
-                      { value: "all", label: "All steps" },
-                      { value: "current", label: "Current step" },
-                    ]}
-                    value={applyTo}
-                    onchange={setApplyTo}
-                    ariaLabel="Turn adjustment scope"
-                    density="tight"
-                    color="accent"
-                  />
-                </div>
-                <div class="turn-pairs" aria-busy={adjusting}>
-                  <div class="turn-prop">
-                    <span>Left</span>
-                    <PropTurnsControl
-                      hand="left"
-                      turns={leftTurns}
-                      rotationDirection={RotationDirection.NO_ROTATION}
-                      showRotation={false}
-                      compact
-                      onTurnsChange={(delta) => nudgeTurns("left", delta)}
-                      onRotationChange={() => {}}
-                    />
-                  </div>
-                  <div class="turn-prop">
-                    <span>Right</span>
-                    <PropTurnsControl
-                      hand="right"
-                      turns={rightTurns}
-                      rotationDirection={RotationDirection.NO_ROTATION}
-                      showRotation={false}
-                      compact
-                      onTurnsChange={(delta) => nudgeTurns("right", delta)}
-                      onRotationChange={() => {}}
-                    />
-                  </div>
-                  <PanelButton
-                    onclick={resetTurns}
-                    disabled={playback.sequence.id ===
-                      selectedLoop?.sequence.id}>Reset</PanelButton
-                  >
-                </div>
+          {#if playback.propDisplay === "staff"}
+            <section
+              class="turn-disclosure"
+              aria-labelledby="turn-controls-title"
+              transition:growFade={{ axis: "y" }}
+            >
+              <div class="turn-disclosure-heading">
+                <h2 id="turn-controls-title">Turns</h2>
+                <PanelButton
+                  onclick={openTurnEditor}
+                  ariaPressed={turnEditorOpen}
+                >
+                  {turnEditorOpen ? "Close" : "Adjust turns"}
+                </PanelButton>
               </div>
-            {/if}
-            <div class="turn-status" aria-live="polite">
-              {#if adjustmentError}
-                <p>{adjustmentError}</p>
-              {:else if !turnLoopClosed}
-                <p>Props finish at a different orientation. Plays once.</p>
+              {#if turnEditorOpen}
+                <div class="turn-controls" transition:growFade={{ axis: "y" }}>
+                  <div class="turn-scope">
+                    <span>Apply to</span>
+                    <SegmentedControl
+                      options={[
+                        { value: "all", label: "All steps" },
+                        { value: "current", label: "Current step" },
+                      ]}
+                      value={applyTo}
+                      onchange={setApplyTo}
+                      ariaLabel="Turn adjustment scope"
+                      density="tight"
+                      color="accent"
+                    />
+                  </div>
+                  <div class="turn-pairs" aria-busy={adjusting}>
+                    <div class="turn-prop">
+                      <span>Left</span>
+                      <PropTurnsControl
+                        hand="left"
+                        turns={leftTurns}
+                        rotationDirection={RotationDirection.NO_ROTATION}
+                        showRotation={false}
+                        compact
+                        onTurnsChange={(delta) => nudgeTurns("left", delta)}
+                        onRotationChange={() => {}}
+                      />
+                    </div>
+                    <div class="turn-prop">
+                      <span>Right</span>
+                      <PropTurnsControl
+                        hand="right"
+                        turns={rightTurns}
+                        rotationDirection={RotationDirection.NO_ROTATION}
+                        showRotation={false}
+                        compact
+                        onTurnsChange={(delta) => nudgeTurns("right", delta)}
+                        onRotationChange={() => {}}
+                      />
+                    </div>
+                    <PanelButton
+                      onclick={resetTurns}
+                      disabled={playback.sequence.id ===
+                        selectedLoop?.sequence.id}>Reset</PanelButton
+                    >
+                  </div>
+                </div>
               {/if}
-            </div>
-          </section>
+              <div class="turn-status" aria-live="polite">
+                {#if adjustmentError}
+                  <p>{adjustmentError}</p>
+                {:else if !turnLoopClosed}
+                  <p>Props finish at a different orientation. Plays once.</p>
+                {/if}
+              </div>
+            </section>
+          {/if}
         </div>
       </div>
 
@@ -531,8 +531,8 @@
                                   gridMode={loop.gridMode}
                                   stepNumberOverride={true}
                                   darkMode={true}
-                                  leftPropTypeOverride={PropType.STAFF}
-                                  rightPropTypeOverride={PropType.STAFF}
+                                  leftPropTypeOverride={displayPropType}
+                                  rightPropTypeOverride={displayPropType}
                                   leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
                                   rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
                                   showGrid={true}
