@@ -20,7 +20,10 @@ import type {
   GridLocation,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
-/** The live lesson's self-paced construction flow. Legacy quiz consumers below
+// Reading time for the successful position, not an animation duration.
+export const POSITION_SUCCESS_HOLD_MS = 1200;
+
+/** The live lesson's construction flow. Legacy quiz consumers below
  * keep their old contract; they are not mounted by the current experience. */
 export function createPositionWorkshopState(
   persistence: ReturnType<typeof getExperiencePersistence>,
@@ -33,6 +36,24 @@ export function createPositionWorkshopState(
   let round = $state(saved.round);
   let explored = $state(saved.explored);
   let feedback = $state<"idle" | "correct" | "incorrect">("idle");
+  let advanceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function cancelAutoAdvance() {
+    clearTimeout(advanceTimer);
+    advanceTimer = undefined;
+  }
+
+  function scheduleAutoAdvance(advance: () => void) {
+    cancelAutoAdvance();
+    if (phase !== "practice" || feedback !== "correct") return cancelAutoAdvance;
+    const completedRound = round;
+    advanceTimer = setTimeout(() => {
+      advanceTimer = undefined;
+      if (phase === "practice" && feedback === "correct" && round === completedRound)
+        advance();
+    }, POSITION_SUCCESS_HOLD_MS);
+    return cancelAutoAdvance;
+  }
   let examples = $state<
     Record<string, { left: GridLocation; right: GridLocation }>
   >({});
@@ -67,11 +88,13 @@ export function createPositionWorkshopState(
     save();
   }
   function explore() {
+    cancelAutoAdvance();
     phase = "explore";
     feedback = "idle";
     save();
   }
   function practice() {
+    cancelAutoAdvance();
     if (round === POSITION_CHALLENGES.length) round = 0;
     phase = "practice";
     feedback = "idle";
@@ -80,25 +103,30 @@ export function createPositionWorkshopState(
   function check(kind: PositionType | null) {
     if (phase !== "practice" || !challenge || !kind) return;
     feedback = kind === challenge.kind ? "correct" : "incorrect";
+    if (feedback !== "correct") cancelAutoAdvance();
   }
   function edited() {
+    cancelAutoAdvance();
     feedback = "idle";
   }
   function evaluatePlacement(change: PropPlacementChange) {
     if (phase !== "practice") return;
     if (!change.complete) {
+      cancelAutoAdvance();
       feedback = "idle";
       return;
     }
     // Keep the mistake visible while the learner retries. Selecting a hand
     // invalidates success, but does not erase an unresolved wrong answer.
     if (change.activeHand !== null) {
+      cancelAutoAdvance();
       if (feedback !== "incorrect") feedback = "idle";
       return;
     }
     check(positionKindFor(change.leftLocation, change.rightLocation));
   }
   function next() {
+    cancelAutoAdvance();
     if (phase !== "practice" || feedback !== "correct") return false;
     round++;
     feedback = "idle";
@@ -136,6 +164,8 @@ export function createPositionWorkshopState(
     check,
     edited,
     evaluatePlacement,
+    scheduleAutoAdvance,
+    cancelAutoAdvance,
     next,
   };
 }

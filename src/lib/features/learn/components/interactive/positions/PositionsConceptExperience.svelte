@@ -7,7 +7,7 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import UndoButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/UndoButton.svelte";
   import ClearSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import GridModeToggle from "$lib/features/create/construct/shared/components/GridModeToggle.svelte";
   import "$lib/shared/selection/selection.css";
   import PropPlacementGrid from "$lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
@@ -93,6 +93,23 @@
   let boardHeight = $state(320);
   let experienceElement: HTMLDivElement;
   const correct = $derived(workshop.feedback === "correct");
+  let pageVisible = $state(true);
+  $effect(() => {
+    const updateVisibility = () => {
+      pageVisible = !document.hidden;
+    };
+    updateVisibility();
+    document.addEventListener("visibilitychange", updateVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", updateVisibility);
+  });
+  $effect(() => {
+    // Keep the successful pictograph readable before reusing the existing Next
+    // transition. Editing, leaving, or hiding the page cancels this round's wait.
+    [workshop.round, workshop.phase];
+    if (!correct || !pageVisible) return;
+    return workshop.scheduleAutoAdvance(() => void next());
+  });
   const incorrect = $derived(workshop.feedback === "incorrect");
   const correctionPreview = $derived(
     incorrect && workshop.challenge && placement.leftLocation
@@ -336,16 +353,9 @@
       >
         {#if freePlay}
           <div class="board-toolbar" data-position-stage="board-tools">
-            <SegmentedControl
-              options={[
-                { value: GridMode.DIAMOND, label: "Diamond" },
-                { value: GridMode.BOX, label: "Box" },
-              ]}
-              value={gridMode}
-              onchange={changeGrid}
-              semantics="radiogroup"
-              ariaLabel="Grid mode"
-              color="accent"
+            <GridModeToggle
+              currentGridMode={gridMode}
+              onGridModeChange={changeGrid}
             />
           </div>
         {/if}
@@ -377,6 +387,7 @@
               bind:this={grid}
               {gridMode}
               positionLetter={built ? POSITION_LETTERS[built] : null}
+              animateContent={true}
               leftPropType={PropType.HAND}
               rightPropType={PropType.HAND}
               leftNoun="left hand"
@@ -522,6 +533,23 @@
             label="Clear both hands"
             onclick={() => loadPair(null, null)}
           />
+          {#if freePlay}
+            <div
+              class="transform-controls"
+              role="group"
+              aria-label="Transform both hands"
+            >
+              <PanelButton disabled={!built} onclick={() => transform("rotate")}
+                ><i class="fas fa-rotate-right" aria-hidden="true"></i> Rotate</PanelButton
+              >
+              <PanelButton disabled={!built} onclick={() => transform("mirror")}
+                ><i class="fas fa-left-right" aria-hidden="true"></i> Reflect</PanelButton
+              >
+              <PanelButton disabled={!built} onclick={() => transform("swap")}
+                ><i class="fas fa-arrows-rotate" aria-hidden="true"></i> Swap hands</PanelButton
+              >
+            </div>
+          {/if}
         </div>
         <div class="support-actions">
           {#if !exploring && !workshop.canFinish}<PanelButton
@@ -533,26 +561,6 @@
             >
           {/if}
         </div>
-
-        {#if exploring}
-          <div class="explore-tools" data-position-stage="tools">
-            <div
-              class="transform-controls"
-              role="group"
-              aria-label="Transform both hands"
-            >
-              <PanelButton disabled={!built} onclick={() => transform("rotate")}
-                >Rotate</PanelButton
-              >
-              <PanelButton disabled={!built} onclick={() => transform("mirror")}
-                >Mirror</PanelButton
-              >
-              <PanelButton disabled={!built} onclick={() => transform("swap")}
-                >Swap</PanelButton
-              >
-            </div>
-          </div>
-        {/if}
       </div>
     {/snippet}
   </LessonStageFrame>
@@ -596,12 +604,9 @@
     order: 4;
   }
   .support-actions {
-    order: 5;
-  }
-  .reference-area {
     order: 6;
   }
-  .explore-tools {
+  .reference-area {
     order: 7;
   }
   @container (min-width: 42rem) {
@@ -695,13 +700,15 @@
     width: 100%;
   }
   .hand-controls,
-  .transform-controls,
   .support-actions {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
+  }
+  .transform-controls {
+    display: contents;
   }
   .hand-controls {
     --workspace-action-width: auto;
@@ -763,12 +770,6 @@
     width: 100%;
     aspect-ratio: 1;
     overflow: hidden;
-  }
-  .explore-tools {
-    display: grid;
-    justify-items: center;
-    gap: 0.75rem;
-    margin-top: 1rem;
   }
   @media (max-width: 760px) {
     .positions-experience {
