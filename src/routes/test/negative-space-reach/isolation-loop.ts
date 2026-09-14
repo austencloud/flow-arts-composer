@@ -145,7 +145,7 @@ function motion(
   return createMotionData({
     hand,
     motionType: MotionType.PRO,
-    rotationDirection: RotationDirection.CLOCKWISE,
+    rotationDirection: RotationDirection.COUNTER_CLOCKWISE,
     startLocation: from,
     endLocation: to,
     startOrientation,
@@ -156,13 +156,12 @@ function motion(
   });
 }
 
-// The canonical wall mapping is viewed from -Z. This study is viewed from
-// the audience at +Z, so source E/W are exchanged to keep screen S→E→N→W.
+// Keep the requested grid locations; the front camera must not rewrite the score.
 const path = [
   GridLocation.SOUTH,
-  GridLocation.WEST,
-  GridLocation.NORTH,
   GridLocation.EAST,
+  GridLocation.NORTH,
+  GridLocation.WEST,
 ] as const;
 
 export const ISOLATION_SEQUENCE: SequenceData = createSequenceData({
