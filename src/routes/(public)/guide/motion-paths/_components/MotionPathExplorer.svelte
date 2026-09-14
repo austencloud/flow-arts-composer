@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { browser } from "$app/environment";
-  import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
+  import MotionPathTransitionStage from "./MotionPathTransitionStage.svelte";
   import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
   import PathShapePanel from "$lib/shared/animation-engine/components/settings-panels/PathShapePanel.svelte";
   import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
@@ -26,7 +26,6 @@
   import { sequenceToStrip } from "../../level-1/_data/guide-sequence-adapter";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { createMotionPathExplorerState } from "../_data/motion-path-explorer-state.svelte";
-  import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
   import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
@@ -187,34 +186,23 @@
         </div>
         <div class="animation" aria-label="Selected path animation">
           {#if browser}
-            <InlineAnimationPlayer
+            <MotionPathTransitionStage
               sequence={explorer.sequence}
-              visibilityManagerOverride={explorer.scope.visibility}
-              effectsConfigState={explorer.scope.effects}
-              trailSettingsOverride={DEFAULT_TRAIL_SETTINGS}
-              tipEffectMap={{}}
-              tipEffortMap={{}}
+              transitionKey={explorer.transitionKey}
+              scope={explorer.scope}
+              playing={explorer.playing}
               leftPropType={PropType.STAFF}
               rightPropType={PropType.STAFF}
-              chrome="minimal"
-              fill
-              autoPlay={false}
-              externalPlaying={explorer.playing}
-              externalBpm={48}
-              onExternalPlayingChange={(value) => (explorer.playing = value)}
-              onStepChange={(value) => (explorer.liveStep = value)}
-              onReady={() => {
+              onplayingchange={(value) => (explorer.playing = value)}
+              onstepchange={(value) => (explorer.liveStep = value)}
+              onready={() => {
                 ready = true;
                 playerFailed = false;
               }}
-              onLoadError={() => {
+              onloaderror={() => {
                 ready = true;
                 playerFailed = true;
               }}
-              showControls={false}
-              showPositionGlyph
-              beatIndicators={false}
-              disableContextMenu
             />
           {/if}
           {#if !ready}<span class="loading" role="status"
