@@ -341,7 +341,11 @@
   {@html `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}<\/script>`}
 </Seo>
 
-<article class="mode-page" style:--mode-accent={mode.element.accentColor}>
+<article
+  class="mode-page"
+  class:sequence-reference={article.code === "TO"}
+  style:--mode-accent={mode.element.accentColor}
+>
   <nav class="page-nav" aria-label="Timing and direction">
     <PanelButton href="/timing-and-direction">
       <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
@@ -400,7 +404,7 @@
                   value={playback.propDisplay}
                   onchange={(value) => (playback.propDisplay = value)}
                   ariaLabel="Player display"
-                  density="compact"
+                  density="tight"
                   color="accent"
                 />
               </div>
@@ -418,6 +422,8 @@
                   <span class="strip-pictograph">
                     <PictographContainer
                       pictographData={pictograph}
+                      stepNumberOverride={false}
+                      darkMode={true}
                       gridMode={selectedLoop?.gridMode ?? GridMode.DIAMOND}
                       leftPropTypeOverride={PropType.STAFF}
                       rightPropTypeOverride={PropType.STAFF}
@@ -463,7 +469,7 @@
                     value={applyTo}
                     onchange={setApplyTo}
                     ariaLabel="Turn adjustment scope"
-                    density="compact"
+                    density="tight"
                     color="accent"
                   />
                 </div>
@@ -548,6 +554,8 @@
                                 <PictographContainer
                                   pictographData={pictograph}
                                   gridMode={loop.gridMode}
+                                  stepNumberOverride={true}
+                                  darkMode={true}
                                   leftPropTypeOverride={PropType.STAFF}
                                   rightPropTypeOverride={PropType.STAFF}
                                   leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
@@ -701,6 +709,9 @@
   }
   .page-nav {
     margin-bottom: 1.5rem;
+  }
+  .mode-page.sequence-reference {
+    max-width: min(var(--shell-w), 90rem);
   }
   .mode-overview {
     display: grid;
@@ -1123,6 +1134,7 @@
     .strip-heading,
     .library-heading {
       display: grid;
+      grid-template-columns: minmax(0, 1fr);
     }
     .display-switch {
       width: 100%;
