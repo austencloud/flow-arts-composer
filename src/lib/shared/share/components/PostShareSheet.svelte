@@ -30,7 +30,7 @@
   import { getCaptionPresetManager } from "$lib/shared/share/state/caption-presets.svelte";
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
   import { createPostShareDraftState } from "$lib/shared/share/state/post-share-draft-state.svelte";
-  import CardFooterEditor from "$lib/shared/share/components/CardFooterEditor.svelte";
+  import ExportImagePanel from "$lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
   import {
     cardPresentationFromFooterSettings,
     type CardPresentation,
@@ -219,7 +219,7 @@
       label: value === "card" ? "Card" : videoLabel,
     }))
   );
-  let footerOpen = $state(false);
+  let cardSettingsOpen = $state(false);
   let presetsOpen = $state(false);
   /** Opening Share must not spend a render on a link or sequence handoff. */
   let filePreparationOpen = $state(false);
@@ -616,7 +616,7 @@
           imageComposition.customNotesText
         ),
     });
-    footerOpen = false;
+    cardSettingsOpen = false;
     presetsOpen = false;
     filePreparationOpen = false;
     captionOpen = false;
@@ -1753,54 +1753,61 @@
                 </p>
               {/if}
 
-              {#if !qrDataUrl && sequence}
-                {#if artifact === "card"}
-                  <div class="card-footer-confirmation">
+            </div>
+            <div class="editing-column">
+              {#if !qrDataUrl}
+                {#if artifact === "card" && sequence}
+                  <!-- The same editor as the viewer's Card tab, folded the way
+                       Video settings is: the card is being chosen as it is
+                       downloaded, so every setting that shapes it is here, not
+                       only the footer. Composition and pictograph toggles are
+                       the account defaults the Card tab writes too; the footer
+                       stays a one-share override until saved to the card. -->
+                  <fieldset class="card-settings" aria-label="Card settings">
                     <PanelButton
                       fullWidth
-                      ariaExpanded={footerOpen}
-                      onclick={() => (footerOpen = !footerOpen)}
+                      ariaExpanded={cardSettingsOpen}
+                      onclick={() => (cardSettingsOpen = !cardSettingsOpen)}
                     >
                       <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-                      Card footer
+                      Card settings
                       <span class="setting-value"
-                        >{shareDraft.cardPresentation.footer.mode === "off"
-                          ? "Off"
+                        >{exportOptions.imageDarkMode ? "Dark" : "Light"} · Footer
+                        {shareDraft.cardPresentation.footer.mode === "off"
+                          ? "off"
                           : shareDraft.cardPresentation.footer.mode === "credit"
-                            ? "Credit"
-                            : "Custom"}</span
+                            ? "credit"
+                            : "custom"}</span
                       >
                       <i
-                        class={footerOpen
+                        class={cardSettingsOpen
                           ? "fa-solid fa-chevron-up"
                           : "fa-solid fa-chevron-down"}
                         aria-hidden="true"
                       ></i>
                     </PanelButton>
-                    {#if footerOpen}
+                    {#if cardSettingsOpen}
                       <div
                         class="disclosure-body"
                         transition:growFade={{ axis: "y" }}
                       >
-                        <CardFooterEditor
-                          value={shareDraft.cardPresentation}
-                          onchange={changeShareCardPresentation}
-                          onSave={onSaveCardPresentation
+                        <ExportImagePanel
+                          {exportOptions}
+                          layout="inline"
+                          stepCount={sequence.steps?.length ?? 0}
+                          resolvedAutoLayout={resolvedCardAutoLayout}
+                          cardPresentation={shareDraft.cardPresentation}
+                          onCardPresentationChange={changeShareCardPresentation}
+                          onSaveCardPresentation={onSaveCardPresentation
                             ? saveCardPresentation
                             : undefined}
-                          dirty={shareDraft.cardPresentationDirty}
-                          saving={savingCardPresentation}
-                          description="Appears inside this shared card image."
-                          idBase="share-card-footer"
+                          cardPresentationDirty={shareDraft.cardPresentationDirty}
+                          cardPresentationSaving={savingCardPresentation}
                         />
                       </div>
                     {/if}
-                  </div>
+                  </fieldset>
                 {/if}
-              {/if}
-            </div>
-            <div class="editing-column">
-              {#if !qrDataUrl}
                 {#if artifact === "video" && sequence}
                   <fieldset
                     class="video-settings"
@@ -2263,10 +2270,6 @@
   .link-reveal > input:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 2px;
-  }
-
-  .card-footer-confirmation {
-    border-radius: 0.875rem;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -2777,10 +2780,14 @@
     align-self: stretch;
     justify-content: space-between;
   }
-  .card-footer-confirmation {
+  .card-settings {
+    min-width: 0;
+    margin: 0;
     padding: 0;
     border: 0;
-    background: none;
+  }
+  .card-settings :global(.export-panel.inline) {
+    background: transparent;
   }
   .setting-value {
     margin-left: auto;

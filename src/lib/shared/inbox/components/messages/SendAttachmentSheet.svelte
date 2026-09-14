@@ -93,8 +93,17 @@
       ? URL.createObjectURL(payload.sequencePreviewBlob)
       : null
   );
+  // While the fresh card is rendering the cloud thumbnail stays out of the
+  // frame: it can be a card from an older renderer, and flashing it before the
+  // real one lands reads as the wrong card. It is the fallback only once the
+  // render has failed.
+  const previewPending = $derived(
+    !!payload?.sequencePreviewPending && !sequencePreviewUrl
+  );
   const previewThumbnailUrl = $derived(
-    sequencePreviewUrl || payload?.sequenceThumbnail || null
+    sequencePreviewUrl ||
+      (previewPending ? null : payload?.sequenceThumbnail) ||
+      null
   );
 
   // Revoke on swap and on unmount; a leaked blob: URL pins the whole image in
@@ -461,6 +470,11 @@
           />
         {:else if imagePreviewUrl}
           <img src={imagePreviewUrl} alt="" class="thumbnail-img" />
+        {:else if previewPending}
+          <div class="thumbnail-fallback" role="status">
+            <i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i>
+            <span>Preparing card…</span>
+          </div>
         {:else}
           <div class="thumbnail-fallback" aria-hidden="true">
             <i class="fas {image ? 'fa-image' : 'fa-layer-group'}"></i>
@@ -726,15 +740,21 @@
   .thumbnail-fallback {
     display: grid;
     place-items: center;
+    gap: 0.5rem;
     /* The frame hugs its content, so the icon needs a box of its own. */
     min-width: 8rem;
     min-height: 6rem;
+    padding: 0.75rem;
     color: var(--theme-text-dim);
     font-size: clamp(
       var(--font-size-xl, 1.25rem),
       6cqw,
       var(--font-size-3xl, 1.875rem)
     );
+  }
+
+  .thumbnail-fallback span {
+    font-size: var(--font-size-sm, 0.875rem);
   }
 
   .section-kicker {
