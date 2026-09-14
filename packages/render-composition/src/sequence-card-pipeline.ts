@@ -83,18 +83,18 @@ export interface SequenceCardPipeline<TStep, TCanvas> {
   renderPictograph: (
     ctx: CanvasRenderingContext2D,
     step: TStep,
-    cell: SequenceCardCell,
+    cell: SequenceCardCell
   ) => Promise<void>;
   buildHeader: (steps: TStep[], word: string) => SequenceCardHeader;
   renderHeader?: (
     ctx: CanvasRenderingContext2D,
     header: SequenceCardHeader,
     layout: SequenceCardLayout,
-    difficultyLevel: number,
+    difficultyLevel: number
   ) => Promise<void> | void;
   renderFooter?: (
     ctx: CanvasRenderingContext2D,
-    layout: SequenceCardLayout,
+    layout: SequenceCardLayout
   ) => Promise<void> | void;
 }
 
@@ -108,7 +108,7 @@ export function calculateSequenceCardLayout(
     | "showDifficulty"
     | "showFooter"
     | "startPositionLayout"
-  >,
+  >
 ): SequenceCardLayout {
   const headerHeight =
     options.showWord || options.showDifficulty
@@ -146,7 +146,7 @@ export function calculateSequenceCardCell(
   index: number,
   columns: number,
   startPositionLayout: "row" | "column" = "column",
-  layout: "grid" | "strip" = "grid",
+  layout: "grid" | "strip" = "grid"
 ): Pick<SequenceCardCell, "index" | "x" | "y"> & { row: number; col: number } {
   if (index === 0) return { index, row: 0, col: 0, x: 0, y: 0 };
 
@@ -171,7 +171,7 @@ export function calculateSequenceCardCell(
 }
 
 export async function composeSequenceCard<TStep, TCanvas>(
-  pipeline: SequenceCardPipeline<TStep, TCanvas>,
+  pipeline: SequenceCardPipeline<TStep, TCanvas>
 ): Promise<Buffer> {
   const steps =
     pipeline.options.showReversals && pipeline.applyReversals
@@ -188,7 +188,7 @@ export async function composeSequenceCard<TStep, TCanvas>(
     0,
     layout.headerHeight,
     layout.width,
-    layout.height - layout.headerHeight - layout.footerHeight,
+    layout.height - layout.headerHeight - layout.footerHeight
   );
 
   const occupiedCells = new Set<string>();
@@ -201,7 +201,7 @@ export async function composeSequenceCard<TStep, TCanvas>(
       index,
       layout.columns,
       pipeline.options.startPositionLayout,
-      pipeline.options.layout,
+      pipeline.options.layout
     );
     const cell: SequenceCardCell = {
       index,
@@ -221,7 +221,7 @@ export async function composeSequenceCard<TStep, TCanvas>(
           cell.x,
           cell.y,
           cellSize,
-          darkMode,
+          darkMode
         );
       }
     } catch {
@@ -249,7 +249,7 @@ export async function composeSequenceCard<TStep, TCanvas>(
       ctx,
       pipeline.buildHeader(steps, pipeline.word),
       layout,
-      difficultyLevel,
+      difficultyLevel
     );
   }
   if (

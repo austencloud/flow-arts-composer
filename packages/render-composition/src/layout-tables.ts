@@ -175,7 +175,7 @@ const WITH_START_COLUMN: Record<number, [number, number]> = {
   5: [3, 3],
   6: [4, 2],
   7: [3, 4],
-  8: [3, 4],
+  8: [5, 2],
   9: [4, 3],
   10: [3, 5],
   11: [4, 4],
@@ -257,16 +257,25 @@ function getTableForLayout(
  * Look up the [columns, rows] grid dimensions for a given step count and
  * start-position layout mode.
  *
- * Falls back to the table's entry for 64 steps (the largest predefined value)
- * if the step count exceeds what the table covers, then to [4, 4] as a last
- * resort so callers always get a usable value.
+ * Falls back to the same aspect-ratio calculation used by Composer when the
+ * step count exceeds the predefined tables.
  */
 export function getLayout(
   stepCount: number,
   startPositionLayout: StartPositionLayout
 ): [columns: number, rows: number] {
   const table = getTableForLayout(startPositionLayout);
-  return table[stepCount] ?? table[64] ?? [4, 4];
+  const predefined = table[stepCount];
+  if (predefined) return predefined;
+
+  if (stepCount <= 0) return [1, 1];
+  const aspectRatio = 1.2;
+  const rows = Math.max(1, Math.round(Math.sqrt(stepCount / aspectRatio)));
+  const columns = Math.max(1, Math.ceil(stepCount / rows));
+
+  if (startPositionLayout === "none") return [columns, rows];
+  if (startPositionLayout === "row") return [columns, rows + 1];
+  return [columns + 1, rows];
 }
 
 /**

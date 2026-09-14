@@ -69,7 +69,7 @@ const DEFAULT_OPTIONS = {
 /** Legacy fallback for callers whose steps do not yet carry turn data. */
 export function resolveRenderedTurns(
   step: SequenceStep,
-  turnAllocation?: TurnAllocation,
+  turnAllocation?: TurnAllocation
 ): { left: number | "fl"; right: number | "fl" } {
   if (step.stepNumber === 0) return { left: 0, right: 0 };
   const allocationIndex = step.stepNumber - 1;
@@ -84,12 +84,12 @@ export function resolveHeaderDisplay(
   steps: SequenceStep[],
   requestedWord: string,
   seedWord?: string,
-  derivedStepIndices: number[] = [],
+  derivedStepIndices: number[] = []
 ): HeaderDisplay {
   const stepSteps = steps.filter((step) => step.stepNumber > 0);
   if (seedWord) {
     const seedSteps = stepSteps.filter(
-      (step) => !step.isBridge && !derivedStepIndices.includes(step.stepNumber),
+      (step) => !step.isBridge && !derivedStepIndices.includes(step.stepNumber)
     );
     return {
       word: seedWord,
@@ -115,7 +115,7 @@ export function resolveHeaderDisplay(
 export async function renderSequenceToImage(
   steps: SequenceStep[],
   word: string,
-  options: Partial<SequenceRenderOptions> = {},
+  options: Partial<SequenceRenderOptions> = {}
 ): Promise<Buffer> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const renderer = getStandaloneRenderer();
@@ -184,7 +184,7 @@ export async function renderSequenceToImage(
         cell.x,
         cell.y,
         cell.cellSize,
-        cell.cellSize,
+        cell.cellSize
       );
     },
     buildHeader: (renderedSteps, requestedWord) => ({
@@ -192,7 +192,7 @@ export async function renderSequenceToImage(
         renderedSteps,
         requestedWord,
         opts.seedWord,
-        opts.derivedStepIndices,
+        opts.derivedStepIndices
       ),
     }),
     renderHeader: async (ctx, header, layout, difficultyLevel) => {
@@ -206,7 +206,7 @@ export async function renderSequenceToImage(
         opts.showDifficulty ?? true,
         opts.darkMode,
         display.letterStyles.length ? display.letterStyles : undefined,
-        opts.loopComponents,
+        opts.loopComponents
       );
     },
     renderFooter: opts.showFooter
@@ -222,7 +222,7 @@ export async function renderSequenceToImage(
             layout.width,
             layout.height,
             layout.footerHeight,
-            opts.darkMode,
+            opts.darkMode
           );
         }
       : undefined,

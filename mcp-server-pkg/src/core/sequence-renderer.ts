@@ -24,7 +24,7 @@ async function getCanvas() {
       canvasModule = await import("canvas");
     } catch {
       throw new Error(
-        "The 'canvas' package is required for sequence rendering but is not installed. Install it with: npm install canvas",
+        "The 'canvas' package is required for sequence rendering but is not installed. Install it with: npm install canvas"
       );
     }
   }
@@ -75,7 +75,7 @@ interface PackagedHeader extends SequenceCardHeader {
 export async function renderSequenceToImage(
   steps: SequenceStep[],
   word: string,
-  options: Partial<SequenceRenderOptions> = {},
+  options: Partial<SequenceRenderOptions> = {}
 ): Promise<Buffer> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const renderer = getStandaloneRenderer();
@@ -147,12 +147,12 @@ export async function renderSequenceToImage(
       };
       ctx.drawImage(
         (await canvasApi.loadImage(
-          await renderer.renderToPng(pictograph, visibilityOptions),
+          await renderer.renderToPng(pictograph, visibilityOptions)
         )) as unknown as CanvasImageSource,
         cell.x,
         cell.y,
         cell.cellSize,
-        cell.cellSize,
+        cell.cellSize
       );
     },
     buildHeader: (renderedSteps, requestedWord): PackagedHeader => {
@@ -161,7 +161,7 @@ export async function renderSequenceToImage(
         ? renderedSteps.filter(
             (step) =>
               step.stepNumber > 0 &&
-              !opts.derivedBeatIndices?.includes(step.stepNumber),
+              !opts.derivedBeatIndices?.includes(step.stepNumber)
           )
         : renderedSteps.filter((step) => step.stepNumber > 0);
       return {
@@ -180,9 +180,9 @@ export async function renderSequenceToImage(
             display.word,
             async (source) =>
               (await canvasApi.loadImage(
-                source,
+                source
               )) as unknown as CanvasImageSource,
-            opts.darkMode,
+            opts.darkMode
           )
         : undefined;
       renderHeader(ctx, {

@@ -12,6 +12,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
 import {
   ensureDataLoaded,
   saveAndOpenImage,
@@ -710,22 +711,22 @@ export function registerSequenceTools(server: McpServer): void {
       layout: z
         .enum(["grid", "strip"])
         .optional()
-        .default("grid")
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.layout)
         .describe("Layout: grid (square) or strip (single row)"),
       cellSize: z
         .number()
         .optional()
-        .default(900)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize)
         .describe("Size of each pictograph cell in pixels"),
       showStepNumbers: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers)
         .describe("Show beat numbers overlaid on each pictograph"),
       showWord: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showWord)
         .describe("Show word header at the top"),
       displayWord: z
         .string()
@@ -736,7 +737,7 @@ export function registerSequenceTools(server: McpServer): void {
       darkMode: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
       maxAttempts: z
         .number()
@@ -748,7 +749,7 @@ export function registerSequenceTools(server: McpServer): void {
       showDifficulty: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty)
         .describe("Show difficulty level badge in header"),
       userName: z
         .string()
@@ -812,7 +813,7 @@ export function registerSequenceTools(server: McpServer): void {
       showReversals: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals)
         .describe(
           "Show reversal indicators (colored dots on left edge when prop direction changes from previous step). Defaults to true."
         ),
@@ -870,14 +871,14 @@ export function registerSequenceTools(server: McpServer): void {
       const {
         word,
         gridMode = "diamond",
-        layout = "grid",
-        cellSize = 900,
-        showStepNumbers = true,
-        showWord = true,
+        layout = COMPOSER_CARD_EXPORT_PROFILE_V1.layout,
+        cellSize = COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize,
+        showStepNumbers = COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+        showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
         displayWord,
-        darkMode = true,
+        darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
         maxAttempts = 500,
-        showDifficulty = true,
+        showDifficulty = COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
         userName,
         notes,
         birthday,
@@ -886,7 +887,7 @@ export function registerSequenceTools(server: McpServer): void {
         turnIntensity = 1,
         loopComponents,
         constraints,
-        showReversals = true,
+        showReversals = COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals,
         period = "quartered",
         leftStartOrientation,
         rightStartOrientation,
@@ -1079,8 +1080,11 @@ export function registerSequenceTools(server: McpServer): void {
               showStepNumbers,
               showWord,
               darkMode,
-              padding: 8,
-              showDifficulty: true,
+              padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
+              showDifficulty,
+              showFooter: Boolean(notes && notes !== "none"),
+              startPositionLayout:
+                COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
               userName,
               notes,
               birthday: birthdayDate,
@@ -1104,6 +1108,9 @@ export function registerSequenceTools(server: McpServer): void {
                 type: "image" as const,
                 data: pngBuffer.toString("base64"),
                 mimeType: "image/png",
+                _meta: {
+                  rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+                },
               },
               {
                 type: "text" as const,
@@ -1245,8 +1252,11 @@ export function registerSequenceTools(server: McpServer): void {
             showStepNumbers,
             showWord,
             darkMode,
-            padding: 8,
+            padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
             showDifficulty,
+            showFooter: Boolean(notes && notes !== "none"),
+            startPositionLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
             userName,
             notes,
             birthday: birthdayDate,
@@ -1276,6 +1286,9 @@ export function registerSequenceTools(server: McpServer): void {
               type: "image" as const,
               data: pngBuffer.toString("base64"),
               mimeType: "image/png",
+              _meta: {
+                rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+              },
             },
             {
               type: "text" as const,

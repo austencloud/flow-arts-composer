@@ -42,7 +42,7 @@ describe("sequence card pipeline geometry", () => {
         showDifficulty: true,
         showFooter: true,
         startPositionLayout: "column",
-      }),
+      })
     ).toMatchObject({
       width: 300,
       height: 247,
@@ -59,7 +59,7 @@ describe("sequence card pipeline geometry", () => {
         showDifficulty: false,
         showFooter: true,
         startPositionLayout: "row",
-      }),
+      })
     ).toMatchObject({
       width: 500,
       height: 114,
@@ -79,7 +79,7 @@ describe("sequence card pipeline geometry", () => {
         showDifficulty: false,
         showFooter: false,
         startPositionLayout: "row",
-      }),
+      })
     ).toMatchObject({
       width: 200,
       height: 333,
