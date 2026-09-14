@@ -12,6 +12,7 @@ import { Resvg } from "@resvg/resvg-js";
 import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import type { HandColorPair } from "@tka/render-composition";
 
 import { GridLocation, GridMode, MotionType, Orientation } from "./enums.js";
 // Import shared core calculations - the SINGLE SOURCE OF TRUTH for rendering logic
@@ -55,6 +56,16 @@ const CENTER = VIEWBOX_SIZE / 2; // 475
 // Use the shared constants for consistency
 const BLUE_COLOR = BLUE_COLOR_DARK; // Dark mode blue - bright on dark backgrounds
 const RED_COLOR = RED_COLOR_DARK; // Dark mode red - standard red works well
+
+function resolveMotionColor(
+  hand: "left" | "right",
+  darkMode: boolean,
+  customColors?: HandColorPair | null
+): string {
+  if (customColors) return customColors[hand];
+  if (hand === "left") return darkMode ? BLUE_COLOR : BLUE_COLOR_LIGHT;
+  return darkMode ? RED_COLOR : RED_COLOR_LIGHT;
+}
 
 // Glyph positioning (matching real renderer)
 const TKA_GLYPH_X = 50;
@@ -276,6 +287,7 @@ export interface RenderVisibilityOptions {
   // Prop type options (null = use default staff)
   leftPropType?: string | null;
   rightPropType?: string | null;
+  primaryPropColors?: HandColorPair | null;
 }
 
 export class StandaloneRenderer {
@@ -356,6 +368,7 @@ export class StandaloneRenderer {
       showRightMotion = true,
       leftPropType = null,
       rightPropType = null,
+      primaryPropColors = null,
     } = options;
 
     const gridMode = this.parseGridMode(input.gridMode);
@@ -382,7 +395,8 @@ export class StandaloneRenderer {
         gridMode,
         darkMode,
         leftPropType,
-        rightPropType
+        rightPropType,
+        primaryPropColors
       );
       if (leftProp) svgParts.push(leftProp);
     }
@@ -393,7 +407,8 @@ export class StandaloneRenderer {
         gridMode,
         darkMode,
         leftPropType,
-        rightPropType
+        rightPropType,
+        primaryPropColors
       );
       if (rightProp) svgParts.push(rightProp);
     }
@@ -404,7 +419,8 @@ export class StandaloneRenderer {
         input,
         input.leftMotion,
         gridMode,
-        darkMode
+        darkMode,
+        primaryPropColors
       );
       if (leftArrow) svgParts.push(leftArrow);
     }
@@ -413,7 +429,8 @@ export class StandaloneRenderer {
         input,
         input.rightMotion,
         gridMode,
-        darkMode
+        darkMode,
+        primaryPropColors
       );
       if (rightArrow) svgParts.push(rightArrow);
     }
@@ -444,7 +461,8 @@ export class StandaloneRenderer {
         input.letter,
         input.leftMotion?.turns,
         input.rightMotion?.turns,
-        darkMode
+        darkMode,
+        primaryPropColors
       );
       if (letterSvg) svgParts.push(letterSvg);
     }
@@ -464,7 +482,8 @@ export class StandaloneRenderer {
       const reversalSvg = this.renderReversalIndicators(
         input.leftReversal ?? false,
         input.rightReversal ?? false,
-        darkMode
+        darkMode,
+        primaryPropColors
       );
       if (reversalSvg) svgParts.push(reversalSvg);
     }
@@ -580,7 +599,8 @@ ${svgParts.join("\n")}
     gridMode: GridMode,
     darkMode: boolean,
     leftPropType: string | null = null,
-    rightPropType: string | null = null
+    rightPropType: string | null = null,
+    customColors?: HandColorPair | null
   ): string {
     // Get the end location and orientation
     const endLocation = motion.endLocation.toLowerCase() as GridLocation;
@@ -646,14 +666,7 @@ ${svgParts.join("\n")}
 
       // Apply color - replace any existing fill colors with the prop color
       // Staff SVG uses #2e3192 as its base color
-      const color =
-        motion.hand === "left"
-          ? darkMode
-            ? BLUE_COLOR
-            : BLUE_COLOR_LIGHT
-          : darkMode
-            ? RED_COLOR
-            : RED_COLOR_LIGHT;
+      const color = resolveMotionColor(motion.hand, darkMode, customColors);
 
       innerContent = innerContent.replace(/#000000/gi, color);
       innerContent = innerContent.replace(/black/gi, color);
@@ -682,7 +695,8 @@ ${svgParts.join("\n")}
     pictograph: PictographInput,
     motion: MotionInput,
     gridMode: GridMode,
-    darkMode: boolean
+    darkMode: boolean,
+    customColors?: HandColorPair | null
   ): string {
     const motionType = motion.motionType.toLowerCase();
 
@@ -862,14 +876,7 @@ ${svgParts.join("\n")}
 
       // Apply color - replace any existing fill colors with the arrow color
       // Arrow SVGs use #2e3192 as their base color
-      const color =
-        motion.hand === "left"
-          ? darkMode
-            ? BLUE_COLOR
-            : BLUE_COLOR_LIGHT
-          : darkMode
-            ? RED_COLOR
-            : RED_COLOR_LIGHT;
+      const color = resolveMotionColor(motion.hand, darkMode, customColors);
 
       innerContent = innerContent.replace(/#000000/gi, color);
       innerContent = innerContent.replace(/black/gi, color);
@@ -958,7 +965,8 @@ ${svgParts.join("\n")}
     rightTurns: number | "fl" | undefined,
     letterWidth: number,
     letterHeight: number,
-    darkMode: boolean
+    darkMode: boolean,
+    customColors?: HandColorPair | null
   ): string {
     const parts: string[] = [];
 
@@ -978,7 +986,8 @@ ${svgParts.join("\n")}
         baseX,
         topY,
         "blue",
-        darkMode
+        darkMode,
+        customColors
       );
       if (topTurnSvg) parts.push(topTurnSvg);
     }
@@ -990,7 +999,8 @@ ${svgParts.join("\n")}
         baseX,
         bottomY,
         "red",
-        darkMode
+        darkMode,
+        customColors
       );
       if (bottomTurnSvg) parts.push(bottomTurnSvg);
     }
@@ -1003,7 +1013,8 @@ ${svgParts.join("\n")}
     x: number,
     y: number,
     color: "blue" | "red",
-    darkMode: boolean
+    darkMode: boolean,
+    customColors?: HandColorPair | null
   ): string {
     // Convert turns value to filename
     const filename = turns === "fl" ? "float.svg" : `${turns}.svg`;
@@ -1036,14 +1047,11 @@ ${svgParts.join("\n")}
       // Apply color - turn numbers use CSS class with fill: #010101
       // IMPORTANT: We must convert CSS class fills to inline fills because multiple
       // embedded SVGs with the same class names (.cls-1) will conflict in the document
-      const fillColor =
-        color === "blue"
-          ? darkMode
-            ? BLUE_COLOR
-            : BLUE_COLOR_LIGHT
-          : darkMode
-            ? RED_COLOR
-            : RED_COLOR_LIGHT;
+      const fillColor = resolveMotionColor(
+        color === "blue" ? "left" : "right",
+        darkMode,
+        customColors
+      );
 
       // Remove the entire <defs><style>...</style></defs> block to avoid CSS conflicts
       innerContent = innerContent.replace(/<defs>[\s\S]*?<\/defs>/gi, "");
@@ -1091,7 +1099,8 @@ ${svgParts.join("\n")}
     letter: string,
     leftTurns: number | "fl" | undefined,
     rightTurns: number | "fl" | undefined,
-    darkMode: boolean
+    darkMode: boolean,
+    customColors?: HandColorPair | null
   ): string {
     // Determine the correct type folder for this letter
     const typeFolder = LETTER_TYPE_FOLDER[letter] || "Type1";
@@ -1144,7 +1153,8 @@ ${svgParts.join("\n")}
         rightTurns,
         width,
         height,
-        darkMode
+        darkMode,
+        customColors
       );
 
       // Combine letter and turn numbers in a group
@@ -1491,7 +1501,8 @@ ${turnNumbersSvg}
   private renderReversalIndicators(
     leftReversal: boolean,
     rightReversal: boolean,
-    darkMode: boolean
+    darkMode: boolean,
+    customColors?: HandColorPair | null
   ): string {
     // Use shared core calculation for positioning
     const { dots } = calculateReversalPositions(
@@ -1502,10 +1513,13 @@ ${turnNumbersSvg}
 
     if (dots.length === 0) return "";
 
-    const circles = dots.map(
-      (dot) =>
-        `<circle cx="${dot.cx}" cy="${dot.cy}" r="${dot.r}" fill="${dot.color}"/>`
-    );
+    const circles = dots.map((dot) => {
+      const hand =
+        dot.color === BLUE_COLOR_DARK || dot.color === BLUE_COLOR_LIGHT
+          ? "left"
+          : "right";
+      return `<circle cx="${dot.cx}" cy="${dot.cy}" r="${dot.r}" fill="${resolveMotionColor(hand, darkMode, customColors)}"/>`;
+    });
 
     return `<g class="reversal-indicators">${circles.join("\n")}</g>`;
   }

@@ -22,9 +22,13 @@ import {
 } from "./text-renderer.js";
 import {
   COMPOSER_CARD_EXPORT_PROFILE_V1,
+  DARK_HAND_COLORS,
+  LIGHT_HAND_COLORS,
   calculateCardMandalaPaths,
   composeSequenceCard,
   renderCardMandala,
+  resolveHandColorPair,
+  type HandColorPair,
   type SequenceCardHeader,
 } from "@tka/render-composition";
 import { calculateDifficultyLevel } from "./difficulty-calculator.js";
@@ -65,6 +69,7 @@ export interface SequenceRenderOptions {
   showFooter?: boolean;
   /** Fill reserved info cells with the sequence's prop-tip trajectory. */
   showMandala?: boolean;
+  primaryPropColors?: HandColorPair | null;
 }
 const DEFAULT_OPTIONS = {
   ...COMPOSER_CARD_EXPORT_PROFILE_V1,
@@ -122,6 +127,12 @@ export async function renderSequenceToImage(
   options: Partial<SequenceRenderOptions> = {}
 ): Promise<Buffer> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
+  const primaryPropColors = opts.primaryPropColors
+    ? resolveHandColorPair(
+        opts.primaryPropColors,
+        opts.darkMode ? DARK_HAND_COLORS : LIGHT_HAND_COLORS
+      )
+    : null;
   const renderer = getStandaloneRenderer();
   const visibilityOptions: RenderVisibilityOptions = {
     darkMode: opts.darkMode,
@@ -136,6 +147,7 @@ export async function renderSequenceToImage(
     showNonRadialPoints: false,
     leftPropType: opts.leftPropType,
     rightPropType: opts.rightPropType,
+    primaryPropColors,
   };
   return composeSequenceCard<SequenceStep, Canvas>({
     steps,
@@ -202,7 +214,13 @@ export async function renderSequenceToImage(
             opts.turnAllocation
           );
           for (const placement of placements) {
-            renderCardMandala(ctx, paths, placement, opts.darkMode);
+            renderCardMandala(
+              ctx,
+              paths,
+              placement,
+              opts.darkMode,
+              primaryPropColors
+            );
           }
         }
       : undefined,

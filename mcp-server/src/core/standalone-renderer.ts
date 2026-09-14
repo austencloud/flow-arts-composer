@@ -13,6 +13,7 @@ import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import type { HandSide } from "@tka/tka-types";
+import type { HandColorPair } from "@tka/render-composition";
 
 import {
   GridMode,
@@ -283,6 +284,7 @@ export interface RenderVisibilityOptions {
   // Prop type options (null = use default staff)
   leftPropType?: string | null;
   rightPropType?: string | null;
+  primaryPropColors?: HandColorPair | null;
   /** When true, use CSS custom properties for colors */
   themeable?: boolean;
   /** When true, omit XML declaration for inline HTML embedding */
@@ -383,6 +385,7 @@ export class StandaloneRenderer {
       showRightMotion = true,
       leftPropType = null,
       rightPropType = null,
+      primaryPropColors = null,
       themeable = false,
       inline = false,
     } = options;
@@ -418,7 +421,8 @@ export class StandaloneRenderer {
         darkMode,
         leftPropType,
         rightPropType,
-        themeable
+        themeable,
+        primaryPropColors
       );
       if (leftProp)
         svgParts.push(`<g class="svg-prop svg-prop-blue">${leftProp}</g>`);
@@ -431,7 +435,8 @@ export class StandaloneRenderer {
         darkMode,
         leftPropType,
         rightPropType,
-        themeable
+        themeable,
+        primaryPropColors
       );
       if (rightProp)
         svgParts.push(`<g class="svg-prop svg-prop-red">${rightProp}</g>`);
@@ -444,7 +449,8 @@ export class StandaloneRenderer {
         input.leftMotion,
         gridMode,
         darkMode,
-        themeable
+        themeable,
+        primaryPropColors
       );
       if (leftArrow)
         svgParts.push(`<g class="svg-arrow svg-arrow-blue">${leftArrow}</g>`);
@@ -455,7 +461,8 @@ export class StandaloneRenderer {
         input.rightMotion,
         gridMode,
         darkMode,
-        themeable
+        themeable,
+        primaryPropColors
       );
       if (rightArrow)
         svgParts.push(`<g class="svg-arrow svg-arrow-red">${rightArrow}</g>`);
@@ -496,7 +503,8 @@ export class StandaloneRenderer {
         input.leftMotion?.turns,
         input.rightMotion?.turns,
         darkMode,
-        themeable
+        themeable,
+        primaryPropColors
       );
       if (letterSvg)
         svgParts.push(`<g class="svg-glyph svg-glyph-letter">${letterSvg}</g>`);
@@ -520,7 +528,8 @@ export class StandaloneRenderer {
         input.leftReversal ?? false,
         input.rightReversal ?? false,
         darkMode,
-        themeable
+        themeable,
+        primaryPropColors
       );
       if (reversalSvg)
         svgParts.push(
@@ -549,6 +558,30 @@ ${svgParts.join("\n")}
       return `var(${cssVar}, ${darkValue})`;
     }
     return darkMode ? darkValue : lightValue;
+  }
+
+  private resolveMotionColor(
+    hand: HandSide,
+    darkMode: boolean,
+    themeable: boolean,
+    customColors?: HandColorPair | null
+  ): string {
+    if (customColors) return customColors[hand];
+    return hand === "left"
+      ? this.resolveColor(
+          "--dm-motion-blue",
+          BLUE_COLOR_DARK,
+          BLUE_COLOR_LIGHT,
+          darkMode,
+          themeable
+        )
+      : this.resolveColor(
+          "--dm-motion-red",
+          RED_COLOR_DARK,
+          RED_COLOR_LIGHT,
+          darkMode,
+          themeable
+        );
   }
 
   // ==========================================================================
@@ -686,7 +719,8 @@ ${svgParts.join("\n")}
     darkMode: boolean,
     leftPropType: string | null = null,
     rightPropType: string | null = null,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     // Get the end location and orientation
     const endLocation = motion.endLocation.toLowerCase() as GridLocation;
@@ -750,22 +784,12 @@ ${svgParts.join("\n")}
         height = parts[3] || 100;
       }
 
-      const color =
-        motion.hand === "left"
-          ? this.resolveColor(
-              "--dm-motion-blue",
-              BLUE_COLOR_DARK,
-              BLUE_COLOR_LIGHT,
-              darkMode,
-              themeable
-            )
-          : this.resolveColor(
-              "--dm-motion-red",
-              RED_COLOR_DARK,
-              RED_COLOR_LIGHT,
-              darkMode,
-              themeable
-            );
+      const color = this.resolveMotionColor(
+        motion.hand,
+        darkMode,
+        themeable,
+        customColors
+      );
       const colorSuffix = motion.hand === "left" ? "blue" : "red";
       const selectiveColorMode =
         !!currentPropType &&
@@ -810,7 +834,8 @@ ${svgParts.join("\n")}
     motion: MotionInput,
     gridMode: GridMode,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     const motionType = motion.motionType.toLowerCase();
 
@@ -969,22 +994,12 @@ ${svgParts.join("\n")}
 
       // Apply color - replace any existing fill colors with the arrow color
       // Arrow SVGs use #2e3192 as their base color
-      const color =
-        motion.hand === "left"
-          ? this.resolveColor(
-              "--dm-motion-blue",
-              BLUE_COLOR_DARK,
-              BLUE_COLOR_LIGHT,
-              darkMode,
-              themeable
-            )
-          : this.resolveColor(
-              "--dm-motion-red",
-              RED_COLOR_DARK,
-              RED_COLOR_LIGHT,
-              darkMode,
-              themeable
-            );
+      const color = this.resolveMotionColor(
+        motion.hand,
+        darkMode,
+        themeable,
+        customColors
+      );
 
       innerContent = innerContent.replace(/#000000/gi, color);
       innerContent = innerContent.replace(/black/gi, color);
@@ -1058,7 +1073,8 @@ ${svgParts.join("\n")}
     letterWidth: number,
     letterHeight: number,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     const parts: string[] = [];
 
@@ -1079,7 +1095,8 @@ ${svgParts.join("\n")}
         topY,
         "blue",
         darkMode,
-        themeable
+        themeable,
+        customColors
       );
       if (topTurnSvg) parts.push(topTurnSvg);
     }
@@ -1092,7 +1109,8 @@ ${svgParts.join("\n")}
         bottomY,
         "red",
         darkMode,
-        themeable
+        themeable,
+        customColors
       );
       if (bottomTurnSvg) parts.push(bottomTurnSvg);
     }
@@ -1109,7 +1127,8 @@ ${svgParts.join("\n")}
     y: number,
     color: "blue" | "red",
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     // Convert turns value to filename
     const filename = turns === "fl" ? "float.svg" : `${turns}.svg`;
@@ -1142,22 +1161,12 @@ ${svgParts.join("\n")}
       // Apply color - turn numbers use CSS class with fill: #010101
       // IMPORTANT: We must convert CSS class fills to inline fills because multiple
       // embedded SVGs with the same class names (.cls-1) will conflict in the document
-      const fillColor =
-        color === "blue"
-          ? this.resolveColor(
-              "--dm-motion-blue",
-              BLUE_COLOR_DARK,
-              BLUE_COLOR_LIGHT,
-              darkMode,
-              themeable
-            )
-          : this.resolveColor(
-              "--dm-motion-red",
-              RED_COLOR_DARK,
-              RED_COLOR_LIGHT,
-              darkMode,
-              themeable
-            );
+      const fillColor = this.resolveMotionColor(
+        color === "blue" ? "left" : "right",
+        darkMode,
+        themeable,
+        customColors
+      );
 
       // Remove the entire <defs><style>...</style></defs> block to avoid CSS conflicts
       innerContent = innerContent.replace(/<defs>[\s\S]*?<\/defs>/gi, "");
@@ -1209,7 +1218,8 @@ ${svgParts.join("\n")}
     leftTurns: number | "fl" | undefined,
     rightTurns: number | "fl" | undefined,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     // Determine the correct type folder for this letter
     const typeFolder = LETTER_TYPE_FOLDER[letter] || "Type1";
@@ -1276,7 +1286,8 @@ ${svgParts.join("\n")}
         width,
         height,
         darkMode,
-        themeable
+        themeable,
+        customColors
       );
 
       // Combine letter and turn numbers in a group
@@ -1652,7 +1663,8 @@ ${turnNumbersSvg}
     leftReversal: boolean,
     rightReversal: boolean,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
   ): string {
     // Use shared core calculation for positioning
     const { dots } = calculateReversalPositions(
@@ -1664,23 +1676,16 @@ ${turnNumbersSvg}
     if (dots.length === 0) return "";
 
     const circles = dots.map((dot) => {
-      const fill = themeable
-        ? dot.color === BLUE_COLOR_DARK || dot.color === BLUE_COLOR_LIGHT
-          ? this.resolveColor(
-              "--dm-motion-blue",
-              BLUE_COLOR_DARK,
-              BLUE_COLOR_LIGHT,
-              darkMode,
-              themeable
-            )
-          : this.resolveColor(
-              "--dm-motion-red",
-              RED_COLOR_DARK,
-              RED_COLOR_LIGHT,
-              darkMode,
-              themeable
-            )
-        : dot.color;
+      const hand =
+        dot.color === BLUE_COLOR_DARK || dot.color === BLUE_COLOR_LIGHT
+          ? "left"
+          : "right";
+      const fill = this.resolveMotionColor(
+        hand,
+        darkMode,
+        themeable,
+        customColors
+      );
       return `<circle cx="${dot.cx}" cy="${dot.cy}" r="${dot.r}" fill="${fill}"/>`;
     });
 

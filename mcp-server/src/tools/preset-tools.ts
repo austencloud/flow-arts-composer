@@ -49,6 +49,11 @@ import {
   type CreatePresetInput,
 } from "../core/user-presets/index.js";
 
+const primaryPropColorsSchema = z.object({
+  left: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+  right: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+});
+
 export function registerPresetTools(server: McpServer): void {
   // Tool: list_user_presets
   server.tool(
@@ -311,6 +316,11 @@ export function registerPresetTools(server: McpServer): void {
         .optional()
         .describe("Override: grid mode"),
       darkMode: z.boolean().optional().describe("Override: dark mode"),
+      primaryPropColors: primaryPropColorsSchema
+        .optional()
+        .describe(
+          "Override left/right colors for every hand-colored card mark"
+        ),
       includeImage: z
         .boolean()
         .optional()
@@ -586,6 +596,7 @@ export function registerPresetTools(server: McpServer): void {
               startPositionLayout:
                 COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
               level: level as 1 | 2 | 3,
+              primaryPropColors: input.primaryPropColors,
             }
           );
 
@@ -632,6 +643,7 @@ export function registerPresetTools(server: McpServer): void {
           startPositionLayout:
             COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
           level: level as 1 | 2 | 3,
+          primaryPropColors: input.primaryPropColors,
         });
 
         const tempPath = saveAndOpenImage(pngBuffer, sequenceWord);

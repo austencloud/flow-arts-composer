@@ -1,4 +1,9 @@
 import { drawPathCommands, parsePathData } from "./svg-path-painter.js";
+import {
+  DARK_HAND_COLORS,
+  LIGHT_HAND_COLORS,
+  type HandColorPair,
+} from "./hand-colors.js";
 
 const PI = Math.PI;
 const TWO_PI = PI * 2;
@@ -327,7 +332,8 @@ export function renderCardMandala(
   ctx: CanvasRenderingContext2D,
   paths: CardMandalaPaths,
   placement: CardMandalaPlacement,
-  darkMode: boolean
+  darkMode: boolean,
+  customColors?: HandColorPair | null
 ): void {
   const size = Math.floor(placement.cellSize * 0.85);
   const padding = (placement.cellSize - size) / 2;
@@ -338,9 +344,8 @@ export function renderCardMandala(
     placement.variant === "full"
       ? (["left", "right"] as const)
       : ([placement.variant] as const);
-  const colors = darkMode
-    ? { left: "#3575E2", right: "#ED1C24" }
-    : { left: "#3D44B8", right: "#DC2626" };
+  const colors =
+    customColors ?? (darkMode ? DARK_HAND_COLORS : LIGHT_HAND_COLORS);
 
   ctx.save();
   ctx.translate(placement.x + padding + center, placement.y + padding + center);

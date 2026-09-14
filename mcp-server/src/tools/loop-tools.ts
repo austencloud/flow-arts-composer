@@ -38,6 +38,11 @@ import {
   isSequenceCircular,
 } from "@tka/sequence-engine/loop";
 
+const primaryPropColorsSchema = z.object({
+  left: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+  right: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+});
+
 const orientationEnum = z.enum([
   "in",
   "out",
@@ -520,6 +525,9 @@ export function registerLoopTools(server: McpServer): void {
         .optional()
         .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
+      primaryPropColors: primaryPropColorsSchema
+        .optional()
+        .describe("Custom left/right colors for every hand-colored card mark"),
       maxAttempts: z
         .number()
         .optional()
@@ -584,6 +592,7 @@ export function registerLoopTools(server: McpServer): void {
       showStepNumbers = COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
       showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
       darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
+      primaryPropColors,
       maxAttempts = 500,
       loopComponents,
       level = 1,
@@ -792,6 +801,7 @@ export function registerLoopTools(server: McpServer): void {
             period: period === "quartered" ? 4 : 2,
             derivedStepIndices: loopResult.derivedStepIndices,
             seedWord: loopResult.seedWord,
+            primaryPropColors,
           }
         );
 
@@ -880,6 +890,9 @@ export function registerLoopTools(server: McpServer): void {
         .optional()
         .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
+      primaryPropColors: primaryPropColorsSchema
+        .optional()
+        .describe("Custom left/right colors for every hand-colored card mark"),
       maxAttempts: z
         .number()
         .optional()
@@ -944,6 +957,7 @@ export function registerLoopTools(server: McpServer): void {
       showStepNumbers = COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
       showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
       darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
+      primaryPropColors,
       maxAttempts = 500,
       loopComponents,
       level = 1,
@@ -1151,6 +1165,7 @@ export function registerLoopTools(server: McpServer): void {
             period: period === "quartered" ? 4 : 2,
             derivedStepIndices: loopResult.derivedStepIndices,
             seedWord: loopResult.seedWord,
+            primaryPropColors,
           }
         );
 

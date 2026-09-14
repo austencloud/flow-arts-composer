@@ -392,6 +392,49 @@ describe("MCP rendering boundaries", () => {
     assert.doesNotMatch(svg, /class="st0"/);
   });
 
+  it("applies one custom hand-color pair to props, arrows, turns, and reversals", async () => {
+    const renderer = getStandaloneRenderer();
+    const svg = await renderer.renderToSvg(
+      {
+        letter: "A",
+        startPosition: "alpha1",
+        endPosition: "alpha3",
+        gridMode: "diamond",
+        leftMotion: {
+          motionType: "pro",
+          rotationDirection: "cw",
+          startLocation: "n",
+          endLocation: "e",
+          startOrientation: "in",
+          hand: "left",
+          turns: 1,
+        },
+        rightMotion: {
+          motionType: "anti",
+          rotationDirection: "ccw",
+          startLocation: "s",
+          endLocation: "w",
+          startOrientation: "in",
+          hand: "right",
+          turns: 1,
+        },
+        leftReversal: true,
+        rightReversal: true,
+      },
+      {
+        darkMode: false,
+        showGrid: false,
+        showTKA: true,
+        showReversals: true,
+        primaryPropColors: { left: "#00e5ff", right: "#ff2ea6" },
+      }
+    );
+
+    assert.ok((svg.match(/#00e5ff/g) ?? []).length >= 4);
+    assert.ok((svg.match(/#ff2ea6/g) ?? []).length >= 4);
+    assert.doesNotMatch(svg, /#3D44B8|#DC2626/i);
+  });
+
   it("renders a nonzero static arrow while keeping zero-turn static motion arrowless", async () => {
     const renderer = getStandaloneRenderer();
     const input: PictographInput = {

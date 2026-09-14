@@ -739,6 +739,15 @@ export function registerSequenceTools(server: McpServer): void {
         .optional()
         .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
+      primaryPropColors: z
+        .object({
+          left: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+          right: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+        })
+        .optional()
+        .describe(
+          'Custom left/right hand colors as hex values, e.g. { left: "#00e5ff", right: "#ff2ea6" }. Applied consistently to props, arrows, turn labels, reversal dots, and mandalas.'
+        ),
       maxAttempts: z
         .number()
         .optional()
@@ -877,6 +886,7 @@ export function registerSequenceTools(server: McpServer): void {
         showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
         displayWord,
         darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
+        primaryPropColors,
         maxAttempts = 500,
         showDifficulty = COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
         userName,
@@ -1094,6 +1104,7 @@ export function registerSequenceTools(server: McpServer): void {
               derivedBeatIndices: loopResult.derivedBeatIndices,
               seedWord: loopResult.seedWord,
               showReversals,
+              primaryPropColors,
             }
           );
 
@@ -1265,6 +1276,7 @@ export function registerSequenceTools(server: McpServer): void {
             loopComponents: finalLoopComponents,
             showReversals,
             seedWord: displayWord?.toUpperCase(),
+            primaryPropColors,
           }
         );
 

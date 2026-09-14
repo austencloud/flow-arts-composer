@@ -107,6 +107,7 @@ try {
       showWord: true,
       notes: "none",
       level: 1,
+      primaryPropColors: { left: "#00e5ff", right: "#ff2ea6" },
     },
   });
   await client.close();
@@ -140,17 +141,21 @@ try {
   inspectionContext.drawImage(renderedImage, 0, 0);
   const infoCellPixels = inspectionContext.getImageData(180, 60, 180, 180).data;
   let mandalaColorPixels = 0;
+  let cyanPixels = 0;
+  let magentaPixels = 0;
   for (let offset = 0; offset < infoCellPixels.length; offset += 4) {
     const red = infoCellPixels[offset];
     const green = infoCellPixels[offset + 1];
     const blue = infoCellPixels[offset + 2];
-    const isBluePath = blue > red * 1.25 && blue > green * 1.1;
-    const isRedPath = red > blue * 1.25 && red > green * 1.5;
-    if (isBluePath || isRedPath) mandalaColorPixels++;
+    const isCyanPath = red < 80 && green > 180 && blue > 200;
+    const isMagentaPath = red > 200 && green < 110 && blue > 130;
+    if (isCyanPath) cyanPixels++;
+    if (isMagentaPath) magentaPixels++;
+    if (isCyanPath || isMagentaPath) mandalaColorPixels++;
   }
-  if (mandalaColorPixels < 40) {
+  if (mandalaColorPixels < 40 || cyanPixels === 0 || magentaPixels === 0) {
     throw new Error(
-      "Installed MCP left the Composer mandala info cell visually empty"
+      "Installed MCP did not apply the custom hand colors to the Composer mandala"
     );
   }
 
