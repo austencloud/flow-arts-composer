@@ -6,7 +6,6 @@
   import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
   import Seo from "$lib/shared/components/Seo.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import TurnNotationControls from "$lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
@@ -17,7 +16,7 @@
   } from "$lib/shared/create/services/level-turn-values";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import SequenceShowcasePreview from "$lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
@@ -698,38 +697,24 @@
                           ariaLabel={loop.word}
                           onclick={() => selectTogetherOppositeLoop(loop, true)}
                         >
-                          <span class="loop-preview" aria-hidden="true">
-                            {#each loop.sequence.steps as pictograph, index (`${loop.id}-${index}`)}
-                              <span class="loop-preview-step">
-                                <PictographContainer
-                                  pictographData={pictograph}
-                                  gridMode={loop.gridMode}
-                                  stepNumberOverride={true}
-                                  darkMode={true}
-                                  leftPropTypeOverride={displayPropType}
-                                  rightPropTypeOverride={displayPropType}
-                                  leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
-                                  rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
-                                  showGrid={true}
-                                  showTKA={true}
-                                  showElemental={false}
-                                  showPositions={false}
-                                  showReversals={false}
-                                  showNonRadialPoints={false}
-                                  showHandPoints={true}
-                                  disableTransitions
-                                />
-                              </span>
-                            {/each}
-                          </span>
-                          <span class="loop-word" aria-hidden="true">
-                            <TKAWordGlyph
-                              word={loop.word}
-                              height={26}
-                              darkMode
-                              fitToParent
-                            />
-                          </span>
+                          <ChoreoCard
+                            sequence={loop.sequence}
+                            showMandala={true}
+                            includeStartPosition={true}
+                            startPositionLayoutOverride="row"
+                            columnCount={2}
+                            showQRCode={false}
+                            showWord={true}
+                            showDifficultyLevel={false}
+                            showNotes={false}
+                            showLoopGlyph={false}
+                            handPathMode={playback.propDisplay === "hands"}
+                            darkMode={true}
+                            leftPropType={displayPropType}
+                            rightPropType={displayPropType}
+                            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+                            fitWidth={true}
+                          />
                         </PanelButton>
                       {/each}
                     </div>
@@ -884,7 +869,7 @@
   .to-reference {
     max-width: 86rem;
     display: grid;
-    grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
   }
@@ -1029,7 +1014,7 @@
   .spin-column :global(.panel-btn) {
     display: grid;
     min-height: 0;
-    padding: 0.375rem;
+    padding: 0.25rem;
   }
   .spin-column :global(.panel-btn[aria-pressed="true"]) {
     outline: 2px solid var(--mode-accent);
@@ -1039,20 +1024,6 @@
       var(--mode-accent) 10%,
       var(--theme-card-bg)
     );
-  }
-  .loop-word {
-    display: block;
-    width: 100%;
-  }
-  .loop-preview {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.125rem;
-    width: 100%;
-  }
-  .loop-preview-step {
-    display: block;
-    aspect-ratio: 1;
   }
   .loop-status {
     display: grid;
