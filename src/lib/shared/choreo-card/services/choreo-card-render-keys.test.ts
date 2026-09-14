@@ -36,15 +36,24 @@ describe("buildChoreoCardRenderKeys", () => {
     );
   });
 
-  it("folds showGrid into the image key (4-digit gv) — guards the onMount/effect drift", () => {
+  it("folds showGrid into the image key (5-digit gv) — guards the onMount/effect drift", () => {
     const gridOn = buildChoreoCardRenderKeys({ ...base, showGrid: true });
     const gridOff = buildChoreoCardRenderKeys({ ...base, showGrid: false });
     // showGrid MUST change the image key, or a grid toggle won't re-render cells.
     expect(gridOn.imageKey).not.toBe(gridOff.imageKey);
-    // The gv segment must carry all four image-visibility flags (TnD, Elemental,
-    // Positions, Grid). The original bug was a 3-digit gv on one side.
-    expect(gridOn.imageKey).toMatch(/-gv:[01]{4}(?:-|$)/);
-    expect(gridOff.imageKey).toMatch(/-gv:[01]{4}(?:-|$)/);
+    // The gv segment must carry all five image-visibility flags (TnD, Elemental,
+    // Positions, Grid, Hand key). The original bug was a 3-digit gv on one side.
+    expect(gridOn.imageKey).toMatch(/-gv:[01]{5}(?:-|$)/);
+    expect(gridOff.imageKey).toMatch(/-gv:[01]{5}(?:-|$)/);
+  });
+
+  it("treats the hand key as an overlay: image key changes, structural key holds", () => {
+    const keyOn = buildChoreoCardRenderKeys({ ...base, showHandColorKey: true });
+    const keyOff = buildChoreoCardRenderKeys({ ...base, showHandColorKey: false });
+    // Omitted means ON (the key is baked in until the export panel turns it off).
+    expect(buildChoreoCardRenderKeys(base).imageKey).toBe(keyOn.imageKey);
+    expect(keyOn.imageKey).not.toBe(keyOff.imageKey);
+    expect(keyOn.structuralKey).toBe(keyOff.structuralKey);
   });
 
   it("repaints fan build changes while keeping the step grid stable", () => {

@@ -167,6 +167,9 @@ lives in `packages/render-core` (`calculateHandColorKeyLayout`) so the viewer
 start cell, rasterized card fronts and exports, and MCP images bake in the same
 key. A hand
 that is hidden or absent drops out of the key; the remaining pair recentres.
+The key is on by default and is the `Hand key` chip in the export panel's
+Pictograph row (`handColorKey` in the visibility manager, `showHandColorKey`
+in the render and export options); locked deck cards always keep it.
 
 ## 6. Controls and Selection
 
