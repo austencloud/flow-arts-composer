@@ -69,7 +69,7 @@ export interface BuildGalleryRenderInputParams {
   handPathMode?: boolean;
   showLeftMotion?: boolean;
   showRightMotion?: boolean;
-  /** Grid cards pass true; the builder still gates on auth + step count. */
+  /** Grid cards pass true; a prepared QR still needs a spare info cell. */
   allowQR?: boolean;
   cardMode?: boolean;
   // Ambient state (passed in so this function stays pure/testable)
@@ -117,6 +117,8 @@ export function buildGalleryVisibility(
     showLeftMotion = true,
     showRightMotion = true,
     allowQR = true,
+    variant = "gallery",
+    cardMode = false,
     isAuthenticated,
     compositionManager,
   } = p;
@@ -127,8 +129,12 @@ export function buildGalleryVisibility(
     ? { showLeftMotion, showRightMotion }
     : {};
 
-  // Guests get no QR; one-count cards have no spare cell for it.
-  const qrAllowed = allowQR && isAuthenticated && stepCount > 1;
+  // One-count cards have no spare cell. Guests can request public prepared
+  // artwork only from the gallery's prepared-only path; other card contexts
+  // retain the existing authentication gate before they can generate a QR.
+  const guestPreparedGallery = variant === "gallery" && !cardMode;
+  const qrAllowed =
+    allowQR && stepCount > 1 && (isAuthenticated || guestPreparedGallery);
 
   if (visibility) {
     const qrGated = qrAllowed
@@ -160,7 +166,7 @@ export function buildGalleryVisibility(
     showQRCode: qrAllowed && compositionManager.showQRCode,
     showMandala: compositionManager.showMandala,
     infoCellChoice: compositionManager.getInfoCellChoiceForStepCount(stepCount),
-    isAuthenticated,
+    isAuthenticated: isAuthenticated || guestPreparedGallery,
   });
   // Cache-key guard: when QR still wins the single info cell, the renderer
   // reserves that cell for the QR (getMandalaPlacements → EMPTY), so the image

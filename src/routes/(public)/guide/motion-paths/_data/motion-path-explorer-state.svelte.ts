@@ -3,7 +3,16 @@ import { createAnimationScope } from "$lib/shared/animation-engine/state/animati
 import { applySequencePathPreview } from "$lib/shared/sequence-viewer/services/sequence-path-policy";
 import type { AnimationPathPolicy } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
+import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 import { motionPathExamples } from "./motion-path-examples";
+
+export type MotionPathRealizationBuilder = (
+  pair: { left: Flower; right: Flower },
+  mode: VtgMode
+) => Promise<SequenceData | null>;
+
+type PickerStatus = "idle" | "loading" | "error";
 
 export function createMotionPathExplorerState() {
   const scope = createAnimationScope({ persistence: "ephemeral" });
@@ -11,7 +20,12 @@ export function createMotionPathExplorerState() {
   scope.visibility.setVisibility("leftPathLines", true);
   scope.visibility.setVisibility("rightPathLines", true);
   let original = $state<SequenceData>(motionPathExamples[2]!);
-  let example = $state("mixed");
+  let selectedPair = $state<{ left: Flower; right: Flower } | null>(null);
+  let selectedMode = $state<VtgMode | null>("SS");
+  let pickerStatus = $state<PickerStatus>("idle");
+  let pickerError = $state<string | null>(null);
+  let selectionVersion = 0;
+  let retryBuilder: MotionPathRealizationBuilder | null = null;
   let policy = $state<AnimationPathPolicy>({
     pathShape: "arc",
     motionAwarePaths: false,
@@ -34,12 +48,43 @@ export function createMotionPathExplorerState() {
   const selectedPath = $derived<MandalaPathShape>(
     policy.motionAwarePaths ? "hybrid" : policy.pathShape
   );
-  // The inline player's load identity includes this variant so authored per-step
-  // exceptions cannot keep a previous path alive after choosing another one.
   const sequence = $derived({
     ...variants[selectedPath],
     id: `${original.id}-${selectedPath}`,
   });
+
+  async function buildSelection(
+    builder: MotionPathRealizationBuilder
+  ): Promise<void> {
+    const pair = selectedPair;
+    const mode = selectedMode;
+    const version = ++selectionVersion;
+    retryBuilder = builder;
+    pickerError = null;
+    if (!pair || !mode) {
+      pickerStatus = "idle";
+      return;
+    }
+    pickerStatus = "loading";
+    try {
+      const built = await builder(pair, mode);
+      if (version !== selectionVersion) return;
+      if (!built) {
+        pickerStatus = "error";
+        pickerError =
+          "That hand relationship is not available for these shapes.";
+        return;
+      }
+      original = built;
+      liveStep = 0;
+      pickerStatus = "idle";
+    } catch {
+      if (version !== selectionVersion) return;
+      pickerStatus = "error";
+      pickerError = "That sequence could not be built. Try again.";
+    }
+  }
+
   return {
     scope,
     get sequence() {
@@ -48,8 +93,17 @@ export function createMotionPathExplorerState() {
     get variants() {
       return variants;
     },
-    get example() {
-      return example;
+    get selectedPair() {
+      return selectedPair;
+    },
+    get selectedMode() {
+      return selectedMode;
+    },
+    get pickerStatus() {
+      return pickerStatus;
+    },
+    get pickerError() {
+      return pickerError;
     },
     get selectedPath() {
       return selectedPath;
@@ -78,18 +132,35 @@ export function createMotionPathExplorerState() {
     syncPolicy() {
       policy = scope.visibility.getPathPolicy();
     },
-    chooseExample(value: string) {
-      const index = ({ pro: 0, anti: 1, mixed: 2 } as Record<string, number>)[
-        value
-      ];
-      if (index === undefined) return;
-      original = motionPathExamples[index]!;
-      example = value;
-      liveStep = 0;
+    chooseMatrixPair(
+      pair: { left: Flower; right: Flower },
+      builder: MotionPathRealizationBuilder
+    ) {
+      selectedPair = pair;
+      void buildSelection(builder);
+    },
+    chooseHandRelationship(
+      mode: VtgMode | null,
+      builder: MotionPathRealizationBuilder
+    ) {
+      selectedMode = mode;
+      void buildSelection(builder);
+    },
+    clearMatrixPair() {
+      ++selectionVersion;
+      selectedPair = null;
+      pickerStatus = "idle";
+      pickerError = null;
+    },
+    retryMatrixSelection() {
+      if (retryBuilder) void buildSelection(retryBuilder);
     },
     chooseSequence(value: SequenceData) {
+      ++selectionVersion;
       original = value;
-      example = "custom";
+      selectedPair = null;
+      pickerStatus = "idle";
+      pickerError = null;
       liveStep = 0;
     },
     toggleGuides() {

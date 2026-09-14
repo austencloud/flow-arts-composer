@@ -66,9 +66,10 @@
           on.
         </p>
         <p>
-          Try Pro + anti with Hybrid. Each hand follows a different kind of
-          path. Switch the trace between Hands and Prop tips to see what the
-          prop’s rotation adds.
+          Pick a matrix cell, then compare Arc with Hybrid. When one hand is pro
+          and the other anti, they follow different kinds of paths. Switch the
+          trace between Hands and Prop tips to see what the prop’s rotation
+          adds.
         </p>
       </section>
 
