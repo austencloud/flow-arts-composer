@@ -871,11 +871,27 @@
     playbackController?.seekToStep(targetStep);
   }
 
+  // LazyMount forwards a newly-created props object whenever its host updates.
+  // Svelte may therefore re-run this effect even when the callback identity is
+  // unchanged. Publishing again makes state owners replay their pending seek,
+  // pinning a continuous player inside that count. Keep imperative registration
+  // at the callback-identity boundary instead of the spread-props boundary.
+  let publishedSeekRef: typeof onSeekRef = undefined;
+
   $effect(() => {
-    const publishSeek = onSeekRef;
-    if (!publishSeek) return;
-    publishSeek(handleSeek);
-    return () => publishSeek(null);
+    const nextSeekRef = onSeekRef;
+    if (nextSeekRef === publishedSeekRef) return;
+
+    const previousSeekRef = publishedSeekRef;
+    publishedSeekRef = nextSeekRef;
+    untrack(() => {
+      previousSeekRef?.(null);
+      nextSeekRef?.(handleSeek);
+    });
+  });
+
+  onDestroy(() => {
+    untrack(() => publishedSeekRef?.(null));
   });
 </script>
 
