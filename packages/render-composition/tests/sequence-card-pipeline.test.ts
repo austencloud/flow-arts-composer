@@ -96,7 +96,7 @@ describe("Composer export profile", () => {
     expect(COMPOSER_CARD_EXPORT_PROFILE_V1).toEqual({
       version: "composer-card-v1",
       layout: "grid",
-      cellSize: 900,
+      cellSize: 300,
       padding: 8,
       showStepNumbers: true,
       showWord: true,
