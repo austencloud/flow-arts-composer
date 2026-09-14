@@ -7,6 +7,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
 import {
   ensureDataLoaded,
   saveAndOpenImage,
@@ -344,9 +345,13 @@ export function registerPresetTools(server: McpServer): void {
         const gridMode = (input.gridMode ??
           config.gridMode ??
           "diamond") as GridMode;
-        const darkMode = input.darkMode ?? config.darkMode ?? true;
-        const cellSize = config.cellSize ?? 900;
-        const layout = config.layout ?? "grid";
+        const darkMode =
+          input.darkMode ??
+          config.darkMode ??
+          COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode;
+        const cellSize =
+          config.cellSize ?? COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize;
+        const layout = config.layout ?? COMPOSER_CARD_EXPORT_PROFILE_V1.layout;
 
         // Load pictograph data
         const allPictographs = ensureDataLoaded(gridMode);
@@ -480,14 +485,17 @@ export function registerPresetTools(server: McpServer): void {
             {
               layout,
               cellSize,
-              showStepNumbers: true,
-              showWord: true,
+              showStepNumbers: COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+              showWord: COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
               darkMode,
               turnAllocation,
               loopComponents: effectiveComponents,
               derivedBeatIndices: loopResult.derivedBeatIndices,
               seedWord: loopResult.seedWord,
-              showDifficulty: true,
+              showDifficulty: COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
+              showFooter: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
+              startPositionLayout:
+                COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
               level: level as 1 | 2 | 3,
             }
           );
@@ -500,6 +508,9 @@ export function registerPresetTools(server: McpServer): void {
                 type: "image" as const,
                 data: pngBuffer.toString("base64"),
                 mimeType: "image/png",
+                _meta: {
+                  rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+                },
               },
               {
                 type: "text" as const,
@@ -578,11 +589,14 @@ export function registerPresetTools(server: McpServer): void {
         const pngBuffer = await renderSequenceToImage(steps, sequenceWord, {
           layout,
           cellSize,
-          showStepNumbers: true,
-          showWord: true,
+          showStepNumbers: COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+          showWord: COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
           darkMode,
           turnAllocation,
-          showDifficulty: true,
+          showDifficulty: COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
+          showFooter: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
+          startPositionLayout:
+            COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
           level: level as 1 | 2 | 3,
         });
 
@@ -594,6 +608,9 @@ export function registerPresetTools(server: McpServer): void {
               type: "image" as const,
               data: pngBuffer.toString("base64"),
               mimeType: "image/png",
+              _meta: {
+                rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+              },
             },
             {
               type: "text" as const,

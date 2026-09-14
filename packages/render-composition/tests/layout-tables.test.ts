@@ -41,16 +41,18 @@ describe("getLayout", () => {
     expect(getLayout(64, "none")).toEqual([16, 4]);
   });
 
-  it("falls back to table[64] for step counts above 64", () => {
+  it("uses the Composer aspect-ratio fallback above 64 steps", () => {
     const result = getLayout(100, "none");
-    // Fallback is the table's 64-step entry: [16, 4]
-    expect(result).toEqual([16, 4]);
+    expect(result).toEqual([12, 9]);
   });
 
-  it("falls back gracefully even when table[64] is unavailable (none case returns [16,4])", () => {
+  it("adds a start column to the Composer fallback", () => {
     const result = getLayout(200, "sidebar");
-    expect(result[0]).toBeGreaterThan(0);
-    expect(result[1]).toBeGreaterThan(0);
+    expect(result).toEqual([17, 13]);
+  });
+
+  it("matches the Composer column layout for eight steps", () => {
+    expect(getLayout(8, "column")).toEqual([5, 2]);
   });
 
   it("WITH_START_ROW has one more row than WITHOUT_START_POSITION for every step count", () => {

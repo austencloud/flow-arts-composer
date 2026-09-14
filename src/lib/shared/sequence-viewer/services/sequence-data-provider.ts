@@ -205,9 +205,19 @@ function thetaSpellings(identifier: string): readonly string[] {
 export async function loadByIdentifier(
   identifier: string
 ): Promise<SequenceData | null> {
-  // Try local repository first
+  // Try the local store first - but only the stored document. The repository's
+  // legacy-PNG fallback synthesizes a copy under a new random id on every call,
+  // and every word that has a bundled PNG also has a real Firestore document
+  // with the word as its id. Taking the copy here meant /sequence/DCKΨ- never
+  // reached that document, so anything keyed on the sequence id - performance
+  // videos, beat maps, library actions - looked up a uuid that exists nowhere.
+  // The PNG remains the route's last resort in SequenceViewerPage, after the
+  // public index and the signed-in library have both missed.
   try {
-    const localSequence = await getSequenceRepository().getSequence(identifier);
+    const localSequence = await getSequenceRepository().getSequence(
+      identifier,
+      { importFromPng: false }
+    );
     if (localSequence && hasMotionData(localSequence)) {
       return prepareForViewer(localSequence);
     }

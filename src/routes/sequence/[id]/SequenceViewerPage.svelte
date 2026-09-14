@@ -5,6 +5,7 @@
     resolveRecordedPropConfig,
   } from "$lib/shared/foundation/services/recorded-prop-intent";
   import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
+  import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository";
   import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
   import { loadSequencesByIds } from "$lib/features/choreo-card/services/catalog-loader";
   import type { SequenceRouteMeta } from "./sequence-seo";
@@ -574,6 +575,18 @@
           resolvedSequence = await libraryRepo.getSequence(id);
         } catch {
           // Library lookup failed (not logged in, etc.)
+        }
+        if (routeLoad.isStale(run)) return;
+      }
+
+      // Last resort: a word that exists only as a bundled legacy PNG. This runs
+      // after every store that can answer by document id, because the import
+      // mints a new random id and would otherwise shadow the real document.
+      if (!resolvedSequence) {
+        try {
+          resolvedSequence = await getSequenceRepository().getSequence(id);
+        } catch {
+          // No bundled PNG for this word
         }
         if (routeLoad.isStale(run)) return;
       }
