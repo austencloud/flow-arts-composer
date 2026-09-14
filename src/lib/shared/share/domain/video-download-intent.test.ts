@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  planFileRequest,
   shouldDeliverPendingVideo,
   videoDownloadSettingsKey,
 } from "./video-download-intent";
@@ -68,6 +69,27 @@ describe("pending video download delivery", () => {
       })
     ).not.toBe(
       videoDownloadSettingsKey({ ...twoDimensional, is3DExport: true })
+    );
+  });
+});
+
+describe("file request planning", () => {
+  it("asks a guest for an account before any render starts", () => {
+    expect(planFileRequest({ needsAccount: true, hasFreshFile: false })).toBe(
+      "request-account"
+    );
+    // Even a file already rendered on screen is not taken home without one.
+    expect(planFileRequest({ needsAccount: true, hasFreshFile: true })).toBe(
+      "request-account"
+    );
+  });
+
+  it("reuses a fresh file and renders otherwise", () => {
+    expect(planFileRequest({ needsAccount: false, hasFreshFile: true })).toBe(
+      "deliver"
+    );
+    expect(planFileRequest({ needsAccount: false, hasFreshFile: false })).toBe(
+      "render"
     );
   });
 });

@@ -166,6 +166,18 @@ to phone, prepared file, viewer source.
 - Existing post composition and publishing components remain their respective
   owners. Do not introduce a second renderer, modal stack, or delivery service.
 
+### Guest file requests
+
+Guests can open the download task, adjust settings, and see the preview, but
+saving a video or card requires a full account. The dock replaces the Download
+button with a one-line note and a `Create free account` action. The sheet closes
+before the auth drawer opens because auth drawers paint beneath the share sheet
+and the sheet makes the page inert. Copy link, in-app sending, and native
+sharing stay available to guests. A viewer that refuses to render reports as a
+failure, not a cancel; cancel is reserved for the user's own action. When the
+clipboard API is denied, copy link falls back to selection copy and, if that
+also fails, reveals the link in a selectable field.
+
 ## Acceptance and future evaluation
 
 Before claiming implementation complete, verify these behaviors:
