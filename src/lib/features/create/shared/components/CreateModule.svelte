@@ -50,7 +50,7 @@
   import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import { setSideBySideLayout } from "$lib/shared/application/state/animation-visibility-state.svelte";
-  import { onMount, setContext, tick } from "svelte";
+  import { onMount, setContext, tick, untrack } from "svelte";
   import ErrorBanner from "./ErrorBanner.svelte";
   import type { CreateModuleOrchestrators } from "../types/create-module-services";
   import type { CreateModuleInitializer } from "../services/create-module-initializer";
@@ -912,24 +912,33 @@
    * are still null, so we need to watch for when they become available.
    */
   $effect(() => {
-    // Clean up previous tracker if it exists
-    if (panelHeightTrackerCleanup) {
-      panelHeightTrackerCleanup();
-      panelHeightTrackerCleanup = null;
-    }
+    const toolElement = toolPanelElement;
+    const buttonElement = buttonPanelElement;
 
-    // Only set up tracker if at least one element is available
-    if (toolPanelElement || buttonPanelElement) {
-      panelHeightTrackerCleanup = createPanelHeightTracker({
-        toolPanelElement,
-        buttonPanelElement,
-        panelState,
-        // Playback owns the workspace while the tools collapse. Keeping their
-        // viewport metrics current during that motion invalidates every overlay
-        // for a panel the user cannot see.
-        isToolPanelVisible: () => !panelState.workspacePlayback,
-      });
-    }
+    // Creating the tracker immediately reads geometry and publishes panel
+    // state. Only element replacement should re-run this owner; subscribing
+    // its setup effect to those published values creates a feedback loop when
+    // the first workspace mounts.
+    untrack(() => {
+      // Clean up previous tracker if it exists
+      if (panelHeightTrackerCleanup) {
+        panelHeightTrackerCleanup();
+        panelHeightTrackerCleanup = null;
+      }
+
+      // Only set up tracker if at least one element is available
+      if (toolElement || buttonElement) {
+        panelHeightTrackerCleanup = createPanelHeightTracker({
+          toolPanelElement: toolElement,
+          buttonPanelElement: buttonElement,
+          panelState,
+          // Playback owns the workspace while the tools collapse. Keeping their
+          // viewport metrics current during that motion invalidates every overlay
+          // for a panel the user cannot see.
+          isToolPanelVisible: () => !panelState.workspacePlayback,
+        });
+      }
+    });
   });
 
   $effect(() => {
