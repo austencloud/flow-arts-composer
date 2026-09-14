@@ -13,6 +13,8 @@ describe("MCP sequence renderer adapters", () => {
       const source = readFileSync(resolve(root, path), "utf8");
       expect(source).toContain("composeSequenceCard");
       expect(source).toContain("COMPOSER_CARD_EXPORT_PROFILE_V1");
+      expect(source).toContain("calculateCardMandalaPaths");
+      expect(source).toContain("renderCardMandala");
       expect(source).not.toContain("function calculateStepPosition");
       expect(source).not.toContain("function calculateLayout");
     }

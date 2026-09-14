@@ -2,6 +2,7 @@ import { renderSmartBorders } from "./border-renderer.js";
 import { calculateFooterHeight, calculateHeaderHeight } from "./dimensions.js";
 import { getLayout } from "./layout-tables.js";
 import { renderStepNumber } from "./step-number-renderer.js";
+import type { CardMandalaPlacement } from "./card-mandala.js";
 
 export interface SequenceCardExportProfile {
   version: "composer-card-v1";
@@ -13,6 +14,7 @@ export interface SequenceCardExportProfile {
   darkMode: boolean;
   showDifficulty: boolean;
   showFooter: boolean;
+  showMandala: boolean;
   showReversals: boolean;
   startPositionLayout: "row" | "column";
   level: number;
@@ -30,6 +32,7 @@ export const COMPOSER_CARD_EXPORT_PROFILE_V1: Readonly<SequenceCardExportProfile
     darkMode: false,
     showDifficulty: false,
     showFooter: false,
+    showMandala: true,
     showReversals: true,
     startPositionLayout: "row",
     level: 1,
@@ -42,6 +45,7 @@ export interface SequenceCardCompositionOptions {
   showWord: boolean;
   showDifficulty: boolean;
   showFooter: boolean;
+  showMandala: boolean;
   showReversals: boolean;
   darkMode: boolean;
   startPositionLayout: "row" | "column";
@@ -85,6 +89,12 @@ export interface SequenceCardPipeline<TStep, TCanvas> {
     step: TStep,
     cell: SequenceCardCell
   ) => Promise<void>;
+  renderMandala?: (
+    ctx: CanvasRenderingContext2D,
+    steps: TStep[],
+    placements: readonly CardMandalaPlacement[],
+    layout: SequenceCardLayout
+  ) => Promise<void> | void;
   buildHeader: (steps: TStep[], word: string) => SequenceCardHeader;
   renderHeader?: (
     ctx: CanvasRenderingContext2D,
@@ -170,6 +180,47 @@ export function calculateSequenceCardCell(
   return { index, row, col, x: col, y: row };
 }
 
+export function calculateSequenceCardMandalaPlacements(
+  layout: SequenceCardLayout,
+  options: Pick<
+    SequenceCardCompositionOptions,
+    "layout" | "cellSize" | "showMandala" | "startPositionLayout"
+  >,
+  occupiedCells: ReadonlySet<string>
+): CardMandalaPlacement[] {
+  if (!options.showMandala || options.layout === "strip") return [];
+
+  const candidates: { col: number; row: number }[] = [];
+  if (options.startPositionLayout === "row") {
+    for (let col = 1; col < layout.columns; col++) {
+      if (!occupiedCells.has(`${col},0`)) candidates.push({ col, row: 0 });
+    }
+  } else {
+    for (let row = 1; row < layout.rows; row++) {
+      if (!occupiedCells.has(`0,${row}`)) candidates.push({ col: 0, row });
+    }
+  }
+
+  const selected = candidates.length <= 2 ? candidates : candidates.slice(0, 3);
+  return selected.map((candidate, index) => {
+    const variant =
+      selected.length === 1
+        ? "full"
+        : index === 0
+          ? "left"
+          : index === selected.length - 1
+            ? "right"
+            : "full";
+    return {
+      ...candidate,
+      x: candidate.col * options.cellSize,
+      y: layout.gridStartY + candidate.row * options.cellSize,
+      cellSize: options.cellSize,
+      variant,
+    };
+  });
+}
+
 export async function composeSequenceCard<TStep, TCanvas>(
   pipeline: SequenceCardPipeline<TStep, TCanvas>
 ): Promise<Buffer> {
@@ -231,6 +282,20 @@ export async function composeSequenceCard<TStep, TCanvas>(
       ctx.font = "12px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("Error", cell.x + cellSize / 2, cell.y + cellSize / 2);
+    }
+  }
+
+  if (pipeline.renderMandala) {
+    const placements = calculateSequenceCardMandalaPlacements(
+      layout,
+      pipeline.options,
+      occupiedCells
+    );
+    if (placements.length > 0) {
+      await pipeline.renderMandala(ctx, steps, placements, layout);
+      for (const placement of placements) {
+        occupiedCells.add(`${placement.col},${placement.row}`);
+      }
     }
   }
 

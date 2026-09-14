@@ -22,7 +22,9 @@ import {
 } from "./text-renderer.js";
 import {
   COMPOSER_CARD_EXPORT_PROFILE_V1,
+  calculateCardMandalaPaths,
   composeSequenceCard,
+  renderCardMandala,
   type SequenceCardHeader,
 } from "@tka/render-composition";
 import { calculateDifficultyLevel } from "./difficulty-calculator.js";
@@ -61,6 +63,8 @@ export interface SequenceRenderOptions {
   startPositionLayout?: "row" | "column";
   /** App export omits the footer; callers may retain it explicitly. */
   showFooter?: boolean;
+  /** Fill reserved info cells with the sequence's prop-tip trajectory. */
+  showMandala?: boolean;
 }
 const DEFAULT_OPTIONS = {
   ...COMPOSER_CARD_EXPORT_PROFILE_V1,
@@ -187,6 +191,21 @@ export async function renderSequenceToImage(
         cell.cellSize
       );
     },
+    renderMandala: opts.showMandala
+      ? (ctx, renderedSteps, placements) => {
+          const paths = calculateCardMandalaPaths(
+            renderedSteps.map((step) => ({
+              stepNumber: step.stepNumber,
+              leftMotion: step.leftMotion,
+              rightMotion: step.rightMotion,
+            })),
+            opts.turnAllocation
+          );
+          for (const placement of placements) {
+            renderCardMandala(ctx, paths, placement, opts.darkMode);
+          }
+        }
+      : undefined,
     buildHeader: (renderedSteps, requestedWord) => ({
       ...resolveHeaderDisplay(
         renderedSteps,

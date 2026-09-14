@@ -61,9 +61,19 @@ export {
 export { renderStepNumber } from "./step-number-renderer.js";
 export { renderSmartBorders } from "./border-renderer.js";
 export {
+  calculateCardMandalaPaths,
+  renderCardMandala,
+  type CardMandalaMotion,
+  type CardMandalaPaths,
+  type CardMandalaPlacement,
+  type CardMandalaStep,
+  type CardMandalaTurnAllocation,
+} from "./card-mandala.js";
+export {
   COMPOSER_CARD_EXPORT_PROFILE_V1,
   calculateSequenceCardCell,
   calculateSequenceCardLayout,
+  calculateSequenceCardMandalaPlacements,
   composeSequenceCard,
   type SequenceCardCell,
   type SequenceCardCompositionOptions,
