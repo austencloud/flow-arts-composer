@@ -19,6 +19,7 @@
     flowerKey,
     type Flower,
   } from "$lib/shared/shape-matrix/domain/flower-signature";
+  import { pairAtTurns } from "$lib/shared/shape-matrix/domain/flower-at-turn";
   import { buildModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
   import {
     loadShapeMatrix,
@@ -67,7 +68,14 @@
   function chooseTurn(hand: "left" | "right", value: TurnValue): void {
     if (hand === "left") leftTurn = value;
     else rightTurn = value;
-    explorer.clearMatrixPair();
+    // A turn change asks to see the same shapes at the new turn value, so the
+    // loaded animation follows the selection instead of going stale.
+    const pair = explorer.selectedPair;
+    if (!pair) return;
+    explorer.chooseMatrixPair(
+      pairAtTurns(pair, leftTurn, rightTurn),
+      buildMatrixSequence
+    );
   }
 
   async function loadMatrix(): Promise<void> {

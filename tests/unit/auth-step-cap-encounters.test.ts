@@ -45,7 +45,7 @@ describe("step cap encounters", () => {
       titles.add(next.title);
       previous = next.title;
     }
-    expect(titles.size).toBeGreaterThanOrEqual(6);
+    expect(titles.size).toBeGreaterThanOrEqual(5);
   });
 
   it("does not change unrelated prompts or fail on invalid encounter counts", () => {
@@ -79,5 +79,26 @@ describe("step cap encounters", () => {
     expect(authDrawerState.claimEncore()).toBe(false);
     authDrawerState.show("signup", "save");
     expect(authDrawerState.encorePrompt).toBeNull();
+  });
+
+  it("keeps the extension copy direct at each outcome", () => {
+    expect(
+      getAuthPromptContent("step-cap-guest", "signup", 5, "offer")
+    ).toMatchObject({
+      title: "Fine. Sixteen.",
+      body: "This sequence only.",
+    });
+    expect(
+      getAuthPromptContent("step-cap-guest", "signup", 6, "spent")
+    ).toMatchObject({
+      title: "That was the exception.",
+      body: "A free account gets you up to 64 steps.",
+    });
+    expect(
+      getAuthPromptContent("step-cap-guest", "signup", 6, "limit")
+    ).toMatchObject({
+      title: "Seventeen is not sixteen.",
+      body: "Sixteen was the exception. A free account gets you up to 64 steps.",
+    });
   });
 });

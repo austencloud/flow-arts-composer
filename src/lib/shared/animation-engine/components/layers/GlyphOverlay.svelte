@@ -291,8 +291,10 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
          its "swap" mode's timing by hand (out fully completes before in
          starts — in:fade delay = out's full duration, matching Crossfade's
          own inDelay = duration computation for mode="swap") so the words
-         never overlap. See crossfade-primitive.md. -->
-    {#if stepNumbersVisible || isAtStartPosition || isAtEndPosition}
+         never overlap. See crossfade-primitive.md.
+         The Start/End words are step labels too: the step-numbers toggle hides
+         all three, matching the export compositor's single showStepNumbers gate. -->
+    {#if stepNumbersVisible}
       {#key stepKey}
         <g
           class="beat-number-group"

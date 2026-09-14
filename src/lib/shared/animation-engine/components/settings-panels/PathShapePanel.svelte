@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { PATH_SHAPE_COLORS } from "$lib/shared/animation-engine/domain/path-shape-colors";
   import { onDestroy, type Snippet } from "svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
@@ -49,7 +50,7 @@
     {
       id: "arc",
       label: "Arc",
-      color: "#60a5fa",
+      color: PATH_SHAPE_COLORS.arc,
       caption: "Hands swing along the circle",
       glyph: ["M3 9.5 Q12 0.5 21 9.5"],
       dots: [
@@ -60,7 +61,7 @@
     {
       id: "linear",
       label: "Linear",
-      color: "#f97316",
+      color: PATH_SHAPE_COLORS.linear,
       caption: "Hands cut straight across",
       glyph: ["M3 6 L21 6"],
       dots: [
@@ -71,7 +72,7 @@
     {
       id: "concave",
       label: "Concave",
-      color: "#a78bfa",
+      color: PATH_SHAPE_COLORS.concave,
       caption: "Hands curve in toward center",
       glyph: ["M3 2.5 Q12 11.5 21 2.5"],
       dots: [
@@ -82,7 +83,7 @@
     {
       id: "byMotion",
       label: "Hybrid",
-      color: "#2dd4bf",
+      color: PATH_SHAPE_COLORS.hybrid,
       caption: "Pro → Arc · Anti → Concave",
       glyph: ["M3 6 Q12 -1 21 6", "M3 6 Q12 13 21 6"],
       dots: [

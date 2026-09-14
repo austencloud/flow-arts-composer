@@ -10,6 +10,11 @@ export interface ViewerPanelLayoutInput {
   focusedPane: ViewerFocusedPane;
   practiceActive: boolean;
   practiceCanvasFraction: number;
+  /**
+   * The animation pane's share of the Side by Side split per axis, as the
+   * user dragged it. Focus and Practice still decide their own allocation.
+   */
+  userSplitShares?: Partial<Record<ViewerPanelDirection, number>>;
 }
 
 export interface ViewerPanelLayout {
@@ -138,6 +143,10 @@ export function resolveViewerPanelLayout(
     return { direction, sizes: [0, 1] };
   }
 
+  const share = input.userSplitShares?.[direction];
+  if (share !== undefined && share > 0 && share < 1) {
+    return { direction, sizes: [share, 1 - share] };
+  }
   return { direction, sizes: [1, 1] };
 }
 

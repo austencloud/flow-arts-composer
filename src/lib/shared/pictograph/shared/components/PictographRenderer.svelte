@@ -19,6 +19,9 @@ Usage:
 -->
 
 <script lang="ts">
+  import { fade } from "svelte/transition";
+  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import type { PreparedPictographData } from "../domain/models/prepared-pictograph-data";
   import {
@@ -92,6 +95,7 @@ Usage:
     // Keep overlays mounted while hidden so opacity fades can play (live DOM only).
     // Export omits this so hidden overlays still hard-unmount for raw SVG capture.
     animateVisibility = false,
+    animateContent = false,
     // Grid mode override (if provided, takes precedence over calculated mode)
     gridModeOverride = null,
     gridRotation = null,
@@ -181,6 +185,8 @@ Usage:
     previewMode?: boolean;
     /** Keep overlays mounted while hidden so opacity fades play (live DOM, not export) */
     animateVisibility?: boolean;
+    /** Animate live prop/glyph presence without replacing the grid. */
+    animateContent?: boolean;
     gridModeOverride?: GridMode | null;
     gridRotation?: number | null;
     visibleHand?: HandSideValue | null;
@@ -309,6 +315,21 @@ Usage:
         }))
     );
   });
+
+  // Keep departing content's geometry/assets alive for its outro after Clear.
+  const renderedProps = $derived(
+    motions.flatMap((motion) => {
+      const asset = propAssets[motion.hand];
+      const position =
+        propPositionOverrides?.[motion.hand] ?? propPositions[motion.hand];
+      return asset && position ? [{ ...motion, asset, position }] : [];
+    })
+  );
+  const renderedGlyphs = $derived(
+    pictograph.letter ? [{ letter: pictograph.letter, data: pictograph }] : []
+  );
+  const contentDuration = () =>
+    animateContent && !printMode ? motionDuration(DURATION.normal) : 0;
 
   // Arrow tip z-promotion: detect when behind-arrow's tip is buried under front-arrow's shaft
   const tipPromotionNeeded = $derived.by(() => {
@@ -502,31 +523,27 @@ Usage:
       {/if}
 
       <!-- Props -->
-      {#each motions as { hand, data, opacity } (hand)}
-        {@const motionPosition =
-          propPositionOverrides?.[hand] ?? propPositions[hand]}
-        {#if propAssets[hand] && motionPosition}
-          <g {opacity}>
-            <PropSvg
-              motionData={data}
-              propAssets={propAssets[hand]}
-              propPosition={motionPosition}
-              showProp={true}
-              isClickable={propsClickable}
-              isSelected={selectedPropHand === hand}
-              onPropClick={propsClickable && onPropClick
-                ? () => onPropClick(hand)
-                : undefined}
-              {cellIndex}
-              {transitionKey}
-              directPositioning={directPropPositioning ||
-                propPositionOverrides?.[hand] !== undefined}
-              colorOverride={hand === HandSide.LEFT
-                ? effectiveLeftColor
-                : effectiveRightColor}
-            />
-          </g>
-        {/if}
+      {#each renderedProps as { hand, data, opacity, asset, position } (hand)}
+        <g {opacity} transition:fade={{ duration: contentDuration() }}>
+          <PropSvg
+            motionData={data}
+            propAssets={asset}
+            propPosition={position}
+            showProp={true}
+            isClickable={propsClickable}
+            isSelected={selectedPropHand === hand}
+            onPropClick={propsClickable && onPropClick
+              ? () => onPropClick(hand)
+              : undefined}
+            {cellIndex}
+            {transitionKey}
+            directPositioning={directPropPositioning ||
+              propPositionOverrides?.[hand] !== undefined}
+            colorOverride={hand === HandSide.LEFT
+              ? effectiveLeftColor
+              : effectiveRightColor}
+          />
+        </g>
       {/each}
 
       <!-- Arrows -->
@@ -621,11 +638,15 @@ Usage:
 
     <!-- Corner glyphs - positioned at edges of expanded viewBox -->
     <!-- TKA Glyph (fades when one motion is dimmed since it represents both hands) -->
-    {#if pictograph.letter}
-      <g opacity={glyphOpacity} transform="translate({tkaOffset}, 0)">
+    {#each renderedGlyphs as glyph (glyph.letter)}
+      <g
+        opacity={glyphOpacity}
+        transform="translate({tkaOffset}, 0)"
+        transition:fade={{ duration: contentDuration() }}
+      >
         <TKAGlyph
-          letter={pictograph.letter}
-          pictographData={pictograph}
+          letter={glyph.letter}
+          pictographData={glyph.data}
           visible={showTKA && !poseOnly}
           {previewMode}
           {animateVisibility}
@@ -633,7 +654,7 @@ Usage:
           onToggle={onToggleTKA}
         />
       </g>
-    {/if}
+    {/each}
 
     <!-- Turns Column (part of TKA) -->
     <g opacity={glyphOpacity} transform="translate({tkaOffset}, 0)">

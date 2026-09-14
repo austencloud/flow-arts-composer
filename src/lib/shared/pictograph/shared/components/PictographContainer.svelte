@@ -142,6 +142,7 @@ with pre-prepared data for better performance.
     motionProgress = null,
     gridRotation = null,
     directPropPositioning = false,
+    animateContent = false,
     arrowOpacity = 1,
   } = $props<{
     pictographData?: (StepData | PictographData) | null;
@@ -216,6 +217,8 @@ with pre-prepared data for better performance.
     gridRotation?: number | null;
     /** Direct manipulation has already moved the props; do not replay that move. */
     directPropPositioning?: boolean;
+    /** Fade live prop/glyph additions and removals without replacing the grid. */
+    animateContent?: boolean;
     /** Opacity for the existing pictograph arrow layer. */
     arrowOpacity?: number;
   }>();
@@ -744,6 +747,7 @@ with pre-prepared data for better performance.
         {duration}
         propPositionOverrides={motionPropPositionOverrides}
         {directPropPositioning}
+        animateContent={animateContent && liveAnimateVisibility}
         {arrowOpacity}
         onGridReady={handleGridReady}
       />
@@ -796,6 +800,7 @@ with pre-prepared data for better performance.
             {duration}
             propPositionOverrides={motionPropPositionOverrides}
             {directPropPositioning}
+            animateContent={animateContent && liveAnimateVisibility}
             {arrowOpacity}
             onGridReady={handleGridReady}
           />
