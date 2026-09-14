@@ -7,7 +7,10 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { AnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import { DEFAULT_TRAIL_SETTINGS } from "$lib/shared/animation-engine/domain/types/trail-types";
+  import {
+    DEFAULT_TRAIL_SETTINGS,
+    TrackingMode,
+  } from "$lib/shared/animation-engine/domain/types/trail-types";
 
   type Source = "first" | "second";
 
@@ -23,6 +26,7 @@
     transitionKey: string;
     scope: AnimationScope;
     playing: boolean;
+    trace: "hands" | "tips";
     leftPropType: PropType;
     rightPropType: PropType;
     onplayingchange: (playing: boolean) => void;
@@ -40,6 +44,7 @@
     transitionKey,
     scope,
     playing,
+    trace,
     leftPropType,
     rightPropType,
     onplayingchange,
@@ -75,10 +80,12 @@
   let secondCanvasInitialized = false;
   // This stage has no trail-tip assignments. Disabling path-cache construction
   // avoids deriving invisible trails before a replacement can crossfade.
-  const motionPathTrailSettings = {
+  const motionPathTrailSettings = $derived({
     ...DEFAULT_TRAIL_SETTINGS,
     usePathCache: false,
-  };
+    trackingMode:
+      trace === "hands" ? TrackingMode.HAND : TrackingMode.RIGHT_END,
+  });
 
   function layerFor(source: Source): Layer | null {
     return source === "first" ? first : second;
