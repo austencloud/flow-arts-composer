@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import type { Snippet } from "svelte";
   import { activateWhenNear } from "$lib/actions/activate-when-near";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
@@ -18,6 +19,8 @@
     sequence?: SequenceData | null;
     /** Keep the canonical player-and-rail composition visible and interactive. */
     alwaysLive?: boolean;
+    /** Host controls rendered in the player frame's unused side rail. */
+    controls?: Snippet;
     playbackActive?: boolean;
     playbackMounted?: boolean;
     onRequestPlayback?: () => void;
@@ -46,6 +49,7 @@
     loadSequence,
     sequence: directSequence = null,
     alwaysLive = false,
+    controls,
     playbackActive = true,
     playbackMounted = playbackActive,
     onRequestPlayback,
@@ -263,6 +267,7 @@
 <div
   class="sequence-preview"
   class:ambient={activation === "ambient"}
+  class:with-controls={alwaysLive && !!controls}
   data-preview-state={showCardLayer ? "card" : "live"}
   data-activation={activation}
   data-playback-active={playbackActive}
@@ -347,6 +352,12 @@
           {/snippet}
         </LazyMount>
       </div>
+
+      {#if controls}
+        <div class="control-rail">
+          {@render controls()}
+        </div>
+      {/if}
     </div>
 
     <div class="strip-zone">
@@ -500,6 +511,36 @@
     inset: 0;
   }
 
+  .sequence-preview.with-controls {
+    aspect-ratio: auto;
+  }
+
+  .with-controls .live-presentation {
+    position: relative;
+    inset: auto;
+  }
+
+  .with-controls .player-zone {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(6rem, 9rem);
+    align-items: stretch;
+  }
+
+  .with-controls .live-player {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 1;
+  }
+
+  .control-rail {
+    display: grid;
+    align-items: stretch;
+    min-width: 0;
+    padding: 0.5rem;
+    border-left: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+  }
+
   .strip-zone {
     flex: 0 0 clamp(3.75rem, 22%, 6.5rem);
     min-width: 0;
@@ -507,6 +548,22 @@
     padding: 0.25rem;
     overflow: hidden;
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+  }
+
+  .with-controls .strip-zone {
+    flex: none;
+    height: clamp(3.75rem, 18cqw, 6.5rem);
+  }
+
+  @container (max-width: 28rem) {
+    .with-controls .player-zone {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .control-rail {
+      border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
+      border-left: 0;
+    }
   }
 
   .card-layer {
