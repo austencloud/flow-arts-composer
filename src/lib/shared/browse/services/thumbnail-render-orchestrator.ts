@@ -62,7 +62,8 @@ export interface ThumbnailRequest {
   /** Cancels only this caller; shared same-key rendering continues for others. */
   signal?: AbortSignal;
 
-  /** Gallery previews may reuse a QR image, but must not prepare scan assets. */
+  /** Gallery requests either prepare scan assets in the background or reuse a
+   * public prepared QR, depending on the caller's authorization. */
   qrPolicy?: "generate" | "cache-only" | "background" | "prepared-only";
 
   /** Paint a separately cached preview while its QR version is prepared. */
@@ -400,9 +401,10 @@ export class ThumbnailRenderOrchestrator {
       if (request.signal?.aborted) throw cancellationError(request.signal);
     }
 
-    // The preview stays visible, without a loading overlay. Only one QR lookup
-    // runs at a time, on a separate queue that cannot block new preview jobs.
-    // Gallery browsing is prepared-only; full card flows retain generation.
+    // The preview stays visible, without a loading overlay. Only one background
+    // QR job runs at a time, on a separate queue that cannot block new previews.
+    // Signed-in gallery cards prepare scan assets there; guest cards only reuse
+    // a public prepared QR.
     const final = await this.loadThumbnail(
       {
         ...request,
