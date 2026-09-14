@@ -10,6 +10,12 @@
  */
 
 import type { IAnimationRenderer as AnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
+import {
+  frameOffset,
+  sameFrame,
+  squareFrame,
+  type CanvasFrame,
+} from "../domain/types/canvas-frame";
 import type { ITrailCapturer as TrailCapturer } from "$lib/shared/animation-engine/services/ITrailCapturer";
 import type { TrailPoint, TrailSettings } from "../domain/types/trail-types";
 import { TrailMode } from "../domain/types/trail-types";
@@ -21,6 +27,8 @@ import type {
   RenderedPropTransform,
   PropTipData,
 } from "../domain/types/fire-types";
+import type { RenderedPropSprite } from "../domain/types/rendered-prop-sprite";
+import type { LedSample } from "../domain/types/led-types";
 import type { FireTipTrackerConfig } from "./fire-tip-tracker";
 import type { FireTipTracker } from "./fire-tip-tracker";
 import type { WebGLLedRenderer } from "$lib/shared/animation-engine/services/led/web-gl-led-renderer";
@@ -235,6 +243,14 @@ export class AnimationRenderLoop {
    */
   private renderers = new Map<EffectType, EffectRendererLike>();
   private canvasSize: number = 950;
+  /**
+   * The rectangle the overlay canvases paint. The engine's square sits centred
+   * in it, so every position handed to an overlay is shifted by `offset`.
+   * Square (offset 0) unless the host's wrapper is wider or taller than its
+   * square — the sequence viewer on a wide monitor.
+   */
+  private canvasFrame: CanvasFrame = squareFrame(950);
+  private offset = { x: 0, y: 0 };
   private lastTrailFrameTime: number = 0;
   // Timestamp of the last frame that actually stamped the trail accumulator.
   // Separate from lastTrailFrameTime (which uses 0 as an uninitialized
@@ -336,6 +352,8 @@ export class AnimationRenderLoop {
     this.TrailCapturer = config.TrailCapturer;
     this.pathCache = config.pathCache;
     this.canvasSize = config.canvasSize;
+    this.canvasFrame = config.canvasFrame ?? squareFrame(config.canvasSize);
+    this.offset = frameOffset(this.canvasFrame);
     this.frameBudgetMonitor = config.frameBudgetMonitor ?? null;
     this.fireTipTracker = config.fireTipTracker ?? null;
     this.ledSampler = config.ledSampler ?? null;
@@ -369,14 +387,20 @@ export class AnimationRenderLoop {
     if (config.TrailCapturer !== undefined)
       this.TrailCapturer = config.TrailCapturer;
     if (config.pathCache !== undefined) this.pathCache = config.pathCache;
-    if (
-      config.canvasSize !== undefined &&
-      config.canvasSize !== this.canvasSize
-    ) {
-      this.canvasSize = config.canvasSize;
-      this.mandalaOverlay?.resize(this.canvasSize, this.canvasSize);
-      this.mandalaPathPreparer.clearCache();
-      this.previousMandalaPaths = null;
+    if (config.canvasSize !== undefined) {
+      const frame =
+        config.canvasFrame ??
+        (config.canvasSize === this.canvasSize
+          ? this.canvasFrame
+          : squareFrame(config.canvasSize));
+      if (!sameFrame(frame, this.canvasFrame)) {
+        this.canvasSize = frame.size;
+        this.canvasFrame = frame;
+        this.offset = frameOffset(frame);
+        this.mandalaOverlay?.resize(frame.width, frame.height);
+        this.mandalaPathPreparer.clearCache();
+        this.previousMandalaPaths = null;
+      }
     }
     if (config.frameBudgetMonitor !== undefined)
       this.frameBudgetMonitor = config.frameBudgetMonitor ?? null;
@@ -1107,6 +1131,62 @@ export class AnimationRenderLoop {
    *   - error counting + auto-disable after threshold
    *   - inactive clear + time reset
    */
+  // ── Square → frame ─────────────────────────────────────────────────────────
+  // The tracker, sampler and renderer all work in the engine's square. Overlay
+  // canvases cover the whole frame, so their inputs are shifted by the offset
+  // of the centred square. Each helper returns its input untouched on a square
+  // frame, which is every export context and most hosts.
+
+  private toFrameTips(result: FireTipUpdateResult): FireTipUpdateResult {
+    const { x, y } = this.offset;
+    if (x === 0 && y === 0) return result;
+    return {
+      ...result,
+      tips: result.tips.map((t) => ({
+        ...t,
+        x: t.x + x,
+        y: t.y + y,
+        prevX: t.prevX + x,
+        prevY: t.prevY + y,
+      })),
+    };
+  }
+
+  private toFrameTransforms(
+    transforms:
+      | {
+          left: RenderedPropTransform | null;
+          right: RenderedPropTransform | null;
+        }
+      | undefined
+  ):
+    | { left: RenderedPropTransform | null; right: RenderedPropTransform | null }
+    | undefined {
+    const { x, y } = this.offset;
+    if (!transforms || (x === 0 && y === 0)) return transforms;
+    const shift = (t: RenderedPropTransform | null) =>
+      t ? { ...t, centerX: t.centerX + x, centerY: t.centerY + y } : null;
+    return { left: shift(transforms.left), right: shift(transforms.right) };
+  }
+
+  private toFrameSprites(
+    sprites: readonly RenderedPropSprite[]
+  ): readonly RenderedPropSprite[] {
+    const { x, y } = this.offset;
+    if (x === 0 && y === 0) return sprites;
+    return sprites.map((s) => ({
+      ...s,
+      centerX: s.centerX + x,
+      centerY: s.centerY + y,
+    }));
+  }
+
+  private toFrameLeds(leds: readonly LedSample[]): readonly LedSample[] {
+    const { x, y } = this.offset;
+    if (x === 0 && y === 0) return leds;
+    return leds.map((l) => ({ ...l, x: l.x + x, y: l.y + y }));
+  }
+
   private dispatchEffect(
     entry: EffectDispatchEntry,
     ctx: EffectDispatchContext
@@ -1704,13 +1784,20 @@ export class AnimationRenderLoop {
             : undefined,
       };
 
-      sharedTipResult = this.fireTipTracker!.update(
-        effectiveLeftMotionVisible ? props.leftProp : null,
-        effectiveRightMotionVisible ? props.rightProp : null,
-        tipTrackerConfig,
-        currentTime
+      sharedTipResult = this.toFrameTips(
+        this.fireTipTracker!.update(
+          effectiveLeftMotionVisible ? props.leftProp : null,
+          effectiveRightMotionVisible ? props.rightProp : null,
+          tipTrackerConfig,
+          currentTime
+        )
       );
     }
+
+    // Everything above worked in the engine's square. The overlays paint the
+    // whole frame, so from here on positions are in frame space.
+    const overlayTransforms = this.toFrameTransforms(renderedTransforms);
+    const overlayPropSprites = this.toFrameSprites(renderedPropSprites);
 
     if (
       hasFireOrCharcoalOverlay &&
@@ -1738,10 +1825,10 @@ export class AnimationRenderLoop {
           tips: allTips,
           currentTime,
           dt: dtSeconds,
-          canvasWidth: this.canvasSize,
-          canvasHeight: this.canvasSize,
+          canvasWidth: this.canvasFrame.width,
+          canvasHeight: this.canvasFrame.height,
           darkMode: params.darkMode ?? false,
-          propSprites: renderedPropSprites,
+          propSprites: overlayPropSprites,
           propColors: params.propColors,
           loopDetected: fireLoopDetected,
           loopDuration: fireLoopDetected ? sequenceSteps : undefined,
@@ -1825,7 +1912,7 @@ export class AnimationRenderLoop {
         sharedTips: sharedTipResult.tips,
         params,
         currentTime,
-        renderedTransforms,
+        renderedTransforms: overlayTransforms,
         propImages: this.renderer?.getPropImages?.(),
         loopDetectedThisFrame: this.loopDetectedThisFrame,
         isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
@@ -1878,12 +1965,14 @@ export class AnimationRenderLoop {
           tunnelPropColors: props.tunnelPropColors,
         };
 
-        const allLeds = this.ledSampler.update(
-          visibleLeftProp,
-          visibleRightProp,
-          ledSamplerConfig,
-          currentTime,
-          params.ledConfig
+        const allLeds = this.toFrameLeds(
+          this.ledSampler.update(
+            visibleLeftProp,
+            visibleRightProp,
+            ledSamplerConfig,
+            currentTime,
+            params.ledConfig
+          )
         );
 
         // Filter LEDs by resolved effect assignment. A pixel staff resolves
@@ -1901,8 +1990,8 @@ export class AnimationRenderLoop {
           {
             leds,
             currentTime,
-            canvasWidth: this.canvasSize,
-            canvasHeight: this.canvasSize,
+            canvasWidth: this.canvasFrame.width,
+            canvasHeight: this.canvasFrame.height,
           },
           params.ledConfig
         );

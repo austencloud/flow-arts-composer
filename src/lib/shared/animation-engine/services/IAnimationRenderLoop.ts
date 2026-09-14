@@ -6,6 +6,7 @@
  */
 
 import type { IAnimationRenderer } from "$lib/shared/animation-engine/services/IAnimationRenderer";
+import type { CanvasFrame } from "../domain/types/canvas-frame";
 import type {
   ITrailCapturer,
   AdditionalLayerProps,
@@ -61,6 +62,8 @@ export interface RenderLoopConfig {
   TrailCapturer: ITrailCapturer | null;
   pathCache: AnimationPathCache | null;
   canvasSize: number;
+  /** The rectangle the overlays paint. Omit for a square of `canvasSize`. */
+  canvasFrame?: CanvasFrame;
   frameBudgetMonitor?: FrameBudgetMonitor | null;
   /** Optional fire/charcoal tip position/velocity tracker (shared by both) */
   fireTipTracker?: FireTipTracker | null;

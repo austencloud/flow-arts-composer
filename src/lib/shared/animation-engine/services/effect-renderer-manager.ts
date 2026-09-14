@@ -14,6 +14,10 @@
  */
 
 import type { FireTipTracker } from "./fire-tip-tracker";
+import {
+  squareFrame,
+  type CanvasFrame,
+} from "../domain/types/canvas-frame";
 import type { LedSampler } from "./led-sampler";
 import type { ITrailOverlayCanvas } from "./ITrailOverlayCanvas";
 import type { IAnimationRenderLoop } from "./IAnimationRenderLoop";
@@ -200,6 +204,9 @@ export class EffectRendererManager {
   // ── Dependencies (injected) ─────────────────────────────────────────
   private containerElement: HTMLDivElement | null = null;
   private canvasSize: number = 0;
+  /** The rectangle every overlay canvas is allocated to; the engine's square
+   *  (`canvasSize`) sits centred inside it. */
+  private frame: CanvasFrame = squareFrame(0);
   private renderLoopService: IAnimationRenderLoop | null = null;
   private getFrameParams: FrameParamsProvider | null = null;
   private getVM: (() => AnimationVisibilityStateManager) | null = null;
@@ -231,6 +238,7 @@ export class EffectRendererManager {
   }): void {
     this.containerElement = deps.containerElement;
     this.canvasSize = deps.canvasSize;
+    this.frame = squareFrame(deps.canvasSize);
     this.renderLoopService = deps.renderLoopService;
     this.getFrameParams = deps.getFrameParams;
     this.getVM = deps.getVM;
@@ -243,7 +251,10 @@ export class EffectRendererManager {
   }): void {
     if (refs.renderLoopService !== undefined)
       this.renderLoopService = refs.renderLoopService;
-    if (refs.canvasSize !== undefined) this.canvasSize = refs.canvasSize;
+    if (refs.canvasSize !== undefined) {
+      this.canvasSize = refs.canvasSize;
+      this.frame = squareFrame(refs.canvasSize);
+    }
   }
 
   /** Expose charcoal params from EffectsConfigState for the registry onInit hook. */
@@ -351,8 +362,8 @@ export class EffectRendererManager {
     const renderer = plugin.createRenderer();
     const success = renderer.initialize(
       this.containerElement,
-      this.canvasSize,
-      this.canvasSize
+      this.frame.width,
+      this.frame.height
     );
     if (success) {
       this.renderers.set(id, renderer);
@@ -548,8 +559,8 @@ export class EffectRendererManager {
           const ledRenderer = new WebGLLedRenderer();
           const success = ledRenderer.initialize(
             this.containerElement,
-            this.canvasSize,
-            this.canvasSize
+            this.frame.width,
+            this.frame.height
           );
           if (success) {
             this.renderers.set("led", ledRenderer);
@@ -624,8 +635,8 @@ export class EffectRendererManager {
         const ledRenderer = new WebGLLedRenderer();
         const success = ledRenderer.initialize(
           this.containerElement,
-          this.canvasSize,
-          this.canvasSize
+          this.frame.width,
+          this.frame.height
         );
         if (!success) {
           this.renderers.delete("led");
@@ -795,18 +806,20 @@ export class EffectRendererManager {
 
   // ── Resize ──────────────────────────────────────────────────────────
 
-  /** Resize all effect overlay canvases to the new canvas size. */
-  resizeAll(newSize: number): void {
-    this.canvasSize = newSize;
+  /** Resize all effect overlay canvases to the new frame. A bare number is a
+   *  square frame of that side (offscreen export contexts). */
+  resizeAll(next: CanvasFrame | number): void {
+    const frame = typeof next === "number" ? squareFrame(next) : next;
+    this.canvasSize = frame.size;
+    this.frame = frame;
+    const { width, height } = frame;
     // Resize all registry-driven renderers (canvas2d + webgl overlays)
     for (const plugin of OVERLAY_PLUGINS) {
-      this.renderers
-        .get(plugin.id as OverlayEffectId)
-        ?.resize?.(newSize, newSize);
+      this.renderers.get(plugin.id as OverlayEffectId)?.resize?.(width, height);
     }
     // LED + trail handled separately
-    this.renderers.get("led")?.resize?.(newSize, newSize);
-    this.renderers.get("trails")?.resize?.(newSize, newSize);
+    this.renderers.get("led")?.resize?.(width, height);
+    this.renderers.get("trails")?.resize?.(width, height);
     // Reset fire/LED tip trackers so positions recalculate at the new canvas size.
     // Without this, after HMR the tracker uses stale positions from the old size.
     this.fireTipTracker?.reset();

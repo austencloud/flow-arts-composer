@@ -1149,6 +1149,10 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
       canvasSize,
       propDimensions: TRAIL_ENDPOINT_DIMENSIONS,
     };
+    // Tips are computed in the engine's square; this canvas covers the whole
+    // frame with that square centred in it.
+    const offsetX = (this.width - canvasSize) / 2;
+    const offsetY = (this.height - canvasSize) / 2;
 
     if (trackLeft) {
       const endpoint = calculateTrailSourceEndpoint(
@@ -1160,8 +1164,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
       if (endpoint) {
         leftMoved = this.appendToRing(
           leftRing,
-          endpoint.x,
-          endpoint.y,
+          endpoint.x + offsetX,
+          endpoint.y + offsetY,
           canvasSize,
           propIndex,
           endpoint.tipIndex ?? 0
@@ -1178,8 +1182,8 @@ export class TrailOverlayWebGL2 implements ITrailOverlayCanvas {
       if (endpoint) {
         rightMoved = this.appendToRing(
           rightRing,
-          endpoint.x,
-          endpoint.y,
+          endpoint.x + offsetX,
+          endpoint.y + offsetY,
           canvasSize,
           propIndex,
           endpoint.tipIndex ?? 1
