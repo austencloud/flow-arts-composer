@@ -4,9 +4,10 @@ import { randomInt } from "node:crypto";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { existsSync } from "node:fs";
-import { mkdir, open, readFile, unlink } from "node:fs/promises";
+import { mkdir, open, readFile, unlink, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { RequestEvent } from "./$types";
+import { parseGenerationOptions } from "../generation-options";
 
 const installation =
   process.env.MPFB_HOME ?? "E:/3D-Models/mpfb-proof-20260908";
@@ -54,6 +55,16 @@ export function GET(event: RequestEvent) {
 export async function POST(event: RequestEvent) {
   assertLocal(event);
   if (!installed()) error(503, "The local MPFB installation is unavailable.");
+  let options: ReturnType<typeof parseGenerationOptions>;
+  if (event.request.headers.get("content-type")?.includes("application/json")) {
+    try {
+      options = parseGenerationOptions(await event.request.json());
+    } catch {
+      options = null;
+    }
+    if (!options)
+      error(400, "Choose supported character options and try again.");
+  } else options = null;
   await mkdir(output, { recursive: true });
   // Shared across tabs, hot reloads and task servers. Never run two Blender jobs.
   let lock;
@@ -70,9 +81,12 @@ export async function POST(event: RequestEvent) {
   const seed = randomInt(0, 2147483647);
   const job = resolve(output, `${seed}-${Date.now()}`);
   try {
+    await mkdir(job, { recursive: true });
     await lock.writeFile(
       JSON.stringify({ seed, job, startedAt: new Date().toISOString() })
     );
+    const optionsFile = options ? resolve(job, "requested-options.json") : "";
+    if (options) await writeFile(optionsFile, JSON.stringify(options, null, 2));
     await promisify(execFile)(
       process.execPath,
       [
@@ -85,6 +99,7 @@ export async function POST(event: RequestEvent) {
         assets,
         blender,
         resolve("static/models/avatars/bakeoff"),
+        optionsFile,
       ],
       { cwd: process.cwd(), windowsHide: true, maxBuffer: 8 * 1024 * 1024 }
     );
