@@ -7,6 +7,7 @@
   import { Popover } from "bits-ui";
   import { flyFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import ShapeMatrixValueScroller from "$lib/shared/shape-matrix/app/components/ShapeMatrixValueScroller.svelte";
   import {
@@ -35,6 +36,7 @@
 
   let leftOpen = $state(false);
   let rightOpen = $state(false);
+  const handColors = $derived(getSettings().primaryPropColors);
 
   const turnValues = matrixTurnsForLevel(4);
   const turnKeys = turnValues.map(turnValueToKey);
@@ -103,7 +105,7 @@
             aria-label={`Choose ${axis.label.toLowerCase()} ${matrixTurnSpokenLabel(axis.turn, labelMode)}`}
           >
             <span class="hand-label">{axis.label}</span>
-            <span class="turn-value"
+            <span class="turn-value" style:color={handColors?.[axis.hand]}
               >{matrixTurnVisibleLabel(axis.turn, labelMode)}</span
             >
             <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -126,6 +128,8 @@
                 <section
                   {...props}
                   class="turn-popover"
+                  style:--dm-motion-blue={handColors?.left}
+                  style:--dm-motion-red={handColors?.right}
                   transition:flyFade={{ y: -6, duration: DURATION.normal }}
                   aria-label={`Choose ${axis.label.toLowerCase()} ${labelMode === "ratios" ? "ratio" : "turn"}`}
                 >

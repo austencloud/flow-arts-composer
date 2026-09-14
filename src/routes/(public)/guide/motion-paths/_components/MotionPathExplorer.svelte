@@ -22,6 +22,7 @@
   import { buildModeRealization } from "$lib/shared/shape-matrix/services/build-mode-realizations";
   import {
     loadShapeMatrix,
+    shapeMatrixTipPoint,
     type ShapeMatrixData,
   } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
   import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
@@ -34,6 +35,7 @@
   import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
 
   const explorer = createMotionPathExplorerState();
+  const matrixTipDx = shapeMatrixTipPoint(PropType.STAFF)?.dx;
   setAnimationVisibilityContext(explorer.scope.visibility);
   let pickerOpen = $state(false);
   let ready = $state(false);
@@ -264,7 +266,8 @@
               darkMode
               leftPropType={PropType.STAFF}
               rightPropType={PropType.STAFF}
-              tipDx={explorer.trace === "hands" ? 0 : undefined}
+              tipEnds={1}
+              tipDx={explorer.trace === "hands" ? 0 : matrixTipDx}
               animate={false}
             />
           {/snippet}
