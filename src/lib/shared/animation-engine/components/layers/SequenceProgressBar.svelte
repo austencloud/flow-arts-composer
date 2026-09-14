@@ -24,6 +24,7 @@ Design:
   import { cubicOut } from "svelte/easing";
   import { motionDuration } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
 
   let {
     currentStep = 0,
@@ -33,6 +34,9 @@ Design:
     onSeek = null,
     onScrubStart = null,
     onScrubEnd = null,
+    showPlaybackControl = false,
+    isPlaying = false,
+    onPlaybackToggle = null,
   }: {
     /** Current beat/step number (can exceed totalSteps for looping sequences) */
     currentStep?: number;
@@ -49,6 +53,10 @@ Design:
     onScrubStart?: (() => void) | null;
     /** Called when a scrub gesture ends (consumer resumes if it was playing). */
     onScrubEnd?: (() => void) | null;
+    /** Optional transport action that stays adjacent to this scrubber. */
+    showPlaybackControl?: boolean;
+    isPlaying?: boolean;
+    onPlaybackToggle?: (() => void) | null;
   } = $props();
 
   const interactive = $derived(!!onSeek);
@@ -119,7 +127,11 @@ Design:
     scrubbing = true;
     scrubRatio = ratioFromEvent(e);
     onScrubStart?.();
-    try { containerEl?.setPointerCapture(e.pointerId); } catch { /* synthetic/uncapturable pointer */ }
+    try {
+      containerEl?.setPointerCapture(e.pointerId);
+    } catch {
+      /* synthetic/uncapturable pointer */
+    }
     onSeek?.(scrubRatio);
   }
 
@@ -135,7 +147,11 @@ Design:
     if (!scrubbing) return;
     e.stopPropagation();
     scrubbing = false;
-    try { containerEl?.releasePointerCapture(e.pointerId); } catch { /* not captured */ }
+    try {
+      containerEl?.releasePointerCapture(e.pointerId);
+    } catch {
+      /* not captured */
+    }
     onScrubEnd?.();
   }
 
@@ -167,48 +183,69 @@ Design:
 </script>
 
 {#if visible && totalSteps > 0}
-  {#if interactive}
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div
-      bind:this={containerEl}
-      class="progress-bar-container interactive"
-      class:dark-mode={darkMode}
-      class:scrubbing
-      transition:fade={fadeParams}
-      role="slider"
-      tabindex="0"
-      aria-label="Seek position"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(displayProgress * 100)}
-      aria-valuetext={ariaLabel}
-      onpointerdown={onPointerDown}
-      onpointermove={onPointerMove}
-      onpointerup={onPointerUp}
-      onpointercancel={onPointerUp}
-      onkeydown={onKeydown}
-    >
-      <div class="progress-track" bind:this={trackEl}>
-        <div class="progress-fill" style="--progress: {progressPercent}"></div>
-        <div class="progress-knob" style="left: {progressPercent}"></div>
+  <div class="progress-row" class:with-playback-control={showPlaybackControl}>
+    {#if interactive}
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div
+        bind:this={containerEl}
+        class="progress-bar-container interactive"
+        class:dark-mode={darkMode}
+        class:scrubbing
+        transition:fade={fadeParams}
+        role="slider"
+        tabindex="0"
+        aria-label="Seek position"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(displayProgress * 100)}
+        aria-valuetext={ariaLabel}
+        onpointerdown={onPointerDown}
+        onpointermove={onPointerMove}
+        onpointerup={onPointerUp}
+        onpointercancel={onPointerUp}
+        onkeydown={onKeydown}
+      >
+        <div class="progress-track" bind:this={trackEl}>
+          <div
+            class="progress-fill"
+            style="--progress: {progressPercent}"
+          ></div>
+          <div class="progress-knob" style="left: {progressPercent}"></div>
+        </div>
       </div>
-    </div>
-  {:else}
-    <div
-      class="progress-bar-container"
-      class:dark-mode={darkMode}
-      transition:fade={fadeParams}
-      role="progressbar"
-      aria-label={ariaLabel}
-      aria-valuenow={Math.floor(progress * 100)}
-      aria-valuemin={0}
-      aria-valuemax={100}
-    >
-      <div class="progress-track">
-        <div class="progress-fill" style="--progress: {progressPercent}"></div>
+    {:else}
+      <div
+        class="progress-bar-container"
+        class:dark-mode={darkMode}
+        transition:fade={fadeParams}
+        role="progressbar"
+        aria-label={ariaLabel}
+        aria-valuenow={Math.floor(progress * 100)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div class="progress-track">
+          <div
+            class="progress-fill"
+            style="--progress: {progressPercent}"
+          ></div>
+        </div>
       </div>
-    </div>
-  {/if}
+    {/if}
+    {#if showPlaybackControl && onPlaybackToggle}
+      <PanelButton
+        variant="secondary"
+        ariaLabel={isPlaying ? "Pause playback" : "Resume playback"}
+        onclick={onPlaybackToggle}
+      >
+        <i
+          class="fa-solid {isPlaying ? 'fa-pause' : 'fa-play'}"
+          aria-hidden="true"
+        ></i>
+        <span>{isPlaying ? "Pause" : "Resume"}</span>
+      </PanelButton>
+    {/if}
+  </div>
 {/if}
 
 <style>
@@ -303,12 +340,19 @@ Design:
       var(--theme-accent-light, var(--theme-accent)) 50%,
       var(--theme-accent) 100%
     );
-    box-shadow: 0 0 12px color-mix(in srgb, var(--theme-accent) 50%, transparent);
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--theme-accent) 50%, transparent);
   }
 
   :global(:root.dark) .progress-bar-container:not(.dark-mode) .progress-fill {
-    background: linear-gradient(90deg, var(--theme-accent) 0%, var(--theme-accent-light, var(--theme-accent)) 50%, var(--theme-accent) 100%);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--theme-accent) 50%, transparent);
+    background: linear-gradient(
+      90deg,
+      var(--theme-accent) 0%,
+      var(--theme-accent-light, var(--theme-accent)) 50%,
+      var(--theme-accent) 100%
+    );
+    box-shadow: 0 0 12px
+      color-mix(in srgb, var(--theme-accent) 50%, transparent);
   }
 
   /* Knob: hidden until hover/scrub so the resting state stays a clean line. */
@@ -342,5 +386,33 @@ Design:
     .progress-knob {
       transition: none;
     }
+  }
+  .progress-row {
+    width: 100%;
+  }
+  .progress-row.with-playback-control {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding-inline: clamp(8px, 4cqw, 16px);
+    box-sizing: border-box;
+    background: var(--theme-panel-bg, rgba(240, 240, 240, 0.98));
+  }
+  .with-playback-control .progress-bar-container {
+    padding-inline: 0;
+  }
+  .with-playback-control :global(.panel-btn) {
+    flex: 0 0 var(--min-touch-target, 44px);
+    width: var(--min-touch-target, 44px);
+    min-width: var(--min-touch-target, 44px);
+    padding: 0;
+  }
+  .with-playback-control :global(.panel-btn span) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 </style>

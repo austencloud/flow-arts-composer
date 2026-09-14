@@ -195,4 +195,55 @@ describe("workspace playback", () => {
     state.confirmWorkspacePlaybackReady(current!);
     expect(state.workspacePlayback).toBe(current);
   });
+
+  it("keeps a failed preparation cancellable and only accepts the retried session", () => {
+    const state = createState();
+    state.startWorkspacePlayback(sequence(), 3, "generate");
+    const failed = state.workspacePlaybackPreparation!;
+
+    state.failWorkspacePlaybackPreparation(failed);
+    state.confirmWorkspacePlaybackReady(failed);
+    expect(state.workspacePlayback).toBeNull();
+    expect(state.workspacePlaybackPreparationError).toBeTruthy();
+
+    state.retryWorkspacePlayback();
+    const retry = state.workspacePlaybackPreparation!;
+    expect(retry).not.toBe(failed);
+    state.confirmWorkspacePlaybackReady(failed);
+    expect(state.workspacePlayback).toBeNull();
+
+    state.confirmWorkspacePlaybackReady(retry);
+    expect(state.workspacePlayback).toBe(retry);
+  });
+
+  it("hands the fractional playhead and paused intent to the viewer", () => {
+    const state = createState();
+    const session = startPlayback(state, sequence(), 3, "generate");
+    state.updateWorkspacePlaybackProgress(session, 1.75, false);
+
+    state.handoffWorkspacePlaybackToViewer();
+
+    expect(state.workspacePlayback).toBeNull();
+    expect(state.isSequenceViewerOpen).toBe(true);
+    expect(state.workspacePlaybackHandoff).toMatchObject({
+      sequence: session.sequence,
+      initialStep: 1.75,
+      playing: false,
+    });
+  });
+
+  it("cancels a failed preparation before a fresh Play starts a new session", () => {
+    const state = createState();
+    state.startWorkspacePlayback(sequence(), 3, "generate");
+    const failed = state.workspacePlaybackPreparation!;
+    state.failWorkspacePlaybackPreparation(failed);
+    state.stopWorkspacePlayback();
+    state.startWorkspacePlayback(sequence(), 3, "generate");
+    const fresh = state.workspacePlaybackPreparation!;
+
+    state.confirmWorkspacePlaybackReady(failed);
+    expect(state.workspacePlayback).toBeNull();
+    state.confirmWorkspacePlaybackReady(fresh);
+    expect(state.workspacePlayback).toBe(fresh);
+  });
 });

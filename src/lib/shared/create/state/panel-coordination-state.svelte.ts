@@ -367,6 +367,13 @@ export interface PanelCoordinationState {
    * mounted player on it, so a new object restarts the animation from beat 0.
    */
   get workspacePlaybackSourceRevision(): number | null;
+  /** The live playback intent used when the workspace opens the full viewer. */
+  get workspacePlaybackHandoff(): {
+    sequence: SequenceData;
+    initialStep: number;
+    playing: boolean;
+  } | null;
+  get workspacePlaybackPreparationError(): string | null;
   startWorkspacePlayback(
     sequence: SequenceData,
     sourceSequenceRevision: number,
@@ -376,6 +383,17 @@ export interface PanelCoordinationState {
     sequence: SequenceData;
     sourceTab: string;
   }): void;
+  failWorkspacePlaybackPreparation(
+    session: { sequence: SequenceData; sourceTab: string },
+    message?: string
+  ): void;
+  retryWorkspacePlayback(): void;
+  updateWorkspacePlaybackProgress(
+    session: { sequence: SequenceData; sourceTab: string },
+    step: number,
+    playing: boolean
+  ): void;
+  handoffWorkspacePlaybackToViewer(): void;
   stopWorkspacePlayback(): void;
   syncWorkspacePlaybackSource(
     sourceTab: string,
@@ -508,6 +526,14 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     sequence: SequenceData;
     sourceTab: string;
   } | null>(null);
+  let workspacePlaybackPreparationError = $state<string | null>(null);
+  let workspacePlaybackStep = 0;
+  let workspacePlaybackPlaying = true;
+  let workspacePlaybackHandoff = $state.raw<{
+    sequence: SequenceData;
+    initialStep: number;
+    playing: boolean;
+  } | null>(null);
   // Plain variable, not $state: the baseline is read imperatively by
   // syncWorkspacePlaybackSource, and nothing should re-render when it moves.
   let workspacePlaybackSourceRevision: number | null = null;
@@ -533,6 +559,8 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   function closeAllPanels() {
     workspacePlayback = null;
     workspacePlaybackPreparation = null;
+    workspacePlaybackPreparationError = null;
+    workspacePlaybackHandoff = null;
     workspacePlaybackSourceRevision = null;
     restoreStepEditorAfterPlayback = false;
     // Exit shift start mode
@@ -591,6 +619,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     if (!workspacePlayback && !workspacePlaybackPreparation) return;
     workspacePlayback = null;
     workspacePlaybackPreparation = null;
+    workspacePlaybackPreparationError = null;
     workspacePlaybackSourceRevision = null;
     if (restoreStepEditorAfterPlayback) isStepEditorPanelOpen = true;
     restoreStepEditorAfterPlayback = false;
@@ -991,6 +1020,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
     closeSequenceViewer() {
       isSequenceViewerOpen = false;
+      workspacePlaybackHandoff = null;
     },
 
     // Close all panels at once
@@ -1059,6 +1089,14 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       return workspacePlaybackSourceRevision;
     },
 
+    get workspacePlaybackHandoff() {
+      return workspacePlaybackHandoff;
+    },
+
+    get workspacePlaybackPreparationError() {
+      return workspacePlaybackPreparationError;
+    },
+
     startWorkspacePlayback(
       sequence,
       sourceSequenceRevision,
@@ -1079,13 +1117,69 @@ export function createPanelCoordinationState(): PanelCoordinationState {
         sequence: structuredClone($state.snapshot(sequence)),
         sourceTab,
       };
+      workspacePlaybackPreparationError = null;
+      workspacePlaybackStep = 0;
+      workspacePlaybackPlaying = true;
       workspacePlaybackSourceRevision = sourceSequenceRevision;
     },
 
     confirmWorkspacePlaybackReady(session) {
-      if (workspacePlaybackPreparation !== session) return;
+      if (
+        workspacePlaybackPreparation !== session ||
+        workspacePlaybackPreparationError !== null
+      )
+        return;
       workspacePlayback = session;
       workspacePlaybackPreparation = null;
+      workspacePlaybackPreparationError = null;
+    },
+
+    failWorkspacePlaybackPreparation(
+      session,
+      message = "Playback could not load."
+    ) {
+      if (workspacePlaybackPreparation !== session) return;
+      workspacePlaybackPreparationError = message;
+    },
+
+    retryWorkspacePlayback() {
+      const session = workspacePlaybackPreparation;
+      if (!session || !workspacePlaybackPreparationError) return;
+      const retriedSession = {
+        sequence: session.sequence,
+        sourceTab: session.sourceTab,
+      };
+      workspacePlaybackPreparation = retriedSession;
+      workspacePlaybackPreparationError = null;
+      workspacePlaybackStep = 0;
+      workspacePlaybackPlaying = true;
+    },
+
+    updateWorkspacePlaybackProgress(session, step, playing) {
+      if (
+        session !== workspacePlayback &&
+        session !== workspacePlaybackPreparation
+      )
+        return;
+      workspacePlaybackStep = step;
+      workspacePlaybackPlaying = playing;
+    },
+
+    handoffWorkspacePlaybackToViewer() {
+      const session = workspacePlayback ?? workspacePlaybackPreparation;
+      if (!session) {
+        closeAllPanels();
+        isSequenceViewerOpen = true;
+        return;
+      }
+      const handoff = {
+        sequence: session.sequence,
+        initialStep: workspacePlaybackStep,
+        playing: workspacePlaybackPlaying,
+      };
+      closeAllPanels();
+      workspacePlaybackHandoff = handoff;
+      isSequenceViewerOpen = true;
     },
 
     stopWorkspacePlayback,

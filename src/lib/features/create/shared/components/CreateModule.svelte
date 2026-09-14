@@ -713,9 +713,8 @@
     handleSectionChange(methodId);
   }
 
-  function handleOpenExportPanel() {
-    if (!handlers) return;
-    handlers.handleOpenExportPanel(panelState);
+  function handleOpenSequenceViewer() {
+    panelState.openSequenceViewer();
   }
 
   function handleClearSequence() {
@@ -981,7 +980,7 @@
             bind:buttonPanelElement
             bind:toolPanelElement
             onClearSequence={handleClearSequence}
-            onViewSequence={handleOpenExportPanel}
+            onViewSequence={handleOpenSequenceViewer}
             onOptionSelected={handleOptionSelected}
             onOpenFilters={handleOpenFilterPanel}
             onCloseFilters={() => {

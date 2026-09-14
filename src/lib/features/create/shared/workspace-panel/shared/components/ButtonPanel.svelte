@@ -82,6 +82,14 @@
   const hasWorkspacePlayback = $derived(
     !!panelState.workspacePlayback || !!panelState.workspacePlaybackPreparation
   );
+  const isWorkspacePlaybackPreparing = $derived(
+    !!panelState.workspacePlaybackPreparation &&
+      !panelState.workspacePlayback &&
+      !panelState.workspacePlaybackPreparationError
+  );
+  const hasWorkspacePlaybackError = $derived(
+    !!panelState.workspacePlaybackPreparationError
+  );
   const shouldShowOptionInteractionBanner = $derived.by(() => {
     if (
       !isConstructTab ||
@@ -120,6 +128,10 @@
       return;
     }
     if (hasWorkspacePlayback) {
+      if (hasWorkspacePlaybackError) {
+        panelState.retryWorkspacePlayback();
+        return;
+      }
       panelState.stopWorkspacePlayback();
       return;
     }
@@ -217,8 +229,7 @@
                       <ViewSequenceButton
                         purpose="expand-viewer"
                         onclick={() => {
-                          panelState.stopWorkspacePlayback();
-                          onViewSequence?.();
+                          panelState.handoffWorkspacePlaybackToViewer();
                         }}
                       />
                     </div>
@@ -226,7 +237,13 @@
                   <ViewSequenceButton
                     onclick={handleFullSequencePlay}
                     isActive={isExportPanelOpen}
-                    isStopping={usesWorkspacePlayback && hasWorkspacePlayback}
+                    isStopping={usesWorkspacePlayback &&
+                      !!panelState.workspacePlayback}
+                    playbackState={isWorkspacePlaybackPreparing
+                      ? "preparing"
+                      : hasWorkspacePlaybackError
+                        ? "retry"
+                        : "idle"}
                     purpose="play"
                   />
                 </div>

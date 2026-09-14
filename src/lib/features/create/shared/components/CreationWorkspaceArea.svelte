@@ -21,7 +21,6 @@
   import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { onDestroy, untrack } from "svelte";
 
   const ctx = getCreateModuleContext();
@@ -179,6 +178,7 @@
       <LazyMount
         loader={loadWorkspacePlayback}
         active
+        retryKey={playbackRun}
         props={{
           sequence: session.sequence,
           active: playback !== null && playbackKey === retainedPlaybackKey,
@@ -189,21 +189,29 @@
             panelState.confirmWorkspacePlaybackReady(playbackCandidate);
           },
           onerror: (failedRun: number) => {
-            if (failedRun === playbackRun) panelState.stopWorkspacePlayback();
+            if (failedRun === playbackRun)
+              panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
           },
           onStepChange: (step: number) => (playbackStep = Math.floor(step)),
+          onPlaybackChange: (
+            reportedRun: number,
+            step: number,
+            playing: boolean
+          ) => {
+            const candidate = playbackCandidate;
+            if (!candidate || reportedRun !== playbackRun) return;
+            panelState.updateWorkspacePlaybackProgress(
+              candidate,
+              step,
+              playing
+            );
+          },
         }}
         onStatusChange={(status) => {
-          if (status === "error") panelState.stopWorkspacePlayback();
+          if (status === "error" && playbackCandidate)
+            panelState.failWorkspacePlaybackPreparation(playbackCandidate);
         }}
-      >
-        {#snippet error(_error, retry)}
-          <div class="playback-loading" role="alert">
-            <span>Playback could not load.</span>
-            <PanelButton onclick={retry}>Try again</PanelButton>
-          </div>
-        {/snippet}
-      </LazyMount>
+      />
     {/key}
   {/if}
 {/snippet}
@@ -239,9 +247,6 @@
       first={card}
       second={animation}
     />
-    {#if playbackCandidate && readyPlayback !== retainedPlayback}
-      <div class="playback-loading" role="status">Loading playback…</div>
-    {/if}
   </div>
 </div>
 
@@ -267,18 +272,5 @@
     position: relative;
     flex: 1;
     min-height: 0;
-  }
-
-  .playback-loading {
-    position: absolute;
-    inset: 4px 12px auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 12px;
-    color: var(--theme-text);
-    background: var(--theme-panel-bg);
-    font-size: var(--font-size-min, 14px);
   }
 </style>
