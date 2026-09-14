@@ -2,6 +2,47 @@
 
 Status: local evaluation complete; not promoted to the production roster.
 
+## Reference quality pass, 2026-09-14
+
+The current reference is `intake-mpfb-962266499`. Its earlier thumb-roll
+correction is present: the distal thumb-to-index-joint distance is 15.76 mm
+on both hands, against a 109.55 mm palm length. The runtime grip check passes.
+This measures bones, not finger-surface contact; the close views and sampled
+staff-loop frames show a usable grip, with further finger-fit work still open.
+
+The outfit's source material declares `female_casualsuit01_ao.png`, but MPFB's
+GAMEENGINE wrapper omitted it. The generator now connects authored outfit AO
+to Blender's glTF occlusion output. It preserves the diffuse, normal and alpha
+channels and exports non-default AO strength. It does not bake shadows into
+the base color or change skin and hair materials.
+
+The comparison candidate is `intake-mpfb-962266499-quality`, at
+`/test/character-playground?character=intake-mpfb-962266499-quality`.
+It restores AO on the archived reference export; it does not regenerate the
+person from a seed. All 22,589 vertex positions across nine meshes and all
+62 node transforms match the original optimized candidate exactly. The
+delivered GLB is 3,282,724 bytes, SHA256
+`bd4377588ff11c0406c8f850c3810406f0719ad616db438302c5ae4cc95854c7`.
+The original candidate remains available.
+
+`scripts/characters/verify-mpfb-materials.mjs` checks this casual-suit fixture.
+The original fails for missing AO; the corrected raw export, optimized export,
+and a fresh Blender generation pass. A controlled Blender export with AO
+strength 0.35 retains that value within 1e-6. The corrected candidate also
+passes `verify-mpfb-grip.mjs` with the original distances.
+
+Direct inspection used the production character playground, Forest environment,
+1600x900 CSS viewport (1920x1080 capture), default staff loop, and hidden plane
+guides. The guide overlay was disabled through existing controls for inspection;
+the scene defaults were not changed. Before/after camera and paused pose were
+held constant. The shading improvement is modest. Evidence is under
+`E:/3D-Models/mpfb-proof-20260908/playground/quality-pass-20260914/`, including
+`reference-before.webp`, `reference-after.webp`, and `motion-front.webp`.
+
+This pass supports continuing with one reference character. Skin detail,
+eye appearance, hair quality, facial animation and exhaustive collision testing
+remain unproven. The original September 8 trial below is historical evidence.
+
 MPFB can produce a clothed, skinned character that loads into TKA and performs
 the existing staff loop. This trial required two export corrections: bake the
 body's modelling shape keys, and align finger bone rolls to TKA's positive-X
