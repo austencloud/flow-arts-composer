@@ -22,6 +22,8 @@
   const scope = createAnimationScope({ persistence: "ephemeral" });
   scope.visibility.setDarkMode(true);
   scope.visibility.setVisibility("props", true);
+  scope.visibility.setVisibility("leftPathLines", true);
+  scope.visibility.setVisibility("rightPathLines", false);
   const trails = {
     ...DEFAULT_TRAIL_SETTINGS,
     trackingMode: TrackingMode.RIGHT_END,
@@ -32,6 +34,7 @@
   let shape = $state<MotionPathLessonShape>("arc");
   let prop = $state<"hand" | "staff">("hand");
   let playing = $state(false);
+  let liveStep = $state(1.5);
   let reducedMotion = $state(false);
   let sequence = $derived(singleHandPathExample(shape));
 
@@ -71,12 +74,15 @@
     <InlineAnimationPlayer
       {sequence}
       sequenceLoadKey={sequence.id}
+      initialStep={liveStep}
+      onStepChange={(step) => (liveStep = step)}
       autoPlay={false}
       showControls={false}
       chrome="minimal"
       fill
       interactive
       hoverHint="none"
+      disableContextMenu
       beatIndicators={false}
       hideTkaGlyph
       leftPropType={prop === "hand" ? PropType.HAND : PropType.STAFF}
