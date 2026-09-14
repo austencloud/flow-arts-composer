@@ -2,6 +2,22 @@ import { describe, expect, it, vi } from "vitest";
 import { createMotionPathExplorerState } from "../../../src/routes/(public)/guide/motion-paths/_data/motion-path-explorer-state.svelte";
 import { motionPathExamples } from "../../../src/routes/(public)/guide/motion-paths/_data/motion-path-examples";
 import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
+
+const proIn: Flower = {
+  style: "pro",
+  turns: 0,
+  ori: "in",
+  grid: "diamond",
+  petals: 1,
+};
+const antiOut: Flower = {
+  style: "anti",
+  turns: 0,
+  ori: "out",
+  grid: "diamond",
+  petals: 1,
+};
 
 describe("motion path guide isolation", () => {
   it("keeps the underlying fixed path for floats in Hybrid", () => {
@@ -59,14 +75,61 @@ describe("motion path guide isolation", () => {
       first.syncPolicy();
       first.toggleGuides();
       first.trace = "hands";
-      first.chooseExample("anti");
+      first.chooseSequence(structuredClone(motionPathExamples[1]!));
       expect(second.selectedPath).toBe("arc");
       expect(second.guides).toBe(true);
-      expect(second.example).toBe("mixed");
       expect(spy).not.toHaveBeenCalled();
     } finally {
       spy.mockRestore();
     }
+  });
+
+  it("keeps the newest matrix realization when an older build finishes late", async () => {
+    const explorer = createMotionPathExplorerState();
+    const pending: Array<{
+      resolve: (sequence: (typeof motionPathExamples)[number]) => void;
+    }> = [];
+    const builder = () =>
+      new Promise<(typeof motionPathExamples)[number]>((resolve) => {
+        pending.push({ resolve });
+      });
+    const first = structuredClone(motionPathExamples[0]!);
+    first.id = "older-matrix-realization";
+    const newest = structuredClone(motionPathExamples[1]!);
+    newest.id = "newest-matrix-realization";
+
+    explorer.chooseMatrixPair({ left: proIn, right: proIn }, builder);
+    explorer.chooseMatrixPair({ left: antiOut, right: antiOut }, builder);
+    await Promise.resolve();
+
+    pending[1]!.resolve(newest);
+    await Promise.resolve();
+    pending[0]!.resolve(first);
+    await Promise.resolve();
+
+    expect(explorer.sequence.id).toBe("newest-matrix-realization-arc");
+  });
+
+  it("keeps the selected path policy while changing a matrix relationship", async () => {
+    const explorer = createMotionPathExplorerState();
+    explorer.scope.visibility.setPathPolicy({
+      pathShape: "concave",
+      motionAwarePaths: true,
+    });
+    explorer.syncPolicy();
+    const realization = structuredClone(motionPathExamples[1]!);
+    realization.id = "matrix-relationship";
+
+    explorer.chooseHandRelationship("TO", async () => realization);
+    explorer.chooseMatrixPair(
+      { left: proIn, right: antiOut },
+      async () => realization
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(explorer.selectedPath).toBe("hybrid");
+    expect(explorer.sequence.id).toBe("matrix-relationship-hybrid");
   });
 
   it("keeps complete, closing MCP examples through the app adapter", () => {
