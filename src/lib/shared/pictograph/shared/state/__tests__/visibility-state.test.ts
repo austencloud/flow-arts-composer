@@ -14,6 +14,24 @@ import { VisibilityStateManager } from "../visibility-state.svelte";
  * tests lock the contract both consumers now depend on: the default is `false`,
  * and a change notifies the `all` / `non_radial` observers the card listens on.
  */
+describe("VisibilityStateManager — hand colour key", () => {
+  it("defaults the start-position hand key ON so it is baked in until toggled", () => {
+    const vm = new VisibilityStateManager();
+    expect(vm.getRawGlyphVisibility("handColorKey")).toBe(true);
+    expect(vm.getState().handColorKey).toBe(true);
+  });
+
+  it("toggles through setGlyphVisibility and notifies glyph observers", () => {
+    const vm = new VisibilityStateManager();
+    const glyphObserver = vi.fn();
+    vm.registerObserver(glyphObserver, ["glyph"]);
+    vm.setGlyphVisibility("handColorKey", false);
+    expect(vm.getRawGlyphVisibility("handColorKey")).toBe(false);
+    expect(glyphObserver).toHaveBeenCalledTimes(1);
+    expect(vm.toAppSettings().handColorKey).toBe(false);
+  });
+});
+
 describe("VisibilityStateManager — non-radial points", () => {
   it("defaults non-radial points OFF (matches the export-panel toggle)", () => {
     const vm = new VisibilityStateManager();

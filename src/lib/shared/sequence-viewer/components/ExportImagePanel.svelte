@@ -281,13 +281,17 @@
     void vmVersion;
     return vm.getNonRadialVisibility();
   });
+  const handColorKey = $derived.by(() => {
+    void vmVersion;
+    return vm.getRawGlyphVisibility("handColorKey");
+  });
 
   // Master toggles: clicking a section label flips all its children.
   // If any child is on, master is "on" and a click turns everything off;
   // if all are off, a click turns everything on.
   const headerAnyOn = $derived(showWord || showDifficulty || showLoopGlyph);
   const pictographAnyOn = $derived(
-    showGrid || tkaGlyph || tndGlyph || positionsGlyph || nonRadial
+    showGrid || tkaGlyph || tndGlyph || positionsGlyph || handColorKey || nonRadial
   );
 
   function toggleHeader(): void {
@@ -305,6 +309,7 @@
     vm.setGlyphVisibility("tndGlyph", target);
     vm.setGlyphVisibility("elementalGlyph", target);
     vm.setGlyphVisibility("positionsGlyph", target);
+    vm.setGlyphVisibility("handColorKey", target);
     vm.setNonRadialVisibility(target);
     reportSetting("pictograph_all", pictographAnyOn, target);
   }
@@ -507,6 +512,17 @@
                       positionsGlyph,
                       (value) => vm.setGlyphVisibility("positionsGlyph", value)
                     )}>Positions</button
+                >
+                <button
+                  type="button"
+                  class="rt-chip"
+                  aria-pressed={handColorKey}
+                  onclick={() =>
+                    togglePictographSetting(
+                      "hand_color_key",
+                      handColorKey,
+                      (value) => vm.setGlyphVisibility("handColorKey", value)
+                    )}>Hand key</button
                 >
                 <button
                   type="button"
@@ -808,6 +824,18 @@
                   (value) => vm.setGlyphVisibility("positionsGlyph", value)
                 )}
               aria-pressed={positionsGlyph}>Positions</button
+            >
+            <button
+              type="button"
+              class="chip"
+              class:active={handColorKey}
+              onclick={() =>
+                togglePictographSetting(
+                  "hand_color_key",
+                  handColorKey,
+                  (value) => vm.setGlyphVisibility("handColorKey", value)
+                )}
+              aria-pressed={handColorKey}>Hand key</button
             >
             <button
               type="button"

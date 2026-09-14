@@ -47,6 +47,7 @@ export function getCardAssetBundle(
         showTnD: false,
         showElemental: false,
         showPositions: false,
+        showHandColorKey: true,
         showReversals: true,
         showNonRadialPoints: false,
         showGrid: true,

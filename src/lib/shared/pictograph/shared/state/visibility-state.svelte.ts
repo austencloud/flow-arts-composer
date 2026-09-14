@@ -29,6 +29,8 @@ interface VisibilitySettings {
   positionsGlyph: boolean;
   showGrid: boolean; 
   nonRadialPoints: boolean;
+  /** L/R colour key on the start position. */
+  handColorKey: boolean;
   handPointVisibility: "all" | "active" | "none";
   stepNumbers: boolean;
 }
@@ -60,6 +62,7 @@ export class VisibilityStateManager {
       positionsGlyph: false,
       showGrid: true,
       nonRadialPoints: false,
+      handColorKey: true,
       handPointVisibility: "all",
       stepNumbers: true,
       ...this.convertAppSettingsToVisibility(initialSettings),
@@ -103,6 +106,8 @@ export class VisibilityStateManager {
           this.settings.showGrid = v.showGrid;
         if (v.nonRadialPoints !== undefined)
           this.settings.nonRadialPoints = v.nonRadialPoints;
+        if (v.handColorKey !== undefined)
+          this.settings.handColorKey = v.handColorKey;
         if (v.handPointVisibility !== undefined)
           this.settings.handPointVisibility = v.handPointVisibility;
         if (v.stepNumbers !== undefined)
@@ -144,6 +149,7 @@ export class VisibilityStateManager {
       reversalIndicators: this.settings.reversalIndicators,
       showGrid: this.settings.showGrid,
       nonRadialPoints: this.settings.nonRadialPoints,
+      handColorKey: this.settings.handColorKey,
       handPointVisibility: this.settings.handPointVisibility,
       stepNumbers: this.settings.stepNumbers,
     };
@@ -165,6 +171,7 @@ export class VisibilityStateManager {
       elementalGlyph: this.settings.elementalGlyph,
       positionsGlyph: this.settings.positionsGlyph,
       nonRadialPoints: this.settings.nonRadialPoints,
+      handColorKey: this.settings.handColorKey,
     };
   }
 
@@ -307,6 +314,7 @@ export class VisibilityStateManager {
       "tndGlyph",
       "elementalGlyph",
       "positionsGlyph",
+      "handColorKey",
     ].filter((glyph) => this.getGlyphVisibility(glyph));
   }
 
