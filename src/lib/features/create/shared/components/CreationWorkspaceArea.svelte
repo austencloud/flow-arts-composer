@@ -191,7 +191,7 @@
           onStepChange: (step: number) => (playbackStep = Math.floor(step)),
         }}
         onStatusChange={(status) => {
-          if (status === "error") readyPlayback = session;
+          if (status === "error") panelState.stopWorkspacePlayback();
         }}
       >
         {#snippet error(_error, retry)}
