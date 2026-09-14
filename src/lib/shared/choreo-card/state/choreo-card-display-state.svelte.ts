@@ -61,6 +61,10 @@ export function createChoreoCardDisplayState(
     void visibilityVersion;
     return visibilityManager.getRawGlyphVisibility("positionsGlyph");
   });
+  const showHandColorKey = $derived.by(() => {
+    void visibilityVersion;
+    return visibilityManager.getRawGlyphVisibility("handColorKey");
+  });
   const showGrid = $derived.by(() => {
     void visibilityVersion;
     return visibilityManager.getGridVisibility();
@@ -176,6 +180,9 @@ export function createChoreoCardDisplayState(
     },
     get showPositions() {
       return showPositions;
+    },
+    get showHandColorKey() {
+      return showHandColorKey;
     },
     get showGrid() {
       return showGrid;

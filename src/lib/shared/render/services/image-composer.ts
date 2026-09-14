@@ -201,6 +201,7 @@ export class ImageComposer {
         showTnD: overrides.showTnD,
         showElemental: overrides.showElemental,
         showPositions: overrides.showPositions,
+        showHandColorKey: overrides.showHandColorKey,
         showReversals: overrides.showReversals,
         showNonRadialPoints: overrides.showNonRadialPoints,
         darkMode: overrides.darkMode,
@@ -238,6 +239,7 @@ export class ImageComposer {
       showTnD: visibilityManager.getGlyphVisibility("tndGlyph"),
       showElemental: visibilityManager.getGlyphVisibility("elementalGlyph"),
       showPositions: visibilityManager.getGlyphVisibility("positionsGlyph"),
+      showHandColorKey: visibilityManager.getGlyphVisibility("handColorKey"),
       showReversals: visibilityManager.getGlyphVisibility("reversalIndicators"),
       showNonRadialPoints: visibilityManager.getNonRadialVisibility(),
       darkMode: animVisibilityManager.isDarkMode(),
@@ -256,6 +258,8 @@ export class ImageComposer {
         showTnD: overrides.showTnD ?? globalSettings.showTnD,
         showElemental: overrides.showElemental ?? globalSettings.showElemental,
         showPositions: overrides.showPositions ?? globalSettings.showPositions,
+        showHandColorKey:
+          overrides.showHandColorKey ?? globalSettings.showHandColorKey,
         showReversals: overrides.showReversals ?? globalSettings.showReversals,
         showNonRadialPoints:
           overrides.showNonRadialPoints ?? globalSettings.showNonRadialPoints,
@@ -526,6 +530,7 @@ export class ImageComposer {
         : visibilitySettings.handPointVisibility ?? "all") as "all" | "active",
       showTKA: visibilitySettings.showTKA ?? true,
       showReversals: visibilitySettings.showReversals ?? true,
+      showHandColorKey: visibilitySettings.showHandColorKey ?? true,
       handPathMode: visibilitySettings.handPathMode ?? false,
     };
 

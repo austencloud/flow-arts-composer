@@ -127,6 +127,7 @@ function mapToVisibility(
     showTnD: options.showTnD ?? false,
     showElemental: options.showElemental ?? false,
     showPositions: options.showPositions ?? false,
+    showHandColorKey: options.showHandColorKey ?? true,
     showReversals: options.showReversals ?? true,
     showNonRadialPoints: options.showNonRadialPoints ?? true,
     showGrid: options.showGrid ?? true,

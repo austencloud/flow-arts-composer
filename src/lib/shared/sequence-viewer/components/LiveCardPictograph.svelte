@@ -125,7 +125,7 @@
       pictograph={displayed}
       {darkMode}
       showDuration={false}
-      showHandColorKey={stepNumber === 0}
+      showHandColorKey={stepNumber === 0 && options.showHandColorKey !== false}
       showPathShape={false}
       widthMultiplier={options.widthMultiplier}
       glyphLayout={options.primaryPropColors ? "card-custom" : "card"}
