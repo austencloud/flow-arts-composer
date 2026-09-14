@@ -2,6 +2,11 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
+  import {
+    createEffectsConfigState,
+    type EffectsConfigState,
+  } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 
   let {
     sequence,
@@ -28,7 +33,21 @@
   // component. Subsequent Play runs only need their new sequence data loaded.
   let canvasInitialized = $state(false);
   let loadedRun = $state<number | null>(null);
+  const visibilityManager = getAnimationVisibilityManager();
+  let effectsConfigState = $state<EffectsConfigState>(
+    visibilityManager.effectsConfigState ?? createEffectsConfigState()
+  );
   const loadIdentity = $derived(`${sequence.id}:${run}`);
+
+  $effect(() => {
+    const syncEffectsConfig = () => {
+      effectsConfigState =
+        visibilityManager.effectsConfigState ?? effectsConfigState;
+    };
+    visibilityManager.registerObserver(syncEffectsConfig);
+    syncEffectsConfig();
+    return () => visibilityManager.unregisterObserver(syncEffectsConfig);
+  });
 
   function confirmReady() {
     if (canvasInitialized && loadedRun === run) onready(run);
@@ -49,6 +68,7 @@
           autoPlayDelay={0}
           playbackAllowed={active}
           resumeWhenPlaybackAllowed
+          {effectsConfigState}
           onReady={(loadedIdentity) => {
             if (loadedIdentity !== loadIdentity) return;
             loadedRun = run;
