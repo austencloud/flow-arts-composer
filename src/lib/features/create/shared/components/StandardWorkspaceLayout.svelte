@@ -2,8 +2,8 @@
   /**
    * StandardWorkspaceLayout - Workspace and Tool Panel Layout Container
    *
-   * Uses CSS Grid for smooth, animatable layout transitions.
-   * Workspace is always in DOM but collapses when empty.
+   * Uses the shared PanelGroup for animated workspace and tool-panel transitions.
+   * Both panels stay mounted while their tracks collapse when inactive.
    *
    * Domain: Create module - Layout
    */
