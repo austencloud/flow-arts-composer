@@ -467,6 +467,7 @@
         // Post Studio owns re-rendering; the sheet must not kick off an
         // animation export that would replace the composed post.
         request: () => Promise.resolve(),
+        cancel: () => {},
       };
     }
 
@@ -478,6 +479,7 @@
         progress: mandala.exporting ? mandala.exportProgress : null,
         label: "Mandala",
         request: () => Promise.resolve(mandala.startExport({ deliver: false })),
+        cancel: () => mandala.cancelExport(),
       };
     }
 
@@ -488,6 +490,7 @@
         progress: ctx.exportProgress?.progress ?? null,
         label: "Tunnel",
         request: () => interactions.handleArtExport(target),
+        cancel: () => interactions.handleCancelVideoExport(),
       };
     }
 
@@ -500,6 +503,7 @@
       // that, because only there is the user unambiguously looking at a scene.
       label: share.sceneShare ? "Scene" : "Video",
       request: requestShareVideo,
+      cancel: () => interactions.handleCancelVideoExport(),
     };
   });
 
@@ -1469,6 +1473,7 @@
     isRecordingScene={!share.artShare && ctx.isRecording3D}
     exportProgress={artShareVideo.progress}
     onRequestVideo={artShareVideo.request}
+    onCancelVideo={artShareVideo.cancel}
     onPrepareFile={share.prepareFile}
     initialEntry={share.initialEntry}
     preserveSession={share.preserveSession}

@@ -76,6 +76,8 @@
     exportProgress: number | null;
     /** `false` means no render started, so the sheet must stop waiting. */
     onRequestVideo?: () => void | boolean | Promise<boolean>;
+    /** Stops the same export source that `onRequestVideo` started. */
+    onCancelVideo?: () => void;
     /** Hosts retire an unrelated old video only when this share prepares video. */
     onPrepareFile?: (artifact: ShareArtifact) => boolean | void;
     onClose: () => void;
@@ -116,6 +118,7 @@
     isRecordingScene = false,
     exportProgress,
     onRequestVideo = () => false,
+    onCancelVideo,
     onPrepareFile,
     onClose,
     metaStatusOverride,
@@ -191,33 +194,21 @@
       label: value === "card" ? "Card" : videoLabel,
     }))
   );
-  /** Sharing starts actionable; customization unfolds only on request. */
-  let customizeOpen = $state(false);
   let footerOpen = $state(false);
   let presetsOpen = $state(false);
   /** Opening Share must not spend a render on a link or sequence handoff. */
   let filePreparationOpen = $state(false);
-  let downloadWhenReady = $state(false);
   let captionOpen = $state(false);
   let publishOpen = $state(false);
   let failedPreviewUrl = $state<string | null>(null);
   let cardRenderFailed = $state(false);
 
-  /** Reveal after the slide finishes so short viewports reach the full panel. */
-  function revealCustomize(event: Event): void {
-    const el = event.currentTarget;
-    if (!(el instanceof HTMLElement)) return;
-    el.scrollIntoView({
-      block: "nearest",
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-    });
-  }
-
   let statusMessage = $state("");
   let busyDestination = $state<HandoffDestinationId | null>(null);
-  let videoRefused = $state(false);
+  type VideoStatus = "idle" | "rendering" | "ready" | "canceled" | "failed";
+  let videoStatus = $state<VideoStatus>("idle");
+  let videoRequestVersion = 0;
+  let sawExternalVideoExport = false;
   let savingCardPresentation = $state(false);
 
   function changeShareCardPresentation(value: CardPresentation): void {
@@ -317,8 +308,10 @@
   );
 
   const filename = $derived(buildArtifactFilename(word, artifact));
-  // The host owns which view-specific render occupies the video slot.
-  const activeVideoUrl = $derived(videoBlobUrl);
+  // A previous file must disappear while an explicit retry replaces it.
+  const activeVideoUrl = $derived(
+    videoStatus === "ready" ? videoBlobUrl : null
+  );
   const reviewPreviewUrl = $derived(
     artifact === "video" ? activeVideoUrl : cardPreview.url
   );
@@ -491,20 +484,8 @@
         (artifact === "video" && !!activeVideoUrl))
   );
 
-  const videoBusy = $derived(artifact === "video" && !videoBlob);
-
-  // The menu's Download is a complete command. Export settings can still open
-  // this preview without saving until the user has reviewed their choices.
-  $effect(() => {
-    if (!isOpen) {
-      if (!preserveSession) downloadWhenReady = false;
-      return;
-    }
-    if (!downloadWhenReady || !activeBlob || busyDestination || qrPending)
-      return;
-    downloadWhenReady = false;
-    untrack(() => void runDestination("download"));
-  });
+  /** Busy means work is actually running, including bytes arriving for delivery. */
+  const videoBusy = $derived(videoStatus === "rendering");
 
   /** Detect setting changes without automatically replacing an expensive render. */
   const videoSettingsKey = $derived(
@@ -521,6 +502,7 @@
    * mark the result stale.
    */
   let requestedVideoKey: string | null = null;
+  let stampedVideoUrl: string | null = null;
 
   /** The URL counts immediately, before its bytes finish loading into a blob. */
   const hasVideo = $derived(!!activeVideoUrl || !!videoBlob);
@@ -585,7 +567,6 @@
           imageComposition.customNotesText
         ),
     });
-    customizeOpen = false;
     footerOpen = false;
     presetsOpen = false;
     filePreparationOpen = false;
@@ -595,7 +576,7 @@
     cardRenderFailed = false;
     statusMessage = "";
     busyDestination = null;
-    videoRefused = false;
+    videoStatus = videoBlobUrl ? "ready" : "idle";
     qrDataUrl = null;
     qrError = "";
     pageMenuOpen = false;
@@ -610,27 +591,62 @@
     // Never relabel and reuse a previous view's render.
     if (!url) {
       videoBlob = null;
+      if (videoStatus === "ready") videoStatus = "idle";
       return;
     }
+    // Rehydrate an existing delivered file whenever this sheet opens. The
+    // visible URL is status-gated, so it cannot be used as the source of truth.
+    if (!isOpen) return;
 
     // `untrack` prevents the completed-render stamp from following later edits.
     // Preexisting renders are credited to the only settings currently available.
-    renderedVideoKey = requestedVideoKey ?? untrack(() => videoSettingsKey);
-    requestedVideoKey = null;
+    if (url !== stampedVideoUrl) {
+      renderedVideoKey = requestedVideoKey ?? untrack(() => videoSettingsKey);
+      requestedVideoKey = null;
+      stampedVideoUrl = url;
+    }
 
+    const requestVersion = ++videoRequestVersion;
+    videoStatus = "rendering";
     let stale = false;
     void (async () => {
       try {
         const blob = await (await fetch(url)).blob();
-        if (!stale) videoBlob = blob;
+        if (!stale && requestVersion === videoRequestVersion) {
+          videoBlob = blob;
+          videoStatus = "ready";
+        }
       } catch (error) {
         console.error("[PostShareSheet] Could not read exported video:", error);
+        if (!stale && requestVersion === videoRequestVersion) {
+          videoStatus = "failed";
+        }
       }
     })();
 
     return () => {
       stale = true;
     };
+  });
+
+  $effect(() => {
+    if (videoStatus === "canceled") return;
+    if (isExportingVideo || isRecordingScene) {
+      sawExternalVideoExport = true;
+      // A delivered URL can finish loading before the source flips its active
+      // flag. Keep the usable result ready instead of bouncing back to a
+      // spinner until the source's final bookkeeping completes.
+      if (!videoBlob) videoStatus = "rendering";
+      return;
+    }
+    if (sawExternalVideoExport) {
+      sawExternalVideoExport = false;
+      if (videoBlob) {
+        videoStatus = "ready";
+      } else if (videoStatus === "rendering" && !videoBlobUrl) {
+        videoStatus = "failed";
+      }
+    }
   });
 
   // A completed request must never update a later sequence or reopened sheet.
@@ -641,7 +657,6 @@
     linkRequest = null;
     if (linkSequence !== target) {
       shortUrl = seededShortUrl || null;
-      downloadWhenReady = false;
     }
     linkSequence = target;
     copyLinkPending = false;
@@ -676,34 +691,24 @@
   });
 
   function handleArtifactChange(next: ShareArtifact): void {
+    if (
+      next !== artifact &&
+      artifact === "video" &&
+      (videoBusy || isExportingVideo || isRecordingScene)
+    ) {
+      cancelVideo();
+    }
     if (!shareDraft.selectArtifact(next)) return;
-    downloadWhenReady = false;
     statusMessage = "";
     qrDataUrl = null;
     // Posted links belong to the selected artifact.
     postedPermalinks = {};
-
-    // A live scene take also prevents duplicate export requests.
-    if (next === "video") requestVideoForPreparedFile();
   }
 
   /** File choices are intentionally lazy, so Copy link and Send in Flow Arts Composer stay fast. */
-  function beginFilePreparation(download = false): void {
+  function beginFilePreparation(): void {
     filePreparationOpen = true;
-    downloadWhenReady = download;
     statusMessage = "";
-    if (artifact === "video") requestVideoForPreparedFile();
-  }
-
-  function requestVideoForPreparedFile(): void {
-    const requiresFreshVideo = onPrepareFile?.("video") === true;
-    if (
-      (!hasVideo || requiresFreshVideo) &&
-      !isExportingVideo &&
-      !isRecordingScene
-    ) {
-      requestVideo();
-    }
   }
 
   function linkSessionIsCurrent(
@@ -790,7 +795,7 @@
   }
 
   function returnToChooser(): void {
-    downloadWhenReady = false;
+    if (videoBusy || isExportingVideo || isRecordingScene) cancelVideo();
     filePreparationOpen = false;
     captionOpen = false;
     publishOpen = false;
@@ -907,22 +912,68 @@
    */
   function requestVideo(): void {
     if (!shareDraft.availableArtifacts.includes("video")) return;
-    videoRefused = false;
+    if (videoBusy || isExportingVideo || isRecordingScene) return;
+    const requestVersion = ++videoRequestVersion;
+    sawExternalVideoExport = false;
+    // Retire an old ordinary render only for this explicit user action.
+    onPrepareFile?.("video");
+    videoBlob = null;
+    videoStatus = "rendering";
     requestedVideoKey = untrack(() => videoSettingsKey);
-    const started = onRequestVideo();
-    if (started === false) {
-      videoRefused = true;
+    let started: void | boolean | Promise<boolean>;
+    try {
+      started = onRequestVideo();
+    } catch {
+      if (requestVersion === videoRequestVersion) videoStatus = "failed";
       return;
     }
-    if (!(started instanceof Promise)) return;
+    if (started === false) {
+      if (requestVersion === videoRequestVersion) videoStatus = "canceled";
+      return;
+    }
+    if (!(started instanceof Promise)) {
+      queueMicrotask(() => {
+        if (
+          requestVersion === videoRequestVersion &&
+          !isExportingVideo &&
+          !isRecordingScene &&
+          !videoBlobUrl
+        ) {
+          videoStatus = "failed";
+        }
+      });
+      return;
+    }
     void started
-      .then((ok) => {
-        videoRefused = ok === false;
+      .then(async (ok) => {
+        await Promise.resolve();
+        if (requestVersion !== videoRequestVersion) return;
+        if (ok === false) {
+          videoStatus = "canceled";
+        } else if (!videoBlobUrl && !isExportingVideo && !isRecordingScene) {
+          // A source that settled without a delivered file is an unsuccessful
+          // render; this also prevents a canceled source from spinning forever.
+          videoStatus = "failed";
+        }
       })
       .catch(() => {
-        videoRefused = true;
+        if (requestVersion === videoRequestVersion) videoStatus = "failed";
       });
   }
+
+  function cancelVideo(): void {
+    if (!videoBusy && !isExportingVideo && !isRecordingScene) return;
+    videoRequestVersion += 1;
+    sawExternalVideoExport = false;
+    requestedVideoKey = null;
+    videoStatus = "canceled";
+    onCancelVideo?.();
+  }
+
+  $effect(() => {
+    if (isOpen || preserveSession) return;
+    if (videoBusy || isExportingVideo || isRecordingScene) cancelVideo();
+  });
 
   function applyPreset(text: string): void {
     shareDraft.caption = text;
@@ -1383,7 +1434,7 @@
               <button
                 type="button"
                 class="intent"
-                onclick={() => beginFilePreparation(true)}
+                onclick={() => beginFilePreparation()}
               >
                 <i class="fa-solid fa-download" aria-hidden="true"></i>
                 <span>Download {artifact === "card" ? "card" : "video"}</span>
@@ -1396,7 +1447,10 @@
             </div>
           </div>
         {:else}
-          <div class="sheet-scroll">
+          <div
+            class="sheet-scroll"
+            class:video-preparation={artifact === "video"}
+          >
             <div class="preview-column">
               {#if !qrDataUrl}
                 <button
@@ -1440,7 +1494,13 @@
                 {/if}
               {/if}
 
-              <div class="stage" class:showing-media={!!previewReady}>
+              <div
+                class="stage"
+                class:showing-media={!!previewReady}
+                class:video-placeholder={artifact === "video" &&
+                  !activeVideoUrl &&
+                  !qrDataUrl}
+              >
                 {#if qrDataUrl}
                   <div class="qr-view">
                     <img
@@ -1482,12 +1542,21 @@
                     muted
                     playsinline
                   ></video>
-                {:else if artifact === "video" && videoRefused}
+                {:else if artifact === "video" && !videoBusy}
                   <div class="stage-pending stage-refused" role="status">
-                    <span>The render didn't start.</span>
-                    <button class="retry" type="button" onclick={requestVideo}>
-                      Try again
-                    </button>
+                    <i class="fa-solid fa-video" aria-hidden="true"></i>
+                    <strong
+                      >{videoStatus === "canceled"
+                        ? "Render canceled"
+                        : videoStatus === "failed"
+                          ? "Video could not be rendered"
+                          : "Ready to render"}</strong
+                    >
+                    <span
+                      >{videoStatus === "failed"
+                        ? "Check your settings and try again."
+                        : "Choose your settings, then render the video."}</span
+                    >
                   </div>
                 {:else}
                   <div class="stage-pending" role="status">
@@ -1544,52 +1613,22 @@
                       </div>
                     {/if}
                   </div>
-                {:else}
-                  <div class="customize">
-                    <button
-                      type="button"
-                      class="customize-toggle"
-                      aria-expanded={customizeOpen}
-                      aria-controls="post-share-customize"
-                      onclick={() => (customizeOpen = !customizeOpen)}
-                    >
-                      <i class="fa-solid fa-sliders" aria-hidden="true"></i>
-                      <span class="customize-label">{videoLabel} settings</span>
-                      <i
-                        class="fa-solid fa-chevron-down chevron"
-                        class:open={customizeOpen}
-                        aria-hidden="true"
-                      ></i>
-                    </button>
-
-                    {#if customizeOpen}
-                      <div
-                        class="customize-body"
-                        id="post-share-customize"
-                        transition:growFade={{ axis: "y" }}
-                        onintroend={revealCustomize}
-                      >
-                        <ExportPopover />
-                        {#if videoSettingsStale}
-                          <button
-                            type="button"
-                            class="rerender"
-                            onclick={requestVideo}
-                            transition:growFade={{ axis: "y" }}
-                          >
-                            <i class="fa-solid fa-rotate" aria-hidden="true"
-                            ></i>
-                            Re-render with these settings
-                          </button>
-                        {/if}
-                      </div>
-                    {/if}
-                  </div>
                 {/if}
               {/if}
             </div>
             <div class="editing-column">
               {#if !qrDataUrl}
+                {#if artifact === "video" && sequence}
+                  <fieldset class="video-settings" disabled={videoBusy}>
+                    <legend>{videoLabel} settings</legend>
+                    <ExportPopover />
+                    {#if videoSettingsStale}
+                      <p class="settings-note">
+                        Render again to apply your changed settings.
+                      </p>
+                    {/if}
+                  </fieldset>
+                {/if}
                 <div class="caption-block">
                   <PanelButton ariaExpanded={captionOpen} onclick={openCaption}>
                     <i class="fa-solid fa-align-left" aria-hidden="true"></i>
@@ -1707,6 +1746,7 @@
                           : destination.label}
                         disabled={(destination.id !== "copy-caption" &&
                           !activeBlob) ||
+                          videoSettingsStale ||
                           busyDestination !== null ||
                           qrPending}
                         onclick={() => runDestination(destination.id)}
@@ -1825,35 +1865,43 @@
           </div>
           <footer class="share-dock">
             {#if !qrDataUrl}
-              <PanelButton
-                variant="primary"
-                fullWidth
-                disabled={!activeBlob || busyDestination !== null || qrPending}
-                ariaBusy={busyDestination === "download" ||
-                  isExportingVideo ||
-                  isRecordingScene ||
-                  (artifact === "card" && !activeBlob && !cardRenderFailed)}
-                onclick={() => runDestination(primaryDeliveryId)}
-              >
-                <i
-                  class={busyDestination === "download" ||
-                  isExportingVideo ||
-                  isRecordingScene ||
-                  (artifact === "card" && !activeBlob && !cardRenderFailed)
-                    ? "fa-solid fa-circle-notch fa-spin"
-                    : "fa-solid fa-download"}
-                  aria-hidden="true"
-                ></i>
-                {isExportingVideo || isRecordingScene
-                  ? progressLabel
-                  : artifact === "card" && !activeBlob && !cardRenderFailed
+              {#if artifact === "video" && videoBusy}
+                <PanelButton fullWidth onclick={cancelVideo}>
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                  Cancel render
+                </PanelButton>
+              {:else if artifact === "video" && (!hasVideo || videoSettingsStale)}
+                <PanelButton variant="primary" fullWidth onclick={requestVideo}>
+                  <i class="fa-solid fa-film" aria-hidden="true"></i>
+                  Render video
+                </PanelButton>
+              {:else}
+                <PanelButton
+                  variant="primary"
+                  fullWidth
+                  disabled={!activeBlob ||
+                    busyDestination !== null ||
+                    qrPending}
+                  ariaBusy={busyDestination === "download" ||
+                    (artifact === "card" && !activeBlob && !cardRenderFailed)}
+                  onclick={() => runDestination(primaryDeliveryId)}
+                >
+                  <i
+                    class={busyDestination === "download" ||
+                    (artifact === "card" && !activeBlob && !cardRenderFailed)
+                      ? "fa-solid fa-circle-notch fa-spin"
+                      : "fa-solid fa-download"}
+                    aria-hidden="true"
+                  ></i>
+                  {artifact === "card" && !activeBlob && !cardRenderFailed
                     ? "Creating image…"
                     : busyDestination === "download"
                       ? "Downloading…"
                       : artifact === "card"
                         ? "Download card"
                         : "Download video"}
-              </PanelButton>
+                </PanelButton>
+              {/if}
             {/if}
             {#if statusMessage || qrError}
               <p
@@ -1892,23 +1940,6 @@
   .stage-refused {
     flex-direction: column;
     color: var(--theme-text, rgba(255, 255, 255, 0.92));
-  }
-
-  .retry {
-    min-height: 2.75rem;
-    padding: 0 1.125rem;
-    border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.16));
-    border-radius: 999px;
-    background: var(--theme-surface-raised, rgba(255, 255, 255, 0.08));
-    color: inherit;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background var(--duration-fast, 120ms) ease;
-  }
-
-  .retry:hover {
-    background: var(--theme-surface-hover, rgba(255, 255, 255, 0.14));
   }
 
   /* Keep the shared control content-sized above the artwork. */
@@ -1989,105 +2020,30 @@
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.7));
   }
 
-  .customize {
-    display: flex;
-    flex-direction: column;
-    gap: 0.625rem;
-  }
-
-  .customize-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.625rem;
-    width: 100%;
-    min-height: var(--min-touch-target, 44px);
-    padding: 0.5rem 0.875rem;
+  .video-settings {
+    min-width: 0;
+    margin: 0;
+    padding: 0.875rem;
+    border: 1px solid var(--theme-stroke);
     border-radius: 0.875rem;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    background: var(--theme-surface-2, rgba(255, 255, 255, 0.05));
-    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.7));
-    font: inherit;
+    background: var(--theme-card-bg);
+  }
+  .video-settings legend {
+    padding-inline: 0.375rem;
     font-size: 0.875rem;
     font-weight: 600;
-    cursor: pointer;
-    transition:
-      background 0.15s ease,
-      border-color 0.15s ease,
-      color 0.15s ease;
   }
-
-  .customize-toggle:hover {
-    background: var(--theme-surface-hover, rgba(255, 255, 255, 0.09));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.16));
-    color: var(--theme-text, #fff);
+  .video-settings:disabled {
+    opacity: 0.6;
   }
-
-  .customize-toggle:focus-visible {
-    outline: 2px solid var(--theme-accent, #6366f1);
-    outline-offset: 2px;
-  }
-
-  .customize-label {
-    flex: 1;
-    text-align: left;
-  }
-
-  .chevron {
-    font-size: 0.75rem;
-    transition: transform 0.2s ease;
-  }
-
-  .chevron.open {
-    transform: rotate(180deg);
-  }
-
-  .customize-body {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.875rem;
-    border-radius: 0.875rem;
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    background: var(--theme-surface-2, rgba(255, 255, 255, 0.04));
+  .settings-note {
+    margin: 0.75rem 0 0;
+    color: var(--theme-text-secondary);
+    font-size: 0.875rem;
   }
 
   .card-footer-confirmation {
     border-radius: 0.875rem;
-  }
-
-  /* Keep the panel's short segmented control from stretching like a progress bar. */
-  .customize-body :global(.seg-fill) {
-    max-width: 24rem;
-  }
-
-  .rerender {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    min-height: var(--min-touch-target, 44px);
-    padding: 0.5rem 1rem;
-    border-radius: 0.75rem;
-    border: 1px solid
-      color-mix(in srgb, var(--theme-accent, #6366f1) 55%, transparent);
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, #6366f1) 22%,
-      transparent
-    );
-    color: var(--theme-text, #fff);
-    font: inherit;
-    font-size: 0.8125rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .rerender:hover {
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, #6366f1) 34%,
-      transparent
-    );
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -2754,6 +2710,29 @@
     }
     .share-dock {
       padding-block: 0.5rem;
+    }
+  }
+  .stage.video-placeholder {
+    height: 9rem;
+  }
+  @media (max-width: 899px) {
+    .video-preparation .preview-column {
+      gap: 0.5rem;
+    }
+    .video-preparation .editing-column {
+      margin-top: 0.75rem;
+    }
+    .stage.video-placeholder {
+      height: 3rem;
+      padding: 0.5rem;
+    }
+    .video-placeholder .stage-pending {
+      padding: 0.5rem;
+      gap: 0.375rem;
+    }
+    .video-placeholder .stage-refused > i,
+    .video-placeholder .stage-refused > span {
+      display: none;
     }
   }
   @media (prefers-reduced-motion: reduce) {
