@@ -26,7 +26,14 @@ describe("timing-direction playback commands", () => {
     state.selectExample(sequence, 1);
     state.followStep(sequence.steps.length + 1, sequence.id);
     expect(state.playing).toBe(false);
+
+    const seekPlaybackStates: boolean[] = [];
+    state.registerSeek(() => seekPlaybackStates.push(state.playing));
+    seekPlaybackStates.length = 0;
+
     state.togglePlayback();
+
+    expect(seekPlaybackStates).toEqual([false]);
     expect(state.playing).toBe(true);
     expect(state.step).toBe(0);
     expect(state.pendingSeek.step).toBe(0);
