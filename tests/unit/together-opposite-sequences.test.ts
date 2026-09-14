@@ -3,9 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-render-hydrator";
 import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+import { deriveWord } from "$lib/shared/foundation/services/word-deriver";
 import {
   adjustTogetherOppositeLoop,
+  adjustTogetherOppositeLoops,
   selectTogetherOppositeLoops,
+  transformTogetherOppositeLoop,
+  transformTogetherOppositeLoops,
 } from "../../src/routes/(public)/timing-and-direction/_data/together-opposite-sequences";
 
 const records = JSON.parse(
@@ -96,6 +100,107 @@ describe("Together–Opposite four-count loops", () => {
     expect(second.steps.map((step) => step.motions.right.turns)).toEqual([
       0, 0, 0, 0,
     ]);
+    expect(second.metadata?.turnLoopClosed).toBe(false);
     expect(first.steps[2]!.motions.left.turns).toBe(0);
+  });
+
+  it("applies one turn choice to all six cards without replacing their recipes", async () => {
+    const loops = selectTogetherOppositeLoops(sequences);
+    const adjusted = await adjustTogetherOppositeLoops(loops, 1, 1.5, 2);
+
+    expect(adjusted).toHaveLength(6);
+    expect(adjusted.map((loop) => loop.id)).toEqual(
+      loops.map((loop) => loop.id)
+    );
+    for (const loop of adjusted) {
+      expect(
+        loop.sequence.steps.map((step) => step.motions.left.turns)
+      ).toEqual([0, 0, 1, 0]);
+      expect(
+        loop.sequence.steps.map((step) => step.motions.right.turns)
+      ).toEqual([0, 0, 1.5, 0]);
+    }
+    expect(loops[0]!.sequence.steps[2]!.motions.left.turns).toBe(0);
+  });
+
+  it("keeps geometric transforms when turns are edited afterwards", async () => {
+    const loop = selectTogetherOppositeLoops(sequences)[0]!;
+    const rotated = await transformTogetherOppositeLoop(
+      loop,
+      "rotate-clockwise"
+    );
+    const withTurns = await adjustTogetherOppositeLoop(
+      { ...loop, sequence: rotated },
+      1,
+      1
+    );
+
+    expect(deriveTnDFromPictograph(rotated.steps[0]!).tndMode).toBe(
+      TnDMode.QUARTER_OPP
+    );
+    expect(deriveTnDFromPictograph(withTurns.steps[0]!).tndMode).toBe(
+      TnDMode.QUARTER_OPP
+    );
+    expect(withTurns.steps.map((step) => step.motions.left.turns)).toEqual([
+      1, 1, 1, 1,
+    ]);
+  });
+
+  it("updates every card's actual grid grouping after a quarter rotation", async () => {
+    const rotated = await transformTogetherOppositeLoops(
+      selectTogetherOppositeLoops(sequences),
+      "rotate-clockwise"
+    );
+
+    expect(rotated.filter((loop) => loop.gridMode === "box")).toHaveLength(3);
+    expect(rotated.filter((loop) => loop.gridMode === "diamond")).toHaveLength(
+      3
+    );
+    expect(
+      rotated.map(
+        (loop) => deriveTnDFromPictograph(loop.sequence.steps[0]!).tndMode
+      )
+    ).toEqual(Array(6).fill(TnDMode.QUARTER_OPP));
+  });
+
+  it("gives consecutive rotations fresh identities and reclassifies each geometry", async () => {
+    const loop = selectTogetherOppositeLoops(sequences)[0]!;
+    const rotated45 = await transformTogetherOppositeLoop(
+      loop,
+      "rotate-clockwise"
+    );
+    const rotated90 = await transformTogetherOppositeLoop(
+      { ...loop, sequence: rotated45 },
+      "rotate-clockwise"
+    );
+
+    expect(rotated45.id).not.toBe(rotated90.id);
+    expect(deriveTnDFromPictograph(rotated45.steps[0]!).tndMode).toBe(
+      TnDMode.QUARTER_OPP
+    );
+    expect(rotated45.metadata?.familyId).toBe("quarter-opp");
+    expect(deriveTnDFromPictograph(rotated90.steps[0]!).tndMode).toBe(
+      TnDMode.SPLIT_OPP
+    );
+    expect(rotated90.metadata?.familyId).toBe("split-opp");
+  });
+
+  it("keeps Together-Opposite classification through mirror, flip, and swap", async () => {
+    const loop = selectTogetherOppositeLoops(sequences)[0]!;
+    const mirrored = await transformTogetherOppositeLoop(loop, "mirror");
+    const flipped = await transformTogetherOppositeLoop(
+      { ...loop, sequence: mirrored },
+      "flip"
+    );
+    const swapped = await transformTogetherOppositeLoop(
+      { ...loop, sequence: flipped },
+      "swap"
+    );
+
+    expect(deriveTnDFromPictograph(swapped.steps[0]!).tndMode).toBe(
+      TnDMode.TOG_OPP
+    );
+    expect(swapped.metadata?.familyId).toBe("tog-opp");
+    expect(swapped.word).toBe(deriveWord(swapped));
   });
 });
