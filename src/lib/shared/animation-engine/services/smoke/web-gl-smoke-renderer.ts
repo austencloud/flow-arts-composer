@@ -1,6 +1,7 @@
 import type { Smoke2DParams } from "$lib/shared/effects/translators/canvas2d-types";
 import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
 import { emitterId } from "$lib/shared/effects/renderers/emitter-tip";
+import { computeEffectScale } from "$lib/shared/effects/renderers/scale";
 import {
   FLUID_PROGRAM_DEFINITIONS,
   WebGLFluidSolver2D,
@@ -43,6 +44,46 @@ export function computeSmokeDensityDissipation(
   lifetimeSeconds: number
 ): number {
   return Math.exp(-3 / (60 * Math.max(0.25, lifetimeSeconds)));
+}
+
+export interface SmokeEmitterMetrics {
+  /** Splat radius in normalized [0,1] simulation space. */
+  splatRadius: number;
+  /** Buoyancy target in simulation grid cells per second. */
+  riseGridVelocity: number;
+  /** Tip speed (pane px/s) that saturates the motion emission term. */
+  motionReferenceSpeedPx: number;
+}
+
+/**
+ * Resolve the pane-relative emission metrics. `baseRadius`, `resolvedRiseSpeed`
+ * and `motionReferenceSpeed` are authored at DEFAULT_CANVAS_SIZE like every
+ * other 2D effect constant, so they pass through `computeEffectScale` before
+ * being normalized against the pane. Without that step a half-width pane
+ * (the disassemble solo slots) receives a puff twice the radius and four
+ * times the mass of the hero's, because the fluid grid is a fixed size and
+ * the Gaussian splat is not area-normalized.
+ */
+export function computeSmokeEmitterMetrics(
+  params: Pick<
+    Smoke2DParams,
+    "baseRadius" | "intensity" | "resolvedRiseSpeed" | "motionReferenceSpeed"
+  >,
+  width: number,
+  height: number,
+  gridHeight: number
+): SmokeEmitterMetrics {
+  const scale = computeEffectScale(width, height);
+  const splatRadius =
+    (params.baseRadius * scale * (0.72 + params.intensity * 0.88)) /
+    Math.max(width, height, 1);
+  const riseGridVelocity =
+    ((params.resolvedRiseSpeed * scale) / Math.max(height, 1)) * gridHeight;
+  const motionReferenceSpeedPx = Math.max(
+    1,
+    params.motionReferenceSpeed * 60 * scale
+  );
+  return { splatRadius, riseGridVelocity, motionReferenceSpeedPx };
 }
 
 export function hexToLinearRgb(hex: string): readonly [number, number, number] {
@@ -169,7 +210,13 @@ export class WebGLSmokeRenderer {
     this.clock += frameDt;
     gl.viewport(0, 0, this.solver.width, this.solver.height);
     gl.disable(gl.BLEND);
-    this.emit(params, emitters, frameDt);
+    const metrics = computeSmokeEmitterMetrics(
+      params,
+      this.width,
+      this.height,
+      this.solver.height
+    );
+    this.emit(params, emitters, frameDt, metrics);
 
     const substeps = Math.max(1, Math.ceil(frameDt / MAX_SUBSTEP));
     const stepDt = frameDt / substeps;
@@ -181,9 +228,7 @@ export class WebGLSmokeRenderer {
     const instanceCount = getActiveFluidInstanceCount();
     const useMacCormack = shouldUseFluidMacCormack(instanceCount);
     const iterations = computeFluidJacobiIterations(instanceCount);
-    const riseGridVelocity =
-      (params.resolvedRiseSpeed / Math.max(this.height, 1)) *
-      this.solver.height;
+    const riseGridVelocity = metrics.riseGridVelocity;
     for (let index = 0; index < substeps; index++) {
       this.solver.advect(
         this.solver.velocity,
@@ -253,7 +298,8 @@ export class WebGLSmokeRenderer {
   private emit(
     params: Smoke2DParams,
     emitters: EmitterTip[],
-    dt: number
+    dt: number,
+    metrics: SmokeEmitterMetrics
   ): void {
     const densitySplats: FluidSplat[] = [];
     const thermalSplats: FluidSplat[] = [];
@@ -273,7 +319,7 @@ export class WebGLSmokeRenderer {
       this.tipState.set(id, { x: emitter.x, y: emitter.y, vx, vy });
 
       const speed = Math.hypot(vx, vy);
-      const reference = Math.max(1, params.motionReferenceSpeed * 60);
+      const reference = metrics.motionReferenceSpeedPx;
       const motion = Math.min(1, speed / reference);
       const emission =
         params.intensity *
@@ -287,9 +333,7 @@ export class WebGLSmokeRenderer {
       const previousX = previous ? previous.x / this.width : currentX;
       const previousY = previous ? 1 - previous.y / this.height : currentY;
       const distance = Math.hypot(currentX - previousX, currentY - previousY);
-      const radius =
-        (params.baseRadius * (0.72 + params.intensity * 0.88)) /
-        Math.max(this.width, this.height);
+      const radius = metrics.splatRadius;
       const count = Math.min(
         24,
         Math.max(1, Math.ceil(distance / Math.max(radius * 0.7, 0.002)))
