@@ -259,6 +259,57 @@ describe("gallery previews under a cold QR backlog", () => {
     expect(h.render).toHaveBeenCalledOnce();
   });
 
+  it("keeps the preview when prepared QR lookup fails", async () => {
+    const h = harness();
+    h.render.mockResolvedValue({
+      blob: new Blob(["preview"]),
+      qrConsistent: true,
+    });
+    h.hasPreparedQR.mockRejectedValue(new Error("offline"));
+    const onPreview = vi.fn();
+
+    const result = await h.orchestrator.getThumbnail({
+      sequence,
+      input,
+      skipCache: true,
+      qrPolicy: "prepared-only",
+      onPreview,
+    });
+
+    expect(onPreview).toHaveBeenCalledOnce();
+    expect(result.key.inputs.visibility?.showQRCode).toBe(false);
+    expect(h.render).toHaveBeenCalledOnce();
+  });
+
+  it("propagates cancellation while checking prepared QR artwork", async () => {
+    const h = harness();
+    const controller = new AbortController();
+    h.hasPreparedQR.mockImplementation(
+      (_sequence, _input, signal?: AbortSignal) =>
+        new Promise<boolean>((_resolve, reject) => {
+          signal?.addEventListener(
+            "abort",
+            () => reject(new DOMException("Aborted", "AbortError")),
+            { once: true }
+          );
+        })
+    );
+    const pending = h.orchestrator.getThumbnail({
+      sequence,
+      input,
+      skipCache: true,
+      qrPolicy: "prepared-only",
+      signal: controller.signal,
+    });
+    const handled = pending.catch((error) => error);
+
+    await vi.advanceTimersByTimeAsync(150);
+    expect(h.hasPreparedQR).toHaveBeenCalledOnce();
+    controller.abort();
+
+    await expect(handled).resolves.toMatchObject({ name: "AbortError" });
+  });
+
   it("finishes a large batch without starting QR work or poisoning QR keys", async () => {
     const h = harness();
     const requests = Array.from({ length: 24 }, (_, index) => {

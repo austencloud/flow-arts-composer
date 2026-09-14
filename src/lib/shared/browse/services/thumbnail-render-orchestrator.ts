@@ -382,11 +382,20 @@ export class ThumbnailRenderOrchestrator {
     // already painted. Fail closed for older/lightweight renderer harnesses:
     // prepared-only must never fall through to QR generation.
     if (request.qrPolicy === "prepared-only") {
-      const hasPreparedQR = await this.renderer.hasPreparedQR?.(
-        request.sequence,
-        request.input,
-        request.signal
-      );
+      let hasPreparedQR = false;
+      try {
+        hasPreparedQR =
+          (await this.renderer.hasPreparedQR?.(
+            request.sequence,
+            request.input,
+            request.signal
+          )) ?? false;
+      } catch {
+        // A public prepared record can disappear or be unreachable while a
+        // card is on screen. Keep the preview rather than surfacing an error.
+        if (request.signal?.aborted) throw cancellationError(request.signal);
+        return preview;
+      }
       if (!hasPreparedQR) return preview;
       if (request.signal?.aborted) throw cancellationError(request.signal);
     }

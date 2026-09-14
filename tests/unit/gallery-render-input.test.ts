@@ -125,6 +125,19 @@ describe("buildGalleryVisibility — per-length QR/mandala choice", () => {
     expect(v?.showQRCode).toBe(true);
     expect(v?.showMandala).toBe(true);
   });
+
+  it("keeps QR generation gated for a guest physical card", () => {
+    const v = buildGalleryVisibility({
+      sequence: four,
+      compositionManager: source({ choice: "qr" }),
+      isAuthenticated: false,
+      allowQR: true,
+      variant: "gallery",
+      cardMode: true,
+    } as any);
+    expect(v?.showQRCode).toBe(false);
+    expect(v?.showMandala).toBe(true);
+  });
 });
 
 describe("buildGalleryRenderInput — portable card provenance", () => {
