@@ -5,13 +5,19 @@
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import PropAwareThumbnail from "$lib/shared/browse/components/PropAwareThumbnail.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { resolveRecordedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
   import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
 
   interface Props {
     word: string;
     posterUrl?: string | null;
-    loadSequence: () => Promise<SequenceData | null>;
+    loadSequence?: () => Promise<SequenceData | null>;
+    /** A host-owned sequence bypasses the lazy loader and updates in place. */
+    sequence?: SequenceData | null;
+    /** Keep the canonical player-and-rail composition visible and interactive. */
+    alwaysLive?: boolean;
     playbackActive?: boolean;
     playbackMounted?: boolean;
     onRequestPlayback?: () => void;
@@ -19,12 +25,27 @@
     onopen?: () => void;
     openLabel?: string;
     allowQR?: boolean;
+    leftPropType?: PropType | null;
+    rightPropType?: PropType | null;
+    railLeftPropType?: PropType | null;
+    railRightPropType?: PropType | null;
+    primaryPropColors?: ViewerCustomColorPair;
+    externalPlaying?: boolean | null;
+    onExternalPlayingChange?: (playing: boolean) => void;
+    onStepChange?: (step: number, sequenceId: string | null) => void;
+    onSeekRef?: (seek: ((step: number) => void) | null) => void;
+    onCellClick?: (stepNumber: number) => void;
+    singlePlay?: boolean;
+    /** Applied by InlineAnimationPlayer after a reactive sequence reload. */
+    initialStep?: number | null;
   }
 
   let {
     word,
     posterUrl = null,
     loadSequence,
+    sequence: directSequence = null,
+    alwaysLive = false,
     playbackActive = true,
     playbackMounted = playbackActive,
     onRequestPlayback,
@@ -32,6 +53,18 @@
     onopen,
     openLabel,
     allowQR = true,
+    leftPropType = null,
+    rightPropType = null,
+    railLeftPropType = null,
+    railRightPropType = null,
+    primaryPropColors,
+    externalPlaying = null,
+    onExternalPlayingChange,
+    onStepChange,
+    onSeekRef,
+    onCellClick,
+    singlePlay = false,
+    initialStep = null,
   }: Props = $props();
 
   const previewAnimationScope = createAnimationScope({
@@ -40,7 +73,7 @@
 
   type ResolutionState = "idle" | "loading" | "ready" | "unavailable";
 
-  let sequence = $state<SequenceData | null>(null);
+  let loadedSequence = $state<SequenceData | null>(null);
   let resolutionState = $state<ResolutionState>("idle");
   let manualPlayerRequested = $state(false);
   let nearViewport = $state(false);
@@ -55,7 +88,9 @@
   let playerReady = $state(false);
   let playerRuntimeError = $state(false);
   let playbackStep = $state(1);
+  let directSequenceId = $state<string | null>(null);
   let resolutionPromise: Promise<SequenceData | null> | null = null;
+  const sequence = $derived(directSequence ?? loadedSequence);
 
   // Creator-recorded presentation, resolved ONCE and handed to the player,
   // the step strip, and the Choreo Card together so all three render the same
@@ -64,13 +99,16 @@
   const recordedPropConfig = $derived(resolveRecordedPropConfig(sequence));
 
   const playerRequested = $derived(
-    manualPlayerRequested || (activation === "ambient" && !prefersReducedMotion)
+    alwaysLive ||
+      manualPlayerRequested ||
+      (activation === "ambient" && !prefersReducedMotion)
   );
   const playerMounted = $derived(
-    playbackMounted && playerRequested && sequence !== null
+    (alwaysLive || playbackMounted) && playerRequested && sequence !== null
   );
   const showCardLayer = $derived(
-    playerLoadState !== "error" &&
+    !alwaysLive &&
+      playerLoadState !== "error" &&
       !playerRuntimeError &&
       (!playerMounted || !playerReady || ambientCardRevealed)
   );
@@ -80,6 +118,21 @@
         playerLoadState === "loading" ||
         (playerMounted && !playerReady))
   );
+
+  $effect(() => {
+    const nextSequenceId = directSequence?.id ?? null;
+    if (!nextSequenceId) {
+      directSequenceId = null;
+      return;
+    }
+    if (nextSequenceId === directSequenceId) return;
+
+    // A direct host replaces its recipe in the existing player. Set the rail to
+    // the requested position immediately, then let the reloaded engine confirm
+    // it; otherwise the old recipe can remain highlighted during that handoff.
+    directSequenceId = nextSequenceId;
+    playbackStep = initialStep ?? 1;
+  });
 
   onMount(() => {
     if (typeof window.matchMedia !== "function") {
@@ -105,15 +158,21 @@
   function beginSequenceResolution(
     force = false
   ): Promise<SequenceData | null> {
+    if (directSequence) return Promise.resolve(directSequence);
     if (sequence && !force) return Promise.resolve(sequence);
     if (resolutionPromise && !force) return resolutionPromise;
 
     resolutionState = "loading";
     if (force) resolutionPromise = null;
 
+    if (!loadSequence) {
+      resolutionState = "unavailable";
+      return Promise.resolve(null);
+    }
+
     const request = loadSequence()
       .then((resolved) => {
-        sequence = resolved;
+        loadedSequence = resolved;
         resolutionState = resolved ? "ready" : "unavailable";
         return resolved;
       })
@@ -122,7 +181,7 @@
           "[SequenceShowcasePreview] Sequence preview could not be loaded:",
           caught
         );
-        sequence = null;
+        loadedSequence = null;
         resolutionState = "unavailable";
         return null;
       })
@@ -235,22 +294,36 @@
           onStatusChange={(status) => (playerLoadState = status)}
           props={{
             sequence,
-            leftPropType: recordedPropConfig?.leftPropType ?? null,
-            rightPropType: recordedPropConfig?.rightPropType ?? null,
+            leftPropType:
+              leftPropType ?? recordedPropConfig?.leftPropType ?? null,
+            rightPropType:
+              rightPropType ?? recordedPropConfig?.rightPropType ?? null,
+            primaryPropColors,
             autoPlay: true,
             showControls: false,
             chrome: "minimal",
             fill: true,
-            interactive: activation === "manual",
+            scrubbable: alwaysLive,
+            interactive: alwaysLive || activation === "manual",
             hoverHint: "none",
-            cornerToggle: activation === "manual",
-            playbackAllowed: playbackActive && visible && !ambientCardRevealed,
+            cornerToggle: !alwaysLive && activation === "manual",
+            playbackAllowed:
+              playbackActive && (alwaysLive || visible) && !ambientCardRevealed,
             resumeWhenPlaybackAllowed: true,
             externalBpm: 60,
+            externalPlaying,
+            onExternalPlayingChange,
+            singlePlay,
+            initialStep,
             disableContextMenu: true,
             hideStepNumbers: true,
             beatIndicators: false,
-            onStepChange: (step: number) => (playbackStep = step),
+            onStepChange: (step: number, sequenceId: string | null) => {
+              if (directSequence && sequenceId !== directSequence.id) return;
+              playbackStep = step;
+              onStepChange?.(step, sequenceId);
+            },
+            onSeekRef,
             onReady: () => {
               playerReady = true;
               playerRuntimeError = false;
@@ -282,77 +355,91 @@
         debugName="sequence showcase step carousel"
         props={{
           sequence,
-          leftPropType: recordedPropConfig?.leftPropType ?? null,
-          rightPropType: recordedPropConfig?.rightPropType ?? null,
+          includeStartPosition: !alwaysLive,
+          leftPropType:
+            railLeftPropType ??
+            leftPropType ??
+            recordedPropConfig?.leftPropType ??
+            null,
+          rightPropType:
+            railRightPropType ??
+            rightPropType ??
+            recordedPropConfig?.rightPropType ??
+            null,
+          leftColorOverride: primaryPropColors?.left,
+          rightColorOverride: primaryPropColors?.right,
           currentStep: playbackStep,
           bpm: 60,
           density: "compact",
           fillHeight: true,
           anchor: "center",
           orientation: "horizontal",
-          loop: false,
+          loop: alwaysLive,
           stepPulse: false,
+          onCellClick,
         }}
       />
     </div>
   </div>
 
-  <div
-    class="card-layer"
-    class:visible={showCardLayer}
-    aria-hidden={!showCardLayer}
-  >
-    <div class="card-art">
-      {#if sequence}
-        <PropAwareThumbnail
-          {sequence}
-          leftPropType={recordedPropConfig?.leftPropType}
-          rightPropType={recordedPropConfig?.rightPropType}
-          catDogModeEnabled={recordedPropConfig?.catDogMode ?? false}
-          eager
-          {allowQR}
-        />
-      {:else if posterUrl && !posterFailed}
-        <img
-          class="legacy-poster"
-          src={posterUrl}
-          alt=""
-          loading="lazy"
-          onerror={() => (posterFailed = true)}
-        />
-      {:else}
-        <div class="poster-glyph" aria-hidden="true">
-          {#if word && word !== "Sequence"}
-            <TKAWordGlyph {word} height={30} darkMode />
-          {:else}
-            <i class="fa-solid fa-arrows-rotate"></i>
-          {/if}
+  {#if !alwaysLive}
+    <div
+      class="card-layer"
+      class:visible={showCardLayer}
+      aria-hidden={!showCardLayer}
+    >
+      <div class="card-art">
+        {#if sequence}
+          <PropAwareThumbnail
+            {sequence}
+            leftPropType={recordedPropConfig?.leftPropType}
+            rightPropType={recordedPropConfig?.rightPropType}
+            catDogModeEnabled={recordedPropConfig?.catDogMode ?? false}
+            eager
+            {allowQR}
+          />
+        {:else if posterUrl && !posterFailed}
+          <img
+            class="legacy-poster"
+            src={posterUrl}
+            alt=""
+            loading="lazy"
+            onerror={() => (posterFailed = true)}
+          />
+        {:else}
+          <div class="poster-glyph" aria-hidden="true">
+            {#if word && word !== "Sequence"}
+              <TKAWordGlyph {word} height={30} darkMode />
+            {:else}
+              <i class="fa-solid fa-arrows-rotate"></i>
+            {/if}
+          </div>
+        {/if}
+      </div>
+
+      {#if showCardLayer && resolutionState === "unavailable" && activation === "manual"}
+        <div class="preview-error" role="alert">
+          <span>Preview unavailable</span>
+          <button type="button" onclick={retrySequence}>Try again</button>
         </div>
+      {:else if showCardLayer && activation === "manual"}
+        <button
+          type="button"
+          class="play-preview"
+          onclick={requestPlayback}
+          disabled={loadingRequestedPlayer}
+          aria-busy={loadingRequestedPlayer || undefined}
+          aria-label="Play {word} preview"
+        >
+          {#if loadingRequestedPlayer}
+            <span class="spinner" aria-hidden="true"></span>
+          {:else}
+            <i class="fa-solid fa-play" aria-hidden="true"></i>
+          {/if}
+        </button>
       {/if}
     </div>
-
-    {#if showCardLayer && resolutionState === "unavailable" && activation === "manual"}
-      <div class="preview-error" role="alert">
-        <span>Preview unavailable</span>
-        <button type="button" onclick={retrySequence}>Try again</button>
-      </div>
-    {:else if showCardLayer && activation === "manual"}
-      <button
-        type="button"
-        class="play-preview"
-        onclick={requestPlayback}
-        disabled={loadingRequestedPlayer}
-        aria-busy={loadingRequestedPlayer || undefined}
-        aria-label="Play {word} preview"
-      >
-        {#if loadingRequestedPlayer}
-          <span class="spinner" aria-hidden="true"></span>
-        {:else}
-          <i class="fa-solid fa-play" aria-hidden="true"></i>
-        {/if}
-      </button>
-    {/if}
-  </div>
+  {/if}
 
   {#if activation === "ambient" && onopen}
     <button
