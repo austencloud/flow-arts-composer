@@ -11,7 +11,7 @@ import {
 } from "../../../src/routes/test/negative-space-reach/isolation-loop";
 
 describe("rendered isolation score", () => {
-  it("visits south, east, north, west with only the left prop", () => {
+  it("visits south, east, north, west with only the right prop", () => {
     const state = createCharacterInstanceState(
       { id: "isolation-path-check", persistent: false },
       makeStandaloneDeps()
@@ -28,23 +28,23 @@ describe("rendered isolation score", () => {
       ];
       for (let phase = 0; phase < 4; phase++) {
         const pair = state.propStatesAtScoreTime(phase);
-        expect(pair.right).toBeNull();
-        expect(pair.left).not.toBeNull();
-        const position = pair.left!.worldPosition;
+        expect(pair.left).toBeNull();
+        expect(pair.right).not.toBeNull();
+        const position = pair.right!.worldPosition;
         const radius = Math.hypot(position.x, position.y);
         expect(position.x / radius).toBeCloseTo(expected[phase]![0]!, 5);
         expect(position.y / radius).toBeCloseTo(expected[phase]![1]!, 5);
       }
       for (let phase = 0; phase < 4; phase += 0.125) {
         const pair = state.propStatesAtScoreTime(phase);
-        expect(pair.right).toBeNull();
-        const right = pair.left!;
+        expect(pair.left).toBeNull();
+        const right = pair.right!;
         const radial = new Vector3(
           right.worldPosition.x,
           right.worldPosition.y,
           0
         );
-        // Staff3D maps its tracked +Y end onto -X before the score rotation.
+        // The prop renderer maps its tracked +Y end onto -X before score rotation.
         const thumbAxis = new Vector3(-1, 0, 0).applyQuaternion(
           right.worldRotation
         );
@@ -53,7 +53,9 @@ describe("rendered isolation score", () => {
           thumbAxis,
           ISOLATION_STAFF_LENGTH_CM / 200
         );
-        expect(anchored.length()).toBeLessThan(1e-6);
+        // The regular 90 cm staff stops 7 cm short of the 52 cm grid radius.
+        // Keep its real size rather than stretching the prop to hit the marker.
+        expect(anchored.length()).toBeCloseTo(0.07, 5);
       }
       expect(state.propStatesAtScoreTime(4)).toEqual(
         state.propStatesAtScoreTime(0)

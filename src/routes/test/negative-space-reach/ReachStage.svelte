@@ -27,8 +27,8 @@
     showGrid: true,
     showAvatar: true,
     showEffects: false,
-    blueMotion: true,
-    redMotion: false,
+    blueMotion: false,
+    redMotion: true,
   });
 </script>
 
@@ -46,7 +46,7 @@
   position={{ x: 0, y: 0, z: 0 }}
   facingAngle={0}
   {characterId}
-  propType={PropType.STAFF}
+  propType={PropType.FIRE_DOUBLE_STAFF}
   propLengthCm={ISOLATION_STAFF_LENGTH_CM}
   {sequence}
   effectId="led"
