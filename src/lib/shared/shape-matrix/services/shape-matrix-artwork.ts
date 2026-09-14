@@ -18,6 +18,7 @@ import {
   renderCell,
   renderExtentFit,
   renderHeader,
+  type ShapeMatrixGuideColors,
 } from "./shape-matrix-render";
 import type { ShapeMatrixData } from "./shape-matrix-flowers";
 
@@ -64,12 +65,57 @@ export interface ShapeMatrixArtworkPainter {
     sizePx: number,
     tipDx: number
   ) => string;
+  /**
+   * Separates rasters painted with different hand colors. Custom painters
+   * already have isolated caches by object identity, but palette painters can
+   * be revisited after a user changes their colors.
+   */
+  cacheKey?: string;
 }
 
 export const CLUB_ARTWORK_PAINTER: ShapeMatrixArtworkPainter = {
   cell: renderCell,
   header: renderHeader,
+  cacheKey: "hero",
 };
+
+const palettePainters = new Map<string, ShapeMatrixArtworkPainter>();
+const PALETTE_PAINTER_LIMIT = 16;
+
+/**
+ * Returns a stable painter for one saved hand-color pair. A stable identity
+ * lets a grid reuse its rasters while the color is unchanged, while the
+ * palette-specific cache key prevents an earlier color choice resurfacing.
+ */
+export function shapeMatrixArtworkPainterForColors(
+  colors: ShapeMatrixGuideColors | null | undefined
+): ShapeMatrixArtworkPainter {
+  if (!colors) return CLUB_ARTWORK_PAINTER;
+  // Settings are reactive objects. Capture this particular choice so a later
+  // in-place settings update cannot leave a painter's cache key and its ink
+  // disagreeing.
+  const palette = { left: colors.left, right: colors.right };
+  const cacheKey = `palette:${palette.left}|${palette.right}`;
+  const existing = palettePainters.get(cacheKey);
+  if (existing) {
+    palettePainters.delete(cacheKey);
+    palettePainters.set(cacheKey, existing);
+    return existing;
+  }
+  const painter: ShapeMatrixArtworkPainter = {
+    cacheKey,
+    cell: (left, right, sizePx, tipDx) =>
+      renderCell(left, right, sizePx, tipDx, { colors: palette }),
+    header: (paths, hand, sizePx, tipDx) =>
+      renderHeader(paths, hand, sizePx, tipDx, { colors: palette }),
+  };
+  palettePainters.set(cacheKey, painter);
+  if (palettePainters.size > PALETTE_PAINTER_LIMIT) {
+    const oldest = palettePainters.keys().next().value;
+    if (oldest !== undefined) palettePainters.delete(oldest);
+  }
+  return painter;
+}
 
 /** Rasters are per size and DPR; keep the recent ones, drop the rest. */
 const ARTWORK_CACHE_LIMIT = 512;
@@ -121,7 +167,7 @@ export function cellArtworkSrc(
 ): string {
   const size = Math.round(sizePx);
   if (!(size > 0)) return "";
-  const key = `cell|${data.propType}|${flowerKey(left)}|${flowerKey(right)}|${size}|${currentDpr()}`;
+  const key = `cell|${painter.cacheKey ?? "custom"}|${data.propType}|${flowerKey(left)}|${flowerKey(right)}|${size}|${currentDpr()}`;
   return cacheFor(painter).get(key, () =>
     painter.cell(
       data.left.get(flowerKey(left))!,
@@ -142,7 +188,7 @@ export function headerArtworkSrc(
 ): string {
   const size = Math.round(sizePx);
   if (!(size > 0)) return "";
-  const key = `head|${data.propType}|${hand}|${flowerKey(flower)}|${size}|${currentDpr()}`;
+  const key = `head|${painter.cacheKey ?? "custom"}|${data.propType}|${hand}|${flowerKey(flower)}|${size}|${currentDpr()}`;
   return cacheFor(painter).get(key, () =>
     painter.header(
       (hand === "left" ? data.left : data.right).get(flowerKey(flower))!,
