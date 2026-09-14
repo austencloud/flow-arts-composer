@@ -167,6 +167,8 @@
     untrack(() => {
       performerState.loadSequence(sequence);
       performerState.loop = true;
+      performerState.speed = props.playbackSpeed ?? 1;
+      if (props.active !== false) performerState.play();
     });
   });
 
@@ -230,8 +232,12 @@
   stanceYaw={renderedUpperBodyStance.yawRad}
   stanceSegments={renderedUpperBodyStance.segments ?? null}
   spinePitchOffset={renderedUpperBodyStance.pitchRad ?? 0}
-  blueHandDepthOffset={authoredStanceActive ? 0 : upperBodyStance.leftDepthOffsetM}
-  redHandDepthOffset={authoredStanceActive ? 0 : upperBodyStance.rightDepthOffsetM}
+  blueHandDepthOffset={authoredStanceActive
+    ? 0
+    : upperBodyStance.leftDepthOffsetM}
+  redHandDepthOffset={authoredStanceActive
+    ? 0
+    : upperBodyStance.rightDepthOffsetM}
   showEffects={props.showEffects ?? true}
   {tipEffectMap}
   isPlaying={performerState.isPlaying}
