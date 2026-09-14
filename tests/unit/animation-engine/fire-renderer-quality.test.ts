@@ -11,6 +11,8 @@ import {
 import {
   computeFireFrameCacheCapacity,
   hasReachedFireFrameCacheCapacity,
+  canPromoteFireFrameRecording,
+  FireFrameCache,
 } from "$lib/shared/animation-engine/services/fire/fire-frame-cache";
 import { DEFAULT_FIRE_CONFIG } from "$lib/shared/animation-engine/domain/types/fire-types";
 import {
@@ -219,6 +221,28 @@ describe("2D fire quality controls", () => {
 });
 
 describe("2D fire frame-cache budget", () => {
+  function recordingCache(frameTimes: number[]): FireFrameCache {
+    // This test deliberately enters the cache at its recording boundary: no
+    // WebGL rendering is needed to verify whether an incomplete loop can ever
+    // become reusable playback.
+    return Object.assign(Object.create(FireFrameCache.prototype), {
+      gl: { deleteFramebuffer() {}, deleteTexture() {} },
+      state: "recording",
+      frames: [],
+      frameTimes,
+      frameIndex: frameTimes.length,
+      totalFrames: frameTimes.length,
+      texturePool: [],
+      texturePoolSize: 0,
+      recordingFBO: null,
+      recordingTexture: null,
+      copyFBO: null,
+      maxFrames: 127,
+      loopDuration: 0,
+      configHash: "fire",
+    }) as FireFrameCache;
+  }
+
   it("reserves the recording target and caps HDR frame allocation", () => {
     const budget = 64 * 1024 * 1024;
     expect(computeFireFrameCacheCapacity(128, 128, budget)).toBe(511);
@@ -230,6 +254,28 @@ describe("2D fire frame-cache budget", () => {
     expect(hasReachedFireFrameCacheCapacity(126, 127)).toBe(false);
     expect(hasReachedFireFrameCacheCapacity(127, 127)).toBe(true);
     expect(hasReachedFireFrameCacheCapacity(0, 0)).toBe(true);
+  });
+
+  it("only promotes a recording when an actual boundary follows its final frame", () => {
+    expect(canPromoteFireFrameRecording([0, 0.0167, 3.9833], 4)).toBe(true);
+    // The observed gap-created fragment has no early phase sample, so it
+    // cannot become playback even if a later real boundary occurs.
+    expect(
+      canPromoteFireFrameRecording([2.816, 3, 3.983], 4)
+    ).toBe(false);
+    expect(canPromoteFireFrameRecording([0, 16.7], 16.7)).toBe(false);
+    expect(canPromoteFireFrameRecording([0, 2, 1], 4)).toBe(false);
+  });
+
+  it("drops a partial recording at the loop boundary instead of warming it", () => {
+    const partial = recordingCache([2.816, 3, 3.983]);
+    partial.onLoopDetected(4);
+    expect(partial.isWarm()).toBe(false);
+    expect(partial.isRecording()).toBe(false);
+
+    const complete = recordingCache([0.016, 2, 3.983]);
+    complete.onLoopDetected(4);
+    expect(complete.isWarm()).toBe(true);
   });
 
   it("invalidates when every renderer-visible control changes", () => {
