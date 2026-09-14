@@ -77,7 +77,7 @@
       low: "Wide hips",
       high: "Wide shoulders",
     },
-    { key: "face", label: "Face variation", low: "Subtle", high: "Bold" },
+    { key: "face", label: "Face variation", low: "None", high: "Bold" },
   ] as const;
 
   const initialSequence = ALL_FIXTURE_LOOPS.find(
@@ -260,7 +260,7 @@
       if (characterId) viewer.setCharacterScoped(characterId as AvatarId);
       mounted = true;
       message =
-        "Randomize creates a new local character for the selected performers. Saved characters are in the performer picker.";
+        "Choose your settings, then generate. Saved characters are in the performer picker.";
       try {
         const response = await fetch("/test/character-playground/generate");
         const status = response.ok ? await response.json() : null;
@@ -268,7 +268,7 @@
         generatorAvailable = status?.available === true;
         if (!generatorAvailable)
           message =
-            "Randomize needs the local Blender and MPFB installation. Scene controls remain available.";
+            "Generation needs the local Blender and MPFB installation. Scene controls remain available.";
         else if (status.busy)
           message =
             "Another character is being generated. You can keep exploring the scene.";
@@ -334,22 +334,19 @@
     class:compact
     aria-label="Character generator"
   >
-    <div class="generator-heading">
-      <PanelHeader title="Character generator" icon="fa-shuffle" />
-      {#if !compact}<SceneChromeButton
-          icon="fa-xmark"
-          label="Close character generator"
-          onclick={close}
-        />{/if}
-    </div>
+    {#if !compact}<div class="generator-heading">
+        <PanelHeader title="Character generator" icon="fa-shuffle" />
+        {#if !compact}<SceneChromeButton
+            icon="fa-xmark"
+            label="Close character generator"
+            onclick={close}
+          />{/if}
+      </div>{/if}
     <PanelContent>
+      <p>Shape a new performer, then generate to see them in the scene.</p>
       <p>
-        Build an adult performer with MakeHuman / MPFB. The generator saves this
-        exact setup with its fresh seed.
-      </p>
-      <p>
-        These sliders shape the model. Scene performer controls set its
-        displayed height.
+        These sliders shape the model. The scene scales performers to its
+        configured height.
       </p>
       <div class="creator-fields">
         <div class="choice-field">
@@ -364,7 +361,7 @@
             semantics="radiogroup"
             ariaLabelledby="presentation-label"
             color="accent"
-            size="sm"
+            size="md"
           />
         </div>
         <div class="choice-field">
@@ -380,7 +377,7 @@
             semantics="radiogroup"
             ariaLabelledby="age-label"
             color="accent"
-            size="sm"
+            size="md"
           />
         </div>
         <div class="slider-grid">
@@ -413,7 +410,7 @@
             semantics="radiogroup"
             ariaLabelledby="hair-label"
             color="accent"
-            size="sm"
+            size="md"
             columns={3}
           />
         </div>
@@ -429,7 +426,7 @@
             semantics="radiogroup"
             ariaLabelledby="outfit-label"
             color="accent"
-            size="sm"
+            size="md"
             columns={3}
           />
         </div>
