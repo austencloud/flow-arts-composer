@@ -79,6 +79,9 @@
   const usesWorkspacePlayback = $derived(
     isConstructTab || navigationState.activeTab === "generate"
   );
+  const hasWorkspacePlayback = $derived(
+    !!panelState.workspacePlayback || !!panelState.workspacePlaybackPreparation
+  );
   const shouldShowOptionInteractionBanner = $derived.by(() => {
     if (
       !isConstructTab ||
@@ -116,7 +119,7 @@
       onViewSequence?.();
       return;
     }
-    if (panelState.workspacePlayback) {
+    if (hasWorkspacePlayback) {
       panelState.stopWorkspacePlayback();
       return;
     }
@@ -223,8 +226,7 @@
                   <ViewSequenceButton
                     onclick={handleFullSequencePlay}
                     isActive={isExportPanelOpen}
-                    isStopping={usesWorkspacePlayback &&
-                      !!panelState.workspacePlayback}
+                    isStopping={usesWorkspacePlayback && hasWorkspacePlayback}
                     purpose="play"
                   />
                 </div>

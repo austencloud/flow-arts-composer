@@ -17,7 +17,7 @@
   } from "$lib/shared/mandala/domain/mandala-types";
   import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
   import { createRootFontRamp } from "$lib/shared/ui/root-font-ramp.svelte";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import {
     createStepGridDisplayState,
     isPendingGenerationAnimation,
@@ -97,6 +97,7 @@
     onAuditionCompleted,
     onAuditionDismiss,
     posePicker = false,
+    observeScroll = true,
   } = $props<{
     steps: ReadonlyArray<StepData> | StepData[];
     startPosition?: StartPositionData | StepData | null;
@@ -164,6 +165,8 @@
      * so it still reads as the current start.
      */
     posePicker?: boolean;
+    /** The hidden editor does not need to recompute overflow while playback owns the stage. */
+    observeScroll?: boolean;
   }>();
 
   // State management
@@ -688,16 +691,26 @@
   $effect(() => {
     if (!scrollContainerRef) return;
 
-    scrollState.setScrollContainer(scrollContainerRef);
+    if (!observeScroll) {
+      untrack(() => scrollState.setScrollContainer(null));
+      return;
+    }
+
+    // The state owner reads its current container while publishing overflow.
+    // Keep that imperative read out of this effect's dependencies, or cleanup
+    // can clear and restore the same container until Svelte reaches its depth
+    // guard when the first grid mounts.
+    untrack(() => scrollState.setScrollContainer(scrollContainerRef));
 
     const scrollResizeObserver = new ResizeObserver(() => {
-      scrollState.checkScrollbar();
+      untrack(() => scrollState.scheduleScrollbarCheck());
     });
 
     scrollResizeObserver.observe(scrollContainerRef);
 
     return () => {
       scrollResizeObserver.disconnect();
+      untrack(() => scrollState.setScrollContainer(null));
     };
   });
 
