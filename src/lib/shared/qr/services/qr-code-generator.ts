@@ -368,6 +368,49 @@ export class QRCodeGenerator {
     return result;
   }
 
+  /**
+   * Returns previously prepared QR artwork without warming cells, allocating a
+   * short code, or rendering a new SVG. Gallery cards use this while scrolling:
+   * a missing preparation is ordinary and leaves the card without a QR.
+   *
+   * Prepared records are baked at the canonical 200px size. SVG is vector
+   * artwork, so callers can draw that same record at their own display size.
+   */
+  async findPreparedForSequence(
+    sequence: SequenceData,
+    options?: QRCodeOptions
+  ): Promise<QRCodeResult | null> {
+    throwIfAborted(options?.signal);
+    const explicitCatDogMode =
+      options?.leftPropType && options.rightPropType
+        ? options.leftPropType !== options.rightPropType
+        : undefined;
+    const propConfig = resolveScanPropConfig(sequence, {
+      leftPropType: options?.leftPropType,
+      rightPropType: options?.rightPropType,
+      catDogMode: explicitCatDogMode,
+    });
+    const preparedKey = await this.preparedCache.keyFor(sequence, propConfig, {
+      ...options,
+      // The prepared population is intentionally canonicalized at 200px.
+      size: 200,
+    });
+    throwIfAborted(options?.signal);
+    const prepared = await this.preparedCache.get(preparedKey);
+    throwIfAborted(options?.signal);
+    return prepared;
+  }
+
+  /** Decode already-prepared SVG artwork for a canvas caller without taking
+   * the generation path. */
+  async loadPreparedAsImage(
+    sequence: SequenceData,
+    options?: QRCodeOptions
+  ): Promise<HTMLImageElement | null> {
+    const prepared = await this.findPreparedForSequence(sequence, options);
+    return prepared ? this.loadDecodedImage(prepared.dataUrl) : null;
+  }
+
   async generateForUrl(
     url: string,
     options?: QRCodeOptions
