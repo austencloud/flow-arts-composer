@@ -11,6 +11,7 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import PanelHeader from "$lib/shared/components/panel/PanelHeader.svelte";
   import PanelContent from "$lib/shared/components/panel/PanelContent.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import { createViewer3DState } from "$lib/shared/3d/state/viewer-3d-state.svelte";
   import { setViewer3DContext } from "$lib/shared/3d/context/viewer-3d-context";
@@ -33,6 +34,51 @@
     resolveCandidate,
     type LocalCharacterCandidate,
   } from "../_lab-kit/local-character-candidates";
+  import {
+    AGE_BANDS,
+    DEFAULT_GENERATION_OPTIONS,
+    HAIR_STYLES,
+    OUTFITS,
+    PRESENTATIONS,
+    type GenerationOptions,
+    type HairStyle,
+    type Outfit,
+    type Presentation,
+  } from "./generation-options";
+
+  const HAIR_LABELS: Record<HairStyle, string> = {
+    short01: "Short 1",
+    short02: "Short 2",
+    short03: "Short 3",
+    bob01: "Bob",
+    ponytail01: "Ponytail",
+    afro01: "Afro",
+  };
+  const OUTFIT_LABELS: Record<Outfit, string> = {
+    female_casualsuit01: "Casual 1",
+    female_casualsuit02: "Casual 2",
+    female_sportsuit01: "Sport",
+    male_casualsuit01: "Casual 1",
+    male_casualsuit02: "Casual 2",
+    male_casualsuit03: "Casual 3",
+  };
+  const RANGE_FIELDS = [
+    {
+      key: "height",
+      label: "Height proportions",
+      low: "Short",
+      high: "Tall",
+    },
+    { key: "weight", label: "Weight", low: "Lean", high: "Fuller" },
+    { key: "muscle", label: "Muscle", low: "Softer", high: "Defined" },
+    {
+      key: "proportions",
+      label: "Proportions",
+      low: "Wide hips",
+      high: "Wide shoulders",
+    },
+    { key: "face", label: "Face variation", low: "None", high: "Bold" },
+  ] as const;
 
   const initialSequence = ALL_FIXTURE_LOOPS.find(
     ([id]) => id === "AAAA_CCW"
@@ -83,6 +129,7 @@
   let pickerOpen = $state(false);
   let message = $state("Loading local characters…");
   let failure = $state("");
+  let options = $state<GenerationOptions>({ ...DEFAULT_GENERATION_OPTIONS });
   let active = false;
   let initializedPlayback = false;
   const sequence = $derived(viewer.currentSequenceData ?? initialSequence);
@@ -120,6 +167,8 @@
     try {
       const response = await fetch("/test/character-playground/generate", {
         method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(options),
       });
       const result = await response.json();
       if (!response.ok)
@@ -158,6 +207,43 @@
     }
   }
 
+  function setPresentation(presentation: Presentation): void {
+    options = {
+      ...options,
+      presentation,
+      outfit: OUTFITS[presentation][0],
+    };
+  }
+
+  function setControl(
+    key: "height" | "weight" | "muscle" | "proportions" | "face",
+    event: Event
+  ): void {
+    options = {
+      ...options,
+      [key]: Number((event.currentTarget as HTMLInputElement).value),
+    };
+  }
+
+  function randomizeSettings(): void {
+    const presentation =
+      PRESENTATIONS[Math.floor(Math.random() * PRESENTATIONS.length)]!;
+    const age = AGE_BANDS[Math.floor(Math.random() * AGE_BANDS.length)]!;
+    const hair = HAIR_STYLES[Math.floor(Math.random() * HAIR_STYLES.length)]!;
+    const outfits = OUTFITS[presentation];
+    options = {
+      presentation,
+      age,
+      hair,
+      outfit: outfits[Math.floor(Math.random() * outfits.length)]!,
+      height: Math.round(Math.random() * 20) / 20,
+      weight: Math.round(Math.random() * 20) / 20,
+      muscle: Math.round(Math.random() * 20) / 20,
+      proportions: Math.round(Math.random() * 20) / 20,
+      face: Math.round(Math.random() * 20) / 20,
+    };
+  }
+
   onMount(() => {
     active = true;
     playback = createPlaybackControllerFactory(visibility);
@@ -174,7 +260,7 @@
       if (characterId) viewer.setCharacterScoped(characterId as AvatarId);
       mounted = true;
       message =
-        "Randomize creates a new local character for the selected performers. Saved characters are in the performer picker.";
+        "Choose your settings, then generate. Saved characters are in the performer picker.";
       try {
         const response = await fetch("/test/character-playground/generate");
         const status = response.ok ? await response.json() : null;
@@ -182,7 +268,7 @@
         generatorAvailable = status?.available === true;
         if (!generatorAvailable)
           message =
-            "Randomize needs the local Blender and MPFB installation. Scene controls remain available.";
+            "Generation needs the local Blender and MPFB installation. Scene controls remain available.";
         else if (status.busy)
           message =
             "Another character is being generated. You can keep exploring the scene.";
@@ -234,24 +320,12 @@
 {#snippet generatorActions()}
   <PanelButton
     variant="primary"
-    ariaLabel="Randomize character"
-    ariaBusy={generating}
-    disabled={generating || !generatorAvailable}
-    onclick={randomize}
+    ariaLabel="Create character"
+    onclick={() => (generatorOpen = true)}
   >
-    <i
-      class="fas {generating ? 'fa-spinner fa-spin' : 'fa-shuffle'}"
-      aria-hidden="true"
-    ></i>
-    Randomize
+    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+    Create character
   </PanelButton>
-  <SceneChromeButton
-    icon="fa-circle-info"
-    label="Character generator"
-    tooltipSide="bottom"
-    aria-pressed={generatorOpen}
-    onclick={() => (generatorOpen = !generatorOpen)}
-  />
 {/snippet}
 
 {#snippet generatorPanel(close: () => void, compact: boolean)}
@@ -260,37 +334,132 @@
     class:compact
     aria-label="Character generator"
   >
-    <div class="generator-heading">
-      <PanelHeader title="Character generator" icon="fa-shuffle" />
-      {#if !compact}<SceneChromeButton
-          icon="fa-xmark"
-          label="Close character generator"
-          onclick={close}
-        />{/if}
-    </div>
+    {#if !compact}<div class="generator-heading">
+        <PanelHeader title="Character generator" icon="fa-shuffle" />
+        {#if !compact}<SceneChromeButton
+            icon="fa-xmark"
+            label="Close character generator"
+            onclick={close}
+          />{/if}
+      </div>{/if}
     <PanelContent>
+      <p>Shape a new performer, then generate to see them in the scene.</p>
       <p>
-        Generate a different body, face, hairstyle and outfit with MakeHuman /
-        MPFB.
+        These sliders shape the model. The scene scales performers to its
+        configured height.
       </p>
-      <p>
-        {candidates.length} local characters available. Select performers in the scene
-        to decide who changes; use their character picker to revisit saved people.
-      </p>
-      <p role="status">{message}</p>
-      {#if failure}<p class="failure" role="alert">{failure}</p>{/if}
-      <PanelButton
-        variant="primary"
-        ariaBusy={generating}
-        disabled={generating || !generatorAvailable}
-        onclick={randomize}
-      >
-        <i
-          class="fas {generating ? 'fa-spinner fa-spin' : 'fa-shuffle'}"
-          aria-hidden="true"
-        ></i>
-        Randomize selected performers
-      </PanelButton>
+      <div class="creator-fields">
+        <div class="choice-field">
+          <span id="presentation-label">Body presentation</span>
+          <SegmentedControl
+            options={[
+              { value: "feminine" as const, label: "Feminine" },
+              { value: "masculine" as const, label: "Masculine" },
+            ]}
+            value={options.presentation}
+            onchange={setPresentation}
+            semantics="radiogroup"
+            ariaLabelledby="presentation-label"
+            color="accent"
+            size="md"
+          />
+        </div>
+        <div class="choice-field">
+          <span id="age-label">Adult age</span>
+          <SegmentedControl
+            options={[
+              { value: "young" as const, label: "Young adult" },
+              { value: "middleage" as const, label: "Middle age" },
+              { value: "old" as const, label: "Older adult" },
+            ]}
+            value={options.age}
+            onchange={(age) => (options = { ...options, age })}
+            semantics="radiogroup"
+            ariaLabelledby="age-label"
+            color="accent"
+            size="md"
+          />
+        </div>
+        <div class="slider-grid">
+          {#each RANGE_FIELDS as field}
+            <label class="range-field">
+              <span class="range-title"
+                >{field.label}<small>{field.low} · {field.high}</small></span
+              >
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={options[field.key]}
+                oninput={(event) => setControl(field.key, event)}
+              />
+              <output>{Math.round(options[field.key] * 100)}%</output>
+            </label>
+          {/each}
+        </div>
+        <div class="choice-field">
+          <span id="hair-label">Hair</span>
+          <SegmentedControl
+            options={HAIR_STYLES.map((hair) => ({
+              value: hair,
+              label: HAIR_LABELS[hair],
+            }))}
+            value={options.hair}
+            onchange={(hair) => (options = { ...options, hair })}
+            semantics="radiogroup"
+            ariaLabelledby="hair-label"
+            color="accent"
+            size="md"
+            columns={3}
+          />
+        </div>
+        <div class="choice-field">
+          <span id="outfit-label">Outfit</span>
+          <SegmentedControl
+            options={OUTFITS[options.presentation].map((outfit) => ({
+              value: outfit,
+              label: OUTFIT_LABELS[outfit],
+            }))}
+            value={options.outfit}
+            onchange={(outfit) => (options = { ...options, outfit })}
+            semantics="radiogroup"
+            ariaLabelledby="outfit-label"
+            color="accent"
+            size="md"
+            columns={3}
+          />
+        </div>
+      </div>
+      <div class="generator-status" aria-live="polite">
+        <p>
+          {candidates.length} local characters available. Changes apply when you generate;
+          selected performers receive the finished character.
+        </p>
+        <p>{message}</p>
+        {#if failure}<p class="failure" role="alert">{failure}</p>{/if}
+      </div>
+      <div class="generator-actions">
+        <PanelButton
+          variant="secondary"
+          disabled={generating || !generatorAvailable}
+          onclick={randomizeSettings}
+        >
+          <i class="fas fa-shuffle" aria-hidden="true"></i> Randomize settings
+        </PanelButton>
+        <PanelButton
+          variant="primary"
+          ariaBusy={generating}
+          disabled={generating || !generatorAvailable}
+          onclick={randomize}
+        >
+          <i
+            class="fas {generating ? 'fa-spinner fa-spin' : 'fa-shuffle'}"
+            aria-hidden="true"
+          ></i>
+          Generate for selected performers
+        </PanelButton>
+      </div>
     </PanelContent>
   </section>
 {/snippet}
@@ -391,6 +560,61 @@
   }
   .generator-panel .failure {
     color: var(--semantic-error);
+  }
+  .creator-fields {
+    display: grid;
+    gap: 0.9rem;
+  }
+  .choice-field {
+    display: grid;
+    gap: 0.35rem;
+  }
+  .choice-field > span,
+  .range-title {
+    color: var(--theme-text);
+    font-size: var(--font-size-min, 14px);
+    font-weight: 600;
+  }
+  .range-title small {
+    display: block;
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 12px);
+    font-weight: 400;
+    line-height: 1.25;
+  }
+  .slider-grid {
+    display: grid;
+    gap: 0.55rem;
+  }
+  .range-field {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(4rem, 1fr) 2.75rem;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: var(--min-touch-target, 44px);
+  }
+  .range-field input {
+    width: 100%;
+    accent-color: var(--theme-accent);
+  }
+  .range-field output {
+    color: var(--theme-text-dim);
+    font-size: var(--font-size-compact, 12px);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .generator-status {
+    min-height: 5.25rem;
+  }
+  .generator-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  @media (max-width: 30rem) {
+    .range-field {
+      grid-template-columns: 6.25rem minmax(3rem, 1fr) 2.5rem;
+    }
   }
   .sr-only {
     position: absolute;

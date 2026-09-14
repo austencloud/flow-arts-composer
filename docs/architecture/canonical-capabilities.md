@@ -143,10 +143,11 @@ The key includes `encodeSequence`, canonical cell keys for both themes, and QR
 URL/style options. A cache hit bypasses warming and short-code allocation;
 only a completed strict warm can publish a cache entry. `warm-sequence-cells.ts`
 owns canonical cell enumeration and probes shared cells before rendering.
-Gallery thumbnail QR upgrades extend `ThumbnailRenderOrchestrator` with its
-prepared-only policy: it first paints the no-QR preview, then asks
-`ThumbnailRenderer.hasPreparedQR` for public prepared artwork. A miss or lookup
-failure keeps that preview; gallery browsing never calls the QR generation path.
+Gallery thumbnail QR upgrades extend `ThumbnailRenderOrchestrator`: a signed-in
+reader first sees the no-QR preview, then one background job prepares the exact
+scan-ready QR. Guests only ask `ThumbnailRenderer.hasPreparedQR` for public
+prepared artwork. A miss, lookup failure, or background preparation failure
+keeps the preview.
 Discovery: `generateForSequence`, `qr-image-cache`, `prepared-scan-card`,
 `warmSequenceCells`, `pictograph-cloud-cache`. Decision: extend these owners;
 do not introduce a second QR renderer or scan-asset preparation pipeline.

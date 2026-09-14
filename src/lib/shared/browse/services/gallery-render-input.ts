@@ -78,6 +78,46 @@ export interface BuildGalleryRenderInputParams {
 }
 
 /**
+ * Gallery cards may prepare a missing QR only for a signed-in reader. Guests
+ * can still draw public artwork that was prepared earlier, but never trigger
+ * scan-cell warming or short-code allocation while they scroll.
+ */
+export type GalleryQrPolicy = "background" | "prepared-only" | undefined;
+
+export interface GalleryThumbnailRequestIdentity {
+  keyHash: string;
+  qrPolicy: GalleryQrPolicy;
+}
+
+export function galleryQrPolicy({
+  variant = "gallery",
+  cardMode,
+  isAuthenticated,
+}: Pick<
+  BuildGalleryRenderInputParams,
+  "variant" | "cardMode" | "isAuthenticated"
+>): GalleryQrPolicy {
+  if (variant !== "gallery" || cardMode) return undefined;
+  return isAuthenticated ? "background" : "prepared-only";
+}
+
+/**
+ * Authentication does not change a gallery image key, but it does change
+ * whether a visible card may prepare a missing QR. Keep that scheduling state
+ * beside the cache key so an auth hydration update retries the same preview.
+ */
+export function galleryThumbnailRequestChanged(
+  current: GalleryThumbnailRequestIdentity | null,
+  next: GalleryThumbnailRequestIdentity
+): boolean {
+  return (
+    current === null ||
+    current.keyHash !== next.keyHash ||
+    current.qrPolicy !== next.qrPolicy
+  );
+}
+
+/**
  * Beat count used for QR gating (>1 → a spare cell exists) and start-position
  * layout selection. Mirrors PropAwareThumbnail: steps length wins over the
  * stored sequenceLength; empty steps (Community sequences) fall through to it.
