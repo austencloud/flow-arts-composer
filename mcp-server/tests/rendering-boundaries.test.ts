@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createCanvas } from "canvas";
+import { createCanvas } from "@napi-rs/canvas/node-canvas.js";
 import {
   BADGE_PADDING_SCALE,
   BADGE_SIZE_SCALE,
@@ -349,7 +349,7 @@ describe("MCP rendering boundaries", () => {
     assert.equal(result.steps[0]?.rightMotion.hand, "right");
   });
 
-  it("scopes blue and red fan styles inside one pictograph", async () => {
+  it("keeps blue and red physical fan frames independent in one pictograph", async () => {
     const renderer = getStandaloneRenderer();
     const svg = await renderer.renderToSvg(
       {
@@ -385,11 +385,18 @@ describe("MCP rendering boundaries", () => {
       }
     );
 
-    assert.ok(svg.includes(".st0-blue{fill:#3575E2;}"));
-    assert.ok(svg.includes('class="st0-blue"'));
-    assert.ok(svg.includes(".st0-red{fill:#ED1C24;}"));
-    assert.ok(svg.includes('class="st0-red"'));
-    assert.doesNotMatch(svg, /class="st0"/);
+    // Physical fan artwork no longer uses the legacy `.st0` stylesheet. Its
+    // marked frame is colored inline, so the blue and red copies cannot leak
+    // paint into each other when embedded in the same SVG.
+    assert.match(
+      svg,
+      /<g\b(?=[^>]*\bdata-fan-frame=(?:""|''))[^>]*\bstroke="#3575E2"/i
+    );
+    assert.match(
+      svg,
+      /<g\b(?=[^>]*\bdata-fan-frame=(?:""|''))[^>]*\bstroke="#ED1C24"/i
+    );
+    assert.doesNotMatch(svg, /data-fan-frame[^>]*stroke="#2E3192"/i);
   });
 
   it("applies one custom hand-color pair to props, arrows, turns, and reversals", async () => {

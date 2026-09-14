@@ -883,6 +883,16 @@ export function registerSequenceTools(server: McpServer): void {
         .optional()
         .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
+      exportProfile: z
+        .enum(["composer", "print"])
+        .optional()
+        .describe("Card export profile"),
+      columnCount: z
+        .number()
+        .int()
+        .min(1)
+        .optional()
+        .describe("Requested card grid column count"),
       primaryPropColors: z
         .object({
           left: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
@@ -892,10 +902,29 @@ export function registerSequenceTools(server: McpServer): void {
         .describe(
           'Custom left/right hand colors as hex values, e.g. { left: "#00e5ff", right: "#ff2ea6" }. Applied consistently to props, arrows, turn labels, reversal dots, and mandalas.'
         ),
+      leftPropType: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("Left-hand prop type; overrides propType for that hand"),
+      rightPropType: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("Right-hand prop type; overrides propType for that hand"),
+      fanAppearance: z
+        .object({
+          build: z
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .optional(),
+          frameColor: z.enum(["black", "white"]).optional(),
+          cover: z.enum(["bare", "covered"]).optional(),
+        })
+        .nullable()
+        .optional(),
       showDifficulty: z
         .boolean()
         .optional()
-        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty)
         .describe("Show difficulty level badge in header"),
       showReversals: z
         .boolean()
@@ -963,8 +992,13 @@ export function registerSequenceTools(server: McpServer): void {
       showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
       displayWord,
       darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
+      exportProfile,
+      columnCount,
       primaryPropColors,
-      showDifficulty = COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
+      leftPropType,
+      rightPropType,
+      fanAppearance,
+      showDifficulty,
       showReversals = COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals,
       loopComponents,
       userName,
@@ -1156,8 +1190,13 @@ export function registerSequenceTools(server: McpServer): void {
             showStepNumbers,
             showWord,
             darkMode,
+            exportProfile,
+            columnCount,
             padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
-            showDifficulty,
+            showDifficulty:
+              showDifficulty ??
+              (exportProfile === "print" ||
+                COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
             showFooter: Boolean(notes && notes !== "none"),
             startPositionLayout:
               COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
@@ -1172,10 +1211,23 @@ export function registerSequenceTools(server: McpServer): void {
                 : 2
               : undefined,
             showReversals,
-            seedWord: displayWord?.toUpperCase() ?? engineSeedWord,
+            displayWord: displayWord?.toUpperCase(),
+            seedWord: engineSeedWord,
+            rotationPeriod: finalLoopComponents?.includes(LOOPComponent.ROTATED)
+              ? (period as "halved" | "quartered")
+              : undefined,
+            inversionPeriod: finalLoopComponents?.includes(
+              LOOPComponent.INVERTED
+            )
+              ? (period as "halved" | "quartered")
+              : undefined,
+            reflectionAxis:
+              reflectionAxis ?? detectedLoop.reflectionAxis ?? undefined,
             derivedStepIndices: engineDerivedStepIndices,
-            leftPropType: propType,
-            rightPropType: propType,
+            leftPropType: leftPropType === undefined ? propType : leftPropType,
+            rightPropType:
+              rightPropType === undefined ? propType : rightPropType,
+            fanAppearance,
             primaryPropColors,
           }
         );

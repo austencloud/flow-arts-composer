@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadImage } from "canvas";
+import { loadImage } from "@napi-rs/canvas/node-canvas.js";
 import { getLetterType, isValidLetter } from "@tka/domain";
 import {
   sanitizeSvgForBitmap,
@@ -66,6 +66,7 @@ function resolveGlyphAsset(token: string): GlyphAsset {
  * and tell the shared header renderer not to apply that browser-only filter.
  */
 function colorGlyphSvg(svg: string, darkMode: boolean): string {
+  if (!darkMode) return sanitizeSvgForBitmap(svg);
   const color = darkMode ? "#e6e6e6" : "#231f20";
   let prepared = sanitizeSvgForBitmap(svg).replace(
     /#000000|#231f20|\bblack\b/gi,

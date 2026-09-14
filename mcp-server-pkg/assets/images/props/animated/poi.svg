@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 291.67 38">
+  <!-- Poi: knob, tether, weighted head. The grip is the viewBox centre
+       (145.835,19) and the head CENTRE sits 129.335 out from it - the club's
+       reach - so poi produces the same mandala and trail radius as every other
+       regular prop. The tether is ~4x the head across, which is what makes the
+       prop read as poi rather than as a ball on a stick.
+
+       Only the head carries motion colour. The knob is a rubber bead and the
+       tether is cord, so both stay neutral the way the club's knob and grip do
+       - which is why "poi" is in SELECTIVE_COLOR_PROP_TYPES. The head fill is
+       the club body's #BDBDBD (unsaturated, so selective mode repaints it);
+       the knob and cord carry the club's blue-grey tint, which selective mode
+       preserves. The knob is a full step darker than the cord (luminance 0.39
+       vs 0.64) and the cord is thin, so at animation scale the eye separates
+       head, cord and handle instead of reading one grey mass. -->
+  <g data-poi-art="regular">
+    <!-- Mirror reserve (invisible): keeps the geometric bbox symmetric about
+         the grip, matching the unilateral-prop convention. -->
+    <circle cx="16.5" cy="19" r="16.5" fill="none"/>
+
+    <!-- tether: cord from the grip out to the head centre. -->
+    <rect data-poi-part="tether" x="145.83" y="16.8" width="129.34" height="4.4" rx="2.2"
+      fill="#9AA4B2" stroke="#202126" stroke-width=".7"/>
+
+    <!-- weighted head: far edge at 291.67, so grip-to-tip spans 145.835. -->
+    <circle data-poi-part="head" cx="275.17" cy="19" r="16.5"
+      fill="#BDBDBD" stroke="#202126" stroke-width=".9"/>
+
+    <!-- knob: the moulded rubber bead. The cord runs through its SHORT axis, so
+         side-on the bead is squat along the tether (16.5) and wide across it
+         (20) - not a capsule lying along the cord. The outboard face that seats
+         in the palm is the flat one; the end the cord leaves by is the rounder
+         dome. Centred on the handpoint. -->
+    <path data-poi-part="knob"
+      d="M137.6 19C137.6 10.9 140.2 9 145 9C150.2 9 154.1 13 154.1 19C154.1 25 150.2 29 145 29C140.2 29 137.6 27.1 137.6 19Z"
+      fill="#5A6472" stroke="#202126" stroke-width=".8"/>
+  </g>
+</svg>

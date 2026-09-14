@@ -44,6 +44,12 @@ export type {
   MotionSvgColorOptions,
 } from "./svg-color.js";
 
+export {
+  applyFanFrameColor,
+  applyFanPaperContrast,
+  FAN_PAPER_CONTRAST,
+} from "./fan-appearance.js";
+
 // Viewbox constants
 export {
   VIEWBOX_SIZE,
@@ -143,6 +149,7 @@ export {
 // Grid position
 export {
   getHandPointCoordinates,
+  getNormalHandPointCoordinates,
   getLayer2PointCoordinates,
 } from "./calculations/grid-position.js";
 

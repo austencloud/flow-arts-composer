@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 207" data-generated-from="scripts/assets/moon-fan-reference.json" data-source-version="1">
+  <title>Lighttoys Moon LED fan</title>
+  <desc>A two-zone diffusion skin stretched over a semicircular LED fan frame.</desc>
+  <defs>
+    <linearGradient id="moon-fabric-top" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f1f3f8"/>
+      <stop offset="0.44" stop-color="#f8fbff"/>
+      <stop offset="0.86" stop-color="#dcecff"/>
+      <stop offset="1" stop-color="#b7d8ff"/>
+    </linearGradient>
+    <linearGradient id="moon-fabric-bottom" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#f1f3f8"/>
+      <stop offset="0.44" stop-color="#fff9fd"/>
+      <stop offset="0.86" stop-color="#f5d9ec"/>
+      <stop offset="1" stop-color="#ecb8dc"/>
+    </linearGradient>
+    <linearGradient id="moon-frame" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ede7ff"/>
+      <stop offset="0.42" stop-color="#a675f6"/>
+      <stop offset="1" stop-color="#5e2fa0"/>
+    </linearGradient>
+    <filter id="moon-soft-light" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.8"/>
+    </filter>
+  </defs>
+
+  <g data-moon-diffuser="">
+    <path d="M140 3 C204 3 257 45 258 103.5 L151 103.5 C151 94 147 87 140 82 Z" fill="url(#moon-fabric-top)" stroke="#818899" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M151 103.5 H258 C257 162 204 204 140 204 V125 C147 120 151 113 151 103.5 Z" fill="url(#moon-fabric-bottom)" stroke="#818899" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M146 9 C203 10 249 48 251 99" fill="none" stroke="#b9ddff" stroke-width="7" stroke-linecap="round" opacity="0.78" filter="url(#moon-soft-light)"/>
+    <path d="M251 108 C247 158 201 196 146 198" fill="none" stroke="#f2badf" stroke-width="7" stroke-linecap="round" opacity="0.72" filter="url(#moon-soft-light)"/>
+    <path d="M151 103.5 H257" fill="none" stroke="#778092" stroke-width="1.6" opacity="0.78"/>
+    <path d="M140 82 C149 88 153 95 153 103.5 C153 112 149 120 140 125" fill="none" stroke="#697181" stroke-width="2.2"/>
+  </g>
+
+  <g data-fan-frame="" fill="none" stroke="url(#moon-frame)" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="130" cy="103.5" r="18.5" stroke-width="5.6"/>
+    <circle cx="130" cy="103.5" r="25.5" stroke-width="3.8"/>
+    <path d="M146 91 L151 103.5 L146 116" stroke-width="3.4"/>
+  </g>
+  <g fill="none" stroke="#667080" stroke-width="1.4" opacity="0.4">
+    <path d="M149 99 L252 52"/>
+    <path d="M149 108 L252 155"/>
+  </g>
+</svg>
