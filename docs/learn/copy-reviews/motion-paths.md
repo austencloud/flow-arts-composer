@@ -132,6 +132,25 @@ Nineteen focused tests passed across explorer state, whole-loop anchor matching,
 
 ## Evidence and teaching boundaries
 
+### Interactive reference revision, September 13
+
+Austen requested interactive pictures, animations, and integrated components below the matrix, then approved implementation with “do it.” The four examples cover single-hand travel, synchronized step joins, third-order composition layers, and sequence-versus-step settings. The existing prose remains available in a collapsed Motion path reference. The upper matrix explorer is unchanged.
+
+The lead applied the Teacher briefing inline and reviewed the new labels with AI-bust. The concise instructions name controls and observable movement; no banned writing patterns were found. Existing delegated editorial authorization applies. User review of the resulting experience is pending.
+
+| Capability                                          | Existing owner reused                                                                    |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Playback, scrubbing, and matching comparison frames | InlineAnimationPlayer and its canonical seek/external-step interface                     |
+| Notation and step selection                         | StepStrip                                                                                |
+| Path choice and explicit per-step paths             | PathShapePanel and applySequencePathPreview                                              |
+| Layered motion                                      | ThirdOrderCompositionSampler, ThirdOrderFlowerOverlay, AnimatorCanvas, TrajectoryMandala |
+| Offscreen activity and lazy mounting                | RenderActivityGate and LazyMount                                                         |
+| Full viewer handoff                                 | openSequenceViewer                                                                       |
+
+Each example owns ephemeral state. Save and Restore affect only the example; the real viewer is reached through an explicit button. The examples reuse frozen motion data and canonical sampling, without inventing a flower formula or equating Concave with an exact four-petal antispin construction. No performer footage was available for this revision.
+
+Focused tests cover selected-step isolation, source preservation, local save/restore/reset, and single-hand visibility. Type checking reported zero errors and warnings before browser verification.
+
 - Hand paths and Hybrid mapping: src/lib/shared/animation-engine/services/prop-interpolator.ts. Concave uses 2 \* straightPoint - circlePoint; it is not the exact flower construction.
 - Preview/save/default and authored exception behavior: src/lib/shared/sequence-viewer/services/sequence-path-policy.ts, animation-visibility-state.svelte.ts, and their tests.
 - Per-hand reset: PropTurnsControl.svelte and path-shape-handler.ts.
