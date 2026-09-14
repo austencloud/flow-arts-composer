@@ -147,8 +147,8 @@
   <div class="lesson-controls">
     <SegmentedControl
       options={[
-        { value: "carrier", label: "Carrier path" },
-        { value: "inner", label: "Inner motion", tone: "blue" },
+        { value: "carrier", label: "Carrier" },
+        { value: "inner", label: "Inner", tone: "blue" },
         { value: "together", label: "Together", tone: "both" },
       ]}
       value={layer}
