@@ -671,13 +671,8 @@
                         showEditInConstructor={false}
                         toolbar
                         actionSubject="all six sequences"
-                        rotationDegrees={45}
                         onMirror={() => void transformAllLoops("mirror")}
                         onFlip={() => void transformAllLoops("flip")}
-                        onRotateCW={() =>
-                          void transformAllLoops("rotate-clockwise")}
-                        onRotateCCW={() =>
-                          void transformAllLoops("rotate-counterclockwise")}
                         onSwap={() => void transformAllLoops("swap")}
                         onReset={resetAllLoops}
                       />
