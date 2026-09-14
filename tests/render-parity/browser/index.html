@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Composer and MCP card comparison</title>
   <style>
     body { font: 16px system-ui; margin: 24px; background: #ddd; color: #111; }
@@ -13,5 +14,13 @@
   <h1>Composer and MCP card comparison</h1>
   <p id="status">Rendering the same inputs in Chromium and Node…</p>
   <main id="results"></main>
-  <script type="module" src="./main.ts"></script>
+  <script type="module">
+    if (location.protocol === "file:") {
+      document.querySelector("#status").textContent = "This is the rendering tool's source page. Open the saved card-profiles.html review for an offline side-by-side comparison, or run the review server and open its HTTP address.";
+    } else {
+      import("./main.ts").catch(error => {
+        document.querySelector("#status").textContent = "Unable to load the comparison tool: " + error;
+      });
+    }
+  </script>
 </html>

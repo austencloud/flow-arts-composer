@@ -13,8 +13,14 @@ badge. A deliberately removed badge must fail the header tolerance.
 For visual investigation, run `pnpm exec tsx tests/render-parity/serve-card-parity.ts`
 from the repository root and open the printed loopback URL. The page uses the
 same Composer fixture adapter as the automated test. PNG triplets and metrics
-are written to the ignored `.artifacts/card-parity` directory. Stop the server
-after review.
+are written to the ignored `.artifacts/card-parity` directory. The run also
+renders the product presets in `card-profile-cases.ts` (Composer export, viewer
+Auto, poker print) and saves `.artifacts/card-parity/card-profiles.html`, a
+self-contained side-by-side review that opens without the server. Preset
+layouts are guarded by `tests/unit/card-profile-cases.test.ts`. In a fresh
+worktree, build the workspace packages and run
+`node mcp-server-pkg/scripts/sync-card-assets.mjs` first. Stop the server after
+review.
 
 ## Owners
 
