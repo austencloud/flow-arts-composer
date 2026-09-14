@@ -433,7 +433,7 @@ export class SequenceModalExporter {
           if (navigator.canShare({ files: [file] })) {
             await navigator.share({
               files: [file],
-              title: "TKA Sequence",
+              title: "Flow Arts Composer sequence",
               text: rawName,
             });
             shared = true;

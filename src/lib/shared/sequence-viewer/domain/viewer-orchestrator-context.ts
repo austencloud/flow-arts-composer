@@ -145,6 +145,8 @@ export interface OrchestratorContext {
   resolvedCardAutoLayout: ResolvedAutoLayout | null;
   setResolvedCardAutoLayout: (layout: ResolvedAutoLayout | null) => void;
   handleCanvasReady: (canvas: HTMLCanvasElement | null) => void;
+  /** Captures the already-mounted 2D animation surface for share presentation. */
+  captureAnimationPreview: () => string;
   handleSyncToggle: () => Promise<void>;
   handleOpenInCompose: (
     preset?: "stagger" | "mirror" | "combo-export"

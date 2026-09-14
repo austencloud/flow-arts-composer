@@ -1481,6 +1481,11 @@
     preserveSession={share.preserveSession}
     onSessionResumed={share.markSessionResumed}
     videoLabel={artShareVideo.label}
+    captureAnimationPreview={share.artShare || share.postShare
+      ? () => ""
+      : ctx.captureAnimationPreview}
+    is3DExport={ctx.renderMode === "3d"}
+    videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}`}
     initialArtifact={share.artShare ||
     share.sceneShare ||
     (share.postShare && !!postStudioVideoUrl) ||

@@ -366,7 +366,7 @@
     // This must be created in the click handler, before any await.
     const shareOperation = shareBlobNatively(card.blob, card.filename, {
       title: sequenceName,
-      text: `TKA sequence: ${sequenceName}`,
+      text: `Flow Arts Composer sequence: ${sequenceName}`,
     });
 
     void shareOperation

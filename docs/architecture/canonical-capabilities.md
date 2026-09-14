@@ -6,12 +6,15 @@ before relying on it. Add a row only for shared behavior or an intentional
 keep-separate decision, not for every component.
 
 Sequence sharing extends `shared/share/components/PostShareSheet.svelte`.
+Read `docs/architecture/sharing-export-experience.md` for the retained research,
+entry-context decisions, browser constraints, and acceptance checks.
 Searches: share, download, export, send to a friend, transfer to phone, caption.
 The compact menu offers Copy link, an inbox attachment, and one file path.
 Download and external file sharing use the same preview and prepared file;
 they must not become competing setup flows. Both the menu's Download and an
-Export shortcut open file settings. Video rendering starts only from Render
-video; Download saves the completed file. Cancel restores editable settings.
+Export shortcut open file settings. Download video owns preparation and delivery;
+opening settings does not render. Cancel clears pending delivery and restores
+editable settings.
 Copy progress and results stay
 inside the Copy link action. `sequence-viewer/state/viewer-shell-share-state.svelte.ts`
 owns the source session; the sheet composes existing card preview and viewer
@@ -19,8 +22,8 @@ export owners, then reuses `shared/share/services/post-handoff.ts` for delivery.
 Download is explicit; sharing to another app is capability-based on desktop
 and mobile. Transfer to phone explains that it uploads the prepared file.
 Export shortcuts enter that same sheet. Live scene recording retains its stage
-controls. Account connection and publishing require the explicit developer-gated
-publishing options inside file preparation.
+controls. Account connection and publishing use a separate explicitly entered,
+developer-gated publishing view; they do not occupy ordinary download settings.
 Do not add another renderer or delivery modal for a new sharing entry point.
 
 Sidebar prop pairs compose `SelectedPropPreview.svelte` with
