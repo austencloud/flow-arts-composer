@@ -312,6 +312,12 @@
   const activeVideoUrl = $derived(
     videoStatus === "ready" ? videoBlobUrl : null
   );
+  /**
+   * Parent context objects are rebuilt during playback. Track the primitive
+   * source URL and sheet visibility, so equivalent parent updates cannot
+   * restart the delivered-file fetch or flip the UI back to rendering.
+   */
+  const hydratedVideoUrl = $derived(isOpen ? videoBlobUrl : null);
   const reviewPreviewUrl = $derived(
     artifact === "video" ? activeVideoUrl : cardPreview.url
   );
@@ -587,16 +593,13 @@
   });
 
   $effect(() => {
-    const url = videoBlobUrl;
+    const url = hydratedVideoUrl;
     // Never relabel and reuse a previous view's render.
     if (!url) {
       videoBlob = null;
-      if (videoStatus === "ready") videoStatus = "idle";
+      if (untrack(() => videoStatus) === "ready") videoStatus = "idle";
       return;
     }
-    // Rehydrate an existing delivered file whenever this sheet opens. The
-    // visible URL is status-gated, so it cannot be used as the source of truth.
-    if (!isOpen) return;
 
     // `untrack` prevents the completed-render stamp from following later edits.
     // Preexisting renders are credited to the only settings currently available.
