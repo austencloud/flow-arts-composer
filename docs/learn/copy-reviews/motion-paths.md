@@ -235,3 +235,11 @@ Ownership ledger: compose LessonStageControls and Crossfade for progression and 
 The lead applied the Teacher briefing and Grid reference; a bounded implementation worker owns the visual component. AI-bust review: clean. Copy describes only the visible hand, endpoints, and routes. No sequence terminology or new third-order claims enter this introduction. No learning outcome or user acceptance is inferred.
 
 Austen also rejected substituting a dot for the hand. The introduction uses the existing recolorable hand artwork, with neutral endpoint markers only. This is a repeated reuse correction; no new hand symbol is invented.
+
+## September 14: establish the center and the shift
+
+Austen approved the simple progression as a starting point and identified its missing spatial context: the horizontal presentation resembled travel between opposite grid points. Arc and Concave need a reference center. The introduction now establishes the canonical diamond grid and its center before demonstrating a shift between neighboring points. This supersedes the horizontal presentation transform described above.
+
+The geometry adapter preserves the animation engine's east-to-south quarter shift, scaled around the original center. GridSvg supplies the existing grid artwork; a faint circle makes the Arc reference visible. The same center, circle, and cardinal landmarks remain through Linear and Concave. Tests verify shared adjacent endpoints, constant Arc radius, the Linear chord, and Concave's smaller distance from the center.
+
+The seven bites are: “Your hand” / “This is your hand.”; “Your grid” / “The grid has a center.”; “A shift” / “Move to a neighboring point.”; “Arc” / “Follow the circle around the center.”; “Linear” / “Take a straight path between the points.”; “Concave” / “Curve inward toward the center.”; “Three paths” / “Same shift. Different paths.” Each remains Next-driven. AI-bust review: clean. The Flow Arts MCP shift entry confirms adjacent cardinal points; the existing path-policy/interpolation implementation supplies the alternative paths for that authored shift. No new sequence or notation selection is introduced. User review of this revision remains pending.

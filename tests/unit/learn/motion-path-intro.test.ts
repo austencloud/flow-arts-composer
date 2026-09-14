@@ -1,27 +1,38 @@
 import { describe, expect, it } from "vitest";
 import {
   INTRO_PATHS,
+  INTRO_RADIUS,
+  INTRO_CENTER,
   introPointAt,
 } from "../../../src/routes/(public)/guide/motion-paths/_data/motion-path-intro";
 
 describe("motion path introduction geometry", () => {
-  it("keeps the endpoints fixed while changing routes", () => {
+  it("keeps a shift between adjacent cardinal points for every route", () => {
     for (const points of Object.values(INTRO_PATHS)) {
       expect(points).toHaveLength(65);
-      expect(points[0]!.x).toBeCloseTo(-140);
+      expect(points[0]!.x).toBeCloseTo(INTRO_RADIUS);
       expect(points[0]!.y).toBeCloseTo(0);
-      expect(points.at(-1)!.x).toBeCloseTo(140);
-      expect(points.at(-1)!.y).toBeCloseTo(0);
+      expect(points.at(-1)!.x).toBeCloseTo(0);
+      expect(points.at(-1)!.y).toBeCloseTo(INTRO_RADIUS);
       expect(
         points.every(({ x, y }) => Number.isFinite(x) && Number.isFinite(y))
       ).toBe(true);
     }
   });
 
-  it("shows a straight route between outward and inward curves", () => {
-    expect(INTRO_PATHS.linear.every(({ y }) => Math.abs(y) < 1e-8)).toBe(true);
-    expect(introPointAt(INTRO_PATHS.arc, 0.5).y).toBeLessThan(-40);
-    expect(introPointAt(INTRO_PATHS.concave, 0.5).y).toBeGreaterThan(40);
+  it("makes around and inward relative to the same grid center", () => {
+    const radius = ({ x, y }: { x: number; y: number }) =>
+      Math.hypot(x - INTRO_CENTER.x, y - INTRO_CENTER.y);
+    for (const point of INTRO_PATHS.arc)
+      expect(radius(point)).toBeCloseTo(INTRO_RADIUS);
+    for (const point of INTRO_PATHS.linear)
+      expect(point.x + point.y).toBeCloseTo(INTRO_RADIUS);
+    const arc = radius(introPointAt(INTRO_PATHS.arc, 0.5));
+    const linear = radius(introPointAt(INTRO_PATHS.linear, 0.5));
+    const concave = radius(introPointAt(INTRO_PATHS.concave, 0.5));
+    expect(concave).toBeGreaterThan(0);
+    expect(concave).toBeLessThan(linear);
+    expect(linear).toBeLessThan(arc);
   });
 
   it("clamps traversal at endpoints and interpolates between samples", () => {
