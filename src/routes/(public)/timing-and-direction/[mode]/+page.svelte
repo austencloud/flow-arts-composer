@@ -6,12 +6,16 @@
   import Seo from "$lib/shared/components/Seo.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import PropTurnsControl from "$lib/features/create/shared/components/sequence-actions/PropTurnsControl.svelte";
+  import TurnNotationControls from "$lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
+  import type { MatrixLabelMode } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
+  import {
+    turnValuesForLevel,
+    type TurnValue,
+  } from "$lib/shared/create/services/level-turn-values";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import SequenceShowcasePreview from "$lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { growFade, reducedMotion } from "$lib/shared/transitions/motion";
@@ -64,6 +68,10 @@
   let loopsRequest = 0;
   let leftTurns = $state(0);
   let rightTurns = $state(0);
+  let turnLabelMode = $state<MatrixLabelMode>("turns");
+  const availableTurns = turnValuesForLevel(3).filter(
+    (turn) => typeof turn === "number"
+  );
   let applyTo = $state<"all" | "current">("all");
   let adjustmentRequest = 0;
   let adjusting = $state(false);
@@ -254,7 +262,8 @@
     rightTurns = Number(step?.motions.right.turns) || 0;
   }
 
-  function nudgeTurns(hand: "left" | "right", delta: number) {
+  function chooseTurn(hand: "left" | "right", value: TurnValue) {
+    if (typeof value !== "number" || !availableTurns.includes(value)) return;
     const current = playback.sequence.steps[editingStep];
     const currentLeft =
       applyTo === "current"
@@ -264,14 +273,8 @@
       applyTo === "current"
         ? Number(current?.motions.right.turns) || 0
         : rightTurns;
-    const nextLeft =
-      hand === "left"
-        ? Math.max(0, Math.min(3, currentLeft + delta))
-        : currentLeft;
-    const nextRight =
-      hand === "right"
-        ? Math.max(0, Math.min(3, currentRight + delta))
-        : currentRight;
+    const nextLeft = hand === "left" ? value : currentLeft;
+    const nextRight = hand === "right" ? value : currentRight;
     if (nextLeft === leftTurns && nextRight === rightTurns) return;
     void adjustTurns(nextLeft, nextRight);
   }
@@ -360,16 +363,18 @@
   {#if article.code === "TO"}
     <section class="to-reference" aria-labelledby="to-reference-title">
       <header class="to-header">
-        <div class="mode-identity">
+        <div class="to-title">
           <img src={mode.element.iconPath} alt="" width="44" height="44" />
-          <span>{article.code} · {mode.element.element}</span>
+          <h1 id="to-reference-title">Together time, opposite direction</h1>
         </div>
-        <h1 id="to-reference-title">Together time, opposite direction</h1>
         <p class="definition">{article.definition}</p>
       </header>
 
       <div class="to-stage">
-        <figure class="demonstration">
+        <figure
+          class="demonstration"
+          aria-label={`${selectedLoop?.word ?? "Together-Opposite"} sequence player`}
+        >
           <div class="demo-toolbar">
             <h2>{selectedLoop?.word ?? "Four-count loop"}</h2>
             <div class="display-switch">
@@ -384,6 +389,20 @@
                 density="tight"
                 color="accent"
               />
+            </div>
+            <div
+              class="turn-editor-toggle"
+              class:unavailable={playback.propDisplay === "hands"}
+              inert={playback.propDisplay === "hands"}
+              aria-hidden={playback.propDisplay === "hands"}
+            >
+              <PanelButton
+                onclick={openTurnEditor}
+                ariaPressed={turnEditorOpen}
+                disabled={!selectedLoop}
+              >
+                Turns
+              </PanelButton>
             </div>
             {#if browser}
               <TransportControls
@@ -412,74 +431,48 @@
               primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
             />
           </div>
-          <figcaption>Tap a pictograph to pause on that count.</figcaption>
         </figure>
 
         <div class="to-workbench">
-          {#if playback.propDisplay === "staff"}
+          {#if playback.propDisplay === "staff" && turnEditorOpen}
             <section
               class="turn-disclosure"
-              aria-labelledby="turn-controls-title"
+              aria-label="Prop turns"
               transition:growFade={{ axis: "y" }}
             >
-              <div class="turn-disclosure-heading">
-                <h2 id="turn-controls-title">Turns</h2>
-                <PanelButton
-                  onclick={openTurnEditor}
-                  ariaPressed={turnEditorOpen}
-                >
-                  {turnEditorOpen ? "Close" : "Adjust turns"}
-                </PanelButton>
-              </div>
-              {#if turnEditorOpen}
-                <div class="turn-controls" transition:growFade={{ axis: "y" }}>
-                  <div class="turn-scope">
-                    <span>Apply to</span>
-                    <SegmentedControl
-                      options={[
-                        { value: "all", label: "All steps" },
-                        { value: "current", label: "Current step" },
-                      ]}
-                      value={applyTo}
-                      onchange={setApplyTo}
-                      ariaLabel="Turn adjustment scope"
-                      density="tight"
-                      color="accent"
-                    />
-                  </div>
-                  <div class="turn-pairs" aria-busy={adjusting}>
-                    <div class="turn-prop">
-                      <span>Left</span>
-                      <PropTurnsControl
-                        hand="left"
-                        turns={leftTurns}
-                        rotationDirection={RotationDirection.NO_ROTATION}
-                        showRotation={false}
-                        compact
-                        onTurnsChange={(delta) => nudgeTurns("left", delta)}
-                        onRotationChange={() => {}}
-                      />
-                    </div>
-                    <div class="turn-prop">
-                      <span>Right</span>
-                      <PropTurnsControl
-                        hand="right"
-                        turns={rightTurns}
-                        rotationDirection={RotationDirection.NO_ROTATION}
-                        showRotation={false}
-                        compact
-                        onTurnsChange={(delta) => nudgeTurns("right", delta)}
-                        onRotationChange={() => {}}
-                      />
-                    </div>
-                    <PanelButton
-                      onclick={resetTurns}
-                      disabled={playback.sequence.id ===
-                        selectedLoop?.sequence.id}>Reset</PanelButton
-                    >
-                  </div>
+              <div class="turn-controls">
+                <div class="turn-scope">
+                  <SegmentedControl
+                    options={[
+                      { value: "all", label: "All steps" },
+                      { value: "current", label: "Current step" },
+                    ]}
+                    value={applyTo}
+                    onchange={setApplyTo}
+                    ariaLabel="Turn adjustment scope"
+                    density="tight"
+                    color="accent"
+                  />
+                  <PanelButton
+                    onclick={resetTurns}
+                    disabled={adjusting ||
+                      playback.sequence.id === selectedLoop?.sequence.id}
+                    >Reset</PanelButton
+                  >
                 </div>
-              {/if}
+                <div aria-busy={adjusting}>
+                  <TurnNotationControls
+                    leftTurn={leftTurns}
+                    rightTurn={rightTurns}
+                    labelMode={turnLabelMode}
+                    onlabelmodechange={(value) => (turnLabelMode = value)}
+                    onturn={chooseTurn}
+                    turnValues={availableTurns}
+                    primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+                    disabled={adjusting}
+                  />
+                </div>
+              </div>
               <div class="turn-status" aria-live="polite">
                 {#if adjustmentError}
                   <p>{adjustmentError}</p>
@@ -687,6 +680,10 @@
   }
   .mode-page.sequence-reference {
     max-width: min(var(--shell-w), 90rem);
+    padding-top: 76px;
+  }
+  .sequence-reference .page-nav {
+    margin-bottom: 1rem;
   }
   .mode-overview {
     display: grid;
@@ -698,17 +695,30 @@
   .to-reference {
     max-width: 86rem;
     display: grid;
-    grid-template-columns: minmax(18rem, 32rem) minmax(0, 1fr);
-    gap: clamp(1rem, 3vw, 2rem);
+    grid-template-columns: minmax(22rem, 34rem) minmax(0, 1fr);
+    gap: 1.5rem;
     align-items: start;
   }
   .to-header {
     grid-column: 1 / -1;
     max-width: 100%;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
+  }
+  .to-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .to-title img {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
   }
   .to-header h1 {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0;
+    font-size: clamp(1.75rem, 1.25rem + 1.5vw, 2.5rem);
     text-wrap: balance;
   }
   .to-header .definition {
@@ -718,21 +728,21 @@
   .to-stage {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 1.25rem;
+    gap: 0.75rem;
     align-items: start;
   }
   .to-stage .demonstration {
     grid-column: auto;
     grid-row: auto;
-    width: min(100%, 32rem);
+    width: 100%;
   }
   .to-workbench {
     display: grid;
-    gap: 1.25rem;
     min-width: 0;
+    container-type: inline-size;
   }
   .turn-disclosure {
-    padding: 1rem;
+    padding: 0.75rem;
     border: 1px solid var(--theme-stroke);
     border-radius: var(--radius-lg, 0.75rem);
     background: var(--theme-card-bg);
@@ -740,24 +750,26 @@
   .library-heading,
   .turn-scope {
     display: flex;
-    align-items: start;
+    align-items: center;
     justify-content: space-between;
     gap: 1rem;
   }
-  .turn-controls p {
-    margin: 0;
-    font-size: 1rem;
-  }
   .display-switch {
-    width: 12rem;
+    width: 11rem;
   }
   .to-stage .demo-toolbar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    gap: 0.75rem;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding-bottom: 0;
+    margin-bottom: 0.5rem;
   }
   .to-stage .demo-toolbar h2 {
     margin: 0;
+  }
+  .turn-editor-toggle.unavailable {
+    visibility: hidden;
   }
   .to-showcase {
     width: 100%;
@@ -774,65 +786,37 @@
   }
   .turn-controls {
     display: grid;
-    gap: 1rem;
-    margin-top: 1rem;
-  }
-  .turn-disclosure-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    gap: 0.5rem;
   }
   .turn-scope {
     align-items: center;
   }
-  .turn-scope > span {
-    font-size: 0.875rem;
-    font-weight: 650;
-    white-space: nowrap;
-  }
   .turn-scope :global(.segmented-control) {
     width: min(100%, 16rem);
   }
-  .turn-pairs {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
-    gap: 0.75rem;
-    align-items: end;
-  }
-  .turn-prop {
-    display: grid;
-    gap: 0.35rem;
-    min-width: 0;
-    font-size: 0.875rem;
-    font-weight: 650;
-  }
-  .turn-prop :global(.turns-controls) {
-    --prop-color: var(--dm-motion-blue);
-  }
-  .turn-prop + .turn-prop :global(.turns-controls) {
-    --prop-color: var(--dm-motion-red);
-  }
   .turn-status {
-    min-height: 1.5rem;
-    margin-top: 0.75rem;
+    display: grid;
   }
   .turn-status p {
-    margin: 0;
+    margin: 0.5rem 0 0;
     color: var(--theme-text-dim);
     font-size: 0.875rem;
   }
-  .turn-pairs :global(.panel-btn) {
-    min-height: 44px;
-  }
   .loop-library {
     min-width: 0;
+  }
+  .library-heading {
+    min-height: 48px;
+    margin-bottom: 0.5rem;
+  }
+  .library-heading h2 {
+    margin: 0;
   }
   .loop-columns {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: 0;
   }
   .loop-group {
     min-width: 0;
@@ -850,7 +834,6 @@
     min-width: 0;
   }
   .spin-column h4 {
-    min-height: 2.5em;
     margin: 0 0 0.35rem;
     color: var(--theme-text-dim);
     font-size: 0.875rem;
@@ -1044,8 +1027,8 @@
     .to-header {
       grid-column: auto;
     }
-    .to-stage .demonstration {
-      width: min(100%, 32rem);
+    .to-stage {
+      width: min(100%, 38rem);
       justify-self: center;
     }
   }
@@ -1091,13 +1074,7 @@
       grid-row: 2;
     }
     .to-stage .demo-toolbar {
-      grid-template-columns: minmax(0, 1fr) auto;
-    }
-    .turn-pairs {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    }
-    .turn-pairs :global(.panel-btn) {
-      grid-column: 1 / -1;
+      grid-template-columns: minmax(0, 1fr) auto auto;
     }
     .spin-grid {
       gap: 0.375rem;

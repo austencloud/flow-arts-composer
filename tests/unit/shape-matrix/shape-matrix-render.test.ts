@@ -57,6 +57,7 @@ const matrixData: ShapeMatrixData = {
   left: new Map([["pro-0-in-diamond", left]]),
   right: new Map([["pro-0-in-diamond", right]]),
   clubTipDx: 100,
+  geometryKey: "arc:tips",
 };
 
 interface Captured {
@@ -135,6 +136,26 @@ describe("shape matrix stills use the animator's guide painter", () => {
 
     painter.cacheKey = "palette:#ed1c24|#2e3192";
     cellArtworkSrc(matrixData, flower, flower, 128, painter);
+    expect(cell).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not reuse an arc raster for another path geometry", () => {
+    const cell = vi.fn(() => "data:image/png;base64,geometry");
+    const painter: ShapeMatrixArtworkPainter = {
+      cacheKey: "geometry",
+      cell,
+      header: vi.fn(() => ""),
+    };
+
+    cellArtworkSrc(matrixData, flower, flower, 128, painter);
+    cellArtworkSrc(
+      { ...matrixData, geometryKey: "concave:hands" },
+      flower,
+      flower,
+      128,
+      painter
+    );
+
     expect(cell).toHaveBeenCalledTimes(2);
   });
 

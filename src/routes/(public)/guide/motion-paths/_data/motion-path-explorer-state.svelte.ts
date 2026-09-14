@@ -182,6 +182,9 @@ export function createMotionPathExplorerState() {
     get selectedPath() {
       return selectedPath;
     },
+    get fixedPath() {
+      return policy.pathShape;
+    },
     get trace() {
       return trace;
     },
