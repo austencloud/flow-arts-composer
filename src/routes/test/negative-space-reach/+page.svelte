@@ -1,720 +1,423 @@
 <script lang="ts">
-  /**
-   * The anti turn through negative space, as a filmstrip.
-   *
-   * Austen, reviewing the previous two-notation comparison page: "I don't
-   * comprehend this page." He asked for four frozen frames of ONE motion —
-   * the right hand's North-thumb-in to East-thumb-out reach on the anti
-   * route — with no second prop, no running clock, and no prose: "don't put
-   * all this text on my screen that's not that useful to me unless you're
-   * using it." This page is that filmstrip. The pro route from the old
-   * comparison is still reachable through `?route=`, but it is not what
-   * opens.
-   *
-   * It is an INSTRUMENT, not a solver. Nothing here touches the collision
-   * owner, the arm solve, the grip, or the pose — the blue prop is hidden
-   * through the scene package's own visibility context in `ReachStage.svelte`,
-   * not by moving it or faking the pose. If the rig does not carry the thumb
-   * end through the pocket he described, the frames are supposed to show
-   * that plainly. See `docs/reference/negative-space-and-wall-plane-reach.md`
-   * §8 for his own description of the pocket, quoted frame by frame.
-   */
   import { Canvas, T } from "@threlte/core";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import type CameraControls from "camera-controls";
-  import type {
-    AvatarGripDiagnostics,
-    AvatarPoseDiagnostics,
-    CollisionEvent,
-  } from "@austencloud/scene-3d";
-
-  import { page } from "$app/state";
-
+  import { Vector3, WebGLRenderer } from "three";
+  import {
+    safeSessionStorageGet,
+    safeSessionStorageSet,
+  } from "$lib/shared/foundation/services/storage-manager";
   import OrbitControls from "$lib/shared/3d/components/OrbitControls.svelte";
-  import type { CharacterId } from "$lib/shared/3d/domain/character-model";
-  import ChipPopoverOption from "$lib/shared/browse/components/filter-chips/ChipPopoverOption.svelte";
+  import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import FilterChipBase from "$lib/shared/browse/components/filter-chips/FilterChipBase.svelte";
-  import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-
-  import { INSPECTION_FOV_DEG } from "../_lab-kit/inspection-shot";
+  import { DEFAULT_LAB_CHARACTER_ID } from "../_lab-kit/lab-characters";
   import {
-    isLocalOnlyCharacter,
-    labCharacterName,
-    labCharacters,
-  } from "../_lab-kit/lab-characters";
-
-  import {
-    MAX_FILMSTRIP_FRAMES,
-    MIN_FILMSTRIP_FRAMES,
-    formatFilmstripPercent,
-    halveFrames,
-    insertMidpoints,
-    percentToPhase,
-  } from "./filmstrip-frames";
-  import ReachReadouts from "./ReachReadouts.svelte";
+    solveInspectionShot,
+    INSPECTION_FOV_DEG,
+    type InspectionShot,
+  } from "../_lab-kit/inspection-shot";
   import ReachStage from "./ReachStage.svelte";
   import {
-    REACH_VIEWS,
-    reachGridCenter,
-    reachShotForView,
-    reachViewById,
-    shoulderHeight,
-    type InspectionShot,
-  } from "./reach-framing";
-  import { REACH_ROUTES, SHORT_SWEEP_ROUTE } from "./reach-routes";
-  import { ReachLabState } from "./reach-state.svelte";
-  import {
-    formatSettleLabel,
-    observeFrameSettle,
-    PaneSettleTracker,
-    SETTLE_LABEL_SIZER_TEXT,
-    type SettleReading,
-  } from "./reach-settle";
-  import {
-    EMPTY_REACH_FRAME,
-    measureReachFrame,
-    type ReachFrame,
-    type Vec3,
-  } from "./reach-telemetry";
+    captureIsolationSnapshot,
+    DEFAULT_TORSO_POSE_KEYFRAMES,
+    ISOLATION_SEQUENCE,
+    ISOLATION_STEP_COUNT,
+    restoreIsolationSnapshot,
+    torsoYawAtKeyframes,
+    upsertTorsoKeyframe,
+    wrapIsolationPhase,
+    type IsolationSnapshot,
+    type TorsoKeyframe,
+  } from "./isolation-loop";
 
-  const lab = new ReachLabState();
-
-  const route = $derived(
-    REACH_ROUTES.find((candidate) => candidate.id === lab.routeId) ??
-      SHORT_SWEEP_ROUTE
-  );
-  const view = $derived(reachViewById(lab.viewId));
-  const frames = $derived(lab.frames);
-
-  /**
-   * One diagnostics entry per frame, keyed by the frame's own formatted
-   * percent rather than array index. Finer/Coarser insert and remove frames
-   * mid-array; an index would silently reattach a reading to the wrong pane
-   * the moment the array reshuffles.
-   */
-  let poses = $state<Record<string, AvatarPoseDiagnostics | null>>({});
-  let grips = $state<Record<string, AvatarGripDiagnostics | null>>({});
-  let shoulders = $state<Record<string, Vec3 | null>>({});
-
-  /**
-   * One tracker per pane, keyed the same way as `poses`/`grips` above. Plain
-   * (non-reactive) bookkeeping — `settleReadings` below is what the template
-   * reads, so a tracker mutating in place does not need to be a `$state`
-   * itself.
-   */
-  const settleTrackers = new Map<string, PaneSettleTracker>();
-  let settleReadings = $state<Record<string, SettleReading>>({});
-
-  interface MeasuredFrame {
-    percent: number;
-    key: string;
-    frame: ReachFrame;
+  interface ReferenceFrame extends IsolationSnapshot {
+    id: number;
+    camera: InspectionShot;
   }
-
-  const measured = $derived.by((): MeasuredFrame[] =>
-    frames.map((percent) => {
-      const key = formatFilmstripPercent(percent);
-      const diagnostics = poses[key];
-      const gripDiagnostics = grips[key];
-      const frame =
-        !diagnostics || !gripDiagnostics
-          ? EMPTY_REACH_FRAME
-          : measureReachFrame({
-              diagnostics,
-              gripDiagnostics,
-              shoulderWorld: shoulders[key] ?? null,
-              shoulderHeight: shoulderHeight(),
-              gridCenter: reachGridCenter(),
-            });
-      return { percent, key, frame };
-    })
+  const points = ["S", "E", "N", "W"];
+  const referenceStorageKey = "tka-isolation-left-references-v1";
+  let playing = $state(true);
+  let ready = $state(false);
+  let phase = $state(0);
+  let torsoKeyframes = $state<TorsoKeyframe[]>(
+    DEFAULT_TORSO_POSE_KEYFRAMES.map((key) => ({ ...key }))
   );
-
-  /**
-   * Every measured value, in world units, on the console.
-   *
-   * Live-scrub readouts on this page were unreliable — values could sign-flip
-   * mid-motion. Each entry here is a frozen phase rather than a moving clock,
-   * which is what makes this reading trustworthy where the old scrubbing
-   * readout was not. `settle` says whether THIS particular reading has
-   * actually finished arriving yet — see `reach-settle.ts`; a frozen phase and
-   * a settled one are not the same thing; a pane can sit at a fixed phase for
-   * seconds while its own rig is still converging on it. Read-only, and only
-   * in dev.
-   */
-  $effect(() => {
-    if (!import.meta.env.DEV || typeof window === "undefined") return;
-    (window as unknown as { __reachFrames?: unknown }).__reachFrames = {
-      route: route.id,
-      shoulderHeight: shoulderHeight(),
-      gridCenter: reachGridCenter(),
-      frames: measured.map(({ percent, key, frame }) => ({
-        percent,
-        phase: percentToPhase(percent),
-        frame,
-        settle: settleReadings[key] ?? { settled: false, ticks: 0, ms: 0 },
-      })),
-    };
-  });
-
-  function receivePose(key: string) {
-    return (
-      _events: CollisionEvent[],
-      diagnostics: AvatarPoseDiagnostics,
-      gripDiagnostics: AvatarGripDiagnostics
-    ) => {
-      poses[key] = diagnostics;
-      grips[key] = gripDiagnostics;
-
-      // This callback fires once per rendered frame for THIS pane (Threlte's
-      // own per-frame task), which is exactly what "ticks" needs to count —
-      // unlike the shared `measured` derived below, which can recompute for
-      // reasons that have nothing to do with this pane's own next tick.
-      let tracker = settleTrackers.get(key);
-      if (!tracker) {
-        tracker = new PaneSettleTracker();
-        tracker.reset(performance.now());
-        settleTrackers.set(key, tracker);
+  let snapshots = $state<ReferenceFrame[]>([]);
+  let capturing = $state(false);
+  let referenceId = 0;
+  let stage: HTMLElement;
+  let width = $state(0);
+  let height = $state(0);
+  let cameraControls = $state<CameraControls | null>(null);
+  const torsoYaw = $derived(torsoYawAtKeyframes(phase, torsoKeyframes));
+  const turnDegrees = $derived(Math.round((torsoYaw * 180) / Math.PI));
+  const shot = $derived(
+    solveInspectionShot(
+      {
+        center: [0, 1.3, 0.15],
+        halfWidth: 1.15,
+        halfHeight: 1.35,
+        halfDepth: 0.3,
+      },
+      {
+        aspectRatio: width / Math.max(height, 1),
+        azimuthDeg: 0,
+        elevationDeg: 0,
+        padding: 1.06,
       }
-      const frame = measureReachFrame({
-        diagnostics,
-        gripDiagnostics,
-        shoulderWorld: shoulders[key] ?? null,
-        shoulderHeight: shoulderHeight(),
-        gridCenter: reachGridCenter(),
-      });
-      settleReadings[key] = observeFrameSettle(tracker, frame, performance.now());
-    };
-  }
-
-  function receiveShoulder(key: string) {
-    return (point: Vec3 | null) => {
-      shoulders[key] = point;
-    };
-  }
-
-  // Each pane solves its own shot against its own aspect ratio, so a pane
-  // that wraps onto a narrower row still frames the subject instead of
-  // cropping it.
-  let paneWidths = $state<Record<string, number>>({});
-  let paneHeights = $state<Record<string, number>>({});
-
-  const shots = $derived.by((): Record<string, InspectionShot> => {
-    const map: Record<string, InspectionShot> = {};
-    for (const { key } of measured) {
-      const width = paneWidths[key] ?? 0;
-      const height = paneHeights[key] ?? 0;
-      map[key] = reachShotForView(
-        view,
-        width > 0 && height > 0 ? width / height : 1
-      );
-    }
-    return map;
-  });
-
-  /**
-   * The angle picker has to move the eye, not just the pivot.
-   *
-   * `camera-controls` takes ownership of the camera transform as soon as it
-   * is live, so a reactive `position` on the camera is overwritten on its
-   * next update. The shot is applied through `setLookAt` instead; the camera
-   * still belongs to the controls afterwards, and a manual orbit is
-   * preserved until the next deliberate angle change.
-   */
-  let cameraControls = $state<Record<string, CameraControls | null>>({});
-
-  // `OrbitControls.ref` is a `$bindable` with a fallback, so `bind:ref` may
-  // never see `undefined` for a key — only `null` or a real instance. A new
-  // frame percent (typed frame count, Finer/Coarser, or a pasted link) can
-  // reach the `{#each}` below before this record has that key, and `pre`
-  // runs before that block re-renders, so every current key exists first.
-  $effect.pre(() => {
-    for (const percent of frames) {
-      const key = formatFilmstripPercent(percent);
-      if (!(key in cameraControls)) cameraControls[key] = null;
-    }
-  });
+    )
+  );
 
   $effect(() => {
-    const eased = !reducedMotion();
-    for (const { key } of measured) {
-      const controls = cameraControls[key];
-      const shot = shots[key];
-      if (!controls || !shot) continue;
-      void controls.setLookAt(
-        shot.position[0],
-        shot.position[1],
-        shot.position[2],
-        shot.target[0],
-        shot.target[1],
-        shot.target[2],
-        eased
-      );
-    }
+    if (width > 0 && height > 0 && cameraControls)
+      void cameraControls.setLookAt(...shot.position, ...shot.target, false);
   });
-
-  const viewOptions = $derived(
-    REACH_VIEWS.map((option) => ({
-      value: option.id,
-      label: option.label,
-      shortLabel: option.pickerLabel,
-      ariaLabel: `${option.label}: ${option.hint}`,
-    }))
-  );
-
-  const routeOptions = $derived(
-    REACH_ROUTES.map((option) => ({
-      value: option.id,
-      label: option.label,
-    }))
-  );
-
-  const characterOptions = $derived(
-    labCharacters().map((definition) => ({
-      value: definition.id,
-      label: definition.name,
-      local: isLocalOnlyCharacter(definition.id),
-    }))
-  );
-
-  function handleFiner(): void {
-    lab.setFrames(insertMidpoints(lab.frames));
+  function seek(next: number) {
+    playing = false;
+    phase = wrapIsolationPhase(next);
   }
-
-  function handleCoarser(): void {
-    lab.setFrames(halveFrames(lab.frames));
-  }
-
-  const atMaxFrames = $derived(frames.length >= MAX_FILMSTRIP_FRAMES);
-  const atMinFrames = $derived(frames.length <= MIN_FILMSTRIP_FRAMES);
-
-  /**
-   * The lab's pickers run at the compact density, which the primitive defines
-   * as a 32px option — deliberate for a dense desktop instrument, and under
-   * the 44px touch floor. On a touch pointer they go back to standard rather
-   * than shipping a target a finger cannot hit.
-   */
-  let coarsePointer = $state(false);
-  let characterMenuOpen = $state(false);
-  const pickerDensity = $derived(coarsePointer ? "standard" : "compact");
-
-  $effect(() => {
-    if (!characterMenuOpen) return;
-    const closeOnOutside = (event: PointerEvent) => {
-      if (!(event.target as HTMLElement).closest(".character-chip")) {
-        characterMenuOpen = false;
-      }
-    };
-    document.addEventListener("pointerdown", closeOnOutside, true);
-    return () =>
-      document.removeEventListener("pointerdown", closeOnOutside, true);
-  });
-
-  onMount(() => {
-    const coarse = window.matchMedia("(pointer: coarse)");
-    const syncPointer = () => (coarsePointer = coarse.matches);
-    syncPointer();
-    coarse.addEventListener("change", syncPointer);
-    return () => coarse.removeEventListener("change", syncPointer);
-  });
-
-  onMount(() => {
-    // This route breaks out of the app layout, so nothing has set the theme
-    // variables the shared pickers and chips paint with. Reading the
-    // device's own saved background keeps the lab in the app's palette
-    // instead of every primitive falling back to its hardcoded default.
-    void import("$lib/shared/settings/utils/background-theme-calculator").then(
-      ({ ensureThemeApplied }) => ensureThemeApplied()
+  function editTorso(degrees: number) {
+    playing = false;
+    torsoKeyframes = upsertTorsoKeyframe(
+      torsoKeyframes,
+      phase,
+      (degrees * Math.PI) / 180
     );
-  });
-
-  // A pasted link or a reload arrives as a real navigation, which is the one
-  // URL change SvelteKit still reports through `page.url`.
-  $effect(() => {
-    void page.url.href;
-    lab.syncFromNavigation();
-  });
-
-  // Back and Forward move the address bar with no framework signal at all,
-  // because every write here is shallow routing.
-  $effect(() => lab.attachUrlSync());
-
-  // A character or route swap changes the skeleton or the sequence every
-  // measurement was taken from, so the probes start again rather than
-  // reporting a reading that belonged to the previous body or path.
-  $effect(() => {
-    void lab.character;
-    void lab.routeId;
-    poses = {};
-    grips = {};
-    shoulders = {};
-    settleTrackers.clear();
-    settleReadings = {};
+  }
+  async function saveSnapshot() {
+    if (!ready || capturing || !cameraControls) return;
+    playing = false;
+    capturing = true;
+    try {
+      // Let the paused phase reach the renderer before recording its pixels.
+      await tick();
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      );
+      const canvas = stage.querySelector("canvas");
+      if (!canvas) return;
+      const thumbnail = document.createElement("canvas");
+      thumbnail.width = Math.min(640, canvas.width);
+      thumbnail.height = Math.round(
+        (thumbnail.width * canvas.height) / canvas.width
+      );
+      const context = thumbnail.getContext("2d");
+      if (!context) return;
+      context.drawImage(canvas, 0, 0, thumbnail.width, thumbnail.height);
+      snapshots = [
+        ...snapshots,
+        {
+          ...captureIsolationSnapshot(
+            thumbnail.toDataURL("image/webp", 0.85),
+            phase,
+            torsoKeyframes
+          ),
+          id: ++referenceId,
+          camera: {
+            position: cameraControls.getPosition(new Vector3()).toArray(),
+            target: cameraControls.getTarget(new Vector3()).toArray(),
+          },
+        },
+      ];
+      safeSessionStorageSet(referenceStorageKey, snapshots);
+    } finally {
+      capturing = false;
+    }
+  }
+  function restoreSnapshot(snapshot: ReferenceFrame) {
+    const restored = restoreIsolationSnapshot(snapshot);
+    phase = restored.phase;
+    torsoKeyframes = restored.torsoKeyframes;
+    playing = false;
+    void cameraControls?.setLookAt(
+      ...snapshot.camera.position,
+      ...snapshot.camera.target,
+      false
+    );
+  }
+  onMount(() => {
+    const saved = safeSessionStorageGet<ReferenceFrame[]>(referenceStorageKey);
+    if (Array.isArray(saved)) {
+      snapshots = saved.filter(
+        (frame) =>
+          frame &&
+          Number.isFinite(frame.phase) &&
+          Number.isFinite(frame.id) &&
+          typeof frame.image === "string" &&
+          frame.image.startsWith("data:image/") &&
+          Array.isArray(frame.torsoKeyframes) &&
+          frame.torsoKeyframes.every(
+            (key) => Number.isFinite(key.phase) && Number.isFinite(key.yaw)
+          ) &&
+          frame.camera?.position?.length === 3 &&
+          frame.camera?.target?.length === 3 &&
+          [...frame.camera.position, ...frame.camera.target].every(
+            Number.isFinite
+          )
+      );
+      referenceId = Math.max(0, ...snapshots.map((frame) => frame.id));
+    }
+    const media = matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      if (media.matches) playing = false;
+    };
+    sync();
+    media.addEventListener("change", sync);
+    let last = performance.now();
+    let request = 0;
+    const advance = (now: number) => {
+      if (playing && ready)
+        phase = wrapIsolationPhase(
+          phase + Math.min((now - last) / 1000, 0.1) * 0.32
+        );
+      last = now;
+      request = requestAnimationFrame(advance);
+    };
+    request = requestAnimationFrame(advance);
+    return () => {
+      cancelAnimationFrame(request);
+      media.removeEventListener("change", sync);
+    };
   });
 </script>
 
-<svelte:head>
-  <title>Negative space reach · TKA lab</title>
-</svelte:head>
-
+<svelte:head><title>Isolation loop · TKA lab</title></svelte:head>
 <main class="lab">
-  <h1 class="sr-only">
-    Negative space reach — anti route filmstrip, {frames.length} frames
-  </h1>
-
-  <div class="controls">
-    <div class="control">
-      <span class="control-label" id="reach-view-label">Angle</span>
-      <div class="control-row">
-        <SegmentedControl
-          options={viewOptions}
-          value={lab.viewId}
-          onchange={(next) => lab.setView(next)}
-          size="sm"
-          density={pickerDensity}
-          ariaLabelledby="reach-view-label"
+  <section
+    class="stage"
+    bind:this={stage}
+    bind:clientWidth={width}
+    bind:clientHeight={height}
+    aria-label="Single-hand staff isolation"
+    aria-busy={!ready}
+  >
+    <Canvas
+      shadows
+      createRenderer={(canvas) =>
+        new WebGLRenderer({
+          canvas,
+          alpha: true,
+          antialias: true,
+          preserveDrawingBuffer: true,
+        })}
+    >
+      <T.PerspectiveCamera
+        makeDefault
+        position={shot.position}
+        fov={INSPECTION_FOV_DEG}
+      >
+        <OrbitControls
+          bind:ref={cameraControls}
+          enablePan={false}
+          rightDragAction="rotate"
+          target={shot.target}
+          minDistance={1.5}
+          maxDistance={12}
         />
-        <FilterChipBase
-          label="Measurement overlay"
-          icon="fa-solid fa-ruler-combined"
-          mode="toggle"
-          size="sm"
-          active={lab.overlay}
-          onclick={() => lab.setOverlay(!lab.overlay)}
-        />
+      </T.PerspectiveCamera>
+      <ReachStage
+        id="single-hand-isolation"
+        {phase}
+        active={false}
+        {torsoYaw}
+        sequence={ISOLATION_SEQUENCE}
+        characterId={DEFAULT_LAB_CHARACTER_ID}
+        onReady={() => (ready = true)}
+      />
+    </Canvas>
+    {#if !ready}<span class="loading" role="status">Loading performer…</span
+      >{/if}
+    {#if snapshots.length}
+      <div class="references" aria-label="Reference snapshots">
+        {#each snapshots as snapshot, index (snapshot.id)}
+          <button
+            class="snapshot"
+            type="button"
+            aria-label={`Restore snapshot ${index + 1}`}
+            onclick={() => restoreSnapshot(snapshot)}
+          >
+            <img src={snapshot.image} alt={`Reference ${index + 1}`} /><span
+              >{snapshot.phase.toFixed(2)}</span
+            >
+          </button>
+        {/each}
       </div>
-      <span class="control-hint">{view.hint}</span>
-    </div>
-
-    <div class="control">
-      <span class="control-label" id="reach-character-label">Body</span>
-      <div class="character-chip">
-        <FilterChipBase
-          label={labCharacterName(lab.character)}
-          icon="fa-solid fa-person"
-          mode="dropdown"
-          size="sm"
-          labelScale="readable"
-          active={true}
-          expanded={characterMenuOpen}
-          ariaLabel="Body: {labCharacterName(lab.character)}"
-          onclick={() => (characterMenuOpen = !characterMenuOpen)}
-        >
-          {#snippet children()}
-            {#each characterOptions as option (option.value)}
-              <ChipPopoverOption
-                label={option.local
-                  ? `${option.label} · only on this machine`
-                  : option.label}
-                selected={option.value === lab.character}
-                onclick={() => {
-                  lab.setCharacter(option.value as CharacterId);
-                  characterMenuOpen = false;
-                }}
-              />
-            {/each}
-          {/snippet}
-        </FilterChipBase>
-      </div>
-    </div>
-
-    <div class="control">
-      <span class="control-label" id="reach-frames-label">Frames</span>
-      <div class="control-row">
-        <FilterChipBase
-          label="Finer"
-          icon="fa-solid fa-plus"
-          mode="action"
-          size="sm"
-          disabled={atMaxFrames}
-          ariaLabel="Finer: add a frame between every pair shown"
-          onclick={handleFiner}
-        />
-        <FilterChipBase
-          label="Coarser"
-          icon="fa-solid fa-minus"
-          mode="action"
-          size="sm"
-          disabled={atMinFrames}
-          ariaLabel="Coarser: remove every other frame"
-          onclick={handleCoarser}
-        />
-      </div>
-    </div>
-
-    <!--
-      Reachable, not prominent — the anti route is what this page is for, and
-      the pro route from the old comparison page is one deliberate pick away
-      rather than a second thing being shown by default.
-    -->
-    <div class="control route-control">
-      <span class="control-label" id="reach-route-label">Route</span>
-      <SegmentedControl
-        options={routeOptions}
-        value={lab.routeId}
-        onchange={(next) => lab.setRoute(next)}
-        size="sm"
-        density={pickerDensity}
-        ariaLabelledby="reach-route-label"
+    {/if}
+  </section>
+  <div class="controls" role="group" aria-label="Isolation controls">
+    <div class="transport">
+      <TransportControls
+        isPlaying={playing && ready}
+        disabled={!ready}
+        onPlaybackToggle={() => (playing = !playing)}
       />
     </div>
-  </div>
-
-  <div class="filmstrip">
-    {#each measured as { percent, key, frame } (key)}
-      <section
-        class="pane"
-        aria-label={`Frame at ${formatFilmstripPercent(percent)} percent through the reach`}
-      >
-        <p class="phase-label">{formatFilmstripPercent(percent)}%</p>
-        <p class="settle-label" class:settled={settleReadings[key]?.settled}>
-          <span class="settle-label-sizer" aria-hidden="true"
-            >{SETTLE_LABEL_SIZER_TEXT}</span
-          >
-          <span class="settle-label-live">{formatSettleLabel(settleReadings[key])}</span>
-        </p>
-
-        <div
-          class="viewport"
-          bind:clientWidth={paneWidths[key]}
-          bind:clientHeight={paneHeights[key]}
-        >
-          <!--
-            No scene clear colour. An alpha buffer lets the page's own surface
-            show through, so the canvas sits on the product's ground rather
-            than on a rectangle that appears nowhere else.
-          -->
-          <Canvas shadows rendererParameters={{ alpha: true }}>
-            <T.PerspectiveCamera
-              makeDefault
-              position={shots[key]?.position ?? [0, 1.5, 3]}
-              fov={INSPECTION_FOV_DEG}
-            >
-              <OrbitControls
-                enableDamping
-                enablePan={false}
-                rightDragAction="rotate"
-                bind:ref={cameraControls[key]}
-                target={shots[key]?.target ?? [0, 1.5, 0]}
-                minDistance={0.3}
-                maxDistance={12}
-                maxPolarAngle={Math.PI}
-              />
-            </T.PerspectiveCamera>
-
-            <ReachStage
-              id={`reach-${route.id}-${key}`}
-              phase={percentToPhase(percent)}
-              sequence={route.sequence}
-              characterId={lab.character}
-              gridEmphasis={view.grid}
-              overlayFrame={lab.overlay ? frame : null}
-              onCollisionEvents={receivePose(key)}
-              onShoulder={receiveShoulder(key)}
-            />
-          </Canvas>
-        </div>
-
-        <ReachReadouts
-          {frame}
-          routeLabel={route.label}
-          compact
-          provisional={!(settleReadings[key]?.settled ?? false)}
-        />
-      </section>
-    {/each}
-  </div>
-
-  <div class="readouts-disclosure">
+    <div class="points" role="group" aria-label="Hand position">
+      {#each points as marker, index}<FilterChipBase
+          label={marker}
+          labelScale="readable"
+          mode="action"
+          size="sm"
+          onclick={() => seek(index)}
+        />{/each}
+    </div>
+    <label class="scrub phase"
+      ><span>Position</span><input
+        aria-label="Sequence position"
+        type="range"
+        min="0"
+        max={ISOLATION_STEP_COUNT}
+        step="0.01"
+        value={phase}
+        oninput={(event) => seek(Number(event.currentTarget.value))}
+      /></label
+    >
+    <label class="scrub turn"
+      ><span>Torso</span><input
+        aria-label="Torso turn"
+        type="range"
+        min="-70"
+        max="70"
+        step="1"
+        value={turnDegrees}
+        oninput={(event) => editTorso(Number(event.currentTarget.value))}
+      /><output>{turnDegrees}°</output></label
+    >
     <FilterChipBase
-      label={lab.readoutsOpen ? "Hide readouts" : "Readouts"}
-      icon="fa-solid fa-ruler"
-      mode="toggle"
+      label="Snapshot"
+      labelScale="readable"
+      icon="fa-solid fa-camera"
+      mode="action"
       size="sm"
-      active={lab.readoutsOpen}
-      onclick={() => lab.toggleReadouts()}
+      disabled={!ready || capturing}
+      onclick={saveSnapshot}
     />
-    <Crossfade key={lab.readoutsOpen} animateHeight>
-      {#snippet children()}
-        {#if lab.readoutsOpen}
-          <div class="full-readouts">
-            {#each measured as { percent, key, frame } (key)}
-              <ReachReadouts
-                {frame}
-                routeLabel={`${route.label} · ${formatFilmstripPercent(percent)}%`}
-              />
-            {/each}
-          </div>
-        {/if}
-      {/snippet}
-    </Crossfade>
   </div>
 </main>
 
 <style>
   .lab {
+    height: 100dvh;
     display: grid;
-    grid-template-rows: auto auto auto;
-    gap: 0.85rem;
-    min-height: 100dvh;
-    padding: 1rem clamp(0.75rem, 2vw, 2rem) 1.5rem;
+    grid-template-rows: minmax(0, 1fr) auto;
+    background: var(--theme-page-bg, #101217);
     color: var(--theme-text, #fff);
   }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
+  .stage {
+    position: relative;
+    min-height: 0;
     overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
   }
-
+  .stage :global(canvas) {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
   .controls {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 0.75rem 1.25rem;
-  }
-
-  .control {
-    display: grid;
-    gap: 0.3rem;
-    justify-items: start;
-  }
-
-  .control-label {
-    font-size: var(--font-size-xs, 0.75rem);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.75));
-  }
-
-  .control-row {
-    display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem 0.75rem;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.75rem;
+    background: var(--theme-panel-bg, #1b1f27);
   }
-
-  .control-hint {
-    font-size: var(--font-size-xs, 0.75rem);
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.75));
-    max-width: 46ch;
+  .transport {
+    flex: 0 0 48px;
   }
-
-  /* Deprioritized: smaller and set apart from the primary controls, so the
-     anti-route default reads as the page rather than one of two choices. */
-  .route-control {
-    opacity: 0.75;
-    margin-left: auto;
-  }
-
-  .character-chip {
-    /* The popover is a DOM child of this wrapper and paints above the page. */
-    position: relative;
-    --chip-option-color: var(--theme-accent);
-  }
-
-  .character-chip :global(.chip-popover) {
-    max-height: min(60vh, 22rem);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-
-  .filmstrip {
-    display: grid;
-    /* One row when there is room, wrapping into a grid as panes stop
-       fitting — the default four fit one row from ~900px up; narrower
-       viewports wrap automatically with no separate breakpoint to maintain. */
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 0.9rem;
-    align-items: start;
-  }
-
-  .pane {
+  .points {
     display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.25rem;
+  }
+  .scrub {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 14px;
+  }
+  .scrub input {
+    accent-color: var(--theme-accent, #6e9cff);
     min-width: 0;
+    width: 100%;
+    height: 32px;
+    cursor: pointer;
   }
-
-  .phase-label {
-    margin: 0;
-    font-size: var(--font-size-xs, 0.75rem);
-    font-weight: 650;
-    letter-spacing: 0.04em;
-    font-variant-numeric: tabular-nums;
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.75));
+  .phase {
+    flex: 1 1 180px;
+    max-width: 360px;
   }
-
-  /*
-    Ghost-sizer (no-layout-shift.md, technique 1): the hidden sizer holds the
-    widest realistic label ("settled · 9999 ticks · 99.9 s") in the same grid
-    cell as the live text, so the row's reserved height already accounts for
-    the longer "settled" text while "settling…" is still showing. Neither
-    span is forced to one line — a narrow pane may wrap both, but since the
-    sizer is always the longer string, its own wrapped height already covers
-    whatever the live text needs, so switching between the two never moves
-    the viewport below it.
-  */
-  .settle-label {
-    display: grid;
-    /* Matches `.pane`'s own `min-width: 0` above: a grid item's default
-       `min-width: auto` sizes to its unwrapped content, which would let a
-       long label push this pane wider than its track instead of wrapping. */
-    min-width: 0;
-    margin: 0;
-    font-size: var(--font-size-xs, 0.75rem);
-    color: var(--theme-text-dim, rgba(255, 255, 255, 0.75));
+  .turn {
+    flex: 1 1 220px;
+    max-width: 360px;
   }
-
-  .settle-label-sizer,
-  .settle-label-live {
-    grid-area: 1 / 1;
-    min-width: 0;
-  }
-
-  .settle-label-sizer {
-    visibility: hidden;
-  }
-
-  .settle-label-live {
+  output {
+    min-width: 4ch;
+    text-align: right;
     font-variant-numeric: tabular-nums;
   }
-
-  .settle-label.settled .settle-label-live {
-    color: var(--theme-text, #fff);
+  .references {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    pointer-events: none;
   }
-
-  .viewport {
+  .snapshot {
+    flex: 0 0 96px;
     position: relative;
-    /* A reserved box before the canvas exists, so nothing below it moves
-       when the renderer mounts. */
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    min-height: 220px;
-    border: var(--glass-border, 1px solid rgba(255, 255, 255, 0.08));
-    border-radius: 0.75rem;
-    overflow: hidden;
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
+    height: 76px;
+    padding: 0;
+    border: 1px solid var(--theme-stroke, #4c5566);
+    border-radius: 6px;
+    background: var(--theme-panel-bg, #1b1f27);
+    color: inherit;
+    cursor: pointer;
+    pointer-events: auto;
   }
-
-  .readouts-disclosure {
-    display: grid;
-    gap: 0.6rem;
-    justify-items: start;
-  }
-
-  .full-readouts {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 0.9rem;
+  .snapshot img {
     width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .snapshot span {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .snapshot:focus-visible,
+  input:focus-visible {
+    outline: 2px solid var(--theme-accent, #6e9cff);
+    outline-offset: 2px;
+  }
+  .loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+  }
+  @media (max-width: 600px) {
+    .controls {
+      gap: 0.5rem;
+    }
+    .phase {
+      order: 2;
+      flex-basis: 100%;
+      max-width: none;
+    }
+    .turn {
+      order: 3;
+      flex-basis: 100%;
+      max-width: none;
+    }
+    .scrub > span {
+      min-width: 54px;
+    }
   }
 </style>
