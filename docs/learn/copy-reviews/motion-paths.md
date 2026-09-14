@@ -207,3 +207,7 @@ Copy and evidence:
 - “Each movement contributes to the full drawing.” / “The staff keeps its rotation as the hand takes a different route.” Geometry calculator and PropInterpolator preserve authored rotations under path changes.
 
 AI-bust review: clean. Copy names the action and visible result; no claims of learning efficacy or ease. Detailed third-order and persistence reference remains collapsed. No new domain claims about third order are introduced.
+
+## September 14: visible movement selection
+
+Austen rejected the native dropdown and restated the preference for visible selection patterns. This supersedes the dropdown ownership recorded above and is a repeated-preference correction in the same task. The replacement composes the canonical StepStrip (pictographs, whole-object selection and keyboard activation) with SegmentedControl (Left hand / Right hand, shared color tones and arrow-key navigation). The current step number remains visible. Step changes preserve the chosen hand when it is present, otherwise choose the visible hand in that step. Hand colors follow the user's settings; scrub progress is retained. Existing explanation copy is unchanged apart from removing “Look at” and replacing the combined dropdown label with the visible step and hand labels. AI-bust: clean. User review remains pending.
