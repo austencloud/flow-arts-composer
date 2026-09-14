@@ -171,17 +171,48 @@ export async function downloadArtifact(
     : { status: "failed", message: "Download failed" };
 }
 
+/**
+ * Last-resort clipboard write for browsers that refuse the async Clipboard API
+ * (embedded webviews, denied permission). It only works inside the user's own
+ * gesture, which is why callers run it synchronously after the failed write.
+ */
+function copyTextThroughSelection(text: string): boolean {
+  if (typeof document === "undefined" || !document.body) return false;
+  const host = document.createElement("textarea");
+  host.value = text;
+  host.setAttribute("readonly", "");
+  host.setAttribute("aria-hidden", "true");
+  host.style.position = "fixed";
+  host.style.top = "0";
+  host.style.left = "0";
+  host.style.opacity = "0";
+  host.style.pointerEvents = "none";
+  document.body.appendChild(host);
+  try {
+    host.select();
+    host.setSelectionRange(0, text.length);
+    return document.execCommand?.("copy") === true;
+  } catch {
+    return false;
+  } finally {
+    host.remove();
+  }
+}
+
 async function copyText(text: string, noun: string): Promise<HandoffResult> {
-  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-    return { status: "failed", message: "Clipboard unavailable" };
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return { status: "done", message: `${noun} copied` };
+    } catch {
+      // Denied permission falls through to the selection path below.
+    }
   }
 
-  try {
-    await navigator.clipboard.writeText(text);
+  if (copyTextThroughSelection(text)) {
     return { status: "done", message: `${noun} copied` };
-  } catch {
-    return { status: "failed", message: `Couldn't copy ${noun.toLowerCase()}` };
   }
+  return { status: "failed", message: `Couldn't copy ${noun.toLowerCase()}` };
 }
 
 export function copyCaption(caption: string): Promise<HandoffResult> {

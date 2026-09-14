@@ -54,6 +54,7 @@
   } from "$lib/shared/share/services/post-handoff";
   import { getUser } from "$lib/shared/auth/state/auth-state.svelte";
   import {
+    planFileRequest,
     shouldDeliverPendingVideo,
     videoDownloadSettingsKey,
   } from "$lib/shared/share/domain/video-download-intent";
@@ -92,6 +93,12 @@
     metaStatusOverride?: MetaPublishStatus;
     /** Omitted by hosts without an inbox. */
     onSendInTka?: () => void;
+    /** The take-it-home gate: guests may set everything up, but a file leaves
+     * only with a free account. The host decides; the sheet says so before the
+     * click instead of starting a render that the viewer then refuses. */
+    needsAccountForFiles?: boolean;
+    /** Opens the host's sign-up path once the sheet has closed. */
+    onRequestAccount?: () => void;
     /** Labels view-specific renders such as Mandala or Tunnel. */
     videoLabel?: string;
     /** A host-owned current-view capture. It is only presentation: exports still
@@ -136,6 +143,8 @@
     onClose,
     metaStatusOverride,
     onSendInTka,
+    needsAccountForFiles = false,
+    onRequestAccount,
     videoLabel = "Video",
     captureAnimationPreview = () => "",
     is3DExport = false,
@@ -266,6 +275,8 @@
   let linkSequence: SequenceData | null = null;
   let copyLinkPending = $state(false);
   let copyLinkMessage = $state("");
+  /** Shown when no clipboard path is open, so the link is still obtainable. */
+  let revealedLinkUrl = $state<string | null>(null);
 
   let qrDataUrl = $state<string | null>(null);
   let qrPending = $state(false);
@@ -620,6 +631,7 @@
     pageMenuOpen = false;
     postedPermalinks = {};
     copyLinkMessage = "";
+    revealedLinkUrl = null;
     shortUrl = seededShortUrl || null;
     shareRoute = initialEntry === "download" ? "download" : "home";
     filePreparationOpen = shareRoute === "download";
@@ -824,6 +836,13 @@
 
       if (target && linkSessionIsCurrent(session, target) && result.message) {
         copyLinkMessage = result.message;
+        if (result.status === "failed") {
+          const fallbackUrl = copyLinkUrl || buildCopyLinkUrl(shortUrl || viewerUrl, viewerUrl);
+          if (fallbackUrl) {
+            revealedLinkUrl = fallbackUrl;
+            copyLinkMessage = "Copy it from the link below";
+          }
+        }
       }
     } catch {
       if (!target || linkSessionIsCurrent(session, target)) {
@@ -981,7 +1000,9 @@
       return;
     }
     if (started === false) {
-      if (requestVersion === videoRequestVersion) videoStatus = "canceled";
+      // The viewer refused to start (canvas not mounted, export in flight).
+      // That is a failure to report, never the user's own cancel.
+      if (requestVersion === videoRequestVersion) videoStatus = "failed";
       return;
     }
     if (!(started instanceof Promise)) {
@@ -1002,7 +1023,7 @@
         await Promise.resolve();
         if (requestVersion !== videoRequestVersion) return;
         if (ok === false) {
-          videoStatus = "canceled";
+          videoStatus = "failed";
         } else if (!videoBlobUrl && !isExportingVideo && !isRecordingScene) {
           // A source that settled without a delivered file is an unsuccessful
           // render; this also prevents a canceled source from spinning forever.
@@ -1030,9 +1051,28 @@
 
   /** Download is one explicit intent: reuse a prepared file, otherwise render
    * it and deliver only if this still-open request completes. */
+  /** The revealed link is the recovery from a failed copy: land on it with
+   * the text already selected so a keyboard copy is the only step left. */
+  function selectOnMount(node: HTMLInputElement) {
+    node.focus({ preventScroll: true });
+    node.select();
+  }
+
+  function requestAccountForFile(): void {
+    handOffAfterClose(() => onRequestAccount?.());
+  }
+
   function downloadVideo(): void {
     if (videoBusy || isExportingVideo || isRecordingScene) return;
-    if (hasVideo && !videoSettingsStale && activeBlob) {
+    const plan = planFileRequest({
+      needsAccount: needsAccountForFiles,
+      hasFreshFile: hasVideo && !videoSettingsStale && !!activeBlob,
+    });
+    if (plan === "request-account") {
+      requestAccountForFile();
+      return;
+    }
+    if (plan === "deliver") {
       void runDestination("download");
       return;
     }
@@ -1531,6 +1571,18 @@
                       "Open this view with its current settings"}
                 </small>
               </button>
+              {#if revealedLinkUrl}
+                <label class="link-reveal" transition:growFade={{ axis: "y" }}>
+                  <span>Sequence link</span>
+                  <input
+                    type="url"
+                    readonly
+                    value={revealedLinkUrl}
+                    use:selectOnMount
+                    onfocus={(event) => event.currentTarget.select()}
+                  />
+                </label>
+              {/if}
               {#if onSendInTka}
                 <button
                   type="button"
@@ -1869,7 +1921,20 @@
           </div>
           <footer class="share-dock">
             {#if !qrDataUrl}
-              {#if artifact === "video" && videoBusy}
+              {#if needsAccountForFiles}
+                <p class="account-note">
+                  Saving this {artifact === "card" ? "card" : "video"} needs a
+                  free account. Your settings are kept.
+                </p>
+                <PanelButton
+                  variant="primary"
+                  fullWidth
+                  onclick={requestAccountForFile}
+                >
+                  <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+                  Create free account
+                </PanelButton>
+              {:else if artifact === "video" && videoBusy}
                 <PanelButton fullWidth onclick={cancelVideo}>
                   <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                   Cancel render
@@ -2168,6 +2233,36 @@
     margin: 0.75rem 0 0;
     color: var(--theme-text-secondary);
     font-size: 0.875rem;
+  }
+  .account-note {
+    margin: 0;
+    color: var(--theme-text-secondary);
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+  .link-reveal {
+    display: grid;
+    gap: 0.375rem;
+    margin-top: -0.25rem;
+    padding: 0 0.25rem;
+  }
+  .link-reveal > span {
+    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
+    font-size: var(--font-size-compact, 0.75rem);
+  }
+  .link-reveal > input {
+    min-height: var(--min-touch-target, 44px);
+    padding: 0 0.75rem;
+    border: 1px solid var(--theme-accent, #8b7cff);
+    border-radius: 0.625rem;
+    background: var(--theme-card-bg, rgba(255, 255, 255, 0.06));
+    color: var(--theme-text, #fff);
+    font: inherit;
+    font-size: 0.875rem;
+  }
+  .link-reveal > input:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
   }
 
   .card-footer-confirmation {
