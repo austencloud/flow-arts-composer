@@ -232,8 +232,66 @@ def apply_solid_color_override(asset_object, color):
     base_color.default_value = rgba
 
 
+def attach_authored_ambient_occlusion(asset_object, mhmat_path):
+    """Expose an MPFB asset AO sheet through Blender's glTF convention.
+
+    GAMEENGINE materials retain the authored diffuse, alpha and normal maps,
+    but MPFB's node wrapper does not create a node for `aomapTexture`.  A
+    glTF Material Output node is deliberately separate from the render shader:
+    Blender recognizes its Occlusion socket and writes a standard
+    `occlusionTexture`, rather than baking AO into base colour or relying on a
+    procedural node graph that a runtime exporter may discard.
+    """
+    if not asset_object or not asset_object.material_slots:
+        return
+    authored_material = MhMaterial()
+    authored_material.populate_from_mhmat(str(mhmat_path))
+    ao_path = authored_material.get_value("aomapTexture")
+    if not ao_path:
+        return
+    material = asset_object.material_slots[0].material
+    if not material or not material.use_nodes:
+        raise RuntimeError("Expected a node material for authored AO export")
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    if nodes.get("MPFB authored occlusion"):
+        return
+    image = bpy.data.images.load(ao_path, check_existing=True)
+    image.colorspace_settings.name = "Non-Color"
+    ao_image = nodes.new("ShaderNodeTexImage")
+    ao_image.name = "MPFB authored AO image"
+    ao_image.label = "Authored ambient occlusion"
+    ao_image.image = image
+    settings_group = bpy.data.node_groups.get("glTF Material Output")
+    if not settings_group:
+        settings_group = bpy.data.node_groups.new("glTF Material Output", "ShaderNodeTree")
+        settings_group.interface.new_socket("Occlusion", socket_type="NodeSocketFloat")
+        settings_group.nodes.new("NodeGroupInput")
+        settings_group.nodes.new("NodeGroupOutput")
+    output = nodes.new("ShaderNodeGroup")
+    output.name = "MPFB authored occlusion"
+    output.label = "glTF occlusion export"
+    output.node_tree = settings_group
+    strength = authored_material.get_value("aomapIntensity")
+    if strength is not None and strength != 1.0:
+        # This white-to-AO mix is Blender's documented glTF representation for
+        # occlusion strength, so the declared MH material intensity survives.
+        mix = nodes.new("ShaderNodeMix")
+        mix.data_type = "RGBA"
+        mix.name = "MPFB authored occlusion strength"
+        mix.inputs["Factor"].default_value = strength
+        mix.inputs["A"].default_value = (1.0, 1.0, 1.0, 1.0)
+        links.new(ao_image.outputs["Color"], mix.inputs["B"])
+        links.new(mix.outputs["Result"], output.inputs["Occlusion"])
+    else:
+        links.new(ao_image.outputs["Color"], output.inputs["Occlusion"])
+
+
 apply_solid_color_override(locals().get("hair_object"), hair_color_override)
 apply_solid_color_override(locals().get("outfit_object"), outfit_color_override)
+attach_authored_ambient_occlusion(
+    locals().get("outfit_object"), asset("clothes", outfit + ".mhmat")
+)
 
 bpy.ops.file.pack_all()
 bpy.ops.wm.save_as_mainfile(filepath=str(args.output / "mpfb-proof-source.blend"))
