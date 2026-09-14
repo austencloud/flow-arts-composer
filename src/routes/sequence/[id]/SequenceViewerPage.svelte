@@ -246,6 +246,24 @@
     registerLoopDetector(loopDetector);
     registerLoopDisplayResolver(resolveLoopDisplay);
 
+    // The card compositor draws a QR only when a generator was injected, and
+    // that injection lives in composition-root/deferred-registrations, which
+    // this landing-mode route never imports. Without it every card this route
+    // renders (Download card, the send-sheet preview, Post Studio) reserves the
+    // QR cell and leaves it blank. Same injection the store's print pipeline
+    // does for its bare routes. Lazy: qr-code-styling is not on this route's
+    // critical path.
+    void Promise.all([
+      import("$lib/shared/render/get-image-composer"),
+      import("$lib/shared/qr/get-qr-code-generator"),
+    ])
+      .then(([composer, qr]) =>
+        composer.getImageComposer().setQRCodeGenerator(qr.getQRCodeGenerator())
+      )
+      .catch((error) =>
+        console.warn("[SequenceViewerPage] QR generator injection failed:", error)
+      );
+
     // Non-blocking: settings sync happens in background.
     // Don't block the viewer on service initialization.
     initializeAppServices().catch(() => {});

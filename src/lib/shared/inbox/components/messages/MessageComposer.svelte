@@ -30,6 +30,15 @@
     lastEditableMessage?: Message;
   }
 
+  interface DraftSnapshot {
+    /** The signed-in account whose draft ledger this text belongs to. */
+    ownerId: string | null;
+    conversationId: string;
+    content: string;
+    replyTo: MessageReplyPreview | null;
+    attachment: PendingMessageAttachment | null;
+  }
+
   let { conversationId, lastEditableMessage }: Props = $props();
 
   const messageDeliveryState = getMessageDeliveryContext();
@@ -41,9 +50,22 @@
   let draftBeforeEdit: string | null = null;
   let lastFocusedReplyId: string | null = null;
   let restoredReplyPreview = $state<MessageReplyPreview | null>(null);
-  let hydratedConversationId = "";
+  /**
+   * `<ownerId>:<conversationId>` — the draft ledger is keyed by account as well
+   * as conversation, so re-hydrating only on a conversation change would leave
+   * the previous account's text sitting in the composer after a switch.
+   */
+  let hydratedDraftKey = "";
   let suppressDraftPersistence = false;
   let draftSaveTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * The snapshot a pending autosave is going to write, including the thread and
+   * the account it belongs to. Both have to travel WITH the text: the debounce
+   * can outlive either one, and a save that reads the live `conversationId` or
+   * the live `activeUserId` at timer time writes one thread's unsent text into
+   * another thread's draft, or into another account's ledger.
+   */
+  let pendingDraftSave: DraftSnapshot | null = null;
   let draftSaveError = $state<string | null>(null);
   let draftFailureReported = false;
   const MAX_INPUT_HEIGHT_PX = 120;
@@ -74,14 +96,23 @@
     // Cleanup typing on unmount
     return () => {
       if (typingTimeout) clearTimeout(typingTimeout);
-      if (draftSaveTimer) clearTimeout(draftSaveTimer);
       if (resizeFrame !== null) cancelAnimationFrame(resizeFrame);
       window.removeEventListener("resize", handleWindowResize);
+      // A pending autosave carries its own thread, so flushing it is always
+      // safe. The explicit persist below then supersedes it for the thread this
+      // composer is still bound to.
+      if (!inboxState.isEditing && messageDeliveryState.ready) {
+        flushPendingDraftSave();
+      } else {
+        pendingDraftSave = null;
+        if (draftSaveTimer) clearTimeout(draftSaveTimer);
+        draftSaveTimer = null;
+      }
       if (
         !inboxState.isEditing &&
         messageDeliveryState.ready &&
         messageDeliveryState.activeUserId &&
-        hydratedConversationId === conversationId
+        hydratedDraftKey === draftKey(conversationId)
       ) {
         void persistCurrentDraft();
       }
@@ -127,11 +158,17 @@
   // draft that finishes loading a moment later.
   $effect(() => {
     if (!messageDeliveryState.ready || !conversationId) return;
-    if (hydratedConversationId === conversationId) return;
+    const key = draftKey(conversationId);
+    if (hydratedDraftKey === key) return;
+
+    // The thread (or account) being left may still have an autosave in flight.
+    // Write it before this composer is rebound, so its last keystrokes survive
+    // and its text can never be mistaken for the incoming draft.
+    flushPendingDraftSave();
 
     const draft = messageDeliveryState.draftFor(conversationId);
     suppressDraftPersistence = true;
-    hydratedConversationId = conversationId;
+    hydratedDraftKey = key;
     messageText = draft?.content ?? "";
     pendingAttachment = draft?.attachment
       ? restoreMessageAttachment(draft.attachment)
@@ -153,37 +190,71 @@
     const editing = inboxState.isEditing;
     const ready = messageDeliveryState.ready;
     const activeConversationId = conversationId;
+    const ownerId = messageDeliveryState.activeUserId;
 
     if (
       !ready ||
       editing ||
       suppressDraftPersistence ||
-      hydratedConversationId !== activeConversationId
+      hydratedDraftKey !== draftKey(activeConversationId)
     ) {
       return;
     }
 
     if (draftSaveTimer) clearTimeout(draftSaveTimer);
-    draftSaveTimer = setTimeout(() => {
-      draftSaveTimer = null;
-      void saveDraftSnapshot(content, replyTo, attachment);
-    }, DRAFT_SAVE_DELAY_MS);
+    pendingDraftSave = {
+      ownerId,
+      conversationId: activeConversationId,
+      content,
+      replyTo,
+      attachment,
+    };
+    draftSaveTimer = setTimeout(flushPendingDraftSave, DRAFT_SAVE_DELAY_MS);
   });
 
-  async function saveDraftSnapshot(
-    content: string,
-    replyTo: MessageReplyPreview | null,
-    attachment: PendingMessageAttachment | null
-  ): Promise<void> {
+  /** Write the pending snapshot now, to the thread it was captured for. */
+  function flushPendingDraftSave(): void {
+    if (draftSaveTimer) {
+      clearTimeout(draftSaveTimer);
+      draftSaveTimer = null;
+    }
+    const pending = pendingDraftSave;
+    pendingDraftSave = null;
+    if (pending) void saveDraftSnapshot(pending);
+  }
+
+  function draftKey(forConversationId: string): string {
+    return `${messageDeliveryState.activeUserId ?? ""}:${forConversationId}`;
+  }
+
+  async function saveDraftSnapshot(snapshot: DraftSnapshot): Promise<void> {
+    // The delivery state writes to whichever account is active NOW, and a draft
+    // id is `<userId>:<conversationId>`. A snapshot whose account has since
+    // changed can only be written into the wrong ledger, so it is dropped: the
+    // account that is signed in never inherits text typed by the previous one.
+    if (snapshot.ownerId !== messageDeliveryState.activeUserId) return;
+    const snapshotKey = draftKey(snapshot.conversationId);
+
     try {
-      await messageDeliveryState.saveDraft(conversationId, {
-        content,
-        replyTo: replyTo ?? undefined,
-        attachment: attachment ?? undefined,
+      await messageDeliveryState.saveDraft(snapshot.conversationId, {
+        content: snapshot.content,
+        replyTo: snapshot.replyTo ?? undefined,
+        attachment: snapshot.attachment ?? undefined,
       });
+      // The outcome belongs to the thread it was written for. By the time this
+      // resolves the composer may be showing a different thread or account, and
+      // an older success must not clear that one's warning.
+      if (hydratedDraftKey !== snapshotKey) return;
       draftSaveError = null;
       draftFailureReported = false;
     } catch (error) {
+      if (hydratedDraftKey !== snapshotKey) {
+        console.warn(
+          "A draft for a thread that is no longer open could not be saved:",
+          error
+        );
+        return;
+      }
       draftSaveError = "Draft not saved";
       if (draftFailureReported) return;
       draftFailureReported = true;
@@ -196,7 +267,13 @@
   }
 
   async function persistCurrentDraft(): Promise<void> {
-    return saveDraftSnapshot(messageText, replyPreview, pendingAttachment);
+    return saveDraftSnapshot({
+      ownerId: messageDeliveryState.activeUserId,
+      conversationId,
+      content: messageText,
+      replyTo: replyPreview,
+      attachment: pendingAttachment,
+    });
   }
 
   function showComposerFailure(

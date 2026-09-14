@@ -32,16 +32,26 @@ export function openSendSequenceSheetWithCard(
     return;
   }
   const payload = buildSequenceSharePayload(sequence);
-  inboxState.openSequenceShare(payload);
-  void renderCard(sequence)
-    .then((blob) => attachSequencePreview(payload, blob))
-    .catch(() => undefined);
+  inboxState.openSequenceShare({ ...payload, sequencePreviewPending: true });
+  void renderCard(sequence).then(
+    (blob) => attachSequencePreview(payload, blob),
+    (error) => {
+      // Not silent: an empty preview frame with no trace in the console is
+      // indistinguishable from a render that never started.
+      console.error("[sendSequence] Card preview render failed:", error);
+      attachSequencePreview(payload, null);
+    }
+  );
 }
 
-/** The card arrives after the sheet opened; attach it only if that share is still up. */
+/**
+ * The card arrives after the sheet opened; attach it only if that share is
+ * still up. `null` settles a failed render: the sheet stops waiting and falls
+ * back to whatever durable thumbnail the record carries.
+ */
 export function attachSequencePreview(
   payload: SequenceSharePayload,
-  blob: Blob
+  blob: Blob | null
 ): void {
   const current = inboxState.shareAttachment;
   if (
@@ -52,7 +62,11 @@ export function attachSequencePreview(
   }
   inboxState.shareAttachment = {
     type: "sequence",
-    payload: { ...current.payload, sequencePreviewBlob: blob },
+    payload: {
+      ...current.payload,
+      sequencePreviewBlob: blob ?? undefined,
+      sequencePreviewPending: false,
+    },
   };
 }
 

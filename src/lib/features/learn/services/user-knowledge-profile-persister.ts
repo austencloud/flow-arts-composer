@@ -25,9 +25,9 @@ import { getUserLearningProgressPath } from "../data/firestore-paths";
 import type { LearningProgress, ConceptProgress } from "../domain/types";
 import type { SerializedLearningProgress } from "./types";
 
-export class UserKnowledgeProfilePersister
-{
-  private unsubscribe: Unsubscribe | null = null;
+export class UserKnowledgeProfilePersister {
+  /** Cancels the subscription this persister currently owns, if any. */
+  private cancelActiveSubscription: (() => void) | null = null;
 
   /**
    * Get the Firestore document reference for a user's learning progress.
@@ -68,7 +68,8 @@ export class UserKnowledgeProfilePersister
       totalCorrect: progress.totalCorrect,
       totalTimeSpent: progress.totalTimeSpent,
       badges: progress.badges,
-      lastUpdated: this.dateToISO(progress.lastUpdated) ?? new Date().toISOString(),
+      lastUpdated:
+        this.dateToISO(progress.lastUpdated) ?? new Date().toISOString(),
     };
   }
 
@@ -78,7 +79,8 @@ export class UserKnowledgeProfilePersister
    */
   private deserialize(data: Record<string, unknown>): LearningProgress {
     const concepts = new Map<string, ConceptProgress>();
-    const rawConcepts = (data.concepts as Record<string, Record<string, unknown>>) || {};
+    const rawConcepts =
+      (data.concepts as Record<string, Record<string, unknown>>) || {};
 
     for (const [key, value] of Object.entries(rawConcepts)) {
       concepts.set(key, {
@@ -92,8 +94,12 @@ export class UserKnowledgeProfilePersister
         currentStreak: (value.currentStreak as number) || 0,
         bestStreak: (value.bestStreak as number) || 0,
         timeSpentSeconds: (value.timeSpentSeconds as number) || 0,
-        startedAt: value.startedAt ? new Date(value.startedAt as string) : undefined,
-        completedAt: value.completedAt ? new Date(value.completedAt as string) : undefined,
+        startedAt: value.startedAt
+          ? new Date(value.startedAt as string)
+          : undefined,
+        completedAt: value.completedAt
+          ? new Date(value.completedAt as string)
+          : undefined,
         lastPracticedAt: value.lastPracticedAt
           ? new Date(value.lastPracticedAt as string)
           : undefined,
@@ -166,23 +172,53 @@ export class UserKnowledgeProfilePersister
     }
   }
 
+  /**
+   * Subscribe to the user's progress document. Returns a cancel function.
+   *
+   * Setup is asynchronous — `getDocRef` awaits the Firestore instance — so
+   * cancellation cannot be "call the unsubscribe we stored", because for the
+   * whole setup window there is nothing stored yet. A caller that unsubscribes
+   * in that window (sign-out, or a sign-in as somebody else) used to cancel
+   * nothing: `onSnapshot` was registered afterwards and then delivered one
+   * account's document to a listener the caller believed it had torn down.
+   *
+   * Each call therefore owns its own `cancelled` flag rather than a field
+   * shared with the next call, the flag is honoured both before registering
+   * and inside every callback, and only the call that is still the active one
+   * clears the persister's pointer.
+   */
   subscribeToProgress(
     userId: string,
     callback: (progress: LearningProgress) => void,
     onError?: (error: unknown) => void
   ): () => void {
     // Clean up existing subscription
-    if (this.unsubscribe) {
-      this.unsubscribe();
-      this.unsubscribe = null;
-    }
+    this.cancelActiveSubscription?.();
+
+    let cancelled = false;
+    let unsubscribeSnapshot: Unsubscribe | null = null;
+
+    const cancel = () => {
+      cancelled = true;
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+        unsubscribeSnapshot = null;
+      }
+      if (this.cancelActiveSubscription === cancel) {
+        this.cancelActiveSubscription = null;
+      }
+    };
+    this.cancelActiveSubscription = cancel;
 
     // Start async subscription setup
     this.getDocRef(userId)
       .then((docRef) => {
-        this.unsubscribe = onSnapshot(
+        if (cancelled) return;
+
+        unsubscribeSnapshot = onSnapshot(
           docRef,
           (snapshot) => {
+            if (cancelled) return;
             if (snapshot.exists()) {
               const data = snapshot.data();
               const { updatedAt: _, createdAt: _c, ...progressData } = data;
@@ -192,6 +228,7 @@ export class UserKnowledgeProfilePersister
             }
           },
           (error) => {
+            if (cancelled) return;
             console.error(
               "[UserKnowledgeProfilePersister] Subscription error:",
               error
@@ -201,6 +238,7 @@ export class UserKnowledgeProfilePersister
         );
       })
       .catch((error) => {
+        if (cancelled) return;
         console.error(
           "[UserKnowledgeProfilePersister] Failed to initialize subscription:",
           error
@@ -208,11 +246,6 @@ export class UserKnowledgeProfilePersister
         onError?.(error);
       });
 
-    return () => {
-      if (this.unsubscribe) {
-        this.unsubscribe();
-        this.unsubscribe = null;
-      }
-    };
+    return cancel;
   }
 }

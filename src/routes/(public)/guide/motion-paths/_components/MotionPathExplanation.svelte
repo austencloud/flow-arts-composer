@@ -16,6 +16,7 @@
     reducedMotion,
   } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
+  import { PATH_SHAPE_COLORS } from "$lib/shared/animation-engine/domain/path-shape-colors";
   import { DARK_MOTION_BLUE_STROKE } from "$lib/shared/mandala/domain/mandala-constants";
   import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -60,6 +61,11 @@
     { title: "Three paths", caption: "Same shift. Different paths." },
   ];
   const COMPARISON_PATHS: readonly IntroPath[] = ["arc", "linear", "concave"];
+  const LEGEND: readonly { path: IntroPath; x: number; label: string }[] = [
+    { path: "arc", x: -118, label: "Arc" },
+    { path: "linear", x: -30, label: "Linear" },
+    { path: "concave", x: 66, label: "Concave" },
+  ];
   const MORPH_DURATION = DURATION.dramatic * 2;
   const TRAVERSE_DURATION = DURATION.dramatic * 4;
   const ARRIVAL_DURATION = DURATION.dramatic * 2;
@@ -371,7 +377,8 @@
       {#if isFinal}
         {#each COMPARISON_PATHS as path (path)}
           <path
-            class={`comparison-route ${path}-route`}
+            class="comparison-route"
+            style:stroke={PATH_SHAPE_COLORS[path]}
             d={introPathD(INTRO_PATHS[path])}
             in:fade={{ duration: motionDuration(DURATION.normal) }}
           />
@@ -389,18 +396,16 @@
           class="route-legend"
           in:fade={{ duration: motionDuration(DURATION.normal) }}
         >
-          <g transform="translate(-118 148)">
-            <path class="legend-line arc-route" d="M0 0h20" />
-            <text class="route-label" x="26" y="5">Arc</text>
-          </g>
-          <g transform="translate(-30 148)">
-            <path class="legend-line linear-route" d="M0 0h20" />
-            <text class="route-label" x="26" y="5">Linear</text>
-          </g>
-          <g transform="translate(66 148)">
-            <path class="legend-line concave-route" d="M0 0h20" />
-            <text class="route-label" x="26" y="5">Concave</text>
-          </g>
+          {#each LEGEND as item (item.path)}
+            <g transform={`translate(${item.x} 148)`}>
+              <path
+                class="legend-line"
+                style:stroke={PATH_SHAPE_COLORS[item.path]}
+                d="M0 0h20"
+              />
+              <text class="route-label" x="26" y="5">{item.label}</text>
+            </g>
+          {/each}
         </g>
       {/if}
 
@@ -450,6 +455,7 @@
     label={isFinal ? "Start again" : "Next"}
     currentStep={stage + 1}
     totalSteps={STAGES.length}
+    progressAppearance="steps"
     onAction={advance}
   />
 </section>
@@ -539,21 +545,12 @@
     stroke-width: 4;
   }
 
-  /* Three equal choices: same hand color, same weight, three line styles. */
+  /* Three equal choices: same weight, each in the color the path panel uses. */
   .comparison-route,
   .legend-line {
     fill: none;
-    stroke: var(--hand-color);
     stroke-width: 3;
     stroke-linecap: round;
-  }
-
-  .linear-route {
-    stroke-dasharray: 9 6;
-  }
-
-  .concave-route {
-    stroke-dasharray: 1 6;
   }
 
   .endpoint {

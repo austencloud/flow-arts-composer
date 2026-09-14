@@ -184,13 +184,7 @@ Card-based architecture with integrated Generate button:
       saved.config,
       saved.startEndOptions ?? null
     );
-    configState.updateConfig(snapshot.config);
-    startEndState.setGridMode(snapshot.config.gridMode);
-    if (snapshot.startEndOptions) {
-      startEndState.setOptions(snapshot.startEndOptions);
-    } else {
-      startEndState.resetOptions();
-    }
+    applySetupSnapshot(snapshot);
     if (spellModeState.inputWord?.trim()) {
       spellModeState.setInputWord("");
     }
@@ -235,10 +229,10 @@ Card-based architecture with integrated Generate button:
   }
 
   function applySetupSnapshot(setup: SetupSnapshot): void {
-    configState.updateConfig(setup.config);
-    startEndState.setGridMode(setup.config.gridMode);
+    configState.replaceConfig(setup.config);
+    startEndState.setGridMode(configState.config.gridMode);
     if (setup.startEndOptions) startEndState.setOptions(setup.startEndOptions);
-    else startEndState.resetOptions(setup.config.gridMode);
+    else startEndState.resetOptions(configState.config.gridMode);
   }
 
   $effect(() => {
@@ -268,7 +262,10 @@ Card-based architecture with integrated Generate button:
       cur.inversionMode !== last.inversionMode ||
       cur.constraintPreset !== last.constraintPreset ||
       cur.handPathMode !== last.handPathMode ||
-      cur.motionTypeFilter !== last.motionTypeFilter
+      cur.motionTypeFilter !== last.motionTypeFilter ||
+      cur.handRelationship !== last.handRelationship ||
+      cur.handRelationshipInverted !== last.handRelationshipInverted ||
+      cur.matchHandTurns !== last.matchHandTurns
     );
   });
 

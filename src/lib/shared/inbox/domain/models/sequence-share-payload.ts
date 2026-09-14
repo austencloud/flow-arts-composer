@@ -18,6 +18,12 @@ export interface SequenceSharePayload {
    * URLs already present on `sequence`.
    */
   sequencePreviewBlob?: Blob;
+  /**
+   * A card render is in flight for this share. The sheet shows a preparing
+   * state instead of a stale cloud thumbnail or an empty frame, and clears it
+   * when the render settles either way.
+   */
+  sequencePreviewPending?: boolean;
   sequenceAuthor?: string;
   sequenceStepCount?: number;
 }

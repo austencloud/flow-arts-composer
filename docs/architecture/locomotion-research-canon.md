@@ -110,22 +110,43 @@ The owners have deliberately different jobs:
 10. **Pelvis height while walking** is owned by `LocomotionAnimator`, not by
     `FootPlanter`. The pack's locomotion clips are re-anchored at the rig's
     rest height, which discards the dip a walk is authored with, so the flat
-    foot ended a centimetre or two (four to six on the runs) above the floor
-    and the planter, which never drags the pelvis down, held the toe on the
-    ground instead. `measureBindAnkleFloor()` reads the bind ankle once at
-    `initialize()`; `analyzeClipGait()` records each clip's `pelvisDrop` as the
-    gap between its lowest ankle and that floor; `blendedPelvisDrop()` lowers
-    the pelvis by the effective-weight blend of those dips every `update()`,
-    so a standing body keeps rest height and a crossfade lowers the body on
-    the same curve that brings the legs in. The same change passes the
-    animator's stored `hipsRest` into the gait probe: `createActions()` zeroes
-    the live pelvis before the clips are prepared, so the probe had been
-    measuring every foot a hip height under the floor and reporting sole and
-    toe offsets of 0, which left `FootPlanter` on default offsets that matched
-    no rig. Shipped 2026-09-06; contract in
-    `tests/unit/3d/locomotion-pelvis-drop.test.ts`. The remaining gap at
-    1.7 m/s (about two centimetres, from stride scaling at a fixed pelvis
-    height) is open.
+    foot ended above the floor and the planter, which never drags the pelvis
+    down, held the toe on the ground instead. `measureBindFloor()` reads the
+    bind ankle and the bind ball of the foot once at `initialize()`;
+    `analyzeClipGait()` records each clip's `pelvisDrop` as the cycle mean,
+    over every probe sample a foot declares contact, of that sole's height
+    over the bind floor (the ankle over its bind height or the ball of the
+    foot over its own, whichever reads lower; in double support the higher
+    sole answers); `blendedPelvisDrop()` lowers the pelvis by the
+    effective-weight blend of those dips every `update()`, so a standing
+    body keeps rest height and a crossfade lowers the body on the same curve
+    that brings the legs in. Measured 2026-09-06 across the twelve shipped
+    rigs: walks 0.032-0.053, strafes 0.051-0.065, runs 0.116-0.149. A
+    per-phase drop curve was built, measured, and rejected the same day: on
+    ch01 at 1.37 m/s it took the planted sole from 2.0 cm to 1.4 cm of the
+    floor and added 2.2 cm of pelvis bob every stride (10.3 cm against
+    8.1), and the bounce is what an eye reads. The retarget error that
+    remains (leading sole up to 2 cm high at heel strike, trailing toe up to
+    1.9 cm low at heel-off, the toe held out of the floor by the planter's
+    clamp) is a leg-proportion mismatch that a retargeter with foot IK goals
+    would absorb in the knees; that is the open gap, and it is not the
+    pelvis. Contract in `tests/unit/3d/locomotion-pelvis-drop.test.ts`.
+11. **Clip loop seams and the mixer's write skip** are owned by
+    `LocomotionAnimator`. The pack's converted clips key from one frame in
+    (0.0333 s at 30 Hz) while their duration counts from zero, and their last
+    key repeats their first, so every loop held the first pose for two extra
+    60 Hz ticks per stride. `trimLeadingHold()` moves each clip's keys to
+    zero and its duration to its last key in `createActions()`, copying the
+    time arrays rather than editing them because the loader hands every
+    channel of one sampler the same array. Separately, three.js
+    `PropertyMixer` only writes a bound property when the accumulated value
+    changed, so zeroing the pelvis before `mixer.update()` left the pelvis at
+    zero on the frame the track repeated its value: the whole body dropped by
+    the bob for one frame, 3.7 cm once per stride on ch01, and the gait probe
+    read that frame as the lowest sole and under-measured `pelvisDrop` by
+    half. `update()` and the probe now restore the previous track value
+    before the mixer runs. Both measured and fixed 2026-09-06; the seam and
+    single-frame contracts live in the same test file as item 10.
 
 The governing TKA designs are:
 
