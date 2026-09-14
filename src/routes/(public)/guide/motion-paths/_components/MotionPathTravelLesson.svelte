@@ -22,6 +22,8 @@
   const scope = createAnimationScope({ persistence: "ephemeral" });
   scope.visibility.setDarkMode(true);
   scope.visibility.setVisibility("props", true);
+  scope.visibility.setVisibility("leftPathLines", true);
+  scope.visibility.setVisibility("rightPathLines", false);
   const trails = {
     ...DEFAULT_TRAIL_SETTINGS,
     trackingMode: TrackingMode.RIGHT_END,
@@ -32,6 +34,7 @@
   let shape = $state<MotionPathLessonShape>("arc");
   let prop = $state<"hand" | "staff">("hand");
   let playing = $state(false);
+  let liveStep = $state(1.5);
   let reducedMotion = $state(false);
   let sequence = $derived(singleHandPathExample(shape));
 
@@ -71,12 +74,15 @@
     <InlineAnimationPlayer
       {sequence}
       sequenceLoadKey={sequence.id}
+      initialStep={liveStep}
+      onStepChange={(step) => (liveStep = step)}
       autoPlay={false}
       showControls={false}
       chrome="minimal"
       fill
       interactive
       hoverHint="none"
+      disableContextMenu
       beatIndicators={false}
       hideTkaGlyph
       leftPropType={prop === "hand" ? PropType.HAND : PropType.STAFF}
@@ -122,7 +128,6 @@
         density="compact"
       />
     </div>
-    <p class="tip">Staff rotation rides along with the same hand travel.</p>
   </div>
 </section>
 
@@ -148,8 +153,7 @@
     gap: var(--spacing-sm, 8px);
     min-width: 0;
   }
-  .control-label,
-  .tip {
+  .control-label {
     color: var(--theme-text-muted);
     font-size: var(--font-size-min, 14px);
   }
@@ -161,9 +165,6 @@
   }
   .control-row :global(.segmented-control) {
     flex: 1 1 16rem;
-  }
-  .tip {
-    margin: 0;
   }
   @container (min-width: 720px) {
     .lesson {

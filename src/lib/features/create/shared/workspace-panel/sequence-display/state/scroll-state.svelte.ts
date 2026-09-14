@@ -9,6 +9,7 @@ export function createScrollState() {
   let hasVerticalScrollbar = $state(false);
   let autoScrollEnabled = $state(true);
   let scrollContainerRef = $state<HTMLElement | null>(null);
+  let scrollbarCheckFrame: number | null = null;
 
   /**
    * Check if container has vertical scrollbar
@@ -26,6 +27,16 @@ export function createScrollState() {
     if (hasScrollbar !== hasVerticalScrollbar) {
       hasVerticalScrollbar = hasScrollbar;
     }
+  }
+
+  // ResizeObserver can fire on every frame while the surrounding panel moves.
+  // The visible editor only needs the final overflow state for that paint.
+  function scheduleScrollbarCheck() {
+    if (scrollbarCheckFrame !== null) return;
+    scrollbarCheckFrame = requestAnimationFrame(() => {
+      scrollbarCheckFrame = null;
+      checkScrollbar();
+    });
   }
 
   /**
@@ -57,6 +68,10 @@ export function createScrollState() {
   }
 
   function setScrollContainer(element: HTMLElement | null) {
+    if (scrollbarCheckFrame !== null) {
+      cancelAnimationFrame(scrollbarCheckFrame);
+      scrollbarCheckFrame = null;
+    }
     scrollContainerRef = element;
     if (element) {
       checkScrollbar();
@@ -85,6 +100,7 @@ export function createScrollState() {
     // Actions
     setScrollContainer,
     checkScrollbar,
+    scheduleScrollbarCheck,
     scrollToBottom,
     scrollToTop,
     setAutoScroll,

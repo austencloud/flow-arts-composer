@@ -355,6 +355,11 @@ export interface PanelCoordinationState {
     sequence: SequenceData;
     sourceTab: string;
   } | null;
+  /** A fixed session whose player is loading while the editor stays visible. */
+  get workspacePlaybackPreparation(): {
+    sequence: SequenceData;
+    sourceTab: string;
+  } | null;
   /**
    * Revision of the source sequence the running playback session was started
    * from, or null when nothing is playing. Kept outside the session object so
@@ -367,6 +372,10 @@ export interface PanelCoordinationState {
     sourceSequenceRevision: number,
     sourceTab?: string
   ): void;
+  confirmWorkspacePlaybackReady(session: {
+    sequence: SequenceData;
+    sourceTab: string;
+  }): void;
   stopWorkspacePlayback(): void;
   syncWorkspacePlaybackSource(
     sourceTab: string,
@@ -495,6 +504,10 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     sequence: SequenceData;
     sourceTab: string;
   } | null>(null);
+  let workspacePlaybackPreparation = $state.raw<{
+    sequence: SequenceData;
+    sourceTab: string;
+  } | null>(null);
   // Plain variable, not $state: the baseline is read imperatively by
   // syncWorkspacePlaybackSource, and nothing should re-render when it moves.
   let workspacePlaybackSourceRevision: number | null = null;
@@ -519,6 +532,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
    */
   function closeAllPanels() {
     workspacePlayback = null;
+    workspacePlaybackPreparation = null;
     workspacePlaybackSourceRevision = null;
     restoreStepEditorAfterPlayback = false;
     // Exit shift start mode
@@ -574,8 +588,9 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   }
 
   function stopWorkspacePlayback() {
-    if (!workspacePlayback) return;
+    if (!workspacePlayback && !workspacePlaybackPreparation) return;
     workspacePlayback = null;
+    workspacePlaybackPreparation = null;
     workspacePlaybackSourceRevision = null;
     if (restoreStepEditorAfterPlayback) isStepEditorPanelOpen = true;
     restoreStepEditorAfterPlayback = false;
@@ -1036,6 +1051,10 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       return workspacePlayback;
     },
 
+    get workspacePlaybackPreparation() {
+      return workspacePlaybackPreparation;
+    },
+
     get workspacePlaybackSourceRevision() {
       return workspacePlaybackSourceRevision;
     },
@@ -1045,32 +1064,45 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       sourceSequenceRevision,
       sourceTab = "construct"
     ) {
-      if (!sequence.steps.length || workspacePlayback) return;
+      if (
+        !sequence.steps.length ||
+        workspacePlayback ||
+        workspacePlaybackPreparation
+      )
+        return;
       const restoreEditor = isStepEditorPanelOpen;
       closeAllPanels();
       restoreStepEditorAfterPlayback = restoreEditor;
-      // Playback gets a fixed document. An edit cannot change the motion mid-beat.
-      workspacePlayback = {
+      // The fixed document can load while editing remains in place. It only
+      // becomes active after its player reports a ready canvas.
+      workspacePlaybackPreparation = {
         sequence: structuredClone($state.snapshot(sequence)),
         sourceTab,
       };
       workspacePlaybackSourceRevision = sourceSequenceRevision;
     },
 
+    confirmWorkspacePlaybackReady(session) {
+      if (workspacePlaybackPreparation !== session) return;
+      workspacePlayback = session;
+      workspacePlaybackPreparation = null;
+    },
+
     stopWorkspacePlayback,
 
     syncWorkspacePlaybackSource(sourceTab, sourceSequenceRevision) {
       // Separate creation tabs can have the same revision counter.
+      const session = workspacePlayback ?? workspacePlaybackPreparation;
       if (
-        workspacePlayback &&
-        (workspacePlayback.sourceTab !== sourceTab ||
+        session &&
+        (session.sourceTab !== sourceTab ||
           workspacePlaybackSourceRevision !== sourceSequenceRevision)
       )
         stopWorkspacePlayback();
     },
 
     rebaseWorkspacePlayback(fromRevision, toRevision) {
-      if (!workspacePlayback) return;
+      if (!workspacePlayback && !workspacePlaybackPreparation) return;
       if (workspacePlaybackSourceRevision !== fromRevision) return;
       workspacePlaybackSourceRevision = toRevision;
     },

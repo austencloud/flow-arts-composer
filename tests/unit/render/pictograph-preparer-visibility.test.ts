@@ -9,6 +9,7 @@ import {
   RotationDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 function staticMotion(color: HandSide) {
   return createMotionData({
@@ -134,5 +135,41 @@ describe("PictographPreparer presentation visibility", () => {
     expect(Object.keys(prepared._prepared?.propPositions ?? {})).toEqual([
       "left",
     ]);
+  });
+
+  it("returns motions with the same hand presentation used to prepare its assets", async () => {
+    const preparer = new PictographPreparer(
+      {
+        coordinateArrowLifecycle: async () => ({
+          positions: {},
+          assets: {},
+          mirroring: {},
+        }),
+      } as never,
+      { loadPropSvg: async () => ({ svgData: null }) } as never,
+      {
+        calculatePlacement: async () => ({
+          positionX: 0,
+          positionY: 0,
+          rotationAngle: 0,
+        }),
+      } as never
+    );
+    const pictograph: PictographData = {
+      id: "hands-presentation",
+      motions: {
+        left: staticMotion(HandSide.LEFT),
+        right: staticMotion(HandSide.RIGHT),
+      },
+    };
+
+    const prepared = await preparer.prepareSingle(pictograph, {
+      leftPropType: PropType.HAND,
+      rightPropType: PropType.HAND,
+    });
+
+    expect(prepared.motions.left!.propType).toBe(PropType.HAND);
+    expect(prepared.motions.right!.propType).toBe(PropType.HAND);
+    expect(pictograph.motions.left!.propType).toBe(PropType.STAFF);
   });
 });

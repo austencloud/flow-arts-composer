@@ -44,4 +44,18 @@ describe("Composer card export profile consumers", () => {
     expect(source).toContain("renderStepNumber as drawStepNumber");
     expect(source).not.toContain("fillText");
   });
+
+  it("forces Composer bulk exports onto the profile's mandala setting", () => {
+    const source = readFileSync(
+      resolve(
+        root,
+        "src/lib/features/choreo-card/components/ChoreoCardExport.svelte"
+      ),
+      "utf8"
+    );
+
+    expect(source).toContain(
+      "showMandala: COMPOSER_CARD_EXPORT_PROFILE_V1.showMandala"
+    );
+  });
 });

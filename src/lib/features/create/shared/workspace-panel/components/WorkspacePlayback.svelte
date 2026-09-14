@@ -2,21 +2,56 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import InlineAnimationPlayer from "$lib/features/browse/sequences/display/components/media-viewer/InlineAnimationPlayer.svelte";
   import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
+  import {
+    createEffectsConfigState,
+    type EffectsConfigState,
+  } from "$lib/shared/effects/state/effects-config-state.svelte";
+  import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 
   let {
     sequence,
     active,
+    run,
     onready,
+    onerror,
     onStepChange,
   }: {
     sequence: SequenceData;
     active: boolean;
-    onready: () => void;
+    /** Advances for every explicit Play so a retained engine restarts cleanly. */
+    run: number;
+    /** Fires only after the retained canvas has painted its first frame. */
+    onready: (run: number) => void;
+    /** Cancels a pending Play when the animation engine cannot load its data. */
+    onerror: (run: number) => void;
     onStepChange?: (step: number) => void;
   } = $props();
 
   let currentStep = $state(0);
   let seek: ((step: number) => void) | null = null;
+  // CanvasSurface reports its first painted frame once for this retained
+  // component. Subsequent Play runs only need their new sequence data loaded.
+  let canvasInitialized = $state(false);
+  let loadedRun = $state<number | null>(null);
+  const visibilityManager = getAnimationVisibilityManager();
+  let effectsConfigState = $state<EffectsConfigState>(
+    visibilityManager.effectsConfigState ?? createEffectsConfigState()
+  );
+  const loadIdentity = $derived(`${sequence.id}:${run}`);
+
+  $effect(() => {
+    const syncEffectsConfig = () => {
+      effectsConfigState =
+        visibilityManager.effectsConfigState ?? effectsConfigState;
+    };
+    visibilityManager.registerObserver(syncEffectsConfig);
+    syncEffectsConfig();
+    return () => visibilityManager.unregisterObserver(syncEffectsConfig);
+  });
+
+  function confirmReady() {
+    if (canvasInitialized && loadedRun === run) onready(run);
+  }
 </script>
 
 <div class="workspace-playback" data-testid="workspace-playback">
@@ -25,14 +60,25 @@
       <div class="player-stage">
         <InlineAnimationPlayer
           {sequence}
+          sequenceLoadKey={loadIdentity}
           chrome="minimal"
           fill
           scrubbable
           autoPlay={active}
           autoPlayDelay={0}
           playbackAllowed={active}
-          onCanvasInitialized={onready}
-          onLoadError={onready}
+          resumeWhenPlaybackAllowed
+          {effectsConfigState}
+          onReady={(loadedIdentity) => {
+            if (loadedIdentity !== loadIdentity) return;
+            loadedRun = run;
+            confirmReady();
+          }}
+          onCanvasInitialized={() => {
+            canvasInitialized = true;
+            confirmReady();
+          }}
+          onLoadError={() => onerror(run)}
           onStepChange={(step) => {
             currentStep = step;
             onStepChange?.(step);

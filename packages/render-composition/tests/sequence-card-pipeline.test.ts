@@ -3,6 +3,7 @@ import {
   COMPOSER_CARD_EXPORT_PROFILE_V1,
   calculateSequenceCardCell,
   calculateSequenceCardLayout,
+  calculateSequenceCardMandalaPlacements,
 } from "../src/sequence-card-pipeline.js";
 
 describe("sequence card pipeline geometry", () => {
@@ -103,9 +104,83 @@ describe("Composer export profile", () => {
       darkMode: false,
       showDifficulty: false,
       showFooter: false,
+      showMandala: true,
       showReversals: true,
       startPositionLayout: "row",
       level: 1,
     });
+  });
+});
+
+describe("sequence card mandala placement", () => {
+  it("fills the single info cell beside the start position with a full mandala", () => {
+    const layout = calculateSequenceCardLayout(5, {
+      layout: "grid",
+      cellSize: 300,
+      showWord: true,
+      showDifficulty: false,
+      showFooter: false,
+      startPositionLayout: "row",
+    });
+
+    expect(
+      calculateSequenceCardMandalaPlacements(
+        layout,
+        {
+          layout: "grid",
+          cellSize: 300,
+          showMandala: true,
+          startPositionLayout: "row",
+        },
+        new Set(["0,0", "0,1", "1,1", "0,2", "1,2"])
+      )
+    ).toEqual([
+      {
+        col: 1,
+        row: 0,
+        x: 300,
+        y: layout.gridStartY,
+        cellSize: 300,
+        variant: "full",
+      },
+    ]);
+  });
+
+  it("keeps strip layouts and explicitly disabled cards mandala-free", () => {
+    const layout = {
+      width: 900,
+      height: 300,
+      columns: 3,
+      rows: 1,
+      headerHeight: 0,
+      footerHeight: 0,
+      gridStartY: 0,
+    };
+    const occupied = new Set(["0,0"]);
+
+    expect(
+      calculateSequenceCardMandalaPlacements(
+        layout,
+        {
+          layout: "strip",
+          cellSize: 300,
+          showMandala: true,
+          startPositionLayout: "row",
+        },
+        occupied
+      )
+    ).toEqual([]);
+    expect(
+      calculateSequenceCardMandalaPlacements(
+        { ...layout, rows: 3 },
+        {
+          layout: "grid",
+          cellSize: 300,
+          showMandala: false,
+          startPositionLayout: "column",
+        },
+        occupied
+      )
+    ).toEqual([]);
   });
 });

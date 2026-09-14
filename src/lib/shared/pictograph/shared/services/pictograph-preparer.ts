@@ -85,17 +85,21 @@ export class PictographPreparer {
     options?: PrepareOptions
   ): Promise<PreparedPictographData> {
     const cacheKey = this.deriveCacheKey(pictograph, options);
+    const renderedPictograph = this.createRenderedPictograph(
+      pictograph,
+      options
+    );
 
     const cached = this.prepareCache.get(cacheKey);
     if (cached) {
       this.cacheHits++;
-      return { ...pictograph, _prepared: cached };
+      return { ...renderedPictograph, _prepared: cached };
     }
 
     const pending = this.pendingPrepares.get(cacheKey);
     if (pending) {
       const prepared = await pending;
-      return { ...pictograph, _prepared: prepared };
+      return { ...renderedPictograph, _prepared: prepared };
     }
 
     this.cacheMisses++;
@@ -116,7 +120,7 @@ export class PictographPreparer {
         this.prepareCache.set(cacheKey, prepared);
       }
 
-      return { ...pictograph, _prepared: prepared };
+      return { ...renderedPictograph, _prepared: prepared };
     } finally {
       this.pendingPrepares.delete(cacheKey);
     }
@@ -157,33 +161,10 @@ export class PictographPreparer {
   ): Promise<PreparedRenderData> {
     const gridMode = this.deriveGridMode(pictograph);
 
-    const settings = {
-      leftPropType: options?.leftPropType ?? DEFAULT_PROP_SETTINGS.leftPropType,
-      rightPropType:
-        options?.rightPropType ?? DEFAULT_PROP_SETTINGS.rightPropType,
-    };
-
-    const effectiveLeftProp = settings.leftPropType;
-    const effectiveRightProp = settings.rightPropType;
-    const useHandPath =
-      options?.handPathMode ||
-      (effectiveLeftProp === PropType.HAND &&
-        effectiveRightProp === PropType.HAND);
-
-    const effectivePictograph = useHandPath
-      ? this.transformForHandPath(pictograph)
-      : pictograph;
-    const overriddenMotions = this.getMotionsWithOverrides(
-      effectivePictograph,
-      settings,
+    const pictographWithPropOverrides = this.createRenderedPictograph(
+      pictograph,
       options
     );
-    const pictographWithPropOverrides: PictographData = {
-      ...effectivePictograph,
-      motions: Object.fromEntries(
-        overriddenMotions
-      ) as PictographData["motions"],
-    };
 
     const showLeft = isVisibleMotion(pictographWithPropOverrides.motions.left);
     const showRight = isVisibleMotion(
@@ -216,6 +197,36 @@ export class PictographPreparer {
       arrowMirroring: arrowResult.mirroring,
       propPositions,
       propAssets,
+    };
+  }
+
+  /**
+   * Keep the motion data handed to the renderer aligned with the prop assets
+   * prepared for it. Otherwise a hands preview could load hand artwork while
+   * still reporting and styling the stale staff motion from its source step.
+   */
+  private createRenderedPictograph(
+    pictograph: PictographData,
+    options?: PrepareOptions
+  ): PictographData {
+    const settings = {
+      leftPropType: options?.leftPropType ?? DEFAULT_PROP_SETTINGS.leftPropType,
+      rightPropType:
+        options?.rightPropType ?? DEFAULT_PROP_SETTINGS.rightPropType,
+    };
+    const useHandPath =
+      options?.handPathMode ||
+      (settings.leftPropType === PropType.HAND &&
+        settings.rightPropType === PropType.HAND);
+    const effectivePictograph = useHandPath
+      ? this.transformForHandPath(pictograph)
+      : pictograph;
+
+    return {
+      ...effectivePictograph,
+      motions: Object.fromEntries(
+        this.getMotionsWithOverrides(effectivePictograph, settings, options)
+      ) as PictographData["motions"],
     };
   }
 
