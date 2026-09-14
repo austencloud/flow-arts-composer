@@ -884,7 +884,7 @@
   .to-reference {
     max-width: 86rem;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
   }
@@ -967,6 +967,7 @@
   }
   .player-controls :global(.transport-controls) {
     margin: auto 0 0;
+    align-self: center;
   }
   .turn-controls {
     display: grid;
@@ -1255,7 +1256,6 @@
     .display-switch {
       width: 100%;
       grid-column: 1 / -1;
-      grid-row: 2;
     }
     .spin-grid {
       gap: 0.375rem;
