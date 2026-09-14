@@ -202,9 +202,23 @@ function thetaSpellings(identifier: string): readonly string[] {
   return swapped === identifier ? [identifier] : [identifier, swapped];
 }
 
+export interface LoadByIdentifierOptions {
+  /**
+   * Whether a miss on the exact document may fall through to a public lookup
+   * by word. Defaults to true for the callers that really do hold a word (a
+   * sync session, an inbox card). The /sequence route passes false: an address
+   * is a short code or a document id, and letting the bare word resolve there
+   * teaches people that words are URLs when the serialized code is the only
+   * form that stays stable across variations of the same word.
+   */
+  wordFallback?: boolean;
+}
+
 export async function loadByIdentifier(
-  identifier: string
+  identifier: string,
+  options: LoadByIdentifierOptions = {}
 ): Promise<SequenceData | null> {
+  const wordFallback = options.wordFallback ?? true;
   // Try the local store first - but only the stored document. The repository's
   // legacy-PNG fallback synthesizes a copy under a new random id on every call,
   // and every word that has a bundled PNG also has a real Firestore document
@@ -245,7 +259,9 @@ export async function loadByIdentifier(
       publicSequence = await loader.loadFullSequenceData(identifier, candidate);
       if (publicSequence) break;
     }
-    publicSequence ??= await loader.loadFullSequenceData(identifier);
+    if (wordFallback) {
+      publicSequence ??= await loader.loadFullSequenceData(identifier);
+    }
     if (publicSequence) {
       return prepareForViewer(publicSequence);
     }
