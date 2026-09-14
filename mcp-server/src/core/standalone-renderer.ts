@@ -34,6 +34,8 @@ import {
   calculateDashLocation,
   type DashLocationInput,
   calculateReversalPositions,
+  calculateHandColorKeyLayout,
+  HAND_COLOR_KEY,
   applyColorToSvg,
   applyFanFrameColor,
   applyFanPaperContrast,
@@ -281,6 +283,8 @@ export interface RenderVisibilityOptions {
   showElemental?: boolean;
   showPositions?: boolean;
   showReversals?: boolean;
+  /** Start-position legend: L/R swatches in the bottom-centre band. */
+  showHandColorKey?: boolean;
   showGrid?: boolean;
   showNonRadialPoints?: boolean;
   showLeftMotion?: boolean;
@@ -446,6 +450,7 @@ export class StandaloneRenderer {
       showElemental = false,
       showPositions = false,
       showReversals = false,
+      showHandColorKey = false,
       showGrid = true,
       showLeftMotion = true,
       showRightMotion = true,
@@ -604,6 +609,19 @@ export class StandaloneRenderer {
         svgParts.push(
           `<g class="svg-glyph svg-glyph-reversal">${reversalSvg}</g>`
         );
+    }
+
+    // 10. Start-position hand colour key (bottom centre)
+    if (showHandColorKey) {
+      const keySvg = this.renderHandColorKey(
+        showLeftMotion && !!input.leftMotion,
+        showRightMotion && !!input.rightMotion,
+        darkMode,
+        themeable,
+        primaryPropColors
+      );
+      if (keySvg)
+        svgParts.push(`<g class="svg-glyph svg-glyph-hand-key">${keySvg}</g>`);
     }
 
     const xmlDecl = inline ? "" : `<?xml version="1.0" encoding="UTF-8"?>\n`;
@@ -1785,6 +1803,42 @@ ${turnNumbersSvg}
     });
 
     return `<g class="reversal-indicators">${circles.join("\n")}</g>`;
+  }
+
+  /**
+   * Start-position hand colour key. Geometry comes from the shared
+   * calculateHandColorKeyLayout so this matches PictographRenderer exactly.
+   */
+  private renderHandColorKey(
+    showLeft: boolean,
+    showRight: boolean,
+    darkMode: boolean,
+    themeable: boolean = false,
+    customColors?: HandColorPair | null
+  ): string {
+    const layout = calculateHandColorKeyLayout(showLeft, showRight);
+    if (layout.entries.length === 0) return "";
+
+    const textColor = this.resolveColor(
+      "--dm-text-color",
+      "#ffffff",
+      "#231f20",
+      darkMode,
+      themeable
+    );
+    const parts = layout.entries.map((entry) => {
+      const fill = this.resolveMotionColor(
+        entry.hand,
+        darkMode,
+        themeable,
+        customColors
+      );
+      return (
+        `<circle cx="${entry.swatchX}" cy="${layout.centerY}" r="${layout.swatchRadius}" fill="${fill}"/>` +
+        `<text x="${entry.labelX}" y="${layout.baselineY}">${entry.label}</text>`
+      );
+    });
+    return `<g class="hand-color-key" transform="translate(${VIEWBOX_SIZE / 2}, 0)" font-family="${HAND_COLOR_KEY.FONT_FAMILY}" font-size="${HAND_COLOR_KEY.FONT_SIZE}" font-weight="${HAND_COLOR_KEY.FONT_WEIGHT}" fill="${textColor}">${parts.join("")}</g>`;
   }
 
   // ==========================================================================

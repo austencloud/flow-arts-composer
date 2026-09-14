@@ -37,8 +37,13 @@ their existing owners.
 Hand identity colors reuse `packages/render-composition/src/hand-colors.ts` for
 cross-runtime normalization and `mandala-palette.ts` for overlap blending.
 `viewer-custom-colors.ts` retains the app-facing compatibility API. Searches: primary prop colors,
-hand-color key, mandala overlap, start-position legend. `PictographRenderer`
-owns the SVG start key; `StartTile` and `LiveCardPictograph` compose that owner.
+hand-color key, mandala overlap, start-position legend. The key's geometry is
+`calculateHandColorKeyLayout` in `packages/render-core`. `PictographRenderer`
+draws it in the live DOM (viewer start cell), `LayerCompositor` draws it into
+the rasterized step-0 cell for card fronts, exports and thumbnails through
+`drawHandColorKey`, and the MCP `StandaloneRenderer` draws it for
+`generate_pictograph` and the sequence image start cell, so every surface
+bakes in the same key.
 `ChoreoCard` resolves its palette once for cells and `CardGridLayout` mandalas.
 Animation frame parameters carry the same hand pair independently of effect
 styling, and `mandala-guide-painter.ts` derives overlap from its actual path

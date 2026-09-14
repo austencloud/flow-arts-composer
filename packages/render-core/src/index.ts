@@ -201,3 +201,13 @@ export type {
   ReversalDotPosition,
   ReversalPositions,
 } from "./calculations/reversal-positions.js";
+
+// Start-position hand colour key
+export {
+  HAND_COLOR_KEY,
+  calculateHandColorKeyLayout,
+} from "./calculations/hand-color-key.js";
+export type {
+  HandColorKeyEntry,
+  HandColorKeyLayout,
+} from "./calculations/hand-color-key.js";
