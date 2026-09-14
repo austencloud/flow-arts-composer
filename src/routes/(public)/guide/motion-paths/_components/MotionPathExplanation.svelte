@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
+  import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import {
     DARK_MOTION_BLUE_STROKE,
@@ -75,6 +77,19 @@
   const tipDx = $derived(
     trace === "hands" ? 0 : shapeMatrixTipPoint(PropType.STAFF)?.dx
   );
+  const handColors = $derived({
+    left: getSettings().primaryPropColors?.left ?? DARK_MOTION_BLUE_STROKE,
+    right: getSettings().primaryPropColors?.right ?? DARK_MOTION_RED_STROKE,
+  });
+
+  function chooseStep(stepNumber: number): void {
+    const index = stepNumber - 1;
+    const next =
+      choices.find(
+        (item) => item.index === index && item.hand === choice?.hand
+      ) ?? choices.find((item) => item.index === index);
+    if (next) selected = next.key;
+  }
 </script>
 
 <section
@@ -90,18 +105,57 @@
   {#if choice}
     <div class="comparison-layout">
       <div class="movement">
-        <label class="movement-choice">
-          <span>Look at</span>
-          <select
-            aria-label="Movement to compare"
-            value={choice.key}
-            onchange={(event) => (selected = event.currentTarget.value)}
-          >
-            {#each choices as item (item.key)}<option value={item.key}
-                >{item.label}</option
-              >{/each}
-          </select>
-        </label>
+        <div class="movement-choice">
+          <div class="choice-heading">
+            <h3>Step {choice.index + 1}</h3>
+            <div
+              class="hand-choice"
+              style:--dm-motion-blue={handColors.left}
+              style:--dm-motion-red={handColors.right}
+            >
+              <SegmentedControl
+                options={[
+                  {
+                    value: "left",
+                    label: "Left hand",
+                    tone: "blue",
+                    disabled: !choices.some(
+                      (item) =>
+                        item.index === choice.index && item.hand === "left"
+                    ),
+                  },
+                  {
+                    value: "right",
+                    label: "Right hand",
+                    tone: "red",
+                    disabled: !choices.some(
+                      (item) =>
+                        item.index === choice.index && item.hand === "right"
+                    ),
+                  },
+                ]}
+                value={choice.hand}
+                onchange={(hand) => (selected = `${choice.index}:${hand}`)}
+                semantics="radiogroup"
+                ariaLabel="Hand to compare"
+              />
+            </div>
+          </div>
+          <div class="step-picker" role="group" aria-label="Choose a movement">
+            <StepStrip
+              {sequence}
+              includeStartPosition={false}
+              currentStep={choice.index + 1}
+              bpm={48}
+              density="compact"
+              presentation="strip"
+              fillHeight
+              leftPropType={PropType.STAFF}
+              rightPropType={PropType.STAFF}
+              onCellClick={chooseStep}
+            />
+          </div>
+        </div>
 
         <div class="route-key" aria-label="Route line styles">
           <span><i class="solid"></i>Arc</span>
@@ -257,21 +311,26 @@
     min-width: 0;
   }
   .movement-choice {
-    display: flex;
+    display: grid;
     gap: var(--spacing-sm, 8px);
-    align-items: center;
-    font-size: var(--font-size-min, 14px);
-  }
-  select {
-    flex: 1;
     min-width: 0;
-    min-height: 44px;
-    color: var(--theme-text);
-    background: var(--theme-panel-bg);
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--radius-md, 8px);
-    padding: var(--spacing-sm, 8px);
-    font: inherit;
+  }
+  .choice-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm, 8px);
+  }
+  .choice-heading h3 {
+    white-space: nowrap;
+  }
+  .hand-choice {
+    width: min(100%, 280px);
+    min-width: 0;
+  }
+  .step-picker {
+    height: 100px;
+    min-width: 0;
   }
   .route-key {
     display: flex;
@@ -351,7 +410,6 @@
     accent-color: var(--hand-color);
     cursor: ew-resize;
   }
-  select:focus-visible,
   input:focus-visible {
     outline: 2px solid var(--theme-accent);
     outline-offset: 3px;
