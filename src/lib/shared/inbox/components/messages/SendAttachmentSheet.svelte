@@ -6,7 +6,6 @@
   import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import RobustAvatar from "$lib/shared/components/avatar/RobustAvatar.svelte";
-  import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import type { ConversationPreview } from "$lib/shared/messaging/domain/models/conversation-models";
   import { conversationService } from "$lib/shared/messaging/services/conversation-manager";
   import type { PendingMessageAttachment } from "../../domain/pending-message-attachment";
@@ -14,7 +13,6 @@
   import { getShortCodeShareMessage } from "$lib/shared/qr/domain/short-code-error";
   import UserSearchInput from "$lib/shared/user-search/UserSearchInput.svelte";
   import { onMount } from "svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { buildSequenceMessageAttachment } from "../../domain/message-attachment-builders";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { inboxState } from "../../state/inbox-state.svelte";
@@ -115,14 +113,6 @@
     if (previewThumbnailUrl) thumbnailFailed = false;
   });
 
-  const displayWord = $derived(
-    payload
-      ? simplifyRepeatedWord(
-          payload.sequenceWord || payload.sequenceCloudWord || ""
-        )
-      : (image?.file.name ?? "")
-  );
-  const kicker = $derived(attachment.type === "image" ? "Sending" : "Sharing");
   const sendLabel = $derived.by(() => {
     const noun = attachment.type === "image" ? "image" : "sequence";
     // The count is the confirmation. "Send image" while four people are
@@ -455,6 +445,9 @@
     class:destination-selected={hasDestination}
     aria-busy={phase === "sending"}
   >
+    <!-- The card IS the preview. The title says "Send sequence" and the card
+         shows the word, so a caption repeating both only stole height from
+         the card it captioned. -->
     <article class="sequence-preview" aria-label="Attachment being shared">
       <div class="preview-thumbnail">
         {#if payload && previewThumbnailUrl && !thumbnailFailed}
@@ -473,27 +466,6 @@
             <i class="fas {image ? 'fa-image' : 'fa-layer-group'}"></i>
           </div>
         {/if}
-      </div>
-
-      <div class="preview-info">
-        <span class="preview-kicker">{kicker}</span>
-        {#if payload && displayWord}
-          <!-- The word is TKA letters, so it gets the glyph renderer every
-               other surface uses, not a Latin fallback face. -->
-          <strong class="preview-word" aria-label={displayWord}>
-            <TKAWordGlyph word={displayWord} height={30} darkMode fitToParent />
-          </strong>
-        {:else}
-          <strong class="preview-word">{displayWord || "Attachment"}</strong>
-        {/if}
-        <div class="preview-meta">
-          {#if payload?.sequenceStepCount}
-            <span>{payload.sequenceStepCount} steps</span>
-          {/if}
-          {#if payload?.sequenceAuthor}
-            <span>by {payload.sequenceAuthor}</span>
-          {/if}
-        </div>
       </div>
     </article>
 
@@ -653,16 +625,14 @@
     </section>
 
     <div class="message-section">
-      <label for="sequence-share-message">
-        Note <span>Optional</span>
-      </label>
       <textarea
         id="sequence-share-message"
         class="message-input"
         bind:value={message}
-        placeholder="Add a note"
+        aria-label="Note (optional)"
+        placeholder="Add a note (optional)"
         maxlength={MESSAGE_MAX}
-        rows={2}
+        rows={1}
         disabled={phase === "sending"}
       ></textarea>
       <span
@@ -711,39 +681,54 @@
 
   .sequence-preview {
     display: grid;
-    grid-template-columns: clamp(4.5rem, 18cqw, 6rem) minmax(0, 1fr);
-    gap: 0.875rem;
-    align-items: center;
+    grid-template-rows: minmax(0, 1fr);
+    justify-self: center;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 0;
     margin: 0;
-    padding: 0.75rem;
+    padding: 0.5rem;
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: 1rem;
   }
 
+  /* No fixed aspect ratio: the card sets its own shape and the box fits it.
+     A forced 4:3 box cropped every card taller than a postcard. The single-
+     column form caps the height so a 16-step card does not push the
+     recipients below the fold; the two-column form removes the cap and lets
+     the card fill its column instead. */
   .preview-thumbnail {
+    --preview-cap: min(14rem, 32dvh);
     display: grid;
     place-items: center;
     width: 100%;
-    aspect-ratio: 1;
+    min-height: 0;
+    max-height: var(--preview-cap);
     overflow: hidden;
     background: color-mix(in srgb, var(--theme-panel-bg) 82%, transparent);
     border: 1px solid var(--theme-stroke);
     border-radius: 0.75rem;
   }
 
+  /* The box above is auto-height here, so a 100% max-height on the image
+     resolves to none; the image repeats the cap. Modes that give the box a
+     definite height switch it back to 100%. */
   .thumbnail-img {
     display: block;
-    width: 100%;
-    height: 100%;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: var(--preview-cap);
     object-fit: contain;
   }
 
   .thumbnail-fallback {
     display: grid;
     place-items: center;
-    width: 100%;
-    height: 100%;
+    /* The frame hugs its content, so the icon needs a box of its own. */
+    min-width: 8rem;
+    min-height: 6rem;
     color: var(--theme-text-dim);
     font-size: clamp(
       var(--font-size-xl, 1.25rem),
@@ -752,13 +737,6 @@
     );
   }
 
-  .preview-info {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-
-  .preview-kicker,
   .section-kicker {
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact, 0.75rem);
@@ -766,30 +744,6 @@
     letter-spacing: 0.08em;
     line-height: 1.2;
     text-transform: uppercase;
-  }
-
-  .preview-word {
-    display: block;
-    overflow: hidden;
-    margin-top: 0.2rem;
-    color: var(--theme-text);
-    font-size: clamp(
-      var(--font-size-xl, 1.25rem),
-      5cqw,
-      var(--font-size-3xl, 1.875rem)
-    );
-    line-height: 1.15;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .preview-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 0.75rem;
-    margin-top: 0.4rem;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 0.75rem);
   }
 
   .destination-section {
@@ -1032,30 +986,18 @@
   .message-section {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 0.35rem 0.75rem;
   }
 
-  .message-section label {
-    color: var(--theme-text);
-    font-size: var(--font-size-sm, 0.875rem);
-    font-weight: 700;
-  }
-
-  .message-section label span {
-    margin-left: 0.25rem;
-    color: var(--theme-text-dim);
-    font-size: var(--font-size-compact, 0.75rem);
-    font-weight: 500;
-  }
-
+  /* One line until typed into; grows to a few, then scrolls. The note is
+     optional and rarely used, so it no longer owns whatever height the card
+     and the recipients leave over. */
   .message-input {
-    grid-column: 1 / -1;
     width: 100%;
-    min-height: 3.25rem;
+    min-height: 2.75rem;
     max-height: 7.5rem;
     padding: 0.75rem;
-    resize: vertical;
+    resize: none;
+    field-sizing: content;
     background: var(--theme-card-bg);
     border: 1px solid var(--theme-stroke);
     border-radius: 0.75rem;
@@ -1085,9 +1027,13 @@
     opacity: 0.65;
   }
 
+  /* Overlaid in the corner of the input: only shown near the limit, so it
+     must not reserve a row of its own the rest of the time. */
   .char-count {
-    justify-self: end;
-    min-width: 4.75rem;
+    position: absolute;
+    right: 0.75rem;
+    bottom: 0.5rem;
+    pointer-events: none;
     visibility: hidden;
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact, 0.75rem);
@@ -1151,24 +1097,20 @@
      the note in the wide layout. */
   @container (max-width: 41.999rem) {
     .destination-selected {
-      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      grid-template-rows: minmax(0, 1fr) auto auto auto;
     }
 
-    .destination-selected .message-section {
-      grid-template-rows: auto minmax(0, 1fr) auto;
-    }
-
-    .destination-selected .message-input {
+    .destination-selected .preview-thumbnail {
       max-height: none;
       height: 100%;
+    }
+
+    .destination-selected .thumbnail-img {
+      max-height: 100%;
     }
   }
 
   @container (min-width: 34rem) {
-    .sequence-preview {
-      padding: 0.875rem;
-    }
-
     .destination-group {
       padding: 0.875rem;
     }
@@ -1192,48 +1134,35 @@
   @container (min-width: 42rem) {
     .send-attachment-sheet {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-      grid-template-rows: auto minmax(0, 1fr) auto;
+      /* Card, note, send, then whatever is left. The recipients column spans
+         every row, so the slack lands under the send button instead of
+         between it and the card. */
+      grid-template-rows: auto auto auto minmax(0, 1fr);
       column-gap: 1rem;
     }
 
-    /* Left column: what you are sending, and the act of sending it. */
+    /* Left column: what you are sending, and the act of sending it. The
+       frame hugs the card rather than stretching to the row: a portrait card
+       in a 300px column is width-bound at ~400px tall, and a 1100px frame
+       around it read as a broken image. */
     .sequence-preview {
       grid-row: 1;
       grid-column: 1;
-      /* Stacked, so the image gets the column's full width instead of the
-         96px thumbnail slot it is squeezed into in the single-column form. */
-      grid-template-columns: minmax(0, 1fr);
-      align-content: start;
+      align-self: start;
     }
 
     .preview-thumbnail {
-      /* Not 1:1. A phone screenshot is 9:19.5 and a 1:1 box letterboxed it
-         into two thick bars; 4:3 keeps landscape and portrait both readable
-         without the preview eating the whole column. Capped because at a
-         1024px drawer an uncapped 4:3 box is 324px tall and turns the preview
-         into the subject of the screen instead of a confirmation of it. */
-      aspect-ratio: 4 / 3;
-      max-height: 16rem;
+      --preview-cap: 65dvh;
     }
 
     .message-section {
       grid-row: 2;
       grid-column: 1;
-      /* Rows, so the textarea can take the slack. Pinning the send button to
-         the bottom of a tall column otherwise leaves a void between it and the
-         note - the space exists either way, so spend it on the input. */
-      grid-template-rows: auto minmax(0, 1fr) auto;
-    }
-
-    .message-input {
-      max-height: none;
-      height: 100%;
     }
 
     .send-button {
       grid-row: 3;
       grid-column: 1;
-      align-self: end;
     }
 
     /* Right column: who it goes to, full height, always visible. */
@@ -1256,30 +1185,21 @@
     }
 
     .sequence-preview {
-      grid-template-columns: 2.5rem minmax(0, 1fr);
-      gap: 0.5rem;
       padding: 0.25rem 0.5rem;
     }
 
     /* A wide-AND-short window (e.g. 2560x400) satisfies the two-column
-       container query as well as this block. These undo the parts of it that
-       assume vertical room; the grid-area overrides below do the rest. */
+       container query as well as this block. A short card strip is all the
+       room there is; the grid-area overrides below do the rest. */
     .preview-thumbnail {
-      aspect-ratio: 1;
-      max-height: none;
-    }
-
-    .message-input {
+      --preview-cap: 4.5rem;
       height: auto;
     }
 
-    .preview-kicker,
-    .preview-meta,
     .section-kicker {
       display: none;
     }
 
-    .preview-word,
     .section-heading h3 {
       margin-top: 0;
     }
