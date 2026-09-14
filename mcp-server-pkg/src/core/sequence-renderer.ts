@@ -1,5 +1,10 @@
 /** Packaged-MCP adapter for the shared choreo card composition pipeline. */
 import {
+  createCanvas,
+  loadImage,
+  type Canvas,
+} from "@napi-rs/canvas/node-canvas.js";
+import {
   getStandaloneRenderer,
   type PictographInput,
   type RenderVisibilityOptions,
@@ -19,23 +24,16 @@ import {
   type LOOPComponentId,
   type LetterStyle,
   type SequenceCardHeader,
+  type CompressedSegment,
+  type LoopInversionPeriod,
+  type LoopReflectionAxis,
+  type LoopRotationPeriod,
+  compressWord,
+  simplifyRepeatedWord,
 } from "@tka/render-composition";
 import { loadTkaWordGlyphs } from "./tka-glyph-loader.js";
 import { calculateDifficultyLevel } from "./difficulty-calculator.js";
-
-let canvasModule: typeof import("canvas") | null = null;
-async function getCanvas() {
-  if (!canvasModule) {
-    try {
-      canvasModule = await import("canvas");
-    } catch {
-      throw new Error(
-        "The 'canvas' package is required for sequence rendering but is not installed. Install it with: npm install canvas"
-      );
-    }
-  }
-  return canvasModule;
-}
+import { ensureGelasioRegistered } from "./gelasio-fonts.js";
 
 export const LOOPComponent = {
   ROTATED: "rotated",
@@ -62,8 +60,27 @@ export interface SequenceRenderOptions {
   notes?: string;
   birthday?: Date;
   level?: number;
+  /** Generation input only; the badge is always derived from rendered motions. */
   turnAllocation?: TurnAllocation;
   loopComponents?: LOOPComponent[];
+  rotationPeriod?: LoopRotationPeriod;
+  inversionPeriod?: LoopInversionPeriod;
+  reflectionAxis?: LoopReflectionAxis;
+  overlayComponents?: LOOPComponent[];
+  compressedSegments?: CompressedSegment[];
+  displayWord?: string;
+  exportProfile?: "composer" | "print";
+  columnCount?: number;
+  frame?: {
+    canvasWidth?: number;
+    canvasHeight?: number;
+    bleedPx?: number;
+    accent: string;
+    dark: string;
+    palette?: readonly string[];
+  };
+  showLoopGlyph?: boolean;
+  period?: number;
   showReversals?: boolean;
   derivedBeatIndices?: number[];
   seedWord?: string;
@@ -71,6 +88,13 @@ export interface SequenceRenderOptions {
   showFooter?: boolean;
   showMandala?: boolean;
   primaryPropColors?: HandColorPair | null;
+  leftPropType?: string | null;
+  rightPropType?: string | null;
+  fanAppearance?: {
+    build?: "pictograph" | "fire" | "flat-grip" | "lotus" | "day" | "moon";
+    frameColor?: "black" | "white";
+    cover?: "bare" | "covered";
+  } | null;
 }
 const DEFAULT_OPTIONS = {
   ...COMPOSER_CARD_EXPORT_PROFILE_V1,
@@ -85,7 +109,12 @@ export async function renderSequenceToImage(
   word: string,
   options: Partial<SequenceRenderOptions> = {}
 ): Promise<Buffer> {
+  ensureGelasioRegistered();
   const opts = { ...DEFAULT_OPTIONS, ...options };
+  const showDifficulty =
+    options.showDifficulty ??
+    (options.exportProfile === "print" ||
+      COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty);
   const primaryPropColors = opts.primaryPropColors
     ? resolveHandColorPair(
         opts.primaryPropColors,
@@ -93,7 +122,6 @@ export async function renderSequenceToImage(
       )
     : null;
   const renderer = getStandaloneRenderer();
-  const canvasApi = await getCanvas();
   const isLoop = !!opts.loopComponents?.length;
   const visibilityOptions: RenderVisibilityOptions = {
     darkMode: opts.darkMode,
@@ -106,36 +134,49 @@ export async function renderSequenceToImage(
     showPositions: false,
     showReversals: opts.showReversals ?? false,
     showNonRadialPoints: false,
+    leftPropType: opts.leftPropType,
+    rightPropType: opts.rightPropType,
+    fanAppearance: opts.fanAppearance ?? {
+      build: "fire",
+      frameColor: "black",
+      cover: "bare",
+    },
     primaryPropColors,
   };
-  return composeSequenceCard<SequenceStep, import("canvas").Canvas>({
+  return composeSequenceCard<SequenceStep, Canvas>({
     steps,
     word,
     options: {
       ...opts,
-      showDifficulty: opts.showDifficulty ?? true,
+      showDifficulty,
       showFooter: opts.showFooter ?? false,
       showReversals: opts.showReversals ?? false,
       startPositionLayout: opts.startPositionLayout ?? "row",
+      showLoopGlyph:
+        opts.showLoopGlyph !== false && !!opts.loopComponents?.length,
     },
-    createCanvas: canvasApi.createCanvas,
+    createCanvas,
     getContext: (canvas) =>
       canvas.getContext("2d") as unknown as CanvasRenderingContext2D,
     toPng: (canvas) => canvas.toBuffer("image/png"),
     getStepNumber: (step) => step.stepNumber,
     applyReversals: (source) => detectReversals(source, isLoop),
     calculateDifficultyLevel: (renderedSteps) =>
-      opts.level ?? calculateDifficultyLevel(renderedSteps),
+      calculateDifficultyLevel(renderedSteps, opts.turnAllocation),
     renderPictograph: async (ctx, step, cell) => {
       const allocationIndex = step.stepNumber - 1;
       const leftTurns =
         step.stepNumber === 0
           ? 0
-          : (opts.turnAllocation?.left[allocationIndex] ?? 0);
+          : (step.leftMotion.turns ??
+            opts.turnAllocation?.left[allocationIndex] ??
+            0);
       const rightTurns =
         step.stepNumber === 0
           ? 0
-          : (opts.turnAllocation?.right[allocationIndex] ?? 0);
+          : (step.rightMotion.turns ??
+            opts.turnAllocation?.right[allocationIndex] ??
+            0);
       const pictograph: PictographInput = {
         letter: step.letter,
         startPosition: step.startPosition,
@@ -161,8 +202,8 @@ export async function renderSequenceToImage(
         rightReversal: step.rightReversal,
       };
       ctx.drawImage(
-        (await canvasApi.loadImage(
-          await renderer.renderToPng(pictograph, visibilityOptions)
+        (await loadImage(
+          await renderer.renderToPng(pictograph, { ...visibilityOptions, size: cell.cellSize })
         )) as unknown as CanvasImageSource,
         cell.x,
         cell.y,
@@ -192,14 +233,17 @@ export async function renderSequenceToImage(
         }
       : undefined,
     buildHeader: (renderedSteps, requestedWord): PackagedHeader => {
-      const headerWord = opts.seedWord ?? requestedWord;
-      const seedLetters = opts.seedWord
-        ? renderedSteps.filter(
-            (step) =>
-              step.stepNumber > 0 &&
-              !opts.derivedBeatIndices?.includes(step.stepNumber)
-          )
-        : renderedSteps.filter((step) => step.stepNumber > 0);
+      const headerWord = simplifyRepeatedWord(
+        opts.displayWord ?? opts.seedWord ?? requestedWord
+      );
+      const seedLetters =
+        (opts.displayWord ?? opts.seedWord)
+          ? renderedSteps.filter(
+              (step) =>
+                step.stepNumber > 0 &&
+                !opts.derivedBeatIndices?.includes(step.stepNumber)
+            )
+          : renderedSteps.filter((step) => step.stepNumber > 0);
       return {
         word: headerWord,
         letterStyles: opts.showWord
@@ -211,11 +255,18 @@ export async function renderSequenceToImage(
     },
     renderHeader: async (ctx, header, layout, difficultyLevel) => {
       const display = header as PackagedHeader;
+      const compressedSegments = opts.compressedSegments ?? compressWord(display.word);
+      const loopPeriod =
+        opts.period === 4
+          ? "quartered"
+          : opts.period === 2
+            ? "halved"
+            : undefined;
       const glyphImages = opts.showWord
         ? await loadTkaWordGlyphs(
             display.word,
             async (source) =>
-              (await canvasApi.loadImage(
+              (await loadImage(
                 source
               )) as unknown as CanvasImageSource,
             opts.darkMode
@@ -224,15 +275,38 @@ export async function renderSequenceToImage(
       renderHeader(ctx, {
         canvasWidth: layout.width,
         headerHeight: layout.headerHeight,
+        indicatorSizeScale: layout.indicatorSizeScale,
         word: opts.showWord ? display.word : "",
         difficultyLevel,
-        showDifficultyBadge: opts.showDifficulty ?? true,
+        showDifficultyBadge: showDifficulty,
         darkMode: opts.darkMode,
         letterStyles: display.letterStyles.length
           ? display.letterStyles
           : undefined,
-        loopComponents: opts.loopComponents
-          ? new Set(opts.loopComponents)
+        loopComponents:
+          opts.showLoopGlyph === false
+            ? undefined
+            : opts.loopComponents
+              ? new Set(opts.loopComponents)
+              : undefined,
+        rotationPeriod:
+          opts.rotationPeriod ??
+          (opts.loopComponents?.includes(LOOPComponent.ROTATED)
+            ? loopPeriod
+            : undefined),
+        inversionPeriod:
+          opts.inversionPeriod ??
+          (opts.loopComponents?.includes(LOOPComponent.INVERTED)
+            ? loopPeriod
+            : undefined),
+        reflectionAxis: opts.reflectionAxis,
+        overlayComponents: opts.overlayComponents
+          ? new Set(opts.overlayComponents)
+          : undefined,
+        compressedSegments: compressedSegments.some(
+          (segment) => segment.repeat > 1
+        )
+          ? compressedSegments
           : undefined,
         glyphImages,
         glyphImagesAreThemeColored: !!glyphImages?.size,

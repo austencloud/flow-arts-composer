@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150">
+<defs>
+  <radialGradient id="cb-edge-L" cx="75" cy="75" r="75" gradientUnits="userSpaceOnUse">
+    <stop offset="0.7" stop-color="#000" stop-opacity="0"/>
+    <stop offset="1" stop-color="#000" stop-opacity="0.35"/>
+  </radialGradient>
+  <radialGradient id="cb-spec-L" cx="52.5" cy="52.5" r="45" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#fff" stop-opacity="0.2"/>
+    <stop offset="0.4" stop-color="#fff" stop-opacity="0.046"/>
+    <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="cb-edge-R" cx="225" cy="75" r="75" gradientUnits="userSpaceOnUse">
+    <stop offset="0.7" stop-color="#000" stop-opacity="0"/>
+    <stop offset="1" stop-color="#000" stop-opacity="0.35"/>
+  </radialGradient>
+  <radialGradient id="cb-spec-R" cx="202.5" cy="52.5" r="45" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#fff" stop-opacity="0.2"/>
+    <stop offset="0.4" stop-color="#fff" stop-opacity="0.046"/>
+    <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<circle cx="75" cy="75" r="75" fill="#2E3192"/>
+<circle cx="75" cy="75" r="75" fill="url(#cb-edge-L)"/>
+<circle cx="75" cy="75" r="75" fill="url(#cb-spec-L)"/>
+<circle cx="225" cy="75" r="75" fill="#2E3192"/>
+<circle cx="225" cy="75" r="75" fill="url(#cb-edge-R)"/>
+<circle cx="225" cy="75" r="75" fill="url(#cb-spec-R)"/>
+</svg>

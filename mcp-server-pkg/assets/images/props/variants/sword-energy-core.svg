@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Energy saber concept A: Core.
+  Original generic energy prop. No franchise hilt silhouette or marking.
+
+  Color contract (see packages/render-core/src/svg-color.ts, selective mode):
+    Blade layers use flat neutral grays (saturation 0, luminance > 0.4) so the
+    fill passes recolor them to the motion color.
+    Pale core is #FFF6E8 (saturation 0.09 > 0.05) so it is preserved.
+    Hilt fills are all below 0.4 luminance so they are preserved.
+    Gradients carry only hilt sheen; stop-color is never rewritten.
+  Pivot: emitter mouth at x = 286.15 = viewBox center. Vertical padding is
+  symmetric about y = 48.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 572.3 96">
+  <defs>
+    <linearGradient id="coreGripSheen" x1="0" y1="30" x2="0" y2="66" gradientUnits="userSpaceOnUse">
+      <stop offset="0.05" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.30" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="0.52" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.45"/>
+    </linearGradient>
+    <filter id="coreHalo" x="-25%" y="-160%" width="150%" height="420%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <filter id="coreSoft" x="-20%" y="-120%" width="140%" height="340%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <!-- Blade: outer halo -->
+  <rect x="284" y="30" width="260" height="36" rx="18" fill="#D0D0D0" opacity="0.32" filter="url(#coreHalo)"/>
+  <!-- Blade: inner bloom -->
+  <rect x="286" y="37" width="254" height="22" rx="11" fill="#DCDCDC" opacity="0.9" filter="url(#coreSoft)"/>
+  <!-- Blade: hard body. Dark hairline keeps the edge readable on light backgrounds. -->
+  <rect x="288" y="40" width="250" height="16" rx="8" fill="#E4E4E4" stroke="#101319" stroke-width="1.4" stroke-opacity="0.55"/>
+  <!-- Pale core: preserved, stays the same on blue and red -->
+  <rect x="292" y="44.5" width="242" height="7" rx="3.5" fill="#FFF6E8"/>
+
+  <!-- Hilt: pommel end cap -->
+  <rect x="112" y="41" width="9" height="14" rx="3" fill="#3A3F49"/>
+  <rect x="118" y="38" width="26" height="20" rx="6" fill="#1A1D22"/>
+  <!-- Hilt: grip -->
+  <rect x="140" y="36" width="108" height="24" rx="10" fill="#24272E"/>
+  <rect x="140" y="36" width="108" height="24" rx="10" fill="url(#coreGripSheen)"/>
+  <!-- Hilt: two control bands -->
+  <rect x="168" y="34" width="11" height="28" rx="3" fill="#3A3F49"/>
+  <rect x="204" y="34" width="11" height="28" rx="3" fill="#3A3F49"/>
+  <!-- Hilt: emitter shroud -->
+  <rect x="248" y="30" width="38" height="36" rx="7" fill="#4A505B" stroke="#12151A" stroke-width="1.5"/>
+  <rect x="248" y="30" width="38" height="36" rx="7" fill="url(#coreGripSheen)"/>
+  <!-- Hilt: emitter throat ring at the pivot -->
+  <rect x="278" y="28" width="10" height="40" rx="3" fill="#5C6470" stroke="#12151A" stroke-width="1.2"/>
+</svg>

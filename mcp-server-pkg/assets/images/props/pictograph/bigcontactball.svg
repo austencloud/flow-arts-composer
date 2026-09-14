@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300">
+<defs>
+  <radialGradient id="cb-edge" cx="450" cy="150" r="150" gradientUnits="userSpaceOnUse">
+    <stop offset="0.7" stop-color="#000" stop-opacity="0"/>
+    <stop offset="1" stop-color="#000" stop-opacity="0.35"/>
+  </radialGradient>
+  <radialGradient id="cb-spec" cx="405" cy="105" r="60" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#fff" stop-opacity="0.35"/>
+    <stop offset="0.4" stop-color="#fff" stop-opacity="0.08"/>
+    <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<circle cx="150" cy="150" r="150" fill="none"/>
+<circle cx="450" cy="150" r="150" fill="#2E3192"/>
+<circle cx="450" cy="150" r="150" fill="url(#cb-edge)"/>
+<circle cx="450" cy="150" r="150" fill="url(#cb-spec)"/>
+</svg>

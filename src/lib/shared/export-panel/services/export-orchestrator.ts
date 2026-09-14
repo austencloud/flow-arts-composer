@@ -307,8 +307,8 @@ export class ExportOrchestrator {
     }
 
     const shareOperation = shareBlobNatively(prepared.blob, prepared.filename, {
-      title: sequence.name || sequence.word || "TKA Sequence",
-      text: `TKA sequence: ${sequence.name || sequence.word || "Untitled"}`,
+      title: sequence.name || sequence.word || "Flow Arts Composer sequence",
+      text: `Flow Arts Composer sequence: ${sequence.name || sequence.word || "Untitled"}`,
     });
     const result = await shareOperation;
 

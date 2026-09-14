@@ -351,7 +351,10 @@ export function renderCardMandala(
   ctx.translate(placement.x + padding + center, placement.y + padding + center);
   ctx.scale(scale, scale);
   ctx.lineCap = "round";
-  ctx.lineWidth = 3 / scale;
+  // Canvas applies the active transform to stroke widths. Keep this in the
+  // mandala's local units so a smaller physical-print cell gets the same
+  // proportionally lighter line that ImageComposer renders.
+  ctx.lineWidth = 3;
   ctx.globalAlpha = 0.9;
 
   for (const hand of visible) {

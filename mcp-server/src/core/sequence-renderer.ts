@@ -3,7 +3,7 @@ import {
   createCanvas,
   type Canvas,
   type CanvasRenderingContext2D,
-} from "canvas";
+} from "@napi-rs/canvas/node-canvas.js";
 import {
   getStandaloneRenderer,
   type PictographInput,
@@ -29,9 +29,16 @@ import {
   renderCardMandala,
   resolveHandColorPair,
   type HandColorPair,
+  type CompressedSegment,
+  type LoopInversionPeriod,
+  type LoopReflectionAxis,
+  type LoopRotationPeriod,
   type SequenceCardHeader,
+  compressWord,
+  simplifyRepeatedWord,
 } from "@tka/render-composition";
 import { calculateDifficultyLevel } from "./difficulty-calculator.js";
+import { ensureGelasioRegistered } from "./gelasio-fonts.js";
 
 export { LOOPComponent };
 
@@ -55,14 +62,37 @@ export interface SequenceRenderOptions {
   notes?: string;
   birthday?: Date;
   level?: number;
+  /** Generation input only; the badge is always derived from rendered motions. */
   turnAllocation?: TurnAllocation;
   loopComponents?: LOOPComponent[];
+  rotationPeriod?: LoopRotationPeriod;
+  inversionPeriod?: LoopInversionPeriod;
+  reflectionAxis?: LoopReflectionAxis;
+  overlayComponents?: LOOPComponent[];
+  compressedSegments?: CompressedSegment[];
+  displayWord?: string;
+  exportProfile?: "composer" | "print";
+  columnCount?: number;
+  frame?: {
+    canvasWidth?: number;
+    canvasHeight?: number;
+    bleedPx?: number;
+    accent: string;
+    dark: string;
+    palette?: readonly string[];
+  };
+  showLoopGlyph?: boolean;
   period?: number;
   showReversals?: boolean;
   derivedStepIndices?: number[];
   seedWord?: string;
   leftPropType?: string | null;
   rightPropType?: string | null;
+  fanAppearance?: {
+    build?: "pictograph" | "fire" | "flat-grip" | "lotus" | "day" | "moon";
+    frameColor?: "black" | "white";
+    cover?: "bare" | "covered";
+  } | null;
   /** App export uses a dedicated start row; legacy column cards can opt in. */
   startPositionLayout?: "row" | "column";
   /** App export omits the footer; callers may retain it explicitly. */
@@ -126,7 +156,12 @@ export async function renderSequenceToImage(
   word: string,
   options: Partial<SequenceRenderOptions> = {}
 ): Promise<Buffer> {
+  ensureGelasioRegistered();
   const opts = { ...DEFAULT_OPTIONS, ...options };
+  const showDifficulty =
+    options.showDifficulty ??
+    (options.exportProfile === "print" ||
+      COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty);
   const primaryPropColors = opts.primaryPropColors
     ? resolveHandColorPair(
         opts.primaryPropColors,
@@ -147,6 +182,11 @@ export async function renderSequenceToImage(
     showNonRadialPoints: false,
     leftPropType: opts.leftPropType,
     rightPropType: opts.rightPropType,
+    fanAppearance: opts.fanAppearance ?? {
+      build: "fire",
+      frameColor: "black",
+      cover: "bare",
+    },
     primaryPropColors,
   };
   return composeSequenceCard<SequenceStep, Canvas>({
@@ -154,10 +194,12 @@ export async function renderSequenceToImage(
     word,
     options: {
       ...opts,
-      showDifficulty: opts.showDifficulty ?? true,
+      showDifficulty,
       showFooter: opts.showFooter ?? false,
       showReversals: opts.showReversals ?? false,
       startPositionLayout: opts.startPositionLayout ?? "row",
+      showLoopGlyph:
+        opts.showLoopGlyph !== false && !!opts.loopComponents?.length,
     },
     createCanvas,
     getContext: (canvas) =>
@@ -166,7 +208,7 @@ export async function renderSequenceToImage(
     getStepNumber: (step) => step.stepNumber,
     applyReversals: detectReversals,
     calculateDifficultyLevel: (renderedSteps) =>
-      opts.level ?? calculateDifficultyLevel(renderedSteps),
+      calculateDifficultyLevel(renderedSteps, opts.turnAllocation),
     renderPictograph: async (ctx, step, cell) => {
       const turns = resolveRenderedTurns(step, opts.turnAllocation);
       const pictograph: PictographInput = {
@@ -193,8 +235,11 @@ export async function renderSequenceToImage(
         leftReversal: step.leftReversal,
         rightReversal: step.rightReversal,
       };
-      const png = await renderer.renderToPng(pictograph, visibilityOptions);
-      const { loadImage } = await import("canvas");
+      const png = await renderer.renderToPng(pictograph, {
+        ...visibilityOptions,
+        size: cell.cellSize,
+      });
+      const { loadImage } = await import("@napi-rs/canvas/node-canvas.js");
       ctx.drawImage(
         (await loadImage(png)) as unknown as CanvasImageSource,
         cell.x,
@@ -228,22 +273,45 @@ export async function renderSequenceToImage(
       ...resolveHeaderDisplay(
         renderedSteps,
         requestedWord,
-        opts.seedWord,
+        opts.displayWord ?? opts.seedWord,
         opts.derivedStepIndices
       ),
     }),
     renderHeader: async (ctx, header, layout, difficultyLevel) => {
       const display = header as SequenceCardHeader & HeaderDisplay;
+      const displayWord = simplifyRepeatedWord(display.word);
+      const compressedSegments =
+        opts.compressedSegments ?? compressWord(displayWord);
+      const loopPeriod =
+        opts.period === 4
+          ? "quartered"
+          : opts.period === 2
+            ? "halved"
+            : undefined;
       await renderWordHeader(
         ctx as unknown as CanvasRenderingContext2D,
-        opts.showWord ? display.word : "",
+        opts.showWord ? displayWord : "",
         layout.width,
         layout.headerHeight,
         difficultyLevel,
-        opts.showDifficulty ?? true,
+        showDifficulty,
         opts.darkMode,
         display.letterStyles.length ? display.letterStyles : undefined,
-        opts.loopComponents
+        opts.showLoopGlyph === false ? undefined : opts.loopComponents,
+        opts.rotationPeriod ??
+          (opts.loopComponents?.includes(LOOPComponent.ROTATED)
+            ? loopPeriod
+            : undefined),
+        opts.inversionPeriod ??
+          (opts.loopComponents?.includes(LOOPComponent.INVERTED)
+            ? loopPeriod
+            : undefined),
+        opts.reflectionAxis,
+        opts.overlayComponents,
+        compressedSegments.some((segment) => segment.repeat > 1)
+          ? compressedSegments
+          : undefined,
+        layout.indicatorSizeScale
       );
     },
     renderFooter: opts.showFooter

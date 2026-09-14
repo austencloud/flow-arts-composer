@@ -22,6 +22,7 @@ interface MotionData {
   rotationDirection: string;
   startOrientation: string; // "in" | "out" | "clock" | "counter"
   endOrientation: string; // "in" | "out" | "clock" | "counter"
+  turns?: number | "fl";
 }
 
 interface PictographData {
