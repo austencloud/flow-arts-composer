@@ -191,7 +191,7 @@
   .reading {
     display: grid;
     gap: clamp(32px, 4vw, 64px);
-    margin-top: clamp(40px, 5vw, 72px);
+    margin-top: var(--spacing-lg, 24px);
   }
   .reading section {
     min-width: 0;
