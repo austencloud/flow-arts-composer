@@ -53,7 +53,7 @@
   phaseOffsetSteps={phase}
   playbackSpeed={0.32}
   {active}
-  weldGrip={false}
+  weldGrip={true}
   showEffects={false}
   enableLocomotion={true}
   enableFootPlanting={false}
