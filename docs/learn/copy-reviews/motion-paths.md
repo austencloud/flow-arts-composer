@@ -40,7 +40,7 @@ Pro motions use Arc. Anti motions use Concave.
 
 Dashes stay straight. Static hands stay at their grid point, even when the prop rotates. Float uses the underlying fixed path when Hybrid is on.
 
-Try Pro + anti with Hybrid. Each hand follows a different kind of path. Switch the trace between Hands and Prop tips to see what the prop’s rotation adds.
+Pick a matrix cell, then compare Arc with Hybrid. When one hand is pro and the other anti, they follow different kinds of paths. Switch the trace between Hands and Prop tips to see what the prop’s rotation adds.
 
 ### Where the setting applies
 
@@ -90,13 +90,29 @@ Open Composer
 
 ## Explorer copy and interaction
 
-- Examples: Pro, Anti, Pro + anti; Your sequence appears after a selection.
-- Choose a sequence opens the existing community/library picker.
+- Sequence selection uses the Shape Engine matrix and hand timing/direction choices. The community/library picker remains available as a secondary choice.
 - Arc, Linear, Concave, Hybrid use the shared PathShapePanel and canonical SequenceMandala renderer.
 - Hands traces the hand centers. Prop tips includes the staff rotation.
 - Changes here stay in this explorer. Your saved paths and defaults stay as they were.
 - Play/Pause and Path lines operate only in this explorer. Reduced-motion preference starts playback paused.
 - Loading animation… / Loading sequence picker… / The sequence picker could not load. / Close.
+
+## September 13 sequence-selection revision
+
+Austen reviewed the page and requested replacing the Pro / Anti / Pro + anti example toggles with selection through the Shape Engine matrix, with hand timing and direction available. This is a new selection preference and one observed substantial correction round. The revised experience is pending user review.
+
+The lead applied the Teacher briefing; Terra owns the bounded implementation. Existing delegated editorial authorization covers the wording revision, which removes instructions naming the old toggle. The AI-bust review still applies.
+
+| Capability                     | Evidence / current consumer                                 | Owner and decision                                                                                                 |
+| ------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Inspectable pair selection     | `matrix`, `selectedPair`, `onselect`; ShapeMatrixMatrixPane | Reuse ShapeMatrixGrid, including its full selection perimeter, native buttons, lazy artwork, and minimum tile size |
+| Hand timing and direction      | ShapeMatrixDrill                                            | Reuse ElementChipRow and the canonical mode definitions                                                            |
+| Shape-to-sequence construction | ShapeMatrixDrill                                            | Compose the existing realization builder and static TnD sequence source; no local motion construction              |
+| Path comparison and playback   | Existing motion-path guide                                  | Keep PathShapePanel, SequenceMandala, scoped visibility, and InlineAnimationPlayer                                 |
+| Word and notation              | Existing motion-path guide                                  | Keep TKAWordGlyph and GuideStepStrip                                                                               |
+| Secondary sequence selection   | Existing motion-path guide                                  | Keep SequencePickerModal                                                                                           |
+
+Matrix choices remain visible before selection. The matrix shows Arc reference shapes; changing the comparison path does not change the selection grid. Phones stack the matrix and comparison, while wider hosts allocate a bounded matrix alongside the comparison where space permits. Shared selection treatments replace the rejected three-example toggle row. No decorative edge accents or duplicate artifact frames are introduced.
 
 ## Evidence and teaching boundaries
 
@@ -109,7 +125,7 @@ Open Composer
 - AAAA, BBBB, and CCCC examples are the unedited data returned by Flow Arts MCP on September 8 with smooth constraints, adapted through the canonical factories. Closure is tested.
 - This is a public reference and comparison tool, not a new mastery lesson or a change to the concept progression. Inline lead applied the Teacher briefing. User review of the completed experience is pending; no learning outcome or satisfaction claim is inferred.
 
-## Verification
+## September 8 verification
 
 - Fifteen focused tests passed across the explorer, sequence path preview, and mandala path policy suites. They cover source preservation, scoped state, Hybrid float behavior, render identity changes, and closure of the example sequences.
 - Svelte check reported zero errors and warnings. A separate full TypeScript run reported two existing option-type errors in the unchanged `an-slice.test.ts` and ten external scene/camera diagnostics; none referenced this task's changed files.
@@ -118,3 +134,12 @@ Open Composer
 - Checked equivalent 200% reflow at 720×450 CSS pixels. This was viewport emulation, not a native browser zoom measurement.
 - Third Order is sign-in gated; the page states that requirement. No authenticated save or account mutation was performed.
 - Screenshots are stored outside the repository in `C:/Users/Austen/.codex/visualizations/2026/09/08/motion-path-guide`.
+
+## September 13 verification
+
+- Ten focused tests passed across the explorer and canonical mixed-turn realization suites. They cover asynchronous selection ordering, retained path policy, source preservation, scoped state, and generated sequence behavior.
+- Svelte check reported zero errors and warnings. Updated interface wording passed the AI-bust review.
+- Direct browser inspection covered 375×667, 960×412, 820×1180, 1440×900, 1920×1080, 2560×1440, and 3840×2160. The matrix showed all 16 cells without horizontal document overflow. A tablet spacing issue was corrected and inspected again at tablet and landscape widths.
+- Verified 0-, 1-, and 2-turn selections, timing/direction changes, keyboard activation, retained Hybrid selection, switching back to Arc, and paused startup with reduced motion. A real AABB gallery selection loaded its word and notation into the explorer.
+- Checked equivalent 200% reflow at 720×450 CSS pixels through viewport emulation; native browser zoom was not measured.
+- Screenshots are stored outside the repository in `C:/Users/Austen/.codex/visualizations/2026/09/13/motion-path-matrix`. User review of the revised selection experience remains pending.
