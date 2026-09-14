@@ -115,6 +115,45 @@ function hasTrailTips(map: TipEffectMap | undefined): boolean {
   return Object.values(map).some((a) => a.effect === "trails");
 }
 
+/** A backwards step jump becomes a fire-cache loop boundary only when it
+ * crosses the known sequence end into its start window. This excludes seeks
+ * such as beat 3 → beat 1. */
+export function isConfirmedFireCacheLoop(
+  previousStep: number,
+  currentStep: number,
+  sequenceSteps: number | undefined,
+  loopDetected: boolean,
+  isPlaying: boolean
+): boolean {
+  return (
+    isPlaying &&
+    loopDetected &&
+    sequenceSteps !== undefined &&
+    sequenceSteps > 0 &&
+    previousStep >= sequenceSteps - 0.5 &&
+    currentStep <= 0.5
+  );
+}
+
+/** Cache frames are only phase-safe while playback changes continuously. */
+export function hasFireCachePlaybackDiscontinuity(
+  previousStep: number,
+  currentStep: number,
+  isPlaying: boolean,
+  dtSeconds: number,
+  stepChangedWhilePaused: boolean,
+  tipGapDetected: boolean,
+  confirmedLoop: boolean
+): boolean {
+  return (
+    tipGapDetected ||
+    (!confirmedLoop &&
+      (stepChangedWhilePaused ||
+        Math.abs(currentStep - previousStep) > 0.5 ||
+        (isPlaying && dtSeconds > 0.2)))
+  );
+}
+
 const MANDALA_GUIDE_CONFIG: MandalaOverlayConfig = {
   ...DEFAULT_MANDALA_OVERLAY_CONFIG,
   enabled: true,
@@ -1293,7 +1332,11 @@ export class AnimationRenderLoop {
       letter,
       props,
       visibility,
+      isPlaying,
     } = params;
+
+    const previousStep = this.previousStep;
+    const stepChangedWhilePaused = !isPlaying && currentStep !== previousStep;
 
     // Tail length is authored as "visible ring points at ~60fps render rate."
     // The path-cache pipeline uses fadeDurationMs for both read window and
@@ -1343,6 +1386,19 @@ export class AnimationRenderLoop {
     if (this.loopDetectedThisFrame) {
       this.loopStartTime = currentTime;
     }
+    // currentStep is the duration-aware, fractional beat coordinate used to
+    // paint props. It is therefore the only cache phase that remains correct
+    // through pause/resume and playback-speed changes. A generic backwards
+    // jump is not enough to prove a loop: only the known path-cache end→start
+    // transition may complete or start a fire recording.
+    const sequenceSteps = this.pathCache?.getCacheInfo()?.totalSteps;
+    const fireLoopDetected = isConfirmedFireCacheLoop(
+      previousStep,
+      currentStep,
+      sequenceSteps,
+      this.loopDetectedThisFrame,
+      isPlaying
+    );
 
     // Apply visibility settings
     const effectiveGridVisible = gridVisible && visibility.gridVisible;
@@ -1685,10 +1741,20 @@ export class AnimationRenderLoop {
           darkMode: params.darkMode ?? false,
           propSprites: renderedPropSprites,
           propColors: params.propColors,
-          loopDetected: this.loopDetectedThisFrame || tipResult.gapDetected,
+          loopDetected: fireLoopDetected,
+          loopDuration: fireLoopDetected ? sequenceSteps : undefined,
+          playbackDiscontinuity: hasFireCachePlaybackDiscontinuity(
+            previousStep,
+            currentStep,
+            isPlaying,
+            dtSeconds,
+            stepChangedWhilePaused,
+            tipResult.gapDetected,
+            fireLoopDetected
+          ),
           playbackSpeed: params.playbackSpeed,
           sequenceContentHash: params.sequenceContentHash,
-          relativeTime: currentTime - this.loopStartTime,
+          relativeTime: currentStep,
           isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
         };
 
