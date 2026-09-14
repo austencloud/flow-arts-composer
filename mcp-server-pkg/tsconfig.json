@@ -13,11 +13,15 @@
     "noEmit": false,
     "rootDir": "..",
     "paths": {
-      "@tka/render-composition": ["../packages/render-composition/src/index.ts"],
+      "@tka/render-composition": [
+        "../packages/render-composition/src/index.ts"
+      ],
       "@tka/domain": ["../packages/domain/src/index.ts"],
       "@tka/render-core": ["../packages/render-core/src/index.ts"],
       "@tka/sequence-engine": ["../packages/sequence-engine/src/index.ts"],
-      "@tka/sequence-engine/loop": ["../packages/sequence-engine/src/loop/index.ts"],
+      "@tka/sequence-engine/loop": [
+        "../packages/sequence-engine/src/loop/index.ts"
+      ],
       "@tka/tka-types": ["../packages/tka-types/src/index.ts"]
     }
   },

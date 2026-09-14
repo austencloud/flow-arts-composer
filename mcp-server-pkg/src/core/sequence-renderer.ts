@@ -2,11 +2,11 @@
  * Sequence Renderer for MCP Server
  *
  * Composites multiple pictographs into a single "choreo card" image.
- * Matches the app's ImageComposer output with:
- * - Header with word text and difficulty badge (Georgia Bold)
- * - Footer with username, notes, and birthday
- * - Step numbers overlaid on pictographs (top-left corner)
- * - Smart cell borders between occupied cells
+ * Uses the app's shared composition primitives for:
+ * - Canonical TKA glyph headers and difficulty badges
+ * - Footer styling
+ * - Step labels overlaid on pictographs
+ * - Smart cell borders and layout geometry
  */
 
 import {
@@ -55,7 +55,6 @@ export const LOOPComponent = {
 } as const;
 export type LOOPComponent = LOOPComponentId;
 import { calculateDifficultyLevel } from "./difficulty-calculator.js";
-
 
 /**
  * Turn allocation per step (left and right get independent values)
@@ -146,7 +145,7 @@ export async function renderSequenceToImage(
 
   // Check if we need header and footer
   const hasHeader = !!(opts.showWord || opts.showDifficulty);
-  // Footer always shows (with defaults) - "Created with Flow Arts Composer" center text is always present
+  // Retain the packaged tool's footer space while using the current shared style.
   const hasFooter = true;
 
   // Calculate layout dimensions
@@ -312,7 +311,8 @@ export async function renderSequenceToImage(
     const glyphImages = opts.showWord
       ? await loadTkaWordGlyphs(
           headerWord,
-          async (source) => (await loadImage(source)) as unknown as CanvasImageSource,
+          async (source) =>
+            (await loadImage(source)) as unknown as CanvasImageSource,
           opts.darkMode
         )
       : undefined;
@@ -324,7 +324,9 @@ export async function renderSequenceToImage(
       showDifficultyBadge: opts.showDifficulty ?? true,
       darkMode: opts.darkMode,
       letterStyles: letterStyles.length > 0 ? letterStyles : undefined,
-      loopComponents: opts.loopComponents ? new Set(opts.loopComponents) : undefined,
+      loopComponents: opts.loopComponents
+        ? new Set(opts.loopComponents)
+        : undefined,
       glyphImages,
       glyphImagesAreThemeColored: !!glyphImages?.size,
     });

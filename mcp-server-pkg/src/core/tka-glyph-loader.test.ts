@@ -10,10 +10,16 @@ const PACKAGE_GLYPHS = join(process.cwd(), "assets/images/letters_trimmed");
 const APP_GLYPHS = join(process.cwd(), "../static/images/letters_trimmed");
 
 function glyphFiles(root: string, current = root): string[] {
-  return readdirSync(current, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(current, entry.name);
-    return entry.isDirectory() ? glyphFiles(root, path) : [relative(root, path)];
-  }).filter((path) => path.endsWith(".svg") && !path.endsWith(".FAKE_DELETE_ME"));
+  return readdirSync(current, { withFileTypes: true })
+    .flatMap((entry) => {
+      const path = join(current, entry.name);
+      return entry.isDirectory()
+        ? glyphFiles(root, path)
+        : [relative(root, path)];
+    })
+    .filter(
+      (path) => path.endsWith(".svg") && !path.endsWith(".FAKE_DELETE_ME")
+    );
 }
 
 function sha256(path: string): string {
@@ -39,25 +45,32 @@ describe("packaged TKA word glyphs", () => {
 
     expect(packageFiles).toEqual(appFiles);
     for (const file of appFiles) {
-      expect(sha256(join(PACKAGE_GLYPHS, file))).toBe(sha256(join(APP_GLYPHS, file)));
+      expect(sha256(join(PACKAGE_GLYPHS, file))).toBe(
+        sha256(join(APP_GLYPHS, file))
+      );
     }
   });
 
   it("loads canonical glyph images, including dashed and static letters", async () => {
     const loaded: Buffer[] = [];
-    const glyphs = await loadTkaWordGlyphs("ALIDτ-", async (source) => {
-      loaded.push(source);
-      return {} as CanvasImageSource;
-    }, true);
+    const glyphs = await loadTkaWordGlyphs(
+      "ALIDτ-",
+      async (source) => {
+        loaded.push(source);
+        return {} as CanvasImageSource;
+      },
+      true
+    );
 
-    expect([...glyphs?.keys() ?? []]).toEqual(["A", "L", "I", "D", "τ-"]);
+    expect([...(glyphs?.keys() ?? [])]).toEqual(["A", "L", "I", "D", "τ-"]);
     expect(glyphs?.get("τ-")?.isDash).toBe(true);
     expect(loaded).toHaveLength(5);
     expect(getTkaGlyphPath("τ-")).toMatch(/Type6[\\/]τ\.svg$/);
   });
 
   it("preserves arbitrary labels as text rather than silently dropping glyphs", async () => {
-    await expect(loadTkaWordGlyphs("A?", async () => ({} as CanvasImageSource), true))
-      .resolves.toBeUndefined();
+    await expect(
+      loadTkaWordGlyphs("A?", async () => ({}) as CanvasImageSource, true)
+    ).resolves.toBeUndefined();
   });
 });
