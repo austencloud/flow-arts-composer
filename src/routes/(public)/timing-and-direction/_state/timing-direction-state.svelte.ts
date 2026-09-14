@@ -73,6 +73,10 @@ export function createTimingDirectionState(initialSlug?: string) {
         step = 0;
         pendingSeekStep = 0;
         seekVersion += 1;
+        // Reset the engine before publishing play intent. Otherwise its retained
+        // end frame can report once more after `playing` flips true and stop an
+        // open loop before the deferred layout seek has reached the player.
+        untrack(() => seek?.(0));
       }
       playing = !playing;
     },
