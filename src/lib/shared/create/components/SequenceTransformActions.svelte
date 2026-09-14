@@ -22,6 +22,9 @@
     isDesktopPanel?: boolean;
     /** True to use compact horizontal layout (icon left, text right) for very small screens */
     compactMode?: boolean;
+    /** Content-sized transform row, with rotation presented as two joined halves. */
+    toolbar?: boolean;
+    actionSubject?: string;
     /** True when help mode is active - buttons show help instead of applying transforms/patterns */
     helpMode?: boolean;
     /** Degrees applied by each spatial rotation action. */
@@ -32,7 +35,7 @@
     /** Other sequence surfaces provide only the callbacks that are valid in
         their context; absent callbacks remove those tiles. */
     secondarySectionLabel?: string;
-    /** Compact surfaces can place First Step beside the geometric transforms
+    /** Compact surfaces can place Choose Start beside the geometric transforms
         instead of creating a sparse secondary row. */
     shiftStartPlacement?: "secondary" | "transform";
     onReset?: () => void;
@@ -43,10 +46,10 @@
     onHelpSelect?: (actionId: SequenceActionId) => void;
     onTurns?: () => void;
     onMirror: () => void;
-    onFlip: () => void;
-    onInvert: () => void;
-    onRotateCW: () => void;
-    onRotateCCW: () => void;
+    onFlip?: () => void;
+    onInvert?: () => void;
+    onRotateCW?: () => void;
+    onRotateCCW?: () => void;
     onSwap?: () => void;
     onRewind?: () => void;
     onTurnPattern?: () => void;
@@ -68,6 +71,8 @@
     showEditInConstructor,
     isDesktopPanel = false,
     compactMode = false,
+    toolbar = false,
+    actionSubject = "sequence",
     helpMode = false,
     rotationDegrees = 45,
     showRotationDegreesInLabel = false,
@@ -145,18 +150,18 @@
       onShiftStart && handleActionClick("shift-start", onShiftStart)}
     disabled={(!hasSequence || isTransforming || !canShiftStart) && !helpMode}
     aria-label={helpMode
-      ? "Learn about First Step"
+      ? "Learn about Choose Start"
       : patternsLocked
-        ? "First Step - locked, sign up to unlock"
-        : "Pick a new first step: change where the sequence starts"}
+        ? "Choose Start - locked, sign up to unlock"
+        : "Choose Start: tap the pose the sequence should start from"}
   >
     {@render lockBadge()}
     <div class="btn-icon">
       <i class="fas fa-forward" aria-hidden="true"></i>
     </div>
     <div class="btn-text">
-      <span class="btn-label">First Step</span>
-      <span class="btn-desc">Pick new step 1</span>
+      <span class="btn-label">Choose Start</span>
+      <span class="btn-desc">Pick the start pose</span>
     </div>
   </button>
 {/snippet}
@@ -166,7 +171,8 @@
   class:disabled
   class:desktop={isDesktopPanel}
   class:three-column={isDesktopPanel && desktopColumns === 3}
-  class:mobile={!isDesktopPanel}
+  class:mobile={!isDesktopPanel && !toolbar}
+  class:toolbar
   class:compact={compactMode}
   class:help-mode={helpMode}
 >
@@ -184,7 +190,7 @@
         disabled={disabled && !helpMode}
         aria-label={helpMode
           ? "Learn about Mirror"
-          : "Mirror sequence: flip left and right"}
+          : `Mirror ${actionSubject}: flip left and right`}
       >
         <div class="btn-icon">
           <i class="fas fa-left-right" aria-hidden="true"></i>
@@ -194,26 +200,28 @@
           <span class="btn-desc">Flip left & right</span>
         </div>
       </button>
-      <button
-        class="grid-btn flip"
-        class:help-active={helpMode}
-        onclick={() => handleActionClick("flip", onFlip)}
-        data-ghost={disabled || helpMode ? undefined : "safe"}
-        data-ghost-kind="transform"
-        data-ghost-label="Flip"
-        disabled={disabled && !helpMode}
-        aria-label={helpMode
-          ? "Learn about Flip"
-          : "Flip sequence: flip up and down"}
-      >
-        <div class="btn-icon">
-          <i class="fas fa-up-down" aria-hidden="true"></i>
-        </div>
-        <div class="btn-text">
-          <span class="btn-label">Flip</span>
-          <span class="btn-desc">Flip up & down</span>
-        </div>
-      </button>
+      {#if onFlip}
+        <button
+          class="grid-btn flip"
+          class:help-active={helpMode}
+          onclick={() => handleActionClick("flip", onFlip)}
+          data-ghost={disabled || helpMode ? undefined : "safe"}
+          data-ghost-kind="transform"
+          data-ghost-label="Flip"
+          disabled={disabled && !helpMode}
+          aria-label={helpMode
+            ? "Learn about Flip"
+            : `Flip ${actionSubject}: flip up and down`}
+        >
+          <div class="btn-icon">
+            <i class="fas fa-up-down" aria-hidden="true"></i>
+          </div>
+          <div class="btn-text">
+            <span class="btn-label">Flip</span>
+            <span class="btn-desc">Flip up & down</span>
+          </div>
+        </button>
+      {/if}
       {#if onSwap}
         <button
           class="grid-btn swap"
@@ -228,10 +236,10 @@
             ? "Learn about Swap Hands"
             : swapDisabled
               ? "Swap requires both hands selected"
-              : "Swap hands in sequence"}
+              : `Swap hands in ${actionSubject}`}
         >
           <div class="btn-icon swap-icon-host">
-            <SwapIcon size="1em" />
+            <SwapIcon size="1em" monochrome={toolbar} />
           </div>
           <div class="btn-text">
             <span class="btn-label">Swap</span>
@@ -241,70 +249,82 @@
           </div>
         </button>
       {/if}
-      <button
-        class="grid-btn invert"
-        class:help-active={helpMode}
-        onclick={() => handleActionClick("invert", onInvert)}
-        data-ghost={disabled || helpMode ? undefined : "safe"}
-        data-ghost-kind="transform"
-        data-ghost-label="Invert"
-        disabled={disabled && !helpMode}
-        aria-label={helpMode
-          ? "Learn about Invert"
-          : "Invert sequence: reverse turn directions"}
-      >
-        <div class="btn-icon">
-          <i class="fas fa-repeat" aria-hidden="true"></i>
+      {#if onInvert}
+        <button
+          class="grid-btn invert"
+          class:help-active={helpMode}
+          onclick={() => handleActionClick("invert", onInvert)}
+          data-ghost={disabled || helpMode ? undefined : "safe"}
+          data-ghost-kind="transform"
+          data-ghost-label="Invert"
+          disabled={disabled && !helpMode}
+          aria-label={helpMode
+            ? "Learn about Invert"
+            : "Invert sequence: reverse turn directions"}
+        >
+          <div class="btn-icon">
+            <i class="fas fa-repeat" aria-hidden="true"></i>
+          </div>
+          <div class="btn-text">
+            <span class="btn-label">Invert</span>
+            <span class="btn-desc">Reverse turns</span>
+          </div>
+        </button>
+      {/if}
+      {#if onRotateCW && onRotateCCW}
+        <div class="rotation-pair">
+          <button
+            class="grid-btn rotate-ccw"
+            title={toolbar ? `Rotate left ${rotationDegrees}°` : undefined}
+            class:help-active={helpMode}
+            onclick={() => handleActionClick("rotate", onRotateCCW)}
+            data-ghost={disabled || helpMode ? undefined : "safe"}
+            data-ghost-kind="transform"
+            data-ghost-label="Rotate L"
+            disabled={disabled && !helpMode}
+            aria-label={helpMode
+              ? "Learn about Rotate"
+              : `Rotate ${actionSubject} left ${rotationDegrees} degrees`}
+          >
+            <div class="btn-icon">
+              <i class="fas fa-rotate-left" aria-hidden="true"></i>
+            </div>
+            <div class="btn-text">
+              <span class="btn-label">
+                {showRotationDegreesInLabel
+                  ? `${rotationDegrees}° L`
+                  : "Rotate L"}
+              </span>
+              <span class="btn-desc">Pivot {rotationDegrees}°</span>
+            </div>
+          </button>
+          <button
+            class="grid-btn rotate-cw"
+            title={toolbar ? `Rotate right ${rotationDegrees}°` : undefined}
+            class:help-active={helpMode}
+            onclick={() => handleActionClick("rotate", onRotateCW)}
+            data-ghost={disabled || helpMode ? undefined : "safe"}
+            data-ghost-kind="transform"
+            data-ghost-label="Rotate R"
+            disabled={disabled && !helpMode}
+            aria-label={helpMode
+              ? "Learn about Rotate"
+              : `Rotate ${actionSubject} right ${rotationDegrees} degrees`}
+          >
+            <div class="btn-icon">
+              <i class="fas fa-rotate-right" aria-hidden="true"></i>
+            </div>
+            <div class="btn-text">
+              <span class="btn-label">
+                {showRotationDegreesInLabel
+                  ? `${rotationDegrees}° R`
+                  : "Rotate R"}
+              </span>
+              <span class="btn-desc">Pivot {rotationDegrees}°</span>
+            </div>
+          </button>
         </div>
-        <div class="btn-text">
-          <span class="btn-label">Invert</span>
-          <span class="btn-desc">Reverse turns</span>
-        </div>
-      </button>
-      <button
-        class="grid-btn rotate-ccw"
-        class:help-active={helpMode}
-        onclick={() => handleActionClick("rotate", onRotateCCW)}
-        data-ghost={disabled || helpMode ? undefined : "safe"}
-        data-ghost-kind="transform"
-        data-ghost-label="Rotate L"
-        disabled={disabled && !helpMode}
-        aria-label={helpMode
-          ? "Learn about Rotate"
-          : `Rotate sequence left ${rotationDegrees} degrees`}
-      >
-        <div class="btn-icon">
-          <i class="fas fa-rotate-left" aria-hidden="true"></i>
-        </div>
-        <div class="btn-text">
-          <span class="btn-label">
-            {showRotationDegreesInLabel ? `${rotationDegrees}° L` : "Rotate L"}
-          </span>
-          <span class="btn-desc">Pivot {rotationDegrees}°</span>
-        </div>
-      </button>
-      <button
-        class="grid-btn rotate-cw"
-        class:help-active={helpMode}
-        onclick={() => handleActionClick("rotate", onRotateCW)}
-        data-ghost={disabled || helpMode ? undefined : "safe"}
-        data-ghost-kind="transform"
-        data-ghost-label="Rotate R"
-        disabled={disabled && !helpMode}
-        aria-label={helpMode
-          ? "Learn about Rotate"
-          : `Rotate sequence right ${rotationDegrees} degrees`}
-      >
-        <div class="btn-icon">
-          <i class="fas fa-rotate-right" aria-hidden="true"></i>
-        </div>
-        <div class="btn-text">
-          <span class="btn-label">
-            {showRotationDegreesInLabel ? `${rotationDegrees}° R` : "Rotate R"}
-          </span>
-          <span class="btn-desc">Pivot {rotationDegrees}°</span>
-        </div>
-      </button>
+      {/if}
       {#if onShiftStart && shiftStartPlacement === "transform"}
         {@render shiftStartButton()}
       {/if}
@@ -520,6 +540,107 @@
 </div>
 
 <style>
+  .rotation-pair {
+    display: contents;
+  }
+
+  .actions-container.toolbar {
+    height: auto;
+    overflow: visible;
+  }
+
+  .toolbar .section-label {
+    display: none;
+  }
+
+  .toolbar .section-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .toolbar .grid-btn {
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+    height: auto;
+  }
+
+  .toolbar .btn-label {
+    font-size: 1rem;
+  }
+
+  .toolbar .grid-btn[class] {
+    background: color-mix(
+      in srgb,
+      rgb(var(--btn-color)) 14%,
+      var(--sheet-bg-solid)
+    );
+    border-color: color-mix(
+      in srgb,
+      rgb(var(--btn-color)) 45%,
+      var(--sheet-bg-solid)
+    );
+  }
+
+  .toolbar .grid-btn[class]:hover:not(:disabled) {
+    background: color-mix(
+      in srgb,
+      rgb(var(--btn-color)) 24%,
+      var(--sheet-bg-solid)
+    );
+    border-color: rgb(var(--btn-color));
+    box-shadow: none;
+  }
+
+  .toolbar .grid-btn[class] .btn-icon {
+    color: white;
+    background: none;
+  }
+
+  .toolbar .rotation-pair .btn-text {
+    display: none;
+  }
+
+  .toolbar .rotation-pair .grid-btn {
+    min-width: 3.5rem;
+  }
+
+  .toolbar .rotation-pair {
+    display: flex;
+    gap: 0;
+  }
+
+  .toolbar .rotate-ccw {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .toolbar .rotate-cw {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -1px;
+  }
+
+  .toolbar .grid-btn:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 3px;
+  }
+
+  @media (min-width: 2400px) {
+    .toolbar .btn-label {
+      font-size: 1.25rem;
+    }
+
+    .toolbar .btn-icon {
+      width: 40px;
+      height: 40px;
+      font-size: 1.25rem;
+    }
+  }
+
   .actions-container {
     --button-row-height: 1fr;
     display: flex;

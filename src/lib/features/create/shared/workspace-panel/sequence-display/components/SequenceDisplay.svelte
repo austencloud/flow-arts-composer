@@ -10,8 +10,6 @@
     MandalaRenderOptions,
   } from "$lib/shared/mandala/domain/mandala-types";
   import StepGrid from "./StepGrid.svelte";
-  import WordLabel from "./WordLabel.svelte";
-  import SequenceMetadataRail from "./SequenceMetadataRail.svelte";
   import { loopDetector as circularLoopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { createComponentLogger } from "$lib/shared/utils/debug-logger";
   import { getIsTimelineMode } from "../state/timeline-mode.svelte";
@@ -177,6 +175,13 @@
 
   function handleStartPositionClick() {
     hapticService?.trigger("selection");
+
+    // Choose Start treats the start tile as a pose too (index 0).
+    if (panelState.isShiftStartMode && panelState.shiftStartHandler) {
+      panelState.shiftStartHandler(0);
+      return;
+    }
+
     onStartPositionSelected?.();
   }
 
@@ -226,33 +231,6 @@
 <div class="sequence-container">
   <div class="content-wrapper">
     <div class="label-and-beatframe-unit">
-      <!-- Workspace actions keep equal outer tracks. Metadata and the word are
-           compact sequence information in the middle, not an action toolbar. -->
-      <div class="top-bar">
-        <div class="word-label-area">
-          <div class="document-title-row">
-            <div class="document-metadata-area">
-              <SequenceMetadataRail
-                sequence={currentSequence}
-                loopType={loopDetectionResult?.loopType ?? null}
-                period={loopDetectionResult?.period ?? null}
-              />
-            </div>
-
-            <div class="word-label-slot">
-              <WordLabel
-                word={currentDisplayWord}
-                scrollMode={false}
-                {letterSources}
-                activeStepNumber={practiceStepNumber}
-                {historyTransitionEpoch}
-                historyWordChanged={historyTransition?.wordChanged ?? false}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="step-grid-wrapper" class:shift-mode={isShiftStartMode}>
         <StepGrid
           steps={displaySequence?.steps ?? []}
@@ -261,6 +239,7 @@
           startPosition={startPositionStep() ?? undefined}
           onStepClick={handleStepClick}
           onStartClick={handleStartPositionClick}
+          posePicker={isShiftStartMode}
           {onStepDelete}
           {onStepLongPress}
           {selectedStepNumber}
@@ -284,6 +263,7 @@
           onAuditionDismiss={handleAuditionDismiss}
           manualColumnCount={loopAlignedColumnCount}
           sequenceWord={currentDisplayWord}
+          observeScroll={!panelState.workspacePlayback}
         />
       </div>
     </div>
@@ -328,117 +308,6 @@
     gap: 0;
     flex: 1 1 auto;
     min-height: 0;
-  }
-
-  /* Equal workspace-action tracks keep the sequence information centered
-     between History on the left and Save on the right. */
-  .top-bar {
-    box-sizing: border-box;
-    display: grid;
-    grid-template-columns:
-      var(--workspace-leading-actions-width, var(--min-touch-target, 44px))
-      minmax(0, 1fr)
-      var(--workspace-leading-actions-width, var(--min-touch-target, 44px));
-    align-items: center;
-    gap: var(--settings-spacing-sm, 8px);
-    width: 100%;
-    padding: 8px 12px;
-    flex-shrink: 0;
-  }
-
-  .word-label-area {
-    grid-column: 2;
-    display: grid;
-    align-items: center;
-    justify-items: center;
-    flex: 1;
-    /* Constrain width to prevent overflow into sibling button zones */
-    min-width: 0;
-    overflow: visible;
-  }
-
-  .document-title-row {
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    justify-self: center;
-    width: max-content;
-    max-width: 100%;
-    min-width: 0;
-    min-height: var(--min-touch-target, 44px);
-  }
-
-  .document-metadata-area {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    flex: 0 0 var(--min-touch-target, 44px);
-    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
-    border-radius: 10px;
-    background: var(--theme-card-bg, rgba(10, 10, 16, 0.86));
-    box-shadow: 0 2px 8px var(--theme-shadow, rgba(0, 0, 0, 0.18));
-  }
-
-  .word-label-slot {
-    flex: 0 1 auto;
-    width: clamp(8rem, 36cqw, 20rem);
-    min-width: 0;
-    max-width: calc(100% - var(--min-touch-target, 44px) - 6px);
-    overflow: hidden;
-  }
-
-  /* At phone width the two workspace-action zones leave a narrow center
-     track. Let the title row fill exactly that track so the word scales inside
-     it instead of crossing underneath the labeled Save pill. */
-  @container sequence-workspace (max-width: 480px) {
-    .document-title-row {
-      width: 100%;
-    }
-
-    .word-label-slot {
-      flex: 1 1 0;
-      width: auto;
-      max-width: none;
-    }
-  }
-
-  /* The settings immediately below repeat difficulty and LOOP on the smallest
-     phones. Give that redundant metadata space back to the actual sequence
-     name so the full word and labeled Save action both remain readable. */
-  @container sequence-workspace (max-width: 400px) {
-    .document-title-row {
-      gap: 0;
-    }
-
-    .document-metadata-area {
-      display: none;
-    }
-
-    .word-label-slot :global(.word-label.has-word) {
-      padding-inline: 0.5rem;
-      font-size: 1rem;
-    }
-  }
-
-  /* Once the center track has room, mirror the metadata tile with an inert
-     spacer. The compact word capsule then sits on the workspace centerline
-     even though metadata only exists on its left. */
-  @container sequence-workspace (min-width: 540px) {
-    .document-title-row::after {
-      width: var(--min-touch-target, 44px);
-      height: 1px;
-      flex: 0 0 var(--min-touch-target, 44px);
-      content: "";
-    }
-  }
-
-  @container sequence-workspace (min-width: 768px) {
-    .top-bar {
-      --workspace-leading-actions-width: 192px;
-    }
   }
 
   .step-grid-wrapper {

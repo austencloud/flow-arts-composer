@@ -553,13 +553,14 @@
   function handleShiftStart() {
     if (!sequence || !canShiftStart) return;
     hapticService?.trigger("selection");
-    panelState.enterShiftStartMode(handleShiftStartBeatSelect);
-    toast.info("Tap the step you want to play first - it will become Step 1");
+    panelState.enterShiftStartMode(handleShiftStartPoseSelect);
+    toast.info("Tap the pose you want to start from.");
   }
 
-  function handleShiftStartBeatSelect(stepNumber: number) {
+  /** `tileIndex` is the tapped pose: 0 for the start tile, 1..n for steps. */
+  function handleShiftStartPoseSelect(tileIndex: number) {
     hapticService?.trigger("selection");
-    const result = actionOrchestrator.analyzeShiftStart(stepNumber);
+    const result = actionOrchestrator.analyzeShiftStart(tileIndex);
     if (!result) return;
 
     switch (result.action) {
@@ -569,16 +570,16 @@
         viewState.finishShiftStart();
         break;
       case "immediate":
-        void executeShiftStart(result.stepNumber);
+        void executeShiftStart(result.targetStepNumber);
         break;
       case "confirm-needed":
-        viewState.requestShiftConfirmation(result.stepNumber);
+        viewState.requestShiftConfirmation(result.targetStepNumber);
         break;
     }
   }
 
-  async function executeShiftStart(stepNumber: number) {
-    const result = await actionOrchestrator.shiftStart(stepNumber);
+  async function executeShiftStart(targetStepNumber: number) {
+    const result = await actionOrchestrator.shiftStart(targetStepNumber);
     if (result.status === "completed") toast.success(result.value.message);
     else if (result.status === "failed") toast.error(result.message);
   }
@@ -840,10 +841,12 @@
                 isShiftMode={isShiftStartMode}
                 mobileMode={isMobileLayout}
                 onStepClick={isShiftStartMode
-                  ? handleShiftStartBeatSelect
+                  ? handleShiftStartPoseSelect
                   : handleStepSelect}
                 onStartClick={() =>
-                  isShiftStartMode ? null : handleStepSelect(0)}
+                  isShiftStartMode
+                    ? handleShiftStartPoseSelect(0)
+                    : handleStepSelect(0)}
                 onStepLongPress={handlePreview}
                 onCancelShiftMode={cancelShiftStart}
               />
@@ -948,10 +951,10 @@
   onCancel={viewState.clearTransferConfirmation}
 />
 
-<!-- First Beat Confirmation Dialog (non-circular sequences) -->
+<!-- Choose Start confirmation (non-loop sequences drop the steps before the pose) -->
 <FirstStepConfirmDialog
   show={showShiftConfirmDialog && pendingShiftStepNumber !== null}
-  stepNumber={pendingShiftStepNumber ?? 1}
+  stepsToRemove={(pendingShiftStepNumber ?? 1) - 1}
   onConfirm={() => executeShiftStart(pendingShiftStepNumber!)}
   onCancel={cancelShiftStart}
 />

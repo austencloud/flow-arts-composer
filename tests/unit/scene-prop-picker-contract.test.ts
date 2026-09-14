@@ -31,8 +31,12 @@ const PICKER_PATH =
   "src/lib/shared/3d/components/controls/ScenePropPicker.svelte";
 const CATALOG_PATH = "src/lib/shared/3d/domain/scene-prop-catalog.ts";
 const VIEWER_SCENE_PATH = "src/lib/shared/3d/components/Viewer3DScene.svelte";
+// BentoPropGrid is the app-wired entry; PropGrid is the picker's own markup.
+// Assertions about what the canonical grid RENDERS read the body.
 const BENTO_GRID_PATH =
   "src/lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte";
+const BENTO_GRID_BODY_PATH =
+  "src/lib/shared/settings/components/tabs/prop-type/PropGrid.svelte";
 const SCENE_PACKAGE_PATCH = "patches/@austencloud__scene-3d@0.1.6.patch";
 
 /** Every surface where a person picks a 3D prop. Add new ones here. */
@@ -151,7 +155,7 @@ describe("scene prop picker contract", () => {
 
   it("adapts mixed selection, host scrolling, bare hands, and chirality without another grid", () => {
     const picker = read(PICKER_PATH);
-    const canonicalGrid = read(BENTO_GRID_PATH);
+    const canonicalGrid = read(BENTO_GRID_BODY_PATH);
     expect(picker).toContain("currentProp: PropType | null");
     expect(picker).toContain('scrollMode="host"');
     expect(picker).toContain("includeBareHands={showBareHands}");
@@ -164,7 +168,10 @@ describe("scene prop picker contract", () => {
   });
 
   it("drills into families inside the picker and gives Escape to the local layer", () => {
-    const canonicalGrid = read(BENTO_GRID_PATH);
+    const canonicalGrid = read(BENTO_GRID_BODY_PATH);
+    // The entry is a pass-through, so the drill-down cannot have moved up into
+    // it while these assertions pass against the body.
+    expect(read(BENTO_GRID_PATH)).toContain("<PropGrid");
 
     // A family's styles replace the grid at full tile size behind a back bar;
     // nothing floats in a popover that could clip or shrink its tiles.

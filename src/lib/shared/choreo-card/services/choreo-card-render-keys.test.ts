@@ -31,7 +31,9 @@ const base = {
 
 describe("buildChoreoCardRenderKeys", () => {
   it("is deterministic for identical inputs", () => {
-    expect(buildChoreoCardRenderKeys(base)).toEqual(buildChoreoCardRenderKeys(base));
+    expect(buildChoreoCardRenderKeys(base)).toEqual(
+      buildChoreoCardRenderKeys(base)
+    );
   });
 
   it("folds showGrid into the image key (4-digit gv) — guards the onMount/effect drift", () => {
@@ -41,19 +43,34 @@ describe("buildChoreoCardRenderKeys", () => {
     expect(gridOn.imageKey).not.toBe(gridOff.imageKey);
     // The gv segment must carry all four image-visibility flags (TnD, Elemental,
     // Positions, Grid). The original bug was a 3-digit gv on one side.
-    expect(gridOn.imageKey).toMatch(/-gv:[01]{4}$/);
-    expect(gridOff.imageKey).toMatch(/-gv:[01]{4}$/);
+    expect(gridOn.imageKey).toMatch(/-gv:[01]{4}(?:-|$)/);
+    expect(gridOff.imageKey).toMatch(/-gv:[01]{4}(?:-|$)/);
+  });
+
+  it("repaints fan build changes while keeping the step grid stable", () => {
+    const fire = buildChoreoCardRenderKeys({
+      ...base,
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+    });
+    const lotus = buildChoreoCardRenderKeys({
+      ...base,
+      fanAppearance: { build: "lotus", frameColor: "black", cover: "bare" },
+    });
+    expect(fire.imageKey).not.toBe(lotus.imageKey);
+    expect(fire.gridStableKey).toBe(lotus.gridStableKey);
   });
 
   it("renderKey reflects darkMode; gridStableKey ignores image-only props", () => {
-    expect(buildChoreoCardRenderKeys({ ...base, darkMode: true }).renderKey).not.toBe(
-      buildChoreoCardRenderKeys({ ...base, darkMode: false }).renderKey,
+    expect(
+      buildChoreoCardRenderKeys({ ...base, darkMode: true }).renderKey
+    ).not.toBe(
+      buildChoreoCardRenderKeys({ ...base, darkMode: false }).renderKey
     );
     // showTKA is an image-only prop: it must NOT change gridStableKey (else a
     // glyph toggle would be misclassified as a grid-structure change).
-    expect(buildChoreoCardRenderKeys({ ...base, showTKA: false }).gridStableKey).toBe(
-      buildChoreoCardRenderKeys({ ...base, showTKA: true }).gridStableKey,
-    );
+    expect(
+      buildChoreoCardRenderKeys({ ...base, showTKA: false }).gridStableKey
+    ).toBe(buildChoreoCardRenderKeys({ ...base, showTKA: true }).gridStableKey);
   });
 
   it("startPositionLayout flip changes contentKey but NOT imageKey (routes to layout-only relayout)", () => {
@@ -62,8 +79,14 @@ describe("buildChoreoCardRenderKeys", () => {
     // classifyChange returns "layout-only" → relayoutCells) while leaving imageKey
     // and gridStableKey stable. Regression guard for the side-by-side
     // "QR flashes over step 1" bug (stale cell positions vs a live QR position).
-    const row = buildChoreoCardRenderKeys({ ...base, startPositionLayout: "row" });
-    const col = buildChoreoCardRenderKeys({ ...base, startPositionLayout: "column" });
+    const row = buildChoreoCardRenderKeys({
+      ...base,
+      startPositionLayout: "row",
+    });
+    const col = buildChoreoCardRenderKeys({
+      ...base,
+      startPositionLayout: "column",
+    });
     expect(row.contentKey).not.toBe(col.contentKey);
     expect(row.imageKey).toBe(col.imageKey);
     expect(row.gridStableKey).toBe(col.gridStableKey);

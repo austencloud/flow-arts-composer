@@ -5,11 +5,14 @@
   import type { PropBuildPreviewOption } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 
   interface Props {
-    label: string;
+    label?: string;
     value: T;
     options: readonly PropBuildPreviewOption<T>[];
     onchange: (value: T) => void;
     density?: "primary" | "secondary";
+    /** Compact fan rails use measured artwork scaling; ordinary 8:3 pickers
+     * keep the source framing so their previews never crop. */
+    useImageScale?: boolean;
   }
 
   let {
@@ -18,6 +21,7 @@
     options,
     onchange,
     density = "primary",
+    useImageScale = false,
   }: Props = $props();
 
   function moveSelection(event: KeyboardEvent, index: number): void {
@@ -48,12 +52,18 @@
   }
 </script>
 
-<section class="picker" class:secondary={density === "secondary"}>
-  <div class="picker-heading">
-    <span class="picker-label">{label}</span>
-  </div>
+<section
+  class="picker"
+  class:secondary={density === "secondary"}
+  class:headingless={!label}
+>
+  {#if label}
+    <div class="picker-heading">
+      <span class="picker-label">{label}</span>
+    </div>
+  {/if}
 
-  <div class="option-grid" role="radiogroup" aria-label={label}>
+  <div class="option-grid" role="radiogroup" aria-label={label ?? "Options"}>
     {#each options as option, index (option.id)}
       <button
         type="button"
@@ -77,7 +87,9 @@
               src={option.image}
               alt=""
               draggable="false"
-              style:--preview-scale={option.imageScale ?? 1}
+              style:--preview-scale={useImageScale
+                ? (option.imageScale ?? 1)
+                : 1}
             />
           </Crossfade>
         </span>

@@ -39,19 +39,20 @@ function getSequencePathHash(
 ): string {
   // Include motion data fingerprint so transforms (rotate, mirror, etc.) produce distinct hashes.
   // Without this, transformed sequences return stale untransformed cached paths.
-  const motionFingerprint = seq.steps
-    ?.map((s) => {
-      const b = s.motions?.left;
-      const r = s.motions?.right;
-      const bPart = b
-        ? `${b.startLocation}${b.endLocation}${b.motionType}${b.rotationDirection}${b.turns}`
-        : "_";
-      const rPart = r
-        ? `${r.startLocation}${r.endLocation}${r.motionType}${r.rotationDirection}${r.turns}`
-        : "_";
-      return `${bPart}|${rPart}`;
-    })
-    .join(";") || "";
+  const motionFingerprint =
+    seq.steps
+      ?.map((s) => {
+        const b = s.motions?.left;
+        const r = s.motions?.right;
+        const bPart = b
+          ? `${b.startLocation}${b.endLocation}${b.motionType}${b.rotationDirection}${b.turns}:${b.pathShape ?? ""}`
+          : "_";
+        const rPart = r
+          ? `${r.startLocation}${r.endLocation}${r.motionType}${r.rotationDirection}${r.turns}:${r.pathShape ?? ""}`
+          : "_";
+        return `${bPart}|${rPart}`;
+      })
+      .join(";") || "";
   const pathShape = vm.getPathShape();
   const motionAware = vm.getMotionAwarePaths();
   return `${seq.id || seq.word || "?"}-${totalSteps}-${stepDurationMs}-${pathShape}-${motionAware}-${motionFingerprint}`;
@@ -59,7 +60,10 @@ function getSequencePathHash(
 
 function storeInGlobalCache(hash: string, cache: AnimationPathCache): void {
   // Evict oldest entry if at capacity
-  if (globalPathCacheMap.size >= MAX_GLOBAL_CACHE_SIZE && !globalPathCacheMap.has(hash)) {
+  if (
+    globalPathCacheMap.size >= MAX_GLOBAL_CACHE_SIZE &&
+    !globalPathCacheMap.has(hash)
+  ) {
     const oldest = globalPathCacheMap.keys().next().value;
     if (oldest !== undefined) globalPathCacheMap.delete(oldest);
   }

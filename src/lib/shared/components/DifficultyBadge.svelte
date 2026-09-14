@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { DIFFICULTY_LEVELS, DEFAULT_DIFFICULTY_STYLE } from "$lib/shared/config/difficulty-styles";
+  import { onMount } from "svelte";
+  import {
+    DIFFICULTY_FONT_FAMILY,
+    DIFFICULTY_LEVELS,
+    DEFAULT_DIFFICULTY_STYLE,
+  } from "$lib/shared/config/difficulty-styles";
+  import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
 
   interface Props {
     level: number;
@@ -12,6 +18,12 @@
 
   const style = $derived(DIFFICULTY_LEVELS[level] ?? DEFAULT_DIFFICULTY_STYLE);
   const computedFontSize = $derived(fontSize ?? `calc(${size} * 0.6)`);
+
+  onMount(() => {
+    void ensureCardFonts().catch((error) => {
+      console.error("Unable to load the difficulty badge font", error);
+    });
+  });
 </script>
 
 <span
@@ -23,6 +35,7 @@
     border-color: {style.border};
     color: {style.text};
     font-size: {computedFontSize};
+    font-family: {DIFFICULTY_FONT_FAMILY};
   "
 >
   {level}
@@ -35,7 +48,6 @@
     justify-content: center;
     border-radius: 50%;
     border: 1px solid;
-    font-family: Cambria, Georgia, serif;
     font-weight: 700;
     line-height: 1;
     flex-shrink: 0;

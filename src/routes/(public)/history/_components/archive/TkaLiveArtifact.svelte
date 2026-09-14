@@ -83,7 +83,7 @@
     display: grid;
     place-items: center;
     /* SequenceHeroDemo caps itself at 26rem; give it the stage. */
-    --hero-demo-max-width: min(32rem, 88cqh, 100cqw);
+    --hero-demo-max-width: min(var(--tka-preview-max-width, 32rem), 88cqh, 100cqw);
     --hero-demo-wide-max-width: var(--hero-demo-max-width);
   }
 

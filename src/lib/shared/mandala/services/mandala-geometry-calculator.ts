@@ -566,7 +566,7 @@ function buildCacheKey(
 				(b.startOrientation ?? '') +
 				(b.endOrientation ?? '') +
 				(b.handPath ?? '') +
-				(b.turns ?? 0)
+				(b.turns ?? 0) + ":" + (b.pathShape ?? "")
 			);
 		if (isVisibleMotion(r))
 			parts.push(
@@ -577,7 +577,7 @@ function buildCacheKey(
 				(r.startOrientation ?? '') +
 				(r.endOrientation ?? '') +
 				(r.handPath ?? '') +
-				(r.turns ?? 0)
+				(r.turns ?? 0) + ":" + (r.pathShape ?? "")
 			);
 	}
 	parts.push(leftPropType ?? "staff", rightPropType ?? "staff");

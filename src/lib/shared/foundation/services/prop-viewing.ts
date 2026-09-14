@@ -1,5 +1,6 @@
 import type { SequenceData } from "../domain/models/sequence-data";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
 import {
   captureActivePropConfig,
   resolveRecordedPropConfig,
@@ -8,6 +9,13 @@ import {
 } from "./recorded-prop-intent";
 
 export type PropViewingMode = "my-props" | "as-saved";
+
+export function viewingPropLabel(config: ResolvedPropConfig): string {
+  const left = getPropTypeDisplayInfo(config.leftPropType).label;
+  return config.leftPropType === config.rightPropType
+    ? left
+    : `${left} / ${getPropTypeDisplayInfo(config.rightPropType).label}`;
+}
 
 export function resolveViewingProps(
   settings: ActivePropSettings & { propViewingMode?: PropViewingMode },

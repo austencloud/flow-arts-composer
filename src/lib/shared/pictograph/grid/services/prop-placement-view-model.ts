@@ -209,6 +209,45 @@ export interface PlacementTransition {
   transitionStep: StepData;
 }
 
+/** Reuses the animator's paths without changing the static notation being taught. */
+export function buildPlacementTransformTransition(
+  startData: PictographData,
+  endData: PictographData,
+  path: "arc" | "linear",
+  direction: RotationDirection = RotationDirection.CLOCKWISE
+): PlacementTransition {
+  const motions = { ...endData.motions };
+  for (const hand of [HandSide.LEFT, HandSide.RIGHT]) {
+    const from = startData.motions?.[hand];
+    const to = endData.motions?.[hand];
+    if (!from || !to) continue;
+    motions[hand] = createMotionData({
+      ...to,
+      startLocation: from.endLocation,
+      startOrientation: from.endOrientation,
+      motionType:
+        from.endLocation === to.endLocation
+          ? MotionType.STATIC
+          : MotionType.PRO,
+      rotationDirection: direction,
+      turns: 0,
+      pathShape: path,
+    });
+  }
+  return {
+    startData,
+    transitionStep: {
+      ...endData,
+      motions,
+      stepNumber: 0,
+      duration: 1,
+      leftReversal: false,
+      rightReversal: false,
+      isBlank: false,
+    } as StepData,
+  };
+}
+
 /**
  * Builds the pair of pictographs that let PictographContainer animate a start
  * position location change in place: the moving prop travels a pro-zero-turns

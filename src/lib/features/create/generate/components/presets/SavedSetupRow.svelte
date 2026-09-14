@@ -6,7 +6,6 @@
     setup,
     summary,
     isActive,
-    isModified,
     isShared,
     isBusy,
     disableMutations,
@@ -19,7 +18,6 @@
     setup: SavedGeneratorSetup;
     summary: string;
     isActive: boolean;
-    isModified: boolean;
     isShared: boolean;
     isBusy: boolean;
     disableMutations: boolean;
@@ -34,16 +32,16 @@
   let draft = $state("");
   let renameInput = $state<HTMLInputElement | null>(null);
 
-  const statusLabel = $derived(
-    isActive ? "Active" : isModified ? "Modified" : ""
-  );
+  const statusLabel = $derived(isActive ? "Active" : "");
 
   const menuItems = $derived([
+    // Overwriting a setup that already equals the live controls is a no-op,
+    // so the active row keeps Update disabled.
     {
       label: "Update with current settings",
       icon: "fa-solid fa-arrows-rotate",
       action: onUpdate,
-      disabled: !isModified || disableMutations || isBusy,
+      disabled: isActive || disableMutations || isBusy,
     },
     {
       label: "Rename",
@@ -108,7 +106,6 @@
       type="button"
       class="favorite-item"
       class:active={isActive}
-      class:modified={isModified}
       aria-current={isActive ? "true" : undefined}
       aria-busy={isBusy || undefined}
       disabled={isBusy}
@@ -184,14 +181,6 @@
       in srgb,
       var(--theme-accent, #3b82f6) 15%,
       transparent
-    );
-  }
-
-  .favorite-item.modified {
-    border-color: color-mix(
-      in srgb,
-      var(--theme-accent, #3b82f6) 55%,
-      var(--theme-stroke, rgba(255, 255, 255, 0.12))
     );
   }
 

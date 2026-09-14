@@ -14,6 +14,7 @@ const expectedPublishedIds = [
   "hand-positions",
   "hand-motions-intro",
   "timing-and-direction",
+  "reading-choreo-cards",
   "rotation-direction",
   "dual-shifts-alpha-beta",
   "gamma-motion",

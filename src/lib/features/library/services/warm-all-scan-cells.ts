@@ -51,6 +51,12 @@ export interface CellWarmDeps {
    *  parallel (bounded by the worker pool), so this mainly controls how much
    *  probe/upload network latency overlaps with rendering. */
   concurrency?: number;
+  /** Optional QR artwork publication, after both scan themes are ready. */
+  bakeQr?: (
+    sequence: SequenceData,
+    code: string,
+    props: WarmOptions
+  ) => Promise<void>;
 }
 
 const FIRESTORE_PROJECT_ID = "the-kinetic-alphabet";
@@ -166,6 +172,7 @@ export function startScanCellWarm(
               })
             )
           );
+          await deps?.bakeQr?.(sequence, code, propConfig);
           progress.current = simplifyRepeatedWord(
             sequence.word || sequence.name || code
           );
@@ -198,4 +205,55 @@ export function startScanCellWarm(
     },
     promise,
   };
+}
+
+/** Bake the standard 200px viewer QR in both themes for every saved code.
+ * Reuses the cell job's hydration, cancellation and failed-code retry handling. */
+export function startScanQrBake(
+  onProgress: (p: CellWarmProgress) => void,
+  deps?: CellWarmDeps
+): CellWarmHandle {
+  return startScanCellWarm(onProgress, {
+    ...deps,
+    // QR SVG generation uses the main thread. Keep its queue small while
+    // overlapping cloud reads and uploads.
+    concurrency: deps?.concurrency ?? 4,
+    bakeQr: deps?.bakeQr ?? bakeCanonicalQr,
+  });
+}
+
+async function bakeCanonicalQr(
+  sequence: SequenceData,
+  code: string,
+  props: WarmOptions
+): Promise<void> {
+  const { getShortCodeManager } =
+    await import("$lib/shared/qr/get-short-code-manager");
+  const { getUrlQRCodeGenerator } =
+    await import("$lib/shared/qr/get-qr-code-generator");
+  const { getQrImageCache } =
+    await import("$lib/shared/qr/services/qr-image-cache");
+  const { PreparedQrCache } =
+    await import("$lib/shared/qr/services/prepared-qr-cache");
+  const cache = new PreparedQrCache(getQrImageCache());
+  const url = getShortCodeManager().urlForExistingCode(code, props);
+  for (const darkMode of [true, false]) {
+    const options = {
+      size: 200,
+      margin: 1,
+      style: "modern" as const,
+      darkMode,
+      leftPropType: props.leftPropType,
+      rightPropType: props.rightPropType,
+    };
+    const key = await cache.keyFor(sequence, props, options);
+    if (await cache.getShared(key, 10000)) continue;
+    const result = await getUrlQRCodeGenerator().generateForUrl(url, options);
+    await cache.set(key, { ...result, shortCode: code });
+    if (!(await cache.getShared(key, 10000))) {
+      throw new Error(
+        `QR artwork for ${code} (${darkMode ? "dark" : "light"}) was not published`
+      );
+    }
+  }
 }

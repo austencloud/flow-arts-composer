@@ -120,6 +120,36 @@ describe("sequence viewer library action feedback", () => {
     );
   });
 
+  it("saves path data only to an owned existing record", async () => {
+    mocks.getSequence.mockResolvedValue(sequence);
+    const handler = makeHandler();
+    await vi.waitFor(() => expect(handler.isOwnedLibraryRecord).toBe(true));
+    expect(await handler.savePaths()).toBe(true);
+    expect(mocks.updateSequence).toHaveBeenCalledWith(sequence.id, {
+      steps: sequence.steps,
+      metadata: sequence.metadata,
+    });
+    mocks.updateSequence.mockClear();
+    expect(await makeHandler(false).savePaths()).toBe(false);
+    expect(mocks.updateSequence).not.toHaveBeenCalled();
+  });
+
+  it("keeps a failed path save retryable", async () => {
+    mocks.getSequence.mockResolvedValue(sequence);
+    mocks.updateSequence.mockRejectedValueOnce(new Error("offline"));
+    const handler = makeHandler();
+    await vi.waitFor(() => expect(handler.isOwnedLibraryRecord).toBe(true));
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(await handler.savePaths()).toBe(false);
+    expect(handler.isSaving).toBe(false);
+    expect(mocks.showToast).toHaveBeenCalledWith(
+      "Couldn't save motion paths",
+      "error"
+    );
+    error.mockRestore();
+    expect(await handler.savePaths()).toBe(true);
+  });
+
   it("persists the chosen pair while leaving the source unchanged", async () => {
     mocks.saveSequence.mockResolvedValue({
       persisted: true,

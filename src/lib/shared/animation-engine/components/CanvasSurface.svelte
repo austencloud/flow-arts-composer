@@ -86,6 +86,7 @@ captureEffectDiagnostics to the context menu.
     preloadAdditionalLayers = [],
     tunnelSpectrum = true,
     tunnelPropColors = null,
+    primaryPropColors,
     tunnelSelectedLayer = null,
     gridVisible = true,
     gridOpacity = undefined,
@@ -150,6 +151,8 @@ captureEffectDiagnostics to the context menu.
     preloadAdditionalLayers?: AdditionalLayerProps[];
     tunnelSpectrum?: boolean;
     tunnelPropColors?: TunnelPropColorPair | null;
+    /** Embedded teaching surfaces can pin colors without changing saved preferences. */
+    primaryPropColors?: TunnelPropColorPair;
     tunnelSelectedLayer?: number | readonly number[] | null;
     gridVisible?: boolean;
     gridOpacity?: number;
@@ -477,7 +480,8 @@ captureEffectDiagnostics to the context menu.
       onAdditionalLayerTextureStatusChange,
       tunnelSpectrum,
       tunnelPropColors,
-      primaryPropColors: getSettings().primaryPropColors ?? null,
+      primaryPropColors:
+        primaryPropColors ?? getSettings().primaryPropColors ?? null,
       tunnelSelectedLayer,
       gridVisible,
       gridOpacity,
@@ -593,6 +597,7 @@ captureEffectDiagnostics to the context menu.
          its own fade in/out, so the overlay must stay in the tree for its
          out-transition to play when the Paths toggle flips off. -->
     <PathLinesOverlay
+      {primaryPropColors}
       {sequenceData}
       {currentStep}
       {stepData}

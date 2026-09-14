@@ -11,7 +11,12 @@ import {
   GridLocation,
   GridMode,
 } from "../../src/lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { buildPlacementTransition } from "../../src/lib/shared/pictograph/grid/services/prop-placement-view-model";
+import {
+  buildPlacementTransition,
+  buildPlacementPictographData,
+  buildPlacementTransformTransition,
+} from "../../src/lib/shared/pictograph/grid/services/prop-placement-view-model";
+import { calculatePictographMotionPositions } from "../../src/lib/shared/pictograph/prop/services/pictograph-motion-positioner";
 import { PropType } from "../../src/lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
   HandSide,
@@ -29,6 +34,91 @@ const baseInput = {
   betaSwapped: false,
   previewPictographData: null,
 };
+
+describe("paired placement transforms", () => {
+  const before = buildPlacementPictographData({
+    ...baseInput,
+    leftLocation: GridLocation.SOUTH,
+    rightLocation: GridLocation.NORTH,
+  });
+  const after = buildPlacementPictographData({
+    ...baseInput,
+    leftLocation: GridLocation.NORTH,
+    rightLocation: GridLocation.SOUTH,
+  });
+  const startPositions = {
+    left: { x: 475, y: 625, rotation: 0 },
+    right: { x: 475, y: 325, rotation: 0 },
+  };
+  const endPositions = {
+    left: startPositions.right,
+    right: startPositions.left,
+  };
+  const common = {
+    gridMode: GridMode.DIAMOND,
+    leftPropType: PropType.HAND,
+    rightPropType: PropType.HAND,
+    startPositions,
+    endPositions,
+  };
+
+  it("reflects across an axis in straight lines, keeping hand symbols upright", () => {
+    const { transitionStep } = buildPlacementTransformTransition(
+      before,
+      after,
+      "linear"
+    );
+    const midpoint = calculatePictographMotionPositions({
+      ...common,
+      step: transitionStep,
+      progress: 0.5,
+    });
+    for (const hand of [HandSide.LEFT, HandSide.RIGHT]) {
+      expect(midpoint[hand]?.x).toBeCloseTo(475);
+      expect(midpoint[hand]?.y).toBeCloseTo(475);
+      expect(midpoint[hand]?.rotation).toBe(0);
+    }
+    expect(before.motions?.left?.motionType).toBe(MotionType.STATIC);
+    expect(after.motions?.left?.motionType).toBe(MotionType.STATIC);
+  });
+
+  it("exchanges opposite hands on separate arcs and lands on exact static poses", () => {
+    const { transitionStep } = buildPlacementTransformTransition(
+      before,
+      after,
+      "arc"
+    );
+    const input = { ...common, step: transitionStep };
+    const midpoint = calculatePictographMotionPositions({
+      ...input,
+      progress: 0.5,
+    });
+    expect(Math.abs(midpoint.left!.x - midpoint.right!.x)).toBeGreaterThan(200);
+    expect(midpoint.left?.rotation).toBe(0);
+    expect(midpoint.right?.rotation).toBe(0);
+    expect(
+      calculatePictographMotionPositions({ ...input, progress: 0 })
+    ).toEqual(startPositions);
+    expect(
+      calculatePictographMotionPositions({ ...input, progress: 1 })
+    ).toEqual(endPositions);
+  });
+
+  it("keeps beta overlap ordering in the final static data", () => {
+    const beta = buildPlacementPictographData({
+      ...baseInput,
+      leftLocation: GridLocation.SOUTH,
+      rightLocation: GridLocation.SOUTH,
+    });
+    const swapped = { ...beta, betaSwapped: true };
+    const transition = buildPlacementTransformTransition(beta, swapped, "arc");
+    expect(transition.startData.betaSwapped).toBe(false);
+    expect(transition.transitionStep.betaSwapped).toBe(true);
+    expect(transition.transitionStep.motions.left.motionType).toBe(
+      MotionType.STATIC
+    );
+  });
+});
 
 describe("buildPlacementTransition", () => {
   it("gives the moving prop a pro-zero-turns arc and holds the partner static", () => {

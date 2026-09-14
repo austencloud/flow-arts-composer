@@ -223,7 +223,7 @@ export const instagramAuthCallback = onRequest(
         returnOrigin: claimed.data.returnOrigin,
         state: stateValue,
         status: "complete",
-        message: "Return to TKA to finish signing in.",
+        message: "Return to Flow Arts Composer to finish signing in.",
       });
     } catch (error) {
       const code = publicFailureCode(error);

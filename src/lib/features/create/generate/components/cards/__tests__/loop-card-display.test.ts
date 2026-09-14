@@ -60,6 +60,26 @@ describe("buildLoopCardDisplay — rotation period", () => {
     expect(display.rotationPeriod).toBeUndefined();
   });
 
+  it("shows halved when a reflection relationship coerces quartered rotation", () => {
+    const display = buildLoopCardDisplay({
+      loopEnabled: true,
+      loopType: LOOPType.ROTATED,
+      period: Period.QUARTERED,
+      handRelationship: "mirrored",
+    });
+    expect(display.rotationPeriod).toBe(Period.HALVED);
+  });
+
+  it("keeps quartered for a relationship that commutes with rotation", () => {
+    const display = buildLoopCardDisplay({
+      loopEnabled: true,
+      loopType: LOOPType.ROTATED,
+      period: Period.QUARTERED,
+      handRelationship: "unison",
+    });
+    expect(display.rotationPeriod).toBe(Period.QUARTERED);
+  });
+
   it("keeps halved when halved is asked for", () => {
     const display = buildLoopCardDisplay({
       loopEnabled: true,
@@ -198,6 +218,9 @@ describe("card-configurator LOOP descriptor", () => {
     constraintPreset: "smooth",
     handPathMode: "mixed",
     motionTypeFilter: null,
+    handRelationship: "flipped",
+    handRelationshipInverted: false,
+    matchHandTurns: false,
     durationTemplateId: null,
     spellTargetLength: null,
   };
@@ -231,6 +254,7 @@ describe("card-configurator LOOP descriptor", () => {
       inversionInterval: 4,
       inversionMode: "overlay",
       reflectionAxis: "east-west",
+      handRelationship: "flipped",
     });
   });
 

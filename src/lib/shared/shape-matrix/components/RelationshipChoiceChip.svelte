@@ -7,6 +7,7 @@
     label,
     active = false,
     disabled = false,
+    compact = false,
     ariaLabel,
     onpick,
   }: {
@@ -17,6 +18,7 @@
     label: string;
     active?: boolean;
     disabled?: boolean;
+    compact?: boolean;
     ariaLabel: string;
     onpick: () => void;
   } = $props();
@@ -26,6 +28,7 @@
   type="button"
   class="relationship-choice"
   class:active
+  class:compact
   style="--choice-accent: {accent}"
   aria-pressed={active}
   aria-label={ariaLabel}
@@ -169,6 +172,20 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .relationship-choice.compact {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.4rem;
+    padding: 0.3rem 0.45rem;
+  }
+  .compact .choice-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  .compact .choice-copy {
+    text-align: left;
   }
 
   .choice-copy strong {

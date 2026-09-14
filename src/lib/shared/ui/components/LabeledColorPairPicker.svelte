@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { COLOR_PRESETS } from "../color-presets";
   import type { HandSide } from "@tka/tka-types";
 
   interface Props {
@@ -18,6 +19,9 @@
     groupLabel = "Prop colors",
     onchange,
   }: Props = $props();
+
+  let editing = $state<HandSide | null>(null);
+  const editorId = $props.id();
 
   let leftInput = $state();
   let rightInput = $state();
@@ -41,7 +45,9 @@
         class="color-control"
         style:--color={entry.value}
         aria-label={`Edit ${entry.label}, ${entry.value.toUpperCase()}`}
-        onclick={() => entry.input?.click()}
+        aria-expanded={editing === entry.hand}
+        aria-controls={editorId}
+        onclick={() => (editing = editing === entry.hand ? null : entry.hand)}
       >
         <span class="color-swatch" aria-hidden="true">
           <i class="fas fa-eye-dropper"></i>
@@ -73,6 +79,46 @@
         onchange("right", (event.currentTarget as HTMLInputElement).value)}
     />
   </div>
+  {#if editing}
+    {@const entry = entries.find((item) => item.hand === editing)!}
+    <div class="color-editor" id={editorId} role="group" aria-label={`${entry.label} color`}>
+      <div class="preset-grid" role="group" aria-label={`${entry.label} presets`}>
+        {#each COLOR_PRESETS as preset (preset.hex)}
+          <button
+            type="button"
+            class="preset"
+            style:--preset={preset.hex}
+            aria-label={`${entry.label}: ${preset.name}`}
+            aria-pressed={entry.value.toLowerCase() === preset.hex}
+            title={preset.name}
+            onclick={() => onchange(entry.hand, preset.hex)}
+          ><span aria-hidden="true">{entry.value.toLowerCase() === preset.hex ? "✓" : ""}</span></button>
+        {/each}
+      </div>
+      <div class="custom-row">
+        <label class="hex-field">
+          <span>Hex color</span>
+          <input
+            aria-label={`${entry.label} hex color`}
+            type="text"
+            value={entry.value.toUpperCase()}
+            maxlength="7"
+            pattern={"#[0-9a-fA-F]{6}"}
+            spellcheck="false"
+            autocomplete="off"
+            oninput={(event) => {
+              const value = event.currentTarget.value;
+              if (/^#[0-9a-f]{6}$/i.test(value)) onchange(entry.hand, value.toLowerCase());
+            }}
+            onblur={(event) => { event.currentTarget.value = entry.value.toUpperCase(); }}
+          />
+        </label>
+        <button class="custom-button" type="button" onclick={() => entry.input?.click()}>
+          More colors
+        </button>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -178,6 +224,67 @@
     font-weight: 700;
     letter-spacing: 0.02em;
   }
+
+  .color-editor {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 12px;
+    background: var(--theme-card-bg);
+  }
+
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
+    gap: 4px;
+  }
+
+  .preset {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 5px;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .preset span {
+    display: grid;
+    place-items: center;
+    min-height: 30px;
+    border-radius: 6px;
+    background: var(--preset);
+    color: white;
+    text-shadow: 0 1px 3px black, 0 0 3px black;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35);
+  }
+
+  .preset[aria-pressed="true"] { border-color: var(--theme-text); }
+  .preset:focus-visible, .custom-button:focus-visible, .hex-field input:focus-visible {
+    outline: 2px solid var(--theme-text);
+    outline-offset: 2px;
+  }
+
+  .custom-row { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; }
+  .hex-field { display: grid; gap: 4px; flex: 1; min-width: 100px; }
+  .hex-field span { font-size: 14px; color: var(--theme-text); }
+  .hex-field input, .custom-button {
+    box-sizing: border-box;
+    min-height: 44px;
+    min-width: 0;
+    width: 100%;
+    border: 1px solid var(--theme-stroke);
+    border-radius: 8px;
+    padding: 8px;
+    color: var(--theme-text);
+    background: var(--theme-panel-bg);
+    font-size: 14px;
+  }
+  .hex-field input { font-family: ui-monospace, monospace; }
+  .custom-button { width: auto; cursor: pointer; }
+  @media (prefers-reduced-motion: reduce) { .color-control { transition: none; } }
 
   .native-color {
     position: absolute;

@@ -33,6 +33,12 @@
   const appState = getShapeMatrixAppContext();
   let open = $state(false);
 
+  export function dismiss(): boolean {
+    if (!open) return false;
+    open = false;
+    return true;
+  }
+
   /* One chip for both surfaces. Its visible action changes with the job. */
   const theory = $derived(appState.surface === "theory");
 

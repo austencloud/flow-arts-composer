@@ -9,11 +9,12 @@
   shell, overlay open/close/dismiss routing, and URL bootstrap.
 -->
 <script lang="ts">
-  import { onMount, tick } from "svelte";
+  import { onMount, tick, type ComponentProps } from "svelte";
+  import type SequenceViewerDrawerContent from "./SequenceViewerDrawerContent.svelte";
   import { afterNavigate, goto } from "$app/navigation";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
-  import SequenceViewerOrchestrator from "./SequenceViewerOrchestrator.svelte";
-  import SequenceViewerShell from "./SequenceViewerShell.svelte";
+  import LazyMount from "$lib/shared/components/LazyMount.svelte";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import ScanSequenceLoader from "./ScanSequenceLoader.svelte";
   import {
     getSequenceOverlayState,
@@ -328,7 +329,7 @@
     removeCurrentUrlParams(["v"]);
   }
 
-  function handleDismiss() {
+  function handleDismiss(reason?: "navigate") {
     const path = overlay.dismissPath;
     const wasOpen = overlay.isOpen;
     const wasFromUrl = overlay.openedFromUrl;
@@ -336,6 +337,10 @@
     clearNativeScanViewerReady();
     clearNativeLoader();
     closeSequenceOverlay();
+
+    // Remix and Compose choose their own destination. A queued Back would
+    // otherwise undo that navigation after the workspace has opened.
+    if (reason === "navigate") return;
 
     if (path) {
       goto(path, { replaceState: true });
@@ -346,6 +351,24 @@
 
   function handleDrawerClose() {
     handleDismiss();
+  }
+
+  function handleViewerContentStatus(
+    status: "loading" | "loaded" | "error"
+  ): void {
+    if (status !== "error") return;
+
+    // The native loader intentionally covers the viewer and makes its drawer
+    // nondismissible until the viewer reports ready. A failed lazy chunk can
+    // never reach that callback, so release the cover here and let LazyMount's
+    // retry UI remain available over the still-open sequence.
+    const code = nativeLoadingCode;
+    if (!code) return;
+
+    markNativeScanViewerFailed(code, {
+      reason: "sequence-viewer-content-load-failed",
+    });
+    clearNativeLoader(code);
   }
 
   async function handleViewerReady() {
@@ -371,6 +394,25 @@
   }
 </script>
 
+{#snippet viewerContentPlaceholder()}
+  <div class="viewer-content-state" role="status" aria-live="polite">
+    <span>Loading sequence viewer…</span>
+    <PanelButton variant="secondary" onclick={() => handleDismiss()}>
+      Close viewer
+    </PanelButton>
+  </div>
+{/snippet}
+
+{#snippet viewerContentError(_error: unknown, retry: () => void)}
+  <div class="viewer-content-state viewer-content-error" role="alert">
+    <p>The sequence viewer couldn’t load.</p>
+    <PanelButton variant="secondary" onclick={retry}>Try again</PanelButton>
+    <PanelButton variant="secondary" onclick={() => handleDismiss()}>
+      Close viewer
+    </PanelButton>
+  </div>
+{/snippet}
+
 <Drawer
   bind:isOpen={drawerOpen}
   placement="bottom"
@@ -385,40 +427,36 @@
   class="sequence-viewer-drawer"
 >
   <div class="viewer-stage">
-    {#if overlay.sequence}
-      {#key overlay.sessionKey}
-        <SequenceViewerOrchestrator
-          sequence={overlay.sequence}
-          isMobile={isMobileWidth}
-          collectionPropType={overlay.collectionPropType}
-          initialBpm={overlay.initialBpm}
-          initialPlaybackMode={overlay.initialPlaybackMode}
-          initialStep={overlay.initialStep}
-          initialViewMode={overlay.initialViewMode}
-          initialViewerMode={overlay.initialViewerMode}
-          handPathMode={overlay.handPathMode}
-          playOnOpen={overlay.playOnOpen}
-          {playbackReleased}
-          onReadyForReveal={handleViewerReady}
-          onClose={handleDismiss}
-          shortCode={overlay.activeShortCode}
-        >
-          {#snippet children(ctx)}
-            <SequenceViewerShell
-              {ctx}
-              sequence={overlay.sequence!}
-              analyticsSource={overlay.analyticsSource}
-              isMobile={isMobileWidth}
-              onClose={handleDismiss}
-              shareOnOpen={overlay.shareOnOpen}
-              tunnelComposition={overlay.tunnelComposition}
-              tunnelSaveTarget={overlay.tunnelSaveTarget}
-              onTunnelSaved={overlay.onTunnelSaved}
-            />
-          {/snippet}
-        </SequenceViewerOrchestrator>
-      {/key}
-    {/if}
+    <LazyMount
+      loader={() => import("./SequenceViewerDrawerContent.svelte")}
+      active={overlay.sequence !== null}
+      placeholder={overlay.sequence ? viewerContentPlaceholder : undefined}
+      error={overlay.sequence ? viewerContentError : undefined}
+      debugName="sequence viewer"
+      onStatusChange={handleViewerContentStatus}
+      props={{
+        sequence: overlay.sequence,
+        sessionKey: overlay.sessionKey,
+        isMobile: isMobileWidth,
+        collectionPropType: overlay.collectionPropType,
+        initialBpm: overlay.initialBpm,
+        initialPlaybackMode: overlay.initialPlaybackMode,
+        initialStep: overlay.initialStep,
+        initialViewMode: overlay.initialViewMode,
+        initialViewerMode: overlay.initialViewerMode,
+        handPathMode: overlay.handPathMode,
+        playOnOpen: overlay.playOnOpen,
+        playbackReleased,
+        onReadyForReveal: handleViewerReady,
+        onClose: handleDismiss,
+        shortCode: overlay.activeShortCode,
+        analyticsSource: overlay.analyticsSource,
+        shareOnOpen: overlay.shareOnOpen,
+        tunnelComposition: overlay.tunnelComposition,
+        tunnelSaveTarget: overlay.tunnelSaveTarget,
+        onTunnelSaved: overlay.onTunnelSaved,
+      } satisfies ComponentProps<typeof SequenceViewerDrawerContent>}
+    />
 
     {#if nativeLoadingCode}
       <div class="native-loader-surface" bind:this={nativeLoaderSurface}>
@@ -450,6 +488,27 @@
     height: 100%;
     min-height: 0;
     overflow: hidden;
+  }
+
+  .viewer-content-state {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: var(--space-3, 0.75rem);
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: var(--space-6, 1.5rem);
+    color: var(--theme-text-muted, rgba(255, 255, 255, 0.72));
+    text-align: center;
+  }
+
+  .viewer-content-error {
+    color: var(--theme-text, rgba(255, 255, 255, 0.95));
+  }
+
+  .viewer-content-error p {
+    margin: 0;
   }
 
   .native-loader-surface {

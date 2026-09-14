@@ -275,7 +275,7 @@
       // Device-gated: native share sheet on mobile (send via text/social/cloud),
       // anchor download on desktop — same pattern the video export uses.
       await shareOrDownloadBlob(blob, `mandala-${safeName}-${PNG_EXPORT_SIZE}px.png`, {
-        title: "TKA Mandala",
+        title: "Flow Arts Composer Mandala",
       });
     } catch (err) {
       console.error("[MandalaExport] Export failed:", err);

@@ -49,6 +49,7 @@ Delegates all rendering to child components.
   import { tryGetCreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
   import { setOptionAuditionContext } from "../context/option-audition-context";
   import { buildAppendedOptionSequence } from "../services/build-appended-option-sequence";
+  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
 
   // Props
   interface Props {
@@ -208,44 +209,57 @@ Delegates all rendering to child components.
     options: PreparedPictographData[];
     availability: { shownCount: number; hiddenCount: number };
   }> {
-    // One tile per option: apply the chosen per-hand spin direction to dash/static
-    // hands rather than fanning out CW/CCW tiles (keeps the grid scannable).
-    const noTurns = effectiveLeftTurns === 0 && effectiveRightTurns === 0;
-    let turned = noTurns
-      ? filtered
-      : filtered.map((o) =>
-          applyPendingTurnsToOption(
-            o,
-            effectiveLeftTurns,
-            effectiveRightTurns,
-            leftRotation,
-            rightRotation
-          )
-        );
+    const span = bootProfiler.startSpan("construct:prepare");
+    try {
+      // One tile per option: apply the chosen per-hand spin direction to dash/static
+      // hands rather than fanning out CW/CCW tiles (keeps the grid scannable).
+      const noTurns = effectiveLeftTurns === 0 && effectiveRightTurns === 0;
+      let turned = noTurns
+        ? filtered
+        : filtered.map((o) =>
+            applyPendingTurnsToOption(
+              o,
+              effectiveLeftTurns,
+              effectiveRightTurns,
+              leftRotation,
+              rightRotation
+            )
+          );
 
-    // When Continuous is on, drop any dash/static option whose chosen spin
-    // direction reverses against the established direction. Direction-only (not
-    // full getReversalCount) so the turns>1 magnitude heuristic doesn't nuke
-    // every option at 2+ turns.
-    const directionResult =
-      !noTurns && internalContinuousOnly && currentSequence.length >= 2
-        ? filterDirectionContinuousOptions(turned, currentSequence)
-        : { options: turned, totalCount: turned.length, hiddenCount: 0 };
-    turned = directionResult.options;
+      // When Continuous is on, drop any dash/static option whose chosen spin
+      // direction reverses against the established direction. Direction-only (not
+      // full getReversalCount) so the turns>1 magnitude heuristic doesn't nuke
+      // every option at 2+ turns.
+      const directionResult =
+        !noTurns && internalContinuousOnly && currentSequence.length >= 2
+          ? filterDirectionContinuousOptions(turned, currentSequence)
+          : { options: turned, totalCount: turned.length, hiddenCount: 0 };
+      turned = directionResult.options;
 
-    const s = getSettings();
-    const options = await preparer!.prepareBatch(turned, {
-      leftPropType: leftPropTypeOverride ?? s.leftPropType,
-      rightPropType: rightPropTypeOverride ?? s.rightPropType,
-    });
-
-    return {
-      options,
-      availability: {
-        shownCount: options.length,
-        hiddenCount: directionResult.hiddenCount,
-      },
-    };
+      const s = getSettings();
+      const options = await preparer!.prepareBatch(turned, {
+        themeMode: darkMode ? "dark" : "light",
+        fanAppearance: s.fanAppearance,
+        leftBuugengFlipped: s.leftBuugengFlipped,
+        rightBuugengFlipped: s.rightBuugengFlipped,
+        leftPropType: leftPropTypeOverride ?? s.leftPropType,
+        rightPropType: rightPropTypeOverride ?? s.rightPropType,
+      });
+      span("ok", { candidates: turned.length, options: options.length });
+      bootProfiler.milestone("construct:options-prepared", {
+        options: options.length,
+      });
+      return {
+        options,
+        availability: {
+          shownCount: options.length,
+          hiddenCount: directionResult.hiddenCount,
+        },
+      };
+    } catch (error) {
+      span("error");
+      throw error;
+    }
   }
 
   // Single effect: always push the prop value to both internal state and pickerState

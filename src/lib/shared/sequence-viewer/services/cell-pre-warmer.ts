@@ -1,7 +1,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { PreviewCellRenderOptions } from "./preview-cell-renderer";
-import type { LayerRenderOptions, LayerVisibility } from "../../render/services/types";
+import { resolvePreviewCellRender } from "./preview-cell-render-contract";
 
 export type PreWarmPriority = "background" | "user-visible" | "user-blocking";
 import { deriveCacheKey } from "./cell-cache-key-deriver";
@@ -22,13 +22,14 @@ interface CellTask {
 }
 
 function hasSchedulerApi(): boolean {
-  return typeof globalThis.scheduler !== "undefined"
-    && typeof globalThis.scheduler.postTask === "function";
+  return (
+    typeof globalThis.scheduler !== "undefined" &&
+    typeof globalThis.scheduler.postTask === "function"
+  );
 }
 
 function hasSchedulerYield(): boolean {
-  return hasSchedulerApi()
-    && typeof globalThis.scheduler!.yield === "function";
+  return hasSchedulerApi() && typeof globalThis.scheduler!.yield === "function";
 }
 
 export class CellPreWarmer {
@@ -45,11 +46,13 @@ export class CellPreWarmer {
     const existing = this.activeWarms.get(seqId);
     if (existing) {
       const priorityRank: Record<PreWarmPriority, number> = {
-        "background": 0,
+        background: 0,
         "user-visible": 1,
         "user-blocking": 2,
       };
-      const existingPriority = (existing as AbortController & { _priority?: PreWarmPriority })._priority ?? "background";
+      const existingPriority =
+        (existing as AbortController & { _priority?: PreWarmPriority })
+          ._priority ?? "background";
       if (priorityRank[priority] <= priorityRank[existingPriority]) {
         return;
       }
@@ -57,7 +60,9 @@ export class CellPreWarmer {
     }
 
     const controller = new AbortController();
-    (controller as AbortController & { _priority?: PreWarmPriority })._priority = priority;
+    (
+      controller as AbortController & { _priority?: PreWarmPriority }
+    )._priority = priority;
     this.activeWarms.set(seqId, controller);
 
     const isDark = settingsService.settings.darkMode ?? false;
@@ -110,7 +115,11 @@ export class CellPreWarmer {
     const leftPropType = settingsService.settings.leftPropType;
     const rightPropType = settingsService.settings.rightPropType;
     const catDogMode = settingsService.settings.catDogMode;
-    const catDogModeEnabled = isCatDogMode(leftPropType, rightPropType, catDogMode);
+    const catDogModeEnabled = isCatDogMode(
+      leftPropType,
+      rightPropType,
+      catDogMode
+    );
     const vm = getVisibilityStateManager();
 
     // Mirror ChoreoCard's canonical render options EXACTLY — same VM source, same
@@ -118,27 +127,33 @@ export class CellPreWarmer {
     // targets the default full-card view: no solo/hand-path filtering, both
     // motions visible. (showGrid was previously omitted here, so a grid-off card
     // baked grid:true into the pre-warm key and never hit.)
-    return buildCellRenderOptions({
-      cellSize: 240,
-      leftPropType,
-      rightPropType,
-      catDogModeEnabled,
-      leftBuugengFlipped: settingsService.settings.leftBuugengFlipped ?? false,
-      rightBuugengFlipped: settingsService.settings.rightBuugengFlipped ?? false,
-      showNonRadial: vm.getNonRadialVisibility(),
-      showGrid: vm.getGridVisibility(),
-      handPointVis: vm.getHandPointVisibility(),
-      showTKA: vm.getRawGlyphVisibility("tkaGlyph"),
-      showReversals: vm.getRawGlyphVisibility("reversalIndicators"),
-      showTnD: vm.getRawGlyphVisibility("tndGlyph"),
-      showElemental: vm.getRawGlyphVisibility("elementalGlyph"),
-      showPositions: vm.getRawGlyphVisibility("positionsGlyph"),
-      isSoloMode: false,
-      handPathMode: false,
-      browseViewMode: undefined,
-      showLeftMotion: true,
-      showRightMotion: true,
-    });
+    return {
+      fanAppearance: settingsService.settings.fanAppearance,
+      primaryPropColors: settingsService.settings.primaryPropColors,
+      ...buildCellRenderOptions({
+        cellSize: 240,
+        leftPropType,
+        rightPropType,
+        catDogModeEnabled,
+        leftBuugengFlipped:
+          settingsService.settings.leftBuugengFlipped ?? false,
+        rightBuugengFlipped:
+          settingsService.settings.rightBuugengFlipped ?? false,
+        showNonRadial: vm.getNonRadialVisibility(),
+        showGrid: vm.getGridVisibility(),
+        handPointVis: vm.getHandPointVisibility(),
+        showTKA: vm.getRawGlyphVisibility("tkaGlyph"),
+        showReversals: vm.getRawGlyphVisibility("reversalIndicators"),
+        showTnD: vm.getRawGlyphVisibility("tndGlyph"),
+        showElemental: vm.getRawGlyphVisibility("elementalGlyph"),
+        showPositions: vm.getRawGlyphVisibility("positionsGlyph"),
+        isSoloMode: false,
+        handPathMode: false,
+        browseViewMode: undefined,
+        showLeftMotion: true,
+        showRightMotion: true,
+      }),
+    };
   }
 
   private buildCellTasks(
@@ -150,7 +165,8 @@ export class CellPreWarmer {
 
     const firstStep = sequence.steps![0];
     if (sequence.startPosition || firstStep) {
-      const startData = sequence.startPosition || createStartPositionFromBeatStart(firstStep!);
+      const startData =
+        sequence.startPosition || createStartPositionFromBeatStart(firstStep!);
       tasks.push({
         pictographData: startData,
         stepNumber: undefined,
@@ -190,7 +206,9 @@ export class CellPreWarmer {
         if (hasSchedulerYield()) {
           await globalThis.scheduler!.yield();
         } else if (typeof requestIdleCallback !== "undefined") {
-          await new Promise<void>(resolve => requestIdleCallback(() => resolve()));
+          await new Promise<void>((resolve) =>
+            requestIdleCallback(() => resolve())
+          );
         }
       }
 
@@ -214,7 +232,9 @@ export class CellPreWarmer {
     signal: AbortSignal
   ): Promise<void> {
     try {
-      const promises = tasks.map(task => this.renderCellIfNeeded(task, options, signal));
+      const promises = tasks.map((task) =>
+        this.renderCellIfNeeded(task, options, signal)
+      );
       await Promise.allSettled(promises);
 
       if (!signal.aborted) {
@@ -239,44 +259,25 @@ export class CellPreWarmer {
 
     if (signal.aborted) return;
 
-    const prepared = await pictographPreparer.prepareSingle(task.pictographData, {
-      themeMode: task.isDark ? "dark" : "light",
-      leftPropType: options.leftPropType,
-      rightPropType: options.catDogModeEnabled
-        ? options.rightPropType
-        : options.leftPropType,
-      showLeftMotion: options.showLeftMotion,
-      showRightMotion: options.showRightMotion,
-    });
-
+    const { data, prepareOptions, renderOptions, visibility } =
+      resolvePreviewCellRender(task.pictographData, task.isDark, options);
+    const prepared = await pictographPreparer.prepareSingle(
+      data,
+      prepareOptions
+    );
     if (signal.aborted) return;
-
     const pool = getWorkerRenderPool();
 
-    const visibility: LayerVisibility = {
-      showTKA: options.showTKA ?? true,
-      showReversals: options.showReversals ?? true,
-    };
-
-    const renderOptions: LayerRenderOptions = {
-      size: options.size,
-      darkMode: task.isDark,
-      showNonRadialPoints: options.showNonRadialPoints ?? true,
-      handPointVisibility: options.handPointVisibility ?? "all",
-      leftPropType: options.leftPropType,
-      rightPropType: options.catDogModeEnabled
-        ? options.rightPropType
-        : options.leftPropType,
-      showLeftMotion: options.showLeftMotion,
-      showRightMotion: options.showRightMotion,
-      showTnD: options.showTnD,
-      showElemental: options.showElemental,
-      showPositions: options.showPositions,
-    };
-
     try {
-      const resolvedStepNum = options.showStepNumbers ? task.stepNumber : undefined;
-      const blob = await pool.render(prepared, renderOptions, visibility, resolvedStepNum);
+      const resolvedStepNum = options.showStepNumbers
+        ? task.stepNumber
+        : undefined;
+      const blob = await pool.render(
+        prepared,
+        renderOptions,
+        visibility,
+        resolvedStepNum
+      );
       if (!signal.aborted) {
         await pictographBlobCache.set(task.cacheKey, blob);
       }

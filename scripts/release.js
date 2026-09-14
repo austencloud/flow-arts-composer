@@ -889,11 +889,11 @@ function popStash() {
 }
 
 /**
- * Push branch and tags to remote
+ * Push the branch and only this release's tag to remote
  */
-function pushToRemote(branch) {
+function pushToRemote(branch, version) {
   execSync(`git push origin ${branch}`, { stdio: "inherit" });
-  execSync("git push --tags", { stdio: "inherit" });
+  execSync(`git push origin refs/tags/v${version}`, { stdio: "inherit" });
 }
 
 /**
@@ -1485,7 +1485,7 @@ async function main() {
 
   // Push main branch and tags
   console.log("✓ Pushing to remote...");
-  pushToRemote("main");
+  pushToRemote("main", suggestedVersion);
 
   // Create GitHub release
   console.log("✓ Creating GitHub release...");

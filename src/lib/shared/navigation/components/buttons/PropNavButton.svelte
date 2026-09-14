@@ -4,6 +4,7 @@
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { onMount } from "svelte";
   import NavButton from "./NavButton.svelte";
+  import SelectedPropPreview from "./SelectedPropPreview.svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -24,9 +25,15 @@
   const settings = $derived(getSettings());
   const leftPropType = $derived(settings.leftPropType ?? PropType.STAFF);
   const displayInfo = $derived(getPropTypeDisplayInfo(leftPropType));
-
-  const iconHtml = $derived(
-    `<img src="${displayInfo.image}" alt="${displayInfo.label}" style="width: 26px; height: 26px; object-fit: contain; filter: brightness(1.3) saturate(1.3);" />`
+  const rightPropType = $derived(
+    settings.catDogMode
+      ? (settings.rightPropType ?? leftPropType)
+      : leftPropType
+  );
+  const propLabel = $derived(
+    rightPropType === leftPropType
+      ? displayInfo.label
+      : `${displayInfo.label} + ${getPropTypeDisplayInfo(rightPropType).label}`
   );
 
   function startLongPress(event: PointerEvent) {
@@ -69,16 +76,18 @@
 >
   <div class="prop-button-container">
     <NavButton
-      icon={iconHtml}
+      iconContent={propIcon}
       label="Prop"
       type="special"
       color="var(--theme-accent, #818cf8)"
       gradient="var(--theme-accent, #818cf8)"
-      ariaLabel="Change prop type. Current: {displayInfo.label}"
+      ariaLabel="Change props. Current: {propLabel}"
       active={false}
     />
   </div>
 </div>
+
+{#snippet propIcon()}<SelectedPropPreview size={36} />{/snippet}
 
 <style>
   .prop-nav-button-wrapper {

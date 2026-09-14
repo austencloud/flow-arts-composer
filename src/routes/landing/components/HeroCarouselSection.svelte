@@ -222,7 +222,7 @@
   />
 </svelte:head>
 
-<section class="hero-carousel" aria-label="TKA hero introduction">
+<section class="hero-carousel" aria-label="Flow Arts Composer introduction">
   <!-- Left column on wide screens / stacked top on mobile+laptop. Holds the
        name, tagline, primary CTA and the wide-only quick links. Below 1200px
        .hero-copy is display:contents, so these behave as direct flex children of

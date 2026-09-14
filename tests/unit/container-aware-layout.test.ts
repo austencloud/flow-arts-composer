@@ -23,6 +23,27 @@ const base = (over: Partial<BestFitInput>): BestFitInput => ({
 });
 
 describe("pickBestFitLayout", () => {
+  it.each([
+    [960, 900],
+    [1700, 900],
+    [375, 700],
+  ])(
+    "packs 32 steps into complete four- or eight-column rows at %sx%s",
+    (containerWidth, containerHeight) => {
+      const layout = pickBestFitLayout(
+        base({
+          stepCount: 32,
+          containerWidth,
+          containerHeight,
+          showQRCode: true,
+        })
+      )!;
+      const columns = stepCols(layout);
+      expect([4, 8]).toContain(columns);
+      const rows = layout.rows - (layout.startPlacement === "row" ? 1 : 0);
+      expect(columns * rows).toBe(32);
+    }
+  );
   it("keeps a 16-count on canonical columns in a tall mobile card", () => {
     const r = pickBestFitLayout(
       base({

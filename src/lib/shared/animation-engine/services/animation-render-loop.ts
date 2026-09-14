@@ -43,6 +43,8 @@ import {
   dimHex,
   spotlightFactor,
   tunnelPropColor,
+  tunnelPerformerPair,
+  type TunnelPropColorPair,
   type TunnelLayerSelection,
 } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 import type { EmitterTip } from "$lib/shared/effects/renderers/emitter-tip";
@@ -111,6 +113,47 @@ function subscribeToLongTasks(listener: LongTaskListener): () => void {
 function hasTrailTips(map: TipEffectMap | undefined): boolean {
   if (!map) return false;
   return Object.values(map).some((a) => a.effect === "trails");
+}
+
+/** A backwards step jump becomes a fire-cache loop boundary only when it
+ * crosses the known sequence end into its start window. This excludes seeks
+ * such as beat 3 → beat 1. Playback is one-based: a four-count
+ * sequence runs from 1 through 5, then wraps back to 1. */
+export function isConfirmedFireCacheLoop(
+  previousStep: number,
+  currentStep: number,
+  sequenceSteps: number | undefined,
+  loopDetected: boolean,
+  isPlaying: boolean
+): boolean {
+  return (
+    isPlaying &&
+    loopDetected &&
+    sequenceSteps !== undefined &&
+    sequenceSteps > 0 &&
+    previousStep >= sequenceSteps + 1 - 0.5 &&
+    currentStep >= 1 &&
+    currentStep <= 1.5
+  );
+}
+
+/** Cache frames are only phase-safe while playback changes continuously. */
+export function hasFireCachePlaybackDiscontinuity(
+  previousStep: number,
+  currentStep: number,
+  isPlaying: boolean,
+  dtSeconds: number,
+  stepChangedWhilePaused: boolean,
+  tipGapDetected: boolean,
+  confirmedLoop: boolean
+): boolean {
+  return (
+    tipGapDetected ||
+    (!confirmedLoop &&
+      (stepChangedWhilePaused ||
+        Math.abs(currentStep - previousStep) > 0.5 ||
+        (isPlaying && dtSeconds > 0.2)))
+  );
 }
 
 const MANDALA_GUIDE_CONFIG: MandalaOverlayConfig = {
@@ -624,7 +667,8 @@ export class AnimationRenderLoop {
           spectrum,
           baseLeft,
           baseRight,
-          params.props.tunnelSelectedLayer ?? null
+          params.props.tunnelSelectedLayer ?? null,
+          params.props.tunnelPropColors
         ),
       });
     }
@@ -649,11 +693,18 @@ export class AnimationRenderLoop {
     spectrum: boolean,
     baseLeft: string,
     baseRight: string,
-    selectedLayer: TunnelLayerSelection = null
+    selectedLayer: TunnelLayerSelection = null,
+    colors?: TunnelPropColorPair | null
   ): string {
     const isLeft = propIndex % 2 === 0;
-    const raw =
-      propIndex <= 1
+    const exact = colors
+      ? tunnelPerformerPair(colors, Math.floor(propIndex / 2))
+      : null;
+    const raw = exact
+      ? isLeft
+        ? exact.left
+        : exact.right
+      : propIndex <= 1
         ? isLeft
           ? baseLeft
           : baseRight
@@ -722,7 +773,8 @@ export class AnimationRenderLoop {
           spectrum,
           baseLeft,
           baseRight,
-          params.props.tunnelSelectedLayer ?? null
+          params.props.tunnelSelectedLayer ?? null,
+          params.props.tunnelPropColors
         ),
       });
     }
@@ -1282,7 +1334,11 @@ export class AnimationRenderLoop {
       letter,
       props,
       visibility,
+      isPlaying,
     } = params;
+
+    const previousStep = this.previousStep;
+    const stepChangedWhilePaused = !isPlaying && currentStep !== previousStep;
 
     // Tail length is authored as "visible ring points at ~60fps render rate."
     // The path-cache pipeline uses fadeDurationMs for both read window and
@@ -1332,6 +1388,19 @@ export class AnimationRenderLoop {
     if (this.loopDetectedThisFrame) {
       this.loopStartTime = currentTime;
     }
+    // currentStep is the duration-aware, fractional beat coordinate used to
+    // paint props. It is therefore the only cache phase that remains correct
+    // through pause/resume and playback-speed changes. A generic backwards
+    // jump is not enough to prove a loop: only the known path-cache end→start
+    // transition may complete or start a fire recording.
+    const sequenceSteps = this.pathCache?.getCacheInfo()?.totalSteps;
+    const fireLoopDetected = isConfirmedFireCacheLoop(
+      previousStep,
+      currentStep,
+      sequenceSteps,
+      this.loopDetectedThisFrame,
+      isPlaying
+    );
 
     // Apply visibility settings
     const effectiveGridVisible = gridVisible && visibility.gridVisible;
@@ -1674,10 +1743,20 @@ export class AnimationRenderLoop {
           darkMode: params.darkMode ?? false,
           propSprites: renderedPropSprites,
           propColors: params.propColors,
-          loopDetected: this.loopDetectedThisFrame || tipResult.gapDetected,
+          loopDetected: fireLoopDetected,
+          loopDuration: fireLoopDetected ? sequenceSteps : undefined,
+          playbackDiscontinuity: hasFireCachePlaybackDiscontinuity(
+            previousStep,
+            currentStep,
+            isPlaying,
+            dtSeconds,
+            stepChangedWhilePaused,
+            tipResult.gapDetected,
+            fireLoopDetected
+          ),
           playbackSpeed: params.playbackSpeed,
           sequenceContentHash: params.sequenceContentHash,
-          relativeTime: currentTime - this.loopStartTime,
+          relativeTime: Math.max(0, currentStep - 1),
           isSeamlesslyLoopable: params.isSeamlesslyLoopable ?? false,
         };
 
@@ -2044,8 +2123,10 @@ export class AnimationRenderLoop {
         rightPropType: params.rightPropType,
         trackingMode: params.trailSettings.trackingMode,
         pathOptions: params.mandalaPathOptions,
-        leftColor: params.trailSettings.leftColor,
-        rightColor: params.trailSettings.rightColor,
+        leftColor:
+          params.primaryPropColors?.left ?? params.trailSettings.leftColor,
+        rightColor:
+          params.primaryPropColors?.right ?? params.trailSettings.rightColor,
         sequenceKey: params.sequenceContentHash,
       }
     );

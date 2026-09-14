@@ -33,11 +33,17 @@ const imageCache = {
   get: vi.fn().mockResolvedValue(null),
   set: vi.fn().mockResolvedValue(undefined),
 };
+const preparedCache = {
+  keyFor: vi.fn().mockResolvedValue("ready-key"),
+  get: vi.fn().mockResolvedValue(null),
+  set: vi.fn().mockResolvedValue(undefined),
+};
 
 describe("QRCodeGenerator canonical cell readiness", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     imageCache.get.mockResolvedValue(null);
+    preparedCache.get.mockResolvedValue(null);
   });
 
   it("verifies both themes with the printed prop pair before creating a code", async () => {
@@ -53,7 +59,8 @@ describe("QRCodeGenerator canonical cell readiness", () => {
     const generator = new QRCodeGenerator(
       { createShortCode } as never,
       imageCache as never,
-      warm
+      warm,
+      preparedCache
     );
 
     await generator.generateForSequence(sequence, {
@@ -95,7 +102,8 @@ describe("QRCodeGenerator canonical cell readiness", () => {
     const generator = new QRCodeGenerator(
       { createShortCode } as never,
       imageCache as never,
-      warm
+      warm,
+      preparedCache
     );
 
     await expect(generator.generateForSequence(sequence)).rejects.toThrow(
@@ -118,7 +126,8 @@ describe("QRCodeGenerator canonical cell readiness", () => {
     const generator = new QRCodeGenerator(
       { createShortCode } as never,
       imageCache as never,
-      warm
+      warm,
+      preparedCache
     );
     const controller = new AbortController();
     const generating = generator.generateForSequence(sequence, {
@@ -132,6 +141,93 @@ describe("QRCodeGenerator canonical cell readiness", () => {
     await expect(generating).rejects.toMatchObject({ name: "AbortError" });
     expect(warm).toHaveBeenCalledOnce();
     expect(createShortCode).not.toHaveBeenCalled();
+  });
+
+  it("returns a prepared QR without warming, allocating or rasterizing", async () => {
+    const ready = {
+      svg: "<svg/>",
+      dataUrl: "data:ready",
+      encodedUrl: "https://tka.run/ABCD",
+      shortCode: "ABCD",
+    };
+    preparedCache.get.mockResolvedValue(ready);
+    const warm = vi.fn(),
+      createShortCode = vi.fn();
+    const generator = new QRCodeGenerator(
+      { createShortCode } as never,
+      imageCache as never,
+      warm,
+      preparedCache
+    );
+    expect(await generator.generateForSequence(sequence)).toEqual(ready);
+    expect(warm).not.toHaveBeenCalled();
+    expect(createShortCode).not.toHaveBeenCalled();
+    expect(getRawData).not.toHaveBeenCalled();
+  });
+
+  it("finds gallery artwork at the canonical bake size without generating", async () => {
+    const ready = {
+      svg: "<svg/>",
+      dataUrl: "data:ready",
+      encodedUrl: "https://tka.run/ABCD",
+      shortCode: "ABCD",
+    };
+    preparedCache.get.mockResolvedValue(ready);
+    const warm = vi.fn();
+    const createShortCode = vi.fn();
+    const generator = new QRCodeGenerator(
+      { createShortCode } as never,
+      imageCache as never,
+      warm,
+      preparedCache
+    );
+
+    await expect(
+      generator.findPreparedForSequence(sequence, {
+        size: 256,
+        leftPropType: PropType.POI,
+        rightPropType: PropType.FAN,
+      })
+    ).resolves.toEqual(ready);
+
+    expect(preparedCache.keyFor).toHaveBeenCalledWith(
+      sequence,
+      expect.objectContaining({
+        leftPropType: PropType.POI,
+        rightPropType: PropType.FAN,
+        catDogMode: true,
+      }),
+      expect.objectContaining({ size: 200 })
+    );
+    expect(warm).not.toHaveBeenCalled();
+    expect(createShortCode).not.toHaveBeenCalled();
+    expect(getRawData).not.toHaveBeenCalled();
+  });
+
+  it("publishes reusable artwork only after both themes and the QR succeed", async () => {
+    const warm = vi
+      .fn()
+      .mockResolvedValue({ total: 2, ready: 2, hashes: [], failures: [] });
+    const createShortCode = vi.fn().mockResolvedValue({
+      code: "ABCD",
+      url: "https://tka.run/ABCD",
+      isNew: false,
+    });
+    const generator = new QRCodeGenerator(
+      { createShortCode } as never,
+      imageCache as never,
+      warm,
+      preparedCache
+    );
+    const result = await generator.generateForSequence(sequence);
+    expect(preparedCache.set).toHaveBeenCalledWith("ready-key", result);
+    expect(warm).toHaveBeenCalledTimes(2);
+    preparedCache.set.mockClear();
+    warm.mockRejectedValue(new Error("missing cells"));
+    await expect(generator.generateForSequence(sequence)).rejects.toThrow(
+      "missing cells"
+    );
+    expect(preparedCache.set).not.toHaveBeenCalled();
   });
 });
 

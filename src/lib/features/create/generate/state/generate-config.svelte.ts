@@ -18,7 +18,6 @@ import { authState } from "$lib/shared/auth/state/auth-state.svelte";
 import { resolveAccessTier } from "$lib/shared/auth/domain/access-tier";
 import { isPremiumOrAbove } from "$lib/shared/auth/domain/models/user-role";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-import type { TurnLanes } from "@tka/sequence-engine/generation";
 import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import { fitLoopRhythmToLength } from "$lib/shared/create/services/loop-rhythm-gating";
 import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
@@ -28,6 +27,10 @@ import {
   type GenerationMotionTypeFilter,
   type GenerationStyleAxis,
 } from "$lib/shared/create/domain/generation-style";
+import {
+  DEFAULT_HAND_RELATIONSHIP,
+  type HandRelationship,
+} from "$lib/shared/create/domain/hand-relationship";
 
 // Re-export for convenience
 export type { UIGenerationConfig };
@@ -40,7 +43,6 @@ interface SerializedConfig {
   length: number;
   level: number;
   turnIntensity: number;
-  turnPattern?: TurnLanes | null;
   gridMode: GridMode;
   propContinuity: PropContinuity;
   period: Period;
@@ -53,6 +55,10 @@ interface SerializedConfig {
   constraintPreset?: GenerationStyleAxis;
   handPathMode?: GenerationStyleAxis;
   motionTypeFilter?: GenerationMotionTypeFilter;
+  // Hand relationship
+  handRelationship?: HandRelationship;
+  handRelationshipInverted?: boolean;
+  matchHandTurns?: boolean;
   // Duration rhythm template
   durationTemplateId?: string | null;
   // Spell mode length override
@@ -70,7 +76,6 @@ function saveConfig(config: UIGenerationConfig): void {
       length: config.length,
       level: config.level,
       turnIntensity: config.turnIntensity,
-      turnPattern: config.turnPattern,
       gridMode: config.gridMode as GridMode,
       propContinuity: config.propContinuity as PropContinuity,
       period: config.period as Period,
@@ -82,6 +87,9 @@ function saveConfig(config: UIGenerationConfig): void {
       constraintPreset: config.constraintPreset,
       handPathMode: config.handPathMode,
       motionTypeFilter: config.motionTypeFilter,
+      handRelationship: config.handRelationship,
+      handRelationshipInverted: config.handRelationshipInverted,
+      matchHandTurns: config.matchHandTurns,
       durationTemplateId: config.durationTemplateId,
       spellTargetLength: config.spellTargetLength,
     };
@@ -135,9 +143,6 @@ function loadConfig(): UIGenerationConfig | null {
     if (data.turnIntensity !== undefined) {
       result.turnIntensity = data.turnIntensity;
     }
-    if (data.turnPattern !== undefined) {
-      result.turnPattern = data.turnPattern;
-    }
     if (data.gridMode !== undefined) {
       result.gridMode = data.gridMode as GridMode;
     }
@@ -182,6 +187,15 @@ function loadConfig(): UIGenerationConfig | null {
     if (data.motionTypeFilter !== undefined) {
       result.motionTypeFilter = data.motionTypeFilter;
     }
+    if (data.handRelationship !== undefined) {
+      result.handRelationship = data.handRelationship;
+    }
+    if (data.handRelationshipInverted !== undefined) {
+      result.handRelationshipInverted = data.handRelationshipInverted;
+    }
+    if (data.matchHandTurns !== undefined) {
+      result.matchHandTurns = data.matchHandTurns;
+    }
     if (data.durationTemplateId !== undefined) {
       result.durationTemplateId = data.durationTemplateId;
     }
@@ -223,6 +237,9 @@ const DEFAULT_CONFIG: UIGenerationConfig = {
   loopType: LOOPType.ROTATED,
   reflectionAxis: "north-south",
   ...DEFAULT_GENERATION_STYLE,
+  handRelationship: DEFAULT_HAND_RELATIONSHIP,
+  handRelationshipInverted: false,
+  matchHandTurns: false,
   durationTemplateId: null,
   spellTargetLength: null,
 };
@@ -380,7 +397,6 @@ export function createGenerationConfigState(
     updateConfig({
       ...DEFAULT_CONFIG,
       ...(guestNow ? GUEST_DEFAULT_OVERRIDES : {}),
-      turnPattern: null,
     });
   }
 

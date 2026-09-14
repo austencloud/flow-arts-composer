@@ -1,64 +1,44 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { AnimationLoop } from "$lib/shared/animation-engine/services/animation-loop";
   import {
     createRenderActivityGate,
     renderGateTarget,
   } from "$lib/shared/render-gating/render-activity-gate";
   import { reducedMotion } from "$lib/shared/transitions/motion";
-  import {
-    downbeatPulse,
-    placementFromPositions,
-    type TimingMode,
-  } from "./timing-intro-phase";
+  import { downbeatPulse } from "./timing-intro-phase";
   import type { TimingLessonTopic } from "./timing-lesson-stage";
+  import PlacementComparison from "./PlacementComparison.svelte";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
 
   let { topic, active = true }: { topic: TimingLessonTopic; active?: boolean } =
     $props();
-  let positions = $state([180, 0, 90]);
-  let rotations = $state([
-    [1, 1],
-    [1, -1],
-  ]);
-  let timing = $state<TimingMode>("together");
-  let elapsed = $state(-0.15);
+  let elapsed = $state(0);
   let quiet = $state(true);
+  let reversed = $state([false, false]);
+  let selectedRhythm = $state("Together");
+
+  function selectRhythm(label: string): void {
+    if (label === selectedRhythm) return;
+    selectedRhythm = label;
+    elapsed = 0;
+  }
+  const rhythms = [
+    { label: "Together", offset: 0, caption: "Downbeats land together." },
+    { label: "Split", offset: 0.5, caption: "Downbeats alternate evenly." },
+    {
+      label: "Quarter",
+      offset: 0.25,
+      caption: "A short gap, then a long gap.",
+    },
+  ];
   const loop = new AnimationLoop();
   const gate = createRenderActivityGate({
     name: "timing-examples",
     rootMargin: "0px",
   });
-  const points = [
-    { angle: 0, x: 22.5, y: 50, name: "left" },
-    { angle: 90, x: 50, y: 62 / 3, name: "top" },
-    { angle: 180, x: 77.5, y: 50, name: "right" },
-    { angle: 270, x: 50, y: 238 / 3, name: "bottom" },
-  ];
-  const placementLabels = {
-    alpha: "Alpha",
-    beta: "Beta",
-    gamma: "Gamma",
-    between: "Between",
-  };
-  const placementCopy = {
-    alpha: "Opposite points.",
-    beta: "The same point.",
-    gamma: "A right angle apart.",
-    between: "Between positions.",
-  };
-  const timingOptions = [
-    { value: "together" as const, label: "Together" },
-    { value: "split" as const, label: "Split" },
-    { value: "quarter" as const, label: "Quarter" },
-  ];
-  const timingCopy = {
-    together: "At the same time.",
-    split: "Taking turns, evenly spaced.",
-    quarter: "A short gap, then a long gap.",
-  };
-
   onMount(() => {
     loop.setActivityGate(gate);
     const updatePreference = () => {
@@ -84,428 +64,366 @@
   $effect(() => {
     if (active && topic === "timing" && !quiet)
       loop.start((delta) => {
-        elapsed += delta / 2400;
+        elapsed += delta / 1400;
       }, 1);
     else loop.stop();
     return () => loop.stop();
   });
-  function selectTiming(value: TimingMode): void {
-    timing = value;
-    elapsed = -0.15;
-  }
 </script>
 
-<div class="examples-board" use:renderGateTarget={gate}>
+<div
+  class="examples-stage"
+  style:--lesson-left={DEFAULT_VIEWER_CUSTOM_COLORS.left}
+  style:--lesson-right={DEFAULT_VIEWER_CUSTOM_COLORS.right}
+  use:renderGateTarget={gate}
+>
   <Crossfade key={topic} fill>
     <div class="examples-scroll">
-      {#if topic === "placement"}
-        <div class="examples" role="group" aria-label="Placement examples">
-          {#each positions as angle, index}
-            {@const placement = placementFromPositions(0, angle / 360)}
-            <section
-              class="example"
-              aria-label={`Placement example ${index + 1}`}
-            >
-              <div
-                class="picture"
-                role="group"
-                aria-label="Tap a point to change placement"
+      <div class="teaching-band">
+        {#if topic === "placement"}
+          <PlacementComparison />
+        {:else if topic === "timing"}
+          <div class="examples" role="group" aria-label="Timing examples">
+            {#each rhythms as rhythm}
+              <section
+                class="example timing-example"
+                class:selected={selectedRhythm === rhythm.label}
+                aria-label={`${rhythm.label} timing`}
               >
-                <svg viewBox="0 0 320 300" aria-hidden="true">
-                  <circle class="ring" cx="160" cy="150" r="88" />
-                  <circle class="point" cx="160" cy="150" r="3" />
-                  {#each points as point}<circle
-                      class="point"
-                      cx={point.x * 3.2}
-                      cy={point.y * 3}
-                      r="3"
-                    />{/each}
-                  <g transform="translate(160 150)">
-                    <circle class="blue-dot" cx="-88" cy="0" r="19" />
-                    <g class="turn" style:transform={`rotate(${angle}deg)`}
-                      ><circle class="red-dot" cx="-88" cy="0" r="13" /></g
-                    >
-                  </g>
-                </svg>
-                {#each points as point}
-                  <button
-                    class="point-button"
-                    style:left={`${point.x}%`}
-                    style:top={`${point.y}%`}
-                    onclick={() => (positions[index] = point.angle)}
-                    aria-pressed={angle === point.angle}
-                    aria-label={`Example ${index + 1}: place the second dot at the ${point.name}`}
-                  ></button>
-                {/each}
-              </div>
-              <div class="example-copy" aria-live="polite">
-                <Crossfade key={placement}
-                  ><h2>{placementLabels[placement]}</h2>
-                  <p>{placementCopy[placement]}</p></Crossfade
+                <PanelButton
+                  fullWidth
+                  ariaLabel={`${rhythm.label} timing: ${rhythm.caption}`}
+                  ariaPressed={selectedRhythm === rhythm.label}
+                  onclick={() => selectRhythm(rhythm.label)}
                 >
-              </div>
-            </section>
-          {/each}
-        </div>
-      {:else if topic === "timing"}
-        <div class="timing-options">
-          <SegmentedControl
-            options={timingOptions}
-            value={timing}
-            onchange={selectTiming}
-            semantics="radiogroup"
-            ariaLabel="Timing examples"
-            color="accent"
+                  <div class="pulse-picture">
+                    <svg
+                      viewBox="0 0 260 156"
+                      role="img"
+                      aria-label={rhythm.caption}
+                    >
+                      {#each [0, rhythm.offset] as phase, index}
+                        {@const strength =
+                          quiet || selectedRhythm !== rhythm.label
+                            ? 0
+                            : downbeatPulse(elapsed, phase)}
+                        <g class:blue={index === 0} class:red={index === 1}>
+                          <circle
+                            class="pulse-ring"
+                            cx={index === 0 ? 70 : 190}
+                            cy="78"
+                            r={34 + 12 * (1 - strength)}
+                            opacity={0.15 + strength * 0.55}
+                          />
+                          <circle
+                            fill="currentColor"
+                            cx={index === 0 ? 70 : 190}
+                            cy="78"
+                            r={23 + 5 * strength}
+                            opacity={0.5 + 0.5 * strength}
+                          />
+                        </g>
+                      {/each}
+                    </svg>
+                  </div>
+                  <div class="caption">
+                    <h2>{rhythm.label}</h2>
+                    <p>{rhythm.caption}</p>
+                  </div>
+                </PanelButton>
+              </section>
+            {/each}
+          </div>
+        {:else}
+          <div
+            class="examples directions"
+            role="group"
+            aria-label="Direction examples"
           >
-            {#snippet optionContent(value)}
-              {@const selected = timing === value}
-              {@const offset =
-                value === "split" ? 0.5 : value === "quarter" ? 0.25 : 0}
-              <span class="timing-example">
-                <span class="picture">
-                  <svg viewBox="0 0 320 300" aria-hidden="true">
-                    {#each [0, offset] as phase, index}
-                      {@const strength =
-                        selected && !quiet ? downbeatPulse(elapsed, phase) : 0}
-                      <g class:blue={index === 0} class:red={index === 1}>
-                        <circle
-                          class="halo"
-                          cx={index === 0 ? 92 : 228}
-                          cy="150"
-                          r={29 + 15 * (1 - strength)}
-                          opacity={strength * 0.75}
-                        />
-                        <circle
-                          fill="currentColor"
-                          cx={index === 0 ? 92 : 228}
-                          cy="150"
-                          r={20 + 4 * strength}
-                          opacity={selected ? 0.55 + 0.45 * strength : 0.35}
-                        />
-                      </g>
-                    {/each}
-                  </svg>
-                </span>
-                <span class="example-copy"
-                  ><strong
-                    >{timingOptions.find((option) => option.value === value)
-                      ?.label}</strong
-                  ><span class="explanation">{timingCopy[value]}</span></span
-                >
-              </span>
-            {/snippet}
-          </SegmentedControl>
-        </div>
-      {:else}
-        <div
-          class="examples direction-examples"
-          role="group"
-          aria-label="Direction examples"
-        >
-          {#each rotations as pair, example}
-            {@const same = pair[0] === pair[1]}
-            <section
-              class="example"
-              aria-label={`Direction example ${example + 1}`}
-            >
-              <div
-                class="picture"
-                role="group"
-                aria-label="Tap either arrow to flip it"
-              >
-                <svg viewBox="0 0 320 300" aria-hidden="true">
-                  {#each pair as rotation, index}
-                    <g
-                      class:blue={index === 0}
-                      class:red={index === 1}
-                      transform={`translate(${index === 0 ? 83 : 237} 150)`}
+            {#each ["Same", "Opposite"] as label, example}
+              <section class="example" aria-label={`${label} direction`}>
+                <div class="direction-picture">
+                  <PanelButton
+                    fullWidth
+                    onclick={() => (reversed[example] = !reversed[example])}
+                    ariaLabel={`Reverse both arrows in ${label.toLowerCase()} direction`}
+                  >
+                    <svg viewBox="0 0 320 190" aria-hidden="true">
+                      {#each [0, 1] as index}
+                        {@const rotation =
+                          (reversed[example] ? -1 : 1) *
+                          (example === 1 && index === 1 ? -1 : 1)}
+                        <g
+                          class:blue={index === 0}
+                          class:red={index === 1}
+                          transform={`translate(${index === 0 ? 79 : 241} 98)`}
+                        >
+                          <g
+                            class="turn"
+                            style:transform={`scaleX(${rotation})`}
+                          >
+                            <path class="arc" d="M-33 33 A47 47 0 1 1 47 0" />
+                            <path
+                              fill="currentColor"
+                              d="M28-7 Q25-7 27-3 L43 20 Q47 25 51 20 L67-3 Q69-7 66-7Z"
+                            />
+                          </g>
+                        </g>
+                      {/each}
+                    </svg>
+                    <span class="reverse-label"
+                      ><i class="fa-solid fa-repeat" aria-hidden="true"
+                      ></i>Reverse both</span
                     >
-                      <g class="turn" style:transform={`scaleX(${rotation})`}>
-                        <path class="arc" d="M-35.35 35.35A50 50 0 1 1 50 0" />
-                        <path
-                          fill="currentColor"
-                          d="M35-8 Q31-8 34-4 L47 17 Q50 22 53 17 L66-4 Q69-8 65-8Z"
-                        />
-                      </g>
-                    </g>
-                  {/each}
-                </svg>
-                {#each pair as rotation, index}
-                  <button
-                    class="arrow-button"
-                    style:left={`${(index === 0 ? 83 : 237) / 3.2}%`}
-                    onclick={() => (pair[index] = -rotation)}
-                    aria-label={`Example ${example + 1}: flip ${index === 0 ? "left" : "right"} arrow. Currently ${rotation === 1 ? "clockwise" : "counterclockwise"}.`}
-                  ></button>
-                {/each}
-              </div>
-              <div class="example-copy" aria-live="polite">
-                <Crossfade key={same}
-                  ><h2>{same ? "Same" : "Opposite"}</h2>
+                  </PanelButton>
+                </div>
+                <div class="caption">
+                  <h2>{label}</h2>
                   <p>
-                    {same
+                    {example === 0
                       ? "Circling the same way."
                       : "Circling opposite ways."}
-                  </p></Crossfade
-                >
-              </div>
-            </section>
-          {/each}
-        </div>
-      {/if}
+                  </p>
+                </div>
+              </section>
+            {/each}
+          </div>
+        {/if}
+      </div>
     </div>
   </Crossfade>
 </div>
 
 <style>
-  .examples-board {
+  .examples-stage {
     width: 100%;
     height: 100%;
     container: examples / size;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 1rem;
-    background: var(--theme-card-bg);
     color: var(--theme-text);
-    overflow: hidden;
   }
   .examples-scroll {
     height: 100%;
     overflow: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
+    display: grid;
+    align-items: center;
+  }
+  .teaching-band {
+    width: min(100%, 144rem);
+    margin-inline: auto;
+    padding: 0.5rem 0.25rem;
   }
   .examples {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    height: 100%;
-    min-height: 22rem;
+    gap: clamp(1rem, 3cqw, 3rem);
   }
-  .direction-examples {
+  .directions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 68rem;
+    margin-inline: auto;
+    gap: clamp(1.5rem, 5cqw, 5rem);
   }
-  .example,
-  .timing-example {
+  .example {
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-width: 0;
-    padding: clamp(1rem, 2cqw, 3rem);
+    gap: 1.25rem;
   }
-  .example + .example {
-    border-inline-start: 1px solid var(--theme-stroke);
-  }
-  .picture {
-    display: block;
-    position: relative;
-    width: min(100%, 80rem, calc((100cqh - 10rem) * 320 / 300));
-    min-width: 0;
-    aspect-ratio: 320 / 300;
-    flex-shrink: 0;
-  }
-  .picture svg {
+  .pulse-picture,
+  .direction-picture {
     width: 100%;
+    max-width: 30rem;
+  }
+  .pulse-picture {
+    border: 1px solid var(--theme-stroke);
+    border-radius: 1rem;
+    background: var(--theme-panel-bg);
+    padding: 0.75rem;
+  }
+  .timing-example :global(.panel-btn) {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
     height: 100%;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: var(--theme-panel-bg);
+    transform: scale(0.94);
+    transition:
+      transform var(--transition-emphasis),
+      box-shadow var(--transition-emphasis),
+      border-color var(--transition-emphasis),
+      background-color var(--transition-emphasis);
+  }
+  .timing-example.selected :global(.panel-btn) {
+    transform: translateY(-0.3rem) scale(1);
+    border-color: var(--theme-accent);
+    box-shadow: var(--shadow-elevated);
+  }
+  .timing-example .pulse-picture {
+    border: 0;
+    background: none;
+  }
+  svg {
+    width: 100%;
     display: block;
     overflow: visible;
   }
-  .example-copy {
-    display: block;
-    width: 100%;
+  .direction-picture :global(.panel-btn) {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: var(--theme-panel-bg);
+  }
+  .caption {
     text-align: center;
-    min-height: 6rem;
   }
-  h2,
-  .example-copy strong {
-    display: block;
-    font-size: clamp(1.5rem, 2cqw, 3rem);
-    line-height: 1.2;
+  h2 {
     margin: 0;
-    font-weight: 750;
+    font-size: clamp(1.4rem, 1.8cqw, 2.25rem);
+    line-height: 1.2;
   }
-  p,
-  .explanation {
-    display: block;
-    margin: 0.6rem 0 0;
-    font-size: clamp(1rem, 1.1cqw, 1.5rem);
+  p {
+    margin: 0.65rem 0 0;
     font-weight: 400;
-    line-height: 1.5;
-    text-wrap: balance;
     color: var(--theme-text-dim);
-  }
-  .ring {
-    fill: none;
-    stroke: var(--theme-text-dim);
-    stroke-width: 1.5;
-    opacity: 0.45;
-  }
-  .point {
-    fill: var(--theme-text-dim);
-    opacity: 0.65;
+    font-size: clamp(1rem, 1.15cqw, 1.25rem);
+    line-height: 1.45;
+    text-wrap: balance;
   }
   .blue {
-    color: var(--prop-blue, #3d44b8);
+    color: var(--lesson-left);
   }
   .red {
-    color: var(--prop-red, #ed1c24);
+    color: var(--lesson-right);
   }
-  .blue-dot {
-    fill: var(--prop-blue, #3d44b8);
-  }
-  .red-dot {
-    fill: var(--prop-red, #ed1c24);
+  .pulse-ring {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.5;
   }
   .arc {
     fill: none;
     stroke: currentColor;
-    stroke-width: 8;
+    stroke-width: 11;
     stroke-linecap: round;
-  }
-  .halo {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
   }
   .turn {
     transform-origin: 0 0;
     transition: transform var(--transition-emphasis);
   }
-  .point-button,
-  .arrow-button {
-    position: absolute;
-    transform: translate(-50%, -50%);
-    border: 1px solid transparent;
-    border-radius: 50%;
-    padding: 0;
-    background: transparent;
-    cursor: pointer;
-    touch-action: manipulation;
+  .reverse-label {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    font-size: 0.95rem;
   }
-  .point-button {
-    width: 44px;
-    height: 44px;
-  }
-  .arrow-button {
-    top: 50%;
-    width: 46.875%;
-    height: 50%;
-    min-width: 44px;
-    min-height: 44px;
-  }
-  .point-button:hover,
-  .arrow-button:hover {
-    border-color: var(--theme-stroke-strong, var(--theme-text-dim));
-  }
-  .point-button:focus-visible,
-  .arrow-button:focus-visible {
-    outline: 2px solid var(--theme-text);
-    outline-offset: 3px;
-  }
-  .timing-options {
-    height: 100%;
-    min-height: 22rem;
-  }
-  .timing-options :global(.segmented-control) {
-    height: 100%;
-    padding: 0;
-    gap: 0;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-  }
-  .timing-options :global(.indicator) {
-    display: none;
-  }
-  .timing-options :global(.segment) {
-    padding: 0;
-    border: 2px solid transparent;
-    border-radius: 0.9rem;
-    white-space: normal;
-  }
-  .timing-options :global(.segment.selected) {
-    border-color: var(--theme-accent);
-    background: color-mix(in srgb, var(--theme-accent) 8%, transparent);
-  }
-  .timing-options :global(.segment-label) {
-    width: 100%;
-    height: 100%;
-  }
-  .timing-example {
-    height: 100%;
-  }
-  @container examples (min-width: 851px) and (max-height: 359px) {
-    .examples,
-    .timing-options {
-      min-height: 12rem;
-    }
-    .example,
-    .timing-example {
-      padding: 0.5rem;
-    }
-    .picture {
-      width: min(100%, max(7rem, calc((100cqh - 5rem) * 320 / 300)));
-    }
-    .example-copy {
-      min-height: 0;
-    }
-    h2,
-    .example-copy strong {
-      font-size: 1.25rem;
-    }
-    p,
-    .explanation {
-      margin-top: 0.25rem;
-    }
-  }
-  @container examples (max-width: 850px) or (max-aspect-ratio: 3/2) {
+  @container examples (max-width: 650px) {
     .examples {
       grid-template-columns: 1fr;
-      grid-template-rows: repeat(3, minmax(12rem, 1fr));
-      min-height: 36rem;
+      gap: 1rem;
     }
-    .direction-examples {
-      grid-template-rows: repeat(2, minmax(12rem, 1fr));
-      min-height: 24rem;
+    .example {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 0.75rem;
     }
-    .example,
     .timing-example {
+      display: block;
+    }
+    .timing-example :global(.panel-btn) {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 0.75rem;
+      padding: 0.5rem;
+    }
+    .timing-example svg {
+      height: 4rem;
+    }
+    .timing-example h2 {
+      font-size: 1.125rem;
+    }
+    .timing-example p {
+      font-size: 0.875rem;
+    }
+    .pulse-picture {
+      padding: 0.25rem;
+    }
+    .direction-picture :global(.panel-btn) {
+      padding: 0.5rem;
+    }
+    .reverse-label {
+      font-size: 0.875rem;
+    }
+    .teaching-band {
+      padding-block: 0.375rem;
+    }
+    h2 {
+      font-size: 1.25rem;
+    }
+    p {
+      margin-top: 0.4rem;
+      line-height: 1.35;
+    }
+  }
+  @media (max-height: 540px) and (min-width: 651px) {
+    .example {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .timing-example {
+      display: block;
+    }
+    .timing-example :global(.panel-btn) {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0.75rem;
       padding: 0.75rem;
-      gap: 0.5rem;
     }
-    .example + .example {
-      border-inline-start: 0;
-      border-top: 1px solid var(--theme-stroke);
+    h2 {
+      font-size: 1.25rem;
     }
-    .picture {
-      width: min(
-        100%,
-        max(9rem, calc((100cqh / 3 - 1.5rem) * 320 / 300)),
-        28rem
-      );
-      justify-self: center;
+    p {
+      margin-top: 0.4rem;
+      line-height: 1.35;
     }
-    .example-copy {
-      min-height: 0;
-    }
-    .timing-options {
-      min-height: 36rem;
-    }
-    .timing-options :global(.segmented-control) {
-      flex-direction: column;
-    }
-    .timing-options :global(.segment) {
-      flex: 1;
-      min-height: 12rem;
+    .direction-picture :global(.panel-btn) {
+      padding: 0.5rem;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    .turn {
+    .turn,
+    .timing-example :global(.panel-btn) {
       transition: none;
     }
   }
+  @media (min-width: 2400px) {
+    .directions {
+      max-width: 112rem;
+    }
+    .pulse-picture,
+    .direction-picture {
+      max-width: 42rem;
+    }
+    p {
+      font-size: 1.5rem;
+    }
+    .reverse-label {
+      font-size: 1.25rem;
+    }
+  }
   :global([data-motion-preference="reduce"]) .turn {
+    transition: none;
+  }
+  :global([data-motion-preference="reduce"])
+    .timing-example
+    :global(.panel-btn) {
     transition: none;
   }
 </style>

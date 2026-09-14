@@ -624,8 +624,9 @@ export function toggleBigVariant(propType: PropType): PropType {
  * composition recipes, …), which are left untouched.
  *
  * Curation: props NOT listed here are simply absent from the picker. Simple
- * Staff (backend thumb-orientation prop), Staff V2, and Hand (hand-path teaching
- * only) stay fully wired elsewhere but off the picker. Poi IS listed here but
+ * Staff (backend thumb-orientation prop) and Staff V2 stay fully wired
+ * elsewhere but off the picker. Hand is listed under Novelty for now so bare
+ * hands can be picked like any prop. Poi IS listed here but
  * dark-gated in BentoPropGrid (dev/admin only, matching the poi-legal filter
  * gate), so the public picker still omits it while the filter is validated.
  * (Fractalgeng was removed from the codebase entirely.)
@@ -687,6 +688,7 @@ export const PROP_PICKER_SECTIONS: { label: string; props: PropType[] }[] = [
       PropType.TRIQUETRA,
       PropType.TRIQUETRA2,
       PropType.POI,
+      PropType.HAND,
     ],
   },
   {

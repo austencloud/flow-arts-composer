@@ -93,7 +93,7 @@ describe("four-lane history archive ledger", () => {
     expect(qst.people).toBe("Mentive, based on Alex Kurowski's grid");
     expect(qst.summary).toContain("228 patterns");
     expect(qst.evidenceNote).toContain(
-      "That dates these copies, not the system's origin"
+      "The archive uses that export date"
     );
     expect(documents.map(({ id, pageCount }) => ({ id, pageCount }))).toEqual(
       expectedDocuments.map(({ id, pageCount }) => ({ id, pageCount }))
@@ -250,9 +250,9 @@ describe("four-lane history archive ledger", () => {
         lastVerifiedYear: 2026,
       },
     });
-    expect(activityLabel(homeOfPoi)).toBe("Archive online · community dormant");
+    expect(activityLabel(homeOfPoi)).toBe("Online archive");
     expect(homeOfPoi.activity?.note).toContain(
-      "newest visible forum post is from April 2025"
+      "Lessons and forum discussions remain available"
     );
     expect(homeOfPoi.citations.map((citation) => citation.href)).toEqual(
       expect.arrayContaining([
@@ -342,14 +342,14 @@ describe("four-lane history archive ledger", () => {
       const entry = archiveEntry(id);
       expect(entry.activity?.status, id).toBe("active");
       expect(entry.activity?.lastVerifiedYear, id).toBe(2026);
-      expect(activityLabel(entry), id).toBe("Active · verified 2026");
+      expect(activityLabel(entry), id).toBe("Sources checked in 2026");
     }
 
     // Staff Science's latest dated trace is 2024; the archive makes no claim
     // past it.
     const staffScience = archiveEntry("staff-science");
     expect(staffScience.activity?.status).toBe("unknown");
-    expect(activityLabel(staffScience)).toBe("Last public trace 2024");
+    expect(activityLabel(staffScience)).toBe("Latest source: 2024");
 
     // A record without an activity claim shows no activity label at all.
     expect(archiveEntry("caps").activity).toBeUndefined();
@@ -369,9 +369,7 @@ describe("four-lane history archive ledger", () => {
     );
     expect(fanAlphabet?.evidenceBasis).toBe("unresolved");
     expect(fanAlphabet?.people).toContain("early documented teacher");
-    expect(fanAlphabet?.summary).toContain(
-      "No reviewed source names a sole inventor"
-    );
+    expect(fanAlphabet?.evidenceNote).toContain("origin remains unclear");
   });
 
   it("keeps PoiNotation's repository record separate from adoption claims", () => {
@@ -379,8 +377,10 @@ describe("four-lane history archive ledger", () => {
       (entry) => entry.id === "poinotation"
     );
     expect(poiNotation?.evidenceLabel).toBe("Repository record");
-    expect(poiNotation?.evidenceNote).toContain(
-      "Adoption and influence are unverified"
+    expect(poiNotation?.people).toBe("Tiffany Fong");
+    expect(poiNotation?.citations[0]?.href).toBe(
+      "https://github.com/tiffanyfong/PoiNotation"
     );
+    expect(poiNotation?.summary).not.toMatch(/widely used|influential|popular/i);
   });
 });

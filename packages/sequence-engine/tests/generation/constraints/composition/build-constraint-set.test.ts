@@ -118,4 +118,25 @@ describe("buildConstraintSet", () => {
     expect(motionSoft).toBeUndefined();
     expect(result.weights).toBeUndefined();
   });
+
+  it("creates a hard HandRelationshipConstraint for handRelationship", () => {
+    const result = buildConstraintSet({
+      handRelationship: { map: "reflect-north-south", inverted: true },
+    });
+    const constraint = result.hard.find(
+      (c) => c.type === ConstraintType.HAND_RELATIONSHIP
+    );
+    expect(constraint).toBeDefined();
+    expect(constraint!.mode).toBe("hard");
+    expect(constraint!.description).toContain("reflect-north-south");
+    expect(constraint!.description).toContain("inverted");
+    expect(result.soft).toHaveLength(0);
+  });
+
+  it("does not create a hand relationship constraint when the option is absent", () => {
+    const result = buildConstraintSet({ propContinuity: "maximize" });
+    expect(
+      result.hard.find((c) => c.type === ConstraintType.HAND_RELATIONSHIP)
+    ).toBeUndefined();
+  });
 });

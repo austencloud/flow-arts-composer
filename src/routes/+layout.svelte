@@ -285,10 +285,38 @@
     const loader = URL_TO_MODULE[segment];
     if (loader) {
       // Fire-and-forget. Cache warms up while DI/firebase/auth resolve in parallel.
-      loader().catch(() => {
+      trackBootImport(`active-module:${segment}`, loader).catch(() => {
         // Preload failure is non-critical - ModuleRenderer retries on demand.
       });
     }
+  }
+
+  function trackBootImport<T>(
+    label: string,
+    load: () => Promise<T>
+  ): Promise<T> {
+    // Start before the import: timing only its later await misses preloaded work.
+    const start = performance.now();
+    const finish = (outcome: "ok" | "error") => {
+      try {
+        performance.measure(`boot:import:${label}:${outcome}`, {
+          start,
+          end: performance.now(),
+        });
+      } catch {
+        /* timing must not prevent startup */
+      }
+    };
+    return load().then(
+      (value) => {
+        finish("ok");
+        return value;
+      },
+      (error) => {
+        finish("error");
+        throw error;
+      }
+    );
   }
 
   function startAppImports() {
@@ -297,9 +325,18 @@
     startActiveModulePreload();
     const common = {
       bootProfiler: import("$lib/shared/analytics/boot-profiler"),
-      di: import("$lib/shared/composition-root"),
-      firebase: import("$lib/shared/auth/firebase"),
-      authState: import("$lib/shared/auth/state/auth-state.svelte"),
+      di: trackBootImport(
+        "composition-root",
+        () => import("$lib/shared/composition-root")
+      ),
+      firebase: trackBootImport(
+        "firebase",
+        () => import("$lib/shared/auth/firebase")
+      ),
+      authState: trackBootImport(
+        "auth-state",
+        () => import("$lib/shared/auth/state/auth-state.svelte")
+      ),
       i18n: import("$lib/shared/i18n/i18n.svelte.js"),
       modalUrlState:
         import("$lib/shared/application/state/ui/modal-url-state.svelte"),
@@ -310,8 +347,11 @@
     // fast enough - adding it here pulls too many deps into initial parallel
     // fetch and slows DI.
     if (import.meta.env.PROD) {
-      (common as Record<string, Promise<unknown>>).mainApp =
-        import("$lib/shared/application/components/MainApplication.svelte");
+      (common as Record<string, Promise<unknown>>).mainApp = trackBootImport(
+        "main-application",
+        () =>
+          import("$lib/shared/application/components/MainApplication.svelte")
+      );
     }
     return common;
   }
@@ -497,10 +537,20 @@
     // actually doing — which is what makes animations stutter on arrival. Both the
     // gallery and the Creators tab still load on demand when actually opened.
     const constrainedConnection = isConstrainedConnection();
+    // A fast connection does not make the entire public gallery useful to
+    // someone opening Construct. Keep local cache/mutation wiring, but let
+    // Browse own its network load when it is actually the requested workspace.
+    const prefetchBrowseNetwork =
+      !constrainedConnection &&
+      window.location.pathname.split("/")[1] === "browse";
+    bootProfiler.milestone("browse:prefetch-policy", {
+      network: prefetchBrowseNetwork,
+      constrainedConnection,
+    });
     const prefetchBrowseData = async () => {
       // Gallery: always warm from the IndexedDB cache (local, instant). On a
-      // constrained connection, skip the fresh Firestore sync; otherwise sync in
-      // the background so the gallery is up to date before the user opens it.
+      // constrained connection or another workspace, skip the fresh Firestore
+      // sync. Browse itself loads its network data on demand when opened.
       //
       // The desktop build seeds that cache from its bundled public index on
       // first launch; wait for it so the warm finds data instead of an empty
@@ -512,7 +562,7 @@
         const prefetcher = getGalleryPrefetcher();
         if (prefetcher && typeof prefetcher.prefetch === "function") {
           prefetcher
-            .prefetch({ skipNetworkSync: constrainedConnection })
+            .prefetch({ skipNetworkSync: !prefetchBrowseNetwork })
             .catch((err: unknown) =>
               console.warn("[Layout] Gallery prefetch failed:", err)
             );
@@ -522,8 +572,8 @@
       }
 
       // Creators: purely speculative warming for the Creators tab. Skip it
-      // entirely on a constrained connection — it loads when the tab is opened.
-      if (!constrainedConnection) {
+      // on other workspaces or constrained connections; the tab loads on demand.
+      if (prefetchBrowseNetwork) {
         import("$lib/features/creators/state/creators-data-state.svelte")
           .then(({ creatorsDataState }) => {
             if (!creatorsDataState.isInitialized) {

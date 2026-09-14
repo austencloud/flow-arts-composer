@@ -188,7 +188,7 @@
   function complete(): void {
     persistence.reset();
     haptic?.trigger("success");
-    onComplete?.();
+    onComplete?.(timingDirectionOnly ? "reading-choreo-cards" : undefined);
   }
 
   function handlePrimaryAction(): void {
@@ -242,6 +242,11 @@
   class:device-fit={timingDirectionOnly}
   class:is-intro={!activeMotion && !isComparison}
   class:has-focused-comparison={comparisonFocused}
+  style:--intro-artifact-height={topic?.id === "placement"
+    ? "min(clamp(48rem, 32vw, 70rem), max(30rem, 46cqw))"
+    : topic?.id === "direction"
+      ? "min(clamp(36rem, 20vw, 48rem), max(24rem, 34cqw))"
+      : "min(clamp(32rem, 17vw, 44rem), max(18rem, 30cqw))"}
   onkeydown={handleKeydown}
   tabindex="0"
   role="application"
@@ -323,6 +328,7 @@
               <TimingDirectionBoard
                 bind:this={comparisonBoard}
                 modes={ELEMENTAL_MODES}
+                showChoreoCards={!timingDirectionOnly}
                 articleHrefFor={(mode) =>
                   `/timing-and-direction/${mode.timing.toLowerCase()}-time-${mode.direction.toLowerCase()}-direction`}
                 active={isComparison && comparisonPresented}
@@ -337,6 +343,7 @@
 
     {#snippet controls()}
       <LessonStageControls
+        progressAppearance="steps"
         label={isComparison
           ? viewMode === "scroll"
             ? "Done"
@@ -379,7 +386,12 @@
   }
 
   .motions-experience :global(.progress-stack) {
-    gap: 0.45rem;
+    gap: 0.6rem;
+  }
+
+  .motions-experience :global(.curriculum-progress) {
+    color: var(--theme-text-dim);
+    font-weight: 500;
   }
 
   .motions-experience.has-focused-comparison {
@@ -592,6 +604,21 @@
     min-height: 0;
   }
 
+  .device-fit.is-intro :global(.lesson-stage-frame) {
+    grid-template-rows:
+      auto minmax(0, min(var(--intro-artifact-height), calc(100cqh - 18rem)))
+      auto;
+    align-content: center;
+    max-width: 110rem;
+    margin-inline: auto;
+  }
+
+  @media (min-width: 2400px) {
+    .device-fit.is-intro :global(.lesson-stage-frame) {
+      max-width: min(82cqw, 156rem);
+    }
+  }
+
   .device-fit :global(.artifact-inner.wide) {
     width: 100%;
     height: 100%;
@@ -609,6 +636,10 @@
     overflow: auto;
     overscroll-behavior: contain;
     scrollbar-width: thin;
+  }
+
+  .device-fit .timing-direction-state {
+    overflow: hidden;
   }
 
   .device-fit :global(.stage-controls) {
@@ -635,10 +666,19 @@
     }
   }
 
+  @container learn-tab (max-width: 650px) {
+    .device-fit.is-intro :global(.lesson-stage-frame) {
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      align-content: stretch;
+    }
+  }
+
   @media (max-height: 540px) and (min-width: 641px) {
     .motions-experience.device-fit :global(.lesson-stage-frame) {
       padding-top: 0.75rem;
       gap: 0.5rem;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      align-content: stretch;
     }
 
     .device-fit :global(.stage-heading) {

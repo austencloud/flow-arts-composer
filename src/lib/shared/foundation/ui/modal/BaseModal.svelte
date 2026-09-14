@@ -39,6 +39,14 @@
     onclose?: (reason: CloseReason) => void;
     /** Fires after the native dialog enters the top layer successfully. */
     onopened?: () => void;
+    /**
+     * Fires once the exit animation has finished and the native dialog has
+     * left the top layer. `onclose` fires at the start of that exit, while the
+     * dialog is still modal: a drawer or other non-top-layer surface opened
+     * from `onclose` is painted beneath the closing dialog and made inert by
+     * it. Open it from here instead.
+     */
+    onclosed?: () => void;
 
     // Behavior
     closeOnBackdrop?: boolean;
@@ -70,6 +78,7 @@
     open = $bindable(false),
     onclose,
     onopened,
+    onclosed,
     closeOnBackdrop = true,
     closeOnEscape = true,
     restoreFocus = true,
@@ -254,6 +263,7 @@
         isClosing = false;
         shouldRender = false;
         focusRestore?.restore();
+        onclosed?.();
       }, exitDuration);
     }
   });

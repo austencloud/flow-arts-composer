@@ -47,6 +47,10 @@ import {
 } from "../turns/TurnSource.js";
 import { materializeTurn } from "../turns/TurnMaterializer.js";
 import {
+  relatedRotationDirection,
+  type HandRelationshipOptions,
+} from "../constraints/style/hand-relationship-constraint.js";
+import {
   applyLayerPattern,
   enforceHandFlipParity,
 } from "../turns/layer-targeting.js";
@@ -181,7 +185,20 @@ function resolveTurnAllocationOptions(
       : {}),
     allowFloat:
       constraints.motionType !== "pro" && constraints.motionType !== "anti",
+    matchHands: options.matchHandTurns === true,
   };
+}
+
+/**
+ * The relationship that decides a left dash's spin, or undefined when turns
+ * are independent or no relationship is active. Only the random allocation
+ * path matches turns; a turnPattern keeps whatever lanes it was given.
+ */
+function resolveMatchedHandRelationship(
+  options: BuildOptions
+): HandRelationshipOptions | undefined {
+  if (!options.matchHandTurns) return undefined;
+  return options.constraintOptions?.handRelationship;
 }
 
 // Public types
@@ -224,6 +241,14 @@ export interface BuildOptions {
   maxTurnIntensity?: number;
 
   /**
+   * Give both hands the same turn value on every step (floats together). With
+   * a `constraintOptions.handRelationship` active, a left dash or static that
+   * gained turns also takes the spin the relationship implies from the right
+   * hand. Random allocation only: a `turnPattern` keeps its own lanes.
+   */
+  matchHandTurns?: boolean;
+
+  /**
    * Turns to use instead of rolling them at random, given as a repeating
    * period per prop. `{ left: [0, 1.5], right: [0.5] }` means left alternates no
    * turn and a turn and a half while right takes a half turn every step.
@@ -245,9 +270,10 @@ export interface BuildOptions {
    * static step carrying turns is a real figure, and a turn pattern that calls
    * for one cannot be built without this.
    *
-   * Defaults to on when `turnPattern` or `targetLayerPattern` is set — the two
-   * cases where the turns were asked for rather than rolled — and off
-   * otherwise. Set it explicitly to override either way. Even when on, a
+   * Defaults to on for a turn pattern, a layer target, or a hand-relationship
+   * LOOP that excludes dashes and can carry turns. Those LOOPs may need a
+   * stationary-hand step to reach the closing position. Set it explicitly to
+   * override either way. Even when on, a
    * static step still has to clear Type6Constraint, which refuses level 1
    * outright and refuses any step whose hands both sit at zero turns.
    */
@@ -703,6 +729,7 @@ export class SequenceBuilder {
           {
             level: options.level,
             allowStaticSteps: this.resolveAllowStaticSteps(options),
+            matchedHandRelationship: resolveMatchedHandRelationship(options),
           }
         );
         const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -759,7 +786,8 @@ export class SequenceBuilder {
         leftStartOrientation: options.leftStartOrientation,
         rightStartOrientation: options.rightStartOrientation,
       },
-      resolveLayerShaping(options)
+      resolveLayerShaping(options),
+      resolveMatchedHandRelationship(options)
     );
 
     // Stage 6: LOOP extension (if requested)
@@ -989,6 +1017,7 @@ export class SequenceBuilder {
         {
           level: options.level,
           allowStaticSteps: this.resolveAllowStaticSteps(options),
+          matchedHandRelationship: resolveMatchedHandRelationship(options),
         }
       );
       const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -1113,6 +1142,7 @@ export class SequenceBuilder {
           {
             level: options.level,
             allowStaticSteps: this.resolveAllowStaticSteps(options),
+            matchedHandRelationship: resolveMatchedHandRelationship(options),
           }
         );
         const propContinuity = this.resolveEffectivePropContinuity(options);
@@ -1186,7 +1216,8 @@ export class SequenceBuilder {
         leftStartOrientation: options.leftStartOrientation,
         rightStartOrientation: options.rightStartOrientation,
       },
-      resolveLayerShaping(options)
+      resolveLayerShaping(options),
+      resolveMatchedHandRelationship(options)
     );
 
     // Stage 6: LOOP extension (if requested)
@@ -1293,16 +1324,30 @@ export class SequenceBuilder {
   /**
    * Whether static letters may be used as ordinary steps.
    *
-   * On when the caller asked for particular turns — a turn pattern or a layer
-   * target — because a static step is then a deliberate figure rather than an
-   * accident. Off for undirected generation, where a random allocation puts
-   * turns on most steps at level 2 and up and would scatter α, β and γ through
-   * every sequence. An explicit value wins over both.
+   * A no-dash unison LOOP cannot rotate a two-step seed by a quarter turn
+   * using shifts alone. A static step with prop turns supplies the missing
+   * path without breaking the requested hand relationship. Undirected
+   * generation keeps its moving-hand default; an explicit value always wins.
    */
   private resolveAllowStaticSteps(options: BuildOptions): boolean {
+    const motionFamily =
+      options.constraintOptions?.motionFamily ??
+      (options.constraintPreset
+        ? getPresetOptions(options.constraintPreset)?.motionFamily
+        : undefined);
+    const constrainedLoopWithTurns =
+      options.loop &&
+      options.constraintOptions?.handRelationship &&
+      motionFamily?.exclude?.includes("dash") &&
+      options.level > 1 &&
+      options.maxTurnIntensity !== 0;
     return (
       options.allowStaticSteps ??
-      Boolean(options.turnPattern || options.targetLayerPattern)
+      Boolean(
+        options.turnPattern ||
+          options.targetLayerPattern ||
+          constrainedLoopWithTurns
+      )
     );
   }
 
@@ -1346,7 +1391,8 @@ export class SequenceBuilder {
       /** Keeps the rewritten turns inside the values this level actually has. */
       level?: number;
       maxTurnIntensity?: number;
-    }
+    },
+    matchedHandRelationship?: HandRelationshipOptions
   ): BuildResult {
     const bridgeIndices = new Set(searchResult.bridgeStepIndices);
     const sequence: SequenceStep[] = [];
@@ -1375,13 +1421,21 @@ export class SequenceBuilder {
       const prevLeftRot = prevStep?.motions.left.rotationDirection;
       const prevRightRot = prevStep?.motions.right.rotationDirection;
 
-      const leftTurn = materializeTurn(pd.leftMotion, leftTurns, {
-        previousRotation: prevLeftRot,
-        propContinuity,
-      });
+      // Right first: with matched turns and a relationship, a left dash or
+      // static takes the spin the relationship implies from the right hand.
       const rightTurn = materializeTurn(pd.rightMotion, rightTurns, {
         previousRotation: prevRightRot,
         propContinuity,
+      });
+      const leftTurn = materializeTurn(pd.leftMotion, leftTurns, {
+        previousRotation: prevLeftRot,
+        propContinuity,
+        forcedRotationDirection: matchedHandRelationship
+          ? relatedRotationDirection(
+              rightTurn.rotationDirection,
+              matchedHandRelationship
+            )
+          : undefined,
       });
 
       // PictographData from the variation provider carries string-typed

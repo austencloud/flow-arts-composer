@@ -11,6 +11,9 @@ import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { ImageCompositionSyncState } from "../components/image-composition-sync.svelte";
 import { SequenceViewerVisibilityState } from "./viewer-visibility-state.svelte";
 
+/** Which hand the viewer's Props picker edits while cat/dog mode is on. */
+export type ViewerPropHand = "left" | "right";
+
 interface ViewerPropVisibilityInputs {
   imageComposition: ImageCompositionSyncState;
   getSequence: () => SequenceData | null;
@@ -66,6 +69,9 @@ export function createViewerPropVisibilityState(
   const activeCatDog = $derived(
     isHandPath ? false : (catDogModeEnabled ?? false)
   );
+  // Cat/dog mode picks one hand at a time. Left first, then right, the same
+  // order the global prop drawer walks the pair.
+  let propHand = $state<ViewerPropHand>("left");
 
   const viewerVisibility = new SequenceViewerVisibilityState();
   applyMotionVisibility(
@@ -102,20 +108,68 @@ export function createViewerPropVisibilityState(
     }
   });
 
-  function handlePropTypeChange(propType: PropType): void {
-    if (isHandPathSequence(inputs.getSequence())) return;
+  function applyPropPair(
+    leftPropType: PropType,
+    rightPropType: PropType,
+    catDogMode: boolean
+  ): void {
     void dependencies.updateSettings({
       propViewingMode: "my-props",
-      catDogMode: false,
-      leftPropType: propType,
-      rightPropType: propType,
+      catDogMode,
+      leftPropType,
+      rightPropType,
     });
     if (inputs.getAnimationServicesReady()) {
-      dependencies.updateAnimationPropTypes(propType, propType);
+      dependencies.updateAnimationPropTypes(leftPropType, rightPropType);
     }
+  }
+
+  /**
+   * A single-grid picker passes no hand (or "both"): one prop for both hands,
+   * cat/dog off. The hand-aware Props page passes the hand it is editing; the
+   * other hand keeps its prop and a left pick moves on to the right, the order
+   * the global prop drawer walks the pair.
+   */
+  function handlePropTypeChange(
+    propType: PropType,
+    hand: ViewerPropHand | "both" = "both"
+  ): void {
+    if (isHandPathSequence(inputs.getSequence())) return;
+    if (hand !== "both") {
+      const leftPropType = hand === "left" ? propType : activeLeftProp;
+      const rightPropType = hand === "right" ? propType : activeRightProp;
+      applyPropPair(leftPropType, rightPropType, true);
+      inputs.onUrlParamChange?.(
+        hand === "left" ? "bp" : "rp",
+        dependencies.encodePropForUrl(propType)
+      );
+      if (hand === "left") propHand = "right";
+      return;
+    }
+    applyPropPair(propType, propType, false);
     const encoded = dependencies.encodePropForUrl(propType);
     inputs.onUrlParamChange?.("bp", encoded);
     inputs.onUrlParamChange?.("rp", encoded);
+  }
+
+  function setPropHand(hand: ViewerPropHand): void {
+    propHand = hand;
+  }
+
+  function handleCatDogToggle(): void {
+    if (isHandPath) return;
+    const next = !activeCatDog;
+    propHand = "left";
+    // Leaving cat/dog mode folds the pair back onto the left prop, the same
+    // collapse the Settings tab performs, so both hands render one prop again.
+    const rightPropType = next ? activeRightProp : activeLeftProp;
+    applyPropPair(activeLeftProp, rightPropType, next);
+    if (!next) {
+      inputs.onUrlParamChange?.(
+        "rp",
+        dependencies.encodePropForUrl(rightPropType)
+      );
+    }
   }
 
   function handleUnifiedDarkModeToggle(): void {
@@ -140,6 +194,11 @@ export function createViewerPropVisibilityState(
     get activeCatDog() {
       return activeCatDog;
     },
+    get propHand() {
+      return propHand;
+    },
+    setPropHand,
+    handleCatDogToggle,
     handlePropTypeChange,
     handleUnifiedDarkModeToggle,
   };

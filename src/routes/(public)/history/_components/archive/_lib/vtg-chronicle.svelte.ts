@@ -57,7 +57,7 @@ export const VTG1_CHAPTERS: VtgChapter[] = [
     figure: "beat-shapes-page",
     title: "Minimal Beat Shapes",
     people: "Brian Thompson",
-    note: "“First discovered and worked through by Brian Thompson.” He built physical manipulatives to work out how a spinner could move between the different patterns.",
+    note: "“First discovered and worked through by Brian Thompson.” Thompson built physical models to explore transitions between the patterns.",
   },
   {
     figure: "patterns-40-a",
@@ -69,13 +69,13 @@ export const VTG1_CHAPTERS: VtgChapter[] = [
     figure: "trans-split-same",
     title: "Transitions Between Shapes",
     people: "David “Tankboy” Cantor",
-    note: "An early attempt to understand how the patterns connect to one another. Yee’s 2019 retrospective identifies this chapter as the origin of VTG 3.",
+    note: "Explores connections between patterns. In his 2019 retrospective, Yee traces VTG 3 back to this chapter.",
   },
   {
     figure: "hybrid-3d",
     title: "3-D Hybrid Shapes",
     people: "Maiki Nope, Ben Drexler and Noel Yee",
-    note: "Written in Mike Icon and Jennifer Longo's house in Philadelphia, winter 2011. They found that from one angle the patterns collapse into lines of different lengths, then used that to build the 3-D hybrids. One flow artist has this page as a tattoo.",
+    note: "Written at Mike Icon and Jennifer Longo’s house in Philadelphia in winter 2011. Nope, Drexler, and Yee noticed that the patterns appeared as lines of different lengths from one angle. They used that observation to build the 3-D hybrids. One flow artist has this page as a tattoo.",
   },
 ];
 

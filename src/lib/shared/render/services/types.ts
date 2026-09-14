@@ -1,3 +1,4 @@
+import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import type { PropType } from "../../pictograph/prop/domain/enums/prop-type";
@@ -52,7 +53,9 @@ export type RenderCanvas = HTMLCanvasElement | OffscreenCanvas;
  * 2D rendering context type that works with both HTMLCanvasElement and OffscreenCanvas.
  * The intersection type captures the common API surface used for drawing.
  */
-export type RenderContext2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+export type RenderContext2D =
+  | CanvasRenderingContext2D
+  | OffscreenCanvasRenderingContext2D;
 
 /**
  * Layer types for compositional caching
@@ -69,6 +72,7 @@ export type LayerType = "base" | "gridPoints" | "tka" | "reversal" | "beat";
  * Options for layer rendering
  */
 export interface LayerRenderOptions {
+  fanAppearance?: FanAppearance;
   primaryPropColors?: { left: string; right: string } | null;
   size: number;
   /** Width multiplier for duration-expanded cells (1 = square, 2 = double-wide). Default: 1 */

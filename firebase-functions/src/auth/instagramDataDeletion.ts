@@ -37,7 +37,7 @@ export function renderInstagramDataDeletionStatusPage(
       ? {
           title: "Instagram data deletion complete",
           message:
-            "TKA removed the Instagram data associated with this request.",
+            "Flow Arts Composer removed the Instagram data associated with this request.",
         }
       : status === "not-found"
         ? {
@@ -46,9 +46,9 @@ export function renderInstagramDataDeletionStatusPage(
               "This confirmation code is invalid or has expired. Contact tkaflowarts@gmail.com if you need help.",
           }
         : {
-            title: "Delete your TKA data",
+            title: "Delete your Flow Arts Composer data",
             message:
-              "Delete your TKA account from the account deletion page, or contact tkaflowarts@gmail.com for help with an Instagram data request.",
+              "Delete your Flow Arts Composer account from the account deletion page, or contact tkaflowarts@gmail.com for help with an Instagram data request.",
           };
 
   return `<!doctype html>

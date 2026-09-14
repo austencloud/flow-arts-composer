@@ -24,14 +24,10 @@ export async function loadGelasioInto(fonts: FontFaceSet): Promise<void> {
   const origin = (globalThis as { location?: { origin?: string } }).location?.origin ?? "";
   await Promise.all(
     FACES.map(async ({ weight, path }) => {
-      try {
-        const url = origin + path;
-        const face = new FontFace("Gelasio", `url(${url})`, { weight, style: "normal" });
-        await face.load();
-        fonts.add(face);
-      } catch {
-        // Non-fatal: text falls back to the next font in the stack.
-      }
+      const url = origin + path;
+      const face = new FontFace("Gelasio", `url(${url})`, { weight, style: "normal" });
+      await face.load();
+      fonts.add(face);
     }),
   );
 }

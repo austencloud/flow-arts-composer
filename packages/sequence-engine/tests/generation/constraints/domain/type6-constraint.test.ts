@@ -15,9 +15,7 @@ const EMPTY_MOTION = {
   endOrientation: "",
 };
 
-function makeContext(
-  overrides: Partial<ConstraintContext>,
-): ConstraintContext {
+function makeContext(overrides: Partial<ConstraintContext>): ConstraintContext {
   const defaults: ConstraintContext = {
     stepIndex: 0,
     totalSteps: 4,
@@ -44,9 +42,7 @@ describe("Type6Constraint", () => {
   });
 
   it("rejects Type 6 at level 1", () => {
-    const result = constraint.evaluate(
-      makeContext({ letter: "α", level: 1 }),
-    );
+    const result = constraint.evaluate(makeContext({ letter: "α", level: 1 }));
     expect(result.satisfied).toBe(false);
     expect(result.score).toBe(0);
   });
@@ -62,7 +58,7 @@ describe("Type6Constraint", () => {
         letter: "γ",
         level: 2,
         turnAllocation: { left: 1, right: 0 },
-      }),
+      })
     );
     expect(result.satisfied).toBe(true);
     expect(result.score).toBe(1);
@@ -74,7 +70,7 @@ describe("Type6Constraint", () => {
         letter: "α",
         level: 2,
         turnAllocation: { left: 0, right: 0 },
-      }),
+      })
     );
     expect(result.satisfied).toBe(false);
     expect(result.score).toBe(0);
@@ -86,7 +82,7 @@ describe("Type6Constraint", () => {
         letter: "α",
         level: 3,
         turnAllocation: { left: 1, right: 0 },
-      }),
+      })
     );
     expect(result.satisfied).toBe(true);
     expect(result.score).toBe(1);
@@ -98,15 +94,13 @@ describe("Type6Constraint", () => {
         letter: "β",
         level: 3,
         turnAllocation: { left: 0, right: 0 },
-      }),
+      })
     );
     expect(result.satisfied).toBe(false);
   });
 
   it("rejects Type 6 at level 2 when no turn allocation provided", () => {
-    const result = constraint.evaluate(
-      makeContext({ letter: "τ", level: 2 }),
-    );
+    const result = constraint.evaluate(makeContext({ letter: "τ", level: 2 }));
     expect(result.satisfied).toBe(false);
   });
 
@@ -122,5 +116,29 @@ describe("Type6Constraint", () => {
     // Type 4 letter at level 3
     const r3 = constraint.evaluate(makeContext({ letter: "Φ", level: 3 }));
     expect(r3.satisfied).toBe(true);
+  });
+
+  it("rejects float assignments that materialize as zero turns on static hands", () => {
+    const result = constraint.evaluate(
+      makeContext({
+        letter: "β",
+        level: 3,
+        turnAllocation: { left: 1, right: 1 },
+        assignedTurns: { left: "fl", right: "fl" },
+      })
+    );
+    expect(result.satisfied).toBe(false);
+  });
+
+  it("allows one real prop turn alongside a float assignment", () => {
+    const result = constraint.evaluate(
+      makeContext({
+        letter: "β",
+        level: 3,
+        turnAllocation: { left: 1, right: 1 },
+        assignedTurns: { left: "fl", right: 1 },
+      })
+    );
+    expect(result.satisfied).toBe(true);
   });
 });

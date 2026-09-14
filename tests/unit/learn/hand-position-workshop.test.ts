@@ -35,6 +35,53 @@ function memory(saved?: unknown) {
 }
 
 describe("hand position workshop domain", () => {
+  it("keeps the placement family through 45-degree rotations and every reflection axis", () => {
+    for (const mode of [GridMode.DIAMOND, GridMode.BOX]) {
+      for (const left of getPlacementGridPoints(mode)) {
+        for (const right of getPlacementGridPoints(mode)) {
+          const kind = positionKindFor(left.location, right.location);
+          for (let step = -8; step <= 8; step++) {
+            const rotated = transformPosition(
+              left.location,
+              right.location,
+              "rotate",
+              { rotationSteps: step }
+            );
+            expect(positionKindFor(rotated.left, rotated.right)).toBe(kind);
+            expect(
+              transformPosition(rotated.left, rotated.right, "rotate", {
+                rotationSteps: -step,
+              })
+            ).toEqual({ left: left.location, right: right.location });
+          }
+          for (const reflectionAxis of [0, 1, 2, 3] as const) {
+            const reflected = transformPosition(
+              left.location,
+              right.location,
+              "mirror",
+              { reflectionAxis }
+            );
+            expect(positionKindFor(reflected.left, reflected.right)).toBe(kind);
+            expect(
+              transformPosition(reflected.left, reflected.right, "mirror", {
+                reflectionAxis,
+              })
+            ).toEqual({ left: left.location, right: right.location });
+          }
+        }
+      }
+    }
+    expect(
+      transformPosition(GridLocation.NORTH, GridLocation.EAST, "rotate", {
+        rotationSteps: 1,
+      })
+    ).toEqual({ left: GridLocation.NORTHEAST, right: GridLocation.SOUTHEAST });
+    expect(
+      transformPosition(GridLocation.NORTH, GridLocation.EAST, "mirror", {
+        reflectionAxis: 1,
+      })
+    ).toEqual({ left: GridLocation.EAST, right: GridLocation.NORTH });
+  });
   it("renders the canonical static letter for every arrangement without changing either hand", () => {
     for (const mode of [GridMode.DIAMOND, GridMode.BOX]) {
       for (const left of getPlacementGridPoints(mode)) {

@@ -339,7 +339,7 @@ describe("Shape Matrix app boundary", () => {
     expect(drillSource).not.toContain('hoverHint: "none"');
     expect(drillSource).toContain("onPropPickerRequest={onproppickertoggle}");
     expect(theoryDetailSource).toMatch(
-      /\{#if app\.compact\}\s*<div class="animation-controls"[\s\S]*?<AnimationPanel/
+      /\{#if app\.compact\}\s*<div[\s\S]{0,200}?class="animation-controls"[\s\S]*?<AnimationPanel/
     );
     expect(theoryDetailSource).toContain("<ShapeMatrixStageActions />");
     // The theory stage is its own button rather than an AnimatorCanvas, so it
@@ -380,9 +380,19 @@ describe("Shape Matrix app boundary", () => {
     expect(theoryDetailSource).toContain(
       "onPropPickerRequest={app.togglePropPicker}"
     );
+    // Compact hosts compose the picker beside the canvas rather than covering
+    // it: same focus mode the section controls use, same canonical grid.
     expect(shellSource).toMatch(
-      /\{#if appState\.compact\}\s*<PropSelectionSheet/
+      /\{#if focusMode\}[\s\S]{0,200}?<ShapeMatrixFocusWorkspace/
     );
+    expect(shellSource).toMatch(
+      /focusMode = \$derived\(\s*appState\.compact &&\s*\(appState\.propPickerOpen \|\| animationState\.activeSection !== null\)/
+    );
+    expect(shellSource).not.toContain("PropSelectionSheet");
+    const focusWorkspaceSource = read(
+      "src/lib/shared/shape-matrix/app/components/ShapeMatrixFocusWorkspace.svelte"
+    );
+    expect(focusWorkspaceSource).toContain("<BentoPropGrid");
     expect(stageActionsSource).toContain("aria-pressed={open}");
     expect(stageActionsSource).toContain("animationState.openCustomize()");
     expect(stageActionsSource).not.toContain("ControlDock");

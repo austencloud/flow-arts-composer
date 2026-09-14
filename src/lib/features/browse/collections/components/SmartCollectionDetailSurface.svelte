@@ -110,7 +110,7 @@
         <p>
           {description ??
             (readOnly
-              ? "A Smart Collection maintained by TKA."
+              ? "A Smart Collection maintained by Flow Arts Composer."
               : "A live collection built from saved filters.")}
         </p>
       </div>

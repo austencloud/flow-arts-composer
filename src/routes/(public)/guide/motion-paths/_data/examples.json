@@ -1,0 +1,485 @@
+[
+  {
+    "word": "AAAA",
+    "steps": [
+      {
+        "letter": "α",
+        "startPosition": "alpha7",
+        "endPosition": "alpha7",
+        "timing": "none",
+        "direction": "none",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "e",
+          "endLocation": "e",
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "w",
+          "endLocation": "w",
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 0,
+        "stepNumber": 0
+      },
+      {
+        "letter": "A",
+        "startPosition": "alpha7",
+        "endPosition": "alpha5",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "e",
+          "endLocation": "n",
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "w",
+          "endLocation": "s",
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 4,
+        "stepNumber": 1
+      },
+      {
+        "letter": "A",
+        "startPosition": "alpha5",
+        "endPosition": "alpha3",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "n",
+          "endLocation": "w",
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "s",
+          "endLocation": "e",
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 1,
+        "stepNumber": 2
+      },
+      {
+        "letter": "A",
+        "startPosition": "alpha3",
+        "endPosition": "alpha1",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "w",
+          "endLocation": "s",
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "e",
+          "endLocation": "n",
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 1,
+        "stepNumber": 3
+      },
+      {
+        "letter": "A",
+        "startPosition": "alpha1",
+        "endPosition": "alpha7",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "s",
+          "endLocation": "e",
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "n",
+          "endLocation": "w",
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 1,
+        "stepNumber": 4
+      }
+    ],
+    "startPosition": "alpha7",
+    "endPosition": "alpha7",
+    "stepCount": 4,
+    "constraintReport": {
+      "score": 1,
+      "satisfied": true,
+      "details": [
+        {
+          "constraint": "continuity",
+          "score": 1,
+          "description": "Perfect continuity: no reversals in 4 steps",
+          "mode": "soft"
+        },
+        {
+          "constraint": "handPath",
+          "score": 1,
+          "description": "100% satisfaction",
+          "mode": "soft"
+        }
+      ]
+    }
+  },
+  {
+    "word": "BBBB",
+    "steps": [
+      {
+        "letter": "α",
+        "startPosition": "alpha7",
+        "endPosition": "alpha7",
+        "timing": "none",
+        "direction": "none",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "e",
+          "endLocation": "e",
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "w",
+          "endLocation": "w",
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 0,
+        "stepNumber": 0
+      },
+      {
+        "letter": "B",
+        "startPosition": "alpha7",
+        "endPosition": "alpha1",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "e",
+          "endLocation": "s",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "out"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "w",
+          "endLocation": "n",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "out"
+        },
+        "variation": 2,
+        "stepNumber": 1
+      },
+      {
+        "letter": "B",
+        "startPosition": "alpha1",
+        "endPosition": "alpha3",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "s",
+          "endLocation": "w",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "out",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "n",
+          "endLocation": "e",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "out",
+          "endOrientation": "in"
+        },
+        "variation": 0,
+        "stepNumber": 2
+      },
+      {
+        "letter": "B",
+        "startPosition": "alpha3",
+        "endPosition": "alpha5",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "w",
+          "endLocation": "n",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "out"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "e",
+          "endLocation": "s",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "out"
+        },
+        "variation": 0,
+        "stepNumber": 3
+      },
+      {
+        "letter": "B",
+        "startPosition": "alpha5",
+        "endPosition": "alpha7",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "n",
+          "endLocation": "e",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "out",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "s",
+          "endLocation": "w",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "out",
+          "endOrientation": "in"
+        },
+        "variation": 0,
+        "stepNumber": 4
+      }
+    ],
+    "startPosition": "alpha7",
+    "endPosition": "alpha7",
+    "stepCount": 4,
+    "constraintReport": {
+      "score": 1,
+      "satisfied": true,
+      "details": [
+        {
+          "constraint": "continuity",
+          "score": 1,
+          "description": "Perfect continuity: no reversals in 4 steps",
+          "mode": "soft"
+        },
+        {
+          "constraint": "handPath",
+          "score": 1,
+          "description": "100% satisfaction",
+          "mode": "soft"
+        }
+      ]
+    }
+  },
+  {
+    "word": "CCCC",
+    "steps": [
+      {
+        "letter": "α",
+        "startPosition": "alpha7",
+        "endPosition": "alpha7",
+        "timing": "none",
+        "direction": "none",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "e",
+          "endLocation": "e",
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "w",
+          "endLocation": "w",
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 0,
+        "stepNumber": 0
+      },
+      {
+        "letter": "C",
+        "startPosition": "alpha7",
+        "endPosition": "alpha1",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "e",
+          "endLocation": "s",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "out"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "w",
+          "endLocation": "n",
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 2,
+        "stepNumber": 1
+      },
+      {
+        "letter": "C",
+        "startPosition": "alpha1",
+        "endPosition": "alpha3",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "s",
+          "endLocation": "w",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "out",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "n",
+          "endLocation": "e",
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 0,
+        "stepNumber": 2
+      },
+      {
+        "letter": "C",
+        "startPosition": "alpha3",
+        "endPosition": "alpha5",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "w",
+          "endLocation": "n",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "in",
+          "endOrientation": "out"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "e",
+          "endLocation": "s",
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 0,
+        "stepNumber": 3
+      },
+      {
+        "letter": "C",
+        "startPosition": "alpha5",
+        "endPosition": "alpha7",
+        "timing": "split",
+        "direction": "same",
+        "leftMotion": {
+          "hand": "left",
+          "startLocation": "n",
+          "endLocation": "e",
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startOrientation": "out",
+          "endOrientation": "in"
+        },
+        "rightMotion": {
+          "hand": "right",
+          "startLocation": "s",
+          "endLocation": "w",
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startOrientation": "in",
+          "endOrientation": "in"
+        },
+        "variation": 0,
+        "stepNumber": 4
+      }
+    ],
+    "startPosition": "alpha7",
+    "endPosition": "alpha7",
+    "stepCount": 4,
+    "constraintReport": {
+      "score": 1,
+      "satisfied": true,
+      "details": [
+        {
+          "constraint": "continuity",
+          "score": 1,
+          "description": "Perfect continuity: no reversals in 4 steps",
+          "mode": "soft"
+        },
+        {
+          "constraint": "handPath",
+          "score": 1,
+          "description": "100% satisfaction",
+          "mode": "soft"
+        }
+      ]
+    }
+  }
+]

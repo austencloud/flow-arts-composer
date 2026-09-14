@@ -1,36 +1,33 @@
 <!--
   FirstStepConfirmDialog.svelte
 
-  Confirmation dialog for setting a new first beat on non-circular sequences.
-  Warns user that steps before the new first beat will be permanently removed.
+  Choose Start confirmation for non-loop sequences. The steps before the
+  chosen pose are removed, so the user confirms before it happens.
 -->
 <script lang="ts">
   interface Props {
     show: boolean;
-    stepNumber: number;
+    stepsToRemove: number;
     onConfirm: () => void;
     onCancel: () => void;
   }
 
-  const { show, stepNumber, onConfirm, onCancel }: Props = $props();
+  const { show, stepsToRemove, onConfirm, onCancel }: Props = $props();
 
-  const stepsToRemove = $derived(stepNumber - 1);
   const isPlural = $derived(stepsToRemove > 1);
 </script>
 
 {#if show}
   <div class="first-beat-overlay" role="dialog" aria-modal="true">
     <div class="first-beat-dialog">
-      <h3>Set New First Step</h3>
+      <h3>Start from here?</h3>
       <p>
-        This will permanently remove step{isPlural ? "s" : ""} 1{isPlural
-          ? `-${stepsToRemove}`
-          : ""}.
+        {isPlural ? `Steps 1 through ${stepsToRemove}` : "Step 1"} will be removed.
       </p>
       <div class="dialog-actions">
         <button class="dialog-btn cancel" onclick={onCancel}> Cancel </button>
         <button class="dialog-btn confirm" onclick={onConfirm}>
-          Set First Step
+          Set Start
         </button>
       </div>
     </div>

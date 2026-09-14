@@ -38,17 +38,43 @@ const allD = (p: ReturnType<typeof calculate>) =>
   [...p.left, ...p.right].map((s) => s.d).join("|");
 
 describe("motion-aware mandala geometry (card-back hybrid shape)", () => {
+  it("does not reuse a cached mandala after a saved path exception changes", () => {
+    const source = step("anti");
+    const original = calculate([source]);
+    const changed = {
+      ...source,
+      motions: {
+        ...source.motions,
+        left: { ...source.motions!.left!, pathShape: "concave" as const },
+      },
+    };
+    const preview = calculate([changed]);
+    expect(allD(preview)).not.toBe(allD(original));
+    expect(allD(calculate([source]))).toBe(allD(original));
+  });
   it("anti motions trace a different (concave) path than the arc default", () => {
     const steps = [step("anti"), step("anti")];
     const arc = calculate(steps, undefined, undefined, undefined, TIP);
-    const aware = calculate(steps, undefined, undefined, { motionAware: true }, TIP);
+    const aware = calculate(
+      steps,
+      undefined,
+      undefined,
+      { motionAware: true },
+      TIP
+    );
     expect(allD(aware)).not.toBe(allD(arc));
   });
 
   it("pro motions are arc under motionAware — identical to the default", () => {
     const steps = [step("pro"), step("pro")];
     const arc = calculate(steps, undefined, undefined, undefined, TIP);
-    const aware = calculate(steps, undefined, undefined, { motionAware: true }, TIP);
+    const aware = calculate(
+      steps,
+      undefined,
+      undefined,
+      { motionAware: true },
+      TIP
+    );
     expect(allD(aware)).toBe(allD(arc));
   });
 
@@ -69,7 +95,13 @@ describe("motion-aware mandala geometry (card-back hybrid shape)", () => {
       },
     ];
     const arc = calculate(overridden, undefined, undefined, undefined, TIP);
-    const aware = calculate(overridden, undefined, undefined, { motionAware: true }, TIP);
+    const aware = calculate(
+      overridden,
+      undefined,
+      undefined,
+      { motionAware: true },
+      TIP
+    );
     expect(allD(aware)).toBe(allD(arc));
   });
 });

@@ -4,25 +4,9 @@ import { authState } from "$lib/shared/auth/state/auth-state.svelte";
 import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
 import { inboxState } from "./inbox-state.svelte";
 import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
-export { buildSequenceSharePayload } from "../domain/build-sequence-share-payload";
-
-const FIREBASE_STORAGE_BUCKET = "the-kinetic-alphabet.firebasestorage.app";
-
-/**
- * Builds a direct Firebase Storage URL for a sequence thumbnail.
- * Bypasses the CloudThumbnailCache manifest check - if the thumbnail exists
- * in storage, this URL works. If not, the <img> onerror handler hides it.
- */
-export function buildThumbnailUrl(
-  sequenceName: string,
-  propType: string,
-  lightMode: boolean
-): string {
-  const modeSuffix = lightMode ? "_light" : "_dark";
-  const storagePath = `thumbnails/gallery/${propType}/${sequenceName}${modeSuffix}.webp`;
-  const encodedPath = encodeURIComponent(storagePath);
-  return `https://firebasestorage.googleapis.com/v0/b/${FIREBASE_STORAGE_BUCKET}/o/${encodedPath}?alt=media`;
-}
+import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { buildSequenceSharePayload } from "../domain/build-sequence-share-payload";
+export { buildSequenceSharePayload };
 
 export function openSendSequenceSheet(p: SequenceSharePayload): void {
   if (!authState.isFullAccount) {
@@ -30,6 +14,46 @@ export function openSendSequenceSheet(p: SequenceSharePayload): void {
     return;
   }
   inboxState.openSequenceShare(p);
+}
+
+/**
+ * Opens the send sheet at once and drops a freshly drawn Choreo Card into its
+ * preview when the render lands. This is the same card the Create module's
+ * Send hands the sheet. Callers without a prepared card used to guess a
+ * gallery thumbnail URL from word + prop instead; that skipped the renderer
+ * revision in the real cloud keys and served pre-font cards.
+ */
+export function openSendSequenceSheetWithCard(
+  sequence: SequenceData,
+  renderCard: (sequence: SequenceData) => Promise<Blob>
+): void {
+  if (!authState.isFullAccount) {
+    authDrawerState.show("signup", "share-sequence");
+    return;
+  }
+  const payload = buildSequenceSharePayload(sequence);
+  inboxState.openSequenceShare(payload);
+  void renderCard(sequence)
+    .then((blob) => attachSequencePreview(payload, blob))
+    .catch(() => undefined);
+}
+
+/** The card arrives after the sheet opened; attach it only if that share is still up. */
+export function attachSequencePreview(
+  payload: SequenceSharePayload,
+  blob: Blob
+): void {
+  const current = inboxState.shareAttachment;
+  if (
+    current?.type !== "sequence" ||
+    current.payload.sequenceId !== payload.sequenceId
+  ) {
+    return;
+  }
+  inboxState.shareAttachment = {
+    type: "sequence",
+    payload: { ...current.payload, sequencePreviewBlob: blob },
+  };
 }
 
 /**

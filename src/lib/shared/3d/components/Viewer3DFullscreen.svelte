@@ -21,6 +21,7 @@
   import { setScene3DRenderContext } from "$lib/shared/3d/scene-features/state/scene-3d-render-context";
   import SceneChromeButton from "./controls/SceneChromeButton.svelte";
   import { warmSelectedSceneAssets } from "../scene-boot/scene-prefetch";
+  import type { PlaybackMode } from "$lib/shared/timeline/unified-playback-context";
 
   // Canonical effects config - single source of truth for both 2D canvas
   // and 3D viewer effect parameters. One-time migration from the old VM
@@ -46,8 +47,20 @@
     rightPropType?: string | null;
     onClose?: () => void;
     onPlaybackToggle: () => void;
+    isLooping?: boolean;
+    onLoopToggle?: () => void;
     onBpmChange: (bpm: number) => void;
     onProgressBarSeek?: (targetStep: number) => void;
+    playbackMode?: PlaybackMode;
+    onPlaybackModeChange?: (mode: PlaybackMode) => void;
+    onSystemPlaybackChange?: (
+      playing: boolean,
+      source: "system_3d_loading"
+    ) => void;
+    onSceneReadyChange?: (ready: boolean) => void;
+    /** Imported characters can opt into the calibrated palm attachment. */
+    weldPerformerGrip?: boolean;
+    enablePerformerLocomotion?: boolean;
     initialRevealMode?: "gated" | "streaming";
     initialRevealDeferredFeatures?: readonly string[];
     /** Immersive toggle. Receives the overlay root for native fullscreen. */
@@ -111,8 +124,16 @@
     rightPropType = null,
     onClose,
     onPlaybackToggle,
+    isLooping,
+    onLoopToggle,
     onBpmChange,
     onProgressBarSeek,
+    playbackMode,
+    onPlaybackModeChange,
+    onSystemPlaybackChange,
+    onSceneReadyChange,
+    weldPerformerGrip = false,
+    enablePerformerLocomotion = true,
     initialRevealMode = "gated",
     initialRevealDeferredFeatures = [],
     immersive = false,
@@ -274,7 +295,15 @@
       {initialRevealMode}
       {initialRevealDeferredFeatures}
       {onPlaybackToggle}
+      {isLooping}
+      {onLoopToggle}
       {onProgressBarSeek}
+      {playbackMode}
+      {onPlaybackModeChange}
+      {onSystemPlaybackChange}
+      {onSceneReadyChange}
+      {weldPerformerGrip}
+      {enablePerformerLocomotion}
       {renderEmptyScene}
       {cameraFov}
       {visiblePerformerCount}
@@ -364,6 +393,8 @@
   .canvas-area {
     flex: 1;
     position: relative;
+    /* Keep the canvas transport below workspace inspectors and compact sheets. */
+    isolation: isolate;
     min-width: 0;
     min-height: 0;
     overflow: hidden;

@@ -18,6 +18,7 @@ function createHarness(options?: {
   reducedMotion?: boolean;
   ignoredStarts?: number;
   playbackReleased?: boolean;
+  hydrateSequence?: (sequence: SequenceData) => Promise<SequenceData>;
 }) {
   let loadedCells = options?.loadedCells ?? 5;
   let totalCells = options?.totalCells ?? 5;
@@ -33,6 +34,7 @@ function createHarness(options?: {
   });
   const playbackController = {
     initialize: vi.fn(() => true),
+    updateSequenceData: vi.fn(),
     setSpeed: vi.fn(),
     togglePlayback,
   } as unknown as AnimationPlaybackController;
@@ -62,7 +64,7 @@ function createHarness(options?: {
       getHapticFeedback: () => ({}) as never,
       getLanSyncCoordinator: () => ({}) as never,
       initializeLanSync: vi.fn(),
-      hydrateSequence: async () => sequence,
+      hydrateSequence: options?.hydrateSequence ?? (async (value) => value),
       preWarmSequence: vi.fn(),
       setAnimationPlaybackRef: vi.fn(),
       isViewerReadyToAutoplay,
@@ -76,6 +78,7 @@ function createHarness(options?: {
 
   return {
     state,
+    playbackController,
     togglePlayback,
     setProgress(loaded: number, total: number) {
       loadedCells = loaded;
@@ -103,6 +106,47 @@ describe("viewer interactive autoplay", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it("discards an in-flight preview when saved paths are restored", async () => {
+    let resolvePreview!: (value: SequenceData) => void;
+    const changed = { ...sequence, word: "preview" };
+    const harness = createHarness({
+      hydrateSequence: (value) =>
+        value === changed
+          ? new Promise((resolve) => {
+              resolvePreview = resolve;
+            })
+          : Promise.resolve(value),
+    });
+    harness.state.ensureInteractiveServices();
+    await harness.state.initializeAnimation(sequence);
+    const pending = harness.state.initializeAnimation(changed);
+    await harness.state.initializeAnimation(sequence);
+    resolvePreview(changed);
+    await pending;
+    expect(
+      harness.playbackController.updateSequenceData
+    ).not.toHaveBeenCalled();
+    harness.dispose();
+  });
+
+  it("refreshes changed motion content without restarting the same sequence", async () => {
+    const harness = createHarness();
+    harness.state.ensureInteractiveServices();
+    await harness.state.initializeAnimation(sequence);
+    const changed = { ...sequence, word: "changed" };
+    await harness.state.initializeAnimation(changed);
+    expect(harness.playbackController.initialize).toHaveBeenCalledOnce();
+    expect(harness.playbackController.updateSequenceData).toHaveBeenCalledWith(
+      changed
+    );
+    expect(harness.togglePlayback).toHaveBeenCalledOnce();
+    await harness.state.initializeAnimation(changed);
+    expect(
+      harness.playbackController.updateSequenceData
+    ).toHaveBeenCalledOnce();
+    harness.dispose();
   });
 
   it("starts a ready QR animation immediately without waiting for a timer", async () => {

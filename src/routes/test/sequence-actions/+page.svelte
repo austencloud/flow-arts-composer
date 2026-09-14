@@ -13,7 +13,7 @@
         { value: "transform", label: "Transform" },
         { value: "patterns", label: "Patterns" },
         { value: "edit", label: "Edit" },
-        { value: "first-step", label: "First Step active" },
+        { value: "first-step", label: "Choose Start active" },
       ],
     },
     {

@@ -58,7 +58,7 @@
       loadError =
         error instanceof Error
           ? error.message
-          : "The TKA video library could not be loaded.";
+          : "The video library could not be loaded.";
     } finally {
       if (version === requestVersion) loading = false;
     }
@@ -223,7 +223,7 @@
               Choose the video for this post
             </h2>
             <p>
-              Use a linked TKA performance or bring in a video from this device.
+              Use a linked performance or bring in a video from this device.
             </p>
           </div>
           <button
@@ -252,7 +252,7 @@
             onclick={() => (uploadOpen = true)}
           >
             <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
-            Upload to TKA
+            Upload to Flow Arts Composer
           </button>
           <input
             bind:this={fileInput}
@@ -296,7 +296,7 @@
 
         <section class="library-section" aria-labelledby="tka-video-library">
           <div class="section-heading">
-            <h3 id="tka-video-library">TKA video library</h3>
+            <h3 id="tka-video-library">Video library</h3>
             {#if !loading}
               <span>{uniqueVideos.length}</span>
             {/if}

@@ -116,13 +116,20 @@ export function positionCorrectionPair(
 export function transformPosition(
   left: GridLocation,
   right: GridLocation,
-  action: "rotate" | "mirror" | "swap"
+  action: "rotate" | "mirror" | "swap",
+  options: { rotationSteps?: number; reflectionAxis?: 0 | 1 | 2 | 3 } = {}
 ) {
   if (action === "swap") return { left: right, right: left };
+  const axis = options.reflectionAxis ?? 0;
   const transform =
     action === "rotate"
-      ? (location: GridLocation) => rotateLocation(location, 2) as GridLocation
-      : (location: GridLocation) => mirrorLocation(location) as GridLocation;
+      ? (location: GridLocation) =>
+          rotateLocation(location, options.rotationSteps ?? 2) as GridLocation
+      : (location: GridLocation) =>
+          rotateLocation(
+            mirrorLocation(rotateLocation(location, -axis)) as GridLocation,
+            axis
+          ) as GridLocation;
   return { left: transform(left), right: transform(right) };
 }
 

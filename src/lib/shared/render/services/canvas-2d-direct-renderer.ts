@@ -33,7 +33,7 @@ import type { RenderCanvas } from "./types";
 import { captureException } from "$lib/shared/analytics/services/posthog";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
-import { applyColorToSvg, SELECTIVE_COLOR_PROP_TYPES } from "$lib/shared/utils/svg-color-utils";
+import { applyColorToSvg, getMotionColor, SELECTIVE_COLOR_PROP_TYPES } from "$lib/shared/utils/svg-color-utils";
 
 const VIEWBOX_SIZE = 950;
 
@@ -166,6 +166,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     if (preparer) {
       try {
         const prepared = await preparer.prepareSingle(pictograph, {
+          fanAppearance: options.visibility.fanAppearance,
           themeMode: options.visibility.darkMode ? "dark" : "light",
           leftPropType: options.visibility.leftPropType,
           rightPropType: options.visibility.rightPropType,
@@ -447,6 +448,7 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
 
         const displayColor = options.visibility.primaryPropColors?.[color];
         const artwork = displayColor ? applyColorToSvg(assets.imageSrc, displayColor, {
+          sourceColors: [getMotionColor(color, "dark"), getMotionColor(color, "light")],
           selectiveColorMode: (SELECTIVE_COLOR_PROP_TYPES as readonly string[]).includes(String(assets.propType ?? pictograph.motions?.[color]?.propType).toLowerCase()),
         }) : assets.imageSrc;
         const wrapped = wrapSvgContent(artwork, viewBoxWidth, viewBoxHeight, false);

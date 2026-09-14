@@ -1,0 +1,4990 @@
+{
+  "baselineRevision": "4eeaea16d0",
+  "conditions": {
+    "desktop": "1280x900x1",
+    "mobile": "390x844x1,mobile,touch",
+    "cpuThrottle": 1,
+    "networkThrottle": "none",
+    "applicationStorage": "new isolated guest context",
+    "server": "local production preview",
+    "readyProxy": "SVG present, ancestor opacity >= 0.95, card center hit target",
+    "observer": "2026-09-08-startup-observer.js"
+  },
+  "before": {
+    "desktop": {
+      "observation": {
+        "milestones": {
+          "splash-visible": 817,
+          "module-container": 2774.699999988079,
+          "splash-removed": 3336.699999988079,
+          "first-start-choice-unoccluded": 3750
+        },
+        "longTasks": [
+          {
+            "start": 1189.3999999761581,
+            "duration": 65
+          },
+          {
+            "start": 1360.199999988079,
+            "duration": 62
+          },
+          {
+            "start": 2370.699999988079,
+            "duration": 80
+          },
+          {
+            "start": 2602.100000023842,
+            "duration": 75
+          },
+          {
+            "start": 2718,
+            "duration": 56
+          },
+          {
+            "start": 3180.199999988079,
+            "duration": 59
+          },
+          {
+            "start": 3279.5,
+            "duration": 50
+          },
+          {
+            "start": 3386.699999988079,
+            "duration": 124
+          },
+          {
+            "start": 25477.100000023842,
+            "duration": 66
+          },
+          {
+            "start": 25985.19999998808,
+            "duration": 335
+          },
+          {
+            "start": 26556,
+            "duration": 61
+          }
+        ],
+        "interactions": [
+          {
+            "start": 25377.80000001192,
+            "ready": 26395.5,
+            "count": 36,
+            "duration": 1017.6999999880791
+          }
+        ]
+      },
+      "profile": {
+        "phases": [
+          {
+            "label": "total-init",
+            "startTime": 1838.300000011921,
+            "endTime": 2671.199999988079,
+            "duration": 832.8999999761581
+          },
+          {
+            "label": "di-container",
+            "startTime": 1838.300000011921,
+            "endTime": 2521.100000023842,
+            "duration": 682.8000000119209
+          },
+          {
+            "label": "shell:main-app-chunk",
+            "startTime": 1838.3999999761581,
+            "endTime": 2572.399999976158,
+            "duration": 734
+          },
+          {
+            "label": "app:init-state",
+            "startTime": 2508.600000023842,
+            "endTime": 2576.199999988079,
+            "duration": 67.59999996423721
+          },
+          {
+            "label": "posthog",
+            "startTime": 2578.399999976158,
+            "endTime": 2599.100000023842,
+            "duration": 20.700000047683716
+          },
+          {
+            "label": "i18n",
+            "startTime": 2578.600000023842,
+            "endTime": 2578.699999988079,
+            "duration": 0.09999996423721313
+          },
+          {
+            "label": "firestore-init",
+            "startTime": 2580.199999988079,
+            "endTime": 2580.199999988079,
+            "duration": 0
+          },
+          {
+            "label": "auth-init",
+            "startTime": 2580.399999976158,
+            "endTime": 2671.100000023842,
+            "duration": 90.70000004768372
+          },
+          {
+            "label": "app:restore-workspace",
+            "startTime": 2591.5,
+            "endTime": 2728.699999988079,
+            "duration": 137.19999998807907
+          },
+          {
+            "label": "app:load-settings+theme",
+            "startTime": 2728.800000011921,
+            "endTime": 2789.199999988079,
+            "duration": 60.39999997615814
+          },
+          {
+            "label": "web-vitals",
+            "startTime": 3033,
+            "endTime": 3038.600000023842,
+            "duration": 5.600000023841858
+          },
+          {
+            "label": "thumbnail-manifest",
+            "startTime": 3033.300000011921,
+            "endTime": 3674.699999988079,
+            "duration": 641.3999999761581
+          },
+          {
+            "label": "library-sync-retry",
+            "startTime": 3033.300000011921,
+            "endTime": 3126.800000011921,
+            "duration": 93.5
+          },
+          {
+            "label": "ui-components",
+            "startTime": 3033.5,
+            "endTime": 3357.600000023842,
+            "duration": 324.10000002384186
+          }
+        ],
+        "milestones": [
+          {
+            "label": "browse:prefetch-policy",
+            "startTime": 2578.300000011921,
+            "detail": {
+              "network": false,
+              "constrainedConnection": false
+            }
+          },
+          {
+            "label": "shell:ready-announced",
+            "startTime": 2789.399999976158,
+            "detail": {
+              "source": "initialization"
+            }
+          },
+          {
+            "label": "create:mounted",
+            "startTime": 2793.800000011921,
+            "detail": {}
+          },
+          {
+            "label": "module:create:chunk-ready",
+            "startTime": 2848.600000023842,
+            "detail": {}
+          },
+          {
+            "label": "create:workspace-initialized",
+            "startTime": 3265.699999988079,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-grid-reveal-start",
+            "startTime": 3546.800000011921,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-pictograph-ready",
+            "startTime": 3681.699999988079,
+            "detail": {}
+          },
+          {
+            "label": "construct:options-prepared",
+            "startTime": 25633.80000001192,
+            "detail": {
+              "options": 36
+            }
+          },
+          {
+            "label": "construct:layout-committed",
+            "startTime": 25992.399999976158,
+            "detail": {}
+          }
+        ],
+        "spans": [
+          {
+            "id": 1,
+            "label": "create:activation",
+            "startTime": 2793.899999976158,
+            "detail": {},
+            "endTime": 3266.100000023842,
+            "duration": 472.2000000476837,
+            "outcome": "ok"
+          },
+          {
+            "id": 2,
+            "label": "create:initializer-import",
+            "startTime": 2794.100000023842,
+            "detail": {},
+            "endTime": 3170.399999976158,
+            "duration": 376.2999999523163,
+            "outcome": "ok"
+          },
+          {
+            "id": 3,
+            "label": "create:initialize",
+            "startTime": 3170.899999976158,
+            "detail": {},
+            "endTime": 3184.199999988079,
+            "duration": 13.300000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 4,
+            "label": "create:orchestrator",
+            "startTime": 3182.399999976158,
+            "detail": {},
+            "endTime": 3183.100000023842,
+            "duration": 0.7000000476837158,
+            "outcome": "ok"
+          },
+          {
+            "id": 5,
+            "label": "create:construct-tab",
+            "startTime": 3183.199999988079,
+            "detail": {},
+            "endTime": 3184.100000023842,
+            "duration": 0.9000000357627869,
+            "outcome": "ok"
+          },
+          {
+            "id": 6,
+            "label": "create:generator-tab",
+            "startTime": 3183.399999976158,
+            "detail": {},
+            "endTime": 3183.899999976158,
+            "duration": 0.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 7,
+            "label": "create:assemble-tab",
+            "startTime": 3183.5,
+            "detail": {},
+            "endTime": 3183.899999976158,
+            "duration": 0.3999999761581421,
+            "outcome": "ok"
+          },
+          {
+            "id": 8,
+            "label": "create:start-positions",
+            "startTime": 3183.600000023842,
+            "detail": {},
+            "endTime": 3183.699999988079,
+            "duration": 0.09999996423721313,
+            "outcome": "ok"
+          },
+          {
+            "id": 9,
+            "label": "create:restore-sequence",
+            "startTime": 3193.899999976158,
+            "detail": {},
+            "endTime": 3234.300000011921,
+            "duration": 40.40000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 10,
+            "label": "construct:start-grid-stabilize",
+            "startTime": 3225.300000011921,
+            "detail": {},
+            "endTime": 3546.800000011921,
+            "duration": 321.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 11,
+            "label": "create:resolve-session",
+            "startTime": 3234.800000011921,
+            "detail": {},
+            "endTime": 3265.600000023842,
+            "duration": 30.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 12,
+            "label": "pictograph:grid-svg",
+            "startTime": 3637.600000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 3675.699999988079,
+            "duration": 38.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 13,
+            "label": "pictograph:grid-svg",
+            "startTime": 3639.399999976158,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 3675.600000023842,
+            "duration": 36.200000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 14,
+            "label": "pictograph:grid-svg",
+            "startTime": 3640.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 3675.699999988079,
+            "duration": 35.59999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 15,
+            "label": "construct:option-query",
+            "startTime": 25429.19999998808,
+            "detail": {
+              "candidates": 576,
+              "options": 36
+            },
+            "endTime": 25517.100000023842,
+            "duration": 87.90000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 16,
+            "label": "csv:load",
+            "startTime": 25429.399999976158,
+            "detail": {
+              "source": "fetch"
+            },
+            "endTime": 25477.5,
+            "duration": 48.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 17,
+            "label": "csv:fetch",
+            "startTime": 25429.5,
+            "detail": {
+              "hasSkewedData": true,
+              "hasTrigridData": true
+            },
+            "endTime": 25477.100000023842,
+            "duration": 47.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 18,
+            "label": "csv:parse",
+            "startTime": 25477.600000023842,
+            "detail": {
+              "diamondRows": 576,
+              "boxRows": 576,
+              "skewedRows": 5120,
+              "hasSkewedData": true,
+              "hasTrigridData": true
+            },
+            "endTime": 25511.30000001192,
+            "duration": 33.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 19,
+            "label": "construct:option-filter",
+            "startTime": 25516.30000001192,
+            "detail": {
+              "candidates": 576,
+              "options": 36
+            },
+            "endTime": 25517,
+            "duration": 0.699999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 20,
+            "label": "construct:layout-settle",
+            "startTime": 25519.5,
+            "detail": {
+              "timedOut": false
+            },
+            "endTime": 25992.30000001192,
+            "duration": 472.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 21,
+            "label": "construct:prepare",
+            "startTime": 25519.899999976158,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 25633.69999998808,
+            "duration": 113.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 22,
+            "label": "pictograph:grid-svg",
+            "startTime": 25692.399999976158,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 25695.399999976158,
+            "duration": 3,
+            "outcome": "ok"
+          },
+          {
+            "id": 23,
+            "label": "pictograph:grid-svg",
+            "startTime": 26094.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.69999998808,
+            "duration": 120.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 24,
+            "label": "pictograph:grid-svg",
+            "startTime": 26095.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.80000001192,
+            "duration": 119.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 25,
+            "label": "pictograph:grid-svg",
+            "startTime": 26095.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.80000001192,
+            "duration": 119.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 26,
+            "label": "pictograph:grid-svg",
+            "startTime": 26095.899999976158,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.80000001192,
+            "duration": 118.90000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 27,
+            "label": "pictograph:grid-svg",
+            "startTime": 26096,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.80000001192,
+            "duration": 118.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 28,
+            "label": "pictograph:grid-svg",
+            "startTime": 26096.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.80000001192,
+            "duration": 118.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 29,
+            "label": "pictograph:grid-svg",
+            "startTime": 26096.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.80000001192,
+            "duration": 118.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 30,
+            "label": "pictograph:grid-svg",
+            "startTime": 26096.899999976158,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 118,
+            "outcome": "ok"
+          },
+          {
+            "id": 31,
+            "label": "pictograph:grid-svg",
+            "startTime": 26097.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 117.79999995231628,
+            "outcome": "ok"
+          },
+          {
+            "id": 32,
+            "label": "pictograph:grid-svg",
+            "startTime": 26097.399999976158,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 117.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 33,
+            "label": "pictograph:grid-svg",
+            "startTime": 26097.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 117.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 34,
+            "label": "pictograph:grid-svg",
+            "startTime": 26098.19999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 116.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 35,
+            "label": "pictograph:grid-svg",
+            "startTime": 26098.399999976158,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 116.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 36,
+            "label": "pictograph:grid-svg",
+            "startTime": 26098.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 116.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 37,
+            "label": "pictograph:grid-svg",
+            "startTime": 26099.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 115.79999995231628,
+            "outcome": "ok"
+          },
+          {
+            "id": 38,
+            "label": "pictograph:grid-svg",
+            "startTime": 26099.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 115.59999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 39,
+            "label": "pictograph:grid-svg",
+            "startTime": 26102,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 112.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 40,
+            "label": "pictograph:grid-svg",
+            "startTime": 26102.399999976158,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 112.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 41,
+            "label": "pictograph:grid-svg",
+            "startTime": 26102.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 112.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 42,
+            "label": "pictograph:grid-svg",
+            "startTime": 26102.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 112.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 43,
+            "label": "pictograph:grid-svg",
+            "startTime": 26103,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 111.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 44,
+            "label": "pictograph:grid-svg",
+            "startTime": 26103.399999976158,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26214.899999976158,
+            "duration": 111.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 45,
+            "label": "pictograph:grid-svg",
+            "startTime": 26103.600000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215,
+            "duration": 111.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 46,
+            "label": "pictograph:grid-svg",
+            "startTime": 26103.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215,
+            "duration": 111.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 47,
+            "label": "pictograph:grid-svg",
+            "startTime": 26104.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215,
+            "duration": 110.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 48,
+            "label": "pictograph:grid-svg",
+            "startTime": 26105,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215,
+            "duration": 110,
+            "outcome": "ok"
+          },
+          {
+            "id": 49,
+            "label": "pictograph:grid-svg",
+            "startTime": 26105.19999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215,
+            "duration": 109.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 50,
+            "label": "pictograph:grid-svg",
+            "startTime": 26105.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215.100000023842,
+            "duration": 109.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 51,
+            "label": "pictograph:grid-svg",
+            "startTime": 26105.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215.100000023842,
+            "duration": 109.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 52,
+            "label": "pictograph:grid-svg",
+            "startTime": 26106.19999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215.100000023842,
+            "duration": 108.90000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 53,
+            "label": "pictograph:grid-svg",
+            "startTime": 26106.600000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215.100000023842,
+            "duration": 108.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 54,
+            "label": "pictograph:grid-svg",
+            "startTime": 26106.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215.100000023842,
+            "duration": 108.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 55,
+            "label": "pictograph:grid-svg",
+            "startTime": 26107.600000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215.100000023842,
+            "duration": 107.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 56,
+            "label": "pictograph:grid-svg",
+            "startTime": 26108.19999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215.100000023842,
+            "duration": 106.90000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 57,
+            "label": "pictograph:grid-svg",
+            "startTime": 26108.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215.100000023842,
+            "duration": 106.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 58,
+            "label": "pictograph:grid-svg",
+            "startTime": 26109.600000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26215.100000023842,
+            "duration": 105.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 59,
+            "label": "construct:prepare",
+            "startTime": 26557.899999976158,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 26567.100000023842,
+            "duration": 9.200000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 60,
+            "label": "construct:prepare",
+            "startTime": 26567.899999976158,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 26595.19999998808,
+            "duration": 27.30000001192093,
+            "outcome": "ok"
+          }
+        ]
+      },
+      "navigation": {
+        "type": "navigate",
+        "responseStart": 658.6999999880791,
+        "responseEnd": 661.3999999761581,
+        "domInteractive": 828.3999999761581,
+        "loadEventEnd": 1301.8999999761581
+      },
+      "scriptsStartingInFirst10s": {
+        "requests": 341,
+        "encodedBytes": 3838499,
+        "transferBytes": 3938699
+      }
+    },
+    "mobile": {
+      "observation": {
+        "milestones": {
+          "splash-visible": 78.19999998807907,
+          "module-container": 1478.0999999642372,
+          "splash-removed": 1979.0999999642372,
+          "first-start-choice-unoccluded": 2071.699999988079
+        },
+        "longTasks": [
+          {
+            "start": 211.89999997615814,
+            "duration": 67
+          },
+          {
+            "start": 624.5999999642372,
+            "duration": 59
+          },
+          {
+            "start": 889.5999999642372,
+            "duration": 103
+          },
+          {
+            "start": 1174.199999988079,
+            "duration": 77
+          },
+          {
+            "start": 1277.300000011921,
+            "duration": 54
+          },
+          {
+            "start": 1543.3999999761581,
+            "duration": 66
+          },
+          {
+            "start": 2322.300000011921,
+            "duration": 126
+          },
+          {
+            "start": 40842.69999998808,
+            "duration": 55
+          },
+          {
+            "start": 41317.89999997616,
+            "duration": 320
+          }
+        ],
+        "interactions": [
+          {
+            "start": 40752.69999998808,
+            "ready": 41703.59999996424,
+            "count": 36,
+            "duration": 950.8999999761581
+          }
+        ]
+      },
+      "profile": {
+        "phases": [
+          {
+            "label": "total-init",
+            "startTime": 691.0999999642372,
+            "endTime": 1325.8999999761581,
+            "duration": 634.8000000119209
+          },
+          {
+            "label": "di-container",
+            "startTime": 691.0999999642372,
+            "endTime": 1003.3999999761581,
+            "duration": 312.30000001192093
+          },
+          {
+            "label": "shell:main-app-chunk",
+            "startTime": 691.1999999880791,
+            "endTime": 1112.199999988079,
+            "duration": 421
+          },
+          {
+            "label": "app:init-state",
+            "startTime": 1043.8999999761581,
+            "endTime": 1113.699999988079,
+            "duration": 69.80000001192093
+          },
+          {
+            "label": "posthog",
+            "startTime": 1115.800000011921,
+            "endTime": 1169.3999999761581,
+            "duration": 53.59999996423721
+          },
+          {
+            "label": "i18n",
+            "startTime": 1115.8999999761581,
+            "endTime": 1116.0999999642372,
+            "duration": 0.19999998807907104
+          },
+          {
+            "label": "firestore-init",
+            "startTime": 1117.8999999761581,
+            "endTime": 1117.8999999761581,
+            "duration": 0
+          },
+          {
+            "label": "auth-init",
+            "startTime": 1118,
+            "endTime": 1325.8999999761581,
+            "duration": 207.89999997615814
+          },
+          {
+            "label": "app:restore-workspace",
+            "startTime": 1139.8999999761581,
+            "endTime": 1455,
+            "duration": 315.10000002384186
+          },
+          {
+            "label": "app:load-settings+theme",
+            "startTime": 1455.0999999642372,
+            "endTime": 1481.800000011921,
+            "duration": 26.700000047683716
+          },
+          {
+            "label": "web-vitals",
+            "startTime": 1831.0999999642372,
+            "endTime": 1837.0999999642372,
+            "duration": 6
+          },
+          {
+            "label": "thumbnail-manifest",
+            "startTime": 1831.300000011921,
+            "endTime": 2568.099999964237,
+            "duration": 736.7999999523163
+          },
+          {
+            "label": "library-sync-retry",
+            "startTime": 1831.3999999761581,
+            "endTime": 1838,
+            "duration": 6.600000023841858
+          },
+          {
+            "label": "ui-components",
+            "startTime": 1831.5999999642372,
+            "endTime": 1860.300000011921,
+            "duration": 28.700000047683716
+          }
+        ],
+        "milestones": [
+          {
+            "label": "browse:prefetch-policy",
+            "startTime": 1115.800000011921,
+            "detail": {
+              "network": false,
+              "constrainedConnection": false
+            }
+          },
+          {
+            "label": "shell:ready-announced",
+            "startTime": 1481.800000011921,
+            "detail": {
+              "source": "initialization"
+            }
+          },
+          {
+            "label": "create:mounted",
+            "startTime": 1490.3999999761581,
+            "detail": {}
+          },
+          {
+            "label": "module:create:chunk-ready",
+            "startTime": 1537.699999988079,
+            "detail": {}
+          },
+          {
+            "label": "create:workspace-initialized",
+            "startTime": 1624.5,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-pictograph-ready",
+            "startTime": 1761.5999999642372,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-grid-reveal-start",
+            "startTime": 1815.300000011921,
+            "detail": {}
+          },
+          {
+            "label": "construct:options-prepared",
+            "startTime": 40983,
+            "detail": {
+              "options": 36
+            }
+          },
+          {
+            "label": "construct:layout-committed",
+            "startTime": 41320.5,
+            "detail": {}
+          }
+        ],
+        "spans": [
+          {
+            "id": 1,
+            "label": "create:activation",
+            "startTime": 1490.5999999642372,
+            "detail": {},
+            "endTime": 1625.199999988079,
+            "duration": 134.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 2,
+            "label": "create:initializer-import",
+            "startTime": 1490.699999988079,
+            "detail": {},
+            "endTime": 1541.300000011921,
+            "duration": 50.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 3,
+            "label": "create:initialize",
+            "startTime": 1541.800000011921,
+            "detail": {},
+            "endTime": 1548.8999999761581,
+            "duration": 7.099999964237213,
+            "outcome": "ok"
+          },
+          {
+            "id": 4,
+            "label": "create:orchestrator",
+            "startTime": 1546.699999988079,
+            "detail": {},
+            "endTime": 1547.5,
+            "duration": 0.800000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 5,
+            "label": "create:construct-tab",
+            "startTime": 1547.5999999642372,
+            "detail": {},
+            "endTime": 1548.8999999761581,
+            "duration": 1.300000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 6,
+            "label": "create:generator-tab",
+            "startTime": 1547.8999999761581,
+            "detail": {},
+            "endTime": 1548.5999999642372,
+            "duration": 0.699999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 7,
+            "label": "create:assemble-tab",
+            "startTime": 1548,
+            "detail": {},
+            "endTime": 1548.5999999642372,
+            "duration": 0.5999999642372131,
+            "outcome": "ok"
+          },
+          {
+            "id": 8,
+            "label": "create:start-positions",
+            "startTime": 1548.0999999642372,
+            "detail": {},
+            "endTime": 1548.3999999761581,
+            "duration": 0.30000001192092896,
+            "outcome": "ok"
+          },
+          {
+            "id": 9,
+            "label": "create:restore-sequence",
+            "startTime": 1558.5,
+            "detail": {},
+            "endTime": 1605,
+            "duration": 46.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 10,
+            "label": "construct:start-grid-stabilize",
+            "startTime": 1594.300000011921,
+            "detail": {},
+            "endTime": 1815.199999988079,
+            "duration": 220.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 11,
+            "label": "create:resolve-session",
+            "startTime": 1605.5999999642372,
+            "detail": {},
+            "endTime": 1624.300000011921,
+            "duration": 18.700000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 12,
+            "label": "pictograph:grid-svg",
+            "startTime": 1751.800000011921,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 1759.5999999642372,
+            "duration": 7.799999952316284,
+            "outcome": "ok"
+          },
+          {
+            "id": 13,
+            "label": "pictograph:grid-svg",
+            "startTime": 1753.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 1759.3999999761581,
+            "duration": 5.899999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 14,
+            "label": "pictograph:grid-svg",
+            "startTime": 1754,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 1759.5999999642372,
+            "duration": 5.599999964237213,
+            "outcome": "ok"
+          },
+          {
+            "id": 15,
+            "label": "construct:option-query",
+            "startTime": 40795.19999998808,
+            "detail": {
+              "candidates": 576,
+              "options": 36
+            },
+            "endTime": 40875.19999998808,
+            "duration": 80,
+            "outcome": "ok"
+          },
+          {
+            "id": 16,
+            "label": "csv:load",
+            "startTime": 40795.39999997616,
+            "detail": {
+              "source": "fetch"
+            },
+            "endTime": 40843,
+            "duration": 47.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 17,
+            "label": "csv:fetch",
+            "startTime": 40795.5,
+            "detail": {
+              "hasSkewedData": true,
+              "hasTrigridData": true
+            },
+            "endTime": 40842.80000001192,
+            "duration": 47.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 18,
+            "label": "csv:parse",
+            "startTime": 40843.09999996424,
+            "detail": {
+              "diamondRows": 576,
+              "boxRows": 576,
+              "skewedRows": 5120,
+              "hasSkewedData": true,
+              "hasTrigridData": true
+            },
+            "endTime": 40869.09999996424,
+            "duration": 26,
+            "outcome": "ok"
+          },
+          {
+            "id": 19,
+            "label": "construct:option-filter",
+            "startTime": 40874.5,
+            "detail": {
+              "candidates": 576,
+              "options": 36
+            },
+            "endTime": 40875.19999998808,
+            "duration": 0.699999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 20,
+            "label": "construct:layout-settle",
+            "startTime": 40877,
+            "detail": {
+              "timedOut": false
+            },
+            "endTime": 41320.39999997616,
+            "duration": 443.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 21,
+            "label": "construct:prepare",
+            "startTime": 40877.5,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 40982.89999997616,
+            "duration": 105.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 22,
+            "label": "pictograph:grid-svg",
+            "startTime": 40935.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 40938.89999997616,
+            "duration": 3.099999964237213,
+            "outcome": "ok"
+          },
+          {
+            "id": 23,
+            "label": "pictograph:grid-svg",
+            "startTime": 41403.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.19999998808,
+            "duration": 120.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 24,
+            "label": "pictograph:grid-svg",
+            "startTime": 41405,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.30000001192,
+            "duration": 119.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 25,
+            "label": "pictograph:grid-svg",
+            "startTime": 41405.39999997616,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.30000001192,
+            "duration": 118.90000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 26,
+            "label": "pictograph:grid-svg",
+            "startTime": 41406.09999996424,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.30000001192,
+            "duration": 118.20000004768372,
+            "outcome": "ok"
+          },
+          {
+            "id": 27,
+            "label": "pictograph:grid-svg",
+            "startTime": 41406.39999997616,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.30000001192,
+            "duration": 117.90000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 28,
+            "label": "pictograph:grid-svg",
+            "startTime": 41406.89999997616,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 117.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 29,
+            "label": "pictograph:grid-svg",
+            "startTime": 41407,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 117.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 30,
+            "label": "pictograph:grid-svg",
+            "startTime": 41407.09999996424,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 117.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 31,
+            "label": "pictograph:grid-svg",
+            "startTime": 41407.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 117.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 32,
+            "label": "pictograph:grid-svg",
+            "startTime": 41407.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 116.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 33,
+            "label": "pictograph:grid-svg",
+            "startTime": 41407.89999997616,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 116.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 34,
+            "label": "pictograph:grid-svg",
+            "startTime": 41408.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 116.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 35,
+            "label": "pictograph:grid-svg",
+            "startTime": 41408.39999997616,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 116,
+            "outcome": "ok"
+          },
+          {
+            "id": 36,
+            "label": "pictograph:grid-svg",
+            "startTime": 41408.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 115.59999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 37,
+            "label": "pictograph:grid-svg",
+            "startTime": 41409,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 115.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 38,
+            "label": "pictograph:grid-svg",
+            "startTime": 41409.19999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 115.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 39,
+            "label": "pictograph:grid-svg",
+            "startTime": 41410.89999997616,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 113.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 40,
+            "label": "pictograph:grid-svg",
+            "startTime": 41411.39999997616,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 113,
+            "outcome": "ok"
+          },
+          {
+            "id": 41,
+            "label": "pictograph:grid-svg",
+            "startTime": 41411.59999996424,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 112.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 42,
+            "label": "pictograph:grid-svg",
+            "startTime": 41411.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 112.59999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 43,
+            "label": "pictograph:grid-svg",
+            "startTime": 41412,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 112.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 44,
+            "label": "pictograph:grid-svg",
+            "startTime": 41412.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 112.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 45,
+            "label": "pictograph:grid-svg",
+            "startTime": 41412.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 111.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 46,
+            "label": "pictograph:grid-svg",
+            "startTime": 41412.59999996424,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 111.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 47,
+            "label": "pictograph:grid-svg",
+            "startTime": 41413.19999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 111.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 48,
+            "label": "pictograph:grid-svg",
+            "startTime": 41413.89999997616,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.39999997616,
+            "duration": 110.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 49,
+            "label": "pictograph:grid-svg",
+            "startTime": 41414.09999996424,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.5,
+            "duration": 110.40000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 50,
+            "label": "pictograph:grid-svg",
+            "startTime": 41414.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.5,
+            "duration": 110.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 51,
+            "label": "pictograph:grid-svg",
+            "startTime": 41414.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.5,
+            "duration": 110.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 52,
+            "label": "pictograph:grid-svg",
+            "startTime": 41414.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.59999996424,
+            "duration": 109.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 53,
+            "label": "pictograph:grid-svg",
+            "startTime": 41415,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.59999996424,
+            "duration": 109.59999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 54,
+            "label": "pictograph:grid-svg",
+            "startTime": 41415.09999996424,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.59999996424,
+            "duration": 109.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 55,
+            "label": "pictograph:grid-svg",
+            "startTime": 41415.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.59999996424,
+            "duration": 108.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 56,
+            "label": "pictograph:grid-svg",
+            "startTime": 41416.09999996424,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.59999996424,
+            "duration": 108.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 57,
+            "label": "pictograph:grid-svg",
+            "startTime": 41416.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.59999996424,
+            "duration": 107.79999995231628,
+            "outcome": "ok"
+          },
+          {
+            "id": 58,
+            "label": "pictograph:grid-svg",
+            "startTime": 41417.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.59999996424,
+            "duration": 107.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 59,
+            "label": "pictograph:grid-svg",
+            "startTime": 41435.19999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 41524.89999997616,
+            "duration": 89.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 60,
+            "label": "construct:prepare",
+            "startTime": 41866.19999998808,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 41875.5,
+            "duration": 9.300000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 61,
+            "label": "construct:prepare",
+            "startTime": 41876.09999996424,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 41895.69999998808,
+            "duration": 19.600000023841858,
+            "outcome": "ok"
+          }
+        ]
+      },
+      "navigation": {
+        "type": "navigate",
+        "responseStart": 6.800000011920929,
+        "responseEnd": 8.699999988079071,
+        "domInteractive": 90.89999997615814,
+        "loadEventEnd": 567.5
+      },
+      "scriptsStartingInFirst10s": {
+        "requests": 341,
+        "encodedBytes": 3838499,
+        "transferBytes": 3938699
+      }
+    }
+  },
+  "beforeMountedPanels": {
+    "visibleCards": 16,
+    "hiddenCards": 20,
+    "visibleSvgNodes": 1104,
+    "hiddenSvgNodes": 1386
+  },
+  "hostStaticClosure": {
+    "before": {
+      "chunks": 232,
+      "uncompressedJsBytes": 13509234
+    },
+    "after": {
+      "chunks": 62,
+      "uncompressedJsBytes": 6752488
+    }
+  },
+  "afterBuildRevision": "b962469cdd",
+  "after": {
+    "desktop": {
+      "observation": {
+        "milestones": {
+          "splash-visible": 672.6999999880791,
+          "module-container": 2204.5,
+          "splash-removed": 2781,
+          "first-start-choice-unoccluded": 2946.300000011921
+        },
+        "longTasks": [
+          {
+            "start": 821.5,
+            "duration": 78
+          },
+          {
+            "start": 1378.800000011921,
+            "duration": 64
+          },
+          {
+            "start": 1673.5,
+            "duration": 96
+          },
+          {
+            "start": 1909.1000000238419,
+            "duration": 95
+          },
+          {
+            "start": 2301.800000011921,
+            "duration": 60
+          },
+          {
+            "start": 2575.800000011921,
+            "duration": 153
+          },
+          {
+            "start": 43801.90000003576,
+            "duration": 92
+          },
+          {
+            "start": 44233.19999998808,
+            "duration": 426
+          },
+          {
+            "start": 44679.69999998808,
+            "duration": 52
+          },
+          {
+            "start": 45023,
+            "duration": 81
+          }
+        ],
+        "interactions": [
+          {
+            "start": 43666.69999998808,
+            "ready": 44752.40000003576,
+            "count": 36,
+            "duration": 1085.7000000476837
+          }
+        ]
+      },
+      "profile": {
+        "phases": [
+          {
+            "label": "shell:main-app-chunk",
+            "startTime": 1455.199999988079,
+            "endTime": 1871.6000000238419,
+            "duration": 416.4000000357628
+          },
+          {
+            "label": "total-init",
+            "startTime": 1455.699999988079,
+            "endTime": 1998,
+            "duration": 542.3000000119209
+          },
+          {
+            "label": "di-container",
+            "startTime": 1455.699999988079,
+            "endTime": 1806.800000011921,
+            "duration": 351.10000002384186
+          },
+          {
+            "label": "app:init-state",
+            "startTime": 1818.5,
+            "endTime": 1873.5,
+            "duration": 55
+          },
+          {
+            "label": "posthog",
+            "startTime": 1876,
+            "endTime": 1903.5,
+            "duration": 27.5
+          },
+          {
+            "label": "i18n",
+            "startTime": 1876.1000000238419,
+            "endTime": 1876.300000011921,
+            "duration": 0.19999998807907104
+          },
+          {
+            "label": "firestore-init",
+            "startTime": 1878.1000000238419,
+            "endTime": 1878.199999988079,
+            "duration": 0.09999996423721313
+          },
+          {
+            "label": "auth-init",
+            "startTime": 1878.300000011921,
+            "endTime": 1997.9000000357628,
+            "duration": 119.60000002384186
+          },
+          {
+            "label": "app:restore-workspace",
+            "startTime": 1885.800000011921,
+            "endTime": 2168.600000023842,
+            "duration": 282.80000001192093
+          },
+          {
+            "label": "app:load-settings+theme",
+            "startTime": 2168.800000011921,
+            "endTime": 2216.5,
+            "duration": 47.69999998807907
+          },
+          {
+            "label": "web-vitals",
+            "startTime": 2507.800000011921,
+            "endTime": 2518,
+            "duration": 10.199999988079071
+          },
+          {
+            "label": "thumbnail-manifest",
+            "startTime": 2508.100000023842,
+            "endTime": 3261.300000011921,
+            "duration": 753.1999999880791
+          },
+          {
+            "label": "library-sync-retry",
+            "startTime": 2508.300000011921,
+            "endTime": 2518.800000011921,
+            "duration": 10.5
+          },
+          {
+            "label": "ui-components",
+            "startTime": 2508.5,
+            "endTime": 2533.5,
+            "duration": 25
+          }
+        ],
+        "milestones": [
+          {
+            "label": "browse:prefetch-policy",
+            "startTime": 1875.9000000357628,
+            "detail": {
+              "network": false,
+              "constrainedConnection": false
+            }
+          },
+          {
+            "label": "shell:ready-announced",
+            "startTime": 2216.5,
+            "detail": {
+              "source": "initialization"
+            }
+          },
+          {
+            "label": "create:mounted",
+            "startTime": 2222.800000011921,
+            "detail": {}
+          },
+          {
+            "label": "module:create:chunk-ready",
+            "startTime": 2287.400000035763,
+            "detail": {}
+          },
+          {
+            "label": "create:workspace-initialized",
+            "startTime": 2364.300000011921,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-grid-reveal-start",
+            "startTime": 2556.100000023842,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-pictograph-ready",
+            "startTime": 2564.5,
+            "detail": {}
+          },
+          {
+            "label": "construct:options-prepared",
+            "startTime": 44035.10000002384,
+            "detail": {
+              "options": 36
+            }
+          },
+          {
+            "label": "construct:layout-committed",
+            "startTime": 44236.90000003576,
+            "detail": {}
+          }
+        ],
+        "spans": [
+          {
+            "id": 1,
+            "label": "create:activation",
+            "startTime": 2223,
+            "detail": {},
+            "endTime": 2364.699999988079,
+            "duration": 141.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 2,
+            "label": "create:initializer-import",
+            "startTime": 2223.100000023842,
+            "detail": {},
+            "endTime": 2298.5,
+            "duration": 75.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 3,
+            "label": "create:initialize",
+            "startTime": 2298.900000035763,
+            "detail": {},
+            "endTime": 2307,
+            "duration": 8.099999964237213,
+            "outcome": "ok"
+          },
+          {
+            "id": 4,
+            "label": "create:orchestrator",
+            "startTime": 2305,
+            "detail": {},
+            "endTime": 2305.800000011921,
+            "duration": 0.800000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 5,
+            "label": "create:construct-tab",
+            "startTime": 2305.800000011921,
+            "detail": {},
+            "endTime": 2306.900000035763,
+            "duration": 1.100000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 6,
+            "label": "create:generator-tab",
+            "startTime": 2306.100000023842,
+            "detail": {},
+            "endTime": 2306.600000023842,
+            "duration": 0.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 7,
+            "label": "create:assemble-tab",
+            "startTime": 2306.199999988079,
+            "detail": {},
+            "endTime": 2306.600000023842,
+            "duration": 0.40000003576278687,
+            "outcome": "ok"
+          },
+          {
+            "id": 8,
+            "label": "create:start-positions",
+            "startTime": 2306.300000011921,
+            "detail": {},
+            "endTime": 2306.400000035763,
+            "duration": 0.10000002384185791,
+            "outcome": "ok"
+          },
+          {
+            "id": 9,
+            "label": "create:restore-sequence",
+            "startTime": 2314.800000011921,
+            "detail": {},
+            "endTime": 2357.100000023842,
+            "duration": 42.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 10,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 2340.900000035763,
+            "detail": {},
+            "endTime": 2536.600000023842,
+            "duration": 195.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 11,
+            "label": "pictograph:prepare-props",
+            "startTime": 2343.699999988079,
+            "detail": {},
+            "endTime": 2389.100000023842,
+            "duration": 45.40000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 12,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 2345.5,
+            "detail": {},
+            "endTime": 2536.600000023842,
+            "duration": 191.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 13,
+            "label": "pictograph:prepare-props",
+            "startTime": 2346.100000023842,
+            "detail": {},
+            "endTime": 2389.199999988079,
+            "duration": 43.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 14,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 2346.800000011921,
+            "detail": {},
+            "endTime": 2536.600000023842,
+            "duration": 189.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 15,
+            "label": "pictograph:prepare-props",
+            "startTime": 2347.5,
+            "detail": {},
+            "endTime": 2389.199999988079,
+            "duration": 41.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 16,
+            "label": "construct:start-grid-stabilize",
+            "startTime": 2347.800000011921,
+            "detail": {},
+            "endTime": 2556,
+            "duration": 208.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 17,
+            "label": "create:resolve-session",
+            "startTime": 2357.800000011921,
+            "detail": {},
+            "endTime": 2364.100000023842,
+            "duration": 6.300000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 18,
+            "label": "pictograph:grid-svg",
+            "startTime": 2551.300000011921,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2561.699999988079,
+            "duration": 10.399999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 19,
+            "label": "pictograph:grid-svg",
+            "startTime": 2553.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2561.600000023842,
+            "duration": 8.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 20,
+            "label": "pictograph:grid-svg",
+            "startTime": 2554.199999988079,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2561.699999988079,
+            "duration": 7.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 21,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 3745.5,
+            "detail": {},
+            "endTime": 3751.5,
+            "duration": 6,
+            "outcome": "ok"
+          },
+          {
+            "id": 22,
+            "label": "pictograph:prepare-props",
+            "startTime": 3746.400000035763,
+            "detail": {},
+            "endTime": 3749.900000035763,
+            "duration": 3.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 23,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 3746.800000011921,
+            "detail": {},
+            "endTime": 3751.400000035763,
+            "duration": 4.600000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 24,
+            "label": "pictograph:prepare-props",
+            "startTime": 3747.600000023842,
+            "detail": {},
+            "endTime": 3750,
+            "duration": 2.399999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 25,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 3748.199999988079,
+            "detail": {},
+            "endTime": 3751.600000023842,
+            "duration": 3.400000035762787,
+            "outcome": "ok"
+          },
+          {
+            "id": 26,
+            "label": "pictograph:prepare-props",
+            "startTime": 3748.5,
+            "detail": {},
+            "endTime": 3750,
+            "duration": 1.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 27,
+            "label": "construct:option-query",
+            "startTime": 43712.90000003576,
+            "detail": {
+              "candidates": 576,
+              "options": 36
+            },
+            "endTime": 43846.10000002384,
+            "duration": 133.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 28,
+            "label": "csv:load",
+            "startTime": 43712.90000003576,
+            "detail": {
+              "source": "fetch"
+            },
+            "endTime": 43802.40000003576,
+            "duration": 89.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 29,
+            "label": "csv:fetch",
+            "startTime": 43713.10000002384,
+            "detail": {
+              "hasSkewedData": true,
+              "hasTrigridData": true
+            },
+            "endTime": 43801.90000003576,
+            "duration": 88.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 30,
+            "label": "csv:parse",
+            "startTime": 43802.40000003576,
+            "detail": {
+              "diamondRows": 576,
+              "boxRows": 576,
+              "skewedRows": 5120,
+              "hasSkewedData": true,
+              "hasTrigridData": true
+            },
+            "endTime": 43841.10000002384,
+            "duration": 38.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 31,
+            "label": "construct:option-filter",
+            "startTime": 43845.40000003576,
+            "detail": {
+              "candidates": 576,
+              "options": 36
+            },
+            "endTime": 43846.10000002384,
+            "duration": 0.699999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 32,
+            "label": "construct:layout-settle",
+            "startTime": 43848.60000002384,
+            "detail": {
+              "timedOut": false
+            },
+            "endTime": 44236.80000001192,
+            "duration": 388.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 33,
+            "label": "construct:prepare",
+            "startTime": 43849.10000002384,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 44035.10000002384,
+            "duration": 186,
+            "outcome": "ok"
+          },
+          {
+            "id": 34,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43849.30000001192,
+            "detail": {},
+            "endTime": 44029.40000003576,
+            "duration": 180.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 35,
+            "label": "pictograph:prepare-props",
+            "startTime": 43850.40000003576,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 42.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 36,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43850.90000003576,
+            "detail": {},
+            "endTime": 44029.40000003576,
+            "duration": 178.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 37,
+            "label": "pictograph:prepare-props",
+            "startTime": 43851.19999998808,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 42.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 38,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43851.5,
+            "detail": {},
+            "endTime": 43993.40000003576,
+            "duration": 141.9000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 39,
+            "label": "pictograph:prepare-props",
+            "startTime": 43852,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 41.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 40,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43852.40000003576,
+            "detail": {},
+            "endTime": 43993.40000003576,
+            "duration": 141,
+            "outcome": "ok"
+          },
+          {
+            "id": 41,
+            "label": "pictograph:prepare-props",
+            "startTime": 43852.60000002384,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 40.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 42,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43852.90000003576,
+            "detail": {},
+            "endTime": 44034.5,
+            "duration": 181.5999999642372,
+            "outcome": "ok"
+          },
+          {
+            "id": 43,
+            "label": "pictograph:prepare-props",
+            "startTime": 43853.19999998808,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 40.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 44,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43853.60000002384,
+            "detail": {},
+            "endTime": 44034.5,
+            "duration": 180.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 45,
+            "label": "pictograph:prepare-props",
+            "startTime": 43853.90000003576,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 39.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 46,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43854.19999998808,
+            "detail": {},
+            "endTime": 44034.5,
+            "duration": 180.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 47,
+            "label": "pictograph:prepare-props",
+            "startTime": 43854.5,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 38.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 48,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43854.90000003576,
+            "detail": {},
+            "endTime": 44034.5,
+            "duration": 179.5999999642372,
+            "outcome": "ok"
+          },
+          {
+            "id": 49,
+            "label": "pictograph:prepare-props",
+            "startTime": 43855.10000002384,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 38.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 50,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43855.40000003576,
+            "detail": {},
+            "endTime": 44033.80000001192,
+            "duration": 178.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 51,
+            "label": "pictograph:prepare-props",
+            "startTime": 43855.60000002384,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 37.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 52,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43858.30000001192,
+            "detail": {},
+            "endTime": 44033.80000001192,
+            "duration": 175.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 53,
+            "label": "pictograph:prepare-props",
+            "startTime": 43858.60000002384,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 34.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 54,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43859,
+            "detail": {},
+            "endTime": 44032.69999998808,
+            "duration": 173.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 55,
+            "label": "pictograph:prepare-props",
+            "startTime": 43859.30000001192,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 34,
+            "outcome": "ok"
+          },
+          {
+            "id": 56,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43859.69999998808,
+            "detail": {},
+            "endTime": 44032.69999998808,
+            "duration": 173,
+            "outcome": "ok"
+          },
+          {
+            "id": 57,
+            "label": "pictograph:prepare-props",
+            "startTime": 43860,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 33.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 58,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43860.30000001192,
+            "detail": {},
+            "endTime": 44035,
+            "duration": 174.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 59,
+            "label": "pictograph:prepare-props",
+            "startTime": 43865.60000002384,
+            "detail": {},
+            "endTime": 43893.30000001192,
+            "duration": 27.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 60,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43866.19999998808,
+            "detail": {},
+            "endTime": 44035,
+            "duration": 168.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 61,
+            "label": "pictograph:prepare-props",
+            "startTime": 43866.69999998808,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 26.700000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 62,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43867,
+            "detail": {},
+            "endTime": 44035,
+            "duration": 168,
+            "outcome": "ok"
+          },
+          {
+            "id": 63,
+            "label": "pictograph:prepare-props",
+            "startTime": 43867.19999998808,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 26.200000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 64,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43867.60000002384,
+            "detail": {},
+            "endTime": 44035,
+            "duration": 167.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 65,
+            "label": "pictograph:prepare-props",
+            "startTime": 43867.90000003576,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 25.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 66,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43868.30000001192,
+            "detail": {},
+            "endTime": 44028.30000001192,
+            "duration": 160,
+            "outcome": "ok"
+          },
+          {
+            "id": 67,
+            "label": "pictograph:prepare-props",
+            "startTime": 43869,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 24.400000035762787,
+            "outcome": "ok"
+          },
+          {
+            "id": 68,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43869.40000003576,
+            "detail": {},
+            "endTime": 44028.40000003576,
+            "duration": 159,
+            "outcome": "ok"
+          },
+          {
+            "id": 69,
+            "label": "pictograph:prepare-props",
+            "startTime": 43869.69999998808,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 23.700000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 70,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43870,
+            "detail": {},
+            "endTime": 44028.40000003576,
+            "duration": 158.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 71,
+            "label": "pictograph:prepare-props",
+            "startTime": 43870.30000001192,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 23.100000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 72,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43870.5,
+            "detail": {},
+            "endTime": 44028.40000003576,
+            "duration": 157.9000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 73,
+            "label": "pictograph:prepare-props",
+            "startTime": 43870.80000001192,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 22.600000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 74,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43871.30000001192,
+            "detail": {},
+            "endTime": 44026.90000003576,
+            "duration": 155.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 75,
+            "label": "pictograph:prepare-props",
+            "startTime": 43873,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 20.400000035762787,
+            "outcome": "ok"
+          },
+          {
+            "id": 76,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43873.30000001192,
+            "detail": {},
+            "endTime": 44026.90000003576,
+            "duration": 153.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 77,
+            "label": "pictograph:prepare-props",
+            "startTime": 43873.69999998808,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 19.700000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 78,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43874.19999998808,
+            "detail": {},
+            "endTime": 44026.90000003576,
+            "duration": 152.70000004768372,
+            "outcome": "ok"
+          },
+          {
+            "id": 79,
+            "label": "pictograph:prepare-props",
+            "startTime": 43874.60000002384,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 18.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 80,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43875,
+            "detail": {},
+            "endTime": 44026.90000003576,
+            "duration": 151.9000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 81,
+            "label": "pictograph:prepare-props",
+            "startTime": 43875.40000003576,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 18,
+            "outcome": "ok"
+          },
+          {
+            "id": 82,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43875.80000001192,
+            "detail": {},
+            "endTime": 44032,
+            "duration": 156.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 83,
+            "label": "pictograph:prepare-props",
+            "startTime": 43876.19999998808,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 17.200000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 84,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43876.5,
+            "detail": {},
+            "endTime": 44032,
+            "duration": 155.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 85,
+            "label": "pictograph:prepare-props",
+            "startTime": 43876.90000003576,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 16.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 86,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43877.30000001192,
+            "detail": {},
+            "endTime": 44032,
+            "duration": 154.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 87,
+            "label": "pictograph:prepare-props",
+            "startTime": 43877.69999998808,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 15.700000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 88,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43878,
+            "detail": {},
+            "endTime": 44032,
+            "duration": 154,
+            "outcome": "ok"
+          },
+          {
+            "id": 89,
+            "label": "pictograph:prepare-props",
+            "startTime": 43878.30000001192,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 15.100000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 90,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43878.5,
+            "detail": {},
+            "endTime": 44028.90000003576,
+            "duration": 150.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 91,
+            "label": "pictograph:prepare-props",
+            "startTime": 43879.10000002384,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 14.300000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 92,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43879.40000003576,
+            "detail": {},
+            "endTime": 44033.40000003576,
+            "duration": 154,
+            "outcome": "ok"
+          },
+          {
+            "id": 93,
+            "label": "pictograph:prepare-props",
+            "startTime": 43880.10000002384,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 13.300000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 94,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43880.60000002384,
+            "detail": {},
+            "endTime": 44033.40000003576,
+            "duration": 152.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 95,
+            "label": "pictograph:prepare-props",
+            "startTime": 43882.10000002384,
+            "detail": {},
+            "endTime": 43893.40000003576,
+            "duration": 11.300000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 96,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43882.5,
+            "detail": {},
+            "endTime": 44030.60000002384,
+            "duration": 148.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 97,
+            "label": "pictograph:prepare-props",
+            "startTime": 43883.10000002384,
+            "detail": {},
+            "endTime": 43893.5,
+            "duration": 10.399999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 98,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43883.40000003576,
+            "detail": {},
+            "endTime": 44030.60000002384,
+            "duration": 147.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 99,
+            "label": "pictograph:prepare-props",
+            "startTime": 43883.90000003576,
+            "detail": {},
+            "endTime": 43893.5,
+            "duration": 9.599999964237213,
+            "outcome": "ok"
+          },
+          {
+            "id": 100,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43884.40000003576,
+            "detail": {},
+            "endTime": 44030.60000002384,
+            "duration": 146.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 101,
+            "label": "pictograph:prepare-props",
+            "startTime": 43884.80000001192,
+            "detail": {},
+            "endTime": 43893.5,
+            "duration": 8.699999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 102,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 43885.19999998808,
+            "detail": {},
+            "endTime": 44030.60000002384,
+            "duration": 145.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 103,
+            "label": "pictograph:prepare-props",
+            "startTime": 43885.60000002384,
+            "detail": {},
+            "endTime": 43893.5,
+            "duration": 7.899999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 104,
+            "label": "pictograph:grid-svg",
+            "startTime": 43982.90000003576,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 43987.30000001192,
+            "duration": 4.399999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 105,
+            "label": "pictograph:grid-svg",
+            "startTime": 44424.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44562.90000003576,
+            "duration": 138.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 106,
+            "label": "pictograph:grid-svg",
+            "startTime": 44425.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563,
+            "duration": 137.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 107,
+            "label": "pictograph:grid-svg",
+            "startTime": 44426,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563,
+            "duration": 137,
+            "outcome": "ok"
+          },
+          {
+            "id": 108,
+            "label": "pictograph:grid-svg",
+            "startTime": 44426.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563,
+            "duration": 136.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 109,
+            "label": "pictograph:grid-svg",
+            "startTime": 44426.90000003576,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.19999998808,
+            "duration": 136.29999995231628,
+            "outcome": "ok"
+          },
+          {
+            "id": 110,
+            "label": "pictograph:grid-svg",
+            "startTime": 44427.40000003576,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 135.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 111,
+            "label": "pictograph:grid-svg",
+            "startTime": 44427.60000002384,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 135.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 112,
+            "label": "pictograph:grid-svg",
+            "startTime": 44427.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 135.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 113,
+            "label": "pictograph:grid-svg",
+            "startTime": 44428.10000002384,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 135.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 114,
+            "label": "pictograph:grid-svg",
+            "startTime": 44428.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 134.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 115,
+            "label": "pictograph:grid-svg",
+            "startTime": 44428.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 134.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 116,
+            "label": "pictograph:grid-svg",
+            "startTime": 44429.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 134,
+            "outcome": "ok"
+          },
+          {
+            "id": 117,
+            "label": "pictograph:grid-svg",
+            "startTime": 44429.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 133.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 118,
+            "label": "pictograph:grid-svg",
+            "startTime": 44430.19999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 133.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 119,
+            "label": "pictograph:grid-svg",
+            "startTime": 44430.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 132.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 120,
+            "label": "pictograph:grid-svg",
+            "startTime": 44430.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 132.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 121,
+            "label": "pictograph:grid-svg",
+            "startTime": 44437,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 126.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 122,
+            "label": "pictograph:grid-svg",
+            "startTime": 44438,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.30000001192,
+            "duration": 125.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 123,
+            "label": "pictograph:grid-svg",
+            "startTime": 44438.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.40000003576,
+            "duration": 125.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 124,
+            "label": "pictograph:grid-svg",
+            "startTime": 44438.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.40000003576,
+            "duration": 124.90000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 125,
+            "label": "pictograph:grid-svg",
+            "startTime": 44438.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.40000003576,
+            "duration": 124.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 126,
+            "label": "pictograph:grid-svg",
+            "startTime": 44439.40000003576,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.40000003576,
+            "duration": 124,
+            "outcome": "ok"
+          },
+          {
+            "id": 127,
+            "label": "pictograph:grid-svg",
+            "startTime": 44439.60000002384,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.40000003576,
+            "duration": 123.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 128,
+            "label": "pictograph:grid-svg",
+            "startTime": 44440.10000002384,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.40000003576,
+            "duration": 123.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 129,
+            "label": "pictograph:grid-svg",
+            "startTime": 44441,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.40000003576,
+            "duration": 122.40000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 130,
+            "label": "pictograph:grid-svg",
+            "startTime": 44441.60000002384,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.40000003576,
+            "duration": 121.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 131,
+            "label": "pictograph:grid-svg",
+            "startTime": 44441.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.5,
+            "duration": 121.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 132,
+            "label": "pictograph:grid-svg",
+            "startTime": 44442,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.5,
+            "duration": 121.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 133,
+            "label": "pictograph:grid-svg",
+            "startTime": 44442.19999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.5,
+            "duration": 121.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 134,
+            "label": "pictograph:grid-svg",
+            "startTime": 44442.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.5,
+            "duration": 120.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 135,
+            "label": "pictograph:grid-svg",
+            "startTime": 44442.90000003576,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.5,
+            "duration": 120.59999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 136,
+            "label": "pictograph:grid-svg",
+            "startTime": 44443.40000003576,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.5,
+            "duration": 120.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 137,
+            "label": "pictograph:grid-svg",
+            "startTime": 44444.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.5,
+            "duration": 118.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 138,
+            "label": "pictograph:grid-svg",
+            "startTime": 44445.40000003576,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.60000002384,
+            "duration": 118.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 139,
+            "label": "pictograph:grid-svg",
+            "startTime": 44446.40000003576,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.60000002384,
+            "duration": 117.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 140,
+            "label": "pictograph:grid-svg",
+            "startTime": 44447.69999998808,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 44563.60000002384,
+            "duration": 115.90000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 141,
+            "label": "construct:prepare",
+            "startTime": 45025.69999998808,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 45038.90000003576,
+            "duration": 13.200000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 142,
+            "label": "construct:prepare",
+            "startTime": 45040.40000003576,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 45075,
+            "duration": 34.59999996423721,
+            "outcome": "ok"
+          }
+        ]
+      },
+      "navigationWorkerStart": 0,
+      "scriptsStartingInFirst10s": {
+        "requests": 292,
+        "encodedBytes": 3433836,
+        "transferBytes": 3519336
+      },
+      "interactionCaveat": "Another page began loading after the start click; do not compare these interaction durations as isolated performance results."
+    },
+    "mobile": {
+      "observation": {
+        "milestones": {
+          "splash-visible": 122.80000001192093,
+          "module-container": 1594.7000000476837,
+          "splash-removed": 2130.100000023842,
+          "first-start-choice-unoccluded": 2318.100000023842
+        },
+        "longTasks": [
+          {
+            "start": 310.5,
+            "duration": 86
+          },
+          {
+            "start": 625,
+            "duration": 79
+          },
+          {
+            "start": 1274.6000000238419,
+            "duration": 64
+          },
+          {
+            "start": 1524.7000000476837,
+            "duration": 67
+          },
+          {
+            "start": 1633.2000000476837,
+            "duration": 55
+          },
+          {
+            "start": 1719.6000000238419,
+            "duration": 97
+          },
+          {
+            "start": 1947.9000000357628,
+            "duration": 151
+          },
+          {
+            "start": 25648.30000001192,
+            "duration": 57
+          },
+          {
+            "start": 25842.100000023842,
+            "duration": 101
+          },
+          {
+            "start": 26257.900000035763,
+            "duration": 617
+          },
+          {
+            "start": 26900.200000047684,
+            "duration": 85
+          },
+          {
+            "start": 26985.700000047684,
+            "duration": 59
+          },
+          {
+            "start": 27531.100000023842,
+            "duration": 87
+          }
+        ],
+        "interactions": [
+          {
+            "start": 25657.200000047684,
+            "ready": 27006.900000035763,
+            "count": 36,
+            "duration": 1349.699999988079
+          }
+        ]
+      },
+      "profile": {
+        "phases": [
+          {
+            "label": "total-init",
+            "startTime": 724.3000000119209,
+            "endTime": 1331.1000000238419,
+            "duration": 606.8000000119209
+          },
+          {
+            "label": "di-container",
+            "startTime": 724.3000000119209,
+            "endTime": 1092.6000000238419,
+            "duration": 368.30000001192093
+          },
+          {
+            "label": "shell:main-app-chunk",
+            "startTime": 724.5,
+            "endTime": 1223.4000000357628,
+            "duration": 498.9000000357628
+          },
+          {
+            "label": "app:init-state",
+            "startTime": 1146.7000000476837,
+            "endTime": 1225.6000000238419,
+            "duration": 78.89999997615814
+          },
+          {
+            "label": "posthog",
+            "startTime": 1230.4000000357628,
+            "endTime": 1262.7000000476837,
+            "duration": 32.30000001192093
+          },
+          {
+            "label": "i18n",
+            "startTime": 1230.6000000238419,
+            "endTime": 1230.9000000357628,
+            "duration": 0.30000001192092896
+          },
+          {
+            "label": "firestore-init",
+            "startTime": 1233,
+            "endTime": 1233.1000000238419,
+            "duration": 0.10000002384185791
+          },
+          {
+            "label": "auth-init",
+            "startTime": 1233.300000011921,
+            "endTime": 1331.1000000238419,
+            "duration": 97.80000001192093
+          },
+          {
+            "label": "app:restore-workspace",
+            "startTime": 1238.300000011921,
+            "endTime": 1540.6000000238419,
+            "duration": 302.30000001192093
+          },
+          {
+            "label": "app:load-settings+theme",
+            "startTime": 1540.9000000357628,
+            "endTime": 1618.1000000238419,
+            "duration": 77.19999998807907
+          },
+          {
+            "label": "web-vitals",
+            "startTime": 2896.5,
+            "endTime": 2912.600000023842,
+            "duration": 16.100000023841858
+          },
+          {
+            "label": "thumbnail-manifest",
+            "startTime": 2897.100000023842,
+            "endTime": 3674.800000011921,
+            "duration": 777.6999999880791
+          },
+          {
+            "label": "library-sync-retry",
+            "startTime": 2897.400000035763,
+            "endTime": 2914.100000023842,
+            "duration": 16.69999998807907
+          },
+          {
+            "label": "ui-components",
+            "startTime": 2897.800000011921,
+            "endTime": 2958.300000011921,
+            "duration": 60.5
+          }
+        ],
+        "milestones": [
+          {
+            "label": "browse:prefetch-policy",
+            "startTime": 1228.1000000238419,
+            "detail": {
+              "network": false,
+              "constrainedConnection": false
+            }
+          },
+          {
+            "label": "shell:ready-announced",
+            "startTime": 1618.4000000357628,
+            "detail": {
+              "source": "initialization"
+            }
+          },
+          {
+            "label": "create:mounted",
+            "startTime": 1627,
+            "detail": {}
+          },
+          {
+            "label": "module:create:chunk-ready",
+            "startTime": 1702,
+            "detail": {}
+          },
+          {
+            "label": "create:workspace-initialized",
+            "startTime": 1834.800000011921,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-grid-reveal-start",
+            "startTime": 2125.7000000476837,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-pictograph-ready",
+            "startTime": 2232.800000011921,
+            "detail": {}
+          },
+          {
+            "label": "construct:options-prepared",
+            "startTime": 26013.900000035763,
+            "detail": {
+              "options": 36
+            }
+          },
+          {
+            "label": "construct:layout-committed",
+            "startTime": 26262.100000023842,
+            "detail": {}
+          }
+        ],
+        "spans": [
+          {
+            "id": 1,
+            "label": "create:activation",
+            "startTime": 1627.1000000238419,
+            "detail": {},
+            "endTime": 1835.800000011921,
+            "duration": 208.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 2,
+            "label": "create:initializer-import",
+            "startTime": 1627.300000011921,
+            "detail": {},
+            "endTime": 1716.9000000357628,
+            "duration": 89.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 3,
+            "label": "create:initialize",
+            "startTime": 1717.4000000357628,
+            "detail": {},
+            "endTime": 1729.4000000357628,
+            "duration": 12,
+            "outcome": "ok"
+          },
+          {
+            "id": 4,
+            "label": "create:orchestrator",
+            "startTime": 1726.2000000476837,
+            "detail": {},
+            "endTime": 1727.4000000357628,
+            "duration": 1.199999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 5,
+            "label": "create:construct-tab",
+            "startTime": 1727.5,
+            "detail": {},
+            "endTime": 1729.4000000357628,
+            "duration": 1.9000000357627869,
+            "outcome": "ok"
+          },
+          {
+            "id": 6,
+            "label": "create:generator-tab",
+            "startTime": 1728.2000000476837,
+            "detail": {},
+            "endTime": 1729,
+            "duration": 0.7999999523162842,
+            "outcome": "ok"
+          },
+          {
+            "id": 7,
+            "label": "create:assemble-tab",
+            "startTime": 1728.300000011921,
+            "detail": {},
+            "endTime": 1729,
+            "duration": 0.699999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 8,
+            "label": "create:start-positions",
+            "startTime": 1728.5,
+            "detail": {},
+            "endTime": 1728.800000011921,
+            "duration": 0.30000001192092896,
+            "outcome": "ok"
+          },
+          {
+            "id": 9,
+            "label": "create:restore-sequence",
+            "startTime": 1743.7000000476837,
+            "detail": {},
+            "endTime": 1809.5,
+            "duration": 65.79999995231628,
+            "outcome": "ok"
+          },
+          {
+            "id": 10,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 1787.800000011921,
+            "detail": {},
+            "endTime": 2166.2000000476837,
+            "duration": 378.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 11,
+            "label": "pictograph:prepare-props",
+            "startTime": 1791.2000000476837,
+            "detail": {},
+            "endTime": 1856.7000000476837,
+            "duration": 65.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 12,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 1793.5,
+            "detail": {},
+            "endTime": 2166.2000000476837,
+            "duration": 372.7000000476837,
+            "outcome": "ok"
+          },
+          {
+            "id": 13,
+            "label": "pictograph:prepare-props",
+            "startTime": 1794.300000011921,
+            "detail": {},
+            "endTime": 1856.7000000476837,
+            "duration": 62.40000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 14,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 1795.300000011921,
+            "detail": {},
+            "endTime": 2166.2000000476837,
+            "duration": 370.9000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 15,
+            "label": "pictograph:prepare-props",
+            "startTime": 1796.1000000238419,
+            "detail": {},
+            "endTime": 1856.7000000476837,
+            "duration": 60.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 16,
+            "label": "construct:start-grid-stabilize",
+            "startTime": 1796.4000000357628,
+            "detail": {},
+            "endTime": 2125.7000000476837,
+            "duration": 329.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 17,
+            "label": "create:resolve-session",
+            "startTime": 1810.4000000357628,
+            "detail": {},
+            "endTime": 1834.300000011921,
+            "duration": 23.899999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 18,
+            "label": "pictograph:grid-svg",
+            "startTime": 2183.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2214.300000011921,
+            "duration": 30.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 19,
+            "label": "pictograph:grid-svg",
+            "startTime": 2185.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2214.100000023842,
+            "duration": 28.600000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 20,
+            "label": "pictograph:grid-svg",
+            "startTime": 2186.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2214.300000011921,
+            "duration": 28.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 21,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 2815.5,
+            "detail": {},
+            "endTime": 2822,
+            "duration": 6.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 22,
+            "label": "pictograph:prepare-props",
+            "startTime": 2816.600000023842,
+            "detail": {},
+            "endTime": 2820.300000011921,
+            "duration": 3.699999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 23,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 2817.600000023842,
+            "detail": {},
+            "endTime": 2822,
+            "duration": 4.399999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 24,
+            "label": "pictograph:prepare-props",
+            "startTime": 2818.100000023842,
+            "detail": {},
+            "endTime": 2820.300000011921,
+            "duration": 2.199999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 25,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 2818.5,
+            "detail": {},
+            "endTime": 2822,
+            "duration": 3.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 26,
+            "label": "pictograph:prepare-props",
+            "startTime": 2818.900000035763,
+            "detail": {},
+            "endTime": 2820.400000035763,
+            "duration": 1.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 27,
+            "label": "construct:option-query",
+            "startTime": 25733.600000023842,
+            "detail": {
+              "candidates": 576,
+              "options": 36
+            },
+            "endTime": 25888,
+            "duration": 154.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 28,
+            "label": "csv:load",
+            "startTime": 25733.80000001192,
+            "detail": {
+              "source": "fetch"
+            },
+            "endTime": 25842.400000035763,
+            "duration": 108.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 29,
+            "label": "csv:fetch",
+            "startTime": 25734,
+            "detail": {
+              "hasSkewedData": true,
+              "hasTrigridData": true
+            },
+            "endTime": 25842.100000023842,
+            "duration": 108.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 30,
+            "label": "csv:parse",
+            "startTime": 25842.5,
+            "detail": {
+              "diamondRows": 576,
+              "boxRows": 576,
+              "skewedRows": 5120,
+              "hasSkewedData": true,
+              "hasTrigridData": true
+            },
+            "endTime": 25879.100000023842,
+            "duration": 36.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 31,
+            "label": "construct:option-filter",
+            "startTime": 25887,
+            "detail": {
+              "candidates": 576,
+              "options": 36
+            },
+            "endTime": 25887.900000035763,
+            "duration": 0.9000000357627869,
+            "outcome": "ok"
+          },
+          {
+            "id": 32,
+            "label": "construct:layout-settle",
+            "startTime": 25891,
+            "detail": {
+              "timedOut": false
+            },
+            "endTime": 26262.100000023842,
+            "duration": 371.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 33,
+            "label": "construct:prepare",
+            "startTime": 25891.700000047684,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 26013.900000035763,
+            "duration": 122.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 34,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25892,
+            "detail": {},
+            "endTime": 26009.400000035763,
+            "duration": 117.40000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 35,
+            "label": "pictograph:prepare-props",
+            "startTime": 25893.400000035763,
+            "detail": {},
+            "endTime": 25942.5,
+            "duration": 49.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 36,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25893.900000035763,
+            "detail": {},
+            "endTime": 26009.400000035763,
+            "duration": 115.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 37,
+            "label": "pictograph:prepare-props",
+            "startTime": 25894.30000001192,
+            "detail": {},
+            "endTime": 25942.5,
+            "duration": 48.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 38,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25894.700000047684,
+            "detail": {},
+            "endTime": 25997.400000035763,
+            "duration": 102.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 39,
+            "label": "pictograph:prepare-props",
+            "startTime": 25895.400000035763,
+            "detail": {},
+            "endTime": 25942.5,
+            "duration": 47.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 40,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25895.80000001192,
+            "detail": {},
+            "endTime": 25997.5,
+            "duration": 101.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 41,
+            "label": "pictograph:prepare-props",
+            "startTime": 25896,
+            "detail": {},
+            "endTime": 25942.5,
+            "duration": 46.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 42,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25896.30000001192,
+            "detail": {},
+            "endTime": 26012.30000001192,
+            "duration": 116,
+            "outcome": "ok"
+          },
+          {
+            "id": 43,
+            "label": "pictograph:prepare-props",
+            "startTime": 25896.600000023842,
+            "detail": {},
+            "endTime": 25942.5,
+            "duration": 45.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 44,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25897,
+            "detail": {},
+            "endTime": 26012.400000035763,
+            "duration": 115.40000003576279,
+            "outcome": "ok"
+          },
+          {
+            "id": 45,
+            "label": "pictograph:prepare-props",
+            "startTime": 25897.30000001192,
+            "detail": {},
+            "endTime": 25942.5,
+            "duration": 45.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 46,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25897.700000047684,
+            "detail": {},
+            "endTime": 26012.400000035763,
+            "duration": 114.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 47,
+            "label": "pictograph:prepare-props",
+            "startTime": 25898.100000023842,
+            "detail": {},
+            "endTime": 25942.5,
+            "duration": 44.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 48,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25898.400000035763,
+            "detail": {},
+            "endTime": 26012.400000035763,
+            "duration": 114,
+            "outcome": "ok"
+          },
+          {
+            "id": 49,
+            "label": "pictograph:prepare-props",
+            "startTime": 25898.80000001192,
+            "detail": {},
+            "endTime": 25942.5,
+            "duration": 43.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 50,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25899.200000047684,
+            "detail": {},
+            "endTime": 26012.700000047684,
+            "duration": 113.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 51,
+            "label": "pictograph:prepare-props",
+            "startTime": 25899.5,
+            "detail": {},
+            "endTime": 25942.5,
+            "duration": 43,
+            "outcome": "ok"
+          },
+          {
+            "id": 52,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25900.100000023842,
+            "detail": {},
+            "endTime": 26012.700000047684,
+            "duration": 112.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 53,
+            "label": "pictograph:prepare-props",
+            "startTime": 25900.30000001192,
+            "detail": {},
+            "endTime": 25942.5,
+            "duration": 42.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 54,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25900.700000047684,
+            "detail": {},
+            "endTime": 26013.200000047684,
+            "duration": 112.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 55,
+            "label": "pictograph:prepare-props",
+            "startTime": 25901.100000023842,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 41.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 56,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25901.400000035763,
+            "detail": {},
+            "endTime": 26013.200000047684,
+            "duration": 111.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 57,
+            "label": "pictograph:prepare-props",
+            "startTime": 25901.600000023842,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 41,
+            "outcome": "ok"
+          },
+          {
+            "id": 58,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25902.100000023842,
+            "detail": {},
+            "endTime": 26013.80000001192,
+            "duration": 111.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 59,
+            "label": "pictograph:prepare-props",
+            "startTime": 25902.30000001192,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 40.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 60,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25902.700000047684,
+            "detail": {},
+            "endTime": 26013.80000001192,
+            "duration": 111.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 61,
+            "label": "pictograph:prepare-props",
+            "startTime": 25903,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 39.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 62,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25903.400000035763,
+            "detail": {},
+            "endTime": 26013.900000035763,
+            "duration": 110.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 63,
+            "label": "pictograph:prepare-props",
+            "startTime": 25903.700000047684,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 38.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 64,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25904.100000023842,
+            "detail": {},
+            "endTime": 26013.900000035763,
+            "duration": 109.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 65,
+            "label": "pictograph:prepare-props",
+            "startTime": 25904.30000001192,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 38.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 66,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25904.700000047684,
+            "detail": {},
+            "endTime": 26004.80000001192,
+            "duration": 100.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 67,
+            "label": "pictograph:prepare-props",
+            "startTime": 25905.5,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 37.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 68,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25905.900000035763,
+            "detail": {},
+            "endTime": 26004.80000001192,
+            "duration": 98.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 69,
+            "label": "pictograph:prepare-props",
+            "startTime": 25906.30000001192,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 36.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 70,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25906.600000023842,
+            "detail": {},
+            "endTime": 26004.80000001192,
+            "duration": 98.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 71,
+            "label": "pictograph:prepare-props",
+            "startTime": 25907.30000001192,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 35.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 72,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25907.5,
+            "detail": {},
+            "endTime": 26004.80000001192,
+            "duration": 97.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 73,
+            "label": "pictograph:prepare-props",
+            "startTime": 25907.80000001192,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 34.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 74,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25908.200000047684,
+            "detail": {},
+            "endTime": 26006.400000035763,
+            "duration": 98.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 75,
+            "label": "pictograph:prepare-props",
+            "startTime": 25909.400000035763,
+            "detail": {},
+            "endTime": 25942.600000023842,
+            "duration": 33.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 76,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25909.600000023842,
+            "detail": {},
+            "endTime": 26006.5,
+            "duration": 96.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 77,
+            "label": "pictograph:prepare-props",
+            "startTime": 25910,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 32.700000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 78,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25910.400000035763,
+            "detail": {},
+            "endTime": 26006.5,
+            "duration": 96.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 79,
+            "label": "pictograph:prepare-props",
+            "startTime": 25910.900000035763,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 31.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 80,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25911.200000047684,
+            "detail": {},
+            "endTime": 26006.5,
+            "duration": 95.29999995231628,
+            "outcome": "ok"
+          },
+          {
+            "id": 81,
+            "label": "pictograph:prepare-props",
+            "startTime": 25911.700000047684,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 31,
+            "outcome": "ok"
+          },
+          {
+            "id": 82,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25912,
+            "detail": {},
+            "endTime": 26008,
+            "duration": 96,
+            "outcome": "ok"
+          },
+          {
+            "id": 83,
+            "label": "pictograph:prepare-props",
+            "startTime": 25912.5,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 30.200000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 84,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25912.80000001192,
+            "detail": {},
+            "endTime": 26008,
+            "duration": 95.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 85,
+            "label": "pictograph:prepare-props",
+            "startTime": 25913.600000023842,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 29.100000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 86,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25914,
+            "detail": {},
+            "endTime": 26008,
+            "duration": 94,
+            "outcome": "ok"
+          },
+          {
+            "id": 87,
+            "label": "pictograph:prepare-props",
+            "startTime": 25914.30000001192,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 28.400000035762787,
+            "outcome": "ok"
+          },
+          {
+            "id": 88,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25914.80000001192,
+            "detail": {},
+            "endTime": 26008,
+            "duration": 93.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 89,
+            "label": "pictograph:prepare-props",
+            "startTime": 25915.900000035763,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 26.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 90,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25916.600000023842,
+            "detail": {},
+            "endTime": 26008.700000047684,
+            "duration": 92.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 91,
+            "label": "pictograph:prepare-props",
+            "startTime": 25917.400000035763,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 25.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 92,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25917.700000047684,
+            "detail": {},
+            "endTime": 26010.30000001192,
+            "duration": 92.59999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 93,
+            "label": "pictograph:prepare-props",
+            "startTime": 25918.5,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 24.200000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 94,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25919.200000047684,
+            "detail": {},
+            "endTime": 26010.30000001192,
+            "duration": 91.09999996423721,
+            "outcome": "ok"
+          },
+          {
+            "id": 95,
+            "label": "pictograph:prepare-props",
+            "startTime": 25920.200000047684,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 22.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 96,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25920.900000035763,
+            "detail": {},
+            "endTime": 26011.600000023842,
+            "duration": 90.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 97,
+            "label": "pictograph:prepare-props",
+            "startTime": 25921.700000047684,
+            "detail": {},
+            "endTime": 25942.700000047684,
+            "duration": 21,
+            "outcome": "ok"
+          },
+          {
+            "id": 98,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25922.100000023842,
+            "detail": {},
+            "endTime": 26011.600000023842,
+            "duration": 89.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 99,
+            "label": "pictograph:prepare-props",
+            "startTime": 25922.600000023842,
+            "detail": {},
+            "endTime": 25942.80000001192,
+            "duration": 20.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 100,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25923.30000001192,
+            "detail": {},
+            "endTime": 26011.600000023842,
+            "duration": 88.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 101,
+            "label": "pictograph:prepare-props",
+            "startTime": 25923.900000035763,
+            "detail": {},
+            "endTime": 25942.80000001192,
+            "duration": 18.899999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 102,
+            "label": "pictograph:prepare-arrows",
+            "startTime": 25924.400000035763,
+            "detail": {},
+            "endTime": 26011.600000023842,
+            "duration": 87.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 103,
+            "label": "pictograph:prepare-props",
+            "startTime": 25930.80000001192,
+            "detail": {},
+            "endTime": 25942.80000001192,
+            "duration": 12,
+            "outcome": "ok"
+          },
+          {
+            "id": 104,
+            "label": "pictograph:grid-svg",
+            "startTime": 26052.700000047684,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26057.600000023842,
+            "duration": 4.899999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 105,
+            "label": "pictograph:grid-svg",
+            "startTime": 26424.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.400000035763,
+            "duration": 243.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 106,
+            "label": "pictograph:grid-svg",
+            "startTime": 26425.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.5,
+            "duration": 241.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 107,
+            "label": "pictograph:grid-svg",
+            "startTime": 26426.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.5,
+            "duration": 241.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 108,
+            "label": "pictograph:grid-svg",
+            "startTime": 26428.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.600000023842,
+            "duration": 239.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 109,
+            "label": "pictograph:grid-svg",
+            "startTime": 26428.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.600000023842,
+            "duration": 239.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 110,
+            "label": "pictograph:grid-svg",
+            "startTime": 26429.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.600000023842,
+            "duration": 238.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 111,
+            "label": "pictograph:grid-svg",
+            "startTime": 26429.400000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.600000023842,
+            "duration": 238.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 112,
+            "label": "pictograph:grid-svg",
+            "startTime": 26429.600000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.600000023842,
+            "duration": 238,
+            "outcome": "ok"
+          },
+          {
+            "id": 113,
+            "label": "pictograph:grid-svg",
+            "startTime": 26429.900000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.600000023842,
+            "duration": 237.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 114,
+            "label": "pictograph:grid-svg",
+            "startTime": 26430.200000047684,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.700000047684,
+            "duration": 237.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 115,
+            "label": "pictograph:grid-svg",
+            "startTime": 26430.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.700000047684,
+            "duration": 237.20000004768372,
+            "outcome": "ok"
+          },
+          {
+            "id": 116,
+            "label": "pictograph:grid-svg",
+            "startTime": 26431.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.700000047684,
+            "duration": 236.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 117,
+            "label": "pictograph:grid-svg",
+            "startTime": 26431.400000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.700000047684,
+            "duration": 236.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 118,
+            "label": "pictograph:grid-svg",
+            "startTime": 26432,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.700000047684,
+            "duration": 235.70000004768372,
+            "outcome": "ok"
+          },
+          {
+            "id": 119,
+            "label": "pictograph:grid-svg",
+            "startTime": 26432.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.700000047684,
+            "duration": 235.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 120,
+            "label": "pictograph:grid-svg",
+            "startTime": 26432.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.700000047684,
+            "duration": 235.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 121,
+            "label": "pictograph:grid-svg",
+            "startTime": 26435.30000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.700000047684,
+            "duration": 232.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 122,
+            "label": "pictograph:grid-svg",
+            "startTime": 26435.900000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 231.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 123,
+            "label": "pictograph:grid-svg",
+            "startTime": 26436.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 231.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 124,
+            "label": "pictograph:grid-svg",
+            "startTime": 26436.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 231.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 125,
+            "label": "pictograph:grid-svg",
+            "startTime": 26436.700000047684,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 231.0999999642372,
+            "outcome": "ok"
+          },
+          {
+            "id": 126,
+            "label": "pictograph:grid-svg",
+            "startTime": 26437.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 230.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 127,
+            "label": "pictograph:grid-svg",
+            "startTime": 26437.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 230,
+            "outcome": "ok"
+          },
+          {
+            "id": 128,
+            "label": "pictograph:grid-svg",
+            "startTime": 26438.100000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 229.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 129,
+            "label": "pictograph:grid-svg",
+            "startTime": 26439.200000047684,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 228.5999999642372,
+            "outcome": "ok"
+          },
+          {
+            "id": 130,
+            "label": "pictograph:grid-svg",
+            "startTime": 26439.900000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 227.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 131,
+            "label": "pictograph:grid-svg",
+            "startTime": 26440.200000047684,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 227.5999999642372,
+            "outcome": "ok"
+          },
+          {
+            "id": 132,
+            "label": "pictograph:grid-svg",
+            "startTime": 26440.400000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.80000001192,
+            "duration": 227.39999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 133,
+            "label": "pictograph:grid-svg",
+            "startTime": 26440.700000047684,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.900000035763,
+            "duration": 227.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 134,
+            "label": "pictograph:grid-svg",
+            "startTime": 26441.200000047684,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.900000035763,
+            "duration": 226.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 135,
+            "label": "pictograph:grid-svg",
+            "startTime": 26441.400000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.900000035763,
+            "duration": 226.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 136,
+            "label": "pictograph:grid-svg",
+            "startTime": 26441.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.900000035763,
+            "duration": 226.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 137,
+            "label": "pictograph:grid-svg",
+            "startTime": 26442.600000023842,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26667.900000035763,
+            "duration": 225.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 138,
+            "label": "pictograph:grid-svg",
+            "startTime": 26443.400000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26668,
+            "duration": 224.5999999642372,
+            "outcome": "ok"
+          },
+          {
+            "id": 139,
+            "label": "pictograph:grid-svg",
+            "startTime": 26444.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26668,
+            "duration": 223.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 140,
+            "label": "pictograph:grid-svg",
+            "startTime": 26445.700000047684,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26668.400000035763,
+            "duration": 222.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 141,
+            "label": "pictograph:grid-svg",
+            "startTime": 26473.80000001192,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 26668.900000035763,
+            "duration": 195.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 142,
+            "label": "construct:prepare",
+            "startTime": 27533.200000047684,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 27543.100000023842,
+            "duration": 9.899999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 143,
+            "label": "construct:prepare",
+            "startTime": 27544.100000023842,
+            "detail": {
+              "candidates": 36,
+              "options": 36
+            },
+            "endTime": 27584.30000001192,
+            "duration": 40.19999998807907,
+            "outcome": "ok"
+          }
+        ]
+      },
+      "navigationWorkerStart": 0,
+      "scriptsStartingInFirst10s": {
+        "requests": 292,
+        "encodedBytes": 3433836,
+        "transferBytes": 3519336
+      },
+      "interactionCaveat": "Another page began loading after the start click; do not compare these interaction durations as isolated performance results."
+    }
+  }
+}

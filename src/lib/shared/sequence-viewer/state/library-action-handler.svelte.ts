@@ -202,6 +202,27 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
     }
   }
 
+  async function savePaths(): Promise<boolean> {
+    const sequence = deps.getSequence();
+    if (!sequence || !deps.getIsOwned() || !isOwnedLibraryRecord || isSaving)
+      return false;
+    isSaving = true;
+    try {
+      await getLibraryRepository().updateSequence(sequence.id, {
+        steps: sequence.steps,
+        metadata: sequence.metadata,
+      });
+      showToast("Motion paths saved", "success");
+      return true;
+    } catch (error) {
+      console.error("[SequenceViewer] Failed to save motion paths", error);
+      showToast("Couldn't save motion paths", "error");
+      return false;
+    } finally {
+      isSaving = false;
+    }
+  }
+
   async function handleDelete() {
     const sequence = deps.getSequence();
     if (!sequence || !isOwnedLibraryRecord) return;
@@ -243,6 +264,7 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
     handlePublishAction,
     handleUnpublishAction,
     saveCardPresentation,
+    savePaths,
     handleSave,
     handleDelete,
   };

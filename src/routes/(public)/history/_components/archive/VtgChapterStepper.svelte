@@ -20,7 +20,10 @@
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { VTG1_CHAPTERS, vtgChapter } from "./_lib/vtg-chronicle.svelte";
 
-  let { active = false }: { active?: boolean } = $props();
+  let {
+    active = false,
+    reader = false,
+  }: { active?: boolean; reader?: boolean } = $props();
 
   const chapters = VTG1_CHAPTERS;
   // Shared across every instance on the page — see vtgChapter's own comment.
@@ -59,15 +62,17 @@
   );
 </script>
 
-<div class="vtg" class:active>
+<div class="vtg" class:active class:reader>
   <figure class="stage">
     <!-- No crossfade: an instant swap is correct for a hand-driven stepper,
 		     and overlapping two dense line lattices produces moiré anyway. -->
-    <img
-      src={`/images/notation/vtg/figures/${current.figure}.webp`}
-      alt={`${current.title}, from the Vulcan Tech Gospel V.1`}
-      decoding="async"
-    />
+    <div class="plate">
+      <img
+        src={`/images/notation/vtg/figures/${current.figure}.webp`}
+        alt={`${current.title}, from the Vulcan Tech Gospel V.1`}
+        decoding="async"
+      />
+    </div>
 
     <figcaption class="label">
       <span class="title">
@@ -275,5 +280,46 @@
     .label {
       display: none;
     }
+  }
+  /* The history reader has room for the full publication and always keeps
+     chapter controls available, including on short screens. */
+  .vtg.reader {
+    height: auto;
+    padding: 0;
+    gap: 1rem;
+  }
+  .plate {
+    display: contents;
+  }
+  .reader .plate {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: min(var(--archive-preview-height), 85cqi);
+  }
+  .reader .stage img {
+    width: auto;
+    height: auto;
+    max-height: 100%;
+    object-fit: contain;
+    padding: 0;
+    background: oklch(0.96 0.008 90 / 0.95);
+    border: 0;
+    box-shadow: none;
+  }
+  .reader .title {
+    font-size: 1.125rem;
+  }
+  .reader .people {
+    display: inline-grid;
+    font-size: 0.875rem;
+  }
+  .reader .chapter-nav {
+    display: grid;
+    width: min(100%, 30rem);
+  }
+  .reader .note {
+    display: none;
   }
 </style>

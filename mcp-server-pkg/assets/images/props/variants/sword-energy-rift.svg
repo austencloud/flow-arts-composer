@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Energy saber concept B: Rift.
+  Original generic energy prop. No franchise hilt silhouette or marking.
+
+  A rigid straight centerline inside an irregular plasma envelope. The notches
+  are deliberately low frequency and high amplitude. The comparison gallery
+  confirms that they read clearly at full size but collapse toward Core at the
+  real 52px picker footprint.
+  Two short edge forks (one up near x=400, one down near x=420) sit off the
+  envelope and do not move the tracked tip at x=536.
+
+  Color contract matches sword-energy-core.svg: flat neutral grays recolor,
+  #FFF6E8 core is preserved, all hilt fills are below 0.4 luminance.
+  Pivot: emitter mouth at x = 286.15 = viewBox center.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 572.3 96">
+  <defs>
+    <linearGradient id="riftGripSheen" x1="0" y1="26" x2="0" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0.05" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.28" stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.45"/>
+    </linearGradient>
+    <filter id="riftHalo" x="-25%" y="-140%" width="150%" height="380%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="riftSoft" x="-20%" y="-160%" width="140%" height="420%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <!-- Blade: irregular halo, same envelope as the body -->
+  <path d="M 288,40 L 320,35 L 352,42 L 386,36 L 396,23 L 408,34 L 430,41 L 470,36 L 505,42 L 528,44 L 536,48 L 526,53 L 500,56 L 468,50 L 432,58 L 420,73 L 408,57 L 356,59 L 322,52 L 288,56 Z"
+        fill="#D0D0D0" opacity="0.34" filter="url(#riftHalo)"/>
+  <!-- Blade: hard irregular body -->
+  <path d="M 288,40 L 320,35 L 352,42 L 386,36 L 396,23 L 408,34 L 430,41 L 470,36 L 505,42 L 528,44 L 536,48 L 526,53 L 500,56 L 468,50 L 432,58 L 420,73 L 408,57 L 356,59 L 322,52 L 288,56 Z"
+        fill="#E2E2E2" stroke="#101319" stroke-width="1.3" stroke-opacity="0.5"/>
+  <!-- Rigid centerline: inner bloom then the preserved pale core -->
+  <rect x="290" y="42" width="244" height="12" rx="6" fill="#DCDCDC" opacity="0.9" filter="url(#riftSoft)"/>
+  <rect x="292" y="45" width="240" height="6" rx="3" fill="#FFF6E8"/>
+
+  <!-- Hilt: angular pommel wedge -->
+  <path d="M 108,48 L 122,36 L 142,36 L 142,60 L 122,60 Z" fill="#1A1D22"/>
+  <!-- Hilt: squared grip -->
+  <rect x="138" y="35" width="96" height="26" rx="4" fill="#24272E"/>
+  <rect x="138" y="35" width="96" height="26" rx="4" fill="url(#riftGripSheen)"/>
+  <!-- Hilt: single long control band -->
+  <rect x="176" y="32" width="22" height="32" rx="2" fill="#3A3F49"/>
+  <!-- Hilt: exposed rod -->
+  <rect x="232" y="43" width="24" height="10" rx="2" fill="#5C6470" stroke="#12151A" stroke-width="1.1"/>
+  <!-- Hilt: flared emitter collar with fins -->
+  <path d="M 254,30 L 286,26 L 286,70 L 254,66 Z" fill="#4A505B" stroke="#12151A" stroke-width="1.5"/>
+  <path d="M 254,30 L 286,26 L 286,70 L 254,66 Z" fill="url(#riftGripSheen)"/>
+  <path d="M 262,29 L 272,17 L 276,28 Z" fill="#3A3F49"/>
+  <path d="M 262,67 L 272,79 L 276,68 Z" fill="#3A3F49"/>
+</svg>

@@ -109,7 +109,7 @@ describe("ExportOrchestrator static mobile share", () => {
       "Static Share.png",
       {
         title: "Static Share",
-        text: "TKA sequence: Static Share",
+        text: "Flow Arts Composer sequence: Static Share",
       }
     );
     expect(harness.getImageBlob).toHaveBeenCalledTimes(1);

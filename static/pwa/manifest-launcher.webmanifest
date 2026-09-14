@@ -1,6 +1,6 @@
 {
   "name": "Flow Arts Composer Launcher",
-  "short_name": "TKA Launcher",
+  "short_name": "Flow Arts Composer Launcher",
   "description": "Advanced version management and development launcher for Flow Arts Composer",
   "version": "2.0.0",
   "start_url": "/",
@@ -85,21 +85,21 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "TKA Launcher Dashboard - Version Management"
+      "label": "Flow Arts Composer Launcher Dashboard - Version Management"
     },
     {
       "src": "/pwa/screenshot-desktop-2.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "TKA Launcher - Performance Monitoring"
+      "label": "Flow Arts Composer Launcher - Performance Monitoring"
     },
     {
       "src": "/pwa/screenshot-mobile-1.png",
       "sizes": "360x640",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "TKA Launcher Mobile - Version Cards"
+      "label": "Flow Arts Composer Launcher Mobile - Version Cards"
     }
   ],
 

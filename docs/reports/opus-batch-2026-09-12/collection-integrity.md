@@ -1,0 +1,512 @@
+# Collection Integrity — Opus batch 2026-09-12
+
+Ten reproduced collection-integrity defects. Each is fixed, with a repro test
+that fails without the fix and passes on the branch head. Several were found by
+successive review of this branch's own fixes; every round carries its own
+before/after evidence. D6 was fixed in two stages — a guard first, then the
+underlying owner chain — and this report previously described the guard as the
+whole fix; see D6.
+
+| Field       | Value                                                             |
+| ----------- | ----------------------------------------------------------------- |
+| Base SHA    | `c4be16199e390e8bdab766051a0042c7827b8d30` (`origin/main`)         |
+| Fixes SHA   | `20edb1c6` (runtime + tests; this report commits on top)           |
+| Branch      | `claude/fix-collection-integrity-nm8fj9`                           |
+| Scope       | collection state, membership bookkeeping, subscription lifecycle   |
+
+## Owned files
+
+Changed (runtime):
+
+- `src/lib/shared/collections/collection-state.svelte.ts`
+- `src/lib/shared/library/services/collection-manager.ts`
+- `src/lib/shared/library/services/collection-firestore-mapper.ts`
+- `src/lib/shared/library/services/library-repository.ts` (the publish owner
+  chain only — D6; explicitly authorized after review, coordinated as a narrow
+  overlap with the agent that owns this file)
+
+Added (tests):
+
+- `src/lib/shared/collections/__tests__/collection-state-overlap.test.ts`
+- `tests/unit/library/collection-manager-delete.test.ts`
+- `tests/unit/library/collection-firestore-mapper-existing-ids.test.ts`
+- `tests/unit/library/collection-manager-subscription-disposal.test.ts`
+- `tests/unit/library/collection-manager-public-member-owner.test.ts`
+- `tests/unit/library/library-repository-publish-owner.test.ts`
+
+Nothing else in the working tree was staged. `saved-sequence-ledger.ts`,
+auth/sync retry, `firestore.rules`, the browse engine, and shared dialogs were
+not touched. `library-repository.ts` was initially out of scope and left alone;
+the D6 change to it is the narrow publish owner chain, authorized in review.
+
+---
+
+## D1 — Optimistic rollback wrote to a stale array index
+
+`CollectionState` backs every saved-artifact gallery (tunnels, mandalas, 3D
+scenes, films). `rename`, `update`, and `updatePresentation` captured an array
+index, awaited the Firestore write, then rolled back with
+`this.ownedCollection[idx] = previous`. Every one of those awaits is a window in
+which another gallery action can land — a save finishing (`add` **unshifts**, so
+every index moves), a delete, a second edit — and the rollback then wrote the old
+entry over whichever entry now occupied that slot.
+
+`update` was worse: `lifecycle.prepareUpdate` is itself awaited *before* the
+optimistic write, so on that path the corruption happened on the success path
+too, not only on rollback.
+
+`remove`'s rollback re-inserted with `splice(idx, 0, removed)` at the same stale
+index, restoring the entry into the wrong position.
+
+**Measured failure (base commit)** — a rename whose write fails while a save
+lands, `src/lib/shared/collections/__tests__/collection-state-overlap.test.ts`:
+
+```
+AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]
+  [
+-   "41d9e76e-…",   (expected: the newly saved entry b)
++   "bb9e9d47-…",   (received: entry a, again)
+    "bb9e9d47-…",
+  ]
+```
+
+Entry `a` appears twice and the just-saved entry `b` is gone from the gallery —
+silently, while Firestore still holds it. It reappears only on reload.
+
+**Fix — reconcile against the confirmed baseline, not the displaced value.**
+
+The first version of this fix resolved the slot by id and restored *the value
+the failed write had displaced*, guarded by a per-write revision so only the
+newest write could roll back. Review found that this still loses the persisted
+state whenever **two overlapping mutations both fail**, and the follow-up tests
+confirm it on that version:
+
+- rename `A → First` then update `First → Second`, both writes rejected: the
+  first rollback is ignored as superseded, the second restores `First` — a name
+  the repository never accepted. Measured: `expected 'First' to be 'A'`.
+- rename `A → Renamed` then delete, both rejected: the delete's rollback puts
+  back the optimistic `Renamed` snapshot it happened to splice out. Measured:
+  `expected [ 'B', 'Renamed' ] to deeply equal [ 'B', 'A' ]`.
+
+The displaced value is only a safe fallback when the write that produced it
+succeeded. So the state now tracks what the repository is **known to hold**:
+
+- `confirmed: Map<id, T>` — seeded from `init`/local hydration/migration, set on
+  every successful save, deleted on a successful remove.
+- `inFlight: Map<id, number>` — mutations outstanding per entry. Nothing is
+  settled while another write for that entry is still running; that write owns
+  the display until it resolves.
+- when the last outstanding write for an entry settles, `settleEntry` puts the
+  confirmed value on screen — replacing it in place, re-inserting it next to the
+  neighbour it sat in front of if a delete had removed it, or dropping it if
+  nothing was ever persisted.
+
+This is order-independent: whichever failure arrives last, the gallery lands on
+what was actually persisted. It also fixes a case the revision model got right
+only by luck — an earlier write succeeding while a later one fails now settles
+to the earlier, persisted value rather than to a displaced optimistic one.
+
+Object identity can't be used for any of this: `ownedCollection` is `$state`, so
+reading a slot returns a proxy, never the object that was written. That was
+measured — an identity-based version failed even the existing non-concurrent
+rollback tests.
+
+Three behaviours are new and deliberate, and are pinned by tests:
+
+- an entry deleted while its own edit is in flight stays deleted (the edit is
+  dropped rather than resurrecting the entry);
+- `update` returns `null` without persisting when the entry disappears during
+  `prepareUpdate`, instead of writing it back to Firestore;
+- an entry optimistically removed by a failing delete stays off screen until any
+  edit still in flight for it resolves, then returns with the persisted value.
+  Showing it again earlier would mean showing a value that is about to change.
+
+### D1a — the baseline was not scoped to the signed-in user
+
+Raised in review of `2b1a7be6`. `confirmed`, `inFlight` and `removedBefore`
+describe one user's gallery, but nothing stopped an operation started under a
+previous identity from writing into them. A write held across a sign-out
+resolves after `teardown()` and `init(B)`: `onPersisted` put A's entry into B's
+confirmed map, and `settleEntry` then either **appended A's art to B's gallery**
+or replaced B's entry when the ids collided. `init` had the same shape
+independently — a slow `repo.load(A)` resolving after `init(B)` assigned A's
+entries straight over B's list (that one predates this branch).
+
+**Measured failures (before the fix)**:
+
+```
+FAIL  does not let a write held across a sign-out land in the next user's gallery
+  expected [ 'A-renamed' ] to deeply equal [ 'B-art' ]
+FAIL  does not insert the previous user's entry into a gallery that has no such id
+  expected [ 'b-only', 'shared' ] to deeply equal [ 'b-only' ]
+FAIL  does not let a slow load for the previous user paint over the current one
+  expected [ 'A-art' ] to deeply equal [ 'B-art' ]
+```
+
+**Fix.** A `generation` counter, bumped by `init` and `teardown`. Every await
+that can outlive an identity — the repository write inside `commitWrite`, the
+`repo.load` in `init`, each step of the guest migration, `prepareAdd`,
+`prepareUpdate` — captures it and checks `isCurrent` before touching the list,
+the baseline or the in-flight counts. The write's own error still propagates to
+the caller; only the shared state is fenced. `add` throws rather than filing a
+prepared entry under whoever signed in during preparation.
+
+Two cases in this area already held before the fix and are pinned anyway: a
+*failed* held write, and a failed held delete, when the next user happens to
+have an entry with the same id. `init` re-seeds `confirmed` from the new user's
+load, which masked them.
+
+### D1b — `prepareUpdate` wrote back a stale snapshot
+
+Also from the `2b1a7be6` review. `update` built its result from the entry as it
+was when the call started, then handed it to `prepareUpdate` (which regenerates
+a poster and mints a revision digest — slow). A `rename` landing **and
+persisting** in that window was silently undone when the prepared snapshot was
+written back: both operations reported success, one of them had no effect.
+
+```
+FAIL  rebases a prepared update onto a rename that landed while it was preparing
+  expected { name: 'Original', … } to match object { name: 'Renamed', … }
+```
+
+**Fix, two parts.** Preparation is serialized per entry id
+(`prepareExclusively`) so the second of two overlapping updates starts from the
+value the first settled on — necessary because `prepareTunnelRevision` digests
+the entry's content, and two concurrent preparations would each digest a
+version that never existed on its own:
+
+```
+FAIL  prepares one update at a time per entry, each from the last settled value
+  expected [ 'one/-', '-/-' ] to deeply equal [ 'one/-' ]
+```
+
+A rename does not go through preparation, so it can still land inside that
+window; the prepared result is therefore also rebased onto the current entry —
+the caller's patch and the lifecycle's contribution (`contributedFields`,
+diffed against what the lifecycle was handed) applied over current values. The
+rebase only pulls fields neither the patch nor the lifecycle claimed, so a
+minted digest still describes the content it was computed over. Fields a
+lifecycle *deletes* are not tracked; enrichment adds and replaces.
+
+## D2 — A collection could become permanently undeletable
+
+`deleteCollection` put one `batch.update(…, arrayRemove(collectionId))` per
+member, plus the collection delete and a user touch, into a **single** batch.
+Two Firestore rules break that:
+
+1. `update()` requires the document to exist; one missing document fails the
+   entire commit.
+2. A commit carries at most 500 writes.
+
+Both are reachable from the UI:
+
+- A collection may legitimately hold a sequence with **no owner document** — a
+  saved public sequence from another user. The codebase says so itself:
+  `addSequenceToCollection` guards with `if (ownSequenceSnapshot.exists())`,
+  `removeSequencesFromCollection` documents "a missing owner document is valid
+  and does not block the collection removal", and `getCollectionSequences`
+  falls back to the public index for ids that don't resolve locally.
+- `LIBRARY_LIMITS.MAX_SEQUENCES_PER_COLLECTION` is 500, so a full collection
+  produced 502 writes.
+
+In both cases the delete failed with "Failed to delete collection. Please try
+again." on every attempt — the folder could never be removed.
+
+**Measured failure (base commit)**, `tests/unit/library/collection-manager-delete.test.ts`:
+
+```
+FAIL  deleteCollection > deletes a collection holding a saved public sequence the user doesn't own
+Error: Failed to delete collection ❯ collection-manager.ts:565
+
+FAIL  deleteCollection > deletes a full collection without exceeding Firestore's per-commit write ceiling
+Error: Failed to delete collection ❯ collection-manager.ts:565
+```
+
+**Fix.** Look up which members actually have an owner document
+(`filterExistingSequenceIds`, new in `collection-firestore-mapper.ts`, chunked to
+the 30-id `documentId in` limit like the existing fetch helpers), clean up only
+those, chunk the cleanup at 200 updates per commit, and commit the collection
+delete **last**. `arrayRemove` is idempotent, so a failure part-way through
+leaves a collection the user can simply delete again, rather than sequences
+pointing at a folder that no longer exists with no way to trigger cleanup.
+
+The member list is also de-duplicated first, which removes a third latent
+failure on the same commit: Firestore rejects two writes to the same document in
+one batch, so a collection whose `sequenceIds` had picked up a duplicate would
+have failed to delete for that reason alone.
+
+Cost: a delete now issues `ceil(members / 30)` extra document reads (17 at the
+500-member cap, 1 for a typical folder), billed only for documents that exist.
+Deleting a collection is a rare, explicit user action; the alternative —
+`set(…, { merge: true })`, which does not fail on a missing document — was
+rejected because it would *create* phantom sequence documents in the library.
+
+## D3 — Collection listeners orphaned when disposed before Firestore init
+
+Flagged by the concurrent Firestore cost audit
+(`origin/claude/firestore-cost-audit-8l6vvx`, finding H2) and reproduced here
+independently before changing anything.
+
+`subscribeToCollections` and `subscribeToCollection` attach `onSnapshot` inside a
+`.then()`, and their disposer only acted `if (unsubscribe)`. A caller disposing
+inside that window ran a no-op disposer; the listener then attached with no
+reference left to tear it down. `collections-state.ensureStarted()` calls
+`teardown()` **synchronously** when the uid changes, which is exactly this
+window — the anonymous→Google upgrade and sign-out that the subscription's own
+`permission-denied` handler already documents as routine.
+
+**Measured failure (base commit)**,
+`tests/unit/library/collection-manager-subscription-disposal.test.ts`:
+
+```
+FAIL  leaves no live collections listener when disposed before Firestore initializes
+  expected [ { …(2) } ] to have a length of +0 but got 1
+FAIL  leaves no live single-collection listener when disposed before Firestore initializes
+  expected [ { …(2) } ] to have a length of +0 but got 1
+FAIL  does not leave the previous user's listener attached across a uid swap
+  expected [ { …(2) }, { …(2) } ] to have a length of 1 but got 2
+```
+
+**Fix.** The `disposed` flag discipline `subscribeToAllPublicCollections`
+already uses in `public-collection-loader.ts`: bail before attaching when
+disposed, re-check immediately after attaching, and have the disposer set the
+flag. No new pattern was invented.
+
+Only the two helpers inside this agent's scope were changed. The audit lists the
+same shape at `library-repository.ts:1374,1538`, `user-repository.ts:597,877`
+and `tag-manager.ts:286` — **left alone**, they belong to other agents.
+
+**Note for whoever integrates both branches:** that audit's quarantined file
+`tests/unit/opus-firestore-audit/listener-disposal-race.test.ts` asserts today's
+leaking behaviour for `subscribeToCollections`. Those two assertions must be
+inverted when this branch lands. It is not on this branch and was not edited.
+
+## D4 — Metadata read and writes could resolve to different users
+
+Raised in review of `32241bad`. `deleteCollection` and `updateCollection` both
+capture `const userId = getAuthenticatedUserId()` and then call
+`getCollection(collectionId)`, which resolves the effective user **again** —
+after an await, and with `"read"` access rather than `"write"`. The effective
+uid changes on the anonymous→Google upgrade, on sign-out, and when admin preview
+is toggled, so the metadata read could come from one user's document while every
+write went to another's.
+
+The consequence is concrete for delete: the member list used to clean up reverse
+membership comes from the wrong collection, so the wrong sequences are edited
+and the right ones keep a dangling `collectionIds` entry.
+
+**Measured failure (before the fix)**,
+`tests/unit/library/collection-manager-delete.test.ts` — with the uid swapping
+after capture, the signed-in user's own member keeps its stale membership
+because the delete cleaned the other user's member list instead:
+
+```
+FAIL  reads and writes as the same user when the effective uid changes mid-delete
+  expected { collectionIds: [ 'collection-1', 'other' ] }
+        to deeply equal { collectionIds: [ 'other' ] }
+```
+
+**Fix.** A module-private `readCollectionAs(firestore, userId, collectionId)`
+reads the document under an already-captured uid; `deleteCollection` and
+`updateCollection` both use it, so one uid covers the metadata read and the
+writes **this module issues**. `getCollection` itself is unchanged — it is a
+legitimate standalone read and other callers depend on it resolving the current
+user.
+
+That is narrower than "every write", and an earlier version of this report
+overstated it. The publish these operations delegate to used to resolve the
+effective user on its own; D6 covers that chain and how it was closed.
+
+---
+
+## D5 — the identity fence missed the path every consumer uses
+
+Raised in review of `ab7642b4`. `update` re-checked `isCurrent` only inside the
+`prepareUpdate` branch — but `prepareExclusively` is awaited on **every** path,
+and mandala, 3D scene and film register no lifecycle at all, so the unchecked
+branch is the one every real consumer takes. Worse, the continuation after that
+await read a live `this.userId`, and `commitWrite` captured `this.generation`
+itself, which by then was the *new* identity's: an edit prepared under one user
+could be saved under the next, and recorded as that user's confirmed baseline.
+
+Separately, the preparation queue was keyed by entry id alone and survived
+`teardown`, so a preparation that never settles (a poster render abandoned at
+sign-out) blocked the next user's edit of a same-id entry for the life of the
+tab.
+
+**Measured failures (before the fix)**:
+
+```
+FAIL  drops a lifecycle-free update when the session ends before it commits
+  expected { id: 'art', name: 'Original', … } to be null
+FAIL  does not block the next user's edit behind a preparation that never settles
+  Error: Test timed out in 30000ms.
+```
+
+**Fix.** Owner and generation are captured before any await in each public
+method and passed into `commitWrite`, so a write is fenced against the identity
+it started under rather than the one current when it finishes. `update` checks
+`isCurrent` inside the exclusive section and again after it, before anything is
+read live or written. The preparation queue is scoped to the generation that
+started it and cleared by `init` and `teardown`.
+
+`npm run check:fast` caught one thing the tests did not: `updatePresentation`
+referenced `generation` without declaring it — a `ReferenceError` on a path with
+no test of its own. Fixed, and the method now captures owner and generation the
+same way as the others.
+
+## D6 — a delegated publish resolved its own user at every step
+
+Raised in review of `ab7642b4`, and only half-fixed at first.
+`ensurePublicMember` delegates to `publishSequence`, which took **no owner
+argument**. Inside it, every step resolved the effective user again:
+
+| Step                                        | Resolved the user via  |
+| ------------------------------------------- | ---------------------- |
+| entry guard                                 | `getWritableUserId()`  |
+| read the owner document                     | `getSequenceStrict`    |
+| flip visibility (`setVisibility` → `updateSequence`) | `getWritableUserId()` — *this is the document reference it writes* |
+| re-read inside `updateSequence`             | `getSequence`          |
+| write the public mirror                     | the id resolved above  |
+| touch referencing collections               | the id resolved above  |
+
+An anonymous→Google upgrade or a sign-out in any of those gaps meant reading one
+user's sequence and writing another's. Sequence ids are word-derived and collide
+across libraries, so the arriving user usually **has a document at the very path
+the operation then writes**.
+
+### The first fix was not a fix
+
+Round four added `assertStillSignedInAs` on both sides of the publish in
+`collection-manager`. That prevents the *collection transaction* from
+committing, and nothing else: the writes inside the publish had already
+happened, and the test mocked `publishSequence` opaquely so it could not have
+observed them. This report described that as the fix for D6 while also admitting
+the chain was unresolved — a contradiction, and the review was right to hold on
+it.
+
+### Measured, against the real repository
+
+`tests/unit/library/library-repository-publish-owner.test.ts` drives the real
+`LibraryRepository` against a mocked Firestore SDK, holds the owner-document
+read open, and swaps the effective uid while it is in flight. Without the owner
+chain:
+
+```
+FAIL  writes nothing for the new user when the identity switches mid-publish
+  public mirror synced for: [ 'user-B' ]
+  documents written:        [ 'users/user-B/sequences/seq-1',
+                              'users/user-B/collections/collection-1' ]
+```
+
+The operation began as `user-A`, resolved successfully, mutated `user-B`'s own
+sequence document, touched `user-B`'s collection, and published a mirror
+attributed to `user-B`.
+
+### The fix
+
+`publishSequence`, `unpublishSequence`, `setVisibility`, `updateSequence`,
+`getSequence` and `getSequenceStrict` take the owner their caller captured, and
+thread it through the whole chain. `ownerFor(ownerId?)` requires that owner to
+still be the signed-in, writable user, so an identity change fails the operation
+instead of writing under either identity; omitting the argument keeps the
+previous resolve-live behaviour for every existing caller, so no other call site
+changes. This never widens access — the supplied owner must equal the live user,
+and the preview-read-only guard is unchanged.
+
+`collection-manager` passes the uid it captured. Its own check after the publish
+stays: it covers the remaining gap between the publish finishing and this
+module's membership write.
+
+Five cases pin it, four of which fail without the chain: no `user-B` document or
+mirror on a mid-publish swap (both the visibility path and the already-public
+repair path), a publish as the captured owner writing only `user-A` paths, a
+refused owner that is not the live user, and an omitted owner still resolving
+live.
+
+## Commands and results
+
+All runs from a clean cloud checkout of `origin/main` at the base SHA with
+`pnpm install --frozen-lockfile`.
+
+**Workspace packages must be built before the suite is trustworthy.** A fresh
+checkout has no `packages/*/dist`, and a test file importing one dies at module
+load with `Failed to resolve entry for package "@tka/…"` — 16 library/collection
+suites (`@tka/tka-types`) and, in the full run, 22 further files
+(`@tka/domain`, `@caps/domain`, `@vtg/domain`, `@tka/sequence-engine`). That
+looks like 22 red files but is zero red assertions. `pnpm --recursive --filter
+"./packages/*" run build` clears all of them; the re-run row below is the proof.
+
+| Command                                                                                   | Result                                                           |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `vitest run … src/lib/shared/collections/__tests__/collection-state-overlap.test.ts` (base) | **5 failed / 5** — D1 reproduced                                 |
+| the same file's two both-failure cases, against the first D1 fix             | **2 failed** — the confirmed-baseline defect reproduced          |
+| the same file's identity-change and preparation cases, against the second D1 fix | **6 failed** — D1a and D1b reproduced                       |
+| the lifecycle-free and stuck-queue cases, against the third fix              | **2 failed** (one a 30s timeout) — D5 reproduced                 |
+| `tests/unit/library/collection-manager-public-member-owner.test.ts`, against the pre-D6 manager | **1 failed** — the membership-write half of D6 reproduced |
+| `tests/unit/library/library-repository-publish-owner.test.ts`, against the pre-owner-chain repository | **3 failed** — cross-user writes measured (see D6) |
+| `vitest run … tests/unit/library/collection-manager-delete.test.ts` (base)                  | **3 failed / 4** — D2 reproduced (2 of them are the defect)      |
+| the same file's uid-swap case, against the pre-D4 manager                    | **1 failed** — D4 reproduced                                     |
+| `vitest run … tests/unit/library/collection-manager-subscription-disposal.test.ts` (base)   | **3 failed / 4** — D3 reproduced                                 |
+| `vitest run … tests/unit/library/ src/lib/shared/{collections,library/services}/__tests__/ src/lib/features/library plus every CollectionState consumer (tunnel, mandala, scene-3d, film)` (head) | **442 tests, all passing** |
+| `vitest run --config tests/config/vitest.config.ts` — full default suite (head)             | **15 672 passed, 106 skipped**; 22 files failed to load, all from unbuilt workspace packages (see below) |
+| Re-run of those 22 files after `pnpm --recursive --filter "./packages/*" run build`          | **22 files, 327 tests, all passing** — the failures were the environment, not this branch |
+| `npm run check:fast` (head)                                                                | 581 errors / 44 warnings repo-wide; **none in any changed or added file** (645 before the workspace packages were built) |
+| full default suite                                                                          | last measured at `32241bad`; the rounds after it were verified with the targeted runs above, not re-run in full |
+| `tsc --noEmit` over the three `tests/unit/library/` files (head)                            | **0 errors in those files** (9 errors, all inside a `node_modules` dependency's own sources) |
+| `firebase emulators:exec --only firestore …`                                                | **could not run** — see limitations                              |
+
+`tsconfig.json` includes only `src/**`, so `check:fast` does not cover the three
+tests under `tests/`; they were type-checked separately with a throwaway config
+(since removed) for the row above. The fourth test is co-located under `src/` and
+is covered by `check:fast`.
+
+Reproductions were captured by stashing only the runtime file under test, so the
+"before" run used the base implementation with the final tests.
+
+## Evidence quality
+
+- **Measured:** every test result above, and the `check:fast` diagnostics. The
+  repro/pass transitions were observed, not inferred.
+- **Mocked:** the Firestore server is a fake in D2 and D3. The D2 fake enforces
+  exactly the two documented rules the defect turns on (an `update` to a missing
+  document fails the commit; more than 500 writes is rejected) — those rules are
+  documented Firestore behaviour, asserted here rather than measured. What *is*
+  measured is that the base implementation violates both under inputs the
+  product can produce, and that the fix does not.
+- **Inferred:** frequency. How often a user holds a foreign public sequence in a
+  deletable collection, or fills one to 500, is not measured here. The
+  reachability of each state is established from the code paths cited above,
+  not from production data.
+
+## Regressions and limitations
+
+- **No emulator evidence.** `firebase emulators:exec` could not run: this
+  environment's network policy answers `403` to `CONNECT storage.googleapis.com`,
+  so the Firestore emulator JAR cannot be downloaded (`java` and `firebase-tools`
+  are both available; only the JAR fetch is blocked). A probe script measuring
+  the two batch rules directly is at
+  `scratchpad/emulator-batch-semantics.mjs` and is ready to run wherever the
+  download succeeds. It was never connected to production.
+- **No browser verification.** These are non-visual state and persistence
+  changes; no geometry, layout, or rendered surface is affected. Device- and
+  user-gated checks were not run and are not claimed.
+- **Pre-existing repo-wide type errors** (581 with the workspace packages built)
+  are untouched; none are in these files. No attempt was made to reduce them.
+- **Behaviour changes to be aware of** beyond the fixes: `deleteCollection` is
+  no longer a single atomic commit (deliberate — see D2); `update` can now
+  return `null` for an entry deleted mid-flight or for a session that ended
+  (deliberate — see D1, D5); and a publish now fails outright when the
+  signed-in user changes while it runs, where it previously completed against
+  whoever arrived (deliberate — see D6).
+- **`library-repository.ts` overlap.** The D6 change adds an optional owner
+  parameter to six methods and changes no existing call site's behaviour, but it
+  does touch a file another agent owns. It is one commit (`20edb1c6`) and can be
+  reviewed or reverted independently of the rest of this branch.
+- **Not done, deliberately:** `reorderSequences`/`reorderCollections` in
+  `collection-manager.ts` are last-write-wins `updateDoc` calls that would clobber
+  a concurrent add/remove and leave `sequenceCount` stale — but `rg` finds **no
+  caller anywhere in `src/`**. Fixing dead code was judged lower value than the
+  three defects above; recorded here so the next agent doesn't have to rediscover
+  it. Existing collection permission work already in review was inspected via
+  history and left alone.

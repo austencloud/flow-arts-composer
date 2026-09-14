@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type * as CloudCellCache from "./pictograph-cloud-cache";
 
 const knownCloudHashes = new Set<string>();
 let renderMakesCellAvailable = true;
@@ -124,6 +125,28 @@ describe("warmSequenceCells", () => {
     expect(result).toMatchObject({ total: 3, ready: 3, failures: [] });
     expect(cloudDownload).not.toHaveBeenCalled();
     expect(renderCell).not.toHaveBeenCalled();
+  });
+
+  it("prepares a fresh browser's unknown cells without speculative GET requests", async () => {
+    const cache = await vi.importActual<typeof CloudCellCache>(
+      "./pictograph-cloud-cache"
+    );
+    cache._resetForTest();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 404 });
+    vi.stubGlobal("fetch", fetchMock);
+    cloudDownload.mockImplementation(cache.download);
+    try {
+      const result = await warmSequenceCells(sequence, {
+        requireComplete: true,
+      });
+      expect(result).toMatchObject({ total: 3, ready: 3, failures: [] });
+      expect(renderCell).toHaveBeenCalledTimes(3);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      cloudDownload.mockReset().mockResolvedValue(null);
+      cache._resetForTest();
+      vi.unstubAllGlobals();
+    }
   });
 
   it("warms the participating hand only for solo choreography", async () => {

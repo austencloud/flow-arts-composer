@@ -112,6 +112,30 @@
   let initializationError = $derived(getInitializationError());
   let settings = $derived(getSettings());
 
+  // Root tokens also reach menus and editors rendered through portals.
+  $effect(() => {
+    const colors = settings.primaryPropColors;
+    const root = document.documentElement;
+    for (const hand of ["left", "right"] as const) {
+      const name = `--user-${hand}-color`;
+      const rgbName = `--user-${hand}-rgb`;
+      const color = colors?.[hand];
+      if (color) {
+        root.style.setProperty(name, color);
+        root.style.setProperty(rgbName, [1, 3, 5].map((offset) => parseInt(color.slice(offset, offset + 2), 16)).join(", "));
+      } else {
+        root.style.removeProperty(name);
+        root.style.removeProperty(rgbName);
+      }
+    }
+    return () => {
+      for (const hand of ["left", "right"]) {
+        root.style.removeProperty(`--user-${hand}-color`);
+        root.style.removeProperty(`--user-${hand}-rgb`);
+      }
+    };
+  });
+
   // Voice control opt-in (hidden by default, enabled in Settings > Preferences)
   const voiceControlEnabled = $derived(settings?.voiceControlEnabled === true);
 
@@ -357,7 +381,8 @@
     // already rendering, so retire the boot splash now instead of waiting for
     // the full async boot chain. Idempotent with the final __tkaLoadProgress(100).
     if (readBootSnapshot() !== null) {
-      window.__tkaLoadProgress?.(100, "Ready");
+      bootProfiler.milestone("shell:ready-announced", { source: "snapshot" });
+      window.__tkaLoadProgress?.(100, "Opening workspace...");
     }
 
     // Run async initialization without blocking cleanup function return
@@ -449,8 +474,11 @@
 
         setInitializationState(true, false, null, 0);
 
-        // Progress: Fully ready - triggers loading screen fade out with random ready message
-        window.__tkaLoadProgress?.(100, "Ready");
+        // The shell can show the active feature's loading state now.
+        bootProfiler.milestone("shell:ready-announced", {
+          source: "initialization",
+        });
+        window.__tkaLoadProgress?.(100, "Opening workspace...");
         // Persist a boot snapshot so the NEXT load can skip the auth spinner and
         // render optimistically. role/uid seed the optimistic tier (W1b); the
         // active module picks the right skeleton.
@@ -739,7 +767,8 @@
         <mod.default
           primaryPropColors={settings.primaryPropColors}
           darkMode={settings.darkMode}
-          onPrimaryPropColorsChange={(value) => updateSetting("primaryPropColors", value)}
+          onPrimaryPropColorsChange={(value) =>
+            updateSetting("primaryPropColors", value)}
           bind:isOpen={propDrawerState.isOpen}
           selectedPropType={propDrawerSelectedPropType}
           color={catDogMode && propDrawerActiveTab === "right" ? "red" : "blue"}

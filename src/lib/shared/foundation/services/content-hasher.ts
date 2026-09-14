@@ -118,7 +118,7 @@ function serializeMotion(m?: MotionData): string {
   // hash it exactly like the old absent hand so render-cache keys for
   // blank/one-hand content are stable across the migration.
   if (!m || m.isVisible === false) return "-";
-  return `${m.motionType}:${m.rotationDirection}:${m.startLocation}:${m.endLocation}:${m.turns}:${m.startOrientation}:${m.endOrientation}`;
+  return `${m.motionType}:${m.rotationDirection}:${m.startLocation}:${m.endLocation}:${m.turns}:${m.startOrientation}:${m.endOrientation}${m.pathShape ? `:${m.pathShape}` : ""}`;
 }
 
 function serializeChoreoNode(node: HashableNode): string {

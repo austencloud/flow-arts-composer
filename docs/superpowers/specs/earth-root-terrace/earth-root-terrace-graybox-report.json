@@ -1,5 +1,5 @@
 {
-  "sourceDigest": "a0e76c90eab4dec850bad5b806d76dd1d8a5671d5f5cadc82d9aa68df2197efb",
+  "sourceDigest": "f756a2b11bee0aa08ce5999c81d4023586245e421638c818daff98bc5d348438",
   "schemaVersion": 1,
   "blenderVersion": "5.0.1",
   "blendPath": "blender/earth-root-terrace-graybox.blend",
@@ -8,9 +8,9 @@
   "shell": {
     "model": "carved",
     "object": "ET_Shell_Rock",
-    "carveOperands": 11,
-    "carvedFaces": 753,
-    "cleanedFaces": 753,
+    "carveOperands": 18,
+    "carvedFaces": 998,
+    "cleanedFaces": 997,
     "margin": 3.5,
     "fireBlockEastX": -20.2,
     "block": {
@@ -29,8 +29,26 @@
     }
   },
   "exportPrefix": "ET_",
-  "exportMeshCount": 60,
+  "exportMeshCount": 131,
   "exportObjects": [
+    "ET_ConsoleLetter_G",
+    "ET_ConsoleLetter_H",
+    "ET_ConsoleLetter_I",
+    "ET_Console_G_Cap",
+    "ET_Console_G_Face",
+    "ET_Console_G_LegE",
+    "ET_Console_G_LegW",
+    "ET_Console_G_Panel",
+    "ET_Console_H_Cap",
+    "ET_Console_H_Face",
+    "ET_Console_H_LegE",
+    "ET_Console_H_LegW",
+    "ET_Console_H_Panel",
+    "ET_Console_I_Cap",
+    "ET_Console_I_Face",
+    "ET_Console_I_LegE",
+    "ET_Console_I_LegW",
+    "ET_Console_I_Panel",
     "ET_Growth_Moss_00",
     "ET_Growth_Moss_01",
     "ET_Growth_Moss_02",
@@ -44,6 +62,13 @@
     "ET_LampStem_04",
     "ET_LampStem_05",
     "ET_LampStem_06",
+    "ET_LampStem_07",
+    "ET_LampStem_08",
+    "ET_LampStem_09",
+    "ET_LampStem_10",
+    "ET_LampStem_11",
+    "ET_LampStem_12",
+    "ET_LampStem_13",
     "ET_Lamp_00",
     "ET_Lamp_01",
     "ET_Lamp_02",
@@ -51,10 +76,16 @@
     "ET_Lamp_04",
     "ET_Lamp_05",
     "ET_Lamp_06",
+    "ET_Lamp_07",
+    "ET_Lamp_08",
+    "ET_Lamp_09",
+    "ET_Lamp_10",
+    "ET_Lamp_11",
+    "ET_Lamp_12",
+    "ET_Lamp_13",
     "ET_Letter_G",
     "ET_Letter_H",
     "ET_Letter_I",
-    "ET_Rail",
     "ET_RailPost_00",
     "ET_RailPost_01",
     "ET_RailPost_02",
@@ -76,6 +107,44 @@
     "ET_RailPost_18",
     "ET_RailPost_19",
     "ET_RailPost_20",
+    "ET_RailPost_21",
+    "ET_RailPost_22",
+    "ET_RailPost_23",
+    "ET_RailPost_24",
+    "ET_RailPost_25",
+    "ET_RailPost_26",
+    "ET_RailPost_27",
+    "ET_RailPost_28",
+    "ET_RailPost_29",
+    "ET_RailPost_30",
+    "ET_RailPost_31",
+    "ET_RailPost_32",
+    "ET_RailPost_33",
+    "ET_RailPost_34",
+    "ET_RailPost_35",
+    "ET_RailPost_36",
+    "ET_RailPost_37",
+    "ET_RailPost_38",
+    "ET_RailPost_39",
+    "ET_RailPost_40",
+    "ET_RailPost_41",
+    "ET_RailPost_42",
+    "ET_RailPost_43",
+    "ET_RailPost_44",
+    "ET_RailPost_45",
+    "ET_RailPost_46",
+    "ET_RailPost_47",
+    "ET_RailPost_48",
+    "ET_RailPost_49",
+    "ET_RailPost_50",
+    "ET_RailPost_51",
+    "ET_Rail_0a",
+    "ET_Rail_1a",
+    "ET_Rail_1b",
+    "ET_Rail_1c",
+    "ET_Rail_1d",
+    "ET_Rail_2a",
+    "ET_Rail_3a",
     "ET_Root_00",
     "ET_Root_01",
     "ET_Root_02",
@@ -88,14 +157,77 @@
     "ET_Root_09",
     "ET_Root_10",
     "ET_Root_11",
+    "ET_Root_12",
+    "ET_Root_13",
     "ET_Shell_Rock",
     "ET_Sky",
     "ET_Stamp_TogetherSame"
   ],
   "materialCount": 8,
-  "railPosts": 21,
-  "lamps": 7,
-  "roots": 12,
+  "railPosts": 52,
+  "footSink": 0.55,
+  "railRuns": [
+    {
+      "vertices": 2,
+      "stretches": 1,
+      "height": 1
+    },
+    {
+      "vertices": 2,
+      "stretches": 4,
+      "height": 1
+    },
+    {
+      "vertices": 14,
+      "stretches": 1,
+      "height": 1
+    },
+    {
+      "vertices": 2,
+      "stretches": 1,
+      "height": 1
+    }
+  ],
+  "consoles": [
+    {
+      "letter": "G",
+      "x": -4,
+      "y": 2.5,
+      "capZ": 0,
+      "deck": -1,
+      "stand": {
+        "x": -4,
+        "y": 2.95,
+        "z": -1
+      }
+    },
+    {
+      "letter": "H",
+      "x": 3,
+      "y": 2.5,
+      "capZ": 0,
+      "deck": -1,
+      "stand": {
+        "x": 3,
+        "y": 2.95,
+        "z": -1
+      }
+    },
+    {
+      "letter": "I",
+      "x": 10,
+      "y": 2.5,
+      "capZ": 0,
+      "deck": -1,
+      "stand": {
+        "x": 10,
+        "y": 2.95,
+        "z": -1
+      }
+    }
+  ],
+  "lamps": 14,
+  "roots": 14,
   "exportObjectBounds": {
     "minX": -20.200000762939453,
     "maxX": 20.5,
@@ -115,10 +247,27 @@
   "renders": {
     "threshold": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-threshold.png",
     "ramp-climb": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-ramp-climb.png",
-    "terrace-overlook": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-terrace-overlook.png",
+    "overlook": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-overlook.png",
+    "console": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-console.png",
     "ensemble": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-ensemble.png",
     "exit": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-exit.png",
     "overview": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-overview.png",
-    "plan": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-plan.png"
-  }
+    "plan": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-plan.png",
+    "console-stance": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-console-stance.png",
+    "catwalk-run": "blender/qa/earth-root-terrace-graybox/earth-root-terrace-catwalk-run.png"
+  },
+  "contractCameras": [
+    "threshold",
+    "ramp-climb",
+    "overlook",
+    "console",
+    "ensemble",
+    "exit",
+    "overview",
+    "plan"
+  ],
+  "qaOnlyCameras": [
+    "console-stance",
+    "catwalk-run"
+  ]
 }

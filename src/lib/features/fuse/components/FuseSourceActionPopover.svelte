@@ -112,8 +112,8 @@
 
       <p class="palette-note">
         {compactTrigger
-          ? "First Step lets you choose where the LOOP begins."
-          : "First Step lets you choose a new step 1 on the source card."}
+          ? "Choose Start lets you pick the pose the LOOP begins from."
+          : "Choose Start lets you tap the pose on the source card the LOOP should begin from."}
       </p>
     </Popover.Content>
   </Popover.Portal>

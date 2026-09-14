@@ -56,6 +56,7 @@ export function resolvePreviewCellRender(
     : (options.rightBuugengFlipped ?? false);
 
   const prepareOptions: PrepareOptions = {
+    fanAppearance: isHandPath ? undefined : options.fanAppearance,
     themeMode: isDark ? "dark" : "light",
     leftPropType: effectiveLeftProp,
     rightPropType: effectiveRightProp,
@@ -72,6 +73,7 @@ export function resolvePreviewCellRender(
   const suppressOverlays = isHandPath || isSoloView || isMotionSolo;
 
   const renderOptions: LayerRenderOptions = {
+    fanAppearance: isHandPath ? undefined : options.fanAppearance,
     primaryPropColors: options.primaryPropColors,
     size: options.size,
     widthMultiplier: options.widthMultiplier,

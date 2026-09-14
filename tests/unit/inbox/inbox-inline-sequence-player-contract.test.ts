@@ -55,16 +55,23 @@ describe("inbox inline sequence player contract", () => {
     expect(showcase).toContain('class="card-layer"');
     expect(showcase).toContain('class="strip-zone"');
     expect(showcase).toContain("currentStep: playbackStep");
+    expect(showcase).toContain("playbackStep = step;");
+    expect(showcase).toContain("onStepChange?.(step, sequenceId);");
+    expect(showcase).toContain("initialStep?: number | null;");
     expect(showcase).toContain(
-      "onStepChange: (step: number) => (playbackStep = step)"
+      "if (directSequence && sequenceId !== directSequence.id) return;"
     );
     expect(showcase).toContain('density: "compact"');
     expect(showcase).toContain("fillHeight: true");
-    expect(showcase).toContain('interactive: activation === "manual"');
-    expect(showcase).toContain('hoverHint: "none"');
-    expect(showcase).toContain('cornerToggle: activation === "manual"');
     expect(showcase).toContain(
-      "playbackActive && visible && !ambientCardRevealed"
+      'interactive: alwaysLive || activation === "manual"'
+    );
+    expect(showcase).toContain('hoverHint: "none"');
+    expect(showcase).toContain(
+      'cornerToggle: !alwaysLive && activation === "manual"'
+    );
+    expect(showcase).toContain(
+      "playbackActive && (alwaysLive || visible) && !ambientCardRevealed"
     );
     expect(showcase).toContain("resumeWhenPlaybackAllowed: true");
     expect(showcase).toContain("disableContextMenu: true");
@@ -117,7 +124,11 @@ describe("inbox inline sequence player contract", () => {
     expect(card).toContain("{playbackActive}");
     expect(preview).toContain('activation="manual"');
     expect(showcase).toContain(
-      "playbackMounted && playerRequested && sequence !== null"
+      "(alwaysLive || playbackMounted) && playerRequested && sequence !== null"
+    );
+    expect(showcase).toContain("alwaysLive = false");
+    expect(showcase).toContain(
+      'externalPlaybackMode: alwaysLive ? "continuous" : null'
     );
   });
 });

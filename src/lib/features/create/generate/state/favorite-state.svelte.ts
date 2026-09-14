@@ -96,8 +96,8 @@ export function createFavoriteState(
   let setups = $state<SavedGeneratorSetup[]>([]);
   let communityFavorites = $state<CommunityFavorite[]>([]);
   let sharedSetupId = $state<string | null>(null);
-  let activeSource = $state<ActiveSetupSource | null>(null);
-  let activeBaseline = $state<SetupSnapshot | null>(null);
+  let appliedSource = $state<ActiveSetupSource | null>(null);
+  let appliedBaseline = $state<SetupSnapshot | null>(null);
   let isLoadingSetups = $state(true);
   let isLoadingCommunity = $state(true);
   let setupsLoadError = $state<string | null>(null);
@@ -115,16 +115,17 @@ export function createFavoriteState(
     operation: Promise<void>;
   } | null = null;
 
-  const activeStatus = $derived.by<"active" | "modified" | null>(
-    () => {
-      if (!activeBaseline) return null;
-      return setupSnapshotsEqual(
-        activeBaseline,
-        deps.getLiveSnapshot()
-      )
-        ? "active"
-        : "modified";
-    }
+  // A setup is active only while the live panel equals the snapshot captured
+  // when it was applied. Any edit detaches it; editing back re-attaches it.
+  const activeSource = $derived.by<ActiveSetupSource | null>(() => {
+    if (!appliedSource || !appliedBaseline) return null;
+    return setupSnapshotsEqual(appliedBaseline, deps.getLiveSnapshot())
+      ? appliedSource
+      : null;
+  });
+
+  const activeStatus = $derived<"active" | null>(
+    activeSource ? "active" : null
   );
 
   const canSave = $derived(
@@ -149,9 +150,9 @@ export function createFavoriteState(
       setups = [];
       sharedSetupId = null;
       setupsLoadError = null;
-      if (activeSource?.kind === "setup") {
-        activeSource = null;
-        activeBaseline = null;
+      if (appliedSource?.kind === "setup") {
+        appliedSource = null;
+        appliedBaseline = null;
       }
       isLoadingSetups = false;
       return;
@@ -165,9 +166,9 @@ export function createFavoriteState(
       personalIdentity = userId;
       setups = [];
       sharedSetupId = null;
-      if (activeSource?.kind === "setup") {
-        activeSource = null;
-        activeBaseline = null;
+      if (appliedSource?.kind === "setup") {
+        appliedSource = null;
+        appliedBaseline = null;
       }
     }
 
@@ -268,8 +269,8 @@ export function createFavoriteState(
         startEndOptions: snapshot.startEndOptions,
       });
       setups = [...setups, created];
-      activeSource = { kind: "setup", setupId: created.id };
-      activeBaseline = captureSetupSnapshot(
+      appliedSource = { kind: "setup", setupId: created.id };
+      appliedBaseline = captureSetupSnapshot(
         created.config,
         created.startEndOptions
       );
@@ -342,10 +343,10 @@ export function createFavoriteState(
         setup.id === setupId ? updated : setup
       );
       if (
-        activeSource?.kind === "setup" &&
-        activeSource.setupId === setupId
+        appliedSource?.kind === "setup" &&
+        appliedSource.setupId === setupId
       ) {
-        activeBaseline = snapshot;
+        appliedBaseline = snapshot;
       }
       deps.notifySuccess("Setup updated");
       return true;
@@ -420,11 +421,11 @@ export function createFavoriteState(
       setups = setups.filter((setup) => setup.id !== setupId);
       if (sharedSetupId === setupId) sharedSetupId = null;
       if (
-        activeSource?.kind === "setup" &&
-        activeSource.setupId === setupId
+        appliedSource?.kind === "setup" &&
+        appliedSource.setupId === setupId
       ) {
-        activeSource = null;
-        activeBaseline = null;
+        appliedSource = null;
+        appliedBaseline = null;
       }
       deps.notifySuccess("Setup deleted");
       return true;
@@ -444,9 +445,9 @@ export function createFavoriteState(
     source: ActiveSetupSource,
     appliedSnapshot?: SetupSnapshot
   ): void {
-    activeSource = source;
+    appliedSource = source;
     if (appliedSnapshot) {
-      activeBaseline = captureSetupSnapshot(
+      appliedBaseline = captureSetupSnapshot(
         appliedSnapshot.config,
         appliedSnapshot.startEndOptions
       );
@@ -459,7 +460,7 @@ export function createFavoriteState(
         : communityFavorites.find(
             (favorite) => favorite.userId === source.userId
           );
-    activeBaseline = saved
+    appliedBaseline = saved
       ? captureSetupSnapshot(
           saved.config,
           saved.startEndOptions ?? null

@@ -1,24 +1,24 @@
 {
-  "sourceDigest": "a0e76c90eab4dec850bad5b806d76dd1d8a5671d5f5cadc82d9aa68df2197efb",
+  "sourceDigest": "f756a2b11bee0aa08ce5999c81d4023586245e421638c818daff98bc5d348438",
   "blenderVersion": "5.0.1",
   "computeDevice": "OPTIX",
   "fast": false,
   "removedGrayboxObjects": {
     "locators": 5,
-    "qaLights": 12
+    "qaLights": 16
   },
   "rockFaces": {
-    "route": 16284,
-    "pit": 17996
+    "route": 14963,
+    "pit": 18805
   },
   "rockTriangles": {
-    "pit": 35992,
-    "route": 32568
+    "pit": 37610,
+    "route": 29926
   },
   "trimTriangles": {
-    "brass": 2720,
-    "stone": 14972,
-    "root": 2880,
+    "brass": 6520,
+    "stone": 17792,
+    "root": 3360,
     "moss": 4608
   },
   "lightmaps": {
@@ -45,18 +45,23 @@
     -1.0
   ],
   "uvMetresPerUnit": {
-    "rock-pit": 45.82183406414739,
-    "rock-route": 59.00590000345286,
-    "trim-brass": 34.26328225981638,
-    "trim-stone": 4.030305790375393,
-    "trim-root": 10.372492995479424,
-    "trim-moss": 3.3899973665090326
+    "rock-pit": 49.48753780984564,
+    "rock-route": 47.73018259910549,
+    "trim-brass": 26.613622077609964,
+    "trim-stone": 4.1322903071537676,
+    "trim-root": 10.386163484694704,
+    "trim-moss": 3.2975353538118566
   },
   "emissiveMaterials": [
     "ET Lamp",
     "ET Sky"
   ],
-  "exportObjectCount": 14,
+  "exportObjectCount": 24,
+  "consoleFaces": [
+    "ET_Console_G_Face",
+    "ET_Console_H_Face",
+    "ET_Console_I_Face"
+  ],
   "exportMaterials": [
     "ET Brass",
     "ET Lamp",
@@ -67,13 +72,16 @@
     "ET Sky",
     "ET Stone"
   ],
-  "rawGlbBytes": 55639268,
-  "finalGlbBytes": 5717544,
+  "rawGlbBytes": 59077496,
+  "finalGlbBytes": 6075592,
   "finalGlbPath": "static/models/museum/cave/earth-root-terrace.glb",
   "renders": {
     "threshold": "blender/qa/earth-root-terrace-production/earth-root-terrace-threshold.png",
     "ramp-climb": "blender/qa/earth-root-terrace-production/earth-root-terrace-ramp-climb.png",
-    "terrace-overlook": "blender/qa/earth-root-terrace-production/earth-root-terrace-terrace-overlook.png",
+    "overlook": "blender/qa/earth-root-terrace-production/earth-root-terrace-overlook.png",
+    "catwalk-run": "blender/qa/earth-root-terrace-production/earth-root-terrace-catwalk-run.png",
+    "console": "blender/qa/earth-root-terrace-production/earth-root-terrace-console.png",
+    "console-stance": "blender/qa/earth-root-terrace-production/earth-root-terrace-console-stance.png",
     "ensemble": "blender/qa/earth-root-terrace-production/earth-root-terrace-ensemble.png",
     "exit": "blender/qa/earth-root-terrace-production/earth-root-terrace-exit.png",
     "overview": "blender/qa/earth-root-terrace-production/earth-root-terrace-overview.png",

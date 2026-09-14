@@ -23,11 +23,14 @@ import {
 import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
 import { resolveLoopConfig } from "$lib/shared/create/services/loop-type-utils";
 import type { ReflectionAxis } from "@tka/sequence-engine/loop";
-import type { TurnLanes } from "@tka/sequence-engine/generation";
 import type {
   GenerationMotionTypeFilter,
   GenerationStyleAxis,
 } from "$lib/shared/create/domain/generation-style";
+import {
+  DEFAULT_HAND_RELATIONSHIP,
+  type HandRelationship,
+} from "$lib/shared/create/domain/hand-relationship";
 
 /**
  * Map difficulty level number to DifficultyLevel enum
@@ -98,11 +101,6 @@ export interface UIGenerationConfig {
   length: number;
   level: number; // 1-4
   turnIntensity: number;
-  /**
-   * An exact repeating turn figure drawn on the strip. Absent means the card is
-   * in Intensity mode and the generator rolls its own turns under the cap.
-   */
-  turnPattern?: TurnLanes | null;
   gridMode: GridMode;
   propContinuity: string; // "continuous" | "random" - legacy, derived from constraintPreset for backwards compat
   period: string; // "halved" | "quartered"
@@ -118,6 +116,11 @@ export interface UIGenerationConfig {
   constraintPreset: GenerationStyleAxis; // Prop reversal frequency
   handPathMode: GenerationStyleAxis; // Hand path reversal frequency
   motionTypeFilter: GenerationMotionTypeFilter; // Dash frequency ("mixed" = null)
+
+  // Hand relationship (Generate only, not part of GenerationStylePolicy)
+  handRelationship: HandRelationship;
+  handRelationshipInverted: boolean;
+  matchHandTurns: boolean;
 
   // Duration rhythm template (applied automatically after generation)
   durationTemplateId: string | null;
@@ -153,6 +156,7 @@ export function uiConfigToGenerationOptions(
           inversionInterval: uiConfig.inversionInterval,
           inversionMode: uiConfig.inversionMode,
           reflectionAxis: uiConfig.reflectionAxis,
+          handRelationship: uiConfig.handRelationship,
         })
       : undefined;
   const period = resolvedLoop?.period ?? uiConfig.period;
@@ -179,7 +183,6 @@ export function uiConfigToGenerationOptions(
     propContinuity: derivedPropContinuity,
     turnIntensity:
       uiConfig.turnIntensity !== undefined ? uiConfig.turnIntensity : undefined,
-    turnPattern: uiConfig.turnPattern ?? undefined,
     period: period ? (period as GenerationOptions["period"]) : undefined,
     loopType: uiConfig.loopType
       ? (uiConfig.loopType as GenerationOptions["loopType"])
@@ -191,6 +194,9 @@ export function uiConfigToGenerationOptions(
     constraintPreset: uiConfig.constraintPreset ?? undefined,
     handPathMode: uiConfig.handPathMode ?? undefined,
     motionTypeFilter: uiConfig.motionTypeFilter ?? undefined,
+    handRelationship: uiConfig.handRelationship ?? DEFAULT_HAND_RELATIONSHIP,
+    handRelationshipInverted: uiConfig.handRelationshipInverted ?? false,
+    matchHandTurns: uiConfig.matchHandTurns ?? false,
 
     // Include start/end options if provided
     blockedStartPositions: startEndOptions?.blockedStartPositions ?? undefined,
@@ -237,6 +243,9 @@ export function generationOptionsToUIConfig(
     constraintPreset,
     handPathMode: options.handPathMode ?? "mixed",
     motionTypeFilter: options.motionTypeFilter ?? null,
+    handRelationship: options.handRelationship ?? DEFAULT_HAND_RELATIONSHIP,
+    handRelationshipInverted: options.handRelationshipInverted ?? false,
+    matchHandTurns: options.matchHandTurns ?? false,
     durationTemplateId: null,
     spellTargetLength: null,
     inversionInterval: options.loopRhythm?.inversionInterval,

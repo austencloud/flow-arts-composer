@@ -81,20 +81,13 @@ export function calculateOriKey(
  * Load special placement data for a letter.
  */
 function loadSpecialPlacement(
-  gridMode: GridMode,
+  _gridMode: GridMode,
   oriKey: string,
   letter: string
 ): PlacementData | null {
-  const gridModeStr =
-    gridMode === GridMode.BOX
-      ? "box"
-      : gridMode === GridMode.SKEWED
-        ? "skewed"
-        : "diamond";
   const placementPath = join(
     PROJECT_ROOT,
     "static/data/arrow_placement",
-    gridModeStr,
     "special",
     oriKey,
     `${letter}_placements.json`
@@ -513,9 +506,8 @@ function loadDefaultPlacementData(
   const filePath = join(
     PROJECT_ROOT,
     "static/data/arrow_placement",
-    gridModeStr,
     "default",
-    `default_${gridModeStr}_${motionType}_placements.json`
+    `default_${motionType}_placements.json`
   );
 
   if (!existsSync(filePath)) {

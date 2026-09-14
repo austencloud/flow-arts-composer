@@ -3,6 +3,7 @@ import { encodeViewMode } from "$lib/shared/browse/domain/browse-view-mode";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { getQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
+import { encodeSequence } from "$lib/shared/navigation/services/sequence-encoder";
 
 export interface ChoreoCardQrDeps {
   readonly sequence: SequenceData;
@@ -39,7 +40,8 @@ export function createChoreoCardQrState(
     const deps = getDeps();
     if (!deps.showQRCode) return "";
     if (deps.qrUrl) return `url:${deps.darkMode}:${deps.qrUrl}`;
-    const sequenceId = deps.sequence.id ?? deps.sequence.word ?? "unknown";
+    // Editing a sequence in place keeps its ID; its QR must follow the motions.
+    const sequenceId = encodeSequence(deps.sequence);
     const authTag = deps.isAuthenticated ? "a" : "g";
     const leftProp = deps.leftPropType ?? "default";
     const rightProp = deps.rightPropType ?? "default";
@@ -81,9 +83,8 @@ export function createChoreoCardQrState(
       return;
     }
 
-    // Published cards must not retain a previous scan target. Keep the existing
-    // generated-card theme handoff unchanged.
-    if (deps.qrUrl) dataUrl = null;
+    // Never leave a previous sequence or prop pair's scan target on screen.
+    dataUrl = null;
     generating = true;
     const options = {
       size: 200,

@@ -76,6 +76,20 @@
     return tabState?.currentSequence ?? null;
   });
   const isConstructTab = $derived(navigationState.activeTab === "construct");
+  const usesWorkspacePlayback = $derived(
+    isConstructTab || navigationState.activeTab === "generate"
+  );
+  const hasWorkspacePlayback = $derived(
+    !!panelState.workspacePlayback || !!panelState.workspacePlaybackPreparation
+  );
+  const isWorkspacePlaybackPreparing = $derived(
+    !!panelState.workspacePlaybackPreparation &&
+      !panelState.workspacePlayback &&
+      !panelState.workspacePlaybackPreparationError
+  );
+  const hasWorkspacePlaybackError = $derived(
+    !!panelState.workspacePlaybackPreparationError
+  );
   const shouldShowOptionInteractionBanner = $derived.by(() => {
     if (
       !isConstructTab ||
@@ -109,11 +123,29 @@
   });
 
   function handleFullSequencePlay() {
-    onViewSequence?.();
-    if (!isConstructTab) return;
+    if (!usesWorkspacePlayback) {
+      onViewSequence?.();
+      return;
+    }
+    if (hasWorkspacePlayback) {
+      if (hasWorkspacePlaybackError) {
+        panelState.retryWorkspacePlayback();
+        return;
+      }
+      panelState.stopWorkspacePlayback();
+      return;
+    }
+    if (!currentSequence) return;
+    panelState.startWorkspacePlayback(
+      currentSequence,
+      CreateModuleState.getActiveTabSequenceState().currentSequenceRevision,
+      navigationState.activeTab
+    );
 
-    logConstructFullPlay(currentSequence?.steps.length ?? 0);
-    constructTutorialState.recordFullPlay();
+    if (isConstructTab) {
+      logConstructFullPlay(currentSequence.steps.length);
+      constructTutorialState.recordFullPlay();
+    }
   }
 
   // Count center-zone buttons to key the container (for smooth cross-fade on
@@ -164,7 +196,12 @@
         {#each leftButtons as btn (btn.id)}
           {#if btn.id === "clear" && canClearSequence && onClearSequence}
             <div transition:presenceTransition>
-              <ClearSequencePanelButton onclick={onClearSequence} />
+              <ClearSequencePanelButton
+                onclick={() => {
+                  panelState.stopWorkspacePlayback();
+                  onClearSequence?.();
+                }}
+              />
             </div>
           {/if}
         {/each}
@@ -181,14 +218,32 @@
             {#each centerButtons as btn (btn.id)}
               {#if btn.id === "view" && showViewSequenceButton && onViewSequence}
                 <div
+                  class="play-controls"
                   class:tutorial-target={isPlayTutorialTarget}
                   data-tutorial-target={isPlayTutorialTarget
                     ? "play-sequence"
                     : undefined}
                 >
+                  {#if usesWorkspacePlayback}
+                    <div class="expand-viewer-action">
+                      <ViewSequenceButton
+                        purpose="expand-viewer"
+                        onclick={() => {
+                          panelState.handoffWorkspacePlaybackToViewer();
+                        }}
+                      />
+                    </div>
+                  {/if}
                   <ViewSequenceButton
                     onclick={handleFullSequencePlay}
                     isActive={isExportPanelOpen}
+                    isStopping={usesWorkspacePlayback &&
+                      !!panelState.workspacePlayback}
+                    playbackState={isWorkspacePlaybackPreparing
+                      ? "preparing"
+                      : hasWorkspacePlaybackError
+                        ? "retry"
+                        : "idle"}
                     purpose="play"
                   />
                 </div>
@@ -314,6 +369,16 @@
     outline-offset: 4px;
   }
 
+  .play-controls {
+    position: relative;
+  }
+
+  .expand-viewer-action {
+    position: absolute;
+    right: calc(100% + 8px);
+    bottom: 0;
+  }
+
   /* Remove mobile tap highlight (blue selection box) */
   .button-panel :global(button),
   .button-panel :global(a) {
@@ -332,6 +397,7 @@
       --workspace-action-padding-inline: 16px;
       --workspace-action-radius: 999px;
       --workspace-play-action-width: auto;
+      --workspace-play-action-height: var(--min-touch-target, 44px);
       --share-trigger-label-display: inline;
       --share-trigger-width: auto;
       --share-trigger-gap: 8px;
@@ -400,6 +466,19 @@
       /* Reduce vertical footprint - minimal padding */
       min-height: 0;
       padding: 4px 12px;
+      /* The individual action controls hold their touch-target size in this
+         short landscape mode, so their labels must also collapse. Otherwise
+         the text escapes a circular control while its background stays small. */
+      --workspace-action-label-display: none;
+      --workspace-action-width: var(--min-touch-target);
+      --workspace-action-gap: 0;
+      --workspace-action-padding-inline: 0;
+      --workspace-action-radius: 50%;
+      --share-trigger-label-display: none;
+      --share-trigger-width: var(--min-touch-target);
+      --share-trigger-gap: 0;
+      --share-trigger-padding-inline: 0;
+      --share-trigger-radius: 50%;
     }
 
     .left-zone,
@@ -469,6 +548,10 @@
       min-width: 50px;
       gap: 0;
       transform: none;
+    }
+
+    .expand-viewer-action {
+      bottom: calc((50px - var(--min-touch-target)) / 2);
     }
 
     .left-zone > div,

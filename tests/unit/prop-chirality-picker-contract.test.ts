@@ -25,7 +25,12 @@ const repoRoot = path.resolve(
 );
 
 const PROP_TYPE_DIR = "src/lib/shared/settings/components/tabs/prop-type";
+// The picker is two files. BentoPropGrid is the app-wired entry: it reads
+// settings and hands PropGrid the colours, fan appearance and premium gates.
+// PropGrid is the picker itself, and every assertion about the picker's markup
+// belongs there.
 const GRID_PATH = `${PROP_TYPE_DIR}/BentoPropGrid.svelte`;
+const GRID_BODY_PATH = `${PROP_TYPE_DIR}/PropGrid.svelte`;
 const ROW_PATH = `${PROP_TYPE_DIR}/PropChiralityRow.svelte`;
 const SEAM_PATH = `${PROP_TYPE_DIR}/prop-chirality-seam.ts`;
 const SHEET_PATH = `${PROP_TYPE_DIR}/PropSelectionSheet.svelte`;
@@ -67,8 +72,18 @@ function read(relativePath: string): string {
 }
 
 describe("buugeng chirality is owned by the prop picker", () => {
+  it("the entry delegates to the picker instead of growing a second grid", () => {
+    const entry = read(GRID_PATH);
+    expect(entry).toContain('import PropGrid from "./PropGrid.svelte"');
+    expect(entry).toContain("<PropGrid");
+    // Everything the entry adds is a settings read passed down as a prop. A
+    // tile, a family list or a chirality control here would be a fork.
+    expect(entry).not.toContain('class="prop-tile"');
+    expect(entry).not.toContain("PropChiralityRow");
+  });
+
   it("the picker renders the chirality row behind the seam", () => {
-    const grid = read(GRID_PATH);
+    const grid = read(GRID_BODY_PATH);
     expect(grid).toContain("PropChiralityRow");
     expect(grid).toContain("chirality?: PropChiralitySeam");
     // Gated on the prop actually being buugeng-family, so staff users never
@@ -142,7 +157,7 @@ describe("buugeng chirality is owned by the prop picker", () => {
   });
 
   it("puts chirality before the prop catalogue in compact drawers", () => {
-    const grid = read(GRID_PATH);
+    const grid = read(GRID_BODY_PATH);
     expect(grid).toContain("class:flat");
     expect(grid).toMatch(
       /\.prop-grid-root\.flat \.chirality-dock\s*\{\s*order: -1;/

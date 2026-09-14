@@ -20,7 +20,8 @@
 export function isBootProfileVerbose(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    if (new URLSearchParams(window.location.search).get("profile") === "1") return true;
+    if (new URLSearchParams(window.location.search).get("profile") === "1")
+      return true;
     return window.localStorage?.getItem("bootProfile") === "1";
   } catch {
     return false;
@@ -41,23 +42,194 @@ interface VitalEntry {
   delta?: number;
 }
 
+type Detail = Record<string, string | number | boolean>;
+type Outcome = "ok" | "error" | "cancelled";
+interface BootSpan extends PhaseEntry {
+  id: number;
+  outcome?: Outcome;
+  detail: Detail;
+}
+
+const MAX_SPANS = 1000;
+
 const VITAL_EMOJI = {
   good: "🟢",
   "needs-improvement": "🟡",
   poor: "🔴",
 } as const;
 
-class BootProfiler {
+export class BootProfiler {
   private phases = new Map<string, PhaseEntry>();
   private vitals = new Map<string, VitalEntry>();
   private bootStart: number;
   private enabled: boolean;
   private summaryPrinted = false;
   private pendingSummaryTimer: ReturnType<typeof setTimeout> | null = null;
+  private milestones = new Map<
+    string,
+    { label: string; startTime: number; detail: Detail }
+  >();
+  private spans: BootSpan[] = [];
+  private nextSpanId = 0;
+  private droppedSpans = 0;
+  private generation = 0;
+  private longTasks: { startTime: number; duration: number }[] = [];
+  private longTaskObserver: PerformanceObserver | null = null;
 
   constructor() {
     this.bootStart = performance.now();
     this.enabled = typeof window !== "undefined";
+    if (this.enabled && isBootProfileVerbose()) {
+      // Buffered entries include tasks before this module finished importing.
+      try {
+        performance.setResourceTimingBufferSize(2000);
+        this.longTaskObserver = new PerformanceObserver((list) => {
+          for (const entry of list.getEntries()) {
+            if (this.longTasks.length < MAX_SPANS) {
+              this.longTasks.push({
+                startTime: entry.startTime,
+                duration: entry.duration,
+              });
+            }
+          }
+        });
+        this.longTaskObserver.observe({ type: "longtask", buffered: true });
+      } catch {
+        this.longTaskObserver = null;
+      }
+    }
+  }
+
+  /** Fixed milestone names only. Never attach user IDs, sequence data or URLs. */
+  milestone(label: string, detail: Detail = {}): void {
+    if (!this.enabled || this.milestones.has(label)) return;
+    const startTime = performance.now();
+    this.milestones.set(label, { label, startTime, detail: { ...detail } });
+    try {
+      performance.mark(`boot:milestone:${label}`);
+    } catch {
+      /* unavailable */
+    }
+  }
+
+  /** Opt-in spans retain overlapping attempts separately, including failures. */
+  startSpan(
+    label: string,
+    detail: Detail = {}
+  ): (outcome?: Outcome, detail?: Detail) => void {
+    if (!this.enabled || !isBootProfileVerbose()) return () => {};
+    if (this.spans.length >= MAX_SPANS) {
+      this.droppedSpans++;
+      return () => {};
+    }
+    const span: BootSpan = {
+      id: ++this.nextSpanId,
+      label,
+      startTime: performance.now(),
+      detail: { ...detail },
+    };
+    const generation = this.generation;
+    this.spans.push(span);
+    const name = `boot:span:${span.id}:${label}`;
+    try {
+      performance.mark(`${name}:start`);
+    } catch {
+      /* unavailable */
+    }
+    return (outcome = "ok", detail = {}) => {
+      if (generation !== this.generation || span.endTime !== undefined) return;
+      span.endTime = performance.now();
+      span.duration = span.endTime - span.startTime;
+      span.outcome = outcome;
+      Object.assign(span.detail, detail);
+      try {
+        performance.measure(name, { start: span.startTime, end: span.endTime });
+        performance.clearMarks(`${name}:start`);
+      } catch {
+        /* unavailable */
+      }
+    };
+  }
+
+  async measureAsync<T>(label: string, work: () => T | Promise<T>): Promise<T> {
+    const finish = this.startSpan(label);
+    try {
+      const value = await work();
+      finish();
+      return value;
+    } catch (error) {
+      finish("error");
+      throw error;
+    }
+  }
+
+  /** Export remains available after the console summary, including late work. */
+  getReport() {
+    const nav = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    return {
+      schemaVersion: 1,
+      capturedAtMs: performance.now(),
+      profilerStartedAtMs: this.bootStart,
+      detailedProfiling: this.enabled && isBootProfileVerbose(),
+      phases: Array.from(this.phases.values(), (entry) => ({ ...entry })),
+      milestones: Array.from(this.milestones.values(), (entry) => ({
+        ...entry,
+        detail: { ...entry.detail },
+      })),
+      spans: this.spans.map((entry) => ({
+        ...entry,
+        detail: { ...entry.detail },
+      })),
+      droppedSpans: this.droppedSpans,
+      longTasksSupported: this.longTaskObserver !== null,
+      longTasks: this.longTasks.map((entry) => ({ ...entry })),
+      navigation: nav
+        ? {
+            type: nav.type,
+            responseStart: nav.responseStart,
+            responseEnd: nav.responseEnd,
+            domInteractive: nav.domInteractive,
+            loadEventEnd: nav.loadEventEnd,
+          }
+        : null,
+      paints: performance
+        .getEntriesByType("paint")
+        .map(({ name, startTime }) => ({ name, startTime })),
+      imports: performance
+        .getEntriesByType("measure")
+        .filter((entry) => entry.name.startsWith("boot:import:"))
+        .map(({ name, startTime, duration }) => ({
+          name,
+          startTime,
+          duration,
+        })),
+      // HTML splash marks begin before this module exists. Resource URLs are
+      // deliberately excluded: authentication requests can carry private values.
+      splash: performance
+        .getEntriesByType("mark")
+        .filter((entry) => entry.name.startsWith("boot:splash:"))
+        .map(({ name, startTime }) => ({ name, startTime })),
+      resources:
+        this.enabled && isBootProfileVerbose()
+          ? (
+              performance.getEntriesByType(
+                "resource"
+              ) as PerformanceResourceTiming[]
+            )
+              .slice(0, 2000)
+              .map((entry) => ({
+                initiatorType: entry.initiatorType,
+                startTime: entry.startTime,
+                duration: entry.duration,
+                transferSize: entry.transferSize,
+                encodedBodySize: entry.encodedBodySize,
+                decodedBodySize: entry.decodedBodySize,
+              }))
+          : [],
+      vitals: this.getVitals().map((entry) => ({ ...entry })),
+    };
   }
 
   /** Record a Core Web Vital. Only logs when verbose profiling is opted in;
@@ -68,7 +240,9 @@ class BootProfiler {
     if (!isBootProfileVerbose()) return;
     const emoji = VITAL_EMOJI[entry.rating] ?? "⚪";
     const formatted =
-      entry.name === "CLS" ? entry.value.toFixed(3) : `${Math.round(entry.value)}ms`;
+      entry.name === "CLS"
+        ? entry.value.toFixed(3)
+        : `${Math.round(entry.value)}ms`;
     console.log(
       `%c${emoji} ${entry.name}: ${formatted} (${entry.rating})`,
       "font-weight: bold;"
@@ -105,19 +279,23 @@ class BootProfiler {
     phase.duration = now - phase.startTime;
     try {
       performance.mark(`boot:${label}:end`);
-      performance.measure(`boot:${label}`, `boot:${label}:start`, `boot:${label}:end`);
+      performance.measure(
+        `boot:${label}`,
+        `boot:${label}:start`,
+        `boot:${label}:end`
+      );
     } catch {
       // ignored
     }
   }
 
   /**
-   * Schedule the final boot summary. Feature modules can call `signalReady(label)`
-   * to add a final "route-ready" phase and trigger the summary immediately.
-   * If no module signals within the timeout, summary prints anyway.
+   * Print a console snapshot after a deadline. Late readiness still enters the
+   * export, even when the console snapshot has already printed.
    */
   scheduleSummary(timeoutMs = 3000): void {
-    if (!this.enabled || this.summaryPrinted || this.pendingSummaryTimer) return;
+    if (!this.enabled || this.summaryPrinted || this.pendingSummaryTimer)
+      return;
     this.pendingSummaryTimer = setTimeout(() => {
       this.pendingSummaryTimer = null;
       this.summary();
@@ -130,7 +308,7 @@ class BootProfiler {
    * cancels any pending timeout, and prints the final summary.
    */
   signalReady(label: string): void {
-    if (!this.enabled || this.summaryPrinted) return;
+    if (!this.enabled || this.phases.has(`route:${label}`)) return;
     const now = performance.now();
     this.phases.set(`route:${label}`, {
       label: `route:${label}`,
@@ -166,9 +344,9 @@ class BootProfiler {
 
     // Synthetic pre-JS phases from Navigation Timing so the table covers the
     // network + html-parse + bundle-eval segment that runs before any boot:* mark.
-    const nav = performance.getEntriesByType(
-      "navigation"
-    )[0] as PerformanceNavigationTiming | undefined;
+    const nav = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
     const synthetic: PhaseEntry[] = [];
     if (nav) {
       const ttfb = nav.responseStart - nav.requestStart;
@@ -193,7 +371,9 @@ class BootProfiler {
 
     const entries = [
       ...synthetic,
-      ...Array.from(this.phases.values()).filter((p) => p.duration !== undefined),
+      ...Array.from(this.phases.values()).filter(
+        (p) => p.duration !== undefined
+      ),
     ].sort((a, b) => a.startTime - b.startTime);
 
     // Console table (Start is absolute ms since navigation start)
@@ -205,18 +385,17 @@ class BootProfiler {
     }));
 
     console.group(
-      `%c⚡ Boot Profile - ${Math.round(totalTime)}ms total`,
+      `%c⚡ Boot Profile snapshot at ${Math.round(totalTime)}ms`,
       "font-size: 14px; font-weight: bold; color: #4fc3f7;"
     );
     console.table(tableData);
 
     // Highlight the top 3 slowest phases
-    const slowest = [...entries].sort((a, b) => b.duration! - a.duration!).slice(0, 3);
+    const slowest = [...entries]
+      .sort((a, b) => b.duration! - a.duration!)
+      .slice(0, 3);
     if (slowest.length > 0) {
-      console.log(
-        "%cSlowest phases:",
-        "font-weight: bold; color: #ff7043;"
-      );
+      console.log("%cSlowest phases:", "font-weight: bold; color: #ff7043;");
       for (const p of slowest) {
         const bar = "█".repeat(Math.max(1, Math.round(p.duration! / 50)));
         console.log(
@@ -243,6 +422,11 @@ class BootProfiler {
 
   /** Reset for a fresh measurement */
   reset(): void {
+    this.generation++;
+    this.milestones.clear();
+    this.spans = [];
+    this.droppedSpans = 0;
+    this.longTasks = [];
     this.phases.clear();
     this.vitals.clear();
     this.summaryPrinted = false;
@@ -255,3 +439,13 @@ class BootProfiler {
 }
 
 export const bootProfiler = new BootProfiler();
+
+declare global {
+  interface Window {
+    __tkaBootProfile?: { report: () => ReturnType<BootProfiler["getReport"]> };
+  }
+}
+
+if (typeof window !== "undefined" && isBootProfileVerbose()) {
+  window.__tkaBootProfile = { report: () => bootProfiler.getReport() };
+}

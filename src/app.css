@@ -730,8 +730,8 @@ h6 {
   --dm-motion-neutral: #231f20;
 
   /* Motion colors (blue/red hands) - optimized for background contrast */
-  --dm-motion-blue: #3d44b8;
-  --dm-motion-red: #dc2626;
+  --dm-motion-blue: var(--user-left-color, #3d44b8);
+  --dm-motion-red: var(--user-right-color, #dc2626);
 
   /* Prop-selection washes. Keeping the host surface visible makes Blue, Red,
      and Both read as related states instead of three blocks of solid paint. */
@@ -799,8 +799,8 @@ h6 {
   --dm-motion-neutral: #ffffff;
 
   /* Motion colors - brighter variants for dark backgrounds */
-  --dm-motion-blue: #3575e2;
-  --dm-motion-red: #ed1c24;
+  --dm-motion-blue: var(--user-left-color, #3575e2);
+  --dm-motion-red: var(--user-right-color, #ed1c24);
 
   /* No stroke needed in dark mode - white text is already visible */
   --dm-beat-stroke: transparent;

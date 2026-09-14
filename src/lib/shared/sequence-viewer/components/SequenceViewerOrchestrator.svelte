@@ -1,7 +1,14 @@
 <script lang="ts">
   import SavePropDialog from "$lib/shared/library/components/SavePropDialog.svelte";
   import { resolveViewingProps } from "$lib/shared/foundation/services/prop-viewing";
-  import { onMount, onDestroy, type Snippet } from "svelte";
+  import { onMount, onDestroy, untrack, type Snippet } from "svelte";
+  import {
+    applySequencePathPreview,
+    savedSequencePathPolicy,
+    countPathOverrides,
+  } from "../services/sequence-path-policy";
+  import type { AnimationPathPolicy } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
+  import { setViewerPathContext } from "../context/viewer-path-context";
   import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
   import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/get-sequence-animation-orchestrator";
   import { getLanSyncCoordinator } from "$lib/shared/lan-sync/get-lan-sync-coordinator";
@@ -153,7 +160,7 @@
     initialPlaybackMode?: PlaybackMode;
     initialStep?: number;
     initialViewMode?: ViewMode;
-    onClose: () => void;
+    onClose: (reason?: "navigate") => void;
     onUrlParamChange?: (key: string, value: string) => void;
     /** Reports tempo changes made through viewer controls. Internal practice
      *  ramp changes stay private so hosts can persist deliberate choices. */
@@ -193,7 +200,7 @@
   }
 
   let {
-    sequence,
+    sequence: savedSequence,
     isMobile,
     collectionPropType = null,
     initialBpm = 60,
@@ -220,6 +227,11 @@
     shortCode = null,
     children,
   }: Props = $props();
+
+  let pathPreview = $state<AnimationPathPolicy | null>(null);
+  const sequence = $derived(
+    applySequencePathPreview(savedSequence, pathPreview)
+  );
 
   // ── URL state session ────────────────────────────────────────────────────
   // One session per viewer mount. It decodes the inbound link into per-slice
@@ -765,6 +777,35 @@
     anStores.settings.replaceAll(anSeed.settings);
     anStores.visibility.replaceAll(anSeed.visibility);
   }
+  const pathDefaults = {
+    pathShape: anStores.visibility.snapshot().pathShape,
+    motionAwarePaths: anStores.visibility.snapshot().motionAwarePaths,
+  };
+  const syncPathPreview = () => {
+    const next = anStores.visibility.getPathSession()?.applied ?? null;
+    if (
+      next?.pathShape !== pathPreview?.pathShape ||
+      next?.motionAwarePaths !== pathPreview?.motionAwarePaths
+    ) {
+      pathPreview = next;
+    }
+  };
+  anStores.visibility.registerObserver(syncPathPreview);
+  let firstPathSession = true;
+  $effect.pre(() => {
+    const original = savedSequence;
+    return untrack(() => {
+      const close = anStores.visibility.beginPathSession(
+        savedSequencePathPolicy(original, pathDefaults),
+        countPathOverrides(original)
+      );
+      if (firstPathSession && anSeedPayload?.pathPreview) {
+        anStores.visibility.setPathPolicy(pathDefaults);
+      }
+      firstPathSession = false;
+      return close;
+    });
+  });
   // Seeded after `an`, and against the store's CURRENT state rather than the
   // restore snapshot, so the excluded dark mode is the link's (already mirrored
   // from the visibility manager) instead of the visitor's.
@@ -836,15 +877,34 @@
     onDeleteSuccess: () => handleClose(),
   });
 
+  setViewerPathContext({
+    get sequence() {
+      return sequence;
+    },
+    get canSave() {
+      return isOwned && libraryActions.isOwnedLibraryRecord;
+    },
+    get saving() {
+      return libraryActions.isSaving;
+    },
+    save: async () => {
+      const policy = anStores.visibility.getPathPolicy();
+      const id = savedSequence?.id;
+      if ((await libraryActions.savePaths()) && savedSequence?.id === id) {
+        anStores.visibility.acceptSavedPaths(policy);
+      }
+    },
+  });
+
   const isPublished = $derived(
     (sequence as LibrarySequence | null)?.visibility === "public"
   );
 
   $effect(() => {
-    libraryActions.syncSavedState(sequence);
+    libraryActions.syncSavedState(savedSequence);
   });
   $effect(() => {
-    libraryActions.syncFavoriteState(sequence);
+    libraryActions.syncFavoriteState(savedSequence);
   });
 
   const previewAspectRatio = $derived.by(() => {
@@ -868,8 +928,6 @@
       onUrlParamChange,
     },
     {
-      setPathShape: (pathShape) =>
-        getAnimationVisibilityManager().setPathShape(pathShape),
       viewportFits3D,
     }
   );
@@ -913,6 +971,7 @@
   });
 
   onDestroy(() => {
+    anStores.visibility.unregisterObserver(syncPathPreview);
     libraryActions.finishPropChoice(false);
     anStores.visibility.unregisterObserver(anVisibilityObserver);
     // Restore FIRST, while writes are still suppressed, then resume — so the
@@ -920,7 +979,7 @@
     // session ever reaching disk.
     if (anRestore) {
       anStores.settings.replaceAll(anRestore.settings);
-      anStores.visibility.replaceAll(anRestore.visibility);
+        anStores.visibility.replaceAll(anRestore.visibility, true);
       anStores.settings.setPersistenceSuspended(false);
       anStores.visibility.setPersistenceSuspended(false);
       anRestore = null;
@@ -991,6 +1050,7 @@
     if (event.key === " " || event.code === "Space") {
       const target = event.target as HTMLElement;
       if (
+        target.closest("[data-keyboard-shortcuts-ignore]") ||
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
         target.isContentEditable
@@ -1004,7 +1064,7 @@
     }
   }
 
-  function handleClose() {
+  function handleClose(reason?: "navigate") {
     libraryActions.finishPropChoice(false);
     playback.stopPracticeIfActive();
 
@@ -1016,7 +1076,7 @@
     viewerLanSync.disconnect();
 
     accessibilityHelper.restoreFocus();
-    onClose();
+    onClose(reason);
   }
 
   const destinationActions = createViewerDestinationActions(
@@ -1123,6 +1183,8 @@
       setResolvedCardAutoLayout,
       onRenderProgress: handleRenderProgress,
       handlePropTypeChange: propVisibility.handlePropTypeChange,
+      setPropHand: propVisibility.setPropHand,
+      handleCatDogToggle: propVisibility.handleCatDogToggle,
       handleFanAppearanceChange,
       enterEditMode: editMode.enterEditMode,
       exitEditMode: editMode.exitEditMode,
@@ -1160,6 +1222,7 @@
     getLeftPropType: () => propVisibility.activeLeftProp,
     getRightPropType: () => propVisibility.activeRightProp,
     getCatDogModeEnabled: () => propVisibility.activeCatDog,
+    getPropHand: () => propVisibility.propHand,
     getFanAppearance: () => normalizeFanAppearance(getSettings().fanAppearance),
     getIsLoggedIn: () => (forceGuest ? false : authState.isAuthenticated),
     getIsOwned: () => isOwned,

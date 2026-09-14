@@ -1,3 +1,4 @@
+import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import type { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
 import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
@@ -62,6 +63,7 @@ export interface SequenceExportOptions {
   leftVisible: boolean;
 
   visibilityOverrides?: {
+    fanAppearance?: FanAppearance;
     primaryPropColors?: { left: string; right: string } | null;
     showTKA?: boolean;
     showTnD?: boolean;

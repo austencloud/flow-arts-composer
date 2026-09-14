@@ -2,7 +2,10 @@
   ActsDock.svelte
 
   The saved-acts panel for the Choreo builder: create a new act, open a saved
-  one, delete one — all inside the shared Drawer shell.
+  one, delete one. Docked INLINE beside the sheet preview (a flex sibling, not
+  an overlay), the same dock pattern as the add-sequences picker and ActPlayer;
+  on a narrow workspace the parent hides the preview and the dock takes its
+  slot.
 
   States (loading / error / empty / list / unsaved-changes confirm) swap through
   the shared <Crossfade> primitive in fill mode, so the dock never jumps as data
@@ -18,6 +21,7 @@
 <script lang="ts">
   import { flip } from "svelte/animate";
   import { scale } from "svelte/transition";
+  import { dockSlide } from "$lib/shared/transitions/dock-slide";
   import { flipDuration, motionDuration } from "$lib/shared/transitions/motion";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { formatTimeAgo } from "$lib/shared/i18n/i18n-formatters";
@@ -29,12 +33,15 @@
     currentActName,
     dirty,
     refreshKey = 0,
+    stacked = false,
     onOpenAct,
     onNewAct,
     onSaveCurrent,
     onDeleted,
     onClose,
   }: {
+    /** Narrow workspace: the dock fills the body instead of docking right. */
+    stacked?: boolean;
     /** Id of the act currently loaded in the builder (draft ids count too). */
     currentActId: string;
     /** Name of the current act, for the unsaved-changes confirm copy. */
@@ -224,16 +231,26 @@
   }
 </script>
 
+<!-- Capture phase so this runs before ChoreoSheetView's window listener:
+     Escape cancels an in-dock confirm first, and only a second press closes
+     the dock (the view honours defaultPrevented). -->
 <svelte:window
-  onkeydown={(e) => {
-    if (e.key === "Escape") {
-      if (pendingTarget) cancelSwitch();
-      else if (confirmDeleteId) disarmDelete();
-    }
+  onkeydowncapture={(e) => {
+    if (e.key !== "Escape") return;
+    if (pendingTarget) cancelSwitch();
+    else if (confirmDeleteId) disarmDelete();
+    else return;
+    e.preventDefault();
   }}
 />
 
-<aside class="acts-dock" aria-label="Saved acts">
+<aside
+  id="choreo-acts-dock"
+  class="acts-dock"
+  class:stacked
+  aria-label="Saved acts"
+  transition:dockSlide
+>
   <div class="dock-head">
     <span class="dock-title">
       <i class="fa-solid fa-clapperboard" aria-hidden="true"></i>
@@ -412,17 +429,40 @@
 </aside>
 
 <style>
-  /* Drawer owns the outer surface and its animation. This component fills the
-     Drawer slot and gives its body the remaining height for state/list scroll. */
+  /* Inline docked column. `--dock-w` is set by ChoreoSheetView from the
+     measured workspace, so this dock and the picker share one width. */
   .acts-dock {
+    flex-shrink: 0;
+    width: var(--dock-w);
     display: flex;
-    flex: 1;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
     min-height: 0;
     background: var(--theme-panel-bg, #14141c);
+    border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
     overflow: hidden;
+  }
+
+  /* dockSlide perf contract: children pinned at the dock's final width so the
+     glide is a pure clip-reveal (no per-frame relayout of the list). */
+  .acts-dock > :global(*) {
+    /* Inside the 1px border. */
+    width: calc(var(--dock-w) - 2px);
+  }
+
+  .acts-dock > .new-act {
+    width: calc(var(--dock-w) - 2px - 2 * var(--spacing-md));
+  }
+
+  /* Narrow workspace: the parent hides the preview and the dock takes the
+     whole body. Children follow the dock instead of the pinned width. */
+  .acts-dock.stacked {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .acts-dock.stacked > :global(*) {
+    width: auto;
   }
 
   .dock-head {

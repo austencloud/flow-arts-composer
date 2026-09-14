@@ -54,15 +54,17 @@
 
   type Level1Row = { id: string; label: string; level: 0 | 1 };
   type Level1Group = { group: GuideGroup; title: string; rows: Level1Row[] };
-  const level1Groups: Level1Group[] = bodyPagesByGroup().map(({ group, entries }) => ({
-    group,
-    title: GROUP_TITLES[group],
-    rows: entries.map(({ entry }) => ({
-      id: entry.id,
-      label: seoForSlug(entry.id, entry.title).h1,
-      level: entry.level,
-    })),
-  }));
+  const level1Groups: Level1Group[] = bodyPagesByGroup().map(
+    ({ group, entries }) => ({
+      group,
+      title: GROUP_TITLES[group],
+      rows: entries.map(({ entry }) => ({
+        id: entry.id,
+        label: seoForSlug(entry.id, entry.title).h1,
+        level: entry.level,
+      })),
+    })
+  );
 
   let level1Open = $state(true);
   let level2Open = $state(true);
@@ -72,6 +74,7 @@
   }
   const codexActive = $derived(pathname.startsWith("/guide/codex"));
   const ratiosActive = $derived(pathname === "/guide/ratios");
+  const motionPathsActive = $derived(pathname === "/guide/motion-paths");
 
   // ── sessionStorage scroll position - restore on (re)mount ──────────────
   // GuideSidebar remounts fresh whenever the reader crosses from level-1 to
@@ -86,7 +89,8 @@
     if (!el) return;
     const saved = sessionStorage.getItem(SCROLL_KEY);
     if (saved) el.scrollTop = Number(saved);
-    const onScroll = () => sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
+    const onScroll = () =>
+      sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   });
@@ -96,7 +100,11 @@
   <!-- ── Level 1 ─────────────────────────────────────────────────────── -->
   <div class="level-block">
     <div class="level-header">
-      <a class="nav-title-link" href="/guide/level-1" onclick={() => onLinkClick?.()}>
+      <a
+        class="nav-title-link"
+        href="/guide/level-1"
+        onclick={() => onLinkClick?.()}
+      >
         Level 1
       </a>
       <button
@@ -140,7 +148,11 @@
   <!-- ── Level 2 ─────────────────────────────────────────────────────── -->
   <div class="level-block">
     <div class="level-header">
-      <a class="nav-title-link" href="/guide/level-2" onclick={() => onLinkClick?.()}>
+      <a
+        class="nav-title-link"
+        href="/guide/level-2"
+        onclick={() => onLinkClick?.()}
+      >
         Level 2
       </a>
       <button
@@ -167,7 +179,9 @@
                 <a
                   class="section-link"
                   class:active={activeSectionId === section.id}
-                  aria-current={activeSectionId === section.id ? "location" : undefined}
+                  aria-current={activeSectionId === section.id
+                    ? "location"
+                    : undefined}
                   href={`/guide/level-2/${route.slug}#${section.id}`}
                   onclick={() => onLinkClick?.()}
                 >
@@ -196,6 +210,18 @@
   <div class="chapter-group">
     <a
       class="chapter-title"
+      class:active={motionPathsActive}
+      aria-current={motionPathsActive ? "page" : undefined}
+      href="/guide/motion-paths"
+      onclick={() => onLinkClick?.()}
+    >
+      Motion paths
+    </a>
+  </div>
+
+  <div class="chapter-group">
+    <a
+      class="chapter-title"
       class:active={codexActive}
       aria-current={codexActive ? "page" : undefined}
       href="/guide/codex"
@@ -209,12 +235,22 @@
     <div class="group-heading"><span>Downloads</span></div>
     <ul class="section-list">
       <li>
-        <a class="section-link" href="/guides/level-1.pdf" download onclick={() => onLinkClick?.()}>
+        <a
+          class="section-link"
+          href="/guides/level-1.pdf"
+          download
+          onclick={() => onLinkClick?.()}
+        >
           Level 1 PDF
         </a>
       </li>
       <li>
-        <a class="section-link" href="/guides/level-2.pdf" download onclick={() => onLinkClick?.()}>
+        <a
+          class="section-link"
+          href="/guides/level-2.pdf"
+          download
+          onclick={() => onLinkClick?.()}
+        >
           Level 2 PDF
         </a>
       </li>
@@ -239,7 +275,7 @@
     font-weight: 700;
     font-size: 0.95rem;
     padding: 0.5rem 0.75rem;
-    color: oklch(0.70 0.10 270);
+    color: oklch(0.7 0.1 270);
     text-decoration: none;
   }
 
@@ -254,10 +290,12 @@
     border-radius: 8px;
     color: oklch(0.55 0.02 270);
     cursor: pointer;
-    transition: background 150ms ease, color 150ms ease;
+    transition:
+      background 150ms ease,
+      color 150ms ease;
   }
   .level-toggle:hover {
-    background: oklch(0.20 0.02 270 / 0.4);
+    background: oklch(0.2 0.02 270 / 0.4);
     color: oklch(0.75 0.04 270);
   }
   .level-toggle i {

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   unlink: vi.fn(),
   exists: vi.fn(),
   read: vi.fn(),
+  writeFile: vi.fn(),
 }));
 vi.mock("node:child_process", () => ({
   execFile: mocks.exec,
@@ -23,21 +24,31 @@ vi.mock("node:fs/promises", () => {
     open: mocks.open,
     readFile: mocks.read,
     unlink: mocks.unlink,
+    writeFile: mocks.writeFile,
   };
   return { ...functions, default: functions };
 });
 import { GET, POST } from "./+server";
+import { DEFAULT_GENERATION_OPTIONS } from "../generation-options";
 
 function event(
   origin = "https://localhost:5173",
   address = "::1",
-  host = "https://localhost:5173"
+  host = "https://localhost:5173",
+  body?: unknown
 ) {
   const url = new URL(`${host}/test/character-playground/generate`);
   return {
     url,
     getClientAddress: () => address,
-    request: new Request(url, { method: "POST", headers: { origin } }),
+    request: new Request(url, {
+      method: "POST",
+      headers:
+        body === undefined
+          ? { origin }
+          : { origin, "content-type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    }),
   } as Parameters<typeof POST>[0];
 }
 
@@ -94,6 +105,39 @@ describe("local character generator boundary", () => {
     expect(mocks.exec).toHaveBeenCalledOnce();
     expect(mocks.close).toHaveBeenCalledOnce();
     expect(mocks.unlink).toHaveBeenCalledOnce();
+  });
+  it("only accepts bounded creator options and passes a file path to the job", async () => {
+    const options = {
+      presentation: "masculine",
+      age: "middleage",
+      height: 0.5,
+      weight: 0.4,
+      muscle: 0.6,
+      proportions: 0.5,
+      face: 0.7,
+      hair: "short01",
+      outfit: "male_casualsuit01",
+    };
+    await POST(event(undefined, undefined, undefined, options));
+    expect(mocks.writeFile).toHaveBeenCalledWith(
+      expect.stringContaining("requested-options.json"),
+      expect.any(String)
+    );
+    expect(JSON.parse(mocks.writeFile.mock.calls[0]?.[1] as string)).toEqual({
+      ...DEFAULT_GENERATION_OPTIONS,
+      ...options,
+    });
+    const args = mocks.exec.mock.calls[0]?.[1] as string[];
+    expect(args.some((arg) => arg.endsWith("requested-options.json"))).toBe(
+      true
+    );
+  });
+  it("rejects arbitrary generation input before writing a job file", async () => {
+    await expect(
+      POST(event(undefined, undefined, undefined, { output: "E:/anything" }))
+    ).rejects.toMatchObject({ status: 400 });
+    expect(mocks.writeFile).not.toHaveBeenCalled();
+    expect(mocks.exec).not.toHaveBeenCalled();
   });
   it("releases the lock after a failed generation so retry remains possible", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});

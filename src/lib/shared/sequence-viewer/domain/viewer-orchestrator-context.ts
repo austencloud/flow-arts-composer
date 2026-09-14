@@ -20,6 +20,7 @@ import type { TunnelViewController } from "$lib/shared/sequence-viewer/tunnel/tu
 import type { MandalaViewerController } from "$lib/shared/sequence-viewer/state/mandala-viewer-controller.svelte";
 import type { PendingActionType } from "$lib/shared/sequence-viewer/services/pending-action-queue";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { ViewerPropHand } from "$lib/shared/sequence-viewer/state/viewer-prop-visibility-state.svelte";
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import type { CardPresentation } from "$lib/shared/share/domain/models/card-presentation";
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
@@ -87,7 +88,14 @@ export interface OrchestratorContext {
   leftPropType: PropType | undefined;
   rightPropType: PropType | undefined;
   catDogModeEnabled: boolean | undefined;
-  handlePropTypeChange: (propType: PropType) => void;
+  /** Hand the Props picker edits while cat/dog mode is on. */
+  propHand: ViewerPropHand;
+  setPropHand: (hand: ViewerPropHand) => void;
+  handleCatDogToggle: () => void;
+  handlePropTypeChange: (
+    propType: PropType,
+    hand?: ViewerPropHand | "both"
+  ) => void;
   fanAppearance: FanAppearance;
   handleFanAppearanceChange: (appearance: FanAppearance) => void;
 
@@ -137,6 +145,8 @@ export interface OrchestratorContext {
   resolvedCardAutoLayout: ResolvedAutoLayout | null;
   setResolvedCardAutoLayout: (layout: ResolvedAutoLayout | null) => void;
   handleCanvasReady: (canvas: HTMLCanvasElement | null) => void;
+  /** Captures the already-mounted 2D animation surface for share presentation. */
+  captureAnimationPreview: () => string;
   handleSyncToggle: () => Promise<void>;
   handleOpenInCompose: (
     preset?: "stagger" | "mirror" | "combo-export"

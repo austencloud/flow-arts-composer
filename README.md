@@ -1,112 +1,146 @@
 # Flow Arts Composer
 
-Sequence editor and notation platform for two-handed prop manipulation. Think sheet music, but for flow arts.
+Write down a movement you want to remember. See it animated. Share it with another
+flow artist.
 
-**[tkaflowarts.com](https://tkaflowarts.com)**
+Flow Arts Composer is a browser app for building and exploring flow arts sequences
+using **The Kinetic Alphabet (TKA)**. It connects written notation with animation
+so you can work out what to practice, keep a record, and pass it on.
 
-TKA (The Kinetic Alphabet) is a notation system built for static props — staff, fans, clubs, buugeng, and other props you grip directly. Static props can be held at any orientation and moved to any point with controlled rotation, free from gravity. Every previous notation system mapped what gravity makes spinning props do. TKA maps what's possible when gravity isn't a constraint.
+**[Open Flow Arts Composer](https://tkaflowarts.com)** ·
+[Read the notation guide](https://tkaflowarts.com/guide/level-1) ·
+[Contribute](CONTRIBUTING.md)
 
-## Stack
+## What you can do
 
-| Layer | Tech |
-|-------|------|
-| App framework | SvelteKit + Svelte 5 runes, TypeScript (strict) |
-| 3D | Threlte (Three.js), post-processing, Rapier physics |
-| Backend | Firebase (Firestore, Auth, Storage, Functions) |
-| Native | Capacitor (iOS + Android) |
-| Rendering | Canvas 2D pictograph pipeline, WebGL trail overlays |
-| Domain engine | 13 internal packages under `packages/` |
-| AI | MCP servers (domain knowledge, game controller, Tika tutor) |
-| i18n | 11 languages (ar, de, en, es, fr, it, ja, ko, pt, ru, zh) |
-| Testing | Vitest (unit), Playwright (E2E) |
-| Build | Vite, feature flags per module |
+- **Build a sequence step by step**, choosing movements in the editor.
+- **Generate sequences** from constraints when you want something new to try.
+- **Watch the movement** in an animated preview and compare it with the notation.
+- **Browse the library** to find sequences and explore other artists' work.
+- **Save and share sequences**, or export pictographs for reference and practice.
 
-## Monorepo Structure
+Create and Browse are the main public workspaces. The repository also contains
+tools for lessons, longer choreography, printable cards, and 3D experiences.
+Access to those areas depends on feature settings and account permissions.
+Their presence in the source does not mean they are available to every user.
 
-```
-src/                          # Composer application (Elastic License 2.0)
-  lib/
-    features/                 # 25+ feature modules
-    shared/                   # Shared services, animation engine, 3D, auth, etc.
-  routes/                     # SvelteKit routes
+## The notation behind it
 
-packages/                     # Internal packages (most MIT-licensed)
-  domain/                     # @tka/domain — letter types, positions, glossary
-  sequence-engine/            # @tka/sequence-engine — beam-search builder, LOOP detection
-  render-core/                # @tka/render-core — prop placement, arrow calculation
-  render-composition/         # @tka/render-composition — card layout, headers, footers
-  tka-types/                  # @tka/tka-types — shared type definitions
-  vtg-domain/                 # @vtg/domain — per-hand (VTG) learning model
-  flow-arts-core/             # @flow-arts/core — cross-system primitives
-  9square-domain/             # @9square/domain
-  caps-domain/                # @caps/domain
-  spin-science-domain/        # @spin-science/domain
-  mcp-tika-talk/              # Tika AI tutor MCP server
-  mcp-game-controller/        # Game controller MCP server
-  feedback-types/             # Shared feedback type definitions
+TKA describes how two hands and their props move. A **pictograph** is a diagram
+with two props and arrows showing motion. Put pictographs in order and you have a
+sequence you can read and perform.
 
-mcp-server/                   # Flow Arts Knowledge MCP server
-firebase-functions/           # Cloud Functions
-messages/                     # i18n translation files
-scripts/                      # Build and utility scripts
-tests/                        # Unit and E2E tests
+The system was designed around a pair of staves held at their centers. Other
+directly gripped props, including fans, clubs, and buugeng, can use the notation
+when their orientations remain readable. Momentum-driven props such as poi need
+additional interpretation.
+
+**Flow Arts Composer** is the application. **The Kinetic Alphabet** is the
+notation system it uses. The notation reference and shared domain packages live
+in this repository alongside the app.
+
+## Run locally
+
+Use **Node.js 24** to match CI and **pnpm 10.28.0**, the version pinned in
+[`package.json`](package.json). This is a pnpm workspace with local packages and
+dependency patches. Install from the repository root.
+
+```sh
+git clone https://github.com/austencloud/flow-arts-composer.git
+cd flow-arts-composer
 ```
 
-## Modules
+Copy [`.env.example`](.env.example) to `.env` **before installing dependencies**.
+The install step generates SvelteKit's environment declarations.
 
-| Module | What it does |
-|--------|-------------|
-| **Create** | Build sequences manually or with the constrained generator |
-| **Browse** | Search and explore the public sequence library |
-
-<details>
-<summary><strong>In Development</strong> — 20+ additional modules not yet public</summary>
-
-| Module | What it does |
-|--------|-------------|
-| **Learn** | Interactive lessons and drills on TKA concepts |
-| **Tika** | AI tutor that teaches TKA through conversation |
-| **Compose** | Arrange sequences into longer choreographies, export video |
-| **Choreo Cards** | Printable reference cards with pictographs and metadata |
-| **Watch** | Community video feed |
-| **Arena** | Head-to-head sequence voting |
-| **Train** | Camera-based practice with real-time scoring |
-| **Write** | Author choreography acts |
-| **Social** | Community map and nearby spinner sync |
-| **Levels** | Position labs (L4–L7) and poi constraint validation |
-| **Hand Paths** | Browse and build spatial hand paths |
-| **Video** | Video analysis, trail extraction, notation overlay |
-| **Museum** | Walkable archive — 2D museum with 3D flip mode |
-| **Archive** | 40,000 years of kinetic history |
-| **Retro** | 1989 DOS terminal, 1995 Win95 desktop, pictograph timeline |
-| **Festivals** | Discover and apply to flow festivals |
-| **Settings** | Props, backgrounds, visibility, AI preferences |
-
-Admin-only: Lab (experiments), Admin (system config), Moderation (user reports).
-
-</details>
-
-## Architecture
-
-Services use a factory-getter pattern — each service has a `get<Name>.ts` file that lazily creates and caches the singleton. No DI container. No barrel exports. Direct imports only.
-
-Domain packages under `packages/` encode the notation system: letter type classification, position algebra, transition graphs, and the constrained beam-search sequence builder. These are MIT-licensed and designed to be consumed independently of the Composer app.
-
-The MCP server (`mcp-server/`) exposes domain knowledge — alphabet data, sequence generation, pictograph rendering — as tool calls for AI assistants.
-
-The 3D viewer (Threlte/Three.js) renders avatar animation with 16 tip effects, physics-driven props, and indoor scene navigation.
-
-## Scripts
-
-```bash
-npm run dev        # Start dev server (port 5173)
-npm run build      # Production build
-npm run check      # TypeScript + Svelte check
-npm test           # Unit tests (Vitest)
-npm run test:e2e   # E2E tests (Playwright)
-npm run lint       # Prettier + ESLint
+```sh
+# macOS / Linux
+cp .env.example .env
 ```
 
-## License
+```powershell
+# PowerShell
+Copy-Item .env.example .env
+```
 
-Mixed licensing. Foundation and engine packages are MIT. The Composer application and MCP servers are Elastic License 2.0. Sequence datasets (53,000+) are CC BY-SA 4.0. See [LICENSE](LICENSE) for full details.
+```sh
+pnpm install --frozen-lockfile
+pnpm run build:packages
+pnpm run dev
+```
+
+Open the URL printed by Vite. The default port is `5173`. Fresh clones use HTTP;
+local certificates in `.cert/` enable HTTPS. If another checkout already has a
+server running, use that server or choose a free port for yours, for example
+`pnpm run dev --port 5174`.
+
+The environment template documents optional integrations. Features that use AI
+providers or server-side administration need their own credentials. Keep `.env`
+and service-account files out of Git.
+
+The browser's Firebase configuration is included in the source. A local frontend
+uses the configured hosted backend unless emulator mode is enabled. For isolated
+data testing, see the [Firebase emulator configuration](src/lib/shared/auth/firebase-emulator-config.ts)
+and [test documentation](tests/README.md).
+
+## Development commands
+
+| Command                       | Purpose                                       |
+| ----------------------------- | --------------------------------------------- |
+| `pnpm run dev`                | Start the local app                           |
+| `pnpm run build:packages`     | Compile the shared domain and engine packages |
+| `pnpm run check`              | Check Svelte and TypeScript diagnostics       |
+| `pnpm run check:tsc`          | Run the separate TypeScript compiler gate     |
+| `pnpm run test:ci`            | Run the app unit tests once                   |
+| `pnpm run test:packages`      | Run workspace package tests                   |
+| `pnpm run test:components:ci` | Run browser component tests                   |
+| `pnpm run build`              | Build the production app                      |
+| `pnpm run lint`               | Check formatting and ESLint rules             |
+
+Browser component tests need Playwright Chromium:
+`pnpm exec playwright install chromium`. Firebase-backed test suites have
+additional emulator requirements. See [tests/README.md](tests/README.md) and the
+[CI workflow](.github/workflows/web-ci.yml) for the current checks.
+
+## Inside the repository
+
+The app uses **SvelteKit, Svelte 5, and TypeScript**, with Firebase for backend
+services. Pictographs use a Canvas rendering pipeline. Three.js and Threlte power
+3D views. Capacitor and Tauri provide native application projects.
+
+| Location                                     | Contents                                                            |
+| -------------------------------------------- | ------------------------------------------------------------------- |
+| [`src/lib/features/`](src/lib/features/)     | App features, including Create and Browse                           |
+| [`src/lib/shared/`](src/lib/shared/)         | Shared UI, animation, authentication, and services                  |
+| [`src/routes/`](src/routes/)                 | SvelteKit pages and server endpoints                                |
+| [`packages/`](packages/)                     | Notation models, sequence generation, rendering, and shared tooling |
+| [`mcp-server/`](mcp-server/)                 | Flow Arts Knowledge MCP server for AI tool integrations             |
+| [`firebase-functions/`](firebase-functions/) | Firebase Cloud Functions                                            |
+| [`messages/`](messages/)                     | Translation files                                                   |
+| [`tests/`](tests/)                           | Tests and test configuration                                        |
+
+Start with [`@tka/domain`](packages/domain/) for notation definitions,
+[`@tka/sequence-engine`](packages/sequence-engine/) for generation, or
+[`@tka/render-core`](packages/render-core/) for rendering calculations. The
+[MCP server README](mcp-server/README.md) covers its setup and tools.
+
+## Contributing
+
+Bug reports, documentation improvements, translations, and code contributions
+are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and
+contribution terms. For a substantial feature, open an
+[issue](https://github.com/austencloud/flow-arts-composer/issues) to discuss the
+approach before starting implementation.
+
+## Licensing
+
+This repository uses several licenses:
+
+- **MIT** for the foundation packages and selected engines, including
+  `@tka/domain`, `@tka/sequence-engine`, and `@tka/render-core`.
+- **Elastic License 2.0** for the Composer application, MCP servers, and the
+  rendering packages identified in the license overview.
+- **CC BY-SA 4.0** for the open sequence datasets and notation documentation.
+
+Other data has separate terms. See [LICENSE](LICENSE) for the component-by-component
+breakdown, exceptions, and full license references.

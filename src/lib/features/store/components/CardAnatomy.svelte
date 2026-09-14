@@ -9,7 +9,7 @@
    * the matching region gets a spotlight (everything else dims) so the
    * cards stay pristine until the reader asks about a part.
    */
-  import { onMount } from "svelte";
+  import { onMount, tick, untrack } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import CardBack from "$lib/features/choreo-card/components/card-back/CardBack.svelte";
   import { computeFrontRegions } from "../services/card-front-regions";
@@ -23,6 +23,9 @@
   import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
   import SkeletonLoader from "$lib/shared/foundation/ui/SkeletonLoader.svelte";
   import ArtifactRegionSpotlight from "$lib/shared/components/ArtifactRegionSpotlight.svelte";
+  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import { CARD_SIZES } from "$lib/features/choreo-card/domain/card-sizes";
 
   let {
     highlight = null,
@@ -32,6 +35,9 @@
     frontUrl = undefined,
     showShuffle = true,
     onstatuschange,
+    handPathCard = false,
+    qrUrl,
+    cardTitle,
   }: {
     highlight?: string | null;
     onhighlight?: (id: string | null) => void;
@@ -50,6 +56,12 @@
     /** Reports readiness so the surrounding legend can disable spotlight
      *  controls until there is a real card to point at. */
     onstatuschange?: (status: "loading" | "ready" | "error") => void;
+    /** Use the live card renderer for a hand-path teaching card. */
+    handPathCard?: boolean;
+    /** A published scan URL for a teaching card, never a newly-created code. */
+    qrUrl?: string;
+    /** Plain-language title used before learners have met TKA letters. */
+    cardTitle?: string;
   } = $props();
 
   const showFront = $derived(face === "both" || face === "front");
@@ -63,6 +75,8 @@
   // the print layout for that step count, and back regions are measured off the
   // live CardBack DOM.
   type Shown = { sequence: SequenceData; frontUrl: string; stepCount: number };
+  const pokerCardAspectRatio =
+    CARD_SIZES.poker.widthInches / CARD_SIZES.poker.heightInches;
   let shown = $state<Shown | null>(null);
   let shuffling = $state(false);
   let previewState = $state<"loading" | "ready" | "error">("loading");
@@ -71,7 +85,10 @@
 
   function setPreviewState(state: "loading" | "ready" | "error"): void {
     previewState = state;
-    onstatuschange?.(state);
+    // A host callback often closes over its selected legend item. Keep that
+    // presentation state out of this card-loading effect or selecting a part
+    // would restart the supplied card and clear the spotlight.
+    untrack(() => onstatuschange?.(state));
   }
 
   // External-card mode: reflect the caller-supplied sequence into `shown`
@@ -87,6 +104,18 @@
     setPreviewState("loading");
     (async () => {
       let front = baked;
+      if (handPathCard) {
+        if (cancelled || attempt !== loadAttempt) return;
+        shown = {
+          sequence: seq,
+          frontUrl: "",
+          stepCount: seq.steps?.length ?? 4,
+        };
+        // The live renderer owns its own cell loading. The anatomy controls can
+        // point at the stable card frame as soon as it is mounted.
+        setPreviewState("ready");
+        return;
+      }
       if (!front) {
         try {
           const { renderCoverFront } =
@@ -276,6 +305,59 @@
   const PAD = 1; // % breathing room around the measured element
 
   let backBox: HTMLElement | null = $state(null);
+  let frontBox: HTMLElement | null = $state(null);
+  let liveRegionRevision = $state(0);
+
+  $effect(() => {
+    if (!handPathCard || !frontBox || !highlight) return;
+    // Let the card finish its own grid layout before measuring the visible cells.
+    const frame = requestAnimationFrame(() => {
+      liveRegionRevision += 1;
+    });
+    return () => cancelAnimationFrame(frame);
+  });
+
+  function measureRegion(selectors: readonly string[]) {
+    if (!frontBox) return null;
+    const els = selectors.flatMap((selector) => [
+      ...frontBox!.querySelectorAll<HTMLElement>(selector),
+    ]);
+    if (!els.length) return null;
+    const b = frontBox.getBoundingClientRect();
+    let left = Infinity,
+      top = Infinity,
+      right = -Infinity,
+      bottom = -Infinity;
+    for (const el of els) {
+      const r = el.getBoundingClientRect();
+      left = Math.min(left, r.left);
+      top = Math.min(top, r.top);
+      right = Math.max(right, r.right);
+      bottom = Math.max(bottom, r.bottom);
+    }
+    return {
+      x: ((left - b.left) / b.width) * 100 - PAD,
+      y: ((top - b.top) / b.height) * 100 - PAD,
+      w: ((right - left) / b.width) * 100 + 2 * PAD,
+      h: ((bottom - top) / b.height) * 100 + 2 * PAD,
+    };
+  }
+
+  const liveFrontRegions = $derived.by(() => {
+    liveRegionRevision;
+    if (!handPathCard) return null;
+    return {
+      start: measureRegion([
+        ".start-cell-wrapper",
+        ".duration-start-col > .pictograph-cell:not(.qr-cell)",
+      ]),
+      steps: measureRegion([".step-cell-wrapper", ".duration-cell"]),
+      qr: measureRegion([".qr-cell-wrapper", ".duration-start-col .qr-cell"]),
+    };
+  });
+  const activeFrontRegions = $derived(
+    handPathCard ? liveFrontRegions : frontRegions
+  );
 
   function measureBack(id: string) {
     const sel = BACK_SELECTORS[id];
@@ -304,7 +386,7 @@
 
   const activeRegion = $derived.by(() => {
     if (!highlight) return null;
-    const front = frontRegions?.[highlight];
+    const front = activeFrontRegions?.[highlight];
     if (front) return { face: "front" as const, ...front };
     const rg = measureBack(highlight);
     return rg ? { face: "back" as const, ...rg } : null;
@@ -331,9 +413,10 @@
   // Touch has no hover, so pointermove never fires on a tap — the tap path
   // below (onclick) handles touch + also works for mouse clicks.
   function frontHit(e: PointerEvent) {
-    if (e.pointerType !== "mouse" || !frontRegions) return;
+    if (e.pointerType !== "mouse" || !activeFrontRegions) return;
     const p = pointerPct(e);
-    for (const [id, rg] of Object.entries(frontRegions)) {
+    for (const [id, rg] of Object.entries(activeFrontRegions)) {
+      if (!rg) continue;
       if (inRect(p.x, p.y, rg)) return onhighlight?.(id);
     }
     onhighlight?.(null);
@@ -359,9 +442,10 @@
     };
   };
   function frontTap(e: MouseEvent) {
-    if (!frontRegions) return;
+    if (!activeFrontRegions) return;
     const p = clickPct(e);
-    for (const [id, rg] of Object.entries(frontRegions)) {
+    for (const [id, rg] of Object.entries(activeFrontRegions)) {
+      if (!rg) continue;
       if (inRect(p.x, p.y, rg))
         return onhighlight?.(highlight === id ? null : id);
     }
@@ -396,7 +480,11 @@
     role={announce ? "status" : undefined}
     aria-label={announce ? "Preparing card preview" : undefined}
   >
-    <div class="anatomy" class:single={face !== "both"}>
+    <div
+      class="anatomy"
+      class:single={face !== "both"}
+      class:hand-path={handPathCard}
+    >
       {#if showFront}
         <figure class="face">
           <div class="card-box preview-skeleton">
@@ -439,7 +527,12 @@
 
 {#if shown}
   <div class="anatomy-stack">
-    <div class="anatomy" class:busy={shuffling} class:single={face !== "both"}>
+    <div
+      class="anatomy"
+      class:busy={shuffling}
+      class:single={face !== "both"}
+      class:hand-path={handPathCard}
+    >
       {#if showFront}
         <figure
           class="face"
@@ -450,13 +543,36 @@
             class="card-box"
             role="presentation"
             class:dimmable={activeRegion?.face === "front"}
+            bind:this={frontBox}
             onpointermove={frontHit}
             onpointerleave={(e) =>
               e.pointerType === "mouse" && onhighlight?.(null)}
             onclick={frontTap}
             oncontextmenu={openCardMenu}
           >
-            {#if shown.frontUrl}
+            {#if handPathCard}
+              <ChoreoCard
+                primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+                sequence={shown.sequence}
+                handPathMode
+                darkMode
+                cardAspectRatio={pokerCardAspectRatio}
+                showWord={false}
+                customTitleText={cardTitle ?? "Hand paths"}
+                showDifficultyLevel={false}
+                includeStartPosition
+                columnCount={2}
+                showNotes={false}
+                showLoopGlyph={false}
+                showQRCode
+                {qrUrl}
+                showStepNumbers
+                forceContain
+                onReady={() => {
+                  void tick().then(() => setPreviewState("ready"));
+                }}
+              />
+            {:else if shown.frontUrl}
               <img src={shown.frontUrl} alt="Front of a real Choreo Card" />
             {:else}
               <div
@@ -615,6 +731,13 @@
     flex: 0 1 340px;
   }
 
+  /* Beginner cards are deliberately sized by their lesson column, rather than
+     the compact shop-preview cap used by the anatomy modal. */
+  .anatomy.hand-path.single .face {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
   .shuffle-bar {
     display: flex;
     justify-content: center;
@@ -692,6 +815,9 @@
        part lights it (the tap path), so coarse pointers get a real pointer
        cursor — the affordance matches the actual interaction. */
     cursor: help;
+  }
+  .card-box :global(.artifact-region-spotlight) {
+    z-index: 2;
   }
   .card-box.preview-skeleton {
     cursor: default;

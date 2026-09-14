@@ -380,7 +380,7 @@
           <!-- Visibility -->
           <div class="option-group">
             <span class="option-label" id="visibility-label">
-              Who can see this in TKA?
+              Who can see this in Flow Arts Composer?
             </span>
             <SegmentedControl
               options={VIDEO_VISIBILITY_OPTIONS}

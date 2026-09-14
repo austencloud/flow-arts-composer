@@ -11,6 +11,7 @@ to three rows. Click opens the expanded overlay.
   import { onMount, getContext } from "svelte";
   import { customizeOverlayWasOpen } from "$lib/shared/create/state/customize-overlay-hmr";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
   import CardHeader from "./shared/CardHeader.svelte";
   import {
     buildCustomizeSummary,
@@ -28,15 +29,16 @@ to three rows. Click opens the expanded overlay.
     level = 3,
     gridMode = GridMode.DIAMOND,
     isFreeformMode = true,
-    turnPattern = null,
-    turnIntensity = 1,
-    sequenceLength = 8,
-    loopPeriod = undefined,
-    onTurnPatternChange = () => {},
     styleBaseline = PRODUCTION_STYLE_BASELINE,
     onConstraintPresetChange,
     onHandPathModeChange,
     onMotionTypeFilterChange,
+    handRelationship = "free",
+    handRelationshipInverted = false,
+    matchHandTurns = false,
+    onHandRelationshipChange = null,
+    onHandRelationshipInvertedChange = null,
+    onMatchHandTurnsChange = null,
     onStartEndChange,
     onResetAll = null,
     color = "linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)",
@@ -51,13 +53,6 @@ to three rows. Click opens the expanded overlay.
     level?: number;
     gridMode?: GridMode;
     isFreeformMode?: boolean;
-    turnPattern?: { left: (number | "fl")[]; right: (number | "fl")[] } | null;
-    turnIntensity?: number;
-    sequenceLength?: number;
-    loopPeriod?: number;
-    onTurnPatternChange?: (
-      lanes: { left: (number | "fl")[]; right: (number | "fl")[] } | null
-    ) => void;
     /**
      * What "untouched" means on THIS surface. The public Composer demo opens
      * on its own recipe, so without this it would report two changes the
@@ -67,6 +62,12 @@ to three rows. Click opens the expanded overlay.
     onConstraintPresetChange: (v: "smooth" | "mixed" | "choppy") => void;
     onHandPathModeChange: (v: "smooth" | "mixed" | "choppy") => void;
     onMotionTypeFilterChange: (v: "no-dash" | "mixed" | "prefer-dash") => void;
+    handRelationship?: HandRelationship;
+    handRelationshipInverted?: boolean;
+    matchHandTurns?: boolean;
+    onHandRelationshipChange?: ((v: HandRelationship) => void) | null;
+    onHandRelationshipInvertedChange?: ((v: boolean) => void) | null;
+    onMatchHandTurnsChange?: ((v: boolean) => void) | null;
     onStartEndChange?: (options: StartEndOptions) => void;
     onResetAll?: (() => void) | null;
     color?: string;
@@ -99,6 +100,9 @@ to three rows. Click opens the expanded overlay.
         constraintPreset,
         handPathMode,
         motionTypeFilter,
+        handRelationship,
+        handRelationshipInverted,
+        matchHandTurns,
         startEndOptions,
         gridMode,
       },
@@ -129,16 +133,17 @@ to three rows. Click opens the expanded overlay.
       level,
       gridMode,
       isFreeformMode,
-      turnPattern,
-      turnIntensity,
-      sequenceLength,
-      loopPeriod,
       styleBaseline,
       onConstraintPresetChange,
       onHandPathModeChange,
       onMotionTypeFilterChange,
+      handRelationship,
+      handRelationshipInverted,
+      matchHandTurns,
+      onHandRelationshipChange,
+      onHandRelationshipInvertedChange,
+      onMatchHandTurnsChange,
       onStartEndChange: onStartEndChange ?? null,
-      onTurnPatternChange,
       onResetAll: onResetAll ?? null,
     });
   }
