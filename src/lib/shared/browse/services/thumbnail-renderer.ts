@@ -33,9 +33,12 @@ export interface ThumbnailRenderResult {
   qrConsistent: boolean;
 }
 
-// The QR is drawn scaled into a single grid cell; 256px is crisp at any card
-// size the gallery uses and cheap to rasterize.
+// Non-gallery callers can request raster artwork at 256px for a crisp card
+// cell without conflating that artwork with gallery's shared preparation.
 const QR_BITMAP_SIZE = 256;
+// Prepared gallery artwork is keyed at 200px. SVG remains crisp when the
+// composer scales it into a card cell, and later prepared-only reads find it.
+const GALLERY_PREPARED_QR_SIZE = 200;
 
 export interface RenderOptions {
   /** Beat size in pixels (default: 240) */
@@ -159,7 +162,9 @@ export class ThumbnailRenderer {
                 )
               : await generator.generateAsImage(
                   sequenceWithStartPos,
-                  QR_BITMAP_SIZE,
+                  input.variant === "gallery"
+                    ? GALLERY_PREPARED_QR_SIZE
+                    : QR_BITMAP_SIZE,
                   qrOptions
                 );
           if (!qrImage) {

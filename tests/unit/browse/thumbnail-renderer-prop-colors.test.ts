@@ -70,4 +70,35 @@ describe("ThumbnailRenderer primary prop colors", () => {
       null
     );
   });
+
+  it("generates gallery QR artwork at the prepared-cache canonical size", async () => {
+    const compose = vi.fn(async () => new Blob(["x"], { type: "image/webp" }));
+    const generateAsImage = vi.fn(async () => new Image());
+    const createImageBitmap = vi.fn(async () => ({ close: vi.fn() }));
+    vi.stubGlobal("createImageBitmap", createImageBitmap);
+
+    const renderer = new ThumbnailRenderer(
+      { compose } as never,
+      { deriveFromFirstStep: vi.fn() } as never,
+      null,
+      { detectLOOPType: vi.fn() } as never,
+      () => ({ generateAsImage }) as never
+    );
+
+    await renderer.render(sequence, {
+      ...input,
+      visibility: { showQRCode: true, showMandala: true },
+    });
+
+    expect(generateAsImage).toHaveBeenCalledWith(
+      sequence,
+      200,
+      expect.objectContaining({
+        leftPropType: PropType.STAFF,
+        rightPropType: PropType.STAFF,
+      })
+    );
+    expect(createImageBitmap).toHaveBeenCalledOnce();
+    vi.unstubAllGlobals();
+  });
 });

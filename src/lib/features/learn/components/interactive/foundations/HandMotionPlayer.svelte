@@ -9,10 +9,12 @@
     sequence,
     ariaLabel,
     neutralMarkers = false,
+    propDisplay = "hands",
     primaryPropColors,
     showElementalGlyph = false,
     interactive = true,
     playbackAllowed = true,
+    singlePlay = false,
     externalPlaying = null,
     externalStep = null,
     initialStep = null,
@@ -29,10 +31,14 @@
     ariaLabel: string;
     /** Timing/direction examples compare motions, not a particular body part. */
     neutralMarkers?: boolean;
+    /** Public explainers can switch between the hand path and the authored prop. */
+    propDisplay?: "hands" | "staff";
     primaryPropColors?: ViewerCustomColorPair;
     showElementalGlyph?: boolean;
     interactive?: boolean;
     playbackAllowed?: boolean;
+    /** Rest at the end when a turn adjustment no longer closes the prop loop. */
+    singlePlay?: boolean;
     externalPlaying?: boolean | null;
     externalStep?: number | null;
     initialStep?: number | null;
@@ -77,14 +83,23 @@
     beatIndicators={false}
     hideTkaGlyph
     hideStepNumbers
-    leftPropType={neutralMarkers ? "motion_point" : "hand"}
-    rightPropType={neutralMarkers ? "motion_point_inner" : "hand"}
+    leftPropType={neutralMarkers
+      ? "motion_point"
+      : propDisplay === "staff"
+        ? "staff"
+        : "hand"}
+    rightPropType={neutralMarkers
+      ? "motion_point_inner"
+      : propDisplay === "staff"
+        ? "staff"
+        : "hand"}
     visibilityManagerOverride={visibility}
     hoverHint={interactive ? "badge" : "none"}
     glyphFrame="stage"
     backgroundAlpha={0}
     {interactive}
     {playbackAllowed}
+    {singlePlay}
     resumeWhenPlaybackAllowed
     {externalPlaying}
     {externalStep}

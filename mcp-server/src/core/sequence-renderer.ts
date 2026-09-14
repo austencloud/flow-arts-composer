@@ -2,11 +2,11 @@
  * Sequence Renderer for MCP Server
  *
  * Composites multiple pictographs into a single "choreo card" image.
- * Matches the app's ImageComposer output with:
- * - Header with word text and difficulty badge (Georgia Bold)
- * - Footer with username, notes, and birthday
- * - Step numbers overlaid on pictographs (top-left corner)
- * - Smart cell borders between occupied cells
+ * Uses the app's shared composition primitives for:
+ * - Canonical TKA glyph headers and difficulty badges
+ * - Footer styling
+ * - Step labels overlaid on pictographs
+ * - Smart cell borders and layout geometry
  */
 
 import {
@@ -32,7 +32,11 @@ import {
   type UserExportInfo,
   type LetterStyle,
 } from "./text-renderer.js";
-import { renderStepNumber } from "@tka/render-composition";
+import {
+  getLayout,
+  renderSmartBorders,
+  renderStepNumber,
+} from "@tka/render-composition";
 
 // Re-export LOOPComponent for consumers
 export { LOOPComponent };
@@ -122,7 +126,8 @@ export function resolveRenderedTurns(
   const allocationIndex = step.stepNumber - 1;
   return {
     left: step.leftMotion.turns ?? turnAllocation?.left[allocationIndex] ?? 0,
-    right: step.rightMotion.turns ?? turnAllocation?.right[allocationIndex] ?? 0,
+    right:
+      step.rightMotion.turns ?? turnAllocation?.right[allocationIndex] ?? 0,
   };
 }
 
@@ -320,16 +325,19 @@ export async function renderSequenceToImage(
     }
   }
 
-  // Draw smart cell borders between occupied cells
-  drawSmartCellBorders(
-    ctx,
+  const occupiedCells = new Set<string>();
+  for (let index = 0; index < letterSteps.length; index++) {
+    const { row, col } = calculateStepPosition(index, columns);
+    occupiedCells.add(`${col},${row}`);
+  }
+  renderSmartBorders(ctx as unknown as globalThis.CanvasRenderingContext2D, {
     columns,
     rows,
-    opts.cellSize,
-    letterSteps.length,
-    gridStartY,
-    opts.darkMode
-  );
+    cellSize: opts.cellSize,
+    offsetY: gridStartY,
+    occupiedCells,
+    darkMode: opts.darkMode,
+  });
 
   // Draw word header if enabled
   if (hasHeader && headerHeight > 0) {
@@ -443,24 +451,8 @@ function calculateLayout(
     };
   }
 
-  // Grid layout with start position offset
-  // We need to figure out how many columns based on letter count
   const letterCount = stepCount - 1; // Exclude start position
-
-  // Calculate step columns (columns after the start position)
-  // 32+ steps use 8 columns for wider, more readable layouts
-  const stepColumns =
-    letterCount >= 31 ? 8 : Math.max(1, Math.ceil(Math.sqrt(letterCount)));
-  const totalColumns = stepColumns + 1; // +1 for start position column
-
-  // Calculate rows needed
-  // Row 1 has stepColumns steps
-  // Subsequent rows each have stepColumns steps
-  const stepsInFirstRow = Math.min(letterCount, stepColumns);
-  const remainingSteps = letterCount - stepsInFirstRow;
-  const additionalRows =
-    remainingSteps > 0 ? Math.ceil(remainingSteps / stepColumns) : 0;
-  const rows = 1 + additionalRows;
+  const [totalColumns, rows] = getLayout(letterCount, "column");
 
   const width = totalColumns * opts.cellSize;
   const height = headerHeight + rows * opts.cellSize + footerHeight;
@@ -474,57 +466,4 @@ function calculateLayout(
     footerHeight,
     gridStartY: headerHeight,
   };
-}
-
-/**
- * Draw cell borders only between occupied cells
- * Matches app's smart grid border logic
- */
-function drawSmartCellBorders(
-  ctx: CanvasRenderingContext2D,
-  columns: number,
-  rows: number,
-  cellSize: number,
-  stepCount: number,
-  gridStartY: number,
-  darkMode: boolean
-): void {
-  ctx.strokeStyle = darkMode ? "rgba(255, 255, 255, 0.15)" : "#e0e0e0";
-  ctx.lineWidth = 1;
-
-  // Create a set of occupied cells using the offset layout
-  const occupied = new Set<string>();
-  for (let i = 0; i < stepCount; i++) {
-    const { row, col } = calculateStepPosition(i, columns);
-    occupied.add(`${col},${row}`);
-  }
-
-  const isOccupied = (col: number, row: number): boolean =>
-    occupied.has(`${col},${row}`);
-
-  // Draw vertical lines between horizontally adjacent occupied cells
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < columns - 1; col++) {
-      if (isOccupied(col, row) && isOccupied(col + 1, row)) {
-        const x = (col + 1) * cellSize;
-        ctx.beginPath();
-        ctx.moveTo(x, gridStartY + row * cellSize);
-        ctx.lineTo(x, gridStartY + (row + 1) * cellSize);
-        ctx.stroke();
-      }
-    }
-  }
-
-  // Draw horizontal lines between vertically adjacent occupied cells
-  for (let col = 0; col < columns; col++) {
-    for (let row = 0; row < rows - 1; row++) {
-      if (isOccupied(col, row) && isOccupied(col, row + 1)) {
-        const y = gridStartY + (row + 1) * cellSize;
-        ctx.beginPath();
-        ctx.moveTo(col * cellSize, y);
-        ctx.lineTo((col + 1) * cellSize, y);
-        ctx.stroke();
-      }
-    }
-  }
 }

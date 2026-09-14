@@ -14,6 +14,62 @@ function sequenceFor(slug: string) {
 }
 
 describe("timing-direction playback commands", () => {
+  it("rests an open prop loop at its end and replays from the beginning", () => {
+    const state = createTimingDirectionState(
+      "together-time-opposite-direction"
+    );
+    const sequence = {
+      ...sequenceFor("together-time-opposite-direction"),
+      id: "open-loop",
+      metadata: { turnLoopClosed: false },
+    };
+    state.selectExample(sequence, 1);
+    state.followStep(sequence.steps.length + 1, sequence.id);
+    expect(state.playing).toBe(false);
+    state.togglePlayback();
+    expect(state.playing).toBe(true);
+    expect(state.step).toBe(0);
+    expect(state.pendingSeek.step).toBe(0);
+  });
+
+  it("switches prop display without resetting a selected sequence or its fractional playhead", () => {
+    const state = createTimingDirectionState(
+      "together-time-opposite-direction"
+    );
+    const sequence = sequenceFor("together-time-opposite-direction");
+    state.selectExample(sequence, 1.625);
+    const version = state.pendingSeek.version;
+    expect(state.propDisplay).toBe("staff");
+    state.propDisplay = "hands";
+    expect(state.sequence).toBe(sequence);
+    expect(state.step).toBe(1.625);
+    expect(state.pendingSeek.version).toBe(version);
+    state.propDisplay = "staff";
+    expect(state.step).toBe(1.625);
+    state.select("split-time-same-direction");
+    expect(state.propDisplay).toBe("hands");
+  });
+
+  it("seeks within the active sequence and ignores frames from a retired sequence", () => {
+    const state = createTimingDirectionState(
+      "together-time-opposite-direction"
+    );
+    const sequence = {
+      ...sequenceFor("together-time-opposite-direction"),
+      id: "selected-loop",
+    };
+    const seek = vi.fn();
+    state.registerSeek(seek);
+    state.selectExample(sequence, 0);
+    state.seekStep(2);
+    state.runPendingSeek();
+    expect(seek).toHaveBeenLastCalledWith(2);
+    state.followStep(3.2, "retired-loop");
+    expect(state.step).toBe(2);
+    state.followStep(2.25, "selected-loop");
+    expect(state.step).toBe(2.25);
+  });
+
   it("publishes each selected example as one explicit seek command", () => {
     const state = createTimingDirectionState(
       "together-time-opposite-direction"
