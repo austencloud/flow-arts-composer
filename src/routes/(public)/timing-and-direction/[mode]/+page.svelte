@@ -473,9 +473,7 @@
             <h2>
               {selectedLoop?.word ?? "Four-count loop"}
               {#if selectedTimingDirectionLabel}
-                <span class="path-mode"
-                  >All six · Hand paths: {selectedTimingDirectionLabel}</span
-                >
+                <span class="path-mode">{selectedTimingDirectionLabel}</span>
               {/if}
             </h2>
             <div class="display-switch">
@@ -614,6 +612,7 @@
                           </div>
                         </div>
                         <div class="turn-status" aria-live="polite">
+                          <p>Applies to all six sequences.</p>
                           {#if adjustmentError}
                             <p>{adjustmentError}</p>
                           {:else if !turnLoopClosed}
@@ -683,7 +682,8 @@
                         onReset={resetAllLoops}
                       />
                       <p class="action-scope">
-                        Reset restores the original six sequences.
+                        Applies to all six sequences. Reset restores the
+                        originals.
                       </p>
                       {#if adjustmentError}
                         <p class="action-scope" aria-live="polite">
@@ -976,7 +976,7 @@
   }
   .to-stage .demo-toolbar {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
     gap: 0.5rem;
     min-height: 48px;
     padding-bottom: 0;
@@ -984,13 +984,18 @@
   }
   .to-stage .demo-toolbar h2 {
     margin: 0;
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
   }
   .path-mode {
     display: block;
-    margin-top: 0.125rem;
     color: var(--theme-text-dim);
     font-size: 0.875rem;
     font-weight: 500;
+    white-space: nowrap;
   }
   .turn-editor-toggle.unavailable {
     visibility: hidden;
