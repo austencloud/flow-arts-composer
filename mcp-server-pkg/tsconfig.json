@@ -11,12 +11,14 @@
     "declaration": true,
     "declarationDir": "./dist",
     "noEmit": false,
-    "rootDir": ".",
+    "rootDir": "..",
     "paths": {
-      "@tka/render-core": ["../packages/render-core/dist/index.d.ts"],
-      "@tka/sequence-engine": ["../packages/sequence-engine/dist/index.d.ts"],
-      "@tka/sequence-engine/loop": ["../packages/sequence-engine/dist/loop/index.d.ts"],
-      "@tka/tka-types": ["../packages/tka-types/dist/index.d.ts"]
+      "@tka/render-composition": ["../packages/render-composition/src/index.ts"],
+      "@tka/domain": ["../packages/domain/src/index.ts"],
+      "@tka/render-core": ["../packages/render-core/src/index.ts"],
+      "@tka/sequence-engine": ["../packages/sequence-engine/src/index.ts"],
+      "@tka/sequence-engine/loop": ["../packages/sequence-engine/src/loop/index.ts"],
+      "@tka/tka-types": ["../packages/tka-types/src/index.ts"]
     }
   },
   "include": ["index.ts", "src/**/*.ts", "vendor/sequence-engine/**/*.ts"],

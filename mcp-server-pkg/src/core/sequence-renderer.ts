@@ -30,100 +30,32 @@ async function getCanvas() {
   }
   return canvasModule;
 }
-type Canvas = import("canvas").Canvas;
-type CanvasRenderingContext2D = import("canvas").CanvasRenderingContext2D;
 import { detectReversals, type SequenceStep } from "./sequence-builder.js";
 import {
-  renderWordHeader,
-  renderUserInfo,
-  calculateHeaderHeight,
   calculateFooterHeight,
-  renderLOOPGlyph,
-  LOOPComponent,
-  type UserExportInfo,
+  calculateHeaderHeight,
+  getLayout,
+  renderFooter,
+  renderHeader,
+  renderSmartBorders,
+  renderStepNumber,
+  type LOOPComponentId,
   type LetterStyle,
-} from "./text-renderer.js";
+} from "@tka/render-composition";
+import { loadTkaWordGlyphs } from "./tka-glyph-loader.js";
 
 // Re-export LOOPComponent for consumers
-export { LOOPComponent };
+export const LOOPComponent = {
+  ROTATED: "rotated",
+  MIRRORED: "mirrored",
+  FLIPPED: "flipped",
+  SWAPPED: "swapped",
+  INVERTED: "inverted",
+  REWOUND: "rewound",
+} as const;
+export type LOOPComponent = LOOPComponentId;
 import { calculateDifficultyLevel } from "./difficulty-calculator.js";
 
-/**
- * Layout table for start-column grid mode.
- * Matches WITH_START_COLUMN from packages/render-composition/src/layout-tables.ts.
- * Key = beat count (not including start position), value = [totalColumns, rows].
- */
-const START_COLUMN_LAYOUTS: Record<number, [number, number]> = {
-  0: [1, 1],
-  1: [2, 1],
-  2: [2, 2],
-  3: [2, 3],
-  4: [3, 2],
-  5: [3, 3],
-  6: [4, 2],
-  7: [3, 4],
-  8: [3, 4],
-  9: [4, 3],
-  10: [3, 5],
-  11: [4, 4],
-  12: [4, 4],
-  13: [4, 5],
-  14: [4, 5],
-  15: [4, 5],
-  16: [5, 4],
-  17: [5, 5],
-  18: [5, 5],
-  19: [5, 5],
-  20: [5, 5],
-  21: [5, 6],
-  22: [5, 6],
-  23: [5, 6],
-  24: [5, 6],
-  25: [5, 7],
-  26: [5, 7],
-  27: [5, 7],
-  28: [5, 7],
-  29: [5, 8],
-  30: [5, 8],
-  31: [5, 8],
-  32: [5, 8],
-  33: [5, 9],
-  34: [5, 9],
-  35: [5, 9],
-  36: [5, 9],
-  37: [5, 10],
-  38: [5, 10],
-  39: [5, 10],
-  40: [5, 10],
-  41: [5, 11],
-  42: [5, 11],
-  43: [5, 11],
-  44: [5, 11],
-  45: [5, 12],
-  46: [5, 12],
-  47: [5, 12],
-  48: [5, 12],
-  49: [5, 13],
-  50: [5, 13],
-  51: [5, 13],
-  52: [5, 13],
-  53: [5, 14],
-  54: [5, 14],
-  55: [5, 14],
-  56: [5, 14],
-  57: [5, 15],
-  58: [5, 15],
-  59: [5, 15],
-  60: [5, 15],
-  61: [5, 16],
-  62: [5, 16],
-  63: [5, 16],
-  64: [5, 16],
-};
-
-function getStartColumnLayout(stepCount: number): [number, number] {
-  return START_COLUMN_LAYOUTS[stepCount] ?? START_COLUMN_LAYOUTS[64] ?? [5, 16];
-}
 
 /**
  * Turn allocation per step (left and right get independent values)
@@ -314,8 +246,8 @@ export async function renderSequenceToImage(
 
       // Draw step number overlaid on pictograph (top-left corner)
       if (opts.showStepNumbers) {
-        drawOverlaidStepNumber(
-          ctx,
+        renderStepNumber(
+          ctx as unknown as CanvasRenderingContext2D,
           step.stepNumber,
           x,
           y,
@@ -335,15 +267,19 @@ export async function renderSequenceToImage(
   }
 
   // Draw smart cell borders between occupied cells
-  drawSmartCellBorders(
-    ctx,
+  const occupiedCells = new Set<string>();
+  for (let i = 0; i < letterSteps.length; i++) {
+    const { row, col } = calculateStepPosition(i, columns);
+    occupiedCells.add(`${col},${row}`);
+  }
+  renderSmartBorders(ctx as unknown as CanvasRenderingContext2D, {
     columns,
     rows,
-    opts.cellSize,
-    letterSteps.length,
-    gridStartY,
-    opts.darkMode
-  );
+    cellSize: opts.cellSize,
+    offsetY: gridStartY,
+    occupiedCells,
+    darkMode: opts.darkMode,
+  });
 
   // Draw word header if enabled
   if (hasHeader && headerHeight > 0) {
@@ -368,33 +304,42 @@ export async function renderSequenceToImage(
           .filter((s) => !s.isBridge)
           .map((s) => ({
             letter: s.letter,
-            isBridge: false,
-            isDerived: false,
+            dimmed: false,
           }))
       : [];
 
-    renderWordHeader(
-      ctx,
-      opts.showWord ? headerWord : "",
-      width,
+    const { loadImage } = await getCanvas();
+    const glyphImages = opts.showWord
+      ? await loadTkaWordGlyphs(
+          headerWord,
+          async (source) => (await loadImage(source)) as unknown as CanvasImageSource,
+          opts.darkMode
+        )
+      : undefined;
+    renderHeader(ctx as unknown as CanvasRenderingContext2D, {
+      canvasWidth: width,
       headerHeight,
+      word: opts.showWord ? headerWord : "",
       difficultyLevel,
-      opts.showDifficulty ?? true,
-      opts.darkMode,
-      letterStyles.length > 0 ? letterStyles : undefined,
-      opts.loopComponents // Pass LOOP components for glyph
-    );
+      showDifficultyBadge: opts.showDifficulty ?? true,
+      darkMode: opts.darkMode,
+      letterStyles: letterStyles.length > 0 ? letterStyles : undefined,
+      loopComponents: opts.loopComponents ? new Set(opts.loopComponents) : undefined,
+      glyphImages,
+      glyphImagesAreThemeColored: !!glyphImages?.size,
+    });
   }
 
-  // Draw user info footer (always shown with defaults)
+  // The current app footer intentionally carries only its shared center label.
+  // userName and birthday remain accepted above for tool-call compatibility.
   if (hasFooter && footerHeight > 0) {
-    const userInfo: UserExportInfo = {
-      userName: opts.userName,
+    renderFooter(ctx as unknown as CanvasRenderingContext2D, {
+      canvasWidth: width,
+      canvasHeight: height,
+      footerHeight,
       notes: opts.notes,
-      birthday: opts.birthday,
-      word, // Pass word for contextual captions
-    };
-    renderUserInfo(ctx, userInfo, width, height, footerHeight, opts.darkMode);
+      darkMode: opts.darkMode,
+    });
   }
 
   return canvas.toBuffer("image/png");
@@ -475,7 +420,7 @@ function calculateLayout(
 
   // Grid layout using the same layout table as the app
   const letterCount = stepCount - 1; // Exclude start position
-  const [totalColumns, rows] = getStartColumnLayout(letterCount);
+  const [totalColumns, rows] = getLayout(letterCount, "column");
 
   const width = totalColumns * opts.cellSize;
   const height = headerHeight + rows * opts.cellSize + footerHeight;
@@ -489,119 +434,4 @@ function calculateLayout(
     footerHeight,
     gridStartY: headerHeight,
   };
-}
-
-/**
- * Matches app's StepNumberRenderer style
- */
-function drawOverlaidStepNumber(
-  ctx: CanvasRenderingContext2D,
-  stepNumber: number,
-  x: number,
-  y: number,
-  cellSize: number,
-  darkMode: boolean
-): void {
-  // Calculate font size proportional to cell size (10% of cell size)
-  const fontSize = Math.max(12, Math.floor(cellSize * 0.1));
-  const padding = Math.floor(cellSize * 0.02);
-
-  // Step number text - use "start" for step 0, otherwise the number
-  const text = stepNumber === 0 ? "start" : stepNumber.toString();
-
-  // Set font for measurement
-  ctx.font = `bold ${fontSize}px Georgia, Times New Roman, serif`;
-  const metrics = ctx.measureText(text);
-  const textWidth = metrics.width;
-  const textHeight = fontSize;
-
-  // Calculate badge position (top-left corner with small margin)
-  const badgeX = x + padding;
-  const badgeY = y + padding;
-  const badgePadding = Math.floor(fontSize * 0.3);
-  const badgeWidth = textWidth + badgePadding * 2;
-  const badgeHeight = textHeight + badgePadding;
-
-  // Draw semi-transparent background circle/rounded rect
-  ctx.fillStyle = darkMode ? "rgba(0, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.85)";
-  ctx.beginPath();
-  const cornerRadius = badgeHeight / 2;
-  // Rounded rectangle
-  ctx.moveTo(badgeX + cornerRadius, badgeY);
-  ctx.lineTo(badgeX + badgeWidth - cornerRadius, badgeY);
-  ctx.arc(
-    badgeX + badgeWidth - cornerRadius,
-    badgeY + cornerRadius,
-    cornerRadius,
-    -Math.PI / 2,
-    Math.PI / 2
-  );
-  ctx.lineTo(badgeX + cornerRadius, badgeY + badgeHeight);
-  ctx.arc(
-    badgeX + cornerRadius,
-    badgeY + cornerRadius,
-    cornerRadius,
-    Math.PI / 2,
-    -Math.PI / 2
-  );
-  ctx.closePath();
-  ctx.fill();
-
-  // Draw text
-  ctx.fillStyle = darkMode ? "#ffffff" : "#1f2937";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, badgeX + badgeWidth / 2, badgeY + badgeHeight / 2);
-}
-
-/**
- * Matches app's smart grid border logic
- */
-function drawSmartCellBorders(
-  ctx: CanvasRenderingContext2D,
-  columns: number,
-  rows: number,
-  cellSize: number,
-  stepCount: number,
-  gridStartY: number,
-  darkMode: boolean
-): void {
-  ctx.strokeStyle = darkMode ? "rgba(255, 255, 255, 0.15)" : "#e0e0e0";
-  ctx.lineWidth = 1;
-
-  // Create a set of occupied cells using the offset layout
-  const occupied = new Set<string>();
-  for (let i = 0; i < stepCount; i++) {
-    const { row, col } = calculateStepPosition(i, columns);
-    occupied.add(`${col},${row}`);
-  }
-
-  const isOccupied = (col: number, row: number): boolean =>
-    occupied.has(`${col},${row}`);
-
-  // Draw vertical lines between horizontally adjacent occupied cells
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < columns - 1; col++) {
-      if (isOccupied(col, row) && isOccupied(col + 1, row)) {
-        const x = (col + 1) * cellSize;
-        ctx.beginPath();
-        ctx.moveTo(x, gridStartY + row * cellSize);
-        ctx.lineTo(x, gridStartY + (row + 1) * cellSize);
-        ctx.stroke();
-      }
-    }
-  }
-
-  // Draw horizontal lines between vertically adjacent occupied cells
-  for (let col = 0; col < columns; col++) {
-    for (let row = 0; row < rows - 1; row++) {
-      if (isOccupied(col, row) && isOccupied(col, row + 1)) {
-        const y = gridStartY + (row + 1) * cellSize;
-        ctx.beginPath();
-        ctx.moveTo(col * cellSize, y);
-        ctx.lineTo((col + 1) * cellSize, y);
-        ctx.stroke();
-      }
-    }
-  }
 }
