@@ -52,6 +52,10 @@ Usage:
   import type { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import {
+    HAND_COLOR_KEY,
+    calculateHandColorKeyLayout,
+  } from "@tka/render-core";
+  import {
     type ElementalType,
     HandSide,
     type HandSide as HandSideValue,
@@ -86,6 +90,7 @@ Usage:
     // Beat number display
     stepNumber = null,
     showStepNumber = false,
+    showHandColorKey = undefined,
     previewMode = false,
     // Keep overlays mounted while hidden so opacity fades can play (live DOM only).
     // Export omits this so hidden overlays still hard-unmount for raw SVG capture.
@@ -93,6 +98,7 @@ Usage:
     animateContent = false,
     // Grid mode override (if provided, takes precedence over calculated mode)
     gridModeOverride = null,
+    gridRotation = null,
     // Show only one hand's prop/arrow (null = show both)
     visibleHand = null,
     // Enable arrow selection for adjustment (admin feature)
@@ -136,6 +142,10 @@ Usage:
     duration = 1,
     showDuration = true,
     showPathShape = true,
+    // Pose only: keep the grid and props (drawn at their end locations) and
+    // fade the arrows and every beat glyph out. Used by the Choose Start
+    // picker so a tile reads as the pose after its beat rather than the beat.
+    poseOnly = false,
     // Fires when the grid SVG has loaded (or errored). The grid loads asynchronously
     // and independently of the prepared arrow/prop data, so an offscreen/export
     // parent uses this to gate its readiness signal (otherwise a cold grid cache
@@ -170,12 +180,15 @@ Usage:
     activeLocations?: GridLocation[];
     stepNumber?: number | null;
     showStepNumber?: boolean;
+    /** Start-cell key shares the pictograph viewBox and scales with its glyphs. */
+    showHandColorKey?: boolean;
     previewMode?: boolean;
     /** Keep overlays mounted while hidden so opacity fades play (live DOM, not export) */
     animateVisibility?: boolean;
     /** Animate live prop/glyph presence without replacing the grid. */
     animateContent?: boolean;
     gridModeOverride?: GridMode | null;
+    gridRotation?: number | null;
     visibleHand?: HandSideValue | null;
     arrowsClickable?: boolean;
     /** Renderable option: hide arrows entirely (props + grid still render). Default true. */
@@ -213,6 +226,8 @@ Usage:
     /** Card annotations are composed by the card's existing overlay layer. */
     showDuration?: boolean;
     showPathShape?: boolean;
+    /** Show only grid and props; arrows and beat glyphs fade out (Choose Start). */
+    poseOnly?: boolean;
     /** Fires when the grid finishes loading (or errors). Used by export readiness gating. */
     onGridReady?: () => void;
   }>();
@@ -227,12 +242,14 @@ Usage:
   const rightGlyphOffset = $derived(
     glyphLayout === "edges" ? expandedWidth - BASE_SIZE : coreContentOffset
   );
-  const tkaOffset = $derived(glyphLayout === "card-custom" ? coreContentOffset : 0);
+  const tkaOffset = $derived(
+    glyphLayout === "card-custom" ? coreContentOffset : 0
+  );
 
   // Derived beat context
   const isStartPosition = $derived(stepNumber === 0);
   const shouldShowBeatNumber = $derived(
-    showStepNumber && stepNumber !== null && !isStartPosition
+    showStepNumber && stepNumber !== null && !isStartPosition && !poseOnly
   );
 
   // Derive grid mode from override, pre-calculated, or motions
@@ -268,12 +285,13 @@ Usage:
   const arrowMirroring = $derived(pictograph._prepared?.arrowMirroring || {});
   const propPositions = $derived(pictograph._prepared?.propPositions || {});
   const propAssets = $derived(pictograph._prepared?.propAssets || {});
-  const effectiveArrowOpacity = $derived(
-    Math.min(1, Math.max(0, arrowOpacity))
-  );
-
   // Opacity for dimmed (not hidden) motions - visible enough to see, clearly de-emphasized
   const DIMMED_OPACITY = 0.2;
+
+  // Pose-only hides the motion entirely so only the pose reads.
+  const effectiveArrowOpacity = $derived(
+    poseOnly ? 0 : Math.min(1, Math.max(0, arrowOpacity))
+  );
 
   // Motions to render (filtered by visibleHand only; visibility controls opacity, not presence)
   const motions = $derived.by(() => {
@@ -444,6 +462,16 @@ Usage:
   const effectiveRightColor = $derived(
     rightColorOverride ?? getSettings().primaryPropColors?.right
   );
+
+  // Start-position hand colour key: shared geometry with the MCP renderer so the
+  // viewer, card back and MCP images bake in the same legend. Hidden or absent
+  // hands drop out of the key rather than advertising a colour that is not there.
+  const handColorKey = $derived(
+    calculateHandColorKeyLayout(
+      leftMotionVisible && isVisibleMotion(pictograph.motions?.left),
+      rightMotionVisible && isVisibleMotion(pictograph.motions?.right)
+    )
+  );
 </script>
 
 <div class="pictograph-renderer">
@@ -480,6 +508,7 @@ Usage:
       {#if showGrid || previewMode || animateVisibility}
         <GridSvg
           layer={gridPointsOnTop ? "base" : "all"}
+          rotationOverride={gridRotation}
           {gridMode}
           {showNonRadialPoints}
           {handPointVisibility}
@@ -596,6 +625,7 @@ Usage:
       {#if gridPointsOnTop && showGrid}
         <GridSvg
           layer="points"
+          rotationOverride={gridRotation}
           {gridMode}
           {showNonRadialPoints}
           {handPointVisibility}
@@ -617,7 +647,7 @@ Usage:
         <TKAGlyph
           letter={glyph.letter}
           pictographData={glyph.data}
-          visible={showTKA}
+          visible={showTKA && !poseOnly}
           {previewMode}
           {animateVisibility}
           {darkMode}
@@ -635,7 +665,7 @@ Usage:
         {turnsTuple}
         letter={pictograph.letter}
         pictographData={pictograph}
-        visible={showTKA}
+        visible={showTKA && !poseOnly}
         {previewMode}
         {animateVisibility}
         standalone={false}
@@ -650,7 +680,7 @@ Usage:
           direction={parsedDirection}
           letter={pictograph.letter}
           {letterDimensions}
-          visible={showTKA}
+          visible={showTKA && !poseOnly}
           {previewMode}
           {animateVisibility}
           {darkMode}
@@ -669,14 +699,46 @@ Usage:
     />
 
     <!-- Reversal indicators -->
-    <g transform="translate({glyphLayout === 'edges' ? 0 : coreContentOffset}, 0)">
+    {#if (showHandColorKey ?? isStartPosition) && hasValidData && handColorKey.entries.length > 0}
+      <g
+        class="hand-color-key"
+        transform="translate({expandedWidth / 2}, 0)"
+        aria-label="Left and right prop colors"
+        font-family={HAND_COLOR_KEY.FONT_FAMILY}
+        font-size={HAND_COLOR_KEY.FONT_SIZE}
+        font-weight={HAND_COLOR_KEY.FONT_WEIGHT}
+        fill={darkMode === undefined
+          ? "var(--dm-text-color)"
+          : darkMode
+            ? "#ffffff"
+            : "#231f20"}
+      >
+        {#each handColorKey.entries as entry (entry.hand)}
+          <circle
+            cx={entry.swatchX}
+            cy={handColorKey.centerY}
+            r={handColorKey.swatchRadius}
+            fill={entry.hand === HandSide.LEFT
+              ? (effectiveLeftColor ?? "var(--dm-motion-blue)")
+              : (effectiveRightColor ?? "var(--dm-motion-red)")}
+          />
+          <text x={entry.labelX} y={handColorKey.baselineY}>{entry.label}</text>
+        {/each}
+      </g>
+    {/if}
+
+    <g
+      transform="translate({glyphLayout === 'edges'
+        ? 0
+        : coreContentOffset}, 0)"
+    >
       <ReversalIndicators
         leftColorOverride={effectiveLeftColor}
         rightColorOverride={effectiveRightColor}
         {leftReversal}
         {rightReversal}
         {hasValidData}
-        visible={showReversals}
+        visible={showReversals && !poseOnly}
         {previewMode}
         onToggle={onToggleReversals}
         {leftMotionVisible}
@@ -690,7 +752,7 @@ Usage:
         elementalType={tndInfo.elementalType}
         letter={pictograph.letter}
         {hasValidData}
-        visible={showElemental || showTnD}
+        visible={(showElemental || showTnD) && !poseOnly}
         {previewMode}
         {animateVisibility}
         onToggle={onToggleElemental ?? onToggleTnD}
@@ -706,7 +768,7 @@ Usage:
         <ElementalGlyph
           elementalType={propElementalType}
           {hasValidData}
-          visible={showElemental || showTnD}
+          visible={(showElemental || showTnD) && !poseOnly}
           {previewMode}
           {animateVisibility}
           onToggle={onToggleElemental ?? onToggleTnD}
@@ -724,7 +786,7 @@ Usage:
         endPosition={pictograph.endPosition}
         letter={pictograph.letter}
         {hasValidData}
-        visible={showPositions}
+        visible={showPositions && !poseOnly}
         {previewMode}
         {animateVisibility}
         onToggle={onTogglePositions}
@@ -735,21 +797,27 @@ Usage:
     <!-- Duration glyph (shows "2×", "0.5×", etc. when duration != 1) -->
     <!-- In timeline mode, use widthMultiplier as the live duration (reflects drag preview) -->
     {#if showDuration}
-      <DurationGlyph
-        duration={isExpanded ? widthMultiplier : duration}
-        {hasValidData}
-        {darkMode}
-        centerX={expandedWidth / 2}
-      />
+      <g class="beat-layer" class:pose-only={poseOnly}>
+        <DurationGlyph
+          duration={isExpanded ? widthMultiplier : duration}
+          {hasValidData}
+          {darkMode}
+          centerX={expandedWidth / 2}
+        />
+      </g>
     {/if}
 
     <!-- Path shape accidental glyph (top center, only when per-step override set) -->
     {#if showPathShape}
-      <PathShapeGlyph
-        leftMotion={pictograph.motions?.left}
-        rightMotion={pictograph.motions?.right}
-        {darkMode}
-      />
+      <g class="beat-layer" class:pose-only={poseOnly}>
+        <PathShapeGlyph
+          leftColorOverride={effectiveLeftColor}
+          rightColorOverride={effectiveRightColor}
+          leftMotion={pictograph.motions?.left}
+          rightMotion={pictograph.motions?.right}
+          {darkMode}
+        />
+      </g>
     {/if}
   </svg>
 </div>
@@ -763,6 +831,26 @@ Usage:
     transition: border-color var(--duration-fast) ease-out;
     /* Allow pointer events to pass through to interactive SVG elements */
     pointer-events: none;
+  }
+
+  /* Pose-only transitions for the layers that have no visibility transition
+     of their own. The glyph components fade themselves via their `visible`
+     prop; the arrows group fades through its opacity attribute, and the
+     duration/path-shape layers fade here. */
+  .pictograph-arrows,
+  .beat-layer {
+    transition: opacity var(--duration-fast, 150ms) ease-out;
+  }
+
+  .beat-layer.pose-only {
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pictograph-arrows,
+    .beat-layer {
+      transition: none;
+    }
   }
 
   /* Subtle white outline in dark mode to distinguish boundaries.

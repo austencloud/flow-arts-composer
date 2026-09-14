@@ -15,7 +15,10 @@
 
 import { untrack } from "svelte";
 import { cubicInOut } from "svelte/easing";
-import type { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type {
+  GridLocation,
+  GridMode,
+} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   buildPlacementTransition,
   type PlacementTransition,
@@ -55,11 +58,12 @@ interface PlacementMotionDeps {
 
 const MOTION_DURATION_MS = DURATION.dramatic;
 
-export function createPropPlacementMotionState(deps: PlacementMotionDeps) {
+export function createPropPlacementMotionState(deps?: PlacementMotionDeps) {
   let transition = $state<PlacementTransition | null>(null);
   let progress = $state(0);
   let lastEpoch = 0;
   let frame = 0;
+  let onComplete: (() => void) | undefined;
 
   function cancelFrame() {
     if (frame) {
@@ -72,9 +76,39 @@ export function createPropPlacementMotionState(deps: PlacementMotionDeps) {
     cancelFrame();
     transition = null;
     progress = 0;
+    const complete = onComplete;
+    onComplete = undefined;
+    complete?.();
+  }
+
+  /** Hold the exact start pose until the consumer's prepared SVGs are ready. */
+  function prepare(value: PlacementTransition, complete?: () => void) {
+    cancelFrame();
+    transition = value;
+    progress = 0;
+    onComplete = complete;
+  }
+
+  function start() {
+    if (!transition || frame) return;
+    if (reducedMotion()) {
+      finish();
+      return;
+    }
+    const startedAt = performance.now();
+    const tick = (now: number) => {
+      const t = reducedMotion()
+        ? 1
+        : Math.min(1, (now - startedAt) / MOTION_DURATION_MS);
+      progress = cubicInOut(t);
+      if (t < 1) frame = requestAnimationFrame(tick);
+      else finish();
+    };
+    frame = requestAnimationFrame(tick);
   }
 
   function begin(move: PlacementMotionMove) {
+    if (!deps) return;
     cancelFrame();
     if (reducedMotion()) {
       finish();
@@ -89,37 +123,24 @@ export function createPropPlacementMotionState(deps: PlacementMotionDeps) {
       return;
     }
 
-    transition = buildPlacementTransition({
-      gridMode: deps.getGridMode(),
-      movingColor: move.color,
-      fromLocation: move.from,
-      toLocation: move.to,
-      direction: move.direction,
-      leftLocation,
-      rightLocation,
-      leftOrientation: deps.getLeftOrientation(),
-      rightOrientation: deps.getRightOrientation(),
-      leftPropType: deps.getLeftPropType(),
-      rightPropType: deps.getRightPropType(),
-      betaSwapped: deps.getBetaSwapped(),
-      previewPictographData: deps.getPreviewPictographData(),
-    });
-    progress = 0;
-
-    const startedAt = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - startedAt) / MOTION_DURATION_MS);
-      progress = cubicInOut(t);
-      if (t < 1) {
-        frame = requestAnimationFrame(tick);
-      } else {
-        frame = 0;
-        // The transition step's prepared prop positions ARE the end poses, so
-        // dropping back to the static render here cannot move a prop.
-        finish();
-      }
-    };
-    frame = requestAnimationFrame(tick);
+    prepare(
+      buildPlacementTransition({
+        gridMode: deps.getGridMode(),
+        movingColor: move.color,
+        fromLocation: move.from,
+        toLocation: move.to,
+        direction: move.direction,
+        leftLocation,
+        rightLocation,
+        leftOrientation: deps.getLeftOrientation(),
+        rightOrientation: deps.getRightOrientation(),
+        leftPropType: deps.getLeftPropType(),
+        rightPropType: deps.getRightPropType(),
+        betaSwapped: deps.getBetaSwapped(),
+        previewPictographData: deps.getPreviewPictographData(),
+      })
+    );
+    start();
   }
 
   /**
@@ -127,7 +148,7 @@ export function createPropPlacementMotionState(deps: PlacementMotionDeps) {
    * mid-flight snaps the current animation to its end and plays the next.
    */
   function synchronize() {
-    const move = deps.getMove();
+    const move = deps?.getMove();
     if (!move || move.epoch === lastEpoch) return;
     lastEpoch = move.epoch;
     untrack(() => begin(move));
@@ -135,6 +156,7 @@ export function createPropPlacementMotionState(deps: PlacementMotionDeps) {
 
   function destroy() {
     cancelFrame();
+    onComplete = undefined;
   }
 
   return {
@@ -151,6 +173,8 @@ export function createPropPlacementMotionState(deps: PlacementMotionDeps) {
       return progress;
     },
     synchronize,
+    prepare,
+    start,
     destroy,
   };
 }

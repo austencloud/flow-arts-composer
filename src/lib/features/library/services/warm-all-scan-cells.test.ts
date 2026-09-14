@@ -12,7 +12,11 @@ vi.mock("$lib/shared/qr/services/scan-prop-resolver", () => ({
   })),
 }));
 
-import { listAllShortCodes, startScanCellWarm } from "./warm-all-scan-cells";
+import {
+  listAllShortCodes,
+  startScanCellWarm,
+  startScanQrBake,
+} from "./warm-all-scan-cells";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
 const sequence = {
@@ -24,6 +28,64 @@ const sequence = {
 describe("shortcode scan-cell backfill", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("bakes the existing code only after both themes are verified", async () => {
+    const events: string[] = [];
+    const bakeQr = vi.fn(async () => {
+      events.push("qr");
+    });
+    const result = await startScanQrBake(vi.fn(), {
+      listCodes: async () => ["EXISTING"],
+      resolveCode: async () => ({ sequence, record: null }),
+      warmCells: async (_sequence, options) => {
+        events.push(options.isDark ? "dark" : "light");
+        return { total: 2, ready: 2, hashes: [], failures: [] };
+      },
+      bakeQr,
+    }).promise;
+    expect(events).toEqual(["dark", "light", "qr"]);
+    expect(bakeQr).toHaveBeenCalledWith(sequence, "EXISTING", {
+      leftPropType: "poi",
+      rightPropType: "fan",
+      catDogMode: true,
+    });
+    expect(result).toMatchObject({ done: 1, failed: 0, finished: true });
+  });
+
+  it("records failed QR publication for retry and continues the batch", async () => {
+    const bakeQr = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("upload failed"))
+      .mockResolvedValueOnce(undefined);
+    const result = await startScanQrBake(vi.fn(), {
+      listCodes: async () => ["RETRY", "READY"],
+      resolveCode: async () => ({ sequence, record: null }),
+      warmCells: vi
+        .fn()
+        .mockResolvedValue({ total: 2, ready: 2, hashes: [], failures: [] }),
+      bakeQr,
+      concurrency: 1,
+    }).promise;
+    expect(result).toMatchObject({
+      done: 2,
+      total: 2,
+      failed: 1,
+      failedCodes: ["RETRY"],
+      finished: true,
+    });
+  });
+
+  it("never publishes QR readiness after a failed cell warm", async () => {
+    const bakeQr = vi.fn();
+    const result = await startScanQrBake(vi.fn(), {
+      listCodes: async () => ["INCOMPLETE"],
+      resolveCode: async () => ({ sequence, record: null }),
+      warmCells: vi.fn().mockRejectedValue(new Error("missing cell")),
+      bakeQr,
+    }).promise;
+    expect(bakeQr).not.toHaveBeenCalled();
+    expect(result.failedCodes).toEqual(["INCOMPLETE"]);
   });
 
   it("lists Firestore document names without transferring shortcode payloads", async () => {

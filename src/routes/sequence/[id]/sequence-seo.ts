@@ -110,7 +110,7 @@ export function buildSequenceSeo(
     ogImage,
     ogImageAlt: displayWord
       ? `${displayWord} flow arts sequence`
-      : "The Kinetic Alphabet",
+      : "Flow Arts Composer",
     indexable,
     jsonLd: indexable
       ? {

@@ -1,7 +1,7 @@
-
 import { Vector3, Quaternion, Euler } from "three";
 import { STAGE } from "@austencloud/scene-3d";
 import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
+import type { PropState3D } from "@austencloud/scene-3d";
 import type { MotionConfig3D } from "$lib/shared/3d/domain/models/motion-data-3d";
 import type { SweptVolume, SweepSample } from "./types";
 
@@ -34,23 +34,32 @@ export function buildSweptVolume(
     const progress = i / (n - 1);
     const state = calculatePropState(config, progress);
 
-    const grip = new Vector3(
-      state.worldPosition.x,
-      state.worldPosition.y,
-      state.worldPosition.z + STAGE.AVATAR_GRID_OFFSET
-    );
-
-    const axis = UP.clone()
-      .applyQuaternion(STAFF_HORIZONTAL_QUAT)
-      .applyQuaternion(state.worldRotation)
-      .multiplyScalar(STAFF_HALF_LENGTH);
-
-    samples.push({
-      gripWorld: grip,
-      tipAWorld: grip.clone().add(axis),
-      tipBWorld: grip.clone().sub(axis),
-      radius: STAFF_RADIUS,
-    });
+    samples.push(propStateToStaffTarget(state));
   }
   return { samples };
+}
+
+/**
+ * Convert a renderer-owned prop state to the rigid staff segment used by the
+ * offline collision model. Consumers with score-time states use this instead
+ * of recreating the avatar-frame translation or staff orientation.
+ */
+export function propStateToStaffTarget(
+  state: PropState3D
+): SweptVolume["samples"][number] {
+  const grip = new Vector3(
+    state.worldPosition.x,
+    state.worldPosition.y,
+    state.worldPosition.z + STAGE.AVATAR_GRID_OFFSET
+  );
+  const axis = UP.clone()
+    .applyQuaternion(STAFF_HORIZONTAL_QUAT)
+    .applyQuaternion(state.worldRotation)
+    .multiplyScalar(STAFF_HALF_LENGTH);
+  return {
+    gripWorld: grip,
+    tipAWorld: grip.clone().add(axis),
+    tipBWorld: grip.clone().sub(axis),
+    radius: STAFF_RADIUS,
+  };
 }

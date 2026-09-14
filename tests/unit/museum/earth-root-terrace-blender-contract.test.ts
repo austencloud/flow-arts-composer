@@ -10,7 +10,10 @@ import {
 import {
   BED_Y,
   DOOR_Y,
-  TERRACE_Y,
+  GALLERY_Y,
+  LANDING_Y,
+  OVERLOOK_Y,
+  RAIL_HEIGHT,
   buildEarthRootTerraceLayout,
 } from "$lib/features/museum/data/earth-root-terrace-terrain";
 import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-floor-plan";
@@ -50,20 +53,48 @@ describe("Earth Root Terrace Blender contract", () => {
   it("carries every floor rect with the ramp ends swapped into Blender y", () => {
     const ids = contract.floors.map((f) => f.id);
     expect(ids).toEqual(layout.floorRects.map((f) => f.id));
-    const ramp = contract.floors.find((f) => f.id === "ramp")!;
-    expect(ramp.kind).toBe("ramp-x");
-    expect(ramp.fromZ).toBe(DOOR_Y);
-    expect(ramp.toZ).toBe(TERRACE_Y);
-    const descentA = contract.floors.find((f) => f.id === "descent-a")!;
-    // World +z is Blender −y: the terrace end (world minZ) is the box's maxY.
-    expect(descentA.kind).toBe("ramp-y");
-    expect(descentA.fromZ).toBe(1.2);
-    expect(descentA.toZ).toBe(TERRACE_Y);
+    const entryRamp = contract.floors.find((f) => f.id === "entry-ramp")!;
+    expect(entryRamp.kind).toBe("ramp-x");
+    expect(entryRamp.fromZ).toBe(DOOR_Y);
+    expect(entryRamp.toZ).toBe(OVERLOOK_Y);
+    const descent = contract.floors.find((f) => f.id === "gallery-descent")!;
+    expect(descent.kind).toBe("ramp-x");
+    expect(descent.fromZ).toBe(DOOR_Y);
+    expect(descent.toZ).toBe(GALLERY_Y);
+    const eastLink = contract.floors.find((f) => f.id === "east-link")!;
+    // World +z is Blender −y: the catwalk end (world minZ) is the box's maxY.
+    expect(eastLink.kind).toBe("ramp-y");
+    expect(eastLink.fromZ).toBe(LANDING_Y);
+    expect(eastLink.toZ).toBe(GALLERY_Y);
     for (const floor of contract.floors) {
       expect(floor.box.minX).toBeLessThan(floor.box.maxX);
       expect(floor.box.minY).toBeLessThan(floor.box.maxY);
       expect(floor.crown).toBeGreaterThan(Math.max(floor.fromZ, floor.toZ) + 2);
     }
+  });
+
+  it("carries the disjoint rail runs, the consoles and the spawn", () => {
+    expect(contract.rails).toHaveLength(layout.rails.length);
+    contract.rails.forEach((run, index) => {
+      expect(run.height).toBe(RAIL_HEIGHT);
+      expect(run.points).toHaveLength(layout.rails[index]!.length);
+    });
+    // The catwalk's north run steps in and out around each alcove, so it has
+    // four extra points per bay over a straight edge.
+    const stepped = contract.rails.reduce((most, run) => Math.max(most, run.points.length), 0);
+    expect(stepped).toBe(2 + layout.alcoves.length * 4);
+
+    expect(contract.consoles.map((panel) => panel.letter)).toEqual(["G", "H", "I"]);
+    for (const panel of contract.consoles) {
+      // Flush in the rail cap, never proud of it: anything standing above the
+      // cap eats the foot clearance the overlook's sightline has over it.
+      expect(panel.capZ).toBe(GALLERY_Y + RAIL_HEIGHT);
+      expect(panel.stand.z).toBe(GALLERY_Y);
+      expect(panel.width).toBeGreaterThan(0);
+    }
+
+    expect(contract.spawn.blender.z).toBe(DOOR_Y);
+    expect(contract.spawn.yaw).toBeCloseTo(Math.PI / 2, 6);
   });
 
   it("reads the corridor from the museum the visitor walks, not the cave-only plan", () => {

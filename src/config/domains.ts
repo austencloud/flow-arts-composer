@@ -13,7 +13,12 @@ import { Capacitor } from "@capacitor/core";
  * Extensible for future portals without breaking changes.
  */
 export type SiteMode =
-  "loading" | "app" | "landing" | "embed" | "kiosk" | "edu";
+  | "loading"
+  | "app"
+  | "landing"
+  | "embed"
+  | "kiosk"
+  | "edu";
 
 // Landing/brand domain
 export const LANDING_DOMAIN = "https://tkaflowarts.com";
@@ -42,6 +47,7 @@ const PUBLIC_PATH_PREFIXES = [
   "/test/sequence-actions",
   "/test/sequence-viewer-transitions",
   "/test/prop-size-audit",
+  "/test/sidebar-props",
   "/test/environment-transition",
   "/test/film-director",
   "/test/prop-3d-studio",

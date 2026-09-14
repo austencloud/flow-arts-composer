@@ -10,7 +10,12 @@
 </script>
 
 {#if entry.catalogEntry}
-  <div class="artifact-visual">
+  <div
+    class="artifact-visual"
+    class:natural={entry.id === "poinotation" ||
+      entry.id === "vtg" ||
+      entry.id === "tka"}
+  >
     <ArtifactVisual entry={entry.catalogEntry} {active} />
   </div>
 {:else if entry.documents?.length}
@@ -43,12 +48,18 @@
 <style>
   .artifact-visual {
     display: grid;
+    grid-template-rows: minmax(0, 1fr);
     width: 100%;
     height: 100%;
     min-width: 0;
     min-height: 0;
     place-items: center;
     container-type: size;
+  }
+
+  .artifact-visual.natural {
+    height: auto;
+    container-type: inline-size;
   }
 
   .document-artifact {

@@ -235,8 +235,6 @@
                     summary={summarize(setup)}
                     isActive={isSetupSource(setup.id) &&
                       favoriteState.activeStatus === "active"}
-                    isModified={isSetupSource(setup.id) &&
-                      favoriteState.activeStatus === "modified"}
                     isShared={favoriteState.sharedSetupId === setup.id}
                     isBusy={setupIsBusy(setup.id)}
                     disableMutations={isPreview || isSignedOut}
@@ -296,8 +294,6 @@
                   class="favorite-item community-item"
                   class:active={isCommunitySource(favorite.userId) &&
                     favoriteState.activeStatus === "active"}
-                  class:modified={isCommunitySource(favorite.userId) &&
-                    favoriteState.activeStatus === "modified"}
                   aria-current={isCommunitySource(favorite.userId) &&
                   favoriteState.activeStatus === "active"
                     ? "true"
@@ -315,12 +311,9 @@
                     <span class="favorite-summary">{summarize(favorite)}</span>
                   </span>
                   <span class="status-slot">
-                    {isCommunitySource(favorite.userId)
-                      ? favoriteState.activeStatus === "active"
-                        ? "Active"
-                        : favoriteState.activeStatus === "modified"
-                          ? "Modified"
-                          : ""
+                    {isCommunitySource(favorite.userId) &&
+                    favoriteState.activeStatus === "active"
+                      ? "Active"
                       : ""}
                   </span>
                 </button>
@@ -591,14 +584,6 @@
       in srgb,
       var(--theme-accent, #3b82f6) 15%,
       transparent
-    );
-  }
-
-  .favorite-item.modified {
-    border-color: color-mix(
-      in srgb,
-      var(--theme-accent, #3b82f6) 55%,
-      var(--theme-stroke, rgba(255, 255, 255, 0.12))
     );
   }
 

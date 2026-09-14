@@ -7,6 +7,18 @@ import {
 } from "$lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte";
 
 describe("shared Studio surfaces", () => {
+  it("remembers the selected settings across Card round trips without sharing viewer state", () => {
+    const viewer = createViewerStudioSurfaces();
+    const other = createViewerStudioSurfaces();
+    for (const content of ["card", "animation", "studio"] as const) {
+      viewer.enter(0, false, 60);
+      viewer.setInspectorContent(content);
+      viewer.leave();
+      viewer.enter(2, true, 80);
+      expect(viewer.inspectorContent).toBe(content);
+    }
+    expect(other.inspectorContent).toBe("animation");
+  });
   const frame = (position: number): StudioAnimationFrame => ({
     sequence: {
       id: "test",

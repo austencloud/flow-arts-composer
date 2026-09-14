@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick, untrack } from "svelte";
+  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
   import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
@@ -28,9 +29,9 @@
   import ShapeMatrixTheoryPane from "./ShapeMatrixTheoryPane.svelte";
   import { runMandalaMorph } from "../services/shape-matrix-mandala-morph";
   import { runShapeMatrixDetailReveal } from "../services/shape-matrix-reveal";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import PropSelectionSheet from "$lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
+  import { growFade, motionDuration } from "$lib/shared/transitions/motion";
+  import ShapeMatrixFocusWorkspace from "./ShapeMatrixFocusWorkspace.svelte";
+  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
 
   interface Props {
     /** Embedded hosts (the Toys tab) get their name from module chrome, so
@@ -40,6 +41,53 @@
 
   const { variant = "standalone" }: Props = $props();
   const appState = getShapeMatrixAppContext();
+  const focusMode = $derived(
+    appState.compact &&
+      (appState.propPickerOpen || animationState.activeSection !== null)
+  );
+  let appElement: HTMLElement | undefined;
+  const focusMotion = createLayoutMotion({
+    getRoot: () => appElement,
+    groups: [{ selector: "[data-focus-layout]", datasetKey: "focusLayout" }],
+    getDuration: () => motionDuration(DURATION.emphasis),
+  });
+  let previousFocusMode: boolean | undefined;
+  $effect.pre(() => {
+    const next = focusMode;
+    if (previousFocusMode === undefined) {
+      previousFocusMode = next;
+      return;
+    }
+    if (previousFocusMode === next) return;
+    previousFocusMode = next;
+    untrack(() => focusMotion.capture());
+    void tick().then(() => focusMotion.play());
+  });
+  $effect(() => () => focusMotion.cancel());
+  let turnPopover: ShapeMatrixTurnPopover | undefined;
+
+  /** Native Back uses the same dismissal owners as the web interface. */
+  export function handleBack(): boolean {
+    if (getEscapeLayerManager().dismissTopLayer() !== "unhandled") return true;
+    if (turnPopover?.dismiss()) return true;
+    if (appState.aboutOpen) {
+      appState.closeAbout();
+      return true;
+    }
+    if (appState.propPickerOpen) {
+      appState.closePropPicker();
+      return true;
+    }
+    if (animationState.activeSection !== null) {
+      animationState.showRelationships();
+      return true;
+    }
+    if (appState.compact && appState.activeView === "detail") {
+      appState.showMatrix();
+      return true;
+    }
+    return false;
+  }
 
   /* Share hands the address on directly, on the press itself: the phone's own
      share sheet where there is one, the clipboard everywhere else. Both need
@@ -367,11 +415,13 @@
 
 <main
   class="shape-app"
+  bind:this={appElement}
+  class:focus-mode={focusMode}
   data-shape-matrix-app
   class:compact-detail={appState.compact && appState.activeView === "detail"}
   class:theory
 >
-  <header class="topbar">
+  <header class="topbar" inert={focusMode} aria-hidden={focusMode}>
     {#if appState.compact}
       <div class="compact-context">
         {#if appState.activeView === "detail"}
@@ -394,6 +444,7 @@
              opens both axis ratios together. -->
         <ShapeMatrixSurfaceControl compact />
         <ShapeMatrixTurnPopover
+          bind:this={turnPopover}
           onratiofocuschange={(hand) => (theoryEditingAxis = hand)}
         />
       </div>
@@ -523,24 +574,105 @@
     </div>
   </div>
 
-  <!-- Compact hosts show one pane at a time, so the grid pane that carries
-       the wide prop overlay is off screen whenever the dock is. The canonical
-       prop sheet takes over there; it keeps the picker open across choices
-       the same way, and closes on its handle, backdrop, X or Escape. -->
-  {#if appState.compact}
-    <PropSelectionSheet
-      isOpen={appState.propPickerOpen}
-      selectedPropType={appState.propType}
-      title="Prop"
-      onSelect={(next: PropType) => void appState.setPropType(next)}
-      onOpenChange={(open) => {
-        if (!open) appState.closePropPicker();
-      }}
-    />
+  {#if focusMode}
+    <div class="focus-workspace-slot" data-focus-layout="picker">
+      <ShapeMatrixFocusWorkspace />
+    </div>
   {/if}
 </main>
 
 <style>
+  /* The same renderer survives this recomposition. FLIP moves its existing
+     frame and grows the picker from the dock; only surrounding chrome fades. */
+  .shape-app.focus-mode {
+    grid-template-rows: minmax(0, min(50cqh, 100cqw)) minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+  .focus-mode .topbar {
+    position: absolute;
+    inset: 0 0 auto;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .focus-mode .workspace {
+    grid-row: 1;
+    padding: 0;
+    overflow: visible;
+  }
+  .focus-workspace-slot {
+    grid-row: 2;
+    min-width: 0;
+    min-height: 0;
+    z-index: 3;
+  }
+  .focus-mode :global(.drill-stage),
+  .focus-mode :global(.theory-detail) {
+    padding: 0;
+  }
+  .focus-mode :global(.drill),
+  .focus-mode :global(.detail-body) {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "media";
+    gap: 0;
+  }
+  .focus-mode :global(.media-stage) {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "hero";
+    place-items: stretch;
+  }
+  .focus-mode :global(.detail-flow) {
+    grid-area: hero;
+    overflow: hidden;
+    gap: 0;
+  }
+  .focus-mode :global(.hero-stage) {
+    grid-template-rows: minmax(0, 1fr);
+    width: min(100cqw, 100cqh);
+    height: 100%;
+    justify-self: center;
+  }
+  .focus-mode :global(.stage-frame) {
+    width: min(100cqw, 100cqh);
+    height: 100%;
+    align-self: center;
+    min-height: 0;
+  }
+  .focus-mode :global(.stage-window) {
+    min-height: 0;
+  }
+  .topbar,
+  .shape-app :global([data-focus-mode-chrome]) {
+    transition:
+      opacity var(--transition-normal),
+      visibility var(--transition-normal);
+  }
+  .focus-mode :global([data-focus-mode-chrome]) {
+    position: absolute;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  @container shape-matrix-app (min-aspect-ratio: 1.25) {
+    .shape-app.focus-mode {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+    }
+    .focus-mode .workspace {
+      grid-column: 1;
+    }
+    .focus-workspace-slot {
+      grid-row: 1;
+      grid-column: 2;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .topbar,
+    .shape-app :global([data-focus-mode-chrome]) {
+      transition: none;
+    }
+  }
   .shape-app {
     position: absolute;
     inset: 0;

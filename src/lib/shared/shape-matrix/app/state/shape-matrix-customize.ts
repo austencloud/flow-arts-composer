@@ -10,7 +10,7 @@ import type { ShapeMatrixAppState } from "./shape-matrix-app-state.svelte";
 
 /**
  * The page asked for: the open section, or the Props page while the prop
- * picker is open. A prop sheet left open on a compact host arrives as the
+ * picker is open. Prop mode left open on a compact host arrives as the
  * Props page when the host widens, so the request is honoured rather than
  * stranded.
  */

@@ -5,6 +5,7 @@
   Renders sequences as print-ready PNGs in a zip file.
 -->
 <script lang="ts">
+  import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -25,13 +26,8 @@
     includeStartPosition: boolean;
   }
 
-  let {
-    sequences,
-    showGrid,
-    showTKA,
-    showWord,
-    includeStartPosition,
-  }: Props = $props();
+  let { sequences, showGrid, showTKA, showWord, includeStartPosition }: Props =
+    $props();
 
   let hapticService: HapticFeedback;
   let browseLoader: PublicSequencesLoader;
@@ -49,7 +45,8 @@
   );
 
   const progressLabel = $derived.by(() => {
-    if (exportStage === "loading") return `Loading ${exportCurrent} of ${exportTotal}...`;
+    if (exportStage === "loading")
+      return `Loading ${exportCurrent} of ${exportTotal}...`;
     if (exportStage === "zipping") return "Packaging zip file...";
     return `Rendering ${exportCurrent} of ${exportTotal}`;
   });
@@ -86,21 +83,23 @@
       const renderer = getSequenceRenderer();
 
       const renderOptions = {
-        stepSize: 300,
+        stepSize: COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize,
         format: "PNG" as const,
         quality: 1.0,
         includeStartPosition,
-        addStepNumbers: true,
-        addWord: showWord,
-        addDifficultyLevel: false,
-        addUserInfo: false,
-        addReversalSymbols: true,
+        startPositionLayout:
+          COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+        addStepNumbers: COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+        addWord: showWord && COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
+        addDifficultyLevel: COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
+        addUserInfo: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
+        addReversalSymbols: COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals,
         // Pass the full visibility set explicitly so the exported PNG matches
         // the on-screen choreo card. Omitting these let image-composer's
         // fallback inherit them from the global VisibilityStateManager (e.g.
         // a stray non-radial / elemental toggle leaked onto clean cards).
         visibilityOverrides: {
-          darkMode: false,
+          darkMode: COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
           printMode: true,
           showGrid,
           showTKA,
@@ -109,6 +108,7 @@
           showTnD: false,
           showElemental: false,
           showPositions: false,
+          showMandala: COMPOSER_CARD_EXPORT_PROFILE_V1.showMandala,
         },
       };
 
@@ -119,9 +119,15 @@
         const fullSeq = await ensureFullData(sequences[0]);
         if (exportCancelled) return;
         exportStage = "rendering";
-        const blob = await renderer.renderSequenceToBlob(fullSeq, renderOptions);
+        const blob = await renderer.renderSequenceToBlob(
+          fullSeq,
+          renderOptions
+        );
         if (exportCancelled) return;
-        await downloadBlob(blob, `${sequences[0].word || sequences[0].name || "choreo-card"}.png`);
+        await downloadBlob(
+          blob,
+          `${sequences[0].word || sequences[0].name || "choreo-card"}.png`
+        );
         hapticService?.trigger("success");
         return;
       }
@@ -217,7 +223,11 @@
 </div>
 
 <ExportTakeover
-  phase={isExporting ? (exportStage === "zipping" ? "encoding" : "capturing") : "idle"}
+  phase={isExporting
+    ? exportStage === "zipping"
+      ? "encoding"
+      : "capturing"
+    : "idle"}
   progress={progressPercent / 100}
   phaseLabel={progressLabel}
   onCancel={cancelExport}
@@ -301,6 +311,5 @@
     .export-btn {
       transition: none;
     }
-
   }
 </style>

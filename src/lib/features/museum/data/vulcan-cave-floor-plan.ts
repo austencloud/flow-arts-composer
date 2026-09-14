@@ -47,6 +47,7 @@ import {
   buildEarthRootTerraceLayout,
   createEarthRootTerraceTerrain,
   earthRootTerraceStationOffsets,
+  earthRootTerraceSpawnOffset,
   BED_Y as EARTH_BED_Y,
 } from "./earth-root-terrace-terrain";
 import {
@@ -406,7 +407,8 @@ const earthPerformers = earthRootTerraceStationOffsets().map((offset, index) => 
     earthDimensions.h,
     earthDimensions.h - 2
   ),
-  // Up toward the terrace rail, where the visitor stands 5.2 m above them.
+  // Up toward the catwalk rail, where the visitor works their console 1.4 m
+  // above them, and on past it to the overlook.
   facing: "north" as const,
   refId: `cave-earth-automaton-${EARTH_STATION_SUFFIXES[index]}`,
   collisionRadiusTiles: 2,
@@ -692,8 +694,24 @@ export const VULCAN_CAVE_ROOMS: RoomNode[] = [
     theme: "cave",
     minInteriorWidth: EARTH_MIN_INTERIOR_WIDTH,
     minInteriorHeight: EARTH_MIN_INTERIOR_HEIGHT,
+    // The visitor must not start on the room's centre tile: in this plan that
+    // is the middle of the rootbed, which is blocked and level with the
+    // performers. Start them inside the west door instead.
+    spawn: {
+      offsetX: interiorOffsetFraction(
+        earthRootTerraceSpawnOffset().xMetres,
+        earthDimensions.w,
+        earthDimensions.w - 2
+      ),
+      offsetY: interiorOffsetFraction(
+        earthRootTerraceSpawnOffset().zMetres,
+        earthDimensions.h,
+        earthDimensions.h - 2
+      ),
+      facing: earthRootTerraceSpawnOffset().facing,
+    },
     description:
-      "The Root Terrace: a ramp climbs out of a mossy vestibule onto a brass-railed terrace along the north wall. Three figures perform G, H and I in one row on the rootbed 5.2 m below, in daylight from an aven, with no way down; the descent along the east wall lands on the row's axis before the floor falls away toward Air.",
+      "The Root Terrace: out of a mossy vestibule one ramp climbs to an overlook above the rootbed and another falls to a brass-railed catwalk that runs the row 1.4 m above it, with a control console set into the rail opposite each of the three figures performing G, H and I in daylight from an aven. There is no way down onto the bed; the east channel lands on the row's axis before the floor falls away toward Air.",
     roomPresentation: { suppressTileGeometry: true },
     walls: earthWalls,
     performers: earthPerformers,

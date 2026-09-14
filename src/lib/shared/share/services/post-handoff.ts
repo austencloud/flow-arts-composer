@@ -65,38 +65,34 @@ export interface HandoffContext {
 /**
  * Which destinations this device can actually honor.
  *
- * Gated on the DEVICE, not the capability — desktop Chrome implements
- * `navigator.share`, so capability detection alone would offer a native share
- * that pops the Windows share sheet. That is the same gate
- * `shareOrDownloadBlob` makes, for the same reason.
+ * Download is a separate explicit action. Offer the system share sheet on any
+ * device that supports the file, rather than treating desktop as incapable.
  */
 export function resolveDestinations(ctx: HandoffContext): HandoffDestination[] {
   const isMobile = detectPlatform() !== "desktop";
   const destinations: HandoffDestination[] = [];
 
-  if (isMobile) {
-    const shareable =
-      supportsNativeFileShare() &&
-      (!ctx.blob || canNativeShareFile(ctx.blob, ctx.filename));
-
-    if (shareable) {
-      destinations.push({
-        id: "native-share",
-        label: "Share",
-        short: "Share",
-        icon: "fa-solid fa-share-nodes",
-        primary: true,
-        hint: "Opens Instagram, Facebook, Messages…",
-      });
-    }
-  } else {
+  const shareable =
+    supportsNativeFileShare() &&
+    (!ctx.blob || canNativeShareFile(ctx.blob, ctx.filename));
+  if (shareable) {
+    destinations.push({
+      id: "native-share",
+      label: "Share to another app",
+      short: "Share to another app",
+      icon: "fa-solid fa-share-nodes",
+      primary: true,
+      hint: "Choose an app on this device",
+    });
+  }
+  if (!isMobile) {
     destinations.push({
       id: "send-to-phone",
-      label: "Send to phone",
-      short: "Phone",
+      label: "Transfer to phone",
+      short: "Transfer",
       icon: "fa-solid fa-qrcode",
       primary: true,
-      hint: "Scan, save, post from Instagram",
+      hint: "Upload a file, then scan its QR code",
     });
 
     if (ctx.artifact === "card") {
@@ -137,8 +133,8 @@ export interface HandoffResult {
 }
 
 /**
- * Native file share. The one-tap post: the caption rides in `text`, so
- * Instagram opens with it pre-filled.
+ * Hand the file and optional caption to the device's share sheet. The receiving
+ * app decides which supplied fields it accepts.
  */
 export async function shareArtifactNatively(
   blob: Blob,
@@ -146,7 +142,7 @@ export async function shareArtifactNatively(
   caption: string
 ): Promise<HandoffResult> {
   const result = await shareBlobNatively(blob, filename, {
-    title: "TKA Sequence",
+    title: "Flow Arts Composer sequence",
     text: caption,
   });
 
@@ -156,7 +152,10 @@ export async function shareArtifactNatively(
     case "canceled":
       return { status: "canceled" };
     case "unavailable":
-      return { status: "failed", message: "Sharing files isn't available here" };
+      return {
+        status: "failed",
+        message: "Sharing files isn't available here",
+      };
     default:
       return { status: "failed", message: "Share failed" };
   }
@@ -168,21 +167,52 @@ export async function downloadArtifact(
 ): Promise<HandoffResult> {
   const result = await downloadBlobToDisk(blob, filename);
   return result.success
-    ? { status: "done", message: "Saved" }
+    ? { status: "done", message: "Download started" }
     : { status: "failed", message: "Download failed" };
 }
 
+/**
+ * Last-resort clipboard write for browsers that refuse the async Clipboard API
+ * (embedded webviews, denied permission). It only works inside the user's own
+ * gesture, which is why callers run it synchronously after the failed write.
+ */
+function copyTextThroughSelection(text: string): boolean {
+  if (typeof document === "undefined" || !document.body) return false;
+  const host = document.createElement("textarea");
+  host.value = text;
+  host.setAttribute("readonly", "");
+  host.setAttribute("aria-hidden", "true");
+  host.style.position = "fixed";
+  host.style.top = "0";
+  host.style.left = "0";
+  host.style.opacity = "0";
+  host.style.pointerEvents = "none";
+  document.body.appendChild(host);
+  try {
+    host.select();
+    host.setSelectionRange(0, text.length);
+    return document.execCommand?.("copy") === true;
+  } catch {
+    return false;
+  } finally {
+    host.remove();
+  }
+}
+
 async function copyText(text: string, noun: string): Promise<HandoffResult> {
-  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-    return { status: "failed", message: "Clipboard unavailable" };
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return { status: "done", message: `${noun} copied` };
+    } catch {
+      // Denied permission falls through to the selection path below.
+    }
   }
 
-  try {
-    await navigator.clipboard.writeText(text);
+  if (copyTextThroughSelection(text)) {
     return { status: "done", message: `${noun} copied` };
-  } catch {
-    return { status: "failed", message: `Couldn't copy ${noun.toLowerCase()}` };
   }
+  return { status: "failed", message: `Couldn't copy ${noun.toLowerCase()}` };
 }
 
 export function copyCaption(caption: string): Promise<HandoffResult> {
@@ -191,6 +221,51 @@ export function copyCaption(caption: string): Promise<HandoffResult> {
 
 export function copyLink(url: string): Promise<HandoffResult> {
   return copyText(url, "Link");
+}
+
+/**
+ * Starts a text clipboard write while a post link is still being prepared.
+ * Safari keeps a click's clipboard permission only for work begun in that
+ * click, but accepts promised ClipboardItem values and waits for their bytes.
+ */
+export async function copyPreparedLink(
+  preparedUrl: Promise<string>
+): Promise<HandoffResult> {
+  // Clipboard capability can disappear between rendering and the click. Keep a
+  // rejected preparation observed even when there is nowhere to write it.
+  void preparedUrl.catch(() => {});
+  if (typeof navigator === "undefined" || !navigator.clipboard) {
+    return { status: "failed", message: "Clipboard unavailable" };
+  }
+
+  if (navigator.clipboard.write && typeof ClipboardItem !== "undefined") {
+    const textBlob = preparedUrl.then(
+      (url) => new Blob([url], { type: "text/plain" })
+    );
+    // A denied write may return before preparation fails later.
+    void textBlob.catch(() => {});
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({ "text/plain": textBlob }),
+      ]);
+      const url = await preparedUrl;
+      // Some embedded browsers acknowledge promised items without delivering
+      // them. Complete the plain-text write where allowed; Safari may reject
+      // this later write, but has already delivered the gesture-bound item.
+      if (navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url).catch(() => {});
+      }
+      return { status: "done", message: "Link copied" };
+    } catch {
+      return { status: "failed", message: "Couldn't copy link" };
+    }
+  }
+
+  try {
+    return await copyLink(await preparedUrl);
+  } catch {
+    return { status: "failed", message: "Couldn't copy link" };
+  }
 }
 
 const FACEBOOK_COMPOSER_URL = "https://www.facebook.com/";
@@ -216,9 +291,7 @@ export async function copyImageAndOpenFacebook(
   }
 
   try {
-    await navigator.clipboard.write([
-      new ClipboardItem({ "image/png": blob }),
-    ]);
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
   } catch {
     return { status: "failed", message: "Couldn't copy the image" };
   }

@@ -22,8 +22,8 @@
   const sideColor = $derived.by(() => {
     const hasBoth = group.sides.has(HandSide.LEFT) && group.sides.has(HandSide.RIGHT);
     if (hasBoth) return "#a855f7";
-    if (group.sides.has(HandSide.LEFT)) return "#3b82f6";
-    return "#ef4444";
+    if (group.sides.has(HandSide.LEFT)) return "var(--prop-blue, #3b82f6)";
+    return "var(--prop-red, #ef4444)";
   });
 
   const gridModeLabel = $derived.by(() => {

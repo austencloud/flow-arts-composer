@@ -107,7 +107,7 @@
       sanitizeFilename(simplifyRepeatedWord(retainedFilm.word || "")) || "film";
     const extension = retainedFilm.mimeType.includes("webm") ? "webm" : "mp4";
     await shareOrDownloadBlob(retainedFilm.blob, `${name}.${extension}`, {
-      title: "TKA 3D Film",
+      title: "Flow Arts Composer 3D Film",
     });
   }
 

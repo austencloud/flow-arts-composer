@@ -337,7 +337,7 @@
 
     <div class="visibility-choice">
       <span class="visibility-label" id="performance-visibility-label">
-        Who can see this in TKA?
+        Who can see this in Flow Arts Composer?
       </span>
       <SegmentedControl
         options={VIDEO_VISIBILITY_OPTIONS}

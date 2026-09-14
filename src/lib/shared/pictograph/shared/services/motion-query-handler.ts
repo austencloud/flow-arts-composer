@@ -9,6 +9,7 @@ import type { CsvLoader } from "../../../foundation/services/data/csv-loader";
 import type { IMotionQueryHandler } from "../../../foundation/services/data/data-contracts";
 import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
 import type { Orientation } from "../domain/enums/pictograph-enums";
+import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
 
 interface ICSVParser {
   parseCSV(csvText: string): { rows: ParsedCsvRow[] };
@@ -17,6 +18,7 @@ interface ICSVParser {
 export class MotionQueryHandler implements IMotionQueryHandler {
   private parsedData: Record<GridMode, ParsedCsvRow[]> | null = null;
   private isInitialized = false;
+  private pendingInitialization: Promise<void> | null = null;
 
   constructor(
     private csvLoader: CsvLoader,
@@ -29,19 +31,48 @@ export class MotionQueryHandler implements IMotionQueryHandler {
       return;
     }
 
+    if (this.pendingInitialization) {
+      return this.pendingInitialization;
+    }
+
+    const initialization = this.initialize();
+    this.pendingInitialization = initialization;
+    try {
+      await initialization;
+    } finally {
+      if (this.pendingInitialization === initialization) {
+        this.pendingInitialization = null;
+      }
+    }
+  }
+
+  private async initialize(): Promise<void> {
     try {
       const csvData = await this.csvLoader.loadCSVDataSet();
+      const parseSpan = bootProfiler.startSpan("csv:parse");
 
-      const diamondParseResult = this.CSVParser.parseCSV(
-        csvData.data?.diamondData || ""
-      );
-      const boxParseResult = this.CSVParser.parseCSV(
-        csvData.data?.boxData || ""
-      );
-
-      const skewedParseResult = csvData.data?.skewedData
-        ? this.CSVParser.parseCSV(csvData.data.skewedData)
-        : { rows: [] };
+      let diamondParseResult: { rows: ParsedCsvRow[] };
+      let boxParseResult: { rows: ParsedCsvRow[] };
+      let skewedParseResult: { rows: ParsedCsvRow[] };
+      try {
+        diamondParseResult = this.CSVParser.parseCSV(
+          csvData.data?.diamondData || ""
+        );
+        boxParseResult = this.CSVParser.parseCSV(csvData.data?.boxData || "");
+        skewedParseResult = csvData.data?.skewedData
+          ? this.CSVParser.parseCSV(csvData.data.skewedData)
+          : { rows: [] };
+        parseSpan("ok", {
+          diamondRows: diamondParseResult.rows.length,
+          boxRows: boxParseResult.rows.length,
+          skewedRows: skewedParseResult.rows.length,
+          hasSkewedData: Boolean(csvData.data?.skewedData),
+          hasTrigridData: Boolean(csvData.data?.trigridData),
+        });
+      } catch (error) {
+        parseSpan("error");
+        throw error;
+      }
 
       this.parsedData = {
         [GridMode.DIAMOND]: diamondParseResult.rows,
@@ -158,11 +189,14 @@ export class MotionQueryHandler implements IMotionQueryHandler {
     sequence: unknown[],
     gridMode: GridMode
   ): Promise<PictographData[]> {
+    const span = bootProfiler.startSpan("construct:option-query");
+    let filterSpan: ReturnType<typeof bootProfiler.startSpan> | null = null;
     try {
       await this.ensureInitialized();
 
       if (!this.parsedData) {
         console.error("❌ No parsed CSV data available");
+        span("error");
         return [];
       }
 
@@ -191,8 +225,17 @@ export class MotionQueryHandler implements IMotionQueryHandler {
         }
       }
 
+      filterSpan = bootProfiler.startSpan("construct:option-filter", {
+        candidates: allPictographs.length,
+      });
       if (!sequence || sequence.length === 0) {
-        return allPictographs.slice(0, 20);
+        const options = allPictographs.slice(0, 20);
+        filterSpan("cancelled");
+        span("ok", {
+          candidates: allPictographs.length,
+          options: options.length,
+        });
+        return options;
       }
 
       const lastStep = sequence[sequence.length - 1] as PictographData;
@@ -200,6 +243,11 @@ export class MotionQueryHandler implements IMotionQueryHandler {
         console.warn(
           "⚠️ MotionQueryHandler: Last beat has no motion data, returning all options"
         );
+        filterSpan("cancelled");
+        span("ok", {
+          candidates: allPictographs.length,
+          options: allPictographs.length,
+        });
         return allPictographs;
       }
 
@@ -239,15 +287,27 @@ export class MotionQueryHandler implements IMotionQueryHandler {
         console.warn(
           "⚠️ MotionQueryHandler: No matching options found, returning all options as fallback"
         );
+        filterSpan("ok", { options: allPictographs.length, fallback: true });
+        span("ok", {
+          candidates: allPictographs.length,
+          options: allPictographs.length,
+        });
         return allPictographs;
       }
 
+      filterSpan("ok", { options: transformedPictographs.length });
+      span("ok", {
+        candidates: allPictographs.length,
+        options: transformedPictographs.length,
+      });
       return transformedPictographs;
     } catch (error) {
       console.error(
         "❌ MotionQueryHandler: Error in getNextOptionsForSequence:",
         error
       );
+      filterSpan?.("error");
+      span("error");
       throw error;
     }
   }

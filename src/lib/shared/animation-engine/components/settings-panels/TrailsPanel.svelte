@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import { resolveTrailColors } from "../../domain/resolve-trail-colors";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
   import { animationSettings } from "../../state/animation-settings-state.svelte";
   import { getEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
@@ -64,12 +66,13 @@
   const maxOpacity = $derived(
     effectsConfig?.trails.brightness ?? DEFAULT_EFFECTS_CONFIG.trails.brightness
   );
-  const leftColor = $derived(
-    effectsConfig?.trails.leftColor ?? DEFAULT_EFFECTS_CONFIG.trails.leftColor
-  );
-  const rightColor = $derived(
-    effectsConfig?.trails.rightColor ?? DEFAULT_EFFECTS_CONFIG.trails.rightColor
-  );
+  const displayColors = $derived(resolveTrailColors({
+    ...DEFAULT_TRAIL_SETTINGS,
+    leftColor: effectsConfig?.trails.leftColor ?? DEFAULT_EFFECTS_CONFIG.trails.leftColor,
+    rightColor: effectsConfig?.trails.rightColor ?? DEFAULT_EFFECTS_CONFIG.trails.rightColor,
+  }, getSettings().primaryPropColors));
+  const leftColor = $derived(displayColors.leftColor);
+  const rightColor = $derived(displayColors.rightColor);
 
   // Rendering params — stay in animationSettings
   const tailLength = $derived(animationSettings.trail.tailLength);
@@ -90,8 +93,8 @@
       Math.abs(maxOpacity - DEFAULT_EFFECTS_CONFIG.trails.brightness) < 0.03 &&
       tailLength === DEFAULT_TRAIL_SETTINGS.tailLength &&
       trackingMode === DEFAULT_TRAIL_SETTINGS.trackingMode &&
-      leftColor === defaultLeft &&
-      rightColor === defaultRight
+      leftColor === (getSettings().primaryPropColors?.left ?? defaultLeft) &&
+      rightColor === (getSettings().primaryPropColors?.right ?? defaultRight)
   );
 
   function resetDefaults(): void {

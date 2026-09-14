@@ -1,7 +1,9 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "tab_toys_third_order": "3차 모션",
+  "tab_toys_hand_tunnel": "핸드 터널",
   "tab_desc_toys_third_order": "완전한 시퀀스를 더 큰 시퀀스 안에서 움직입니다",
+  "tab_desc_toys_hand_tunnel": "여러 연기자의 손 경로를 한 평면에 겹쳐 보기",
   "action_cancel": "취소",
   "action_close": "닫기",
   "action_confirm": "확인",

@@ -25,6 +25,11 @@
 
   let { persistence, variant = "standalone" }: Props = $props();
   let host: HTMLDivElement;
+  let shell: ShapeMatrixAppShell | undefined;
+
+  export function handleBack(): boolean {
+    return shell?.handleBack() ?? false;
+  }
   const state = createShapeMatrixAppState(
     {
       loadMatrix: loadShapeMatrix,
@@ -82,7 +87,7 @@
 </script>
 
 <div class="shape-matrix-app-host" bind:this={host}>
-  <ShapeMatrixAppShell {variant} />
+  <ShapeMatrixAppShell {variant} bind:this={shell} />
   <ShapeMatrixAboutModal />
 </div>
 

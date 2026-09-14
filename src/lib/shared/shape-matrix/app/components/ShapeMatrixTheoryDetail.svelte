@@ -45,8 +45,6 @@
   import { registerShapeMatrixPlaybackShortcut } from "../services/shape-matrix-playback-shortcut";
   import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
-  import { tick } from "svelte";
-  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
   import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
@@ -62,46 +60,6 @@
    * playing on the other.
    */
   const animationState = getShapeMatrixAnimationContext();
-  let compactSettingsElement = $state<HTMLElement | null>(null);
-  const compactSettingsOpen = $derived(
-    app.compact &&
-      app.surface === "theory" &&
-      app.activeView === "detail" &&
-      animationState.activeSection !== null
-  );
-
-  function closeCompactSettings(): void {
-    animationState.showRelationships();
-  }
-
-  function onCompactSettingsKeydown(event: KeyboardEvent): void {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    event.stopPropagation();
-    closeCompactSettings();
-  }
-
-  $effect(() => {
-    if (!compactSettingsOpen) return;
-    const restoreTo = document.activeElement;
-    const unregister = getEscapeLayerManager().register({
-      id: "shape-matrix:theory-compact-settings",
-      canDismiss: () => true,
-      dismiss: closeCompactSettings,
-    });
-    void tick().then(() =>
-      compactSettingsElement
-        ?.querySelector<HTMLButtonElement>("header button")
-        ?.focus({ preventScroll: true })
-    );
-    return () => {
-      unregister();
-      if (restoreTo instanceof HTMLElement && restoreTo.isConnected) {
-        restoreTo.focus({ preventScroll: true });
-      }
-    };
-  });
-
   const BLUE = "var(--dm-motion-blue, #3575e2)";
   const RED = "var(--dm-motion-red, #ed1c24)";
 
@@ -308,7 +266,11 @@
          also repaints nothing in the grid: a tile is the two hands' shapes, and
          the pairing is what those two hands do to each other, which is a thing
          you watch rather than a thing you look at. -->
-    <div class="mode-picker" transition:growFade={{ axis: "y" }}>
+    <div
+      class="mode-picker"
+      data-focus-mode-chrome
+      transition:growFade={{ axis: "y" }}
+    >
       <ElementChipRow
         selected={app.theoryMode}
         onpick={(mode: VtgMode | null) => {
@@ -331,11 +293,7 @@
       />
     </div>
 
-    <div
-      class="media-stage"
-      inert={compactSettingsOpen}
-      aria-hidden={compactSettingsOpen}
-    >
+    <div class="media-stage">
       <div class="detail-flow">
         {#if !pair}
           <div class="empty">
@@ -343,7 +301,7 @@
             <small>Its two hands run here, in the pairing chosen above.</small>
           </div>
         {:else}
-          <header class="pair-heading">
+          <header class="pair-heading" data-focus-mode-chrome>
             <div class="pair-keys">
               <strong style={`color: ${BLUE};`}>
                 {theoryRatioLabel(pair.left.ratio)}
@@ -357,7 +315,7 @@
 
           <!-- The stage is a button, so the gear is its sibling in a shared
                frame rather than a control nested inside a control. -->
-          <div class="stage-frame">
+          <div class="stage-frame" data-focus-layout="theory-canvas">
             {#if !app.compact}
               <ShapeMatrixStageActions />
             {/if}
@@ -412,7 +370,11 @@
         <!-- Outside the branch on purpose: it is true of the whole surface.
              The short question stays visible; the explanation waits until
              someone asks for it so this pane still feels like a toy. -->
-        <div class="boundary-disclosure" transition:growFade={{ axis: "y" }}>
+        <div
+          class="boundary-disclosure"
+          data-focus-mode-chrome
+          transition:growFade={{ axis: "y" }}
+        >
           <PanelButton
             fullWidth
             ariaExpanded={boundaryOpen}
@@ -440,57 +402,18 @@
       </div>
     </div>
 
-    {#if compactSettingsOpen}
-      <div
-        class="compact-settings"
-        role="dialog"
-        aria-label="Animation settings"
-        tabindex="-1"
-        bind:this={compactSettingsElement}
-        onkeydown={onCompactSettingsKeydown}
-      >
-        <header class="compact-settings-header">
-          <strong>Animation settings</strong>
-          <button
-            type="button"
-            onclick={closeCompactSettings}
-            aria-label="Close settings"
-          >
-            <i class="fas fa-xmark" aria-hidden="true"></i>
-          </button>
-        </header>
-        <div class="compact-settings-body">
-          <AnimationPanel
-            isExporting={false}
-            layout="bottom"
-            presentation="content"
-            controlledSection={animationState.activeSection}
-            isPlaying={animationState.playing}
-            bpm={animationState.bpm}
-            playbackMode={animationState.playbackMode}
-            onPlaybackToggle={animationState.togglePlaying}
-            onPlaybackModeChange={animationState.setPlaybackMode}
-            onBpmChange={animationState.setBpm}
-            showEffectsPlayback={false}
-            selectedPropType={app.propType}
-            onPropChange={(next: PropType) => void app.setPropType(next)}
-            showPathShape={false}
-            showMotionVisibility={true}
-            showSequenceMarks={false}
-            availableEffects={THEORY_EFFECTS}
-            regionLabel="Shape animation settings"
-          />
-        </div>
-      </div>
-    {/if}
-
     <!-- Compact hosts only. A wide host reaches Customize from the gear in
          the stage's corner and playback from the stage itself, so it needs no
          band here. `sequence` is null because a spin ratio is not one: it has
          no letter, no steps and no word, and the panel's sequence-shaped
          affordances are turned off rather than pointed at nothing. -->
     {#if app.compact}
-      <div class="animation-controls" data-shape-matrix-dock>
+      <div
+        class="animation-controls"
+        data-focus-mode-chrome
+        data-focus-layout={app.surface === "theory" ? "picker" : undefined}
+        data-shape-matrix-dock
+      >
         <AnimationPanel
           isExporting={false}
           layout="bottom"
@@ -793,50 +716,6 @@
     }
   }
 
-  .compact-settings {
-    position: absolute;
-    z-index: 8;
-    inset-inline: 0;
-    bottom: 3.65rem;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    height: min(52%, 20rem);
-    overflow: hidden;
-    border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
-    border-radius: 14px 14px 0 0;
-    background:
-      linear-gradient(
-        var(--theme-panel-bg, rgb(16 23 33 / 0.96)),
-        var(--theme-panel-bg, rgb(16 23 33 / 0.96))
-      ),
-      var(--theme-bg-deep, #0a0f14);
-    box-shadow: 0 -0.75rem 2rem var(--theme-shadow, rgb(0 0 0 / 0.4));
-  }
-
-  .compact-settings-header {
-    display: flex;
-    min-height: var(--min-touch-target, 44px);
-    align-items: center;
-    justify-content: space-between;
-    padding-inline: 0.85rem 0.35rem;
-    border-bottom: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
-    font-size: var(--font-size-min, 0.875rem);
-  }
-
-  .compact-settings-header button {
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    border: 0;
-    background: transparent;
-    color: var(--theme-text, #fff);
-    cursor: pointer;
-  }
-
-  .compact-settings-body {
-    min-height: 0;
-    overflow: hidden;
-  }
-
   @container shape-matrix-app (max-width: 74.99rem) or (max-height: 41.99rem) {
     .theory-detail {
       border: 0;
@@ -856,10 +735,6 @@
      is already two columns wide here on its own, which is what the rail was
      sized for. */
   @container shape-matrix-drill (min-width: 42rem) and (max-height: 24rem) {
-    .compact-settings {
-      inset-inline-start: calc(clamp(13rem, 30%, 17rem) + 0.8rem);
-    }
-
     .detail-body {
       grid-template-columns: clamp(13rem, 30%, 17rem) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr) auto;

@@ -56,6 +56,9 @@ export function createChoreoCardQrStateHarness(options: HarnessOptions) {
     setQrUrl(qrUrl: string | undefined) {
       deps = { ...deps, qrUrl };
     },
+    setSequence(sequence: SequenceData) {
+      deps = { ...deps, sequence };
+    },
     dispose,
   } as const;
 }

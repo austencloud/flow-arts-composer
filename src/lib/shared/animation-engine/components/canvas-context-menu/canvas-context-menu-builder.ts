@@ -13,7 +13,7 @@
  *   - Effect Presets: the active effect's presets + Default (radio-style)
  *   - Trail Tracking: prop-aware end labels + Hand (when trails are active)
  *   - Efforts: the 8 effort presets from the effort domain (radio-style)
- *   - Motion Paths: Arc / Linear / Concave / By Motion (radio-style)
+ *   - Motion Paths: Arc / Linear / Concave / Hybrid (radio-style)
  *
  * Plus: Disassemble toggle, Report Effect Issue, 3D view toggle.
  *
@@ -26,18 +26,17 @@ import type {
   ContextMenuEntry,
   ContextMenuItem,
 } from "$lib/shared/components/context-menu/context-menu-types";
-import type { AnimationVisibilityStateManager, GridMode } from "../../state/animation-visibility-state.svelte";
+import type {
+  AnimationVisibilityStateManager,
+  GridMode,
+} from "../../state/animation-visibility-state.svelte";
 import { EFFORTS } from "$lib/shared/effort/domain/effort-types";
 import { animationSettings } from "../../state/animation-settings-state.svelte";
 import { fits3DViewportNow } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte";
 import { TrackingMode } from "../../domain/types/trail-types";
 import type { EffectType } from "../../domain/types/tip-effect-types";
 import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
-import {
-  EFFECTS,
-  getRegistration,
-} from "../effects-panel/effect-registry";
-
+import { EFFECTS, getRegistration } from "../effects-panel/effect-registry";
 
 interface CanvasContextMenuDeps {
   visibilityManager: AnimationVisibilityStateManager;
@@ -59,7 +58,7 @@ function getActiveEffect(ecs?: EffectsConfigState | null): EffectType {
 
 function buildEffectChildren(
   active: EffectType,
-  ecs?: EffectsConfigState | null,
+  ecs?: EffectsConfigState | null
 ): ContextMenuItem[] {
   const setEffect = (effect: EffectType) => {
     ecs?.setActiveEffect(effect);
@@ -89,7 +88,7 @@ function buildEffectChildren(
  */
 function buildEffectPresetChildren(
   active: EffectType,
-  ecs?: EffectsConfigState | null,
+  ecs?: EffectsConfigState | null
 ): ContextMenuItem[] {
   if (!ecs || active === "none") return [];
   const registration = getRegistration(active);
@@ -121,7 +120,7 @@ function buildEffectPresetChildren(
         ecs.applyPreset(
           group.effectType,
           preset.id,
-          preset.resolvePatch ? preset.resolvePatch() : (preset.patch ?? {}),
+          preset.resolvePatch ? preset.resolvePatch() : (preset.patch ?? {})
         ),
     })),
   ];
@@ -183,8 +182,7 @@ function buildTrailTrackingChildren(): ContextMenuItem[] {
   ];
 }
 
-// Labels and colors match PathShapePanel exactly — the same four choices under
-// two different names ("Hybrid" here, "By Motion" there) read as two features.
+// Labels match the viewer and mandala controls.
 function buildPathShapeChildren(
   vm: AnimationVisibilityStateManager
 ): ContextMenuItem[] {
@@ -220,12 +218,31 @@ function buildPathShapeChildren(
     },
     {
       id: "path-by-motion",
-      label: "By Motion",
+      label: "Hybrid",
       icon: "fa-shuffle",
       iconColor: "#2dd4bf",
       checked: motionAware,
       action: () => vm.setMotionAwarePaths(true),
     },
+    {
+      id: "path-explanation",
+      label: "About motion paths",
+      icon: "fa-circle-info",
+      action: () => {
+        window.open("/guide/motion-paths", "_blank", "noopener,noreferrer");
+      },
+    },
+    ...(vm.getPathSession()
+      ? [
+          {
+            id: "path-restore",
+            label: "Restore saved paths",
+            icon: "fa-rotate-left",
+            disabled: !vm.getPathSession()?.preview,
+            action: () => vm.restoreSavedPaths(),
+          },
+        ]
+      : []),
   ];
 }
 
@@ -440,7 +457,7 @@ export function buildCanvasContextMenuItems(
       icon: "fa-draw-polygon",
       children: buildPathShapeChildren(vm),
     },
-    { type: "separator" as const },
+    { type: "separator" as const }
   );
 
   if (deps.onToggleDisassemble) {
@@ -467,21 +484,34 @@ export function buildCanvasContextMenuItems(
           const json = JSON.stringify(snapshot, null, 2);
           try {
             await navigator.clipboard.writeText(json);
-            console.log("[EffectDiagnostics] Snapshot copied to clipboard:", snapshot);
+            console.log(
+              "[EffectDiagnostics] Snapshot copied to clipboard:",
+              snapshot
+            );
           } catch {
             // Clipboard may fail in non-secure contexts
-            console.log("[EffectDiagnostics] Snapshot (copy failed, logged here):", json);
+            console.log(
+              "[EffectDiagnostics] Snapshot (copy failed, logged here):",
+              json
+            );
           }
         },
       }
     );
   }
 
-  if (deps.viewer3DState?.webgl2Available && deps.onToggle3DView && fits3DViewportNow()) {
+  if (
+    deps.viewer3DState?.webgl2Available &&
+    deps.onToggle3DView &&
+    fits3DViewportNow()
+  ) {
     items.push({ type: "separator" as const });
     items.push({
       id: "toggle-3d-view",
-      label: deps.viewer3DState.renderMode === "3d" ? "Exit 3D View" : "Enter 3D View",
+      label:
+        deps.viewer3DState.renderMode === "3d"
+          ? "Exit 3D View"
+          : "Enter 3D View",
       icon: "fa-cube",
       action: deps.onToggle3DView,
     });

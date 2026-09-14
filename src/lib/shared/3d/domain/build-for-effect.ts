@@ -27,6 +27,16 @@ export interface PropBuildEquip {
   readonly propBuild?: Partial<PropBuild>;
 }
 
+/**
+ * `flat-grip` remains a supported persisted fan appearance while the shared
+ * scene package's current `PropBuild` catalog no longer includes it. Accept it
+ * at this compatibility boundary so enabling fire preserves its five-wick
+ * build; writes remain restricted to the current package shape.
+ */
+type EffectPropBuild = Omit<PropBuild, "fanBuild"> & {
+  readonly fanBuild: PropBuild["fanBuild"] | "flat-grip";
+};
+
 /** Every member of the "Double Staff build" family. */
 const DOUBLE_STAFF_FAMILY: ReadonlySet<PropType> = new Set([
   PropType.STAFF,
@@ -65,7 +75,7 @@ const FINISH_PROPS: ReadonlySet<PropType> = new Set([
 /** Drops the fields that already hold the wanted value. */
 function changedOnly(
   wanted: Partial<PropBuild>,
-  current: PropBuild
+  current: EffectPropBuild
 ): Partial<PropBuild> | null {
   const diff: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(wanted)) {
@@ -76,7 +86,7 @@ function changedOnly(
 
 function equipBuild(
   wanted: Partial<PropBuild>,
-  current: PropBuild
+  current: EffectPropBuild
 ): PropBuildEquip | null {
   const propBuild = changedOnly(wanted, current);
   return propBuild ? { propBuild } : null;
@@ -93,7 +103,7 @@ function equipProp(
 
 function fireEquip(
   propType: PropType,
-  current: PropBuild
+  current: EffectPropBuild
 ): PropBuildEquip | null {
   // Physical fire builds burn from five wicks. Keep the fan the performer
   // chose and only uncover it; pictograph and day builds still equip DoodleGrip.
@@ -128,7 +138,7 @@ function fireEquip(
 export function buildForEffect(
   propType: PropType,
   effect: EffectType | null,
-  current: PropBuild
+  current: EffectPropBuild
 ): PropBuildEquip | null {
   switch (effect) {
     case "fire":

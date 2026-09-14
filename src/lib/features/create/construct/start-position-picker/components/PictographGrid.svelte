@@ -7,6 +7,7 @@
   import { getLetterBorderColorSafe } from "$lib/shared/pictograph/shared/utils/letter-border-utils";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { onMount } from "svelte";
+  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
 
   const {
     pictographDataSet,
@@ -34,15 +35,23 @@
   let hapticService: HapticFeedback | undefined;
 
   onMount(() => {
+    const finishStabilizing = bootProfiler.startSpan(
+      "construct:start-grid-stabilize"
+    );
     hapticService = getHapticFeedback();
 
     // Brief stabilization to let container queries settle after layout change
     // Matches the parent's in:scale delay (200ms) so both views feel symmetric
     const stabilizationTimer = setTimeout(() => {
       isLayoutStabilizing = false;
+      finishStabilizing();
+      bootProfiler.milestone("construct:start-grid-reveal-start");
     }, 200);
 
-    return () => clearTimeout(stabilizationTimer);
+    return () => {
+      clearTimeout(stabilizationTimer);
+      finishStabilizing("cancelled");
+    };
   });
 
   // Animation handlers (kept for compatibility but never trigger)
@@ -94,6 +103,8 @@
           {pictographData}
           {leftPropTypeOverride}
           {rightPropTypeOverride}
+          onReady={() =>
+            bootProfiler.milestone("construct:start-pictograph-ready")}
         />
       </div>
     </div>
@@ -299,7 +310,6 @@
       margin-inline: auto;
       gap: clamp(1.5rem, 3cqw, 4rem);
     }
-
   }
 
   @media (min-width: 2600px) {

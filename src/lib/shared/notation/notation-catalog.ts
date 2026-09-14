@@ -81,7 +81,7 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     // fractional piece of other moves with simpler symmetry and assembling them
     // together into more complexly layered moves."
     records:
-      "Fractions of separate moves assembled into one pattern that repeats without a seam. Alien Jon, who took up the term in the same thread, is careful that it names a way of thinking about movement rather than a move.",
+      "Parts of different moves joined into a repeating pattern. In the original forum discussion, Alien Jon describes CAPs as a way to build movement from smaller pieces.",
     explore: {
       kind: "explanation",
       label: "See CAPs explained",
@@ -95,11 +95,11 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     sortYear: 2009.1,
     system: "The trochoid model",
     people:
-      "Zaltymbunk, of Angers, France. Danny_, in Brighton, was modelling the same problem independently against the ground rather than the arm.",
+      "Zaltymbunk, of Angers, France. Danny_, in Brighton, independently modelled the same problem using the ground as a reference. Zaltymbunk used the arm.",
     // Verbatim from the archived thread: "The patterns will be defined in the
     // following way : Theta1 Theta2 ; Rho1 Rho2", plus the later division term.
     records:
-      "A pattern written as two numbers of turns and two radii: Theta1 Theta2 ; Rho1 Rho2. A division term takes a fraction of the cycle instead of all of it. It carries a wrap table and a cycloid condition, plus rules for which patterns are physically possible.",
+      "The model describes a pattern with two turn counts and two radii: Theta1 Theta2 ; Rho1 Rho2. A division term specifies a fraction of the cycle. It also includes a wrap table, a condition for cycloids, and rules for which patterns are physically possible.",
     explore: {
       kind: "explanation",
       label: "See the model explained",
@@ -127,14 +127,14 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     // enters the lineage afterward, via Book of P.H.A.T. and Yee's own 2015 app
     // credits; see the `lorq` entry. Do not add him to this line.
     people:
-      "VTG 1 compiled by Noel Yee. Transition Theory with Jordan Campbell and David “Tankboy” Cantor; chapters by Brian Thompson, Cantor, Maiki Nope, Ben Drexler, and Yee.",
+      "Noel Yee compiled VTG 1, with chapters by Brian Thompson, David “Tankboy” Cantor, Maiki Nope, Ben Drexler, and Yee. Jordan Campbell also worked with Yee and Cantor on Transition Theory.",
     // Yee's own site: "The first goal of VTG is to help the user to understand
     // the variety of flower patterns available in a given arm and prop timing
     // and direction. The second is to teach the user how to transition between
     // patterns within a given timing and direction." Volume 1's ten shapes are
     // from Yee's own walkthrough video.
     records:
-      "A framework for flower patterns and the transitions between them, developed through illustrated guides and interactive apps. VTG 1 starts with ten minimal beat shapes for two hands. VTG 3 organizes patterns in a grid that records the timing and direction of hands and props separately; VTG 4 extends that framework through SpiroAnim.",
+      "Illustrated guides and apps for flower patterns and the transitions between them. VTG 1 starts with ten minimal beat shapes for two hands. VTG 3 uses a grid to compare the timing and direction of hands and props. VTG 4 adds quarter timing and quarter placement through SpiroAnim.",
     explore: {
       kind: "original",
       label: "Open the VTG 3 web app",
@@ -143,23 +143,23 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     subWorks: [
       {
         name: "VTG 1",
-        note: "2010, released 2011: five chapters, five different authors",
+        note: "Dated 2010 and released in 2011. Five chapters by five authors.",
       },
       {
         name: "VTG #2",
-        note: "October 2011, Cantor and Yee: past the one-to-one case, to three-to-three",
+        note: "Cantor and Yee’s October 2011 guide extends the one-to-one case to three-to-three.",
       },
       {
         name: "Book of P.H.A.T. Volume 1",
-        note: "illustrated and written by Lorq Nichols, with Thompson, Cantor and Yee. The Shape Matrix is page 32",
+        note: "Written and illustrated by Lorq Nichols, with Brian Thompson, David Cantor, and Noel Yee. The Shape Matrix appears on page 32.",
       },
       {
         name: "VTG 3: grid and document · 2019",
-        note: "A six-by-six grid of movement snapshots, with each pattern labeled by the timing and direction of the hands and props. The public document is marked Draft #1; it credits Yee, with inspiration from Cantor and Cassie McKenney.",
+        note: "A six-by-six grid of movement snapshots. Each pattern has separate labels for hand and prop timing and direction. The document, marked Draft #1, credits Yee with inspiration from Cantor and Cassie McKenney.",
       },
       {
         name: "VTG 3: phone and web apps",
-        note: "Available as an Android app by July 2019. Michael Caden Pike (MCP) and Yee turned the grid into animations, transitions and quizzes at 1:1, 1:3 and 1:5. A web version remains publicly accessible.",
+        note: "Michael Caden Pike (MCP) and Yee made the grid into an app with animations, transitions, and quizzes at 1:1, 1:3, and 1:5. The Android app was available by July 2019. You can also use the web version.",
       },
       {
         name: "VTG 4 / SpiroAnim · 2026",
@@ -212,7 +212,7 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     system: "9-Square Theory",
     people: "Charlie Cushing",
     records:
-      "A nine-point grid, plus the poi length and planes it assumes. The series runs eleven parts, from direction and timing out to stalls and footwork.",
+      "A nine-point grid for exploring poi movement, with a specified poi length and set of planes. Cushing’s eleven-part lesson series covers timing and direction, then works through topics including stalls and footwork.",
     sources: [
       {
         label: "Charlie's 9-square theory, all eleven parts",
@@ -225,14 +225,14 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
         title: "Charlie's 9-Square Theory Introduction for Poi",
         creator: "Charlie Cushing",
         year: "",
-        note: "Where the series starts.",
+        note: "An introduction to the series.",
       },
       {
         id: "VfqPBoVCt-0",
         title: "#1: Poi Length, Planes, 9-Square Introduction",
         creator: "Charlie Cushing",
         year: "",
-        note: "The grid itself, and the proportion everything else assumes.",
+        note: "How poi length and planes relate to the grid.",
       },
       {
         id: "nGwLdHSDokI",
@@ -256,18 +256,18 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     sortYear: 2011,
     system: "QFT Notation",
     people:
-      "Charlie Cushing, who dreamed up the concept. Ben Drexler wrote the primer; Alien Jon and Noel Yee gave feedback on the class the two of them taught at Kinetic Fire Festival.",
+      "Charlie Cushing developed the concept, and Ben Drexler wrote the primer. Alien Jon and Noel Yee gave feedback on Cushing and Drexler’s class at Kinetic Fire Festival.",
     // The primer is the only public document that expands the acronym, so the
     // expansion ships: "Charlie's Quantized Field Theory for poi and one of its
     // applications: notation for props."
     records:
-      "A circle cut into eight positions, and movement written as where the prop leaves, where it arrives, and which way it is travelling at each end. The full formula is a,b(h(±x±y±z)h'){Class}a',b'.",
+      "QFT divides a circle into eight positions. It records a prop’s starting and ending positions, along with its direction of travel at each end. The full formula is a,b(h(±x±y±z)h'){Class}a',b'.",
     sources: [
       { label: "The primer, on the Home of Poi forums", href: HOP_QFT },
       // The same primer on Drex's own blog. Listed because it is the copy whose
       // diagrams still load — the forum's images are all dead placeholders now.
       {
-        label: "The same primer on Drex's blog, diagrams intact",
+        label: "The primer with diagrams, on DrexFactor",
         href: "https://drexfactor.com/weirdscience/2011/05/18/beginners_guide_poi_qft_notation",
       },
     ],
@@ -288,24 +288,24 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     // Yee, David Cantor, Brian Thompson, Lorq Nichols." Neither fact is used to
     // make a claim about influence or chronology between entries.
     records:
-      "Nichols mapped movement into printed grids: driving styles crossed against each other, arm paths crossed against club shapes, until the full set could be seen at once. The Shape Matrix appears on page 32 of Vulcan Tech Gospel Book of P.H.A.T. Volume 1. Noel Yee's 2015 app credits list Nichols with Yee, David Cantor, and Brian Thompson under “VTG Authors.”",
+      "Nichols’ printed grids catalog pairs of driving styles and combinations of arm paths with club shapes. The Shape Matrix appears on page 32 of Vulcan Tech Gospel Book of P.H.A.T. Volume 1. Noel Yee's 2015 app credits list Nichols with Yee, David Cantor, and Brian Thompson under “VTG Authors.”",
     subWorks: [
       {
         name: "144 Shape Matrix",
-        note: "twelve driving styles against twelve; his own gloss is “a multiplication table for tricks”",
+        note: "Pairs twelve driving styles with twelve. Nichols calls it “a multiplication table for tricks.”",
       },
-      { name: "324 Patterns", note: "counted from arm paths and club shapes" },
+      { name: "324 Patterns", note: "A catalog of combinations of arm paths and club shapes." },
       {
         name: "27 Arm Paths",
-        note: "three axes, three planes, nine arm positions, and the transitions between them",
+        note: "Three axes, three planes, nine arm positions, and the transitions between them.",
       },
       {
         name: "Tech Tiles / Book of P.H.A.T.",
-        note: "published as Vulcan Tech Gospel Book of P.H.A.T. Volume 1, with Brian Thompson, David Cantor, and Noel Yee",
+        note: "Published as Vulcan Tech Gospel Book of P.H.A.T. Volume 1, with Brian Thompson, David Cantor, and Noel Yee.",
       },
       {
         name: "Position Matrix",
-        note: "2013, with Brian Thompson and David Cantor: the 1:1 club flowers and every transition between them",
+        note: "A 2013 catalog of 1:1 club flowers and their transitions, made with Brian Thompson and David Cantor.",
       },
     ],
     // The original publication uses HTTP: its HTTPS certificate is expired.
@@ -336,10 +336,10 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     sortYear: 2016,
     system: "PoiNotation",
     people: "Tiffany Fong",
-    records: "Poi movement written as text a program can read back.",
+    records: "A text format for recording poi movement in a form that software can read.",
     sources: [
       {
-        label: "The repository",
+        label: "PoiNotation on GitHub",
         href: "https://github.com/tiffanyfong/PoiNotation",
       },
     ],
@@ -351,7 +351,7 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
     system: "The Kinetic Alphabet",
     people: "Austen Cloud",
     records:
-      "A visual notation for flow arts. Letters and pictographs record movement, allowing sequences to be read, shared, and composed as words.",
+      "A visual notation that uses letters and pictographs to record flow arts movement. Sequences form words that can be read and shared.",
     sources: [{ label: "The Kinetic Alphabet guide", href: "/guide" }],
     explore: {
       kind: "explanation",
@@ -364,14 +364,14 @@ export const NOTATION_CATALOG: CatalogEntry[] = [
         label: "Flow Arts Composer",
         href: "/create",
         description:
-          "Austen Cloud’s main application for building, animating, saving, and sharing sequences in The Kinetic Alphabet.",
+          "Austen Cloud’s main application for The Kinetic Alphabet. Build a sequence, watch it animate, then save it or share it.",
       },
       {
         role: "tool",
         label: "Shape Engine",
         href: "/shape-engine",
         description:
-          "An exploration tool within Flow Arts Composer that can also be opened on its own. It brings together VTG, TKA, timing, and direction. Its matrix extends Lorq Nichols’ pairing approach; it is Austen Cloud’s work.",
+          "Austen Cloud’s tool for exploring VTG and TKA with timing and direction. It is part of Flow Arts Composer and also opens on its own. Its matrix extends Lorq Nichols’ approach of pairing movements.",
       },
     ],
   },

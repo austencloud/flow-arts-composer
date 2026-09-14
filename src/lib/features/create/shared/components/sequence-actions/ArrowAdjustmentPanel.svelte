@@ -548,13 +548,13 @@
   }
 
   .arrow-badge.blue {
-    background: rgba(59, 130, 246, 0.3);
-    color: #60a5fa;
+    background: rgba(var(--user-left-rgb, 59, 130, 246), 0.3);
+    color: var(--user-left-color, #60a5fa);
   }
 
   .arrow-badge.red {
-    background: rgba(239, 68, 68, 0.3);
-    color: #f87171;
+    background: rgba(var(--user-right-rgb, 239, 68, 68), 0.3);
+    color: var(--user-right-color, #f87171);
   }
 
   .adjustment-values {
@@ -626,7 +626,7 @@
   }
 
   .save-indicator.saving {
-    color: #60a5fa;
+    color: var(--user-left-color, #60a5fa);
   }
 
   .save-indicator.saved {
@@ -651,7 +651,7 @@
     border-radius: 10px;
     border: 1px solid rgba(96, 165, 250, 0.3);
     background: rgba(96, 165, 250, 0.1);
-    color: #60a5fa;
+    color: var(--user-left-color, #60a5fa);
     cursor: pointer;
     font-size: 0.6rem;
     padding: 0 6px;

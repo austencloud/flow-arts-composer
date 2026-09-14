@@ -6,6 +6,8 @@
  * that resolve to ConstraintOptions before calling buildConstraintSet().
  */
 
+import type { HandRelationshipOptions } from "../style/hand-relationship-constraint.js";
+
 export interface ConstraintOptions {
   /** Pro, anti, or any motion type. Default: "any" */
   motionType?: "pro" | "anti" | "any";
@@ -36,4 +38,8 @@ export interface ConstraintOptions {
    *  constraints can still force non-dash picks on specific steps — this is
    *  a best-effort bias, not a hard minimum. */
   dashPreference?: "maximize" | "minimize";
+
+  /** Tie the left hand to the right hand inside every step. Hard. See
+   *  HandRelationshipConstraint for the maps and what "inverted" means. */
+  handRelationship?: HandRelationshipOptions;
 }

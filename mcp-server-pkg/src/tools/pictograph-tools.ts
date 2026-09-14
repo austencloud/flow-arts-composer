@@ -235,6 +235,7 @@ export function registerPictographTools(server: McpServer): void {
           showRightMotion: prefs.showRightMotion,
           leftPropType: prefs.leftPropType,
           rightPropType: prefs.rightPropType,
+          fanAppearance: prefs.fanAppearance,
         };
 
         const renderer = getStandaloneRenderer();
@@ -432,6 +433,7 @@ export function registerPictographTools(server: McpServer): void {
           showRightMotion: prefs.showRightMotion,
           leftPropType: prefs.leftPropType,
           rightPropType: prefs.rightPropType,
+          fanAppearance: prefs.fanAppearance,
         };
 
         const renderer = getStandaloneRenderer();

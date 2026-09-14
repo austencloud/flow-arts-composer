@@ -2,7 +2,7 @@
   StepGridSection.svelte
 
   Step grid display section for SequenceActionsPanel.
-  Includes shift-mode banner when in shift start mode.
+  Includes the Choose Start banner while picking a start pose.
 -->
 <script lang="ts">
   import StepGrid from "../../workspace-panel/sequence-display/components/StepGrid.svelte";
@@ -42,7 +42,7 @@
 >
   {#if isShiftMode}
     <div class="shift-mode-banner">
-      <span>Tap the step to play first - it becomes Step 1</span>
+      <span>Tap the pose you want to start from</span>
       <button class="cancel-btn" onclick={onCancelShiftMode}>Cancel</button>
     </div>
   {/if}
@@ -53,6 +53,7 @@
     {onStepClick}
     {onStartClick}
     onStepLongPress={isShiftMode ? undefined : onStepLongPress}
+    posePicker={isShiftMode}
   />
 </div>
 

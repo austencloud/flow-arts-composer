@@ -14,7 +14,6 @@ interface Viewer3DActivationInputs {
 }
 
 interface Viewer3DActivationDependencies {
-  setPathShape: (pathShape: "arc" | "linear") => void;
   viewportFits3D: () => boolean;
 }
 
@@ -22,13 +21,6 @@ export function createViewer3DActivationState(
   inputs: Viewer3DActivationInputs,
   dependencies: Viewer3DActivationDependencies
 ) {
-  $effect(() => {
-    const savedPathShape = inputs.getSequence()?.metadata?.pathShape;
-    if (savedPathShape === "arc" || savedPathShape === "linear") {
-      dependencies.setPathShape(savedPathShape);
-    }
-  });
-
   $effect(() => {
     inputs.onUrlParamChange?.(
       "render",

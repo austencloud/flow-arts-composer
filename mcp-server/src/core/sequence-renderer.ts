@@ -1,56 +1,54 @@
-/**
- * Sequence Renderer for MCP Server
- *
- * Composites multiple pictographs into a single "choreo card" image.
- * Matches the app's ImageComposer output with:
- * - Header with word text and difficulty badge (Georgia Bold)
- * - Footer with username, notes, and birthday
- * - Step numbers overlaid on pictographs (top-left corner)
- * - Smart cell borders between occupied cells
- */
-
+/** MCP adapter for the platform-neutral choreo card composition pipeline. */
 import {
   createCanvas,
   type Canvas,
   type CanvasRenderingContext2D,
-} from "canvas";
+} from "@napi-rs/canvas/node-canvas.js";
 import {
   getStandaloneRenderer,
   type PictographInput,
   type RenderVisibilityOptions,
 } from "./standalone-renderer.js";
-import {
-  detectReversals,
-  type SequenceStep,
-} from "./sequence-builder-adapter.js";
+import type { SequenceStep } from "./sequence-builder-adapter.js";
+import { applyCanonicalReversals } from "./card-reversals.js";
+import { renderCardQrCode } from "./qr-code-renderer.js";
 import {
   renderWordHeader,
   renderUserInfo,
-  calculateHeaderHeight,
-  calculateFooterHeight,
   LOOPComponent,
   type UserExportInfo,
   type LetterStyle,
 } from "./text-renderer.js";
-import { renderStepNumber } from "@tka/render-composition";
-
-// Re-export LOOPComponent for consumers
-export { LOOPComponent };
+import {
+  COMPOSER_CARD_EXPORT_PROFILE_V1,
+  DARK_HAND_COLORS,
+  LIGHT_HAND_COLORS,
+  calculateCardMandalaPaths,
+  composeSequenceCard,
+  renderCardMandala,
+  resolveHandColorPair,
+  type HandColorPair,
+  type CompressedSegment,
+  type LoopInversionPeriod,
+  type LoopReflectionAxis,
+  type LoopRotationPeriod,
+  type SequenceCardHeader,
+  compressWord,
+  simplifyRepeatedWord,
+} from "@tka/render-composition";
 import { calculateDifficultyLevel } from "./difficulty-calculator.js";
+import { ensureGelasioRegistered } from "./gelasio-fonts.js";
 
-/**
- * Legacy fallback for callers whose steps do not yet carry turn data.
- */
+export { LOOPComponent };
+
 export interface TurnAllocation {
   left: (number | "fl")[];
   right: (number | "fl")[];
 }
-
 export interface HeaderDisplay {
   word: string;
   letterStyles: LetterStyle[];
 }
-
 export interface SequenceRenderOptions {
   layout: "grid" | "strip";
   cellSize: number;
@@ -58,81 +56,76 @@ export interface SequenceRenderOptions {
   showStepNumbers: boolean;
   showWord: boolean;
   darkMode: boolean;
-  // New options for visual parity
   showDifficulty?: boolean;
   userName?: string;
   notes?: string;
   birthday?: Date;
-  // Difficulty level (for badge display and orientation calculation)
   level?: number;
-  // Legacy turn fallback, indexed by step number - 1. Canonical turn values on
-  // each motion always win so LOOP-derived steps keep the seed transformation.
+  /** Generation input only; the badge is always derived from rendered motions. */
   turnAllocation?: TurnAllocation;
-  // LOOP components for the pie chart glyph (top-right corner)
   loopComponents?: LOOPComponent[];
-  // LOOP period as integer (2 = halved, 4 = quartered) — rendered as badge on each icon
+  rotationPeriod?: LoopRotationPeriod;
+  inversionPeriod?: LoopInversionPeriod;
+  reflectionAxis?: LoopReflectionAxis;
+  overlayComponents?: LOOPComponent[];
+  compressedSegments?: CompressedSegment[];
+  displayWord?: string;
+  exportProfile?: "composer" | "print";
+  columnCount?: number;
+  frame?: {
+    canvasWidth?: number;
+    canvasHeight?: number;
+    bleedPx?: number;
+    accent: string;
+    dark: string;
+    palette?: readonly string[];
+  };
+  showLoopGlyph?: boolean;
   period?: number;
-  // Show reversal indicators (direction change dots on left edge)
   showReversals?: boolean;
-  // LOOP sequence info - which steps are derived (transformed) vs seed (original)
-  // Used for header text styling only - pictographs are not dimmed
   derivedStepIndices?: number[];
-  // Original seed word for LOOP sequences (displayed prominently in header)
   seedWord?: string;
-  // Prop artwork for both hands. Null/undefined keeps the staff default.
   leftPropType?: string | null;
   rightPropType?: string | null;
+  fanAppearance?: {
+    build?: "pictograph" | "fire" | "flat-grip" | "lotus" | "day" | "moon";
+    frameColor?: "black" | "white";
+    cover?: "bare" | "covered";
+  } | null;
+  /** App export uses a dedicated start row; legacy column cards can opt in. */
+  startPositionLayout?: "row" | "column";
+  /** App export omits the footer; callers may retain it explicitly. */
+  showFooter?: boolean;
+  /** Fill reserved info cells with the sequence's prop-tip trajectory. */
+  showMandala?: boolean;
+  primaryPropColors?: HandColorPair | null;
+  /** Published player link; when set the card carries the Composer's QR slot. */
+  qrUrl?: string;
+  /** Opt out of the QR cell even when `qrUrl` is known. */
+  showQRCode?: boolean;
+  /** TnD accent tint (header, footer, and print side bands). */
+  accentColor?: string;
+  /** 0–1 alpha for the accent tint; omit for the Composer default. */
+  accentTintOpacity?: number;
 }
+const DEFAULT_OPTIONS = {
+  ...COMPOSER_CARD_EXPORT_PROFILE_V1,
+} satisfies SequenceRenderOptions;
 
-const DEFAULT_OPTIONS: SequenceRenderOptions = {
-  layout: "grid",
-  cellSize: 900,
-  padding: 8,
-  showStepNumbers: true,
-  showWord: true,
-  darkMode: true,
-  showDifficulty: true,
-  level: 1,
-  showReversals: true,
-};
-
-/**
- * Get start orientation based on difficulty level.
- * - Level 1-2: "in" (radial)
- * - Level 3: "clock" (non-radial)
- */
-function getStartOrientationForLevel(level: number): string {
-  return level === 3 ? "clock" : "in";
-}
-
-/**
- * Resolve the exact turn tuple sent to the pictograph renderer.
- *
- * Generated sequence steps are authoritative. The optional allocation exists
- * only for older callers that still provide steps without embedded turn data.
- */
+/** Legacy fallback for callers whose steps do not yet carry turn data. */
 export function resolveRenderedTurns(
   step: SequenceStep,
   turnAllocation?: TurnAllocation
 ): { left: number | "fl"; right: number | "fl" } {
-  if (step.stepNumber === 0) {
-    return { left: 0, right: 0 };
-  }
-
+  if (step.stepNumber === 0) return { left: 0, right: 0 };
   const allocationIndex = step.stepNumber - 1;
   return {
     left: step.leftMotion.turns ?? turnAllocation?.left[allocationIndex] ?? 0,
-    right: step.rightMotion.turns ?? turnAllocation?.right[allocationIndex] ?? 0,
+    right:
+      step.rightMotion.turns ?? turnAllocation?.right[allocationIndex] ?? 0,
   };
 }
 
-/**
- * Resolve the header from the steps that are actually rendered.
- *
- * A generated word can gain bridge steps, so the requested input is not a
- * faithful label for the resulting sequence. LOOP cards are the exception:
- * their explicit seed word remains the compact header contract.
- */
 export function resolveHeaderDisplay(
   steps: SequenceStep[],
   requestedWord: string,
@@ -140,12 +133,10 @@ export function resolveHeaderDisplay(
   derivedStepIndices: number[] = []
 ): HeaderDisplay {
   const stepSteps = steps.filter((step) => step.stepNumber > 0);
-
   if (seedWord) {
     const seedSteps = stepSteps.filter(
       (step) => !step.isBridge && !derivedStepIndices.includes(step.stepNumber)
     );
-
     return {
       word: seedWord,
       letterStyles: seedSteps.map((step) => ({
@@ -155,12 +146,10 @@ export function resolveHeaderDisplay(
       })),
     };
   }
-
   return {
-    word:
-      stepSteps.length > 0
-        ? stepSteps.map((step) => step.letter).join("")
-        : requestedWord,
+    word: stepSteps.length
+      ? stepSteps.map((step) => step.letter).join("")
+      : requestedWord,
     letterStyles: stepSteps.map((step) => ({
       letter: step.letter,
       isBridge: !!step.isBridge,
@@ -169,60 +158,24 @@ export function resolveHeaderDisplay(
   };
 }
 
-/**
- * Render a sequence as a composite image.
- * Returns a PNG buffer.
- */
 export async function renderSequenceToImage(
   steps: SequenceStep[],
   word: string,
   options: Partial<SequenceRenderOptions> = {}
 ): Promise<Buffer> {
+  ensureGelasioRegistered();
   const opts = { ...DEFAULT_OPTIONS, ...options };
+  const showDifficulty =
+    options.showDifficulty ??
+    (options.exportProfile === "print" ||
+      COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty);
+  const primaryPropColors = opts.primaryPropColors
+    ? resolveHandColorPair(
+        opts.primaryPropColors,
+        opts.darkMode ? DARK_HAND_COLORS : LIGHT_HAND_COLORS
+      )
+    : null;
   const renderer = getStandaloneRenderer();
-
-  // Include all steps (including step 0 start position)
-  // Apply reversal detection if showReversals is enabled
-  const letterSteps = opts.showReversals ? detectReversals(steps) : steps;
-
-  if (letterSteps.length === 0) {
-    throw new Error("No steps to render");
-  }
-
-  // Use provided level for difficulty badge
-  const difficultyLevel = opts.level ?? 1;
-
-  // Get base orientation based on level
-  const baseOrientation = getStartOrientationForLevel(difficultyLevel);
-
-  // Turn allocation (per step, per color)
-  const turnAllocation = opts.turnAllocation;
-
-  // Check if we need header and footer
-  const hasHeader = !!(opts.showWord || opts.showDifficulty);
-  // Footer always shows (with defaults) - "The Kinetic Alphabet" center text is always present
-  const hasFooter = true;
-
-  // Calculate layout dimensions
-  const {
-    width,
-    height,
-    columns,
-    rows,
-    headerHeight,
-    footerHeight,
-    gridStartY,
-  } = calculateLayout(letterSteps.length, opts, hasHeader, hasFooter);
-
-  // Create main canvas
-  const canvas = createCanvas(width, height);
-  const ctx = canvas.getContext("2d");
-
-  // Fill background for grid area
-  ctx.fillStyle = opts.darkMode ? "#0a0a0f" : "#ffffff";
-  ctx.fillRect(0, headerHeight, width, height - headerHeight - footerHeight);
-
-  // Render each pictograph
   const visibilityOptions: RenderVisibilityOptions = {
     darkMode: opts.darkMode,
     size: opts.cellSize,
@@ -236,295 +189,166 @@ export async function renderSequenceToImage(
     showNonRadialPoints: false,
     leftPropType: opts.leftPropType,
     rightPropType: opts.rightPropType,
+    fanAppearance: opts.fanAppearance ?? {
+      build: "fire",
+      frameColor: "black",
+      cover: "bare",
+    },
+    primaryPropColors,
   };
-
-  for (let i = 0; i < letterSteps.length; i++) {
-    const step = letterSteps[i];
-    if (!step) continue;
-
-    // Calculate cell position using the offset layout
-    const { row, col } = calculateStepPosition(i, columns);
-    const x = col * opts.cellSize;
-    const y = gridStartY + row * opts.cellSize;
-
-    // Convert step to pictograph input format. LOOP-expanded steps already
-    // contain the transformed turn tuple; never replace it during rendering.
-    const stepNum = step.stepNumber;
-    const { left: leftTurns, right: rightTurns } = resolveRenderedTurns(
-      step,
-      turnAllocation
-    );
-
-    const pictographInput: PictographInput = {
-      letter: step.letter,
-      startPosition: step.startPosition,
-      endPosition: step.endPosition,
-      leftMotion: {
-        motionType: step.leftMotion.motionType,
-        rotationDirection: step.leftMotion.rotationDirection || "no_rotation",
-        startLocation: step.leftMotion.startLocation,
-        endLocation: step.leftMotion.endLocation,
-        hand: "left",
-        turns: leftTurns,
-        startOrientation: step.leftMotion.startOrientation || baseOrientation,
-      },
-      rightMotion: {
-        motionType: step.rightMotion.motionType,
-        rotationDirection: step.rightMotion.rotationDirection || "no_rotation",
-        startLocation: step.rightMotion.startLocation,
-        endLocation: step.rightMotion.endLocation,
-        hand: "right",
-        turns: rightTurns,
-        startOrientation: step.rightMotion.startOrientation || baseOrientation,
-      },
-      // Reversal indicators (if detected)
-      leftReversal: step.leftReversal,
-      rightReversal: step.rightReversal,
-    };
-
-    try {
-      // Render individual pictograph
-      const pngBuffer = await renderer.renderToPng(
-        pictographInput,
-        visibilityOptions
+  return composeSequenceCard<SequenceStep, Canvas>({
+    steps,
+    word,
+    options: {
+      ...opts,
+      showDifficulty,
+      showFooter: opts.showFooter ?? false,
+      showReversals: opts.showReversals ?? false,
+      startPositionLayout: opts.startPositionLayout ?? "row",
+      showLoopGlyph:
+        opts.showLoopGlyph !== false && !!opts.loopComponents?.length,
+      showQRCode: !!opts.qrUrl && opts.showQRCode !== false,
+    },
+    createCanvas,
+    getContext: (canvas) =>
+      canvas.getContext("2d") as unknown as globalThis.CanvasRenderingContext2D,
+    toPng: (canvas) => canvas.toBuffer("image/png"),
+    getStepNumber: (step) => step.stepNumber,
+    getStepDuration: (step) => step.duration,
+    applyReversals: (source) =>
+      applyCanonicalReversals(source, !!opts.loopComponents?.length),
+    renderQRCode: opts.qrUrl
+      ? (ctx, cell) => renderCardQrCode(ctx, cell, opts.qrUrl!, opts.darkMode)
+      : undefined,
+    calculateDifficultyLevel: (renderedSteps) =>
+      calculateDifficultyLevel(renderedSteps, opts.turnAllocation),
+    renderPictograph: async (ctx, step, cell) => {
+      const turns = resolveRenderedTurns(step, opts.turnAllocation);
+      const pictograph: PictographInput = {
+        letter: step.letter,
+        startPosition: step.startPosition,
+        endPosition: step.endPosition,
+        leftMotion: {
+          ...step.leftMotion,
+          rotationDirection: step.leftMotion.rotationDirection || "no_rotation",
+          hand: "left",
+          turns: turns.left,
+          startOrientation:
+            step.leftMotion.startOrientation || cell.baseOrientation,
+        },
+        rightMotion: {
+          ...step.rightMotion,
+          rotationDirection:
+            step.rightMotion.rotationDirection || "no_rotation",
+          hand: "right",
+          turns: turns.right,
+          startOrientation:
+            step.rightMotion.startOrientation || cell.baseOrientation,
+        },
+        leftReversal: step.leftReversal,
+        rightReversal: step.rightReversal,
+      };
+      const png = await renderer.renderToPng(pictograph, {
+        ...visibilityOptions,
+        // The start cell is part of the pictograph canon: it carries the L/R key.
+        showHandColorKey: step.stepNumber === 0,
+        size: cell.cellSize,
+      });
+      const { loadImage } = await import("@napi-rs/canvas/node-canvas.js");
+      ctx.drawImage(
+        (await loadImage(png)) as unknown as CanvasImageSource,
+        cell.x,
+        cell.y,
+        cell.cellSize,
+        cell.cellSize
       );
-
-      // Load and draw onto composite canvas
-      const { loadImage } = await import("canvas");
-      const img = await loadImage(pngBuffer);
-      ctx.drawImage(img, x, y, opts.cellSize, opts.cellSize);
-
-      // Note: Derived steps in LOOP sequences are distinguished in the header text
-      // (smaller font, secondary color) but the pictographs themselves are NOT dimmed
-      // to maintain readability
-
-      // Draw step number overlaid on pictograph (top-left corner)
-      if (opts.showStepNumbers) {
-        renderStepNumber(
-          ctx as unknown as globalThis.CanvasRenderingContext2D,
-          stepNum,
-          x,
-          y,
-          opts.cellSize,
-          opts.darkMode
-        );
-      }
-    } catch (error) {
-      // Draw error placeholder
-      ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
-      ctx.fillRect(x, y, opts.cellSize, opts.cellSize);
-      ctx.fillStyle = opts.darkMode ? "#ff6b6b" : "#dc3545";
-      ctx.font = "12px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("Error", x + opts.cellSize / 2, y + opts.cellSize / 2);
-    }
-  }
-
-  // Draw smart cell borders between occupied cells
-  drawSmartCellBorders(
-    ctx,
-    columns,
-    rows,
-    opts.cellSize,
-    letterSteps.length,
-    gridStartY,
-    opts.darkMode
-  );
-
-  // Draw word header if enabled
-  if (hasHeader && headerHeight > 0) {
-    const headerDisplay = resolveHeaderDisplay(
-      letterSteps,
-      word,
-      opts.seedWord,
-      opts.derivedStepIndices
-    );
-
-    await renderWordHeader(
-      ctx,
-      opts.showWord ? headerDisplay.word : "",
-      width,
-      headerHeight,
-      difficultyLevel,
-      opts.showDifficulty ?? true,
-      opts.darkMode,
-      headerDisplay.letterStyles.length > 0
-        ? headerDisplay.letterStyles
-        : undefined,
-      opts.loopComponents
-    );
-  }
-
-  // Draw user info footer (always shown with defaults)
-  if (hasFooter && footerHeight > 0) {
-    const userInfo: UserExportInfo = {
-      userName: opts.userName,
-      notes: opts.notes,
-      birthday: opts.birthday,
-      word, // Pass word for contextual captions
-    };
-    renderUserInfo(ctx, userInfo, width, height, footerHeight, opts.darkMode);
-  }
-
-  return canvas.toBuffer("image/png");
-}
-
-/**
- * Calculate grid position for a step, accounting for start position offset.
- *
- * Layout pattern:
- * Row 1: [start] [1] [2] [3] ...
- * Row 2:    -    [4] [5] [6] ...  (empty cell in column 0)
- * Row 3:    -    [7] [8] [9] ...
- *
- * @param stepIndex - Index in the steps array (0 = start position)
- * @param totalColumns - Total columns in the grid
- * @returns { row, col } position
- */
-function calculateStepPosition(
-  stepIndex: number,
-  totalColumns: number
-): { row: number; col: number } {
-  if (stepIndex === 0) {
-    // Start position is always at (0, 0)
-    return { row: 0, col: 0 };
-  }
-
-  // Letter steps: account for start position taking column 0 of row 0
-  // stepColumns = totalColumns - 1 (columns available for steps per row after the start column)
-  const stepColumns = totalColumns - 1;
-  const stepNumber = stepIndex - 1; // 0-based index among letter steps
-
-  if (stepNumber < stepColumns) {
-    // First row: steps go after the start position
-    return { row: 0, col: stepNumber + 1 };
-  }
-
-  // Subsequent rows: start at column 1 (column 0 is empty)
-  const adjustedIndex = stepNumber - stepColumns; // Index relative to row 2+
-  const row = Math.floor(adjustedIndex / stepColumns) + 1;
-  const col = (adjustedIndex % stepColumns) + 1;
-
-  return { row, col };
-}
-
-function calculateLayout(
-  stepCount: number,
-  opts: SequenceRenderOptions,
-  hasHeader: boolean,
-  hasFooter: boolean
-): {
-  width: number;
-  height: number;
-  columns: number;
-  rows: number;
-  headerHeight: number;
-  footerHeight: number;
-  gridStartY: number;
-} {
-  // Calculate header and footer heights based on cell size (matching app proportions)
-  const headerHeight = hasHeader ? calculateHeaderHeight(opts.cellSize) : 0;
-  const footerHeight = hasFooter ? calculateFooterHeight(opts.cellSize) : 0;
-
-  if (opts.layout === "strip") {
-    // Single row layout - all steps in one row
-    const columns = stepCount;
-    const rows = 1;
-    const width = columns * opts.cellSize;
-    const height = headerHeight + opts.cellSize + footerHeight;
-    return {
-      width,
-      height,
-      columns,
-      rows,
-      headerHeight,
-      footerHeight,
-      gridStartY: headerHeight,
-    };
-  }
-
-  // Grid layout with start position offset
-  // We need to figure out how many columns based on letter count
-  const letterCount = stepCount - 1; // Exclude start position
-
-  // Calculate step columns (columns after the start position)
-  // 32+ steps use 8 columns for wider, more readable layouts
-  const stepColumns =
-    letterCount >= 31 ? 8 : Math.max(1, Math.ceil(Math.sqrt(letterCount)));
-  const totalColumns = stepColumns + 1; // +1 for start position column
-
-  // Calculate rows needed
-  // Row 1 has stepColumns steps
-  // Subsequent rows each have stepColumns steps
-  const stepsInFirstRow = Math.min(letterCount, stepColumns);
-  const remainingSteps = letterCount - stepsInFirstRow;
-  const additionalRows =
-    remainingSteps > 0 ? Math.ceil(remainingSteps / stepColumns) : 0;
-  const rows = 1 + additionalRows;
-
-  const width = totalColumns * opts.cellSize;
-  const height = headerHeight + rows * opts.cellSize + footerHeight;
-
-  return {
-    width,
-    height,
-    columns: totalColumns,
-    rows,
-    headerHeight,
-    footerHeight,
-    gridStartY: headerHeight,
-  };
-}
-
-/**
- * Draw cell borders only between occupied cells
- * Matches app's smart grid border logic
- */
-function drawSmartCellBorders(
-  ctx: CanvasRenderingContext2D,
-  columns: number,
-  rows: number,
-  cellSize: number,
-  stepCount: number,
-  gridStartY: number,
-  darkMode: boolean
-): void {
-  ctx.strokeStyle = darkMode ? "rgba(255, 255, 255, 0.15)" : "#e0e0e0";
-  ctx.lineWidth = 1;
-
-  // Create a set of occupied cells using the offset layout
-  const occupied = new Set<string>();
-  for (let i = 0; i < stepCount; i++) {
-    const { row, col } = calculateStepPosition(i, columns);
-    occupied.add(`${col},${row}`);
-  }
-
-  const isOccupied = (col: number, row: number): boolean =>
-    occupied.has(`${col},${row}`);
-
-  // Draw vertical lines between horizontally adjacent occupied cells
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < columns - 1; col++) {
-      if (isOccupied(col, row) && isOccupied(col + 1, row)) {
-        const x = (col + 1) * cellSize;
-        ctx.beginPath();
-        ctx.moveTo(x, gridStartY + row * cellSize);
-        ctx.lineTo(x, gridStartY + (row + 1) * cellSize);
-        ctx.stroke();
-      }
-    }
-  }
-
-  // Draw horizontal lines between vertically adjacent occupied cells
-  for (let col = 0; col < columns; col++) {
-    for (let row = 0; row < rows - 1; row++) {
-      if (isOccupied(col, row) && isOccupied(col, row + 1)) {
-        const y = gridStartY + (row + 1) * cellSize;
-        ctx.beginPath();
-        ctx.moveTo(col * cellSize, y);
-        ctx.lineTo((col + 1) * cellSize, y);
-        ctx.stroke();
-      }
-    }
-  }
+    },
+    renderMandala: opts.showMandala
+      ? (ctx, renderedSteps, placements) => {
+          const paths = calculateCardMandalaPaths(
+            renderedSteps.map((step) => ({
+              stepNumber: step.stepNumber,
+              leftMotion: step.leftMotion,
+              rightMotion: step.rightMotion,
+            })),
+            opts.turnAllocation
+          );
+          for (const placement of placements) {
+            renderCardMandala(
+              ctx,
+              paths,
+              placement,
+              opts.darkMode,
+              primaryPropColors
+            );
+          }
+        }
+      : undefined,
+    buildHeader: (renderedSteps, requestedWord) => ({
+      ...resolveHeaderDisplay(
+        renderedSteps,
+        requestedWord,
+        opts.displayWord ?? opts.seedWord,
+        opts.derivedStepIndices
+      ),
+    }),
+    renderHeader: async (ctx, header, layout, difficultyLevel) => {
+      const display = header as SequenceCardHeader & HeaderDisplay;
+      const displayWord = simplifyRepeatedWord(display.word);
+      const compressedSegments =
+        opts.compressedSegments ?? compressWord(displayWord);
+      const loopPeriod =
+        opts.period === 4
+          ? "quartered"
+          : opts.period === 2
+            ? "halved"
+            : undefined;
+      await renderWordHeader(
+        ctx as unknown as CanvasRenderingContext2D,
+        opts.showWord ? displayWord : "",
+        layout.width,
+        layout.headerHeight,
+        difficultyLevel,
+        showDifficulty,
+        opts.darkMode,
+        display.letterStyles.length ? display.letterStyles : undefined,
+        opts.showLoopGlyph === false ? undefined : opts.loopComponents,
+        opts.rotationPeriod ??
+          (opts.loopComponents?.includes(LOOPComponent.ROTATED)
+            ? loopPeriod
+            : undefined),
+        opts.inversionPeriod ??
+          (opts.loopComponents?.includes(LOOPComponent.INVERTED)
+            ? loopPeriod
+            : undefined),
+        opts.reflectionAxis,
+        opts.overlayComponents,
+        compressedSegments.some((segment) => segment.repeat > 1)
+          ? compressedSegments
+          : undefined,
+        layout.indicatorSizeScale,
+        opts.accentColor,
+        opts.accentTintOpacity
+      );
+    },
+    renderFooter: opts.showFooter
+      ? (ctx, layout) => {
+          renderUserInfo(
+            ctx as unknown as CanvasRenderingContext2D,
+            {
+              userName: opts.userName,
+              notes: opts.notes,
+              birthday: opts.birthday,
+              word,
+            } satisfies UserExportInfo,
+            layout.width,
+            layout.height,
+            layout.footerHeight,
+            opts.darkMode,
+            opts.accentColor,
+            opts.accentTintOpacity
+          );
+        }
+      : undefined,
+  });
 }

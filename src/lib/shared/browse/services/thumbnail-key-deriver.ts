@@ -45,6 +45,11 @@ export interface ThumbnailRenderInput {
   leftPropType: PropType | undefined;
   rightPropType: PropType | undefined;
   catDogModeEnabled: boolean;
+  /**
+   * The user's chosen hand palette. Null/undefined = the theme's blue/red
+   * defaults, which is the only class the shared static/cloud tiers hold.
+   */
+  primaryPropColors?: { left: string; right: string } | null;
 
   // Visual mode
   lightMode: boolean;
@@ -228,6 +233,9 @@ function checkInputUsesDefaults(
     return false;
   // Any custom text means not using defaults
   if (input.customNotesText !== undefined) return false;
+  // A custom hand palette is personal: it must never be served from, or
+  // uploaded to, the shared static/cloud tiers.
+  if (input.primaryPropColors) return false;
   // LOOP glyph strip is on by default; hiding it is a non-default render
   if (input.showLoopGlyph !== undefined && input.showLoopGlyph !== true) return false;
   // Visibility settings affect rendered appearance - check if any are non-default
@@ -292,6 +300,12 @@ function buildFullHashInput(input: ThumbnailRenderInput): object {
     left: input.leftPropType,
     right: input.rightPropType,
     catDog: input.catDogModeEnabled,
+    // Flattened on purpose: computeHash whitelists top-level keys, so a nested
+    // {left, right} object would stringify as {} and every palette would
+    // collide. Only present for custom palettes so existing keys stay stable.
+    ...(input.primaryPropColors && {
+      colors: `${input.primaryPropColors.left}:${input.primaryPropColors.right}`,
+    }),
     light: input.lightMode,
     variant: input.variant,
     addWord: input.addWord,

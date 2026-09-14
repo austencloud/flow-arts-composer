@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Energy saber concept C: Twin.
+  Original generic energy prop. No franchise hilt silhouette or marking.
+
+  Double-ended staff. Both blades are exactly 176 units long so the prop stays
+  physically symmetric, but the emitters are deliberately different so the
+  thumb-reference end and the pinky-reference end stay distinguishable:
+    right / thumb end  = long squared collar that flares outward, three rings
+    left  / pinky end  = short domed collar, one wide ring
+  The collar silhouettes read clearly in the full comparison. At picker size,
+  only the center break stays obvious, so production artwork may need stronger
+  end asymmetry if this concept wins.
+
+  Color contract matches sword-energy-core.svg: flat neutral grays recolor,
+  #FFF6E8 core is preserved, all hilt fills are below 0.4 luminance.
+  Pivot: grip center at x = 286.15 = viewBox center. Padding is symmetric about
+  y = 48.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 572.3 96">
+  <defs>
+    <linearGradient id="twinGripSheen" x1="0" y1="27" x2="0" y2="69" gradientUnits="userSpaceOnUse">
+      <stop offset="0.05" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.30" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="0.52" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.45"/>
+    </linearGradient>
+    <filter id="twinHalo" x="-25%" y="-160%" width="150%" height="420%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <filter id="twinSoft" x="-20%" y="-120%" width="140%" height="340%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <!-- Blades: outer halo -->
+  <rect x="364" y="32" width="180" height="32" rx="16" fill="#D0D0D0" opacity="0.30" filter="url(#twinHalo)"/>
+  <rect x="36" y="32" width="180" height="32" rx="16" fill="#D0D0D0" opacity="0.30" filter="url(#twinHalo)"/>
+  <!-- Blades: inner bloom -->
+  <rect x="366" y="38" width="176" height="20" rx="10" fill="#DCDCDC" opacity="0.9" filter="url(#twinSoft)"/>
+  <rect x="38" y="38" width="176" height="20" rx="10" fill="#DCDCDC" opacity="0.9" filter="url(#twinSoft)"/>
+  <!-- Blades: hard bodies, equal length -->
+  <rect x="366" y="40" width="176" height="16" rx="8" fill="#E4E4E4" stroke="#101319" stroke-width="1.4" stroke-opacity="0.55"/>
+  <rect x="38" y="40" width="176" height="16" rx="8" fill="#E4E4E4" stroke="#101319" stroke-width="1.4" stroke-opacity="0.55"/>
+  <!-- Blades: preserved pale cores -->
+  <rect x="370" y="44.5" width="168" height="7" rx="3.5" fill="#FFF6E8"/>
+  <rect x="42" y="44.5" width="168" height="7" rx="3.5" fill="#FFF6E8"/>
+
+  <!-- Grip -->
+  <rect x="236" y="36" width="100" height="24" rx="10" fill="#24272E"/>
+  <rect x="236" y="36" width="100" height="24" rx="10" fill="url(#twinGripSheen)"/>
+  <rect x="278" y="32" width="16" height="32" rx="4" fill="#3A3F49"/>
+
+  <!-- Thumb end: long squared collar flaring outward, three rings -->
+  <path d="M 336,33 L 358,27 L 366,29 L 366,67 L 358,69 L 336,63 Z" fill="#4A505B" stroke="#12151A" stroke-width="1.5"/>
+  <path d="M 336,33 L 358,27 L 366,29 L 366,67 L 358,69 L 336,63 Z" fill="url(#twinGripSheen)"/>
+  <rect x="340" y="33" width="4" height="30" rx="1" fill="#5C6470"/>
+  <rect x="347" y="31" width="4" height="34" rx="1" fill="#5C6470"/>
+  <rect x="354" y="30" width="4" height="36" rx="1" fill="#5C6470"/>
+
+  <!-- Pinky end: short domed collar, one wide ring -->
+  <rect x="214" y="36" width="22" height="24" rx="11" fill="#4A505B" stroke="#12151A" stroke-width="1.5"/>
+  <rect x="214" y="36" width="22" height="24" rx="11" fill="url(#twinGripSheen)"/>
+  <rect x="219" y="34" width="10" height="28" rx="5" fill="#5C6470"/>
+</svg>

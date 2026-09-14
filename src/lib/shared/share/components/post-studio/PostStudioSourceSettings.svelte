@@ -69,7 +69,7 @@
       />
     {/if}
   </div>
-{:else if selectedBinding?.renderMode === "choreo-card"}
+{:else if selectedBinding?.renderMode === "choreo-card" && !shared?.externalInspectorTarget}
   <div class="card-settings">
     <ExportImagePanel
       {exportOptions}

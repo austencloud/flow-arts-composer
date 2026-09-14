@@ -3,16 +3,18 @@
   "sceneId": "earth-root-terrace",
   "title": "Earth: The Root Terrace",
   "domainProofRequired": true,
-  "currentGate": 5,
+  "currentGate": 0,
   "authority": {
     "experienceSpec": "docs/superpowers/specs/2026-08-11-museum-exhibit-hallway-architecture-design.md",
     "roomShellSource": "src/lib/features/museum/data/vulcan-cave-floor-plan.ts",
     "planContract": "src/lib/features/museum/data/earth-root-terrace-terrain.ts",
-    "decisionRecord": "docs/superpowers/specs/earth-root-terrace/2026-09-07-earth-production-decision.md",
+    "decisionRecord": "docs/superpowers/specs/earth-root-terrace/2026-09-08-root-terrace-regrade.md",
     "museumTrackerItems": [
-      "nJVCzC1ok3pHQ4VvbiyB"
+      "nJVCzC1ok3pHQ4VvbiyB",
+      "YZsXMRJgrzAUa8KPeBWP"
     ],
-    "note": "The sealed hallway architecture gives Earth the elevated terrace climb above the performers and the terrace-overlook signature move; the Phase 0 canon row gives the verb COMPARE, the barrier ELEVATION and the payoff of three unison figures aligned. Tracker question LweZ97oG (Earth Compression) is unanswered and nothing here depends on it."
+    "note": "The sealed hallway architecture gives Earth the elevated climb above the performers and the overlook signature move; the Phase 0 canon row gives the verb COMPARE, the barrier ELEVATION and the payoff of three unison figures aligned. The 2026-09-08 regrade keeps the climb as a dead-end spur and adds a working catwalk 1.4 m above the row, because the terraced room failed its own sightline criterion at every case. Tracker question LweZ97oG (Earth Compression) is unanswered and nothing here depends on it.",
+    "supersededDecisionRecord": "docs/superpowers/specs/earth-root-terrace/2026-09-07-earth-production-decision.md"
   },
   "sequences": [
     {
@@ -51,19 +53,20 @@
     {
       "id": "C-002",
       "class": "invention",
-      "statement": "The visitor climbs a ramp to a terrace 2.8 m above the door datum and reads all three cases from above, on a rootbed 5.2 m below the terrace, with no way down.",
+      "statement": "Out of the vestibule one ramp climbs 1.8 m to a dead-end overlook spur and another falls 1.0 m to a catwalk that runs the row 1.4 m above the rootbed. There is no way down onto the bed. The terrain is 2.5D, so the spur is walked and walked back rather than looped.",
       "evidence": [
         "docs/superpowers/specs/2026-08-11-museum-exhibit-hallway-architecture-design.md",
-        "docs/superpowers/specs/earth-root-terrace/2026-09-07-earth-production-decision.md"
+        "docs/superpowers/specs/earth-root-terrace/2026-09-08-root-terrace-regrade.md",
+        "tests/unit/museum/earth-root-terrace-traversal.test.ts"
       ]
     },
     {
       "id": "C-003",
       "class": "invention",
-      "statement": "The payoff is a single eye on the landing half a metre from the rail, from which the three unison figures nest away down one axis and read as one shape at three scales.",
+      "statement": "The payoff is a single eye on the landing at plan (30.5, 13.0), from which the three unison figures nest away down one axis and read as one shape at three scales: 3.79 m at 22.5 degrees, 10.60 m at 7.9, 17.56 m at 4.7.",
       "evidence": [
-        "docs/superpowers/specs/earth-root-terrace/2026-09-07-earth-production-decision.md",
-        "tests/unit/museum/earth-root-terrace-terrain.test.ts"
+        "docs/superpowers/specs/earth-root-terrace/2026-09-08-root-terrace-regrade.md",
+        "tests/unit/museum/earth-root-terrace-sightlines.test.ts"
       ]
     },
     {
@@ -71,7 +74,17 @@
       "class": "literal",
       "statement": "Elemental associations are never spoken in the wing. The only text on the shell is the class stamp TOGETHER-SAME and the three case letters.",
       "evidence": [
-        "scripts/build-earth-root-terrace-graybox.py"
+        "src/lib/features/museum/data/earth-root-terrace-terrain.ts"
+      ]
+    },
+    {
+      "id": "C-005",
+      "class": "invention",
+      "statement": "Three control consoles are set into the catwalk south rail, one opposite each case, capped level with the door datum. From a console its own case reads at 4.28 m and 22.7 degrees below the horizon with the foot line clear, which is the acceptance criterion of at most 6.00 m and 25 degrees. The consoles are geometry in the plan contract; no interaction reads or writes a sequence through them yet.",
+      "evidence": [
+        "src/lib/features/museum/data/earth-root-terrace-terrain.ts",
+        "tests/unit/museum/earth-root-terrace-sightlines.test.ts",
+        "docs/superpowers/specs/earth-root-terrace/2026-09-08-root-terrace-regrade.md"
       ]
     }
   ],
@@ -84,19 +97,19 @@
         {
           "kind": "plan-contract",
           "path": "src/lib/features/museum/data/earth-root-terrace-terrain.ts",
-          "sha256": "c715bb08294d29370aa62c142fb7305301cf834c586ad44dd479a838a8932229",
+          "sha256": "1fb8b2ea6601b3957cef670707416751e3aede8c4cca35c85922bb063ec78961",
           "note": "The plan and its terrain program, derived from the compiled grid."
         },
         {
           "kind": "coordinate-manifest",
           "path": "docs/superpowers/specs/earth-root-terrace/earth-root-terrace-blender-plan.json",
-          "sha256": "c8773ac37575c77bcec6f4b1dfe902c27e2abb433bfc165cd6c5e8a6f3f38f3d",
-          "note": "Hash-stamped Blender-frame contract. sourceDigest a0e76c90eab4dec850bad5b806d76dd1d8a5671d5f5cadc82d9aa68df2197efb; the production build refuses to run against any other."
+          "sha256": "7399f4eed704a5a894ece4572a78a267216177f108742709b978ff1189566692",
+          "note": "Hash-stamped Blender-frame contract. sourceDigest f756a2b11bee0aa08ce5999c81d4023586245e421638c818daff98bc5d348438; the graybox and production builds refuse to run against any other, which is what stops either from rebuilding the pre-regrade room by accident."
         },
         {
           "kind": "blender-contract",
           "path": "src/lib/features/museum/data/earth-root-terrace-blender-contract.ts",
-          "sha256": "b2a589831877ab63a0f9dccdd2605880fde2a405761d9595d2c76d03ad0590b2",
+          "sha256": "939c6db5bbbcc8983886f48a0f78893170cc17e25a8f1ffaa8fc8758d74a74f9",
           "note": "The Blender frame and the seven QA cameras."
         },
         {
@@ -132,39 +145,56 @@
         {
           "kind": "plan-contract",
           "path": "src/lib/features/museum/data/earth-root-terrace-terrain.ts",
-          "sha256": "c715bb08294d29370aa62c142fb7305301cf834c586ad44dd479a838a8932229",
-          "note": "Doors, ramps, decks, rail line, three case positions, aven centre and the ensemble sightline all derive from the compiled grid."
+          "sha256": "1fb8b2ea6601b3957cef670707416751e3aede8c4cca35c85922bb063ec78961",
+          "note": "Doors, both ramps, the overlook spur, the catwalk and its three alcoves, the four rail runs, the three consoles, the case positions, the aven centre, the spawn and the ensemble sightline all derive from the compiled grid."
         },
         {
           "kind": "room-shell",
           "path": "src/lib/features/museum/data/vulcan-cave-floor-plan.ts",
-          "sha256": "22a91e85b3b2a0c292d7d9d3a6a536c373b389ae4b2a91bfbd6107defbcc0d04",
-          "note": "cave-earth renamed to The Root Terrace, performers re-derived from the new station offsets, tile geometry suppressed."
+          "sha256": "7ed3c4188749cac15b1be7dd875e6e45cfccdb38c64f8d32487a265cc10ddb4b",
+          "note": "cave-earth carries The Root Terrace, performers re-derived from the station offsets, tile geometry suppressed, and an explicit spawn so the isolated room route no longer drops the visitor onto the rootbed."
+        },
+        {
+          "kind": "route-storyboard",
+          "path": "docs/superpowers/specs/earth-root-terrace/2026-09-08-root-terrace-regrade.md",
+          "sha256": "2114743f79ffa104ddf61609d43288266924f0881eea72ffdeea54183dcce95a",
+          "note": "The regrade written out: why the terraced room failed, the 2.5D and step-rule constraint that forced a spur, every deck with its grade, the console reads, the collider bug, and what is deliberately left undone."
         }
       ],
       "checks": [
         {
           "name": "walkability",
           "status": "passed",
-          "evidence": "tests/unit/museum/earth-root-terrace-traversal.test.ts (7 tests) drives MuseumPhysicsProvider from Fire's east door through the corridor, vestibule, ramp, terrace, corner, landing and second descent to the Air door with no isolated cell."
+          "evidence": "tests/unit/museum/earth-root-terrace-traversal.test.ts (10 tests) drives MuseumPhysicsProvider from the Fire east door through the corridor and vestibule, up the entry ramp to the overlook, back down, along the whole catwalk stopping at all three consoles, then the east link, the ensemble landing and the exit ramp to the Air door. 1038 of 1038 walkable bay tiles are reachable from the west door with no orphan deck."
         },
         {
           "name": "elevation-continuity",
           "status": "passed",
-          "evidence": "tests/unit/museum/earth-root-terrace-terrain.test.ts (16 tests) asserts every deck seam is answered by the deck side, and that the rootbed and cleft are blocked at their own datums."
+          "evidence": "tests/unit/museum/earth-root-terrace-terrain.test.ts (20 tests) asserts no two floor rects overlap in a 2.5D program, that every deck seam is answered by the deck side, that no 4-neighbour pair steps more than 0.6 m, and that the rootbed and cleft are blocked at their own datums."
+        },
+        {
+          "name": "clearance",
+          "status": "passed",
+          "evidence": "Every deck edge lands on a quarter-metre, never on a tile centre, so all four COLLISION_RADIUS probe points are unblocked on every walkable tile. This is a regression test for a real stall found by the headless playtest: a catwalk edge on a tile centre reads walkable to the terrain and unstandable to the collider."
+        },
+        {
+          "name": "sightlines",
+          "status": "passed",
+          "evidence": "tests/unit/museum/earth-root-terrace-sightlines.test.ts (5 tests) sweeps every edge of every floor rect, walkway decks and not just rail lines, against the ray from each viewpoint to each case feet and prop centre. Each console reads its own case at 4.28 m and 22.7 degrees, inside the 6.00 m and 25 degree criterion, with the foot line clear over its own rail by 0.258 m. The same test asserts the regrade beats the terrace it replaced on both numbers, measured from the old rail line."
         },
         {
           "name": "corridor-seam",
           "status": "passed",
-          "evidence": "Fire's rock block reaches plan x 91.05 and Earth's block starts at exactly that x; Fire bores its Earth door 0.8 m past its own block face. Confirmed against the full grid, where Fire's east door lands at plan (89.25, z 56.25-58.25) and Earth's corridor arrives at the same wall across the same z span, and empirically by the bridge-driven walk below."
+          "evidence": "Fire rock block reaches plan x 91.05 and the Earth block starts at exactly that x; Fire bores its Earth door 0.8 m past its own block face. Confirmed against the full grid, where the Fire east door lands at plan (89.25, z 56.25-58.25) and the Earth corridor arrives at the same wall across the same z span, and empirically by the bridge-driven walk recorded under gate 4. The regrade does not move the corridor, the doors or the block bounds."
         },
         {
           "name": "final-view",
           "status": "passed",
-          "evidence": "The ensemble eye stands at plan (124.75, 40.75) at 2.8 m, half a metre from the rail so the bar sits under the sightline. The 84 degree camera holds all three figures, twelve degrees below the horizon at the near case and forty-seven at the far one."
+          "evidence": "The ensemble eye stands at plan (30.5, 13.0), world (124.75, 24.25), at -1.2. All three cases read: I at 3.79 m and 22.5 degrees, H at 10.60 m and 7.9, G at 17.56 m and 4.7. The old room spread was 12 to 47 degrees; this is 4.7 to 22.5, which is why the ensemble camera field of view drops from 84 to 75 degrees."
         }
       ],
-      "approval": null
+      "approval": null,
+      "note": "NOT APPROVED. The instruction to build this was, verbatim: \"yes, I want you to do the whole job actually\". That authorised the implementation and is recorded here as the reason the work exists. It is not a gate approval and must not be read as one. Austen has not walked the regraded room, and he did not answer the visual-bridge comprehension check (references/visual-bridge.md asks the reviewer to describe what they believe happens next, and a correct read is part of approval), so approval.visualComprehensionConfirmed cannot honestly be set. The approval field stays null until Austen approves this gate himself."
     },
     {
       "id": "playable-graybox",
@@ -173,26 +203,26 @@
         {
           "kind": "blender-source",
           "path": "scripts/build-earth-root-terrace-graybox.py",
-          "sha256": "f529829f276289c8f6317a0a721ac8226fcb244fb74fb75e676cb3fe1064d116",
-          "note": "Carves the measured shell from one rock mass: 11 carve operands, 753 carved faces, one ET_Shell_Rock. No stacked prisms."
+          "sha256": "aba8d1e6de5c70b1e0af613326e9b674b92c2a71b438f0f921a858a59d8b2155",
+          "note": "Carves the REGRADED room: vestibule at the door datum, the entry ramp climbing east to the +1.8 overlook spur, the descent ramp west of the gallery, and the catwalk causeway at -1.0 with its three alcoves. Four rail runs (52 posts), three rail consoles with their cut-stone letters, 14 lanterns and 14 roots. Every deck-mounted foot starts FOOT_SINK 0.55 below its deck so the production floor sink and the voxel edge rounding cannot leave it in mid-air. Adds two QA-only cameras, console-stance and catwalk-run, which never enter the manifest."
         },
         {
           "kind": "graybox-report",
           "path": "docs/superpowers/specs/earth-root-terrace/earth-root-terrace-graybox-report.json",
-          "sha256": "60d5db4ca2957a8d1f3a0bbab16adf6aa52264276a5b1f6d9ca84d34a5c3808a",
-          "note": "Written by the build. Records the carve, the block bounds and the Fire block face at x -20.2 in the Blender frame."
+          "sha256": "147b107c169e864fbd1273a94fccd5536d12bb55b211874ec4e3071b7c2c22a0",
+          "note": "Written by the regraded build and carries sourceDigest f756a2b1, which is the manifest the contract stamps. 131 exported meshes, 8 materials, 52 rail posts, footSink 0.55, the three consoles at deck -1.0 with caps at 0.0, and the split camera lists: eight contract cameras, two QA-only."
         }
       ],
       "checks": [
         {
           "name": "shell-continuity",
           "status": "passed",
-          "evidence": "One carved ET_Shell_Rock. Floor, wall and ceiling share one surface by construction; the void is built from the graybox's two boxes rather than a bounding box, so the outside face of the corridor notch stays rock."
+          "evidence": "The carve takes 18 route operands into one ET_Shell_Rock, 998 faces cleaned to 997 with no orphan (graybox report). The production pass then builds the void from the same carve at 1035 faces and closes it into a single 67536-triangle shell after removing 3878 outside caps, which a discontinuous route would not do. The ramp-climb, catwalk-run and ensemble renders show unbroken rock at every deck seam and under the causeway."
         },
         {
           "name": "collision-parity",
           "status": "passed",
-          "evidence": "Collision comes from createEarthRootTerraceTerrain over the same layout the carve consumes, and cave-terrain-routing.test.ts (6 tests) asserts the composed cave terrain routes the Earth bay to that program and never blocks a corridor or door tile."
+          "evidence": "The graybox is authored from the hash-stamped manifest (sourceDigest f756a2b1) that the runtime terrain program is exported from, so the decks land on the plan datums by construction. What the pipeline then does to them was measured rather than assumed: ray-probing the production blend across the catwalk band (x -4/0/3/6/10 by y 2.2 to 5.4) reads the deck at -1.12 to -1.18 in its interior and -1.40 at the lip, against a -1.00 datum, and the bed at -2.5 against -2.40. That is FLOOR_SINK 0.12 plus the 0.30 m voxel rounding a deck edge down. Every measurement sits BELOW the collider and none above it, which is the invariant the sink exists for: the visitor never stands in rock. FOOT_SINK 0.55 in the graybox is what keeps the rail posts, console legs and lamp stems buried in that gap rather than floating over it."
         }
       ],
       "approval": null
@@ -211,69 +241,74 @@
         {
           "kind": "blender-source",
           "path": "scripts/build-earth-root-terrace-production.py",
-          "sha256": "9e1db516d03a1d3e50e3d53f8c6327e7c57ae90784d8929031338b90f5cb6676",
-          "note": "Headless production build: remesh and skin the carved void, mound the rootbed through its own vertex group, split the rock into the walked route and the pit, unwrap both, bake a lightmap per piece under daylight and lantern light, denoise, export and optimise."
+          "sha256": "887ad1d8582ddd8b07b31eec1ca3ac3eb58dcec3e0251581921e44e6864ee775",
+          "note": "Headless production build: remesh and skin the carved void, mound the rootbed through its own vertex group, split the rock into route and pit by the grown bed box, bake six lightmaps, render the QA views and optimise to WebP plus Draco. This pass adds the console export families - panel, cap and both legs to ET_Brass, the letter to ET_CutStone, the lit face beside the lantern heads - and an orphan guard that raises when any ET_ mesh is claimed by no family, because the first regrade pass would otherwise have shipped a room whose rail carried no consoles at all. Also lights the exit bore from inside and renders ten views."
         },
         {
           "kind": "production-glb",
           "path": "static/models/museum/cave/earth-root-terrace.glb",
-          "sha256": "fb72d34e215fc0cff79c1d2f0c8f39e21ff8591b738f09fc1e9345043ec90273",
-          "note": "5717544 bytes. Two lightmapped rock pieces at 4096 and four trim pieces at 1024, eight materials, fourteen exported objects, WebP textures, Draco compressed."
+          "sha256": "9441f4a1d848ef6dbba591293a1bb41a69d07bdcc2174281156165b1543e1e77",
+          "note": "The regraded room. 6075592 bytes. Two lightmapped rock pieces at 4096 (pit 37610 tris, route 29926) and four trim pieces at 1024 (brass 6520, stone 17792, root 3360, moss 4608), eight materials, 24 exported objects including the three console faces. 59.1 MB raw to 6.1 MB shipped."
         },
         {
           "kind": "build-report",
           "path": "docs/superpowers/specs/earth-root-terrace/earth-root-terrace-production-report.json",
-          "sha256": "dcc02628b7d94f50216731d263694c5c35b7c602bd3f52ef5d7ad99d9c85997c",
+          "sha256": "4429b5aa6c424dd97ca2e1062f8de921d780338fc4e19c7b2b8538762ba244b5",
           "note": "Written by the build: source digest, per-piece triangle counts and lightmap sizes, texture sets, UV metres per unit, export and optimise settings."
         },
         {
           "kind": "runtime-owner",
           "path": "src/lib/features/museum/components/game/EarthRootTerraceAuthored.svelte",
-          "sha256": "b9d5dd2ee35a108a306131e382974cba7284f5fc0d873f751314839f17b4503c",
+          "sha256": "1f4e60618c1022233dc467687909a3ca65fa434955d2d445272c0db34c581fc9",
           "note": "Mounts the GLB at the room's plan centre, tunes the two emissive-only materials by name, ray-casts the mounded bed in the shell's own frame, stands four pedestals and four performers, registers four pooled point lights, dev seam window.__earth."
         },
         {
           "kind": "decision-record",
           "path": "docs/superpowers/specs/earth-root-terrace/2026-09-07-earth-production-decision.md",
-          "sha256": "b7b01cbc01b1b30ccccdb84655605f70ef4fee68155d172628b2f6cacdd2464b",
+          "sha256": "bf9c65c89bd8d4785ed4515c580b695d6002fbcf8116d03021fa211642c9026e",
           "note": "Seventeen numbered decisions, the verification pass, and what is left open."
         },
         {
           "kind": "bridge-driven-walk",
-          "path": "session transcript 2026-09-07 (be270ac6)",
-          "sha256": null,
-          "note": "Full /museum grid on a task-owned worktree server. Stops at the Fire seam (90.5, 58.0), the corridor, the west door, the vestibule, the ramp, the terrace overlook, the landing ensemble eye and the exit approach, reading window.__earth at each. Zero console errors. The walk found and fixed two defects that no test or QA render could show: the bed ray was cast in the wrong frame and never reached the shell, and the pedestal body was still the Drowned Gallery's slate."
+          "path": "docs/superpowers/specs/earth-root-terrace/2026-09-08-root-terrace-regrade.md",
+          "sha256": "2114743f79ffa104ddf61609d43288266924f0881eea72ffdeea54183dcce95a",
+          "note": "Recorded in the 2026-09-07 decision record and summarised in the regrade spec; the raw evidence is session transcript be270ac6, which lives outside the repository. Full /museum grid on a task-owned worktree server, stopping at the Fire seam (90.5, 58.0), the corridor, the west door, the vestibule, the ramp, the terrace overlook, the landing ensemble eye and the exit approach, reading window.__earth at each. Zero console errors. The walk found and fixed two defects no test or QA render could show: the bed ray was cast in the wrong frame and never reached the shell, and the pedestal body was still the Drowned Gallery slate. It walked the pre-regrade room."
         }
       ],
       "checks": [
         {
-          "id": "unit-tests",
-          "command": "npx vitest run --config tests/config/vitest.config.ts tests/unit/museum/earth-root-terrace-*.test.ts tests/unit/museum/cave-terrain-routing.test.ts tests/unit/museum/museum-rendering-performance-contract.test.ts",
-          "result": "5 files, 53 tests passed (2026-09-07)"
+          "name": "interaction-state",
+          "status": "pending",
+          "evidence": "The three consoles are geometry in the plan contract only. Nothing reads or writes a sequence through them, so the room has no interaction to capture yet."
         },
         {
-          "id": "museum-suite",
-          "command": "npx vitest run --config tests/config/vitest.config.ts tests/unit/museum",
-          "result": "494 of 499 passed. The five failures are in drowned-gallery-sightlines (3), earth-canyon-blender-contract (1) and earth-long-terrace-plan (1); all five fail identically on main with this branch absent."
+          "name": "runtime-console",
+          "status": "passed",
+          "evidence": "Walked in a task-owned browser on 2026-09-09 against a task-owned Vite on port 5437 (stopped in the same turn). /museum?room=cave-earth loads the regraded GLB - the served file is 6075592 bytes, not the 5717544-byte pre-regrade one - with zero console errors; the only entries are Vite reconnect noise and a PostHog no-API-key warning. window.__earth reads the player at (2.5, 0.85, 13.5) in the isolated frame, which is plan (1.25, 12.25) and Blender (-15.75, 0) against a contract spawn of (-15.8, 0) - the half-tile snap. Cases G, H and I are all active with topY -2.228, -2.227 and -2.284, and the four light slots read 34, 9, 9 and 14. The spawn view is the vestibule: the opener disc and its performer ahead, the entry ramp and its brass rail climbing away on the left, the wing stamp on the rock beyond. That is the read the regrade exists for, and it replaces the pre-regrade walk, which put the visitor face-first into a rock wall. One thing this walk did NOT establish: the player would not move. The docent auto-walk held KeyD for over a minute with the tile counter frozen at (5, 27). The identical stall reproduces in ?room=cave-fire, a room this work never touched, so it is not a Root Terrace defect - but locomotion under the isolated-room route is unproven here and wants its own pass."
         },
         {
-          "id": "bed-measurement",
-          "command": "window.__earth.bedSurface, read in the browser at the terrace",
-          "result": "G -2.478, H -2.477, I -2.534 against a plan datum of -2.400: three distinct measurements of the mound, which is the proof the ray now reaches the shell."
+          "name": "performance",
+          "status": "passed",
+          "evidence": "window.__earth.lights reads four declared slots at intensities 34, 9, 9 and 14. The pool hands the shader the nearest three and the visible-light count never changes, which is what keeps the three.js relink storm off this room. The regrade keeps the pool at exactly four."
         },
         {
-          "id": "light-pool",
-          "command": "window.__earth.lights, read in the browser inside the room",
-          "result": "Four declared slots at intensities 34, 9, 9 and 14. The pool hands the shader the nearest three and the count never changes."
+          "name": "unit-tests",
+          "status": "passed",
+          "evidence": "npx vitest run --config tests/config/vitest.config.ts tests/unit/museum/ gives 58 files and 510 tests, all passing (2026-09-09). The four Earth files carry 20 terrain, 10 traversal, 5 sightline and 7 contract tests. Running it at all first needed a repair: another session's pnpm install through a worktree junction had repointed 498 of this checkout's internal .pnpm links into E:/tka-platform-gif-context-fpp2, which does not carry them, so vitest resolved @vitest/expect to a stale 3.2.4 and died on a missing chai export. All 498 were repointed back to this checkout's own store; nothing was installed."
         },
         {
-          "id": "qa-renders",
-          "command": "Cycles 128 spp, AgX Medium High Contrast, OPTIX denoise",
-          "result": "Seven views in blender/qa/earth-root-terrace-production/ (not committed; blender/ is gitignored)."
+          "name": "bed-measurement",
+          "status": "passed",
+          "evidence": "window.__earth.bedSurface read in the browser at the terrace on 2026-09-07: G -2.478, H -2.477, I -2.534 against a plan datum of -2.400. Three distinct measurements of the mound, which is the proof the ray reaches the shell. The bed datum is unchanged by the regrade."
+        },
+        {
+          "name": "qa-renders",
+          "status": "passed",
+          "evidence": "Ten Cycles views of the regraded room in blender/qa/earth-root-terrace-production/ (not committed; blender/ is gitignored): threshold, ramp-climb, overlook, catwalk-run, console, console-stance, ensemble, exit, overview, plan. Eight register to contract cameras; catwalk-run and console-stance are QA-only. Two things to read them by. Every emissive is exaggerated for these frames (BAKE_EMISSION puts ET Sky at 42x and ET Lamp at 24x) so the lightmaps show as they were baked, which makes lanterns and console faces render as blown-white slabs; at export they ship at unity and the runtime tunes them by name. And overview and plan are shot from outside the shell, which the rock hides, so they read as rail diagrams rather than room views - that predates the regrade."
         }
       ],
       "approval": null,
-      "note": "Technical slice complete; awaiting Austen's walk. No approval is recorded here."
+      "note": "The 2026-09-07 slice was technically complete and was never approved. Austen walked it and rejected the spatial premise, which is what produced the 2026-09-08 regrade. The layout, tests and Blender contract are regraded; the graybox, the production GLB and the QA renders are not. This gate cannot be presented again until gate 2 is rebuilt."
     },
     {
       "id": "integrated-room",
@@ -289,5 +324,20 @@
       "checks": [],
       "approval": null
     }
-  ]
+  ],
+  "validatorState": {
+    "status": "failing",
+    "errors": [
+      "measured-plan: later gates cannot contain evidence",
+      "measured-plan: later gates cannot contain checks",
+      "playable-graybox: later gates cannot contain evidence",
+      "playable-graybox: later gates cannot contain checks",
+      "production-slice: later gates cannot contain evidence",
+      "production-slice: later gates cannot contain checks"
+    ],
+    "explanation": "One structural fact, reported six times, and it is unchanged by this rebuild. The validator derives currentGate as the index of the first gate that is not complete, and forbids any gate past currentGate from holding evidence or checks. No gate on this scene has ever been approved, so currentGate is 0, and every piece of real evidence gathered for gates 1, 2 and 4 is therefore illegal. There is no value of currentGate that both tells the truth and lets the evidence stand. The honest resolution is Austen approving gates as he reviews them, at which point currentGate rises legitimately and these errors disappear on their own. Do not resolve this by stamping approvals.",
+    "priorState": "On 2026-09-08 this manifest carried the same six errors, but gates 2 and 4 were additionally STALE: the graybox source and report were the pre-regrade carve, and the shipped GLB was the pre-regrade room, so collision and visuals disagreed. Both are now rebuilt from the regraded plan and the STALE qualifiers are gone. shell-continuity, collision-parity, qa-renders and runtime-console moved from pending to passed on their own evidence. interaction-state stays pending: the three consoles are still geometry with nothing reading or writing a sequence through them.",
+    "checkedAt": "2026-09-09",
+    "command": "node .claude/skills/museum-scene-production/scripts/validate-scene-gates.mjs docs/superpowers/specs/earth-root-terrace/scene-gates.json"
+  }
 }

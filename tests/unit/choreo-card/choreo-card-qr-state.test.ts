@@ -4,6 +4,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { QRCodeResult } from "$lib/shared/qr/services/types";
 import { createChoreoCardQrStateHarness } from "./choreo-card-qr-state-harness.svelte";
+import { TRANSITION_REVIEW_SEQUENCE } from "../../../src/routes/test/sequence-viewer-transitions/transition-review-fixture";
 
 const sequence = {
   id: "sequence-1",
@@ -22,6 +23,34 @@ function qrResult(label: string): QRCodeResult {
 }
 
 describe("choreo card QR state", () => {
+  it("drops the old scan target when motions change without changing the sequence ID", async () => {
+    const generateForSequence = vi
+      .fn()
+      .mockResolvedValueOnce(qrResult("first"))
+      .mockImplementationOnce(() => new Promise(() => {}));
+    const harness = createChoreoCardQrStateHarness({
+      sequence: TRANSITION_REVIEW_SEQUENCE,
+      leftPropType: PropType.STAFF,
+      rightPropType: PropType.STAFF,
+      generateForSequence,
+    });
+    try {
+      flushSync();
+      await Promise.resolve();
+      expect(harness.qrState.dataUrl).toBe(qrResult("first").dataUrl);
+      harness.setSequence({
+        ...TRANSITION_REVIEW_SEQUENCE,
+        steps: TRANSITION_REVIEW_SEQUENCE.steps.map((step, i) =>
+          i ? step : { ...step, duration: 2 }
+        ),
+      });
+      flushSync();
+      expect(generateForSequence).toHaveBeenCalledTimes(2);
+      expect(harness.qrState.dataUrl).toBeNull();
+    } finally {
+      harness.dispose();
+    }
+  });
   it("draws a published code for a guest without minting a new sequence code", async () => {
     const generateForSequence = vi.fn();
     const generateForUrl = vi.fn().mockResolvedValue(qrResult("published"));

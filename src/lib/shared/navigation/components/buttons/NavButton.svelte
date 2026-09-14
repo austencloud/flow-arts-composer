@@ -3,10 +3,12 @@
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import { onMount } from "svelte";
+  import type { Snippet } from "svelte";
   import type { HTMLButtonAttributes } from "svelte/elements";
 
   let {
     icon = "",
+    iconContent,
     label = "",
     active = false,
     disabled = false,
@@ -22,7 +24,8 @@
     onpointercancel,
     oncontextmenu,
   } = $props<{
-    icon: string;
+    icon?: string;
+    iconContent?: Snippet;
     label: string;
     active?: boolean;
     disabled?: boolean;
@@ -83,7 +86,9 @@
   aria-current={active && type === "section" ? "page" : undefined}
   style="--section-color: {color}; --section-gradient: {gradient};"
 >
-  <span class="nav-icon">{@html icon}</span>
+  <span class="nav-icon"
+    >{#if iconContent}{@render iconContent()}{:else}{@html icon}{/if}</span
+  >
   {#if badgeCount > 0}
     <span class="nav-badge" aria-hidden="true">
       {formatBadgeCount(badgeCount)}

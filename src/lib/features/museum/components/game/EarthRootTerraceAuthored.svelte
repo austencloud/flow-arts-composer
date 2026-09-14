@@ -52,7 +52,7 @@
     EARTH_ROOM_ID,
     EYE_ABOVE_FLOOR,
     LANDING_Y,
-    TERRACE_Y,
+    OVERLOOK_Y,
     buildEarthRootTerraceLayout,
     type EarthCaseLetter,
   } from "../../data/earth-root-terrace-terrain";
@@ -288,8 +288,12 @@
   const lightPlan = $derived.by((): AuthoredPointLight[] => {
     if (!layout) return [];
     const railZ = layout.bed.minZ;
-    const terraceLamp = {
-      x: (layout.terrace.minX + layout.terrace.maxX) / 2,
+    // The north lane's lantern, on the overlook rail. It serves the ramp head
+    // and the spur together; the catwalk below is lit by the daylight shaft
+    // and by its own console caps, which are emissive furniture rather than
+    // a fifth light (the pool is fixed at four so the shader never relinks).
+    const overlookLamp = {
+      x: (layout.overlook.minX + layout.overlook.maxX) / 2,
       z: railZ,
     };
     const landingLamp = {
@@ -313,9 +317,9 @@
         distance: 26,
       },
       {
-        x: terraceLamp.x,
-        y: TERRACE_Y + 2.0,
-        z: terraceLamp.z,
+        x: overlookLamp.x,
+        y: OVERLOOK_Y + 2.0,
+        z: overlookLamp.z,
         color: "#ffb45a",
         intensity: near ? 9 : 0,
         distance: 13,

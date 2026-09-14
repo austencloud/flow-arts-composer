@@ -3,6 +3,7 @@ import { render } from "vitest-browser-svelte";
 import { describe, expect, it, vi } from "vitest";
 import LazyMountLifecycleTestHarness from "./LazyMountLifecycleTestHarness.svelte";
 import LazyMountInactiveTestHarness from "./LazyMountInactiveTestHarness.svelte";
+import LazyMountRetryKeyTestHarness from "./LazyMountRetryKeyTestHarness.svelte";
 import LazyMountTestHarness from "./LazyMountTestHarness.svelte";
 
 describe("LazyMount recovery", () => {
@@ -63,5 +64,17 @@ describe("LazyMount recovery", () => {
 
     await page.getByRole("button", { name: "Activate preview" }).click();
     await expect.element(page.getByText("Loaded after retry")).toBeVisible();
+  });
+
+  it("retries a failed import when a new owner run starts", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+    render(LazyMountRetryKeyTestHarness);
+
+    await expect
+      .element(page.getByRole("alert"))
+      .toHaveTextContent("Test component did not load.");
+    await page.getByRole("button", { name: "Start fresh playback" }).click();
+    await expect.element(page.getByText("Loaded after retry")).toBeVisible();
+    errorLog.mockRestore();
   });
 });

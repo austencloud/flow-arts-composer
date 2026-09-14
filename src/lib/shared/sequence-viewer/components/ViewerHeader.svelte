@@ -14,14 +14,27 @@
   import ShareActionMenu from "$lib/shared/share/components/ShareActionMenu.svelte";
   import MotionVisibilityToggle from "./MotionVisibilityToggle.svelte";
   import ViewerOverflowMenu from "./ViewerOverflowMenu.svelte";
+  import PropViewingControl from "$lib/shared/browse/components/PropViewingControl.svelte";
+  import {
+    resolveViewingProps,
+    viewingPropLabel,
+  } from "$lib/shared/foundation/services/prop-viewing";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
-  const handColors = $derived(getSettings().primaryPropColors ?? {
-    left: getMotionColor(HandSide.LEFT, getSettings().darkMode ? "dark" : "light"),
-    right: getMotionColor(HandSide.RIGHT, getSettings().darkMode ? "dark" : "light"),
-  });
+  const handColors = $derived(
+    getSettings().primaryPropColors ?? {
+      left: getMotionColor(
+        HandSide.LEFT,
+        getSettings().darkMode ? "dark" : "light"
+      ),
+      right: getMotionColor(
+        HandSide.RIGHT,
+        getSettings().darkMode ? "dark" : "light"
+      ),
+    }
+  );
 
   interface HeaderNavigation {
     label: string;
@@ -166,6 +179,16 @@
   );
 
   let shareMenuOpen = $state(false);
+  let viewingControl = $state<{ show: () => void }>();
+  const showViewingProps = $derived(
+    !hidden && (ctx.leftPropType !== "hand" || ctx.rightPropType !== "hand")
+  );
+  const viewingLabel = $derived(
+    viewingPropLabel(
+      resolveViewingProps(getSettings(), sequence, ctx.collectionPropType)
+        .config
+    )
+  );
 
   function handleVisibilityAction(): void {
     if (isPublished) onUnpublish?.();
@@ -196,6 +219,16 @@
           <i class="fas fa-arrow-left" aria-hidden="true"></i>
           <span class="action-label">Exit Practice</span>
         </button>
+      {/if}
+      {#if compactChrome && showViewingProps}
+        <ViewerOverflowMenu
+          variant="header"
+          dropDown
+          align="left"
+          onPropsOpen={() => viewingControl?.show()}
+          propsLabel={`Viewing props · ${viewingLabel}`}
+          onOpenChange={onOverflowOpenChange}
+        />
       {/if}
     {:else}
       {#if navigation}
@@ -362,6 +395,10 @@
       {#if compactChrome}
         <ViewerOverflowMenu
           variant="header"
+          onPropsOpen={showViewingProps
+            ? () => viewingControl?.show()
+            : undefined}
+          propsLabel={`Viewing props · ${viewingLabel}`}
           dropDown
           align="left"
           {isFavorite}
@@ -488,6 +525,15 @@
           </button>
         {/if}
       </div>
+    {/if}
+
+    {#if showViewingProps}
+      <PropViewingControl
+        bind:this={viewingControl}
+        {sequence}
+        collectionPropType={ctx.collectionPropType}
+        presentation={compactChrome ? "none" : "toolbar"}
+      />
     {/if}
 
     {#if exportSettings}

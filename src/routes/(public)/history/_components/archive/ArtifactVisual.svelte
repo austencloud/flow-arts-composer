@@ -45,6 +45,8 @@
 
 <style>
 	.caps-frame {
+		min-height: 0;
+		grid-template-rows: minmax(0, 1fr);
 		width: 100%;
 		height: 100%;
 		display: grid;

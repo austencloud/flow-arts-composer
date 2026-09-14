@@ -330,6 +330,24 @@
       <span>Mode path: {summary.modePath.join(" → ") || "n/a"}</span>
       <span>Mode commit: {modeCommitSummary || "n/a"}</span>
       {#if trace.command.includes("studio")}
+        <span
+          >Selected Studio half: {workspaceSamples.at(-1)?.selectedStudioHalf ??
+            "unmeasured"}</span
+        >
+        <span
+          >Live Card settings identities: {new Set(
+            workspaceSamples
+              .map((s) => s.sharedCardInspectorIdentity)
+              .filter(Boolean)
+          ).size}</span
+        >
+        <span
+          >Motion settings fading: {workspaceSamples.filter(
+            (s) =>
+              (s.motionInspectorOpacity ?? 0) > 0.01 &&
+              (s.motionInspectorOpacity ?? 1) < 0.99
+          ).length} frames</span
+        >
         {@const coveredFrames = workspaceSamples.filter(
           (sample) => sample.sharedTransportCovered
         ).length}

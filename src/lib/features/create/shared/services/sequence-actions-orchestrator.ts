@@ -5,11 +5,11 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { TargetHand } from "../state/panel-coordination-state.svelte";
 import type { ExtensionFlowCoordinator } from "./extension-flow-coordinator";
 import {
-  analyzeSelection,
-  getResultMessage,
-  type FirstBeatAnalysisResult,
-  type FirstBeatResult,
-} from "./first-step-analyzer";
+  analyzeStartPick,
+  getStartPickMessage,
+  type StartPickAnalysis,
+  type StartPickResult,
+} from "./choose-start-analyzer";
 import type {
   BridgeAppendResult,
   ExtensionApplyResult,
@@ -217,25 +217,25 @@ export function createSequenceActionsOrchestrator(
     }
   }
 
-  function analyzeShiftStart(
-    stepNumber: number
-  ): FirstBeatAnalysisResult | null {
+  /** `tileIndex` is the tapped pose: 0 for the start tile, 1..n for steps. */
+  function analyzeShiftStart(tileIndex: number): StartPickAnalysis | null {
     const sequence = deps.getSequenceState().currentSequence;
-    return sequence ? analyzeSelection(sequence, stepNumber) : null;
+    return sequence ? analyzeStartPick(sequence, tileIndex) : null;
   }
 
+  /** `targetStepNumber` is the step that becomes step 1 (from the analysis). */
   async function shiftStart(
-    stepNumber: number
-  ): Promise<SequenceActionResult<FirstBeatResult>> {
+    targetStepNumber: number
+  ): Promise<SequenceActionResult<StartPickResult>> {
     const state = deps.getSequenceState();
     const sequence = state.currentSequence;
     if (!sequence) {
       return { status: "unavailable", message: "No active sequence" };
     }
     try {
-      const execution = await executeTransform("shift_start", stepNumber);
+      const execution = await executeTransform("shift_start", targetStepNumber);
       if (execution.status !== "completed") return execution;
-      const result = getResultMessage(sequence, stepNumber);
+      const result = getStartPickMessage(sequence, targetStepNumber);
       deps.hapticService?.trigger("success");
       return completedWith(result);
     } finally {

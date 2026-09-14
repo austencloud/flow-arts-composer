@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { onMount, onDestroy, type Snippet } from "svelte";
+  import { onMount, onDestroy, untrack, type Snippet } from "svelte";
   import { browser } from "$app/environment";
   import { page } from "$app/state";
   import HandMotionPlayer from "$lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte";
+  import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { reparentToInspector as reparentToSlot } from "$lib/shared/sequence-viewer/components/reparent-to-inspector";
   import { reducedMotion } from "$lib/shared/transitions/motion";
   import {
@@ -18,13 +19,24 @@
   const playback = createTimingDirectionState(page.params.mode);
   setTimingDirectionState(playback);
   const gate = createRenderActivityGate({ name: "timing-direction-journey" });
+  // Together–Opposite owns the canonical inline showcase player. The other
+  // articles keep this retained canvas, even while route state is changing.
+  const togetherOppositeRoute = $derived(
+    page.params.mode === "together-time-opposite-direction"
+  );
   onDestroy(() => gate.dispose());
   onMount(() => {
     if (reducedMotion()) playback.playing = false;
   });
 
   $effect(() => {
-    if (page.params.mode) playback.select(page.params.mode);
+    const slug = page.params.mode;
+    if (slug) untrack(() => playback.select(slug));
+  });
+
+  $effect(() => {
+    playback.pendingSeek.version;
+    untrack(() => playback.runPendingSeek());
   });
 </script>
 
@@ -40,16 +52,25 @@
     >
       <!-- The animation engine is stubbed out of the production SSR build
            (see SSR_STUBBED_SHARED_RENDER_PATHS), so the canvas mounts client-only. -->
-      {#if browser}
+      {#if browser && !togetherOppositeRoute}
         <HandMotionPlayer
-          neutralMarkers
-          sequence={playback.selected.motion.sequence}
+          primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+          sequence={playback.sequence}
           initialStep={playback.step}
           ariaLabel={playback.selected.article.name}
+          propDisplay={playback.propDisplay}
           showElementalGlyph
           externalPlaying={playback.playing}
-          onExternalPlayingChange={(value) => (playback.playing = value)}
+          singlePlay={(
+            playback.sequence.metadata as
+              | { turnLoopClosed?: boolean }
+              | undefined
+          )?.turnLoopClosed === false}
+          onExternalPlayingChange={(value) => {
+            if (value !== playback.playing) playback.togglePlayback();
+          }}
           onStepChange={playback.followStep}
+          onSeekRef={playback.registerSeek}
           playbackGate={gate}
           framed={false}
         />

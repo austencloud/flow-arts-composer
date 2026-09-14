@@ -361,19 +361,24 @@ describe("shape matrix mandala continuity", () => {
     // in two later passes: the 2026-09-06 demo-layout rewrite (31a3411642)
     // dropped the topbar's relationships-action button, and the 2026-09-07
     // canvas-transport pass (e485f1d861) replaced it with a wide-only stage
-    // gear (ShapeMatrixStageActions) and a compact settings sheet with its
-    // own close button. Neither adds a second persistent row beside the
-    // topbar: the sheet is an absolute overlay shown only while a section is
-    // open, so the topbar remains the only standing chrome row.
+    // gear (ShapeMatrixStageActions) and a compact settings sheet. The sheet
+    // itself is gone again: 38bd0bf493 dropped the overlay, its header and its
+    // close button in favour of focus mode, where every chrome element the
+    // drill marks is taken out of flow while the controls are in use. Nothing
+    // in that chain adds a second persistent row beside the topbar.
     const shell = read("app/components/ShapeMatrixAppShell.svelte");
     expect(shell).toContain("setShapeMatrixAnimationContext(");
     const drill = read("components/ShapeMatrixDrill.svelte");
-    expect(drill).toMatch(
-      /compactSettingsOpen = \$derived\(\s*!!appState &&\s*appState\.compact &&\s*appState\.surface === "matrix" &&\s*appState\.activeView === "detail" &&\s*animationState\.activeSection !== null\s*\);/
+    // The drill declares which of its rows are chrome; it does not build a
+    // surface to hide them behind.
+    expect(drill).toContain("data-focus-mode-chrome");
+    expect(drill).not.toContain("compact-settings");
+    expect(drill).not.toContain('aria-label="Close settings"');
+    // And the shell is the single owner of what marked chrome does, so a row
+    // cannot opt out and stand while the rest step aside.
+    expect(shell).toMatch(
+      /\.focus-mode :global\(\[data-focus-mode-chrome\]\) \{[^}]*visibility: hidden/s
     );
-    expect(drill).toMatch(/\.compact-settings \{[^}]*position: absolute/s);
-    expect(drill).toContain('aria-label="Close settings"');
-    expect(drill).toContain("closeCompactSettings");
     const stageActions = read("components/ShapeMatrixStageActions.svelte");
     expect(stageActions).toContain("animationState.showRelationships();");
     // ShapeMatrixDetailPane's own pane-heading (and the animation-context

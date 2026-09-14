@@ -36,7 +36,10 @@
   import {
     buildGalleryRenderInput,
     deriveThumbnailSequenceName,
+    galleryQrPolicy,
+    galleryThumbnailRequestChanged,
     galleryStepCount,
+    type GalleryQrPolicy,
   } from "$lib/shared/browse/services/gallery-render-input";
   import { repairThumbnailCaches } from "$lib/shared/browse/services/thumbnail-repair";
   import { calculateGalleryAspectRatio } from "$lib/shared/render/services/layout-calculator";
@@ -45,6 +48,7 @@
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
 
   interface Props {
     sequence: SequenceData;
@@ -74,7 +78,7 @@
     showRightMotion?: boolean;
     // Skip IntersectionObserver and load immediately (use in modals/pickers)
     eager?: boolean;
-    /** Allow QR codes in physical card previews. Gallery thumbnails stay QR-free. */
+    /** Allow a QR when this card has a prepared public scan asset. */
     allowQR?: boolean;
     /** Use 5:7 playing card layout for physical card export (different from lightMode/printMode) */
     cardMode?: boolean;
@@ -111,6 +115,7 @@
   let status = $state<ThumbnailLoadStatus>({ state: "idle" });
   let isVisible = $state(false);
   let currentKeyHash = $state<string | null>(null);
+  let currentQrPolicy = $state<GalleryQrPolicy | null>(null);
   let displayedKey = $state<ThumbnailCacheKey | null>(null);
   let currentRequestController: AbortController | null = null;
 
@@ -176,6 +181,10 @@
       leftPropType,
       rightPropType,
       catDogModeEnabled,
+      // The same palette the live PictographRenderer reads, so a card in a
+      // picker matches the sheet it gets added to. Null keeps the card on the
+      // shared default-color cache class.
+      primaryPropColors: getSettings().primaryPropColors ?? null,
       lightMode,
       variant,
       addWord,
@@ -191,7 +200,7 @@
       handPathMode,
       showLeftMotion,
       showRightMotion,
-      allowQR: cardMode && allowQR,
+      allowQR,
       cardMode,
       compositionManager,
       isAuthenticated: authState.isAuthenticated,
@@ -223,6 +232,7 @@
             currentRequestController.abort();
             currentRequestController = null;
             currentKeyHash = null;
+            currentQrPolicy = null;
             status = { state: "idle" };
           }
         },
@@ -246,6 +256,7 @@
     // Reset state to force the $effect to re-fetch
     thumbnailUrl = null;
     currentKeyHash = null;
+    currentQrPolicy = null;
     status = { state: "idle" };
   }
 
@@ -325,6 +336,7 @@
       // Clear current state to force re-fetch
       thumbnailUrl = null;
       currentKeyHash = null; // This will trigger the $effect to re-run
+      currentQrPolicy = null;
       status = { state: "idle" };
     }, 100);
   }
@@ -337,9 +349,23 @@
     }
 
     const key = deriveKey(renderInput);
+    const qrPolicy = galleryQrPolicy({
+      variant,
+      cardMode,
+      isAuthenticated: authState.isAuthenticated,
+    });
+    const sameImageKey = key.hash === currentKeyHash;
 
-    // Skip if key hasn't changed
-    if (key.hash === currentKeyHash) {
+    // The image cache key stays stable during auth hydration, but a signed-in
+    // reader may now prepare the preview's missing QR. Track that policy too.
+    if (
+      !galleryThumbnailRequestChanged(
+        currentKeyHash === null
+          ? null
+          : { keyHash: currentKeyHash, qrPolicy: currentQrPolicy ?? undefined },
+        { keyHash: key.hash, qrPolicy }
+      )
+    ) {
       return;
     }
 
@@ -349,6 +375,7 @@
       currentRequestController = null;
     }
     currentKeyHash = key.hash;
+    currentQrPolicy = qrPolicy;
 
     // Synchronous memory cache check - instant on revisits, no placeholder flash
     if (!skipCacheOnNextRequest) {
@@ -362,10 +389,14 @@
       }
     }
 
-    // Clear old thumbnail - show loading placeholder while fetching
-    releaseUncachedThumbnail();
-    displayedKey = null;
-    thumbnailUrl = null;
+    // Auth hydration can promote this preview without changing its image key.
+    // Keep the visible no-QR card in place while its QR work moves to the
+    // background queue; a different image still gets the normal placeholder.
+    if (!sameImageKey) {
+      releaseUncachedThumbnail();
+      displayedKey = null;
+      thumbnailUrl = null;
+    }
 
     // Capture and reset the skipCache flag
     const shouldSkipCache = skipCacheOnNextRequest;
@@ -377,6 +408,7 @@
     currentRequestController = requestController;
     const requestIsCurrent = () =>
       key.hash === currentKeyHash &&
+      qrPolicy === currentQrPolicy &&
       currentRequestController === requestController;
 
     // Request thumbnail (cache check → queue → render → upload)
@@ -387,6 +419,17 @@
         skipCache: shouldSkipCache,
         priority,
         signal: requestController.signal,
+        // A signed-in reader sees the preview first, then the separate
+        // background queue prepares the exact scan-ready QR. Guests only reuse
+        // public prepared artwork, so scrolling can never allocate a code.
+        qrPolicy,
+        onPreview: (preview) => {
+          if (requestIsCurrent() && preview.url) {
+            displayedKey = preview.key;
+            thumbnailUrl = preview.url;
+            status = { state: "complete", url: preview.url };
+          }
+        },
         onStatusChange: (s) => {
           if (requestIsCurrent()) {
             status = s;
@@ -524,6 +567,7 @@
     // 5. Reset state to trigger the $effect to re-fetch
     thumbnailUrl = null;
     currentKeyHash = null;
+    currentQrPolicy = null;
     status = { state: "idle" };
   }
 </script>

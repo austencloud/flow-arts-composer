@@ -40,6 +40,9 @@
 
 <style>
 	.drafting {
+		box-sizing: border-box;
+		min-height: 0;
+		grid-template-rows: minmax(0, 1fr);
 		width: 100%;
 		height: 100%;
 		display: grid;
@@ -48,6 +51,8 @@
 	}
 
 	.film {
+		box-sizing: border-box;
+		min-height: 0;
 		display: grid;
 		grid-template-rows: auto minmax(0, 1fr);
 		gap: clamp(0.3rem, 1.4cqh, 0.75rem);

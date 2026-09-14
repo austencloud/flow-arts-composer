@@ -146,11 +146,11 @@ export const actionHelpContent: ActionHelpItem[] = [
   {
     id: "shift-start",
     icon: "fa-forward",
-    name: "First Step",
+    name: "Choose Start",
     color: "#06b6d4",
-    shortDesc: "Pick new step 1",
+    shortDesc: "Pick the start pose",
     fullDesc:
-      "Changes which step is the starting point of your sequence. Tap any step to make it the new 'Step 1' - the sequence will be reordered so that step plays first. Great for finding the best entry point into a pattern or creating variations from the same movements.",
+      "Changes where the sequence starts. While choosing, every tile shows only the pose it ends in. Tap the pose you want to start from and the sequence reorders to begin there. Sequences that don't loop drop the steps before it.",
     category: "tool",
   },
 ];

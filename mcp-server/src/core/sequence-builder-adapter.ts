@@ -44,6 +44,8 @@ export interface SequenceStep {
   rightMotion: MotionData;
   /** Step index in the sequence (matches stepNumber for MCP adapter) */
   stepNumber: number;
+  /** Counts the step holds for; the card draws an "N×" badge when it is not 1. */
+  duration?: number;
   isBridge?: boolean;
   leftReversal?: boolean;
   rightReversal?: boolean;
@@ -775,7 +777,7 @@ export function mcpStepsToEngineSteps(steps: SequenceStep[]): any[] {
     endPosition: s.endPosition || null,
     motions: { left: s.leftMotion, right: s.rightMotion },
     stepNumber: s.stepNumber ?? i,
-    duration: 1,
+    duration: s.duration ?? 1,
     isBridge: s.isBridge,
     variation: s.variation,
   }));
@@ -790,6 +792,7 @@ export function engineStepsToMcpSteps(steps: any[]): SequenceStep[] {
     leftMotion: (s.motions?.left ?? s.leftMotion) as SequenceStep["leftMotion"],
     rightMotion: (s.motions?.right ?? s.rightMotion) as SequenceStep["rightMotion"],
     stepNumber: s.stepNumber ?? i,
+    duration: s.duration,
     isBridge: s.isBridge,
     variation: s.variation,
   }));

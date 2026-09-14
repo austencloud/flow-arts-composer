@@ -206,24 +206,20 @@
 {/snippet}
 
 <div class="tool-panel-wrapper">
-  <!-- Generate is a primary Create mode, so warm its deferred chunk after
-       Create paints instead of making the user pay that cost on the tab click.
-       Keeping this LazyMount alive also remembers the loaded module, while
-       keepAlive=false still tears down Generate's active effects whenever the
-       user works in another mode. -->
+  <!-- Keep the loaded module available after first use, but don't compete with
+       Construct's first pictographs by loading another tool during startup. -->
   <div
     class="creation-tool-content generate-tool-content"
     class:is-active={isGeneratePanelActive}
     aria-hidden={!isGeneratePanelActive}
     aria-busy={isGeneratePanelActive && generateLoadStatus === "loading"}
-    inert={!isGeneratePanelActive}
+    inert={!isGeneratePanelActive || !!panelState.workspacePlayback}
   >
     <div class="sub-tab-content" data-tab="generate">
       <LazyMount
         loader={() => import("../../generate/components/GeneratePanel.svelte")}
         active={isGeneratePanelActive}
         keepAlive={false}
-        prefetch
         placeholder={isGeneratePanelActive ? generateLoading : undefined}
         error={generateError}
         debugName="Generate settings panel"

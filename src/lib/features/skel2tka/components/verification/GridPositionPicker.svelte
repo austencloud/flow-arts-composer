@@ -18,7 +18,7 @@
     onSelect: (location: GridLocation) => void;
   } = $props();
 
-  const handColor = $derived(hand === "left" ? "#3b82f6" : "#ef4444");
+  const handColor = $derived(hand === "left" ? "var(--prop-blue, #3b82f6)" : "var(--prop-red, #ef4444)");
 
   interface GridButton {
     location: GridLocation;
@@ -50,7 +50,7 @@
         style="
           left: {btn.x}%;
           top: {btn.y}%;
-          {selected === btn.location ? `border-color: ${handColor}; box-shadow: 0 0 8px ${handColor}40;` : ''}
+          {selected === btn.location ? `border-color: ${handColor}; box-shadow: 0 0 8px color-mix(in srgb, ${handColor} 25%, transparent);` : ''}
         "
         onclick={() => onSelect(btn.location)}
         role="radio"

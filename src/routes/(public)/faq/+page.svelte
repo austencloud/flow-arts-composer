@@ -13,7 +13,7 @@
 
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://tkaflowarts.com/faq" />
-  <meta property="og:title" content="FAQ | The Kinetic Alphabet" />
+  <meta property="og:title" content="FAQ | Flow Arts Composer" />
   <meta
     property="og:description"
     content="Common questions about The Kinetic Alphabet: what the notation is, which props it covers, where to start, and what Flow Arts Composer costs."
@@ -21,7 +21,7 @@
   <meta property="og:image" content="https://tkaflowarts.com/branding/og-image.png" />
 
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="FAQ | The Kinetic Alphabet" />
+  <meta name="twitter:title" content="FAQ | Flow Arts Composer" />
   <meta
     name="twitter:description"
     content="Common questions about The Kinetic Alphabet: what the notation is, which props it covers, where to start, and what Flow Arts Composer costs."

@@ -11,6 +11,7 @@ import type {
 import type { createCrossfaderState } from "$lib/shared/choreo-card/state/crossfader-state.svelte";
 
 export interface ChoreoCardRenderLifecycleDeps {
+  readonly fanAppearance?: import("$lib/shared/pictograph/prop/domain/fan-appearance").FanAppearance;
   readonly primaryPropColors?: { left: string; right: string } | null;
   readonly sequence: SequenceData;
   readonly handPathMode?: boolean;
@@ -69,6 +70,7 @@ export function createChoreoCardRenderLifecycle(
       sequence: deps.sequence,
       handPathMode: deps.handPathMode,
       browseViewMode: deps.browseViewMode,
+      fanAppearance: deps.fanAppearance,
       primaryPropColors: deps.primaryPropColors,
       leftPropType: deps.leftPropType,
       rightPropType: deps.rightPropType,

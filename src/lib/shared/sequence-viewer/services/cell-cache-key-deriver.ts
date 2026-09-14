@@ -117,9 +117,11 @@ function mapToVisibility(
   isDark: boolean
 ): PictographVisibilityOptions {
   const handsView =
-    (options.handPathMode ?? false) || options.browseViewMode?.subject === "hands";
+    (options.handPathMode ?? false) ||
+    options.browseViewMode?.subject === "hands";
 
   return {
+    fanAppearance: handsView ? undefined : options.fanAppearance,
     primaryPropColors: options.primaryPropColors,
     showTKA: options.showTKA ?? true,
     showTnD: options.showTnD ?? false,

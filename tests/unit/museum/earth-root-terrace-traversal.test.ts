@@ -1,7 +1,14 @@
 /**
  * Headless playtest of the Root Terrace: Fire's east door → the corridor →
- * the vestibule → the ramp → the whole terrace → the corner → the landing →
- * the second descent → the Air door.
+ * the vestibule → up the entry ramp to the overlook → back down → the gallery
+ * descent → all three consoles along the catwalk → the east link → the
+ * ensemble landing → the exit ramp → the Air door.
+ *
+ * The walk back down from the overlook is the point of the spur, not an
+ * oversight: the terrain is 2.5D and the step rule needs a metre of rock
+ * between decks at different heights, which leaves no corridor for a descent
+ * that clears the vestibule without flanking the overlook. This test proves
+ * the round trip is actually walkable rather than merely drawn.
  *
  * Drives the REAL stack (buildVulcanCaveFloorPlan + MuseumPhysicsProvider) with
  * repeated movePlayer calls, exactly like the in-game controller does, walking a
@@ -19,8 +26,9 @@ import { TILE_METRES, inRectClosed } from "$lib/features/museum/data/drowned-gal
 import {
   BED_Y,
   DOOR_Y,
+  GALLERY_Y,
   LANDING_Y,
-  TERRACE_Y,
+  OVERLOOK_Y,
   buildEarthRootTerraceLayout,
 } from "$lib/features/museum/data/earth-root-terrace-terrain";
 
@@ -207,10 +215,13 @@ const earthWestDoor = doorCenterTile("cave-earth", "west");
 const earthSouthDoor = doorCenterTile("cave-earth", "south");
 
 const opener = tileOfWorld(layout.opener.centre);
-const rampFoot = tileOfWorld({ x: layout.ramp.minX + 0.5, z: mid(layout.ramp).z });
-const rampHead = tileOfWorld({ x: layout.ramp.maxX - 0.5, z: mid(layout.ramp).z });
-const terraceMid = tileOfWorld({ x: mid(layout.terrace).x, z: layout.terrace.maxZ - 0.75 });
-const corner = tileOfWorld({ x: layout.terrace.maxX - 1, z: mid(layout.terrace).z });
+const rampFoot = tileOfWorld({ x: layout.entryRamp.minX + 0.5, z: mid(layout.entryRamp).z });
+const overlookStand = tileOfWorld({
+  x: layout.overlook.minX + 1.0,
+  z: layout.overlook.maxZ - 0.5,
+});
+const descentFoot = tileOfWorld({ x: layout.gallery.minX + 0.5, z: mid(layout.gallery).z });
+const consoles = layout.consoles.map((panel) => tileOfWorld(panel.stand));
 const landing = tileOfWorld(layout.ensemble.eye);
 const exit = tileOfWorld(mid(layout.doorApproach));
 
@@ -219,9 +230,10 @@ const ROUTE: TileCoord[] = [
   earthWestDoor,
   opener,
   rampFoot,
-  rampHead,
-  terraceMid,
-  corner,
+  overlookStand,
+  // …and back out of the spur, through the vestibule, down the other lane.
+  descentFoot,
+  ...consoles,
   landing,
   exit,
   earthSouthDoor,
@@ -252,20 +264,41 @@ describe("earth root terrace traversal (headless playtest)", () => {
     expect(last.elevation).toBeCloseTo(DOOR_Y, 5);
   });
 
-  it("climbs the ramp and holds the terrace datum the whole way along", () => {
-    const onRamp = samples.filter((s) => inRectClosed(layout.ramp, s.x, s.z));
+  it("climbs the entry ramp and holds the overlook datum on the spur", () => {
+    const onRamp = samples.filter((s) => inRectClosed(layout.entryRamp, s.x, s.z));
     expect(onRamp.length).toBeGreaterThan(50);
     expect(Math.min(...onRamp.map((s) => s.elevation))).toBeLessThan(0.3);
-    expect(Math.max(...onRamp.map((s) => s.elevation))).toBeGreaterThan(TERRACE_Y - 0.3);
-    const onTerrace = samples.filter((s) => inRectClosed(layout.terrace, s.x, s.z));
-    expect(onTerrace.length).toBeGreaterThan(100);
-    for (const s of onTerrace) {
-      expect(s.elevation).toBeCloseTo(TERRACE_Y, 5);
-      expect(s.y).toBeCloseTo(TERRACE_Y + STANDING_Y, 5);
+    expect(Math.max(...onRamp.map((s) => s.elevation))).toBeGreaterThan(OVERLOOK_Y - 0.3);
+    const onOverlook = samples.filter((s) => inRectClosed(layout.overlook, s.x, s.z));
+    expect(onOverlook.length).toBeGreaterThan(5);
+    for (const s of onOverlook) {
+      expect(s.elevation).toBeCloseTo(OVERLOOK_Y, 5);
+      expect(s.y).toBeCloseTo(OVERLOOK_Y + STANDING_Y, 5);
     }
   });
 
-  it("stands on the landing at 1.2 m, on the row's axis", () => {
+  it("comes back down and walks the whole catwalk, stopping at all three consoles", () => {
+    const onGallery = samples.filter((s) => inRectClosed(layout.gallery, s.x, s.z));
+    expect(onGallery.length).toBeGreaterThan(100);
+    for (const s of onGallery) {
+      expect(s.elevation).toBeCloseTo(GALLERY_Y, 5);
+      expect(s.y).toBeCloseTo(GALLERY_Y + STANDING_Y, 5);
+    }
+    // Every console is actually reached, not merely passed near.
+    for (const panel of layout.consoles) {
+      const reached = samples.some(
+        (s) => Math.hypot(s.x - panel.stand.x, s.z - panel.stand.z) < 0.4
+      );
+      expect(reached, `console ${panel.letter}`).toBe(true);
+    }
+    // The overlook is walked BEFORE the catwalk: the reveal, then the work.
+    const firstOverlook = samples.findIndex((s) => inRectClosed(layout.overlook, s.x, s.z));
+    const firstGallery = samples.findIndex((s) => inRectClosed(layout.gallery, s.x, s.z));
+    expect(firstOverlook).toBeGreaterThanOrEqual(0);
+    expect(firstOverlook).toBeLessThan(firstGallery);
+  });
+
+  it("stands on the landing, below the datum, on the row's axis", () => {
     const onLanding = samples.filter((s) => inRectClosed(layout.landing, s.x, s.z));
     expect(onLanding.length).toBeGreaterThan(5);
     for (const s of onLanding) expect(s.elevation).toBeCloseTo(LANDING_Y, 5);
@@ -286,21 +319,38 @@ describe("earth root terrace traversal (headless playtest)", () => {
     }
   });
 
-  it("never walks onto the bed or into the cleft, and never shares the performers' floor", () => {
+  it("never reaches the performers' floor, on the bed or in the cleft", () => {
+    // The catwalk and its alcoves are cantilevered over the bed rect, so being
+    // inside that rect in plan is expected now. What must never happen is
+    // standing ON the bed: every sample is on a deck at least 1.2 m above it.
     for (const s of samples) {
       expect(terrain.blockedAt(s.x, s.z)).toBe(false);
-      expect(inRectClosed(layout.bed, s.x, s.z)).toBe(false);
       expect(inRectClosed(layout.cleft, s.x, s.z)).toBe(false);
-      expect(s.elevation).toBeGreaterThan(BED_Y + 2);
+      expect(s.elevation - BED_Y).toBeGreaterThanOrEqual(1.2 - 1e-9);
+      if (inRectClosed(layout.bed, s.x, s.z)) {
+        const overDeck = [layout.galleryDescent, layout.gallery, ...layout.alcoves].some(
+          (r) => inRectClosed(r, s.x, s.z)
+        );
+        expect(overDeck, `${s.x.toFixed(2)},${s.z.toFixed(2)} inside the bed`).toBe(true);
+      }
     }
   });
 
-  it("cannot step off the terrace rail onto the bed", () => {
-    const start = { x: mid(layout.terrace).x, z: layout.terrace.maxZ - 0.3 };
+  it("cannot step off the catwalk rail onto the bed", () => {
+    const start = { x: layout.consoles[1]!.stand.x, z: layout.gallery.maxZ - 0.3 };
+    const physics = new MuseumPhysicsProvider(grid, TILE, { x: start.x, y: 0, z: start.z });
+    for (let i = 0; i < 80; i++) physics.movePlayer({ x: 0, y: -0.2, z: 0.05 }, 1 / 60);
+    const pos = physics.getPlayerPosition();
+    expect(pos.z).toBeLessThan(layout.gallery.maxZ + 0.5);
+    expect(pos.y).toBeCloseTo(GALLERY_Y + STANDING_Y, 3);
+  });
+
+  it("cannot step off the overlook spur onto the bed", () => {
+    const start = { x: mid(layout.overlook).x, z: layout.overlook.maxZ - 0.3 };
     const physics = new MuseumPhysicsProvider(grid, TILE, { x: start.x, y: 0, z: start.z });
     for (let i = 0; i < 80; i++) physics.movePlayer({ x: 0, y: -0.2, z: 0.05 }, 1 / 60);
     const pos = physics.getPlayerPosition();
     expect(pos.z).toBeLessThan(layout.bed.minZ + 0.5);
-    expect(pos.y).toBeCloseTo(TERRACE_Y + STANDING_Y, 3);
+    expect(pos.y).toBeCloseTo(OVERLOOK_Y + STANDING_Y, 3);
   });
 });

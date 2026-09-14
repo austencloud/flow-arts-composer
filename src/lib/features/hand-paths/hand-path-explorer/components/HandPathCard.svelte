@@ -24,8 +24,8 @@
   const sideColor = $derived.by(() => {
     const hasBoth = group.sides.has(HandSide.LEFT) && group.sides.has(HandSide.RIGHT);
     if (hasBoth) return "#a855f7"; // purple = both
-    if (group.sides.has(HandSide.LEFT)) return "#3b82f6";
-    return "#ef4444"; // red
+    if (group.sides.has(HandSide.LEFT)) return "var(--prop-blue, #3b82f6)";
+    return "var(--prop-red, #ef4444)"; // red
   });
 
   const sideBadgeLabel = $derived.by(() => {
@@ -79,9 +79,9 @@
       <span class="card__count">{group.sequences.length} seq</span>
       <span
         class="card__badge"
-        style:background-color="{sideColor}22"
+        style:background-color="color-mix(in srgb, {sideColor} 13%, transparent)"
         style:color={sideColor}
-        style:border-color="{sideColor}55"
+        style:border-color="color-mix(in srgb, {sideColor} 33%, transparent)"
       >
         {sideBadgeLabel}
       </span>

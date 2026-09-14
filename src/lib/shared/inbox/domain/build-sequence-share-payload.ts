@@ -18,7 +18,9 @@ export function buildSequenceSharePayload(
     sequenceCloudWord: seq.word || undefined,
     sequenceName: seq.name || undefined,
     sequenceThumbnail: seq.thumbnails?.[0] || seq.thumbnailUrl || undefined,
-    sequenceAuthor: seq.ownerDisplayName || seq.author || undefined,
+    // `author` is legacy tool attribution ("TKA Explore"), not a person; the
+    // owner is the only name worth putting after "by".
+    sequenceAuthor: seq.ownerDisplayName || undefined,
     sequenceStepCount: seq.steps?.length || undefined,
   };
 }

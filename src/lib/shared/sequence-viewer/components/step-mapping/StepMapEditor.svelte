@@ -33,6 +33,11 @@
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import StepMapTimeline from "./StepMapTimeline.svelte";
+  import {
+    clearStepMapDraft,
+    loadStepMapDraft,
+    saveStepMapDraft,
+  } from "./step-map-draft";
   import { mirrorBeat } from "$lib/shared/create/services/step-transforms";
   import { mirrorStartPosition } from "$lib/shared/create/services/start-position-transforms";
   import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
@@ -47,6 +52,12 @@
     /** The opening pose. The first mark is the performer settling into it. */
     startPosition?: StartPositionData | null;
     initialStepMap?: StepMap;
+    /**
+     * Identifies this (sequence, video) pairing so an unfinished run survives
+     * a reload, a hot module swap, or closing the panel. Without one, the run
+     * lives only as long as the component.
+     */
+    draftKey?: string;
     bpm: number;
     onSave: (beatMap: StepMap) => Promise<void>;
     onClose: () => void;
@@ -58,6 +69,7 @@
     steps,
     startPosition = null,
     initialStepMap,
+    draftKey,
     bpm,
     onSave,
     onClose,
@@ -80,32 +92,47 @@
   const moveCount = $derived(steps.length);
 
   /**
+   * A run that was interrupted before it was saved. Every tap is written here
+   * as it lands, so coming back to this video picks up exactly where the last
+   * tap left off, not at the last saved map and not at zero.
+   */
+  const draft = untrack(() => (draftKey ? loadStepMapDraft(draftKey) : null));
+
+  /**
    * How many times through the sequence this run is currently sized for. It
    * grows on its own as the marking reaches the end of a pass with footage
    * still to go, so nobody has to count the repeats before starting.
    */
   let passes = $state(
-    untrack(() => passesFromStepMap(initialStepMap, steps.length))
+    untrack(
+      () => draft?.passes ?? passesFromStepMap(initialStepMap, steps.length)
+    )
   );
 
   const totalMarks = $derived(moveCount * passes + 1);
 
   let videoEl: HTMLVideoElement | undefined = $state();
   let isPlaying = $state(false);
-  let currentTime = $state(0);
+  let currentTime = $state(untrack(() => draft?.currentTime ?? 0));
   /**
    * Marking opens slowed down, because the landing is what you are looking for.
    * Re-timing an existing map opens on the timeline, where full speed is what
    * you want to check the result against.
    */
-  let rate = $state(untrack(() => initialStepMap) ? 1 : MARKING_RATE);
+  let rate = $state(
+    untrack(() => (draft ? draft.mode === "review" : Boolean(initialStepMap)))
+      ? 1
+      : MARKING_RATE
+  );
 
   /**
    * One timestamp per arrival, in tap order. Shorter than totalMarks while a
    * run is in progress.
    */
   let marks = $state<number[]>(
-    untrack(() => marksFromStepMap(initialStepMap, videoDuration))
+    untrack(
+      () => draft?.marks ?? marksFromStepMap(initialStepMap, videoDuration)
+    )
   );
 
   /**
@@ -113,10 +140,32 @@
    * the timeline with its marks intact.
    */
   let mode = $state<"mark" | "review">(
-    untrack(() => initialStepMap) ? "review" : "mark"
+    untrack(() => draft?.mode ?? (initialStepMap ? "review" : "mark"))
   );
 
-  let selectedMark = $state(0);
+  let selectedMark = $state(untrack(() => draft?.selectedMark ?? 0));
+
+  /**
+   * Autosave. Runs after every change to the run, so nothing that has been
+   * tapped can be lost to a reload. Saving the real map clears it; closing
+   * the panel deliberately does not, so "go back" finds it all still there.
+   */
+  $effect(() => {
+    if (!draftKey) return;
+    saveStepMapDraft(draftKey, {
+      marks,
+      passes,
+      mode,
+      selectedMark,
+      // Read untracked: the playhead ticks four times a second and none of
+      // those ticks change the run. Every tap sets currentTime itself, so
+      // the stored playhead is the last tap, which is where to resume.
+      currentTime: untrack(() => currentTime),
+    });
+  });
+
+  /** Seek to the draft's playhead once the clip can actually be seeked. */
+  let resumeAt: number | null = draft ? draft.currentTime : null;
   let isSaving = $state(false);
   let saveError = $state<string | null>(null);
   let flashing = $state(false);
@@ -193,7 +242,10 @@
    * passes. Pass one opens at the start mark, so it is not one of these.
    */
   const passStartIndices = $derived(
-    Array.from({ length: Math.max(0, passes - 1) }, (_, i) => moveCount * (i + 1) + 1)
+    Array.from(
+      { length: Math.max(0, passes - 1) },
+      (_, i) => moveCount * (i + 1) + 1
+    )
   );
 
   const pendingFace = $derived(faceFor(pendingIndex));
@@ -215,7 +267,6 @@
     return Math.max(1, Math.ceil(map.beatTimestamps.length / moves));
   }
 
-
   function applyRate(next: number): void {
     rate = next;
     if (videoEl) videoEl.playbackRate = next;
@@ -231,6 +282,10 @@
   function handleLoadedMetadata(): void {
     if (!videoEl) return;
     videoEl.playbackRate = rate;
+    if (resumeAt !== null) {
+      seekTo(resumeAt);
+      resumeAt = null;
+    }
     if (videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
       videoRatio = videoEl.videoWidth / videoEl.videoHeight;
     }
@@ -258,7 +313,6 @@
   function skip(seconds: number): void {
     seekTo((videoEl?.currentTime ?? currentTime) + seconds);
   }
-
 
   /**
    * A performer works in their own frame; the camera sees it reflected, so a
@@ -292,7 +346,6 @@
     );
     mirroredStart = startPosition ? mirrorStartPosition(startPosition) : null;
   }
-
 
   function startMarking(): void {
     mode = "mark";
@@ -397,14 +450,17 @@
       passSeconds > 0
         ? Math.max(1, Math.round(videoDuration / passSeconds))
         : passes;
-    marks = generateEvenBeatTimestamps(videoDuration, moveCount * passes + 1, bpm);
+    marks = generateEvenBeatTimestamps(
+      videoDuration,
+      moveCount * passes + 1,
+      bpm
+    );
     selectedMark = 0;
     mode = "review";
     applyRate(1);
     videoEl?.pause();
     seekTo(marks[0] ?? 0);
   }
-
 
   function selectMark(index: number): void {
     selectedMark = Math.max(0, Math.min(index, marks.length - 1));
@@ -417,8 +473,13 @@
     const gap = 0.03;
     const min = index > 0 ? (marks[index - 1] ?? 0) + gap : 0;
     const max =
-      index < marks.length - 1 ? (marks[index + 1] ?? videoDuration) - gap : videoDuration;
-    return Math.max(0, Math.min(Math.max(min, Math.min(max, time)), videoDuration));
+      index < marks.length - 1
+        ? (marks[index + 1] ?? videoDuration) - gap
+        : videoDuration;
+    return Math.max(
+      0,
+      Math.min(Math.max(min, Math.min(max, time)), videoDuration)
+    );
   }
 
   function moveMark(index: number, time: number): void {
@@ -434,7 +495,6 @@
     const moved = marks[selectedMark];
     if (moved !== undefined) seekTo(moved);
   }
-
 
   function handleKeyboard(event: KeyboardEvent): void {
     const target = event.target;
@@ -486,7 +546,6 @@
     }
   }
 
-
   async function handleSave(): Promise<void> {
     isSaving = true;
     saveError = null;
@@ -508,6 +567,7 @@
         source: "manual",
         updatedAt: new Date(),
       });
+      if (draftKey) clearStepMapDraft(draftKey);
     } catch (cause) {
       saveError =
         cause instanceof Error ? cause.message : "Failed to save the timing";
@@ -692,7 +752,11 @@
                is how it ends: the moment one full pass exists, stopping is a
                button rather than a thing that happens to you. -->
           {#if fullPasses >= 1}
-            <button type="button" class="aux-btn done-btn" onclick={finishMarking}>
+            <button
+              type="button"
+              class="aux-btn done-btn"
+              onclick={finishMarking}
+            >
               <i class="fas fa-check" aria-hidden="true"></i>
               Done marking
             </button>
@@ -831,8 +895,16 @@
   /* The one container every query in this file resolves against, so a rule that
      recomposes .editor and a rule that recomposes its children cross the same
      seam at the same width. */
+  /* The shell is a flex item of the performance editor, and its own grid sizes
+     every track from the space it is given (minmax(0, 1fr) columns, absolutely
+     filled video). That makes its max-content width zero, so an auto flex basis
+     collapsed the whole mapping UI to a 0px sliver at the left edge. Claim the
+     track explicitly instead of inheriting it from the content. */
   .step-map-shell {
     container-type: inline-size;
+    flex: 1;
+    min-inline-size: 0;
+    inline-size: 100%;
     block-size: 100%;
   }
 

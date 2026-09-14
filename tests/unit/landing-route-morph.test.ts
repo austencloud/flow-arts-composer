@@ -423,10 +423,13 @@ describe("landing shared-element contract", () => {
     }
 
     expect(construct).toContain(
-      'hidden={isCompactDemo && !isGuidedBuild && compactPane !== "sequence"}'
+      "const usesFocusedLayout = $derived(isGuidedBuild || isContinuous)"
     );
-    expect(construct).toContain(
-      'hidden={isCompactDemo && !isGuidedBuild && compactPane !== "build"}'
+    expect(construct).toMatch(
+      /hidden=\{isCompactDemo\s*&&\s*!usesFocusedLayout\s*&&\s*compactPane !== "sequence"\}/
+    );
+    expect(construct).toMatch(
+      /hidden=\{isCompactDemo\s*&&\s*!usesFocusedLayout\s*&&\s*compactPane !== "build"\}/
     );
     expect(generate).toContain(
       'hidden={isCompactDemo && compactView !== "result"}'

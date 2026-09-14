@@ -17,6 +17,8 @@ export enum ConstraintType {
   CONTINUITY = "continuity",
   REVERSAL = "reversal",
   HAND_PATH = "handPath",
+  /** Left hand related to the right hand inside one step (mirror, unison, ...). */
+  HAND_RELATIONSHIP = "handRelationship",
 
   // Position constraints
   POSITION_GROUP = "positionGroup",
@@ -69,6 +71,7 @@ export const CONSTRAINT_CATEGORIES: Record<ConstraintType, ConstraintCategory> =
     [ConstraintType.CONTINUITY]: ConstraintCategory.SEQUENCE,
     [ConstraintType.REVERSAL]: ConstraintCategory.SEQUENCE,
     [ConstraintType.HAND_PATH]: ConstraintCategory.SEQUENCE,
+    [ConstraintType.HAND_RELATIONSHIP]: ConstraintCategory.MOTION,
     [ConstraintType.POSITION_GROUP]: ConstraintCategory.POSITION,
     [ConstraintType.VTG_TIMING]: ConstraintCategory.TIMING,
     [ConstraintType.ALTERNATING]: ConstraintCategory.PATTERN,

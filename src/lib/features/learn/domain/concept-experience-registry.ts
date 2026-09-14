@@ -69,6 +69,14 @@ export const CONCEPT_EXPERIENCES = [
       import("../components/interactive/motions/TimingDirectionConceptExperience.svelte"),
   }),
   experience({
+    conceptId: "reading-choreo-cards",
+    guideSlug: "hand-motions",
+    guideLabel: "Hand Motions",
+    reviewStatus: "built",
+    load: () =>
+      import("../components/interactive/cards/ReadingChoreoCardsConceptExperience.svelte"),
+  }),
+  experience({
     conceptId: "rotation-direction",
     guideSlug: "staff-motions",
     guideLabel: "Staff Motions: Prospin and Antispin",

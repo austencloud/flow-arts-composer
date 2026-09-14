@@ -1,0 +1,152 @@
+[
+  {
+    "key": "guide",
+    "title": "Construct guide actions are clipped on small phones",
+    "type": "bug",
+    "priority": "high",
+    "module": "create",
+    "tab": "construct",
+    "description": "Astra audit, 2026-09-07. Reproduced at 375x667: Show guide spans y=78.8..122.8, but .workspace-heading ends at y=98 with overflow:hidden; Not now is clipped too. Source: src/lib/features/create/construct/start-position-picker/components/StartPositionPicker.svelte:499. Make the heading fit the offered guide while preserving stable layout and active-guide collapse. Verify the offer, ordinary heading, and active guide across required viewports.",
+    "id": "likYCeZfjkY3breTeG5U"
+  },
+  {
+    "key": "shell",
+    "title": "App shell download failure leaves an endless loading screen",
+    "type": "bug",
+    "priority": "high",
+    "module": "system",
+    "tab": "startup",
+    "description": "Astra audit, 2026-09-07. Source-confirmed, failure not injected during audit. src/routes/app/AppShellLoader.svelte:13 imports MainApplication with .then only. Rejection leaves MainApp null and LoadingGate forever. Add earned user-visible recovery using existing chunk-recovery ownership where available. Verify rejected first import and successful retry without compromising normal boot.",
+    "id": "x8R4BmS2D7Rq5UT6UqeJ"
+  },
+  {
+    "key": "keepalive",
+    "title": "Browse and retained modules lack loading and retry states",
+    "type": "bug",
+    "priority": "high",
+    "module": "system",
+    "tab": "navigation",
+    "description": "Astra audit, 2026-09-07. Source-confirmed, blank interval observed on initial Browse entry. src/lib/shared/modules/ModuleRenderer.svelte:354 bypasses ordinary #await for keep-alive modules; load effect near :96 swallows rejection and host near :431 renders only once cached. Preserve retained instances while providing pending and retryable failure states for Browse/Museum/personal-museum. Verify first load, rejection/retry, rapid switches and return to cached module.",
+    "id": "1JponjiyXPhmHHrUIcgV"
+  },
+  {
+    "key": "analytics",
+    "title": "Optional analytics failure can block app startup",
+    "type": "bug",
+    "priority": "high",
+    "module": "system",
+    "tab": "startup",
+    "description": "Astra audit, 2026-09-07. Source-confirmed, failure not injected during audit. src/routes/+layout.svelte:556 awaits PostHog and lifecycle reporter before auth; exception can reach root Critical Error. Analytics HTTP responses are NOT awaited. Isolate optional analytics imports/setup from app availability, retain diagnostics and disposal, test rejection without blocking auth. Coordinate with concurrent analytics work before editing.",
+    "id": "HKqrfUonQWnbyQnJyOBE"
+  },
+  {
+    "key": "manifest",
+    "title": "Transient thumbnail manifest failure is cached for the session",
+    "type": "bug",
+    "priority": "medium",
+    "module": "browse",
+    "tab": "gallery",
+    "description": "Astra audit, 2026-09-07. Source-confirmed. src/lib/shared/browse/services/thumbnail-render-orchestrator.ts:175 caches an empty Set for failed HTTP or network requests to /thumbnails/manifest.json. Subsequent calls skip bundled thumbnails until reset. Distinguish failure from a valid empty manifest; allow bounded retry and retain request coalescing. Test transient failure then success and concurrent callers. Other tiers already provide fallback.",
+    "id": "JS6IHoTHKiYEC8rDAWNW"
+  },
+  {
+    "key": "community",
+    "title": "Late Gallery response can overwrite a newer Library view",
+    "type": "bug",
+    "priority": "high",
+    "module": "browse",
+    "tab": "collections",
+    "description": "Astra audit, 2026-09-07. Source-confirmed race. src/lib/shared/browse/engine/create-browse-engine.svelte.ts:529 applies community response without request/source guard; library loads already have revision checks. AddSequencesSheet permits source switching; main Explore is community-only. Guard success, errors, loading flags and extras against outdated requests and disposal. Test out-of-order source changes including community-library-community.",
+    "id": "kE2JtZenxL3LByKqc238"
+  },
+  {
+    "key": "glyph",
+    "title": "Hidden uncached glyphs keep polling every 16 milliseconds",
+    "type": "bug",
+    "priority": "medium",
+    "module": "system",
+    "tab": "animation",
+    "description": "Astra audit, 2026-09-07. Source-confirmed. GlyphOverlay.svelte:114 polls dimensions while uncached without tkaGlyphVisible; TKAGlyph only mounts when visible near :181. CanvasSurface keeps overlay mounted. Ensure hidden glyphs do not start or retain polling, with reactive recovery when enabled and cleanup on changes/destroy. Measure timer activity before and after. CPU savings are unmeasured.",
+    "id": "dRmSL8ZKrZPBfjdeTkPo"
+  },
+  {
+    "key": "canvas",
+    "title": "Animation initialization failure leaves an empty stage",
+    "type": "bug",
+    "priority": "high",
+    "module": "system",
+    "tab": "animation",
+    "description": "Astra audit, 2026-09-07. Source-confirmed. src/lib/shared/animation-engine/components/CanvasSurface.svelte:400 catches initialize rejection only to console. Surface should expose a clear recoverable failure at the existing error boundary without duplicating normal effect failures. Test rejection, disposal before resolution, and recovery. Keep diagnosis details out of user-facing copy.",
+    "id": "Et13ONkhmG52qQVO8Wvl"
+  },
+  {
+    "key": "word",
+    "title": "Fast sequence changes can leave the animation title stale",
+    "type": "bug",
+    "priority": "medium",
+    "module": "system",
+    "tab": "animation",
+    "description": "Astra audit, 2026-09-07. Source-confirmed. WordHeader.svelte:129 ignores updates during entering/exiting but advances lastWord near :167; returning to idle does not reconcile because phase is untracked. Latest word must eventually win under rapid changes, visibility toggles and destruction. Preserve existing choreography and reduced motion. Add meaningful timing/state regression coverage.",
+    "id": "BpacjdEFPknUL5vSuTpP"
+  },
+  {
+    "key": "rail",
+    "title": "Sequence viewer sidebar resize control ignores the keyboard",
+    "type": "bug",
+    "priority": "medium",
+    "module": "browse",
+    "tab": "viewer",
+    "description": "Astra audit, 2026-09-07. Source-confirmed. ViewerContentRail.svelte:245 exposes focusable role=slider with width values and pointer-only resizing. Reuse existing ResizeHandle semantics/behavior where appropriate; support keyboard width changes and bounds without losing pointer drag/double-click behavior. Compare GallerySplitPane's existing arrow-key support. Verify accessible name, orientation, focus and keyboard/pointer endpoints.",
+    "id": "xZyzrEKYQrgeZd5cff7W"
+  },
+  {
+    "key": "inbox",
+    "title": "Inbox navigation creates two keyboard targets for one action",
+    "type": "bug",
+    "priority": "medium",
+    "module": "system",
+    "tab": "navigation",
+    "description": "Astra audit, 2026-09-07. Source-confirmed. InboxNavButton.svelte:51 wraps a native NavButton in focusable role=button handling Enter but not Space. Use one semantic action owner for opening Inbox; preserve hover prefetch and notification badge. Verify one tab stop and native Enter/Space activation.",
+    "id": "JZZg3vchX76TaEWOeJdD"
+  },
+  {
+    "key": "export",
+    "title": "Measure export code loaded during ordinary app visits",
+    "type": "general",
+    "priority": "medium",
+    "module": "system",
+    "tab": "performance",
+    "description": "Astra audit, 2026-09-07. Investigation, not a measured regression. Composition-root index schedules deferred-registrations on idle with 2s timeout/100ms fallback. Deferred registrations statically import video export graph including mediabunny even without export intent. Measure dependency/transfer/evaluation cost on ordinary Create/Browse entry. If material, move loading to existing export intent boundary while preserving registration availability. Record baseline, decision and validation; avoid speculative refactor.",
+    "id": "fF4oG3FbmYZyNXWPrImz"
+  },
+  {
+    "key": "facets",
+    "title": "Measure repeated search and filtering for Browse facet counts",
+    "type": "general",
+    "priority": "medium",
+    "module": "browse",
+    "tab": "performance",
+    "description": "Astra audit, 2026-09-07. Investigation, not measured latency. create-browse-engine.svelte.ts:969 repeats search and multi-filter for each candidate count; gallery-drill-catalog.svelte.ts:377 requests counts per letter and analogous facets. Audit saw 1518 sequences and 46 letters. Measure representative filter/search interactions, retain count semantics and OR/AND behavior, then batch/index work only if meaningful. Existing derived caching and virtualization must be preserved.",
+    "id": "xY3ck6mfYTvCKysks9Gu"
+  },
+  {
+    "key": "browse-design",
+    "title": "Evaluate a content-first default for Show all in Browse",
+    "type": "feature",
+    "priority": "medium",
+    "module": "browse",
+    "tab": "gallery",
+    "description": "Astra audit, 2026-09-07. Design hypothesis. At 1440x900 Show all opens a 440px category pane with no filters applied. Existing pane can resize/collapse. Compare a content-first Show all entry with filters immediately available against current editor; preserve intentional category entry, remembered preferences and all capabilities. Prototype for review rather than silently replacing default behavior.",
+    "id": "HJleHkxOS5sFOt3ImpFv"
+  },
+  {
+    "key": "prototype",
+    "title": "Prototype continuous editing and playback in Construct",
+    "type": "feature",
+    "priority": "high",
+    "module": "create",
+    "tab": "construct",
+    "description": "Astra audit, 2026-09-07. User authorized a separate reviewable prototype, not integration of the redesign. Keep sequence, motion preview, selected beat and controls together. Existing Play opens viewer (create-module-handlers.ts:52); WorkspacePanel beat selection closes playback. Reuse hold-to-audition, sequence/undo owners, renderer activity gates and shared panels. Prototype desktop persistent preview plus phone compact preview/expandable choices. Exercise build, candidate audition, beat edit, undo and playback without modal round trips. Keep existing viewer for focused practice/share. Deliver runnable prototype and design for Austen to review before shipping.",
+    "id": "rEx10HQmiNFkeAgoUVfm"
+  }
+]

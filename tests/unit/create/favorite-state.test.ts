@@ -8,6 +8,7 @@ import type {
   SavedGeneratorSetup,
 } from "$lib/features/create/generate/domain/models/favorite-config";
 import { captureSetupSnapshot } from "$lib/features/create/generate/domain/setup-snapshot";
+import { createLiveConfigHarness } from "./favorite-state-live-harness.svelte";
 
 const NOW = new Date();
 const CONFIG = {
@@ -211,6 +212,54 @@ describe("favorite state", () => {
       liveSnapshot()
     );
 
+    expect(state.activeStatus).toBe("active");
+  });
+
+  it("detaches the applied setup when a control changes", async () => {
+    const live = createLiveConfigHarness(CONFIG);
+    const { deps } = makeDeps({
+      personal: {
+        setups: [makeSetup("s1")],
+        sharedSetupId: null,
+      },
+    });
+    const state = await settled(
+      createFavoriteState(live.getLiveSnapshot, deps)
+    );
+    state.setActiveSource(
+      { kind: "setup", setupId: "s1" },
+      live.getLiveSnapshot()
+    );
+    expect(state.activeStatus).toBe("active");
+
+    live.setLevel(3);
+
+    expect(state.activeSource).toBeNull();
+    expect(state.activeStatus).toBeNull();
+  });
+
+  it("re-attaches the applied setup when the controls match it again", async () => {
+    const live = createLiveConfigHarness(CONFIG);
+    const { deps } = makeDeps({
+      personal: {
+        setups: [makeSetup("s1")],
+        sharedSetupId: null,
+      },
+    });
+    const state = await settled(
+      createFavoriteState(live.getLiveSnapshot, deps)
+    );
+    state.setActiveSource(
+      { kind: "setup", setupId: "s1" },
+      live.getLiveSnapshot()
+    );
+
+    live.setLevel(3);
+    expect(state.activeSource).toBeNull();
+
+    live.setLevel(CONFIG.level);
+
+    expect(state.activeSource).toEqual({ kind: "setup", setupId: "s1" });
     expect(state.activeStatus).toBe("active");
   });
 

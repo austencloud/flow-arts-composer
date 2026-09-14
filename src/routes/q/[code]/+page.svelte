@@ -19,9 +19,9 @@
   const title = $derived(
     displayWord
       ? isSolo
-        ? `${displayWord}: Solo Flow Choreography | The Kinetic Alphabet`
-        : `${displayWord}: Flow Arts Sequence | The Kinetic Alphabet`
-      : "Scanned Sequence | The Kinetic Alphabet"
+        ? `${displayWord}: Solo Flow Choreography | Flow Arts Composer`
+        : `${displayWord}: Flow Arts Sequence | Flow Arts Composer`
+      : "Scanned Sequence | Flow Arts Composer"
   );
   const description = $derived(
     displayWord
@@ -73,7 +73,7 @@
   <meta name="description" content={description} />
   <link rel="canonical" href={canonical} />
   <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="The Kinetic Alphabet" />
+  <meta property="og:site_name" content="Flow Arts Composer" />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:url" content={canonical} />

@@ -7,7 +7,6 @@
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import StepCell from "./StepCell.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
 
   let {
     startPosition,
@@ -47,8 +46,6 @@
   }>();
 
   const hapticService: HapticFeedback | null = getHapticFeedback();
-  const leftColor = $derived(leftColorOverride ?? getSettings().primaryPropColors?.left ?? "var(--dm-motion-blue)");
-  const rightColor = $derived(rightColorOverride ?? getSettings().primaryPropColors?.right ?? "var(--dm-motion-red)");
 
   function handleStartClick() {
     hapticService?.trigger("selection");
@@ -94,39 +91,9 @@
     {rightColorOverride}
     {onContentReady}
   />
-  <span class="hand-colors" aria-label="Left and right prop colors">
-    <span title="Left hand"><i style:background={leftColor}></i>L</span>
-    <span title="Right hand"><i style:background={rightColor}></i>R</span>
-  </span>
 </div>
 
 <style>
-  .hand-colors {
-    position: absolute;
-    bottom: 4%;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 8px;
-    pointer-events: none;
-    color: var(--dm-text-color, var(--theme-text));
-    font-size: var(--font-size-compact, 12px);
-    font-weight: 600;
-  }
-
-  .hand-colors > span {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-  }
-
-  .hand-colors i {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px var(--theme-stroke);
-  }
-
   .start-tile {
     margin: 0;
     position: relative;

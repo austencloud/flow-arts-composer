@@ -34,12 +34,14 @@
     <!-- Blue half (left) -->
     <path
       d="M20,2 A18,18 0 0,0 20,38"
-      fill={isLeft ? "var(--prop-blue, #2e8bf0)" : "rgba(46, 139, 240, 0.25)"}
+      fill="var(--prop-blue, #2e8bf0)"
+      fill-opacity={isLeft ? 1 : 0.25}
     />
     <!-- Red half (right) -->
     <path
       d="M20,2 A18,18 0 0,1 20,38"
-      fill={!isLeft ? "var(--prop-red, #ed1c24)" : "rgba(237, 28, 36, 0.25)"}
+      fill="var(--prop-red, #ed1c24)"
+      fill-opacity={isLeft ? 0.25 : 1}
     />
     <!-- Center divider -->
     <line

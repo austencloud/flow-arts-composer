@@ -19,11 +19,9 @@ describe("prop picker catalog", () => {
     }
   });
 
-  it("lists every prop with artwork except the scene-only hand", () => {
+  it("lists every prop with artwork, bare hands included", () => {
     const listed = new Set(PROP_PICKER_SECTIONS.flatMap((s) => s.props));
-    const expected = (Object.values(PropType) as PropType[]).filter(
-      (prop) => prop !== PropType.HAND
-    );
+    const expected = Object.values(PropType) as PropType[];
     const missing = expected.filter((prop) => !listed.has(prop));
     expect(missing).toEqual([]);
   });

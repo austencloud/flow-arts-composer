@@ -22,6 +22,7 @@
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
+import type { HandRelationship } from "$lib/shared/create/domain/hand-relationship";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import type { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
@@ -176,30 +177,28 @@ export interface CustomizeOverlayProps {
     handPathMode: "smooth" | "mixed" | "choppy";
     motionTypeFilter: "no-dash" | "prefer-dash" | null;
   };
-  /** Absent means the generator rolls its own turns under the intensity ceiling. */
-  turnPattern: { left: (number | "fl")[]; right: (number | "fl")[] } | null;
-  /** The ceiling from the bento's Turn Intensity card, which caps the strip's values. */
-  turnIntensity: number;
-  sequenceLength: number;
-  /** A LOOP's seed block, when one is active. Restricts the periods offered. */
-  loopPeriod?: number;
   onConstraintPresetChange: (v: "smooth" | "mixed" | "choppy") => void;
   onHandPathModeChange: (v: "smooth" | "mixed" | "choppy") => void;
   onMotionTypeFilterChange: (v: "no-dash" | "mixed" | "prefer-dash") => void;
+  /** Absent on surfaces that do not offer the row (public Composer demo). */
+  handRelationship?: HandRelationship;
+  handRelationshipInverted?: boolean;
+  onHandRelationshipChange?: ((v: HandRelationship) => void) | null;
+  onHandRelationshipInvertedChange?: ((v: boolean) => void) | null;
+  matchHandTurns?: boolean;
+  onMatchHandTurnsChange?: ((v: boolean) => void) | null;
   onStartEndChange: ((options: StartEndOptions) => void) | null;
-  onTurnPatternChange: (
-    lanes: { left: (number | "fl")[]; right: (number | "fl")[] } | null
-  ) => void;
   /** "Reset all" — every persisted generation setting back to first-run. */
   onResetAll: (() => void) | null;
 }
 
 export interface PanelCoordinationState {
-  // Shift Start Mode State
+  // Choose Start picker state. The handler receives the tapped tile index:
+  // 0 for the start tile, 1..n for step tiles (the pose after that step).
   get isShiftStartMode(): boolean;
-  get shiftStartHandler(): ((stepNumber: number) => void) | null;
+  get shiftStartHandler(): ((tileIndex: number) => void) | null;
 
-  enterShiftStartMode(handler: (stepNumber: number) => void): void;
+  enterShiftStartMode(handler: (tileIndex: number) => void): void;
   exitShiftStartMode(): void;
 
   // Edit Panel State
@@ -352,6 +351,65 @@ export interface PanelCoordinationState {
   ): void;
   exitOptionAudition(): void;
 
+  get workspacePlayback(): {
+    sequence: SequenceData;
+    sourceTab: string;
+  } | null;
+  /** A fixed session whose player is loading while the editor stays visible. */
+  get workspacePlaybackPreparation(): {
+    sequence: SequenceData;
+    sourceTab: string;
+  } | null;
+  /**
+   * Revision of the source sequence the running playback session was started
+   * from, or null when nothing is playing. Kept outside the session object so
+   * re-basing it cannot change that object's identity — the workspace keys the
+   * mounted player on it, so a new object restarts the animation from beat 0.
+   */
+  get workspacePlaybackSourceRevision(): number | null;
+  /** The live playback intent used when the workspace opens the full viewer. */
+  get workspacePlaybackHandoff(): {
+    sequence: SequenceData;
+    initialStep: number;
+    playing: boolean;
+  } | null;
+  get workspacePlaybackPreparationError(): string | null;
+  startWorkspacePlayback(
+    sequence: SequenceData,
+    sourceSequenceRevision: number,
+    sourceTab?: string
+  ): void;
+  confirmWorkspacePlaybackReady(session: {
+    sequence: SequenceData;
+    sourceTab: string;
+  }): void;
+  failWorkspacePlaybackPreparation(
+    session: { sequence: SequenceData; sourceTab: string },
+    message?: string
+  ): void;
+  retryWorkspacePlayback(): void;
+  updateWorkspacePlaybackProgress(
+    session: { sequence: SequenceData; sourceTab: string },
+    step: number,
+    playing: boolean
+  ): void;
+  handoffWorkspacePlaybackToViewer(): void;
+  stopWorkspacePlayback(): void;
+  syncWorkspacePlaybackSource(
+    sourceTab: string,
+    sourceSequenceRevision: number
+  ): void;
+  /**
+   * Move the running session's baseline from one revision to another without
+   * interrupting it. For a sequence rewrite that playback does not care about:
+   * a global prop-type swap stamps the new prop onto every motion, but the
+   * animator and the notation rail both resolve prop type from settings, so the
+   * motion the user is watching is unchanged. Only the exact delta the caller
+   * observed is forgiven, so a real edit landing at the same time still stops
+   * playback.
+   */
+  rebaseWorkspacePlayback(fromRevision: number, toRevision: number): void;
+
   // LOOP Completion Flow (triggers confirmation dialog in CreateModule)
   requestLoopCompletion(loopType: LOOPType): void;
   setLoopCompletionCallback(cb: (loopType: LOOPType) => void): void;
@@ -360,7 +418,7 @@ export interface PanelCoordinationState {
 export function createPanelCoordinationState(): PanelCoordinationState {
   // Shift start mode state
   let isShiftStartMode = $state(false);
-  let shiftStartHandler = $state<((stepNumber: number) => void) | null>(null);
+  let shiftStartHandler = $state<((tileIndex: number) => void) | null>(null);
 
   // Edit panel state
   let isEditPanelOpen = $state(false);
@@ -460,6 +518,26 @@ export function createPanelCoordinationState(): PanelCoordinationState {
   let originalSequence = $state<SequenceData | null>(null);
   let optionAudition = $state<ConstructOptionAudition | null>(null);
   let optionAuditionRequestId = 0;
+  let workspacePlayback = $state.raw<{
+    sequence: SequenceData;
+    sourceTab: string;
+  } | null>(null);
+  let workspacePlaybackPreparation = $state.raw<{
+    sequence: SequenceData;
+    sourceTab: string;
+  } | null>(null);
+  let workspacePlaybackPreparationError = $state<string | null>(null);
+  let workspacePlaybackStep = 0;
+  let workspacePlaybackPlaying = true;
+  let workspacePlaybackHandoff = $state.raw<{
+    sequence: SequenceData;
+    initialStep: number;
+    playing: boolean;
+  } | null>(null);
+  // Plain variable, not $state: the baseline is read imperatively by
+  // syncWorkspacePlaybackSource, and nothing should re-render when it moves.
+  let workspacePlaybackSourceRevision: number | null = null;
+  let restoreStepEditorAfterPlayback = false;
 
   // Preset drawer state
   let isPresetDrawerOpen = $state(false);
@@ -479,6 +557,12 @@ export function createPanelCoordinationState(): PanelCoordinationState {
    * This ensures only ONE panel is open at a time, preventing state conflicts
    */
   function closeAllPanels() {
+    workspacePlayback = null;
+    workspacePlaybackPreparation = null;
+    workspacePlaybackPreparationError = null;
+    workspacePlaybackHandoff = null;
+    workspacePlaybackSourceRevision = null;
+    restoreStepEditorAfterPlayback = false;
     // Exit shift start mode
     isShiftStartMode = false;
     shiftStartHandler = null;
@@ -531,6 +615,16 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     originalSequence = null;
   }
 
+  function stopWorkspacePlayback() {
+    if (!workspacePlayback && !workspacePlaybackPreparation) return;
+    workspacePlayback = null;
+    workspacePlaybackPreparation = null;
+    workspacePlaybackPreparationError = null;
+    workspacePlaybackSourceRevision = null;
+    if (restoreStepEditorAfterPlayback) isStepEditorPanelOpen = true;
+    restoreStepEditorAfterPlayback = false;
+  }
+
   return {
     // Shift Start Mode Getters
     get isShiftStartMode() {
@@ -540,7 +634,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       return shiftStartHandler;
     },
 
-    enterShiftStartMode(handler: (stepNumber: number) => void) {
+    enterShiftStartMode(handler: (tileIndex: number) => void) {
       isShiftStartMode = true;
       shiftStartHandler = handler;
     },
@@ -926,6 +1020,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
 
     closeSequenceViewer() {
       isSequenceViewerOpen = false;
+      workspacePlaybackHandoff = null;
     },
 
     // Close all panels at once
@@ -982,7 +1077,132 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       return optionAudition;
     },
 
+    get workspacePlayback() {
+      return workspacePlayback;
+    },
+
+    get workspacePlaybackPreparation() {
+      return workspacePlaybackPreparation;
+    },
+
+    get workspacePlaybackSourceRevision() {
+      return workspacePlaybackSourceRevision;
+    },
+
+    get workspacePlaybackHandoff() {
+      return workspacePlaybackHandoff;
+    },
+
+    get workspacePlaybackPreparationError() {
+      return workspacePlaybackPreparationError;
+    },
+
+    startWorkspacePlayback(
+      sequence,
+      sourceSequenceRevision,
+      sourceTab = "construct"
+    ) {
+      if (
+        !sequence.steps.length ||
+        workspacePlayback ||
+        workspacePlaybackPreparation
+      )
+        return;
+      const restoreEditor = isStepEditorPanelOpen;
+      closeAllPanels();
+      restoreStepEditorAfterPlayback = restoreEditor;
+      // The fixed document can load while editing remains in place. It only
+      // becomes active after its player reports a ready canvas.
+      workspacePlaybackPreparation = {
+        sequence: structuredClone($state.snapshot(sequence)),
+        sourceTab,
+      };
+      workspacePlaybackPreparationError = null;
+      workspacePlaybackStep = 0;
+      workspacePlaybackPlaying = true;
+      workspacePlaybackSourceRevision = sourceSequenceRevision;
+    },
+
+    confirmWorkspacePlaybackReady(session) {
+      if (
+        workspacePlaybackPreparation !== session ||
+        workspacePlaybackPreparationError !== null
+      )
+        return;
+      workspacePlayback = session;
+      workspacePlaybackPreparation = null;
+      workspacePlaybackPreparationError = null;
+    },
+
+    failWorkspacePlaybackPreparation(
+      session,
+      message = "Playback could not load."
+    ) {
+      if (workspacePlaybackPreparation !== session) return;
+      workspacePlaybackPreparationError = message;
+    },
+
+    retryWorkspacePlayback() {
+      const session = workspacePlaybackPreparation;
+      if (!session || !workspacePlaybackPreparationError) return;
+      const retriedSession = {
+        sequence: session.sequence,
+        sourceTab: session.sourceTab,
+      };
+      workspacePlaybackPreparation = retriedSession;
+      workspacePlaybackPreparationError = null;
+      workspacePlaybackStep = 0;
+      workspacePlaybackPlaying = true;
+    },
+
+    updateWorkspacePlaybackProgress(session, step, playing) {
+      if (
+        session !== workspacePlayback &&
+        session !== workspacePlaybackPreparation
+      )
+        return;
+      workspacePlaybackStep = step;
+      workspacePlaybackPlaying = playing;
+    },
+
+    handoffWorkspacePlaybackToViewer() {
+      const session = workspacePlayback ?? workspacePlaybackPreparation;
+      if (!session) {
+        closeAllPanels();
+        isSequenceViewerOpen = true;
+        return;
+      }
+      const handoff = {
+        sequence: session.sequence,
+        initialStep: workspacePlaybackStep,
+        playing: workspacePlaybackPlaying,
+      };
+      closeAllPanels();
+      workspacePlaybackHandoff = handoff;
+      isSequenceViewerOpen = true;
+    },
+
+    stopWorkspacePlayback,
+
+    syncWorkspacePlaybackSource(sourceTab, sourceSequenceRevision) {
+      // Separate creation tabs can have the same revision counter.
+      const session = workspacePlayback ?? workspacePlaybackPreparation;
+      if (
+        session &&
+        (session.sourceTab !== sourceTab ||
+          workspacePlaybackSourceRevision !== sourceSequenceRevision)
+      )
+        stopWorkspacePlayback();
+    },
+
+    rebaseWorkspacePlayback(fromRevision, toRevision) {
+      if (!workspacePlayback && !workspacePlaybackPreparation) return;
+      if (workspacePlaybackSourceRevision !== fromRevision) return;
+      workspacePlaybackSourceRevision = toRevision;
+    },
+
     enterOptionAudition(audition) {
+      if (workspacePlayback) return;
       isDurationPreviewMode = false;
       previewSequence = null;
       originalSequence = null;

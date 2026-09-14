@@ -5,8 +5,7 @@
 	Main area for viewing and interacting with the sequence.
 -->
 <script lang="ts">
-
-import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
+  import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
   import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
   import { tryGetCreateModuleContext } from "../../context/create-module-context";
   import { onMount } from "svelte";
@@ -45,7 +44,6 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
 
     // Letter sources for spell tab
     letterSources = null,
-
   }: {
     sequenceState?: SequenceState;
     createModuleState?: CreateModuleState;
@@ -65,7 +63,6 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
 
     /** Letter sources for spell tab - enables original vs bridge letter styling */
     letterSources?: LetterSource[] | null;
-
   } = $props();
 
   // Derive selection directly from sequenceState when not animating
@@ -87,6 +84,7 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
     stepNumber: number,
     modifiers?: { range: boolean; toggle: boolean }
   ) {
+    if (panelState?.workspacePlayback) return;
     if (!sequenceState) return;
 
     // Close any open viewer/animation panels - editing takes priority
@@ -120,6 +118,7 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
 
   // Handle start position selection (stepNumber 0)
   function handleStartPositionSelected() {
+    if (panelState?.workspacePlayback) return;
     if (!sequenceState) return;
 
     // Only proceed if there's actually a start position selected
@@ -146,6 +145,7 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
 
   // Handle beat deletion via keyboard
   function handleStepDelete(stepNumber: number) {
+    if (panelState?.workspacePlayback) return;
     if (!createModuleState) {
       console.warn("Cannot delete beat - createModuleState not initialized");
       return;

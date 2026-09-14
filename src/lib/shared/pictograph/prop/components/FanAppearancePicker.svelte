@@ -8,11 +8,13 @@
   import PropBuildPicker from "$lib/shared/3d/components/controls/PropBuildPicker.svelte";
   import {
     fanBuildPreviewOptions,
+    compactFanLookPreviewOptions,
     fanCoverPreviewOptions,
     fanFramePreviewOptions,
     normalizeFanAppearance,
     type FanAppearance,
     type FanBuild,
+    type CompactFanLook,
     type FanCover,
     type FanFrameColor,
   } from "../domain/fan-appearance";
@@ -34,6 +36,7 @@
 
   const appearance = $derived(normalizeFanAppearance(value));
   const buildOptions = $derived(fanBuildPreviewOptions(appearance));
+  const compactLookOptions = $derived(compactFanLookPreviewOptions(appearance));
   const frameOptions = $derived(fanFramePreviewOptions(appearance));
   const coverOptions = $derived(fanCoverPreviewOptions(appearance));
   const showFrameColor = $derived(frameColor && appearance.build === "day");
@@ -44,6 +47,20 @@
   function chooseBuild(build: FanBuild): void {
     onchange({ ...appearance, build });
   }
+
+  function chooseCompactLook(look: CompactFanLook): void {
+    if (look === "covered-fire") {
+      onchange({ ...appearance, build: "fire", cover: "covered" });
+      return;
+    }
+    onchange({ ...appearance, build: look, cover: "bare" });
+  }
+
+  const compactLook = $derived<CompactFanLook>(
+    appearance.build === "fire" && appearance.cover === "covered"
+      ? "covered-fire"
+      : appearance.build
+  );
 
   function chooseFrameColor(frameColor: FanFrameColor): void {
     onchange({ ...appearance, frameColor });
@@ -62,14 +79,18 @@
 >
   <div class="build-choice">
     <PropBuildPicker
-      label="Build"
-      value={appearance.build}
-      options={buildOptions}
-      onchange={chooseBuild}
+      label={compact ? undefined : "Build"}
+      value={compact ? compactLook : appearance.build}
+      options={compact ? compactLookOptions : buildOptions}
+      useImageScale={compact}
+      onchange={(next) =>
+        compact
+          ? chooseCompactLook(next as CompactFanLook)
+          : chooseBuild(next as FanBuild)}
     />
   </div>
 
-  {#if showFrameColor || showCover}
+  {#if !compact && (showFrameColor || showCover)}
     <div
       class="modifier-grid"
       class:single={!(showFrameColor && showCover)}

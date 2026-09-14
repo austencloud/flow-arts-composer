@@ -5,6 +5,7 @@ import type { getHapticFeedback } from "$lib/shared/application/get-haptic-feedb
 import type { getSettings } from "$lib/shared/application/state/app-state.svelte";
 import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import { hashSequenceContent } from "$lib/shared/foundation/services/content-hasher";
 import type { getLanSyncCoordinator } from "$lib/shared/lan-sync/get-lan-sync-coordinator";
 import type { PlaybackControllerState } from "../components/playback-controller.svelte";
 import type { ViewMode } from "../domain/viewer-orchestrator-context";
@@ -49,6 +50,8 @@ export function createViewerInteractiveServicesState(
   let playbackController = $state<AnimationPlaybackController | null>(null);
   let hapticService: HapticFeedback | null = null;
   let lastLoadedSequenceId: string | null = null;
+  let lastLoadedContent: string | null = null;
+  let loadRevision = 0;
   let servicesLoadPromise: Promise<void> | null = null;
   let autoplayReadyTimer: ReturnType<typeof setInterval> | null = null;
   let pausedForPlaybackGate = false;
@@ -117,15 +120,29 @@ export function createViewerInteractiveServicesState(
     if (!playbackController) return;
 
     const sequenceId = sequence.id || sequence.word || "unknown";
-    if (sequenceId === lastLoadedSequenceId) return;
+    const content = hashSequenceContent(sequence);
+    const revision = ++loadRevision;
+    if (sequenceId === lastLoadedSequenceId && content === lastLoadedContent) {
+      animationLoading = false;
+      inputs.modalAnimationState.setLoading(false);
+      return;
+    }
+    const updating = sequenceId === lastLoadedSequenceId;
 
-    animationLoading = true;
-    inputs.modalAnimationState.setLoading(true);
+    animationLoading = !updating;
+    inputs.modalAnimationState.setLoading(!updating);
     inputs.modalAnimationState.setError(null);
 
     try {
       const loadedSequence = await dependencies.hydrateSequence(sequence);
+      if (revision !== loadRevision) return;
       if (!loadedSequence) throw new Error("Failed to load sequence");
+
+      if (updating) {
+        playbackController.updateSequenceData(loadedSequence);
+        lastLoadedContent = content;
+        return;
+      }
 
       if (!inputs.cloudBackedScan) {
         dependencies.preWarmSequence(loadedSequence, "user-blocking");
@@ -141,6 +158,7 @@ export function createViewerInteractiveServicesState(
 
       dependencies.setAnimationPlaybackRef(playbackController);
       lastLoadedSequenceId = sequenceId;
+      lastLoadedContent = content;
       inputs.modalAnimationState.setSequenceData(loadedSequence);
       playbackController.setSpeed(inputs.playback.bpmLocal / 60);
 
@@ -161,14 +179,17 @@ export function createViewerInteractiveServicesState(
         }, 50);
       }
     } catch (error) {
+      if (revision !== loadRevision) return;
       console.warn(
         "[SequenceViewerOrchestrator] Animation not available:",
         error
       );
       inputs.modalAnimationState.setError("Animation data not available");
     } finally {
-      animationLoading = false;
-      inputs.modalAnimationState.setLoading(false);
+      if (revision === loadRevision) {
+        animationLoading = false;
+        inputs.modalAnimationState.setLoading(false);
+      }
     }
   }
 

@@ -15,8 +15,15 @@ import type { AnimationPlaybackController } from "$lib/shared/animation-engine/s
 import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
 import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import {
+  capturePosterFrame,
+  compositeContainerLayers,
+} from "../tunnel/tunnel-poster";
 import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
-import { sequenceModalExporter, type Video3DExportDependencies } from "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte";
+import {
+  sequenceModalExporter,
+  type Video3DExportDependencies,
+} from "$lib/shared/sequence-viewer/services/sequence-modal-exporter.svelte";
 import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
 import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 import { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
@@ -33,7 +40,10 @@ import {
 import { ensureFullAccountForExport } from "$lib/shared/auth/domain/export-gate";
 import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
 import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
-import { sanitizeFilename, shareOrDownloadBlob } from "$lib/shared/foundation/services/file-downloader";
+import {
+  sanitizeFilename,
+  shareOrDownloadBlob,
+} from "$lib/shared/foundation/services/file-downloader";
 import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
 import { detectPlatform } from "$lib/shared/mobile/services/platform-detector";
 import { logShareAction } from "$lib/shared/analytics/services/posthog-activity-logger";
@@ -138,6 +148,34 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     animationCanvas = canvas;
   }
 
+  /** A small, presentational capture of the live animation canvas. Export owns
+   * the canvas handle, so sharing can show the current view without creating a
+   * second renderer or starting an export. */
+  function captureAnimationPreview(): string {
+    if (!animationCanvas) return "";
+    // Effects and trails are sibling canvases near the registered prop canvas.
+    // Capture that owned stage when present, while retaining its actual aspect.
+    const stage = animationCanvas.parentElement;
+    const scale = Math.min(
+      1,
+      960 / Math.max(animationCanvas.width, animationCanvas.height)
+    );
+    const width = Math.round(animationCanvas.width * scale);
+    const height = Math.round(animationCanvas.height * scale);
+    const composite = stage
+      ? compositeContainerLayers(
+          stage,
+          Math.max(width, height),
+          undefined,
+          true
+        )
+      : null;
+    return capturePosterFrame(composite ?? animationCanvas, {
+      width,
+      height,
+    });
+  }
+
   function handleCancelExport() {
     sequenceModalExporter.cancel();
   }
@@ -166,10 +204,11 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       effectiveSequence?.intendedWord ||
       effectiveSequence?.word ||
       "sequence";
-    const safeName = sanitizeFilename(simplifyRepeatedWord(rawName)) || "sequence";
+    const safeName =
+      sanitizeFilename(simplifyRepeatedWord(rawName)) || "sequence";
     const blob = await (await fetch(url)).blob();
     const result = await shareOrDownloadBlob(blob, `${safeName}.mp4`, {
-      title: "TKA Sequence",
+      title: "Flow Arts Composer sequence",
     });
 
     if (result.success && !result.canceled && !measuredVideoUrls.has(url)) {
@@ -202,7 +241,10 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
    * Deliberately NOT a "Video exported!" toast: nothing has hit disk yet.
    */
   function notifyVideoReady(effectiveSequence: SequenceData | null) {
-    if (!sequenceModalExporter.state.previewBlobUrl || sequenceModalExporter.state.error) {
+    if (
+      !sequenceModalExporter.state.previewBlobUrl ||
+      sequenceModalExporter.state.error
+    ) {
       return;
     }
     const saveLabel = detectPlatform() === "desktop" ? "Download" : "Save";
@@ -215,7 +257,10 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         onClick: () => void saveExportedVideo(effectiveSequence),
       },
     });
-    accessibilityHelper.announce(`Video ready. Activate ${saveLabel} to keep it.`, "assertive");
+    accessibilityHelper.announce(
+      `Video ready. Activate ${saveLabel} to keep it.`,
+      "assertive"
+    );
   }
 
   /**
@@ -233,7 +278,10 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
    * unless the user also clicks after a successful auto-download.
    */
   function autoDeliverExportedVideo(effectiveSequence: SequenceData | null) {
-    if (!sequenceModalExporter.state.previewBlobUrl || sequenceModalExporter.state.error) {
+    if (
+      !sequenceModalExporter.state.previewBlobUrl ||
+      sequenceModalExporter.state.error
+    ) {
       return;
     }
     const tabFocused = typeof document === "undefined" || !document.hidden;
@@ -275,7 +323,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     // Per-prop rainbow spectrum, mirrored from the live tunnel controller so the
     // offscreen engine colors the kaleidoscope to match the on-screen view.
     tunnelSpectrum: boolean,
-    tunnelPropColors: TunnelPropColorPair | null,
+    tunnelPropColors: TunnelPropColorPair | null
   ): Promise<boolean> {
     if (sequenceModalExporter.state.isExporting) return false;
 
@@ -284,7 +332,10 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     if (!(await ensureFullAccountForExport())) return false;
 
     if (!playbackController) {
-      showToast("Animation not ready yet. Wait a moment and try again.", "error");
+      showToast(
+        "Animation not ready yet. Wait a moment and try again.",
+        "error"
+      );
       return false;
     }
 
@@ -338,7 +389,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         playbackController,
         panelState: modalAnimationState,
       },
-      callbacks,
+      callbacks
     );
     // No auto-download: ArtPane surfaces previewBlobUrl in VideoPreviewPanel and
     // the user saves/shares from there.
@@ -384,7 +435,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
    * forever on a render that was never going to happen.
    */
   async function handleExport(
-    editingPane: 'animation' | 'image' | 'video-upload' | null,
+    editingPane: "animation" | "image" | "video-upload" | null,
     effectiveSequence: SequenceData | null,
     playbackController: AnimationPlaybackController | null,
     modalAnimationState: AnimationPanelState,
@@ -393,14 +444,18 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     bpmLocal: number,
     isHandPath: boolean,
     resolvedAutoLayout: ResolvedAutoLayout | null,
-    options?: ExportRequestOptions,
+    options?: ExportRequestOptions
   ): Promise<boolean> {
     // The share sheet asks for a render it is going to deliver itself. Without
     // this the same take also lands in Downloads and toasts "Video ready" —
     // a 34 MB file the user never asked for, once per attempt.
     const autoDeliver = options?.autoDeliver !== false;
     const exportType: ExportType | null =
-      editingPane === 'animation' ? 'animation' : editingPane === 'image' ? 'image' : null;
+      editingPane === "animation"
+        ? "animation"
+        : editingPane === "image"
+          ? "image"
+          : null;
 
     if (sequenceModalExporter.state.isExporting || !exportType) return false;
 
@@ -447,26 +502,45 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     };
 
     // 3D mode: real-time capture from WebGL canvas
-    const is3DMode = viewer3DState.renderMode === '3d';
+    const is3DMode = viewer3DState.renderMode === "3d";
     if (is3DMode && exportType === "animation") await await3DExportHandles();
     const webglCanvas = viewer3DState.webglCanvas;
 
-    if (exportType === "animation" && is3DMode && webglCanvas && playbackController) {
+    if (
+      exportType === "animation" &&
+      is3DMode &&
+      webglCanvas &&
+      playbackController
+    ) {
       const opts = exportOptions.getVideoOptions();
       const secondsPerBeat = 1.0 / modalAnimationState.speed;
       const beatsPerSecond = modalAnimationState.speed;
       const steps = effectiveSequence?.steps ?? [];
-      const totalDurationUnits = steps.reduce((sum, s) => sum + (s.duration ?? 1), 0);
+      const totalDurationUnits = steps.reduce(
+        (sum, s) => sum + (s.duration ?? 1),
+        0
+      );
       const startDur = opts.includeStartPosition ? 1 : 0;
       const endDur = opts.includeEndHold ? 1 : 0;
-      const singleLoopSec = (startDur + totalDurationUnits + endDur) * secondsPerBeat;
+      const singleLoopSec =
+        (startDur + totalDurationUnits + endDur) * secondsPerBeat;
 
-      const threlteCamera = viewer3DState.threlteCamera as Video3DExportDependencies["camera"] | null;
-      const threlteRenderer = viewer3DState.threlteRenderer as Video3DExportDependencies["renderer"] | null;
+      const threlteCamera = viewer3DState.threlteCamera as
+        | Video3DExportDependencies["camera"]
+        | null;
+      const threlteRenderer = viewer3DState.threlteRenderer as
+        | Video3DExportDependencies["renderer"]
+        | null;
       const threlteRunFrame = viewer3DState.threlteRunFrame;
       const threltePauseAutoLoop = viewer3DState.threltePauseAutoLoop;
       const threlteResumeAutoLoop = viewer3DState.threlteResumeAutoLoop;
-      if (!threlteCamera || !threlteRenderer || !threlteRunFrame || !threltePauseAutoLoop || !threlteResumeAutoLoop) {
+      if (
+        !threlteCamera ||
+        !threlteRenderer ||
+        !threlteRunFrame ||
+        !threltePauseAutoLoop ||
+        !threlteResumeAutoLoop
+      ) {
         showToast("3D scene not ready for export. Please try again.", "error");
         return false;
       }
@@ -477,7 +551,8 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       const choreography = viewer3DState.cameraChoreography;
       const useOrbit = choreography.activePresetId === "auto-orbit";
 
-      const primaryAvatar = viewer3DState.performerManager.performers[0] ?? null;
+      const primaryAvatar =
+        viewer3DState.performerManager.performers[0] ?? null;
       const orbitPreset = useOrbit ? choreography.activePreset : null;
       const presetTotalLoops = orbitPreset?.totalLoops ?? 1;
       const presetDurationSec = useOrbit ? singleLoopSec * presetTotalLoops : 0;
@@ -497,7 +572,9 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       cameraKeyframes.startRecording(threlteCamera);
       isRecording3D = true;
       recordingElapsed = 0;
-      recordingTimer = setInterval(() => { recordingElapsed += 0.1; }, 100);
+      recordingTimer = setInterval(() => {
+        recordingElapsed += 0.1;
+      }, 100);
 
       let boundaryPoller: ReturnType<typeof setInterval> | null = null;
       let autoStopTimer: ReturnType<typeof setTimeout> | null = null;
@@ -512,9 +589,12 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
           }
           prevProgress = p;
         }, 1000 / 60);
-        autoStopTimer = setTimeout(() => {
-          if (resolveRecording) resolveRecording();
-        }, Math.round(presetDurationSec * 1000) + 200);
+        autoStopTimer = setTimeout(
+          () => {
+            if (resolveRecording) resolveRecording();
+          },
+          Math.round(presetDurationSec * 1000) + 200
+        );
       }
 
       try {
@@ -531,7 +611,10 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       cameraKeyframes.stopRecording();
       isRecording3D = false;
       resolveRecording = null;
-      if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
+      if (recordingTimer) {
+        clearInterval(recordingTimer);
+        recordingTimer = null;
+      }
 
       const recordedDuration = cameraKeyframes.duration;
       if (recordedDuration <= 0) {
@@ -606,8 +689,12 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
             runFrame: threlteRunFrame,
             pauseAutoLoop: threltePauseAutoLoop,
             resumeAutoLoop: threlteResumeAutoLoop,
-            setExporting: (value: boolean) => { viewer3DState.isExporting = value; },
-            setExportCurrentStep: (step: number | null) => { viewer3DState.exportCurrentStep = step; },
+            setExporting: (value: boolean) => {
+              viewer3DState.isExporting = value;
+            },
+            setExportCurrentStep: (step: number | null) => {
+              viewer3DState.exportCurrentStep = step;
+            },
           },
           videoCallbacks
         );
@@ -615,7 +702,10 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       } finally {
         isRecording3D = false;
         recordingElapsed = 0;
-        if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
+        if (recordingTimer) {
+          clearInterval(recordingTimer);
+          recordingTimer = null;
+        }
       }
       // Keep the finished file on the device so dismissing the preview costs
       // nothing. Fire and forget: retention is a convenience, and a storage
@@ -635,7 +725,8 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         });
       }
       // Auto-download on finish (focused tab) + toast/preview fallback.
-      if (exported3DOk && autoDeliver) autoDeliverExportedVideo(effectiveSequence);
+      if (exported3DOk && autoDeliver)
+        autoDeliverExportedVideo(effectiveSequence);
       return true;
     }
 
@@ -653,13 +744,23 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
           leftMotionVisible: motion?.left,
           rightMotionVisible: motion?.right,
         },
-        { canvas: animationCanvas, playbackController, panelState: modalAnimationState },
+        {
+          canvas: animationCanvas,
+          playbackController,
+          panelState: modalAnimationState,
+        },
         videoCallbacks
       );
       // Auto-download on finish (focused tab) + toast/preview fallback.
       if (autoDeliver) autoDeliverExportedVideo(effectiveSequence);
-    } else if (exportType === "animation" && (!playbackController || !animationCanvas)) {
-      showToast("Animation not ready yet. Wait a moment and try again.", "error");
+    } else if (
+      exportType === "animation" &&
+      (!playbackController || !animationCanvas)
+    ) {
+      showToast(
+        "Animation not ready yet. Wait a moment and try again.",
+        "error"
+      );
       return false;
     } else if (exportType === "image" && effectiveSequence) {
       if (!effectiveSequence.steps || effectiveSequence.steps.length === 0) {
@@ -690,24 +791,48 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     // waiting forever on a choice nobody can make any more.
     resolvePendingRender?.(false);
     sequenceModalExporter.dispose();
-    if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
+    if (recordingTimer) {
+      clearInterval(recordingTimer);
+      recordingTimer = null;
+    }
   }
 
   return {
     exportOptions,
-    get animationCanvas() { return animationCanvas; },
-    get isExporting() { return sequenceModalExporter.state.isExporting; },
-    get exportProgress() { return sequenceModalExporter.state.progress; },
-    get exportError() { return sequenceModalExporter.state.error; },
-    get previewBlobUrl() { return sequenceModalExporter.state.previewBlobUrl; },
-    get countdownValue() { return countdownValue; },
-    get isRecording3D() { return isRecording3D; },
-    get recordingElapsed() { return recordingElapsed; },
-    get pendingFilmRender() { return pendingFilmRender; },
-    get lastFilmEntryId() { return lastFilmEntryId; },
+    get animationCanvas() {
+      return animationCanvas;
+    },
+    get isExporting() {
+      return sequenceModalExporter.state.isExporting;
+    },
+    get exportProgress() {
+      return sequenceModalExporter.state.progress;
+    },
+    get exportError() {
+      return sequenceModalExporter.state.error;
+    },
+    get previewBlobUrl() {
+      return sequenceModalExporter.state.previewBlobUrl;
+    },
+    get countdownValue() {
+      return countdownValue;
+    },
+    get isRecording3D() {
+      return isRecording3D;
+    },
+    get recordingElapsed() {
+      return recordingElapsed;
+    },
+    get pendingFilmRender() {
+      return pendingFilmRender;
+    },
+    get lastFilmEntryId() {
+      return lastFilmEntryId;
+    },
     handleConfirmFilmRender,
     handleDiscardFilmRender,
     handleCanvasReady,
+    captureAnimationPreview,
     handleCancelExport,
     handleRetryExport,
     handleExport,

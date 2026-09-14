@@ -3,10 +3,8 @@
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
 
   const state = getShapeMatrixAppContext();
-  // Prop choosing is NOT one of the dock's tray sections, and it never takes
-  // room on this pane: the catalogue opens over the grid pane (a sheet on
-  // compact hosts), so the animation, the relationships and the dock all stay
-  // put while a prop is chosen. The drill only shows its Props pill pressed.
+  // The shell owns prop choosing. Wide hosts use the grid pane; compact
+  // hosts recompose this same live stage above a scrolling prop workspace.
 </script>
 
 <aside

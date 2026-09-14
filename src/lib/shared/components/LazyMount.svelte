@@ -45,6 +45,7 @@
     error,
     onStatusChange,
     debugName = "component",
+    retryKey = undefined,
   }: {
     /** Dynamic import of the component module. */
     loader: () => Promise<{ default: Component<any> }>;
@@ -64,6 +65,8 @@
     onStatusChange?: (status: "loading" | "loaded" | "error") => void;
     /** Identifies the failed chunk in diagnostics without exposing it in the UI. */
     debugName?: string;
+    /** A new key retries a failed import without remounting a healthy instance. */
+    retryKey?: unknown;
   } = $props();
 
   let Loaded = $state<Component<any> | null>(null);
@@ -73,6 +76,7 @@
   // Single in-flight import shared by mount + prefetch, so warming the chunk
   // and the eventual mount never double-fetch.
   let modPromise: Promise<{ default: Component<any> }> | null = null;
+  let previousRetryKey = retryKey;
 
   function load(): Promise<{ default: Component<any> }> {
     // Normalize a synchronous loader throw into the same owned rejection path
@@ -121,6 +125,13 @@
     if (active && !started) {
       mountLoadedComponent();
     }
+  });
+
+  $effect(() => {
+    const nextRetryKey = retryKey;
+    if (nextRetryKey === previousRetryKey) return;
+    previousRetryKey = nextRetryKey;
+    if (loadError) retry();
   });
 
   // Idle-warm the chunk ahead of first open. Skipped once anything has already

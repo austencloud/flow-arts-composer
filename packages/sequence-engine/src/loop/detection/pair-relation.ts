@@ -347,3 +347,7 @@ export function detectsInnerRotation(steps: readonly PairMotions[]): boolean {
     rel.components[0] === "rotated"
   );
 }
+
+// The two location tables that are not reflections, exported for the
+// per-step hand relationship constraint so it does not keep its own copy.
+export { IDENTITY as IDENTITY_LOCATION_MAP, ROTATE_180 as ROTATE_180_LOCATION_MAP };

@@ -106,4 +106,30 @@ describe("PropSvgLoader fan builds", () => {
     expect(fire.svgData!.svgContent).not.toEqual(lotus.svgData!.svgContent);
     expect(fire.svgData!.viewBox).not.toEqual(big.svgData!.viewBox);
   });
+
+  it("hands a light pictograph the paper palette so the choreo sheet can read the fan", async () => {
+    // The sheet and its PDF prepare with themeMode "light". The rod-built fans
+    // were tuned on a dark pictograph, where pale kevlar wicks anchor the
+    // silhouette; on white paper those wicks vanished and only a hairline web
+    // of frame was left, which is how the sheet came to draw ghosts.
+    const loader = new StaticFileLoader();
+    const light = await loader.loadPropSvg(placement, motion("fan", HandSide.RIGHT), false, {
+      themeMode: "light",
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+    });
+    const dark = await loader.loadPropSvg(placement, motion("fan", HandSide.RIGHT), false, {
+      themeMode: "dark",
+      fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
+    });
+
+    const lightSvg = light.svgData!.svgContent;
+    expect(lightSvg).toContain(`stroke="${getMotionColor(HandSide.RIGHT, "light")}"`);
+    expect(lightSvg).not.toContain('fill="#f5e6b8"');
+    expect(lightSvg).toMatch(/data-fire-wick="1" fill="#d9b25a" stroke="#4a2f14" stroke-width="2.2"/);
+    expect(lightSvg).toMatch(/data-fan-frame=""[^>]*stroke-width="2.4"/);
+    // Dark keeps the authored materials, and the two themes never share a cache entry.
+    expect(dark.svgData!.svgContent).toMatch(/data-fire-wick="1" fill="#f5e6b8"/);
+    expect(light.svgData!.viewBox).toEqual(dark.svgData!.viewBox);
+    expect(light.svgData!.center).toEqual(dark.svgData!.center);
+  });
 });

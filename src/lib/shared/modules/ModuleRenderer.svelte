@@ -300,12 +300,10 @@
     );
     moduleCache.set(moduleName, ModuleComponent);
 
-    // Signal the boot profiler that the initial module chunk has arrived -
-    // this is the "user sees real app content" moment. The profiler is
-    // idempotent: only the first signal prints the summary, later module
-    // switches are no-ops (they're navigation, not boot).
+    // Import completion precedes the module's own data, layout and asset work.
+    // Keep this milestone separate from actual route readiness.
     import("$lib/shared/analytics/boot-profiler").then(({ bootProfiler }) =>
-      bootProfiler.signalReady(moduleName)
+      bootProfiler.milestone(`module:${moduleName}:chunk-ready`)
     );
 
     return ModuleComponent;

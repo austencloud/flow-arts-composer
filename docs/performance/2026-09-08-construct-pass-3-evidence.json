@@ -1,0 +1,402 @@
+{
+  "date": "2026-09-08",
+  "baseCommit": "788c886372",
+  "environment": {
+    "server": "task-owned Vite development server",
+    "route": "/create/construct?profile=1",
+    "desktop": "1280x900 at 1x",
+    "mobile": "390x844 at 1x, mobile/touch emulation",
+    "cpuThrottle": 1,
+    "method": "One isolated page, sequential runs after Vite optimization settled. Each timed run undoes the start selection, waits 650ms at the start screen, selects alpha, then polls animation frames for a visible SVG option with nonzero size, ancestor opacity >=0.95 and successful center hit test. No concurrent page navigation during measurement.",
+    "limits": [
+      "Warmed development interaction measurements, not production startup benchmarks.",
+      "Synthetic UI clicks/pointer events supplement direct Chrome tool clicks and screenshots.",
+      "Three runs per condition; shared machine and run order can influence timing.",
+      "First-paintable is a DOM, style and hit-test proxy, not a compositor trace."
+    ]
+  },
+  "baseline": {
+    "desktop": [
+      {
+        "firstDom": {
+          "duration": 758.5,
+          "count": 36
+        },
+        "firstPaintable": {
+          "duration": 761.6000000238419,
+          "count": 36
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 724.5,
+          "count": 36
+        },
+        "firstPaintable": {
+          "duration": 727.3000000119209,
+          "count": 36
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 704.8000000119209,
+          "count": 36
+        },
+        "firstPaintable": {
+          "duration": 707.6000000238419,
+          "count": 36
+        }
+      }
+    ],
+    "mobile": [
+      {
+        "firstDom": {
+          "duration": 812.2000000476837,
+          "count": 36
+        },
+        "firstPaintable": {
+          "duration": 815.5,
+          "count": 36
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 751.3000000119209,
+          "count": 36
+        },
+        "firstPaintable": {
+          "duration": 752.9000000357628,
+          "count": 36
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 788.3000000119209,
+          "count": 36
+        },
+        "firstPaintable": {
+          "duration": 790.6000000238419,
+          "count": 36
+        }
+      }
+    ]
+  },
+  "afterInitial": {
+    "desktop": [
+      {
+        "firstDom": {
+          "duration": 632.6000000238419,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 634.4000000357628,
+          "count": 16
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 621.1000000238419,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 623.1000000238419,
+          "count": 16
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 666.1999999880791,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 668.6999999880791,
+          "count": 16
+        }
+      }
+    ],
+    "mobile": [
+      {
+        "firstDom": {
+          "duration": 615.3000000119209,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 616.6000000238419,
+          "count": 16
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 605.1000000238419,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 606.6999999880791,
+          "count": 16
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 600.5999999642372,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 601.5999999642372,
+          "count": 16
+        }
+      }
+    ]
+  },
+  "afterFinal": {
+    "desktop": [
+      {
+        "firstDom": {
+          "duration": 648.3000000119209,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 650.7000000476837,
+          "count": 16
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 649.4000000357628,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 651,
+          "count": 16
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 612.3000000119209,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 613.6000000238419,
+          "count": 16
+        }
+      }
+    ],
+    "mobile": [
+      {
+        "firstDom": {
+          "duration": 592.8999999761581,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 594.0999999642372,
+          "count": 16
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 569,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 570.5999999642372,
+          "count": 16
+        }
+      },
+      {
+        "firstDom": {
+          "duration": 625.2000000476837,
+          "count": 16
+        },
+        "firstPaintable": {
+          "duration": 627.2000000476837,
+          "count": 16
+        }
+      }
+    ]
+  },
+  "checks": {
+    "earlyDirectJump": {
+      "before": 16,
+      "firstTarget": 114.30000001192093,
+      "blankFrames": 0,
+      "active": "2",
+      "stored": "2",
+      "samples": [
+        {
+          "t": 114.30000001192093,
+          "cards": 36
+        },
+        {
+          "t": 704.3000000119209,
+          "cards": 36
+        }
+      ]
+    },
+    "earlyDrag": {
+      "before": 16,
+      "firstTarget": 304.5999999642372,
+      "blankFrames": 0,
+      "active": "1",
+      "stored": "1",
+      "samples": [
+        {
+          "t": 304.5999999642372,
+          "cards": 36
+        },
+        {
+          "t": 712.0999999642372,
+          "cards": 36
+        }
+      ]
+    },
+    "restoredAndLoop": {
+      "frames": [
+        {
+          "ms": 555.9000000357628,
+          "counts": [0, 0, 0, 4],
+          "active": "3"
+        },
+        {
+          "ms": 631.2000000476837,
+          "counts": [16, 0, 0, 4],
+          "active": "3"
+        },
+        {
+          "ms": 703.8000000119209,
+          "counts": [16, 8, 0, 4],
+          "active": "3"
+        },
+        {
+          "ms": 748.2000000476837,
+          "counts": [16, 8, 8, 4],
+          "active": "3"
+        }
+      ],
+      "loopForward": "0",
+      "loopBack": "3",
+      "spans": [
+        {
+          "id": 151,
+          "label": "construct:carousel-mount",
+          "startTime": 15484.200000047684,
+          "detail": {
+            "panels": 4
+          },
+          "endTime": 15662.5,
+          "duration": 178.29999995231628,
+          "outcome": "ok"
+        },
+        {
+          "id": 202,
+          "label": "construct:carousel-mount",
+          "startTime": 65720.5,
+          "detail": {
+            "panels": 4
+          },
+          "endTime": 65976.80000001192,
+          "duration": 256.30000001192093,
+          "outcome": "ok"
+        }
+      ]
+    },
+    "quickUndo": {
+      "starts": 3,
+      "remainingOptions": 0,
+      "lastSpan": {
+        "id": 296,
+        "label": "construct:carousel-mount",
+        "startTime": 90384.5,
+        "detail": {
+          "panels": 4
+        },
+        "endTime": 90638.90000003576,
+        "duration": 254.4000000357628,
+        "outcome": "ok"
+      }
+    },
+    "turnRefresh": [
+      {
+        "index": 0,
+        "updated": true,
+        "cards": 16
+      },
+      {
+        "index": 1,
+        "updated": true,
+        "cards": 8
+      },
+      {
+        "index": 2,
+        "updated": true,
+        "cards": 8
+      },
+      {
+        "index": 3,
+        "updated": true,
+        "cards": 4
+      }
+    ],
+    "addOption": {
+      "before": [
+        "Add A. Hold to preview.",
+        "Add A. Hold to preview.",
+        "Add B. Hold to preview.",
+        "Add B. Hold to preview.",
+        "Add C. Hold to preview.",
+        "Add C. Hold to preview.",
+        "Add C. Hold to preview.",
+        "Add C. Hold to preview.",
+        "Add J. Hold to preview.",
+        "Add J. Hold to preview.",
+        "Add K. Hold to preview.",
+        "Add K. Hold to preview.",
+        "Add L. Hold to preview.",
+        "Add L. Hold to preview.",
+        "Add L. Hold to preview.",
+        "Add L. Hold to preview."
+      ],
+      "after": [
+        "Add A. Hold to preview.",
+        "Add A. Hold to preview.",
+        "Add B. Hold to preview.",
+        "Add B. Hold to preview.",
+        "Add C. Hold to preview.",
+        "Add C. Hold to preview.",
+        "Add C. Hold to preview.",
+        "Add C. Hold to preview.",
+        "Add J. Hold to preview.",
+        "Add J. Hold to preview.",
+        "Add K. Hold to preview.",
+        "Add K. Hold to preview.",
+        "Add L. Hold to preview.",
+        "Add L. Hold to preview.",
+        "Add L. Hold to preview.",
+        "Add L. Hold to preview."
+      ],
+      "tabs": [
+        "Type 1: Dual-Shift, 16 options",
+        "Type 2: Shift, 8 options",
+        "Type 3: Cross-Shift, 8 options",
+        "Types 4-6: Dash, Dual-Dash, Static, 4 options"
+      ],
+      "panels": [
+        {
+          "index": "0",
+          "cards": 16
+        },
+        {
+          "index": "1",
+          "cards": 8
+        },
+        {
+          "index": "2",
+          "cards": 8
+        },
+        {
+          "index": "3",
+          "cards": 4
+        }
+      ],
+      "text": "Skip to main content\nFlow\n Arts Composer\nAll methods\nConstruct\nGenerate\nHow do you want to create?\nLast used\nConstruct\nBuild a sequence one pictograph at a time, with every option available.\nGenerate\nSet a few rules and let the app create a sequence for you.\n1\nStart\nL\nR\n1\nStep 1 added\nSave\n1\nBase Motions\n2\nWhole Turns\n3\nHalf Turns, Floats\n0\n1\n2\n3\n0\n1\n2\n3\n1\n2\n3\n4-6\n\nType 1: Dual-Shift, 16 options\n\nType 1: Dual-Shift\nType 2: Shift\nType 3: Cross-Shift\nType 4: Dash\nType 5: Dual-Dash\nType 6: Static"
+    }
+  }
+}

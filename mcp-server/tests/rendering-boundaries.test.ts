@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { createCanvas } from "canvas";
+import { createCanvas } from "@napi-rs/canvas/node-canvas.js";
 import {
   BADGE_PADDING_SCALE,
   BADGE_SIZE_SCALE,
@@ -349,7 +349,7 @@ describe("MCP rendering boundaries", () => {
     assert.equal(result.steps[0]?.rightMotion.hand, "right");
   });
 
-  it("scopes blue and red fan styles inside one pictograph", async () => {
+  it("keeps blue and red physical fan frames independent in one pictograph", async () => {
     const renderer = getStandaloneRenderer();
     const svg = await renderer.renderToSvg(
       {
@@ -385,11 +385,61 @@ describe("MCP rendering boundaries", () => {
       }
     );
 
-    assert.ok(svg.includes(".st0-blue{fill:#3575E2;}"));
-    assert.ok(svg.includes('class="st0-blue"'));
-    assert.ok(svg.includes(".st0-red{fill:#ED1C24;}"));
-    assert.ok(svg.includes('class="st0-red"'));
-    assert.doesNotMatch(svg, /class="st0"/);
+    // Physical fan artwork no longer uses the legacy `.st0` stylesheet. Its
+    // marked frame is colored inline, so the blue and red copies cannot leak
+    // paint into each other when embedded in the same SVG.
+    assert.match(
+      svg,
+      /<g\b(?=[^>]*\bdata-fan-frame=(?:""|''))[^>]*\bstroke="#3575E2"/i
+    );
+    assert.match(
+      svg,
+      /<g\b(?=[^>]*\bdata-fan-frame=(?:""|''))[^>]*\bstroke="#ED1C24"/i
+    );
+    assert.doesNotMatch(svg, /data-fan-frame[^>]*stroke="#2E3192"/i);
+  });
+
+  it("applies one custom hand-color pair to props, arrows, turns, and reversals", async () => {
+    const renderer = getStandaloneRenderer();
+    const svg = await renderer.renderToSvg(
+      {
+        letter: "A",
+        startPosition: "alpha1",
+        endPosition: "alpha3",
+        gridMode: "diamond",
+        leftMotion: {
+          motionType: "pro",
+          rotationDirection: "cw",
+          startLocation: "n",
+          endLocation: "e",
+          startOrientation: "in",
+          hand: "left",
+          turns: 1,
+        },
+        rightMotion: {
+          motionType: "anti",
+          rotationDirection: "ccw",
+          startLocation: "s",
+          endLocation: "w",
+          startOrientation: "in",
+          hand: "right",
+          turns: 1,
+        },
+        leftReversal: true,
+        rightReversal: true,
+      },
+      {
+        darkMode: false,
+        showGrid: false,
+        showTKA: true,
+        showReversals: true,
+        primaryPropColors: { left: "#00e5ff", right: "#ff2ea6" },
+      }
+    );
+
+    assert.ok((svg.match(/#00e5ff/g) ?? []).length >= 4);
+    assert.ok((svg.match(/#ff2ea6/g) ?? []).length >= 4);
+    assert.doesNotMatch(svg, /#3D44B8|#DC2626/i);
   });
 
   it("renders a nonzero static arrow while keeping zero-turn static motion arrowless", async () => {
@@ -492,14 +542,15 @@ describe("MCP rendering boundaries", () => {
   });
 
   it("loads canonical glyph assets, including Greek, bridge, and dash letters", async () => {
-    const glyphs = await loadTkaGlyphImages("ΣWΘQVY-", true);
+    const glyphs = await loadTkaGlyphImages("ΣWΘQVY-τ-", true);
 
-    assert.equal(glyphs?.size, 6);
+    assert.equal(glyphs?.size, 7);
     assert.ok((glyphs?.get("Σ")?.naturalHeight ?? 0) > 0);
     assert.ok((glyphs?.get("W")?.naturalWidth ?? 0) > 0);
     assert.ok((glyphs?.get("Θ")?.naturalHeight ?? 0) > 0);
     assert.ok((glyphs?.get("Q")?.naturalWidth ?? 0) > 0);
     assert.equal(glyphs?.get("Y-")?.isDash, true);
+    assert.equal(glyphs?.get("τ-")?.isDash, true);
   });
 
   it("renders a canonical header with glyph images instead of word text", async () => {

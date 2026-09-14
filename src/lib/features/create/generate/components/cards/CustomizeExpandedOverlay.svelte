@@ -1,8 +1,9 @@
 <!--
 CustomizeExpandedOverlay.svelte - Customize panel, one decision at a time.
 
-A SettingsDrillPanel over four settings: Style, Start Position, End Position,
-Start Orientation. The root list shows each one's current value; choosing a row
+A SettingsDrillPanel over Style, Start Position, End Position, and Hand
+Relationship.
+The root list shows each one's current value; choosing a row
 gives that setting the whole panel. Single column at every size — see
 SettingsDrillPanel's header for why the two-pane variant was removed.
 
@@ -33,6 +34,11 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     StartPositionPreset,
   } from "../../shared/domain/start-position-presets";
   import GenerationStylePanel from "$lib/shared/create/components/GenerationStylePanel.svelte";
+  import HandRelationshipPanel from "./HandRelationshipPanel.svelte";
+  import {
+    describeHandRelationship,
+    type HandRelationship,
+  } from "$lib/shared/create/domain/hand-relationship";
   import SettingsDrillPanel, {
     type SettingsDrillItem,
   } from "$lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
@@ -48,7 +54,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   import { GENERATE_DEFAULT_CONFIG } from "../../state/generate-config.svelte";
   import ConfirmDialog from "$lib/shared/foundation/ui/ConfirmDialog.svelte";
   import GenerationSettingsOverlay from "./GenerationSettingsOverlay.svelte";
-  import TurnPatternSection from "../modals/customize/TurnPatternSection.svelte";
   import {
     clampStartOrientationToLevel,
     startOrientationsForLevel,
@@ -62,15 +67,16 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     level = 3,
     gridMode = GridMode.DIAMOND,
     isFreeformMode = true,
-    turnPattern = null,
-    turnIntensity = 1,
-    sequenceLength = 8,
-    loopPeriod = undefined,
-    onTurnPatternChange = () => {},
     styleBaseline = PRODUCTION_STYLE_BASELINE,
     onConstraintPresetChange,
     onHandPathModeChange,
     onMotionTypeFilterChange,
+    handRelationship = "free",
+    handRelationshipInverted = false,
+    matchHandTurns = false,
+    onHandRelationshipChange = null,
+    onHandRelationshipInvertedChange = null,
+    onMatchHandTurnsChange = null,
     onStartEndChange,
     onResetAll = null,
     onClose,
@@ -82,17 +88,16 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     level?: number;
     gridMode?: GridMode;
     isFreeformMode?: boolean;
-    turnPattern?: { left: (number | "fl")[]; right: (number | "fl")[] } | null;
-    turnIntensity?: number;
-    sequenceLength?: number;
-    loopPeriod?: number;
-    onTurnPatternChange?: (
-      lanes: { left: (number | "fl")[]; right: (number | "fl")[] } | null
-    ) => void;
     styleBaseline?: CustomizeStyleBaseline;
     onConstraintPresetChange: (v: "smooth" | "mixed" | "choppy") => void;
     onHandPathModeChange: (v: "smooth" | "mixed" | "choppy") => void;
     onMotionTypeFilterChange: (v: "no-dash" | "mixed" | "prefer-dash") => void;
+    handRelationship?: HandRelationship;
+    handRelationshipInverted?: boolean;
+    matchHandTurns?: boolean;
+    onHandRelationshipChange?: ((v: HandRelationship) => void) | null;
+    onHandRelationshipInvertedChange?: ((v: boolean) => void) | null;
+    onMatchHandTurnsChange?: ((v: boolean) => void) | null;
     onStartEndChange: ((options: StartEndOptions) => void) | null;
     onResetAll?: (() => void) | null;
     onClose: () => void;
@@ -105,7 +110,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   });
 
   // Always opens on the root list — picking WHICH factor to change is itself
-  // the first decision, and the list shows all four current values, so nothing
+  // the first decision, and the list shows all current values, so nothing
   // is buried the way it was when one accordion section was open at a time.
   // (The accordion's "remember the last open section" localStorage existed
   // because a collapsed section hid its value; the root list doesn't.)
@@ -134,6 +139,15 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   let localMotionTypeFilter = $state<"no-dash" | "prefer-dash" | null>(
     untrack(() => motionTypeFilter)
   );
+
+  // ─── Local state for the hand relationship (instant UI feedback) ───
+  let localHandRelationship = $state<HandRelationship>(
+    untrack(() => handRelationship)
+  );
+  let localHandRelationshipInverted = $state<boolean>(
+    untrack(() => handRelationshipInverted)
+  );
+  let localMatchHandTurns = $state<boolean>(untrack(() => matchHandTurns));
 
   // ─── Local state for start positions (instant UI feedback) ───
   let localBlockedPositions = $state<GridPosition[]>(
@@ -198,15 +212,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     return `${n} positions`;
   });
 
-  // What the engine will actually do. A pattern REPLACES the intensity ceiling
-  // rather than combining with it, so the row reports whichever one is in force.
-  const turnPatternDisplay = $derived.by(() => {
-    if (!turnPattern) return `Random, ≤${turnIntensity}`;
-    const lane = (values: readonly (number | "fl")[]) =>
-      values.length ? values.map(String).join("·") : "0";
-    return `Left ${lane(turnPattern.left)} · Right ${lane(turnPattern.right)}`;
-  });
-
   // The shared picker speaks blocklist; end positions are an allowlist. Invert
   // at this seam so the primitive is reused unchanged (never-hand-roll) and
   // both position screens look and behave identically: all cells bright = no
@@ -253,6 +258,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   // End Position stays present and locked when LOOP owns it — dropping the row
   // would change the list length and move the row below it, and leave a user
   // who saw the setting once with no explanation.
+  //
+  // Hand Relationship appears only on surfaces that pass a change handler;
+  // the public Composer demo does not offer it.
   const drillItems = $derived<SettingsDrillItem[]>([
     { id: "style", label: "Style", value: styleSummary },
     { id: "startPos", label: "Start Position", value: startPosDisplay },
@@ -263,7 +271,19 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
       disabled: !isFreeformMode,
       disabledReason: "Set by LOOP",
     },
-    { id: "turnPattern", label: "Turn Pattern", value: turnPatternDisplay },
+    ...(onHandRelationshipChange
+      ? [
+          {
+            id: "hands",
+            label: "Hand Relationship",
+            value: describeHandRelationship(
+              localHandRelationship,
+              localHandRelationshipInverted,
+              localMatchHandTurns
+            ),
+          },
+        ]
+      : []),
   ]);
 
   function handleClose() {
@@ -285,6 +305,10 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     localConstraintPreset = GENERATE_DEFAULT_CONFIG.constraintPreset;
     localHandPathMode = GENERATE_DEFAULT_CONFIG.handPathMode;
     localMotionTypeFilter = GENERATE_DEFAULT_CONFIG.motionTypeFilter;
+    localHandRelationship = GENERATE_DEFAULT_CONFIG.handRelationship;
+    localHandRelationshipInverted =
+      GENERATE_DEFAULT_CONFIG.handRelationshipInverted;
+    localMatchHandTurns = GENERATE_DEFAULT_CONFIG.matchHandTurns;
     localBlockedPositions = [];
     localEndPositions = [];
     localLeftOri = Orientation.IN;
@@ -438,17 +462,26 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
               {gridMode}
             />
           </div>
-        {:else if id === "turnPattern"}
-          <div class="drill-fill pattern-fill">
-            <TurnPatternSection
-              {turnPattern}
-              {level}
-              {turnIntensity}
-              leftStartOrientation={localLeftOri}
-              rightStartOrientation={localRightOri}
-              {sequenceLength}
-              {loopPeriod}
-              {onTurnPatternChange}
+        {:else if id === "hands"}
+          <div class="drill-fill spread">
+            <HandRelationshipPanel
+              relationship={localHandRelationship}
+              inverted={localHandRelationshipInverted}
+              haptic={hapticService}
+              onRelationshipChange={(v) => {
+                localHandRelationship = v;
+                onHandRelationshipChange?.(v);
+              }}
+              onInvertedChange={(v) => {
+                localHandRelationshipInverted = v;
+                onHandRelationshipInvertedChange?.(v);
+              }}
+              matchTurns={localMatchHandTurns}
+              turnsAvailable={level >= 2}
+              onMatchTurnsChange={(v) => {
+                localMatchHandTurns = v;
+                onMatchHandTurnsChange?.(v);
+              }}
             />
           </div>
         {/if}
@@ -460,7 +493,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 <ConfirmDialog
   bind:isOpen={resetConfirmOpen}
   title="Reset all settings?"
-  message="Style, start positions, level, length and LOOP settings all go back to their defaults. This can't be undone."
+  message="Style, hand relationship, start positions, level, length and LOOP settings all go back to their defaults. This can't be undone."
   confirmText="Reset"
   cancelText="Keep"
   variant="danger"
@@ -517,15 +550,6 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     display: flex;
     flex-direction: column;
     gap: 14px;
-  }
-
-  /* The section owns its own vertical rhythm and grows its strip into whatever
-     height is left, so the wrapper only has to hand it the full column.
-     (`.drill-fill` already claims the remaining height from the drill panel.) */
-  .pattern-fill {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
   }
 
   .spread :global(.style-panel) {

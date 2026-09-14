@@ -29,8 +29,7 @@ import {
   type VtgMode,
 } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 
-/** The hand's home bearing, and the eighths a timing puts between the hands. */
-const HAND_HOME = 8;
+/** The eighths a timing puts between the two hands. */
 const TIMING_OFFSET: Record<string, number> = { S: 4, T: 0, Q: 2 };
 
 /** Bearings are compass eighths, so 0 and 8 are the same place. */
@@ -54,7 +53,9 @@ const SAMPLES = [0, 0.375, 1, 2.5, 4, 7.25];
 function everyFlower(): { ratio: SpinRatio; flower: TheoryFlower }[] {
   const atlas = buildTheorySpinRatioAtlas();
   const stationary = atlas.filter((ratio) => ratio.handCycles === 0);
-  expect(stationary.map(spinRatioKey)).toEqual([spinRatioKey(STATIONARY_RATIO)]);
+  expect(stationary.map(spinRatioKey)).toEqual([
+    spinRatioKey(STATIONARY_RATIO),
+  ]);
 
   return atlas.flatMap((ratio) =>
     buildTheoryAxis(ratio).map((flower) => ({ ratio, flower }))
@@ -126,28 +127,34 @@ describe("every Theory pairing on the surface", () => {
   }
 
   /*
-   * Opposite Direction is that same motion mirrored about the axis standing
-   * between the two hands, so every bearing reflects: 2a - x. On the prop's
-   * own start that reads as -phase, which swaps clock for counter and leaves
-   * in and out where they are.
+   * Opposite Direction is that same motion run backwards from the offset: the
+   * right hand at u is the left hand at offset - u, hand and prop both. That
+   * is the only reading that keeps the right hand on its own tile's flower.
+   * The earlier one — a mirror about the axis standing between the hands —
+   * reflected the flower about an axis it is symmetric about only by
+   * coincidence, and 2:3 in Fire turned the red hand's petals into its gaps.
    */
   for (const mode of MODE_ORDER.filter((m) => m.endsWith("O"))) {
-    it(`plays ${mode} as that motion mirrored between the hands`, () => {
-      const axis = HAND_HOME + (TIMING_OFFSET[mode.charAt(0)] ?? 0) / 2;
+    it(`plays ${mode} as the left hand's own motion, run backwards from the offset`, () => {
+      const offset = TIMING_OFFSET[mode.charAt(0)] ?? 0;
       const misses: string[] = [];
 
-      for (const { flower } of FLOWERS) {
+      for (const { ratio, flower } of FLOWERS) {
+        // A hand that never travels has no motion to run backwards; its
+        // timing is a plain bearing offset, checked on its own below.
+        if (ratio.handCycles === 0) continue;
+
         const left = theorySoloKnobs(flower);
         const right = theoryKnobs(flower, "right", mode);
 
         for (const u of SAMPLES) {
           const handOff = eighthsApart(
             handIndexAt(right, u),
-            2 * axis - handIndexAt(left, u)
+            handIndexAt(left, offset - u)
           );
           const propOff = eighthsApart(
             propIndexAt(right, u),
-            2 * axis - propIndexAt(left, u)
+            propIndexAt(left, offset - u)
           );
           if (handOff > SAME_PLACE || propOff > SAME_PLACE) {
             misses.push(
@@ -172,9 +179,7 @@ describe("every Theory pairing on the surface", () => {
     for (const { flower } of FLOWERS) {
       for (const mode of MODE_ORDER) {
         const left = theoryKnobs(flower, "left", mode);
-        if (
-          JSON.stringify(left) !== JSON.stringify(theorySoloKnobs(flower))
-        ) {
+        if (JSON.stringify(left) !== JSON.stringify(theorySoloKnobs(flower))) {
           misses.push(describeCase(flower, mode));
         }
       }
@@ -191,16 +196,22 @@ describe("every Theory pairing on the surface", () => {
     for (const { flower } of FLOWERS.filter(
       ({ ratio }) => ratio.handCycles === 0
     )) {
-      for (const mode of MODE_ORDER.filter((m) => m.endsWith("S"))) {
+      for (const mode of MODE_ORDER) {
         const offset = TIMING_OFFSET[mode.charAt(0)] ?? 0;
         const left = theorySoloKnobs(flower);
         const right = theoryKnobs(flower, "right", mode);
-        for (const u of SAMPLES) {
+        // Opposite Direction reverses the prop's spin, so the two props agree
+        // only at the downbeat and then part; Same Direction agrees throughout.
+        const samples = mode.endsWith("O") ? [0] : SAMPLES;
+        for (const u of samples) {
           expect(
             eighthsApart(propIndexAt(right, u), propIndexAt(left, u) + offset),
             describeCase(flower, mode)
           ).toBeLessThan(SAME_PLACE);
         }
+        expect(right.handDirection, describeCase(flower, mode)).toBe(
+          mode.endsWith("O") ? -1 : 1
+        );
       }
     }
   });

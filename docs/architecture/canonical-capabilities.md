@@ -5,6 +5,87 @@ wholesale. Each row names the behavior owner. Verify the path in current code
 before relying on it. Add a row only for shared behavior or an intentional
 keep-separate decision, not for every component.
 
+Sequence sharing extends `shared/share/components/PostShareSheet.svelte`.
+Read `docs/architecture/sharing-export-experience.md` for the retained research,
+entry-context decisions, browser constraints, and acceptance checks.
+Searches: share, download, export, send to a friend, transfer to phone, caption.
+The compact menu offers Copy link, an inbox attachment, and one file path.
+Download and external file sharing use the same preview and prepared file;
+they must not become competing setup flows. Both the menu's Download and an
+Export shortcut open file settings. Download video owns preparation and delivery;
+opening settings does not render. Cancel clears pending delivery and restores
+editable settings.
+Copy progress and results stay
+inside the Copy link action. `sequence-viewer/state/viewer-shell-share-state.svelte.ts`
+owns the source session; the sheet composes existing card preview and viewer
+export owners, then reuses `shared/share/services/post-handoff.ts` for delivery.
+Download is explicit; sharing to another app is capability-based on desktop
+and mobile. Transfer to phone explains that it uploads the prepared file.
+Export shortcuts enter that same sheet. Live scene recording retains its stage
+controls. Account connection and publishing use a separate explicitly entered,
+developer-gated publishing view; they do not occupy ordinary download settings.
+Do not add another renderer or delivery modal for a new sharing entry point.
+
+Sidebar prop pairs compose `SelectedPropPreview.svelte` with
+`PropCompositionPreview.svelte`. Searches: prop button, paired composition,
+fan appearance, primary prop colors. `prop-look.ts` owns build artwork and
+`prop-composition-recipes.ts` owns placement; the Prop Button Lab tunes those
+same recipes. Navigation reads the existing app settings for both hands,
+chirality and colors. Drawer activation, haptics and navigation geometry keep
+their existing owners.
+
+Hand identity colors reuse `packages/render-composition/src/hand-colors.ts` for
+cross-runtime normalization and `mandala-palette.ts` for overlap blending.
+`viewer-custom-colors.ts` retains the app-facing compatibility API. Searches: primary prop colors,
+hand-color key, mandala overlap, start-position legend. The key's geometry is
+`calculateHandColorKeyLayout` in `packages/render-core`. `PictographRenderer`
+draws it in the live DOM (viewer start cell), `LayerCompositor` draws it into
+the rasterized step-0 cell for card fronts, exports and thumbnails through
+`drawHandColorKey`, and the MCP `StandaloneRenderer` draws it for
+`generate_pictograph` and the sequence image start cell, so every surface
+bakes in the same key.
+`ChoreoCard` resolves its palette once for cells and `CardGridLayout` mandalas.
+Animation frame parameters carry the same hand pair independently of effect
+styling, and `mandala-guide-painter.ts` derives overlap from its actual path
+colors. New color-bearing annotations consume that resolved pair rather than
+introducing baked blue/red or purple. Explicit artwork palettes retain their
+existing override semantics.
+
+Compact turn/ratio pickers reuse
+`shared/shape-matrix/app/components/TurnNotationControls.svelte`. Searches:
+turn notation, ratios picker, left turn, right turn. It composes the canonical
+matrix turn labels and `ShapeMatrixValueScroller`; callers provide their turn
+palette, colors, and selection callbacks.
+
+Tunnel performer colors extend `sequence-viewer/tunnel/tunnel-prop-colors.ts`.
+Searches: performer colors, shared hue, custom prop pair, layer colors.
+`TunnelViewController` maps stable performer IDs to rendered stage order.
+Textures, trails, LED sampling, prop-matched effects, and export consume that
+resolved palette through `tunnelPerformerPair`. `TunnelColorSettings` composes
+`LabeledColorPairPicker`, `SegmentedControl`, and `ScrubbableNumber` for editing.
+
+Standalone 3D workspaces compose `shared/3d/components/Viewer3DFullscreen.svelte`,
+which owns the scene canvas, adaptive `SceneControlWorkspace`, and shared
+timeline/tempo controls. Local character generators extend its HUD and inspector
+slots. `shared/3d/context/character-catalog-context.ts` supplies a reactive,
+host-scoped catalog to the existing `PerformerCharacterPicker`; other hosts keep
+the standard catalog. Searches: scene workspace, environment picker, performer
+selection, BPM, generated characters. Sequence selection remains with
+`shared/components/sequence-picker/SequencePickerModal.svelte`.
+
+Static placement transforms reuse `PictographContainer`'s `motionStartData`,
+`motionStep`, and `motionProgress` seam. `pictograph-motion-positioner` maps the
+2D animator's paths onto exact prepared start/end poses; `prop-placement-view-model`
+builds paired arc/linear transitions, and `createPropPlacementMotionState` owns
+the readiness-gated clock. Construct's arrival and placement editor keep their
+existing consumers. Searches: static pictograph animation, mirror, flip, swap,
+rotation, arrival motion. Learn queues actions and shares one clock across its
+three examples; it does not own another renderer or interpolation system.
+For synchronized grid rotation, `PictographContainer.gridRotation` carries that
+clock's cumulative angle through `PictographRenderer` to `GridSvg.rotationOverride`.
+This opt-in bypasses the grid's independent mode-change animation and global
+direction setting; other pictograph consumers retain their existing behavior.
+
 Timing-and-direction route continuity composes the existing `HandMotionPlayer`,
 `reparentToInspector` mounted-node action (also consumed by `ArtPane`), and
 `navigationMorphs`/`runNamedRouteMorph` route driver. Searches: persistent player,
@@ -31,7 +112,11 @@ Sequence Viewer ↔ Post Studio surface continuity uses the same
 `createViewerStudioSurfaces` owns the canvas/inspector/Card/transport loan and composition-clock
 handoff; Studio slots request the mounted surfaces through its optional context.
 Standalone Studio and additional simultaneous animation slots retain their own
-renderers. The desktop inspector keeps its original outer track; compact Studio
+renderers. Desktop motion and Card settings stay in the shell's persistent layers;
+`inspectorContent` remembers the selected Studio source kind across mode changes.
+Card-to-Studio switches fade between different settings or retain the same Card
+settings, without reparenting their contents into an outgoing hidden layer.
+The desktop inspector keeps its original outer track; compact Studio
 uses destinations for the same surfaces. The canvas flight captures its visual
 child before the transport changes allocation. Searches: Post Studio, persistent
 canvas, shared inspector, shared Choreo Card, shared playback bar, live handoff.
@@ -43,6 +128,7 @@ canvas, shared inspector, shared Choreo Card, shared playback bar, live handoff.
 | crossfade, keyed swap, canvas handoff, animated height                                                                              | `shared/components/Crossfade.svelte` for cheap keyed content; `shared/components/DualSourceCrossfade.svelte` for heavy or stateful sources (`clip={false}` preserves stage-owned overflow controls); see `.claude/rules/crossfade-primitive.md`                                                                                                                                                                                                                                                                                                                                                                            |
 | layout motion, reflow, panel presence, reorder, FLIP                                                                                | `shared/transitions/motion.ts`, `shared/panels/PanelGroup.svelte`, Svelte `animate:flip` with `flipDuration()`, and `shared/transitions/layout-flip.ts`; see `.claude/rules/no-layout-shift.md`                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | step grid, pictograph preview swap, visual slot identity, difficulty and LOOP metadata                                              | `features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte` owns document-vs-slot identity; `SequenceMetadataRail.svelte` owns compact difficulty and LOOP indicators                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Choreo Card image export, MCP sequence image, renderer profile, packaged glyph assets                                               | `packages/render-composition/src/sequence-card-pipeline.ts` owns card composition and `COMPOSER_CARD_EXPORT_PROFILE_V1`. Composer and both MCP adapters consume that profile. `static/images/letters_trimmed/` owns TKA glyph artwork; `mcp-server-pkg/scripts/sync-card-assets.mjs` generates the publishable package copy during builds. Extend these owners instead of copying layout logic, defaults, or glyph files.                                                                                                                                                                                                  |
 | BPM, tempo, tap tempo, speed preset                                                                                                 | `shared/animation-engine/domain/tempo-behavior.ts` and `shared/animation-engine/domain/constants/timing.ts`; presentations are `BpmChips.svelte` and `TempoControl.svelte`                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | effect preview, preset lab, continuous demo                                                                                         | `InfiniteSequenceGenerator` and `isEffectPreviewLoop`; see `.claude/rules/sequence-generation.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | sequence transform, mirror, flip, invert, rotate, reset                                                                             | `shared/create/services/sequence-transformer.ts`; action tiles use `shared/create/components/SequenceTransformActions.svelte`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -73,3 +159,19 @@ and completed cell entrances). Published scan links extend its existing
 than minting account-owned short codes. Discovery: `onRenderProgress`,
 `onRenderSettled`, `generateForUrl`, and `showQRCode`; lesson cards compose
 these owners with `createLayoutMotion` and `DualSourceCrossfade`.
+
+QR display reuses `shared/qr/services/qr-code-generator.ts` and extends
+`qr-image-cache.ts` with `prepared-qr-cache.ts`: a successful preparation stores
+the artwork and short link locally and in `prepared-qrs/{contentHash}.json`.
+The key includes `encodeSequence`, canonical cell keys for both themes, and QR
+URL/style options. A cache hit bypasses warming and short-code allocation;
+only a completed strict warm can publish a cache entry. `warm-sequence-cells.ts`
+owns canonical cell enumeration and probes shared cells before rendering.
+Gallery thumbnail QR upgrades extend `ThumbnailRenderOrchestrator`: a signed-in
+reader first sees the no-QR preview, then one background job prepares the exact
+scan-ready QR. Guests only ask `ThumbnailRenderer.hasPreparedQR` for public
+prepared artwork. A miss, lookup failure, or background preparation failure
+keeps the preview.
+Discovery: `generateForSequence`, `qr-image-cache`, `prepared-scan-card`,
+`warmSequenceCells`, `pictograph-cloud-cache`. Decision: extend these owners;
+do not introduce a second QR renderer or scan-asset preparation pipeline.

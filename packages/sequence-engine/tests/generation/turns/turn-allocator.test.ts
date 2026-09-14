@@ -6,6 +6,19 @@ import {
 
 describe("TurnAllocator", () => {
   describe("allocateTurns", () => {
+    it.each([1, 2, 8])("keeps Level 2 from randomly producing a turn-free %i-step seed", (count) => {
+      const result = allocateTurns(count, 2, 1, { random: () => 0 });
+      const turns = [...result.left, ...result.right];
+      expect(turns.some((turn) => turn === 1)).toBe(true);
+      expect(turns.every((turn) => turn === 0 || turn === 1)).toBe(true);
+    });
+
+    it("preserves an explicitly required zero-turn figure", () => {
+      expect(allocateTurns(2, 2, 1, { requiredTurns: 0, random: () => 0 })).toEqual({
+        left: [0, 0], right: [0, 0],
+      });
+    });
+
     it("uses injected entropy for deterministic allocation", () => {
       const values = [0.99, 0, 0.49, 0.75];
       const random = () => values.shift() ?? 0;

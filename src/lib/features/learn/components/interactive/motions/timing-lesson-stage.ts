@@ -4,17 +4,18 @@ export const TIMING_LESSON_TOPICS = [
   {
     id: "placement",
     title: "Placement",
-    description: "Where things are right now. Tap a point to move it.",
+    description:
+      "Where things are. Rotate or reflect them: the relationship stays the same.",
   },
   {
     id: "timing",
     title: "Timing",
-    description: "When downbeats happen. Tap a rhythm to watch it.",
+    description: "Choose a rhythm to watch its downbeats.",
   },
   {
     id: "direction",
     title: "Direction",
-    description: "Which way things rotate. Tap an arrow to flip it.",
+    description: "Which way things rotate relative to each other.",
   },
 ] as const;
 

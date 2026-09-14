@@ -46,6 +46,7 @@ export interface StagedIntakeEntry {
   bytes: number | null;
   note: string;
   stagedAt: string;
+  sha256: string;
 }
 
 function stringField(value: unknown, fallback = ""): string {
@@ -83,6 +84,9 @@ export function parseIntakeManifest(value: unknown): StagedIntakeEntry[] {
       bytes: typeof record.bytes === "number" ? record.bytes : null,
       note: stringField(record.note),
       stagedAt: stringField(record.stagedAt),
+      sha256: /^[a-f0-9]{64}$/i.test(stringField(record.sha256))
+        ? stringField(record.sha256)
+        : "",
     });
   }
   return entries;
@@ -99,7 +103,7 @@ export function stagedCandidate(
     id: stagedCandidateId(entry.id),
     label: entry.label,
     source: entry.source,
-    modelUrl: `${STAGE_DIRECTORY_URL}/${entry.file}`,
+    modelUrl: `${STAGE_DIRECTORY_URL}/${entry.file}${entry.sha256 ? `?v=${entry.sha256}` : ""}`,
     bytes: entry.bytes,
     continuity: "current",
     note:

@@ -341,7 +341,7 @@ export const metaConnectCallback = onRequest(
         returnOrigin: claimed.data.returnOrigin,
         state: stateValue,
         status: "complete",
-        message: "Return to TKA — you can post from the share sheet now.",
+        message: "Return to Flow Arts Composer — you can post from the share sheet now.",
       });
     } catch (error) {
       const code = metaConnectFailureCode(error);

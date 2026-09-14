@@ -7,6 +7,7 @@
  */
 
 import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
+import { getSequenceOverlayState } from "$lib/shared/sequence-viewer/state/sequence-viewer-overlay-state.svelte";
 import type { DeepLinkSequenceHandler } from "../../services/deep-link-sequence-handler";
 import type { CreateModuleState } from "../create-module-state.svelte";
 import type { ConstructTabState } from "../construct-tab-state.svelte";
@@ -26,12 +27,16 @@ export function createPendingEditEffect(config: PendingEditConfig): () => void {
     isServicesInitialized,
   } = config;
 
-  let pendingEditProcessed = false;
+  const viewer = getSequenceOverlayState();
 
   const cleanup = $effect.root(() => {
     $effect(() => {
       const currentModule = navigationState.currentModule;
       if (currentModule !== "create") return;
+
+      // Create stays mounted behind the viewer. Closing it must check for a
+      // new remix even when the module and active tab have not changed.
+      if (viewer.isOpen) return;
 
       const deepLinkService = getDeepLinker();
       const createModuleState = getCreateModuleState();
@@ -46,14 +51,10 @@ export function createPendingEditEffect(config: PendingEditConfig): () => void {
         return;
       }
 
-      if (pendingEditProcessed) return;
-
       const hasPending = deepLinkService.hasPendingEdit();
       if (!hasPending) return;
 
-      pendingEditProcessed = true;
-
-      deepLinkService.loadFromPendingEdit((sequence) => {
+      void deepLinkService.loadFromPendingEdit((sequence) => {
         const constructorSequenceState = constructTabState?.sequenceState;
         if (constructorSequenceState) {
           constructorSequenceState.setCurrentSequence(sequence);

@@ -202,12 +202,36 @@ function thetaSpellings(identifier: string): readonly string[] {
   return swapped === identifier ? [identifier] : [identifier, swapped];
 }
 
+export interface LoadByIdentifierOptions {
+  /**
+   * Whether a miss on the exact document may fall through to a public lookup
+   * by word. Defaults to true for the callers that really do hold a word (a
+   * sync session, an inbox card). The /sequence route passes false: an address
+   * is a short code or a document id, and letting the bare word resolve there
+   * teaches people that words are URLs when the serialized code is the only
+   * form that stays stable across variations of the same word.
+   */
+  wordFallback?: boolean;
+}
+
 export async function loadByIdentifier(
-  identifier: string
+  identifier: string,
+  options: LoadByIdentifierOptions = {}
 ): Promise<SequenceData | null> {
-  // Try local repository first
+  const wordFallback = options.wordFallback ?? true;
+  // Try the local store first - but only the stored document. The repository's
+  // legacy-PNG fallback synthesizes a copy under a new random id on every call,
+  // and every word that has a bundled PNG also has a real Firestore document
+  // with the word as its id. Taking the copy here meant /sequence/DCKΨ- never
+  // reached that document, so anything keyed on the sequence id - performance
+  // videos, beat maps, library actions - looked up a uuid that exists nowhere.
+  // The PNG remains the route's last resort in SequenceViewerPage, after the
+  // public index and the signed-in library have both missed.
   try {
-    const localSequence = await getSequenceRepository().getSequence(identifier);
+    const localSequence = await getSequenceRepository().getSequence(
+      identifier,
+      { importFromPng: false }
+    );
     if (localSequence && hasMotionData(localSequence)) {
       return prepareForViewer(localSequence);
     }
@@ -235,7 +259,9 @@ export async function loadByIdentifier(
       publicSequence = await loader.loadFullSequenceData(identifier, candidate);
       if (publicSequence) break;
     }
-    publicSequence ??= await loader.loadFullSequenceData(identifier);
+    if (wordFallback) {
+      publicSequence ??= await loader.loadFullSequenceData(identifier);
+    }
     if (publicSequence) {
       return prepareForViewer(publicSequence);
     }

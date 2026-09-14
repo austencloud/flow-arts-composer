@@ -175,3 +175,72 @@ mobile selection uses aria-current rather than desktop aria-pressed. Focused
 tests cover transformed sizing, zero-size parking, dependent docking and reversal,
 and the canvas-only moving state: 15 tests pass. Svelte check reports zero errors
 and warnings.
+
+## Card / Studio sidebar continuity · 2026-09-09
+
+The animation-half sidebar disappeared in one frame on Studio-to-Card: its
+effective opacity fell from 1 to 0 while the outgoing Studio wrapper was still
+fully visible. Reparenting had moved the controls into the hidden motion layer,
+leaving an empty wrapper to fade. The Card half also mounted a second settings
+panel instead of retaining the shell's existing Card controls.
+
+Desktop now keeps both settings panels in their original shell layers. Studio
+publishes the selected source kind through the viewer-local surface owner, which
+retains it across visits. Animation selection crossfades motion and Card settings;
+Card selection keeps the same controls visible throughout. Other source kinds
+retain Studio's inspector. Compact and standalone Studio keep their existing Edit
+presentation. The Card artwork and its approved animation were not changed.
+
+The motion settings width rule now targets its actual origin wrapper, with right
+alignment during the outer track resize. Measured motion-control sideways travel
+was 0px at 1440×900, 1920×1080, 2560×1440 and 3840×2160. The respective outgoing
+fades contained 5, 3, 3 and 4 intermediate-opacity frames instead of a one-frame
+disappearance. With the Card half selected, Card settings opacity stayed at 1 and
+the DOM identity was retained. Both selections survived round trips at all seven
+viewport tiers, including 375×667, 960×412 and 820×1180. Compact Card settings may
+remount in the Edit view; desktop identity guarantees do not claim otherwise.
+
+Screenshots were inspected at all tiers, although this Windows host still
+crops/scales its 4K capture; the 4K position and identity results are DOM measures.
+Reduced motion retained both desktop settings nodes and the selected half without
+flight overlays. Focused surface/reparenting tests pass (13 tests), and Svelte
+check reports zero errors and warnings.
+
+Gate 6 now includes separate top-selected and bottom-selected Card/Studio replays.
+Its trace reports the selected half, live Card-settings identities, and sampled
+motion-settings fade frames so the two cases can be reviewed independently.
+
+### Dissolve pacing correction · 2026-09-09
+
+The first sidebar fix retained the controls but kept the 150ms, front-loaded
+button-feedback easing. That was technically a fade, yet visually too close to
+a pop. A busy Card return also skipped middle rAF samples, so counting fade
+frames alone was not sufficient evidence of a readable handoff.
+
+Motion and Card settings now use the shared 350ms duration with ease-in-out,
+and their persistent layers advertise opacity compositing before the switch.
+The live preview's Studio entry passed through 12%, 21%, 33%, 46%, 57%, 67%,
+74%, 80%, 85% and 89% opacity over roughly 150ms of its middle range. The
+return also retained intermediate opacity instead of immediately hiding the
+outgoing controls. These are measured CSS samples, not a claim of fixed frame
+rate while the Card recomposes. Visibility waits for the full dissolve; reduced
+motion clears both duration and delay. No geometry or artwork motion changed.
+
+### Reflow on return to the phone · 2026-09-09
+
+The shared Card could land in a 366×287 phone slot while its Auto grid picker
+still read a 760×847 focused-view destination. Clearing the viewer destination
+did not clear the sizing state's separate container override. This kept the
+portrait grid even though the outer Card already fit the phone.
+
+When both the destination and its motion phase are released, the sizing owner
+now returns the grid picker to live container measurements. A collapsing viewer
+pane still holds its destination during motion. No column count is forced and
+the existing Card flight/reflow animation is unchanged.
+
+Two regression cases failed before the fix with 760×847 instead of 366×287:
+direct release into Studio and release after a collapsing pane. Both now pass,
+including subsequent live resizing and reuse of a new viewer destination. All
+six focused sizing tests pass. Three browser round trips at 1440×900 retained
+the same Card node: focused mode chose 3×4, and the phone consistently returned
+to 4×3 with a 344×287 Card in its 367×287 slot.

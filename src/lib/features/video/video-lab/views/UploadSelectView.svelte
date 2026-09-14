@@ -231,7 +231,7 @@
     <span>Performance timing</span>
     <h3>Choose the sequence and the video that performs it</h3>
     <p>
-      Saved TKA videos keep their markers. A local file stays on this device
+      Saved Flow Arts Composer videos keep their markers. A local file stays on this device
       until you upload it.
     </p>
   </div>
@@ -347,7 +347,7 @@
       <section class="library-panel" aria-labelledby="saved-performance-title">
         <div class="library-heading">
           <div>
-            <span>From your TKA library</span>
+            <span>From your Flow Arts Composer library</span>
             <h3 id="saved-performance-title">Saved performances</h3>
           </div>
           {#if !videosLoading}<strong>{savedVideos.length}</strong>{/if}

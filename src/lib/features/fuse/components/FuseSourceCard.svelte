@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
+  import { loopStartPickTarget } from "$lib/features/create/shared/services/choose-start-analyzer";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import OverflowMenu from "$lib/shared/ui/components/OverflowMenu.svelte";
   import FuseVtgPathPicker from "./FuseVtgPathPicker.svelte";
@@ -319,12 +320,17 @@
     cardContextMenuHost?.openContextMenu(event.clientX, event.clientY);
   }
 
-  async function chooseInlineFirstStep(stepIndex: number): Promise<void> {
+  /**
+   * Choose Start: the tapped tile is the pose after that step, so the step
+   * after it becomes step 1. The last step's pose is already the LOOP start.
+   */
+  async function chooseInlineStartPose(stepIndex: number): Promise<void> {
     if (!firstStepPickerActive) return;
-    await fuseState.adjustSource(side, {
-      kind: "first-step",
-      step: stepIndex + 1,
-    });
+    const stepCount = displaySequence?.steps.length ?? 0;
+    const step = loopStartPickTarget(stepCount, stepIndex + 1);
+    if (step !== null) {
+      await fuseState.adjustSource(side, { kind: "first-step", step });
+    }
     onFirstStepComplete?.(side);
   }
 
@@ -451,8 +457,9 @@
           leftPropType={settings.leftPropType}
           rightPropType={settings.rightPropType}
           onStepClick={firstStepPickerActive
-            ? (stepIndex) => void chooseInlineFirstStep(stepIndex)
+            ? (stepIndex) => void chooseInlineStartPose(stepIndex)
             : undefined}
+          posePicker={firstStepPickerActive}
         />
       </div>
     {:else if source.isLoading || isSymmetryFollower}
@@ -550,7 +557,8 @@
         <div>
           <i class="fas fa-arrow-pointer" aria-hidden="true"></i>
           <span
-            ><strong>Choose the new step 1.</strong> Click any step above.</span
+            ><strong>Choose the start.</strong> Tap the pose above you want to start
+            from.</span
           >
         </div>
         <PanelButton variant="secondary" onclick={onCancelFirstStep}>

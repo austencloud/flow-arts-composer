@@ -8,7 +8,7 @@
     onBack,
   } = $props<{
     viewMode?: ExperienceViewMode;
-    onComplete?: () => void;
+    onComplete?: (nextConceptId?: string) => void;
     onBack?: () => void;
   }>();
 

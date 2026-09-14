@@ -16,19 +16,17 @@ export const ACCENT_COLORS_TO_PRESERVE = [
   "#fff",
 ] as const;
 
-export const HAND_COLOR_MAP: Record<
-  HandSide,
-  { dark: string; light: string }
-> = {
-  left: {
-    dark: "#3575E2",
-    light: "#3D44B8",
-  },
-  right: {
-    dark: "#ED1C24",
-    light: "#DC2626",
-  },
-};
+export const HAND_COLOR_MAP: Record<HandSide, { dark: string; light: string }> =
+  {
+    left: {
+      dark: "#3575E2",
+      light: "#3D44B8",
+    },
+    right: {
+      dark: "#ED1C24",
+      light: "#DC2626",
+    },
+  };
 
 /**
  * Props whose artwork is only PARTLY the motion color. Selective mode keeps any
@@ -66,7 +64,7 @@ export const SELECTIVE_COLOR_PROP_TYPES = [
 
 export function getMotionColor(
   hand: HandSide,
-  mode: ThemeMode = "dark",
+  mode: ThemeMode = "dark"
 ): string {
   return HAND_COLOR_MAP[hand]?.[mode] ?? HAND_COLOR_MAP.left[mode];
 }
@@ -94,7 +92,7 @@ function saturation(r: number, g: number, b: number): number {
 
 export function shouldPreserveColor(
   color: string,
-  selectiveMode?: boolean,
+  selectiveMode?: boolean
 ): boolean {
   const colorLower = color.toLowerCase();
 
@@ -109,7 +107,7 @@ export function shouldPreserveColor(
   }
 
   return ACCENT_COLORS_TO_PRESERVE.some(
-    (accent) => accent.toLowerCase() === colorLower,
+    (accent) => accent.toLowerCase() === colorLower
   );
 }
 
@@ -119,12 +117,14 @@ export interface SvgColorOptions {
   makeClassNamesUnique?: boolean;
   colorSuffix?: string;
   selectiveColorMode?: boolean;
+  /** Previously applied hand colors that must change even on material-preserving props. */
+  sourceColors?: readonly string[];
 }
 
 export function applyColorToSvg(
   svgText: string,
   targetColor: string,
-  options: SvgColorOptions = {},
+  options: SvgColorOptions = {}
 ): string {
   const {
     transformStroke = false,
@@ -132,87 +132,113 @@ export function applyColorToSvg(
     makeClassNamesUnique = false,
     colorSuffix = "",
     selectiveColorMode = false,
+    sourceColors = [],
   } = options;
+
+  const preserve = (color: string) =>
+    !sourceColors.some(
+      (source) => source.toLowerCase() === color.toLowerCase()
+    ) && shouldPreserveColor(color, selectiveColorMode);
 
   let coloredSvg = svgText;
 
-  coloredSvg = coloredSvg.replace(
-    /fill="(#[0-9A-Fa-f]{3,6}|rgb[a]?\([^)]+\)|[a-z]+)"/gi,
-    (match, capturedColor: string) => {
-      if (shouldPreserveColor(capturedColor, selectiveColorMode)) {
-        return match;
-      }
-      return `fill="${targetColor}"`;
-    },
-  );
-
-  coloredSvg = coloredSvg.replace(
-    /fill:\s*(#[0-9A-Fa-f]{3,6}|rgb[a]?\([^)]+\)|[a-z]+)/gi,
-    (match, capturedColor: string) => {
-      if (shouldPreserveColor(capturedColor, selectiveColorMode)) {
-        return match;
-      }
-      return `fill:${targetColor}`;
-    },
-  );
-
-  if (transformStroke) {
+  // Physical fan builds mark the frame that carries hand identity. Recoloring
+  // the complete artwork again (for custom hand colors) would paint the Kevlar
+  // and covers too, while leaving the stroke-built frame in its old color.
+  const fanFrame = /<g\b(?=[^>]*\bdata-fan-frame=(?:""|''))[^>]*>/gi;
+  const hasFanFrame = /\bdata-fan-frame=(?:""|'')/i.test(svgText);
+  if (hasFanFrame) {
+    coloredSvg = coloredSvg.replace(fanFrame, (tag) =>
+      tag.replace(
+        /\b(fill|stroke)=("|')([^"']*)\2/gi,
+        (paint, name, quote, value) =>
+          value === "none" || value === "transparent"
+            ? paint
+            : `${name}=${quote}${targetColor}${quote}`
+      )
+    );
+  } else {
     coloredSvg = coloredSvg.replace(
-      /stroke="(#[0-9A-Fa-f]{3,6}|rgb[a]?\([^)]+\)|[a-z]+)"/gi,
+      /fill="(#[0-9A-Fa-f]{3,6}|rgb[a]?\([^)]+\)|[a-z]+)"/gi,
       (match, capturedColor: string) => {
-        if (shouldPreserveColor(capturedColor, selectiveColorMode)) {
+        if (preserve(capturedColor)) {
           return match;
         }
-        return `stroke="${targetColor}"`;
-      },
+        return `fill="${targetColor}"`;
+      }
     );
 
     coloredSvg = coloredSvg.replace(
-      /stroke:\s*(#[0-9A-Fa-f]{3,6}|rgb[a]?\([^)]+\)|[a-z]+)/gi,
+      /fill:\s*(#[0-9A-Fa-f]{3,6}|rgb[a]?\([^)]+\)|[a-z]+)/gi,
       (match, capturedColor: string) => {
-        if (shouldPreserveColor(capturedColor, selectiveColorMode)) {
+        if (preserve(capturedColor)) {
           return match;
         }
-        return `stroke:${targetColor}`;
-      },
+        return `fill:${targetColor}`;
+      }
     );
+
+    if (transformStroke) {
+      coloredSvg = coloredSvg.replace(
+        /stroke="(#[0-9A-Fa-f]{3,6}|rgb[a]?\([^)]+\)|[a-z]+)"/gi,
+        (match, capturedColor: string) => {
+          if (preserve(capturedColor)) {
+            return match;
+          }
+          return `stroke="${targetColor}"`;
+        }
+      );
+
+      coloredSvg = coloredSvg.replace(
+        /stroke:\s*(#[0-9A-Fa-f]{3,6}|rgb[a]?\([^)]+\)|[a-z]+)/gi,
+        (match, capturedColor: string) => {
+          if (preserve(capturedColor)) {
+            return match;
+          }
+          return `stroke:${targetColor}`;
+        }
+      );
+    }
   }
 
   if (removeCenterPoint) {
     coloredSvg = coloredSvg.replace(
       /<circle[^>]*id="centerPoint"[^>]*\/?>/g,
-      "",
+      ""
     );
   }
 
   if (makeClassNamesUnique && colorSuffix) {
-    coloredSvg = coloredSvg.replace(/\.st(\d+)/g, `.st$1-${colorSuffix}`);
     coloredSvg = coloredSvg.replace(
-      /class="st(\d+)"/g,
-      `class="st$1-${colorSuffix}"`,
+      /\.st(\d+)(?:-[\w-]+)?/g,
+      `.st$1-${colorSuffix}`
     );
     coloredSvg = coloredSvg.replace(
-      /id="([^"]+)"/g,
-      `id="$1-${colorSuffix}"`,
+      /class="([^"]+)"/g,
+      (_, classes: string) =>
+        `class="${classes.replace(/\bst(\d+)(?:-[\w-]+)?\b/g, `st$1-${colorSuffix}`)}"`
     );
+    coloredSvg = coloredSvg.replace(/id="([^"]+)"/g, `id="$1-${colorSuffix}"`);
     coloredSvg = coloredSvg.replace(
       /url\(#([^)]+)\)/g,
-      `url(#$1-${colorSuffix})`,
+      `url(#$1-${colorSuffix})`
     );
   }
 
   return coloredSvg;
 }
 
-export interface MotionSvgColorOptions
-  extends Omit<SvgColorOptions, "colorSuffix"> {
+export interface MotionSvgColorOptions extends Omit<
+  SvgColorOptions,
+  "colorSuffix"
+> {
   themeMode?: ThemeMode;
 }
 
 export function applyMotionColorToSvg(
   svgText: string,
   motionHand: HandSide,
-  options: MotionSvgColorOptions = {},
+  options: MotionSvgColorOptions = {}
 ): string {
   const mode = options.themeMode ?? "dark";
   const targetColor = getMotionColor(motionHand, mode);

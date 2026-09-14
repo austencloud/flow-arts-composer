@@ -7,6 +7,7 @@
   Only shows when a motion has a per-step override set.
 -->
 <script lang="ts">
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import type { MotionData } from "../domain/models/motion-data";
   import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
   import { HandSide } from "../domain/enums/pictograph-enums";
@@ -15,18 +16,22 @@
     leftMotion = undefined,
     rightMotion = undefined,
     darkMode = undefined,
+    leftColorOverride = undefined,
+    rightColorOverride = undefined,
   }: {
     leftMotion?: MotionData | null;
     rightMotion?: MotionData | null;
     darkMode?: boolean;
+    leftColorOverride?: string;
+    rightColorOverride?: string;
   } = $props();
 
   const leftShape = $derived(leftMotion?.pathShape);
   const rightShape = $derived(rightMotion?.pathShape);
   const hasAny = $derived(leftShape !== undefined || rightShape !== undefined);
 
-  const leftColor = $derived(getMotionColor(HandSide.LEFT, darkMode ? "dark" : "light"));
-  const rightColor = $derived(getMotionColor(HandSide.RIGHT, darkMode ? "dark" : "light"));
+  const leftColor = $derived(leftColorOverride ?? getSettings().primaryPropColors?.left ?? getMotionColor(HandSide.LEFT, darkMode ? "dark" : "light"));
+  const rightColor = $derived(rightColorOverride ?? getSettings().primaryPropColors?.right ?? getMotionColor(HandSide.RIGHT, darkMode ? "dark" : "light"));
 
   const CX = 475;
   const CY = 58;

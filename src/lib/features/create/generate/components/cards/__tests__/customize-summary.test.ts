@@ -304,3 +304,54 @@ describe("summaryRowBudget", () => {
     );
   });
 });
+
+describe("hand relationship fact", () => {
+  it("names the relationship when it is not Free", () => {
+    const summary = buildCustomizeSummary({
+      ...inputFrom(PRODUCTION_STYLE_BASELINE),
+      handRelationship: "mirrored",
+      handRelationshipInverted: true,
+    });
+    expect(summary.facts).toContain("Relationship: Mirrored, inverted");
+    expect(summary.isDefault).toBe(false);
+  });
+
+  it("says nothing for Free, even with the inverted flag set", () => {
+    const summary = buildCustomizeSummary({
+      ...inputFrom(PRODUCTION_STYLE_BASELINE),
+      handRelationship: "free",
+      handRelationshipInverted: true,
+    });
+    expect(summary.facts.some((f) => f.startsWith("Relationship:"))).toBe(
+      false
+    );
+    expect(summary.isDefault).toBe(true);
+  });
+
+  it("adds a Turns fact when the hands' turns are matched", () => {
+    const summary = buildCustomizeSummary({
+      ...inputFrom(PRODUCTION_STYLE_BASELINE),
+      handRelationship: "free",
+      matchHandTurns: true,
+    });
+    expect(summary.facts).toEqual(["Turns: Matched"]);
+    expect(summary.isDefault).toBe(false);
+    const both = buildCustomizeSummary({
+      ...inputFrom(PRODUCTION_STYLE_BASELINE),
+      handRelationship: "mirrored",
+      matchHandTurns: true,
+    });
+    expect(both.facts).toEqual(["Relationship: Mirrored", "Turns: Matched"]);
+  });
+
+  it("orders the fact after the style axes", () => {
+    const summary = buildCustomizeSummary({
+      ...inputFrom({ ...PRODUCTION_STYLE_BASELINE, constraintPreset: "choppy" }),
+      handRelationship: "unison",
+    });
+    expect(summary.facts.slice(0, 2)).toEqual([
+      "Props: Choppy",
+      "Relationship: Unison",
+    ]);
+  });
+});
