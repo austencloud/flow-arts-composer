@@ -18,6 +18,8 @@ const { values } = parseArgs({
     credentials: { type: "string" },
     "canvas-module": { type: "string" },
     "output-dir": { type: "string" },
+    "gallery-sequences": { type: "string" },
+    prop: { type: "string" },
     limit: { type: "string", default: "0" },
     concurrency: { type: "string", default: "4" },
   },
@@ -73,6 +75,7 @@ const startedAt = new Date().toISOString();
 const report = {
   startedAt,
   apply: values.apply,
+  prop: values.prop ?? null,
   total: 0,
   processed: 0,
   ready: 0,
@@ -115,8 +118,15 @@ try {
   const { hydrateSequence } = await load(
     "shared/navigation/services/sequence-hydrator"
   );
+  const { encodeSequence } = await load(
+    "shared/navigation/services/sequence-encoder"
+  );
+  const { sha256Hex } = await load("shared/foundation/utils/canonical-digest");
   const { resolveScanPropConfig } = await load(
     "shared/qr/services/scan-prop-resolver"
+  );
+  const { PropType } = await load(
+    "shared/pictograph/prop/domain/enums/prop-type"
   );
   const { getCanonicalSequenceCells } = await load(
     "shared/render/services/warm-sequence-cells"
@@ -134,11 +144,41 @@ try {
     "shared/qr/services/short-code-manager"
   );
   const shortCodes = new ShortCodeManager();
+  const forcedProps = values.prop
+    ? (() => {
+        if (!Object.values(PropType).includes(values.prop)) {
+          throw new Error(
+            `Unknown --prop ${JSON.stringify(values.prop)}; use a PropType value`
+          );
+        }
+        // Gallery prop choices are an intentional destination variant. Keep
+        // both hands explicit so the cache key and QR URL describe the same card.
+        return {
+          leftPropType: values.prop,
+          rightPropType: values.prop,
+          catDogMode: false,
+        };
+      })()
+    : null;
   installQrBakeNodeRuntime(nodeCanvas, path.resolve("static"));
   const cache = new PreparedQrCache({
     get: async () => null,
     set: async () => {},
   });
+  const gallerySequencesByHash = new Map();
+  if (values["gallery-sequences"]) {
+    const gallerySequences = JSON.parse(
+      await fs.readFile(values["gallery-sequences"], "utf8")
+    );
+    if (!Array.isArray(gallerySequences) || gallerySequences.length === 0)
+      throw new Error("--gallery-sequences must be a nonempty sequence array");
+    for (const sequence of gallerySequences) {
+      const encoderHash = await sha256Hex(encodeSequence(sequence));
+      if (gallerySequencesByHash.has(encoderHash))
+        throw new Error(`Duplicate gallery encoder hash: ${encoderHash}`);
+      gallerySequencesByHash.set(encoderHash, sequence);
+    }
+  }
   let records;
   const snapshot = path.join(output, "shortcodes.json");
   try {
@@ -244,21 +284,38 @@ try {
       try {
         const raw = await hydrateSelfContainedShortCodePayload(code, record);
         if (!raw) throw new Error("No valid self-contained sequence payload");
-        const sequence = await hydrateSequence(raw, { loopDetector: null });
-        const props = resolveScanPropConfig(sequence, record);
+        const hydrated = await hydrateSequence(raw, { loopDetector: null });
+        if (
+          values["gallery-sequences"] &&
+          (await sha256Hex(encodeSequence(hydrated))) !== record.encoderHash
+        ) {
+          throw new Error("Shortcode payload does not match its encoder hash");
+        }
+        const sequence = values["gallery-sequences"]
+          ? gallerySequencesByHash.get(record.encoderHash)
+          : hydrated;
+        if (!sequence)
+          throw new Error(
+            "No same-hash gallery sequence for shortcode payload"
+          );
+        const props = forcedProps ?? resolveScanPropConfig(sequence, record);
         const missing = [];
-        const cellChecks = getCanonicalSequenceCells(sequence, props).flatMap(
-          ({ data, options }) =>
-            [true, false].map(async (darkMode) => {
-              const hash = await deriveCloudCellHash(data, darkMode, options);
-              requiredCells.add(hash);
-              if (!cells.has(`pictograph-cells/${hash}.webp`)) {
-                const cell = { code, data, options, darkMode };
-                report.missingCells[hash] ??= cell;
-                if (values.apply) await ensureCell(hash, cell);
-                else missing.push(hash);
-              }
-            })
+        const cellSequences =
+          sequence === hydrated ? [sequence] : [hydrated, sequence];
+        const cellChecks = cellSequences.flatMap((cellSequence) =>
+          getCanonicalSequenceCells(cellSequence, props).flatMap(
+            ({ data, options }) =>
+              [true, false].map(async (darkMode) => {
+                const hash = await deriveCloudCellHash(data, darkMode, options);
+                requiredCells.add(hash);
+                if (!cells.has(`pictograph-cells/${hash}.webp`)) {
+                  const cell = { code, data, options, darkMode };
+                  report.missingCells[hash] ??= cell;
+                  if (values.apply) await ensureCell(hash, cell);
+                  else missing.push(hash);
+                }
+              })
+          )
         );
         const checked = await Promise.allSettled(cellChecks);
         const rejected = checked.find((result) => result.status === "rejected");
