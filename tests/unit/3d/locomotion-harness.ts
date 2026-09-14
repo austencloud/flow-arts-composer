@@ -25,11 +25,14 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import {
   buildTwoBoneChain,
   ContactCurveCache,
+  extractClipFootprint,
   FootPlanter,
   HingeConstrainedLegIKSolver,
   kneeHingeReferenceAxis,
   LocomotionAnimator,
   LocomotionState,
+  registerClipFootprint,
+  trimLeadingHold,
   type BoneChain,
   type IAvatarSkeletonBuilder,
 } from "@austencloud/scene-3d";
@@ -257,7 +260,13 @@ function rigData(file: string): ArrayBuffer {
 // ---------------------------------------------------------------------------
 
 /**
- * Load the clip pack once per process.
+ * Load the clip pack once per process, the way the app loads it.
+ *
+ * `loadSharedAnimation` trims each clip's leading hold and registers the
+ * footprint of the rig it was authored on before the animator sees it; the
+ * animator only bakes contact-preserved legs for a clip that has a footprint.
+ * A loader that skipped this handed every suite the raw pack, and the tests
+ * measured a leg the app never plays (found 2026-09-07).
  *
  * Separate from the drive so a suite can await it in `beforeAll` and get the
  * parse cost, and any parse failure, attributed to setup rather than to
@@ -268,7 +277,11 @@ export async function loadPackClips(): Promise<Map<string, AnimationClip>> {
   for (const [key, file] of Object.entries(CLIP_FILES)) {
     const gltf = await parse(readGlb(path.join(PACK, file)).buffer);
     const clip = gltf.animations[0];
-    if (clip) clips.set(key, clip);
+    if (!clip) continue;
+    trimLeadingHold(clip);
+    const footprint = extractClipFootprint(gltf.scene, clip);
+    if (footprint) registerClipFootprint(clip, footprint);
+    clips.set(key, clip);
   }
   expect(clips.size, "every pack clip parsed").toBe(
     Object.keys(CLIP_FILES).length
@@ -370,6 +383,12 @@ export interface DriveRigOptions {
    * metric nobody has ever seen go red is an assumption, not a check.
    */
   onPlanter?: (planter: FootPlanter) => void;
+  /**
+   * Heading rate in radians per second. Zero walks the straight line; a
+   * nonzero rate walks a circle, facing the way it is going, so a plant
+   * has the ground rotate under it the way the walk lab circle does.
+   */
+  turnRate?: number;
 }
 
 export interface DriveRigResult {
@@ -382,7 +401,8 @@ export interface DriveRigResult {
 }
 
 /**
- * Walk a rig in a straight line along +Z and record what the bones did.
+ * Walk a rig along +Z, or round a circle at `turnRate`, and record what the
+ * bones did.
  *
  * A fresh animator and planter per call: blend springs, the gait clock, the
  * tier split and every foot lock are stateful, and a run that inherited
@@ -398,6 +418,7 @@ export async function driveRig({
   omitClips = [],
   planting = false,
   onPlanter,
+  turnRate = 0,
 }: DriveRigOptions): Promise<DriveRigResult> {
   const rig = await parse(rigData(rigFile));
   const travel = new Group();
@@ -439,7 +460,7 @@ export async function driveRig({
   const frames: GaitFrame[] = [];
   const tiers: number[] = [];
   const speeds: number[] = [];
-  let z = 0;
+  let heading = 0;
 
   const total = Math.round((settleSeconds + seconds) * frameRate);
   for (let i = 0; i < total; i++) {
@@ -454,8 +475,10 @@ export async function driveRig({
     });
     animator.update(dt);
 
-    z += speed * dt;
-    travel.position.z = z;
+    heading += turnRate * dt;
+    travel.rotation.y = heading;
+    travel.position.x += speed * dt * Math.sin(heading);
+    travel.position.z += speed * dt * Math.cos(heading);
     travel.updateMatrixWorld(true);
 
     if (planter) {
@@ -472,7 +495,9 @@ export async function driveRig({
         contactRight: contact?.right,
         lockConfidence: animator.getFootPlantConfidence?.() ?? 1,
         strideScale: animator.getStrideScale?.() ?? 1,
-        travelDirection: moving ? { x: 0, z: 1 } : undefined,
+        travelDirection: moving
+          ? { x: Math.sin(heading), z: Math.cos(heading) }
+          : undefined,
       });
     }
 
