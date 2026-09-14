@@ -41,7 +41,7 @@
       title: "Your grid",
       caption: "The grid has a center.",
     },
-    { title: "A shift", caption: "Move to a neighboring point.", path: "arc" },
+    { title: "A shift", caption: "From this point to the next one." },
     {
       title: "Arc",
       caption: "Follow the circle around the center.",
@@ -59,6 +59,7 @@
     },
     { title: "Three paths", caption: "Same shift. Different paths." },
   ];
+  const COMPARISON_PATHS: readonly IntroPath[] = ["arc", "linear", "concave"];
   const MORPH_DURATION = DURATION.dramatic * 2;
   const TRAVERSE_DURATION = DURATION.dramatic * 4;
   const ARRIVAL_DURATION = DURATION.dramatic * 2;
@@ -84,9 +85,12 @@
   );
   const routeD = $derived(introPathD(routePoints));
   const gridVisible = $derived(stage >= 1);
-  const routeVisible = $derived(stage >= 2);
+  const endpointsVisible = $derived(stage >= 2);
+  const routeVisible = $derived(stage >= 3 && !isFinal);
+  const shiftStart = introPointAt(INTRO_PATHS.arc, 0);
+  const shiftEnd = introPointAt(INTRO_PATHS.arc, 1);
   const traceD = $derived(
-    stage >= 2 && traceProgress > 0
+    stage >= 3 && traceProgress > 0
       ? introPathD(
           routePoints.slice(
             0,
@@ -134,11 +138,11 @@
     pulseActive = false;
     const path = current.path ?? (isFinal ? "concave" : "arc");
     routePoints = INTRO_PATHS[path];
-    traceProgress = stage >= 2 ? 1 : 0;
+    traceProgress = stage >= 3 ? 1 : 0;
     hand =
       stage === 0
         ? INTRO_CENTER
-        : stage === 1
+        : stage <= 2
           ? introPointAt(routePoints, 0)
           : introPointAt(routePoints, 1);
   }
@@ -274,7 +278,8 @@
       else moveHandToStart();
       return;
     }
-    if (stage === 3) {
+    if (stage === 2) {
+      // Reveal the destination only; the hand waits at its start point.
       settle();
       return;
     }
@@ -364,11 +369,10 @@
       {/if}
 
       {#if isFinal}
-        {#each ["arc", "linear"] as path}
+        {#each COMPARISON_PATHS as path (path)}
           <path
-            class="comparison-route"
-            class:linear-route={path === "linear"}
-            d={introPathD(INTRO_PATHS[path as IntroPath])}
+            class={`comparison-route ${path}-route`}
+            d={introPathD(INTRO_PATHS[path])}
             in:fade={{ duration: motionDuration(DURATION.normal) }}
           />
         {/each}
@@ -385,22 +389,22 @@
           class="route-legend"
           in:fade={{ duration: motionDuration(DURATION.normal) }}
         >
-          <g transform="translate(-95 143)">
-            <path class="legend-line arc-line" d="M0 0h16" />
-            <text class="route-label" x="21" y="4">Arc</text>
+          <g transform="translate(-118 148)">
+            <path class="legend-line arc-route" d="M0 0h20" />
+            <text class="route-label" x="26" y="5">Arc</text>
           </g>
-          <g transform="translate(-18 143)">
-            <path class="legend-line linear-line" d="M0 0h16" />
-            <text class="route-label" x="21" y="4">Linear</text>
+          <g transform="translate(-30 148)">
+            <path class="legend-line linear-route" d="M0 0h20" />
+            <text class="route-label" x="26" y="5">Linear</text>
           </g>
-          <g transform="translate(66 143)">
-            <path class="legend-line concave-line" d="M0 0h16" />
-            <text class="route-label" x="21" y="4">Concave</text>
+          <g transform="translate(66 148)">
+            <path class="legend-line concave-route" d="M0 0h20" />
+            <text class="route-label" x="26" y="5">Concave</text>
           </g>
         </g>
       {/if}
 
-      <foreignObject x={hand.x - 32} y={hand.y - 32} width="64" height="64">
+      <foreignObject x={hand.x - 24} y={hand.y - 24} width="48" height="48">
         <div
           class:pulsing={pulseActive}
           class="hand-art"
@@ -410,13 +414,35 @@
             propType={PropType.HAND}
             singleHand="left"
             pairedGlyph
-            size={64}
+            size={48}
             darkBackground
             colors={getSettings().primaryPropColors}
             useSavedOverrides={false}
           />
         </div>
       </foreignObject>
+
+      {#if endpointsVisible}
+        <!-- Drawn after the hand so the point stays visible when the hand lands on it. -->
+        <g
+          class="endpoints"
+          in:fade={{ duration: motionDuration(DURATION.normal) }}
+        >
+          <circle
+            class="endpoint start"
+            cx={shiftStart.x}
+            cy={shiftStart.y}
+            r="7"
+          />
+          <circle
+            class="endpoint end"
+            class:arriving={stage === 2}
+            cx={shiftEnd.x}
+            cy={shiftEnd.y}
+            r="7"
+          />
+        </g>
+      {/if}
     </svg>
   </div>
 
@@ -432,9 +458,9 @@
   .motion-path-intro {
     --settings-stage-width: min(100%, 47.5rem);
     width: var(--settings-stage-width);
-    min-height: clamp(31.25rem, 62vh, 37.5rem);
+    min-height: clamp(36rem, 70vh, 44rem);
     display: grid;
-    grid-template-rows: 5.5rem minmax(16rem, 1fr) auto;
+    grid-template-rows: 5.5rem minmax(22rem, 1fr) auto;
     justify-items: center;
     gap: clamp(1rem, 2.5cqw, 1.75rem);
     margin: clamp(2rem, 6vw, 4.5rem) auto;
@@ -475,7 +501,7 @@
   }
 
   .route-stage {
-    width: min(100%, 34rem);
+    width: min(100%, 40rem);
     min-width: 0;
     min-height: 0;
     display: grid;
@@ -485,7 +511,7 @@
   svg {
     display: block;
     width: 100%;
-    max-height: 17.5rem;
+    max-height: 24rem;
     overflow: visible;
   }
 
@@ -513,9 +539,36 @@
     stroke-width: 4;
   }
 
-  .comparison-route {
-    stroke: color-mix(in srgb, var(--theme-text-dim) 60%, transparent);
-    stroke-width: 2;
+  /* Three equal choices: same hand color, same weight, three line styles. */
+  .comparison-route,
+  .legend-line {
+    fill: none;
+    stroke: var(--hand-color);
+    stroke-width: 3;
+    stroke-linecap: round;
+  }
+
+  .linear-route {
+    stroke-dasharray: 9 6;
+  }
+
+  .concave-route {
+    stroke-dasharray: 1 6;
+  }
+
+  .endpoint {
+    fill: var(--theme-bg, #0b0b0f);
+    stroke: var(--hand-color);
+    stroke-width: 2.5;
+  }
+
+  .endpoint.start {
+    fill: var(--hand-color);
+  }
+
+  .endpoint.arriving {
+    animation: endpoint-pulse var(--arrival-duration) var(--ease-out, ease-out)
+      infinite;
   }
 
   .grid-art {
@@ -535,8 +588,8 @@
   }
 
   .hand-art {
-    width: 64px;
-    height: 64px;
+    width: 48px;
+    height: 48px;
     display: grid;
     place-items: center;
     filter: drop-shadow(
@@ -550,32 +603,21 @@
   }
 
   .route-label {
-    fill: var(--theme-text-dim);
-    font-size: 13px;
+    fill: var(--theme-text);
+    font-size: 15px;
     font-weight: 650;
   }
 
-  .legend-line {
-    fill: none;
-    stroke-linecap: round;
-    stroke-width: 3;
-  }
-
-  .arc-line {
-    stroke: color-mix(in srgb, var(--theme-text-dim) 60%, transparent);
-  }
-
-  .linear-line {
-    stroke: color-mix(in srgb, var(--theme-text-dim) 60%, transparent);
-  }
-
-  .linear-route,
-  .linear-line {
-    stroke-dasharray: 5 4;
-  }
-
-  .concave-line {
-    stroke: var(--hand-color);
+  @keyframes endpoint-pulse {
+    0%,
+    100% {
+      r: 7;
+      stroke-opacity: 1;
+    }
+    50% {
+      r: 11;
+      stroke-opacity: 0.55;
+    }
   }
 
   @keyframes arrival-pulse {
@@ -602,7 +644,7 @@
   @container (max-width: 440px) {
     .motion-path-intro {
       min-height: 31.25rem;
-      grid-template-rows: 5rem minmax(14rem, 1fr) auto;
+      grid-template-rows: 5rem minmax(18rem, 1fr) auto;
       margin-block: 2rem;
     }
 
@@ -615,17 +657,19 @@
     }
 
     svg {
-      max-height: 15rem;
+      max-height: 19rem;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hand-art.pulsing {
+    .hand-art.pulsing,
+    .endpoint.arriving {
       animation: none;
     }
   }
 
-  :global([data-motion-preference="reduce"]) .hand-art.pulsing {
+  :global([data-motion-preference="reduce"]) .hand-art.pulsing,
+  :global([data-motion-preference="reduce"]) .endpoint.arriving {
     animation: none;
   }
 </style>

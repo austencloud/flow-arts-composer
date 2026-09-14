@@ -27,13 +27,21 @@
       <p>Change the path. See what it draws.</p>
     </header>
 
+    <MotionPathExplanation />
+
+    <header class="explorer-intro">
+      <h2>Try all four on a sequence</h2>
+      <p>
+        Hybrid is the fourth choice. It uses Arc for pro motions and Concave for
+        anti motions.
+      </p>
+    </header>
+
     {#if browser}
       <MotionPathExplorer />
     {:else}
       <p role="status">The interactive comparison loads in your browser.</p>
     {/if}
-
-    <MotionPathExplanation />
 
     <details class="reference">
       <summary>Motion path reference</summary>
@@ -192,6 +200,21 @@
   .intro p {
     max-width: none;
     font-size: clamp(16px, 1.3vw, 20px);
+    color: var(--theme-text-muted);
+  }
+  .explorer-intro {
+    margin-block: clamp(2rem, 5vw, 3.5rem) var(--spacing-lg, 24px);
+  }
+  .explorer-intro h2 {
+    margin: 0 0 var(--spacing-xs, 4px);
+    font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+    line-height: 1.15;
+  }
+  .explorer-intro p {
+    margin: 0;
+    max-width: none;
+    font-size: 16px;
+    line-height: 1.6;
     color: var(--theme-text-muted);
   }
   .reading {
