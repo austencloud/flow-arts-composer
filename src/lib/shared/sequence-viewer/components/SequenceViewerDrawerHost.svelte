@@ -397,6 +397,9 @@
 {#snippet viewerContentPlaceholder()}
   <div class="viewer-content-state" role="status" aria-live="polite">
     <span>Loading sequence viewer…</span>
+    <PanelButton variant="secondary" onclick={() => handleDismiss()}>
+      Close viewer
+    </PanelButton>
   </div>
 {/snippet}
 
@@ -404,6 +407,9 @@
   <div class="viewer-content-state viewer-content-error" role="alert">
     <p>The sequence viewer couldn’t load.</p>
     <PanelButton variant="secondary" onclick={retry}>Try again</PanelButton>
+    <PanelButton variant="secondary" onclick={() => handleDismiss()}>
+      Close viewer
+    </PanelButton>
   </div>
 {/snippet}
 
