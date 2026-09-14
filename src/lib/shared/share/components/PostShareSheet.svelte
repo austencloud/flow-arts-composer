@@ -197,9 +197,9 @@
   let presetsOpen = $state(false);
   /** Opening Share must not spend a render on a link or sequence handoff. */
   let filePreparationOpen = $state(false);
+  let downloadWhenReady = $state(false);
   let captionOpen = $state(false);
   let publishOpen = $state(false);
-  let fileIntent = $state<"download" | "share">("download");
   let failedPreviewUrl = $state<string | null>(null);
   let cardRenderFailed = $state(false);
 
@@ -247,6 +247,7 @@
   let linkSession = 0;
   let linkSequence: SequenceData | null = null;
   let copyLinkPending = $state(false);
+  let copyLinkMessage = $state("");
 
   let qrDataUrl = $state<string | null>(null);
   let qrPending = $state(false);
@@ -344,15 +345,8 @@
     destinations.find((destination) => destination.id === "native-share") ??
       null
   );
-  const primaryDeliveryId = $derived.by(() => {
-    if (fileIntent === "download") return "download" as const;
-    return (
-      nativeShare?.id ??
-      destinations.find((destination) => destination.id === "send-to-phone")
-        ?.id ??
-      "download"
-    );
-  });
+  /** Download remains the dependable primary action; device sharing stays nearby. */
+  const primaryDeliveryId = "download" as const;
 
   /** The visual harness can exercise connection states while posting is disabled. */
   const postingAvailable = $derived(
@@ -499,6 +493,19 @@
 
   const videoBusy = $derived(artifact === "video" && !videoBlob);
 
+  // The menu's Download is a complete command. Export settings can still open
+  // this preview without saving until the user has reviewed their choices.
+  $effect(() => {
+    if (!isOpen) {
+      if (!preserveSession) downloadWhenReady = false;
+      return;
+    }
+    if (!downloadWhenReady || !activeBlob || busyDestination || qrPending)
+      return;
+    downloadWhenReady = false;
+    untrack(() => void runDestination("download"));
+  });
+
   /** Detect setting changes without automatically replacing an expensive render. */
   const videoSettingsKey = $derived(
     [
@@ -593,8 +600,9 @@
     qrError = "";
     pageMenuOpen = false;
     postedPermalinks = {};
+    copyLinkMessage = "";
     shortUrl = seededShortUrl || null;
-    if (initialEntry === "download") beginFilePreparation("download");
+    if (initialEntry === "download") beginFilePreparation();
   });
 
   $effect(() => {
@@ -631,7 +639,10 @@
     if (!isOpen || !target) return;
     const session = ++linkSession;
     linkRequest = null;
-    if (linkSequence !== target) shortUrl = seededShortUrl || null;
+    if (linkSequence !== target) {
+      shortUrl = seededShortUrl || null;
+      downloadWhenReady = false;
+    }
     linkSequence = target;
     copyLinkPending = false;
     return () => {
@@ -666,6 +677,7 @@
 
   function handleArtifactChange(next: ShareArtifact): void {
     if (!shareDraft.selectArtifact(next)) return;
+    downloadWhenReady = false;
     statusMessage = "";
     qrDataUrl = null;
     // Posted links belong to the selected artifact.
@@ -676,11 +688,9 @@
   }
 
   /** File choices are intentionally lazy, so Copy link and Send in Flow Arts Composer stay fast. */
-  function beginFilePreparation(
-    intent: "download" | "share" = "download"
-  ): void {
+  function beginFilePreparation(download = false): void {
     filePreparationOpen = true;
-    fileIntent = intent;
+    downloadWhenReady = download;
     statusMessage = "";
     if (artifact === "video") requestVideoForPreparedFile();
   }
@@ -740,7 +750,7 @@
   async function handleCopyLinkIntent(): Promise<void> {
     if (copyLinkPending) return;
     if (!copyLinkUrl && !canCreateLink) {
-      statusMessage = "Save this sequence to create a shareable link.";
+      copyLinkMessage = "Save this sequence to create a shareable link.";
       return;
     }
 
@@ -748,18 +758,25 @@
     const target = sequence;
     const viewerUrl = shareUrl;
     copyLinkPending = true;
-    statusMessage = copyLinkUrl ? "" : "Preparing link…";
-    const result = copyLinkUrl
-      ? await copyLink(copyLinkUrl)
-      : await copyPreparedLink(
-          requestPostLink().then((url) => buildCopyLinkUrl(url, viewerUrl))
-        );
+    copyLinkMessage = "";
+    try {
+      const result = copyLinkUrl
+        ? await copyLink(copyLinkUrl)
+        : await copyPreparedLink(
+            requestPostLink().then((url) => buildCopyLinkUrl(url, viewerUrl))
+          );
 
-    if (target && linkSessionIsCurrent(session, target) && result.message) {
-      statusMessage = result.message;
-    }
-    if (!target || linkSessionIsCurrent(session, target)) {
-      copyLinkPending = false;
+      if (target && linkSessionIsCurrent(session, target) && result.message) {
+        copyLinkMessage = result.message;
+      }
+    } catch {
+      if (!target || linkSessionIsCurrent(session, target)) {
+        copyLinkMessage = "Couldn't copy the link. Try again.";
+      }
+    } finally {
+      if (!target || linkSessionIsCurrent(session, target)) {
+        copyLinkPending = false;
+      }
     }
   }
 
@@ -773,6 +790,7 @@
   }
 
   function returnToChooser(): void {
+    downloadWhenReady = false;
     filePreparationOpen = false;
     captionOpen = false;
     publishOpen = false;
@@ -1000,6 +1018,9 @@
       if (result.status !== "canceled" && result.message) {
         statusMessage = result.message;
       }
+    } catch (error) {
+      console.error("[PostShareSheet] Delivery failed:", error);
+      statusMessage = "Couldn't finish sharing. Try again.";
     } finally {
       busyDestination = null;
     }
@@ -1302,6 +1323,7 @@
         class="sheet"
         data-surface={surface}
         class:qr-step={!!qrDataUrl}
+        class:menu-step={!filePreparationOpen}
         tabindex="-1"
         autofocus
       >
@@ -1324,7 +1346,6 @@
 
         {#if !filePreparationOpen}
           <div class="share-intents">
-            <p class="intent-intro">Choose how to share this sequence.</p>
             <div class="intent-grid">
               <button
                 type="button"
@@ -1332,9 +1353,21 @@
                 disabled={busyLocalTile !== null || copyLinkPending}
                 onclick={handleCopyLinkIntent}
               >
-                <i class="fa-solid fa-link" aria-hidden="true"></i>
+                <i
+                  class={copyLinkPending
+                    ? "fa-solid fa-circle-notch fa-spin"
+                    : copyLinkMessage === "Link copied"
+                      ? "fa-solid fa-check"
+                      : "fa-solid fa-link"}
+                  aria-hidden="true"
+                ></i>
                 <span>Copy link</span>
-                <small>Open this view with its current settings</small>
+                <small aria-live="polite">
+                  {copyLinkPending
+                    ? "Copying…"
+                    : copyLinkMessage ||
+                      "Open this view with its current settings"}
+                </small>
               </button>
               {#if onSendInTka}
                 <button
@@ -1343,43 +1376,24 @@
                   onclick={() => handOffAfterClose(() => onSendInTka?.())}
                 >
                   <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
-                  <span>Send in Flow Arts Composer</span>
-                  <small>Attach this sequence to a message</small>
+                  <span>Send to a friend</span>
+                  <small>In Flow Arts Composer</small>
                 </button>
               {/if}
               <button
                 type="button"
                 class="intent"
-                onclick={() => beginFilePreparation("download")}
+                onclick={() => beginFilePreparation(true)}
               >
                 <i class="fa-solid fa-download" aria-hidden="true"></i>
-                <span>Download…</span>
-                <small>Prepare a file from the current view</small>
-              </button>
-              <button
-                type="button"
-                class="intent"
-                onclick={() => beginFilePreparation("share")}
-              >
-                <i class="fa-solid fa-share-nodes" aria-hidden="true"></i>
-                <span>Share file…</span>
-                <small>Prepare a file for this device</small>
+                <span>Download {artifact === "card" ? "card" : "video"}</span>
+                <small
+                  >{artifact === "card"
+                    ? "Save or share an image"
+                    : "Save or share a video"}</small
+                >
               </button>
             </div>
-            {#if postingAvailable}
-              <button
-                type="button"
-                class="publish-route"
-                onclick={() => {
-                  beginFilePreparation("share");
-                  publishOpen = true;
-                  preparePostLink();
-                }}
-              >
-                Publish to social…
-              </button>
-            {/if}
-            <p class="intent-status" role="status">{statusMessage || " "}</p>
           </div>
         {:else}
           <div class="sheet-scroll">
@@ -1667,7 +1681,7 @@
                       {@render networkButton(plan)}
                     {/each}
                   </div>
-                {:else if postingAvailable}
+                {:else if META_POSTING_ENABLED}
                   <button
                     type="button"
                     class="publish-route"
@@ -1676,7 +1690,7 @@
                       preparePostLink();
                     }}
                   >
-                    Publish to social…
+                    Publishing options
                   </button>
                 {/if}
 
@@ -1710,8 +1724,16 @@
                           {/if}
                         </span>
                         <span class="tile-label">{destination.label}</span>
-                        {#if destination.hint}
-                          <span class="tile-hint">{destination.hint}</span>
+                        {#if destination.hint || busyDestination === destination.id || (destination.id === "send-to-phone" && qrError)}
+                          <span class="tile-hint" aria-live="polite">
+                            {busyDestination === destination.id
+                              ? destination.id === "send-to-phone"
+                                ? "Preparing transfer…"
+                                : "Preparing…"
+                              : destination.id === "send-to-phone" && qrError
+                                ? qrError
+                                : destination.hint}
+                          </span>
                         {/if}
                       </button>
                     {/each}
@@ -1807,38 +1829,41 @@
                 variant="primary"
                 fullWidth
                 disabled={!activeBlob || busyDestination !== null || qrPending}
-                ariaBusy={busyDestination !== null}
+                ariaBusy={busyDestination === "download" ||
+                  isExportingVideo ||
+                  isRecordingScene ||
+                  (artifact === "card" && !activeBlob && !cardRenderFailed)}
                 onclick={() => runDestination(primaryDeliveryId)}
               >
                 <i
-                  class={busyDestination
+                  class={busyDestination === "download" ||
+                  isExportingVideo ||
+                  isRecordingScene ||
+                  (artifact === "card" && !activeBlob && !cardRenderFailed)
                     ? "fa-solid fa-circle-notch fa-spin"
-                    : primaryDeliveryId === "send-to-phone"
-                      ? "fa-solid fa-qrcode"
-                      : primaryDeliveryId === "native-share"
-                        ? "fa-solid fa-share-nodes"
-                        : "fa-solid fa-download"}
+                    : "fa-solid fa-download"}
                   aria-hidden="true"
                 ></i>
-                {primaryDeliveryId !== "download"
-                  ? nativeShare
-                    ? "Share file"
-                    : primaryDeliveryId === "send-to-phone"
-                      ? "Transfer to phone"
-                      : "Share file"
-                  : artifact === "card"
-                    ? "Download card"
-                    : "Download video"}
+                {isExportingVideo || isRecordingScene
+                  ? progressLabel
+                  : artifact === "card" && !activeBlob && !cardRenderFailed
+                    ? "Creating image…"
+                    : busyDestination === "download"
+                      ? "Downloading…"
+                      : artifact === "card"
+                        ? "Download card"
+                        : "Download video"}
               </PanelButton>
             {/if}
-            <!-- Reserve status height so messages cannot move the sheet. -->
-            <p
-              class="status"
-              role="status"
-              class:visible={!!(statusMessage || qrError)}
-            >
-              {qrError || statusMessage || " "}
-            </p>
+            {#if statusMessage || qrError}
+              <p
+                class="delivery-feedback"
+                role="status"
+                transition:growFade={{ axis: "y" }}
+              >
+                {qrError || statusMessage}
+              </p>
+            {/if}
           </footer>
         {/if}
       </div>
@@ -2369,18 +2394,6 @@
     background: var(--theme-surface-3, rgba(255, 255, 255, 0.12));
   }
 
-  /* Reserve the row even when no message is visible. */
-  .status {
-    margin: 0;
-    text-align: center;
-    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.7));
-    visibility: hidden;
-  }
-
-  .status.visible {
-    visibility: visible;
-  }
-
   .sheet {
     height: 100%;
     min-height: 0;
@@ -2388,6 +2401,12 @@
     flex-direction: column;
     color: var(--theme-text);
     background: var(--theme-panel-bg, #17171f);
+  }
+  .delivery-feedback {
+    margin: 0.5rem 0 0;
+    font-size: var(--font-size-min, 0.875rem);
+    color: var(--theme-text-secondary);
+    text-align: center;
   }
   .sheet:focus {
     outline: none;
@@ -2445,10 +2464,12 @@
     overflow-y: auto;
     padding: 1.25rem;
   }
-  .intent-intro {
-    margin: 0 0 1rem;
-    color: var(--theme-text-secondary, rgba(255, 255, 255, 0.7));
-    font-size: var(--font-size-min, 0.875rem);
+  .menu-step {
+    height: auto;
+  }
+  .menu-step .share-intents {
+    flex: 0 0 auto;
+    overflow: visible;
   }
   .intent-grid {
     display: grid;
@@ -2482,6 +2503,7 @@
     font-weight: 650;
   }
   .intent > small {
+    min-height: 2.7em;
     color: var(--theme-text-secondary, rgba(255, 255, 255, 0.68));
     font-size: var(--font-size-compact, 0.75rem);
     line-height: 1.35;
@@ -2494,12 +2516,6 @@
   .intent:disabled {
     opacity: 0.45;
     cursor: not-allowed;
-  }
-  .intent-status {
-    min-height: 1.5rem;
-    margin: 1rem 0 0;
-    color: var(--theme-text-secondary);
-    font-size: var(--font-size-min, 0.875rem);
   }
   .publish-route {
     width: fit-content;
@@ -2633,7 +2649,7 @@
   .tiles {
     display: grid;
     grid-auto-flow: row;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
     gap: 0.5rem;
   }
   .tile {
@@ -2679,12 +2695,6 @@
     font-size: 1rem;
     font-weight: 600;
   }
-  .status {
-    font-size: 0.75rem;
-    line-height: 1.4;
-    min-height: 1.25rem;
-    padding-top: 0.25rem;
-  }
   .header-close:focus-visible,
   .tile:focus-visible,
   .network:focus-visible {
@@ -2698,12 +2708,6 @@
     height: 100%;
     min-height: 20rem;
   }
-  @media (min-width: 600px) {
-    .intent-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
   @media (min-width: 900px) {
     .panel-header {
       padding: 1.25rem 1.75rem;
@@ -2726,9 +2730,6 @@
     .share-intents {
       padding: 1.75rem;
     }
-    .intent-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
     .editing-column {
       margin-top: 0;
       gap: 1.25rem;
@@ -2738,20 +2739,7 @@
       height: clamp(12rem, 43dvh, 30rem);
     }
     .share-dock {
-      display: grid;
-      grid-template-columns: 1fr minmax(18rem, 0.74fr);
-      column-gap: 2rem;
       padding: 1rem 1.75rem;
-      align-items: center;
-    }
-    .share-dock :global(.panel-btn) {
-      grid-column: 2;
-      grid-row: 1;
-    }
-    .status {
-      grid-column: 1;
-      grid-row: 1;
-      text-align: left;
     }
     .qr-step .sheet-scroll {
       display: block;
