@@ -317,6 +317,7 @@
   const showTnD = $derived(displayState.showTnD);
   const showElemental = $derived(displayState.showElemental);
   const showPositions = $derived(displayState.showPositions);
+  const showHandColorKey = $derived(displayState.showHandColorKey);
   const showGrid = $derived(displayState.showGrid);
   const showNonRadial = $derived(displayState.showNonRadial);
   const handPointVis = $derived(displayState.handPointVis);
@@ -637,6 +638,7 @@
       showTnD,
       showElemental,
       showPositions,
+      showHandColorKey,
       isSoloMode,
       handPathMode,
       browseViewMode,
@@ -726,6 +728,7 @@
       showTnD,
       showElemental,
       showPositions,
+      showHandColorKey,
       showGrid,
       showLeftMotion,
       showRightMotion,

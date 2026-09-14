@@ -58,5 +58,6 @@ geometry; inspect the saved difference image before changing a tolerance.
 
 The `composer` and `print` profiles intentionally have different dimensions and
 badge scales. Compare matching profiles and options. This suite covers image
-exports, not every interactive card state. The QR fixtures use a fixed player
-link; short-code minting stays outside the comparison.
+exports, not every interactive card state. The QR fixtures carry the real
+viewer deep link for the steps on the card (`DEMO_SEQUENCE_LINKS`); short-code
+minting stays outside the comparison.
