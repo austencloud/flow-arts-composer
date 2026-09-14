@@ -9,8 +9,9 @@ Sequence sharing extends `shared/share/components/PostShareSheet.svelte`.
 Searches: share, download, export, send to a friend, transfer to phone, caption.
 The compact menu offers Copy link, an inbox attachment, and one file path.
 Download and external file sharing use the same preview and prepared file;
-they must not become competing setup flows. The menu's Download prepares and
-saves once, while an Export shortcut opens settings for review first.
+they must not become competing setup flows. Both the menu's Download and an
+Export shortcut open file settings. Video rendering starts only from Render
+video; Download saves the completed file. Cancel restores editable settings.
 Copy progress and results stay
 inside the Copy link action. `sequence-viewer/state/viewer-shell-share-state.svelte.ts`
 owns the source session; the sheet composes existing card preview and viewer
