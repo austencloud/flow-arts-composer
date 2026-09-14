@@ -24,10 +24,18 @@ await build({
   root: resolve(root, "tests/render-parity/browser"),
   publicDir: false,
   plugins: [svelte()],
+  // The QR generator reaches the viewer's render worker; ES workers are the
+  // only format Rollup accepts once the bundle code-splits.
+  worker: { format: "es" },
   resolve: {
     conditions: ["browser"],
     alias: {
       $lib: resolve(root, "src/lib"),
+      // Always the checkout's own package, never a node_modules link to another one.
+      "@tka/render-composition": resolve(
+        root,
+        "packages/render-composition/src/index.ts"
+      ),
       "$app/environment": resolve(
         root,
         "tests/render-parity/stubs/app-environment.ts"

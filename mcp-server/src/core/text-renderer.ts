@@ -79,7 +79,9 @@ export async function renderWordHeader(
   reflectionAxis?: LoopReflectionAxis,
   overlayComponents?: LOOPComponent[],
   compressedSegments?: CompressedSegment[],
-  indicatorSizeScale?: number
+  indicatorSizeScale?: number,
+  accentColor?: string,
+  accentTintOpacity?: number
 ): Promise<void> {
   ensureFontsRegistered();
   const glyphImages = await loadTkaGlyphImages(word, darkMode);
@@ -120,6 +122,8 @@ export async function renderWordHeader(
     letterStyles: sharedLetterStyles,
     glyphImages,
     glyphImagesAreThemeColored: !!glyphImages,
+    accentColor,
+    accentTintOpacity,
   };
 
   // Cast: node-canvas CanvasRenderingContext2D is structurally compatible
@@ -143,7 +147,9 @@ export function renderUserInfo(
   canvasWidth: number,
   canvasHeight: number,
   footerHeight: number,
-  darkMode: boolean = true
+  darkMode: boolean = true,
+  accentColor?: string,
+  accentTintOpacity?: number
 ): void {
   ensureFontsRegistered();
 
@@ -161,6 +167,8 @@ export function renderUserInfo(
     footerHeight,
     notes: resolvedNotes,
     darkMode,
+    accentColor,
+    accentTintOpacity,
   };
 
   sharedRenderFooter(

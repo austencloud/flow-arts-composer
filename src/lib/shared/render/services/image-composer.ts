@@ -23,6 +23,7 @@ import { blobToImage, canvasToImage, imageToBlob } from "./image-format-converte
 import { createRenderCanvas } from "./create-render-canvas";
 import type { RenderCanvas } from "./types";
 import { findEmptyCellForQR } from "./cell-border-renderer";
+import { renderDurationBadge, stepHasDurationBadge } from "@tka/render-composition";
 import {
   computeCardFrontLayout,
   paintCardFrontBackground,
@@ -411,7 +412,7 @@ export class ImageComposer {
       );
 
       const beatDuration = beat.duration ?? 1;
-      if (Math.abs(beatDuration - 1.0) > 0.001) {
+      if (stepHasDurationBadge(beatDuration)) {
         const x = col * stepSize + gridOffsetX;
         const y = row * stepSize + gridOffsetY;
         this.drawDurationBadge(ctx, beatDuration, x, y, stepSize, isDarkMode);
@@ -665,25 +666,8 @@ export class ImageComposer {
     cellSize: number,
     isDarkMode: boolean
   ): void {
-    const VIEW_BOX_SIZE = 950;
-    const scale = cellSize / VIEW_BOX_SIZE;
-
-    const formatted = Number.isInteger(duration)
-      ? duration.toString()
-      : duration.toFixed(2).replace(/\.?0+$/, "");
-    const text = `${formatted}×`;
-
-    const fontSize = 52 * scale;
-    const textX = x + 475 * scale;
-    const textY = y + 890 * scale;
-
-    ctx.save();
-    ctx.font = `600 ${fontSize}px Inter, "SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = isDarkMode ? "#ffffff" : "#231f20";
-    ctx.fillText(text, textX, textY);
-    ctx.restore();
+    // Shared owner: the MCP card draws the same badge through the same function.
+    renderDurationBadge(ctx, duration, x, y, cellSize, isDarkMode);
   }
 
   getCacheStats() {

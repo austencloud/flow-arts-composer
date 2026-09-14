@@ -18,6 +18,11 @@ export default defineConfig({
     conditions: ["browser"],
     alias: {
       $lib: path.resolve(projectRoot, "src/lib"),
+      // Always the checkout's own package, never a node_modules link to another one.
+      "@tka/render-composition": path.resolve(
+        projectRoot,
+        "packages/render-composition/src/index.ts"
+      ),
       "$app/environment": path.resolve(
         projectRoot,
         "tests/render-parity/stubs/app-environment.ts"
