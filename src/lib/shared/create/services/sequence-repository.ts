@@ -105,15 +105,25 @@ export class SequenceRepository {
   }
 
   /**
-   * Get a sequence by ID
+   * Get a sequence by ID.
+   *
+   * A miss falls back to the bundled legacy PNG for that word. That import
+   * mints a fresh random id every time (the PNG carries none), so the result
+   * is a synthesized copy, not the document the id names. Callers that hold a
+   * document id and have other stores to consult pass `importFromPng: false`
+   * and reserve the PNG for their own last resort.
    */
-  async getSequence(id: string): Promise<SequenceData | null> {
+  async getSequence(
+    id: string,
+    options: { importFromPng?: boolean } = {}
+  ): Promise<SequenceData | null> {
+    const importFromPng = options.importFromPng ?? true;
     try {
       let sequence = await persistLoadSequence(id);
       if (sequence) sequence = this.hydrateSequence(sequence);
 
       // If sequence not found, try to import from PNG metadata if import service is available
-      if (!sequence && this.sequenceImportService) {
+      if (!sequence && importFromPng && this.sequenceImportService) {
         try {
           sequence = await this.sequenceImportService.importFromPNG(id);
           // Save it to persistence for future use

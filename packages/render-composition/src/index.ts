@@ -61,6 +61,18 @@ export {
 export { renderStepNumber } from "./step-number-renderer.js";
 export { renderSmartBorders } from "./border-renderer.js";
 export {
+  COMPOSER_CARD_EXPORT_PROFILE_V1,
+  calculateSequenceCardCell,
+  calculateSequenceCardLayout,
+  composeSequenceCard,
+  type SequenceCardCell,
+  type SequenceCardCompositionOptions,
+  type SequenceCardExportProfile,
+  type SequenceCardHeader,
+  type SequenceCardLayout,
+  type SequenceCardPipeline,
+} from "./sequence-card-pipeline.js";
+export {
   calculateHeaderWordSideInset,
   renderHeader,
   type HeaderOptions,
