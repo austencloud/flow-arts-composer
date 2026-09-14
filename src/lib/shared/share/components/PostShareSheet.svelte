@@ -1756,6 +1756,7 @@
                     disabled={videoBusy}
                   >
                     <PanelButton
+                      fullWidth
                       ariaExpanded={videoSettingsOpen}
                       onclick={() => (videoSettingsOpen = !videoSettingsOpen)}
                     >
@@ -2086,10 +2087,8 @@
   .video-settings {
     min-width: 0;
     margin: 0;
-    padding: 0.875rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 0.875rem;
-    background: var(--theme-card-bg);
+    padding: 0;
+    border: 0;
   }
   .video-settings legend {
     padding-inline: 0.375rem;
@@ -2107,6 +2106,7 @@
   .compact-settings {
     display: grid;
     gap: 0.625rem;
+    padding: 0.75rem 0.25rem 0;
   }
   .compact-settings label,
   .repeat-stepper {
@@ -2829,6 +2829,9 @@
       flex-direction: column;
       gap: 0.875rem;
       max-width: 42rem;
+      width: 100%;
+      box-sizing: border-box;
+      align-items: stretch;
       margin-inline: auto;
     }
     .sheet-scroll.download-route .stage {
@@ -2882,6 +2885,20 @@
     }
     .share-dock {
       padding-block: 0.5rem;
+    }
+  }
+  @media (min-width: 900px) and (max-height: 500px) {
+    .sheet-scroll.download-route {
+      display: grid;
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      align-items: start;
+    }
+    .sheet-scroll.download-route .stage {
+      height: 11rem;
+      min-height: 0;
+    }
+    .sheet-scroll.download-route .preview-column {
+      align-self: start;
     }
   }
   .sheet-scroll:not(.has-preview) .stage {
