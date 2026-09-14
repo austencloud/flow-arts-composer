@@ -9,10 +9,9 @@ import {
   type PictographInput,
   type RenderVisibilityOptions,
 } from "./standalone-renderer.js";
-import {
-  detectReversals,
-  type SequenceStep,
-} from "./sequence-builder-adapter.js";
+import type { SequenceStep } from "./sequence-builder-adapter.js";
+import { applyCanonicalReversals } from "./card-reversals.js";
+import { renderCardQrCode } from "./qr-code-renderer.js";
 import {
   renderWordHeader,
   renderUserInfo,
@@ -100,6 +99,14 @@ export interface SequenceRenderOptions {
   /** Fill reserved info cells with the sequence's prop-tip trajectory. */
   showMandala?: boolean;
   primaryPropColors?: HandColorPair | null;
+  /** Published player link; when set the card carries the Composer's QR slot. */
+  qrUrl?: string;
+  /** Opt out of the QR cell even when `qrUrl` is known. */
+  showQRCode?: boolean;
+  /** TnD accent tint (header, footer, and print side bands). */
+  accentColor?: string;
+  /** 0–1 alpha for the accent tint; omit for the Composer default. */
+  accentTintOpacity?: number;
 }
 const DEFAULT_OPTIONS = {
   ...COMPOSER_CARD_EXPORT_PROFILE_V1,
@@ -200,13 +207,19 @@ export async function renderSequenceToImage(
       startPositionLayout: opts.startPositionLayout ?? "row",
       showLoopGlyph:
         opts.showLoopGlyph !== false && !!opts.loopComponents?.length,
+      showQRCode: !!opts.qrUrl && opts.showQRCode !== false,
     },
     createCanvas,
     getContext: (canvas) =>
       canvas.getContext("2d") as unknown as globalThis.CanvasRenderingContext2D,
     toPng: (canvas) => canvas.toBuffer("image/png"),
     getStepNumber: (step) => step.stepNumber,
-    applyReversals: detectReversals,
+    getStepDuration: (step) => step.duration,
+    applyReversals: (source) =>
+      applyCanonicalReversals(source, !!opts.loopComponents?.length),
+    renderQRCode: opts.qrUrl
+      ? (ctx, cell) => renderCardQrCode(ctx, cell, opts.qrUrl!, opts.darkMode)
+      : undefined,
     calculateDifficultyLevel: (renderedSteps) =>
       calculateDifficultyLevel(renderedSteps, opts.turnAllocation),
     renderPictograph: async (ctx, step, cell) => {
@@ -311,7 +324,9 @@ export async function renderSequenceToImage(
         compressedSegments.some((segment) => segment.repeat > 1)
           ? compressedSegments
           : undefined,
-        layout.indicatorSizeScale
+        layout.indicatorSizeScale,
+        opts.accentColor,
+        opts.accentTintOpacity
       );
     },
     renderFooter: opts.showFooter
@@ -327,7 +342,9 @@ export async function renderSequenceToImage(
             layout.width,
             layout.height,
             layout.footerHeight,
-            opts.darkMode
+            opts.darkMode,
+            opts.accentColor,
+            opts.accentTintOpacity
           );
         }
       : undefined,

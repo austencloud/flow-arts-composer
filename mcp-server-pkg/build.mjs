@@ -38,6 +38,8 @@ execSync(
     "--external:canvas",
     "--external:@napi-rs/canvas",
     "--external:@napi-rs/canvas/*",
+    "--external:qr-code-styling",
+    "--external:jsdom",
     "--alias:@tka/domain=../packages/domain/src/index.ts",
     "--alias:@tka/render-composition=../packages/render-composition/src/index.ts",
   ].join(" "),

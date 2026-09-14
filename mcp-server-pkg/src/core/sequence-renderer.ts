@@ -9,7 +9,9 @@ import {
   type PictographInput,
   type RenderVisibilityOptions,
 } from "./standalone-renderer.js";
-import { detectReversals, type SequenceStep } from "./sequence-builder.js";
+import type { SequenceStep } from "./sequence-builder.js";
+import { applyCanonicalReversals } from "./card-reversals.js";
+import { renderCardQrCode } from "./qr-code-renderer.js";
 import {
   COMPOSER_CARD_EXPORT_PROFILE_V1,
   DARK_HAND_COLORS,
@@ -95,6 +97,14 @@ export interface SequenceRenderOptions {
     frameColor?: "black" | "white";
     cover?: "bare" | "covered";
   } | null;
+  /** Published player link; when set the card carries the Composer's QR slot. */
+  qrUrl?: string;
+  /** Opt out of the QR cell even when `qrUrl` is known. */
+  showQRCode?: boolean;
+  /** TnD accent tint (header, footer, and print side bands). */
+  accentColor?: string;
+  /** 0–1 alpha for the accent tint; omit for the Composer default. */
+  accentTintOpacity?: number;
 }
 const DEFAULT_OPTIONS = {
   ...COMPOSER_CARD_EXPORT_PROFILE_V1,
@@ -154,13 +164,18 @@ export async function renderSequenceToImage(
       startPositionLayout: opts.startPositionLayout ?? "row",
       showLoopGlyph:
         opts.showLoopGlyph !== false && !!opts.loopComponents?.length,
+      showQRCode: !!opts.qrUrl && opts.showQRCode !== false,
     },
     createCanvas,
     getContext: (canvas) =>
       canvas.getContext("2d") as unknown as CanvasRenderingContext2D,
     toPng: (canvas) => canvas.toBuffer("image/png"),
     getStepNumber: (step) => step.stepNumber,
-    applyReversals: (source) => detectReversals(source, isLoop),
+    getStepDuration: (step) => step.duration,
+    applyReversals: (source) => applyCanonicalReversals(source, isLoop),
+    renderQRCode: opts.qrUrl
+      ? (ctx, cell) => renderCardQrCode(ctx, cell, opts.qrUrl!, opts.darkMode)
+      : undefined,
     calculateDifficultyLevel: (renderedSteps) =>
       calculateDifficultyLevel(renderedSteps, opts.turnAllocation),
     renderPictograph: async (ctx, step, cell) => {
@@ -310,6 +325,8 @@ export async function renderSequenceToImage(
           : undefined,
         glyphImages,
         glyphImagesAreThemeColored: !!glyphImages?.size,
+        accentColor: opts.accentColor,
+        accentTintOpacity: opts.accentTintOpacity,
       });
     },
     renderFooter: opts.showFooter
@@ -320,6 +337,8 @@ export async function renderSequenceToImage(
             footerHeight: layout.footerHeight,
             notes: opts.notes,
             darkMode: opts.darkMode,
+            accentColor: opts.accentColor,
+            accentTintOpacity: opts.accentTintOpacity,
           })
       : undefined,
   });
