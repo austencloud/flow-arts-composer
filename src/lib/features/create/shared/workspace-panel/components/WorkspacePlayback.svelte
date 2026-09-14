@@ -15,6 +15,7 @@
     onready,
     onerror,
     onStepChange,
+    onPlaybackChange,
   }: {
     sequence: SequenceData;
     active: boolean;
@@ -25,9 +26,12 @@
     /** Cancels a pending Play when the animation engine cannot load its data. */
     onerror: (run: number) => void;
     onStepChange?: (step: number) => void;
+    onPlaybackChange?: (run: number, step: number, playing: boolean) => void;
   } = $props();
 
   let currentStep = $state(0);
+  let playing = $state(false);
+  let startedRun = $state<number | null>(null);
   let seek: ((step: number) => void) | null = null;
   // CanvasSurface reports its first painted frame once for this retained
   // component. Subsequent Play runs only need their new sequence data loaded.
@@ -52,6 +56,16 @@
   function confirmReady() {
     if (canvasInitialized && loadedRun === run) onready(run);
   }
+
+  $effect(() => {
+    if (!active || startedRun === run) return;
+    startedRun = run;
+    playing = true;
+  });
+
+  $effect(() => {
+    onPlaybackChange?.(run, currentStep, playing);
+  });
 </script>
 
 <div class="workspace-playback" data-testid="workspace-playback">
@@ -64,10 +78,13 @@
           chrome="minimal"
           fill
           scrubbable
+          showScrubberPlaybackControl
+          hoverHint="none"
           autoPlay={active}
           autoPlayDelay={0}
           playbackAllowed={active}
           resumeWhenPlaybackAllowed
+          externalPlaying={active ? playing : false}
           {effectsConfigState}
           onReady={(loadedIdentity) => {
             if (loadedIdentity !== loadIdentity) return;
@@ -78,7 +95,12 @@
             canvasInitialized = true;
             confirmReady();
           }}
-          onLoadError={() => onerror(run)}
+          onLoadError={(_message, failedIdentity) => {
+            if (failedIdentity === loadIdentity) onerror(run);
+          }}
+          onExternalPlayingChange={(nextPlaying) => {
+            playing = nextPlaying;
+          }}
           onStepChange={(step) => {
             currentStep = step;
             onStepChange?.(step);
@@ -110,7 +132,7 @@
   }
   .playback-layout {
     --notation-height: 0px;
-    --sequence-seek-target-size: 32px;
+    --sequence-seek-target-size: var(--min-touch-target, 44px);
     position: absolute;
     inset: 4px 12px 8px;
     container-type: size;

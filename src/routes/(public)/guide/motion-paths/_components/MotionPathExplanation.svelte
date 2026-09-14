@@ -17,8 +17,12 @@
   } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { DARK_MOTION_BLUE_STROKE } from "$lib/shared/mandala/domain/mandala-constants";
+  import GridSvg from "$lib/shared/pictograph/grid/components/GridSvg.svelte";
+  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import {
+    INTRO_CENTER,
     INTRO_PATHS,
+    INTRO_RADIUS,
     introPathD,
     introPointAt,
     type IntroPath,
@@ -34,14 +38,26 @@
   const STAGES: readonly StageCopy[] = [
     { title: "Your hand", caption: "This is your hand." },
     {
-      title: "Two points",
-      caption: "It moves from here to here.",
+      title: "Your grid",
+      caption: "The grid has a center.",
+    },
+    { title: "A shift", caption: "Move to a neighboring point.", path: "arc" },
+    {
+      title: "Arc",
+      caption: "Follow the circle around the center.",
+      path: "arc",
+    },
+    {
+      title: "Linear",
+      caption: "Take a straight path between the points.",
       path: "linear",
     },
-    { title: "Arc", caption: "Go around.", path: "arc" },
-    { title: "Linear", caption: "Go straight.", path: "linear" },
-    { title: "Concave", caption: "Bend inward.", path: "concave" },
-    { title: "Three paths", caption: "Same start. Same finish." },
+    {
+      title: "Concave",
+      caption: "Curve inward toward the center.",
+      path: "concave",
+    },
+    { title: "Three paths", caption: "Same shift. Different paths." },
   ];
   const MORPH_DURATION = DURATION.dramatic * 2;
   const TRAVERSE_DURATION = DURATION.dramatic * 4;
@@ -52,8 +68,8 @@
   });
 
   let stage = $state(0);
-  let routePoints = $state<readonly IntroPoint[]>(INTRO_PATHS.linear);
-  let hand = $state<IntroPoint>({ x: 0, y: 0 });
+  let routePoints = $state<readonly IntroPoint[]>(INTRO_PATHS.arc);
+  let hand = $state<IntroPoint>(INTRO_CENTER);
   let traceProgress = $state(0);
   let pulseActive = $state(false);
   let isReducedMotion = $state(reducedMotion());
@@ -67,8 +83,8 @@
     getSettings().primaryPropColors?.left ?? DARK_MOTION_BLUE_STROKE
   );
   const routeD = $derived(introPathD(routePoints));
+  const gridVisible = $derived(stage >= 1);
   const routeVisible = $derived(stage >= 2);
-  const endpointsVisible = $derived(stage > 0);
   const traceD = $derived(
     stage >= 2 && traceProgress > 0
       ? introPathD(
@@ -116,21 +132,58 @@
   function settle(): void {
     cancelFrame();
     pulseActive = false;
-    const path = stage === 0 ? "linear" : (current.path ?? "concave");
+    const path = current.path ?? (isFinal ? "concave" : "arc");
     routePoints = INTRO_PATHS[path];
-    traceProgress = stage === 0 ? 0 : 1;
-    hand = stage === 0 ? { x: 0, y: 0 } : introPointAt(routePoints, 1);
+    traceProgress = stage >= 2 ? 1 : 0;
+    hand =
+      stage === 0
+        ? INTRO_CENTER
+        : stage === 1
+          ? introPointAt(routePoints, 0)
+          : introPointAt(routePoints, 1);
   }
 
-  function runStage(nextPath: IntroPath): void {
+  function moveHandToStart(): void {
+    cancelFrame();
+    const epoch = ++stageEpoch;
+    const origin = hand;
+    const destination = introPointAt(INTRO_PATHS.arc, 0);
+    const start = performance.now();
+
+    const animate = (now: number): void => {
+      if (epoch !== stageEpoch || !gate.active) return;
+      const progress = Math.min(
+        1,
+        (now - start) / motionDuration(ARRIVAL_DURATION)
+      );
+      hand = interpolatePoint(origin, destination, cubicInOut(progress));
+      if (progress < 1) {
+        frame = requestAnimationFrame(animate);
+      } else {
+        frame = null;
+      }
+    };
+
+    frame = requestAnimationFrame(animate);
+  }
+
+  function runStage(nextPath: IntroPath, retrace = false): void {
     cancelFrame();
     const epoch = ++stageEpoch;
     const from = routePoints;
     const destination = INTRO_PATHS[nextPath];
     const handOrigin = hand;
-    const handStart = introPointAt(destination, 0);
+    const nearest = from.reduce(
+      (best, point, index) =>
+        Math.hypot(point.x - hand.x, point.y - hand.y) <
+        Math.hypot(from[best]!.x - hand.x, from[best]!.y - hand.y)
+          ? index
+          : best,
+      0
+    );
+    const startProgress = nearest / (from.length - 1);
     const start = performance.now();
-    traceProgress = 0;
+    traceProgress = retrace ? 1 : 0;
 
     const animate = (now: number): void => {
       if (epoch !== stageEpoch || !gate.active) return;
@@ -140,7 +193,11 @@
       );
       const morphProgress = cubicInOut(rawMorphProgress);
       routePoints = interpolateRoute(from, destination, morphProgress);
-      hand = interpolatePoint(handOrigin, handStart, morphProgress);
+      hand = interpolatePoint(
+        handOrigin,
+        introPointAt(destination, startProgress),
+        morphProgress
+      );
 
       if (rawMorphProgress < 1) {
         frame = requestAnimationFrame(animate);
@@ -150,28 +207,57 @@
       const traversalStart = now;
       const traverse = (traverseNow: number): void => {
         if (epoch !== stageEpoch || !gate.active) return;
-        const progress = Math.min(
+        const rawProgress = Math.min(
           1,
           (traverseNow - traversalStart) / motionDuration(TRAVERSE_DURATION)
         );
+        const progress = retrace
+          ? startProgress * (1 - rawProgress)
+          : startProgress + (1 - startProgress) * rawProgress;
         traceProgress = progress;
         hand = introPointAt(destination, progress);
-        if (progress < 1) {
+        if (rawProgress < 1) {
           frame = requestAnimationFrame(traverse);
           return;
         }
-        routePoints = destination;
-        pulseActive = true;
-        pulseTimeout = window.setTimeout(() => {
-          if (epoch === stageEpoch) pulseActive = false;
-          pulseTimeout = null;
-        }, ARRIVAL_DURATION);
-        frame = null;
+        if (retrace) {
+          const redrawStart = traverseNow;
+          const redraw = (redrawNow: number): void => {
+            if (epoch !== stageEpoch || !gate.active) return;
+            const redrawProgress = Math.min(
+              1,
+              (redrawNow - redrawStart) / motionDuration(TRAVERSE_DURATION)
+            );
+            traceProgress = redrawProgress;
+            hand = introPointAt(destination, redrawProgress);
+            if (redrawProgress < 1) {
+              frame = requestAnimationFrame(redraw);
+              return;
+            }
+            completeRoute(epoch, destination);
+          };
+          frame = requestAnimationFrame(redraw);
+          return;
+        }
+        completeRoute(epoch, destination);
       };
       frame = requestAnimationFrame(traverse);
     };
 
     frame = requestAnimationFrame(animate);
+  }
+
+  function completeRoute(
+    epoch: number,
+    destination: readonly IntroPoint[]
+  ): void {
+    routePoints = destination;
+    pulseActive = true;
+    pulseTimeout = window.setTimeout(() => {
+      if (epoch === stageEpoch) pulseActive = false;
+      pulseTimeout = null;
+    }, ARRIVAL_DURATION);
+    frame = null;
   }
 
   function advance(): void {
@@ -183,12 +269,21 @@
     }
 
     stage += 1;
+    if (stage === 1) {
+      if (isReducedMotion || !gate.active) settle();
+      else moveHandToStart();
+      return;
+    }
+    if (stage === 3) {
+      settle();
+      return;
+    }
     const nextPath = STAGES[stage]?.path;
     if (!nextPath || isReducedMotion || !gate.active) {
       settle();
       return;
     }
-    runStage(nextPath);
+    runStage(nextPath, stage >= 4);
   }
 
   onMount(() => {
@@ -238,11 +333,47 @@
 
   <div class="route-stage">
     <svg
-      viewBox="-220 -130 440 260"
+      viewBox="-165 -165 330 330"
       role="img"
       aria-label={current.caption}
       preserveAspectRatio="xMidYMid meet"
     >
+      {#if gridVisible}
+        <g
+          class="grid-art"
+          in:fade={{ duration: motionDuration(DURATION.normal) }}
+        >
+          <g transform={`scale(${INTRO_RADIUS / 300}) translate(-475 -475)`}>
+            <GridSvg
+              gridMode={GridMode.DIAMOND}
+              darkMode={true}
+              handPointVisibility="none"
+              showNonRadialPoints={false}
+            />
+          </g>
+          <circle
+            class="center-circle"
+            cx={INTRO_CENTER.x}
+            cy={INTRO_CENTER.y}
+            r={INTRO_RADIUS}
+          />
+          <text class="center-label" x="-12" y="-14" text-anchor="end"
+            >Center</text
+          >
+        </g>
+      {/if}
+
+      {#if isFinal}
+        {#each ["arc", "linear"] as path}
+          <path
+            class="comparison-route"
+            class:linear-route={path === "linear"}
+            d={introPathD(INTRO_PATHS[path as IntroPath])}
+            in:fade={{ duration: motionDuration(DURATION.normal) }}
+          />
+        {/each}
+      {/if}
+
       {#if routeVisible}
         <path class="route-shadow" d={routeD} />
         <path class="route" d={routeD} />
@@ -250,26 +381,25 @@
       {/if}
 
       {#if isFinal}
-        {#each ["arc", "linear"] as path}
-          <path
-            class="comparison-route"
-            d={introPathD(INTRO_PATHS[path as IntroPath])}
-            in:fade={{ duration: motionDuration(DURATION.normal) }}
-          />
-        {/each}
-        <g in:fade={{ duration: motionDuration(DURATION.normal) }}>
-          <text class="route-label arc-label" x="0" y="-84">Arc</text>
-          <text class="route-label linear-label" x="0" y="-14">Linear</text>
-          <text class="route-label concave-label" x="0" y="96">Concave</text>
+        <g
+          class="route-legend"
+          in:fade={{ duration: motionDuration(DURATION.normal) }}
+        >
+          <g transform="translate(-95 143)">
+            <path class="legend-line arc-line" d="M0 0h16" />
+            <text class="route-label" x="21" y="4">Arc</text>
+          </g>
+          <g transform="translate(-18 143)">
+            <path class="legend-line linear-line" d="M0 0h16" />
+            <text class="route-label" x="21" y="4">Linear</text>
+          </g>
+          <g transform="translate(66 143)">
+            <path class="legend-line concave-line" d="M0 0h16" />
+            <text class="route-label" x="21" y="4">Concave</text>
+          </g>
         </g>
       {/if}
 
-      {#if endpointsVisible}
-        <g in:fade={{ duration: motionDuration(DURATION.normal) }}>
-          <circle class="endpoint" cx="-140" cy="0" r="6" />
-          <circle class="endpoint" cx="140" cy="0" r="6" />
-        </g>
-      {/if}
       <foreignObject x={hand.x - 32} y={hand.y - 32} width="64" height="64">
         <div
           class:pulsing={pulseActive}
@@ -388,10 +518,20 @@
     stroke-width: 2;
   }
 
-  .endpoint {
-    fill: var(--theme-panel-bg);
-    stroke: color-mix(in srgb, var(--theme-text) 62%, transparent);
-    stroke-width: 3;
+  .grid-art {
+    pointer-events: none;
+  }
+
+  .center-circle {
+    fill: none;
+    stroke: color-mix(in srgb, var(--theme-text-dim) 44%, transparent);
+    stroke-width: 1.5;
+  }
+
+  .center-label {
+    fill: var(--theme-text-dim);
+    font-size: 14px;
+    font-weight: 650;
   }
 
   .hand-art {
@@ -411,13 +551,31 @@
 
   .route-label {
     fill: var(--theme-text-dim);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 650;
-    text-anchor: middle;
   }
 
-  .arc-label {
-    fill: color-mix(in srgb, var(--hand-color) 75%, var(--theme-text));
+  .legend-line {
+    fill: none;
+    stroke-linecap: round;
+    stroke-width: 3;
+  }
+
+  .arc-line {
+    stroke: color-mix(in srgb, var(--theme-text-dim) 60%, transparent);
+  }
+
+  .linear-line {
+    stroke: color-mix(in srgb, var(--theme-text-dim) 60%, transparent);
+  }
+
+  .linear-route,
+  .linear-line {
+    stroke-dasharray: 5 4;
+  }
+
+  .concave-line {
+    stroke: var(--hand-color);
   }
 
   @keyframes arrival-pulse {

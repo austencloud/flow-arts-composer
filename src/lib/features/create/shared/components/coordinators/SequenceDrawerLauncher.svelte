@@ -51,14 +51,18 @@
 
   // --- 2. View-sequence redirect (heavy navigator loaded on demand) ----------
   $effect(() => {
-    if (!panelState.isSequenceViewerOpen || !currentSequence) return;
+    if (!panelState.isSequenceViewerOpen) return;
+
+    const handoff = panelState.workspacePlaybackHandoff;
+    const sequence = handoff?.sequence ?? currentSequence;
+    if (!sequence) return;
 
     // Clear the flag immediately so this fires once per request.
     panelState.closeSequenceViewer();
 
     // Stamp ownership so the viewer shows Save/Edit/Delete for create-built
     // sequences that haven't been persisted to Firestore yet.
-    const seq = currentSequence;
+    const seq = sequence;
     const sequenceWithOwner = seq.ownerId
       ? seq
       : {
@@ -77,7 +81,9 @@
         source: "create_workspace",
         returnPath,
         returnLabel,
-        playOnOpen: true,
+        initialStep: handoff?.initialStep,
+        initialViewMode: "animation",
+        playOnOpen: handoff?.playing ?? true,
       });
     })();
   });
