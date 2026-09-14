@@ -17,12 +17,13 @@
   } from "../domain/flower-signature";
   import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
   import {
-    CLUB_ARTWORK_PAINTER,
     cellArtworkSrc,
     headerArtworkSrc,
+    shapeMatrixArtworkPainterForColors,
     SHAPE_MATRIX_ACTIVE_STAGE_NAME,
     type ShapeMatrixArtworkPainter,
   } from "../services/shape-matrix-artwork";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import ShapeMatrixMandalaArt from "./ShapeMatrixMandalaArt.svelte";
   import { runShapeMatrixGridReveal } from "../app/services/shape-matrix-reveal";
 
@@ -90,7 +91,7 @@
     onsolo,
     soloHand = null,
     selectedPair,
-    painter = CLUB_ARTWORK_PAINTER,
+    painter,
     overlayFor,
     dimFor,
     claimSelected = false,
@@ -111,6 +112,15 @@
     corner,
     revealToken = 0,
   }: Props = $props();
+
+  // Ordinary Matrix grids are part of the user's workspace, so their stills
+  // follow the same saved hand inks as the rest of the app. Hosts that supply
+  // a painter remain deliberate, fixed artwork (for example POI curation).
+  const defaultPainter = $derived(
+    shapeMatrixArtworkPainterForColors(getSettings().primaryPropColors)
+  );
+  const effectivePainter = $derived(painter ?? defaultPainter);
+  const painterArtKey = $derived(effectivePainter.cacheKey ?? "");
 
   /* The reveal answers a token CHANGE after mount. The token the grid mounts
      with (a restored roll, or zero) is a state to show, not a roll to replay. */
@@ -139,13 +149,19 @@
     paintHeader
       ? paintHeader(f, hand, sizePx)
       : data
-        ? headerArtworkSrc(data, f as Flower, hand, sizePx, painter)
+        ? headerArtworkSrc(data, f as Flower, hand, sizePx, effectivePainter)
         : "";
   const cellPaint = (b: TAxis, r: TAxis) => (sizePx: number) =>
     paintCell
       ? paintCell(b, r, sizePx)
       : data
-        ? cellArtworkSrc(data, b as Flower, r as Flower, sizePx, painter)
+        ? cellArtworkSrc(
+            data,
+            b as Flower,
+            r as Flower,
+            sizePx,
+            effectivePainter
+          )
         : "";
 
   let observed = $state(new Set<string>());
@@ -228,14 +244,14 @@
                 >
                   <ShapeMatrixMandalaArt
                     paint={headerPaint(rf, "right")}
-                    artKey={`right:${keyOf(rf)}`}
+                    artKey={`right:${keyOf(rf)}:${painterArtKey}`}
                     alt={`right ${labelOf(rf)}`}
                   />
                 </button>
               {:else}
                 <ShapeMatrixMandalaArt
                   paint={headerPaint(rf, "right")}
-                  artKey={`right:${keyOf(rf)}`}
+                  artKey={`right:${keyOf(rf)}:${painterArtKey}`}
                   alt={`right ${labelOf(rf)}`}
                 />
               {/if}
@@ -264,14 +280,14 @@
                 >
                   <ShapeMatrixMandalaArt
                     paint={headerPaint(bf, "left")}
-                    artKey={`left:${keyOf(bf)}`}
+                    artKey={`left:${keyOf(bf)}:${painterArtKey}`}
                     alt={`left ${labelOf(bf)}`}
                   />
                 </button>
               {:else}
                 <ShapeMatrixMandalaArt
                   paint={headerPaint(bf, "left")}
-                  artKey={`left:${keyOf(bf)}`}
+                  artKey={`left:${keyOf(bf)}:${painterArtKey}`}
                   alt={`left ${labelOf(bf)}`}
                 />
               {/if}
@@ -305,7 +321,7 @@
                     <span class="artwork">
                       <ShapeMatrixMandalaArt
                         paint={cellPaint(bf, rf)}
-                        artKey={key}
+                        artKey={`${key}:${painterArtKey}`}
                         claim={claimSelected && selectedKey === key}
                       />
                     </span>
@@ -464,7 +480,11 @@
       var(--theme-accent, #f59e0b) 45%,
       transparent
     );
-    background: color-mix(in srgb, var(--theme-accent, #f59e0b) 8%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f59e0b) 8%,
+      transparent
+    );
   }
 
   .head-button:focus-visible {
