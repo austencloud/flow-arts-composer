@@ -65,6 +65,8 @@
     sizes?: number[];
     /** Called when sizes change */
     onSizesChange?: (sizes: number[]) => void;
+    /** Double-click on the handle after panel `index`; hosts use it to reset. */
+    onHandleDoubleClick?: (index: number) => void;
     /** Gap size for handles */
     gap?: number;
     /**
@@ -79,6 +81,7 @@
     panels,
     sizes = $bindable([]),
     onSizesChange,
+    onHandleDoubleClick,
     gap = 6,
     flattened = false,
   }: Props = $props();
@@ -496,6 +499,9 @@
           onDrag={(delta) => handleDrag(i, delta)}
           onDragEnd={handleDragEnd}
           onKeydown={(event) => handleKeydown(i, event)}
+          onDoubleClick={onHandleDoubleClick
+            ? () => onHandleDoubleClick(i)
+            : undefined}
           ariaLabel={panel.resizeLabel ??
             `Resize ${panel.id ?? `panel ${i + 1}`} and ${panels[i + 1]?.id ?? `panel ${i + 2}`}`}
           ariaValueNow={handleValues[i] ?? measureHandleValue(i)}

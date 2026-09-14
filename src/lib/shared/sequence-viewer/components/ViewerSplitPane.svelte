@@ -25,6 +25,7 @@
   import ViewerPracticeLane from "./ViewerPracticeLane.svelte";
   import PracticeCountInOverlay from "./PracticeCountInOverlay.svelte";
   import {
+    MIN_VIEWER_PANE_REVEAL_SIZE,
     readViewerCardPaneBox,
     rememberViewerCardPaneBox,
     resolveViewerPanelDirection,
@@ -37,6 +38,7 @@
   import { motionDuration } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import type { ViewerSplitPaneProps } from "./viewer-split-pane-types";
+  import { VIEWER_INSPECTOR_HANDLE_SIZE as VIEWER_SPLIT_HANDLE_SIZE } from "../services/viewer-shell-model";
   import { onDestroy } from "svelte";
   import { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
   import { TUNNEL_REVEAL_DURATION } from "../tunnel/tunnel-layer-reveal";
@@ -50,6 +52,13 @@
   } from "../services/viewer-url-slices/tn-slice";
   import { createViewerTunnelStageState } from "../state/viewer-tunnel-stage-state.svelte";
   import { setViewerTunnelStageContext } from "../context/viewer-tunnel-stage-context";
+  import {
+    VIEWER_SPLIT_DEFAULT_SHARE,
+    VIEWER_SPLIT_MIN_SHARE,
+    loadViewerSplitShares,
+    saveViewerSplitShares,
+    viewerSplitShareFromSizes,
+  } from "./viewer-split-prefs";
   import "./viewer-split-pane.css";
 
   let {
@@ -224,6 +233,13 @@
       !layout.isFullscreen &&
       splitHeight > splitWidth
   );
+  // The user's Side by Side split, one share per axis, remembered per device.
+  // The divider only exists on desktop while both panes are readable; focus
+  // and Practice keep their own allocations.
+  let userSplitShares = $state(loadViewerSplitShares());
+  const splitResizable = $derived(
+    !layout.isMobile && !practiceActive && viewerFocusedPane === null
+  );
   const responsivePanelLayout = $derived(
     resolveViewerPanelLayout({
       isFullscreen: layout.isFullscreen,
@@ -234,7 +250,35 @@
       focusedPane: viewerFocusedPane,
       practiceActive,
       practiceCanvasFraction,
+      userSplitShares: splitResizable ? userSplitShares : undefined,
     })
+  );
+  function handleSplitSizesChange(sizes: number[]): void {
+    const direction = panelLayout.direction;
+    const next = {
+      ...userSplitShares,
+      [direction]: viewerSplitShareFromSizes(sizes),
+    };
+    userSplitShares = next;
+    saveViewerSplitShares(next);
+  }
+  function resetSplitShare(): void {
+    const next = {
+      ...userSplitShares,
+      [panelLayout.direction]: VIEWER_SPLIT_DEFAULT_SHARE,
+    };
+    userSplitShares = next;
+    saveViewerSplitShares(next);
+  }
+  // Each pane keeps at least a quarter of the axis and the readable minimum.
+  const splitAxisLength = $derived(
+    panelLayout.direction === "horizontal" ? splitWidth : splitHeight
+  );
+  const splitPaneMinSize = $derived(
+    Math.max(
+      MIN_VIEWER_PANE_REVEAL_SIZE,
+      splitAxisLength * VIEWER_SPLIT_MIN_SHARE
+    )
   );
   let retainedSplitDirection = $state<ViewerPanelDirection | null>(null);
   let focusReleasePending = $state(false);
@@ -680,13 +724,22 @@
   <PanelGroup
     direction={panelLayout.direction}
     sizes={panelLayout.sizes}
-    gap={0}
+    gap={splitResizable ? VIEWER_SPLIT_HANDLE_SIZE : 0}
+    onSizesChange={handleSplitSizesChange}
+    onHandleDoubleClick={resetSplitShare}
     panels={[
-      { id: "animation", content: animationPanel, resizable: false },
+      {
+        id: "animation",
+        content: animationPanel,
+        resizable: splitResizable,
+        minSize: splitPaneMinSize,
+        resizeLabel: "Resize animation and card",
+      },
       {
         id: "preview",
         content: previewPanel,
         resizable: false,
+        minSize: splitPaneMinSize,
         preferredSize: panelLayout.previewPreferredSize,
       },
     ]}
