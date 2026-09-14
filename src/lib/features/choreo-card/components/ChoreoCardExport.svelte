@@ -108,6 +108,7 @@
           showTnD: false,
           showElemental: false,
           showPositions: false,
+          showMandala: COMPOSER_CARD_EXPORT_PROFILE_V1.showMandala,
         },
       };
 

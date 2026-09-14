@@ -7,8 +7,10 @@ import {
 import { detectReversals, type SequenceStep } from "./sequence-builder.js";
 import {
   COMPOSER_CARD_EXPORT_PROFILE_V1,
+  calculateCardMandalaPaths,
   composeSequenceCard,
   renderFooter,
+  renderCardMandala,
   renderHeader,
   type LOOPComponentId,
   type LetterStyle,
@@ -63,6 +65,7 @@ export interface SequenceRenderOptions {
   seedWord?: string;
   startPositionLayout?: "row" | "column";
   showFooter?: boolean;
+  showMandala?: boolean;
 }
 const DEFAULT_OPTIONS = {
   ...COMPOSER_CARD_EXPORT_PROFILE_V1,
@@ -155,6 +158,21 @@ export async function renderSequenceToImage(
         cell.cellSize
       );
     },
+    renderMandala: opts.showMandala
+      ? (ctx, renderedSteps, placements) => {
+          const paths = calculateCardMandalaPaths(
+            renderedSteps.map((step) => ({
+              stepNumber: step.stepNumber,
+              leftMotion: step.leftMotion,
+              rightMotion: step.rightMotion,
+            })),
+            opts.turnAllocation
+          );
+          for (const placement of placements) {
+            renderCardMandala(ctx, paths, placement, opts.darkMode);
+          }
+        }
+      : undefined,
     buildHeader: (renderedSteps, requestedWord): PackagedHeader => {
       const headerWord = opts.seedWord ?? requestedWord;
       const seedLetters = opts.seedWord
