@@ -99,10 +99,12 @@ export async function renderWordHeader(
   const glyphImages = await loadTkaGlyphImages(word, darkMode);
 
   // Convert MCP LetterStyle[] to shared package LetterStyle[]
-  const sharedLetterStyles: SharedLetterStyle[] | undefined = letterStyles?.map((ls) => ({
-    letter: ls.letter,
-    dimmed: ls.isBridge || !!ls.isDerived,
-  }));
+  const sharedLetterStyles: SharedLetterStyle[] | undefined = letterStyles?.map(
+    (ls) => ({
+      letter: ls.letter,
+      dimmed: ls.isBridge || !!ls.isDerived,
+    })
+  );
 
   // Convert LOOPComponent[] to Set<LOOPComponentId>
   const loopSet: Set<LOOPComponentId> | undefined =
@@ -126,7 +128,10 @@ export async function renderWordHeader(
   // Cast: node-canvas CanvasRenderingContext2D is structurally compatible
   // with the DOM type used by the shared package, but TypeScript sees them
   // as different nominal types.
-  sharedRenderHeader(ctx as unknown as globalThis.CanvasRenderingContext2D, options);
+  sharedRenderHeader(
+    ctx as unknown as globalThis.CanvasRenderingContext2D,
+    options
+  );
 }
 
 /**
@@ -146,27 +151,25 @@ export function renderUserInfo(
   ensureFontsRegistered();
 
   // Resolve the notes text: explicit notes > contextual caption > default
-  const contextualCaption = userInfo.word ? getContextualCaption(userInfo.word) : null;
+  const contextualCaption = userInfo.word
+    ? getContextualCaption(userInfo.word)
+    : null;
   const resolvedNotes = userInfo.notes?.trim()
     ? userInfo.notes
-    : contextualCaption ?? undefined;
-
-  // Default username for MCP-generated sequences
-  const userName = userInfo.userName?.trim()
-    ? userInfo.userName
-    : "Austen Cloud";
+    : (contextualCaption ?? undefined);
 
   const options: FooterOptions = {
     canvasWidth,
     canvasHeight,
     footerHeight,
-    userName,
     notes: resolvedNotes,
-    birthday: userInfo.birthday,
     darkMode,
   };
 
-  sharedRenderFooter(ctx as unknown as globalThis.CanvasRenderingContext2D, options);
+  sharedRenderFooter(
+    ctx as unknown as globalThis.CanvasRenderingContext2D,
+    options
+  );
 }
 
 /**
@@ -206,95 +209,95 @@ function getContextualCaption(word: string): string | null {
   // Each was selected from 4 options representing different comedy lenses
   const curatedCaptions: Record<string, string> = {
     // === ROUND 1: Initial quiz ===
-    "BIGDICK": "Narrator: It wasn't",
-    "BUTTHOLE": "A hole lot of talent",
-    "LOSER": "At least you're honest",
-    "PENIS": "Anatomy 101",
-    "DADDY": "Call me that again",
-    "SATAN": "Hell yeah",
-    "MOIST": "Your discomfort is valid",
-    "KAREN": "I need to speak to the choreographer",
-    "THICC": "The C's are load-bearing",
-    "VEGAN": "We get it",
-    "CUMSHOT": "Photography term, obviously",
-    "POOP": "Timeless",
-    "BOOBS": "Calculator humor never dies",
-    "SEXY": "Debatable",
-    "NICE": "Nice",
-    "FART": "The body keeps the score",
-    "BALLS": "Plural for emphasis",
-    "SIMP": "The DMs are open",
-    "YEET": "Maximum velocity achieved",
-    "LOVE": "Tennis scoring is weird",
-    "WEED": "For gardening purposes",
-    "HELP": "Blink twice if you need it",
-    "CHAD": "Peak prop confidence",
-    "NERD": "Correct",
-    "MILF": "Man I Love Flow-arts",
-    "SLAY": "The props fear you",
-    "DEAD": "Inside or outside?",
+    BIGDICK: "Narrator: It wasn't",
+    BUTTHOLE: "A hole lot of talent",
+    LOSER: "At least you're honest",
+    PENIS: "Anatomy 101",
+    DADDY: "Call me that again",
+    SATAN: "Hell yeah",
+    MOIST: "Your discomfort is valid",
+    KAREN: "I need to speak to the choreographer",
+    THICC: "The C's are load-bearing",
+    VEGAN: "We get it",
+    CUMSHOT: "Photography term, obviously",
+    POOP: "Timeless",
+    BOOBS: "Calculator humor never dies",
+    SEXY: "Debatable",
+    NICE: "Nice",
+    FART: "The body keeps the score",
+    BALLS: "Plural for emphasis",
+    SIMP: "The DMs are open",
+    YEET: "Maximum velocity achieved",
+    LOVE: "Tennis scoring is weird",
+    WEED: "For gardening purposes",
+    HELP: "Blink twice if you need it",
+    CHAD: "Peak prop confidence",
+    NERD: "Correct",
+    MILF: "Man I Love Flow-arts",
+    SLAY: "The props fear you",
+    DEAD: "Inside or outside?",
 
     // === ROUND 2: Profanity/crude (user-approved) ===
-    "SHIT": "Poetry",
-    "FUCK": "Expressive",
-    "ASS": "Cheeky",
-    "DAMN": "Strong feelings",
-    "HELL": "Hot take",
-    "BUTT": "See: BUTTHOLE",
-    "SEX": "The checkbox kind",
-    "CRAP": "Quality content",
-    "DUMB": "The compliment or the insult?",
-    "STUPID": "Big brain energy",
-    "IDIOT": "The Greek root means 'private citizen'",
-    "HATE": "The sequel to LOVE",
-    "KILL": "Metaphorically",
-    "DIE": "The singular of dice",
-    "BOOB": "Just the one",
-    "PEE": "Going with the flow",
-    "SMALLDICK": "Narrator: It wasn't",
-    "ASSWIPE": "Mom would be proud",
+    SHIT: "Poetry",
+    FUCK: "Expressive",
+    ASS: "Cheeky",
+    DAMN: "Strong feelings",
+    HELL: "Hot take",
+    BUTT: "See: BUTTHOLE",
+    SEX: "The checkbox kind",
+    CRAP: "Quality content",
+    DUMB: "The compliment or the insult?",
+    STUPID: "Big brain energy",
+    IDIOT: "The Greek root means 'private citizen'",
+    HATE: "The sequel to LOVE",
+    KILL: "Metaphorically",
+    DIE: "The singular of dice",
+    BOOB: "Just the one",
+    PEE: "Going with the flow",
+    SMALLDICK: "Narrator: It wasn't",
+    ASSWIPE: "Mom would be proud",
 
     // === ROUND 3: Flow arts domain (user-approved) ===
-    "FLOW": "The whole point",
-    "SPIN": "Revolutionary",
-    "FIRE": "Safety third",
-    "POI": "The Maori would like a word",
-    "STAFF": "HR or prop?",
-    "HOOP": "Humans Orbiting Objects Persistently",
-    "FAN": "The prop or the admirer?",
-    "CLUB": "Carefully Leveraged Utility Baton",
-    "JUGGLE": "Controlled chaos",
-    "PROP": "Personality extension device",
-    "BURN": "The good kind",
-    "JAM": "Bring your own props",
+    FLOW: "The whole point",
+    SPIN: "Revolutionary",
+    FIRE: "Safety third",
+    POI: "The Maori would like a word",
+    STAFF: "HR or prop?",
+    HOOP: "Humans Orbiting Objects Persistently",
+    FAN: "The prop or the admirer?",
+    CLUB: "Carefully Leveraged Utility Baton",
+    JUGGLE: "Controlled chaos",
+    PROP: "Personality extension device",
+    BURN: "The good kind",
+    JAM: "Bring your own props",
 
     // === ROUND 4: Internet culture (user-approved) ===
-    "CRINGE": "(n.) The feeling of watching yourself on video",
-    "BASED": "(adj.) Possessing opinions the speaker agrees with",
-    "COPE": "(v.) To manage; see also: seethe",
-    "MID": "(adj.) Acceptable; technically",
-    "GOAT": "(n.) A horned mammal; also: bold claim",
-    "SIGMA": "(n.) Summation symbol; also: lone wolf cosplay",
-    "ALPHA": "(n.) A position where hands are opposite; wolves optional",
-    "BETA": "(n.) A position where hands are together; not an insult",
-    "BOOMER": "(n.) Someone born 1946-1964; also: anyone over 30",
-    "ZOOMER": "No cap fr fr",
-    "BRUH": "The universal response",
-    "LMAO": "Laughing, presumably",
-    "LMFAO": "Laughing harder, allegedly",
-    "WTF": "Valid question",
-    "OMG": "Dramatic",
-    "LOL": "Were you though?",
-    "ROFL": "Carpet burn incoming",
-    "YOLO": "Proof pending",
-    "SWAG": "(acr.) Spinning With Absolute Grace",
-    "EPIC": "Scale: unverified",
-    "FAIL": "Learning opportunity",
-    "COOL": "Temperature or approval?",
-    "DOPE": "Illegal in some states",
-    "SICK": "(adj.) Ill; also: impressive; confusing",
-    "TRASH": "Oscar the Grouch approved",
-    "BASIC": "(adj.) Fundamental; also: Starbucks-adjacent",
+    CRINGE: "(n.) The feeling of watching yourself on video",
+    BASED: "(adj.) Possessing opinions the speaker agrees with",
+    COPE: "(v.) To manage; see also: seethe",
+    MID: "(adj.) Acceptable; technically",
+    GOAT: "(n.) A horned mammal; also: bold claim",
+    SIGMA: "(n.) Summation symbol; also: lone wolf cosplay",
+    ALPHA: "(n.) A position where hands are opposite; wolves optional",
+    BETA: "(n.) A position where hands are together; not an insult",
+    BOOMER: "(n.) Someone born 1946-1964; also: anyone over 30",
+    ZOOMER: "No cap fr fr",
+    BRUH: "The universal response",
+    LMAO: "Laughing, presumably",
+    LMFAO: "Laughing harder, allegedly",
+    WTF: "Valid question",
+    OMG: "Dramatic",
+    LOL: "Were you though?",
+    ROFL: "Carpet burn incoming",
+    YOLO: "Proof pending",
+    SWAG: "(acr.) Spinning With Absolute Grace",
+    EPIC: "Scale: unverified",
+    FAIL: "Learning opportunity",
+    COOL: "Temperature or approval?",
+    DOPE: "Illegal in some states",
+    SICK: "(adj.) Ill; also: impressive; confusing",
+    TRASH: "Oscar the Grouch approved",
+    BASIC: "(adj.) Fundamental; also: Starbucks-adjacent",
   };
 
   // Check for exact match first

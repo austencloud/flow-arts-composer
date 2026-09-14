@@ -492,14 +492,15 @@ describe("MCP rendering boundaries", () => {
   });
 
   it("loads canonical glyph assets, including Greek, bridge, and dash letters", async () => {
-    const glyphs = await loadTkaGlyphImages("ΣWΘQVY-", true);
+    const glyphs = await loadTkaGlyphImages("ΣWΘQVY-τ-", true);
 
-    assert.equal(glyphs?.size, 6);
+    assert.equal(glyphs?.size, 7);
     assert.ok((glyphs?.get("Σ")?.naturalHeight ?? 0) > 0);
     assert.ok((glyphs?.get("W")?.naturalWidth ?? 0) > 0);
     assert.ok((glyphs?.get("Θ")?.naturalHeight ?? 0) > 0);
     assert.ok((glyphs?.get("Q")?.naturalWidth ?? 0) > 0);
     assert.equal(glyphs?.get("Y-")?.isDash, true);
+    assert.equal(glyphs?.get("τ-")?.isDash, true);
   });
 
   it("renders a canonical header with glyph images instead of word text", async () => {

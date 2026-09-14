@@ -6,7 +6,7 @@ import { mkdirSync } from "fs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 mkdirSync(resolve(__dirname, "dist"), { recursive: true });
 
-const esbuildBin = resolve(__dirname, "../node_modules/.bin/esbuild");
+const esbuildBin = resolve(__dirname, "node_modules/.bin/esbuild");
 
 execSync(
   [
@@ -36,6 +36,7 @@ execSync(
     "--external:util",
     "--external:worker_threads",
     "--external:canvas",
+    "--alias:@tka/domain=../packages/domain/src/index.ts",
   ].join(" "),
   { cwd: __dirname, stdio: "inherit" }
 );
