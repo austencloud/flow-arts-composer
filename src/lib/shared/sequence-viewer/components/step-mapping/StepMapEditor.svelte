@@ -831,8 +831,16 @@
   /* The one container every query in this file resolves against, so a rule that
      recomposes .editor and a rule that recomposes its children cross the same
      seam at the same width. */
+  /* The shell is a flex item of the performance editor, and its own grid sizes
+     every track from the space it is given (minmax(0, 1fr) columns, absolutely
+     filled video). That makes its max-content width zero, so an auto flex basis
+     collapsed the whole mapping UI to a 0px sliver at the left edge. Claim the
+     track explicitly instead of inheriting it from the content. */
   .step-map-shell {
     container-type: inline-size;
+    flex: 1;
+    min-inline-size: 0;
+    inline-size: 100%;
     block-size: 100%;
   }
 
