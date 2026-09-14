@@ -6,6 +6,7 @@
   import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
   import Seo from "$lib/shared/components/Seo.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import SequenceTransformActions from "$lib/shared/create/components/SequenceTransformActions.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import TurnNotationControls from "$lib/shared/shape-matrix/app/components/TurnNotationControls.svelte";
@@ -127,7 +128,6 @@
       )
     )
   );
-
 
   $effect(() => {
     if (article.code !== "TO") {
@@ -434,6 +434,53 @@
   </nav>
 
   {#if article.code === "TO"}
+    {#snippet playerControls()}
+      <div class="player-controls">
+        <div class="display-switch">
+          <SegmentedControl
+            options={[
+              { value: "staff", label: "With props", shortLabel: "Props" },
+              { value: "hands", label: "Hands" },
+            ]}
+            value={playback.propDisplay}
+            onchange={(value) => (playback.propDisplay = value)}
+            ariaLabel="Player display"
+            density="tight"
+            color="accent"
+          />
+        </div>
+        {#if playback.propDisplay === "staff"}
+          <div class="turn-editor-toggle">
+            <PanelButton
+              bind:ref={turnTrigger}
+              onclick={openTurnEditor}
+              ariaExpanded={turnEditorOpen}
+              disabled={!selectedLoop}
+              fullWidth
+            >
+              Turns
+            </PanelButton>
+          </div>
+        {/if}
+        <div class="action-editor-toggle">
+          <PanelButton
+            bind:ref={actionTrigger}
+            onclick={() => (actionEditorOpen = !actionEditorOpen)}
+            ariaExpanded={actionEditorOpen}
+            disabled={!selectedLoop}
+            fullWidth
+          >
+            Actions
+          </PanelButton>
+        </div>
+        {#if browser}
+          <TransportControls
+            isPlaying={playback.playing}
+            onPlaybackToggle={playback.togglePlayback}
+          />
+        {/if}
+      </div>
+    {/snippet}
     <section class="to-reference" aria-labelledby="to-reference-title">
       <header class="to-header">
         <div class="to-title">
@@ -447,56 +494,6 @@
           class="demonstration"
           aria-label={`${selectedLoop?.word ?? "Together-Opposite"} sequence player`}
         >
-          <div class="demo-toolbar">
-            <h2>
-              {selectedLoop?.word ?? "Four-count loop"}
-            </h2>
-            <div class="display-switch">
-              <SegmentedControl
-                options={[
-                  { value: "staff", label: "With props" },
-                  { value: "hands", label: "Hands" },
-                ]}
-                value={playback.propDisplay}
-                onchange={(value) => (playback.propDisplay = value)}
-                ariaLabel="Player display"
-                density="tight"
-                color="accent"
-              />
-            </div>
-            <div
-              class="turn-editor-toggle"
-              class:unavailable={playback.propDisplay === "hands"}
-              inert={playback.propDisplay === "hands"}
-              aria-hidden={playback.propDisplay === "hands"}
-            >
-              <PanelButton
-                bind:ref={turnTrigger}
-                onclick={openTurnEditor}
-                ariaExpanded={turnEditorOpen &&
-                  playback.propDisplay === "staff"}
-                disabled={!selectedLoop}
-              >
-                Turns
-              </PanelButton>
-            </div>
-            <div class="action-editor-toggle">
-              <PanelButton
-                bind:ref={actionTrigger}
-                onclick={() => (actionEditorOpen = !actionEditorOpen)}
-                ariaExpanded={actionEditorOpen}
-                disabled={!selectedLoop}
-              >
-                Actions
-              </PanelButton>
-            </div>
-            {#if browser}
-              <TransportControls
-                isPlaying={playback.playing}
-                onPlaybackToggle={playback.togglePlayback}
-              />
-            {/if}
-          </div>
           <div class="to-showcase" bind:this={examplePlayer}>
             <SequenceShowcasePreview
               word={selectedLoop?.word ?? "Together-Opposite"}
@@ -515,6 +512,7 @@
               leftPropType={displayPropType}
               rightPropType={displayPropType}
               primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+              controls={playerControls}
             />
           </div>
         </figure>
@@ -697,6 +695,7 @@
                         <PanelButton
                           fullWidth
                           ariaPressed={selectedTogetherOppositeLoop === loop.id}
+                          ariaLabel={loop.word}
                           onclick={() => selectTogetherOppositeLoop(loop, true)}
                         >
                           <span class="loop-preview" aria-hidden="true">
@@ -723,7 +722,14 @@
                               </span>
                             {/each}
                           </span>
-                          <span class="loop-word">{loop.word}</span>
+                          <span class="loop-word" aria-hidden="true">
+                            <TKAWordGlyph
+                              word={loop.word}
+                              height={26}
+                              darkMode
+                              fitToParent
+                            />
+                          </span>
                         </PanelButton>
                       {/each}
                     </div>
@@ -938,39 +944,29 @@
     gap: 1rem;
   }
   .display-switch {
-    width: 11rem;
-  }
-  .to-stage .demo-toolbar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
-    gap: 0.5rem;
-    min-height: 48px;
-    padding-bottom: 0;
-    margin-bottom: 0.5rem;
-  }
-  .to-stage .demo-toolbar h2 {
-    margin: 0;
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.75rem;
-  }
-  .turn-editor-toggle.unavailable {
-    visibility: hidden;
+    width: 100%;
   }
   .to-showcase {
     width: 100%;
-    aspect-ratio: 1;
   }
   .to-showcase :global(.sequence-preview) {
-    height: 100%;
-    aspect-ratio: auto;
     border-color: color-mix(
       in srgb,
       var(--mode-accent) 55%,
       var(--theme-stroke)
     );
+  }
+  .player-controls {
+    display: grid;
+    align-content: start;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .player-controls :global(.segmented-control) {
+    width: 100%;
+  }
+  .player-controls :global(.transport-controls) {
+    margin: 0;
   }
   .turn-controls {
     display: grid;
@@ -1044,10 +1040,8 @@
     );
   }
   .loop-word {
-    overflow-wrap: anywhere;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.025em;
+    display: block;
+    width: 100%;
   }
   .loop-preview {
     display: grid;
@@ -1263,27 +1257,20 @@
       grid-column: 1 / -1;
       grid-row: 2;
     }
-    .to-stage .demo-toolbar {
-      grid-template-columns: minmax(0, 1fr) auto auto;
-    }
-    .to-stage .demo-toolbar h2 {
-      grid-column: 1 / -1;
-      grid-row: 1;
-    }
-    .turn-editor-toggle {
-      grid-column: 1;
-      grid-row: 3;
-    }
-    .action-editor-toggle {
-      grid-column: 2;
-      grid-row: 3;
-    }
-    .to-stage .demo-toolbar > :global(.transport-controls) {
-      grid-column: 3;
-      grid-row: 3;
-    }
     .spin-grid {
       gap: 0.375rem;
+    }
+  }
+  @container (max-width: 28rem) {
+    .player-controls {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: center;
+    }
+    .player-controls .display-switch {
+      grid-column: 1 / -1;
+    }
+    .player-controls :global(.transport-controls) {
+      justify-self: center;
     }
   }
 </style>
