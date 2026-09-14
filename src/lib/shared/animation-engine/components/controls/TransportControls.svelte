@@ -21,6 +21,7 @@
     onStepFullBeatForward,
     onRestartToStart,
     disabled = false,
+    appearance = "standard",
   }: {
     isPlaying?: boolean;
     /** How long step buttons glow after click (ms). 0 to disable. */
@@ -33,6 +34,8 @@
     /** When provided, replaces the full-beat-backward button with a restart-to-start button */
     onRestartToStart?: () => void;
     disabled?: boolean;
+    /** Compact transport embedded in a continuous scrubber row. */
+    appearance?: "standard" | "inline";
   } = $props();
 
   // Step glow state
@@ -54,7 +57,7 @@
   });
 </script>
 
-<div class="transport-controls">
+<div class="transport-controls" class:inline={appearance === "inline"}>
   <!-- Each button renders only when its handler is provided, so consumers
        can compose any subset without dead controls. -->
   {#if onStepHalfBeatBackward}
@@ -281,7 +284,6 @@
     font-size: var(--font-size-lg);
   }
 
-
   @media (max-width: 480px) {
     .transport-controls {
       gap: 4px;
@@ -322,5 +324,57 @@
     .play-pause-btn.large {
       font-size: var(--font-size-sm);
     }
+  }
+  /* Inline: the media-player idiom. A bare glyph at the head of a scrubber
+     row, sharing the row's background. Keeps the full touch target but drops
+     the card border, shadow, and hover scale that make the standard button
+     read as a separate widget. */
+  .transport-controls.inline {
+    flex: 0 0 auto;
+    margin: 0;
+    gap: 0;
+  }
+
+  .transport-controls.inline .play-pause-btn,
+  .transport-controls.inline .play-pause-btn.large,
+  .transport-controls.inline .play-pause-btn.playing {
+    width: var(--min-touch-target, 44px);
+    height: var(--min-touch-target, 44px);
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
+    color: var(--theme-text);
+    font-size: var(--font-size-sm, 14px);
+    transition:
+      background var(--duration-fast) ease-out,
+      opacity var(--duration-fast) ease-out;
+  }
+
+  /* The play triangle is visually left-heavy; nudge it onto the optical
+     centre so play and pause sit on the same spot. */
+  .transport-controls.inline .play-pause-btn:not(.playing) i {
+    transform: translateX(1px);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .transport-controls.inline .play-pause-btn:hover:not(:disabled),
+    .transport-controls.inline .play-pause-btn.playing:hover:not(:disabled) {
+      background: color-mix(in srgb, currentColor 14%, transparent);
+      border: 0;
+      box-shadow: none;
+      color: var(--theme-text);
+      transform: none;
+    }
+  }
+
+  .transport-controls.inline .play-pause-btn:active:not(:disabled) {
+    transform: none;
+    opacity: 0.6;
+  }
+
+  .transport-controls.inline .play-pause-btn:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: -4px;
   }
 </style>
