@@ -6,6 +6,7 @@
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { reducedMotion } from "$lib/shared/transitions/motion";
@@ -52,6 +53,20 @@
   let examplesRetry = $state(0);
   let examplesRequest = 0;
   let examplePlayer: HTMLElement | undefined = $state();
+  const exampleGroups = $derived([
+    {
+      title: "Diamond",
+      examples: togetherOppositeExamples.filter(
+        (example) => example.gridMode === GridMode.DIAMOND
+      ),
+    },
+    {
+      title: "Box",
+      examples: togetherOppositeExamples.filter(
+        (example) => example.gridMode === GridMode.BOX
+      ),
+    },
+  ]);
 
   $effect(() => {
     if (article.code !== "TO") {
@@ -92,7 +107,7 @@
   ) {
     selectedTogetherOppositeExample = example.id;
     playback.selectExample(example.sequence, example.step);
-    if (reveal && window.matchMedia("(max-width: 800px)").matches) {
+    if (reveal && window.matchMedia("(max-width: 900px)").matches) {
       examplePlayer?.scrollIntoView({
         block: "center",
         behavior: reducedMotion() ? "instant" : "smooth",
@@ -216,7 +231,7 @@
         <section class="example-picker" aria-labelledby="example-picker-title">
           <div>
             <h2 id="example-picker-title">Matching pictographs</h2>
-            <p>Choose a pictograph to follow its hand path.</p>
+            <p>Same hand paths. Different prop rotations.</p>
           </div>
           <div
             class="example-options"
@@ -233,37 +248,44 @@
                 >
               </div>
             {:else}
-              {#each togetherOppositeExamples as example (example.id)}
-                <PanelButton
-                  fullWidth
-                  ariaPressed={selectedTogetherOppositeExample === example.id}
-                  ariaLabel={`Show ${example.pictograph.letter} in ${example.gridMode} grid`}
-                  onclick={() => selectTogetherOppositeExample(example, true)}
+              {#each exampleGroups as group (group.title)}
+                <section
+                  class="example-group"
+                  aria-labelledby={`${group.title}-examples`}
                 >
-                  <span class="example-pictograph">
-                    <PictographContainer
-                      pictographData={example.pictograph}
-                      gridMode={example.gridMode}
-                      leftPropTypeOverride={PropType.HAND}
-                      rightPropTypeOverride={PropType.HAND}
-                      leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
-                      rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
-                      showGrid={true}
-                      showTKA={true}
-                      showElemental={true}
-                      showPositions={true}
-                      showReversals={false}
-                      showNonRadialPoints={false}
-                      showHandPoints={true}
-                      disableTransitions
-                    />
-                  </span>
-                  <span class="example-label"
-                    ><strong>{example.pictograph.letter}</strong><span
-                      >{example.gridMode === "box" ? "Box" : "Diamond"}</span
-                    ></span
-                  >
-                </PanelButton>
+                  <h3 id={`${group.title}-examples`}>{group.title}</h3>
+                  <div class="example-grid">
+                    {#each group.examples as example (example.id)}
+                      <PanelButton
+                        fullWidth
+                        ariaPressed={selectedTogetherOppositeExample ===
+                          example.id}
+                        ariaLabel={`Show ${example.pictograph.letter} in ${example.gridMode} grid`}
+                        onclick={() =>
+                          selectTogetherOppositeExample(example, true)}
+                      >
+                        <span class="example-pictograph">
+                          <PictographContainer
+                            pictographData={example.pictograph}
+                            gridMode={example.gridMode}
+                            leftPropTypeOverride={PropType.STAFF}
+                            rightPropTypeOverride={PropType.STAFF}
+                            leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
+                            rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
+                            showGrid={true}
+                            showTKA={true}
+                            showElemental={true}
+                            showPositions={true}
+                            showReversals={false}
+                            showNonRadialPoints={false}
+                            showHandPoints={true}
+                            disableTransitions
+                          />
+                        </span>
+                      </PanelButton>
+                    {/each}
+                  </div>
+                </section>
               {/each}
             {/if}
           </div>
@@ -441,14 +463,14 @@
   }
   .to-stage {
     display: grid;
-    grid-template-columns: minmax(18rem, 1fr) minmax(20rem, 0.9fr);
+    grid-template-columns: minmax(18rem, 32rem) minmax(0, 1fr);
     gap: clamp(1rem, 3vw, 2rem);
     align-items: start;
   }
   .to-stage .demonstration {
     grid-column: auto;
     grid-row: auto;
-    width: min(100%, 40rem);
+    width: min(100%, 32rem);
   }
   .to-notes {
     display: grid;
@@ -514,11 +536,7 @@
     margin-top: 1.5rem;
   }
   .example-picker {
-    margin: 1.5rem 0;
-    padding: 1rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: var(--radius-lg, 0.75rem);
-    background: var(--theme-card-bg);
+    min-width: 0;
   }
   .example-picker h2 {
     margin-bottom: 0.25rem;
@@ -529,18 +547,26 @@
   }
   .example-options {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8.75rem, 1fr));
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+  .example-group {
+    min-width: 0;
+  }
+  .example-group h3 {
+    margin: 0 0 0.625rem;
+    font-size: 1rem;
+    font-weight: 650;
+  }
+  .example-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.5rem;
   }
   .example-options :global(.panel-btn) {
-    display: grid;
-    gap: 0.35rem;
     min-width: 0;
-    min-height: 44px;
-    padding: 0.35rem;
-    font-size: 0.875rem;
-    line-height: 1.25;
-    text-align: left;
+    min-height: 0;
+    padding: 0.375rem;
   }
   .example-options :global(.panel-btn[aria-pressed="true"]) {
     outline: 2px solid var(--mode-accent);
@@ -558,13 +584,6 @@
   .example-pictograph {
     display: block;
     aspect-ratio: 1;
-  }
-  .example-label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding: 0.25rem;
   }
   .example-status {
     display: grid;
@@ -667,12 +686,18 @@
     outline: 3px solid var(--theme-text);
     outline-offset: -3px;
   }
-  @media (max-width: 1100px) {
+  @media (min-width: 1600px) {
+    .example-options {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1.5rem;
+    }
+  }
+  @media (max-width: 900px) {
     .to-stage {
       grid-template-columns: minmax(0, 1fr);
     }
     .to-stage .demonstration {
-      width: min(100%, 30rem);
+      width: min(100%, 32rem);
       justify-self: center;
     }
   }
