@@ -65,31 +65,27 @@ export interface HandoffContext {
 /**
  * Which destinations this device can actually honor.
  *
- * Gated on the DEVICE, not the capability — desktop Chrome implements
- * `navigator.share`, so capability detection alone would offer a native share
- * that pops the Windows share sheet. That is the same gate
- * `shareOrDownloadBlob` makes, for the same reason.
+ * Download is a separate explicit action. Offer the system share sheet on any
+ * device that supports the file, rather than treating desktop as incapable.
  */
 export function resolveDestinations(ctx: HandoffContext): HandoffDestination[] {
   const isMobile = detectPlatform() !== "desktop";
   const destinations: HandoffDestination[] = [];
 
-  if (isMobile) {
-    const shareable =
-      supportsNativeFileShare() &&
-      (!ctx.blob || canNativeShareFile(ctx.blob, ctx.filename));
-
-    if (shareable) {
-      destinations.push({
-        id: "native-share",
-        label: "Share",
-        short: "Share",
-        icon: "fa-solid fa-share-nodes",
-        primary: true,
-        hint: "Opens Instagram, Facebook, Messages…",
-      });
-    }
-  } else {
+  const shareable =
+    supportsNativeFileShare() &&
+    (!ctx.blob || canNativeShareFile(ctx.blob, ctx.filename));
+  if (shareable) {
+    destinations.push({
+      id: "native-share",
+      label: "Share to another app",
+      short: "Share to another app",
+      icon: "fa-solid fa-share-nodes",
+      primary: true,
+      hint: "Choose an app on this device",
+    });
+  }
+  if (!isMobile) {
     destinations.push({
       id: "send-to-phone",
       label: "Transfer to phone",
@@ -137,8 +133,8 @@ export interface HandoffResult {
 }
 
 /**
- * Native file share. The one-tap post: the caption rides in `text`, so
- * Instagram opens with it pre-filled.
+ * Hand the file and optional caption to the device's share sheet. The receiving
+ * app decides which supplied fields it accepts.
  */
 export async function shareArtifactNatively(
   blob: Blob,
@@ -146,7 +142,7 @@ export async function shareArtifactNatively(
   caption: string
 ): Promise<HandoffResult> {
   const result = await shareBlobNatively(blob, filename, {
-    title: "TKA Sequence",
+    title: "Flow Arts Composer sequence",
     text: caption,
   });
 
@@ -175,17 +171,48 @@ export async function downloadArtifact(
     : { status: "failed", message: "Download failed" };
 }
 
+/**
+ * Last-resort clipboard write for browsers that refuse the async Clipboard API
+ * (embedded webviews, denied permission). It only works inside the user's own
+ * gesture, which is why callers run it synchronously after the failed write.
+ */
+function copyTextThroughSelection(text: string): boolean {
+  if (typeof document === "undefined" || !document.body) return false;
+  const host = document.createElement("textarea");
+  host.value = text;
+  host.setAttribute("readonly", "");
+  host.setAttribute("aria-hidden", "true");
+  host.style.position = "fixed";
+  host.style.top = "0";
+  host.style.left = "0";
+  host.style.opacity = "0";
+  host.style.pointerEvents = "none";
+  document.body.appendChild(host);
+  try {
+    host.select();
+    host.setSelectionRange(0, text.length);
+    return document.execCommand?.("copy") === true;
+  } catch {
+    return false;
+  } finally {
+    host.remove();
+  }
+}
+
 async function copyText(text: string, noun: string): Promise<HandoffResult> {
-  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-    return { status: "failed", message: "Clipboard unavailable" };
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return { status: "done", message: `${noun} copied` };
+    } catch {
+      // Denied permission falls through to the selection path below.
+    }
   }
 
-  try {
-    await navigator.clipboard.writeText(text);
+  if (copyTextThroughSelection(text)) {
     return { status: "done", message: `${noun} copied` };
-  } catch {
-    return { status: "failed", message: `Couldn't copy ${noun.toLowerCase()}` };
   }
+  return { status: "failed", message: `Couldn't copy ${noun.toLowerCase()}` };
 }
 
 export function copyCaption(caption: string): Promise<HandoffResult> {

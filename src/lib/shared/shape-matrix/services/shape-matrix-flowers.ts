@@ -1,5 +1,10 @@
-import type { MandalaPaths } from "$lib/shared/mandala/domain/mandala-types";
+import type {
+  MandalaPaths,
+  MandalaPathShape,
+} from "$lib/shared/mandala/domain/mandala-types";
 import { calculate as calculateMandalaGeometry } from "$lib/shared/mandala/services/mandala-geometry-calculator";
+import { getMandalaPathOptions } from "$lib/shared/mandala/services/mandala-path-options";
+import { applySequencePathPreview } from "$lib/shared/sequence-viewer/services/sequence-path-policy";
 import {
   getTipPoints,
   type TipPoint,
@@ -27,9 +32,29 @@ export interface ShapeMatrixData {
   tipPoint?: TipPoint;
   /** Radial reach retained for the existing canvas painters. */
   clubTipDx: number;
+  /** Identifies the exact path and trace geometry behind this matrix. */
+  geometryKey?: string;
 }
 
-const cache = new Map<PropType, Promise<ShapeMatrixData>>();
+export interface ShapeMatrixLoadOptions {
+  pathShape?: MandalaPathShape;
+  trace?: "hands" | "tips";
+  /** The fixed policy that Hybrid preserves for float and other non-spin motions. */
+  hybridFallback?: "arc" | "linear" | "concave";
+}
+
+interface ResolvedLoadOptions {
+  pathShape: MandalaPathShape;
+  trace: "hands" | "tips";
+  hybridFallback: "arc" | "linear" | "concave";
+  geometryKey: string;
+}
+
+const cache = new Map<string, Promise<ShapeMatrixData>>();
+let flowerSources: Promise<{
+  matrices: Awaited<ReturnType<typeof resolveRotationStyleArchetypes>>;
+  edges: Awaited<ReturnType<typeof loadDiamondEdges>>;
+}> | null = null;
 
 class LazyPathMap extends Map<string, MandalaPaths> {
   constructor(
@@ -49,13 +74,38 @@ class LazyPathMap extends Map<string, MandalaPaths> {
 }
 
 export function loadShapeMatrix(
-  propType: PropType = PropType.STAFF
+  propType: PropType = PropType.STAFF,
+  options: ShapeMatrixLoadOptions = {}
 ): Promise<ShapeMatrixData> {
-  const cached = cache.get(propType);
+  const resolved = resolveLoadOptions(options);
+  const key = `${propType}|${resolved.geometryKey}`;
+  const cached = cache.get(key);
   if (cached) return cached;
-  const pending = build(propType);
-  cache.set(propType, pending);
+  const pending = build(propType, resolved);
+  cache.set(key, pending);
+  void pending.catch(() => {
+    // A transient fetch failure must not turn the matrix's retry button into
+    // a permanent replay of the same rejected promise.
+    if (cache.get(key) === pending) cache.delete(key);
+  });
   return pending;
+}
+
+function resolveLoadOptions(
+  options: ShapeMatrixLoadOptions
+): ResolvedLoadOptions {
+  const pathShape = options.pathShape ?? "arc";
+  const trace = options.trace ?? "tips";
+  const hybridFallback = options.hybridFallback ?? "arc";
+  return {
+    pathShape,
+    trace,
+    hybridFallback,
+    geometryKey:
+      pathShape === "hybrid"
+        ? `${pathShape}:${hybridFallback}:${trace}`
+        : `${pathShape}:${trace}`,
+  };
 }
 
 export function shapeMatrixTipPoint(propType: PropType): TipPoint | null {
@@ -66,14 +116,30 @@ export function shapeMatrixTipPoint(propType: PropType): TipPoint | null {
   return null;
 }
 
-async function build(propType: PropType): Promise<ShapeMatrixData> {
-  const [matrices, edges] = await Promise.all([
+function loadFlowerSources() {
+  if (flowerSources) return flowerSources;
+  const pending = Promise.all([
     resolveRotationStyleArchetypes("diamond"),
     loadDiamondEdges(),
-  ]);
+  ]).then(([matrices, edges]) => ({ matrices, edges }));
+  flowerSources = pending;
+  void pending.catch(() => {
+    if (flowerSources === pending) flowerSources = null;
+  });
+  return pending;
+}
+
+async function build(
+  propType: PropType,
+  options: ResolvedLoadOptions
+): Promise<ShapeMatrixData> {
+  const { matrices, edges } = await loadFlowerSources();
   const proArch = resolveFlowerArchetype(matrices, "pro");
   const antiArch = resolveFlowerArchetype(matrices, "anti");
-  const tip = shapeMatrixTipPoint(propType);
+  const tip =
+    options.trace === "hands"
+      ? { dx: 0, dy: 0 }
+      : shapeMatrixTipPoint(propType);
   if (!tip)
     throw new Error(`Prop ${propType} has no tracked Shape Matrix source`);
   const clubTipDx = Math.hypot(tip.dx, tip.dy);
@@ -98,19 +164,31 @@ async function build(propType: PropType): Promise<ShapeMatrixData> {
     // hands are anchored at opposite points), which desyncs the two axes and
     // stops the diagonal from overlapping into a clean purple pictograph.
     const seq = buildFlowerSequence(arch, f, "left", edges, propType);
+    // Hybrid assigns pro and anti their canonical paths while preserving the
+    // selected fixed path for float motions, exactly as the live guide does.
+    const preview = applySequencePathPreview(seq, {
+      pathShape:
+        options.pathShape === "hybrid"
+          ? options.hybridFallback
+          : options.pathShape,
+      motionAwarePaths: options.pathShape === "hybrid",
+    });
     const paths = calculateMandalaGeometry(
-      seq.steps,
+      preview?.steps ?? seq.steps,
       undefined,
       undefined,
-      { tipEnds: 1, pathShape: "arc" },
+      getMandalaPathOptions(options.pathShape, 1),
       tip
     );
     canonicalPaths.set(key, paths);
     if (import.meta.env.DEV) {
-      performance.measure(`shape-matrix:path:${propType}:${key}`, {
-        start: startedAt,
-        end: performance.now(),
-      });
+      performance.measure(
+        `shape-matrix:path:${propType}:${options.geometryKey}:${key}`,
+        {
+          start: startedAt,
+          end: performance.now(),
+        }
+      );
     }
     return paths;
   };
@@ -125,5 +203,13 @@ async function build(propType: PropType): Promise<ShapeMatrixData> {
     return paths ? { left: [], right: paths.left, purple: [] } : undefined;
   });
 
-  return { axis, left, right, propType, tipPoint: tip, clubTipDx };
+  return {
+    axis,
+    left,
+    right,
+    propType,
+    tipPoint: tip,
+    clubTipDx,
+    geometryKey: options.geometryKey,
+  };
 }

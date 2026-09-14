@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const detectPlatform = vi.hoisted(() => vi.fn(() => "desktop"));
 const supportsNativeFileShare = vi.hoisted(() => vi.fn(() => true));
@@ -15,8 +15,12 @@ vi.mock("$lib/shared/foundation/services/file-downloader", async () => {
   return { ...actual, supportsNativeFileShare, canNativeShareFile };
 });
 
-const { buildArtifactFilename, copyPreparedLink, resolveDestinations } =
-  await import("$lib/shared/share/services/post-handoff");
+const {
+  buildArtifactFilename,
+  copyLink,
+  copyPreparedLink,
+  resolveDestinations,
+} = await import("$lib/shared/share/services/post-handoff");
 
 function pngBlob(): Blob {
   return new Blob(["x"], { type: "image/png" });
@@ -42,18 +46,16 @@ describe("post handoff destinations", () => {
     expect(destinations[0]?.primary).toBe(true);
   });
 
-  it("never offers the native share on desktop, even though Chrome implements it", () => {
-    // The gate is the DEVICE, not the capability — desktop Chrome supports
-    // navigator.share and would pop the Windows share sheet for a file that
-    // should just download.
+  it("offers capable desktops both native sharing and an explicit download", () => {
     const destinations = resolveDestinations({
       artifact: "card",
       blob: pngBlob(),
       filename: "FΨ.png",
     });
 
-    expect(destinations.map((d) => d.id)).not.toContain("native-share");
-    expect(destinations[0]?.id).toBe("send-to-phone");
+    expect(destinations.map((d) => d.id)).toEqual(
+      expect.arrayContaining(["native-share", "download", "send-to-phone"])
+    );
   });
 
   it("omits the clipboard-to-Facebook path for video, which cannot be copied", () => {
@@ -86,17 +88,34 @@ describe("post handoff destinations", () => {
     expect(destinations.map((d) => d.id)).toContain("copy-caption");
   });
 
-  it("drops the native share when this browser cannot share the payload", () => {
-    detectPlatform.mockReturnValue("mobile");
-    canNativeShareFile.mockReturnValue(false);
+  it.each(["mobile", "desktop"])(
+    "drops native sharing for unsupported payloads on %s",
+    (platform) => {
+      detectPlatform.mockReturnValue(platform);
+      canNativeShareFile.mockReturnValue(false);
 
+      const destinations = resolveDestinations({
+        artifact: "video",
+        blob: pngBlob(),
+        filename: "FΨ.mp4",
+      });
+
+      expect(destinations.map((d) => d.id)).not.toContain("native-share");
+      expect(destinations.map((d) => d.id)).toContain("download");
+    }
+  );
+
+  it("keeps download and phone transfer when desktop sharing is unavailable", () => {
+    supportsNativeFileShare.mockReturnValue(false);
     const destinations = resolveDestinations({
       artifact: "video",
       blob: pngBlob(),
-      filename: "FΨ.mp4",
+      filename: "test.mp4",
     });
-
     expect(destinations.map((d) => d.id)).not.toContain("native-share");
+    expect(destinations.map((d) => d.id)).toEqual(
+      expect.arrayContaining(["download", "send-to-phone"])
+    );
   });
 });
 
@@ -277,5 +296,55 @@ describe("prepared link clipboard handoff", () => {
       message: "Couldn't copy link",
     });
     expect(writeText).not.toHaveBeenCalled();
+  });
+});
+
+describe("direct link copy", () => {
+  const originalExecCommand = document.execCommand;
+  const mockedCreateElement = document.createElement;
+
+  beforeEach(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    document.execCommand = originalExecCommand;
+    // The global setup stubs createElement with plain objects; the selection
+    // fallback appends a real textarea, so restore jsdom's own for this file.
+    document.createElement =
+      Object.getPrototypeOf(document).createElement.bind(document);
+  });
+
+  afterEach(() => {
+    document.createElement = mockedCreateElement;
+  });
+
+  it("copies through a selection when the Clipboard API refuses", async () => {
+    const writeText = vi.fn(async () => {
+      throw new DOMException("Write permission denied.", "NotAllowedError");
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+    let selected = "";
+    document.execCommand = vi.fn(() => {
+      selected = document.querySelector("textarea")?.value ?? "";
+      return true;
+    });
+
+    await expect(
+      copyLink("https://tkaflowarts.com/sequence/ABCD")
+    ).resolves.toEqual({ status: "done", message: "Link copied" });
+    expect(writeText).toHaveBeenCalledOnce();
+    expect(selected).toBe("https://tkaflowarts.com/sequence/ABCD");
+    expect(document.querySelector("textarea")).toBeNull();
+  });
+
+  it("reports failure honestly when every clipboard path is closed", async () => {
+    document.execCommand = vi.fn(() => false);
+    await expect(
+      copyLink("https://tkaflowarts.com/sequence/ABCD")
+    ).resolves.toEqual({ status: "failed", message: "Couldn't copy link" });
   });
 });

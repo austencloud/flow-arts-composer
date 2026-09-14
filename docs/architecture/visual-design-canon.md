@@ -159,6 +159,15 @@ page or section edge red to announce that one action is dangerous.
 Color may encode identity inside an icon, glyph, thumbnail, plot, or artifact.
 It may not be glued to a container as a thin edge strip.
 
+The start-position pictograph carries the hand colour key as part of the
+pictograph itself, not as a viewer decoration. Two swatch-and-letter pairs
+(`L`, `R`) sit centred in the bottom band of the 950-unit viewBox, the one slot
+no other glyph uses, in the same Georgia bold as the step number. Geometry
+lives in `packages/render-core` (`calculateHandColorKeyLayout`) so the viewer
+start cell, rasterized card fronts and exports, and MCP images bake in the same
+key. A hand
+that is hidden or absent drops out of the key; the remaining pair recentres.
+
 ## 6. Controls and Selection
 
 Actions must look actionable before hover. The minimum pointer target is 44px.

@@ -277,9 +277,12 @@
 /* The returning surface waits for actual room instead of racing a timer. On a
    busy canvas frame or a narrow landscape layout, time can advance while the
    pane is still a sliver; measured geometry cannot. */
-.split-view:not([data-focused]) .split-column[data-readable="false"] {
+.split-view .split-column[data-readable="false"] {
   opacity: 0;
   pointer-events: none;
+  /* Conceal immediately, then use the normal opacity transition to reveal.
+     An interrupted exit must not spend its fade visibly shrinking to a dot. */
+  visibility: hidden;
 }
 
 .split-view[data-focused] .preview-column {

@@ -48,8 +48,8 @@
     onMirror: () => void;
     onFlip?: () => void;
     onInvert?: () => void;
-    onRotateCW: () => void;
-    onRotateCCW: () => void;
+    onRotateCW?: () => void;
+    onRotateCCW?: () => void;
     onSwap?: () => void;
     onRewind?: () => void;
     onTurnPattern?: () => void;
@@ -271,58 +271,60 @@
           </div>
         </button>
       {/if}
-      <div class="rotation-pair">
-        <button
-          class="grid-btn rotate-ccw"
-          title={toolbar ? `Rotate left ${rotationDegrees}°` : undefined}
-          class:help-active={helpMode}
-          onclick={() => handleActionClick("rotate", onRotateCCW)}
-          data-ghost={disabled || helpMode ? undefined : "safe"}
-          data-ghost-kind="transform"
-          data-ghost-label="Rotate L"
-          disabled={disabled && !helpMode}
-          aria-label={helpMode
-            ? "Learn about Rotate"
-            : `Rotate ${actionSubject} left ${rotationDegrees} degrees`}
-        >
-          <div class="btn-icon">
-            <i class="fas fa-rotate-left" aria-hidden="true"></i>
-          </div>
-          <div class="btn-text">
-            <span class="btn-label">
-              {showRotationDegreesInLabel
-                ? `${rotationDegrees}° L`
-                : "Rotate L"}
-            </span>
-            <span class="btn-desc">Pivot {rotationDegrees}°</span>
-          </div>
-        </button>
-        <button
-          class="grid-btn rotate-cw"
-          title={toolbar ? `Rotate right ${rotationDegrees}°` : undefined}
-          class:help-active={helpMode}
-          onclick={() => handleActionClick("rotate", onRotateCW)}
-          data-ghost={disabled || helpMode ? undefined : "safe"}
-          data-ghost-kind="transform"
-          data-ghost-label="Rotate R"
-          disabled={disabled && !helpMode}
-          aria-label={helpMode
-            ? "Learn about Rotate"
-            : `Rotate ${actionSubject} right ${rotationDegrees} degrees`}
-        >
-          <div class="btn-icon">
-            <i class="fas fa-rotate-right" aria-hidden="true"></i>
-          </div>
-          <div class="btn-text">
-            <span class="btn-label">
-              {showRotationDegreesInLabel
-                ? `${rotationDegrees}° R`
-                : "Rotate R"}
-            </span>
-            <span class="btn-desc">Pivot {rotationDegrees}°</span>
-          </div>
-        </button>
-      </div>
+      {#if onRotateCW && onRotateCCW}
+        <div class="rotation-pair">
+          <button
+            class="grid-btn rotate-ccw"
+            title={toolbar ? `Rotate left ${rotationDegrees}°` : undefined}
+            class:help-active={helpMode}
+            onclick={() => handleActionClick("rotate", onRotateCCW)}
+            data-ghost={disabled || helpMode ? undefined : "safe"}
+            data-ghost-kind="transform"
+            data-ghost-label="Rotate L"
+            disabled={disabled && !helpMode}
+            aria-label={helpMode
+              ? "Learn about Rotate"
+              : `Rotate ${actionSubject} left ${rotationDegrees} degrees`}
+          >
+            <div class="btn-icon">
+              <i class="fas fa-rotate-left" aria-hidden="true"></i>
+            </div>
+            <div class="btn-text">
+              <span class="btn-label">
+                {showRotationDegreesInLabel
+                  ? `${rotationDegrees}° L`
+                  : "Rotate L"}
+              </span>
+              <span class="btn-desc">Pivot {rotationDegrees}°</span>
+            </div>
+          </button>
+          <button
+            class="grid-btn rotate-cw"
+            title={toolbar ? `Rotate right ${rotationDegrees}°` : undefined}
+            class:help-active={helpMode}
+            onclick={() => handleActionClick("rotate", onRotateCW)}
+            data-ghost={disabled || helpMode ? undefined : "safe"}
+            data-ghost-kind="transform"
+            data-ghost-label="Rotate R"
+            disabled={disabled && !helpMode}
+            aria-label={helpMode
+              ? "Learn about Rotate"
+              : `Rotate ${actionSubject} right ${rotationDegrees} degrees`}
+          >
+            <div class="btn-icon">
+              <i class="fas fa-rotate-right" aria-hidden="true"></i>
+            </div>
+            <div class="btn-text">
+              <span class="btn-label">
+                {showRotationDegreesInLabel
+                  ? `${rotationDegrees}° R`
+                  : "Rotate R"}
+              </span>
+              <span class="btn-desc">Pivot {rotationDegrees}°</span>
+            </div>
+          </button>
+        </div>
+      {/if}
       {#if onShiftStart && shiftStartPlacement === "transform"}
         {@render shiftStartButton()}
       {/if}

@@ -7,6 +7,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
 import {
   ensureDataLoaded,
   saveAndOpenImage,
@@ -40,6 +41,11 @@ import {
   isLOOPValidForPositionPair,
   LOOPComponent,
 } from "../core/loop/index.js";
+
+const primaryPropColorsSchema = z.object({
+  left: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+  right: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+});
 import {
   createPreset,
   updatePreset,
@@ -300,6 +306,26 @@ export function registerPresetTools(server: McpServer): void {
         .optional()
         .describe("Override: grid mode"),
       darkMode: z.boolean().optional().describe("Override: dark mode"),
+      exportProfile: z.enum(["composer", "print"]).optional(),
+      columnCount: z.number().int().min(1).optional(),
+      showDifficulty: z.boolean().optional(),
+      leftPropType: z.string().nullable().optional(),
+      rightPropType: z.string().nullable().optional(),
+      fanAppearance: z
+        .object({
+          build: z
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .optional(),
+          frameColor: z.enum(["black", "white"]).optional(),
+          cover: z.enum(["bare", "covered"]).optional(),
+        })
+        .nullable()
+        .optional(),
+      primaryPropColors: primaryPropColorsSchema
+        .optional()
+        .describe(
+          "Override left/right colors for every hand-colored card mark"
+        ),
       includeImage: z
         .boolean()
         .optional()
@@ -344,9 +370,13 @@ export function registerPresetTools(server: McpServer): void {
         const gridMode = (input.gridMode ??
           config.gridMode ??
           "diamond") as GridMode;
-        const darkMode = input.darkMode ?? config.darkMode ?? true;
-        const cellSize = config.cellSize ?? 900;
-        const layout = config.layout ?? "grid";
+        const darkMode =
+          input.darkMode ??
+          config.darkMode ??
+          COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode;
+        const cellSize =
+          config.cellSize ?? COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize;
+        const layout = config.layout ?? COMPOSER_CARD_EXPORT_PROFILE_V1.layout;
 
         // Load pictograph data
         const allPictographs = ensureDataLoaded(gridMode);
@@ -480,15 +510,26 @@ export function registerPresetTools(server: McpServer): void {
             {
               layout,
               cellSize,
-              showStepNumbers: true,
-              showWord: true,
+              showStepNumbers: COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+              showWord: COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
               darkMode,
               turnAllocation,
               loopComponents: effectiveComponents,
+              period: config.period === "quartered" ? 4 : 2,
               derivedBeatIndices: loopResult.derivedBeatIndices,
               seedWord: loopResult.seedWord,
-              showDifficulty: true,
+              showFooter: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
+              startPositionLayout:
+                COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
               level: level as 1 | 2 | 3,
+              exportProfile: input.exportProfile,
+              columnCount: input.columnCount,
+              showDifficulty:
+                input.showDifficulty ?? input.exportProfile === "print",
+              leftPropType: input.leftPropType,
+              rightPropType: input.rightPropType,
+              fanAppearance: input.fanAppearance,
+              primaryPropColors: input.primaryPropColors,
             }
           );
 
@@ -500,6 +541,9 @@ export function registerPresetTools(server: McpServer): void {
                 type: "image" as const,
                 data: pngBuffer.toString("base64"),
                 mimeType: "image/png",
+                _meta: {
+                  rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+                },
               },
               {
                 type: "text" as const,
@@ -578,12 +622,22 @@ export function registerPresetTools(server: McpServer): void {
         const pngBuffer = await renderSequenceToImage(steps, sequenceWord, {
           layout,
           cellSize,
-          showStepNumbers: true,
-          showWord: true,
+          showStepNumbers: COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+          showWord: COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
           darkMode,
           turnAllocation,
-          showDifficulty: true,
+          showFooter: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
+          startPositionLayout:
+            COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
           level: level as 1 | 2 | 3,
+          exportProfile: input.exportProfile,
+          columnCount: input.columnCount,
+          showDifficulty:
+            input.showDifficulty ?? input.exportProfile === "print",
+          leftPropType: input.leftPropType,
+          rightPropType: input.rightPropType,
+          fanAppearance: input.fanAppearance,
+          primaryPropColors: input.primaryPropColors,
         });
 
         saveAndOpenImage(pngBuffer, sequenceWord);
@@ -594,6 +648,9 @@ export function registerPresetTools(server: McpServer): void {
               type: "image" as const,
               data: pngBuffer.toString("base64"),
               mimeType: "image/png",
+              _meta: {
+                rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+              },
             },
             {
               type: "text" as const,

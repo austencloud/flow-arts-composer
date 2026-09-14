@@ -165,17 +165,54 @@ describe("QRCodeGenerator canonical cell readiness", () => {
     expect(getRawData).not.toHaveBeenCalled();
   });
 
+  it("finds gallery artwork at the canonical bake size without generating", async () => {
+    const ready = {
+      svg: "<svg/>",
+      dataUrl: "data:ready",
+      encodedUrl: "https://tka.run/ABCD",
+      shortCode: "ABCD",
+    };
+    preparedCache.get.mockResolvedValue(ready);
+    const warm = vi.fn();
+    const createShortCode = vi.fn();
+    const generator = new QRCodeGenerator(
+      { createShortCode } as never,
+      imageCache as never,
+      warm,
+      preparedCache
+    );
+
+    await expect(
+      generator.findPreparedForSequence(sequence, {
+        size: 256,
+        leftPropType: PropType.POI,
+        rightPropType: PropType.FAN,
+      })
+    ).resolves.toEqual(ready);
+
+    expect(preparedCache.keyFor).toHaveBeenCalledWith(
+      sequence,
+      expect.objectContaining({
+        leftPropType: PropType.POI,
+        rightPropType: PropType.FAN,
+        catDogMode: true,
+      }),
+      expect.objectContaining({ size: 200 })
+    );
+    expect(warm).not.toHaveBeenCalled();
+    expect(createShortCode).not.toHaveBeenCalled();
+    expect(getRawData).not.toHaveBeenCalled();
+  });
+
   it("publishes reusable artwork only after both themes and the QR succeed", async () => {
     const warm = vi
       .fn()
       .mockResolvedValue({ total: 2, ready: 2, hashes: [], failures: [] });
-    const createShortCode = vi
-      .fn()
-      .mockResolvedValue({
-        code: "ABCD",
-        url: "https://tka.run/ABCD",
-        isNew: false,
-      });
+    const createShortCode = vi.fn().mockResolvedValue({
+      code: "ABCD",
+      url: "https://tka.run/ABCD",
+      isNew: false,
+    });
     const generator = new QRCodeGenerator(
       { createShortCode } as never,
       imageCache as never,

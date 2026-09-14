@@ -33,9 +33,12 @@ export interface ThumbnailRenderResult {
   qrConsistent: boolean;
 }
 
-// The QR is drawn scaled into a single grid cell; 256px is crisp at any card
-// size the gallery uses and cheap to rasterize.
+// Non-gallery callers can request raster artwork at 256px for a crisp card
+// cell without conflating that artwork with gallery's shared preparation.
 const QR_BITMAP_SIZE = 256;
+// Prepared gallery artwork is keyed at 200px. SVG remains crisp when the
+// composer scales it into a card cell, and later prepared-only reads find it.
+const GALLERY_PREPARED_QR_SIZE = 200;
 
 export interface RenderOptions {
   /** Beat size in pixels (default: 240) */
@@ -46,6 +49,9 @@ export interface RenderOptions {
 
   /** Quality for lossy formats 0-1 (default: 0.9) */
   quality?: number;
+
+  /** Gallery browsing may only reuse already-prepared QR SVGs. */
+  qrLookup?: "prepared-only";
 }
 export type RenderProgressCallback = (progress: {
   current: number;
@@ -141,19 +147,32 @@ export class ThumbnailRenderer {
       try {
         const generator = this.qrCodeGeneratorFactory?.();
         if (generator) {
-          const qrImage = await generator.generateAsImage(
-            sequenceWithStartPos,
-            QR_BITMAP_SIZE,
-            {
-              darkMode: !input.lightMode,
-              leftPropType: input.leftPropType,
-              rightPropType: input.rightPropType,
-              signal,
-              onActivity,
-            }
-          );
-          onActivity?.();
-          qrBitmap = await createImageBitmap(qrImage);
+          const qrOptions = {
+            darkMode: !input.lightMode,
+            leftPropType: input.leftPropType,
+            rightPropType: input.rightPropType,
+            signal,
+            onActivity,
+          };
+          const qrImage =
+            options?.qrLookup === "prepared-only"
+              ? await generator.loadPreparedAsImage(
+                  sequenceWithStartPos,
+                  qrOptions
+                )
+              : await generator.generateAsImage(
+                  sequenceWithStartPos,
+                  input.variant === "gallery"
+                    ? GALLERY_PREPARED_QR_SIZE
+                    : QR_BITMAP_SIZE,
+                  qrOptions
+                );
+          if (!qrImage) {
+            qrBitmap = null;
+          } else {
+            onActivity?.();
+            qrBitmap = await createImageBitmap(qrImage);
+          }
         }
       } catch (err) {
         console.debug(
@@ -191,6 +210,34 @@ export class ThumbnailRenderer {
 
     // QR-consistent unless a QR was wanted but its bitmap couldn't be produced.
     return { blob, qrConsistent: !wantsQR || qrBitmap !== null };
+  }
+
+  /**
+   * Probe a gallery QR before a second composition pass. A missing record is a
+   * normal browse state, so callers keep their already-rendered preview rather
+   * than drawing the same pictographs again without a QR.
+   */
+  async hasPreparedQR(
+    sequence: SequenceData,
+    input: ThumbnailRenderInput,
+    signal?: AbortSignal
+  ): Promise<boolean> {
+    if (!input.visibility?.showQRCode) return false;
+    const loadedSequence = await this.ensureFullSequenceData(
+      sequence,
+      input.sequenceName
+    );
+    const sequenceWithStartPos = this.ensureStartPosition(loadedSequence);
+    const generator = this.qrCodeGeneratorFactory?.();
+    if (!generator) return false;
+    return Boolean(
+      await generator.findPreparedForSequence(sequenceWithStartPos, {
+        darkMode: !input.lightMode,
+        leftPropType: input.leftPropType,
+        rightPropType: input.rightPropType,
+        signal,
+      })
+    );
   }
 
   private async ensureFullSequenceData(

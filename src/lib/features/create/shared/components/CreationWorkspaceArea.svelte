@@ -21,8 +21,7 @@
   import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { onDestroy } from "svelte";
+  import { onDestroy, untrack } from "svelte";
 
   const ctx = getCreateModuleContext();
   const { CreateModuleState, panelState, layout } = ctx;
@@ -51,13 +50,46 @@
 
   const optionAudition = $derived(panelState.optionAudition);
   const playback = $derived(panelState.workspacePlayback);
+  const playbackPreparation = $derived(panelState.workspacePlaybackPreparation);
+  const playbackCandidate = $derived(playbackPreparation ?? playback);
   let readyPlayback = $state.raw<typeof playback>(null);
   let retainedPlayback = $state.raw<typeof playback>(null);
+  let retainedPlaybackKey = $state<string | null>(null);
+  let playbackRun = $state(0);
   let playbackStep = $state(0);
+  const playbackKeys = new WeakMap<object, string>();
+  const loadWorkspacePlayback = () =>
+    import("../workspace-panel/components/WorkspacePlayback.svelte");
+
+  const playbackKey = $derived.by(() => {
+    if (!playbackCandidate) return null;
+    const knownKey = playbackKeys.get(playbackCandidate);
+    if (knownKey) return knownKey;
+    const key = [
+      playbackCandidate.sourceTab,
+      panelState.workspacePlaybackSourceRevision,
+      playbackCandidate.sequence.id,
+    ].join(":");
+    playbackKeys.set(playbackCandidate, key);
+    return key;
+  });
 
   $effect(() => {
-    if (playback) retainedPlayback = playback;
-    else if (readyPlayback !== retainedPlayback) retainedPlayback = null;
+    const session = playbackCandidate;
+    const key = playbackKey;
+    if (!session || !key) return;
+
+    untrack(() => {
+      // Play has always restarted the sequence. Reuse the prepared engine, but
+      // give it a fresh load identity so it returns to the first beat first.
+      playbackRun += 1;
+      readyPlayback = null;
+
+      if (key === retainedPlaybackKey) return;
+
+      retainedPlayback = session;
+      retainedPlaybackKey = key;
+    });
   });
 
   onDestroy(() => panelState.stopWorkspacePlayback());
@@ -70,7 +102,7 @@
   });
 
   function stopOnEscape(event: KeyboardEvent) {
-    if (event.key === "Escape" && playback) {
+    if (event.key === "Escape" && playbackCandidate) {
       event.preventDefault();
       panelState.stopWorkspacePlayback();
     }
@@ -118,6 +150,10 @@
 
 <svelte:window onkeydown={stopOnEscape} />
 
+<!-- Warm the player code while the editable workspace is stable. This leaves
+     its engine unmounted until Play, so hidden playback cannot consume frames. -->
+<LazyMount loader={loadWorkspacePlayback} prefetch />
+
 {#snippet card()}
   {#key navigationState.activeTab}
     <WorkspacePanel
@@ -140,26 +176,42 @@
     {#key retainedPlayback}
       {@const session = retainedPlayback}
       <LazyMount
-        loader={() =>
-          import("../workspace-panel/components/WorkspacePlayback.svelte")}
+        loader={loadWorkspacePlayback}
         active
+        retryKey={playbackRun}
         props={{
           sequence: session.sequence,
-          active: playback === session && readyPlayback === session,
-          onready: () => (readyPlayback = session),
+          active: playback !== null && playbackKey === retainedPlaybackKey,
+          run: playbackRun,
+          onready: (readyRun: number) => {
+            if (!playbackCandidate || readyRun !== playbackRun) return;
+            readyPlayback = session;
+            panelState.confirmWorkspacePlaybackReady(playbackCandidate);
+          },
+          onerror: (failedRun: number) => {
+            if (failedRun === playbackRun)
+              panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
+          },
           onStepChange: (step: number) => (playbackStep = Math.floor(step)),
+          onPlaybackChange: (
+            reportedRun: number,
+            step: number,
+            playing: boolean
+          ) => {
+            const candidate = playbackCandidate;
+            if (!candidate || reportedRun !== playbackRun) return;
+            panelState.updateWorkspacePlaybackProgress(
+              candidate,
+              step,
+              playing
+            );
+          },
         }}
         onStatusChange={(status) => {
-          if (status === "error") readyPlayback = session;
+          if (status === "error" && playbackCandidate)
+            panelState.failWorkspacePlaybackPreparation(playbackCandidate);
         }}
-      >
-        {#snippet error(_error, retry)}
-          <div class="playback-loading" role="alert">
-            <span>Playback could not load.</span>
-            <PanelButton onclick={retry}>Try again</PanelButton>
-          </div>
-        {/snippet}
-      </LazyMount>
+      />
     {/key}
   {/if}
 {/snippet}
@@ -187,16 +239,14 @@
   />
   <div class="workspace-content">
     <DualSourceCrossfade
-      active={playback && readyPlayback === playback ? "second" : "first"}
+      active={playback !== null &&
+      playbackKey === retainedPlaybackKey &&
+      readyPlayback === retainedPlayback
+        ? "second"
+        : "first"}
       first={card}
       second={animation}
-      onsettled={(source) => {
-        if (source === "first" && !playback) retainedPlayback = null;
-      }}
     />
-    {#if playback && readyPlayback !== playback}
-      <div class="playback-loading" role="status">Loading playback…</div>
-    {/if}
   </div>
 </div>
 
@@ -222,18 +272,5 @@
     position: relative;
     flex: 1;
     min-height: 0;
-  }
-
-  .playback-loading {
-    position: absolute;
-    inset: 4px 12px auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 12px;
-    color: var(--theme-text);
-    background: var(--theme-panel-bg);
-    font-size: var(--font-size-min, 14px);
   }
 </style>

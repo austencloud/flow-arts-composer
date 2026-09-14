@@ -5,6 +5,7 @@
     resolveRecordedPropConfig,
   } from "$lib/shared/foundation/services/recorded-prop-intent";
   import { getLibraryRepository } from "$lib/shared/library/get-library-repository";
+  import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository";
   import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
   import { loadSequencesByIds } from "$lib/features/choreo-card/services/catalog-loader";
   import type { SequenceRouteMeta } from "./sequence-seo";
@@ -42,6 +43,7 @@
   import type { OrchestratorContext } from "$lib/shared/sequence-viewer/domain/viewer-orchestrator-context";
   import SequenceViewerShell from "$lib/shared/sequence-viewer/components/SequenceViewerShell.svelte";
   import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
+  import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
   import { initialViewerModeForUrl } from "$lib/shared/sequence-viewer/services/viewer-modes";
 
   import {
@@ -169,6 +171,14 @@
   let sequence = $state<SequenceData | null>(null);
   /** The route id, when it resolved as a short code. Share reuses it. */
   let resolvedShortCode = $state<string | null>(null);
+  // Send to a friend flips inboxState.isOpen, but the drawer it expects lives
+  // in MainApplication, which this route never mounts. Mount it here on first
+  // open (and keep it) so a signed-in viewer's send actually shows a picker,
+  // without paying the conversation subscription on every viewer visit.
+  let inboxHostMounted = $state(false);
+  $effect(() => {
+    if (inboxState.isOpen) inboxHostMounted = true;
+  });
   let isLoading = $state(true);
   let loadError = $state<string | null>(null);
   let handoffData = $state<SequenceRouteHandoff | null>(null);
@@ -563,7 +573,7 @@
       if (resolvedSequence) resolvedShortCode = id;
 
       if (!resolvedSequence) {
-        resolvedSequence = await loadByIdentifier(id);
+        resolvedSequence = await loadByIdentifier(id, { wordFallback: false });
         if (routeLoad.isStale(run)) return;
       }
 
@@ -574,6 +584,18 @@
           resolvedSequence = await libraryRepo.getSequence(id);
         } catch {
           // Library lookup failed (not logged in, etc.)
+        }
+        if (routeLoad.isStale(run)) return;
+      }
+
+      // Last resort: a word that exists only as a bundled legacy PNG. This runs
+      // after every store that can answer by document id, because the import
+      // mints a new random id and would otherwise shadow the real document.
+      if (!resolvedSequence) {
+        try {
+          resolvedSequence = await getSequenceRepository().getSequence(id);
+        } catch {
+          // No bundled PNG for this word
         }
         if (routeLoad.isStale(run)) return;
       }
@@ -594,6 +616,7 @@
       // Apply URL prop preferences (from QR codes with embedded prop info)
       applyUrlPropPreferences();
       isLoading = false;
+      if (!resolvedShortCode) void canonicalizeAddress(hydrated, run);
     } catch (err) {
       if (routeLoad.isStale(run)) return;
       console.error("[SequenceRoute] Failed to load sequence:", err);
@@ -617,6 +640,31 @@
       return;
     }
     void goto("/browse/gallery");
+  }
+
+  /**
+   * Rewrite a document-id address to the sequence's short code.
+   *
+   * The route accepts a raw document id so library, sync-room and legacy links
+   * keep working, but the legacy imports use the word itself as their id, so
+   * `/sequence/DCKΨ-` reads as if typing a word were the way in. It never is:
+   * two variations of one word share nothing but the word, and only the code
+   * names one of them. The lookup is a read of the existing code (never a
+   * mint), it runs after the sequence is already on screen, and a sequence
+   * without a code simply keeps the address it arrived on.
+   */
+  async function canonicalizeAddress(seq: SequenceData, run: number) {
+    let code: string | null = null;
+    try {
+      code = await getShortCodeManager().findExistingCodeForSequence(seq);
+    } catch {
+      return;
+    }
+    if (!code || routeLoad.isStale(run)) return;
+    resolvedShortCode = code;
+    mutateCurrentUrl((url) => {
+      url.pathname = `/sequence/${code}`;
+    });
   }
 
   function updateUrlParam(key: string, value: string) {
@@ -737,6 +785,19 @@
       reason={authDrawerState.reason}
       onClose={() => authDrawerState.hide()}
     />
+  {/await}
+{/if}
+
+<!-- Same gap for the signed-in half of that flow: "Send to a friend" opens the
+     inbox picker, which MainApplication mounts and this route does not. The
+     subscription provider comes with it — the picker lists
+     inboxState.conversations, and only the provider fills them. -->
+{#if inboxHostMounted}
+  {#await import("$lib/shared/inbox/components/InboxSubscriptionProvider.svelte") then mod}
+    <mod.default />
+  {/await}
+  {#await import("$lib/shared/inbox/components/InboxDrawer.svelte") then mod}
+    <mod.default />
   {/await}
 {/if}
 

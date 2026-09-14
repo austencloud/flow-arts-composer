@@ -675,15 +675,24 @@ export class WebGLFireRenderer {
         this.lastConfigHash = hash;
       }
 
-      // Handle loop detection
+      // A tracker gap or seek resets the live simulation, so any recording
+      // spanning it is incomplete. Do not let that discontinuity masquerade
+      // as a sequence wrap and promote frames captured mid-loop.
+      if (input.playbackDiscontinuity) {
+        cache.invalidate();
+      }
+
+      // Handle actual sequence loop detection. Playback discontinuities are
+      // deliberately handled above and do not enter this state transition.
       if (input.loopDetected) {
         if (cache.isRecording()) {
           // First loop complete - switch to playback
-          cache.onLoopDetected();
+          cache.onLoopDetected(input.loopDuration);
         } else if (cache.isWarm()) {
           // Subsequent loop - reset playback index
           cache.onLoopDetected();
-        } else if (!cache.isBypassed()) {
+        }
+        if (!cache.isWarm() && !cache.isRecording() && !cache.isBypassed()) {
           // Cache is idle - start recording this loop
           cache.startRecording(
             this.simWidth,

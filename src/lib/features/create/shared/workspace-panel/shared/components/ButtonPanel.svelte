@@ -79,6 +79,17 @@
   const usesWorkspacePlayback = $derived(
     isConstructTab || navigationState.activeTab === "generate"
   );
+  const hasWorkspacePlayback = $derived(
+    !!panelState.workspacePlayback || !!panelState.workspacePlaybackPreparation
+  );
+  const isWorkspacePlaybackPreparing = $derived(
+    !!panelState.workspacePlaybackPreparation &&
+      !panelState.workspacePlayback &&
+      !panelState.workspacePlaybackPreparationError
+  );
+  const hasWorkspacePlaybackError = $derived(
+    !!panelState.workspacePlaybackPreparationError
+  );
   const shouldShowOptionInteractionBanner = $derived.by(() => {
     if (
       !isConstructTab ||
@@ -116,7 +127,11 @@
       onViewSequence?.();
       return;
     }
-    if (panelState.workspacePlayback) {
+    if (hasWorkspacePlayback) {
+      if (hasWorkspacePlaybackError) {
+        panelState.retryWorkspacePlayback();
+        return;
+      }
       panelState.stopWorkspacePlayback();
       return;
     }
@@ -214,8 +229,7 @@
                       <ViewSequenceButton
                         purpose="expand-viewer"
                         onclick={() => {
-                          panelState.stopWorkspacePlayback();
-                          onViewSequence?.();
+                          panelState.handoffWorkspacePlaybackToViewer();
                         }}
                       />
                     </div>
@@ -225,6 +239,11 @@
                     isActive={isExportPanelOpen}
                     isStopping={usesWorkspacePlayback &&
                       !!panelState.workspacePlayback}
+                    playbackState={isWorkspacePlaybackPreparing
+                      ? "preparing"
+                      : hasWorkspacePlaybackError
+                        ? "retry"
+                        : "idle"}
                     purpose="play"
                   />
                 </div>
@@ -447,6 +466,19 @@
       /* Reduce vertical footprint - minimal padding */
       min-height: 0;
       padding: 4px 12px;
+      /* The individual action controls hold their touch-target size in this
+         short landscape mode, so their labels must also collapse. Otherwise
+         the text escapes a circular control while its background stays small. */
+      --workspace-action-label-display: none;
+      --workspace-action-width: var(--min-touch-target);
+      --workspace-action-gap: 0;
+      --workspace-action-padding-inline: 0;
+      --workspace-action-radius: 50%;
+      --share-trigger-label-display: none;
+      --share-trigger-width: var(--min-touch-target);
+      --share-trigger-gap: 0;
+      --share-trigger-padding-inline: 0;
+      --share-trigger-radius: 50%;
     }
 
     .left-zone,

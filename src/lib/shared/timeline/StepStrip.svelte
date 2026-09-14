@@ -36,6 +36,8 @@
     loop = false,
     leftPropType = null,
     rightPropType = null,
+    leftColorOverride = undefined,
+    rightColorOverride = undefined,
     propElementalType = null,
     stepPulse = false,
     staggerCellUpdates = false,
@@ -78,6 +80,10 @@
     loop?: boolean;
     leftPropType?: PropType | null;
     rightPropType?: PropType | null;
+    /** Display-only motion colors. Hosts with a fixed teaching palette can keep
+     * the rail aligned with their canvas without changing visitor settings. */
+    leftColorOverride?: string;
+    rightColorOverride?: string;
     /** Optional prop-path relationship shared by this realized sequence. */
     propElementalType?: ElementalType | null;
     /** Flash the focus frame each time the active step advances. */
@@ -395,6 +401,8 @@
               disableContentTransitions={true}
               leftPropTypeOverride={leftPropType ?? undefined}
               rightPropTypeOverride={rightPropType ?? undefined}
+              {leftColorOverride}
+              {rightColorOverride}
               {propElementalType}
             />
           </div>

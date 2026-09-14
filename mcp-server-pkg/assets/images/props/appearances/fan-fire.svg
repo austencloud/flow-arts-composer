@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 207" data-generated-from="scripts/assets/doodlegrip-fire-reference.json" data-source-version="1" data-fan-cover-state="bare">
+  <title>DoodleGrip five-wick fire fan</title>
+  <desc>Generated from the same measured physical geometry as the 3D fan model.</desc>
+  <g data-fan-frame="" fill="none" stroke="#2E3192" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse data-fire-grip-ring="" cx="130" cy="103.5" rx="8.9421" ry="7.9496" stroke-width="3"/>
+    <path data-fire-grip-shell="" d="M 145.9996 80.0046 L 144.5008 79.4145 L 142.9672 78.8998 L 141.4036 78.4623 L 139.8149 78.1032 L 138.2062 77.8238 L 136.5823 77.6248 L 134.9485 77.5069 L 133.3098 77.4705 L 131.6713 77.5157 L 130.0383 77.6423 L 128.4159 77.85 L 126.809 78.138 L 125.2228 78.5056 L 123.6622 78.9515 L 122.1321 79.4743 L 120.6373 80.0725 L 119.1826 80.744 L 117.7724 81.4869 L 116.4111 82.2988 L 115.1031 83.1772 L 113.8525 84.1192 L 112.6631 85.122 L 111.5387 86.1824 L 110.4828 87.2971 L 109.4987 88.4625 L 108.5896 89.6751 L 107.7582 90.931 L 107.0071 92.2263 L 106.3388 93.557 L 105.7553 94.9188 L 105.2584 96.3075 L 104.8498 97.7188 L 104.5306 99.1482 L 104.3019 100.5912 L 104.1644 102.0433 L 104.1185 103.5 L 104.1644 104.9567 L 104.3019 106.4088 L 104.5306 107.8518 L 104.8498 109.2812 L 105.2584 110.6925 L 105.7553 112.0812 L 106.3388 113.443 L 107.0071 114.7737 L 107.7582 116.069 L 108.5896 117.3249 L 109.4987 118.5375 L 110.4828 119.7029 L 111.5387 120.8176 L 112.6631 121.878 L 113.8525 122.8808 L 115.1031 123.8228 L 116.4111 124.7012 L 117.7724 125.5131 L 119.1826 126.256 L 120.6373 126.9275 L 122.1321 127.5257 L 123.6622 128.0485 L 125.2228 128.4944 L 126.809 128.862 L 128.4159 129.15 L 130.0383 129.3577 L 131.6713 129.4843 L 133.3098 129.5295 L 134.9485 129.4931 L 136.5823 129.3752 L 138.2062 129.1762 L 139.8149 128.8968 L 141.4036 128.5377 L 142.9672 128.1002 L 144.5008 127.5855 L 145.9996 126.9954" stroke-width="2.6"/>
+    <path data-fire-grip-bridge="1" d="M 123.4284 97.0319 L 111.0005 86.7347"/>
+    <path data-fire-grip-bridge="2" d="M 119.9548 103.5 L 104.1185 103.5"/>
+    <path data-fire-grip-bridge="3" d="M 123.4284 109.9681 L 111.0005 120.2653"/>
+    <path data-fire-rail="left" d="M 134.694 94.7367 C 137.5104 89.7291 142.6738 83.8869 145.9996 80.0046 C 149.3253 76.1223 179.9987 34.6455 179.9987 7.6168" stroke-width="2.6"/>
+    <path data-fire-spine="2" d="M 139.388 98.9097 L 231.1477 45.9847"/>
+    <path data-fire-spine="3" d="M 140.0452 103.5 L 252.8097 103.5"/>
+    <path data-fire-spine="4" d="M 139.388 108.0903 L 231.1477 161.0153"/>
+    <path data-fire-rail="right" d="M 134.694 112.2633 C 137.5104 117.2709 142.6738 123.1131 145.9996 126.9954 C 149.3253 130.8777 179.9987 172.3545 179.9987 199.3832" stroke-width="2.6"/>
+    <path data-fire-webbing="WickHorizon" d="M 179.9987 10.9552 L 179.9987 196.0448"/>
+    <path data-fire-webbing="UpperLeftStar" d="M 249.0545 103.5 L 179.9987 75.2905 L 227.9974 47.8017 L 179.9987 103.5"/>
+    <path data-fire-webbing="UpperRightStar" d="M 249.0545 103.5 L 179.9987 131.7095 L 227.9974 159.1983 L 179.9987 103.5"/>
+  </g>
+  <g data-fire-wick="1" fill="#f5e6b8" stroke="#6d4b2a" stroke-width="1.2" stroke-linecap="round">
+    <rect x="-7.9496" y="-6.3369" width="15.8991" height="12.6738" rx="6.3369" transform="translate(179.9987 10.9552) rotate(-90)"/>
+    <path data-fire-wick-wrap="1-1" d="M 173.6618 15.9628 L 186.3356 15.9628"/>
+    <path data-fire-wick-wrap="1-2" d="M 173.6618 10.9552 L 186.3356 10.9552"/>
+    <path data-fire-wick-wrap="1-3" d="M 173.6618 5.9476 L 186.3356 5.9476"/>
+  </g>
+  <g data-fire-wick="2" fill="#f5e6b8" stroke="#6d4b2a" stroke-width="1.2" stroke-linecap="round">
+    <rect x="-8.6599" y="-5.8507" width="17.3198" height="11.7015" rx="5.8507" transform="translate(227.9974 47.8017) rotate(-29.9754)"/>
+    <path data-fire-wick-wrap="2-1" d="M 220.3488 45.4591 L 226.1952 55.5954"/>
+    <path data-fire-wick-wrap="2-2" d="M 225.0742 42.7336 L 230.9206 52.8699"/>
+    <path data-fire-wick-wrap="2-3" d="M 229.7996 40.0081 L 235.646 50.1443"/>
+  </g>
+  <g data-fire-wick="3" fill="#f5e6b8" stroke="#6d4b2a" stroke-width="1.2" stroke-linecap="round">
+    <rect x="-8.9421" y="-5.6336" width="17.8841" height="11.2671" rx="5.6336" transform="translate(249.0545 103.5) rotate(0)"/>
+    <path data-fire-wick-wrap="3-1" d="M 243.4217 97.8665 L 243.4217 109.1335"/>
+    <path data-fire-wick-wrap="3-2" d="M 249.0545 97.8665 L 249.0545 109.1335"/>
+    <path data-fire-wick-wrap="3-3" d="M 254.6873 97.8665 L 254.6873 109.1335"/>
+  </g>
+  <g data-fire-wick="4" fill="#f5e6b8" stroke="#6d4b2a" stroke-width="1.2" stroke-linecap="round">
+    <rect x="-8.6599" y="-5.8507" width="17.3198" height="11.7015" rx="5.8507" transform="translate(227.9974 159.1983) rotate(29.9754)"/>
+    <path data-fire-wick-wrap="4-1" d="M 226.1952 151.4046 L 220.3488 161.5409"/>
+    <path data-fire-wick-wrap="4-2" d="M 230.9206 154.1301 L 225.0742 164.2664"/>
+    <path data-fire-wick-wrap="4-3" d="M 235.646 156.8557 L 229.7996 166.9919"/>
+  </g>
+  <g data-fire-wick="5" fill="#f5e6b8" stroke="#6d4b2a" stroke-width="1.2" stroke-linecap="round">
+    <rect x="-7.9496" y="-6.3369" width="15.8991" height="12.6738" rx="6.3369" transform="translate(179.9987 196.0448) rotate(90)"/>
+    <path data-fire-wick-wrap="5-1" d="M 186.3356 191.0372 L 173.6618 191.0372"/>
+    <path data-fire-wick-wrap="5-2" d="M 186.3356 196.0448 L 173.6618 196.0448"/>
+    <path data-fire-wick-wrap="5-3" d="M 186.3356 201.0524 L 173.6618 201.0524"/>
+  </g>
+
+</svg>

@@ -21,13 +21,12 @@ export interface ArtShareTarget {
 interface ViewerShellShareInputs {
   getContext: () => OrchestratorContext;
   getSequence: () => SequenceData;
-  getDefaultBluePropType: () => unknown;
 }
 
 interface ViewerShellShareDependencies {
-  openSendSequenceSheet: typeof import("$lib/shared/inbox/state/send-sequence-state.svelte").openSendSequenceSheet;
-  buildSequenceSharePayload: typeof import("$lib/shared/inbox/state/send-sequence-state.svelte").buildSequenceSharePayload;
-  buildThumbnailUrl: typeof import("$lib/shared/inbox/state/send-sequence-state.svelte").buildThumbnailUrl;
+  openSendSequenceSheetWithCard: typeof import("$lib/shared/inbox/state/send-sequence-state.svelte").openSendSequenceSheetWithCard;
+  /** The Choreo Card the current pipeline draws for this sequence. */
+  renderCardPreview: (sequence: SequenceData) => Promise<Blob>;
   sendToStickerLab: typeof import("../services/send-to-sticker-lab").sendToStickerLab;
   captureScanAction: typeof import("$lib/shared/analytics/scan-analytics").captureScanAction;
 }
@@ -82,17 +81,9 @@ export function createViewerShellShareState(
   function sendToInbox(): void {
     const sequence = inputs.getSequence();
     dependencies.captureScanAction("send");
-    const propType =
-      sequence.intendedProp?.leftPropType ??
-      inputs.getDefaultBluePropType() ??
-      "staff";
-    const thumbnailUrl = dependencies.buildThumbnailUrl(
-      sequence.word || sequence.name,
-      String(propType),
-      false
-    );
-    dependencies.openSendSequenceSheet(
-      dependencies.buildSequenceSharePayload({ ...sequence, thumbnailUrl })
+    dependencies.openSendSequenceSheetWithCard(
+      sequence,
+      dependencies.renderCardPreview
     );
   }
 

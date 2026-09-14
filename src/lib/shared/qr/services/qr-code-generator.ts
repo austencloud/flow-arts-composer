@@ -9,6 +9,14 @@
  */
 
 import QRCodeStyling from "qr-code-styling";
+import {
+  MODERN_QR_STYLE,
+  applyDarkQrStyle,
+  createStyledQrOptions,
+} from "@tka/render-composition";
+
+// The style owner lives in the shared package so the MCP card paints the same QR.
+export { PLAY_GREEN, playIconDataUrl } from "@tka/render-composition";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ShortCodeManager } from "./short-code-manager";
 import type {
@@ -45,14 +53,7 @@ function throwIfAborted(signal?: AbortSignal): void {
  * Style presets for quick styling
  */
 const STYLE_PRESETS: Record<QRStylePreset, QRCodeStyle> = {
-  modern: {
-    dotsType: "rounded",
-    cornersSquareType: "extra-rounded",
-    cornersDotType: "dot",
-    color: "#1a1a2e",
-    backgroundColor: "#ffffff",
-    errorCorrectionLevel: "M",
-  },
+  modern: MODERN_QR_STYLE as QRCodeStyle,
   classic: {
     dotsType: "square",
     cornersSquareType: "square",
@@ -70,53 +71,6 @@ const STYLE_PRESETS: Record<QRStylePreset, QRCodeStyle> = {
     errorCorrectionLevel: "L",
   },
 };
-
-/** The play triangle's color — a vivid "go/play" green that reads on either
- *  badge. Universal play semantics; the badge isolates it from the card palette. */
-export const PLAY_GREEN = "#22c55e";
-
-/**
- * Rough perceived-luminance test, used to pick the badge color that matches the
- * card (white badge on light cards, dark badge on dark cards). Accepts
- * #rgb / #rrggbb (with optional alpha); anything else is treated as dark.
- */
-function isLightColor(hex: string): boolean {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})/i.exec(hex.trim());
-  const raw = m?.[1];
-  if (!raw) return false;
-  const h = raw.length === 3 ? raw.replace(/./g, (c) => c + c) : raw;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  // Rec. 601 luma
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
-}
-
-/**
- * Inline SVG data URL: a green play triangle in a circular badge, centered in
- * the QR. The badge matches the card (white on light cards, dark on dark cards)
- * so it blends into the card's whitespace and the green triangle floats in the
- * cleared center. The overlay is purely visual — it never changes the encoded
- * URL — and the generator bumps error correction to "H" so the obscured modules
- * stay recoverable. `moduleColor` is the QR module color; the badge is derived
- * as its card-matching contrast.
- */
-export function playIconDataUrl(
-  moduleColor: string,
-  triangleColor: string = PLAY_GREEN
-): string {
-  // Badge matches the card background: light card (dark modules) -> white badge;
-  // dark card (white modules) -> dark badge.
-  const badge = isLightColor(moduleColor) ? "#1a1a2e" : "#ffffff";
-  const triangle = triangleColor;
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">` +
-    `<circle cx="50" cy="50" r="50" fill="${badge}"/>` +
-    `<path d="M35 24 L35 76 L80 50 Z" fill="${triangle}" ` +
-    `stroke="${triangle}" stroke-width="6" stroke-linejoin="round"/>` +
-    `</svg>`;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
-}
 
 export class QRCodeGenerator {
   /** Memory-only map of decoded QR images, keyed by dataUrl. The SVG render
@@ -179,54 +133,13 @@ export class QRCodeGenerator {
     style: QRCodeStyle,
     centerIcon: "play" | "none"
   ): ConstructorParameters<typeof QRCodeStyling>[0] {
-    // Center play button: a QR that resolves to the animated player carries the
-    // triangle as an implicit "scan to play". hideBackgroundDots clears the
-    // modules behind it and the margin gives a clean ring. centerIcon "none"
-    // skips the overlay (and the forced-"H" recovery it requires) for QRs whose
-    // destination is not a player.
-    const imageOptions =
-      centerIcon === "play"
-        ? {
-            image: playIconDataUrl(style.color || "#1a1a2e"),
-            imageOptions: {
-              imageSize: 0.25,
-              margin: 3,
-              hideBackgroundDots: true,
-              crossOrigin: "anonymous",
-            },
-          }
-        : {};
-    return {
-      width: size,
-      height: size,
-      type: "svg",
-      data: url,
-      margin: margin,
-      ...imageOptions,
-      qrOptions: {
-        typeNumber: 0, // Auto-detect
-        mode: "Byte",
-        // Force "H" (30% recovery) whenever the center image is embedded so the
-        // obscured modules stay recoverable, regardless of the preset's level.
-        errorCorrectionLevel:
-          centerIcon === "play" ? "H" : style.errorCorrectionLevel || "M",
-      },
-      dotsOptions: {
-        color: style.color || "#1a1a2e",
-        type: style.dotsType || "rounded",
-      },
-      cornersSquareOptions: {
-        color: style.color || "#1a1a2e",
-        type: style.cornersSquareType || "extra-rounded",
-      },
-      cornersDotOptions: {
-        color: style.color || "#1a1a2e",
-        type: style.cornersDotType || "dot",
-      },
-      backgroundOptions: {
-        color: style.backgroundColor || "#ffffff",
-      },
-    };
+    return createStyledQrOptions(
+      url,
+      size,
+      margin,
+      style,
+      centerIcon
+    ) as ConstructorParameters<typeof QRCodeStyling>[0];
   }
 
   /**
@@ -243,11 +156,7 @@ export class QRCodeGenerator {
 
     // Dark mode: white modules on transparent background
     if (options?.darkMode) {
-      style = {
-        ...style,
-        color: "#ffffff",
-        backgroundColor: "#00000000",
-      };
+      style = applyDarkQrStyle(style) as QRCodeStyle;
     }
 
     // Persistent image cache: the qr-code-styling render + getRawData is the
@@ -366,6 +275,49 @@ export class QRCodeGenerator {
     // Uploading it never delays displaying or saving the QR that is ready now.
     void this.preparedCache.set(preparedKey, result).catch(() => {});
     return result;
+  }
+
+  /**
+   * Returns previously prepared QR artwork without warming cells, allocating a
+   * short code, or rendering a new SVG. Gallery cards use this while scrolling:
+   * a missing preparation is ordinary and leaves the card without a QR.
+   *
+   * Prepared records are baked at the canonical 200px size. SVG is vector
+   * artwork, so callers can draw that same record at their own display size.
+   */
+  async findPreparedForSequence(
+    sequence: SequenceData,
+    options?: QRCodeOptions
+  ): Promise<QRCodeResult | null> {
+    throwIfAborted(options?.signal);
+    const explicitCatDogMode =
+      options?.leftPropType && options.rightPropType
+        ? options.leftPropType !== options.rightPropType
+        : undefined;
+    const propConfig = resolveScanPropConfig(sequence, {
+      leftPropType: options?.leftPropType,
+      rightPropType: options?.rightPropType,
+      catDogMode: explicitCatDogMode,
+    });
+    const preparedKey = await this.preparedCache.keyFor(sequence, propConfig, {
+      ...options,
+      // The prepared population is intentionally canonicalized at 200px.
+      size: 200,
+    });
+    throwIfAborted(options?.signal);
+    const prepared = await this.preparedCache.get(preparedKey);
+    throwIfAborted(options?.signal);
+    return prepared;
+  }
+
+  /** Decode already-prepared SVG artwork for a canvas caller without taking
+   * the generation path. */
+  async loadPreparedAsImage(
+    sequence: SequenceData,
+    options?: QRCodeOptions
+  ): Promise<HTMLImageElement | null> {
+    const prepared = await this.findPreparedForSequence(sequence, options);
+    return prepared ? this.loadDecodedImage(prepared.dataUrl) : null;
   }
 
   async generateForUrl(

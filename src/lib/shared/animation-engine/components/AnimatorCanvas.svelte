@@ -146,6 +146,7 @@ Last audit: 2025-12-27
     progressLine = false,
     hoverHint = "none",
     cornerToggle = false,
+    showScrubberPlaybackControl = false,
     extraContextMenuItems = [],
     beatIndicators = true,
     bpm = undefined,
@@ -293,6 +294,8 @@ Last audit: 2025-12-27
      *  canvas via CanvasSurface's cornerControl slot. Pairs with onPlaybackToggle.
      *  Off by default. */
     cornerToggle?: boolean;
+    /** Adds the canonical play/pause action beside the minimal scrubber. */
+    showScrubberPlaybackControl?: boolean;
     /** Extra entries injected into the right-click context menu (e.g. "Save
      *  tunnel"). Prepended before the built-in items by CanvasContextMenuHost.
      *  Defaults to [] so existing consumers are unaffected. */
@@ -906,6 +909,11 @@ Last audit: 2025-12-27
             : null}
           onScrubStart={onProgressBarScrubStart}
           onScrubEnd={onProgressBarScrubEnd}
+          showPlaybackControl={showScrubberPlaybackControl}
+          {isPlaying}
+          onPlaybackToggle={showScrubberPlaybackControl
+            ? onPlaybackToggle
+            : null}
         />
       {:else}
         <!-- The transport is the canonical playback surface: play, tempo,

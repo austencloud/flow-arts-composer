@@ -15,37 +15,51 @@
     isActive = false,
     purpose = "open-viewer",
     isStopping = false,
+    playbackState = "idle",
   } = $props<{
     onclick?: () => void;
     isActive?: boolean;
     purpose?: "open-viewer" | "expand-viewer" | "play";
     isStopping?: boolean;
+    playbackState?: "idle" | "preparing" | "retry";
   }>();
 
   const icon = $derived(
-    isStopping
-      ? "fa-stop"
-      : purpose === "play"
-        ? "fa-play"
-        : purpose === "expand-viewer"
-          ? "fa-expand"
-          : WORKSPACE_BUTTON_ICON.view.icon
+    playbackState === "preparing"
+      ? "fa-spinner fa-spin"
+      : playbackState === "retry"
+        ? "fa-rotate-right"
+        : isStopping
+          ? "fa-stop"
+          : purpose === "play"
+            ? "fa-play"
+            : purpose === "expand-viewer"
+              ? "fa-expand"
+              : WORKSPACE_BUTTON_ICON.view.icon
   );
   const accessibleLabel = $derived(
-    isStopping
-      ? "Stop playback and return to card"
-      : purpose === "play"
-        ? WORKSPACE_BUTTON_ICON.view.actionLabel
-        : purpose === "expand-viewer"
-          ? "Expand sequence viewer"
-          : "Open sequence viewer"
+    playbackState === "preparing"
+      ? "Cancel playback preparation"
+      : playbackState === "retry"
+        ? "Retry playback after loading failed"
+        : isStopping
+          ? "Stop playback and return to card"
+          : purpose === "play"
+            ? WORKSPACE_BUTTON_ICON.view.actionLabel
+            : purpose === "expand-viewer"
+              ? "Expand sequence viewer"
+              : "Open sequence viewer"
   );
   const visibleLabel = $derived(
-    isStopping
-      ? "Stop"
-      : purpose === "play"
-        ? WORKSPACE_BUTTON_ICON.view.visibleLabel
-        : "View"
+    playbackState === "preparing"
+      ? "Cancel"
+      : playbackState === "retry"
+        ? "Retry"
+        : isStopping
+          ? "Stop"
+          : purpose === "play"
+            ? WORKSPACE_BUTTON_ICON.view.visibleLabel
+            : "View"
   );
 
   /**
@@ -71,6 +85,8 @@
   class:play-purpose={purpose === "play"}
   class:expand-purpose={purpose === "expand-viewer"}
   class:stopping={isStopping}
+  class:preparing={playbackState === "preparing"}
+  class:retry={playbackState === "retry"}
   onclick={handleClick}
   aria-label={accessibleLabel}
   data-ghost={isActive ? undefined : "safe"}
@@ -204,8 +220,13 @@
     font-size: clamp(1.25rem, 5cqi, 1.75rem);
   }
 
-  .view-sequence-button.play-purpose:not(.stopping) i {
+  .view-sequence-button.play-purpose:not(.stopping):not(.preparing):not(.retry)
+    i {
     transform: translateX(0.08em);
+  }
+
+  .view-sequence-button.retry {
+    animation: none;
   }
 
   @keyframes arrive {
@@ -278,6 +299,10 @@
       width: var(--min-touch-target);
       height: var(--min-touch-target);
       font-size: var(--font-size-base);
+    }
+
+    .view-sequence-button.preparing i {
+      animation: none;
     }
   }
 

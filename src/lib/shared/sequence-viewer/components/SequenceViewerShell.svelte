@@ -18,6 +18,8 @@
   Do NOT rebuild scan-specific header/body variants — extend this shell.
 -->
 <script lang="ts">
+  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
   import { onDestroy, onMount, untrack, type Snippet } from "svelte";
   import { createViewerStudioSurfaces } from "../state/viewer-studio-surfaces.svelte";
   import { setViewerStudioSurfaces } from "../context/viewer-studio-surfaces-context";
@@ -67,12 +69,8 @@
   import { uploadRenderedFilm } from "$lib/shared/video-collaboration/services/upload-rendered-film";
   import { canAccessPostStudio } from "../services/post-studio-access";
   import ChoreoCardContextMenuHost from "./choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
-  import {
-    openSendSequenceSheet,
-    buildSequenceSharePayload,
-    buildThumbnailUrl,
-  } from "$lib/shared/inbox/state/send-sequence-state.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { openSendSequenceSheetWithCard } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  import { getSharer } from "$lib/shared/share/get-sharer";
   import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { sendToStickerLab } from "$lib/shared/sequence-viewer/services/send-to-sticker-lab";
@@ -358,12 +356,17 @@
     {
       getContext: () => ctx,
       getSequence: () => sequence,
-      getDefaultBluePropType: () => settingsService.settings.leftPropType,
     },
     {
-      openSendSequenceSheet,
-      buildSequenceSharePayload,
-      buildThumbnailUrl,
+      openSendSequenceSheetWithCard,
+      // Same inputs the share sheet's own card download uses, so the send
+      // preview matches the card on screen.
+      renderCardPreview: (target) =>
+        getSharer().getCardImageBlob(target, {
+          darkMode: ctx.exportOptions.imageDarkMode,
+          resolvedAutoLayout: ctx.resolvedCardAutoLayout,
+          cardPresentation: cardPresentation.value,
+        }),
       sendToStickerLab,
       captureScanAction: captureViewerAndScanAction,
     }
@@ -467,6 +470,7 @@
         // Post Studio owns re-rendering; the sheet must not kick off an
         // animation export that would replace the composed post.
         request: () => Promise.resolve(),
+        cancel: () => {},
       };
     }
 
@@ -478,6 +482,7 @@
         progress: mandala.exporting ? mandala.exportProgress : null,
         label: "Mandala",
         request: () => Promise.resolve(mandala.startExport({ deliver: false })),
+        cancel: () => mandala.cancelExport(),
       };
     }
 
@@ -488,6 +493,7 @@
         progress: ctx.exportProgress?.progress ?? null,
         label: "Tunnel",
         request: () => interactions.handleArtExport(target),
+        cancel: () => interactions.handleCancelVideoExport(),
       };
     }
 
@@ -500,6 +506,7 @@
       // that, because only there is the user unambiguously looking at a scene.
       label: share.sceneShare ? "Scene" : "Video",
       request: requestShareVideo,
+      cancel: () => interactions.handleCancelVideoExport(),
     };
   });
 
@@ -1159,7 +1166,9 @@
                   second={studioSource}
                   duration={DURATION.emphasis}
                 />
-                {#if ctx.renderMode === "3d" && (ctx.countdownValue > 0 || ctx.isRecording3D || ctx.isExporting || ctx.pendingFilmRender)}
+                <!-- Share owns progress and cancellation while open. A second
+                     native modal would intercept its visible controls. -->
+                {#if ctx.renderMode === "3d" && !share.postSheetOpen && (ctx.countdownValue > 0 || ctx.isRecording3D || ctx.isExporting || ctx.pendingFilmRender)}
                   <Recording3DOverlay
                     countdownValue={ctx.countdownValue}
                     isRecording={ctx.isRecording3D}
@@ -1173,7 +1182,7 @@
                     onDiscardRender={interactions.handleDiscardFilmRender}
                   />
                 {/if}
-                {#if ctx.renderMode !== "3d" && shellRendersTakeover && animTakeover.phase !== "idle"}
+                {#if ctx.renderMode !== "3d" && !share.postSheetOpen && shellRendersTakeover && animTakeover.phase !== "idle"}
                   <ExportTakeover
                     phase={animTakeover.phase}
                     progress={interactions.videoProgress?.progress ?? 0}
@@ -1469,11 +1478,17 @@
     isRecordingScene={!share.artShare && ctx.isRecording3D}
     exportProgress={artShareVideo.progress}
     onRequestVideo={artShareVideo.request}
+    onCancelVideo={artShareVideo.cancel}
     onPrepareFile={share.prepareFile}
     initialEntry={share.initialEntry}
     preserveSession={share.preserveSession}
     onSessionResumed={share.markSessionResumed}
     videoLabel={artShareVideo.label}
+    captureAnimationPreview={share.artShare || share.postShare
+      ? () => ""
+      : ctx.captureAnimationPreview}
+    is3DExport={ctx.renderMode === "3d"}
+    videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}`}
     initialArtifact={share.artShare ||
     share.sceneShare ||
     (share.postShare && !!postStudioVideoUrl) ||
@@ -1487,6 +1502,8 @@
       ? persistCardPresentation
       : undefined}
     onSendInTka={() => share.sendToInbox()}
+    needsAccountForFiles={!authState.isFullAccount}
+    onRequestAccount={() => authDrawerState.show("signup", "export")}
     onOpenPostStudio={canAccessPostStudio()
       ? () => layout.selectViewerMode("post-studio")
       : undefined}
@@ -1814,7 +1831,7 @@
 
   .motion-settings-layer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     overflow-x: hidden;
     overflow-y: auto;
   }

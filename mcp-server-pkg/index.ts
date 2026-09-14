@@ -20,6 +20,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import packageJson from "./package.json" with { type: "json" };
 import {
   registerDataTools,
   registerPreferenceTools,
@@ -36,7 +37,7 @@ import { loadKnowledgeBase } from "./src/shared/server-context.js";
 // Create MCP server instance
 const server = new McpServer({
   name: "tka-domain",
-  version: "2.0.0",
+  version: packageJson.version,
 });
 
 // Load knowledge base (glossary, letter types)
@@ -53,7 +54,9 @@ registerPresetTools(server);
 registerUtilityTools(server);
 
 async function main() {
-  console.error("[MCP] Starting TKA Domain MCP Server v2.0.0...");
+  console.error(
+    `[MCP] Starting TKA Domain MCP Server v${packageJson.version}...`
+  );
 
   // Ensure transition graph is initialized before accepting tool calls
   // This must complete before any sequence generation tools are used

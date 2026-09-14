@@ -20,15 +20,14 @@ import type { Canvas2DDirectRenderer } from './canvas-2d-direct-renderer';
 import {
   drawMonochromeImage,
   drawTintedImage,
+  renderStepNumber,
 } from "@tka/render-composition";
+import { ensureCardFonts } from "./gelasio-fonts";
+import { drawHandColorKey } from "./canvas-2d-glyph-renderer";
 
 const VIEWBOX_SIZE = 950;
 const TKA_GLYPH_X = 50;
 const TKA_GLYPH_Y = 800;
-const STEP_NUMBER_X = 50;
-const STEP_NUMBER_Y = 50;
-const BEAT_NUMBER_FONT_SIZE = 100;
-const BEAT_NUMBER_START_FONT_SIZE = 80;
 const TURN_NUMBER_HEIGHT = 45;
 const DOT_PADDING = 10;
 const DOT_SIZE = 25;
@@ -116,6 +115,7 @@ export class LayerCompositor {
   ): Promise<CompositionResult> {
     const totalStart = performance.now();
     this.stats.totalCompositions++;
+    if (stepNumber !== undefined) await ensureCardFonts();
 
     const timing = {
       totalMs: 0,
@@ -151,6 +151,13 @@ export class LayerCompositor {
       ctx.drawImage(core, Math.round((width - options.size) / 2), 0);
       if (typeof stepNumber === "number" && stepNumber !== -1) {
         this.drawStepNumber(ctx, stepNumber, options.size, options.darkMode);
+        this.drawStartHandKey(
+          ctx,
+          pictograph,
+          options,
+          stepNumber,
+          Math.round((width - options.size) / 2)
+        );
       }
       timing.totalMs = performance.now() - totalStart;
       return { canvas, timing, cacheStats };
@@ -226,6 +233,7 @@ export class LayerCompositor {
     if (typeof stepNumber === "number" && stepNumber !== -1) {
       const beatStart = performance.now();
       this.drawStepNumber(ctx, stepNumber, options.size, options.darkMode);
+      this.drawStartHandKey(ctx, pictograph, options, stepNumber, coreOffset);
       timing.beatLayerMs = performance.now() - beatStart;
     }
 
@@ -643,20 +651,36 @@ export class LayerCompositor {
     size: number,
     darkMode: boolean
   ): void {
-    if (stepNumber === -1) return;
+    renderStepNumber(ctx, stepNumber, 0, 0, size, darkMode);
+  }
 
-    const scale = size / VIEWBOX_SIZE;
-    const text = stepNumber === 0 ? "Start" : String(stepNumber);
-    const fontSize = (stepNumber === 0 ? BEAT_NUMBER_START_FONT_SIZE : BEAT_NUMBER_FONT_SIZE) * scale;
-
-    ctx.font = `bold ${fontSize}px Georgia, serif`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    ctx.fillStyle = darkMode ? "#ffffff" : "#231f20";
-
-    const x = STEP_NUMBER_X * scale;
-    const y = STEP_NUMBER_Y * scale;
-    ctx.fillText(text, x, y);
+  /**
+   * The start cell (step 0) carries the L/R hand colour key as part of the
+   * pictograph canon. Hidden or absent hands drop out of the key.
+   */
+  private drawStartHandKey(
+    ctx: RenderContext2D,
+    pictograph: PreparedPictographData,
+    options: LayerRenderOptions,
+    stepNumber: number,
+    coreOffset: number
+  ): void {
+    if (stepNumber !== 0) return;
+    drawHandColorKey(
+      ctx,
+      options.size,
+      options.darkMode,
+      {
+        showLeft:
+          (options.showLeftMotion ?? true) &&
+          isVisibleMotion(pictograph.motions?.left),
+        showRight:
+          (options.showRightMotion ?? true) &&
+          isVisibleMotion(pictograph.motions?.right),
+        primaryPropColors: options.primaryPropColors,
+      },
+      coreOffset
+    );
   }
 
   private async drawTKAGlyph(

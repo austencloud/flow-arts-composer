@@ -263,6 +263,7 @@
           onAuditionDismiss={handleAuditionDismiss}
           manualColumnCount={loopAlignedColumnCount}
           sequenceWord={currentDisplayWord}
+          observeScroll={!panelState.workspacePlayback}
         />
       </div>
     </div>

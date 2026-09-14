@@ -15,6 +15,30 @@ on:
       - "*.md"
 
 jobs:
+  card-render-parity:
+    name: Composer and MCP Card Parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+      - run: cp .env.example .env
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:packages
+      - run: npm ci --prefix mcp-server --ignore-scripts
+      - run: npm ci --prefix mcp-server-pkg --ignore-scripts
+      - run: npm run build --prefix mcp-server-pkg
+      - name: Canonical packaged assets must be current
+        run: |
+          git diff --exit-code -- mcp-server-pkg/assets
+          test -z "$(git ls-files --others --exclude-standard -- mcp-server-pkg/assets)"
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run test:card-mcp-parity
+
   validate:
     name: Type Check, Test, Build
     runs-on: ubuntu-latest

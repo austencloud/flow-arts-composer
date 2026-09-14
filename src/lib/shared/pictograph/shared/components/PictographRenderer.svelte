@@ -49,6 +49,10 @@ Usage:
   import type { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
   import { GridMode, GridLocation } from "../../grid/domain/enums/grid-enums";
   import {
+    HAND_COLOR_KEY,
+    calculateHandColorKeyLayout,
+  } from "@tka/render-core";
+  import {
     type ElementalType,
     HandSide,
     type HandSide as HandSideValue,
@@ -437,6 +441,16 @@ Usage:
   const effectiveRightColor = $derived(
     rightColorOverride ?? getSettings().primaryPropColors?.right
   );
+
+  // Start-position hand colour key: shared geometry with the MCP renderer so the
+  // viewer, card back and MCP images bake in the same legend. Hidden or absent
+  // hands drop out of the key rather than advertising a colour that is not there.
+  const handColorKey = $derived(
+    calculateHandColorKeyLayout(
+      leftMotionVisible && isVisibleMotion(pictograph.motions?.left),
+      rightMotionVisible && isVisibleMotion(pictograph.motions?.right)
+    )
+  );
 </script>
 
 <div class="pictograph-renderer">
@@ -664,38 +678,31 @@ Usage:
     />
 
     <!-- Reversal indicators -->
-    {#if (showHandColorKey ?? isStartPosition) && hasValidData}
+    {#if (showHandColorKey ?? isStartPosition) && hasValidData && handColorKey.entries.length > 0}
       <g
         class="hand-color-key"
-        transform="translate({expandedWidth / 2}, 850)"
+        transform="translate({expandedWidth / 2}, 0)"
         aria-label="Left and right prop colors"
-        font-family="Arial, sans-serif"
-        font-size="64"
-        font-weight="600"
+        font-family={HAND_COLOR_KEY.FONT_FAMILY}
+        font-size={HAND_COLOR_KEY.FONT_SIZE}
+        font-weight={HAND_COLOR_KEY.FONT_WEIGHT}
         fill={darkMode === undefined
           ? "var(--dm-text-color)"
           : darkMode
             ? "#ffffff"
             : "#231f20"}
       >
-        {#if leftMotionVisible && isVisibleMotion(pictograph.motions?.left)}
+        {#each handColorKey.entries as entry (entry.hand)}
           <circle
-            cx="-145"
-            cy="0"
-            r="28"
-            fill={effectiveLeftColor ?? "var(--dm-motion-blue)"}
+            cx={entry.swatchX}
+            cy={handColorKey.centerY}
+            r={handColorKey.swatchRadius}
+            fill={entry.hand === HandSide.LEFT
+              ? (effectiveLeftColor ?? "var(--dm-motion-blue)")
+              : (effectiveRightColor ?? "var(--dm-motion-red)")}
           />
-          <text x="-99" y="22">L</text>
-        {/if}
-        {#if rightMotionVisible && isVisibleMotion(pictograph.motions?.right)}
-          <circle
-            cx="65"
-            cy="0"
-            r="28"
-            fill={effectiveRightColor ?? "var(--dm-motion-red)"}
-          />
-          <text x="111" y="22">R</text>
-        {/if}
+          <text x={entry.labelX} y={handColorKey.baselineY}>{entry.label}</text>
+        {/each}
       </g>
     {/if}
 
