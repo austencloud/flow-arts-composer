@@ -127,5 +127,8 @@ describe("inbox inline sequence player contract", () => {
       "(alwaysLive || playbackMounted) && playerRequested && sequence !== null"
     );
     expect(showcase).toContain("alwaysLive = false");
+    expect(showcase).toContain(
+      'externalPlaybackMode: alwaysLive ? "continuous" : null'
+    );
   });
 });
