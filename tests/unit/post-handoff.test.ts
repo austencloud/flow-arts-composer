@@ -42,18 +42,16 @@ describe("post handoff destinations", () => {
     expect(destinations[0]?.primary).toBe(true);
   });
 
-  it("never offers the native share on desktop, even though Chrome implements it", () => {
-    // The gate is the DEVICE, not the capability — desktop Chrome supports
-    // navigator.share and would pop the Windows share sheet for a file that
-    // should just download.
+  it("offers capable desktops both native sharing and an explicit download", () => {
     const destinations = resolveDestinations({
       artifact: "card",
       blob: pngBlob(),
       filename: "FΨ.png",
     });
 
-    expect(destinations.map((d) => d.id)).not.toContain("native-share");
-    expect(destinations[0]?.id).toBe("send-to-phone");
+    expect(destinations.map((d) => d.id)).toEqual(
+      expect.arrayContaining(["native-share", "download", "send-to-phone"])
+    );
   });
 
   it("omits the clipboard-to-Facebook path for video, which cannot be copied", () => {
@@ -86,17 +84,34 @@ describe("post handoff destinations", () => {
     expect(destinations.map((d) => d.id)).toContain("copy-caption");
   });
 
-  it("drops the native share when this browser cannot share the payload", () => {
-    detectPlatform.mockReturnValue("mobile");
-    canNativeShareFile.mockReturnValue(false);
+  it.each(["mobile", "desktop"])(
+    "drops native sharing for unsupported payloads on %s",
+    (platform) => {
+      detectPlatform.mockReturnValue(platform);
+      canNativeShareFile.mockReturnValue(false);
 
+      const destinations = resolveDestinations({
+        artifact: "video",
+        blob: pngBlob(),
+        filename: "FΨ.mp4",
+      });
+
+      expect(destinations.map((d) => d.id)).not.toContain("native-share");
+      expect(destinations.map((d) => d.id)).toContain("download");
+    }
+  );
+
+  it("keeps download and phone transfer when desktop sharing is unavailable", () => {
+    supportsNativeFileShare.mockReturnValue(false);
     const destinations = resolveDestinations({
       artifact: "video",
       blob: pngBlob(),
-      filename: "FΨ.mp4",
+      filename: "test.mp4",
     });
-
     expect(destinations.map((d) => d.id)).not.toContain("native-share");
+    expect(destinations.map((d) => d.id)).toEqual(
+      expect.arrayContaining(["download", "send-to-phone"])
+    );
   });
 });
 

@@ -78,8 +78,13 @@
     height: min(38rem, calc(var(--viewport-height, 100dvh) - 2rem));
   }
   :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
-    width: min(44rem, calc(100vw - 3rem));
-    height: min(31rem, calc(var(--viewport-height, 100dvh) - 3rem));
+    width: min(32rem, calc(100vw - 2rem));
+    height: auto;
+    max-height: calc(var(--viewport-height, 100dvh) - 2rem);
+  }
+  :global(.share-sheet-modal--compact .modal-content-wrapper),
+  :global(.share-sheet-modal--compact .modal-body) {
+    height: auto;
   }
   :global(dialog.base-modal.share-sheet-modal--expanded[data-size]) {
     width: calc(100vw - 1rem);
@@ -96,13 +101,19 @@
       border-bottom: 0;
     }
     :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
-      height: min(40rem, calc(var(--viewport-height, 100dvh) - 0.75rem));
+      width: min(32rem, calc(100vw - 1rem));
+      height: auto;
+      max-height: calc(var(--viewport-height, 100dvh) - 0.75rem);
+      margin: auto auto 0;
+      border: 1px solid var(--theme-stroke);
+      border-radius: 1.25rem 1.25rem 0 0;
     }
   }
   @media (min-width: 600px) and (max-width: 899px) {
     :global(dialog.base-modal.share-sheet-modal--compact[data-size]) {
-      width: min(44rem, calc(100vw - 3rem));
-      height: min(31rem, calc(var(--viewport-height, 100dvh) - 3rem));
+      width: min(32rem, calc(100vw - 3rem));
+      height: auto;
+      max-height: calc(var(--viewport-height, 100dvh) - 3rem);
       margin: auto;
       border: 1px solid var(--theme-stroke);
       border-radius: 1.25rem;
