@@ -128,7 +128,6 @@
         density="compact"
       />
     </div>
-    <p class="tip">Staff rotation rides along with the same hand travel.</p>
   </div>
 </section>
 
@@ -154,8 +153,7 @@
     gap: var(--spacing-sm, 8px);
     min-width: 0;
   }
-  .control-label,
-  .tip {
+  .control-label {
     color: var(--theme-text-muted);
     font-size: var(--font-size-min, 14px);
   }
@@ -167,9 +165,6 @@
   }
   .control-row :global(.segmented-control) {
     flex: 1 1 16rem;
-  }
-  .tip {
-    margin: 0;
   }
   @container (min-width: 720px) {
     .lesson {
