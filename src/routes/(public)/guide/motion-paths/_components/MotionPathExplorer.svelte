@@ -314,17 +314,9 @@
             onchange={(value) => (explorer.trace = value)}
           />
         </div>
-        <p class="comparison-note">
-          Hands traces the hand centers. Prop tips includes the staff rotation.
-        </p>
       </div>
     </div>
   </div>
-
-  <p class="scope-note">
-    Changes here stay in this explorer. Your saved paths and defaults stay as
-    they were.
-  </p>
 </section>
 
 {#if pickerOpen}
@@ -491,18 +483,6 @@
   .trace-choice :global(.segmented-control) {
     flex: 1;
   }
-  .comparison-note,
-  .scope-note {
-    color: var(--theme-text-muted);
-    font-size: var(--font-size-sm, 14px);
-    line-height: 1.6;
-  }
-  .comparison-note {
-    margin-block: var(--spacing-sm, 8px) 0;
-  }
-  .scope-note {
-    margin-block: var(--spacing-lg, 24px) 0;
-  }
   @container (min-width: 640px) {
     .shape-picker {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -521,6 +501,14 @@
     }
     .comparison {
       grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    }
+    .path-column {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      align-self: stretch;
+    }
+    .path-column :global(.path-shape-grid) {
+      grid-template-rows: repeat(2, minmax(0, 1fr));
     }
   }
   @container (min-width: 1100px) {
