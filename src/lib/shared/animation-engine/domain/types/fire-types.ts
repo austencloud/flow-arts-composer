@@ -117,11 +117,21 @@ export interface FireFrameInput {
   propColors?: PropFlameColor[];
   /** Set to true on the frame where the animation loops back to the start */
   loopDetected?: boolean;
+  /** Duration of the loop that just ended, in the same phase units as
+   * relativeTime. This is the authoritative cache boundary; it is intentionally not inferred from
+   * the final sampled frame. */
+  loopDuration?: number;
+  /** A tracker gap, paused seek, or stalled frame changed playback continuity.
+   * This is distinct from a real sequence wrap and must never complete a
+   * frame-cache recording. */
+  playbackDiscontinuity?: boolean;
   /** Playback speed multiplier (1.0 = 60 BPM). Used for cache invalidation - different speeds produce different fire physics. */
   playbackSpeed?: number;
   /** Changes when the sequence content changes. Invalidates fire cache so stale frames don't replay over new props. */
   sequenceContentHash?: string;
-  /** Time relative to the start of the current loop (ms). Used for timestamp-indexed cache playback. */
+  /** Continuous sequence phase used for timestamp-indexed cache playback.
+   * Render-loop callers use fractional currentStep, so pauses and seeks cannot
+   * advance this coordinate independently of the props. */
   relativeTime?: number;
   /** Whether the sequence loops seamlessly (end position = start position). When true, fire should NOT be cleared on loop - it should continue naturally. */
   isSeamlesslyLoopable?: boolean;
