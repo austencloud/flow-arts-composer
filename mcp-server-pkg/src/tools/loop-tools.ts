@@ -7,6 +7,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
 import {
   ensureDataLoaded,
   saveAndOpenImage,
@@ -460,27 +461,27 @@ export function registerLoopTools(server: McpServer): void {
       layout: z
         .enum(["grid", "strip"])
         .optional()
-        .default("grid")
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.layout)
         .describe("Layout: grid (square) or strip (single row)"),
       cellSize: z
         .number()
         .optional()
-        .default(900)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize)
         .describe("Size of each pictograph cell in pixels"),
       showStepNumbers: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers)
         .describe("Show beat numbers"),
       showWord: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showWord)
         .describe("Show word header"),
       darkMode: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
       maxAttempts: z
         .number()
@@ -529,11 +530,11 @@ export function registerLoopTools(server: McpServer): void {
       loopType,
       period = "halved",
       gridMode = "diamond",
-      layout = "grid",
-      cellSize = 900,
-      showStepNumbers = true,
-      showWord = true,
-      darkMode = true,
+      layout = COMPOSER_CARD_EXPORT_PROFILE_V1.layout,
+      cellSize = COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize,
+      showStepNumbers = COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+      showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
+      darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
       maxAttempts = 500,
       loopComponents,
       level = 1,
@@ -689,8 +690,11 @@ export function registerLoopTools(server: McpServer): void {
             showStepNumbers,
             showWord,
             darkMode,
-            padding: 8,
-            showDifficulty: true,
+            padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
+            showDifficulty: COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
+            showFooter: Boolean(notes && notes !== "none"),
+            startPositionLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
             userName,
             notes,
             birthday: birthdayDate,
@@ -718,6 +722,9 @@ export function registerLoopTools(server: McpServer): void {
               type: "image" as const,
               data: base64,
               mimeType: "image/png",
+              _meta: {
+                rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+              },
             },
           ],
         };
@@ -754,27 +761,27 @@ export function registerLoopTools(server: McpServer): void {
       layout: z
         .enum(["grid", "strip"])
         .optional()
-        .default("grid")
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.layout)
         .describe("Layout: grid (square) or strip (single row)"),
       cellSize: z
         .number()
         .optional()
-        .default(900)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize)
         .describe("Size of each pictograph cell in pixels"),
       showStepNumbers: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers)
         .describe("Show beat numbers"),
       showWord: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showWord)
         .describe("Show word header"),
       darkMode: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
       maxAttempts: z
         .number()
@@ -823,11 +830,11 @@ export function registerLoopTools(server: McpServer): void {
       loopType,
       period = "halved",
       gridMode = "diamond",
-      layout = "grid",
-      cellSize = 900,
-      showStepNumbers = true,
-      showWord = true,
-      darkMode = true,
+      layout = COMPOSER_CARD_EXPORT_PROFILE_V1.layout,
+      cellSize = COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize,
+      showStepNumbers = COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+      showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
+      darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
       maxAttempts = 500,
       loopComponents,
       level = 1,
@@ -982,8 +989,11 @@ export function registerLoopTools(server: McpServer): void {
             showStepNumbers,
             showWord,
             darkMode,
-            padding: 8,
-            showDifficulty: true,
+            padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
+            showDifficulty: COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
+            showFooter: Boolean(notes && notes !== "none"),
+            startPositionLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
             userName,
             notes,
             birthday: birthdayDate,
@@ -1004,6 +1014,9 @@ export function registerLoopTools(server: McpServer): void {
               type: "image" as const,
               data: pngBuffer.toString("base64"),
               mimeType: "image/png",
+              _meta: {
+                rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+              },
             },
             {
               type: "text" as const,
