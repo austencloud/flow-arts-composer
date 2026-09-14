@@ -1,25 +1,26 @@
 <!--
-  A guide-local presentation of the Shape Matrix turn palette. The guide owns
-  which two axes it displays; the Matrix domain remains the source for values,
-  labels, and ratio notation.
+  A compact presentation of the Shape Matrix turn palette. Callers own the
+  two displayed axes; the Matrix domain remains the source for values, labels,
+  and ratio notation.
 -->
 <script lang="ts">
   import { Popover } from "bits-ui";
-  import { flyFade } from "$lib/shared/transitions/motion";
-  import { DURATION } from "$lib/shared/transitions/transitions";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import ShapeMatrixValueScroller from "$lib/shared/shape-matrix/app/components/ShapeMatrixValueScroller.svelte";
+  import {
+    turnValueToKey,
+    type TurnValue,
+  } from "$lib/shared/create/services/level-turn-values";
   import {
     matrixTurnSpokenLabel,
     matrixTurnVisibleLabel,
     matrixTurnsForLevel,
     type MatrixLabelMode,
   } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
-  import {
-    turnValueToKey,
-    type TurnValue,
-  } from "$lib/shared/create/services/level-turn-values";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
+  import { flyFade } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import ShapeMatrixValueScroller from "./ShapeMatrixValueScroller.svelte";
 
   type Hand = "left" | "right";
 
@@ -27,23 +28,31 @@
     leftTurn: TurnValue;
     rightTurn: TurnValue;
     labelMode: MatrixLabelMode;
+    turnValues?: readonly TurnValue[];
+    primaryPropColors?: ViewerCustomColorPair | null;
+    disabled?: boolean;
     onturn: (hand: Hand, turn: TurnValue) => void;
     onlabelmodechange: (mode: MatrixLabelMode) => void;
   }
 
-  let { leftTurn, rightTurn, labelMode, onturn, onlabelmodechange }: Props =
-    $props();
+  let {
+    leftTurn,
+    rightTurn,
+    labelMode,
+    turnValues = matrixTurnsForLevel(4),
+    primaryPropColors = getSettings().primaryPropColors,
+    disabled = false,
+    onturn,
+    onlabelmodechange,
+  }: Props = $props();
 
   let leftOpen = $state(false);
   let rightOpen = $state(false);
-  const handColors = $derived(getSettings().primaryPropColors);
-
-  const turnValues = matrixTurnsForLevel(4);
-  const turnKeys = turnValues.map(turnValueToKey);
-  const notationOptions = [
-    { value: "turns" as const, label: "Turns" },
-    { value: "ratios" as const, label: "Ratios" },
-  ];
+  const turnKeys = $derived(turnValues.map(turnValueToKey));
+  const notationOptions = $derived([
+    { value: "turns" as const, label: "Turns", disabled },
+    { value: "ratios" as const, label: "Ratios", disabled },
+  ]);
 
   function optionsFor(hand: Hand) {
     return turnValues.map((turn) => ({
@@ -51,10 +60,12 @@
       label: matrixTurnSpokenLabel(turn, labelMode),
       shortLabel: matrixTurnVisibleLabel(turn, labelMode),
       tone: hand === "left" ? ("blue" as const) : ("red" as const),
+      disabled,
     }));
   }
 
   function setOpen(hand: Hand, open: boolean): void {
+    if (disabled && open) return;
     if (hand === "left") {
       leftOpen = open;
       if (open) rightOpen = false;
@@ -65,6 +76,7 @@
   }
 
   function chooseTurn(hand: Hand, value: string): void {
+    if (disabled) return;
     const turn = turnValues.find(
       (candidate) => turnValueToKey(candidate) === value
     );
@@ -103,9 +115,12 @@
             class:left={axis.hand === "left"}
             class:right={axis.hand === "right"}
             aria-label={`Choose ${axis.label.toLowerCase()} ${matrixTurnSpokenLabel(axis.turn, labelMode)}`}
+            {disabled}
           >
             <span class="hand-label">{axis.label}</span>
-            <span class="turn-value" style:color={handColors?.[axis.hand]}
+            <span
+              class="turn-value"
+              style:color={primaryPropColors?.[axis.hand]}
               >{matrixTurnVisibleLabel(axis.turn, labelMode)}</span
             >
             <i class="fas fa-chevron-down" aria-hidden="true"></i>
@@ -128,8 +143,8 @@
                 <section
                   {...props}
                   class="turn-popover"
-                  style:--dm-motion-blue={handColors?.left}
-                  style:--dm-motion-red={handColors?.right}
+                  style:--dm-motion-blue={primaryPropColors?.left}
+                  style:--dm-motion-red={primaryPropColors?.right}
                   transition:flyFade={{ y: -6, duration: DURATION.normal }}
                   aria-label={`Choose ${axis.label.toLowerCase()} ${labelMode === "ratios" ? "ratio" : "turn"}`}
                 >
@@ -192,7 +207,7 @@
       background var(--transition-fast);
   }
 
-  .turn-trigger:hover {
+  .turn-trigger:hover:not(:disabled) {
     border-color: color-mix(
       in srgb,
       var(--theme-accent, #f59e0b) 55%,
@@ -203,6 +218,11 @@
       var(--theme-accent, #f59e0b) 10%,
       transparent
     );
+  }
+
+  .turn-trigger:disabled {
+    cursor: default;
+    opacity: 0.55;
   }
 
   .turn-trigger:focus-visible {
