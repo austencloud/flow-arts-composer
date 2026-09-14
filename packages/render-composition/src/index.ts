@@ -90,9 +90,12 @@ export {
 } from "./card-mandala.js";
 export {
   COMPOSER_CARD_EXPORT_PROFILE_V1,
+  MANDALA_MIN_STEP_COUNT,
+  accentAlphaHex,
   calculateSequenceCardCell,
   calculateSequenceCardLayout,
   calculateSequenceCardMandalaPlacements,
+  calculateSequenceCardQRCell,
   composeSequenceCard,
   type SequenceCardCell,
   type SequenceCardCompositionOptions,
@@ -122,3 +125,22 @@ export {
   seedFooterIcon,
   type FooterOptions,
 } from "./footer-renderer.js";
+export {
+  DURATION_BADGE_FONT_FAMILY,
+  formatDurationBadge,
+  renderDurationBadge,
+  stepHasDurationBadge,
+} from "./duration-badge.js";
+export {
+  MODERN_QR_STYLE,
+  PLAY_GREEN,
+  PRINT_QR_RENDER_SIZE,
+  applyDarkQrStyle,
+  calculateQrCellGeometry,
+  createStyledQrOptions,
+  paintQrCell,
+  playIconDataUrl,
+  type QrCenterIcon,
+  type StyledQrOptions,
+  type StyledQrStyle,
+} from "./qr-code-style.js";

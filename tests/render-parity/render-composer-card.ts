@@ -8,7 +8,9 @@ import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circul
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { registerLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
 import { resolveLoopDisplay } from "$lib/features/loop-labeler/services/loop-display-resolver";
+import { getUrlQRCodeGenerator } from "$lib/shared/qr/get-qr-code-generator";
 import type { PropLOOPSpecWire } from "@tka/sequence-engine/loop";
+import { PRINT_QR_RENDER_SIZE } from "@tka/render-composition";
 
 interface ComposerCardRenderOptions {
   hideBadge?: boolean;
@@ -40,6 +42,16 @@ export async function renderComposerCard(
     };
   }
   const print = opts.exportProfile === "print";
+  const showQRCode = !!opts.qrUrl && opts.showQRCode !== false;
+  // A published link is rendered exactly the way PrintCardRenderer does it:
+  // a URL-only generator, the modern style, no short-code minting.
+  const qrImageBitmap = showQRCode
+    ? await getUrlQRCodeGenerator().generateUrlAsImage(
+        opts.qrUrl!,
+        PRINT_QR_RENDER_SIZE,
+        { style: "modern", margin: 1, darkMode: opts.darkMode ?? false }
+      )
+    : undefined;
   const options: Partial<SequenceExportOptions> = {
     stepSize: 300,
     stepScale: 1,
@@ -54,6 +66,9 @@ export async function renderComposerCard(
     showNotes: opts.showFooter ?? false,
     notes: opts.notes,
     ...(print ? { deckCard: { contentWidth: 678, contentHeight: 978 } } : {}),
+    accentColor: opts.accentColor,
+    accentTintOpacity: opts.accentTintOpacity,
+    qrImageBitmap,
     loopType: opts.loopComponents ? LOOPType.ROTATED : undefined,
     showLoopGlyph: !!opts.loopComponents,
     visibilityOverrides: {
@@ -66,7 +81,7 @@ export async function renderComposerCard(
       showTnD: false,
       showElemental: false,
       showPositions: false,
-      showQRCode: false,
+      showQRCode,
       showMandala: opts.showMandala ?? true,
       leftPropType: (opts.leftPropType ?? "staff") as PropType,
       rightPropType: (opts.rightPropType ?? "staff") as PropType,
@@ -78,6 +93,8 @@ export async function renderComposerCard(
     ...testCase.sequence,
     id: `card-parity-${testCase.name}`,
     period: 4,
+    // Reversal wrap follows the same loop signal the MCP options carry.
+    isCircular: !!opts.loopComponents,
     loopType: options.loopType,
     loopSpec: { left: loopCertificate, right: loopCertificate },
   } as unknown as SequenceData;
