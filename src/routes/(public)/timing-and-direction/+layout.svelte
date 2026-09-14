@@ -53,9 +53,17 @@
           sequence={playback.sequence}
           initialStep={playback.step}
           ariaLabel={playback.selected.article.name}
+          propDisplay={playback.propDisplay}
           showElementalGlyph
           externalPlaying={playback.playing}
-          onExternalPlayingChange={(value) => (playback.playing = value)}
+          singlePlay={(
+            playback.sequence.metadata as
+              | { turnLoopClosed?: boolean }
+              | undefined
+          )?.turnLoopClosed === false}
+          onExternalPlayingChange={(value) => {
+            if (value !== playback.playing) playback.togglePlayback();
+          }}
           onStepChange={playback.followStep}
           onSeekRef={playback.registerSeek}
           playbackGate={gate}

@@ -1,15 +1,19 @@
 <script lang="ts">
   import type { PageData } from "./$types";
+  import { untrack } from "svelte";
   import { browser } from "$app/environment";
   import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
   import Seo from "$lib/shared/components/Seo.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import PropTurnsControl from "$lib/features/create/shared/components/sequence-actions/PropTurnsControl.svelte";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { reducedMotion } from "$lib/shared/transitions/motion";
+  import { growFade, reducedMotion } from "$lib/shared/transitions/motion";
   import { getTimingDirectionState } from "../_state/timing-direction-state.svelte";
   import TimingDirectionModeCard from "../_components/TimingDirectionModeCard.svelte";
   import {
@@ -17,9 +21,10 @@
     TIMING_DIRECTION_ARTICLES,
   } from "../_data/timing-direction-articles";
   import {
-    loadTogetherOppositeExamples,
-    type TogetherOppositeExample,
-  } from "../_data/together-opposite-examples";
+    adjustTogetherOppositeLoop,
+    loadTogetherOppositeLoops,
+    type TogetherOppositeLoop,
+  } from "../_data/together-opposite-sequences";
 
   let { data }: { data: PageData } = $props();
 
@@ -46,67 +51,111 @@
       ? "/learn/concepts/gamma-motion"
       : "/learn/concepts/dual-shifts-alpha-beta"
   );
-  let togetherOppositeExamples = $state<TogetherOppositeExample[]>([]);
-  let selectedTogetherOppositeExample = $state<string | null>(null);
-  let examplesLoading = $state(false);
-  let examplesError = $state<string | null>(null);
-  let examplesRetry = $state(0);
-  let examplesRequest = 0;
+  const spinLabels = ["Pro-spin", "Anti-spin", "Mixed"] as const;
+  let togetherOppositeLoops = $state<TogetherOppositeLoop[]>([]);
+  let selectedTogetherOppositeLoop = $state<string | null>(null);
+  let loopsLoading = $state(false);
+  let loopsError = $state<string | null>(null);
+  let loopsRetry = $state(0);
+  let loopsRequest = 0;
+  let leftTurns = $state(0);
+  let rightTurns = $state(0);
+  let applyTo = $state<"all" | "current">("all");
+  let adjustmentRequest = 0;
+  let adjusting = $state(false);
+  let adjustmentError = $state<string | null>(null);
+  let turnLoopClosed = $state(true);
+  let turnEditorOpen = $state(false);
+  let editingStep = $state(0);
   let examplePlayer: HTMLElement | undefined = $state();
-  const exampleGroups = $derived([
+  const selectedLoop = $derived(
+    togetherOppositeLoops.find(
+      (loop) => loop.id === selectedTogetherOppositeLoop
+    ) ??
+      togetherOppositeLoops[0] ??
+      null
+  );
+  const currentStripStep = $derived(
+    Math.max(
+      0,
+      Math.min(
+        playback.sequence.steps.length - 1,
+        Math.floor(playback.step) - 1
+      )
+    )
+  );
+  const loopGroups = $derived([
     {
       title: "Diamond",
-      examples: togetherOppositeExamples.filter(
-        (example) => example.gridMode === GridMode.DIAMOND
+      loops: togetherOppositeLoops.filter(
+        (loop) => loop.gridMode === GridMode.DIAMOND
       ),
     },
     {
       title: "Box",
-      examples: togetherOppositeExamples.filter(
-        (example) => example.gridMode === GridMode.BOX
+      loops: togetherOppositeLoops.filter(
+        (loop) => loop.gridMode === GridMode.BOX
       ),
     },
   ]);
 
   $effect(() => {
     if (article.code !== "TO") {
-      examplesRequest += 1;
-      selectedTogetherOppositeExample = null;
-      togetherOppositeExamples = [];
-      examplesError = null;
-      examplesLoading = false;
+      loopsRequest += 1;
+      adjustmentRequest += 1;
+      adjusting = false;
+      adjustmentError = null;
+      selectedTogetherOppositeLoop = null;
+      togetherOppositeLoops = [];
+      loopsError = null;
+      loopsLoading = false;
       return;
     }
-    examplesRetry;
-    const request = ++examplesRequest;
-    examplesLoading = true;
-    examplesError = null;
-    togetherOppositeExamples = [];
-    void loadTogetherOppositeExamples()
-      .then((examples) => {
-        if (request !== examplesRequest || article.code !== "TO") return;
-        if (examples.length === 0) {
-          examplesError = "No matching pictographs are available yet.";
+    loopsRetry;
+    const request = ++loopsRequest;
+    adjustmentRequest += 1;
+    adjusting = false;
+    adjustmentError = null;
+    loopsLoading = true;
+    loopsError = null;
+    togetherOppositeLoops = [];
+    void loadTogetherOppositeLoops()
+      .then((loops) => {
+        if (request !== loopsRequest || article.code !== "TO") return;
+        if (loops.length === 0) {
+          loopsError = "No Together-Opposite loops are available yet.";
           return;
         }
-        togetherOppositeExamples = examples;
-        selectTogetherOppositeExample(examples[0]!);
+        togetherOppositeLoops = loops;
+        untrack(() => selectTogetherOppositeLoop(loops[0]!));
       })
       .catch(() => {
-        if (request !== examplesRequest || article.code !== "TO") return;
-        examplesError = "Examples could not load. Try again.";
+        if (request !== loopsRequest || article.code !== "TO") return;
+        loopsError = "Loops could not load. Try again.";
       })
       .finally(() => {
-        if (request === examplesRequest) examplesLoading = false;
+        if (request === loopsRequest) loopsLoading = false;
       });
+    return () => {
+      loopsRequest += 1;
+      adjustmentRequest += 1;
+    };
   });
 
-  function selectTogetherOppositeExample(
-    example: TogetherOppositeExample,
+  function selectTogetherOppositeLoop(
+    loop: TogetherOppositeLoop,
     reveal = false
   ) {
-    selectedTogetherOppositeExample = example.id;
-    playback.selectExample(example.sequence, example.step);
+    adjustmentRequest += 1;
+    adjusting = false;
+    adjustmentError = null;
+    selectedTogetherOppositeLoop = loop.id;
+    leftTurns = 0;
+    rightTurns = 0;
+    turnLoopClosed = true;
+    turnEditorOpen = false;
+    editingStep = 0;
+    playback.selectExample(loop.sequence, 0);
     if (reveal && window.matchMedia("(max-width: 1439px)").matches) {
       examplePlayer?.scrollIntoView({
         block: "center",
@@ -115,8 +164,112 @@
     }
   }
 
-  function retryTogetherOppositeExamples() {
-    examplesRetry += 1;
+  function retryTogetherOppositeLoops() {
+    loopsRetry += 1;
+  }
+
+  async function adjustTurns(nextLeftTurns: number, nextRightTurns: number) {
+    if (!selectedLoop) return;
+    const previousLeftTurns = leftTurns;
+    const previousRightTurns = rightTurns;
+    leftTurns = nextLeftTurns;
+    rightTurns = nextRightTurns;
+    const request = ++adjustmentRequest;
+    adjusting = true;
+    adjustmentError = null;
+    playback.playing = false;
+    const sampledPlaybackStep = Math.max(
+      0,
+      Math.min(playback.sequence.steps.length + 1, playback.step)
+    );
+    try {
+      const sequence = await adjustTogetherOppositeLoop(
+        { ...selectedLoop, sequence: playback.sequence },
+        nextLeftTurns,
+        nextRightTurns,
+        applyTo === "current" ? editingStep : undefined
+      );
+      if (request !== adjustmentRequest) return;
+      playback.selectExample(sequence, sampledPlaybackStep);
+      turnLoopClosed =
+        (sequence.metadata as { turnLoopClosed?: boolean } | undefined)
+          ?.turnLoopClosed !== false;
+    } catch {
+      if (request === adjustmentRequest) {
+        leftTurns = previousLeftTurns;
+        rightTurns = previousRightTurns;
+        adjustmentError = "Turn change could not be applied. Try again.";
+      }
+    } finally {
+      if (request === adjustmentRequest) adjusting = false;
+    }
+  }
+
+  function resetTurns() {
+    if (!selectedLoop) return;
+    adjustmentRequest += 1;
+    adjusting = false;
+    adjustmentError = null;
+    turnLoopClosed = true;
+    leftTurns = 0;
+    rightTurns = 0;
+    playback.playing = false;
+    playback.selectExample(
+      selectedLoop.sequence,
+      Math.max(
+        0,
+        Math.min(selectedLoop.sequence.steps.length + 1, playback.step)
+      )
+    );
+  }
+
+  function selectCount(index: number) {
+    const step = playback.sequence.steps[index];
+    if (!step) return;
+    leftTurns = Number(step.motions.left.turns) || 0;
+    rightTurns = Number(step.motions.right.turns) || 0;
+    editingStep = index;
+    playback.playing = false;
+    playback.seekStep(index + 1);
+  }
+
+  function openTurnEditor() {
+    const step = playback.sequence.steps[currentStripStep];
+    editingStep = currentStripStep;
+    leftTurns = Number(step?.motions.left.turns) || 0;
+    rightTurns = Number(step?.motions.right.turns) || 0;
+    adjustmentError = null;
+    playback.playing = false;
+    turnEditorOpen = !turnEditorOpen;
+  }
+
+  function setApplyTo(value: "all" | "current") {
+    applyTo = value;
+    const step = playback.sequence.steps[editingStep];
+    leftTurns = Number(step?.motions.left.turns) || 0;
+    rightTurns = Number(step?.motions.right.turns) || 0;
+  }
+
+  function nudgeTurns(hand: "left" | "right", delta: number) {
+    const current = playback.sequence.steps[editingStep];
+    const currentLeft =
+      applyTo === "current"
+        ? Number(current?.motions.left.turns) || 0
+        : leftTurns;
+    const currentRight =
+      applyTo === "current"
+        ? Number(current?.motions.right.turns) || 0
+        : rightTurns;
+    const nextLeft =
+      hand === "left"
+        ? Math.max(0, Math.min(3, currentLeft + delta))
+        : currentLeft;
+    const nextRight =
+      hand === "right"
+        ? Math.max(0, Math.min(3, currentRight + delta))
+        : currentRight;
+    if (nextLeft === leftTurns && nextRight === rightTurns) return;
+    void adjustTurns(nextLeft, nextRight);
   }
   const jsonLd = $derived({
     "@context": "https://schema.org",
@@ -210,11 +363,15 @@
       <div class="to-stage">
         <figure class="demonstration">
           <div class="demo-toolbar">
-            <span>Hand paths</span>
+            <span
+              >{playback.propDisplay === "staff"
+                ? "With props"
+                : "Hand paths"}</span
+            >
             {#if browser}
               <TransportControls
                 isPlaying={playback.playing}
-                onPlaybackToggle={() => (playback.playing = !playback.playing)}
+                onPlaybackToggle={playback.togglePlayback}
               />
             {/if}
           </div>
@@ -223,95 +380,201 @@
             bind:this={examplePlayer}
             use:playback.registerTarget
           ></div>
-          <figcaption>
-            Drag the bar to follow the selected hand path.
-          </figcaption>
+          <figcaption>Choose a count to hold the player there.</figcaption>
         </figure>
 
-        <section class="example-picker" aria-labelledby="example-picker-title">
-          <div>
-            <h2 id="example-picker-title">Matching pictographs</h2>
-            <p>Same hand paths. Different prop rotations.</p>
-          </div>
-          <div
-            class="example-options"
-            aria-label="Together-Opposite examples"
-            aria-busy={examplesLoading}
-          >
-            {#if examplesLoading}
-              <p class="example-status">Loading matching pictographs…</p>
-            {:else if examplesError}
-              <div class="example-status">
-                <p>{examplesError}</p>
-                <PanelButton onclick={retryTogetherOppositeExamples}
-                  >Try again</PanelButton
-                >
+        <div class="to-workbench">
+          <section class="count-strip" aria-labelledby="counts-title">
+            <div class="strip-heading">
+              <div>
+                <h2 id="counts-title">
+                  {selectedLoop?.word ?? "Four-count loop"}
+                </h2>
               </div>
-            {:else}
-              {#each exampleGroups as group (group.title)}
-                <section
-                  class="example-group"
-                  aria-labelledby={`${group.title}-examples`}
+              <div class="display-switch">
+                <SegmentedControl
+                  options={[
+                    { value: "staff", label: "With props" },
+                    { value: "hands", label: "Hands" },
+                  ]}
+                  value={playback.propDisplay}
+                  onchange={(value) => (playback.propDisplay = value)}
+                  ariaLabel="Player display"
+                  density="compact"
+                  color="accent"
+                />
+              </div>
+            </div>
+            <div class="pictograph-strip" aria-label="Loop counts">
+              {#each playback.sequence.steps as pictograph, index (`${playback.sequence.id}-${index}`)}
+                <button
+                  type="button"
+                  class:current={currentStripStep === index}
+                  aria-current={currentStripStep === index ? "step" : undefined}
+                  aria-label={`Show count ${index + 1}`}
+                  onclick={() => selectCount(index)}
                 >
-                  <h3 id={`${group.title}-examples`}>{group.title}</h3>
-                  <div class="example-grid">
-                    {#each group.examples as example (example.id)}
-                      <PanelButton
-                        fullWidth
-                        ariaPressed={selectedTogetherOppositeExample ===
-                          example.id}
-                        ariaLabel={`Show ${example.pictograph.letter} in ${example.gridMode} grid`}
-                        onclick={() =>
-                          selectTogetherOppositeExample(example, true)}
-                      >
-                        <span class="example-pictograph">
-                          <PictographContainer
-                            pictographData={example.pictograph}
-                            gridMode={example.gridMode}
-                            leftPropTypeOverride={PropType.STAFF}
-                            rightPropTypeOverride={PropType.STAFF}
-                            leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
-                            rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
-                            showGrid={true}
-                            showTKA={true}
-                            showElemental={true}
-                            showPositions={true}
-                            showReversals={false}
-                            showNonRadialPoints={false}
-                            showHandPoints={true}
-                            disableTransitions
-                          />
-                        </span>
-                      </PanelButton>
-                    {/each}
-                  </div>
-                </section>
+                  <span class="count-number">{index + 1}</span>
+                  <span class="strip-pictograph">
+                    <PictographContainer
+                      pictographData={pictograph}
+                      gridMode={selectedLoop?.gridMode ?? GridMode.DIAMOND}
+                      leftPropTypeOverride={PropType.STAFF}
+                      rightPropTypeOverride={PropType.STAFF}
+                      leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
+                      rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
+                      showGrid={true}
+                      showTKA={true}
+                      showElemental={false}
+                      showPositions={false}
+                      showReversals={false}
+                      showNonRadialPoints={false}
+                      showHandPoints={true}
+                      disableTransitions
+                    />
+                  </span>
+                </button>
               {/each}
+            </div>
+          </section>
+
+          <section
+            class="turn-disclosure"
+            aria-labelledby="turn-controls-title"
+          >
+            <div class="turn-disclosure-heading">
+              <h2 id="turn-controls-title">Turns</h2>
+              <PanelButton
+                onclick={openTurnEditor}
+                ariaPressed={turnEditorOpen}
+              >
+                {turnEditorOpen ? "Close" : "Adjust turns"}
+              </PanelButton>
+            </div>
+            {#if turnEditorOpen}
+              <div class="turn-controls" transition:growFade={{ axis: "y" }}>
+                <div class="turn-scope">
+                  <span>Apply to</span>
+                  <SegmentedControl
+                    options={[
+                      { value: "all", label: "All steps" },
+                      { value: "current", label: "Current step" },
+                    ]}
+                    value={applyTo}
+                    onchange={setApplyTo}
+                    ariaLabel="Turn adjustment scope"
+                    density="compact"
+                    color="accent"
+                  />
+                </div>
+                <div class="turn-pairs" aria-busy={adjusting}>
+                  <div class="turn-prop">
+                    <span>Left</span>
+                    <PropTurnsControl
+                      hand="left"
+                      turns={leftTurns}
+                      rotationDirection={RotationDirection.NO_ROTATION}
+                      showRotation={false}
+                      compact
+                      onTurnsChange={(delta) => nudgeTurns("left", delta)}
+                      onRotationChange={() => {}}
+                    />
+                  </div>
+                  <div class="turn-prop">
+                    <span>Right</span>
+                    <PropTurnsControl
+                      hand="right"
+                      turns={rightTurns}
+                      rotationDirection={RotationDirection.NO_ROTATION}
+                      showRotation={false}
+                      compact
+                      onTurnsChange={(delta) => nudgeTurns("right", delta)}
+                      onRotationChange={() => {}}
+                    />
+                  </div>
+                  <PanelButton
+                    onclick={resetTurns}
+                    disabled={playback.sequence.id ===
+                      selectedLoop?.sequence.id}>Reset</PanelButton
+                  >
+                </div>
+              </div>
             {/if}
-          </div>
-        </section>
+            <div class="turn-status" aria-live="polite">
+              {#if adjustmentError}
+                <p>{adjustmentError}</p>
+              {:else if !turnLoopClosed}
+                <p>Props finish at a different orientation. Plays once.</p>
+              {/if}
+            </div>
+          </section>
+        </div>
       </div>
 
-      <div class="to-notes">
-        <section>
-          <h2>What stays the same</h2>
-          <p>
-            Both hands arrive on the same beat while their paths travel in
-            opposite senses.
-          </p>
-        </section>
-        <section>
-          <h2>What can change</h2>
-          <p>
-            Letter, start position, grid, and prop rotation can change without
-            changing that hand-path classification.
-          </p>
-        </section>
-        <section>
-          <h2>Practice</h2>
-          <p>{article.example}</p>
-        </section>
-      </div>
+      <section class="loop-library" aria-labelledby="loop-library-title">
+        <div class="library-heading">
+          <h2 id="loop-library-title">Choose a sequence</h2>
+        </div>
+        <div class="loop-columns" aria-busy={loopsLoading}>
+          {#if loopsLoading}
+            <p class="loop-status">Loading six loops…</p>
+          {:else if loopsError}
+            <div class="loop-status">
+              <p>{loopsError}</p>
+              <PanelButton onclick={retryTogetherOppositeLoops}
+                >Try again</PanelButton
+              >
+            </div>
+          {:else}
+            {#each loopGroups as group (group.title)}
+              <section
+                class="loop-group"
+                aria-labelledby={`${group.title}-loops`}
+              >
+                <h3 id={`${group.title}-loops`}>{group.title}</h3>
+                <div class="spin-grid">
+                  {#each spinLabels as spinLabel}
+                    <div class="spin-column">
+                      <h4>{spinLabel}</h4>
+                      {#each group.loops.filter((loop) => loop.spinLabel === spinLabel) as loop (loop.id)}
+                        <PanelButton
+                          fullWidth
+                          ariaPressed={selectedTogetherOppositeLoop === loop.id}
+                          onclick={() => selectTogetherOppositeLoop(loop, true)}
+                        >
+                          <span class="loop-preview" aria-hidden="true">
+                            {#each loop.sequence.steps as pictograph, index (`${loop.id}-${index}`)}
+                              <span class="loop-preview-step">
+                                <PictographContainer
+                                  pictographData={pictograph}
+                                  gridMode={loop.gridMode}
+                                  leftPropTypeOverride={PropType.STAFF}
+                                  rightPropTypeOverride={PropType.STAFF}
+                                  leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
+                                  rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
+                                  showGrid={true}
+                                  showTKA={true}
+                                  showElemental={false}
+                                  showPositions={false}
+                                  showReversals={false}
+                                  showNonRadialPoints={false}
+                                  showHandPoints={true}
+                                  disableTransitions
+                                />
+                              </span>
+                            {/each}
+                          </span>
+                          <span class="loop-word">{loop.word}</span>
+                        </PanelButton>
+                      {/each}
+                    </div>
+                  {/each}
+                </div>
+              </section>
+            {/each}
+          {/if}
+        </div>
+      </section>
     </section>
   {:else}
     <div class="mode-overview">
@@ -448,8 +711,13 @@
   }
   .to-reference {
     max-width: 86rem;
+    display: grid;
+    grid-template-columns: minmax(18rem, 32rem) minmax(0, 1fr);
+    gap: clamp(1rem, 3vw, 2rem);
+    align-items: start;
   }
   .to-header {
+    grid-column: 1 / -1;
     max-width: 100%;
     margin-bottom: 1.5rem;
   }
@@ -463,24 +731,207 @@
   }
   .to-stage {
     display: grid;
-    grid-template-columns: minmax(18rem, 28rem) minmax(0, 1fr);
-    gap: clamp(1rem, 3vw, 2rem);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
     align-items: start;
   }
   .to-stage .demonstration {
     grid-column: auto;
     grid-row: auto;
-    width: min(100%, 28rem);
+    width: min(100%, 32rem);
   }
-  .to-notes {
+  .to-workbench {
+    display: grid;
+    gap: 1.25rem;
+    min-width: 0;
+  }
+  .count-strip,
+  .turn-disclosure {
+    padding: 1rem;
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--radius-lg, 0.75rem);
+    background: var(--theme-card-bg);
+  }
+  .strip-heading,
+  .library-heading,
+  .turn-scope {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .turn-controls p {
+    margin: 0;
+    font-size: 1rem;
+  }
+  .display-switch {
+    width: min(100%, 15rem);
+    flex: 0 1 15rem;
+  }
+  .pictograph-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .pictograph-strip button {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    padding: 0.25rem;
+    color: var(--theme-text);
+    background: transparent;
+    border: 1px solid var(--theme-stroke);
+    border-radius: var(--radius-md, 0.5rem);
+    cursor: pointer;
+  }
+  .pictograph-strip button.current {
+    border-color: var(--mode-accent);
+    outline: 2px solid var(--mode-accent);
+    outline-offset: -2px;
+    background: color-mix(
+      in srgb,
+      var(--mode-accent) 12%,
+      var(--theme-card-bg)
+    );
+  }
+  .pictograph-strip button:focus-visible {
+    outline: 3px solid var(--theme-text);
+    outline-offset: 2px;
+  }
+  .count-number {
+    display: block;
+    padding: 0.25rem 0.25rem 0;
+    font-size: 0.875rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+  }
+  .strip-pictograph {
+    display: block;
+    aspect-ratio: 1;
+  }
+  .turn-controls {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .turn-disclosure-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .turn-scope {
+    align-items: center;
+  }
+  .turn-scope > span {
+    font-size: 0.875rem;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+  .turn-scope :global(.segmented-control) {
+    width: min(100%, 16rem);
+  }
+  .turn-pairs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: end;
+  }
+  .turn-prop {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+    font-size: 0.875rem;
+    font-weight: 650;
+  }
+  .turn-prop :global(.turns-controls) {
+    --prop-color: var(--dm-motion-blue);
+  }
+  .turn-prop + .turn-prop :global(.turns-controls) {
+    --prop-color: var(--dm-motion-red);
+  }
+  .turn-status {
+    min-height: 1.5rem;
+    margin-top: 0.75rem;
+  }
+  .turn-status p {
+    margin: 0;
+    color: var(--theme-text-dim);
+    font-size: 0.875rem;
+  }
+  .turn-pairs :global(.panel-btn) {
+    min-height: 44px;
+  }
+  .loop-library {
+    min-width: 0;
+  }
+  .loop-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+  .loop-group {
+    min-width: 0;
+  }
+  .loop-group h3 {
+    margin: 0 0 0.625rem;
+    font-size: 1rem;
+  }
+  .spin-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--theme-stroke);
+    gap: 0.5rem;
   }
-  .to-notes p {
+  .spin-column {
+    min-width: 0;
+  }
+  .spin-column h4 {
+    min-height: 2.5em;
+    margin: 0 0 0.35rem;
+    color: var(--theme-text-dim);
+    font-size: 0.875rem;
+    line-height: 1.25;
+  }
+  .spin-column :global(.panel-btn) {
+    display: grid;
+    min-height: 0;
+    padding: 0.375rem;
+  }
+  .spin-column :global(.panel-btn[aria-pressed="true"]) {
+    outline: 2px solid var(--mode-accent);
+    outline-offset: -2px;
+    background: color-mix(
+      in srgb,
+      var(--mode-accent) 10%,
+      var(--theme-card-bg)
+    );
+  }
+  .loop-word {
+    overflow-wrap: anywhere;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.025em;
+  }
+  .loop-preview {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.125rem;
+    width: 100%;
+  }
+  .loop-preview-step {
+    display: block;
+    aspect-ratio: 1;
+  }
+  .loop-status {
+    display: grid;
+    gap: 0.5rem;
+    min-height: 6rem;
+    align-content: center;
+  }
+  .loop-status p {
     margin: 0;
     font-size: 1rem;
   }
@@ -534,70 +985,6 @@
   }
   .mode-notes section + section {
     margin-top: 1.5rem;
-  }
-  .example-picker {
-    min-width: 0;
-    width: 100%;
-    max-width: 64rem;
-    justify-self: center;
-  }
-  .example-picker h2 {
-    margin-bottom: 0.25rem;
-  }
-  .example-picker p {
-    margin-bottom: 0.75rem;
-    font-size: 1rem;
-  }
-  .example-options {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.5rem;
-  }
-  .example-group {
-    min-width: 0;
-  }
-  .example-group h3 {
-    margin: 0 0 0.625rem;
-    font-size: 1rem;
-    font-weight: 650;
-  }
-  .example-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
-  }
-  .example-options :global(.panel-btn) {
-    min-width: 0;
-    min-height: 0;
-    padding: 0.375rem;
-  }
-  .example-options :global(.panel-btn[aria-pressed="true"]) {
-    outline: 2px solid var(--mode-accent);
-    outline-offset: -2px;
-    background: color-mix(
-      in srgb,
-      var(--mode-accent) 10%,
-      var(--theme-card-bg)
-    );
-  }
-  .example-options :global(.panel-btn:focus-visible) {
-    outline: 3px solid var(--theme-text);
-    outline-offset: 2px;
-  }
-  .example-pictograph {
-    display: block;
-    aspect-ratio: 1;
-  }
-  .example-status {
-    display: grid;
-    gap: 0.5rem;
-    grid-column: 1 / -1;
-    min-height: 9rem;
-    align-content: center;
-  }
-  .example-status p {
-    margin: 0;
-    font-size: 0.875rem;
   }
   .demonstration {
     grid-column: 2;
@@ -689,25 +1076,19 @@
     outline: 3px solid var(--theme-text);
     outline-offset: -3px;
   }
-  @media (max-width: 1439px) {
-    .to-stage {
+  @media (max-width: 1100px) {
+    .to-reference {
       grid-template-columns: minmax(0, 1fr);
+    }
+    .to-header {
+      grid-column: auto;
     }
     .to-stage .demonstration {
       width: min(100%, 32rem);
       justify-self: center;
     }
   }
-  @media (max-width: 700px) {
-    .example-options {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
   @media (max-width: 800px) {
-    .to-stage,
-    .to-notes {
-      grid-template-columns: minmax(0, 1fr);
-    }
     .to-stage .demonstration {
       justify-self: center;
     }
@@ -727,6 +1108,9 @@
     .sources {
       grid-template-columns: minmax(0, 1fr);
     }
+    .loop-columns {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
   @media (max-width: 600px) {
     .mode-page {
@@ -736,8 +1120,24 @@
     .page-nav {
       margin-bottom: 1rem;
     }
-    .example-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+    .strip-heading,
+    .library-heading {
+      display: grid;
+    }
+    .display-switch {
+      width: 100%;
+    }
+    .pictograph-strip {
+      gap: 0.375rem;
+    }
+    .turn-pairs {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .turn-pairs :global(.panel-btn) {
+      grid-column: 1 / -1;
+    }
+    .spin-grid {
+      gap: 0.375rem;
     }
   }
 </style>
