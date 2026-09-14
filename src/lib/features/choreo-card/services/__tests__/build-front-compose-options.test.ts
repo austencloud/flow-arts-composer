@@ -81,7 +81,6 @@ describe("buildFrontComposeOptions", () => {
     expect(composeOptions.accentColor).toBe("#3568a0");
     expect(composeOptions.accentTintOpacity).toBe(0.12);
     expect(composeOptions.iconPath).toBe("/images/elements/water-v2.png");
-    expect(composeOptions.gridCentering).toBe("geometric");
     // Printed-deck labels and iconography still earn the footer.
     expect(composeOptions.showNotes).toBe(true);
   });
@@ -112,7 +111,6 @@ describe("buildFrontComposeOptions", () => {
     expect(frame.dark).toBe("#ffde17");
     expect(frame.palette).toEqual(palette);
     expect(composeOptions.accentColor).toBeUndefined();
-    expect(composeOptions.gridCentering).toBeUndefined();
   });
 
   it("emits prop-type overrides only when provided", () => {

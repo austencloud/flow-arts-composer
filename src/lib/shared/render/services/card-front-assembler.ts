@@ -113,7 +113,6 @@ export function computeCardFrontLayout(
     showHeader: !!showHeaderForLayout && stepCount > 0,
     showFooter: hasAnyFooterContent,
     deckCard: options.deckCard,
-    gridCentering: options.gridCentering,
   });
   const {
     cellSize: stepSize,

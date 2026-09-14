@@ -76,10 +76,6 @@ export function buildFrontComposeOptions(
     ...(options.totalGridColumns !== undefined && {
       columnCount: options.totalGridColumns,
     }),
-    // Four-step TnD cards devote a full lane to the centered Start and QR
-    // cells. The usual pictograph-label compensation pushes that mixed grid
-    // visibly right, so these cards keep equal physical gutters instead.
-    ...(options.tndElement && { gridCentering: "geometric" as const }),
     addStepNumbers: true,
     addWord: isHandPath ? true : canonical.addWord,
     customName: options.customName,

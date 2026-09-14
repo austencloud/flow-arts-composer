@@ -111,14 +111,6 @@ export interface SequenceExportOptions {
 
   columnCount?: number | null;
 
-  /**
-   * Horizontal centering policy for fixed physical-card grids. The default
-   * optical mode compensates for pictograph labels that sit toward each cell's
-   * left edge. Geometric mode keeps the grid gutters equal when large centered
-   * cells such as Start and QR make that compensation look off-center.
-   */
-  gridCentering?: "optical" | "geometric";
-
   format: "PNG" | "JPEG" | "WebP";
   quality: number;
   scale: number;

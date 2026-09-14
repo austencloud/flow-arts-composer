@@ -54,7 +54,6 @@ export interface SequenceCardCompositionOptions {
   exportProfile?: "composer" | "print";
   frame?: CardFrameOptions;
   columnCount?: number;
-  gridCentering?: "optical" | "geometric";
   showLoopGlyph?: boolean;
   layout: "grid" | "strip";
   cellSize: number;
@@ -154,7 +153,6 @@ export function calculateSequenceCardLayout(
     | "exportProfile"
     | "frame"
     | "columnCount"
-    | "gridCentering"
     | "showLoopGlyph"
   >
 ): SequenceCardLayout {
@@ -187,7 +185,6 @@ export function calculateSequenceCardLayout(
       showHeader:
         options.showWord || options.showDifficulty || !!options.showLoopGlyph,
       showFooter: options.showFooter,
-      gridCentering: options.gridCentering,
     }),
     columns,
     rows,
