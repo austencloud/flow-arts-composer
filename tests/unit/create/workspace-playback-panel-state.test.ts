@@ -178,4 +178,21 @@ describe("workspace playback", () => {
     expect(state.workspacePlayback).toBeNull();
     expect(state.workspacePlaybackPreparation).toBeNull();
   });
+
+  it("ignores a first canvas readiness callback after Stop starts a newer Play", () => {
+    const state = createState();
+    state.startWorkspacePlayback(sequence(), 3, "generate");
+    const cancelled = state.workspacePlaybackPreparation;
+
+    state.stopWorkspacePlayback();
+    state.startWorkspacePlayback(sequence(), 3, "generate");
+    const current = state.workspacePlaybackPreparation;
+
+    state.confirmWorkspacePlaybackReady(cancelled!);
+    expect(state.workspacePlayback).toBeNull();
+    expect(state.workspacePlaybackPreparation).toBe(current);
+
+    state.confirmWorkspacePlaybackReady(current!);
+    expect(state.workspacePlayback).toBe(current);
+  });
 });

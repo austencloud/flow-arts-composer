@@ -188,6 +188,9 @@
             readyPlayback = session;
             panelState.confirmWorkspacePlaybackReady(playbackCandidate);
           },
+          onerror: (failedRun: number) => {
+            if (failedRun === playbackRun) panelState.stopWorkspacePlayback();
+          },
           onStepChange: (step: number) => (playbackStep = Math.floor(step)),
         }}
         onStatusChange={(status) => {
