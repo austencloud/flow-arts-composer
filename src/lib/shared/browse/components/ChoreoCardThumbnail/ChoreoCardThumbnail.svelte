@@ -29,11 +29,8 @@ Variation support:
   import { buildCardMenuSection } from "$lib/shared/choreo-card/services/card-menu-section";
   import { featureFlagService } from "$lib/shared/auth/services/post-hog-feature-flag-service.svelte";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
-  import {
-    openSendSequenceSheet,
-    buildSequenceSharePayload,
-    buildThumbnailUrl,
-  } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  import { openSendSequenceSheetWithCard } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  import { getSharer } from "$lib/shared/share/get-sharer";
   import { onDestroy, tick, untrack } from "svelte";
   import SheetMorphOverlay from "./SheetMorphOverlay.svelte";
   import {
@@ -492,14 +489,9 @@ Variation support:
   function handleSendTo() {
     const seq = displayedSequence;
     closeContextMenu();
-    const propType = seq.intendedProp?.leftPropType ?? leftPropType ?? "staff";
-    // Cloud thumbnails are keyed by sequence.word (not .name) - matches PropAwareThumbnail
-    const thumbnailUrl = buildThumbnailUrl(
-      seq.word || seq.name,
-      propType,
-      false
+    openSendSequenceSheetWithCard(seq, (target) =>
+      getSharer().getCardImageBlob(target, { darkMode: true })
     );
-    openSendSequenceSheet(buildSequenceSharePayload({ ...seq, thumbnailUrl }));
   }
 
   const contextMenuItems: ContextMenuEntry[] = $derived.by(() => {
