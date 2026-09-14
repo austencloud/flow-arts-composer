@@ -3,8 +3,14 @@ import { createAnimationScope } from "$lib/shared/animation-engine/state/animati
 import { applySequencePathPreview } from "$lib/shared/sequence-viewer/services/sequence-path-policy";
 import type { AnimationPathPolicy } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
 import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
-import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
-import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+import {
+  flowerKey,
+  type Flower,
+} from "$lib/shared/shape-matrix/domain/flower-signature";
+import {
+  MODE_ORDER,
+  type VtgMode,
+} from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
 import { motionPathExamples } from "./motion-path-examples";
 
 export type MotionPathRealizationBuilder = (
@@ -13,6 +19,13 @@ export type MotionPathRealizationBuilder = (
 ) => Promise<SequenceData | null>;
 
 type PickerStatus = "idle" | "loading" | "error";
+
+type MatrixPair = { left: Flower; right: Flower };
+type RealizationCache = Map<string, Map<VtgMode, Promise<SequenceData | null>>>;
+
+function matrixPairKey(pair: MatrixPair): string {
+  return `${flowerKey(pair.left)}:${flowerKey(pair.right)}`;
+}
 
 export function createMotionPathExplorerState() {
   const scope = createAnimationScope({ persistence: "ephemeral" });
@@ -26,6 +39,12 @@ export function createMotionPathExplorerState() {
   let pickerError = $state<string | null>(null);
   let selectionVersion = 0;
   let retryBuilder: MotionPathRealizationBuilder | null = null;
+  // Cache by builder identity because callers can supply more than one matrix
+  // source during a guide visit.
+  const realizationCaches = new WeakMap<
+    MotionPathRealizationBuilder,
+    RealizationCache
+  >();
   let policy = $state<AnimationPathPolicy>({
     pathShape: "arc",
     motionAwarePaths: false,
@@ -57,6 +76,57 @@ export function createMotionPathExplorerState() {
     id: `${original.id}-${selectedPath}`,
   });
 
+  function cachedRealization(
+    builder: MotionPathRealizationBuilder,
+    pair: MatrixPair,
+    mode: VtgMode
+  ): Promise<SequenceData | null> {
+    let cache = realizationCaches.get(builder);
+    if (!cache) {
+      cache = new Map();
+      realizationCaches.set(builder, cache);
+    }
+    const key = matrixPairKey(pair);
+    let modes = cache.get(key);
+    if (!modes) {
+      modes = new Map();
+      cache.set(key, modes);
+    }
+    const cached = modes.get(mode);
+    if (cached) return cached;
+
+    const pending = builder(pair, mode).then(
+      (result) => {
+        // Builders report transient loader failures as null. Do not turn that
+        // temporary state into a permanently unavailable relationship.
+        if (!result) modes?.delete(mode);
+        return result;
+      },
+      (error: unknown) => {
+        modes?.delete(mode);
+        throw error;
+      }
+    );
+    modes.set(mode, pending);
+    return pending;
+  }
+
+  async function prewarmPair(
+    pair: MatrixPair,
+    builder: MotionPathRealizationBuilder,
+    selectedMode: VtgMode | null
+  ): Promise<void> {
+    for (const mode of MODE_ORDER) {
+      if (mode === selectedMode) continue;
+      // These builds populate data only. The stage retains two live players,
+      // so warming six relationships never creates six canvases.
+      // Yielding lets a click begin its selected build before background modes
+      // spend time deriving their own flower phases.
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      void cachedRealization(builder, pair, mode).catch(() => {});
+    }
+  }
+
   async function buildSelection(
     builder: MotionPathRealizationBuilder
   ): Promise<void> {
@@ -71,7 +141,7 @@ export function createMotionPathExplorerState() {
     }
     pickerStatus = "loading";
     try {
-      const built = await builder(pair, mode);
+      const built = await cachedRealization(builder, pair, mode);
       if (version !== selectionVersion) return;
       if (!built) {
         pickerStatus = "error";
@@ -144,6 +214,7 @@ export function createMotionPathExplorerState() {
       builder: MotionPathRealizationBuilder
     ) {
       selectedPair = pair;
+      void prewarmPair(pair, builder, selectedMode);
       void buildSelection(builder);
     },
     chooseHandRelationship(

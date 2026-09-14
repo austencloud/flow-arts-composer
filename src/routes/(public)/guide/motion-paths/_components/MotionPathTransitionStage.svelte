@@ -27,6 +27,10 @@
     rightPropType: PropType;
     onplayingchange: (playing: boolean) => void;
     onstepchange: (step: number) => void;
+    /** Publishes a safe seek target for the canvas currently shown by the stage. */
+    onseekref?: (seek: ((step: number) => void) | null) => void;
+    /** Lets an external step rail keep its cells aligned to the visible canvas. */
+    ondisplayedsequencechange?: (sequence: SequenceData | null) => void;
     onready: () => void;
     onloaderror: () => void;
   }
@@ -40,6 +44,8 @@
     rightPropType,
     onplayingchange,
     onstepchange,
+    onseekref = undefined,
+    ondisplayedsequencechange = undefined,
     onready,
     onloaderror,
   }: Props = $props();
@@ -65,6 +71,14 @@
     sequence: false,
     canvas: false,
   });
+  let firstCanvasInitialized = false;
+  let secondCanvasInitialized = false;
+  // This stage has no trail-tip assignments. Disabling path-cache construction
+  // avoids deriving invisible trails before a replacement can crossfade.
+  const motionPathTrailSettings = {
+    ...DEFAULT_TRAIL_SETTINGS,
+    usePathCache: false,
+  };
 
   function layerFor(source: Source): Layer | null {
     return source === "first" ? first : second;
@@ -73,10 +87,20 @@
   function setLayer(source: Source, layer: Layer | null): void {
     if (source === "first") first = layer;
     else second = layer;
+    if (!layer) {
+      if (source === "first") firstCanvasInitialized = false;
+      else secondCanvasInitialized = false;
+    }
     const readiness = {
       key: layer?.key ?? null,
       sequence: false,
-      canvas: false,
+      // Once a source has painted, later sequence reloads retain its canvas.
+      // They only wait for the replacement sequence, not a second engine boot.
+      canvas: layer
+        ? source === "first"
+          ? firstCanvasInitialized
+          : secondCanvasInitialized
+        : false,
     };
     if (source === "first") firstReadiness = readiness;
     else secondReadiness = readiness;
@@ -154,9 +178,15 @@
     onready();
   }
 
-  function markSequenceReady(source: Source, key: string): void {
+  function markSequenceReady(
+    source: Source,
+    key: string,
+    loadedIdentity: string | null
+  ): void {
     const readiness = readinessFor(source);
-    if (readiness.key !== key) return;
+    const layer = layerFor(source);
+    if (readiness.key !== key || layer?.key !== key || key !== loadedIdentity)
+      return;
     readiness.sequence = true;
     void revealWhenReady(source, key);
   }
@@ -164,23 +194,55 @@
   function markCanvasReady(source: Source, key: string): void {
     const readiness = readinessFor(source);
     if (readiness.key !== key) return;
+    if (source === "first") firstCanvasInitialized = true;
+    else secondCanvasInitialized = true;
     readiness.canvas = true;
     void revealWhenReady(source, key);
   }
 
-  function handleStep(source: Source, key: string, step: number): void {
-    if (active !== source || layerFor(source)?.key !== key) return;
+  function handleStep(
+    source: Source,
+    key: string,
+    step: number,
+    sequenceId: string | null
+  ): void {
+    const layer = layerFor(source);
+    if (
+      active !== source ||
+      layer?.key !== key ||
+      (sequenceId !== null && sequenceId !== layer.sequence.id)
+    )
+      return;
     visibleStep = step;
     onstepchange(step);
   }
 
+  function seekDisplayed(step: number): void {
+    if (!active) return;
+    (active === "first" ? firstSeek : secondSeek)?.(step);
+  }
+
+  $effect(() => {
+    const publishSeek = onseekref;
+    if (!publishSeek) return;
+    // The parent keeps this reference for a step rail. While a replacement is
+    // loading, `active` still names the displayed player, so a click never
+    // scrubs an invisible or half-initialized canvas.
+    publishSeek(seekDisplayed);
+    return () => publishSeek(null);
+  });
+
+  $effect(() => {
+    ondisplayedsequencechange?.(
+      active ? (layerFor(active)?.sequence ?? null) : null
+    );
+  });
+
   function handleSettled(source: Source): void {
     if (active !== source) return;
-    const outgoing = source === "first" ? "second" : "first";
-    // A newer selection can already be loading in the retiring source. Its
-    // canvas stays parked at opacity zero until it is ready; deleting it here
-    // would lose the latest request and make the old player flash back.
-    if (waiting !== outgoing) setLayer(outgoing, null);
+    // Keep both players mounted after a handoff. The next selection reloads
+    // this parked source in place, preserving its engine and canvas instead of
+    // paying a second cold initialization before the next fade.
     fading = false;
     const next = queued;
     queued = null;
@@ -212,13 +274,14 @@
     // A player's teardown can run after its snippet's layer becomes null.
     // Capture its identity now so late callbacks cannot touch the replacement.
     return {
-      onStepChange: (step: number) => handleStep(source, key, step),
+      onStepChange: (step: number, sequenceId: string | null) =>
+        handleStep(source, key, step, sequenceId),
       onSeekRef: (seek: ((step: number) => void) | null) => {
         if (layerFor(source)?.key !== key) return;
         if (source === "first") firstSeek = seek;
         else secondSeek = seek;
       },
-      onReady: () => markSequenceReady(source, key),
+      onReady: (loadIdentity) => markSequenceReady(source, key, loadIdentity),
       onCanvasInitialized: () => markCanvasReady(source, key),
       onLoadError: () => handleLoadError(source, key),
     };
@@ -227,37 +290,36 @@
 
 {#snippet player(source: Source, layer: Layer | null)}
   {#if layer}
-    {#key layer.key}
-      {@const callbacks = playerCallbacks(source, layer.key)}
-      <InlineAnimationPlayer
-        sequence={layer.sequence}
-        visibilityManagerOverride={scope.visibility}
-        effectsConfigState={scope.effects}
-        trailSettingsOverride={DEFAULT_TRAIL_SETTINGS}
-        tipEffectMap={{}}
-        tipEffortMap={{}}
-        {leftPropType}
-        {rightPropType}
-        chrome="minimal"
-        fill
-        autoPlay={false}
-        externalPlaying={playing}
-        externalStep={waiting === source && releasing !== source
-          ? handoffStep(layer)
-          : null}
-        externalBpm={48}
-        backgroundAlpha={0}
-        onExternalPlayingChange={onplayingchange}
-        {...callbacks}
-        showControls={false}
-        showPositionGlyph
-        beatIndicators={false}
-        disableContextMenu
-        playbackAllowed
-        resumeWhenPlaybackAllowed
-        initialStep={layer.initialStep}
-      />
-    {/key}
+    {@const callbacks = playerCallbacks(source, layer.key)}
+    <InlineAnimationPlayer
+      sequence={layer.sequence}
+      sequenceLoadKey={layer.key}
+      visibilityManagerOverride={scope.visibility}
+      effectsConfigState={scope.effects}
+      trailSettingsOverride={motionPathTrailSettings}
+      tipEffectMap={{}}
+      tipEffortMap={{}}
+      {leftPropType}
+      {rightPropType}
+      chrome="minimal"
+      fill
+      autoPlay={false}
+      externalPlaying={playing}
+      externalStep={waiting === source && releasing !== source
+        ? handoffStep(layer)
+        : null}
+      externalBpm={48}
+      backgroundAlpha={0}
+      onExternalPlayingChange={onplayingchange}
+      {...callbacks}
+      showControls={false}
+      showPositionGlyph
+      beatIndicators={false}
+      disableContextMenu
+      playbackAllowed={active === source || waiting === source || fading}
+      resumeWhenPlaybackAllowed
+      initialStep={layer.initialStep}
+    />
   {/if}
 {/snippet}
 
