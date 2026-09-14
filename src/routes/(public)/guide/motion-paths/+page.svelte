@@ -3,7 +3,10 @@
   import GuideShell from "../_components/GuideShell.svelte";
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import MotionPathExplorer from "./_components/MotionPathExplorer.svelte";
-  import MotionPathLessons from "./_components/MotionPathLessons.svelte";
+  import MotionPathExplanation from "./_components/MotionPathExplanation.svelte";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  let selectedSequence = $state<SequenceData | null>(null);
+  let selectedTrace = $state<"hands" | "tips">("tips");
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
 </script>
 
@@ -24,19 +27,26 @@
   <article class="motion-path-guide guide-page-route">
     <header class="intro">
       <h1>Motion paths</h1>
-      <p>
-        The same sequence can draw a different mandala. Pick a path and watch
-        how the hands travel.
-      </p>
+      <p>Change the path. See what it draws.</p>
     </header>
 
     {#if browser}
-      <MotionPathExplorer />
+      <MotionPathExplorer
+        onchange={(sequence, trace) => {
+          selectedSequence = sequence;
+          selectedTrace = trace;
+        }}
+      />
     {:else}
       <p role="status">The interactive comparison loads in your browser.</p>
     {/if}
 
-    <MotionPathLessons />
+    {#if selectedSequence}
+      <MotionPathExplanation
+        sequence={selectedSequence}
+        trace={selectedTrace}
+      />
+    {/if}
 
     <details class="reference">
       <summary>Motion path reference</summary>

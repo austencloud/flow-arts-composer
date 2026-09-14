@@ -48,6 +48,13 @@
   let rightTurn = $state<TurnValue>(0);
   let labelMode = $state<MatrixLabelMode>("turns");
   let displayedSequence = $state<SequenceData | null>(null);
+  let {
+    onchange,
+  }: { onchange?: (sequence: SequenceData, trace: "hands" | "tips") => void } =
+    $props();
+  $effect(() => {
+    if (displayedSequence) onchange?.(displayedSequence, explorer.trace);
+  });
   let stageSeek = $state<((step: number) => void) | null>(null);
   let mounted = true;
   let matrixRequest = 0;
