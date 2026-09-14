@@ -11,7 +11,9 @@
   import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import { openSequenceViewer } from "$lib/shared/sequence-viewer/services/sequence-viewer-navigator";
+  import { goto } from "$app/navigation";
+  import { saveSequenceRouteHandoff } from "$lib/shared/coordinators/sequence-handoff.svelte";
+  import { generateSequenceRoutePath } from "$lib/shared/navigation/services/sequence-encoder";
   import { motionPathExamples } from "../_data/motion-path-examples";
   import { createMotionPathApplication } from "../_data/motion-path-application.svelte";
   import { savedSequencePathPolicy } from "$lib/shared/sequence-viewer/services/sequence-path-policy";
@@ -83,6 +85,17 @@
         ? `Step ${selectedStep} changed`
         : "Whole sequence changed";
   }
+  function openViewer() {
+    playing = false;
+    saveSequenceRouteHandoff({
+      sequence,
+      returnPath: "/guide/motion-paths",
+      returnLabel: "Motion paths",
+      scrollY: window.scrollY,
+      playbackState: { currentStep, bpm: 36, isPlaying: false },
+    });
+    void goto(generateSequenceRoutePath(sequence));
+  }
 </script>
 
 <div class="application-demo">
@@ -93,6 +106,7 @@
       rightPropType={PropType.STAFF}
       visibilityManagerOverride={playbackScope.visibility}
       effectsConfigState={playbackScope.effects}
+      tipEffectMap={{}}
       trailSettingsOverride={trails}
       autoPlay={false}
       externalPlaying={playing}
@@ -106,6 +120,7 @@
       showControls={false}
       backgroundAlpha={0}
       disableContextMenu
+      hoverHint="none"
       beatIndicators={false}
       fill
     />
@@ -157,14 +172,7 @@
       >
     </div>
     <span class="status" role="status">{status}</span>
-    <PanelButton
-      onclick={() =>
-        openSequenceViewer(sequence, {
-          source: "external_link",
-          returnPath: "/guide/motion-paths",
-          returnLabel: "Motion paths",
-        })}>Open in sequence viewer</PanelButton
-    >
+    <PanelButton onclick={openViewer}>Open in sequence viewer</PanelButton>
   </div>
   <div class="strip" aria-label="Choose a step to edit">
     <StepStrip
