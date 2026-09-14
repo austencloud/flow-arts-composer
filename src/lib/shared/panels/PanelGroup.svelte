@@ -45,7 +45,7 @@
 </script>
 
 <script lang="ts">
-  import { onDestroy, untrack } from "svelte";
+  import { onDestroy, onMount, untrack } from "svelte";
   import { flexPresence, growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import ResizeHandle from "./ResizeHandle.svelte";
@@ -103,11 +103,8 @@
     });
   });
 
-  $effect(() => {
-    if (!containerRef || !hasResizeHandles) {
-      handleValues = [];
-      return;
-    }
+  onMount(() => {
+    if (!containerRef || !hasResizeHandles) return;
 
     let scheduledFrame = 0;
     const scheduleRefresh = () => {
@@ -301,10 +298,7 @@
   }
 
   function refreshHandleValues(): void {
-    if (!hasResizeHandles) {
-      handleValues = [];
-      return;
-    }
+    if (!hasResizeHandles) return;
     handleValues = panels
       .slice(0, -1)
       .map((_, index) => measureHandleValue(index));
