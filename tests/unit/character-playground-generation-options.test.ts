@@ -28,4 +28,46 @@ describe("character playground generation options", () => {
       parseGenerationOptions({ ...DEFAULT_GENERATION_OPTIONS, face: 0 })
     ).toMatchObject({ face: 0 });
   });
+
+  it("fills new appearance controls for a saved legacy creator request", () => {
+    const {
+      shoes,
+      hat,
+      eyebrows,
+      eyelashes,
+      eyeColor,
+      hairColorOverride,
+      outfitColorOverride,
+      ...legacy
+    } = DEFAULT_GENERATION_OPTIONS;
+    expect(parseGenerationOptions(legacy)).toEqual(DEFAULT_GENERATION_OPTIONS);
+  });
+
+  it("keeps asset paths and malformed color values out of the generator", () => {
+    expect(
+      parseGenerationOptions({
+        ...DEFAULT_GENERATION_OPTIONS,
+        shoes: "../../shoes01",
+      })
+    ).toBeNull();
+    expect(
+      parseGenerationOptions({
+        ...DEFAULT_GENERATION_OPTIONS,
+        outfitColorOverride: "blue",
+      })
+    ).toBeNull();
+  });
+
+  it("accepts bounded reproducibility seeds and rejects fractional values", () => {
+    expect(
+      parseGenerationOptions({
+        ...DEFAULT_GENERATION_OPTIONS,
+        variationSeed: 0,
+        faceSeed: 2147483647,
+      })
+    ).toMatchObject({ variationSeed: 0, faceSeed: 2147483647 });
+    expect(
+      parseGenerationOptions({ ...DEFAULT_GENERATION_OPTIONS, faceSeed: 0.5 })
+    ).toBeNull();
+  });
 });
