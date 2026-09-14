@@ -4,6 +4,7 @@ import {
   buildGalleryVisibility,
   deriveThumbnailSequenceName,
   galleryQrPolicy,
+  galleryThumbnailRequestChanged,
   type GalleryCompositionSource,
 } from "$lib/shared/browse/services/gallery-render-input";
 import type { InfoCellChoice } from "$lib/shared/sequence-viewer/services/info-cell-display";
@@ -170,6 +171,39 @@ describe("galleryQrPolicy", () => {
         isAuthenticated: true,
       })
     ).toBeUndefined();
+  });
+
+  it("defaults an omitted variant to the gallery policy", () => {
+    expect(
+      galleryQrPolicy({ cardMode: false, isAuthenticated: true })
+    ).toBe("background");
+  });
+
+  it("retries the same image key when auth changes its QR scheduling policy", () => {
+    const keyHash = "gallery-card";
+    const guest = galleryQrPolicy({
+      variant: "gallery",
+      cardMode: false,
+      isAuthenticated: false,
+    });
+    const signedIn = galleryQrPolicy({
+      variant: "gallery",
+      cardMode: false,
+      isAuthenticated: true,
+    });
+
+    expect(
+      galleryThumbnailRequestChanged(
+        { keyHash, qrPolicy: guest },
+        { keyHash, qrPolicy: signedIn }
+      )
+    ).toBe(true);
+    expect(
+      galleryThumbnailRequestChanged(
+        { keyHash, qrPolicy: signedIn },
+        { keyHash, qrPolicy: signedIn }
+      )
+    ).toBe(false);
   });
 });
 
