@@ -33,6 +33,7 @@
   import { loopDetector } from "$lib/features/create/generate/circular/services/loop-detector";
   import { registerLoopDetector } from "$lib/shared/create/get-loop-detector";
   import type { TurnValue } from "$lib/shared/create/services/level-turn-values";
+  import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
 
   const explorer = createMotionPathExplorerState();
   const matrixTipDx = shapeMatrixTipPoint(PropType.STAFF)?.dx;
@@ -41,6 +42,7 @@
   let ready = $state(false);
   let playerFailed = $state(false);
   let matrixData = $state<ShapeMatrixData | null>(null);
+  let matrixPreviews = $state<Map<string, ShapeMatrixData>>(new Map());
   let matrixError = $state<string | null>(null);
   let leftTurn = $state<TurnValue>(0);
   let rightTurn = $state<TurnValue>(0);
@@ -50,6 +52,11 @@
   let mounted = true;
   let matrixRequest = 0;
   const matrixFilters = $derived(matrixFiltersForTurns(leftTurn, rightTurn));
+  const previewMatrix = $derived(
+    matrixPreviews.get(
+      `${explorer.selectedPath}:${explorer.trace}:${explorer.selectedPath === "hybrid" ? explorer.fixedPath : "arc"}`
+    )
+  );
   const rowAxis = $derived(
     matrixData ? applyFilter(matrixData.axis, matrixFilters.left, false) : []
   );
@@ -68,8 +75,30 @@
     matrixError = null;
     matrixData = null;
     try {
-      const data = await loadShapeMatrix(PropType.STAFF);
-      if (mounted && request === matrixRequest) matrixData = data;
+      const paths: MandalaPathShape[] = ["arc", "linear", "concave", "hybrid"];
+      const previews = await Promise.all(
+        paths.flatMap((pathShape) =>
+          (["hands", "tips"] as const).flatMap((trace) =>
+            (pathShape === "hybrid"
+              ? (["arc", "linear", "concave"] as const)
+              : (["arc"] as const)
+            ).map(async (hybridFallback) => {
+              const data = await loadShapeMatrix(PropType.STAFF, {
+                pathShape,
+                trace,
+                hybridFallback,
+              });
+              return [`${pathShape}:${trace}:${hybridFallback}`, data] as const;
+            })
+          )
+        )
+      );
+      if (mounted && request === matrixRequest) {
+        matrixPreviews = new Map(previews);
+        // Realization matching uses the original flower geometry. Changing
+        // the displayed path should never select a different sequence.
+        matrixData = matrixPreviews.get("arc:tips:arc")!;
+      }
     } catch {
       if (mounted && request === matrixRequest)
         matrixError = "The Shape Matrix could not load.";
@@ -154,7 +183,7 @@
           <p class="matrix-status" role="status">Building the Shape Matrix…</p>
         {:else}
           <ShapeMatrixGrid
-            data={matrixData}
+            data={previewMatrix}
             {rowAxis}
             {colAxis}
             maxCellPx={108}
@@ -176,8 +205,8 @@
         {:else}
           <span
             >{explorer.selectedPair
-              ? "Matrix previews use Arc."
-              : "Pick a cell. Matrix previews use Arc."}</span
+              ? "Change the motion path to compare these shapes."
+              : "Pick a cell to animate its shapes."}</span
           >
         {/if}
       </div>
