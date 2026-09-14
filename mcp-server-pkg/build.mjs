@@ -36,6 +36,8 @@ execSync(
     "--external:util",
     "--external:worker_threads",
     "--external:canvas",
+    "--external:@napi-rs/canvas",
+    "--external:@napi-rs/canvas/*",
     "--alias:@tka/domain=../packages/domain/src/index.ts",
     "--alias:@tka/render-composition=../packages/render-composition/src/index.ts",
   ].join(" "),

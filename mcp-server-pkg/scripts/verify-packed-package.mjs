@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { createCanvas, loadImage } from "canvas";
+import { createCanvas, loadImage } from "@napi-rs/canvas/node-canvas.js";
 
 const packageRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const packageManifest = JSON.parse(

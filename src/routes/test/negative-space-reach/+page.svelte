@@ -35,7 +35,7 @@
     camera: InspectionShot;
   }
   const points = ["S", "E", "N", "W"];
-  const referenceStorageKey = "tka-isolation-right-fire-references-v1";
+  const referenceStorageKey = "tka-isolation-right-fire-east-references-v2";
   let playing = $state(false);
   let ready = $state(false);
   let phase = $state(0);

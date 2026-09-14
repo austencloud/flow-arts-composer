@@ -9,7 +9,7 @@ import { GridLocation, GridMode, MotionType } from "./enums.js";
 import {
   getLayer2PointCoordinates,
   type Coordinates,
-} from "./grid-coordinates.js";
+} from "@tka/render-core";
 import {
   STATIC_RADIAL_CLOCKWISE_MAP,
   STATIC_RADIAL_COUNTER_CLOCKWISE_MAP,

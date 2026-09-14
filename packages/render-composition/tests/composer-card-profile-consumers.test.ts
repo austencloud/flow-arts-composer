@@ -45,6 +45,17 @@ describe("Composer card export profile consumers", () => {
     expect(source).not.toContain("fillText");
   });
 
+  it("keeps cached-layer step labels on the same painter as direct exports", () => {
+    const source = readFileSync(
+      resolve(root, "src/lib/shared/render/services/layer-compositor.ts"),
+      "utf8"
+    );
+    expect(source).toContain(
+      "renderStepNumber(ctx, stepNumber, 0, 0, size, darkMode)"
+    );
+    expect(source).not.toContain("BEAT_NUMBER_FONT_SIZE");
+  });
+
   it("forces Composer bulk exports onto the profile's mandala setting", () => {
     const source = readFileSync(
       resolve(

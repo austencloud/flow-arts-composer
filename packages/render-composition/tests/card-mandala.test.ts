@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateCardMandalaPaths,
+  renderCardMandala,
   type CardMandalaStep,
 } from "../src/card-mandala.js";
 
@@ -66,5 +67,35 @@ describe("card mandala geometry", () => {
     });
 
     expect(halfTurn).not.toEqual(fullTurn);
+  });
+
+  it("keeps its local stroke width so canvas scaling matches ImageComposer", () => {
+    const widths: number[] = [];
+    const context = {
+      save: () => undefined,
+      restore: () => undefined,
+      translate: () => undefined,
+      scale: () => undefined,
+      beginPath: () => undefined,
+      moveTo: () => undefined,
+      bezierCurveTo: () => undefined,
+      stroke: () => undefined,
+      set lineWidth(value: number) {
+        widths.push(value);
+      },
+      set lineCap(_value: CanvasLineCap) {},
+      set globalAlpha(_value: number) {},
+      set strokeStyle(_value: string | CanvasGradient | CanvasPattern) {},
+    } as unknown as CanvasRenderingContext2D;
+
+    renderCardMandala(
+      context,
+      calculateCardMandalaPaths(STEPS, { left: [1], right: [1] }),
+      { col: 1, row: 1, x: 0, y: 0, cellSize: 120, variant: "full" },
+      false
+    );
+
+    expect(widths).toContain(3);
+    expect(widths).not.toContain(3 / 0.5);
   });
 });

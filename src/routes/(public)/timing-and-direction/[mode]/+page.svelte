@@ -16,7 +16,7 @@
   } from "$lib/shared/create/services/level-turn-values";
   import TransportControls from "$lib/shared/animation-engine/components/controls/TransportControls.svelte";
   import SequenceShowcasePreview from "$lib/shared/sequence-preview/components/SequenceShowcasePreview.svelte";
-  import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
+  import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
@@ -127,7 +127,6 @@
       )
     )
   );
-
 
   $effect(() => {
     if (article.code !== "TO") {
@@ -434,6 +433,53 @@
   </nav>
 
   {#if article.code === "TO"}
+    {#snippet playerControls()}
+      <div class="player-controls">
+        <div class="display-switch">
+          <SegmentedControl
+            options={[
+              { value: "staff", label: "With props", shortLabel: "Props" },
+              { value: "hands", label: "Hands" },
+            ]}
+            value={playback.propDisplay}
+            onchange={(value) => (playback.propDisplay = value)}
+            ariaLabel="Player display"
+            density="tight"
+            color="accent"
+          />
+        </div>
+        {#if playback.propDisplay === "staff"}
+          <div class="turn-editor-toggle">
+            <PanelButton
+              bind:ref={turnTrigger}
+              onclick={openTurnEditor}
+              ariaExpanded={turnEditorOpen}
+              disabled={!selectedLoop}
+              fullWidth
+            >
+              Turns
+            </PanelButton>
+          </div>
+        {/if}
+        <div class="action-editor-toggle">
+          <PanelButton
+            bind:ref={actionTrigger}
+            onclick={() => (actionEditorOpen = !actionEditorOpen)}
+            ariaExpanded={actionEditorOpen}
+            disabled={!selectedLoop}
+            fullWidth
+          >
+            Actions
+          </PanelButton>
+        </div>
+        {#if browser}
+          <TransportControls
+            isPlaying={playback.playing}
+            onPlaybackToggle={playback.togglePlayback}
+          />
+        {/if}
+      </div>
+    {/snippet}
     <section class="to-reference" aria-labelledby="to-reference-title">
       <header class="to-header">
         <div class="to-title">
@@ -447,56 +493,6 @@
           class="demonstration"
           aria-label={`${selectedLoop?.word ?? "Together-Opposite"} sequence player`}
         >
-          <div class="demo-toolbar">
-            <h2>
-              {selectedLoop?.word ?? "Four-count loop"}
-            </h2>
-            <div class="display-switch">
-              <SegmentedControl
-                options={[
-                  { value: "staff", label: "With props" },
-                  { value: "hands", label: "Hands" },
-                ]}
-                value={playback.propDisplay}
-                onchange={(value) => (playback.propDisplay = value)}
-                ariaLabel="Player display"
-                density="tight"
-                color="accent"
-              />
-            </div>
-            <div
-              class="turn-editor-toggle"
-              class:unavailable={playback.propDisplay === "hands"}
-              inert={playback.propDisplay === "hands"}
-              aria-hidden={playback.propDisplay === "hands"}
-            >
-              <PanelButton
-                bind:ref={turnTrigger}
-                onclick={openTurnEditor}
-                ariaExpanded={turnEditorOpen &&
-                  playback.propDisplay === "staff"}
-                disabled={!selectedLoop}
-              >
-                Turns
-              </PanelButton>
-            </div>
-            <div class="action-editor-toggle">
-              <PanelButton
-                bind:ref={actionTrigger}
-                onclick={() => (actionEditorOpen = !actionEditorOpen)}
-                ariaExpanded={actionEditorOpen}
-                disabled={!selectedLoop}
-              >
-                Actions
-              </PanelButton>
-            </div>
-            {#if browser}
-              <TransportControls
-                isPlaying={playback.playing}
-                onPlaybackToggle={playback.togglePlayback}
-              />
-            {/if}
-          </div>
           <div class="to-showcase" bind:this={examplePlayer}>
             <SequenceShowcasePreview
               word={selectedLoop?.word ?? "Together-Opposite"}
@@ -515,6 +511,7 @@
               leftPropType={displayPropType}
               rightPropType={displayPropType}
               primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+              controls={playerControls}
             />
           </div>
         </figure>
@@ -697,33 +694,27 @@
                         <PanelButton
                           fullWidth
                           ariaPressed={selectedTogetherOppositeLoop === loop.id}
+                          ariaLabel={loop.word}
                           onclick={() => selectTogetherOppositeLoop(loop, true)}
                         >
-                          <span class="loop-preview" aria-hidden="true">
-                            {#each loop.sequence.steps as pictograph, index (`${loop.id}-${index}`)}
-                              <span class="loop-preview-step">
-                                <PictographContainer
-                                  pictographData={pictograph}
-                                  gridMode={loop.gridMode}
-                                  stepNumberOverride={true}
-                                  darkMode={true}
-                                  leftPropTypeOverride={displayPropType}
-                                  rightPropTypeOverride={displayPropType}
-                                  leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
-                                  rightColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.right}
-                                  showGrid={true}
-                                  showTKA={true}
-                                  showElemental={false}
-                                  showPositions={false}
-                                  showReversals={false}
-                                  showNonRadialPoints={false}
-                                  showHandPoints={true}
-                                  disableTransitions
-                                />
-                              </span>
-                            {/each}
-                          </span>
-                          <span class="loop-word">{loop.word}</span>
+                          <ChoreoCard
+                            sequence={loop.sequence}
+                            showMandala={true}
+                            includeStartPosition={true}
+                            startPositionLayoutOverride="row"
+                            columnCount={2}
+                            showQRCode={false}
+                            showWord={true}
+                            showDifficultyLevel={false}
+                            showNotes={false}
+                            showLoopGlyph={false}
+                            handPathMode={playback.propDisplay === "hands"}
+                            darkMode={true}
+                            leftPropType={displayPropType}
+                            rightPropType={displayPropType}
+                            primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+                            fitWidth={true}
+                          />
                         </PanelButton>
                       {/each}
                     </div>
@@ -878,7 +869,7 @@
   .to-reference {
     max-width: 86rem;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
   }
@@ -938,39 +929,30 @@
     gap: 1rem;
   }
   .display-switch {
-    width: 11rem;
-  }
-  .to-stage .demo-toolbar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
-    gap: 0.5rem;
-    min-height: 48px;
-    padding-bottom: 0;
-    margin-bottom: 0.5rem;
-  }
-  .to-stage .demo-toolbar h2 {
-    margin: 0;
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.75rem;
-  }
-  .turn-editor-toggle.unavailable {
-    visibility: hidden;
+    width: 100%;
   }
   .to-showcase {
     width: 100%;
-    aspect-ratio: 1;
   }
   .to-showcase :global(.sequence-preview) {
-    height: 100%;
-    aspect-ratio: auto;
     border-color: color-mix(
       in srgb,
       var(--mode-accent) 55%,
       var(--theme-stroke)
     );
+  }
+  .player-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .player-controls :global(.segmented-control) {
+    width: 100%;
+  }
+  .player-controls :global(.transport-controls) {
+    margin: auto 0 0;
+    align-self: center;
   }
   .turn-controls {
     display: grid;
@@ -1032,7 +1014,7 @@
   .spin-column :global(.panel-btn) {
     display: grid;
     min-height: 0;
-    padding: 0.375rem;
+    padding: 0.25rem;
   }
   .spin-column :global(.panel-btn[aria-pressed="true"]) {
     outline: 2px solid var(--mode-accent);
@@ -1042,22 +1024,6 @@
       var(--mode-accent) 10%,
       var(--theme-card-bg)
     );
-  }
-  .loop-word {
-    overflow-wrap: anywhere;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.025em;
-  }
-  .loop-preview {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.125rem;
-    width: 100%;
-  }
-  .loop-preview-step {
-    display: block;
-    aspect-ratio: 1;
   }
   .loop-status {
     display: grid;
@@ -1261,29 +1227,23 @@
     .display-switch {
       width: 100%;
       grid-column: 1 / -1;
-      grid-row: 2;
-    }
-    .to-stage .demo-toolbar {
-      grid-template-columns: minmax(0, 1fr) auto auto;
-    }
-    .to-stage .demo-toolbar h2 {
-      grid-column: 1 / -1;
-      grid-row: 1;
-    }
-    .turn-editor-toggle {
-      grid-column: 1;
-      grid-row: 3;
-    }
-    .action-editor-toggle {
-      grid-column: 2;
-      grid-row: 3;
-    }
-    .to-stage .demo-toolbar > :global(.transport-controls) {
-      grid-column: 3;
-      grid-row: 3;
     }
     .spin-grid {
       gap: 0.375rem;
+    }
+  }
+  @container (max-width: 28rem) {
+    .player-controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: center;
+    }
+    .player-controls .display-switch {
+      grid-column: 1 / -1;
+    }
+    .player-controls :global(.transport-controls) {
+      margin: 0;
+      justify-self: center;
     }
   }
 </style>

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { PlaneMode } from "@austencloud/scene-3d";
 import { Vector3 } from "three";
+import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import {
   createCharacterInstanceState,
   makeStandaloneDeps,
@@ -12,6 +14,11 @@ import {
 
 describe("rendered isolation score", () => {
   it("visits south, east, north, west with only the right prop", () => {
+    const first = ISOLATION_SEQUENCE.steps[0]!.motions.right!;
+    expect(first.startLocation).toBe(GridLocation.SOUTH);
+    expect(first.endLocation).toBe(GridLocation.EAST);
+    expect(first.startOrientation).toBe(Orientation.IN);
+    expect(first.endOrientation).toBe(Orientation.IN);
     const state = createCharacterInstanceState(
       { id: "isolation-path-check", persistent: false },
       makeStandaloneDeps()
@@ -22,9 +29,9 @@ describe("rendered isolation score", () => {
     try {
       const expected = [
         [0, -1],
-        [1, 0],
-        [0, 1],
         [-1, 0],
+        [0, 1],
+        [1, 0],
       ];
       for (let phase = 0; phase < 4; phase++) {
         const pair = state.propStatesAtScoreTime(phase);
@@ -57,6 +64,10 @@ describe("rendered isolation score", () => {
         // Keep its real size rather than stretching the prop to hit the marker.
         expect(anchored.length()).toBeCloseTo(0.07, 5);
       }
+      // Halfway to east must stay in the south/east quadrant, not take the long arc.
+      const midway = state.propStatesAtScoreTime(0.5).right!.worldPosition;
+      expect(midway.x).toBeLessThan(0);
+      expect(midway.y).toBeLessThan(0);
       expect(state.propStatesAtScoreTime(4)).toEqual(
         state.propStatesAtScoreTime(0)
       );

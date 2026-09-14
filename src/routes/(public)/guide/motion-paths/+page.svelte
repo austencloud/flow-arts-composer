@@ -4,9 +4,6 @@
   import GuideSeo from "../level-1/_components/GuideSeo.svelte";
   import MotionPathExplorer from "./_components/MotionPathExplorer.svelte";
   import MotionPathExplanation from "./_components/MotionPathExplanation.svelte";
-  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-  let selectedSequence = $state<SequenceData | null>(null);
-  let selectedTrace = $state<"hands" | "tips">("tips");
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
 </script>
 
@@ -31,22 +28,12 @@
     </header>
 
     {#if browser}
-      <MotionPathExplorer
-        onchange={(sequence, trace) => {
-          selectedSequence = sequence;
-          selectedTrace = trace;
-        }}
-      />
+      <MotionPathExplorer />
     {:else}
       <p role="status">The interactive comparison loads in your browser.</p>
     {/if}
 
-    {#if selectedSequence}
-      <MotionPathExplanation
-        sequence={selectedSequence}
-        trace={selectedTrace}
-      />
-    {/if}
+    <MotionPathExplanation />
 
     <details class="reference">
       <summary>Motion path reference</summary>

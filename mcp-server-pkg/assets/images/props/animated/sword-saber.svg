@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sword rethink: Curved saber / katana. Metal hardware (kashira/grip/tsuba) = st0 flat -> recolors to hand color. Curved blade = st1 gold kevlar wick, preserved. Sheen/edges via url() + stroke, both survive recolor. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 572.3 64">
+<style type="text/css">
+	.st0{fill:#989498;}
+	.st1{fill:#ffd540;}
+</style>
+<defs>
+	<linearGradient id="sheen" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+		<stop offset="0.05" stop-color="#ffffff" stop-opacity="0"/>
+		<stop offset="0.30" stop-color="#ffffff" stop-opacity="0.85"/>
+		<stop offset="0.46" stop-color="#ffffff" stop-opacity="0.05"/>
+		<stop offset="0.62" stop-color="#000000" stop-opacity="0"/>
+		<stop offset="1" stop-color="#000000" stop-opacity="0.5"/>
+	</linearGradient>
+	<linearGradient id="bladeSheen" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+		<stop offset="0.18" stop-color="#ffffff" stop-opacity="0"/>
+		<stop offset="0.36" stop-color="#fffbe0" stop-opacity="0.95"/>
+		<stop offset="0.5" stop-color="#ffffff" stop-opacity="0.1"/>
+		<stop offset="0.66" stop-color="#6b4e00" stop-opacity="0"/>
+		<stop offset="0.9" stop-color="#6b4e00" stop-opacity="0.6"/>
+	</linearGradient>
+</defs>
+
+<!-- Blade (gold wick): single-edge banana curve to a point -->
+<path class="st1" stroke="#3a2c00" stroke-width="1" stroke-linejoin="round"
+	d="M292 27 C370 19 482 19 548 27.5 L566 32 C548 33 480 35 372 38 C336 39 312 39 292 38 Z"/>
+<path fill="url(#bladeSheen)" d="M292 27 C370 19 482 19 548 27.5 L566 32 C548 33 480 35 372 38 C336 39 312 39 292 38 Z"/>
+
+<!-- Tsuba: tall thin oval guard -->
+<ellipse class="st0" stroke="#141418" stroke-width="1.3" cx="288" cy="32" rx="8" ry="21"/>
+<ellipse fill="url(#sheen)" cx="288" cy="32" rx="8" ry="21"/>
+
+<!-- Tsuka grip: diamond-wrapped -->
+<rect class="st0" stroke="#141418" stroke-width="1.2" x="142" y="26" width="138" height="12" rx="6"/>
+<rect fill="url(#sheen)" x="142" y="26" width="138" height="12" rx="6"/>
+<g stroke="#141418" stroke-width="1" opacity="0.5">
+	<line x1="160" y1="26" x2="172" y2="38"/>
+	<line x1="172" y1="26" x2="160" y2="38"/>
+	<line x1="196" y1="26" x2="208" y2="38"/>
+	<line x1="208" y1="26" x2="196" y2="38"/>
+	<line x1="232" y1="26" x2="244" y2="38"/>
+	<line x1="244" y1="26" x2="232" y2="38"/>
+</g>
+
+<!-- Kashira: angled end cap -->
+<path class="st0" stroke="#141418" stroke-width="1.2" stroke-linejoin="round"
+	d="M148 26 L136 28 C130 29 130 35 136 36 L148 38 Z"/>
+<path fill="url(#sheen)" d="M148 26 L136 28 C130 29 130 35 136 36 L148 38 Z"/>
+</svg>

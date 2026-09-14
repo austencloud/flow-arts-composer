@@ -20,15 +20,13 @@ import type { Canvas2DDirectRenderer } from './canvas-2d-direct-renderer';
 import {
   drawMonochromeImage,
   drawTintedImage,
+  renderStepNumber,
 } from "@tka/render-composition";
+import { ensureCardFonts } from "./gelasio-fonts";
 
 const VIEWBOX_SIZE = 950;
 const TKA_GLYPH_X = 50;
 const TKA_GLYPH_Y = 800;
-const STEP_NUMBER_X = 50;
-const STEP_NUMBER_Y = 50;
-const BEAT_NUMBER_FONT_SIZE = 100;
-const BEAT_NUMBER_START_FONT_SIZE = 80;
 const TURN_NUMBER_HEIGHT = 45;
 const DOT_PADDING = 10;
 const DOT_SIZE = 25;
@@ -116,6 +114,7 @@ export class LayerCompositor {
   ): Promise<CompositionResult> {
     const totalStart = performance.now();
     this.stats.totalCompositions++;
+    if (stepNumber !== undefined) await ensureCardFonts();
 
     const timing = {
       totalMs: 0,
@@ -643,20 +642,7 @@ export class LayerCompositor {
     size: number,
     darkMode: boolean
   ): void {
-    if (stepNumber === -1) return;
-
-    const scale = size / VIEWBOX_SIZE;
-    const text = stepNumber === 0 ? "Start" : String(stepNumber);
-    const fontSize = (stepNumber === 0 ? BEAT_NUMBER_START_FONT_SIZE : BEAT_NUMBER_FONT_SIZE) * scale;
-
-    ctx.font = `bold ${fontSize}px Georgia, serif`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    ctx.fillStyle = darkMode ? "#ffffff" : "#231f20";
-
-    const x = STEP_NUMBER_X * scale;
-    const y = STEP_NUMBER_Y * scale;
-    ctx.fillText(text, x, y);
+    renderStepNumber(ctx, stepNumber, 0, 0, size, darkMode);
   }
 
   private async drawTKAGlyph(
