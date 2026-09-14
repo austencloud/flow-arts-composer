@@ -22,7 +22,7 @@
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import { onDestroy } from "svelte";
+  import { onDestroy, untrack } from "svelte";
 
   const ctx = getCreateModuleContext();
   const { CreateModuleState, panelState, layout } = ctx;
@@ -74,17 +74,21 @@
   });
 
   $effect(() => {
-    if (!playback || !playbackKey) return;
+    const session = playback;
+    const key = playbackKey;
+    if (!session || !key) return;
 
-    // Play has always restarted the sequence. Reuse the prepared engine, but
-    // give it a fresh load identity so it returns to the first beat first.
-    playbackRun += 1;
-    readyPlayback = null;
+    untrack(() => {
+      // Play has always restarted the sequence. Reuse the prepared engine, but
+      // give it a fresh load identity so it returns to the first beat first.
+      playbackRun += 1;
+      readyPlayback = null;
 
-    if (playbackKey === retainedPlaybackKey) return;
+      if (key === retainedPlaybackKey) return;
 
-    retainedPlayback = playback;
-    retainedPlaybackKey = playbackKey;
+      retainedPlayback = session;
+      retainedPlaybackKey = key;
+    });
   });
 
   onDestroy(() => panelState.stopWorkspacePlayback());
@@ -175,7 +179,7 @@
         active
         props={{
           sequence: session.sequence,
-          active: playbackKey === retainedPlaybackKey,
+          active: playback !== null && playbackKey === retainedPlaybackKey,
           run: playbackRun,
           onready: (readyRun: number) => {
             if (playback && readyRun === playbackRun) readyPlayback = session;
@@ -220,7 +224,8 @@
   />
   <div class="workspace-content">
     <DualSourceCrossfade
-      active={playbackKey === retainedPlaybackKey &&
+      active={playback !== null &&
+      playbackKey === retainedPlaybackKey &&
       readyPlayback === retainedPlayback
         ? "second"
         : "first"}
