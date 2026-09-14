@@ -7,11 +7,13 @@ import {
 } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
 import {
   flowerKey,
-  flowerPetals,
   type Flower,
-  type FlowerStyle,
-  type RotatingFlowerOri,
 } from "$lib/shared/shape-matrix/domain/flower-signature";
+import {
+  flowerAtTurn,
+  semanticVariant,
+  type SemanticVariant,
+} from "$lib/shared/shape-matrix/domain/flower-at-turn";
 import type {
   TurnLevel,
   TurnValue,
@@ -118,8 +120,6 @@ interface ShapeMatrixAppDependencies {
   link?: (state: ShapeMatrixAppSnapshot) => string;
 }
 
-type SemanticVariant = 0 | 1 | 2 | 3;
-
 const LEVEL_LANDING_TURN: Record<TurnLevel, TurnValue> = {
   1: 0,
   2: 1,
@@ -148,50 +148,6 @@ function theoryFlowerAt(
       )
     : undefined;
   return match ?? (axis[0] as TheoryFlower);
-}
-
-function semanticVariant(flower: Flower): SemanticVariant {
-  if (flower.style === "float") {
-    return ({ in: 0, out: 1, clock: 2, counter: 3 } as const)[flower.ori];
-  }
-  return ((flower.style === "anti" ? 2 : 0) +
-    (flower.ori === "out" ? 1 : 0)) as SemanticVariant;
-}
-
-function rotatingStyle(variant: SemanticVariant): FlowerStyle {
-  return variant >= 2 ? "anti" : "pro";
-}
-
-function rotatingOri(variant: SemanticVariant): RotatingFlowerOri {
-  return variant % 2 === 0 ? "in" : "out";
-}
-
-function floatOri(variant: SemanticVariant): Flower["ori"] {
-  return (["in", "out", "clock", "counter"] as const)[variant];
-}
-
-function flowerAtTurn(
-  turn: TurnValue,
-  rememberedVariant: SemanticVariant
-): Flower {
-  if (turn === "fl") {
-    return {
-      style: "float",
-      turns: "fl",
-      ori: floatOri(rememberedVariant),
-      grid: "diamond",
-      petals: 0,
-    };
-  }
-
-  const style = rotatingStyle(rememberedVariant);
-  return {
-    style,
-    turns: turn,
-    ori: rotatingOri(rememberedVariant),
-    grid: "diamond",
-    petals: flowerPetals({ style, turns: turn }),
-  };
 }
 
 function supportsTimedPropRelationship(
