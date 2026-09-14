@@ -105,13 +105,20 @@ function createWorkspace() {
 }
 
 describe("changing a prop while the workspace quick viewer plays", () => {
-  it("leaves the same playback session running", () => {
-    const workspace = createWorkspace();
+  function startPlayback(workspace: ReturnType<typeof createWorkspace>) {
     workspace.panelState.startWorkspacePlayback(
       sequence(),
       workspace.revision,
       ACTIVE_TAB
     );
+    const prepared = workspace.panelState.workspacePlaybackPreparation;
+    expect(prepared).not.toBeNull();
+    workspace.panelState.confirmWorkspacePlaybackReady(prepared!);
+  }
+
+  it("leaves the same playback session running", () => {
+    const workspace = createWorkspace();
+    startPlayback(workspace);
     const session = workspace.panelState.workspacePlayback;
     expect(session).not.toBeNull();
 
@@ -134,11 +141,7 @@ describe("changing a prop while the workspace quick viewer plays", () => {
 
   it("still stops playback for a real edit after a prop swap", () => {
     const workspace = createWorkspace();
-    workspace.panelState.startWorkspacePlayback(
-      sequence(),
-      workspace.revision,
-      ACTIVE_TAB
-    );
+    startPlayback(workspace);
 
     settingsHarness.leftPropType = "club";
     flushSync();
@@ -152,11 +155,7 @@ describe("changing a prop while the workspace quick viewer plays", () => {
 
   it("still stops playback when the creation tab changes", () => {
     const workspace = createWorkspace();
-    workspace.panelState.startWorkspacePlayback(
-      sequence(),
-      workspace.revision,
-      ACTIVE_TAB
-    );
+    startPlayback(workspace);
 
     settingsHarness.rightPropType = "buugeng";
     flushSync();
@@ -170,11 +169,7 @@ describe("changing a prop while the workspace quick viewer plays", () => {
 
   it("does not re-base a session that was already out of date", () => {
     const workspace = createWorkspace();
-    workspace.panelState.startWorkspacePlayback(
-      sequence(),
-      workspace.revision,
-      ACTIVE_TAB
-    );
+    startPlayback(workspace);
 
     // An edit the workspace has not reconciled yet, then a prop swap on top.
     workspace.editSequence();
