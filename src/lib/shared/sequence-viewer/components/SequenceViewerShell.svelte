@@ -1163,7 +1163,9 @@
                   second={studioSource}
                   duration={DURATION.emphasis}
                 />
-                {#if ctx.renderMode === "3d" && (ctx.countdownValue > 0 || ctx.isRecording3D || ctx.isExporting || ctx.pendingFilmRender)}
+                <!-- Share owns progress and cancellation while open. A second
+                     native modal would intercept its visible controls. -->
+                {#if ctx.renderMode === "3d" && !share.postSheetOpen && (ctx.countdownValue > 0 || ctx.isRecording3D || ctx.isExporting || ctx.pendingFilmRender)}
                   <Recording3DOverlay
                     countdownValue={ctx.countdownValue}
                     isRecording={ctx.isRecording3D}
@@ -1177,7 +1179,7 @@
                     onDiscardRender={interactions.handleDiscardFilmRender}
                   />
                 {/if}
-                {#if ctx.renderMode !== "3d" && shellRendersTakeover && animTakeover.phase !== "idle"}
+                {#if ctx.renderMode !== "3d" && !share.postSheetOpen && shellRendersTakeover && animTakeover.phase !== "idle"}
                   <ExportTakeover
                     phase={animTakeover.phase}
                     progress={interactions.videoProgress?.progress ?? 0}

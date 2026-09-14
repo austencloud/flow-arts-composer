@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PageData } from "./$types";
   import { untrack } from "svelte";
+  import { Popover } from "bits-ui";
   import { browser } from "$app/environment";
   import { TIMING_DIRECTION_MODES } from "$lib/features/learn/components/interactive/foundations/pictograph-foundation-content";
   import Seo from "$lib/shared/components/Seo.svelte";
@@ -18,7 +19,7 @@
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { DEFAULT_VIEWER_CUSTOM_COLORS } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
-  import { growFade, reducedMotion } from "$lib/shared/transitions/motion";
+  import { flyFade, reducedMotion } from "$lib/shared/transitions/motion";
   import { getTimingDirectionState } from "../_state/timing-direction-state.svelte";
   import TimingDirectionModeCard from "../_components/TimingDirectionModeCard.svelte";
   import {
@@ -78,6 +79,7 @@
   let adjustmentError = $state<string | null>(null);
   let turnLoopClosed = $state(true);
   let turnEditorOpen = $state(false);
+  let turnTrigger = $state<HTMLButtonElement | null>(null);
   let editingStep = $state(0);
   let examplePlayer: HTMLElement | undefined = $state();
   const selectedLoop = $derived(
@@ -397,8 +399,10 @@
               aria-hidden={playback.propDisplay === "hands"}
             >
               <PanelButton
+                bind:ref={turnTrigger}
                 onclick={openTurnEditor}
-                ariaPressed={turnEditorOpen}
+                ariaExpanded={turnEditorOpen &&
+                  playback.propDisplay === "staff"}
                 disabled={!selectedLoop}
               >
                 Turns
@@ -433,56 +437,92 @@
           </div>
         </figure>
 
-        <div class="to-workbench">
-          {#if playback.propDisplay === "staff" && turnEditorOpen}
-            <section
-              class="turn-disclosure"
-              aria-label="Prop turns"
-              transition:growFade={{ axis: "y" }}
+        <Popover.Root
+          open={playback.propDisplay === "staff" && turnEditorOpen}
+          onOpenChange={(open) => (turnEditorOpen = open)}
+        >
+          <Popover.Portal>
+            <Popover.Content
+              customAnchor={turnTrigger ?? undefined}
+              side="bottom"
+              align="end"
+              sideOffset={8}
+              collisionPadding={12}
+              onInteractOutside={(event) => {
+                if (
+                  event.target instanceof Node &&
+                  turnTrigger?.contains(event.target)
+                )
+                  event.preventDefault();
+              }}
+              onCloseAutoFocus={(event) => {
+                event.preventDefault();
+                if (playback.propDisplay === "staff") turnTrigger?.focus();
+              }}
+              forceMount
             >
-              <div class="turn-controls">
-                <div class="turn-scope">
-                  <SegmentedControl
-                    options={[
-                      { value: "all", label: "All steps" },
-                      { value: "current", label: "Current step" },
-                    ]}
-                    value={applyTo}
-                    onchange={setApplyTo}
-                    ariaLabel="Turn adjustment scope"
-                    density="tight"
-                    color="accent"
-                  />
-                  <PanelButton
-                    onclick={resetTurns}
-                    disabled={adjusting ||
-                      playback.sequence.id === selectedLoop?.sequence.id}
-                    >Reset</PanelButton
-                  >
+              {#snippet child({ open, wrapperProps, props })}
+                <div {...wrapperProps} style:z-index="50">
+                  {#if open}
+                    <section
+                      {...props}
+                      class="turn-disclosure"
+                      aria-label="Prop turns"
+                      transition:flyFade={{ y: -6 }}
+                    >
+                      <div class="to-workbench">
+                        <div class="turn-controls">
+                          <div class="turn-scope">
+                            <SegmentedControl
+                              options={[
+                                { value: "all", label: "All steps" },
+                                { value: "current", label: "Current step" },
+                              ]}
+                              value={applyTo}
+                              onchange={setApplyTo}
+                              ariaLabel="Turn adjustment scope"
+                              density="tight"
+                              color="accent"
+                            />
+                            <PanelButton
+                              onclick={resetTurns}
+                              disabled={adjusting ||
+                                playback.sequence.id ===
+                                  selectedLoop?.sequence.id}>Reset</PanelButton
+                            >
+                          </div>
+                          <div aria-busy={adjusting}>
+                            <TurnNotationControls
+                              leftTurn={leftTurns}
+                              rightTurn={rightTurns}
+                              labelMode={turnLabelMode}
+                              onlabelmodechange={(value) =>
+                                (turnLabelMode = value)}
+                              onturn={chooseTurn}
+                              turnValues={availableTurns}
+                              primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
+                              disabled={adjusting}
+                            />
+                          </div>
+                        </div>
+                        <div class="turn-status" aria-live="polite">
+                          {#if adjustmentError}
+                            <p>{adjustmentError}</p>
+                          {:else if !turnLoopClosed}
+                            <p>
+                              Props finish at a different orientation. Plays
+                              once.
+                            </p>
+                          {/if}
+                        </div>
+                      </div>
+                    </section>
+                  {/if}
                 </div>
-                <div aria-busy={adjusting}>
-                  <TurnNotationControls
-                    leftTurn={leftTurns}
-                    rightTurn={rightTurns}
-                    labelMode={turnLabelMode}
-                    onlabelmodechange={(value) => (turnLabelMode = value)}
-                    onturn={chooseTurn}
-                    turnValues={availableTurns}
-                    primaryPropColors={DEFAULT_VIEWER_CUSTOM_COLORS}
-                    disabled={adjusting}
-                  />
-                </div>
-              </div>
-              <div class="turn-status" aria-live="polite">
-                {#if adjustmentError}
-                  <p>{adjustmentError}</p>
-                {:else if !turnLoopClosed}
-                  <p>Props finish at a different orientation. Plays once.</p>
-                {/if}
-              </div>
-            </section>
-          {/if}
-        </div>
+              {/snippet}
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
       </div>
 
       <section class="loop-library" aria-labelledby="loop-library-title">
@@ -695,7 +735,7 @@
   .to-reference {
     max-width: 86rem;
     display: grid;
-    grid-template-columns: minmax(22rem, 34rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
     gap: 1.5rem;
     align-items: start;
   }
@@ -742,10 +782,13 @@
     container-type: inline-size;
   }
   .turn-disclosure {
+    width: min(32rem, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
     padding: 0.75rem;
     border: 1px solid var(--theme-stroke);
     border-radius: var(--radius-lg, 0.75rem);
-    background: var(--theme-card-bg);
+    background: var(--theme-panel-bg);
   }
   .library-heading,
   .turn-scope {

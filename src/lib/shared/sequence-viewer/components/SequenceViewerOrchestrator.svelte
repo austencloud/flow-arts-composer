@@ -1050,6 +1050,7 @@
     if (event.key === " " || event.code === "Space") {
       const target = event.target as HTMLElement;
       if (
+        target.closest("[data-keyboard-shortcuts-ignore]") ||
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
         target.isContentEditable
