@@ -152,6 +152,7 @@
     interactive = true,
     hoverHint = "badge",
     cornerToggle = false,
+    showScrubberPlaybackControl = false,
     playbackAllowed = true,
     resumeWhenPlaybackAllowed = false,
     onTogglePlaybackRef = undefined,
@@ -321,6 +322,8 @@
     hoverHint?: "badge" | "none";
     /** Show the canvas-owned keyboard-accessible play/pause button. */
     cornerToggle?: boolean;
+    /** Keeps a persistent transport action adjacent to a minimal scrubber. */
+    showScrubberPlaybackControl?: boolean;
     /** Pause this player while its host is not visible. Returning to view does
      *  not resume motion unless autoplay has not happened yet. */
     playbackAllowed?: boolean;
@@ -341,7 +344,8 @@
     onCanvasInitialized?: () => void;
     /** Reports an engine/data load failure to a host that keeps a poster above
      *  the player until readiness is confirmed. */
-    onLoadError?: (message: string) => void;
+    /** Reports the load identity so retained hosts can reject a stale failure. */
+    onLoadError?: (message: string, loadIdentity: string | null) => void;
     /** Per-instance visibility manager (ephemeral scope). Routes the
      *  orchestrator's effort/path-shape reads AND setSpeed's write-back away
      *  from the global singleton, so a public embed neither inherits the
@@ -760,7 +764,7 @@
     } catch (err) {
       console.error("Failed to load animation:", err);
       error = err instanceof Error ? err.message : "Failed to load animation";
-      onLoadError?.(error);
+      onLoadError?.(error, loadIdentity);
     } finally {
       loading = false;
       if (import.meta.env.DEV) {
@@ -953,6 +957,7 @@
         hideHeader={fill && !showWordHeader}
         hideProgressBar={fill && !scrubbable}
         {cornerToggle}
+        {showScrubberPlaybackControl}
         onInitialized={onCanvasInitialized}
         onProgressBarSeek={scrubbable ? handleSeek : null}
         onProgressBarScrubStart={scrubbable ? handleScrubStart : null}
