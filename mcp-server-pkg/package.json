@@ -1,6 +1,6 @@
 {
   "name": "@austencloud/tka-domain-mcp",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "MCP server for The Kinetic Alphabet domain - pictograph rendering, sequence generation, and educational tools",
   "type": "module",
   "main": "dist/index.js",
@@ -15,10 +15,13 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "build": "node build.mjs",
+    "prepare:assets": "node scripts/sync-card-assets.mjs",
+    "build": "npm run prepare:assets && node build.mjs",
     "test": "npm run build && vitest run",
+    "test:pack": "node scripts/verify-packed-package.mjs",
     "start": "node dist/index.js",
-    "prepublishOnly": "npm run typecheck && npm run build"
+    "prepack": "npm run build",
+    "prepublishOnly": "npm run typecheck && npm run build && npm run test:pack"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
