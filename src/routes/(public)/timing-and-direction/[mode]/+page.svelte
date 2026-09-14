@@ -34,8 +34,6 @@
     type TogetherOppositeTransform,
     type TogetherOppositeLoop,
   } from "../_data/together-opposite-sequences";
-  import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
-  import { TnDMode } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
   let { data }: { data: PageData } = $props();
 
@@ -97,17 +95,6 @@
       togetherOppositeLoops[0] ??
       null
   );
-  const selectedTimingDirection = $derived(
-    selectedLoop
-      ? (deriveTnDFromPictograph(selectedLoop.sequence.steps[0]!).tndMode ??
-          null)
-      : null
-  );
-  const selectedTimingDirectionLabel = $derived(
-    selectedTimingDirection
-      ? TIMING_DIRECTION_LABELS[selectedTimingDirection]
-      : null
-  );
   const currentStripStep = $derived(
     Math.max(
       0,
@@ -141,14 +128,6 @@
     )
   );
 
-  const TIMING_DIRECTION_LABELS: Record<TnDMode, string> = {
-    [TnDMode.SPLIT_SAME]: "Split-Same",
-    [TnDMode.SPLIT_OPP]: "Split-Opposite",
-    [TnDMode.TOG_SAME]: "Together-Same",
-    [TnDMode.TOG_OPP]: "Together-Opposite",
-    [TnDMode.QUARTER_SAME]: "Quarter-Same",
-    [TnDMode.QUARTER_OPP]: "Quarter-Opposite",
-  };
 
   $effect(() => {
     if (article.code !== "TO") {
@@ -458,10 +437,9 @@
     <section class="to-reference" aria-labelledby="to-reference-title">
       <header class="to-header">
         <div class="to-title">
-          <img src={mode.element.iconPath} alt="" width="44" height="44" />
-          <h1 id="to-reference-title">Together time, opposite direction</h1>
+          <img src={mode.element.iconPath} alt="" width="64" height="64" />
+          <h1 id="to-reference-title">Together Time, Opposite Direction</h1>
         </div>
-        <p class="definition">{article.definition}</p>
       </header>
 
       <div class="to-stage">
@@ -472,9 +450,6 @@
           <div class="demo-toolbar">
             <h2>
               {selectedLoop?.word ?? "Four-count loop"}
-              {#if selectedTimingDirectionLabel}
-                <span class="path-mode">{selectedTimingDirectionLabel}</span>
-              {/if}
             </h2>
             <div class="display-switch">
               <SegmentedControl
@@ -718,7 +693,6 @@
                 <div class="spin-grid">
                   {#each spinLabels as spinLabel}
                     <div class="spin-column">
-                      <h4>{spinLabel}</h4>
                       {#each group.loops.filter((loop) => loop.spinLabel === spinLabel) as loop (loop.id)}
                         <PanelButton
                           fullWidth
@@ -916,23 +890,20 @@
   .to-title {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.75rem;
-    margin-bottom: 0.5rem;
+    text-align: center;
   }
   .to-title img {
-    flex: 0 0 36px;
-    width: 36px;
-    height: 36px;
+    flex: 0 0 auto;
+    width: clamp(48px, 4.5vw, 64px);
+    height: clamp(48px, 4.5vw, 64px);
     object-fit: contain;
   }
   .to-header h1 {
     margin-bottom: 0;
     font-size: clamp(1.75rem, 1.25rem + 1.5vw, 2.5rem);
     text-wrap: balance;
-  }
-  .to-header .definition {
-    max-width: 68ch;
-    margin-bottom: 0;
   }
   .to-stage {
     display: grid;
@@ -957,7 +928,7 @@
     padding: 0.75rem;
     border: 1px solid var(--theme-stroke);
     border-radius: var(--radius-lg, 0.75rem);
-    background: var(--theme-panel-bg);
+    background: var(--sheet-bg-solid);
   }
   .library-heading,
   .turn-scope {
@@ -984,13 +955,6 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 0.75rem;
-  }
-  .path-mode {
-    display: block;
-    color: var(--theme-text-dim);
-    font-size: 0.875rem;
-    font-weight: 500;
-    white-space: nowrap;
   }
   .turn-editor-toggle.unavailable {
     visibility: hidden;
@@ -1064,12 +1028,6 @@
   }
   .spin-column {
     min-width: 0;
-  }
-  .spin-column h4 {
-    margin: 0 0 0.35rem;
-    color: var(--theme-text-dim);
-    font-size: 0.875rem;
-    line-height: 1.25;
   }
   .spin-column :global(.panel-btn) {
     display: grid;
