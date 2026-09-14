@@ -338,11 +338,14 @@ const EMBER_LAVA_RIVER_SOURCE: LavaRiverSourceConfig = {
   radiance: 1,
 };
 
+// Reach is in channel half-widths. At 5.2 / 0.85 the skirt laid a flat
+// yellow sheet across the whole stage floor from every close camera; radiance
+// off a lava bank is a narrow warm margin, not a second floor.
 const EMBER_LAVA_RIVER_BANK_GLOW: LavaRiverBankGlowConfig = {
   enabled: true,
-  reach: 5.2,
-  intensity: 0.85,
-  softness: 2.1,
+  reach: 2.6,
+  intensity: 0.38,
+  softness: 2.6,
 };
 
 const EMBER_PILLAR_RINGS: TreeRingConfig[] = [

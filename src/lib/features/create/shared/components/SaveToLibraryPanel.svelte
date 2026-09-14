@@ -14,6 +14,7 @@
 </script>
 
 <script lang="ts">
+  import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
   import CreatePanelDrawer from "./CreatePanelDrawer.svelte";
   import SaveProgressOverlay from "$lib/features/library/components/SaveProgressOverlay.svelte";
   import ExpandableField from "$lib/features/library/components/ExpandableField.svelte";
@@ -27,7 +28,6 @@
   import { getHallOfShameSubmitter } from "$lib/features/hall-of-shame/get-hall-of-shame-submitter";
   import { createSavePanelState } from "../state/save-panel-state.svelte";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
-  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { getSoloPropSaveOrchestrator } from "$lib/features/library/get-solo-prop-save-orchestrator";
   import CardFooterEditor from "$lib/shared/share/components/CardFooterEditor.svelte";
   import {
@@ -41,7 +41,6 @@
   // app-settings prop type, so prop / QR / mandala / footer all agree with the
   // saved PNG instead of drifting (they used to share only includeStartPosition).
   const compositionManager = getImageCompositionManager();
-  const appSettings = getSettings();
 
   interface Props {
     show: boolean;
@@ -181,6 +180,10 @@
     </div>
 
     <div class="panel-body">
+      {#if !s.isSolo}
+        <PropPairField bind:value={s.saveProps} disabled={s.isSaving} />
+        <p>Used when someone chooses As saved.</p>
+      {/if}
       <!-- Sequence Preview — WYSIWYG: the same card the save will produce.
            Every toggle comes from the composition manager / app settings (the
            same sources buildCardRenderOptions reads for the saved PNG), so the
@@ -198,8 +201,8 @@
               }}
               darkMode={s.darkMode}
               forceContain={true}
-              leftPropType={appSettings.leftPropType}
-              rightPropType={appSettings.rightPropType}
+              leftPropType={s.saveProps.leftPropType}
+              rightPropType={s.saveProps.rightPropType}
               showWord={s.isSolo ? false : compositionManager.addWord}
               showStepNumbers={compositionManager.addStepNumbers}
               showDifficultyLevel={compositionManager.addDifficultyLevel}

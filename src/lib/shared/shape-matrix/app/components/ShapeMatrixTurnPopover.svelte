@@ -33,6 +33,12 @@
   const appState = getShapeMatrixAppContext();
   let open = $state(false);
 
+  export function dismiss(): boolean {
+    if (!open) return false;
+    open = false;
+    return true;
+  }
+
   /* One chip for both surfaces. Its visible action changes with the job. */
   const theory = $derived(appState.surface === "theory");
 
@@ -152,7 +158,7 @@
                     describe={(level) => SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level]}
                     onchange={applyLevel}
                     compact={true}
-                    ariaLabel="Kinetic Alphabet level"
+                    ariaLabel="Difficulty level"
                   />
                 </div>
               {/if}

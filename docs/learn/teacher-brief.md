@@ -47,7 +47,10 @@ roles are not required dependencies and are not active pilot agents.
   demonstrate the target beside the artifact and make retry actionable. Use
   canonical action glyphs. Progress must not resemble reference selection.
   Dragging must visibly acknowledge pickup, show destinations and the landing
-  target, and confirm release or cancellation. See the [UX audit](hand-positions-ux-audit.md#drag-feedback-and-unambiguous-completion)
+  target, and confirm release or cancellation without replaying the completed
+  drag. September 8 feedback also requires built-in pictograph glyph placement,
+  edge-aligned examples, and anchored feedback instead of shrinking the board.
+  See the [UX audit](hand-positions-ux-audit.md#canonical-pictographs-and-anchored-feedback-september-8)
   for scope and evidence. These are requested gates, not final acceptance.
 - **Carry the learner forward.** The [Grid copy review](copy-reviews/grid.md)
   records the approved continuation into Hand Positions. Connect through the
@@ -63,9 +66,8 @@ roles are not required dependencies and are not active pilot agents.
   dopamine effects. This is a requested acceptance gate, not approval of the
   implementation; [the UX audit](hand-positions-ux-audit.md) owns its evidence.
 
-These are references to recorded decisions, not fresh visual inspection. No
-screenshots were captured for this briefing. Recheck relevant source and runtime
-before applying a precedent. Historical notes contain superseded sections.
+These are recorded decisions, not fresh inspection. Recheck source and runtime;
+historical notes contain superseded sections.
 
 ## Upkeep
 

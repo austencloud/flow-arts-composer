@@ -13,12 +13,18 @@ import { rotateLocation } from "$lib/shared/create/services/rotation-helpers";
 import { mirrorLocation } from "$lib/shared/pictograph/shared/domain/geometry/mirror-vertical";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import {
   POSITION_TYPE_INFO,
   type PositionType,
 } from "../../../domain/constants/position-quiz-data";
 
 export const POSITION_KINDS: PositionType[] = ["alpha", "beta", "gamma"];
+export const POSITION_LETTERS: Record<PositionType, Letter> = {
+  alpha: Letter.ALPHA,
+  beta: Letter.BETA,
+  gamma: Letter.GAMMA,
+};
 
 // Verbatim definitions from the written Level 1 Guide.
 export const POSITION_DEFINITIONS: Record<PositionType, string> = {
@@ -73,7 +79,14 @@ export function positionPreview(
   const example = fixedLeft
     ? positionCorrectionPair(fixedLeft, kind, gridMode)
     : positionExample(kind, gridMode);
-  return buildPlacementPictographData({
+  return positionPairPreview(example, gridMode);
+}
+
+export function positionPairPreview(
+  example: { left: GridLocation; right: GridLocation },
+  gridMode: GridMode
+) {
+  const data = buildPlacementPictographData({
     gridMode,
     leftLocation: example.left,
     rightLocation: example.right,
@@ -84,6 +97,8 @@ export function positionPreview(
     betaSwapped: false,
     previewPictographData: null,
   });
+  const kind = positionKindFor(example.left, example.right);
+  return { ...data, letter: kind ? POSITION_LETTERS[kind] : null };
 }
 
 /** Keep the learner's first hand in place so the visual target shows a single edit. */
@@ -101,13 +116,20 @@ export function positionCorrectionPair(
 export function transformPosition(
   left: GridLocation,
   right: GridLocation,
-  action: "rotate" | "mirror" | "swap"
+  action: "rotate" | "mirror" | "swap",
+  options: { rotationSteps?: number; reflectionAxis?: 0 | 1 | 2 | 3 } = {}
 ) {
   if (action === "swap") return { left: right, right: left };
+  const axis = options.reflectionAxis ?? 0;
   const transform =
     action === "rotate"
-      ? (location: GridLocation) => rotateLocation(location, 2) as GridLocation
-      : (location: GridLocation) => mirrorLocation(location) as GridLocation;
+      ? (location: GridLocation) =>
+          rotateLocation(location, options.rotationSteps ?? 2) as GridLocation
+      : (location: GridLocation) =>
+          rotateLocation(
+            mirrorLocation(rotateLocation(location, -axis)) as GridLocation,
+            axis
+          ) as GridLocation;
   return { left: transform(left), right: transform(right) };
 }
 

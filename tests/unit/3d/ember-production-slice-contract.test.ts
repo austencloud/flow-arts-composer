@@ -6,14 +6,22 @@ import { createDefaultEmberConfig } from "$lib/shared/3d/environments/domain/mod
 import { getCanonicalPerformerStageBounds } from "$lib/shared/3d/environments/domain/performer-stage-bounds";
 import { isEmberGroundDetailSurface } from "$lib/shared/3d/environments/scenes/ember/ember-ground-detail";
 import {
+  EMBER_APRON_RIM_INSET,
+  EMBER_APRON_RIM_TUCK,
   createEmberHorizonApron,
   createEmberSurfaceEcology,
   createEmberTerrainHeightField,
   distanceToEmberLavaCorridor,
+  distanceToEmberLavaCorridorEdge,
+  emberLavaCorridorHalfWidth,
   sampleEmberTerrainHeight,
 } from "$lib/shared/3d/environments/scenes/ember/ember-surface-ecology";
 import { createEmberSurfacePlateGeometry } from "$lib/shared/3d/environments/scenes/ember/ember-surface-plate-geometry";
-import { createLavaRiverStripGeometry } from "$lib/shared/3d/environments/scenes/ember/lava-river-geometry";
+import {
+  LAVA_RIVER_BANK_MARGIN_FRACTION,
+  createLavaRiverStripGeometry,
+} from "$lib/shared/3d/environments/scenes/ember/lava-river-geometry";
+import volcanicWorldR7 from "$lib/shared/3d/environments/domain/models/scene-configs/ember-volcanic-world-r7.json";
 import {
   DEFAULT_VIEWER_FRONT_STAGE_CAMERA_Z_SIGN,
   DEFAULT_VIEWER_FRONT_STAGE_FACING_ANGLE,
@@ -516,7 +524,33 @@ describe("Ember integrated-room contracts", () => {
       const [x, , z] = placement.position;
       expect(Math.hypot(x, z)).toBeGreaterThanOrEqual(7.4);
       expect(distanceToEmberLavaCorridor(x, z)).toBeGreaterThanOrEqual(4.3);
+      expect(distanceToEmberLavaCorridorEdge(x, z)).toBeGreaterThanOrEqual(1.4);
     }
+  });
+
+  it("measures lava clearance from the polygon edge, so the delta widens it", () => {
+    const tail = volcanicWorldR7.lavaRiver.pointsRuntimeXZHeight.at(-1)!;
+    const head = volcanicWorldR7.lavaRiver.pointsRuntimeXZHeight[0]!;
+    // Upstream the corridor is the channel plus its bank margin.
+    expect(emberLavaCorridorHalfWidth(0.5)).toBeCloseTo(
+      (volcanicWorldR7.lavaRiver.width / 2) *
+        1.025 *
+        (1 + LAVA_RIVER_BANK_MARGIN_FRACTION),
+      6
+    );
+    // At the toe it spreads with the delta.
+    expect(emberLavaCorridorHalfWidth(1)).toBeGreaterThan(
+      emberLavaCorridorHalfWidth(0.5) * 2
+    );
+    // Eight metres beside the tail is inside the delta: the boulder the F04
+    // frame caught sitting in the lava.
+    expect(distanceToEmberLavaCorridorEdge(tail[0] - 8, tail[1])).toBeLessThan(
+      0
+    );
+    // Eight metres beside the head is well clear of the channel.
+    expect(
+      distanceToEmberLavaCorridorEdge(head[0] - 8, head[1])
+    ).toBeGreaterThan(3);
   });
 
   it("gives every geology role a detail pass or a named reason it has none", () => {
@@ -600,6 +634,7 @@ describe("Ember integrated-room contracts", () => {
       const [x, y, z] = rock.position;
       expect(Math.hypot(x, z)).toBeGreaterThanOrEqual(34);
       expect(distanceToEmberLavaCorridor(x, z)).toBeGreaterThanOrEqual(8);
+      expect(distanceToEmberLavaCorridorEdge(x, z)).toBeGreaterThanOrEqual(5);
       // Seated, not floating: within a boulder's own height of the terrain.
       expect(Math.abs(y - sampleEmberTerrainHeight(field, x, z))).toBeLessThan(
         Math.max(...rock.scale)
@@ -628,10 +663,19 @@ describe("Ember integrated-room contracts", () => {
         reachesPastRim += 1;
       if (apron.positions[inner + 4]! < apron.positions[inner + 1]!)
         descends += 1;
-      // The rim ring has to track the terrain, not a flat plane.
-      expect(apron.positions[inner + 1]!).toBeCloseTo(
-        sampleEmberTerrainHeight(field, innerX, innerZ),
-        4
+      // The rim ring starts inside the bounds and under the terrain, so the
+      // seam cannot open to the sky, but it still tracks the relief rather
+      // than a flat plane.
+      expect(innerX).toBeGreaterThanOrEqual(minX + EMBER_APRON_RIM_INSET * 0.7);
+      expect(innerX).toBeLessThanOrEqual(maxX - EMBER_APRON_RIM_INSET * 0.7);
+      expect(innerZ).toBeGreaterThanOrEqual(minZ + EMBER_APRON_RIM_INSET * 0.7);
+      expect(innerZ).toBeLessThanOrEqual(maxZ - EMBER_APRON_RIM_INSET * 0.7);
+      const surface = sampleEmberTerrainHeight(field, innerX, innerZ);
+      expect(apron.positions[inner + 1]!).toBeLessThanOrEqual(
+        surface - EMBER_APRON_RIM_TUCK + 1e-4
+      );
+      expect(apron.positions[inner + 1]!).toBeGreaterThan(
+        surface - EMBER_APRON_RIM_TUCK - 4
       );
     }
     expect(reachesPastRim).toBe(225);

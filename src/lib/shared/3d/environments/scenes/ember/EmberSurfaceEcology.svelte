@@ -21,6 +21,7 @@
     type EmberTerrainHeightField,
   } from "./ember-surface-ecology";
   import { createEmberSurfacePlateGeometry } from "./ember-surface-plate-geometry";
+  import { createEmberBoulderGeometry } from "./ember-boulder-geometry";
 
   interface Props {
     stageRadius?: number;
@@ -38,12 +39,16 @@
   const groundY = $derived(userProportionsState.groundY);
   let basin = $state<Mesh | null>(null);
   const families = ["cold", "iron", "glass"] as const;
+  // Glass was a blue-grey that the hemisphere light lifted to a pale, almost
+  // translucent ball beside the cold basalt. Obsidian is black; its identity is
+  // the tighter specular, not a lighter albedo.
   const colors = {
     cold: "#16191a",
     iron: "#3a1a12",
-    glass: "#242b2e",
+    glass: "#141a1c",
   } as const;
   const plateGeometry = untrack(() => createEmberSurfacePlateGeometry());
+  const boulderGeometry = untrack(() => createEmberBoulderGeometry());
 
   // Bounded so a failed slice load cannot leave a graph walk running for the
   // life of the scene. Roughly ten seconds at 60fps.
@@ -112,6 +117,7 @@
   onDestroy(() => {
     stopBasinSearch();
     plateGeometry.dispose();
+    boulderGeometry.dispose();
   });
 
   function placementsFor(
@@ -168,14 +174,14 @@
     {#if rubble.length > 0}
       <T.InstancedMesh
         args={[undefined, undefined, rubble.length]}
+        geometry={boulderGeometry}
         receiveShadow
         oncreate={(mesh: InstancedMesh) => fill(mesh, rubble)}
       >
-        <T.IcosahedronGeometry args={[1, 2]} />
         <T.MeshStandardMaterial
           color={colors[family]}
-          roughness={family === "glass" ? 0.66 : 0.92}
-          metalness={family === "glass" ? 0.14 : 0.02}
+          roughness={family === "glass" ? 0.74 : 0.92}
+          metalness={family === "glass" ? 0.08 : 0.02}
           flatShading
         />
       </T.InstancedMesh>

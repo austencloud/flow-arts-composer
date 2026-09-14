@@ -140,9 +140,7 @@ describe("shape matrix mandala continuity", () => {
     const drill = read("components/ShapeMatrixDrill.svelte");
     expect(drill).toContain("class:offstage={layer.pairKey !== pairKey}");
     expect(drill).toMatch(/\.player-layer\.offstage \{\s*visibility: hidden;/);
-    expect(drill).toMatch(
-      /getLayer\(visibleSource\)\?\.pairKey === pairKey/
-    );
+    expect(drill).toMatch(/getLayer\(visibleSource\)\?\.pairKey === pairKey/);
   });
 
   it("flies the whole stage rectangle, with the mandala riding it", () => {
@@ -222,14 +220,14 @@ describe("shape matrix mandala continuity", () => {
     const theoryPane = read("app/components/ShapeMatrixTheoryPane.svelte");
     // Wide hosts: the grid's corner cell owns Surprise and both axis values;
     // the strip above the grid takes over only on compact hosts.
-    expect(matrixPane).toContain("<ShapeMatrixGridCorner surface=\"level\"");
+    expect(matrixPane).toContain('<ShapeMatrixGridCorner surface="level"');
     expect(theoryPane).toContain("<ShapeMatrixGridCorner");
     expect(matrixPane).toMatch(
       /\{#if state\.compact\}\s*<ShapeMatrixRecipeStrip/
     );
     const corner = read("app/components/ShapeMatrixGridCorner.svelte");
-    expect(corner).toContain("<ShapeMatrixAxisStepper hand=\"left\"");
-    expect(corner).toContain("<ShapeMatrixAxisStepper hand=\"right\"");
+    expect(corner).toContain('<ShapeMatrixAxisStepper hand="left"');
+    expect(corner).toContain('<ShapeMatrixAxisStepper hand="right"');
     // Columns (red) sit on the column-header band above Rows (blue), and
     // both axes point with icon arrows rather than thin text glyphs.
     expect(corner.indexOf('class="axis columns"')).toBeLessThan(
@@ -251,7 +249,9 @@ describe("shape matrix mandala continuity", () => {
     expect(controls).not.toContain("Apply to");
     expect(controls).not.toContain("mixed");
     // The tray edits a named axis and stays on the detail pane.
-    expect(popover).toContain("appState.setTurnFor(hand, turn, { stayOnDetail: true })");
+    expect(popover).toContain(
+      "appState.setTurnFor(hand, turn, { stayOnDetail: true })"
+    );
     // Surprise lives with the grid; the header shows a dice only while a
     // compact detail view has hidden the bar.
     expect(shell).toMatch(
@@ -340,36 +340,61 @@ describe("shape matrix mandala continuity", () => {
     expect(popover).toContain("<LevelSelector");
     expect(popover).toContain("<DifficultyBadge level={appState.level}");
     expect(popover).not.toMatch(/L\{appState\.level\}/);
-    expect(popover).toContain("appState.setLevel(level, { stayOnDetail: true })");
-    // One list of levels and blurbs for the ribbon and the popover.
+    expect(popover).toContain(
+      "appState.setLevel(level, { stayOnDetail: true })"
+    );
+    // One list of levels and blurbs, read by everything that names a level:
+    // the popover, the difficulty strip beside the grid, and About. The strip
+    // is where the shell's level control went, so the shell no longer reads it.
     expect(popover).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
+    const strip = read("app/components/ShapeMatrixDifficultyStrip.svelte");
+    expect(strip).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
+    const about = read("app/components/ShapeMatrixAboutModal.svelte");
+    expect(about).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
     const shell = read("app/components/ShapeMatrixAppShell.svelte");
-    expect(shell).toContain("SHAPE_MATRIX_LEVEL_DESCRIPTIONS");
     expect(shell).not.toContain("const LEVEL_DESCRIPTIONS");
   });
 
   it("keeps the compact topbar as the only chrome row on the detail view", () => {
-    // The shell owns the animation state so the relationships toggle can
-    // live in the topbar; the pane heading is a wide-layout row only.
+    // The shell still owns the animation state (so every consumer shares one
+    // scope), but the way back off a section moved out of the shell's topbar
+    // in two later passes: the 2026-09-06 demo-layout rewrite (31a3411642)
+    // dropped the topbar's relationships-action button, and the 2026-09-07
+    // canvas-transport pass (e485f1d861) replaced it with a wide-only stage
+    // gear (ShapeMatrixStageActions) and a compact settings sheet. The sheet
+    // itself is gone again: 38bd0bf493 dropped the overlay, its header and its
+    // close button in favour of focus mode, where every chrome element the
+    // drill marks is taken out of flow while the controls are in use. Nothing
+    // in that chain adds a second persistent row beside the topbar.
     const shell = read("app/components/ShapeMatrixAppShell.svelte");
     expect(shell).toContain("setShapeMatrixAnimationContext(");
-    expect(shell).toContain('class="top-action relationships-action"');
-    expect(shell).toContain(
-      'appState.activeView === "detail" && animationState.activeSection !== null'
+    const drill = read("components/ShapeMatrixDrill.svelte");
+    // The drill declares which of its rows are chrome; it does not build a
+    // surface to hide them behind.
+    expect(drill).toContain("data-focus-mode-chrome");
+    expect(drill).not.toContain("compact-settings");
+    expect(drill).not.toContain('aria-label="Close settings"');
+    // And the shell is the single owner of what marked chrome does, so a row
+    // cannot opt out and stand while the rest step aside.
+    expect(shell).toMatch(
+      /\.focus-mode :global\(\[data-focus-mode-chrome\]\) \{[^}]*visibility: hidden/s
     );
+    const stageActions = read("components/ShapeMatrixStageActions.svelte");
+    expect(stageActions).toContain("animationState.showRelationships();");
+    // ShapeMatrixDetailPane's own pane-heading (and the animation-context
+    // read it needed) was retired in the same 31a3411642 rewrite: the pane
+    // is nothing but the drill now, so it owns no heading or back-navigation
+    // chrome of its own — a stronger guarantee than a wide-only heading that
+    // the compact topbar is the sole standing chrome row.
     const detailPane = read("app/components/ShapeMatrixDetailPane.svelte");
-    expect(detailPane).toContain("getShapeMatrixAnimationContext()");
-    // The way back is only there while a control section covers the chips;
-    // while they are showing, the stage takes the heading's height.
-    expect(detailPane).toMatch(
-      /\{#if headingVisible\}\s*<header class="pane-heading">/
-    );
-    expect(detailPane).toContain(
-      "!state.compact && animationState.activeSection !== null"
-    );
+    expect(detailPane).toContain("<ShapeMatrixDrill");
+    expect(detailPane).not.toContain("<header");
+    expect(detailPane).not.toContain("pane-heading");
     // The toggle never borrows the back arrow the Matrix button owns.
     expect(detailPane).not.toContain("fa-arrow-left");
     const controls = read("app/components/ShapeMatrixTurnControls.svelte");
-    expect(controls).not.toMatch(/\.turn-editor\.tray[^{]*\{[^}]*(?<![-\w])width: 100%/);
+    expect(controls).not.toMatch(
+      /\.turn-editor\.tray[^{]*\{[^}]*(?<![-\w])width: 100%/
+    );
   });
 });

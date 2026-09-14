@@ -1,6 +1,9 @@
 /** Opt-in provider check. Uses synthetic scene data and never executes a plan. */
 import assert from "node:assert/strict";
-import { TikaModelProvider } from "../../src/lib/features/tika/services/tika-model-provider";
+import {
+  createTikaDirectorModel,
+  isOllamaDirectorModel,
+} from "../../src/lib/features/stage/services/server/tika-director-models";
 import { planStageDirection } from "../../src/lib/features/stage/services/server/tika-director-planner";
 import { reviewStageDirection } from "../../src/lib/features/stage/services/server/tika-director-reviewer";
 import type {
@@ -15,17 +18,23 @@ if (!process.argv.includes("--live")) {
     "Pass --live with ANTHROPIC_API_KEY set to run this billed, synthetic provider check."
   );
 }
-assert(process.env.ANTHROPIC_API_KEY, "ANTHROPIC_API_KEY is required");
 const modelKey =
   process.argv.find((arg) => arg.startsWith("--model="))?.slice(8) ??
   "sonnet-5";
-const model = new TikaModelProvider(process.env.ANTHROPIC_API_KEY, "").getModel(
-  modelKey
-);
-const reviewer = new TikaModelProvider(
-  process.env.ANTHROPIC_API_KEY,
-  ""
-).getModel("sonnet-5");
+// The reviewer stays hosted unless --reviewer= says otherwise, so a local
+// planner is graded by the same judge as the hosted one.
+const reviewerKey =
+  process.argv.find((arg) => arg.startsWith("--reviewer="))?.slice(11) ??
+  "sonnet-5";
+if (!isOllamaDirectorModel(modelKey) || !isOllamaDirectorModel(reviewerKey)) {
+  assert(process.env.ANTHROPIC_API_KEY, "ANTHROPIC_API_KEY is required");
+}
+const modelEnv = {
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+  ollamaBaseUrl: process.env.OLLAMA_BASE_URL,
+};
+const model = createTikaDirectorModel(modelKey, modelEnv);
+const reviewer = createTikaDirectorModel(reviewerKey, modelEnv);
 const scene: TikaDirectorRequest["scene"] = {
   id: "synthetic-review",
   name: "Synthetic review",

@@ -1,10 +1,12 @@
 /**
  * Measured Gate 1 spatial contract for the proposed Earth Root Observatory.
  *
- * The live Earth room still uses `earth-canyon-layout.ts`. This plan keeps the
- * compiled 34 by 24 metre shell and its real Fire and Air doors, then proposes
- * a different interior. Drawings and later Blender work must consume this
- * contract instead of copying coordinates out of the review board.
+ * Superseded: the Earth wing shipped as the Root Terrace
+ * (`earth-root-terrace-terrain.ts`), and this plan is kept only as the record
+ * of a proposal. It keeps the compiled 34 by 24 metre shell and its real Fire
+ * and Air doors, then proposes a different interior. Drawings and later Blender
+ * work must consume this contract instead of copying coordinates out of the
+ * review board.
  */
 import type { MuseumGrid } from "../domain/museum-grid-types";
 import {

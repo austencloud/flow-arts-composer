@@ -13,7 +13,9 @@ describe("SEO acquisition funnel analytics", () => {
     expect(posthog).toContain(
       'capture_pageview: captureEnabled ? "history_change" : false'
     );
-    expect(layout).toContain("const { initPostHog } = await imports.posthog;");
+    expect(layout).toMatch(
+      /const \{ initPostHog \} =\s*await import\("\$lib\/shared\/analytics\/services\/posthog"\)/
+    );
     expect(layout).toContain("await initPostHog();");
   });
 

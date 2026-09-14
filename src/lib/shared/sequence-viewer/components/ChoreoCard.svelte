@@ -16,6 +16,7 @@
   // Note: transition/animation imports (fade, fly, scale, flip, cubicOut) moved to
   // extracted sub-components (CardHeader, CardFooter, CardGridLayout, CellRenderer).
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { ViewerCustomColorPair } from "../domain/viewer-custom-colors";
   import type { PreviewCellRenderOptions } from "../services/preview-cell-renderer";
   import type { ViewerPaneBox } from "./viewer-panel-layout";
   import { onDestroy, tick } from "svelte";
@@ -80,6 +81,8 @@
     // Visibility toggles
     showWord?: boolean;
     showStepNumbers?: boolean;
+    /** Choose Start picker: step cells render as poses (grid and props only). */
+    posePicker?: boolean;
     showDifficultyLevel?: boolean;
     includeStartPosition?: boolean;
     showNotes?: boolean;
@@ -105,6 +108,7 @@
     // Prop overrides
     leftPropType?: PropType;
     rightPropType?: PropType;
+    primaryPropColors?: ViewerCustomColorPair;
     catDogModeEnabled?: boolean;
     // Step highlighting (for animation sync)
     highlightedStepIndex?: number | null; // 0-indexed step to highlight (null = none)
@@ -158,6 +162,7 @@
     sequence,
     showWord = true,
     showStepNumbers = true,
+    posePicker = false,
     showDifficultyLevel = true,
     includeStartPosition = true,
     showNotes = true,
@@ -169,6 +174,7 @@
     browseViewMode,
     darkMode = false,
     frameColors,
+    primaryPropColors,
     cardAspectRatio,
     customTitleText: requestedTitleText,
     customNotesText = "Created using Flow Arts Composer",
@@ -311,6 +317,7 @@
   const showTnD = $derived(displayState.showTnD);
   const showElemental = $derived(displayState.showElemental);
   const showPositions = $derived(displayState.showPositions);
+  const showHandColorKey = $derived(displayState.showHandColorKey);
   const showGrid = $derived(displayState.showGrid);
   const showNonRadial = $derived(displayState.showNonRadial);
   const handPointVis = $derived(displayState.handPointVis);
@@ -401,6 +408,9 @@
 
   // True only under a scan-origin /sequence route — cells use the cloud cache.
   const cloudProbeEnabled = getScanCardCloudProbe();
+  const effectivePrimaryPropColors = $derived(
+    cloudProbeEnabled ? null : (primaryPropColors ?? getSettings().primaryPropColors)
+  );
 
   const qrState = createChoreoCardQrState(
     () => ({
@@ -503,7 +513,9 @@
       !containedWidth ||
       !containedHeight ||
       !cells.length ||
-      !cells.every((cell) => cell.isLoaded || cell.renderFailed) ||
+      !cells
+        .filter((cell) => includeStartPosition || cell.index !== -1)
+        .every((cell) => cell.isLoaded || cell.renderFailed) ||
       !qrState.settled
     )
       return;
@@ -626,6 +638,7 @@
       showTnD,
       showElemental,
       showPositions,
+      showHandColorKey,
       isSoloMode,
       handPathMode,
       browseViewMode,
@@ -635,6 +648,10 @@
 
     return {
       ...baseOptions,
+      fanAppearance: cloudProbeEnabled
+        ? undefined
+        : getSettings().fanAppearance,
+      primaryPropColors: effectivePrimaryPropColors,
       // A scan represents the printed card, not the scanner's personal export
       // toggles. Pin the same canonical visibility used when QR creation
       // verifies cloud assets; retain the sequence's participating hands.
@@ -663,6 +680,7 @@
     renderModel,
     () => ({
       sequence,
+      livePictographs: !cloudProbeEnabled,
       renderOptions: buildRenderOptionsFn(),
       leftPropType,
       rightPropType,
@@ -690,6 +708,11 @@
 
   renderLifecycle = createChoreoCardRenderLifecycle(
     () => ({
+      handPathMode,
+      fanAppearance: cloudProbeEnabled
+        ? undefined
+        : getSettings().fanAppearance,
+      primaryPropColors: effectivePrimaryPropColors,
       sequence,
       leftPropType,
       rightPropType,
@@ -705,6 +728,7 @@
       showTnD,
       showElemental,
       showPositions,
+      showHandColorKey,
       showGrid,
       showLeftMotion,
       showRightMotion,
@@ -967,6 +991,7 @@
       <!-- Grid section with individual pictograph cells -->
       <CardGridLayout
         {sequence}
+        primaryPropColors={effectivePrimaryPropColors}
         {cells}
         {visibleCells}
         {effectiveColumns}
@@ -997,6 +1022,7 @@
           gridScrollRef = el;
         }}
         {showStepNumbers}
+        {posePicker}
         {crossfadeActive}
         transitionMode={crossfader.transitionMode}
         {isBrowseSoloMode}

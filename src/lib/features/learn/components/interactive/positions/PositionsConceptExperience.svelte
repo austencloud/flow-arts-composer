@@ -5,10 +5,10 @@
   import { DURATION } from "$lib/shared/transitions/transitions";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
-  import UndoGlyph from "$lib/features/create/shared/workspace-panel/shared/components/buttons/UndoGlyph.svelte";
-  import { WORKSPACE_BUTTON_ICON } from "$lib/features/create/shared/workspace-panel/shared/workspace-button-layout";
+  import UndoButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/UndoButton.svelte";
+  import ClearSequenceButton from "$lib/features/create/shared/workspace-panel/shared/components/buttons/ClearSequenceButton.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
+  import "$lib/shared/selection/selection.css";
   import PropPlacementGrid from "$lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import {
@@ -31,9 +31,11 @@
   import {
     POSITION_CHALLENGES,
     POSITION_KINDS,
+    POSITION_LETTERS,
     positionKindFor,
     positionExample,
     positionPreview,
+    positionPairPreview,
     positionCorrection,
     transformPosition,
     changePositionGrid,
@@ -86,6 +88,7 @@
   );
   let epoch = $state(0);
   let showReference = $state<boolean | null>(null);
+  let hoveredExample = $state<PositionType | null>(null);
   let boardWidth = $state(300);
   let boardHeight = $state(320);
   let experienceElement: HTMLDivElement;
@@ -106,22 +109,16 @@
   const stageMotion = createLayoutMotion({
     getRoot: () => experienceElement,
     groups: [
-      { selector: "[data-position-stage]", datasetKey: "positionStage" },
+      { selector: "[data-position-layout]", datasetKey: "positionLayout" },
     ],
     getDuration: () => motionDuration(DURATION.emphasis),
+    resize: "layout",
   });
   let hasRendered = false;
   $effect.pre(() => {
     // Only learning-state changes recompose the stage. Pointer aiming stays
     // with the grid and must never start a layout animation.
-    [
-      correct,
-      workshop.feedback,
-      workshop.round,
-      workshop.phase,
-      showReference,
-      built,
-    ];
+    [workshop.phase, showReference, workshop.challenge?.guided];
     if (hasRendered) {
       untrack(() => stageMotion.capture());
       void tick().then(() => stageMotion.play());
@@ -147,13 +144,26 @@
   const referencesVisible = $derived(
     exploring ||
       workshop.canFinish ||
-      (!incorrect &&
-        (showReference ?? (workshop.challenge?.guided && !correct)))
+      (showReference ?? workshop.challenge?.guided)
   );
+  const handHistory = {
+    get canUndo() {
+      return placement.canUndo;
+    },
+    canRedo: false,
+    undo() {
+      grid?.undoPlacement();
+      return true;
+    },
+    redo() {
+      return false;
+    },
+  };
   const examples = $derived(
     POSITION_KINDS.map((kind) => ({
       kind,
-      data: positionPreview(kind, gridMode),
+      pair: workshop.examplePair(kind, gridMode),
+      data: positionPairPreview(workshop.examplePair(kind, gridMode), gridMode),
     }))
   );
   const title = $derived(
@@ -171,6 +181,12 @@
       change.leftLocation !== placement.leftLocation ||
       change.rightLocation !== placement.rightLocation;
     placement = change;
+    if (change.complete && change.activeHand === null)
+      workshop.rememberPosition(
+        change.leftLocation,
+        change.rightLocation,
+        gridMode
+      );
     workshop.evaluatePlacement(change);
     if (incorrect && change.complete && change.activeHand === null) {
       const retryEpoch = epoch;
@@ -194,6 +210,7 @@
   }
 
   function loadPair(left: GridLocation | null, right: GridLocation | null) {
+    workshop.rememberPosition(left, right, gridMode);
     preset = { left, right };
     placement = {
       leftLocation: left,
@@ -207,7 +224,7 @@
   }
 
   function study(kind: PositionType) {
-    const example = positionExample(kind, gridMode);
+    const example = workshop.examplePair(kind, gridMode);
     loadPair(example.left, example.right);
   }
 
@@ -283,7 +300,10 @@
       onAction={workshop.canFinish ? finish : practice}
     />
     {#if workshop.canFinish}
-      <PanelButton onclick={practice}>Practice again</PanelButton>
+      <PanelButton onclick={practice}
+        ><i class="fa-solid fa-rotate-right" aria-hidden="true"></i>Practice
+        again</PanelButton
+      >
     {/if}
   </nav>
 {/snippet}
@@ -307,74 +327,42 @@
     {/snippet}
 
     {#snippet artifact()}
-      {#if freePlay}
-        <div class="board-toolbar" data-position-stage="board-tools">
-          <div class="live-position" aria-live="polite" aria-atomic="true">
-            <Crossfade key={built}>
-              <div class="position-name">
-                {#if built}
-                  <span aria-hidden="true"
-                    ><TKAWordGlyph
-                      word={POSITION_TYPE_INFO[built].symbol}
-                      height={28}
-                      darkMode
-                    /></span
-                  >
-                  <strong>{POSITION_TYPE_INFO[built].label}</strong>
-                {:else}<strong>Your position</strong>{/if}
-              </div>
-            </Crossfade>
-          </div>
-          <SegmentedControl
-            options={[
-              { value: GridMode.DIAMOND, label: "Diamond" },
-              { value: GridMode.BOX, label: "Box" },
-            ]}
-            value={gridMode}
-            onchange={changeGrid}
-            semantics="radiogroup"
-            ariaLabel="Grid mode"
-            color="accent"
-          />
-        </div>
-      {/if}
       <div
-        class="placement-instructions"
-        class:incorrect
-        data-position-stage="instructions"
+        class="workshop"
+        class:exploring
+        class:free-play={freePlay}
+        class:has-reference={referencesVisible}
+        data-position-layout="workshop"
       >
-        <div class="current-task" class:incorrect aria-live="polite">
-          {#if incorrect}<i class="fa-solid fa-circle-xmark" aria-hidden="true"
-            ></i>{/if}
-          <Crossfade key={instruction}>{instruction}</Crossfade>
-        </div>
-        {#if correctionPreview && workshop.challenge}
-          <figure class="correction-guide">
-            <div class="correction-art" aria-hidden="true">
-              <PictographContainer
-                pictographData={correctionPreview}
-                showTKA={false}
-                showPositions={false}
-                showReversals={false}
-                showTnD={false}
-                showElemental={false}
-                leftPropTypeOverride={PropType.HAND}
-                rightPropTypeOverride={PropType.HAND}
-              />
-            </div>
-            <figcaption class="sr-only">
-              {positionCorrection(
-                placement.leftLocation!,
-                placement.rightLocation!,
-                workshop.challenge.kind,
-                gridMode
-              )}
-            </figcaption>
-          </figure>
+        {#if freePlay}
+          <div class="board-toolbar" data-position-stage="board-tools">
+            <SegmentedControl
+              options={[
+                { value: GridMode.DIAMOND, label: "Diamond" },
+                { value: GridMode.BOX, label: "Box" },
+              ]}
+              value={gridMode}
+              onchange={changeGrid}
+              semantics="radiogroup"
+              ariaLabel="Grid mode"
+              color="accent"
+            />
+          </div>
         {/if}
-      </div>
-      <div class="workshop" class:exploring>
-        <div class="board-column">
+        <div
+          class="placement-instructions"
+          class:incorrect
+          data-position-stage="instructions"
+        >
+          <div class="current-task" class:incorrect aria-live="polite">
+            {#if incorrect}<i
+                class="fa-solid fa-circle-xmark"
+                aria-hidden="true"
+              ></i>{/if}
+            <Crossfade key={instruction}>{instruction}</Crossfade>
+          </div>
+        </div>
+        <div class="artifact-row">
           <div
             class="board"
             data-position-stage="board"
@@ -388,6 +376,7 @@
             <PropPlacementGrid
               bind:this={grid}
               {gridMode}
+              positionLetter={built ? POSITION_LETTERS[built] : null}
               leftPropType={PropType.HAND}
               rightPropType={PropType.HAND}
               leftNoun="left hand"
@@ -407,128 +396,110 @@
               renderTray={false}
               onChange={changed}
             />
-          </div>
-          <div class="advance" data-position-stage="advance">
-            {#if !exploring && !workshop.canFinish}
-              <LessonStageControls
-                label={workshop.round === POSITION_CHALLENGES.length - 1
-                  ? "Finish practice"
-                  : "Next position"}
-                currentStep={workshop.round + 1}
-                totalSteps={POSITION_CHALLENGES.length}
-                showProgress={false}
-                actionDisabled={!correct}
-                bind:actionRef={forwardButton}
-                onAction={next}
-              />
-            {:else}
-              {@render lessonActions()}
+            <span class="sr-only" aria-live="polite"
+              >{built ? POSITION_TYPE_INFO[built].label : "Your position"}</span
+            >
+            {#if correctionPreview && workshop.challenge && !referencesVisible}
+              <figure class="correction-guide">
+                <div class="correction-art" aria-hidden="true">
+                  <PictographContainer
+                    pictographData={correctionPreview}
+                    showTKA={true}
+                    showPositions={false}
+                    showReversals={false}
+                    showTnD={false}
+                    showElemental={false}
+                    leftPropTypeOverride={PropType.HAND}
+                    rightPropTypeOverride={PropType.HAND}
+                  />
+                </div>
+                <figcaption class="sr-only">
+                  {positionCorrection(
+                    placement.leftLocation!,
+                    placement.rightLocation!,
+                    workshop.challenge.kind,
+                    gridMode
+                  )}
+                </figcaption>
+              </figure>
             {/if}
           </div>
-          <div
-            class="hand-controls"
-            data-position-stage="editing"
-            role="group"
-            aria-label="Move the hands"
-          >
-            <PanelButton
-              disabled={!placement.canUndo}
-              onclick={() => grid?.undoPlacement()}
-              ><UndoGlyph />Undo</PanelButton
-            >
-            <PanelButton
-              disabled={!placement.leftLocation && !placement.rightLocation}
-              ariaLabel="Clear both hands"
-              onclick={() => loadPair(null, null)}
-              ><i
-                class="fa-solid {WORKSPACE_BUTTON_ICON.clear.icon}"
-                aria-hidden="true"
-              ></i>Clear</PanelButton
-            >
-          </div>
-        </div>
-
-        <div class="lesson-side">
-          <div class="reference-area" data-position-stage="reference">
-            <div class="support-actions">
-              {#if !exploring && !workshop.canFinish && !incorrect && !correct}<PanelButton
-                  ariaPressed={referencesVisible}
-                  onclick={() => (showReference = !referencesVisible)}
-                  >{referencesVisible
-                    ? "Hide reference"
-                    : "Show reference"}</PanelButton
-                >
-              {/if}
-            </div>
-            <Crossfade
-              key={Boolean(referencesVisible)}
-              animateHeight
-              duration={DURATION.emphasis}
-            >
-              {#if referencesVisible}
-                <div class="reference-heading">
-                  <h3>{freePlay ? "Try an example" : "Reference"}</h3>
-                </div>
-                <div
-                  class="examples"
-                  role="group"
-                  aria-label="Position examples"
-                >
-                  {#each examples as example (example.kind)}
-                    <div
-                      class="example"
-                      class:selected={freePlay && built === example.kind}
-                    >
-                      <div class="example-art" aria-hidden="true">
-                        <PictographContainer
-                          pictographData={example.data}
-                          showTKA={false}
-                          showPositions={false}
-                          showReversals={false}
-                          showTnD={false}
-                          showElemental={false}
-                          leftPropTypeOverride={PropType.HAND}
-                          rightPropTypeOverride={PropType.HAND}
-                        />
-                      </div>
-                      {#if freePlay}
-                        <PanelButton
-                          ariaLabel={`Study ${POSITION_TYPE_INFO[example.kind].label} example`}
-                          ariaPressed={built === example.kind}
-                          onclick={() => study(example.kind)}
-                          >{POSITION_TYPE_INFO[example.kind].label}</PanelButton
-                        >
-                      {:else}
-                        <strong>{POSITION_TYPE_INFO[example.kind].label}</strong
+          {#if referencesVisible}
+            <div class="reference-area">
+              <div class="examples" role="group" aria-label="Position examples">
+                {#each examples as example (example.kind)}
+                  {@const matches =
+                    freePlay &&
+                    placement.leftLocation === example.pair.left &&
+                    placement.rightLocation === example.pair.right}
+                  {@const isCorrection =
+                    incorrect && workshop.challenge?.kind === example.kind}
+                  <div
+                    class="example tka-seq-cell"
+                    class:is-selected={matches}
+                    class:is-hovered={hoveredExample === example.kind}
+                    class:correction={isCorrection}
+                  >
+                    <div class="example-art" aria-hidden="true">
+                      <PictographContainer
+                        pictographData={isCorrection && correctionPreview
+                          ? correctionPreview
+                          : example.data}
+                        showTKA={true}
+                        showPositions={false}
+                        showReversals={false}
+                        showTnD={false}
+                        showElemental={false}
+                        leftPropTypeOverride={PropType.HAND}
+                        rightPropTypeOverride={PropType.HAND}
+                      />
+                    </div>
+                    {#if freePlay}
+                      <button
+                        type="button"
+                        class="tka-seq-hit"
+                        aria-label={`Study ${POSITION_TYPE_INFO[example.kind].label} example`}
+                        aria-pressed={matches}
+                        onpointerenter={() => (hoveredExample = example.kind)}
+                        onpointerleave={() => (hoveredExample = null)}
+                        onclick={() => study(example.kind)}
+                      ></button>
+                    {:else}
+                      <span class="sr-only"
+                        >{POSITION_TYPE_INFO[example.kind].label}</span
+                      >
+                      {#if isCorrection && workshop.challenge}
+                        <span class="sr-only"
+                          >{positionCorrection(
+                            placement.leftLocation!,
+                            placement.rightLocation!,
+                            workshop.challenge.kind,
+                            gridMode
+                          )}</span
                         >
                       {/if}
-                    </div>
-                  {/each}
-                </div>
-              {/if}
-            </Crossfade>
-          </div>
-
-          {#if exploring}
-            <div class="explore-tools" data-position-stage="tools">
-              <div
-                class="transform-controls"
-                role="group"
-                aria-label="Transform both hands"
-              >
-                <PanelButton
-                  disabled={!built}
-                  onclick={() => transform("rotate")}>Rotate</PanelButton
-                >
-                <PanelButton
-                  disabled={!built}
-                  onclick={() => transform("mirror")}>Mirror</PanelButton
-                >
-                <PanelButton disabled={!built} onclick={() => transform("swap")}
-                  >Swap</PanelButton
-                >
+                    {/if}
+                  </div>
+                {/each}
               </div>
             </div>
+          {/if}
+        </div>
+        <div class="advance" data-position-stage="advance">
+          {#if !exploring && !workshop.canFinish}
+            <LessonStageControls
+              label={workshop.round === POSITION_CHALLENGES.length - 1
+                ? "Finish practice"
+                : "Next position"}
+              currentStep={workshop.round + 1}
+              totalSteps={POSITION_CHALLENGES.length}
+              showProgress={false}
+              actionDisabled={!correct}
+              bind:actionRef={forwardButton}
+              onAction={next}
+            />
+          {:else}
+            {@render lessonActions()}
           {/if}
           {#if !exploring && !workshop.canFinish}
             <progress
@@ -539,6 +510,49 @@
             ></progress>
           {/if}
         </div>
+        <div
+          class="hand-controls"
+          data-position-stage="editing"
+          role="group"
+          aria-label="Move the hands"
+        >
+          <UndoButton CreateModuleState={handHistory} />
+          <ClearSequenceButton
+            disabled={!placement.leftLocation && !placement.rightLocation}
+            label="Clear both hands"
+            onclick={() => loadPair(null, null)}
+          />
+        </div>
+        <div class="support-actions">
+          {#if !exploring && !workshop.canFinish}<PanelButton
+              ariaPressed={referencesVisible}
+              onclick={() => (showReference = !referencesVisible)}
+              >{referencesVisible
+                ? "Hide reference"
+                : "Show reference"}</PanelButton
+            >
+          {/if}
+        </div>
+
+        {#if exploring}
+          <div class="explore-tools" data-position-stage="tools">
+            <div
+              class="transform-controls"
+              role="group"
+              aria-label="Transform both hands"
+            >
+              <PanelButton disabled={!built} onclick={() => transform("rotate")}
+                >Rotate</PanelButton
+              >
+              <PanelButton disabled={!built} onclick={() => transform("mirror")}
+                >Mirror</PanelButton
+              >
+              <PanelButton disabled={!built} onclick={() => transform("swap")}
+                >Swap</PanelButton
+              >
+            </div>
+          </div>
+        {/if}
       </div>
     {/snippet}
   </LessonStageFrame>
@@ -546,32 +560,86 @@
 
 <style>
   .positions-experience {
+    container-type: inline-size;
     display: flex;
     flex: 1 0 auto;
     width: 100%;
     min-height: 100%;
     color: var(--theme-text);
-    --position-board-size: clamp(18.5rem, calc(100svh - 36rem), 32rem);
-    --lesson-workshop-max: 32rem;
+    --position-board-size: clamp(18.5rem, calc(100svh - 32rem), 56rem);
+    --lesson-workshop-max: 78rem;
   }
-  .workshop,
-  .board-column,
-  .lesson-side {
-    display: contents;
-  }
-  .board {
-    aspect-ratio: 1;
+  .workshop {
+    display: grid;
     width: min(100%, var(--position-board-size));
     margin-inline: auto;
   }
-  .correct .board {
-    width: min(86%, calc(var(--position-board-size) * 0.86));
+  .artifact-row {
+    display: contents;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  .board-toolbar {
+    order: 0;
+  }
+  .placement-instructions {
+    order: 1;
+  }
+  .artifact-row,
+  .board {
+    order: 2;
+  }
+  .advance {
+    order: 3;
+  }
+  .hand-controls {
+    order: 4;
+  }
+  .support-actions {
+    order: 5;
+  }
+  .reference-area {
+    order: 6;
+  }
+  .explore-tools {
+    order: 7;
+  }
+  @container (min-width: 42rem) {
+    .workshop.has-reference {
+      width: min(100%, calc(var(--position-board-size) * 1.333 + 1.5rem));
+    }
+    .has-reference .artifact-row {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+      column-gap: 1.25rem;
+    }
+    .reference-area {
+      position: relative;
+    }
+    .has-reference .examples {
+      position: absolute;
+      inset: 0;
+      grid-template-columns: 1fr;
+      grid-template-rows: repeat(3, minmax(0, 1fr));
+      justify-items: center;
+      gap: 0.75rem;
+    }
+    .has-reference .example {
+      height: 100%;
+      width: auto;
+    }
+  }
+  .board {
+    position: relative;
+    aspect-ratio: 1;
+    width: min(100%, var(--position-board-size));
+    margin-inline: auto;
   }
   .placement-instructions {
     display: grid;
     justify-items: center;
     gap: 0.35rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
     text-align: center;
   }
   .current-task {
@@ -579,27 +647,28 @@
     align-items: center;
     gap: 0.5rem;
     min-height: 1.5rem;
-    font-size: 1rem;
-    font-weight: 650;
+    justify-content: center;
+    font-size: var(--font-size-min);
+    font-weight: 500;
+    color: var(--theme-text-dim);
   }
   .current-task.incorrect {
     color: var(--semantic-error);
   }
-  .placement-instructions.incorrect {
-    grid-template-columns: auto auto;
-    justify-content: center;
-    align-items: center;
-    gap: 1rem;
-  }
   .correction-guide {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    pointer-events: none;
     margin: 0;
     display: flex;
     align-items: center;
     gap: 0.75rem;
   }
   .correction-art {
-    width: 7rem;
+    width: clamp(4rem, 15cqw, 7rem);
     aspect-ratio: 1;
+    outline: 2px solid var(--semantic-error);
   }
   .advance {
     display: grid;
@@ -614,7 +683,7 @@
     display: block;
     width: 8rem;
     height: 0.375rem;
-    margin: 1rem auto 0;
+    margin: 0.5rem auto 0;
     accent-color: var(--theme-accent);
   }
   .lesson-navigation {
@@ -634,34 +703,28 @@
     align-items: center;
     gap: 0.5rem;
   }
+  .hand-controls {
+    --workspace-action-width: auto;
+    --workspace-action-gap: 0.5rem;
+    --workspace-action-padding-inline: 1rem;
+    --workspace-action-radius: 999px;
+    --workspace-action-label-display: inline;
+  }
   .support-actions {
     margin-block: 0.75rem;
   }
-  .position-name {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+  .support-actions:empty {
+    display: none;
   }
   .board-toolbar {
+    width: min(100%, 20rem);
+    margin-inline: auto;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     gap: 0.75rem 1.5rem;
-    margin-bottom: 0.75rem;
-  }
-  .live-position {
-    min-width: 9rem;
-    font-size: 1.25rem;
-  }
-  .example.selected {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 3px;
-  }
-  h3 {
-    margin: 0;
-    font-size: var(--font-size-min, 14px);
-    font-weight: 650;
+    margin-bottom: 0.5rem;
   }
   p {
     margin: 0;
@@ -675,10 +738,12 @@
   }
   .reference-area {
     min-width: 0;
+    margin-top: 1rem;
   }
-  .reference-heading {
-    text-align: center;
-    margin-block: 0.75rem;
+  @container (min-width: 42rem) {
+    .has-reference .reference-area {
+      margin-top: 0;
+    }
   }
   .examples {
     display: grid;
@@ -687,21 +752,17 @@
   }
   .example {
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
+    aspect-ratio: 1;
+    --selection-selected-transform: none;
+  }
+  .example.correction {
+    outline: 2px solid var(--semantic-error);
+    outline-offset: 2px;
   }
   .example-art {
     width: 100%;
     aspect-ratio: 1;
     overflow: hidden;
-  }
-  .example strong {
-    font-size: var(--font-size-min, 14px);
-  }
-  .example :global(.panel-btn) {
-    padding-inline: 0.75rem;
   }
   .explore-tools {
     display: grid;
@@ -712,6 +773,12 @@
   @media (max-width: 760px) {
     .positions-experience {
       --position-board-size: 18.5rem;
+    }
+  }
+  @media (min-width: 2400px) and (min-height: 1700px) {
+    .positions-experience {
+      --position-board-size: 72rem;
+      --lesson-workshop-max: 104rem;
     }
   }
 </style>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { withSavedProps } from "$lib/shared/foundation/services/prop-viewing";
   import { getVideoUploader } from "$lib/shared/share/get-video-uploader";
   /**
    * Video Record Coordinator Component
@@ -109,7 +110,7 @@
         analyticsSource: "video_record",
       };
       const saved = await getLibrarySaveService().saveSequence(
-        currentSequence,
+        withSavedProps(currentSequence, metadata.propConfig),
         saveOptions
       );
       const sequenceId = saved.sequenceId;

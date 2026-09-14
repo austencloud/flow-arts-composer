@@ -1,0 +1,3579 @@
+{
+  "date": "2026-09-08",
+  "context": "Dedicated guest browser. Local Vite development; normal CPU/network; warm modules and browser cache; shared machine; no service worker for baseline b/c/mobile. Timings are ms since navigation. SVG/unoccluded observation is a DOM readiness proxy, not a paint guarantee.",
+  "runs": [
+    {
+      "label": "baseline1280",
+      "observation": {
+        "milestones": {
+          "splash-visible": 126.40000003576279,
+          "module-container": 2265.7000000476837,
+          "splash-removed": 3467.800000011921,
+          "first-start-choice-unoccluded": 4975.400000035763
+        },
+        "longTasks": [
+          {
+            "start": 497.60000002384186,
+            "duration": 74
+          },
+          {
+            "start": 1370.2000000476837,
+            "duration": 197
+          },
+          {
+            "start": 1585.6000000238419,
+            "duration": 132
+          },
+          {
+            "start": 1741.1000000238419,
+            "duration": 108
+          },
+          {
+            "start": 1917.6000000238419,
+            "duration": 50
+          },
+          {
+            "start": 2026.6000000238419,
+            "duration": 57
+          },
+          {
+            "start": 3518.800000011921,
+            "duration": 88
+          },
+          {
+            "start": 3757.2000000476837,
+            "duration": 279
+          },
+          {
+            "start": 4036.900000035763,
+            "duration": 53
+          },
+          {
+            "start": 4090.7000000476837,
+            "duration": 57
+          },
+          {
+            "start": 4309.400000035763,
+            "duration": 50
+          },
+          {
+            "start": 4428.200000047684,
+            "duration": 58
+          }
+        ]
+      },
+      "marks": [
+        {
+          "name": "boot:total-init",
+          "start": 610.6000000238419,
+          "duration": 509.5
+        },
+        {
+          "name": "boot:di-container",
+          "start": 610.8000000119209,
+          "duration": 387.19999998807907
+        },
+        {
+          "name": "boot:shell:main-app-chunk",
+          "start": 610.9000000357628,
+          "duration": 1120.8999999761581
+        },
+        {
+          "name": "boot:posthog",
+          "start": 1085.1000000238419,
+          "duration": 52.69999998807907
+        },
+        {
+          "name": "boot:i18n",
+          "start": 1085.2000000476837,
+          "duration": 0.19999998807907104
+        },
+        {
+          "name": "boot:firestore-init",
+          "start": 1087,
+          "duration": 0
+        },
+        {
+          "name": "boot:auth-init",
+          "start": 1087.2000000476837,
+          "duration": 32.799999952316284
+        },
+        {
+          "name": "boot:web-vitals",
+          "start": 1161.9000000357628,
+          "duration": 120
+        },
+        {
+          "name": "boot:thumbnail-manifest",
+          "start": 1162.1000000238419,
+          "duration": 747.6000000238419
+        },
+        {
+          "name": "boot:library-sync-retry",
+          "start": 1162.2000000476837,
+          "duration": 103.29999995231628
+        },
+        {
+          "name": "boot:ui-components",
+          "start": 1162.300000011921,
+          "duration": 1008.6999999880791
+        },
+        {
+          "name": "boot:app:init-state",
+          "start": 1550.6000000238419,
+          "duration": 564.3999999761581
+        },
+        {
+          "name": "boot:app:restore-workspace",
+          "start": 2188.400000035763,
+          "duration": 41.30000001192093
+        },
+        {
+          "name": "module-chunk:create",
+          "start": 2226.800000011921,
+          "duration": 1959.699999988079
+        },
+        {
+          "name": "boot:app:load-settings+theme",
+          "start": 2229.800000011921,
+          "duration": 235.80000001192093
+        }
+      ],
+      "paints": [
+        {
+          "name": "first-paint",
+          "start": 144
+        },
+        {
+          "name": "first-contentful-paint",
+          "start": 144
+        }
+      ],
+      "resources": {
+        "count": 3323,
+        "bytes": 77787949
+      }
+    },
+    {
+      "label": "baseline1280b",
+      "observation": {
+        "milestones": {
+          "splash-visible": 161.5,
+          "module-container": 2417.100000023842,
+          "splash-removed": 3578.399999976158,
+          "first-start-choice-unoccluded": 5820.5
+        },
+        "longTasks": [
+          {
+            "start": 562.8999999761581,
+            "duration": 107
+          },
+          {
+            "start": 1429,
+            "duration": 245
+          },
+          {
+            "start": 1757.699999988079,
+            "duration": 107
+          },
+          {
+            "start": 1867,
+            "duration": 100
+          },
+          {
+            "start": 1971,
+            "duration": 64
+          },
+          {
+            "start": 2170.399999976158,
+            "duration": 67
+          },
+          {
+            "start": 3952.5,
+            "duration": 100
+          },
+          {
+            "start": 4161.399999976158,
+            "duration": 63
+          },
+          {
+            "start": 4413.600000023842,
+            "duration": 315
+          },
+          {
+            "start": 4728.899999976158,
+            "duration": 63
+          },
+          {
+            "start": 4792.800000011921,
+            "duration": 64
+          },
+          {
+            "start": 4952.5,
+            "duration": 56
+          },
+          {
+            "start": 5320.100000023842,
+            "duration": 87
+          },
+          {
+            "start": 6219.199999988079,
+            "duration": 61
+          }
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled": false,
+      "marks": [
+        {
+          "name": "boot:shell:main-app-chunk",
+          "start": 683,
+          "duration": 1017.3000000119209
+        },
+        {
+          "name": "boot:di-container",
+          "start": 683.1999999880791,
+          "duration": 380
+        },
+        {
+          "name": "boot:total-init",
+          "start": 683.1999999880791,
+          "duration": 490.80000001192093
+        },
+        {
+          "name": "boot:posthog",
+          "start": 1152.1000000238419,
+          "duration": 38.39999997615814
+        },
+        {
+          "name": "boot:i18n",
+          "start": 1152.199999988079,
+          "duration": 0.30000001192092896
+        },
+        {
+          "name": "boot:firestore-init",
+          "start": 1154.1000000238419,
+          "duration": 0.09999996423721313
+        },
+        {
+          "name": "boot:auth-init",
+          "start": 1154.3999999761581,
+          "duration": 19.5
+        },
+        {
+          "name": "boot:web-vitals",
+          "start": 1269.3999999761581,
+          "duration": 140
+        },
+        {
+          "name": "boot:library-sync-retry",
+          "start": 1269.699999988079,
+          "duration": 118.5
+        },
+        {
+          "name": "boot:thumbnail-manifest",
+          "start": 1269.699999988079,
+          "duration": 781.3000000119209
+        },
+        {
+          "name": "boot:ui-components",
+          "start": 1269.8999999761581,
+          "duration": 1118.4000000357628
+        },
+        {
+          "name": "boot:app:init-state",
+          "start": 1656.300000011921,
+          "duration": 604.3000000119209
+        },
+        {
+          "name": "boot:app:restore-workspace",
+          "start": 2323.300000011921,
+          "duration": 72.80000001192093
+        },
+        {
+          "name": "module-chunk:create",
+          "start": 2393.5,
+          "duration": 2604.300000011921
+        },
+        {
+          "name": "boot:app:load-settings+theme",
+          "start": 2396.199999988079,
+          "duration": 244
+        }
+      ]
+    },
+    {
+      "label": "baseline1280c",
+      "observation": {
+        "milestones": {
+          "splash-visible": 222.19999998807907,
+          "module-container": 3394.300000011921,
+          "splash-removed": 4065.5,
+          "first-start-choice-unoccluded": 6365.199999988079
+        },
+        "longTasks": [
+          {
+            "start": 807.3000000119209,
+            "duration": 87
+          },
+          {
+            "start": 1863.3999999761581,
+            "duration": 227
+          },
+          {
+            "start": 2174.800000011921,
+            "duration": 367
+          },
+          {
+            "start": 2545.199999988079,
+            "duration": 130
+          },
+          {
+            "start": 2971.899999976158,
+            "duration": 68
+          },
+          {
+            "start": 4721.800000011921,
+            "duration": 96
+          },
+          {
+            "start": 5021.300000011921,
+            "duration": 293
+          },
+          {
+            "start": 5315.199999988079,
+            "duration": 58
+          },
+          {
+            "start": 5373.899999976158,
+            "duration": 100
+          },
+          {
+            "start": 5498,
+            "duration": 58
+          },
+          {
+            "start": 5887.099999964237,
+            "duration": 79
+          },
+          {
+            "start": 7449.300000011921,
+            "duration": 53
+          },
+          {
+            "start": 7916.199999988079,
+            "duration": 57
+          }
+        ]
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled": false,
+      "marks": [
+        {
+          "name": "boot:di-container",
+          "start": 939,
+          "duration": 392.89999997615814
+        },
+        {
+          "name": "boot:total-init",
+          "start": 939,
+          "duration": 534.3000000119209
+        },
+        {
+          "name": "boot:shell:main-app-chunk",
+          "start": 939.0999999642372,
+          "duration": 1186.7000000476837
+        },
+        {
+          "name": "boot:i18n",
+          "start": 1429,
+          "duration": 0.3999999761581421
+        },
+        {
+          "name": "boot:posthog",
+          "start": 1429,
+          "duration": 60.19999998807907
+        },
+        {
+          "name": "boot:firestore-init",
+          "start": 1431,
+          "duration": 0.09999996423721313
+        },
+        {
+          "name": "boot:auth-init",
+          "start": 1431.3999999761581,
+          "duration": 41.80000001192093
+        },
+        {
+          "name": "boot:web-vitals",
+          "start": 1561.8999999761581,
+          "duration": 226.5
+        },
+        {
+          "name": "boot:thumbnail-manifest",
+          "start": 1562.0999999642372,
+          "duration": 60.10000002384186
+        },
+        {
+          "name": "boot:library-sync-retry",
+          "start": 1562.0999999642372,
+          "duration": 181.10000002384186
+        },
+        {
+          "name": "boot:ui-components",
+          "start": 1562.300000011921,
+          "duration": 1801
+        },
+        {
+          "name": "boot:app:init-state",
+          "start": 2067.199999988079,
+          "duration": 1092.199999988079
+        },
+        {
+          "name": "boot:app:restore-workspace",
+          "start": 3244.199999988079,
+          "duration": 94.39999997615814
+        },
+        {
+          "name": "module-chunk:create",
+          "start": 3336.399999976158,
+          "duration": 2208.5
+        },
+        {
+          "name": "boot:app:load-settings+theme",
+          "start": 3338.699999988079,
+          "duration": 406.5
+        }
+      ],
+      "resources": {
+        "count": 3352,
+        "bytes": 77616441
+      }
+    },
+    {
+      "label": "baselineMobile",
+      "observation": {
+        "milestones": {
+          "splash-visible": 182.39999997615814,
+          "module-container": 2519,
+          "splash-removed": 3681.199999988079,
+          "first-start-choice-unoccluded": 5862.100000023842
+        },
+        "longTasks": [
+          {
+            "start": 563.5,
+            "duration": 104
+          },
+          {
+            "start": 1561.5,
+            "duration": 242
+          },
+          {
+            "start": 1994.3999999761581,
+            "duration": 259
+          },
+          {
+            "start": 2309.399999976158,
+            "duration": 66
+          },
+          {
+            "start": 2545.600000023842,
+            "duration": 56
+          },
+          {
+            "start": 3680.800000011921,
+            "duration": 192
+          },
+          {
+            "start": 4200.399999976158,
+            "duration": 94
+          },
+          {
+            "start": 4625.300000011921,
+            "duration": 314
+          },
+          {
+            "start": 5074.899999976158,
+            "duration": 56
+          },
+          {
+            "start": 5405,
+            "duration": 69
+          },
+          {
+            "start": 6152.399999976158,
+            "duration": 54
+          }
+        ]
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "controlled": false,
+      "marks": [
+        {
+          "name": "boot:total-init",
+          "start": 687.6999999880791,
+          "duration": 531.5
+        },
+        {
+          "name": "boot:di-container",
+          "start": 687.8000000119209,
+          "duration": 398.5999999642372
+        },
+        {
+          "name": "boot:shell:main-app-chunk",
+          "start": 687.8999999761581,
+          "duration": 1164.5
+        },
+        {
+          "name": "boot:posthog",
+          "start": 1189.1000000238419,
+          "duration": 50.19999998807907
+        },
+        {
+          "name": "boot:i18n",
+          "start": 1189.199999988079,
+          "duration": 0.40000003576278687
+        },
+        {
+          "name": "boot:firestore-init",
+          "start": 1192,
+          "duration": 0.10000002384185791
+        },
+        {
+          "name": "boot:auth-init",
+          "start": 1192.6000000238419,
+          "duration": 26.5
+        },
+        {
+          "name": "boot:web-vitals",
+          "start": 1313.300000011921,
+          "duration": 546.8999999761581
+        },
+        {
+          "name": "boot:thumbnail-manifest",
+          "start": 1313.3999999761581,
+          "duration": 9.5
+        },
+        {
+          "name": "boot:library-sync-retry",
+          "start": 1313.5,
+          "duration": 241.39999997615814
+        },
+        {
+          "name": "boot:ui-components",
+          "start": 1313.6000000238419,
+          "duration": 1217.199999988079
+        },
+        {
+          "name": "boot:app:init-state",
+          "start": 1797.6000000238419,
+          "duration": 588
+        },
+        {
+          "name": "boot:app:restore-workspace",
+          "start": 2451.300000011921,
+          "duration": 60.69999998807907
+        },
+        {
+          "name": "module-chunk:create",
+          "start": 2508.199999988079,
+          "duration": 2611.400000035763
+        },
+        {
+          "name": "boot:app:load-settings+theme",
+          "start": 2512.100000023842,
+          "duration": 258.69999998807907
+        }
+      ]
+    },
+    {
+      "label": "deployed-frontdoor-cold-original-viewport",
+      "observation": {
+        "milestones": {
+          "splash-visible": 748,
+          "module-container": 4802.800000011921,
+          "splash-removed": 7058.699999988079
+        },
+        "longTasks": [
+          {
+            "start": 1513,
+            "duration": 103
+          },
+          {
+            "start": 3057.600000023842,
+            "duration": 71
+          },
+          {
+            "start": 3717.199999988079,
+            "duration": 86
+          },
+          {
+            "start": 4402.699999988079,
+            "duration": 172
+          },
+          {
+            "start": 4738.300000011921,
+            "duration": 56
+          },
+          {
+            "start": 4879.699999988079,
+            "duration": 171
+          },
+          {
+            "start": 5339,
+            "duration": 78
+          },
+          {
+            "start": 5570.899999976158,
+            "duration": 65
+          },
+          {
+            "start": 5668,
+            "duration": 89
+          },
+          {
+            "start": 6274.100000023842,
+            "duration": 52
+          },
+          {
+            "start": 6365.100000023842,
+            "duration": 75
+          },
+          {
+            "start": 6531.100000023842,
+            "duration": 482
+          },
+          {
+            "start": 7219.5,
+            "duration": 411
+          },
+          {
+            "start": 7691.600000023842,
+            "duration": 122
+          }
+        ]
+      },
+      "resources": {
+        "link": 159,
+        "script": 375,
+        "img": 2,
+        "xmlhttprequest": 2,
+        "other": 20,
+        "fetch": 102,
+        "firestore": 27,
+        "css": 2,
+        "image": 3,
+        "beacon": 1
+      },
+      "sameOriginBytes": 4737269
+    },
+    {
+      "label": "fixed1280a",
+      "revision": "dc6e8a06e3 (before final Browse network gate)",
+      "observation": {
+        "milestones": {
+          "splash-visible": 170.30000001192093,
+          "splash-removed": 2067.199999988079,
+          "module-container": 2123.099999964237,
+          "first-start-choice-unoccluded": 4623.199999988079
+        },
+        "longTasks": [
+          {
+            "start": 936,
+            "duration": 75
+          },
+          {
+            "start": 1395.0999999642372,
+            "duration": 242
+          },
+          {
+            "start": 1657.199999988079,
+            "duration": 126
+          },
+          {
+            "start": 1817.199999988079,
+            "duration": 99
+          },
+          {
+            "start": 2230.399999976158,
+            "duration": 66
+          },
+          {
+            "start": 2980.5,
+            "duration": 53
+          },
+          {
+            "start": 3396,
+            "duration": 87
+          },
+          {
+            "start": 3564.199999988079,
+            "duration": 108
+          },
+          {
+            "start": 3726.599999964237,
+            "duration": 244
+          },
+          {
+            "start": 4181.199999988079,
+            "duration": 57
+          }
+        ]
+      },
+      "profile": {
+        "schemaVersion": 1,
+        "capturedAtMs": 17511.19999998808,
+        "profilerStartedAtMs": 419.19999998807907,
+        "detailedProfiling": true,
+        "phases": [
+          {
+            "label": "shell:main-app-chunk",
+            "startTime": 419.30000001192093,
+            "endTime": 1799,
+            "duration": 1379.699999988079
+          },
+          {
+            "label": "total-init",
+            "startTime": 419.39999997615814,
+            "endTime": 1149.699999988079,
+            "duration": 730.3000000119209
+          },
+          {
+            "label": "di-container",
+            "startTime": 419.5,
+            "endTime": 1010.6999999880791,
+            "duration": 591.1999999880791
+          },
+          {
+            "label": "posthog",
+            "startTime": 1108.5999999642372,
+            "endTime": 1163.8999999761581,
+            "duration": 55.30000001192093
+          },
+          {
+            "label": "i18n",
+            "startTime": 1108.699999988079,
+            "endTime": 1109.0999999642372,
+            "duration": 0.3999999761581421
+          },
+          {
+            "label": "firestore-init",
+            "startTime": 1110.5999999642372,
+            "endTime": 1110.699999988079,
+            "duration": 0.10000002384185791
+          },
+          {
+            "label": "auth-init",
+            "startTime": 1111.0999999642372,
+            "endTime": 1149.5999999642372,
+            "duration": 38.5
+          },
+          {
+            "label": "web-vitals",
+            "startTime": 1191.5,
+            "endTime": 1309.800000011921,
+            "duration": 118.30000001192093
+          },
+          {
+            "label": "thumbnail-manifest",
+            "startTime": 1191.5999999642372,
+            "endTime": 1202.699999988079,
+            "duration": 11.100000023841858
+          },
+          {
+            "label": "library-sync-retry",
+            "startTime": 1191.800000011921,
+            "endTime": 1291.8999999761581,
+            "duration": 100.09999996423721
+          },
+          {
+            "label": "ui-components",
+            "startTime": 1191.8999999761581,
+            "endTime": 2077.800000011921,
+            "duration": 885.9000000357628
+          },
+          {
+            "label": "app:init-state",
+            "startTime": 1619.699999988079,
+            "endTime": 2048.899999976158,
+            "duration": 429.19999998807907
+          },
+          {
+            "label": "app:restore-workspace",
+            "startTime": 2080.699999988079,
+            "endTime": 2103.199999988079,
+            "duration": 22.5
+          },
+          {
+            "label": "app:load-settings+theme",
+            "startTime": 2103.199999988079,
+            "endTime": 2216,
+            "duration": 112.80000001192093
+          }
+        ],
+        "milestones": [
+          {
+            "label": "shell:ready-announced",
+            "startTime": 1619.3999999761581,
+            "detail": {
+              "source": "snapshot"
+            }
+          },
+          {
+            "label": "create:mounted",
+            "startTime": 3671.300000011921,
+            "detail": {}
+          },
+          {
+            "label": "module:create:chunk-ready",
+            "startTime": 3722.199999988079,
+            "detail": {}
+          },
+          {
+            "label": "create:workspace-initialized",
+            "startTime": 4247.899999976158,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-pictograph-ready",
+            "startTime": 4363.099999964237,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-grid-reveal-start",
+            "startTime": 4426,
+            "detail": {}
+          }
+        ],
+        "spans": [
+          {
+            "id": 1,
+            "label": "create:activation",
+            "startTime": 3671.599999964237,
+            "detail": {},
+            "endTime": 4248,
+            "duration": 576.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 2,
+            "label": "create:initializer-import",
+            "startTime": 3671.899999976158,
+            "detail": {},
+            "endTime": 4171.800000011921,
+            "duration": 499.9000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 3,
+            "label": "create:initialize",
+            "startTime": 4172.199999988079,
+            "detail": {},
+            "endTime": 4187.199999988079,
+            "duration": 15,
+            "outcome": "ok"
+          },
+          {
+            "id": 4,
+            "label": "create:orchestrator",
+            "startTime": 4184.899999976158,
+            "detail": {},
+            "endTime": 4185.300000011921,
+            "duration": 0.40000003576278687,
+            "outcome": "ok"
+          },
+          {
+            "id": 5,
+            "label": "create:construct-tab",
+            "startTime": 4185.599999964237,
+            "detail": {},
+            "endTime": 4186.899999976158,
+            "duration": 1.300000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 6,
+            "label": "create:generator-tab",
+            "startTime": 4185.899999976158,
+            "detail": {},
+            "endTime": 4186.599999964237,
+            "duration": 0.699999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 7,
+            "label": "create:assemble-tab",
+            "startTime": 4186.099999964237,
+            "detail": {},
+            "endTime": 4186.699999988079,
+            "duration": 0.6000000238418579,
+            "outcome": "ok"
+          },
+          {
+            "id": 8,
+            "label": "create:start-positions",
+            "startTime": 4186.199999988079,
+            "detail": {},
+            "endTime": 4186.399999976158,
+            "duration": 0.19999998807907104,
+            "outcome": "ok"
+          },
+          {
+            "id": 9,
+            "label": "create:restore-sequence",
+            "startTime": 4197.699999988079,
+            "detail": {},
+            "endTime": 4233.5,
+            "duration": 35.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 10,
+            "label": "construct:start-grid-stabilize",
+            "startTime": 4222.699999988079,
+            "detail": {},
+            "endTime": 4425.899999976158,
+            "duration": 203.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 11,
+            "label": "create:resolve-session",
+            "startTime": 4233.699999988079,
+            "detail": {},
+            "endTime": 4247.599999964237,
+            "duration": 13.899999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 12,
+            "label": "pictograph:grid-svg",
+            "startTime": 4338.300000011921,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4360.599999964237,
+            "duration": 22.299999952316284,
+            "outcome": "ok"
+          },
+          {
+            "id": 13,
+            "label": "pictograph:grid-svg",
+            "startTime": 4340.5,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4360.5,
+            "duration": 20,
+            "outcome": "ok"
+          },
+          {
+            "id": 14,
+            "label": "pictograph:grid-svg",
+            "startTime": 4341,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4360.599999964237,
+            "duration": 19.599999964237213,
+            "outcome": "ok"
+          }
+        ],
+        "droppedSpans": 0,
+        "longTasksSupported": true,
+        "longTasks": [
+          {
+            "startTime": 936,
+            "duration": 75
+          },
+          {
+            "startTime": 1395.0999999642372,
+            "duration": 242
+          },
+          {
+            "startTime": 1657.199999988079,
+            "duration": 126
+          },
+          {
+            "startTime": 1817.199999988079,
+            "duration": 99
+          },
+          {
+            "startTime": 2230.399999976158,
+            "duration": 66
+          },
+          {
+            "startTime": 2980.5,
+            "duration": 53
+          },
+          {
+            "startTime": 3396,
+            "duration": 87
+          },
+          {
+            "startTime": 3564.199999988079,
+            "duration": 108
+          },
+          {
+            "startTime": 3726.599999964237,
+            "duration": 244
+          },
+          {
+            "startTime": 4181.199999988079,
+            "duration": 57
+          }
+        ],
+        "navigation": {
+          "type": "reload",
+          "responseStart": 7.599999964237213,
+          "responseEnd": 8.399999976158142,
+          "domInteractive": 151,
+          "loadEventEnd": 168.69999998807907
+        },
+        "paints": [
+          {
+            "name": "first-paint",
+            "startTime": 188
+          },
+          {
+            "name": "first-contentful-paint",
+            "startTime": 188
+          }
+        ],
+        "imports": [
+          {
+            "name": "boot:import:composition-root:ok",
+            "startTime": 394.5,
+            "duration": 616.0999999642372
+          },
+          {
+            "name": "boot:import:firebase:ok",
+            "startTime": 394.69999998807907,
+            "duration": 304.80000001192093
+          },
+          {
+            "name": "boot:import:auth-state:ok",
+            "startTime": 394.89999997615814,
+            "duration": 616.6000000238419
+          }
+        ],
+        "splash": [
+          {
+            "name": "boot:splash:script-start",
+            "startTime": 142.19999998807907
+          },
+          {
+            "name": "boot:splash:checkpoint:84",
+            "startTime": 400
+          },
+          {
+            "name": "boot:splash:checkpoint:100",
+            "startTime": 1619.5
+          },
+          {
+            "name": "boot:splash:shell-handoff",
+            "startTime": 1619.5999999642372
+          },
+          {
+            "name": "boot:splash:dismiss-start",
+            "startTime": 1619.5999999642372
+          },
+          {
+            "name": "boot:splash:removed",
+            "startTime": 2067
+          }
+        ],
+        "vitals": [
+          {
+            "name": "FCP",
+            "value": 188,
+            "rating": "good",
+            "delta": 188
+          },
+          {
+            "name": "TTFB",
+            "value": 7.599999964237213,
+            "rating": "good",
+            "delta": 7.599999964237213
+          }
+        ],
+        "resourceSummary": {
+          "count": 2000,
+          "encodedBytes": 46021089
+        }
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled": false
+    },
+    {
+      "label": "fixed1280b",
+      "revision": "dc6e8a06e3 (before final Browse network gate)",
+      "observation": {
+        "milestones": {
+          "splash-visible": 137.20000004768372,
+          "splash-removed": 2225.5,
+          "module-container": 2363.5,
+          "first-start-choice-unoccluded": 4983.700000047684
+        },
+        "longTasks": [
+          {
+            "start": 1213.2000000476837,
+            "duration": 52
+          },
+          {
+            "start": 1364.4000000357628,
+            "duration": 268
+          },
+          {
+            "start": 1929,
+            "duration": 119
+          },
+          {
+            "start": 2118.2000000476837,
+            "duration": 106
+          },
+          {
+            "start": 2289.900000035763,
+            "duration": 65
+          },
+          {
+            "start": 3540.600000023842,
+            "duration": 50
+          },
+          {
+            "start": 3696.900000035763,
+            "duration": 83
+          },
+          {
+            "start": 3859,
+            "duration": 106
+          },
+          {
+            "start": 4031.2000000476837,
+            "duration": 252
+          },
+          {
+            "start": 4544.300000011921,
+            "duration": 60
+          }
+        ]
+      },
+      "profile": {
+        "schemaVersion": 1,
+        "capturedAtMs": 24816.30000001192,
+        "profilerStartedAtMs": 381.30000001192093,
+        "detailedProfiling": true,
+        "phases": [
+          {
+            "label": "total-init",
+            "startTime": 381.5,
+            "endTime": 1215.6000000238419,
+            "duration": 834.1000000238419
+          },
+          {
+            "label": "di-container",
+            "startTime": 381.60000002384186,
+            "endTime": 1051.7000000476837,
+            "duration": 670.1000000238419
+          },
+          {
+            "label": "shell:main-app-chunk",
+            "startTime": 381.80000001192093,
+            "endTime": 1669.7000000476837,
+            "duration": 1287.9000000357628
+          },
+          {
+            "label": "posthog",
+            "startTime": 1168.300000011921,
+            "endTime": 1270.2000000476837,
+            "duration": 101.90000003576279
+          },
+          {
+            "label": "i18n",
+            "startTime": 1168.300000011921,
+            "endTime": 1168.7000000476837,
+            "duration": 0.40000003576278687
+          },
+          {
+            "label": "firestore-init",
+            "startTime": 1170.4000000357628,
+            "endTime": 1170.5,
+            "duration": 0.09999996423721313
+          },
+          {
+            "label": "auth-init",
+            "startTime": 1170.800000011921,
+            "endTime": 1215.6000000238419,
+            "duration": 44.80000001192093
+          },
+          {
+            "label": "web-vitals",
+            "startTime": 1312.4000000357628,
+            "endTime": 1695.4000000357628,
+            "duration": 383
+          },
+          {
+            "label": "thumbnail-manifest",
+            "startTime": 1312.5,
+            "endTime": 1363.5,
+            "duration": 51
+          },
+          {
+            "label": "library-sync-retry",
+            "startTime": 1312.6000000238419,
+            "endTime": 1907.800000011921,
+            "duration": 595.1999999880791
+          },
+          {
+            "label": "ui-components",
+            "startTime": 1312.7000000476837,
+            "endTime": 2653.2000000476837,
+            "duration": 1340.5
+          },
+          {
+            "label": "app:init-state",
+            "startTime": 1618.1000000238419,
+            "endTime": 1846.800000011921,
+            "duration": 228.69999998807907
+          },
+          {
+            "label": "app:restore-workspace",
+            "startTime": 1876.1000000238419,
+            "endTime": 2235.5,
+            "duration": 359.39999997615814
+          },
+          {
+            "label": "app:load-settings+theme",
+            "startTime": 2235.5,
+            "endTime": 2483,
+            "duration": 247.5
+          }
+        ],
+        "milestones": [
+          {
+            "label": "shell:ready-announced",
+            "startTime": 1618,
+            "detail": {
+              "source": "snapshot"
+            }
+          },
+          {
+            "label": "create:mounted",
+            "startTime": 3964.300000011921,
+            "detail": {}
+          },
+          {
+            "label": "module:create:chunk-ready",
+            "startTime": 4018.100000023842,
+            "detail": {}
+          },
+          {
+            "label": "create:workspace-initialized",
+            "startTime": 4626.800000011921,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-pictograph-ready",
+            "startTime": 4766,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-grid-reveal-start",
+            "startTime": 4793.900000035763,
+            "detail": {}
+          }
+        ],
+        "spans": [
+          {
+            "id": 1,
+            "label": "create:activation",
+            "startTime": 3964.7000000476837,
+            "detail": {},
+            "endTime": 4626.900000035763,
+            "duration": 662.1999999880791,
+            "outcome": "ok"
+          },
+          {
+            "id": 2,
+            "label": "create:initializer-import",
+            "startTime": 3965,
+            "detail": {},
+            "endTime": 4536.400000035763,
+            "duration": 571.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 3,
+            "label": "create:initialize",
+            "startTime": 4536.900000035763,
+            "detail": {},
+            "endTime": 4551.300000011921,
+            "duration": 14.399999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 4,
+            "label": "create:orchestrator",
+            "startTime": 4547.800000011921,
+            "detail": {},
+            "endTime": 4548.5,
+            "duration": 0.699999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 5,
+            "label": "create:construct-tab",
+            "startTime": 4549.400000035763,
+            "detail": {},
+            "endTime": 4551,
+            "duration": 1.5999999642372131,
+            "outcome": "ok"
+          },
+          {
+            "id": 6,
+            "label": "create:generator-tab",
+            "startTime": 4549.900000035763,
+            "detail": {},
+            "endTime": 4550.700000047684,
+            "duration": 0.800000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 7,
+            "label": "create:assemble-tab",
+            "startTime": 4550,
+            "detail": {},
+            "endTime": 4550.800000011921,
+            "duration": 0.800000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 8,
+            "label": "create:start-positions",
+            "startTime": 4550.200000047684,
+            "detail": {},
+            "endTime": 4550.400000035763,
+            "duration": 0.19999998807907104,
+            "outcome": "ok"
+          },
+          {
+            "id": 9,
+            "label": "create:restore-sequence",
+            "startTime": 4561,
+            "detail": {},
+            "endTime": 4599.100000023842,
+            "duration": 38.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 10,
+            "label": "construct:start-grid-stabilize",
+            "startTime": 4587.5,
+            "detail": {},
+            "endTime": 4793.900000035763,
+            "duration": 206.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 11,
+            "label": "create:resolve-session",
+            "startTime": 4599.600000023842,
+            "detail": {},
+            "endTime": 4626.5,
+            "duration": 26.899999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 12,
+            "label": "pictograph:grid-svg",
+            "startTime": 4738.400000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4763.600000023842,
+            "duration": 25.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 13,
+            "label": "pictograph:grid-svg",
+            "startTime": 4740.300000011921,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4763.400000035763,
+            "duration": 23.100000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 14,
+            "label": "pictograph:grid-svg",
+            "startTime": 4740.900000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4763.600000023842,
+            "duration": 22.69999998807907,
+            "outcome": "ok"
+          }
+        ],
+        "droppedSpans": 0,
+        "longTasksSupported": true,
+        "longTasks": [
+          {
+            "startTime": 1213.2000000476837,
+            "duration": 52
+          },
+          {
+            "startTime": 1364.4000000357628,
+            "duration": 268
+          },
+          {
+            "startTime": 1929,
+            "duration": 119
+          },
+          {
+            "startTime": 2118.2000000476837,
+            "duration": 106
+          },
+          {
+            "startTime": 2289.900000035763,
+            "duration": 65
+          },
+          {
+            "startTime": 3540.600000023842,
+            "duration": 50
+          },
+          {
+            "startTime": 3696.900000035763,
+            "duration": 83
+          },
+          {
+            "startTime": 3859,
+            "duration": 106
+          },
+          {
+            "startTime": 4031.2000000476837,
+            "duration": 252
+          },
+          {
+            "startTime": 4544.300000011921,
+            "duration": 60
+          }
+        ],
+        "navigation": {
+          "type": "reload",
+          "responseStart": 6,
+          "responseEnd": 9.300000011920929,
+          "domInteractive": 127,
+          "loadEventEnd": 135.10000002384186
+        },
+        "paints": [
+          {
+            "name": "first-paint",
+            "startTime": 148
+          },
+          {
+            "name": "first-contentful-paint",
+            "startTime": 148
+          }
+        ],
+        "imports": [
+          {
+            "name": "boot:import:composition-root:ok",
+            "startTime": 355.60000002384186,
+            "duration": 696
+          },
+          {
+            "name": "boot:import:firebase:ok",
+            "startTime": 356,
+            "duration": 421.7000000476837
+          },
+          {
+            "name": "boot:import:auth-state:ok",
+            "startTime": 356.2000000476837,
+            "duration": 653.5999999642372
+          }
+        ],
+        "splash": [
+          {
+            "name": "boot:splash:script-start",
+            "startTime": 115.70000004768372
+          },
+          {
+            "name": "boot:splash:checkpoint:84",
+            "startTime": 361.4000000357628
+          },
+          {
+            "name": "boot:splash:checkpoint:100",
+            "startTime": 1618
+          },
+          {
+            "name": "boot:splash:shell-handoff",
+            "startTime": 1618
+          },
+          {
+            "name": "boot:splash:dismiss-start",
+            "startTime": 1618
+          },
+          {
+            "name": "boot:splash:removed",
+            "startTime": 2225.400000035763
+          }
+        ],
+        "vitals": [
+          {
+            "name": "FCP",
+            "value": 148,
+            "rating": "good",
+            "delta": 148
+          },
+          {
+            "name": "TTFB",
+            "value": 6,
+            "rating": "good",
+            "delta": 6
+          }
+        ],
+        "resourceSummary": {
+          "count": 2000,
+          "encodedBytes": 46591835
+        }
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled": false
+    },
+    {
+      "label": "fixed1280c",
+      "revision": "dc6e8a06e3 (before final Browse network gate)",
+      "observation": {
+        "milestones": {
+          "splash-visible": 131.4000000357628,
+          "splash-removed": 1939.4000000357628,
+          "module-container": 1965.1000000238419,
+          "first-start-choice-unoccluded": 4456
+        },
+        "longTasks": [
+          {
+            "start": 1302.1000000238419,
+            "duration": 210
+          },
+          {
+            "start": 1627.6000000238419,
+            "duration": 113
+          },
+          {
+            "start": 1774.9000000357628,
+            "duration": 95
+          },
+          {
+            "start": 2350.400000035763,
+            "duration": 63
+          },
+          {
+            "start": 3245.600000023842,
+            "duration": 85
+          },
+          {
+            "start": 3402.699999988079,
+            "duration": 100
+          },
+          {
+            "start": 3555,
+            "duration": 252
+          },
+          {
+            "start": 4005.699999988079,
+            "duration": 60
+          }
+        ]
+      },
+      "profile": {
+        "schemaVersion": 1,
+        "capturedAtMs": 7775.100000023842,
+        "profilerStartedAtMs": 369.9000000357628,
+        "detailedProfiling": true,
+        "phases": [
+          {
+            "label": "total-init",
+            "startTime": 370.19999998807907,
+            "endTime": 1094.4000000357628,
+            "duration": 724.2000000476837
+          },
+          {
+            "label": "di-container",
+            "startTime": 370.19999998807907,
+            "endTime": 997.6000000238419,
+            "duration": 627.4000000357628
+          },
+          {
+            "label": "shell:main-app-chunk",
+            "startTime": 370.4000000357628,
+            "endTime": 1535.5,
+            "duration": 1165.0999999642372
+          },
+          {
+            "label": "posthog",
+            "startTime": 1046.199999988079,
+            "endTime": 1116.199999988079,
+            "duration": 70
+          },
+          {
+            "label": "i18n",
+            "startTime": 1046.300000011921,
+            "endTime": 1046.699999988079,
+            "duration": 0.3999999761581421
+          },
+          {
+            "label": "firestore-init",
+            "startTime": 1048.1000000238419,
+            "endTime": 1048.199999988079,
+            "duration": 0.09999996423721313
+          },
+          {
+            "label": "auth-init",
+            "startTime": 1048.4000000357628,
+            "endTime": 1094.4000000357628,
+            "duration": 46
+          },
+          {
+            "label": "web-vitals",
+            "startTime": 1145.1000000238419,
+            "endTime": 1249.800000011921,
+            "duration": 104.69999998807907
+          },
+          {
+            "label": "thumbnail-manifest",
+            "startTime": 1145.300000011921,
+            "endTime": 1152.6000000238419,
+            "duration": 7.300000011920929
+          },
+          {
+            "label": "library-sync-retry",
+            "startTime": 1145.300000011921,
+            "endTime": 1236.699999988079,
+            "duration": 91.39999997615814
+          },
+          {
+            "label": "ui-components",
+            "startTime": 1145.4000000357628,
+            "endTime": 2142.600000023842,
+            "duration": 997.1999999880791
+          },
+          {
+            "label": "app:init-state",
+            "startTime": 1497.800000011921,
+            "endTime": 1918.4000000357628,
+            "duration": 420.60000002384186
+          },
+          {
+            "label": "app:restore-workspace",
+            "startTime": 1935.699999988079,
+            "endTime": 1947.5,
+            "duration": 11.800000011920929
+          },
+          {
+            "label": "app:load-settings+theme",
+            "startTime": 1947.5,
+            "endTime": 1989.6000000238419,
+            "duration": 42.10000002384186
+          }
+        ],
+        "milestones": [
+          {
+            "label": "shell:ready-announced",
+            "startTime": 1497.6000000238419,
+            "detail": {
+              "source": "snapshot"
+            }
+          },
+          {
+            "label": "create:mounted",
+            "startTime": 3502.100000023842,
+            "detail": {}
+          },
+          {
+            "label": "module:create:chunk-ready",
+            "startTime": 3551.400000035763,
+            "detail": {}
+          },
+          {
+            "label": "create:workspace-initialized",
+            "startTime": 4075.600000023842,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-pictograph-ready",
+            "startTime": 4179.100000023842,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-grid-reveal-start",
+            "startTime": 4259.400000035763,
+            "detail": {}
+          }
+        ],
+        "spans": [
+          {
+            "id": 1,
+            "label": "create:activation",
+            "startTime": 3502.5,
+            "detail": {},
+            "endTime": 4075.800000011921,
+            "duration": 573.3000000119209,
+            "outcome": "ok"
+          },
+          {
+            "id": 2,
+            "label": "create:initializer-import",
+            "startTime": 3502.699999988079,
+            "detail": {},
+            "endTime": 4000.300000011921,
+            "duration": 497.60000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 3,
+            "label": "create:initialize",
+            "startTime": 4000.5,
+            "detail": {},
+            "endTime": 4014,
+            "duration": 13.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 4,
+            "label": "create:orchestrator",
+            "startTime": 4010.199999988079,
+            "detail": {},
+            "endTime": 4011.199999988079,
+            "duration": 1,
+            "outcome": "ok"
+          },
+          {
+            "id": 5,
+            "label": "create:construct-tab",
+            "startTime": 4012.100000023842,
+            "detail": {},
+            "endTime": 4013.699999988079,
+            "duration": 1.5999999642372131,
+            "outcome": "ok"
+          },
+          {
+            "id": 6,
+            "label": "create:generator-tab",
+            "startTime": 4012.5,
+            "detail": {},
+            "endTime": 4013.400000035763,
+            "duration": 0.9000000357627869,
+            "outcome": "ok"
+          },
+          {
+            "id": 7,
+            "label": "create:assemble-tab",
+            "startTime": 4012.600000023842,
+            "detail": {},
+            "endTime": 4013.400000035763,
+            "duration": 0.800000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 8,
+            "label": "create:start-positions",
+            "startTime": 4012.800000011921,
+            "detail": {},
+            "endTime": 4012.900000035763,
+            "duration": 0.10000002384185791,
+            "outcome": "ok"
+          },
+          {
+            "id": 9,
+            "label": "create:restore-sequence",
+            "startTime": 4024.100000023842,
+            "detail": {},
+            "endTime": 4061.800000011921,
+            "duration": 37.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 10,
+            "label": "construct:start-grid-stabilize",
+            "startTime": 4049.5,
+            "detail": {},
+            "endTime": 4259.300000011921,
+            "duration": 209.80000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 11,
+            "label": "create:resolve-session",
+            "startTime": 4062,
+            "detail": {},
+            "endTime": 4075.400000035763,
+            "duration": 13.400000035762787,
+            "outcome": "ok"
+          },
+          {
+            "id": 12,
+            "label": "pictograph:grid-svg",
+            "startTime": 4157.300000011921,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4176.5,
+            "duration": 19.19999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 13,
+            "label": "pictograph:grid-svg",
+            "startTime": 4159.400000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4176.400000035763,
+            "duration": 17,
+            "outcome": "ok"
+          },
+          {
+            "id": 14,
+            "label": "pictograph:grid-svg",
+            "startTime": 4160,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4176.5,
+            "duration": 16.5,
+            "outcome": "ok"
+          }
+        ],
+        "droppedSpans": 0,
+        "longTasksSupported": true,
+        "longTasks": [
+          {
+            "startTime": 1302.1000000238419,
+            "duration": 210
+          },
+          {
+            "startTime": 1627.6000000238419,
+            "duration": 113
+          },
+          {
+            "startTime": 1774.9000000357628,
+            "duration": 95
+          },
+          {
+            "startTime": 2350.400000035763,
+            "duration": 63
+          },
+          {
+            "startTime": 3245.600000023842,
+            "duration": 85
+          },
+          {
+            "startTime": 3402.699999988079,
+            "duration": 100
+          },
+          {
+            "startTime": 3555,
+            "duration": 252
+          },
+          {
+            "startTime": 4005.699999988079,
+            "duration": 60
+          }
+        ],
+        "navigation": {
+          "type": "reload",
+          "responseStart": 6.900000035762787,
+          "responseEnd": 7.900000035762787,
+          "domInteractive": 124.40000003576279,
+          "loadEventEnd": 130.9000000357628
+        },
+        "paints": [
+          {
+            "name": "first-paint",
+            "startTime": 140
+          },
+          {
+            "name": "first-contentful-paint",
+            "startTime": 140
+          }
+        ],
+        "imports": [
+          {
+            "name": "boot:import:composition-root:ok",
+            "startTime": 349.80000001192093,
+            "duration": 647.6999999880791
+          },
+          {
+            "name": "boot:import:firebase:ok",
+            "startTime": 350.19999998807907,
+            "duration": 279.60000002384186
+          },
+          {
+            "name": "boot:import:auth-state:ok",
+            "startTime": 350.30000001192093,
+            "duration": 608.3999999761581
+          }
+        ],
+        "splash": [
+          {
+            "name": "boot:splash:script-start",
+            "startTime": 114.69999998807907
+          },
+          {
+            "name": "boot:splash:checkpoint:84",
+            "startTime": 355.30000001192093
+          },
+          {
+            "name": "boot:splash:checkpoint:100",
+            "startTime": 1497.699999988079
+          },
+          {
+            "name": "boot:splash:shell-handoff",
+            "startTime": 1497.699999988079
+          },
+          {
+            "name": "boot:splash:dismiss-start",
+            "startTime": 1497.800000011921
+          },
+          {
+            "name": "boot:splash:removed",
+            "startTime": 1939.300000011921
+          }
+        ],
+        "vitals": [
+          {
+            "name": "FCP",
+            "value": 140,
+            "rating": "good",
+            "delta": 140
+          },
+          {
+            "name": "TTFB",
+            "value": 6.900000035762787,
+            "rating": "good",
+            "delta": 6.900000035762787
+          }
+        ],
+        "resourceSummary": {
+          "count": 2000,
+          "encodedBytes": 46808232
+        }
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled": false
+    },
+    {
+      "label": "fixedMobile",
+      "revision": "dc6e8a06e3 (before final Browse network gate)",
+      "observation": {
+        "milestones": {
+          "splash-visible": 169.19999998807907,
+          "splash-removed": 2173.099999964237,
+          "module-container": 2221.599999964237,
+          "first-start-choice-unoccluded": 4570.399999976158
+        },
+        "longTasks": [
+          {
+            "start": 1362.5999999642372,
+            "duration": 233
+          },
+          {
+            "start": 1898.5999999642372,
+            "duration": 126
+          },
+          {
+            "start": 2074.800000011921,
+            "duration": 97
+          },
+          {
+            "start": 2435.5,
+            "duration": 66
+          },
+          {
+            "start": 3407.5,
+            "duration": 77
+          },
+          {
+            "start": 3535.199999988079,
+            "duration": 124
+          },
+          {
+            "start": 3682.399999976158,
+            "duration": 240
+          },
+          {
+            "start": 3922.699999988079,
+            "duration": 62
+          },
+          {
+            "start": 4131.5,
+            "duration": 57
+          }
+        ]
+      },
+      "profile": {
+        "schemaVersion": 1,
+        "capturedAtMs": 7301.699999988079,
+        "profilerStartedAtMs": 395.89999997615814,
+        "detailedProfiling": true,
+        "phases": [
+          {
+            "label": "total-init",
+            "startTime": 396.19999998807907,
+            "endTime": 1199.8999999761581,
+            "duration": 803.6999999880791
+          },
+          {
+            "label": "di-container",
+            "startTime": 396.19999998807907,
+            "endTime": 1036.5,
+            "duration": 640.3000000119209
+          },
+          {
+            "label": "shell:main-app-chunk",
+            "startTime": 396.39999997615814,
+            "endTime": 1629.699999988079,
+            "duration": 1233.300000011921
+          },
+          {
+            "label": "posthog",
+            "startTime": 1158.8999999761581,
+            "endTime": 1198.5,
+            "duration": 39.60000002384186
+          },
+          {
+            "label": "i18n",
+            "startTime": 1158.8999999761581,
+            "endTime": 1159.199999988079,
+            "duration": 0.30000001192092896
+          },
+          {
+            "label": "firestore-init",
+            "startTime": 1160.800000011921,
+            "endTime": 1160.800000011921,
+            "duration": 0
+          },
+          {
+            "label": "auth-init",
+            "startTime": 1161.0999999642372,
+            "endTime": 1199.8999999761581,
+            "duration": 38.80000001192093
+          },
+          {
+            "label": "web-vitals",
+            "startTime": 1316.800000011921,
+            "endTime": 1717.5,
+            "duration": 400.69999998807907
+          },
+          {
+            "label": "thumbnail-manifest",
+            "startTime": 1317.0999999642372,
+            "endTime": 1607.8999999761581,
+            "duration": 290.80000001192093
+          },
+          {
+            "label": "library-sync-retry",
+            "startTime": 1317.199999988079,
+            "endTime": 1895.5999999642372,
+            "duration": 578.3999999761581
+          },
+          {
+            "label": "ui-components",
+            "startTime": 1317.5999999642372,
+            "endTime": 2534.800000011921,
+            "duration": 1217.2000000476837
+          },
+          {
+            "label": "app:init-state",
+            "startTime": 1590.199999988079,
+            "endTime": 1744.300000011921,
+            "duration": 154.10000002384186
+          },
+          {
+            "label": "app:restore-workspace",
+            "startTime": 1782.300000011921,
+            "endTime": 2179.5,
+            "duration": 397.19999998807907
+          },
+          {
+            "label": "app:load-settings+theme",
+            "startTime": 2179.5,
+            "endTime": 2269.899999976158,
+            "duration": 90.39999997615814
+          }
+        ],
+        "milestones": [
+          {
+            "label": "shell:ready-announced",
+            "startTime": 1590,
+            "detail": {
+              "source": "snapshot"
+            }
+          },
+          {
+            "label": "create:mounted",
+            "startTime": 3658.899999976158,
+            "detail": {}
+          },
+          {
+            "label": "module:create:chunk-ready",
+            "startTime": 3680.800000011921,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-pictograph-ready",
+            "startTime": 4342.599999964237,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-grid-reveal-start",
+            "startTime": 4375.5,
+            "detail": {}
+          },
+          {
+            "label": "create:workspace-initialized",
+            "startTime": 4466.199999988079,
+            "detail": {}
+          }
+        ],
+        "spans": [
+          {
+            "id": 1,
+            "label": "create:activation",
+            "startTime": 3659.099999964237,
+            "detail": {},
+            "endTime": 4466.5,
+            "duration": 807.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 2,
+            "label": "create:initializer-import",
+            "startTime": 3659.300000011921,
+            "detail": {},
+            "endTime": 4123.599999964237,
+            "duration": 464.2999999523163,
+            "outcome": "ok"
+          },
+          {
+            "id": 3,
+            "label": "create:initialize",
+            "startTime": 4124,
+            "detail": {},
+            "endTime": 4139.199999988079,
+            "duration": 15.199999988079071,
+            "outcome": "ok"
+          },
+          {
+            "id": 4,
+            "label": "create:orchestrator",
+            "startTime": 4135,
+            "detail": {},
+            "endTime": 4135.800000011921,
+            "duration": 0.800000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 5,
+            "label": "create:construct-tab",
+            "startTime": 4137,
+            "detail": {},
+            "endTime": 4138.899999976158,
+            "duration": 1.899999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 6,
+            "label": "create:generator-tab",
+            "startTime": 4137.5,
+            "detail": {},
+            "endTime": 4138.5,
+            "duration": 1,
+            "outcome": "ok"
+          },
+          {
+            "id": 7,
+            "label": "create:assemble-tab",
+            "startTime": 4137.699999988079,
+            "detail": {},
+            "endTime": 4138.5,
+            "duration": 0.800000011920929,
+            "outcome": "ok"
+          },
+          {
+            "id": 8,
+            "label": "create:start-positions",
+            "startTime": 4137.899999976158,
+            "detail": {},
+            "endTime": 4138.099999964237,
+            "duration": 0.19999998807907104,
+            "outcome": "ok"
+          },
+          {
+            "id": 9,
+            "label": "create:restore-sequence",
+            "startTime": 4149.399999976158,
+            "detail": {},
+            "endTime": 4184.699999988079,
+            "duration": 35.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 10,
+            "label": "construct:start-grid-stabilize",
+            "startTime": 4174.199999988079,
+            "detail": {},
+            "endTime": 4375.5,
+            "duration": 201.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 11,
+            "label": "create:resolve-session",
+            "startTime": 4185.099999964237,
+            "detail": {},
+            "endTime": 4196.099999964237,
+            "duration": 11,
+            "outcome": "ok"
+          },
+          {
+            "id": 12,
+            "label": "create:restore-session-metadata",
+            "startTime": 4196.199999988079,
+            "detail": {},
+            "endTime": 4465.300000011921,
+            "duration": 269.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 13,
+            "label": "pictograph:grid-svg",
+            "startTime": 4324.399999976158,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4340.5,
+            "duration": 16.100000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 14,
+            "label": "pictograph:grid-svg",
+            "startTime": 4326.300000011921,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4340.399999976158,
+            "duration": 14.099999964237213,
+            "outcome": "ok"
+          },
+          {
+            "id": 15,
+            "label": "pictograph:grid-svg",
+            "startTime": 4326.800000011921,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 4340.399999976158,
+            "duration": 13.599999964237213,
+            "outcome": "ok"
+          }
+        ],
+        "droppedSpans": 0,
+        "longTasksSupported": true,
+        "longTasks": [
+          {
+            "startTime": 1362.5999999642372,
+            "duration": 233
+          },
+          {
+            "startTime": 1898.5999999642372,
+            "duration": 126
+          },
+          {
+            "startTime": 2074.800000011921,
+            "duration": 97
+          },
+          {
+            "startTime": 2435.5,
+            "duration": 66
+          },
+          {
+            "startTime": 3407.5,
+            "duration": 77
+          },
+          {
+            "startTime": 3535.199999988079,
+            "duration": 124
+          },
+          {
+            "startTime": 3682.399999976158,
+            "duration": 240
+          },
+          {
+            "startTime": 3922.699999988079,
+            "duration": 62
+          },
+          {
+            "startTime": 4131.5,
+            "duration": 57
+          }
+        ],
+        "navigation": {
+          "type": "reload",
+          "responseStart": 18.399999976158142,
+          "responseEnd": 19.30000001192093,
+          "domInteractive": 149,
+          "loadEventEnd": 156.80000001192093
+        },
+        "paints": [
+          {
+            "name": "first-paint",
+            "startTime": 188
+          },
+          {
+            "name": "first-contentful-paint",
+            "startTime": 188
+          }
+        ],
+        "imports": [
+          {
+            "name": "boot:import:composition-root:ok",
+            "startTime": 374.69999998807907,
+            "duration": 661.8000000119209
+          },
+          {
+            "name": "boot:import:firebase:ok",
+            "startTime": 375,
+            "duration": 406.19999998807907
+          },
+          {
+            "name": "boot:import:auth-state:ok",
+            "startTime": 375.30000001192093,
+            "duration": 623.5999999642372
+          }
+        ],
+        "splash": [
+          {
+            "name": "boot:splash:script-start",
+            "startTime": 139.5999999642372
+          },
+          {
+            "name": "boot:splash:checkpoint:84",
+            "startTime": 380.5
+          },
+          {
+            "name": "boot:splash:checkpoint:100",
+            "startTime": 1590.0999999642372
+          },
+          {
+            "name": "boot:splash:shell-handoff",
+            "startTime": 1590.199999988079
+          },
+          {
+            "name": "boot:splash:dismiss-start",
+            "startTime": 1590.199999988079
+          },
+          {
+            "name": "boot:splash:removed",
+            "startTime": 2172.899999976158
+          }
+        ],
+        "vitals": [
+          {
+            "name": "FCP",
+            "value": 188,
+            "rating": "good",
+            "delta": 188
+          },
+          {
+            "name": "TTFB",
+            "value": 18.399999976158142,
+            "rating": "good",
+            "delta": 18.399999976158142
+          }
+        ],
+        "resourceSummary": {
+          "count": 2000,
+          "encodedBytes": 46603008
+        }
+      },
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "controlled": false
+    },
+    {
+      "label": "fixedProduction",
+      "revision": "dc6e8a06e3 (before final Browse network gate)",
+      "observation": {
+        "milestones": {
+          "splash-visible": 608.0999999642372,
+          "module-container": 2230.5,
+          "splash-removed": 2524.699999988079,
+          "first-start-choice-unoccluded": 2849.300000011921
+        },
+        "longTasks": [
+          {
+            "start": 899.8999999761581,
+            "duration": 102
+          },
+          {
+            "start": 1116.0999999642372,
+            "duration": 129
+          },
+          {
+            "start": 1421.800000011921,
+            "duration": 83
+          },
+          {
+            "start": 1529.199999988079,
+            "duration": 121
+          },
+          {
+            "start": 1876.699999988079,
+            "duration": 103
+          },
+          {
+            "start": 2091,
+            "duration": 124
+          },
+          {
+            "start": 2344.599999964237,
+            "duration": 95
+          },
+          {
+            "start": 2918.599999964237,
+            "duration": 148
+          },
+          {
+            "start": 4649.899999976158,
+            "duration": 106
+          },
+          {
+            "start": 4830.699999988079,
+            "duration": 582
+          },
+          {
+            "start": 5690.399999976158,
+            "duration": 449
+          },
+          {
+            "start": 6210.699999988079,
+            "duration": 142
+          }
+        ]
+      },
+      "profile": {
+        "schemaVersion": 1,
+        "capturedAtMs": 35006.39999997616,
+        "profilerStartedAtMs": 1310.199999988079,
+        "detailedProfiling": true,
+        "phases": [
+          {
+            "label": "total-init",
+            "startTime": 1310.300000011921,
+            "endTime": 2204,
+            "duration": 893.6999999880791
+          },
+          {
+            "label": "di-container",
+            "startTime": 1310.3999999761581,
+            "endTime": 1523.800000011921,
+            "duration": 213.4000000357628
+          },
+          {
+            "label": "shell:main-app-chunk",
+            "startTime": 1310.5,
+            "endTime": 1836.0999999642372,
+            "duration": 525.5999999642372
+          },
+          {
+            "label": "app:init-state",
+            "startTime": 1637.199999988079,
+            "endTime": 1840.699999988079,
+            "duration": 203.5
+          },
+          {
+            "label": "posthog",
+            "startTime": 1841.8999999761581,
+            "endTime": 2025.300000011921,
+            "duration": 183.4000000357628
+          },
+          {
+            "label": "i18n",
+            "startTime": 1842.199999988079,
+            "endTime": 1842.5,
+            "duration": 0.30000001192092896
+          },
+          {
+            "label": "firestore-init",
+            "startTime": 1844.300000011921,
+            "endTime": 1844.3999999761581,
+            "duration": 0.09999996423721313
+          },
+          {
+            "label": "auth-init",
+            "startTime": 1844.5999999642372,
+            "endTime": 2204,
+            "duration": 359.4000000357628
+          },
+          {
+            "label": "app:restore-workspace",
+            "startTime": 1868.199999988079,
+            "endTime": 2057.300000011921,
+            "duration": 189.10000002384186
+          },
+          {
+            "label": "app:load-settings+theme",
+            "startTime": 2057.399999976158,
+            "endTime": 2074,
+            "duration": 16.600000023841858
+          },
+          {
+            "label": "web-vitals",
+            "startTime": 2811.399999976158,
+            "endTime": 2836.699999988079,
+            "duration": 25.30000001192093
+          },
+          {
+            "label": "thumbnail-manifest",
+            "startTime": 2811.599999964237,
+            "endTime": 3765.199999988079,
+            "duration": 953.6000000238419
+          },
+          {
+            "label": "library-sync-retry",
+            "startTime": 2811.899999976158,
+            "endTime": 2837.699999988079,
+            "duration": 25.80000001192093
+          },
+          {
+            "label": "ui-components",
+            "startTime": 2812.399999976158,
+            "endTime": 2876.300000011921,
+            "duration": 63.90000003576279
+          }
+        ],
+        "milestones": [
+          {
+            "label": "shell:ready-announced",
+            "startTime": 2074.099999964237,
+            "detail": {
+              "source": "initialization"
+            }
+          },
+          {
+            "label": "create:mounted",
+            "startTime": 2290.300000011921,
+            "detail": {}
+          },
+          {
+            "label": "module:create:chunk-ready",
+            "startTime": 2330.099999964237,
+            "detail": {}
+          },
+          {
+            "label": "create:workspace-initialized",
+            "startTime": 2468,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-grid-reveal-start",
+            "startTime": 2627.899999976158,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-pictograph-ready",
+            "startTime": 2686,
+            "detail": {}
+          }
+        ],
+        "spans": [
+          {
+            "id": 1,
+            "label": "create:activation",
+            "startTime": 2290.399999976158,
+            "detail": {},
+            "endTime": 2468.800000011921,
+            "duration": 178.4000000357628,
+            "outcome": "ok"
+          },
+          {
+            "id": 2,
+            "label": "create:initializer-import",
+            "startTime": 2290.599999964237,
+            "detail": {},
+            "endTime": 2342.800000011921,
+            "duration": 52.200000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 3,
+            "label": "create:initialize",
+            "startTime": 2343.399999976158,
+            "detail": {},
+            "endTime": 2351.899999976158,
+            "duration": 8.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 4,
+            "label": "create:orchestrator",
+            "startTime": 2348.199999988079,
+            "detail": {},
+            "endTime": 2349.099999964237,
+            "duration": 0.8999999761581421,
+            "outcome": "ok"
+          },
+          {
+            "id": 5,
+            "label": "create:construct-tab",
+            "startTime": 2349.300000011921,
+            "detail": {},
+            "endTime": 2351.899999976158,
+            "duration": 2.599999964237213,
+            "outcome": "ok"
+          },
+          {
+            "id": 6,
+            "label": "create:generator-tab",
+            "startTime": 2349.699999988079,
+            "detail": {},
+            "endTime": 2351.300000011921,
+            "duration": 1.600000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 7,
+            "label": "create:assemble-tab",
+            "startTime": 2350,
+            "detail": {},
+            "endTime": 2351.399999976158,
+            "duration": 1.399999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 8,
+            "label": "create:start-positions",
+            "startTime": 2350.399999976158,
+            "detail": {},
+            "endTime": 2350.800000011921,
+            "duration": 0.40000003576278687,
+            "outcome": "ok"
+          },
+          {
+            "id": 9,
+            "label": "create:restore-sequence",
+            "startTime": 2361.399999976158,
+            "detail": {},
+            "endTime": 2432.5,
+            "duration": 71.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 10,
+            "label": "construct:start-grid-stabilize",
+            "startTime": 2418,
+            "detail": {},
+            "endTime": 2627.899999976158,
+            "duration": 209.89999997615814,
+            "outcome": "ok"
+          },
+          {
+            "id": 11,
+            "label": "create:resolve-session",
+            "startTime": 2433.399999976158,
+            "detail": {},
+            "endTime": 2467.699999988079,
+            "duration": 34.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 12,
+            "label": "pictograph:grid-svg",
+            "startTime": 2656.399999976158,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2682.099999964237,
+            "duration": 25.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 13,
+            "label": "pictograph:grid-svg",
+            "startTime": 2658.199999988079,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2681.899999976158,
+            "duration": 23.69999998807907,
+            "outcome": "ok"
+          },
+          {
+            "id": 14,
+            "label": "pictograph:grid-svg",
+            "startTime": 2658.800000011921,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2682,
+            "duration": 23.19999998807907,
+            "outcome": "ok"
+          }
+        ],
+        "droppedSpans": 0,
+        "longTasksSupported": true,
+        "longTasks": [
+          {
+            "startTime": 899.8999999761581,
+            "duration": 102
+          },
+          {
+            "startTime": 1116.0999999642372,
+            "duration": 129
+          },
+          {
+            "startTime": 1421.800000011921,
+            "duration": 83
+          },
+          {
+            "startTime": 1529.199999988079,
+            "duration": 121
+          },
+          {
+            "startTime": 1876.699999988079,
+            "duration": 103
+          },
+          {
+            "startTime": 2091,
+            "duration": 124
+          },
+          {
+            "startTime": 2344.599999964237,
+            "duration": 95
+          },
+          {
+            "startTime": 2918.599999964237,
+            "duration": 148
+          },
+          {
+            "startTime": 4649.899999976158,
+            "duration": 106
+          },
+          {
+            "startTime": 4830.699999988079,
+            "duration": 582
+          },
+          {
+            "startTime": 5690.399999976158,
+            "duration": 449
+          },
+          {
+            "startTime": 6210.699999988079,
+            "duration": 142
+          }
+        ],
+        "navigation": {
+          "type": "navigate",
+          "responseStart": 516.5999999642372,
+          "responseEnd": 518.8999999761581,
+          "domInteractive": 596.8000000119209,
+          "loadEventEnd": 1108.3999999761581
+        },
+        "paints": [
+          {
+            "name": "first-paint",
+            "startTime": 648
+          },
+          {
+            "name": "first-contentful-paint",
+            "startTime": 648
+          }
+        ],
+        "imports": [
+          {
+            "name": "boot:import:active-module:create:ok",
+            "startTime": 1140.0999999642372,
+            "duration": 613
+          },
+          {
+            "name": "boot:import:composition-root:ok",
+            "startTime": 1192.5999999642372,
+            "duration": 331.10000002384186
+          },
+          {
+            "name": "boot:import:firebase:ok",
+            "startTime": 1195.5,
+            "duration": 316
+          },
+          {
+            "name": "boot:import:auth-state:ok",
+            "startTime": 1196.3999999761581,
+            "duration": 308.4000000357628
+          },
+          {
+            "name": "boot:import:main-application:ok",
+            "startTime": 1199.800000011921,
+            "duration": 509.39999997615814
+          }
+        ],
+        "splash": [
+          {
+            "name": "boot:splash:script-start",
+            "startTime": 595.3999999761581
+          },
+          {
+            "name": "boot:splash:checkpoint:84",
+            "startTime": 1227
+          },
+          {
+            "name": "boot:splash:checkpoint:88",
+            "startTime": 1867.8999999761581
+          },
+          {
+            "name": "boot:splash:checkpoint:92",
+            "startTime": 2057.399999976158
+          },
+          {
+            "name": "boot:splash:checkpoint:95",
+            "startTime": 2070.699999988079
+          },
+          {
+            "name": "boot:splash:checkpoint:100",
+            "startTime": 2074.099999964237
+          },
+          {
+            "name": "boot:splash:shell-handoff",
+            "startTime": 2074.199999988079
+          },
+          {
+            "name": "boot:splash:dismiss-start",
+            "startTime": 2074.300000011921
+          },
+          {
+            "name": "boot:splash:removed",
+            "startTime": 2524.300000011921
+          }
+        ],
+        "vitals": [
+          {
+            "name": "FCP",
+            "value": 648,
+            "rating": "good",
+            "delta": 648
+          },
+          {
+            "name": "TTFB",
+            "value": 516.5999999642372,
+            "rating": "good",
+            "delta": 516.5999999642372
+          }
+        ],
+        "resourceSummary": {
+          "count": 596,
+          "encodedBytes": 4723619
+        }
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled": true
+    },
+    {
+      "label": "final-production-local-cold",
+      "revision": "4eeaea16d0",
+      "observation": {
+        "milestones": {
+          "splash-visible": 774.6999999880791,
+          "module-container": 2519.100000023842,
+          "splash-removed": 3011.600000023842,
+          "first-start-choice-unoccluded": 3094.699999988079
+        },
+        "longTasks": [
+          {
+            "start": 908.3000000119209,
+            "duration": 69
+          },
+          {
+            "start": 1570.9000000357628,
+            "duration": 59
+          },
+          {
+            "start": 1885.9000000357628,
+            "duration": 74
+          },
+          {
+            "start": 2166.699999988079,
+            "duration": 69
+          },
+          {
+            "start": 2301.800000011921,
+            "duration": 78
+          },
+          {
+            "start": 2594.900000035763,
+            "duration": 66
+          },
+          {
+            "start": 3152.400000035763,
+            "duration": 151
+          }
+        ]
+      },
+      "profile": {
+        "schemaVersion": 1,
+        "capturedAtMs": 10772.900000035763,
+        "profilerStartedAtMs": 1639.199999988079,
+        "detailedProfiling": true,
+        "phases": [
+          {
+            "label": "shell:main-app-chunk",
+            "startTime": 1639.300000011921,
+            "endTime": 2130.199999988079,
+            "duration": 490.89999997615814
+          },
+          {
+            "label": "total-init",
+            "startTime": 1639.5,
+            "endTime": 2375.199999988079,
+            "duration": 735.6999999880791
+          },
+          {
+            "label": "di-container",
+            "startTime": 1639.5,
+            "endTime": 1885.199999988079,
+            "duration": 245.69999998807907
+          },
+          {
+            "label": "app:init-state",
+            "startTime": 1950.300000011921,
+            "endTime": 2133.699999988079,
+            "duration": 183.39999997615814
+          },
+          {
+            "label": "posthog",
+            "startTime": 2138.699999988079,
+            "endTime": 2240.900000035763,
+            "duration": 102.20000004768372
+          },
+          {
+            "label": "i18n",
+            "startTime": 2138.900000035763,
+            "endTime": 2139.300000011921,
+            "duration": 0.3999999761581421
+          },
+          {
+            "label": "firestore-init",
+            "startTime": 2141.300000011921,
+            "endTime": 2141.400000035763,
+            "duration": 0.10000002384185791
+          },
+          {
+            "label": "auth-init",
+            "startTime": 2141.5,
+            "endTime": 2375.199999988079,
+            "duration": 233.69999998807907
+          },
+          {
+            "label": "app:restore-workspace",
+            "startTime": 2144.199999988079,
+            "endTime": 2477.100000023842,
+            "duration": 332.9000000357628
+          },
+          {
+            "label": "app:load-settings+theme",
+            "startTime": 2477.199999988079,
+            "endTime": 2537.600000023842,
+            "duration": 60.40000003576279
+          },
+          {
+            "label": "web-vitals",
+            "startTime": 2965,
+            "endTime": 2971.600000023842,
+            "duration": 6.600000023841858
+          },
+          {
+            "label": "thumbnail-manifest",
+            "startTime": 2965.199999988079,
+            "endTime": 4248,
+            "duration": 1282.800000011921
+          },
+          {
+            "label": "library-sync-retry",
+            "startTime": 2965.300000011921,
+            "endTime": 2972.300000011921,
+            "duration": 7
+          },
+          {
+            "label": "ui-components",
+            "startTime": 2965.5,
+            "endTime": 2983.5,
+            "duration": 18
+          }
+        ],
+        "milestones": [
+          {
+            "label": "browse:prefetch-policy",
+            "startTime": 2138.600000023842,
+            "detail": {
+              "network": false,
+              "constrainedConnection": false
+            }
+          },
+          {
+            "label": "shell:ready-announced",
+            "startTime": 2537.699999988079,
+            "detail": {
+              "source": "initialization"
+            }
+          },
+          {
+            "label": "create:mounted",
+            "startTime": 2542.900000035763,
+            "detail": {}
+          },
+          {
+            "label": "module:create:chunk-ready",
+            "startTime": 2590.199999988079,
+            "detail": {}
+          },
+          {
+            "label": "create:workspace-initialized",
+            "startTime": 2687.600000023842,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-grid-reveal-start",
+            "startTime": 2859.300000011921,
+            "detail": {}
+          },
+          {
+            "label": "construct:start-pictograph-ready",
+            "startTime": 2865.400000035763,
+            "detail": {}
+          }
+        ],
+        "spans": [
+          {
+            "id": 1,
+            "label": "create:activation",
+            "startTime": 2543,
+            "detail": {},
+            "endTime": 2688.100000023842,
+            "duration": 145.10000002384186,
+            "outcome": "ok"
+          },
+          {
+            "id": 2,
+            "label": "create:initializer-import",
+            "startTime": 2543.199999988079,
+            "detail": {},
+            "endTime": 2592.5,
+            "duration": 49.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 3,
+            "label": "create:initialize",
+            "startTime": 2592.699999988079,
+            "detail": {},
+            "endTime": 2600.400000035763,
+            "duration": 7.700000047683716,
+            "outcome": "ok"
+          },
+          {
+            "id": 4,
+            "label": "create:orchestrator",
+            "startTime": 2598.5,
+            "detail": {},
+            "endTime": 2599.100000023842,
+            "duration": 0.6000000238418579,
+            "outcome": "ok"
+          },
+          {
+            "id": 5,
+            "label": "create:construct-tab",
+            "startTime": 2599.199999988079,
+            "detail": {},
+            "endTime": 2600.300000011921,
+            "duration": 1.100000023841858,
+            "outcome": "ok"
+          },
+          {
+            "id": 6,
+            "label": "create:generator-tab",
+            "startTime": 2599.5,
+            "detail": {},
+            "endTime": 2600.100000023842,
+            "duration": 0.6000000238418579,
+            "outcome": "ok"
+          },
+          {
+            "id": 7,
+            "label": "create:assemble-tab",
+            "startTime": 2599.600000023842,
+            "detail": {},
+            "endTime": 2600.100000023842,
+            "duration": 0.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 8,
+            "label": "create:start-positions",
+            "startTime": 2599.699999988079,
+            "detail": {},
+            "endTime": 2599.900000035763,
+            "duration": 0.20000004768371582,
+            "outcome": "ok"
+          },
+          {
+            "id": 9,
+            "label": "create:restore-sequence",
+            "startTime": 2611.800000011921,
+            "detail": {},
+            "endTime": 2656.300000011921,
+            "duration": 44.5,
+            "outcome": "ok"
+          },
+          {
+            "id": 10,
+            "label": "construct:start-grid-stabilize",
+            "startTime": 2646.300000011921,
+            "detail": {},
+            "endTime": 2859.300000011921,
+            "duration": 213,
+            "outcome": "ok"
+          },
+          {
+            "id": 11,
+            "label": "create:resolve-session",
+            "startTime": 2657,
+            "detail": {},
+            "endTime": 2687.300000011921,
+            "duration": 30.30000001192093,
+            "outcome": "ok"
+          },
+          {
+            "id": 12,
+            "label": "pictograph:grid-svg",
+            "startTime": 2855.900000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2862.800000011921,
+            "duration": 6.899999976158142,
+            "outcome": "ok"
+          },
+          {
+            "id": 13,
+            "label": "pictograph:grid-svg",
+            "startTime": 2857.400000035763,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2862.699999988079,
+            "duration": 5.299999952316284,
+            "outcome": "ok"
+          },
+          {
+            "id": 14,
+            "label": "pictograph:grid-svg",
+            "startTime": 2857.699999988079,
+            "detail": {
+              "gridType": "diamond"
+            },
+            "endTime": 2862.800000011921,
+            "duration": 5.100000023841858,
+            "outcome": "ok"
+          }
+        ],
+        "droppedSpans": 0,
+        "longTasksSupported": true,
+        "longTasks": [
+          {
+            "startTime": 908.3000000119209,
+            "duration": 69
+          },
+          {
+            "startTime": 1570.9000000357628,
+            "duration": 59
+          },
+          {
+            "startTime": 1885.9000000357628,
+            "duration": 74
+          },
+          {
+            "startTime": 2166.699999988079,
+            "duration": 69
+          },
+          {
+            "startTime": 2301.800000011921,
+            "duration": 78
+          },
+          {
+            "startTime": 2594.900000035763,
+            "duration": 66
+          },
+          {
+            "startTime": 3152.400000035763,
+            "duration": 151
+          }
+        ],
+        "navigation": {
+          "type": "navigate",
+          "responseStart": 693.4000000357628,
+          "responseEnd": 695.5,
+          "domInteractive": 787.6999999880791,
+          "loadEventEnd": 1522.5
+        },
+        "paints": [
+          {
+            "name": "first-paint",
+            "startTime": 844
+          },
+          {
+            "name": "first-contentful-paint",
+            "startTime": 844
+          }
+        ],
+        "imports": [
+          {
+            "name": "boot:import:active-module:create:ok",
+            "startTime": 1574.699999988079,
+            "duration": 457.7000000476837
+          },
+          {
+            "name": "boot:import:composition-root:ok",
+            "startTime": 1598.300000011921,
+            "duration": 286.80000001192093
+          },
+          {
+            "name": "boot:import:firebase:ok",
+            "startTime": 1600.699999988079,
+            "duration": 256.60000002384186
+          },
+          {
+            "name": "boot:import:auth-state:ok",
+            "startTime": 1601.1000000238419,
+            "duration": 269.19999998807907
+          },
+          {
+            "name": "boot:import:main-application:ok",
+            "startTime": 1602.5,
+            "duration": 360.60000002384186
+          }
+        ],
+        "splash": [
+          {
+            "name": "boot:splash:script-start",
+            "startTime": 771.3000000119209
+          },
+          {
+            "name": "boot:splash:checkpoint:84",
+            "startTime": 1617.6000000238419
+          },
+          {
+            "name": "boot:splash:checkpoint:88",
+            "startTime": 2143.900000035763
+          },
+          {
+            "name": "boot:splash:checkpoint:92",
+            "startTime": 2477.100000023842
+          },
+          {
+            "name": "boot:splash:checkpoint:95",
+            "startTime": 2515.900000035763
+          },
+          {
+            "name": "boot:splash:checkpoint:100",
+            "startTime": 2537.800000011921
+          },
+          {
+            "name": "boot:splash:shell-handoff",
+            "startTime": 2537.800000011921
+          },
+          {
+            "name": "boot:splash:dismiss-start",
+            "startTime": 2537.800000011921
+          },
+          {
+            "name": "boot:splash:removed",
+            "startTime": 3011.400000035763
+          }
+        ],
+        "vitals": [
+          {
+            "name": "FCP",
+            "value": 844,
+            "rating": "good",
+            "delta": 844
+          },
+          {
+            "name": "TTFB",
+            "value": 693.4000000357628,
+            "rating": "good",
+            "delta": 693.4000000357628
+          }
+        ],
+        "resourceSummary": {
+          "count": 598,
+          "encodedBytes": 4787823
+        }
+      },
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "controlled": true
+    }
+  ],
+  "baselineMobileInteraction": {
+    "interactions": [
+      {
+        "start": 121123.89999997616,
+        "ready": 122018.80000001192,
+        "count": 36,
+        "duration": 894.9000000357628
+      }
+    ],
+    "options": 36
+  },
+  "fixedDesktopInteraction": {
+    "interactions": [
+      {
+        "start": 21018.5,
+        "ready": 21908.80000001192,
+        "count": 36,
+        "duration": 890.3000000119209
+      }
+    ],
+    "spans": [
+      {
+        "id": 15,
+        "label": "construct:option-query",
+        "startTime": 21066.600000023842,
+        "detail": {
+          "candidates": 576,
+          "options": 36
+        },
+        "endTime": 21296.19999998808,
+        "duration": 229.5999999642372,
+        "outcome": "ok"
+      },
+      {
+        "id": 16,
+        "label": "csv:load",
+        "startTime": 21066.80000001192,
+        "detail": {
+          "source": "fetch"
+        },
+        "endTime": 21242.100000023842,
+        "duration": 175.30000001192093,
+        "outcome": "ok"
+      },
+      {
+        "id": 17,
+        "label": "csv:fetch",
+        "startTime": 21067,
+        "detail": {
+          "hasSkewedData": true,
+          "hasTrigridData": true
+        },
+        "endTime": 21241.69999998808,
+        "duration": 174.69999998807907,
+        "outcome": "ok"
+      },
+      {
+        "id": 18,
+        "label": "csv:parse",
+        "startTime": 21242.100000023842,
+        "detail": {
+          "diamondRows": 576,
+          "boxRows": 576,
+          "skewedRows": 5120,
+          "hasSkewedData": true,
+          "hasTrigridData": true
+        },
+        "endTime": 21287.600000023842,
+        "duration": 45.5,
+        "outcome": "ok"
+      },
+      {
+        "id": 19,
+        "label": "construct:option-filter",
+        "startTime": 21295.30000001192,
+        "detail": {
+          "candidates": 576,
+          "options": 36
+        },
+        "endTime": 21296.100000023842,
+        "duration": 0.800000011920929,
+        "outcome": "ok"
+      },
+      {
+        "id": 20,
+        "label": "construct:layout-settle",
+        "startTime": 21300.19999998808,
+        "detail": {
+          "timedOut": false
+        },
+        "endTime": 21580.80000001192,
+        "duration": 280.60000002384186,
+        "outcome": "ok"
+      },
+      {
+        "id": 21,
+        "label": "construct:prepare",
+        "startTime": 21302.100000023842,
+        "detail": {
+          "candidates": 36,
+          "options": 36
+        },
+        "endTime": 21556.19999998808,
+        "duration": 254.0999999642372,
+        "outcome": "ok"
+      }
+    ]
+  },
+  "fixedMobileInteraction": {
+    "interactions": [
+      {
+        "start": 18730.599999964237,
+        "ready": 19579.69999998808,
+        "count": 36,
+        "duration": 849.1000000238419
+      }
+    ],
+    "spans": [
+      {
+        "id": 16,
+        "label": "construct:option-query",
+        "startTime": 18765.399999976158,
+        "detail": {
+          "candidates": 576,
+          "options": 36
+        },
+        "endTime": 18836.69999998808,
+        "duration": 71.30000001192093,
+        "outcome": "ok"
+      },
+      {
+        "id": 17,
+        "label": "csv:load",
+        "startTime": 18765.599999964237,
+        "detail": {
+          "source": "fetch"
+        },
+        "endTime": 18800,
+        "duration": 34.40000003576279,
+        "outcome": "ok"
+      },
+      {
+        "id": 18,
+        "label": "csv:fetch",
+        "startTime": 18765.69999998808,
+        "detail": {
+          "hasSkewedData": true,
+          "hasTrigridData": true
+        },
+        "endTime": 18799.5,
+        "duration": 33.80000001192093,
+        "outcome": "ok"
+      },
+      {
+        "id": 19,
+        "label": "csv:parse",
+        "startTime": 18800.099999964237,
+        "detail": {
+          "diamondRows": 576,
+          "boxRows": 576,
+          "skewedRows": 5120,
+          "hasSkewedData": true,
+          "hasTrigridData": true
+        },
+        "endTime": 18829.19999998808,
+        "duration": 29.100000023841858,
+        "outcome": "ok"
+      },
+      {
+        "id": 20,
+        "label": "construct:option-filter",
+        "startTime": 18835.69999998808,
+        "detail": {
+          "candidates": 576,
+          "options": 36
+        },
+        "endTime": 18836.599999964237,
+        "duration": 0.8999999761581421,
+        "outcome": "ok"
+      },
+      {
+        "id": 21,
+        "label": "construct:layout-settle",
+        "startTime": 18840.69999998808,
+        "detail": {
+          "timedOut": false
+        },
+        "endTime": 19239.899999976158,
+        "duration": 399.19999998807907,
+        "outcome": "ok"
+      },
+      {
+        "id": 22,
+        "label": "construct:prepare",
+        "startTime": 18841.599999964237,
+        "detail": {
+          "candidates": 36,
+          "options": 36
+        },
+        "endTime": 18947.80000001192,
+        "duration": 106.20000004768372,
+        "outcome": "ok"
+      }
+    ]
+  },
+  "finalNetworkInspection": {
+    "method": "Chrome network request-body inspection, collection names only; captured before navigation to Browse",
+    "postRequestsInspected": 13,
+    "collections": [
+      "global_arrow_adjustments",
+      "default_arrow_adjustments",
+      "prop_geometry_adjustments",
+      "special_arrow_placements"
+    ],
+    "publicSequencesQueries": 0,
+    "usersQueries": 0,
+    "browseOnDemand": {
+      "sequences": 1524,
+      "loadedImagesObserved": 117
+    },
+    "previewOnlyErrors": [
+      "POST /api/console-log returned 404 in production preview"
+    ]
+  }
+}

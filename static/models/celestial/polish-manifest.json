@@ -1,0 +1,158 @@
+{
+  "revision": "citadel-polish-r1",
+  "movedTrees": [
+    {
+      "tree": "Citadel olive.001 anchor",
+      "from": [
+        23.0,
+        22.0
+      ],
+      "to": [
+        39,
+        10
+      ]
+    }
+  ],
+  "connectedIslands": [
+    "Citadel island",
+    "East aerie",
+    "Far east ridge",
+    "Far high sanctuary",
+    "Far west ridge",
+    "Rear garden island",
+    "West monastery"
+  ],
+  "routes": [
+    {
+      "name": "West cloister way",
+      "from": "Citadel island",
+      "to": "West monastery",
+      "width": 5.6,
+      "length": 80.06,
+      "maxGrade": 0.1,
+      "landings": [
+        [
+          -36.0,
+          25.0,
+          -1.1326996088027954
+        ],
+        [
+          -111.0,
+          53.0,
+          -2.2896056175231934
+        ]
+      ]
+    },
+    {
+      "name": "East cloister way",
+      "from": "Citadel island",
+      "to": "East aerie",
+      "width": 5.6,
+      "length": 81.27,
+      "maxGrade": 0.1,
+      "landings": [
+        [
+          40.0,
+          25.0,
+          -1.1294647455215454
+        ],
+        [
+          117.0,
+          51.0,
+          -2.1592345237731934
+        ]
+      ]
+    },
+    {
+      "name": "Pilgrim arrival",
+      "from": "Citadel island",
+      "to": "Rear garden island",
+      "width": 6.0,
+      "length": 81.32,
+      "maxGrade": 0.38,
+      "landings": [
+        [
+          7.0,
+          -52.0,
+          -1.459924340248108
+        ],
+        [
+          64.0,
+          -110.0,
+          -9.261621475219727
+        ]
+      ]
+    },
+    {
+      "name": "Library pilgrimage",
+      "from": "West monastery",
+      "to": "Far high sanctuary",
+      "width": 4.8,
+      "length": 92.54,
+      "maxGrade": 0.38,
+      "landings": [
+        [
+          -119.0,
+          109.0,
+          -2.4099669456481934
+        ],
+        [
+          -109.0,
+          201.0,
+          5.974508762359619
+        ]
+      ]
+    },
+    {
+      "name": "Ruins causeway",
+      "from": "West monastery",
+      "to": "Far west ridge",
+      "width": 4.8,
+      "length": 89.81,
+      "maxGrade": 0.0563,
+      "landings": [
+        [
+          -165.0,
+          100.0,
+          -2.1152281761169434
+        ],
+        [
+          -228.0,
+          164.0,
+          -2.734872341156006
+        ]
+      ]
+    },
+    {
+      "name": "Beacon causeway",
+      "from": "East aerie",
+      "to": "Far east ridge",
+      "width": 4.8,
+      "length": 93.15,
+      "maxGrade": 0.1,
+      "landings": [
+        [
+          166.0,
+          112.0,
+          -2.377450466156006
+        ],
+        [
+          190.0,
+          202.0,
+          -8.122262954711914
+        ]
+      ]
+    }
+  ],
+  "grassTufts": {
+    "Citadel island meadow crown": 2600,
+    "West monastery meadow crown": 380,
+    "East aerie meadow crown": 380,
+    "Far high sanctuary meadow crown": 380,
+    "Far east ridge meadow crown": 380,
+    "Far west ridge meadow crown": 380,
+    "Rear garden island meadow crown": 380
+  },
+  "grassSource": "Existing scripts/forest_ground_ecosystem.py authored blade geometry; sage material adaptation.",
+  "scope": "Static connected walking surfaces. No player controls, terrain collision or navigation simulation added."
+}

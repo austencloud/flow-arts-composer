@@ -7,6 +7,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
 import {
   ensureDataLoaded,
   saveAndOpenImage,
@@ -36,6 +37,11 @@ import {
   detectLOOPFromSteps,
   isSequenceCircular,
 } from "@tka/sequence-engine/loop";
+
+const primaryPropColorsSchema = z.object({
+  left: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+  right: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+});
 
 const orientationEnum = z.enum([
   "in",
@@ -497,28 +503,46 @@ export function registerLoopTools(server: McpServer): void {
       layout: z
         .enum(["grid", "strip"])
         .optional()
-        .default("grid")
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.layout)
         .describe("Layout: grid (square) or strip (single row)"),
       cellSize: z
         .number()
         .optional()
-        .default(900)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize)
         .describe("Size of each pictograph cell in pixels"),
       showStepNumbers: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers)
         .describe("Show step numbers"),
       showWord: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showWord)
         .describe("Show word header"),
       darkMode: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
+      primaryPropColors: primaryPropColorsSchema
+        .optional()
+        .describe("Custom left/right colors for every hand-colored card mark"),
+      exportProfile: z.enum(["composer", "print"]).optional(),
+      columnCount: z.number().int().min(1).optional(),
+      showDifficulty: z.boolean().optional(),
+      leftPropType: z.string().nullable().optional(),
+      rightPropType: z.string().nullable().optional(),
+      fanAppearance: z
+        .object({
+          build: z
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .optional(),
+          frameColor: z.enum(["black", "white"]).optional(),
+          cover: z.enum(["bare", "covered"]).optional(),
+        })
+        .nullable()
+        .optional(),
       maxAttempts: z
         .number()
         .optional()
@@ -578,11 +602,18 @@ export function registerLoopTools(server: McpServer): void {
       loopType,
       period = "halved",
       gridMode = "diamond",
-      layout = "grid",
-      cellSize = 900,
-      showStepNumbers = true,
-      showWord = true,
-      darkMode = true,
+      layout = COMPOSER_CARD_EXPORT_PROFILE_V1.layout,
+      cellSize = COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize,
+      showStepNumbers = COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+      showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
+      darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
+      primaryPropColors,
+      exportProfile,
+      columnCount,
+      showDifficulty,
+      leftPropType,
+      rightPropType,
+      fanAppearance,
       maxAttempts = 500,
       loopComponents,
       level = 1,
@@ -777,8 +808,14 @@ export function registerLoopTools(server: McpServer): void {
             showStepNumbers,
             showWord,
             darkMode,
-            padding: 8,
-            showDifficulty: true,
+            padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
+            showDifficulty:
+              showDifficulty ??
+              (exportProfile === "print" ||
+                COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
+            showFooter: Boolean(notes && notes !== "none"),
+            startPositionLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
             userName,
             notes,
             birthday: birthdayDate,
@@ -786,8 +823,17 @@ export function registerLoopTools(server: McpServer): void {
             turnAllocation,
             loopComponents: parsedLoopComponents,
             period: period === "quartered" ? 4 : 2,
+            rotationPeriod: parsedLoopComponents.includes(LOOPComponent.ROTATED)
+              ? (period as "halved" | "quartered")
+              : undefined,
             derivedStepIndices: loopResult.derivedStepIndices,
             seedWord: loopResult.seedWord,
+            primaryPropColors,
+            exportProfile,
+            columnCount,
+            leftPropType,
+            rightPropType,
+            fanAppearance,
           }
         );
 
@@ -807,6 +853,9 @@ export function registerLoopTools(server: McpServer): void {
               type: "image" as const,
               data: base64,
               mimeType: "image/png",
+              _meta: {
+                rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+              },
             },
           ],
         };
@@ -851,28 +900,46 @@ export function registerLoopTools(server: McpServer): void {
       layout: z
         .enum(["grid", "strip"])
         .optional()
-        .default("grid")
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.layout)
         .describe("Layout: grid (square) or strip (single row)"),
       cellSize: z
         .number()
         .optional()
-        .default(900)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize)
         .describe("Size of each pictograph cell in pixels"),
       showStepNumbers: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers)
         .describe("Show step numbers"),
       showWord: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showWord)
         .describe("Show word header"),
       darkMode: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
+      primaryPropColors: primaryPropColorsSchema
+        .optional()
+        .describe("Custom left/right colors for every hand-colored card mark"),
+      exportProfile: z.enum(["composer", "print"]).optional(),
+      columnCount: z.number().int().min(1).optional(),
+      showDifficulty: z.boolean().optional(),
+      leftPropType: z.string().nullable().optional(),
+      rightPropType: z.string().nullable().optional(),
+      fanAppearance: z
+        .object({
+          build: z
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .optional(),
+          frameColor: z.enum(["black", "white"]).optional(),
+          cover: z.enum(["bare", "covered"]).optional(),
+        })
+        .nullable()
+        .optional(),
       maxAttempts: z
         .number()
         .optional()
@@ -932,11 +999,18 @@ export function registerLoopTools(server: McpServer): void {
       loopType,
       period = "halved",
       gridMode = "diamond",
-      layout = "grid",
-      cellSize = 900,
-      showStepNumbers = true,
-      showWord = true,
-      darkMode = true,
+      layout = COMPOSER_CARD_EXPORT_PROFILE_V1.layout,
+      cellSize = COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize,
+      showStepNumbers = COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+      showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
+      darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
+      primaryPropColors,
+      exportProfile,
+      columnCount,
+      showDifficulty,
+      leftPropType,
+      rightPropType,
+      fanAppearance,
       maxAttempts = 500,
       loopComponents,
       level = 1,
@@ -1130,8 +1204,14 @@ export function registerLoopTools(server: McpServer): void {
             showStepNumbers,
             showWord,
             darkMode,
-            padding: 8,
-            showDifficulty: true,
+            padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
+            showDifficulty:
+              showDifficulty ??
+              (exportProfile === "print" ||
+                COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
+            showFooter: Boolean(notes && notes !== "none"),
+            startPositionLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
             userName,
             notes,
             birthday: birthdayDate,
@@ -1139,8 +1219,17 @@ export function registerLoopTools(server: McpServer): void {
             turnAllocation,
             loopComponents: parsedLoopComponents,
             period: period === "quartered" ? 4 : 2,
+            rotationPeriod: parsedLoopComponents.includes(LOOPComponent.ROTATED)
+              ? (period as "halved" | "quartered")
+              : undefined,
             derivedStepIndices: loopResult.derivedStepIndices,
             seedWord: loopResult.seedWord,
+            primaryPropColors,
+            exportProfile,
+            columnCount,
+            leftPropType,
+            rightPropType,
+            fanAppearance,
           }
         );
 

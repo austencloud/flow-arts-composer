@@ -419,6 +419,8 @@
       direction: panelLayout.direction,
       width: animationPanelWidth,
       height: animationPanelHeight,
+      stageWidth: splitWidth,
+      stageHeight: splitHeight,
     });
     previewPanelReady = resolveViewerPaneRevealReady({
       pane: "image",
@@ -426,6 +428,8 @@
       direction: panelLayout.direction,
       width: previewPanelWidth,
       height: previewPanelHeight,
+      stageWidth: splitWidth,
+      stageHeight: splitHeight,
     });
   });
 
@@ -492,8 +496,8 @@
     class:focused={layout.focusedPane === "animation"}
     data-hidden={layout.focusedPane === "image"}
     data-readable={animationPanelReady}
-    inert={layout.focusedPane === "image"}
-    aria-hidden={layout.focusedPane === "image"}
+    inert={layout.focusedPane === "image" || !animationPanelReady}
+    aria-hidden={layout.focusedPane === "image" || !animationPanelReady}
     bind:clientWidth={animationPanelWidth}
     bind:clientHeight={animationPanelHeight}
   >
@@ -574,8 +578,8 @@
     class:focused={layout.focusedPane === "image"}
     data-hidden={layout.focusedPane === "animation"}
     data-readable={previewPanelReady}
-    inert={layout.focusedPane === "animation"}
-    aria-hidden={layout.focusedPane === "animation"}
+    inert={layout.focusedPane === "animation" || !previewPanelReady}
+    aria-hidden={layout.focusedPane === "animation" || !previewPanelReady}
     bind:clientWidth={previewPanelWidth}
     bind:clientHeight={previewPanelHeight}
   >

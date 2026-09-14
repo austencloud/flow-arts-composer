@@ -12,12 +12,15 @@
     playback,
     visible = true,
     hidePlay = false,
+    compact = false,
     trailing,
   }: {
     playback: UnifiedPlaybackContext;
     visible?: boolean;
     /** Hide the play/pause button (e.g. when tap-to-toggle on the canvas covers it). */
     hidePlay?: boolean;
+    /** Keep a loaned transport in one presentation across differently sized hosts. */
+    compact?: boolean;
     /**
      * Host-owned controls that belong to this bar rather than beside it —
      * Post Studio's alignment chip and its Advanced-timing toggle. They ride
@@ -181,6 +184,7 @@
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
     class="unified-timeline"
+    class:compact
     role="group"
     aria-label="Playback transport"
     onkeydown={onKeydown}
@@ -727,6 +731,26 @@
 
   .compact-more:active {
     transform: scale(0.94);
+  }
+
+  .compact .transport-pill {
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .compact .tempo-group,
+  .compact .pill-mode-slot,
+  .compact .pill-loop,
+  .compact .pill-trailing {
+    display: none;
+  }
+
+  .compact .pill-track {
+    min-width: 0;
+  }
+  .compact .compact-more {
+    display: flex;
   }
 
   :global(.compact-playback-pop) {

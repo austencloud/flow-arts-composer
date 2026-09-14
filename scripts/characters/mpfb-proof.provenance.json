@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "mpfb-proof",
+  "displayName": "MPFB Proof",
+  "description": "One locally generated MakeHuman character for staff and deformation evaluation.",
+  "source": {
+    "provider": "MakeHuman Community MPFB",
+    "assetName": "MPFB base human with official system skin, sportsuit, shoes and ponytail",
+    "assetId": "mpfb2-437dd513888a92399d1d3200d2e80859fae55abc",
+    "creator": "MakeHuman Community",
+    "url": "https://github.com/makehumancommunity/mpfb2/tree/437dd513888a92399d1d3200d2e80859fae55abc"
+  },
+  "license": {
+    "name": "CC0 1.0 Universal (character assets)",
+    "spdx": "CC0-1.0",
+    "url": "https://github.com/makehumancommunity/mpfb2/blob/437dd513888a92399d1d3200d2e80859fae55abc/LICENSE.ASSETS.md"
+  },
+  "rights": {
+    "commercialUse": "allowed",
+    "applicationRuntimeDistribution": "allowed",
+    "rawSourceRedistribution": "allowed",
+    "attributionRequired": false,
+    "restrictions": []
+  },
+  "evidence": [
+    {
+      "url": "https://github.com/makehumancommunity/mpfb2/blob/437dd513888a92399d1d3200d2e80859fae55abc/LICENSE.md",
+      "retrievedAt": "2026-09-08",
+      "note": "Bundled base mesh, targets and rig definitions are CC0; GPL applies to MPFB program code, not generated character output."
+    },
+    {
+      "url": "https://static.makehumancommunity.org/assets/assetpacks/makehuman_system_assets.html",
+      "retrievedAt": "2026-09-08",
+      "note": "Every selected skin, bodypart, clothing, shoe and hair asset is listed as CC0. No third-party asset packs were used."
+    }
+  ],
+  "acquiredAt": "2026-09-08T18:37:00.000Z"
+}

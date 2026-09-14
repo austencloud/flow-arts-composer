@@ -139,7 +139,7 @@ export function createSequenceTransformActionDispatcher(
       });
       return {
         status: "unavailable",
-        message: "Shift Start requires at least two steps",
+        message: "Choose Start needs at least two steps",
       };
     }
 

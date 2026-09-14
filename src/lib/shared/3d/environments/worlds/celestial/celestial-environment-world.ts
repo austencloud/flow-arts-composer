@@ -32,7 +32,7 @@ import {
 } from "./celestial-cloudbreak-world";
 
 export const CELESTIAL_SHELL_URL =
-  "/models/celestial/sky-citadel.glb?v=citadel-eztree-r1";
+  "/models/celestial/sky-citadel.glb?v=citadel-polish-r1";
 export const CELESTIAL_AUTHORED_RESOURCE_URLS = [CELESTIAL_SHELL_URL] as const;
 
 export type CelestialEnvironmentAssets = CelestialCloudbreakAssets;

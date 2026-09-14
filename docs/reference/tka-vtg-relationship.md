@@ -163,13 +163,17 @@ different measurements against two different references.** [you]
   mirrored. [code: tnd-deriver `blueDir === redDir ? same : opp`]
 - **Timing:** measured by **downbeat-crossing phase** between the two hands.
   [MCP: downbeat — "both at south = together; 180° out of phase = split"]
-- **VTG natively had only two timings: Together and Split** (and same/opposite
-  direction) → **4 modes: T/S, T/O, S/S, S/O**, exactly what the VTG notation
-  pages show. [VTG notation pages; you]
-- **Quarter timing (gamma) is a TKA extension VTG never formally classified** —
-  Austen added it (the Sun/Moon elements cover the 90° phase). So TKA has **6**
-  timing×direction modes (adds Quarter-Same, Quarter-Opp) where VTG had 4.
-  [MCP: elemental-model]
+- **The early VTG notation pages organize Together and Split timing** with
+  same/opposite direction into **4 modes: T/S, T/O, S/S, S/O**.
+  [VTG notation pages; you]
+- **TKA includes Quarter-Same and Quarter-Opposite**, giving it six
+  timing×direction modes. The older claim here that VTG never classified
+  quarter timing is no longer accurate: the August 29, 2026 VTG 4 announcement
+  presents Mentive’s SpiroAnim expansion with quarter timing and quarter
+  placement. Mentive credits the underlying concepts to other practitioners.
+  This dates VTG 4’s integration, not the concepts’ origin. See the
+  [release-history evidence](vtg-release-history.md) and
+  [earlier timing-and-direction record](timing-direction-history.md).
 
 ---
 

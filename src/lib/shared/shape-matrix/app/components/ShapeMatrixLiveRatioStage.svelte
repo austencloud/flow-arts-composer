@@ -274,8 +274,8 @@
         sprites.left = leftSprite;
         sprites.right = rightSprite;
       } catch {
-        // The stick-and-dot fallback below is a complete drawing on its own, so
-        // a prop that will not decode costs the artwork nothing.
+        // The stick fallback below is a complete drawing on its own, so a
+        // prop that will not decode costs the artwork nothing.
         if (!cancelled) {
           sprites.left = null;
           sprites.right = null;
@@ -668,27 +668,8 @@
           context.strokeStyle = "rgba(255, 255, 255, 0.92)";
           context.stroke();
         }
-
-        context.beginPath();
-        context.arc(handX, handY, 0.075, 0, Math.PI * 2);
-        context.fillStyle = "rgba(255, 255, 255, 0.92)";
-        context.fill();
-
-        /*
-         * The tracked tip, marked. It is the point the trail follows and the
-         * point the whole grid of tiles is drawn from.
-         */
-        context.beginPath();
-        context.arc(headX, headY, 0.155, 0, Math.PI * 2);
-        context.globalAlpha = 0.28;
-        context.fillStyle = color;
-        context.fill();
-        context.globalAlpha = 1;
-
-        context.beginPath();
-        context.arc(headX, headY, 0.1, 0, Math.PI * 2);
-        context.fillStyle = color;
-        context.fill();
+        // No marks on the hand or on the tracked tip: the Matrix stage draws
+        // the prop alone, and the trail already shows which end it follows.
       }
 
       context.restore();

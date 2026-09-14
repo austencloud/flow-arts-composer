@@ -41,6 +41,7 @@ export interface StudioControls {
 export function createViewerStudioSurfaces() {
   let active = $state(false);
   let canvas = $state.raw<HTMLElement | null>(null);
+  let canvasHome = $state.raw<HTMLElement | null>(null);
   let inspector = $state.raw<HTMLElement | null>(null);
   let card = $state.raw<HTMLElement | null>(null);
   let cardDestinations = $state.raw<
@@ -55,10 +56,19 @@ export function createViewerStudioSurfaces() {
   let externalInspectorTarget = $state.raw<HTMLElement | null>(null);
   let destinations = $state.raw<CanvasDestination[]>([]);
   let inspectorTarget = $state.raw<HTMLElement | null>(null);
+  let inspectorContent = $state<"animation" | "card" | "studio">("animation");
   let movingSurfaces = $state<Record<string, boolean>>({});
   let controls = $state.raw<(() => StudioControls) | null>(null);
   let entry = $state({ position: 0, playing: false, bpm: 60, revision: 0 });
   return {
+    get inspectorContent() {
+      return inspectorContent;
+    },
+    setInspectorContent(content: "animation" | "card" | "studio") {
+      // Keep the selected half while away, so returning never flashes the
+      // animation controls before discovering that the Card was selected.
+      inspectorContent = content;
+    },
     get externalInspectorTarget() {
       return externalInspectorTarget;
     },
@@ -131,6 +141,9 @@ export function createViewerStudioSurfaces() {
     get canvasAvailable() {
       return canvas !== null;
     },
+    get canvasHome() {
+      return canvasHome;
+    },
     get inspectorAvailable() {
       return inspector !== null;
     },
@@ -145,6 +158,9 @@ export function createViewerStudioSurfaces() {
     },
     get moving() {
       return Object.values(movingSurfaces).some(Boolean);
+    },
+    get canvasMoving() {
+      return movingSurfaces.canvas === true;
     },
     get controls() {
       return active ? (controls?.() ?? null) : null;
@@ -170,8 +186,12 @@ export function createViewerStudioSurfaces() {
     },
     registerCanvas(node: HTMLElement) {
       canvas = node;
+      canvasHome = node.parentElement;
       return () => {
-        if (canvas === node) canvas = null;
+        if (canvas === node) {
+          canvas = null;
+          canvasHome = null;
+        }
       };
     },
     registerInspector(node: HTMLElement) {

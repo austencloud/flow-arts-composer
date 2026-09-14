@@ -22,8 +22,8 @@ export interface VideoExportOptions {
   autoDownload?: boolean;
 }
 import { VIDEO_EXPORT_FPS } from "$lib/shared/animation-engine/domain/constants/timing";
-import { WebCodecsVideoEncoder } from "$lib/shared/animation-engine/services/web-codecs-video-encoder";
-import { WasmVideoEncoder } from "$lib/shared/animation-engine/services/wasm-video-encoder";
+import type { WebCodecsVideoEncoder } from "$lib/shared/animation-engine/services/web-codecs-video-encoder";
+import type { WasmVideoEncoder } from "$lib/shared/animation-engine/services/wasm-video-encoder";
 
 export class VideoExporter {
   private isCurrentlyExporting = false;
@@ -34,7 +34,9 @@ export class VideoExporter {
    * Check if WebCodecs API is available (Chrome, Safari, Edge)
    */
   private hasWebCodecs(): boolean {
-    return WebCodecsVideoEncoder.isSupported();
+    return (
+      typeof VideoEncoder !== "undefined" && typeof VideoFrame !== "undefined"
+    );
   }
 
   isFormatSupported(_format: VideoFormat): boolean {
@@ -66,26 +68,29 @@ export class VideoExporter {
     this.isCurrentlyExporting = true;
     this.shouldCancel = false;
 
-    // Choose encoder based on browser support
-    const useWebCodecs = this.hasWebCodecs();
-
-    if (useWebCodecs) {
-      this.activeEncoder = new WebCodecsVideoEncoder({
-        width,
-        height,
-        fps,
-        bitrate,
-      });
-    } else {
-      this.activeEncoder = new WasmVideoEncoder({
-        width,
-        height,
-        fps,
-        bitrate,
-      });
-    }
-
     try {
+      if (this.hasWebCodecs()) {
+        const { WebCodecsVideoEncoder } = await import(
+          "$lib/shared/animation-engine/services/web-codecs-video-encoder"
+        );
+        this.activeEncoder = new WebCodecsVideoEncoder({
+          width,
+          height,
+          fps,
+          bitrate,
+        });
+      } else {
+        const { WasmVideoEncoder } = await import(
+          "$lib/shared/animation-engine/services/wasm-video-encoder"
+        );
+        this.activeEncoder = new WasmVideoEncoder({
+          width,
+          height,
+          fps,
+          bitrate,
+        });
+      }
+
       await this.activeEncoder.initialize();
     } catch (error) {
       // Reset state on initialization error

@@ -12,6 +12,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
 import {
   ensureDataLoaded,
   saveAndOpenImage,
@@ -710,22 +711,22 @@ export function registerSequenceTools(server: McpServer): void {
       layout: z
         .enum(["grid", "strip"])
         .optional()
-        .default("grid")
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.layout)
         .describe("Layout: grid (square) or strip (single row)"),
       cellSize: z
         .number()
         .optional()
-        .default(900)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize)
         .describe("Size of each pictograph cell in pixels"),
       showStepNumbers: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers)
         .describe("Show beat numbers overlaid on each pictograph"),
       showWord: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showWord)
         .describe("Show word header at the top"),
       displayWord: z
         .string()
@@ -736,8 +737,52 @@ export function registerSequenceTools(server: McpServer): void {
       darkMode: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
+      exportProfile: z
+        .enum(["composer", "print"])
+        .optional()
+        .describe("Card export profile"),
+      columnCount: z
+        .number()
+        .int()
+        .min(1)
+        .optional()
+        .describe("Requested card grid column count"),
+      primaryPropColors: z
+        .object({
+          left: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+          right: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+        })
+        .optional()
+        .describe(
+          'Custom left/right hand colors as hex values, e.g. { left: "#00e5ff", right: "#ff2ea6" }. Applied consistently to props, arrows, turn labels, reversal dots, and mandalas.'
+        ),
+      leftPropType: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("Left-hand prop type; defaults to staff when omitted"),
+      rightPropType: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("Right-hand prop type; defaults to staff when omitted"),
+      fanAppearance: z
+        .object({
+          build: z.enum([
+            "pictograph",
+            "fire",
+            "flat-grip",
+            "lotus",
+            "day",
+            "moon",
+          ]),
+          frameColor: z.enum(["black", "white"]),
+          cover: z.enum(["bare", "covered"]),
+        })
+        .optional()
+        .describe("Physical build for either fan or bigfan hand"),
       maxAttempts: z
         .number()
         .optional()
@@ -748,7 +793,6 @@ export function registerSequenceTools(server: McpServer): void {
       showDifficulty: z
         .boolean()
         .optional()
-        .default(true)
         .describe("Show difficulty level badge in header"),
       userName: z
         .string()
@@ -812,7 +856,7 @@ export function registerSequenceTools(server: McpServer): void {
       showReversals: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals)
         .describe(
           "Show reversal indicators (colored dots on left edge when prop direction changes from previous step). Defaults to true."
         ),
@@ -870,14 +914,20 @@ export function registerSequenceTools(server: McpServer): void {
       const {
         word,
         gridMode = "diamond",
-        layout = "grid",
-        cellSize = 900,
-        showStepNumbers = true,
-        showWord = true,
+        layout = COMPOSER_CARD_EXPORT_PROFILE_V1.layout,
+        cellSize = COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize,
+        showStepNumbers = COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+        showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
         displayWord,
-        darkMode = true,
+        darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
+        exportProfile,
+        columnCount,
+        primaryPropColors,
+        leftPropType,
+        rightPropType,
+        fanAppearance,
         maxAttempts = 500,
-        showDifficulty = true,
+        showDifficulty,
         userName,
         notes,
         birthday,
@@ -886,7 +936,7 @@ export function registerSequenceTools(server: McpServer): void {
         turnIntensity = 1,
         loopComponents,
         constraints,
-        showReversals = true,
+        showReversals = COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals,
         period = "quartered",
         leftStartOrientation,
         rightStartOrientation,
@@ -1079,8 +1129,16 @@ export function registerSequenceTools(server: McpServer): void {
               showStepNumbers,
               showWord,
               darkMode,
-              padding: 8,
-              showDifficulty: true,
+              exportProfile,
+              columnCount,
+              padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
+              showDifficulty:
+                showDifficulty ??
+                (exportProfile === "print" ||
+                  COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
+              showFooter: Boolean(notes && notes !== "none"),
+              startPositionLayout:
+                COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
               userName,
               notes,
               birthday: birthdayDate,
@@ -1089,7 +1147,18 @@ export function registerSequenceTools(server: McpServer): void {
               loopComponents: parsedComponents,
               derivedBeatIndices: loopResult.derivedBeatIndices,
               seedWord: loopResult.seedWord,
+              displayWord: headerWord,
+              rotationPeriod: parsedComponents.includes(LOOPComponent.ROTATED)
+                ? (period as "halved" | "quartered")
+                : undefined,
+              inversionPeriod: parsedComponents.includes(LOOPComponent.INVERTED)
+                ? (period as "halved" | "quartered")
+                : undefined,
               showReversals,
+              leftPropType,
+              rightPropType,
+              fanAppearance,
+              primaryPropColors,
             }
           );
 
@@ -1104,6 +1173,9 @@ export function registerSequenceTools(server: McpServer): void {
                 type: "image" as const,
                 data: pngBuffer.toString("base64"),
                 mimeType: "image/png",
+                _meta: {
+                  rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+                },
               },
               {
                 type: "text" as const,
@@ -1245,8 +1317,16 @@ export function registerSequenceTools(server: McpServer): void {
             showStepNumbers,
             showWord,
             darkMode,
-            padding: 8,
-            showDifficulty,
+            exportProfile,
+            columnCount,
+            padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
+            showDifficulty:
+              showDifficulty ??
+              (exportProfile === "print" ||
+                COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
+            showFooter: Boolean(notes && notes !== "none"),
+            startPositionLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
             userName,
             notes,
             birthday: birthdayDate,
@@ -1254,7 +1334,19 @@ export function registerSequenceTools(server: McpServer): void {
             turnAllocation,
             loopComponents: finalLoopComponents,
             showReversals,
-            seedWord: displayWord?.toUpperCase(),
+            displayWord: displayWord?.toUpperCase(),
+            rotationPeriod: finalLoopComponents?.includes(LOOPComponent.ROTATED)
+              ? (period as "halved" | "quartered")
+              : undefined,
+            inversionPeriod: finalLoopComponents?.includes(
+              LOOPComponent.INVERTED
+            )
+              ? (period as "halved" | "quartered")
+              : undefined,
+            primaryPropColors,
+            leftPropType,
+            rightPropType,
+            fanAppearance,
           }
         );
 
@@ -1276,6 +1368,9 @@ export function registerSequenceTools(server: McpServer): void {
               type: "image" as const,
               data: pngBuffer.toString("base64"),
               mimeType: "image/png",
+              _meta: {
+                rendererProfile: COMPOSER_CARD_EXPORT_PROFILE_V1.version,
+              },
             },
             {
               type: "text" as const,

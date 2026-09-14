@@ -19,7 +19,7 @@
 
   const TITLE = `${KINETIC_SHAPE_ENGINE_NAME} | Flow Arts Composer`;
   const DESCRIPTION = KINETIC_SHAPE_ENGINE_DESCRIPTION;
-  const URL = "https://tkaflowarts.com/shape-engine";
+  const CANONICAL_URL = "https://tkaflowarts.com/shape-engine";
   const ROUTE_STATE_PARAMS = [
     "level",
     "turn",
@@ -48,17 +48,24 @@
     persist: (snapshot: ShapeMatrixAppSnapshot): void => {
       mutateCurrentUrl((url) => writeShapeMatrixRouteState(url, snapshot));
     },
+    // The share link is the same address the app keeps current, written for
+    // the snapshot the app asks for (its notation may differ from the bar).
+    link: (snapshot: ShapeMatrixAppSnapshot): string => {
+      const url = new URL(window.location.href);
+      writeShapeMatrixRouteState(url, snapshot);
+      return url.href;
+    },
   };
 </script>
 
-<Seo title={TITLE} description={DESCRIPTION} canonical={URL} ogType="website">
+<Seo title={TITLE} description={DESCRIPTION} canonical={CANONICAL_URL} ogType="website">
   {@html `<script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "${KINETIC_SHAPE_ENGINE_NAME}",
     "alternateName": ["${KINETIC_SHAPE_ENGINE_LEGACY_NAME}", "${SHAPE_MATRIX_EXPLORER_LEGACY_NAME}"],
-    "url": "${URL}",
+    "url": "${CANONICAL_URL}",
     "description": "${DESCRIPTION}",
     "applicationCategory": "EducationalApplication",
     "operatingSystem": "Web",
@@ -87,7 +94,7 @@
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://tkaflowarts.com/" },
       { "@type": "ListItem", "position": 2, "name": "Flow Arts History", "item": "https://tkaflowarts.com/history" },
-      { "@type": "ListItem", "position": 3, "name": "${KINETIC_SHAPE_ENGINE_NAME}", "item": "${URL}" }
+      { "@type": "ListItem", "position": 3, "name": "${KINETIC_SHAPE_ENGINE_NAME}", "item": "${CANONICAL_URL}" }
     ]
   }
   </script>`}

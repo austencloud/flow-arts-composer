@@ -7,6 +7,18 @@ import {
 } from "$lib/shared/sequence-viewer/state/viewer-studio-surfaces.svelte";
 
 describe("shared Studio surfaces", () => {
+  it("remembers the selected settings across Card round trips without sharing viewer state", () => {
+    const viewer = createViewerStudioSurfaces();
+    const other = createViewerStudioSurfaces();
+    for (const content of ["card", "animation", "studio"] as const) {
+      viewer.enter(0, false, 60);
+      viewer.setInspectorContent(content);
+      viewer.leave();
+      viewer.enter(2, true, 80);
+      expect(viewer.inspectorContent).toBe(content);
+    }
+    expect(other.inspectorContent).toBe("animation");
+  });
   const frame = (position: number): StudioAnimationFrame => ({
     sequence: {
       id: "test",
@@ -21,16 +33,25 @@ describe("shared Studio surfaces", () => {
 
   it("loans one renderer to one slot, then gives it back without losing its registration", () => {
     const state = createViewerStudioSurfaces();
-    const canvas = document.createElement("div");
+    const html = () =>
+      document.createElementNS(
+        "http://www.w3.org/1999/xhtml",
+        "div"
+      ) as HTMLElement;
+    const canvas = html();
+    const home = html();
+    home.append(canvas);
     const unregister = state.registerCanvas(canvas);
     const first = {},
       second = {};
-    const a = document.createElement("div"),
-      b = document.createElement("div");
+    const a = html(),
+      b = html();
     let position = 2.5;
     const release = state.requestCanvas(first, a, () => frame(position));
     state.requestCanvas(second, b, () => frame(7));
     state.enter(2.5, true, 84);
+    a.append(canvas);
+    expect(state.canvasHome).toBe(home);
     expect(state.canvasTarget).toBe(a);
     expect(state.ownsCanvas(first)).toBe(true);
     expect(state.ownsCanvas(second)).toBe(false);
@@ -45,6 +66,7 @@ describe("shared Studio surfaces", () => {
     expect(state.canvasAvailable).toBe(true);
     unregister();
     expect(state.canvasAvailable).toBe(false);
+    expect(state.canvasHome).toBeNull();
   });
 
   it("isolates viewers and ignores stale cleanup from an outgoing owner", () => {
@@ -108,10 +130,15 @@ describe("shared Studio surfaces", () => {
     step = 4;
     expect(state.cardFrame?.highlightedStepIndex).toBe(4);
     state.setMoving(true);
+    expect(state.canvasMoving).toBe(true);
+    state.setSurfaceMoving("transport", true);
     state.setSurfaceMoving("card", true);
     state.setMoving(false);
+    expect(state.canvasMoving).toBe(false);
     expect(state.moving).toBe(true);
     state.setSurfaceMoving("card", false);
+    expect(state.moving).toBe(true);
+    state.setSurfaceMoving("transport", false);
     expect(state.moving).toBe(false);
     releaseCard();
     expect(state.ownsCard(extra)).toBe(true);

@@ -58,11 +58,12 @@
       onclick={() => onOpenPropSheet?.(hand)}
       aria-label="Change {hand} prop type: {displayInfo.label}"
     >
-      <img
-        src={displayInfo.image}
-        alt={displayInfo.label}
+      <span
+        role="img"
+        aria-label={displayInfo.label}
+        style:mask-image={`url("${displayInfo.image}")`}
         class="prop-icon-sm"
-      />
+      ></span>
     </button>
   {:else}
     <!-- Full button with label -->
@@ -71,7 +72,8 @@
       onclick={() => onOpenPropSheet?.(hand)}
       aria-label="Change {hand} prop type"
     >
-      <img src={displayInfo.image} alt={displayInfo.label} class="prop-icon" />
+      <span role="img" aria-label={displayInfo.label} class="prop-icon"
+        style:mask-image={`url("${displayInfo.image}")`}></span>
       <span class="prop-name">{displayInfo.label}</span>
       <i class="fas fa-chevron-right" aria-hidden="true"></i>
     </button>
@@ -112,6 +114,15 @@
 </div>
 
 <style>
+  .prop-icon, .prop-icon-sm {
+    display: inline-block;
+    flex-shrink: 0;
+    mask-size: contain;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    background: var(--prop-color, var(--dm-motion-blue));
+  }
+
 
   .prop-type-row {
     display: flex;
@@ -168,26 +179,26 @@
 
   /* Blue prop type button */
   .prop-type-row.blue .prop-type-btn {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(var(--user-left-rgb, 59, 130, 246), 0.15);
+    border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.3);
     color: rgba(255, 255, 255, 0.9);
   }
 
   .prop-type-row.blue .prop-type-btn:hover {
-    background: rgba(59, 130, 246, 0.25);
-    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(var(--user-left-rgb, 59, 130, 246), 0.25);
+    border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.5);
   }
 
   /* Red prop type button */
   .prop-type-row.red .prop-type-btn {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(var(--user-right-rgb, 239, 68, 68), 0.15);
+    border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.3);
     color: rgba(255, 255, 255, 0.9);
   }
 
   .prop-type-row.red .prop-type-btn:hover {
-    background: rgba(239, 68, 68, 0.25);
-    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(var(--user-right-rgb, 239, 68, 68), 0.25);
+    border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.5);
   }
 
   /* ============================================================================
@@ -215,24 +226,24 @@
 
   /* Blue icon button */
   .prop-type-row.blue .prop-icon-btn {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(var(--user-left-rgb, 59, 130, 246), 0.15);
+    border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.3);
   }
 
   .prop-type-row.blue .prop-icon-btn:hover {
-    background: rgba(59, 130, 246, 0.25);
-    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(var(--user-left-rgb, 59, 130, 246), 0.25);
+    border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.5);
   }
 
   /* Red icon button */
   .prop-type-row.red .prop-icon-btn {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(var(--user-right-rgb, 239, 68, 68), 0.15);
+    border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.3);
   }
 
   .prop-type-row.red .prop-icon-btn:hover {
-    background: rgba(239, 68, 68, 0.25);
-    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(var(--user-right-rgb, 239, 68, 68), 0.25);
+    border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.5);
   }
 
 
@@ -279,42 +290,42 @@
 
   /* Blue chirality button */
   .prop-type-row.blue .chirality-btn {
-    background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.3);
-    color: rgba(59, 130, 246, 0.7);
+    background: rgba(var(--user-left-rgb, 59, 130, 246), 0.15);
+    border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.3);
+    color: rgba(var(--user-left-rgb, 59, 130, 246), 0.7);
   }
 
   .prop-type-row.blue .chirality-btn:hover {
-    background: rgba(59, 130, 246, 0.25);
-    border-color: rgba(59, 130, 246, 0.5);
-    color: var(--semantic-info);
+    background: rgba(var(--user-left-rgb, 59, 130, 246), 0.25);
+    border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.5);
+    color: var(--user-left-color, var(--semantic-info));
   }
 
   .prop-type-row.blue .chirality-btn.flipped {
-    background: rgba(59, 130, 246, 0.3);
-    border-color: rgba(59, 130, 246, 0.6);
-    color: var(--semantic-info);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+    background: rgba(var(--user-left-rgb, 59, 130, 246), 0.3);
+    border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.6);
+    color: var(--user-left-color, var(--semantic-info));
+    box-shadow: 0 2px 8px rgba(var(--user-left-rgb, 59, 130, 246), 0.25);
   }
 
   /* Red chirality button */
   .prop-type-row.red .chirality-btn {
-    background: rgba(239, 68, 68, 0.15);
-    border-color: rgba(239, 68, 68, 0.3);
-    color: rgba(239, 68, 68, 0.7);
+    background: rgba(var(--user-right-rgb, 239, 68, 68), 0.15);
+    border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.3);
+    color: rgba(var(--user-right-rgb, 239, 68, 68), 0.7);
   }
 
   .prop-type-row.red .chirality-btn:hover {
-    background: rgba(239, 68, 68, 0.25);
-    border-color: rgba(239, 68, 68, 0.5);
-    color: var(--semantic-error);
+    background: rgba(var(--user-right-rgb, 239, 68, 68), 0.25);
+    border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.5);
+    color: var(--user-right-color, var(--semantic-error));
   }
 
   .prop-type-row.red .chirality-btn.flipped {
-    background: rgba(239, 68, 68, 0.3);
-    border-color: rgba(239, 68, 68, 0.6);
-    color: var(--semantic-error);
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+    background: rgba(var(--user-right-rgb, 239, 68, 68), 0.3);
+    border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.6);
+    color: var(--user-right-color, var(--semantic-error));
+    box-shadow: 0 2px 8px rgba(var(--user-right-rgb, 239, 68, 68), 0.25);
   }
 
   @media (prefers-reduced-motion: reduce) {

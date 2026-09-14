@@ -93,7 +93,7 @@ describe("four-lane history archive ledger", () => {
     expect(qst.people).toBe("Mentive, based on Alex Kurowski's grid");
     expect(qst.summary).toContain("228 patterns");
     expect(qst.evidenceNote).toContain(
-      "That dates these copies, not the system's origin"
+      "The archive uses that export date"
     );
     expect(documents.map(({ id, pageCount }) => ({ id, pageCount }))).toEqual(
       expectedDocuments.map(({ id, pageCount }) => ({ id, pageCount }))
@@ -138,6 +138,66 @@ describe("four-lane history archive ledger", () => {
         entriesForLane(lane.id).some((candidate) => candidate.id === entry.id)
       );
       expect(appearances, entry.id).toHaveLength(1);
+    }
+  });
+
+  it("retains VTG 3's public draft and released app", () => {
+    const vtg = archiveEntry("vtg");
+    const works = vtg.catalogEntry?.subWorks ?? [];
+    const vtg3 = works.filter((work) => work.name.startsWith("VTG 3"));
+    const vtg3Text = vtg3.map((work) => work.note).join(" ");
+
+    expect(vtg3Text).toMatch(/Draft #1/);
+    expect(vtg3Text).toMatch(/Michael Caden Pike \(MCP\)/);
+    expect(vtg3Text).toMatch(/July 2019/);
+    expect(vtg3Text).not.toMatch(
+      /never published|never appeared|not released/i
+    );
+    expect(vtg.catalogEntry?.explore?.href).toBe("https://vtg-v3.web.app/");
+    expect(vtg.citations.map((citation) => citation.href)).toEqual(
+      expect.arrayContaining([
+        "https://drive.google.com/file/d/11jlw3ezJ4aSzH5zwlaM5_2mtOYy4U3WX/view",
+        "https://play.google.com/store/apps/details?hl=en_US&id=net.firestaff.mcp.VTGv3",
+      ])
+    );
+
+    const chronicle = readFileSync(
+      path.join(
+        repoRoot,
+        "src/routes/(public)/history/_components/archive/_lib/vtg-chronicle.svelte.ts"
+      ),
+      "utf8"
+    );
+    expect(chronicle).not.toMatch(/never-published VTG|VTG 3 never appeared/);
+  });
+
+  it("dates VTG 4's application announcement while retaining Mentive's conceptual attribution", () => {
+    const vtg = archiveEntry("vtg");
+    const vtg4 = vtg.catalogEntry?.subWorks?.find((work) =>
+      work.name.startsWith("VTG 4")
+    );
+    expect(vtg.firstDocumentedYear).toBe(2010);
+    expect(entrySpanEndYear(vtg)).toBe(2026);
+    expect(vtg4?.note).toMatch(/August 29, 2026/);
+    expect(vtg4?.note).toMatch(/Mentive.*SpiroAnim/);
+    expect(vtg4?.note).toMatch(
+      /credits the underlying concepts to other practitioners/
+    );
+
+    const announcement = vtg.citations.find((citation) =>
+      citation.href.endsWith("/p/DcoQATwFrUA/")
+    );
+    const attribution = vtg.citations.find((citation) =>
+      citation.href.endsWith("/c/17953419501233426/")
+    );
+    expect(announcement?.basis).toBe("creators-account");
+    expect(announcement?.supports).toMatch(/VTG 4/);
+    expect(attribution?.basis).toBe("creators-account");
+    expect(attribution?.supports).toMatch(/credits other practitioners/);
+    // Source descriptions are matched by position in the catalog. An added
+    // source must not silently receive the generic fallback claim.
+    for (const citation of vtg.citations) {
+      expect(citation.supports).toMatch(/VTG|Yee|MCP|Mentive/);
     }
   });
 
@@ -190,9 +250,9 @@ describe("four-lane history archive ledger", () => {
         lastVerifiedYear: 2026,
       },
     });
-    expect(activityLabel(homeOfPoi)).toBe("Archive online · community dormant");
+    expect(activityLabel(homeOfPoi)).toBe("Online archive");
     expect(homeOfPoi.activity?.note).toContain(
-      "newest visible forum post is from April 2025"
+      "Lessons and forum discussions remain available"
     );
     expect(homeOfPoi.citations.map((citation) => citation.href)).toEqual(
       expect.arrayContaining([
@@ -282,14 +342,14 @@ describe("four-lane history archive ledger", () => {
       const entry = archiveEntry(id);
       expect(entry.activity?.status, id).toBe("active");
       expect(entry.activity?.lastVerifiedYear, id).toBe(2026);
-      expect(activityLabel(entry), id).toBe("Active · verified 2026");
+      expect(activityLabel(entry), id).toBe("Sources checked in 2026");
     }
 
     // Staff Science's latest dated trace is 2024; the archive makes no claim
     // past it.
     const staffScience = archiveEntry("staff-science");
     expect(staffScience.activity?.status).toBe("unknown");
-    expect(activityLabel(staffScience)).toBe("Last public trace 2024");
+    expect(activityLabel(staffScience)).toBe("Latest source: 2024");
 
     // A record without an activity claim shows no activity label at all.
     expect(archiveEntry("caps").activity).toBeUndefined();
@@ -309,9 +369,7 @@ describe("four-lane history archive ledger", () => {
     );
     expect(fanAlphabet?.evidenceBasis).toBe("unresolved");
     expect(fanAlphabet?.people).toContain("early documented teacher");
-    expect(fanAlphabet?.summary).toContain(
-      "No reviewed source names a sole inventor"
-    );
+    expect(fanAlphabet?.evidenceNote).toContain("origin remains unclear");
   });
 
   it("keeps PoiNotation's repository record separate from adoption claims", () => {
@@ -319,8 +377,10 @@ describe("four-lane history archive ledger", () => {
       (entry) => entry.id === "poinotation"
     );
     expect(poiNotation?.evidenceLabel).toBe("Repository record");
-    expect(poiNotation?.evidenceNote).toContain(
-      "Adoption and influence are unverified"
+    expect(poiNotation?.people).toBe("Tiffany Fong");
+    expect(poiNotation?.citations[0]?.href).toBe(
+      "https://github.com/tiffanyfong/PoiNotation"
     );
+    expect(poiNotation?.summary).not.toMatch(/widely used|influential|popular/i);
   });
 });

@@ -25,10 +25,16 @@
 
   let { persistence, variant = "standalone" }: Props = $props();
   let host: HTMLDivElement;
+  let shell: ShapeMatrixAppShell | undefined;
+
+  export function handleBack(): boolean {
+    return shell?.handleBack() ?? false;
+  }
   const state = createShapeMatrixAppState(
     {
       loadMatrix: loadShapeMatrix,
       syncState: (snapshot) => persistence?.persist(snapshot),
+      link: persistence?.link,
     },
     {
       surface: "matrix",
@@ -45,6 +51,7 @@
       pair: null,
       mode: null,
       propMode: null,
+      solo: null,
     },
     false
   );
@@ -80,7 +87,7 @@
 </script>
 
 <div class="shape-matrix-app-host" bind:this={host}>
-  <ShapeMatrixAppShell {variant} />
+  <ShapeMatrixAppShell {variant} bind:this={shell} />
   <ShapeMatrixAboutModal />
 </div>
 

@@ -314,8 +314,11 @@ export async function generatePropSvg(
   const fanRenderKey = parseFanRenderKey(propTypeLower);
   const fetchedSvg = await fetchPropSvg(path);
   const semanticPropType = fanRenderKey?.propType ?? propTypeLower;
-  const isMaterialColoredFan =
-    fanRenderKey !== null && fanRenderKey.build !== "pictograph";
+  // A parsed key is a material build by construction: FanRenderKey types
+  // `build` as Exclude<FanBuild, "pictograph">, and resolveFanRenderKey returns
+  // null for the pictograph build rather than a key carrying it. The old
+  // second half of this test could not go false.
+  const isMaterialColoredFan = fanRenderKey !== null;
   const coloredSvg = isMaterialColoredFan
     ? applyFanFrameColor(fetchedSvg, color)
     : applyColorToPropSvg(fetchedSvg, color, semanticPropType);

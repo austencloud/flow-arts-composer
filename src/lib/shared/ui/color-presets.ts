@@ -1,0 +1,18 @@
+export const COLOR_PRESETS = [
+    { hex: "#ef4444", name: "Red" },
+    { hex: "#f97316", name: "Orange" },
+    { hex: "#eab308", name: "Yellow" },
+    { hex: "#22c55e", name: "Green" },
+    { hex: "#06b6d4", name: "Cyan" },
+    { hex: "#3b82f6", name: "Blue" },
+    { hex: "#8b5cf6", name: "Violet" },
+    { hex: "#ec4899", name: "Pink" },
+    { hex: "#d97706", name: "Amber" },
+    { hex: "#65a30d", name: "Lime" },
+    { hex: "#0d9488", name: "Teal" },
+    { hex: "#7c3aed", name: "Purple" },
+    { hex: "#db2777", name: "Fuchsia" },
+    { hex: "#dc2626", name: "Crimson" },
+    { hex: "#2563eb", name: "Royal Blue" },
+    { hex: "#059669", name: "Emerald" },
+  ];

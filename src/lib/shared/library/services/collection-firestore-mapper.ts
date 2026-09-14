@@ -14,6 +14,7 @@ import {
   type DocumentData,
   type Firestore,
 } from "firebase/firestore";
+import { parseCollectionProp } from "../domain/collection-prop";
 import { authState } from "$lib/shared/auth/state/auth-state.svelte";
 import { isPreviewReadOnly } from "$lib/shared/debug/state/user-preview-state.svelte";
 import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
@@ -86,6 +87,7 @@ export function mapDocToCollection(
   return {
     id,
     name: data["name"] ?? "",
+    propType: parseCollectionProp(data["propType"]),
     description: data["description"],
     // Cleared fields are written as "" rather than deleted (updateDoc rejects
     // undefined), so normalise the empty string back to absent here.
@@ -188,6 +190,38 @@ export async function batchFetchSequences(
   }
 
   return sequences;
+}
+
+/**
+ * Which of these ids exist as documents in the user's own library.
+ *
+ * A collection can legitimately point at a sequence the user doesn't own — a
+ * saved public sequence from someone else — and Firestore fails an entire
+ * batch when one `update` targets a missing document. Membership bookkeeping
+ * therefore has to know which owner documents are actually there before it
+ * writes. Chunked to the 30-item `in` limit like the fetch helpers above, and
+ * billed only for the documents that come back.
+ */
+export async function filterExistingSequenceIds(
+  firestore: Firestore,
+  userId: string,
+  sequenceIds: readonly string[]
+): Promise<Set<string>> {
+  const existing = new Set<string>();
+  const uniqueIds = [...new Set(sequenceIds)];
+
+  for (let i = 0; i < uniqueIds.length; i += BATCH_SIZE) {
+    const chunk = uniqueIds.slice(i, i + BATCH_SIZE);
+    const sequencesRef = collection(firestore, `users/${userId}/sequences`);
+    const snapshot = await getDocs(
+      query(sequencesRef, where(documentId(), "in", chunk))
+    );
+    for (const docSnap of snapshot.docs) {
+      existing.add(docSnap.id);
+    }
+  }
+
+  return existing;
 }
 
 /**

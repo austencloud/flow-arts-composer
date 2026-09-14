@@ -54,6 +54,7 @@ import { drawStepNumber } from "$lib/shared/render/services/step-number-renderer
 import { pictographPreparer } from "$lib/shared/pictograph/shared/services/pictograph-preparer";
 import { settingsService as propSettings } from "$lib/shared/settings/state/settings-state.svelte";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { normalizeFanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 
 const PRINT_DPI = 300;
 
@@ -184,6 +185,10 @@ export async function buildChoreoSheetPDF(
   // user's settings when no override is given, so the print uses the same.
   const leftProp = propSettings.settings.leftPropType ?? PropType.STAFF;
   const rightProp = propSettings.settings.rightPropType ?? PropType.STAFF;
+  const fanAppearance = normalizeFanAppearance(propSettings.settings.fanAppearance);
+  const primaryPropColors = propSettings.settings.primaryPropColors
+    ? { ...propSettings.settings.primaryPropColors }
+    : null;
 
   const renderer = new Canvas2DDirectRenderer();
   await renderer.initialize();
@@ -282,6 +287,7 @@ export async function buildChoreoSheetPDF(
     let img = imageCache.get(key);
     if (!img) {
       const prepared = await pictographPreparer.prepareSingle(step, {
+        fanAppearance,
         themeMode: "light",
         leftPropType: leftProp,
         rightPropType: rightProp,
@@ -290,6 +296,8 @@ export async function buildChoreoSheetPDF(
         size: rasterPx,
         visibility: {
           ...SHEET_CELL_VISIBILITY,
+          fanAppearance,
+          primaryPropColors,
           darkMode: false,
           leftPropType: leftProp,
           rightPropType: rightProp,

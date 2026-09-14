@@ -97,6 +97,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   rightPropType: PropType.STAFF,
   fanAppearance: DEFAULT_FAN_APPEARANCE,
   propArtwork: DEFAULT_PROP_LOOK,
+  primaryPropColors: null,
   blockedStartPositions: [],
   blockedStartPositionsByGridMode: {},
   propPresets: DEFAULT_PROP_PRESETS,

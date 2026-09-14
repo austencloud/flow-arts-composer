@@ -75,6 +75,10 @@
     async function compileShaders(): Promise<void> {
       const handles = resolveThrelteHandles(threlte);
       if (!handles) return;
+      if (import.meta.env.DEV) {
+        (window as unknown as { __sceneHandles?: unknown }).__sceneHandles =
+          handles;
+      }
       beginBootSpan("compile");
       await warmupRenderer(handles, {
         signal: abort.signal,

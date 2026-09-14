@@ -1487,7 +1487,7 @@ export const TUTORIAL_SCRIPTS: TutorialScript[] = [
       },
       {
         "kind": "spoken",
-        "text": "One reassurance before you panic-memorize: the TKA software places all of this for you. You don't have to write glyphs — you have to recognize what they're telling you. Focus on the motions."
+        "text": "One reassurance before you panic-memorize: Flow Arts Composer places all of this for you. You don't have to write glyphs — you have to recognize what they're telling you. Focus on the motions."
       }
     ]
   },
@@ -1710,7 +1710,7 @@ export const TUTORIAL_SCRIPTS: TutorialScript[] = [
       {
         "kind": "slot",
         "id": "s36-2",
-        "prompt": "a short beat of the TKA app building the word — pictographs chaining left to right."
+        "prompt": "a short beat of Flow Arts Composer building the word — pictographs chaining left to right."
       },
       {
         "kind": "spoken",

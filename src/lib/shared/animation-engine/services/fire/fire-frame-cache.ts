@@ -30,6 +30,31 @@ export function hasReachedFireFrameCacheCapacity(frameIndex: number, capacity: n
   return capacity <= 0 || frameIndex >= capacity;
 }
 
+/** A cache may only become warm at a known loop boundary. In particular, the
+ * last recorded sample is not itself a loop duration: at 60fps it normally
+ * precedes the boundary by one frame. */
+export function canPromoteFireFrameRecording(
+  frameTimes: readonly number[],
+  loopDuration: number | undefined
+): boolean {
+  const firstFrameTime = frameTimes[0];
+  const lastFrameTime = frameTimes.at(-1);
+  const boundaryWindow =
+    loopDuration === undefined ? 0 : Math.min(0.5, loopDuration * 0.1);
+  return (
+    firstFrameTime !== undefined &&
+    Number.isFinite(firstFrameTime) &&
+    lastFrameTime !== undefined &&
+    Number.isFinite(lastFrameTime) &&
+    loopDuration !== undefined &&
+    Number.isFinite(loopDuration) &&
+    firstFrameTime <= boundaryWindow &&
+    lastFrameTime >= loopDuration - boundaryWindow &&
+    loopDuration > lastFrameTime &&
+    frameTimes.every((time, index) => index === 0 || time > frameTimes[index - 1]!)
+  );
+}
+
 // Blit shader: draw a cached texture to the screen
 
 const BLIT_FRAG = `#version 300 es
@@ -58,9 +83,9 @@ export class FireFrameCache {
 
   // Cache textures (RGBA8, one per frame) - pre-allocated in batches
   private frames: WebGLTexture[] = [];
-  /** Relative timestamps (ms since loop start) for each cached frame */
+  /** Relative sequence phases for each cached frame */
   private frameTimes: number[] = [];
-  /** Total loop duration from recording (ms) */
+  /** Total loop phase span from recording */
   private loopDuration: number = 0;
   private frameIndex = 0;
   private totalFrames = 0;
@@ -199,6 +224,17 @@ export class FireFrameCache {
     if (this.state !== "recording") return false;
     const gl = this.gl;
 
+    // Cache lookup is binary-search based, so a seek or reverse sample cannot
+    // be allowed to corrupt the phase ordering of an in-progress recording.
+    const previousTime = this.frameTimes.at(-1);
+    if (
+      !Number.isFinite(relativeTime) ||
+      (previousTime !== undefined && relativeTime <= previousTime)
+    ) {
+      this.invalidate();
+      return false;
+    }
+
     if (hasReachedFireFrameCacheCapacity(this.frameIndex, this.maxFrames)) {
       this.bypassCurrentRecording();
       return false;
@@ -232,9 +268,15 @@ export class FireFrameCache {
    * Called when the animation loop detects a sequence restart.
    * Finishes recording and switches to warm (playback) mode.
    */
-  onLoopDetected(): void {
-    if (this.state === "recording" && this.totalFrames > 0) {
-      this.loopDuration = this.frameTimes[this.frameTimes.length - 1] ?? 0;
+  onLoopDetected(loopDuration?: number): void {
+    if (this.state === "recording") {
+      if (!canPromoteFireFrameRecording(this.frameTimes, loopDuration)) {
+        // An interrupted or partial pass has no phase-safe playback mapping.
+        // Drop it rather than replaying fire from an arbitrary point in the loop.
+        this.invalidate();
+        return;
+      }
+      this.loopDuration = loopDuration!;
       this.state = "warm";
       this.frameIndex = 0;
       // Destroy recording resources - no longer needed during playback
@@ -251,7 +293,7 @@ export class FireFrameCache {
   /**
    * Blit the cached frame nearest to the given relative time.
    * Uses binary search for O(log N) lookup.
-   * @param relativeTime - Time since loop start (ms). Wraps via modulo.
+   * @param relativeTime - Sequence phase. Wraps via modulo.
    * @returns true if a frame was blitted
    */
   blitCachedFrame(relativeTime?: number): boolean {

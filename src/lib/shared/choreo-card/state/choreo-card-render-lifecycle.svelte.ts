@@ -11,7 +11,10 @@ import type {
 import type { createCrossfaderState } from "$lib/shared/choreo-card/state/crossfader-state.svelte";
 
 export interface ChoreoCardRenderLifecycleDeps {
+  readonly fanAppearance?: import("$lib/shared/pictograph/prop/domain/fan-appearance").FanAppearance;
+  readonly primaryPropColors?: { left: string; right: string } | null;
   readonly sequence: SequenceData;
+  readonly handPathMode?: boolean;
   readonly leftPropType: PropType | undefined;
   readonly rightPropType: PropType | undefined;
   readonly browseViewMode: BrowseViewMode | undefined;
@@ -26,6 +29,7 @@ export interface ChoreoCardRenderLifecycleDeps {
   readonly showTnD: boolean;
   readonly showElemental: boolean;
   readonly showPositions: boolean;
+  readonly showHandColorKey: boolean;
   readonly showGrid: boolean;
   readonly showLeftMotion: boolean;
   readonly showRightMotion: boolean;
@@ -65,6 +69,10 @@ export function createChoreoCardRenderLifecycle(
   function renderKeys(deps: ChoreoCardRenderLifecycleDeps) {
     return buildChoreoCardRenderKeys({
       sequence: deps.sequence,
+      handPathMode: deps.handPathMode,
+      browseViewMode: deps.browseViewMode,
+      fanAppearance: deps.fanAppearance,
+      primaryPropColors: deps.primaryPropColors,
       leftPropType: deps.leftPropType,
       rightPropType: deps.rightPropType,
       catDogModeEnabled: deps.catDogModeEnabled,
@@ -78,6 +86,7 @@ export function createChoreoCardRenderLifecycle(
       showTnD: deps.showTnD,
       showElemental: deps.showElemental,
       showPositions: deps.showPositions,
+      showHandColorKey: deps.showHandColorKey,
       showGrid: deps.showGrid,
       showLeftMotion: deps.showLeftMotion,
       showRightMotion: deps.showRightMotion,

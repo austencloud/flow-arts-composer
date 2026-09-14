@@ -66,6 +66,8 @@
   // chunk finishes loading and calls .set() - critical for the keep-alive host
   // below, whose component arrives asynchronously after first render.
   const moduleCache = new SvelteMap<string, Component<any>>();
+  const moduleErrors = new SvelteMap<string, unknown>();
+  const moduleLoads = new Map<string, Promise<Component<any> | null>>();
 
   // Certain heavy modules must survive module switches instead of being
   // destroyed/recreated by {#key activeModule}. The controller tracks
@@ -90,7 +92,7 @@
   $effect(() => {
     keepAlive.setActiveModule(activeModule);
     for (const id of keepAlive.mountedModules()) {
-      if (!moduleCache.has(id)) {
+      if (!moduleCache.has(id) && !moduleErrors.has(id)) {
         loadModule(id)
           .then(() => (keepAliveVersion += 1))
           .catch(() => {});
@@ -212,19 +214,41 @@
     // museum → Removed (Museum Navigator archived, use Realm → Gallery)
   };
 
-  // Load module with caching
-  async function loadModule(
+  function loadModule(
     moduleName: string,
     recoverOnFailure = false
   ): Promise<Component<any> | null> {
-    if (!moduleName || !moduleLoaders[moduleName]) return null;
+    if (!moduleName || !moduleLoaders[moduleName]) return Promise.resolve(null);
 
-    // Return cached module if available
     if (moduleCache.has(moduleName)) {
       console.debug(`[ModuleLoad] ${moduleName}: cache hit (0ms)`);
-      return moduleCache.get(moduleName)!;
+      return Promise.resolve(moduleCache.get(moduleName)!);
     }
 
+    const pending = moduleLoads.get(moduleName);
+    if (pending) return pending;
+
+    moduleErrors.delete(moduleName);
+    const load = loadModuleUncached(moduleName, recoverOnFailure)
+      .catch((error: unknown) => {
+        moduleErrors.set(moduleName, error);
+        throw error;
+      })
+      .finally(() => {
+        if (moduleLoads.get(moduleName) === load) {
+          moduleLoads.delete(moduleName);
+        }
+      });
+    moduleLoads.set(moduleName, load);
+    return load;
+  }
+
+  // Load and cache the component. Concurrent callers share the promise above,
+  // so switching rapidly cannot fetch and initialize the same module twice.
+  async function loadModuleUncached(
+    moduleName: string,
+    recoverOnFailure: boolean
+  ): Promise<Component<any>> {
     // Load and cache the component
     // Services are already registered synchronously via ITI container
     // Instrument the chunk fetch+eval — this is exactly how long the
@@ -276,15 +300,23 @@
     );
     moduleCache.set(moduleName, ModuleComponent);
 
-    // Signal the boot profiler that the initial module chunk has arrived -
-    // this is the "user sees real app content" moment. The profiler is
-    // idempotent: only the first signal prints the summary, later module
-    // switches are no-ops (they're navigation, not boot).
+    // Import completion precedes the module's own data, layout and asset work.
+    // Keep this milestone separate from actual route readiness.
     import("$lib/shared/analytics/boot-profiler").then(({ bootProfiler }) =>
-      bootProfiler.signalReady(moduleName)
+      bootProfiler.milestone(`module:${moduleName}:chunk-ready`)
     );
 
     return ModuleComponent;
+  }
+
+  function retryKeepAliveModule(moduleName: string): void {
+    moduleErrors.delete(moduleName);
+    void loadModule(moduleName, moduleName === activeModule).catch(() => {});
+  }
+
+  function moduleErrorMessage(moduleName: string): string {
+    const error = moduleErrors.get(moduleName);
+    return error instanceof Error ? error.message : "Unknown error";
   }
 
   // Reactive module loading based on activeModule
@@ -354,7 +386,40 @@
 {:else if activeModule && keepAlive.isKeepAlive(activeModule)}
   <!-- Keep-alive modules render in the persistent host below; the keyed path
          is bypassed so they are never destroyed on switch. -->
-  <div class="transition-container"></div>
+  <div class="transition-container">
+    {#if moduleErrors.has(activeModule)}
+      <div class="module-error" role="alert">
+        <p>Failed to load module</p>
+        <p class="error-details">{moduleErrorMessage(activeModule)}</p>
+        <button
+          class="reload-button"
+          onclick={() => retryKeepAliveModule(activeModule)}
+          type="button"
+        >
+          Try Again
+        </button>
+      </div>
+    {:else if !moduleCache.has(activeModule)}
+      {#if activeModule === "museum" || activeModule === "personal-museum"}
+        <div
+          class="museum-skeleton"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div class="museum-skeleton-icon">
+            <i class="fas fa-landmark" aria-hidden="true"></i>
+          </div>
+          <p class="museum-skeleton-title">Entering The Archive...</p>
+          <div class="museum-skeleton-track">
+            <div class="museum-skeleton-fill"></div>
+          </div>
+        </div>
+      {:else}
+        <ModuleSkeleton moduleKey={activeModule} />
+      {/if}
+    {/if}
+  </div>
 {:else}
   <!-- Transition container for overlaying content -->
   <div class="transition-container">

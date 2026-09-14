@@ -4,6 +4,7 @@ import {
   Group,
   Mesh,
   MeshBasicMaterial,
+  PlaneGeometry,
   PerspectiveCamera,
   Raycaster,
   Vector2,
@@ -248,12 +249,19 @@ describe("performer press vs camera-controls listener ordering", () => {
       performerIndex: 0,
       performerVisualPickTarget: true,
     };
+    const planeRoot = new Group();
+    planeRoot.userData = { performerInteractionExcluded: true };
+    const activePlane = new Mesh(
+      new PlaneGeometry(10, 10),
+      new MeshBasicMaterial()
+    );
+    planeRoot.add(activePlane);
     const visibleKnee = new Mesh(
       new BoxGeometry(1.2, 1.6, 1),
       new MeshBasicMaterial()
     );
     visibleKnee.position.set(0, 0.7, -1);
-    visualRoot.add(visibleKnee);
+    visualRoot.add(planeRoot, visibleKnee);
     visualRoot.updateMatrixWorld(true);
 
     const viewer = {
@@ -338,6 +346,7 @@ describe("performer press vs camera-controls listener ordering", () => {
       camera,
       proxy,
       visualRoot,
+      activePlane,
       visibleKnee,
     };
   }
@@ -453,6 +462,22 @@ describe("performer press vs camera-controls listener ordering", () => {
     firePointer(canvas, "pointerdown", { clientX: 2, clientY: 2 });
     expect(orbitDown).toHaveBeenCalledTimes(1);
     expect(viewer.clearPerformerSelection).not.toHaveBeenCalled();
+    detach();
+  });
+
+  it("does not treat an active performer plane as the performer's body", () => {
+    const { canvas, viewer, orbitDown, detach, camera, proxy, activePlane } =
+      buildHarness();
+    const raycaster = new Raycaster();
+    raycaster.setFromCamera(new Vector2(0.5, 0), camera);
+    expect(raycaster.intersectObject(activePlane)).toHaveLength(1);
+    expect(raycaster.intersectObject(proxy)).toHaveLength(0);
+
+    firePointer(canvas, "pointerdown", { clientX: 75, clientY: 50 });
+
+    expect(orbitDown).toHaveBeenCalledTimes(1);
+    expect(viewer.replacePerformerSelection).not.toHaveBeenCalled();
+    expect(viewer.beginSpatialEdit).not.toHaveBeenCalled();
     detach();
   });
 

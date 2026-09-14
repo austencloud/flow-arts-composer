@@ -1,3 +1,4 @@
+import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { Timestamp } from "firebase/firestore";
 
 /**
@@ -124,6 +125,9 @@ export const SYSTEM_COLLECTION_CONFIG: Record<
  * LibraryCollection - A named collection of sequences
  */
 export interface LibraryCollection {
+  /** Display every member with this prop. Null or absent uses normal selection. */
+  readonly propType?: PropType | null;
+
   /** Unique collection ID */
   readonly id: string;
 
@@ -226,6 +230,7 @@ export function isSmartCollection(collection: LibraryCollection): boolean {
  * Options for creating a new collection
  */
 export interface CreateCollectionOptions {
+  propType?: PropType | null;
   description?: string;
   coverImageUrl?: string;
   color?: string;
@@ -251,6 +256,7 @@ export function createCollection(
     name,
     ownerId,
     description: options.description,
+    propType: options.propType,
     sequenceIds: [],
     sequenceCount: 0,
     coverImageUrl: options.coverImageUrl,
@@ -280,6 +286,7 @@ export function createSmartCollectionModel(
     name,
     ownerId,
     description: options.description,
+    propType: options.propType,
     sequenceIds: [],
     sequenceCount: options.sequenceCount ?? 0,
     coverImageUrl: options.coverImageUrl,

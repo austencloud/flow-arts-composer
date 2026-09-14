@@ -85,7 +85,7 @@ describe("viewer orchestrator model", () => {
     expect(details).toEqual({
       url: "https://tka.run/q/encoded?bpm=90",
       title: "Air Bridge",
-      text: "TKA sequence: Air Bridge",
+      text: "Flow Arts Composer sequence: Air Bridge",
       activityMetadata: {
         sequenceId: "sequence-1",
         sequenceWord: "ABCD",

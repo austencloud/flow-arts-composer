@@ -13,6 +13,8 @@
   import { backOut, cubicOut } from "svelte/easing";
   import { getViewerVisibilityContext } from "../context/viewer-visibility-context";
   import MotionColorChips from "$lib/shared/components/MotionColorChips.svelte";
+  import PrimaryPropColorSettings from "$lib/shared/settings/components/tabs/prop-type/PrimaryPropColorSettings.svelte";
+  import { getSettings, updateSetting } from "$lib/shared/application/state/app-state.svelte";
 
   const visibility = getViewerVisibilityContext();
   interface Props {
@@ -108,6 +110,12 @@
         showRight={visibility.rightMotion}
         onToggleLeft={toggleLeft}
         onToggleRight={toggleRight}
+        showVisibilityIcons
+      />
+      <PrimaryPropColorSettings
+        colors={getSettings().primaryPropColors}
+        darkMode={getSettings().darkMode}
+        onchange={(colors) => updateSetting("primaryPropColors", colors)}
       />
     </div>
   {/if}
@@ -179,14 +187,13 @@
       opacity 160ms ease;
   }
   .prop-silhouette.blue {
-    background: var(--prop-blue, #2196f3);
+    background: var(--motion-left-color, var(--prop-blue, #2196f3));
   }
   .prop-silhouette.red {
-    background: var(--prop-red, #f44336);
+    background: var(--motion-right-color, var(--prop-red, #f44336));
   }
   .prop-silhouette.muted {
-    background: rgba(255, 255, 255, 0.25);
-    opacity: 0.55;
+    opacity: 0.3;
   }
 
   .motion-vis-backdrop {
@@ -203,9 +210,13 @@
   .motion-vis-popover {
     position: absolute;
     top: calc(100% + 6px);
-    right: 0;
-    min-width: 140px;
-    padding: 8px;
+    left: 0;
+    box-sizing: border-box;
+    width: min(340px, calc(100vw - 24px));
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
     background: var(--theme-panel-bg, #141620);
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
     border-radius: 12px;

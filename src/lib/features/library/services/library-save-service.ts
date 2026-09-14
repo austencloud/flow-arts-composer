@@ -503,6 +503,7 @@ export class LibrarySaveService {
       const imageCompositionManager = getImageCompositionManager();
 
       const imageBlob = await this.shareService.getCardImageBlob(sequence, {
+        propConfig: resolveRecordedPropConfig(sequence) ?? undefined,
         darkMode: imageCompositionManager.darkMode,
       });
 

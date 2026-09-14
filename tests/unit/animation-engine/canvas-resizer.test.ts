@@ -28,10 +28,60 @@ describe("CanvasResizer", () => {
     vi.unstubAllGlobals();
   });
 
+  it("uses layout pixels through scaled flights and ignores zero-sized parking", async () => {
+    let width = 490;
+    let height = 487;
+    let scale = 0.1;
+    const container = {
+      get clientWidth() {
+        return width;
+      },
+      get clientHeight() {
+        return height;
+      },
+      closest: () => null,
+      getBoundingClientRect: () => ({
+        width: width * scale,
+        height: height * scale,
+      }),
+    } as unknown as HTMLDivElement;
+    const renderer = { resize: vi.fn().mockResolvedValue(undefined) };
+    const resizer = new CanvasResizer();
+    resizer.initialize(container, renderer);
+    resizer.setup();
+    notifyResize([], {} as ResizeObserver);
+    await Promise.resolve();
+    expect(renderer.resize).toHaveBeenLastCalledWith(487);
+    // Finishing a transform does not notify ResizeObserver. The bitmap must
+    // already be correct; there is no later event to repair a 49px raster.
+    scale = 1;
+    expect(resizer.state.currentSize).toBe(487);
+    width = 0;
+    notifyResize([], {} as ResizeObserver);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(renderer.resize).toHaveBeenCalledTimes(1);
+    width = 800;
+    height = 740;
+    scale = 0.06;
+    notifyResize([], {} as ResizeObserver);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(renderer.resize).toHaveBeenLastCalledWith(740);
+    width = 490;
+    height = 487;
+    notifyResize([], {} as ResizeObserver);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(renderer.resize).toHaveBeenLastCalledWith(487);
+    resizer.dispose();
+  });
+
   it("retains the readable backing size while its workspace pane is inert", async () => {
     let width = 630;
     let inert = false;
     const container = {
+      get clientWidth() {
+        return width;
+      },
+      clientHeight: 780,
       closest: (selector: string) =>
         inert && selector === "[inert]" ? {} : null,
       getBoundingClientRect: () =>
@@ -83,6 +133,10 @@ describe("CanvasResizer", () => {
     let width = 630;
     let inert = false;
     const container = {
+      get clientWidth() {
+        return width;
+      },
+      clientHeight: 780,
       closest: (selector: string) =>
         inert && selector === "[inert]" ? {} : null,
       getBoundingClientRect: () =>

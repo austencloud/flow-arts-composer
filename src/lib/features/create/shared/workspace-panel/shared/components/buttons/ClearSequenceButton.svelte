@@ -11,8 +11,12 @@
   // Props
   const {
     onclick,
+    disabled = false,
+    label = "Clear sequence",
   }: {
     onclick?: () => void;
+    disabled?: boolean;
+    label?: string;
   } = $props();
 
   // Services
@@ -25,14 +29,16 @@
 </script>
 
 <button
+  type="button"
+  {disabled}
   class="panel-button clear-button"
   data-testid="clear-sequence-button"
   data-ghost="safe"
   data-ghost-kind="clear"
-  data-ghost-label="Clear sequence"
+  data-ghost-label={label}
   onclick={handleClick}
-  aria-label="Clear sequence"
-  title="Clear sequence"
+  aria-label={label}
+  title={label}
 >
   <i class="fa-solid {WORKSPACE_BUTTON_ICON.clear.icon}" aria-hidden="true"></i>
   <span class="workspace-action-label" aria-hidden="true">
@@ -123,10 +129,22 @@
       );
   }
 
+  .panel-button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .panel-button {
+      transition: none;
+    }
+  }
+
   /* Mobile responsive - 48px minimum per iOS/Android guidelines */
   @media (max-width: 768px) {
     .panel-button {
-      width: var(--min-touch-target);
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
       font-size: var(--font-size-base);
     }
@@ -134,7 +152,7 @@
 
   @media (max-width: 480px) {
     .panel-button {
-      width: var(--min-touch-target); /* Maintain 48px minimum */
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
       font-size: var(--font-size-base);
     }
@@ -142,7 +160,7 @@
 
   @media (max-width: 320px) {
     .panel-button {
-      width: var(--min-touch-target); /* NEVER below 48px for accessibility */
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
       font-size: var(--font-size-sm);
     }
@@ -151,9 +169,7 @@
   /* 🎯 LANDSLOOPE MOBILE: Maintain 48px minimum for accessibility */
   @media (min-aspect-ratio: 17/10) and (max-height: 500px) {
     .panel-button {
-      width: var(
-        --min-touch-target
-      ); /* Maintain 48px minimum for accessibility */
+      width: var(--workspace-action-width, var(--min-touch-target));
       height: var(--min-touch-target);
       font-size: var(--font-size-sm);
     }

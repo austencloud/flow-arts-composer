@@ -1,10 +1,10 @@
 /**
  * The Vulcan Tech Gospel's own chronology.
  *
- * VTG is not one document. It is a decade-long project in numbered
+ * VTG is not one document. It is a continuing project in numbered
  * installments, and VTG 1 is itself five chapters with five different authors.
  * The archive tile steps through those chapters; the detail view tells the
- * decade.
+ * chronology.
  *
  * SOURCING — every line here traces to a page that was actually read, on the
  * same terms as `notation-catalog.ts`. Two primaries:
@@ -13,6 +13,8 @@
  *      chapter-by-chapter commentary on VTG 1, posted Feb 2, 2019.
  *   B. https://noelyee.com/vulcan-tech-gospel-2/ — the VTG #2 page, carrying
  *      Cantor and Yee's introduction and a dated release log.
+ *   Later document, app and social-announcement sources are recorded in
+ *   docs/reference/vtg-release-history.md and the archive ledger.
  *
  * The plates themselves were cropped from the PDFs those pages link to.
  *
@@ -55,7 +57,7 @@ export const VTG1_CHAPTERS: VtgChapter[] = [
     figure: "beat-shapes-page",
     title: "Minimal Beat Shapes",
     people: "Brian Thompson",
-    note: "“First discovered and worked through by Brian Thompson.” He built physical manipulatives to work out how a spinner could move between the different patterns.",
+    note: "“First discovered and worked through by Brian Thompson.” Thompson built physical models to explore transitions between the patterns.",
   },
   {
     figure: "patterns-40-a",
@@ -67,13 +69,13 @@ export const VTG1_CHAPTERS: VtgChapter[] = [
     figure: "trans-split-same",
     title: "Transitions Between Shapes",
     people: "David “Tankboy” Cantor",
-    note: "The first attempt to understand how all the patterns connect to one another, and the origin of the never-published VTG 3. Yee: “not visited often but has many elements that are worthy of attention.”",
+    note: "Explores connections between patterns. In his 2019 retrospective, Yee traces VTG 3 back to this chapter.",
   },
   {
     figure: "hybrid-3d",
     title: "3-D Hybrid Shapes",
     people: "Maiki Nope, Ben Drexler and Noel Yee",
-    note: "Written in Mike Icon and Jennifer Longo's house in Philadelphia, winter 2011. They found that from one angle the patterns collapse into lines of different lengths, then used that to build the 3-D hybrids. One flow artist has this page as a tattoo.",
+    note: "Written at Mike Icon and Jennifer Longo’s house in Philadelphia in winter 2011. Nope, Drexler, and Yee noticed that the patterns appeared as lines of different lengths from one angle. They used that observation to build the 3-D hybrids. One flow artist has this page as a tattoo.",
   },
 ];
 
@@ -86,9 +88,7 @@ export interface VtgEvent {
 }
 
 /**
- * The decade, for the detail view. The tile does not show this — 2015 and 2019
- * have no plate, and a stepper whose last step is an empty frame ends on a
- * blank.
+ * The project chronology, separate from the stepper's five VTG 1 plates.
  */
 export const VTG_DECADE: VtgEvent[] = [
   {
@@ -114,14 +114,21 @@ export const VTG_DECADE: VtgEvent[] = [
     what: "Yee announces “the tenth year of the Vulcan Tech Gospel Project and the release of the final installment VTG3,” and begins re-releasing the older chapters.",
   },
   {
-    when: "Not released",
-    what: "VTG 3 never appeared. No page, no download, no forum trace. The chapter that would have connected every pattern to every other is the one the project stopped before.",
-    unshipped: true,
+    when: "2019 · VTG 3",
+    what: "The public VTG 3 document is marked Draft #1. Its six-by-six snapshot grid labels the hands’ and props’ timing and direction separately. An Android app by Michael Caden Pike (MCP) and Yee was available by July, with animations, transitions and quizzes.",
+  },
+  {
+    when: "27 August 2026",
+    what: "The VTG Crew presents Mentive’s SpiroAnim translation of the VTG 3 grid into elemental terminology.",
+  },
+  {
+    when: "29 August 2026 · VTG 4",
+    what: "The VTG Crew announces Mentive’s SpiroAnim expansion as VTG 4, with quarter timing, quarter placement and additional ratios. Mentive’s reply credits the underlying concepts to other practitioners and describes his work as defining, exploring and visualizing them.",
   },
 ];
 
-/** The years VTG occupies on the archive's own 2009–2022 rail. */
-export const VTG_SPAN = { from: 2010, to: 2011 } as const;
+/** First documented year and latest verified activity, not a project end date. */
+export const VTG_SPAN = { from: 2010, to: 2026 } as const;
 
 /**
  * Which chapter is open, shared by every VtgChapterStepper on the page.

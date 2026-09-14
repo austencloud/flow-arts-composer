@@ -44,11 +44,12 @@ import {
   FIRST_FIRE_SHRINE_ORDER,
 } from "./first-fire-procession-plan";
 import {
-  buildEarthCanyonLayout,
-  createEarthCanyonTerrain,
-  earthCanyonStationOffsets,
-  BOSS_Y as EARTH_BOSS_Y,
-} from "./earth-canyon-layout";
+  buildEarthRootTerraceLayout,
+  createEarthRootTerraceTerrain,
+  earthRootTerraceStationOffsets,
+  earthRootTerraceSpawnOffset,
+  BED_Y as EARTH_BED_Y,
+} from "./earth-root-terrace-terrain";
 import {
   buildAirChimneyLayout,
   createAirChimneyTerrain,
@@ -353,13 +354,13 @@ const firePerformers = FIRST_FIRE_SHRINE_ORDER.map((shrineId) => {
 });
 
 /**
- * The Earth canyon overlook's authored shell, declared before VULCAN_CAVE_ROOMS
- * for the same reason Water's and Fire's are: the three boss stations come off
- * the SAME compiled dimensions the layout engine uses.
+ * The Earth wing's authored shell (the Root Terrace), declared before
+ * VULCAN_CAVE_ROOMS for the same reason Water's and Fire's are: the three
+ * case stations come off the SAME compiled dimensions the layout engine uses.
  *
  * Interior metres = ceil(minInterior × 1.5) × 0.5, so 45 × 32 compiles to
- * 34 × 24 m: a 12.5 m grass gully plus a 21.5 × 24 m canyon chamber holding a
- * ⌀14 m void with its rim ring.
+ * 34 × 24 m: a 6 m vestibule, a 10 m ramp and an 18 m terrace along the north
+ * wall, the rootbed 5.2 m below the terrace, and the east descent to Air.
  */
 // Interior metres = ceil(minInterior × 1.5) × 0.5, the same compile the Earth
 // note above describes. 23 × 27 gives 17.5 × 20.5 m.
@@ -377,11 +378,11 @@ const EARTH_MIN_INTERIOR_WIDTH = 45;
 const EARTH_MIN_INTERIOR_HEIGHT = 32;
 
 const earthWalls = {
-  // The canyon is open north. The compiled wall stays for collision; the
-  // graybox omits its visual and renders the boulder parapet just inside it.
+  // The terrace runs along the north wall; the carved shell is that wall.
+  // The compiled wall stays for collision and the room suppresses its tiles.
   north: EMPTY_WALL,
-  // The Air door sits at the east end of the south wall, at the top of the
-  // exit ramp that climbs east along the south rim.
+  // The Air door sits at the east end of the south wall, at the foot of the
+  // descent that comes down the east wall from the terrace.
   south: doorWall(EDGE_IDS.earthToAir, "end"),
   east: torchWall("start"),
   west: doorWall(EDGE_IDS.fireToEarth, "center"),
@@ -395,9 +396,7 @@ const earthDimensions = computeRoomDimensions({
 
 const EARTH_STATION_SUFFIXES = ["g", "h", "i"] as const;
 
-const earthPerformers = earthCanyonStationOffsets(
-  (earthDimensions.w - 2) * TILE_METRES
-).map((offset, index) => ({
+const earthPerformers = earthRootTerraceStationOffsets().map((offset, index) => ({
   offsetX: interiorOffsetFraction(
     offset.xMetres,
     earthDimensions.w,
@@ -408,12 +407,12 @@ const earthPerformers = earthCanyonStationOffsets(
     earthDimensions.h,
     earthDimensions.h - 2
   ),
-  // Up and out toward the south rim and the slab overlook, where the visitor
-  // stands six metres above them.
-  facing: "south" as const,
+  // Up toward the catwalk rail, where the visitor works their console 1.4 m
+  // above them, and on past it to the overlook.
+  facing: "north" as const,
   refId: `cave-earth-automaton-${EARTH_STATION_SUFFIXES[index]}`,
   collisionRadiusTiles: 2,
-  elevation: EARTH_BOSS_Y,
+  elevation: EARTH_BED_Y,
 }));
 
 const airWalls = {
@@ -690,13 +689,29 @@ export const VULCAN_CAVE_ROOMS: RoomNode[] = [
   },
   {
     id: "cave-earth",
-    name: "The Canyon Overlook",
+    name: "The Root Terrace",
     material: "stone",
     theme: "cave",
     minInteriorWidth: EARTH_MIN_INTERIOR_WIDTH,
     minInteriorHeight: EARTH_MIN_INTERIOR_HEIGHT,
+    // The visitor must not start on the room's centre tile: in this plan that
+    // is the middle of the rootbed, which is blocked and level with the
+    // performers. Start them inside the west door instead.
+    spawn: {
+      offsetX: interiorOffsetFraction(
+        earthRootTerraceSpawnOffset().xMetres,
+        earthDimensions.w,
+        earthDimensions.w - 2
+      ),
+      offsetY: interiorOffsetFraction(
+        earthRootTerraceSpawnOffset().zMetres,
+        earthDimensions.h,
+        earthDimensions.h - 2
+      ),
+      facing: earthRootTerraceSpawnOffset().facing,
+    },
     description:
-      "A grass gully opens onto the rim of a canyon. Three figures perform six metres below, on a floor there is no way down to; a fallen slab cantilevers over the drop and the shelves beyond recede into haze.",
+      "The Root Terrace: out of a mossy vestibule one ramp climbs to an overlook above the rootbed and another falls to a brass-railed catwalk that runs the row 1.4 m above it, with a control console set into the rail opposite each of the three figures performing G, H and I in daylight from an aven. There is no way down onto the bed; the east channel lands on the row's axis before the floor falls away toward Air.",
     roomPresentation: { suppressTileGeometry: true },
     walls: earthWalls,
     performers: earthPerformers,
@@ -905,9 +920,9 @@ const CAVE_SPACE_PROGRAM: readonly CaveSpaceProgram[] = [
   },
   {
     id: "cave-earth",
-    title: "The canyon overlook",
+    title: "The root terrace",
     description:
-      "A grass gully turns once and opens on a canyon rim; three figures work six metres below, past a fallen slab, with no way down.",
+      "A ramp climbs to a railed terrace above a rootbed lit from an aven; three figures work in one row 5.2 m below, and the descent lands on the row's axis.",
     tone: "social",
   },
   {
@@ -1133,8 +1148,8 @@ export function composeCaveTerrainForGrid(
       program: createFirstFireProcessionTerrain(grid),
     },
     {
-      footprint: buildEarthCanyonLayout(grid)?.bayFootprint,
-      program: createEarthCanyonTerrain(grid),
+      footprint: buildEarthRootTerraceLayout(grid)?.bayFootprint,
+      program: createEarthRootTerraceTerrain(grid),
     },
     {
       footprint: buildAirChimneyLayout(grid)?.bayFootprint,

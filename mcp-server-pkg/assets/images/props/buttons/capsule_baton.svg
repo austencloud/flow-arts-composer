@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Capsule Baton — LED baton, Staff family.
+
+  Modeled on the physical object, center outward: a braided/twisted silver shaft,
+  a tapered collar where the shaft enters each clear polycarbonate tube, paired
+  vent holes near each tube's open rim, and a frosted fluted silicone cap over
+  each end with the light capsule sitting inside it.
+
+  Geometry (matches PROP_DIMENSIONS.capsule_baton and PROP_TIP_POINTS.capsule_baton):
+    viewBox 252.8 x 40, so the hand pivot sits at (126.4, 20) and the prop spans
+    exactly as far as staff does — the mandala radius and beta spacing stay on the
+    staff family's numbers. The tracked tips are NOT the outer edge: they sit at
+    +/- 117 from the pivot, the center of each cap, because that is where the
+    light capsule actually is. The LED, fire, trail and charcoal emitters all read
+    those points, so the glow comes out of the cap rather than off the rim.
+
+    Cross-section is drawn about 2x the real object, the same exaggeration staff
+    uses (a 25mm tube on a 660mm prop would otherwise be a hairline). The thin
+    middle and fat ends are NOT exaggeration — that silhouette is the prop.
+
+  Color contract (packages/render-core/src/svg-color.ts, selective mode):
+    The two caps are flat neutral gray (#C9C9C9 — saturation 0, luminance > 0.4),
+    so the fill passes repaint them to the motion color. That is the whole point:
+    the lit part of the prop is the part that carries blue or red.
+    Shaft, grip, collars, tube rims and vent holes sit below 0.4 luminance, so
+    selective mode preserves them and the hardware stays silver on both hands.
+    Highlights are #FFF6E8 (saturation 0.09 > 0.05), preserved like the energy
+    pair's pale cores. Pure #ffffff would NOT survive selective mode.
+    The tube, the braid and the cap's internal bloom are gradient/pattern fills —
+    `fill="url(#...)"` cannot match the recolor regex, so they are immune. Strokes
+    are never rewritten (no consumer passes transformStroke), so the cap flutes
+    stay pale over whichever color the cap takes.
+    Every id is prefixed `cbaton` and gets suffixed per motion color when the
+    loader inlines both props into one document.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 252.8 40">
+  <defs>
+    <!-- Twisted silver deco tape over the carbon shaft. -->
+    <pattern id="cbatonBraid" width="7.6" height="10" patternUnits="userSpaceOnUse">
+      <rect width="7.6" height="10" fill="#C3CDDC"/>
+      <path d="M-3.5 12 L8.5 -2" stroke="#DFE7F2" stroke-width="3" fill="none"/>
+      <path d="M-1.7 12 L10.3 -2" stroke="#FFFFFF" stroke-width="1" fill="none" opacity="0.8"/>
+    </pattern>
+
+    <!-- Clear polycarbonate tube: bright top edge, dark underside. -->
+    <linearGradient id="cbatonTube" x1="0" y1="10" x2="0" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DFE8F3" stop-opacity="0.62"/>
+      <stop offset="0.24" stop-color="#FFFFFF" stop-opacity="0.3"/>
+      <stop offset="0.58" stop-color="#78838F" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#080B10" stop-opacity="0.68"/>
+    </linearGradient>
+
+    <!-- Grip and collar sheen, same read as the tube's. -->
+    <linearGradient id="cbatonSheen" x1="0" y1="13" x2="0" y2="27" gradientUnits="userSpaceOnUse">
+      <stop offset="0.06" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="0.3" stop-color="#FFFFFF" stop-opacity="0.42"/>
+      <stop offset="0.56" stop-color="#FFFFFF" stop-opacity="0.03"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.52"/>
+    </linearGradient>
+
+    <!-- Capsule sitting inside the frosted cap: bright core, soft falloff. -->
+    <radialGradient id="cbatonCore" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="0.42" stop-color="#FFFFFF" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- The cap silhouette is inlined at both ends rather than <use>d from defs:
+       the loader's makeClassNamesUnique rewrites id= and url(#...) but not
+       href=, so a <use> reference would dangle once both props share a doc. -->
+
+  <!-- ── Shaft ───────────────────────────────────────────────────────────── -->
+  <rect x="40.4" y="15" width="172" height="10" rx="5" fill="#C3CDDC"/>
+  <rect x="40.4" y="15" width="172" height="10" rx="5" fill="url(#cbatonBraid)"/>
+  <rect x="40.4" y="16" width="172" height="1.7" rx="0.85" fill="#FFF6E8" opacity="0.55"/>
+  <rect x="40.4" y="22.9" width="172" height="1.5" rx="0.75" fill="#0A0D12" opacity="0.6"/>
+
+  <!-- ── Grip, centered on the pivot ──────────────────────────────────────── -->
+  <rect x="96.4" y="13.7" width="60" height="12.6" rx="6.3" fill="#7C8899"/>
+  <rect x="96.4" y="13.7" width="60" height="12.6" rx="6.3" fill="url(#cbatonSheen)"/>
+  <rect x="98.6" y="13.7" width="1.8" height="12.6" rx="0.9" fill="#E6EDF6"/>
+  <rect x="152.4" y="13.7" width="1.8" height="12.6" rx="0.9" fill="#E6EDF6"/>
+
+  <!-- ══ RIGHT END ═══════════════════════════════════════════════════════════ -->
+  <!-- Tapered collar where the shaft enters the tube -->
+  <path d="M203 14.5 L214 11.5 L214 28.5 L203 25.5 Z" fill="#9AA7B8"/>
+  <path d="M203 14.5 L214 11.5 L214 28.5 L203 25.5 Z" fill="url(#cbatonSheen)"/>
+  <!-- Clear tube -->
+  <rect x="212" y="10" width="40.8" height="20" rx="4.5" fill="#B4B4B4" opacity="0.8"/>
+  <rect x="212" y="10" width="40.8" height="20" rx="4.5" fill="url(#cbatonTube)"/>
+  <!-- Open rim of the tube, so it reads as a separate part from the shaft -->
+  <path d="M212.6 11.2 L215.4 11.2 L215.4 28.8 L212.6 28.8 Z" fill="#39424F" opacity="0.85"/>
+  <!-- Hard specular running the tube's length -->
+  <rect x="216" y="12.3" width="33" height="2.3" rx="1.15" fill="#FFF6E8" opacity="0.85"/>
+  <!-- Paired vent holes near the open rim -->
+  <circle cx="220.5" cy="15.8" r="1.35" fill="#2A313B"/>
+  <circle cx="220.5" cy="24.2" r="1.35" fill="#2A313B"/>
+  <!-- Frosted fluted cap — the part that takes the motion color -->
+  <path d="M232 8.3 L244.5 10.1 C250.7 11.6 252.8 15.4 252.8 20 C252.8 24.6 250.7 28.4 244.5 29.9 L232 31.7 Z" fill="#C9C9C9"/>
+  <ellipse cx="242.5" cy="20" rx="12" ry="10" fill="url(#cbatonCore)"/>
+  <!-- Axial flutes -->
+  <path d="M233.4 11.4 L249.4 13.7 M233.4 28.6 L249.4 26.3" stroke="#FFF6E8" stroke-width="1" opacity="0.6" fill="none"/>
+  <path d="M233 15.4 L251 16.5 M233 24.6 L251 23.5" stroke="#FFF6E8" stroke-width="0.9" opacity="0.4" fill="none"/>
+  <!-- Rim where the cap slides over the tube -->
+  <path d="M232 8.3 L235.2 8.8 L235.2 31.2 L232 31.7 Z" fill="#AEB9C8" opacity="0.8"/>
+
+  <!-- ══ LEFT END (mirror) ═══════════════════════════════════════════════════ -->
+  <g transform="translate(252.8,0) scale(-1,1)">
+    <path d="M203 14.5 L214 11.5 L214 28.5 L203 25.5 Z" fill="#9AA7B8"/>
+    <path d="M203 14.5 L214 11.5 L214 28.5 L203 25.5 Z" fill="url(#cbatonSheen)"/>
+    <rect x="212" y="10" width="40.8" height="20" rx="4.5" fill="#B4B4B4" opacity="0.8"/>
+    <rect x="212" y="10" width="40.8" height="20" rx="4.5" fill="url(#cbatonTube)"/>
+    <path d="M212.6 11.2 L215.4 11.2 L215.4 28.8 L212.6 28.8 Z" fill="#39424F" opacity="0.85"/>
+    <rect x="216" y="12.3" width="33" height="2.3" rx="1.15" fill="#FFF6E8" opacity="0.85"/>
+    <circle cx="220.5" cy="15.8" r="1.35" fill="#2A313B"/>
+    <circle cx="220.5" cy="24.2" r="1.35" fill="#2A313B"/>
+    <path d="M232 8.3 L244.5 10.1 C250.7 11.6 252.8 15.4 252.8 20 C252.8 24.6 250.7 28.4 244.5 29.9 L232 31.7 Z" fill="#C9C9C9"/>
+    <ellipse cx="242.5" cy="20" rx="12" ry="10" fill="url(#cbatonCore)"/>
+    <path d="M233.4 11.4 L249.4 13.7 M233.4 28.6 L249.4 26.3" stroke="#FFF6E8" stroke-width="1" opacity="0.6" fill="none"/>
+    <path d="M233 15.4 L251 16.5 M233 24.6 L251 23.5" stroke="#FFF6E8" stroke-width="0.9" opacity="0.4" fill="none"/>
+    <path d="M232 8.3 L235.2 8.8 L235.2 31.2 L232 31.7 Z" fill="#AEB9C8" opacity="0.8"/>
+  </g>
+</svg>

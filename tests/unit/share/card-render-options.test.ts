@@ -19,6 +19,8 @@ const ic = {
   getInfoCellChoiceForStepCount: () => ic._choice,
 };
 const vm = { getGridVisibility: () => true };
+const appSettings = { primaryPropColors: { left: "#00ff88", right: "#ff8800" } };
+vi.mock("$lib/shared/application/state/app-state.svelte", () => ({ getSettings: () => appSettings }));
 
 vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
   getImageCompositionManager: () => ic,
@@ -36,6 +38,18 @@ import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-o
 const seq = { steps: [{ letter: "A" }, { letter: "B" }, { letter: "C" }] } as any;
 
 describe("buildCardRenderOptions", () => {
+  it("snapshots the primary hand colors into the worker export options", () => {
+    expect(buildCardRenderOptions(seq, { darkMode: false }).visibilityOverrides?.primaryPropColors)
+      .toEqual({ left: "#00ff88", right: "#ff8800" });
+  });
+  it("exports the selected presentation instead of the account props", () => {
+    const options = buildCardRenderOptions(seq, {
+      darkMode: false,
+      propConfig: { leftPropType: "fan", rightPropType: "buugeng", catDogMode: true } as never,
+    });
+    expect(options.leftPropTypeOverride).toBe("fan");
+    expect(options.rightPropTypeOverride).toBe("buugeng");
+  });
   beforeEach(() => {
     ic._cols = 4;
     ic._layout = "row";

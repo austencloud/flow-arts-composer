@@ -18,6 +18,8 @@ Features:
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import HorizontalSwipeContainer from "$lib/shared/foundation/ui/HorizontalSwipeContainer.svelte";
+  import { runAtBackgroundPriority } from "$lib/shared/foundation/utils/background-scheduling";
+  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import { t } from "$lib/shared/i18n/i18n.svelte.js";
   import { flyFade } from "$lib/shared/transitions/motion";
@@ -112,6 +114,7 @@ Features:
   } | null>(null);
   let emblaApi = $state<EmblaCarouselType | undefined>();
   let activePanelIndex = $state(initialPanelIndex);
+  let mountedPanels = $state<number[]>([initialPanelIndex]);
   let pendingPanelIndex = $state<number | null>(null);
   let pendingDirectPanelIndex: number | null = null;
   let activeUtilityPanel = $state<UtilityPanel | null>(null);
@@ -126,6 +129,67 @@ Features:
   const activePanel = $derived(
     organizedPictographs[activePanelIndex] ?? organizedPictographs[0]
   );
+  const canWarmPanels = $derived(boundsReady());
+
+  function mountPanel(index: number) {
+    if (!mountedPanels.includes(index))
+      mountedPanels = [...mountedPanels, index];
+  }
+
+  function prepareForNavigation() {
+    mountedPanels = organizedPictographs.map((_, index) => index);
+  }
+
+  // Give the selected pictographs a paint before preparing each hidden group.
+  // Keep the slide boxes present throughout so swipe distances never change.
+  $effect(() => {
+    if (!canWarmPanels) return;
+    const count = organizedPictographs.length;
+    const finish = bootProfiler.startSpan("construct:carousel-mount", {
+      panels: count,
+    });
+    let cancelled = false;
+    let frame = 0;
+
+    function scheduleNextPanel() {
+      frame = requestAnimationFrame(() => {
+        frame = requestAnimationFrame(() => {
+          bootProfiler.milestone("construct:carousel-yielded");
+          runAtBackgroundPriority(() => {
+            if (cancelled) return;
+            const next = Array.from(
+              { length: count },
+              (_, index) => index
+            ).find((index) => !mountedPanels.includes(index));
+            if (next === undefined) {
+              finish();
+              return;
+            }
+            mountPanel(next);
+            scheduleNextPanel();
+          });
+        });
+      });
+    }
+
+    scheduleNextPanel();
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(frame);
+      finish("cancelled");
+    };
+  });
+
+  $effect(() => {
+    const api = emblaApi;
+    if (!api) return;
+    // A drag may cross several slides before background warming has finished.
+    // Prepare them on pointer-down, before the first movement can expose one.
+    api.on("pointerDown", prepareForNavigation);
+    return () => {
+      api.off("pointerDown", prepareForNavigation);
+    };
+  });
   const activeGroup = $derived(
     getLetterTypeGroupDescriptor(activePanel?.title ?? "") ?? defaultGroup
   );
@@ -191,6 +255,7 @@ Features:
 
   // ===== Event Handlers =====
   function handlePanelChange(panelIndex: number) {
+    mountPanel(panelIndex);
     const previousPanelIndex = activePanelIndex;
     activePanelIndex =
       organizedPictographs.length === 0
@@ -233,6 +298,8 @@ Features:
       (section: OrganizedSection) => section.title === type
     );
     if (panelIndex === -1) return;
+    // A direct jump can expose intermediate slides along its animated path.
+    prepareForNavigation();
 
     onLetterTypeGroupSelected(type, "selector");
     pendingDirectPanelIndex = panelIndex;
@@ -473,7 +540,7 @@ Features:
                   >Try another letter type or adjust the option settings.</span
                 >
               </div>
-            {:else if boundsReady()}
+            {:else if boundsReady() && (index === activePanelIndex || mountedPanels.includes(index))}
               <!-- Wait for bounds before rendering pictographs to prevent size burst on mobile -->
               {#if section.title === "Types 4-6" || section.type === "grouped"}
                 <!-- Grouped section (Types 4-6) -->

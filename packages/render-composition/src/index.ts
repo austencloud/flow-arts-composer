@@ -1,6 +1,11 @@
 // @tka/render-composition — shared choreo card composition
 export * from "./types.js";
 export { tokenizeGlyphWord } from "./glyph-word.js";
+export {
+  compressWord,
+  simplifyRepeatedWord,
+  splitWordLetterUnits,
+} from "./word-display.js";
 export { sanitizeSvgForBitmap } from "./svg-bitmap-sanitize.js";
 export {
   DARK_MONOCHROME_IMAGE_COLOR,
@@ -8,6 +13,13 @@ export {
   drawTintedImage,
 } from "./tinted-image.js";
 export * from "./difficulty-config.js";
+export {
+  analyzeDifficultyMotions,
+  calculateDifficultyLevelFromMotions,
+  type DifficultyAnalysis,
+  type DifficultyMotion,
+  type DifficultyTrigger,
+} from "./difficulty-analysis.js";
 export {
   drawSvgPath,
   drawPathCommands,
@@ -61,14 +73,74 @@ export {
 export { renderStepNumber } from "./step-number-renderer.js";
 export { renderSmartBorders } from "./border-renderer.js";
 export {
+  DARK_HAND_COLORS,
+  LIGHT_HAND_COLORS,
+  normalizeHandHexColor,
+  resolveHandColorPair,
+  type HandColorPair,
+} from "./hand-colors.js";
+export {
+  calculateCardMandalaPaths,
+  renderCardMandala,
+  type CardMandalaMotion,
+  type CardMandalaPaths,
+  type CardMandalaPlacement,
+  type CardMandalaStep,
+  type CardMandalaTurnAllocation,
+} from "./card-mandala.js";
+export {
+  COMPOSER_CARD_EXPORT_PROFILE_V1,
+  MANDALA_MIN_STEP_COUNT,
+  accentAlphaHex,
+  calculateSequenceCardCell,
+  calculateSequenceCardLayout,
+  calculateSequenceCardMandalaPlacements,
+  calculateSequenceCardQRCell,
+  composeSequenceCard,
+  type SequenceCardCell,
+  type SequenceCardCompositionOptions,
+  type SequenceCardExportProfile,
+  type SequenceCardHeader,
+  type SequenceCardLayout,
+  type SequenceCardPipeline,
+} from "./sequence-card-pipeline.js";
+export {
   calculateHeaderWordSideInset,
   renderHeader,
   type HeaderOptions,
   type HeaderWordSideInsetOptions,
 } from "./header-renderer.js";
 export {
+  paintCardFrame,
+  getCardFrameContentInset,
+  type CardFrameOptions,
+} from "./card-frame.js";
+export {
+  calculateCardSurface,
+  type CardSurfaceOptions,
+} from "./card-surface-layout.js";
+export {
   renderFooter,
   loadFooterIcon,
   seedFooterIcon,
   type FooterOptions,
 } from "./footer-renderer.js";
+export {
+  DURATION_BADGE_FONT_FAMILY,
+  formatDurationBadge,
+  renderDurationBadge,
+  stepHasDurationBadge,
+} from "./duration-badge.js";
+export {
+  MODERN_QR_STYLE,
+  PLAY_GREEN,
+  PRINT_QR_RENDER_SIZE,
+  applyDarkQrStyle,
+  calculateQrCellGeometry,
+  createStyledQrOptions,
+  paintQrCell,
+  playIconDataUrl,
+  type QrCenterIcon,
+  type StyledQrOptions,
+  type StyledQrStyle,
+} from "./qr-code-style.js";

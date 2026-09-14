@@ -199,7 +199,9 @@
     if (!element) return 0;
     let opacity = 1;
     while (element) {
-      opacity *= Number.parseFloat(getComputedStyle(element).opacity) || 0;
+      const style = getComputedStyle(element);
+      if (style.visibility === "hidden" || style.display === "none") return 0;
+      opacity *= Number.parseFloat(style.opacity) || 0;
       element = element.parentElement;
     }
     return opacity;
@@ -485,6 +487,44 @@
     return false;
   }
 
+  function sharedCanvasQuality() {
+    const surface = document.querySelector<HTMLElement>(
+      "[data-shared-animation-surface]"
+    );
+    const canvas = surface?.querySelector<HTMLCanvasElement>(
+      'canvas[data-animation-layer="props"]'
+    );
+    const bar = document.querySelector<HTMLElement>(
+      "[data-shared-studio-transport]"
+    );
+    let covered = false;
+    if (surface && bar && !surface.closest("[inert]")) {
+      const rect = bar.getBoundingClientRect();
+      // Flying surfaces ignore pointer input. Temporarily include them in the
+      // paint-order hit test, restoring before the browser paints or handles input.
+      const targets = [surface, bar];
+      const pointers = targets.map((node) => node.style.pointerEvents);
+      try {
+        targets.forEach((node) => (node.style.pointerEvents = "auto"));
+        const top = document.elementFromPoint(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2
+        );
+        covered = !!top && surface.contains(top) && !bar.contains(top);
+      } finally {
+        targets.forEach(
+          (node, index) => (node.style.pointerEvents = pointers[index])
+        );
+      }
+    }
+    const size = canvas ? Math.min(canvas.clientWidth, canvas.clientHeight) : 0;
+    const density =
+      canvas && size > 0 && !surface?.closest("[inert]")
+        ? canvas.width / (size * window.devicePixelRatio)
+        : null;
+    return { sharedTransportCovered: covered, sharedRasterDensity: density };
+  }
+
   function captureGeometrySample(): void {
     if (!activeTrace) return;
     if (
@@ -608,14 +648,32 @@
         sharedCanvasIdentity: elementIdentity(
           "[data-shared-animation-surface][data-surface-handoff] canvas"
         ),
+        ...sharedCanvasQuality(),
         sharedInspectorIdentity: elementIdentity(
           "[data-shared-studio-inspector]"
         ),
+        motionInspectorOpacity: elementOpacity(
+          "[data-shared-studio-inspector]"
+        ),
+        cardInspectorOpacity: elementOpacity("[data-shared-card-inspector]"),
+        sharedCardInspectorIdentity: elementIdentity(
+          "[data-shared-card-inspector] .export-panel"
+        ),
+        selectedStudioHalf:
+          document
+            .querySelector(".region-surface[aria-pressed='true']")
+            ?.getAttribute("aria-label") ?? null,
         sharedCardIdentity: elementIdentity(
           "[data-shared-studio-card] .choreo-card-root"
         ),
         sharedTransportIdentity: elementIdentity(
           "[data-shared-studio-transport] [aria-label='Playback transport']"
+        ),
+        sharedScrubberIdentity: elementIdentity(
+          "[data-shared-studio-transport] [aria-label='Playback progress']"
+        ),
+        sharedPlayButtonIdentity: elementIdentity(
+          "[data-shared-studio-transport] .pill-play"
         ),
         sharedSurfaces: Object.fromEntries(
           Object.entries({
@@ -626,6 +684,8 @@
             editor: "[data-shared-studio-inspector] .panel-scroll",
             card: "[data-shared-studio-card]",
             transport: "[data-shared-studio-transport]",
+            scrubber: "[data-shared-studio-transport] .pill-track",
+            playButton: "[data-shared-studio-transport] .pill-play",
             phone: ".output-frame",
           }).map(([key, selector]) => [key, elementBounds(selector)])
         ),
@@ -938,11 +998,26 @@
     const source: ReviewModeLabel =
       command === "studio-3d"
         ? "3D Animation"
-        : command === "practice-card"
+        : command === "practice-card" || command.startsWith("studio-card-")
           ? "Card"
           : "2D Animation";
     if (!(await chooseMode(source, version))) return;
     if (source === "3D Animation" && !(await waitFor3DReady(version))) return;
+
+    if (command.startsWith("studio-card-")) {
+      if (!(await chooseMode("Post Studio", version))) return;
+      const halves = Array.from(
+        document.querySelectorAll<HTMLButtonElement>(".region-surface")
+      ).sort(
+        (a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top
+      );
+      const selected =
+        halves[command.endsWith("bottom") ? halves.length - 1 : 0];
+      if (!selected) throw new Error("Studio has no selectable phone halves");
+      selected.click();
+      await wait(dwell);
+      if (!(await chooseMode("Card", version))) return;
+    }
 
     beginGeometryTrace(
       command,
@@ -981,6 +1056,9 @@
         await wait(dwell);
         setTracePhase("workspace-return");
         (await waitForControl("Exit practice mode", version)).click();
+        // A round trip is not complete if Practice silently leaves the user
+        // in Side by Side instead of restoring the surface that opened it.
+        await waitForModeCommit(source, version);
         await wait(dwell);
       }
     } else {

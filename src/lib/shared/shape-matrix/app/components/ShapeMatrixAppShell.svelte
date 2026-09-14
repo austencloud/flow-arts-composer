@@ -1,20 +1,26 @@
 <script lang="ts">
   import { tick, untrack } from "svelte";
+  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
   import PanelGroup from "$lib/shared/panels/PanelGroup.svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import LevelSelector from "$lib/shared/components/LevelSelector.svelte";
   import type { MatrixLabelMode } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
   import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
   import { KINETIC_SHAPE_ENGINE_NAME } from "../shape-engine-identity";
+  import { shareOrCopyLink } from "$lib/shared/share/services/link-share";
+  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
 
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { createShapeMatrixAnimationState } from "../state/shape-matrix-animation-state.svelte";
+  import { customizeSection } from "../state/shape-matrix-customize";
   import { setShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
   import { setAnimationScopeContext } from "$lib/shared/animation-engine/state/animation-scope-context";
   import { setAnimationVisibilityContext } from "$lib/shared/animation-engine/state/animation-visibility-context";
+  import { SequenceViewerVisibilityState } from "$lib/shared/sequence-viewer/state/viewer-visibility-state.svelte";
+  import { setViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
   import { setEffectsConfigContext } from "$lib/shared/effects/state/effects-config-context";
+  import ShapeMatrixCustomizeWorkspace from "./ShapeMatrixCustomizeWorkspace.svelte";
   import ShapeMatrixDetailPane from "./ShapeMatrixDetailPane.svelte";
   import ShapeMatrixMatrixPane from "./ShapeMatrixMatrixPane.svelte";
   import ShapeMatrixTurnPopover from "./ShapeMatrixTurnPopover.svelte";
@@ -23,9 +29,9 @@
   import ShapeMatrixTheoryPane from "./ShapeMatrixTheoryPane.svelte";
   import { runMandalaMorph } from "../services/shape-matrix-mandala-morph";
   import { runShapeMatrixDetailReveal } from "../services/shape-matrix-reveal";
-  import { growFade } from "$lib/shared/transitions/motion";
-  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-  import PropSelectionSheet from "$lib/shared/settings/components/tabs/prop-type/PropSelectionSheet.svelte";
+  import { growFade, motionDuration } from "$lib/shared/transitions/motion";
+  import ShapeMatrixFocusWorkspace from "./ShapeMatrixFocusWorkspace.svelte";
+  import { createLayoutMotion } from "$lib/shared/transitions/layout-flip";
 
   interface Props {
     /** Embedded hosts (the Toys tab) get their name from module chrome, so
@@ -35,6 +41,68 @@
 
   const { variant = "standalone" }: Props = $props();
   const appState = getShapeMatrixAppContext();
+  const focusMode = $derived(
+    appState.compact &&
+      (appState.propPickerOpen || animationState.activeSection !== null)
+  );
+  let appElement: HTMLElement | undefined;
+  const focusMotion = createLayoutMotion({
+    getRoot: () => appElement,
+    groups: [{ selector: "[data-focus-layout]", datasetKey: "focusLayout" }],
+    getDuration: () => motionDuration(DURATION.emphasis),
+  });
+  let previousFocusMode: boolean | undefined;
+  $effect.pre(() => {
+    const next = focusMode;
+    if (previousFocusMode === undefined) {
+      previousFocusMode = next;
+      return;
+    }
+    if (previousFocusMode === next) return;
+    previousFocusMode = next;
+    untrack(() => focusMotion.capture());
+    void tick().then(() => focusMotion.play());
+  });
+  $effect(() => () => focusMotion.cancel());
+  let turnPopover: ShapeMatrixTurnPopover | undefined;
+
+  /** Native Back uses the same dismissal owners as the web interface. */
+  export function handleBack(): boolean {
+    if (getEscapeLayerManager().dismissTopLayer() !== "unhandled") return true;
+    if (turnPopover?.dismiss()) return true;
+    if (appState.aboutOpen) {
+      appState.closeAbout();
+      return true;
+    }
+    if (appState.propPickerOpen) {
+      appState.closePropPicker();
+      return true;
+    }
+    if (animationState.activeSection !== null) {
+      animationState.showRelationships();
+      return true;
+    }
+    if (appState.compact && appState.activeView === "detail") {
+      appState.showMatrix();
+      return true;
+    }
+    return false;
+  }
+
+  /* Share hands the address on directly, on the press itself: the phone's own
+     share sheet where there is one, the clipboard everywhere else. Both need
+     that gesture, so nothing may await before the call. The app never builds
+     the address; the route host does, through appState.shareLink(). */
+  async function shareThisView(): Promise<void> {
+    const url = appState.shareLink();
+    if (url === null) return;
+    const outcome = await shareOrCopyLink({
+      url,
+      title: KINETIC_SHAPE_ENGINE_NAME,
+    });
+    if (outcome === "copied") toast.success("Link copied");
+    else if (outcome === "failed") toast.error("Could not copy the link");
+  }
   // The hero's animation state lives here, above both panes, so both surfaces
   // share one animation scope while their workspaces crossfade.
   const animationState = setShapeMatrixAnimationContext(
@@ -42,12 +110,22 @@
   );
   setAnimationScopeContext(animationState.scope);
   setAnimationVisibilityContext(animationState.scope.visibility);
-  setEffectsConfigContext(animationState.scope.effects);
-  import {
-    SHAPE_MATRIX_LEVELS,
-    SHAPE_MATRIX_LEVEL_DESCRIPTIONS,
-  } from "../shape-matrix-levels";
 
+  /* Which hands the canvas draws. The animator already owns per-hand motion
+     visibility for the viewer; the Shape Engine scopes its own instance so a
+     header's solo hides the other prop and its trail through that owner
+     rather than a second mechanism. It follows the solo and nothing else, so
+     the Display page can still change it afterwards. */
+  const motionVisibility = new SequenceViewerVisibilityState(true);
+  setViewerVisibilityContext(motionVisibility);
+  $effect(() => {
+    const solo = appState.soloHand;
+    untrack(() => {
+      motionVisibility.leftMotion = solo !== "right";
+      motionVisibility.rightMotion = solo !== "left";
+    });
+  });
+  setEffectsConfigContext(animationState.scope.effects);
   /* Both surfaces are a grid of pairs with a detail beside it, so the shell
      runs one layout and swaps what fills the panes. Matrix adds a Kinetic
      Alphabet difficulty choice; Theory's typed ratios need no second bound. */
@@ -72,12 +150,12 @@
     { value: "turns" as const, label: "TKA turns", shortLabel: "Turns" },
     { value: "ratios" as const, label: "VTG ratios", shortLabel: "Ratios" },
   ];
+  /* One split for both surfaces. The panes stay where they are while the
+     grid and the detail inside them crossfade, so a split set on one surface
+     is the split on the other. */
   let sizes = $state([1.28, 0.82]);
-  let theorySizes = $state([1.28, 0.82]);
-  let matrixPaneElement: HTMLDivElement;
+  let gridPaneElement: HTMLDivElement;
   let detailPaneElement: HTMLDivElement;
-  let theoryPaneElement: HTMLDivElement;
-  let theoryDetailElement: HTMLDivElement;
   let theoryEditingAxis = $state<"left" | "right" | "both" | null>(null);
   let workspaceElement: HTMLDivElement;
 
@@ -96,12 +174,10 @@
   const STAGE_MIN = 380;
   const CUSTOMIZE_MIN = 440;
   const customizeOpen = $derived(
-    !appState.compact &&
-      (animationState.activeSection !== null || appState.propPickerOpen)
+    customizeSection(appState, animationState) !== null
   );
   let restingSizes: number[] | null = null;
-  let restingTheorySizes: number[] | null = null;
-  let customizeSurface: "matrix" | "theory" | null = null;
+  let customizeApplied = false;
 
   function customizeSplit(): number[] | null {
     if (!workspaceElement) return null;
@@ -142,29 +218,29 @@
   }
 
   $effect(() => {
-    const target = customizeOpen ? (theory ? "theory" : "matrix") : null;
-    if (target === customizeSurface) return;
+    const target = customizeOpen;
+    if (target === customizeApplied) return;
     untrack(() => {
-      if (customizeSurface === "matrix" && restingSizes) sizes = restingSizes;
-      if (customizeSurface === "theory" && restingTheorySizes) {
-        theorySizes = restingTheorySizes;
-      }
-      if (target === "matrix") {
+      if (customizeApplied && restingSizes) sizes = restingSizes;
+      if (target) {
         restingSizes = [...sizes];
         const split = customizeSplit();
         if (split) sizes = split;
-      } else if (target === "theory") {
-        restingTheorySizes = [...theorySizes];
-        const split = customizeSplit();
-        if (split) theorySizes = split;
       }
-      customizeSurface = target;
+      customizeApplied = target;
     });
   });
 
   // Compact navigation runs as a shared-element morph between the selected
   // tile and the hero. Wide layouts show both panes at once, so the same
   // calls fall through to the plain state mutation.
+  /* A header, on a wide host, changes what the hero plays without leaving
+     the grid; a compact host still has to travel to the detail view, and
+     there is no tile to fly, so it goes there plainly. */
+  function selectSolo(hand: "left" | "right", flower: Flower): void {
+    appState.selectSolo(hand, flower);
+  }
+
   function selectPair(pair: { left: Flower; right: Flower }): void {
     if (!appState.compact) {
       appState.selectPair(pair);
@@ -211,7 +287,7 @@
     const previous = revealedToken;
     revealedToken = token;
     if (previous === null || previous === token) return;
-    const pane = theory ? theoryDetailElement : detailPaneElement;
+    const pane = detailPaneElement;
     if (!pane) return;
     void tick().then(() => {
       runShapeMatrixDetailReveal(pane, { hero: !appState.compact });
@@ -227,13 +303,8 @@
     void tick().then(() => {
       if (cancelled) return;
       frame = requestAnimationFrame(() => {
-        const pane = theory
-          ? request.target === "matrix"
-            ? theoryPaneElement
-            : theoryDetailElement
-          : request.target === "matrix"
-            ? matrixPaneElement
-            : detailPaneElement;
+        const pane =
+          request.target === "matrix" ? gridPaneElement : detailPaneElement;
         if (!pane) return;
         const focusTarget =
           request.target === "matrix"
@@ -254,14 +325,46 @@
   });
 </script>
 
-{#snippet matrixPane()}
+{#snippet matrixGrid()}
+  <!-- The crossfade lays its sources out as absolutely positioned blocks. Each
+       pane root fills by height, so each source gets one block that is the
+       source's whole box for the root to fill. -->
+  <div class="pane-source">
+    <ShapeMatrixMatrixPane
+      onselect={selectPair}
+      onsolo={selectSolo}
+      onsurprise={surpriseMe}
+    />
+  </div>
+{/snippet}
+
+{#snippet theoryGrid()}
+  <div class="pane-source">
+    <ShapeMatrixTheoryPane
+      emphasizedAxis={theoryEditingAxis}
+      onsurprise={surpriseMe}
+    />
+  </div>
+{/snippet}
+
+<!-- One grid pane for both surfaces. The surface changes what the grid is
+     made of, not where it is: the Matrix grid and the Theory grid crossfade
+     inside the pane, and the customize workspace covers the pane once,
+     whichever grid is showing. -->
+{#snippet gridPane()}
   <div
     class="workspace-pane"
-    bind:this={matrixPaneElement}
+    bind:this={gridPaneElement}
     inert={appState.compact && appState.activeView !== "matrix"}
     aria-hidden={appState.compact && appState.activeView !== "matrix"}
   >
-    <ShapeMatrixMatrixPane onselect={selectPair} onsurprise={surpriseMe} />
+    <DualSourceCrossfade
+      active={theory ? "second" : "first"}
+      duration={booted ? DURATION.normal : 0}
+      first={matrixGrid}
+      second={theoryGrid}
+    />
+    <ShapeMatrixCustomizeWorkspace />
   </div>
 {/snippet}
 
@@ -281,6 +384,19 @@
   </button>
 {/snippet}
 
+{#snippet matrixDetail()}
+  <div class="pane-source">
+    <ShapeMatrixDetailPane />
+  </div>
+{/snippet}
+
+{#snippet theoryDetail()}
+  <div class="pane-source">
+    <ShapeMatrixTheoryDetail />
+  </div>
+{/snippet}
+
+<!-- One detail pane, the same way: the two details crossfade inside it. -->
 {#snippet detailPane()}
   <div
     class="workspace-pane"
@@ -288,117 +404,24 @@
     inert={appState.compact && appState.activeView !== "detail"}
     aria-hidden={appState.compact && appState.activeView !== "detail"}
   >
-    <ShapeMatrixDetailPane />
-  </div>
-{/snippet}
-
-{#snippet matrixWorkspace()}
-  <!-- The crossfade lays its sources out as absolutely positioned blocks, so a
-       child that fills by flex-grow has nothing to grow inside. Each source
-       gets its own filling stage, the way the viewer's panel workspace does. -->
-  <div class="workspace-source">
-    <PanelGroup
-      direction="horizontal"
-      bind:sizes
-      gap={appState.compact ? 0 : 8}
-      panels={[
-        {
-          id: "matrix",
-          content: matrixPane,
-          defaultSize: 1.28,
-          minSize: 440,
-          fixedSize: appState.compact
-            ? appState.activeView === "matrix"
-              ? "100%"
-              : "0px"
-            : undefined,
-          resizable: !appState.compact,
-        },
-        {
-          id: "realization",
-          content: detailPane,
-          defaultSize: 0.82,
-          minSize: 380,
-          fixedSize: appState.compact
-            ? appState.activeView === "detail"
-              ? "100%"
-              : "0px"
-            : undefined,
-        },
-      ]}
-    />
-  </div>
-{/snippet}
-
-{#snippet theoryPane()}
-  <div
-    class="workspace-pane"
-    bind:this={theoryPaneElement}
-    inert={appState.compact && appState.activeView !== "matrix"}
-    aria-hidden={appState.compact && appState.activeView !== "matrix"}
-  >
-    <ShapeMatrixTheoryPane
-      emphasizedAxis={theoryEditingAxis}
-      onsurprise={surpriseMe}
-    />
-  </div>
-{/snippet}
-
-{#snippet theoryDetail()}
-  <div
-    class="workspace-pane"
-    bind:this={theoryDetailElement}
-    inert={appState.compact && appState.activeView !== "detail"}
-    aria-hidden={appState.compact && appState.activeView !== "detail"}
-  >
-    <ShapeMatrixTheoryDetail />
-  </div>
-{/snippet}
-
-{#snippet theoryWorkspace()}
-  <!-- Same two panes, same split, same compact behaviour as the Matrix. The
-       surface changes what the grid is made of, not how the app works. -->
-  <div class="workspace-source">
-    <PanelGroup
-      direction="horizontal"
-      bind:sizes={theorySizes}
-      gap={appState.compact ? 0 : 8}
-      panels={[
-        {
-          id: "theory-matrix",
-          content: theoryPane,
-          defaultSize: 1.28,
-          minSize: 440,
-          fixedSize: appState.compact
-            ? appState.activeView === "matrix"
-              ? "100%"
-              : "0px"
-            : undefined,
-          resizable: !appState.compact,
-        },
-        {
-          id: "theory-realization",
-          content: theoryDetail,
-          defaultSize: 0.82,
-          minSize: 380,
-          fixedSize: appState.compact
-            ? appState.activeView === "detail"
-              ? "100%"
-              : "0px"
-            : undefined,
-        },
-      ]}
+    <DualSourceCrossfade
+      active={theory ? "second" : "first"}
+      duration={booted ? DURATION.normal : 0}
+      first={matrixDetail}
+      second={theoryDetail}
     />
   </div>
 {/snippet}
 
 <main
   class="shape-app"
+  bind:this={appElement}
+  class:focus-mode={focusMode}
   data-shape-matrix-app
   class:compact-detail={appState.compact && appState.activeView === "detail"}
   class:theory
 >
-  <header class="topbar">
+  <header class="topbar" inert={focusMode} aria-hidden={focusMode}>
     {#if appState.compact}
       <div class="compact-context">
         {#if appState.activeView === "detail"}
@@ -421,6 +444,7 @@
              opens both axis ratios together. -->
         <ShapeMatrixSurfaceControl compact />
         <ShapeMatrixTurnPopover
+          bind:this={turnPopover}
           onratiofocuschange={(hand) => (theoryEditingAxis = hand)}
         />
       </div>
@@ -431,8 +455,10 @@
     {/if}
 
     {#if !appState.compact}
-      <!-- The surface choice outranks everything below it. Matrix adds its
-           difficulty beside that choice; Theory has no parallel setting. -->
+      <!-- The surface choice outranks everything below it. Difficulty is
+           not here: it reshapes the grid alone, so it stands with the grid
+           (ShapeMatrixDifficultyStrip) where the press and the change are one
+           glance apart. Notation stays, because it re-reads every surface. -->
       <div class="header-meta">
         <div class="surface-control-cell">
           <ShapeMatrixSurfaceControl />
@@ -448,17 +474,6 @@
               duration: booted ? DURATION.normal : 0,
             }}
           >
-            <div class="control-cell level-control">
-              <span class="control-label">Difficulty</span>
-              <LevelSelector
-                value={appState.level}
-                levels={SHAPE_MATRIX_LEVELS}
-                describe={(level) => SHAPE_MATRIX_LEVEL_DESCRIPTIONS[level]}
-                onchange={appState.setLevel}
-                compact={true}
-                ariaLabel="Kinetic Alphabet level"
-              />
-            </div>
             <!-- The axis values themselves are edited in the recipe bar above
                  the grid; the header keeps only the settings that shape the
                  whole surface. -->
@@ -498,6 +513,20 @@
           </button>
         {/if}
       {/if}
+      <!-- The link to this view. One press: the phone's own share sheet
+           where there is one, the clipboard everywhere else. Only a host with
+           a route has a link at all. -->
+      {#if appState.canShare}
+        <button
+          class="top-action"
+          type="button"
+          aria-label="Share this view"
+          onclick={shareThisView}
+        >
+          <i class="fas fa-share-nodes" aria-hidden="true"></i>
+          {#if !appState.compact}<span>Share</span>{/if}
+        </button>
+      {/if}
       <button
         class="top-action"
         type="button"
@@ -511,32 +540,139 @@
   </header>
 
   <div class="workspace" bind:this={workspaceElement}>
-    <DualSourceCrossfade
-      active={appState.surface === "matrix" ? "first" : "second"}
-      duration={booted ? DURATION.normal : 0}
-      first={matrixWorkspace}
-      second={theoryWorkspace}
-    />
+    <div class="workspace-source">
+      <PanelGroup
+        direction="horizontal"
+        bind:sizes
+        gap={appState.compact ? 0 : 8}
+        panels={[
+          {
+            id: "matrix",
+            content: gridPane,
+            defaultSize: 1.28,
+            minSize: 440,
+            fixedSize: appState.compact
+              ? appState.activeView === "matrix"
+                ? "100%"
+                : "0px"
+              : undefined,
+            resizable: !appState.compact,
+          },
+          {
+            id: "realization",
+            content: detailPane,
+            defaultSize: 0.82,
+            minSize: 380,
+            fixedSize: appState.compact
+              ? appState.activeView === "detail"
+                ? "100%"
+                : "0px"
+              : undefined,
+          },
+        ]}
+      />
+    </div>
   </div>
 
-  <!-- Compact hosts show one pane at a time, so the grid pane that carries
-       the wide prop overlay is off screen whenever the dock is. The canonical
-       prop sheet takes over there; it keeps the picker open across choices
-       the same way, and closes on its handle, backdrop, X or Escape. -->
-  {#if appState.compact}
-    <PropSelectionSheet
-      isOpen={appState.propPickerOpen}
-      selectedPropType={appState.propType}
-      title="Prop"
-      onSelect={(next: PropType) => void appState.setPropType(next)}
-      onOpenChange={(open) => {
-        if (!open) appState.closePropPicker();
-      }}
-    />
+  {#if focusMode}
+    <div class="focus-workspace-slot" data-focus-layout="picker">
+      <ShapeMatrixFocusWorkspace />
+    </div>
   {/if}
 </main>
 
 <style>
+  /* The same renderer survives this recomposition. FLIP moves its existing
+     frame and grows the picker from the dock; only surrounding chrome fades. */
+  .shape-app.focus-mode {
+    grid-template-rows: minmax(0, min(50cqh, 100cqw)) minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+  .focus-mode .topbar {
+    position: absolute;
+    inset: 0 0 auto;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .focus-mode .workspace {
+    grid-row: 1;
+    padding: 0;
+    overflow: visible;
+  }
+  .focus-workspace-slot {
+    grid-row: 2;
+    min-width: 0;
+    min-height: 0;
+    z-index: 3;
+  }
+  .focus-mode :global(.drill-stage),
+  .focus-mode :global(.theory-detail) {
+    padding: 0;
+  }
+  .focus-mode :global(.drill),
+  .focus-mode :global(.detail-body) {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "media";
+    gap: 0;
+  }
+  .focus-mode :global(.media-stage) {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "hero";
+    place-items: stretch;
+  }
+  .focus-mode :global(.detail-flow) {
+    grid-area: hero;
+    overflow: hidden;
+    gap: 0;
+  }
+  .focus-mode :global(.hero-stage) {
+    grid-template-rows: minmax(0, 1fr);
+    width: min(100cqw, 100cqh);
+    height: 100%;
+    justify-self: center;
+  }
+  .focus-mode :global(.stage-frame) {
+    width: min(100cqw, 100cqh);
+    height: 100%;
+    align-self: center;
+    min-height: 0;
+  }
+  .focus-mode :global(.stage-window) {
+    min-height: 0;
+  }
+  .topbar,
+  .shape-app :global([data-focus-mode-chrome]) {
+    transition:
+      opacity var(--transition-normal),
+      visibility var(--transition-normal);
+  }
+  .focus-mode :global([data-focus-mode-chrome]) {
+    position: absolute;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  @container shape-matrix-app (min-aspect-ratio: 1.25) {
+    .shape-app.focus-mode {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: minmax(0, 1fr);
+    }
+    .focus-mode .workspace {
+      grid-column: 1;
+    }
+    .focus-workspace-slot {
+      grid-row: 1;
+      grid-column: 2;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .topbar,
+    .shape-app :global([data-focus-mode-chrome]) {
+      transition: none;
+    }
+  }
   .shape-app {
     position: absolute;
     inset: 0;
@@ -615,7 +751,8 @@
     text-overflow: ellipsis;
   }
 
-  .top-action:hover {
+  .top-action:hover,
+  .top-action.open {
     color: var(--theme-text, #fff);
     border-color: color-mix(
       in srgb,
@@ -793,29 +930,6 @@
     margin-left: 0.5rem;
   }
 
-  .level-control {
-    /* The three widths track LevelSelector's own 1680/2600 ramp. */
-    min-width: 17.5rem;
-  }
-
-  /* Centre the badges in the cell. */
-  .level-control :global(.level-selector) {
-    width: 100%;
-    justify-content: center;
-  }
-
-  @media (min-width: 1680px) {
-    .level-control {
-      min-width: 19.25rem;
-    }
-  }
-
-  @media (min-width: 2600px) {
-    .level-control {
-      min-width: 22.5rem;
-    }
-  }
-
   .control-label {
     color: var(--theme-text-dim, rgb(255 255 255 / 0.52));
     font-size: var(--font-size-compact, 0.75rem);
@@ -823,15 +937,6 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     white-space: nowrap;
-  }
-
-  /* Pin the badge tiles to the shared ribbon height; the selector's own
-     big-screen media ramp would otherwise outgrow the segmented controls. */
-  .level-control :global(.lvl) {
-    flex: 0 0 auto;
-    min-width: var(--min-touch-target, 44px);
-    height: var(--ribbon-control-h);
-    min-height: var(--min-touch-target, 44px);
   }
 
   .label-control {
@@ -899,11 +1004,20 @@
   }
 
   .workspace-pane {
+    /* The customize workspace covers the grid pane from here. */
+    position: relative;
     width: 100%;
     height: 100%;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
+  }
+
+  .pane-source {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
   }
 
   /* The compact seam. ShapeMatrixApp decides `compact` in script from the
@@ -935,11 +1049,6 @@
       gap: 0;
       padding: 0.25rem 0.35rem;
       border-radius: 10px;
-    }
-
-    /* This tier trades the whole title-line pair for compact chrome. */
-    .level-control {
-      min-width: 0;
     }
 
     .top-actions {

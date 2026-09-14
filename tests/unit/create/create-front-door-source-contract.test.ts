@@ -59,8 +59,8 @@ describe("Create front-door source contract", () => {
     expect(constructSource).toContain(
       "suppressHeading={constructTutorialState.isActive}"
     );
-    expect(pickerSource).toContain(
-      "class:heading-suppressed={suppressHeading}"
+    expect(pickerSource).toMatch(
+      /<Crossfade\s+key=\{suppressHeading\}[^>]*>[\s\S]*?\{#if !suppressHeading\}/
     );
     expect(pickerSource).toContain("{#if !suppressHeading}");
   });

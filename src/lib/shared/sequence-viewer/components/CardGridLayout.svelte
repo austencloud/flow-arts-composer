@@ -43,17 +43,7 @@
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
   import { toMandalaPathShape } from "$lib/shared/mandala/services/mandala-path-policy";
 
-  interface CellData {
-    index: number;
-    label: string;
-    imageUrl: string;
-    isLoaded: boolean;
-    renderFailed?: boolean;
-    gridColumn: number;
-    gridRow: number;
-    duration: number;
-    fadeOutUrl?: string;
-  }
+  import type { ChoreoCardCell as CellData } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
 
   interface MandalaPlacement {
     row: number;
@@ -62,6 +52,7 @@
   }
 
   interface Props {
+    primaryPropColors?: { left: string; right: string } | null;
     sequence: SequenceData;
     cells: CellData[];
     visibleCells: CellData[];
@@ -96,6 +87,8 @@
     onGridScrollRefChange: (el: HTMLDivElement | undefined) => void;
     // CellRenderer pass-through props
     showStepNumbers: boolean;
+    /** Choose Start picker: step cells render as poses. */
+    posePicker?: boolean;
     crossfadeActive: boolean;
     transitionMode: "crossfade" | "swap";
     isBrowseSoloMode: boolean;
@@ -134,6 +127,7 @@
     flipDuration,
     cellWidth,
     activeDarkMode,
+    primaryPropColors,
     leftPropType,
     rightPropType,
     onStepClick,
@@ -141,6 +135,7 @@
     clickableStart = false,
     onGridScrollRefChange,
     showStepNumbers,
+    posePicker = false,
     crossfadeActive,
     transitionMode,
     isBrowseSoloMode,
@@ -197,6 +192,7 @@
         cell={startCell}
         showDurBadge={false}
         {showStepNumbers}
+        {posePicker}
         {activeDarkMode}
         {crossfadeActive}
         {transitionMode}
@@ -221,6 +217,7 @@
         cell={startCell}
         showDurBadge={false}
         {showStepNumbers}
+        {posePicker}
         {activeDarkMode}
         {crossfadeActive}
         {transitionMode}
@@ -320,6 +317,7 @@
                           {cell}
                           showDurBadge={true}
                           {showStepNumbers}
+                          {posePicker}
                           {activeDarkMode}
                           {crossfadeActive}
                 {transitionMode}
@@ -345,6 +343,7 @@
                           {cell}
                           showDurBadge={true}
                           {showStepNumbers}
+                          {posePicker}
                           {activeDarkMode}
                           {crossfadeActive}
                 {transitionMode}
@@ -406,6 +405,7 @@
                         {cell}
                         showDurBadge={true}
                         {showStepNumbers}
+                        {posePicker}
                         {activeDarkMode}
                         {crossfadeActive}
                 {transitionMode}
@@ -431,6 +431,7 @@
                         {cell}
                         showDurBadge={true}
                         {showStepNumbers}
+                        {posePicker}
                         {activeDarkMode}
                         {crossfadeActive}
                 {transitionMode}
@@ -492,6 +493,7 @@
               {cell}
               showDurBadge={true}
               {showStepNumbers}
+              {posePicker}
               {activeDarkMode}
               {crossfadeActive}
                 {transitionMode}
@@ -517,6 +519,7 @@
               {cell}
               showDurBadge={true}
               {showStepNumbers}
+              {posePicker}
               {activeDarkMode}
               {crossfadeActive}
                 {transitionMode}
@@ -553,6 +556,7 @@
         >
           <div class="pictograph-cell mandala-cell" class:light-bg={isLightBackground}>
             <SequenceMandala
+              {primaryPropColors}
               {sequence}
               mode="card-back"
               style="stroke"
@@ -578,7 +582,7 @@
   >
     {#if startCell && includeStartPosition}
       <div
-        class="cell-flip-wrapper"
+        class="cell-flip-wrapper start-cell-wrapper"
         style="grid-column: 1; grid-row: 1;"
         transition:scale|local={{ duration: scaleDuration, easing: cubicOut }}
       >
@@ -587,7 +591,7 @@
     {/if}
     {#each visibleCells as cell (cell.index)}
       <div
-        class="cell-flip-wrapper"
+        class="cell-flip-wrapper step-cell-wrapper"
         style="grid-column: {cell.gridColumn}; grid-row: {cell.gridRow};"
         animate:safeFlip={{ duration: flipDuration, easing: cubicOut }}
       >
@@ -605,6 +609,7 @@
             {cell}
             showDurBadge={true}
             {showStepNumbers}
+            {posePicker}
             {activeDarkMode}
             {crossfadeActive}
                 {transitionMode}
@@ -630,6 +635,7 @@
             {cell}
             showDurBadge={true}
             {showStepNumbers}
+            {posePicker}
             {activeDarkMode}
             {crossfadeActive}
                 {transitionMode}
@@ -666,6 +672,7 @@
       >
         <div class="pictograph-cell mandala-cell" class:light-bg={isLightBackground}>
           <SequenceMandala
+            {primaryPropColors}
             {sequence}
             mode="card-back"
             style="stroke"

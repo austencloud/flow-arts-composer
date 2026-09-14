@@ -131,43 +131,45 @@
       <h3>Placement</h3>
       <p>Where things are right now.</p>
     </header>
-    <div
-      class="picture"
-      role="group"
-      aria-label="Click a point to change placement"
-    >
-      <svg viewBox="0 0 320 300" aria-hidden="true">
-        <circle class="placement-ring" cx="160" cy="150" r="88" />
-        <circle class="center" cx="160" cy="150" r="3" />
-        {#each placementPoints as point}
-          <circle
-            class="placement-target"
-            cx={point.x * 3.2}
-            cy={point.y * 3}
-            r="3"
-          />
-        {/each}
-        <g transform="translate(160 150)">
-          <circle class="blue-dot" cx="-88" cy="0" r="19" />
-          <g
-            class="placement-turn"
-            style:transform={`rotate(${placementAngle}deg)`}
-          >
-            <circle class="red-dot" cx="-88" cy="0" r="13" />
+    <div class="picture-slot">
+      <div
+        class="picture"
+        role="group"
+        aria-label="Click a point to change placement"
+      >
+        <svg viewBox="0 0 320 300" aria-hidden="true">
+          <circle class="placement-ring" cx="160" cy="150" r="88" />
+          <circle class="center" cx="160" cy="150" r="3" />
+          {#each placementPoints as point}
+            <circle
+              class="placement-target"
+              cx={point.x * 3.2}
+              cy={point.y * 3}
+              r="3"
+            />
+          {/each}
+          <g transform="translate(160 150)">
+            <circle class="blue-dot" cx="-88" cy="0" r="19" />
+            <g
+              class="placement-turn"
+              style:transform={`rotate(${placementAngle}deg)`}
+            >
+              <circle class="red-dot" cx="-88" cy="0" r="13" />
+            </g>
           </g>
-        </g>
-      </svg>
-      {#each placementPoints as point}
-        <button
-          class="point-button"
-          style:left={`${point.x}%`}
-          style:top={`${point.y}%`}
-          onclick={() => (placementAngle = point.angle)}
-          aria-label={`Place the second dot at the ${point.name}`}
-          aria-pressed={placementAngle === point.angle}
-          title={`Place the second dot at the ${point.name}`}
-        ></button>
-      {/each}
+        </svg>
+        {#each placementPoints as point}
+          <button
+            class="point-button"
+            style:left={`${point.x}%`}
+            style:top={`${point.y}%`}
+            onclick={() => (placementAngle = point.angle)}
+            aria-label={`Place the second dot at the ${point.name}`}
+            aria-pressed={placementAngle === point.angle}
+            title={`Place the second dot at the ${point.name}`}
+          ></button>
+        {/each}
+      </div>
     </div>
     <div class="caption" aria-live="polite">
       <Crossfade key={placement}><p>{placementCopy}</p></Crossfade>
@@ -190,45 +192,47 @@
       <h3>Timing</h3>
       <p>A pulse marks each downbeat.</p>
     </header>
-    <div class="picture pulse-picture">
-      <svg viewBox="0 0 320 300" role="img" aria-label={timingDescription}>
-        {#each pulses as strength, index}
-          <g class:blue={index === 0} class:red={index === 1}>
-            <circle
-              class="pulse-halo"
-              cx={index === 0 ? 92 : 228}
-              cy="150"
-              r={29 + 15 * (1 - strength)}
-              opacity={strength * 0.75}
-            />
-            <circle
-              class="pulse-dot"
-              cx={index === 0 ? 92 : 228}
-              cy="150"
-              r={20 + 4 * strength}
-              opacity={0.55 + 0.45 * strength}
-            />
-          </g>
-        {/each}
-      </svg>
-      <div class="pulse-transport">
-        <PanelButton
-          onclick={() => (playing = !playing)}
-          ariaLabel={playing ? "Pause downbeats" : "Play downbeats"}
-        >
-          <svg class="transport-icon" viewBox="0 0 20 20" aria-hidden="true"
-            >{#if playing}<path
-                d="M6 4v12M14 4v12"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="3"
-                stroke-linecap="round"
-              />{:else}<path
-                d="M6 3L17 10L6 17Z"
-                fill="currentColor"
-              />{/if}</svg
+    <div class="picture-slot">
+      <div class="picture pulse-picture">
+        <svg viewBox="0 0 320 300" role="img" aria-label={timingDescription}>
+          {#each pulses as strength, index}
+            <g class:blue={index === 0} class:red={index === 1}>
+              <circle
+                class="pulse-halo"
+                cx={index === 0 ? 92 : 228}
+                cy="150"
+                r={29 + 15 * (1 - strength)}
+                opacity={strength * 0.75}
+              />
+              <circle
+                class="pulse-dot"
+                cx={index === 0 ? 92 : 228}
+                cy="150"
+                r={20 + 4 * strength}
+                opacity={0.55 + 0.45 * strength}
+              />
+            </g>
+          {/each}
+        </svg>
+        <div class="pulse-transport">
+          <PanelButton
+            onclick={() => (playing = !playing)}
+            ariaLabel={playing ? "Pause downbeats" : "Play downbeats"}
           >
-        </PanelButton>
+            <svg class="transport-icon" viewBox="0 0 20 20" aria-hidden="true"
+              >{#if playing}<path
+                  d="M6 4v12M14 4v12"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="3"
+                  stroke-linecap="round"
+                />{:else}<path
+                  d="M6 3L17 10L6 17Z"
+                  fill="currentColor"
+                />{/if}</svg
+            >
+          </PanelButton>
+        </div>
       </div>
     </div>
     <div class="caption" aria-live="polite">
@@ -252,37 +256,39 @@
       <h3>Direction</h3>
       <p>Which way things rotate.</p>
     </header>
-    <div
-      class="picture"
-      role="group"
-      aria-label="Click either arrow to flip its rotation"
-    >
-      <svg viewBox="0 0 320 300" aria-hidden="true">
-        {#each rotations as rotation, index}
-          <g
-            class:blue={index === 0}
-            class:red={index === 1}
-            transform={`translate(${index === 0 ? 83 : 237} 150)`}
-          >
-            <g class="arrow-flip" style:transform={`scaleX(${rotation})`}>
-              <path class="rotation-arc" d="M-35.35 35.35A50 50 0 1 1 50 0" />
-              <path
-                class="arrowhead"
-                d="M35-8 Q31-8 34-4 L47 17 Q50 22 53 17 L66-4 Q69-8 65-8Z"
-              />
+    <div class="picture-slot">
+      <div
+        class="picture"
+        role="group"
+        aria-label="Click either arrow to flip its rotation"
+      >
+        <svg viewBox="0 0 320 300" aria-hidden="true">
+          {#each rotations as rotation, index}
+            <g
+              class:blue={index === 0}
+              class:red={index === 1}
+              transform={`translate(${index === 0 ? 83 : 237} 150)`}
+            >
+              <g class="arrow-flip" style:transform={`scaleX(${rotation})`}>
+                <path class="rotation-arc" d="M-35.35 35.35A50 50 0 1 1 50 0" />
+                <path
+                  class="arrowhead"
+                  d="M35-8 Q31-8 34-4 L47 17 Q50 22 53 17 L66-4 Q69-8 65-8Z"
+                />
+              </g>
             </g>
-          </g>
+          {/each}
+        </svg>
+        {#each rotations as rotation, index}
+          <button
+            class="arrow-button"
+            style:left={`${(index === 0 ? 83 : 237) / 3.2}%`}
+            onclick={() => (rotations[index] = -rotation)}
+            aria-label={`Flip ${index === 0 ? "left" : "right"} arrow. Currently ${rotation === 1 ? "clockwise" : "counterclockwise"}.`}
+            title={`Flip ${index === 0 ? "left" : "right"} arrow`}
+          ></button>
         {/each}
-      </svg>
-      {#each rotations as rotation, index}
-        <button
-          class="arrow-button"
-          style:left={`${(index === 0 ? 83 : 237) / 3.2}%`}
-          onclick={() => (rotations[index] = -rotation)}
-          aria-label={`Flip ${index === 0 ? "left" : "right"} arrow. Currently ${rotation === 1 ? "clockwise" : "counterclockwise"}.`}
-          title={`Flip ${index === 0 ? "left" : "right"} arrow`}
-        ></button>
-      {/each}
+      </div>
     </div>
     <div class="caption" aria-live="polite">
       <Crossfade key={direction}
@@ -312,6 +318,8 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
+    height: 100%;
+    min-height: 28rem;
     border: 1px solid var(--theme-stroke);
     border-radius: var(--radius-xl, 1rem);
     background: var(--theme-card-bg);
@@ -321,7 +329,7 @@
   .concept {
     min-width: 0;
     display: grid;
-    grid-template-rows: auto 1fr auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
     justify-items: center;
     padding: clamp(1.25rem, 2cqw, 3rem);
     text-align: center;
@@ -348,12 +356,19 @@
     color: var(--theme-text-dim);
     font-size: clamp(1rem, 0.9cqw, 1.25rem);
   }
+  .picture-slot {
+    width: 100%;
+    min-height: 0;
+    container-type: size;
+    display: grid;
+    place-items: center;
+    margin-block: clamp(0.75rem, 1.5cqw, 2rem);
+  }
   .picture {
-    width: min(100%, 30rem);
+    width: min(100cqw, calc(100cqh * 320 / 300));
     aspect-ratio: 320 / 300;
     align-self: center;
     position: relative;
-    margin-block: clamp(0.75rem, 1.5cqw, 2rem);
   }
   .picture > svg {
     display: block;
@@ -471,6 +486,8 @@
   @container (max-width: 850px) and (min-width: 501px) {
     .concepts {
       grid-template-columns: 1fr;
+      grid-template-rows: repeat(3, minmax(16rem, 1fr));
+      min-height: 48rem;
     }
     .concept {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -486,10 +503,9 @@
       grid-column: 1;
       align-self: end;
     }
-    .picture {
+    .picture-slot {
       grid-column: 2;
       grid-row: 1 / 4;
-      width: min(100%, 15rem);
       margin-block: 0;
     }
     .caption {
@@ -504,6 +520,8 @@
   @container (max-width: 500px) {
     .concepts {
       grid-template-columns: 1fr;
+      grid-template-rows: repeat(3, minmax(26rem, 1fr));
+      min-height: 78rem;
     }
     .concept {
       padding: 1.5rem 1rem;
@@ -512,8 +530,7 @@
       border-inline-start: 0;
       border-top: 1px solid var(--theme-stroke);
     }
-    .picture {
-      width: 13rem;
+    .picture-slot {
       margin-block: 0.25rem;
     }
     .caption {
@@ -525,6 +542,37 @@
     .placement-turn,
     .arrow-flip {
       transition: none;
+    }
+  }
+  @media (max-height: 540px) and (min-width: 641px) {
+    .concepts {
+      grid-template-columns: 1fr;
+      grid-template-rows: repeat(3, minmax(14rem, 1fr));
+      min-height: 42rem;
+    }
+    .concept {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
+      padding: 1rem;
+      column-gap: 1rem;
+    }
+    .concept + .concept {
+      border-inline-start: 0;
+      border-top: 1px solid var(--theme-stroke);
+    }
+    header,
+    .caption,
+    .choices {
+      grid-column: 1;
+    }
+    .picture-slot {
+      grid-column: 2;
+      grid-row: 1 / 4;
+      margin: 0;
+    }
+    .caption {
+      min-height: 0;
+      margin: 0.5rem 0;
     }
   }
   :global([data-motion-preference="reduce"]) .placement-turn,

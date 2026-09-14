@@ -19,6 +19,7 @@
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { buildNotationCells, type NotationCell } from "./notation-cell";
+  import { buildStripWindow, nextLoopOffset } from "./strip-window";
 
   let {
     cells = null,
@@ -28,12 +29,15 @@
     bpm,
     cellSize = 72,
     density = "standard",
+    presentation = "spotlight",
     anchor = "center",
     orientation = "horizontal",
     fillHeight = false,
     loop = false,
     leftPropType = null,
     rightPropType = null,
+    leftColorOverride = undefined,
+    rightColorOverride = undefined,
     propElementalType = null,
     stepPulse = false,
     staggerCellUpdates = false,
@@ -56,6 +60,8 @@
     /** Standard preserves the original Play with It geometry. Compact keeps
      *  the focus treatment while fitting an editorial/card-sized rail. */
     density?: "standard" | "compact";
+    /** A continuous strip keeps neighboring pictographs full size. */
+    presentation?: "spotlight" | "strip";
     /** "start" pins the focus toward the leading edge so upcoming cells fill
      *  the remaining axis; "center" keeps it in the middle. */
     anchor?: "center" | "start";
@@ -67,10 +73,17 @@
      *  density uses nearly all of a short rail's height. */
     fillHeight?: boolean;
     /** Seamless wrap: when the track reaches the end the first cell follows (the
-     *  sequence repeats) instead of snapping back to the start. */
+     *  sequence repeats) instead of snapping back to the start. The window can
+     *  then hold more than one copy of a cell; only the focus's own repeat is
+     *  marked `data-cell-instance="primary"`, so a host pairing
+     *  view-transition-names against cells still finds exactly one element. */
     loop?: boolean;
     leftPropType?: PropType | null;
     rightPropType?: PropType | null;
+    /** Display-only motion colors. Hosts with a fixed teaching palette can keep
+     * the rail aligned with their canvas without changing visitor settings. */
+    leftColorOverride?: string;
+    rightColorOverride?: string;
     /** Optional prop-path relationship shared by this realized sequence. */
     propElementalType?: ElementalType | null;
     /** Flash the focus frame each time the active step advances. */
@@ -84,7 +97,7 @@
     onCellClick?: ((stepNumber: number) => void) | null;
   } = $props();
 
-  const GAP = 6;
+  const GAP = $derived(presentation === "strip" ? 3 : 6);
   const BUFFER = 3;
   const renderBuffer = $derived(density === "compact" ? 1 : BUFFER);
   const resolvedCells = $derived(cells ?? buildNotationCells(sequence));
@@ -136,7 +149,9 @@
   const displayedStep = $derived(
     Math.max(0, (currentStep ?? 0) - (includeStartPosition ? 0 : 1))
   );
-  const heroScale = $derived(density === "compact" ? 1.15 : 1.32);
+  const heroScale = $derived(
+    presentation === "strip" ? 1 : density === "compact" ? 1.15 : 1.32
+  );
   const vertical = $derived(orientation === "vertical");
 
   let currentStepNumber = $derived(Math.floor(displayedStep));
@@ -168,8 +183,13 @@
       prevSeqKey = seqKey;
       return;
     }
-    if (loop && prevRawStep !== -1 && raw < prevRawStep) {
-      loopOffset += displayedCells.length;
+    if (loop) {
+      loopOffset = nextLoopOffset(
+        loopOffset,
+        prevRawStep,
+        raw,
+        displayedCells.length
+      );
     }
     prevRawStep = raw;
   });
@@ -239,33 +259,31 @@
   // run past the ends and map to cells circularly (seamless wrap); otherwise they
   // clamp to the real range. Cells are absolutely placed at vi * STRIDE.
   let renderCells = $derived.by(() => {
-    const len = displayedCells.length;
-    if (len === 0)
-      return [] as { vi: number; cell: NotationCell; dist: number }[];
-    const a = virtualActive;
-    let start: number;
-    let end: number;
-    if (anchor === "start") {
-      // Forward-biased: one finished cell (graceful exit) + as many upcoming as
-      // the primary axis holds. No deep past — practice only needs what's next.
-      const ahead =
-        Math.ceil((stripPrimarySize - focusOffset) / STRIDE) + renderBuffer;
-      start = a - 1;
-      end = a + ahead + 1;
-    } else {
-      const half = Math.ceil(stripPrimarySize / STRIDE / 2) + renderBuffer;
-      start = a - half;
-      end = a + half + 1;
-    }
-    if (!loop) {
-      start = Math.max(0, start);
-      end = Math.min(len, end);
-    }
-    const out: { vi: number; cell: NotationCell; dist: number }[] = [];
-    for (let vi = start; vi < end; vi++) {
-      const ci = loop ? ((vi % len) + len) % len : vi;
-      const cell = displayedCells[ci];
-      if (cell) out.push({ vi, cell, dist: Math.abs(vi - a) });
+    const window = buildStripWindow({
+      activeVirtualIndex: virtualActive,
+      cellCount: displayedCells.length,
+      loop,
+      anchor,
+      primarySize: stripPrimarySize,
+      focusOffset,
+      stride: STRIDE,
+      buffer: renderBuffer,
+    });
+    const out: {
+      vi: number;
+      cell: NotationCell;
+      dist: number;
+      primary: boolean;
+    }[] = [];
+    for (const item of window) {
+      const cell = displayedCells[item.ci];
+      if (cell)
+        out.push({
+          vi: item.vi,
+          cell,
+          dist: item.dist,
+          primary: item.primary,
+        });
     }
     return out;
   });
@@ -293,10 +311,12 @@
   );
 
   function cellOpacity(dist: number) {
+    if (presentation === "strip") return dist === 0 ? 1 : 0.85;
     if (dist === 0) return 1;
     return Math.max(0.14, 0.66 - (dist - 1) * 0.18);
   }
   function cellScale(dist: number) {
+    if (presentation === "strip") return 1;
     if (dist === 0) return heroScale;
     return Math.max(0.62, 0.84 - (dist - 1) * 0.09);
   }
@@ -324,6 +344,7 @@
     class:anchor-start={anchor === "start"}
     class:fill-height={fillHeight}
     class:vertical
+    class:continuous-strip={presentation === "strip"}
     bind:this={stepStripEl}
     style="--slide-dur: {slideDurMs}ms; --cell: {effCell}px; --frame: {FRAME}px; {fillHeight
       ? 'height: 100%'
@@ -352,6 +373,7 @@
           class:is-focus={item.dist === 0}
           class:clickable={!!onCellClick}
           data-step-number={item.cell.stepNumber}
+          data-cell-instance={item.primary ? "primary" : "repeat"}
           style="{vertical ? 'top' : 'left'}: {item.vi *
             STRIDE}px; opacity: {cellOpacity(item.dist)}"
           role={onCellClick ? "button" : undefined}
@@ -379,6 +401,8 @@
               disableContentTransitions={true}
               leftPropTypeOverride={leftPropType ?? undefined}
               rightPropTypeOverride={rightPropType ?? undefined}
+              {leftColorOverride}
+              {rightColorOverride}
               {propElementalType}
             />
           </div>
@@ -541,6 +565,20 @@
     transition: transform var(--slide-dur, 420ms) ease;
   }
 
+  .step-viewport.continuous-strip {
+    --pictograph-border: none;
+    border: 0;
+    background: transparent;
+  }
+  .continuous-strip .step-cell {
+    border: 0;
+    border-radius: 0;
+  }
+  .continuous-strip .step-focus {
+    border-color: var(--semantic-warning, #d4813a);
+    border-radius: 4px;
+    box-shadow: none;
+  }
   @media (prefers-reduced-motion: reduce) {
     .step-track,
     .step-cell,

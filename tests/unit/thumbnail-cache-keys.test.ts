@@ -203,3 +203,31 @@ describe("renderer cache invalidation", () => {
     );
   });
 });
+
+describe("primary prop colors — custom palettes never touch the shared tiers", () => {
+  const palette = { left: "#00ff88", right: "#ff8800" };
+
+  it("keys a custom palette as non-default so it can't be served from or uploaded to the shared cache", () => {
+    const key = deriveKey(galleryInput({ primaryPropColors: palette }));
+    expect(key.usesDefaults).toBe(false);
+  });
+
+  it("keeps a null palette (theme defaults) on the shared class with the same hash as no palette", () => {
+    const absent = deriveKey(galleryInput());
+    const nulled = deriveKey(galleryInput({ primaryPropColors: null }));
+    expect(nulled.usesDefaults).toBe(true);
+    expect(nulled.hash).toBe(absent.hash);
+  });
+
+  it("gives each palette its own hash", () => {
+    const defaults = deriveKey(galleryInput());
+    const custom = deriveKey(galleryInput({ primaryPropColors: palette }));
+    const swapped = deriveKey(
+      galleryInput({
+        primaryPropColors: { left: palette.right, right: palette.left },
+      })
+    );
+    expect(custom.hash).not.toBe(defaults.hash);
+    expect(swapped.hash).not.toBe(custom.hash);
+  });
+});

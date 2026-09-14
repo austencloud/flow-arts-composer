@@ -4,6 +4,8 @@
   import { onMount } from "svelte";
 
   let {
+    leftColorOverride = undefined,
+    rightColorOverride = undefined,
     leftReversal = false,
     rightReversal = false,
     hasValidData = true,
@@ -13,6 +15,8 @@
     leftMotionVisible = true,
     rightMotionVisible = true,
   } = $props<{
+    leftColorOverride?: string;
+    rightColorOverride?: string;
     /** Whether to show blue reversal indicator */
     leftReversal?: boolean;
     /** Whether to show red reversal indicator */
@@ -93,8 +97,8 @@
   });
 
   // Get motion colors from centralized cache
-  const BLUE_COLOR = $derived(cachedColors.left);
-  const RED_COLOR = $derived(cachedColors.right);
+  const BLUE_COLOR = $derived(leftColorOverride ?? cachedColors.left);
+  const RED_COLOR = $derived(rightColorOverride ?? cachedColors.right);
 
   // Relative positioning - scales with pictograph size
   // Using percentages of the standard 1000px pictograph dimensions

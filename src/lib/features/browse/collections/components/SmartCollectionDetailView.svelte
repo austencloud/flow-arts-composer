@@ -8,6 +8,7 @@ the shared BrowsePanel renders the result. Editable collections show their
 rule here; TKA's founding decks use the surrounding library hierarchy instead.
 -->
 <script lang="ts">
+	import CollectionDetailsDialog from "./CollectionDetailsDialog.svelte";
 	import { onMount, untrack } from "svelte";
 	import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
 	import { subscribeToCollection } from "$lib/shared/library/services/collection-manager";
@@ -199,6 +200,7 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
 	function openViewer(sequence: SequenceData, variations?: SequenceData[]) {
 		openSequenceViewer(sequence, {
 			source: "browse_collection",
+			collectionPropType: collection?.propType,
 			returnPath: "/browse/library",
 			returnLabel: collection?.name ?? "Library",
 			scrollY: browseScrollState.lastScrollY,
@@ -219,8 +221,18 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
 	let renameValue = $state("");
 	let deleteConfirmOpen = $state(false);
 	let editOpen = $state(false);
+	let detailsOpen = $state(false);
 
 	const menuItems: ContextMenuEntry[] = $derived.by(() => [
+		{
+			id: "details",
+			label: "Collection details",
+			icon: "fa-pen-to-square",
+			action() {
+				menuState = { open: false };
+				detailsOpen = true;
+			},
+		},
 		{
 			id: "rename",
 			label: "Rename",
@@ -273,6 +285,10 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
 	}
 </script>
 
+{#if collection && !isFounding && !previewReadOnly}
+	<CollectionDetailsDialog {collection} bind:open={detailsOpen} />
+{/if}
+
 <SmartCollectionDetailSurface
 	name={collection?.name}
 	description={collection?.description}
@@ -313,6 +329,7 @@ rule here; TKA's founding decks use the surrounding library hierarchy instead.
 			     their read-only navigation. Empty and error states are
 			     intercepted by SmartCollectionDetailSurface. -->
 			<BrowsePanel
+				collectionPropType={collection?.propType}
 				{engine}
 				layout="compact"
 				eager={false}

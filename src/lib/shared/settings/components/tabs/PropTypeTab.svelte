@@ -20,6 +20,7 @@
   import CatDogToggle from "./prop-type/CatDogToggle.svelte";
   import PresetChipBar from "./prop-type/PresetChipBar.svelte";
   import CompactPropDisplay from "./prop-type/CompactPropDisplay.svelte";
+  import PrimaryPropColorSettings from "./prop-type/PrimaryPropColorSettings.svelte";
   import type {
     ChiralityHand,
     PropChiralityHandState,
@@ -49,6 +50,8 @@
     settings: AppSettings;
     onUpdate?: (event: { key: string; value: unknown }) => void;
   }>();
+
+
 
   // Services
   let hapticService: HapticFeedback;
@@ -388,6 +391,12 @@
         onToggleBig={handleToggleBig}
       />
     </div>
+
+    <PrimaryPropColorSettings
+      colors={settings.primaryPropColors}
+      darkMode={settings.darkMode}
+      onchange={(value) => onUpdate?.({ key: "primaryPropColors", value })}
+    />
 
     <!-- CatDog Toggle -->
     <div class="mode-row">

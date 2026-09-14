@@ -37,6 +37,7 @@
   // is this internal propSvgLoader service (bundled static prop SVGs), never user
   // or external input, so it is a trusted, non-XSS surface — no sanitization pass.
   import { propSvgLoader } from "$lib/shared/pictograph/prop/services/prop-svg-loader";
+  import { applyHandColorOverride } from "$lib/shared/pictograph/prop/domain/prop-preview-color";
   import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import { PropRotAngleManager } from "$lib/shared/pictograph/prop/services/prop-rot-angle-manager";
   import { LOCATION_ANGLES } from "$lib/shared/foundation/domain/math-constants";
@@ -155,11 +156,36 @@
     getSettings().rightPropType ?? PropType.STAFF
   );
 
-  // Load prop SVGs reactively when prop type changes in settings
+  // The loader paints the default hand color. Repaint with the user's chosen
+  // color so the stage matches the pictographs (PropSvg does the same).
+  function withUserColor(
+    data: PropRenderData,
+    hand: HandSide,
+    propType: PropType,
+    color: string | undefined
+  ): PropRenderData {
+    if (!color || !data.svgData) return data;
+    return {
+      ...data,
+      svgData: {
+        ...data.svgData,
+        svgContent: applyHandColorOverride(
+          data.svgData.svgContent,
+          hand,
+          propType,
+          color
+        ),
+      },
+    };
+  }
+
+  // Load prop SVGs reactively when prop type or hand color changes in settings
   $effect(() => {
     const settings = getSettings();
     const leftPropType = settings.leftPropType ?? PropType.STAFF;
     const rightPropType = settings.rightPropType ?? PropType.STAFF;
+    const leftColor = settings.primaryPropColors?.left;
+    const rightColor = settings.primaryPropColors?.right;
 
     // Load left-hand prop SVG
     const leftMotion = createMotionData({
@@ -173,7 +199,12 @@
         false
       )
       .then((data) => {
-        leftPropData = data;
+        leftPropData = withUserColor(
+          data,
+          HandSide.LEFT,
+          leftPropType,
+          leftColor
+        );
       })
       .catch(() => {
         /* SVG unavailable; fallback circle renders */
@@ -191,7 +222,12 @@
         false
       )
       .then((data) => {
-        rightPropData = data;
+        rightPropData = withUserColor(
+          data,
+          HandSide.RIGHT,
+          rightPropType,
+          rightColor
+        );
       })
       .catch(() => {
         /* SVG unavailable; fallback circle renders */

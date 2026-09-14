@@ -15,6 +15,11 @@
 # tailnet for a peer listening on the Apollo port and caches the answer; later
 # runs reuse the cache and only re-probe if it has gone stale.
 
+[CmdletBinding()]
+param(
+  [switch]$ListModes
+)
+
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Windows.Forms, System.Drawing
 
 $ErrorActionPreference = "Stop"
@@ -24,20 +29,21 @@ $ErrorActionPreference = "Stop"
 # instance: instance 1 (serving d2) is 47989, instance 2 (serving the laptop) is
 # 48989. Which panel each instance mirrors is its own output_name pin.
 #
-# Those two values are the ONLY things that differ per machine, so they live in
-# an optional override file rather than in a second copy of this script:
+# Per-machine values live in an optional override file rather than in a second
+# copy of this script:
 #
 #   %LOCALAPPDATA%\MoonlightHub\hub.json
-#   { "port": 47989, "mirrorMonitor": "right", "title": "Stream d1" }
+#   { "port": 47989, "mirrorMonitor": "right", "title": "Stream d1", "modeProfile": "classic" }
 #
-# Absent, the laptop's values apply. Drop that file on d2 and the same script
-# works there unchanged.
+# The connection defaults target the laptop's Apollo instance. The mode profile
+# defaults to classic, so d2 keeps its three actions unless explicitly changed.
 $StateDir = Join-Path $env:LOCALAPPDATA "MoonlightHub"
 if (-not (Test-Path $StateDir)) { New-Item -ItemType Directory -Path $StateDir -Force | Out-Null }
 
 $HostPort      = 48989
 $MirrorMonitor = "left"
 $CardTitle     = "Stream d1"
+$ModeProfile   = "classic"
 
 $overrideFile = Join-Path $StateDir "hub.json"
 if (Test-Path $overrideFile) {
@@ -46,6 +52,9 @@ if (Test-Path $overrideFile) {
     if ($o.port)          { $HostPort      = [int]$o.port }
     if ($o.mirrorMonitor) { $MirrorMonitor = $o.mirrorMonitor }
     if ($o.title)         { $CardTitle     = $o.title }
+    if ($o.modeProfile -in @("classic", "desktop-only")) {
+      $ModeProfile = [string]$o.modeProfile
+    }
   } catch { }   # a malformed override must never stop the launcher
 }
 
@@ -64,36 +73,59 @@ if (Test-Path $overrideFile) {
 # by recognizing windows: the left panel reports "Offset: 0x0" and the right one
 # "Offset: 3840x0", because the virtual desktop origin is -3840.
 
-# "Virtual Display" is Apollo's app that CREATES a screen. "Desktop" captures a
-# physical monitor d1 already has. The quotes matter - the space in the app name
-# truncates to "Virtual" without them and Apollo answers "Failed to find
-# application Virtual".
-$Modes = @(
-  [pscustomobject]@{
-    Key   = "1"
-    Title = "Extended"
-    Blurb = "New screen, 1:1"
-    Color = "#FF4F46E5"
-    App   = "Virtual Display"
-    Args  = "--resolution 1920x1200 --fps 60 --bitrate 40000 --video-codec HEVC"
-  },
-  [pscustomobject]@{
-    Key   = "2"
-    Title = "Mirror"
-    Blurb = "d1 $MirrorMonitor panel"
-    Color = "#FF0D9488"
-    App   = "Desktop"
-    Args  = "--resolution 1920x1200 --fps 60 --bitrate 40000 --video-codec HEVC"
-  },
-  [pscustomobject]@{
-    Key   = "3"
-    Title = "Away"
-    Blurb = "Low bandwidth"
-    Color = "#FF475569"
-    App   = "Virtual Display"
-    Args  = "--resolution 1920x1080 --fps 60 --bitrate 5000 --video-codec HEVC"
-  }
-)
+# The laptop's current Apollo lifecycle is attached to Desktop, so its local
+# profile presents that one proven path. The classic profile remains the
+# default for d2 and preserves its existing Virtual Display actions.
+if ($ModeProfile -eq "desktop-only") {
+  $Modes = @(
+    [pscustomobject]@{
+      Key      = "1"
+      Shortcut = "Enter  /  1"
+      Title    = "Connect"
+      Blurb    = "Mirrored desktop · 1920×1200"
+      Color    = "#FF0D9488"
+      App      = "Desktop"
+      Args     = "--resolution 1920x1200 --fps 60 --bitrate 40000 --video-codec HEVC"
+    }
+  )
+} else {
+  # "Virtual Display" is Apollo's app that CREATES a screen. The quotes matter:
+  # passing its name without them makes Moonlight look for an app named Virtual.
+  $Modes = @(
+    [pscustomobject]@{
+      Key      = "1"
+      Shortcut = "1"
+      Title    = "Extended"
+      Blurb    = "New screen, 1:1"
+      Color    = "#FF4F46E5"
+      App      = "Virtual Display"
+      Args     = "--resolution 1920x1200 --fps 60 --bitrate 40000 --video-codec HEVC"
+    },
+    [pscustomobject]@{
+      Key      = "2"
+      Shortcut = "2"
+      Title    = "Mirror"
+      Blurb    = "d1 $MirrorMonitor panel"
+      Color    = "#FF0D9488"
+      App      = "Desktop"
+      Args     = "--resolution 1920x1200 --fps 60 --bitrate 40000 --video-codec HEVC"
+    },
+    [pscustomobject]@{
+      Key      = "3"
+      Shortcut = "3"
+      Title    = "Away"
+      Blurb    = "Low bandwidth"
+      Color    = "#FF475569"
+      App      = "Virtual Display"
+      Args     = "--resolution 1920x1080 --fps 60 --bitrate 5000 --video-codec HEVC"
+    }
+  )
+}
+
+if ($ListModes) {
+  ConvertTo-Json -InputObject @($Modes) -Depth 4
+  return
+}
 
 $Moonlight = "C:\Program Files\Moonlight Game Streaming\Moonlight.exe"
 $HostCache = Join-Path $StateDir "host.txt"
@@ -179,8 +211,12 @@ function Text-Block($content, $size, $weight, $brush, $opacity, $topMargin) {
 
 $lastKey = ""
 if (Test-Path $LastFile) { $lastKey = (Get-Content $LastFile -Raw).Trim() }
+if (-not ($Modes | Where-Object { $_.Key -eq $lastKey } | Select-Object -First 1)) {
+  $lastKey = $Modes[0].Key
+}
 
 $window                  = New-Object System.Windows.Window
+$window.Title            = $CardTitle
 $window.WindowStyle      = "None"
 $window.AllowsTransparency = $true
 $window.Background       = [System.Windows.Media.Brushes]::Transparent
@@ -281,7 +317,7 @@ foreach ($mode in $Modes) {
   $sp.VerticalAlignment = "Center"
   $sp.Children.Add((Text-Block $mode.Title 19 ([System.Windows.FontWeights]::SemiBold) ([System.Windows.Media.Brushes]::White) 1.0 0)) | Out-Null
   $sp.Children.Add((Text-Block $mode.Blurb 11 ([System.Windows.FontWeights]::Normal) ([System.Windows.Media.Brushes]::White) 0.85 3)) | Out-Null
-  $sp.Children.Add((Text-Block $mode.Key 11 ([System.Windows.FontWeights]::Normal) ([System.Windows.Media.Brushes]::White) 0.6 7)) | Out-Null
+  $sp.Children.Add((Text-Block $mode.Shortcut 11 ([System.Windows.FontWeights]::Normal) ([System.Windows.Media.Brushes]::White) 0.6 7)) | Out-Null
   $tile.Child = $sp
 
   $tile.Tag = $mode
@@ -294,7 +330,12 @@ foreach ($mode in $Modes) {
   $colIndex += 2
 }
 
-$hint = Text-Block "Enter  last used        Esc  cancel" 11 ([System.Windows.FontWeights]::Normal) (Brush "#FF6C6C74") 1.0 18
+$hintText = if ($ModeProfile -eq "desktop-only") {
+  "Enter  connect        Esc  cancel"
+} else {
+  "Enter  last used        Esc  cancel"
+}
+$hint = Text-Block $hintText 11 ([System.Windows.FontWeights]::Normal) (Brush "#FF6C6C74") 1.0 18
 $col.Children.Add($hint) | Out-Null
 
 # --- Behavior --------------------------------------------------------------

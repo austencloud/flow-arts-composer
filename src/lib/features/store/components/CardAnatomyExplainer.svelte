@@ -20,6 +20,7 @@
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import SkeletonLoader from "$lib/shared/foundation/ui/SkeletonLoader.svelte";
   import type { CoverCard } from "../domain/models/product";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import {
     bakedCoverUrl,
     DEFAULT_SHOP_PROP,
@@ -29,22 +30,50 @@
   let {
     card = undefined,
     showShuffle = true,
+    beginnerCard = undefined,
+    initialHighlight = null,
+    highlight = $bindable(initialHighlight),
+    onhighlightchange,
   }: {
     /** Drive a SPECIFIC card. Absent ⇒ CardAnatomy self-loads a shuffleable
      *  example (the marketing page). */
     card?: CoverCard;
     showShuffle?: boolean;
+    /** A live hand-path card for early lessons, before TKA letters are taught. */
+    beginnerCard?: {
+      sequence: SequenceData;
+      qrUrl: string;
+      title: string;
+    };
+    /** Lets a guided host begin with the card region it is teaching. */
+    initialHighlight?: string | null;
+    /** Controlled spotlight region for guided teaching hosts. */
+    highlight?: string | null;
+    /** Reports a card-part choice to guided hosts without replacing the card owner. */
+    onhighlightchange?: (id: string | null) => void;
   } = $props();
 
-  const sequence = $derived(card?.sequence);
+  const sequence = $derived(beginnerCard?.sequence ?? card?.sequence);
   const frontUrl = $derived(
     card ? (bakedCoverUrl(card, DEFAULT_SHOP_PROP) ?? card.imageUrl) : undefined
   );
+  const isBeginner = $derived(beginnerCard !== undefined);
+  const frontLegend = $derived(
+    isBeginner
+      ? FRONT_LEGEND.filter(
+          (item) => item.id !== "word" && item.id !== "mandalas"
+        )
+      : FRONT_LEGEND
+  );
+  const backLegend = $derived(isBeginner ? [] : BACK_LEGEND);
 
   // Which region is lit. Legend rows/chips and the cards drive it both ways.
-  let highlight = $state<string | null>(null);
+  function setHighlight(id: string | null) {
+    highlight = id;
+    onhighlightchange?.(id);
+  }
   function toggle(id: string) {
-    highlight = highlight === id ? null : id;
+    setHighlight(isBeginner ? id : highlight === id ? null : id);
   }
 
   // Both-faces vs single-face keys off THIS box's width. Default wide so the
@@ -66,13 +95,13 @@
   let face = $state<"front" | "back">("front");
   function switchFace(f: "front" | "back") {
     face = f;
-    highlight = null;
+    setHighlight(null);
   }
   const legendById = $derived(
-    new Map([...FRONT_LEGEND, ...BACK_LEGEND].map((i) => [i.id, i]))
+    new Map([...frontLegend, ...backLegend].map((i) => [i.id, i]))
   );
   const detail = $derived(highlight ? legendById.get(highlight) : null);
-  const faceLegend = $derived(face === "front" ? FRONT_LEGEND : BACK_LEGEND);
+  const faceLegend = $derived(face === "front" ? frontLegend : backLegend);
 
   // Keep the legend copy in SSR, but hold the interactive cards and their
   // Firebase-backed example data until this section is near the viewport and
@@ -81,7 +110,7 @@
   let cardStatus = $state<"loading" | "ready" | "error">("loading");
   function setCardStatus(status: "loading" | "ready" | "error"): void {
     cardStatus = status;
-    if (status !== "ready") highlight = null;
+    if (status === "error") setHighlight(null);
   }
   const activateCardsWhenNear = activateWhenNear;
   const wideCardProps = $derived({
@@ -89,7 +118,13 @@
     sequence,
     frontUrl,
     showShuffle,
-    onhighlight: (id: string | null) => (highlight = id),
+    handPathCard: isBeginner,
+    qrUrl: beginnerCard?.qrUrl,
+    cardTitle: beginnerCard?.title,
+    onhighlight: (id: string | null) => {
+      if (isBeginner && id === null) return;
+      setHighlight(id);
+    },
     onstatuschange: setCardStatus,
   });
   const narrowCardProps = $derived({ ...wideCardProps, face });
@@ -190,22 +225,22 @@
 {/snippet}
 
 <div class="explainer" bind:clientWidth={boxW}>
-  {#if isWide}
+  {#if isWide && !isBeginner}
     <!-- Wide: front labels | cards (both faces) | back labels, hover-driven. -->
     <div class="anatomy-layout" class:dimming={highlight !== null}>
       <div class="legend-col front">
         <h3 class="legend-title">Front</h3>
         <div class="legend-list" role="list">
-          {#each FRONT_LEGEND as item}
+          {#each frontLegend as item}
             <button
               type="button"
               class="legend-row"
               class:active={highlight === item.id}
               disabled={cardStatus !== "ready"}
               onpointerenter={(e) =>
-                e.pointerType === "mouse" && (highlight = item.id)}
+                e.pointerType === "mouse" && setHighlight(item.id)}
               onpointerleave={(e) =>
-                e.pointerType === "mouse" && (highlight = null)}
+                e.pointerType === "mouse" && !isBeginner && setHighlight(null)}
               onclick={() => toggle(item.id)}
             >
               <span class="legend-term">{item.term}</span>
@@ -238,16 +273,16 @@
       <div class="legend-col back">
         <h3 class="legend-title">Back</h3>
         <div class="legend-list" role="list">
-          {#each BACK_LEGEND as item}
+          {#each backLegend as item}
             <button
               type="button"
               class="legend-row"
               class:active={highlight === item.id}
               disabled={cardStatus !== "ready"}
               onpointerenter={(e) =>
-                e.pointerType === "mouse" && (highlight = item.id)}
+                e.pointerType === "mouse" && setHighlight(item.id)}
               onpointerleave={(e) =>
-                e.pointerType === "mouse" && (highlight = null)}
+                e.pointerType === "mouse" && !isBeginner && setHighlight(null)}
               onclick={() => toggle(item.id)}
             >
               <span class="legend-term">{item.term}</span>
@@ -261,17 +296,19 @@
     <!-- Narrow: one card + a Front/Back toggle, its detail beneath, a chip row —
          card and text always share the screen. -->
     <div class="mobile-anatomy">
-      <div class="face-toggle">
-        <SegmentedControl
-          options={[
-            { value: "front", label: "Front" },
-            { value: "back", label: "Back" },
-          ]}
-          value={face}
-          onchange={switchFace}
-          color="accent"
-        />
-      </div>
+      {#if !isBeginner}
+        <div class="face-toggle">
+          <SegmentedControl
+            options={[
+              { value: "front", label: "Front" },
+              { value: "back", label: "Back" },
+            ]}
+            value={face}
+            onchange={switchFace}
+            color="accent"
+          />
+        </div>
+      {/if}
 
       <div
         class="cards-slot"

@@ -19,13 +19,41 @@ const {
   DEFAULT_TRAIL_SETTINGS,
   TrackingMode,
   TrailMode,
-} = await import("$lib/shared/animation-engine/state/animation-settings-state.svelte");
-const { AnimationVisibilityStateManager } = await import(
-  "$lib/shared/animation-engine/state/animation-visibility-state.svelte"
-);
+} =
+  await import("$lib/shared/animation-engine/state/animation-settings-state.svelte");
+const { AnimationVisibilityStateManager } =
+  await import("$lib/shared/animation-engine/state/animation-visibility-state.svelte");
 
 const SETTINGS_KEY = "tka_animation_settings";
 const VISIBILITY_KEY = "animation-visibility-settings";
+
+describe("path preview links", () => {
+  it("encodes an Arc override even though Arc is the default", () => {
+    const visibility = new AnimationVisibilityStateManager({ ephemeral: true });
+    visibility.setPathPolicy({ pathShape: "concave", motionAwarePaths: true });
+    visibility.beginPathSession(
+      { pathShape: "concave", motionAwarePaths: true },
+      2
+    );
+    visibility.setPathPolicy({ pathShape: "arc", motionAwarePaths: false });
+    const payload = captureAnSlice({
+      settings: createAnimationSettingsState({ ephemeral: true }),
+      visibility,
+    });
+    expect(payload?.pathPreview).toBe(true);
+    const seed = seedFromAnSlice(payload!);
+    expect(seed.visibility.pathShape).toBe("arc");
+    expect(seed.visibility.motionAwarePaths).toBe(false);
+    expect(visibility.snapshot().motionAwarePaths).toBe(true);
+    visibility.restoreSavedPaths();
+    expect(
+      captureAnSlice({
+        settings: createAnimationSettingsState({ ephemeral: true }),
+        visibility,
+      })?.pathPreview
+    ).toBeUndefined();
+  });
+});
 
 function defaultStores() {
   return {
@@ -82,7 +110,9 @@ describe("an slice", () => {
       visibility: new AnimationVisibilityStateManager(),
     };
     expect(stores.settings.trail.trackingMode).toBe(TrackingMode.BOTH_ENDS);
-    expect(stores.settings.trail.lineWidth).toBe(DEFAULT_TRAIL_SETTINGS.lineWidth);
+    expect(stores.settings.trail.lineWidth).toBe(
+      DEFAULT_TRAIL_SETTINGS.lineWidth
+    );
     expect(captureAnSlice(stores)).toBeNull();
   });
 
@@ -116,11 +146,15 @@ describe("an slice", () => {
 
     const slice = captureAnSlice(stores);
     expect(slice?.visibility?.effortPreset).toBe("bounce");
-    expect(slice?.visibility?.tipEffortMap).toEqual({ "*": { effort: "bounce" } });
+    expect(slice?.visibility?.tipEffortMap).toEqual({
+      "*": { effort: "bounce" },
+    });
 
     const seeded = seedFromAnSlice(slice!);
     expect(seeded.visibility.effortPreset).toBe("bounce");
-    expect(seeded.visibility.tipEffortMap).toEqual({ "*": { effort: "bounce" } });
+    expect(seeded.visibility.tipEffortMap).toEqual({
+      "*": { effort: "bounce" },
+    });
   });
 
   it("keeps an exotic per-tip effort map verbatim", () => {
@@ -129,7 +163,9 @@ describe("an slice", () => {
 
     const slice = captureAnSlice(stores);
     expect(slice?.visibility?.effortPreset).toBe("linear");
-    expect(slice?.visibility?.tipEffortMap).toEqual({ "3": { effort: "bounce" } });
+    expect(slice?.visibility?.tipEffortMap).toEqual({
+      "3": { effort: "bounce" },
+    });
 
     const b = defaultStores();
     const seeded = seedFromAnSlice(slice!);
@@ -280,7 +316,11 @@ describe("an slice", () => {
         '"visibility":{"__proto__":{"polluted":true},"stepNumbers":false,"junk":true}}'
     );
     const seeded = seedFromAnSlice(payload);
-    for (const obj of [seeded.settings, seeded.settings.trail, seeded.visibility]) {
+    for (const obj of [
+      seeded.settings,
+      seeded.settings.trail,
+      seeded.visibility,
+    ]) {
       expect(Object.getPrototypeOf(obj)).toBe(Object.prototype);
       expect((obj as { polluted?: boolean }).polluted).toBeUndefined();
     }
@@ -296,7 +336,9 @@ describe("an slice", () => {
       const full = captureAnSlice(stores, { full: true });
       expect(full).not.toBeNull();
       expect(full?.settings?.bpm).toBe(stores.settings.snapshot().bpm);
-      expect(full?.settings?.shouldLoop).toBe(stores.settings.snapshot().shouldLoop);
+      expect(full?.settings?.shouldLoop).toBe(
+        stores.settings.snapshot().shouldLoop
+      );
       expect(Object.keys(full!.settings!.trail!).sort()).toEqual(
         Object.keys(DEFAULT_TRAIL_SETTINGS).sort()
       );

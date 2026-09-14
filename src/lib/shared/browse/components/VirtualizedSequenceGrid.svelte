@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { prefetch as prefetchSequenceData } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import {
@@ -36,6 +37,7 @@
   }
 
   const {
+    collectionPropType,
     sequences = [],
     thumbnailService,
     onAction,
@@ -54,6 +56,7 @@
     onSelectionToggle,
     variationSource,
   } = $props<{
+    collectionPropType?: PropType | null;
     sequences: SequenceData[];
     thumbnailService: BrowseThumbnailProvider | null;
     onAction?: (
@@ -456,6 +459,7 @@
           {@const seqVariations = getVariationsForSequence(sequence)}
           <div role="gridcell" aria-colindex={colIndex + 1}>
             <ChoreoCardThumbnail
+              {collectionPropType}
               {sequence}
               variations={seqVariations}
               onPrimaryAction={onAction

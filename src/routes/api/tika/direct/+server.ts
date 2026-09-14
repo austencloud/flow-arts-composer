@@ -3,7 +3,10 @@ import { env } from "$env/dynamic/private";
 import { TikaDirectorRequestSchema } from "$lib/features/stage/domain/tika-director";
 import { planStageDirection } from "$lib/features/stage/services/server/tika-director-planner";
 import { reviewStageDirection } from "$lib/features/stage/services/server/tika-director-reviewer";
-import { TikaModelProvider } from "$lib/features/tika/services/tika-model-provider";
+import {
+  createTikaDirectorModel,
+  isTikaDirectorModelConfigured,
+} from "$lib/features/stage/services/server/tika-director-models";
 import { requireAdmin } from "$lib/server/auth/requireAdmin";
 import { requireFirebaseUser } from "$lib/server/auth/requireFirebaseUser";
 import { RATE_LIMITS } from "$lib/server/security/rate-limiter";
@@ -40,8 +43,18 @@ export const POST: RequestHandler = async (event) => {
       );
     }
 
-    const provider = new TikaModelProvider(env.ANTHROPIC_API_KEY || "", "");
-    if (!provider.isProviderConfigured("anthropic")) {
+    // A local Ollama planner is a per-machine setting for the desktop server;
+    // the deployed edge leaves these unset and keeps the hosted models.
+    const plannerKey = env.TIKA_DIRECTOR_MODEL || "sonnet-5";
+    const reviewerKey = env.TIKA_DIRECTOR_REVIEWER || "sonnet-5";
+    const modelEnv = {
+      anthropicApiKey: env.ANTHROPIC_API_KEY,
+      ollamaBaseUrl: env.OLLAMA_BASE_URL,
+    };
+    if (
+      !isTikaDirectorModelConfigured(plannerKey, modelEnv) ||
+      !isTikaDirectorModelConfigured(reviewerKey, modelEnv)
+    ) {
       return Response.json(
         { error: "TIKA's model provider is not configured." },
         { status: 503 }
@@ -53,12 +66,12 @@ export const POST: RequestHandler = async (event) => {
       AbortSignal.timeout(30_000),
     ]);
     const planned = await planStageDirection(
-      provider.getModel("sonnet-5"),
+      createTikaDirectorModel(plannerKey, modelEnv),
       parsed.data,
       signal
     );
     const { response } = await reviewStageDirection(
-      provider.getModel("sonnet-5"),
+      createTikaDirectorModel(reviewerKey, modelEnv),
       parsed.data,
       planned.response,
       signal

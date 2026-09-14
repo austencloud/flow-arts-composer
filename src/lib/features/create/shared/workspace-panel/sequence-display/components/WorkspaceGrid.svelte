@@ -1,5 +1,6 @@
 <!-- WorkspaceGrid.svelte - Unified workspace grid with standard and timeline layout modes -->
 <script lang="ts">
+  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
   import { tick, untrack } from "svelte";
   import { fade } from "svelte/transition";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -100,6 +101,7 @@
     rightPropTypeOverride = undefined,
     leftColorOverride = undefined,
     rightColorOverride = undefined,
+    posePicker = false,
     sequenceWord = "",
     arrivalRequest = null,
     edgePadding = 16,
@@ -145,6 +147,8 @@
     rightPropTypeOverride?: PropType;
     leftColorOverride?: string;
     rightColorOverride?: string;
+    /** Choose Start picker: step tiles render as poses; the start tile does not. */
+    posePicker?: boolean;
     sequenceWord?: string;
     arrivalRequest?: PictographArrivalRequest | null;
     edgePadding?: number;
@@ -858,7 +862,12 @@
             in:fade={{ duration: getHistoryStartDuration() }}
             out:fade={{ duration: getHistoryStartDuration() }}
           >
-            <div class="history-layout-shell">
+            {#if isStartTileAwaiting}
+              <div class="pictograph-loading" aria-label="Loading pictograph">
+                <PanelSpinner size={6} />
+              </div>
+            {/if}
+            <div class="history-layout-shell" inert={isStartTileAwaiting}>
               <StartTile
                 {startPosition}
                 shouldAnimate={isStartTileCascading}
@@ -975,7 +984,18 @@
                 in:fade={{ duration: getHistoryMembershipDuration(identity) }}
                 out:fade={{ duration: getHistoryMembershipDuration(identity) }}
               >
-                <div class="history-layout-shell">
+                {#if isAwaitingReveal(stepIndex)}
+                  <div
+                    class="pictograph-loading"
+                    aria-label="Loading pictograph"
+                  >
+                    <PanelSpinner size={6} />
+                  </div>
+                {/if}
+                <div
+                  class="history-layout-shell"
+                  inert={isAwaitingReveal(stepIndex)}
+                >
                   <StepCell
                     {step}
                     index={stepIndex}
@@ -998,6 +1018,7 @@
                     {rightPropTypeOverride}
                     {leftColorOverride}
                     {rightColorOverride}
+                    poseOnly={posePicker}
                     onContentReady={() => noteContentReady(stepIndex, waveBand)}
                   />
                 </div>
@@ -1031,7 +1052,12 @@
           in:fade={{ duration: getHistoryStartDuration() }}
           out:fade={{ duration: getHistoryStartDuration() }}
         >
-          <div class="history-layout-shell">
+          {#if isStartTileAwaiting}
+            <div class="pictograph-loading" aria-label="Loading pictograph">
+              <PanelSpinner size={6} />
+            </div>
+          {/if}
+          <div class="history-layout-shell" inert={isStartTileAwaiting}>
             <StartTile
               startPosition={startCell.startPosition}
               shouldAnimate={isStartTileCascading}
@@ -1081,7 +1107,12 @@
           in:fade={{ duration: getHistoryMembershipDuration(identity) }}
           out:fade={{ duration: getHistoryMembershipDuration(identity) }}
         >
-          <div class="history-layout-shell">
+          {#if isAwaitingReveal(index)}
+            <div class="pictograph-loading" aria-label="Loading pictograph">
+              <PanelSpinner size={6} />
+            </div>
+          {/if}
+          <div class="history-layout-shell" inert={isAwaitingReveal(index)}>
             <StepCell
               {step}
               {index}
@@ -1101,6 +1132,7 @@
               {rightPropTypeOverride}
               {leftColorOverride}
               {rightColorOverride}
+              poseOnly={posePicker}
               onContentReady={() => noteContentReady(index, waveBand)}
             />
           </div>
@@ -1363,10 +1395,19 @@
     pointer-events: none;
   }
 
-  /* Content-gated: this cell's pictograph has not finished painting, so it has
-     no place in the wave yet. Held out of sight rather than swept in empty. The
-     wave's own deadline releases it even if the report never arrives. */
-  .awaiting-reveal {
+  /* Keep loading feedback visible while the unfinished artwork stays hidden. */
+  .pictograph-loading {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background: var(--theme-card-bg);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  .awaiting-reveal:not(:has(.pictograph-loading)),
+  .awaiting-reveal > .history-layout-shell {
     opacity: 0;
     pointer-events: none;
   }

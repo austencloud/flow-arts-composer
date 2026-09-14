@@ -25,7 +25,7 @@
   import VulcanCaveScenicLayer from "./VulcanCaveScenicLayer.svelte";
   import DrownedGalleryAuthored from "./DrownedGalleryAuthored.svelte";
   import FirstFireAuthored from "./FirstFireAuthored.svelte";
-  import EarthCanyonGraybox from "./EarthCanyonGraybox.svelte";
+  import EarthRootTerraceAuthored from "./EarthRootTerraceAuthored.svelte";
   import AirChimneyGraybox from "./AirChimneyGraybox.svelte";
   import SundialGraybox from "./SundialGraybox.svelte";
   import MoonGraybox from "./MoonGraybox.svelte";
@@ -279,8 +279,8 @@
   // Graybox for The First Fire. Remove with the component when its authored
   // GLB shell lands, the way the Drowned Gallery's graybox went.
   const hasFirstFire = grid.wings.some((wing) => wing.id === "cave-fire");
-  // Graybox for the Earth Room (the Canyon Overlook). Same lifetime again.
-  const hasEarthCanyon = grid.wings.some((wing) => wing.id === "cave-earth");
+  // The Earth wing (the Root Terrace) owns its shell and its stations.
+  const hasEarthTerrace = grid.wings.some((wing) => wing.id === "cave-earth");
   const hasAirChimney = grid.wings.some((wing) => wing.id === "cave-air");
   // Graybox for the Sundial (the Sun Chamber). Same lifetime again.
   const hasSundial = grid.wings.some((wing) => wing.id === "cave-sun");
@@ -2150,6 +2150,9 @@
   {:else if hasFirstFire && performer.id.startsWith("cave-fire-")}
     <!-- Skip: the Fire wing stands one automaton per court and lights it by
          the procession (FirstFireAuthored) -->
+  {:else if hasEarthTerrace && performer.id.startsWith("cave-earth-")}
+    <!-- Skip: the Earth wing stands its three cases on the rootbed below the
+         terrace and its opener in the vestibule (EarthRootTerraceAuthored) -->
   {:else if performer.id.includes("telekinetic-formation")}
     {@const posOverride =
       overrideVersion >= 0
@@ -2288,10 +2291,11 @@
   />
 {/if}
 
-{#if hasEarthCanyon}
-  <EarthCanyonGraybox
+{#if hasEarthTerrace}
+  <EarthRootTerraceAuthored
     {grid}
     currentRoomId={currentPlayerRoomId}
+    {playerPosition}
     onLightPlanChange={handleAuthoredPointLightPlanChange}
     visible={props.visible !== false}
   />

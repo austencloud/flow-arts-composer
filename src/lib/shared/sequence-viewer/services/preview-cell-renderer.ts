@@ -1,3 +1,4 @@
+import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 /**
  * Preview Cell Renderer
  *
@@ -7,11 +8,8 @@
  */
 
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import type {
-  LayerRenderOptions,
-  LayerVisibility,
-} from "../../render/services/types";
+import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import { resolvePreviewCellRender } from "./preview-cell-render-contract";
 import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode";
 
 /**
@@ -19,6 +17,8 @@ import type { BrowseViewMode } from "$lib/shared/browse/domain/browse-view-mode"
  * All visibility and prop settings that affect the rendered output.
  */
 export interface PreviewCellRenderOptions {
+  fanAppearance?: FanAppearance;
+  primaryPropColors?: { left: string; right: string } | null;
   /** Render size in pixels (e.g., 480 for high-res) - this is the height; width = size * widthMultiplier */
   size: number;
 
@@ -72,6 +72,8 @@ export interface PreviewCellRenderOptions {
 
   /** Show start/end position letters (alpha/beta/gamma labels) */
   showPositions?: boolean;
+  /** L/R colour key on the start cell. Default: true. */
+  showHandColorKey?: boolean;
 
   /** When true, renders hand path visualization: HAND props, float arrows for shifts,
    *  no TKA overlay, no reversals. Shows pure spatial trajectory. */
@@ -111,20 +113,6 @@ import { compositeStepNumberOnBlob } from "./step-number-compositor";
 import * as pictographCloudCache from "$lib/shared/render/services/pictograph-cloud-cache";
 import { deriveCloudCellHash } from "$lib/shared/render/services/cloud-cell-key";
 import { pngBlobToWebp } from "$lib/shared/render/services/png-blob-to-webp";
-
-function filterSoloMotions(
-  data: PictographData,
-  viewMode: BrowseViewMode
-): PictographData {
-  const keepHand = viewMode.hand;
-  const motions = { ...data.motions };
-  if (keepHand === "left") {
-    delete motions.right;
-  } else {
-    delete motions.left;
-  }
-  return { ...data, motions };
-}
 
 /**
  * Render a single pictograph and return a blob URL.
@@ -248,67 +236,9 @@ export async function renderCell(
     );
   }
 
-  const viewMode = options.browseViewMode;
-  const isHandsView = viewMode?.subject === "hands";
-  const isSoloView = viewMode?.granularity === "solo";
-
-  const isHandPath = (options.handPathMode ?? false) || isHandsView;
-  const effectiveLeftProp = isHandPath ? PropType.HAND : options.leftPropType;
-  const effectiveRightProp = isHandPath
-    ? PropType.HAND
-    : options.catDogModeEnabled
-      ? options.rightPropType
-      : options.leftPropType;
-
-  const soloFiltered = isSoloView
-    ? filterSoloMotions(pictographData, viewMode!)
-    : pictographData;
-
-  const dataForRender = soloFiltered;
-
-  // Hand-path mode swaps both props for HANDs, so chirality is meaningless
-  // there — passing it would only fragment the cache.
-  const leftFlipped = isHandPath ? false : (options.leftBuugengFlipped ?? false);
-  const rightFlipped = isHandPath ? false : (options.rightBuugengFlipped ?? false);
-
-  const prepared = await pictographPreparer.prepareSingle(dataForRender, {
-    themeMode: isDark ? "dark" : "light",
-    leftPropType: effectiveLeftProp,
-    rightPropType: effectiveRightProp,
-    handPathMode: isHandPath,
-    showLeftMotion: options.showLeftMotion,
-    showRightMotion: options.showRightMotion,
-    leftBuugengFlipped: leftFlipped,
-    rightBuugengFlipped: rightFlipped,
-  });
-
-  const isMotionSolo =
-    (options.showLeftMotion === true && options.showRightMotion === false) ||
-    (options.showRightMotion === true && options.showLeftMotion === false);
-  const suppressOverlays = isHandPath || isSoloView || isMotionSolo;
-
-  const renderOptions: LayerRenderOptions = {
-    size: options.size,
-    widthMultiplier: options.widthMultiplier,
-    darkMode: isDark,
-    showNonRadialPoints: options.showNonRadialPoints ?? true,
-    showGrid: options.showGrid ?? true,
-    handPointVisibility: options.handPointVisibility ?? "all",
-    leftPropType: effectiveLeftProp,
-    rightPropType: effectiveRightProp,
-    leftBuugengFlipped: leftFlipped,
-    rightBuugengFlipped: rightFlipped,
-    showLeftMotion: options.showLeftMotion,
-    showRightMotion: options.showRightMotion,
-    showTnD: suppressOverlays ? false : (options.showTnD ?? false),
-    showElemental: suppressOverlays ? false : (options.showElemental ?? false),
-    showPositions: suppressOverlays ? false : (options.showPositions ?? false),
-  };
-
-  const visibility: LayerVisibility = {
-    showTKA: suppressOverlays ? false : (options.showTKA ?? true),
-    showReversals: suppressOverlays ? false : (options.showReversals ?? true),
-  };
+  const { data, prepareOptions, renderOptions, visibility } =
+    resolvePreviewCellRender(pictographData, isDark, options);
+  const prepared = await pictographPreparer.prepareSingle(data, prepareOptions);
 
   const pool = getWorkerRenderPool();
   // Render the base number-free (the worker never bakes the number), then

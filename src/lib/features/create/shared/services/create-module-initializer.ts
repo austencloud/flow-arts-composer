@@ -14,6 +14,7 @@
  * - Testability (can pass mocks directly to constructor)
  */
 
+import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { StartPositionManager } from "$lib/shared/create/services/start-position-manager";
@@ -157,7 +158,9 @@ export class CreateModuleInitializer {
 
     // Initialize services
     const t1 = performance.now();
-    await this.CreateModuleOrchestrator.initialize();
+    await bootProfiler.measureAsync("create:orchestrator", () =>
+      this.CreateModuleOrchestrator.initialize()
+    );
     console.log(
       `[Create init] Orchestrator: ${Math.round(performance.now() - t1)}ms`
     );
@@ -165,10 +168,18 @@ export class CreateModuleInitializer {
     // Initialize all tab states + start positions in parallel (independent of each other)
     const t2 = performance.now();
     await Promise.all([
-      constructTabState.initializeConstructTab(),
-      generatorTabState.initializeGeneratorTab(),
-      assembleTabState.initializeAssembleTab(),
-      this.loadStartPositions(GridMode.DIAMOND),
+      bootProfiler.measureAsync("create:construct-tab", () =>
+        constructTabState.initializeConstructTab()
+      ),
+      bootProfiler.measureAsync("create:generator-tab", () =>
+        generatorTabState.initializeGeneratorTab()
+      ),
+      bootProfiler.measureAsync("create:assemble-tab", () =>
+        assembleTabState.initializeAssembleTab()
+      ),
+      bootProfiler.measureAsync("create:start-positions", () =>
+        this.loadStartPositions(GridMode.DIAMOND)
+      ),
     ]);
     console.log(
       `[Create init] Tabs + start positions: ${Math.round(performance.now() - t2)}ms`

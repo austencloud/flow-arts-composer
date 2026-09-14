@@ -23,12 +23,12 @@
     ],
     "depth": 64
   },
-  "meshesBeforeInstancing": 64,
-  "trianglesBeforeInstancing": 1817952,
-  "provenance": "Original Blender architecture and mineral textures. Trees generated with @dgreenheck/ez-tree 1.1.0 (MIT), bundled ash leaves and Poly Haven oak bark maps. See EZ-TREE-LICENSE.txt and ez-tree-manifest.json.",
-  "bytes": 12715180,
+  "meshesBeforeInstancing": 4945,
+  "trianglesBeforeInstancing": 2516436,
+  "provenance": "Original Blender architecture and mineral textures. Trees generated with @dgreenheck/ez-tree 1.1.0 (MIT), bundled ash leaves and Poly Haven oak bark maps. See EZ-TREE-LICENSE.txt and ez-tree-manifest.json. Grass reuses the existing Forest authored tuft generator with sage materials. Connected stone routes and placement checks are recorded in polish-manifest.json.",
+  "bytes": 14756084,
   "compression": "EXT_meshopt_compression; float positions preserved",
   "textureFormat": "WebP, maximum 1024 square",
-  "sha256": "9482c31ccb31adcb75049bcb79e8d163c62365c9a461745a260bc0bac848bc10",
-  "meshes": 22
+  "sha256": "7309fb30a977e9a7a7a34f3ce6750b883ac2af86d6ba855c5fdfa170e772701e",
+  "meshes": 26
 }

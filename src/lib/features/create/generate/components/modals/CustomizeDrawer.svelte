@@ -31,20 +31,21 @@
         constraintPreset={overlayProps.constraintPreset}
         handPathMode={overlayProps.handPathMode}
         motionTypeFilter={overlayProps.motionTypeFilter}
+        handRelationship={overlayProps.handRelationship}
+        handRelationshipInverted={overlayProps.handRelationshipInverted}
+        onHandRelationshipChange={overlayProps.onHandRelationshipChange}
+        onHandRelationshipInvertedChange={overlayProps.onHandRelationshipInvertedChange}
+        matchHandTurns={overlayProps.matchHandTurns}
+        onMatchHandTurnsChange={overlayProps.onMatchHandTurnsChange}
         startEndOptions={overlayProps.startEndOptions}
         level={overlayProps.level}
         gridMode={overlayProps.gridMode}
         isFreeformMode={overlayProps.isFreeformMode}
-        turnPattern={overlayProps.turnPattern}
-        turnIntensity={overlayProps.turnIntensity}
-        sequenceLength={overlayProps.sequenceLength}
-        loopPeriod={overlayProps.loopPeriod}
         styleBaseline={overlayProps.styleBaseline}
         onConstraintPresetChange={overlayProps.onConstraintPresetChange}
         onHandPathModeChange={overlayProps.onHandPathModeChange}
         onMotionTypeFilterChange={overlayProps.onMotionTypeFilterChange}
         onStartEndChange={overlayProps.onStartEndChange}
-        onTurnPatternChange={overlayProps.onTurnPatternChange}
         onResetAll={overlayProps.onResetAll}
         {onClose}
       />

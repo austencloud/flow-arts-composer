@@ -6,7 +6,12 @@
   import { WORKSPACE_BUTTON_ICON } from "../../workspace-button-layout";
   import UndoGlyph from "./UndoGlyph.svelte";
 
-  type CreateModuleState = ReturnType<typeof createCreateModuleState>;
+  type ModuleState = ReturnType<typeof createCreateModuleState>;
+  type CreateModuleState = Pick<
+    ModuleState,
+    "canUndo" | "canRedo" | "undo" | "redo"
+  > &
+    Partial<Pick<ModuleState, "assembleTabState" | "undoController">>;
 
   // Props
   let {
@@ -146,13 +151,13 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    width: var(--min-touch-target);
+    width: var(--workspace-action-width, var(--min-touch-target));
     min-width: var(--min-touch-target);
     height: var(--min-touch-target);
-    gap: 0;
-    padding-inline: 0;
+    gap: var(--workspace-action-gap, 0);
+    padding-inline: var(--workspace-action-padding-inline, 0);
     border: none;
-    border-radius: 50%;
+    border-radius: var(--workspace-action-radius, 50%);
     cursor: pointer;
     transition:
       transform var(--duration-emphasis) cubic-bezier(0.4, 0, 0.2, 1),
@@ -180,7 +185,7 @@
   }
 
   .workspace-action-label {
-    display: none;
+    display: var(--workspace-action-label-display, none);
     font-size: var(--font-size-min, 14px);
     font-weight: 650;
     line-height: 1;
@@ -236,5 +241,11 @@
     opacity: 0.4;
     cursor: not-allowed;
     pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .undo-button {
+      transition: none;
+    }
   }
 </style>

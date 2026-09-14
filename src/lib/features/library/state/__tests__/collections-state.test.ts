@@ -68,6 +68,28 @@ vi.mock("$lib/shared/auth/firebase", () => ({
 
 import { collectionsState } from "../collections-state.svelte";
 import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+
+describe("collection prop details", () => {
+  it("persists the prop and explicitly clears it with a Firestore-safe null", async () => {
+    const details = { name: "Fans", description: "", credit: "" };
+    await collectionsState.saveDetails("fans", {
+      ...details,
+      propType: PropType.FAN,
+    });
+    expect(mocks.updateCollection).toHaveBeenLastCalledWith("fans", {
+      ...details,
+      propType: PropType.FAN,
+    });
+    await collectionsState.saveDetails("fans", { ...details, propType: null });
+    expect(mocks.updateCollection).toHaveBeenLastCalledWith("fans", {
+      ...details,
+      propType: null,
+    });
+    await collectionsState.saveDetails("fans", details);
+    expect(mocks.updateCollection).toHaveBeenLastCalledWith("fans", details);
+  });
+});
 
 // authState above is the vi.mock plain object; the production type marks the tier
 // flags readonly, so cast to a mutable view to reset/flip them between tests.

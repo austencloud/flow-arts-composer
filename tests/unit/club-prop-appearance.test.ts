@@ -7,19 +7,36 @@ import {
   getMotionColor,
 } from "$lib/shared/utils/svg-color-utils";
 
-const ASSET_FAMILIES = [
+// The "buttons" family deliberately diverges from every other renderer: it
+// crops the viewBox down to the painted artwork so the family-tile picker
+// doesn't draw the prop at half size inside its icon (see commit
+// b267e856d5). Everything after the `<svg ...>` opening tag stays identical
+// to the canonical artwork -- only the viewBox window changes -- so the
+// silhouette and material split are still shared, just re-windowed.
+const FULL_SILHOUETTE_FAMILIES = [
   "static/images/props",
   "static/images/props/animated",
-  "static/images/props/buttons",
   "static/images/props/pictograph",
   "mcp-server-pkg/assets/images/props",
   "mcp-server-pkg/assets/images/props/animated",
-  "mcp-server-pkg/assets/images/props/buttons",
   "mcp-server-pkg/assets/images/props/pictograph",
 ] as const;
 
-const CLUB_ASSETS = ASSET_FAMILIES.map((family) => `${family}/club.svg`);
-const CLASSIC_CLUB_ASSETS = ASSET_FAMILIES.map(
+const BUTTON_TILE_FAMILIES = [
+  "static/images/props/buttons",
+  "mcp-server-pkg/assets/images/props/buttons",
+] as const;
+
+const CLUB_ASSETS = FULL_SILHOUETTE_FAMILIES.map(
+  (family) => `${family}/club.svg`
+);
+const CLASSIC_CLUB_ASSETS = FULL_SILHOUETTE_FAMILIES.map(
+  (family) => `${family}/classic_club.svg`
+);
+const CLUB_BUTTON_ASSETS = BUTTON_TILE_FAMILIES.map(
+  (family) => `${family}/club.svg`
+);
+const CLASSIC_CLUB_BUTTON_ASSETS = BUTTON_TILE_FAMILIES.map(
   (family) => `${family}/classic_club.svg`
 );
 
@@ -36,6 +53,13 @@ function clubPart(svg: string, part: string): string {
   return tag;
 }
 
+/** Strips the opening `<svg ...>` tag's viewBox so a cropped icon tile can
+ * be compared against the full-canvas canonical render without the crop
+ * itself registering as a mismatch. */
+function withoutViewBox(svg: string): string {
+  return svg.replace(/(<svg\b[^>]*)\sviewBox="[^"]*"/, "$1");
+}
+
 describe("regular 2D club artwork", () => {
   it("keeps every renderer on the same measured silhouette and material split", () => {
     const canonical = readAsset(CLUB_ASSETS[0]!);
@@ -47,6 +71,16 @@ describe("regular 2D club artwork", () => {
     }
     for (const path of CLUB_ASSETS.slice(1)) {
       expect(readAsset(path)).toBe(canonical);
+    }
+
+    // The button-tile crop re-windows the same artwork -- same silhouette
+    // and material split, cropped viewBox -- and both button copies (main
+    // app + mcp-server-pkg mirror) must stay in lockstep with each other.
+    const buttonCanonical = readAsset(CLUB_BUTTON_ASSETS[0]!);
+    expect(buttonCanonical).toContain('viewBox="125 0 133.67 34.17"');
+    expect(withoutViewBox(buttonCanonical)).toBe(withoutViewBox(canonical));
+    for (const path of CLUB_BUTTON_ASSETS.slice(1)) {
+      expect(readAsset(path)).toBe(buttonCanonical);
     }
   });
 
@@ -77,6 +111,14 @@ describe("regular 2D club artwork", () => {
     expect(canonical).toContain('data-club-art="classic"');
     for (const path of CLASSIC_CLUB_ASSETS.slice(1)) {
       expect(readAsset(path)).toBe(canonical);
+    }
+
+    // Same button-tile crop as the regular club, mirrored in lockstep.
+    const buttonCanonical = readAsset(CLASSIC_CLUB_BUTTON_ASSETS[0]!);
+    expect(buttonCanonical).toContain('viewBox="125 0 133.67 34.17"');
+    expect(withoutViewBox(buttonCanonical)).toBe(withoutViewBox(canonical));
+    for (const path of CLASSIC_CLUB_BUTTON_ASSETS.slice(1)) {
+      expect(readAsset(path)).toBe(buttonCanonical);
     }
   });
 

@@ -136,6 +136,7 @@
           movementMap.sequence.startingPosition}
         bpm={60}
         initialStepMap={movementMap.stepMap ?? undefined}
+        draftKey={`movement:${movementMap.sequence.id}:${movementMap.video.id}`}
         onSave={async (stepMap) => onTimingSaved(stepMap)}
         onClose={() => movementMap.goToStage("setup")}
       />

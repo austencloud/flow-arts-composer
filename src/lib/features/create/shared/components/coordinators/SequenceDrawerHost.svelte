@@ -596,9 +596,18 @@ import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orche
       playbackController.togglePlayback();
     }
 
-    // Cancel any ongoing export
+    // Cancel any ongoing export. Route through the export orchestrator, the
+    // same door handleCancelExport uses: it marks the in-flight run cancelled
+    // before delegating, which is what makes performExport resolve as cancelled
+    // instead of throwing. Cancelling the video orchestrator directly leaves the
+    // run unmarked, so closing the panel mid-export raised a failure toast and
+    // an error haptic for something the user deliberately did.
     if (videoExportOrchestrator?.isExporting()) {
-      videoExportOrchestrator.cancelExport();
+      if (exportOrchestrator) {
+        exportOrchestrator.cancelExport();
+      } else {
+        videoExportOrchestrator.cancelExport();
+      }
       exportProgress = null;
     }
 

@@ -131,7 +131,10 @@ export async function createWorkerPropVisual(
       options.propType === CANONICAL_PROP_TYPE.BIGFAN) &&
     options.build.fanBuild !== "pictograph"
   ) {
-    const modelUrl = "/models/props/fan.glb";
+    const modelUrl =
+      options.build.fanBuild === "flat-grip"
+        ? "/models/props/fan-flat-grip.glb"
+        : "/models/props/fan.glb";
     if (!options.loadModel) return missingLoader(options, modelUrl);
     const visual = await createFanModelWorkerProp(
       options,

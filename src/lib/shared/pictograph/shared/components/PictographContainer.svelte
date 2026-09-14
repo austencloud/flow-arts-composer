@@ -27,6 +27,7 @@ with pre-prepared data for better performance.
 -->
 
 <script lang="ts">
+  import PanelSpinner from "$lib/shared/components/panel/PanelSpinner.svelte";
   import { onMount, untrack, tick } from "svelte";
   import { getVisibilityStateManager } from "../state/visibility-state.svelte";
   import { getAnimationVisibilityManager } from "../../../animation-engine/state/animation-visibility-state.svelte";
@@ -40,6 +41,7 @@ with pre-prepared data for better performance.
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PropType } from "../../prop/domain/enums/prop-type";
   import {
+    type FanAppearance,
     fanAppearanceSignature,
     normalizeFanAppearance,
   } from "../../prop/domain/fan-appearance";
@@ -73,6 +75,7 @@ with pre-prepared data for better performance.
     showElemental = undefined,
     propElementalType = null,
     showPositions = undefined,
+    showHandColorKey = undefined,
     // Preview mode for visibility settings
     previewMode = false,
     // Show only one hand's prop/arrow (null = show both)
@@ -103,8 +106,11 @@ with pre-prepared data for better performance.
     // Transparent background: skip the background fill so the glyph floats
     // on the host surface (decorative embeds on dark tiles).
     transparentBackground = false,
+    // Choose Start picker: grid and props only, every beat glyph fades out.
+    poseOnly = false,
     // Explicit prop types for export/thumbnail rendering
     // When provided, passed to PictographPreparer for consistency during async operations
+    fanAppearanceOverride = undefined,
     leftPropTypeOverride = undefined,
     rightPropTypeOverride = undefined,
     leftColorOverride = undefined,
@@ -132,7 +138,10 @@ with pre-prepared data for better performance.
     // Optional in-place motion. The current pictograph remains the only
     // renderer while its props travel from the prepared start pose to this step.
     motionStartData = null,
+    motionStep = null,
     motionProgress = null,
+    gridRotation = null,
+    directPropPositioning = false,
     arrowOpacity = 1,
   } = $props<{
     pictographData?: (StepData | PictographData) | null;
@@ -151,6 +160,8 @@ with pre-prepared data for better performance.
     /** Optional prop-path TnD element for the top-right sister glyph. */
     propElementalType?: ElementalType | null;
     showPositions?: boolean;
+    /** L/R colour key on start positions; undefined follows the global toggle. */
+    showHandColorKey?: boolean;
     previewMode?: boolean;
     visibleHand?: HandSide | null;
     arrowsClickable?: boolean;
@@ -172,7 +183,9 @@ with pre-prepared data for better performance.
     printMode?: boolean;
     /** Skip the background fill so the glyph floats on the host surface. */
     transparentBackground?: boolean;
+    poseOnly?: boolean;
     /** Explicit prop type for the left hand. Export/thumbnail rendering provides this for consistency. */
+    fanAppearanceOverride?: FanAppearance;
     leftPropTypeOverride?: PropType;
     /** Explicit prop type for the right hand. Export/thumbnail rendering provides this for consistency. */
     rightPropTypeOverride?: PropType;
@@ -195,8 +208,14 @@ with pre-prepared data for better performance.
     stepNumberOverride?: boolean;
     /** Pictograph whose prepared prop positions define this motion's exact start pose. */
     motionStartData?: PictographData | null;
+    /** Presentation-only travel while the displayed pictograph owns the exact final pose. */
+    motionStep?: StepData | null;
     /** 0..1 interpolation progress. null renders the finished pictograph normally. */
     motionProgress?: number | null;
+    /** Cumulative degrees driven by the caller's motion clock; null uses grid-mode animation. */
+    gridRotation?: number | null;
+    /** Direct manipulation has already moved the props; do not replay that move. */
+    directPropPositioning?: boolean;
     /** Opacity for the existing pictograph arrow layer. */
     arrowOpacity?: number;
   }>();
@@ -230,6 +249,7 @@ with pre-prepared data for better performance.
     tndGlyph: visibilityManager.getGlyphVisibility("tndGlyph"),
     elementalGlyph: visibilityManager.getGlyphVisibility("elementalGlyph"),
     positionsGlyph: visibilityManager.getGlyphVisibility("positionsGlyph"),
+    handColorKey: visibilityManager.getGlyphVisibility("handColorKey"),
     handPointVisibility: visibilityManager.getHandPointVisibility(),
     stepNumbers: visibilityManager.getStepNumbersVisibility(),
     darkMode: animVisibilityManager.isDarkMode(),
@@ -255,6 +275,7 @@ with pre-prepared data for better performance.
       tndGlyph: visibilityManager.getGlyphVisibility("tndGlyph"),
       elementalGlyph: visibilityManager.getGlyphVisibility("elementalGlyph"),
       positionsGlyph: visibilityManager.getGlyphVisibility("positionsGlyph"),
+      handColorKey: visibilityManager.getGlyphVisibility("handColorKey"),
       handPointVisibility: visibilityManager.getHandPointVisibility(),
       stepNumbers: visibilityManager.getStepNumbersVisibility(),
       darkMode: syncedVisibility.darkMode, // Keep dark mode unchanged
@@ -344,6 +365,16 @@ with pre-prepared data for better performance.
     showPositions !== undefined
       ? showPositions
       : syncedVisibility.positionsGlyph
+  );
+
+  // The renderer draws the key on start positions when this is undefined, so
+  // the global toggle only ever forces it OFF; an explicit prop still wins.
+  const effectiveShowHandColorKey = $derived<boolean | undefined>(
+    showHandColorKey !== undefined
+      ? showHandColorKey
+      : syncedVisibility.handColorKey
+        ? undefined
+        : false
   );
 
   // Hand point visibility mode - prop override forces show-all or hide-inactive, else use global
@@ -472,7 +503,7 @@ with pre-prepared data for better performance.
       // The fan build picks the prop artwork, so choosing DoodleGrip Fire
       // over the notation fan has to re-prepare every fan pictograph.
       fanAppearance: fanAppearanceSignature(
-        normalizeFanAppearance(settings.fanAppearance)
+        normalizeFanAppearance(fanAppearanceOverride ?? settings.fanAppearance)
       ),
       darkMode: effectiveDarkMode, // Include effective dark mode for color-correct preparation
       leftMotion: leftFingerprint,
@@ -534,7 +565,9 @@ with pre-prepared data for better performance.
           rightPropType: effectiveRightPropType,
           leftBuugengFlipped: getSettings().leftBuugengFlipped ?? false,
           rightBuugengFlipped: getSettings().rightBuugengFlipped ?? false,
-          fanAppearance: normalizeFanAppearance(getSettings().fanAppearance),
+          fanAppearance: normalizeFanAppearance(
+            fanAppearanceOverride ?? getSettings().fanAppearance
+          ),
           showLeftMotion: preparationShowLeftMotion,
           showRightMotion: preparationShowRightMotion,
         };
@@ -585,12 +618,18 @@ with pre-prepared data for better performance.
   });
 
   const motionPropPositionOverrides = $derived.by(() => {
-    if (motionProgress === null || !stepData || !preparedData?._prepared) {
+    const travelingStep = motionStep ?? stepData;
+    if (
+      motionProgress === null ||
+      !travelingStep ||
+      !preparedData?._prepared ||
+      appliedPrepareKey !== prepareKey
+    ) {
       return null;
     }
 
     return calculatePictographMotionPositions({
-      step: stepData,
+      step: travelingStep,
       progress: motionProgress,
       gridMode:
         overrideGridMode ?? preparedData._prepared.gridMode ?? GridMode.DIAMOND,
@@ -657,6 +696,7 @@ with pre-prepared data for better performance.
   class:loading={isLoading}
   role={hasA11yLabel ? "img" : undefined}
   aria-label={hasA11yLabel ? a11yLabel : undefined}
+  aria-busy={Boolean(pictographData) && !preparedData}
 >
   {#if preparedData}
     {#if disableTransitions}
@@ -674,13 +714,16 @@ with pre-prepared data for better performance.
         showElemental={effectiveShowElemental}
         {propElementalType}
         showPositions={effectiveShowPositions}
+        showHandColorKey={effectiveShowHandColorKey}
         handPointVisibility={effectiveHandPointVisibility}
         {activeLocations}
+        {poseOnly}
         {stepNumber}
         {showStepNumber}
         {previewMode}
         animateVisibility={liveAnimateVisibility}
         gridModeOverride={overrideGridMode}
+        {gridRotation}
         {visibleHand}
         {arrowsClickable}
         {showArrow}
@@ -700,6 +743,7 @@ with pre-prepared data for better performance.
         {transitionKey}
         {duration}
         propPositionOverrides={motionPropPositionOverrides}
+        {directPropPositioning}
         {arrowOpacity}
         onGridReady={handleGridReady}
       />
@@ -722,18 +766,21 @@ with pre-prepared data for better performance.
             showElemental={effectiveShowElemental}
             {propElementalType}
             showPositions={effectiveShowPositions}
+            showHandColorKey={effectiveShowHandColorKey}
             handPointVisibility={effectiveHandPointVisibility}
             {activeLocations}
+            {poseOnly}
             {stepNumber}
             {showStepNumber}
             {previewMode}
             animateVisibility={liveAnimateVisibility}
             gridModeOverride={overrideGridMode}
+            {gridRotation}
             {visibleHand}
             {arrowsClickable}
             {showArrow}
             darkMode={effectiveDarkMode}
-                {printMode}
+            {printMode}
             {transparentBackground}
             {leftColorOverride}
             {rightColorOverride}
@@ -748,6 +795,7 @@ with pre-prepared data for better performance.
             {transitionKey}
             {duration}
             propPositionOverrides={motionPropPositionOverrides}
+            {directPropPositioning}
             {arrowOpacity}
             onGridReady={handleGridReady}
           />
@@ -756,6 +804,14 @@ with pre-prepared data for better performance.
     {/if}
   {:else}
     <div class="empty-state">
+      {#if pictographData}
+        <div class="loading-indicator">
+          <PanelSpinner
+            size={6}
+            color={effectiveDarkMode ? "white" : "black"}
+          />
+        </div>
+      {/if}
       <svg width="100%" height="100%" viewBox="0 0 950 950">
         <rect
           width="950"
@@ -783,6 +839,13 @@ with pre-prepared data for better performance.
     height: 100%;
     /* Allow pointer events to pass through to interactive SVG elements */
     pointer-events: none;
+  }
+
+  .loading-indicator {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
   }
 
   .empty-state {

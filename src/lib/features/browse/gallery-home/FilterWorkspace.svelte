@@ -19,7 +19,10 @@ the below-seam actions mutate the engine in place.
 <script lang="ts">
   import type { Snippet } from "svelte";
   import GalleryDrill from "$lib/features/browse/gallery-home/GalleryDrill.svelte";
-  import type { CollectionOption } from "$lib/features/browse/gallery-home/gallery-drill-catalog.svelte";
+  import type {
+    CollectionOption,
+    Section,
+  } from "$lib/features/browse/gallery-home/gallery-drill-catalog.svelte";
   import FilterRuleStrip from "$lib/shared/browse/components/FilterRuleStrip.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import { startMorph } from "$lib/shared/transitions/results-morph";
@@ -39,6 +42,7 @@ the below-seam actions mutate the engine in place.
     onSaveSmart,
     onEject,
     onClose,
+    splitMinHeight = 0,
   }: {
     engine: BrowseEngine;
     collections?: CollectionOption[];
@@ -57,6 +61,9 @@ the below-seam actions mutate the engine in place.
      * mutation just runs.
      */
     onEject?: (mutate: () => void) => void;
+    /** Forwarded to the drill: a short host (a modal) can be wide enough for
+     * the split pane and still too short for its stacked left column. */
+    splitMinHeight?: number;
   } = $props();
 
   const eject = (mutate: () => void) => (onEject ? onEject(mutate) : mutate());
@@ -126,6 +133,15 @@ the below-seam actions mutate the engine in place.
   // Bound into the drill: opens its pane on the full live grid with no active
   // category (the destination "Show all" / "View N results" used to eject to).
   let showAllPane = $state(false);
+  // Which screen the drill is on. Inside a value editor the pinned strip is
+  // rendered before any rule exists, so applying the first one changes the
+  // strip's text and not the position of the card that was just tapped: on a
+  // phone the strip and its button used to arrive together and push the
+  // level cards 110px down under the user's thumb.
+  let drillSection = $state<Section>("chooser");
+  const stripReserved = $derived(
+    showViewResultsAction && drillSection !== "chooser"
+  );
 </script>
 
 <!-- The workspace's right-hand column: the rule as a header, the live grid
@@ -192,7 +208,7 @@ the below-seam actions mutate the engine in place.
       </PanelButton>
     </div>
   {/if}
-  {#if (engine.hasActiveFilters || resultsActions) && !splitPaneActive}
+  {#if (engine.hasActiveFilters || resultsActions || stripReserved) && !splitPaneActive}
     <div class="gallery-rule-strip" aria-label="Current filters">
       <span
         class="strip-count strip-motion-anchor"
@@ -333,6 +349,8 @@ the below-seam actions mutate the engine in place.
       {collections}
       onSplitPaneChange={(active) => (splitPaneActive = active)}
       onSplitCapableChange={(capable) => (splitCapable = capable)}
+      onSectionChange={(section) => (drillSection = section)}
+      {splitMinHeight}
       bind:showAllPane
       {resultsHeader}
       {resultsPane}
@@ -397,6 +415,11 @@ the below-seam actions mutate the engine in place.
     .gallery-rule-strip {
       display: grid;
       grid-template-columns: max-content minmax(0, 1fr);
+      /* The first row holds either the empty-state sentence or a 44px chip.
+         A floor keeps the strip the same height in both states, so the
+         first applied rule does not nudge the value cards below it. */
+      grid-auto-rows: minmax(var(--min-touch-target, 44px), auto);
+      align-items: center;
       gap: 0.4rem 0.6rem;
       padding: 0.5rem 0.75rem;
     }

@@ -20,6 +20,7 @@
   list's offset below the toolbar/filter bar.
 -->
 <script lang="ts">
+  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { onMount, onDestroy, untrack } from "svelte";
   import {
     createVirtualizer,
@@ -58,6 +59,7 @@
   }
 
   interface Props {
+    collectionPropType?: PropType | null;
     engine: BrowseEngine;
     thumbnailService: BrowseThumbnailProvider | null;
     /** The single external scroll container (BrowsePanel's `.panel-content`). */
@@ -90,6 +92,7 @@
   }
 
   const {
+    collectionPropType,
     engine,
     thumbnailService,
     scrollElement,
@@ -658,6 +661,7 @@
             {#each it.sequences as sequence (sequence.id)}
               {@const seqVariations = getVariationsForSequence(sequence)}
               <ChoreoCardThumbnail
+                {collectionPropType}
                 {sequence}
                 variations={seqVariations}
                 onPrimaryAction={onAction

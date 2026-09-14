@@ -310,6 +310,8 @@ interface CentrelineRow {
   side: Vector3;
   tangent: Vector3;
   halfWidth: number;
+  /** `halfWidth` before the toe spread: the corridor the bank glow follows. */
+  corridorHalfWidth: number;
   sourceTaper: number;
   arcLength: number;
   /** Normalised arc position, head 0 to tail 1. */
@@ -414,6 +416,7 @@ export function createLavaRiverStripGeometry({
       side,
       tangent,
       halfWidth: 0,
+      corridorHalfWidth: 0,
       sourceTaper: 1,
       arcLength,
       run: 0,
@@ -447,14 +450,14 @@ export function createLavaRiverStripGeometry({
         : (toe - toeSpec.capStart) / Math.max(1e-4, 1 - toeSpec.capStart);
     const cap = Math.max(0.06, Math.sqrt(Math.max(0, 1 - capT * capT)));
 
-    entry.halfWidth =
+    entry.corridorHalfWidth =
       width *
       widthScale *
       (0.9 + Math.sin(t * Math.PI) * 0.1 + Math.sin(t * 17.3 + 0.7) * 0.025) *
       entry.sourceTaper *
-      spread *
       cap *
       0.5;
+    entry.halfWidth = entry.corridorHalfWidth * spread;
   }
 
   const positions: number[] = [];
@@ -689,7 +692,11 @@ function createGlowSkirtGeometry({
 
   const vertex = new Vector3();
   for (const row of rows) {
-    const halfWidth = Math.max(row.halfWidth, minHalfWidth);
+    // The skirt follows the corridor, not the delta. Its reach is measured in
+    // half-widths, so scaled off the spread rows it fanned into a sheet more
+    // than twice as wide as anywhere upstream, right where the lava is
+    // coolest.
+    const halfWidth = Math.max(row.corridorHalfWidth, minHalfWidth);
     for (let column = 0; column <= columns; column += 1) {
       const lateralT = column / columns;
       const cross = (lateralT * 2 - 1) * spec.reach;

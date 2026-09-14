@@ -9,11 +9,16 @@ import { getExperiencePersistence } from "../../../state/experience-persistence.
 import {
   POSITION_CHALLENGES,
   positionKindFor,
+  positionExample,
   restorePositionWorkshop,
   type PositionWorkshopCheckpoint,
 } from "./hand-position-lesson";
 import type { PositionType } from "../../../domain/constants/position-quiz-data";
 import type { PropPlacementChange } from "$lib/shared/pictograph/grid/domain/prop-placement";
+import type {
+  GridMode,
+  GridLocation,
+} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 /** The live lesson's self-paced construction flow. Legacy quiz consumers below
  * keep their old contract; they are not mounted by the current experience. */
@@ -28,7 +33,24 @@ export function createPositionWorkshopState(
   let round = $state(saved.round);
   let explored = $state(saved.explored);
   let feedback = $state<"idle" | "correct" | "incorrect">("idle");
+  let examples = $state<
+    Record<string, { left: GridLocation; right: GridLocation }>
+  >({});
   const challenge = $derived(POSITION_CHALLENGES[round] ?? null);
+
+  function rememberPosition(
+    left: GridLocation | null,
+    right: GridLocation | null,
+    mode: GridMode
+  ) {
+    const kind = positionKindFor(left, right);
+    if (!kind || !left || !right) return;
+    examples = { ...examples, [`${mode}:${kind}`]: { left, right } };
+  }
+
+  function examplePair(kind: PositionType, mode: GridMode) {
+    return examples[`${mode}:${kind}`] ?? positionExample(kind, mode);
+  }
 
   function save() {
     if (!review)
@@ -107,6 +129,8 @@ export function createPositionWorkshopState(
       return round === POSITION_CHALLENGES.length;
     },
     discover,
+    rememberPosition,
+    examplePair,
     explore,
     practice,
     check,

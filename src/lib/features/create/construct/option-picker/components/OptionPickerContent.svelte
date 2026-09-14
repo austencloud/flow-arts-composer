@@ -41,6 +41,7 @@ Uses organizer and sizer services for section grouping and sizing.
   } from "../../services/construct-analytics";
   import type { Attachment } from "svelte/attachments";
   import { onMount } from "svelte";
+  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
   import OptionInteractionHint from "./OptionInteractionHint.svelte";
   import { createOptionInteractionHintState } from "../state/option-interaction-hint-state.svelte";
   import {
@@ -444,6 +445,7 @@ Uses organizer and sizer services for section grouping and sizing.
   $effect(() => {
     if (!containerElement) return;
     const element = containerElement;
+    const span = bootProfiler.startSpan("construct:layout-settle");
 
     let timeoutId: number;
     let settleFrame: number | null = null;
@@ -524,6 +526,10 @@ Uses organizer and sizer services for section grouping and sizing.
           containerWidth = rect.width;
           containerHeight = rect.height;
           sizingStable = true;
+          span("ok", {
+            timedOut: performance.now() - settleStartedAt > SETTLE_TIMEOUT_MS,
+          });
+          bootProfiler.milestone("construct:layout-committed");
           return;
         }
         probeUntilSettled();
@@ -533,6 +539,7 @@ Uses organizer and sizer services for section grouping and sizing.
     probeUntilSettled();
 
     return () => {
+      span("cancelled");
       clearTimeout(timeoutId);
       cancelSettleProbe();
       observer.disconnect();

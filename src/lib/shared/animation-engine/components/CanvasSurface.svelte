@@ -34,6 +34,7 @@ captureEffectDiagnostics to the context menu.
 -->
 <script lang="ts">
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
@@ -75,6 +76,7 @@ captureEffectDiagnostics to the context menu.
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { GlyphOverlayFrameMode } from "../domain/glyph-overlay-frame";
+  import PanelState from "$lib/shared/components/panel/PanelState.svelte";
 
   let {
     // Engine-driving props
@@ -84,6 +86,7 @@ captureEffectDiagnostics to the context menu.
     preloadAdditionalLayers = [],
     tunnelSpectrum = true,
     tunnelPropColors = null,
+    primaryPropColors,
     tunnelSelectedLayer = null,
     gridVisible = true,
     gridOpacity = undefined,
@@ -148,6 +151,8 @@ captureEffectDiagnostics to the context menu.
     preloadAdditionalLayers?: AdditionalLayerProps[];
     tunnelSpectrum?: boolean;
     tunnelPropColors?: TunnelPropColorPair | null;
+    /** Embedded teaching surfaces can pin colors without changing saved preferences. */
+    primaryPropColors?: TunnelPropColorPair;
     tunnelSelectedLayer?: number | readonly number[] | null;
     gridVisible?: boolean;
     gridOpacity?: number;
@@ -216,10 +221,15 @@ captureEffectDiagnostics to the context menu.
   let containerElement: HTMLDivElement | undefined = $state();
 
   // Engine instance - created here in the leaf and bound back out to the parent.
-  const engineInstance = new AnimationEngine();
-  if (initialQualityTier) {
-    engineInstance.setInitialQualityTier(initialQualityTier);
+  function createEngine() {
+    const nextEngine = new AnimationEngine();
+    if (initialQualityTier) {
+      nextEngine.setInitialQualityTier(initialQualityTier);
+    }
+    return nextEngine;
   }
+
+  let engineInstance = $state(createEngine());
   engine = engineInstance;
 
   // Off-screen / hidden-tab gating. Every on-screen animated canvas goes
@@ -229,8 +239,11 @@ captureEffectDiagnostics to the context menu.
   // attached once the container element exists. The offscreen export engine is
   // built by `render-context-factory`, never by this component, so it never
   // receives a gate and is never paused.
-  const activityGate = createRenderActivityGate({ name: resolvedContextId });
+  let activityGate = createRenderActivityGate({ name: resolvedContextId });
   engineInstance.setActivityGate(activityGate);
+
+  let initializationError = $state<Error | null>(null);
+  let retryInitialization = $state<(() => void) | null>(null);
 
   // Sync 2D overlay suppression (for 3D mode)
   $effect.pre(() => {
@@ -368,7 +381,9 @@ captureEffectDiagnostics to the context menu.
     const el = containerElement;
     if (!el) return;
 
-    activityGate.attach(el);
+    const currentEngine = engineInstance;
+    const currentActivityGate = activityGate;
+    currentActivityGate.attach(el);
 
     // Register the render context AFTER the (async) engine init resolves.
     // getRenderContext returns null until the awaited lifecycle init has created
@@ -379,34 +394,50 @@ captureEffectDiagnostics to the context menu.
     // `disposed` guard prevents registering a context for an engine that was torn
     // down before init finished.
     let disposed = false;
-    untrack(() => {
-      void engineInstance
-        .initialize(el, {
-          onCanvasReady,
-          onTrailSettingsChange: (settings) => {
-            externalTrailSettings = settings;
-          },
-          onEffectError,
-          prewarmEffects,
-        })
-        .then(() => {
-          if (disposed) return;
-          const ctx = engineInstance.getRenderContext(resolvedContextId, el);
-          if (ctx) {
-            getRenderContextRegistry().register(ctx);
-          }
-        })
-        .catch((err) => {
-          // Effect-level failures surface via onEffectError, but a throw from
-          // init itself means NO canvas gets created at all — an empty stage.
-          // Swallowing it silently once hid a DataCloneError for a full
-          // evening; always leave a trace.
-          console.error(
-            "[CanvasSurface] engine initialize() failed — canvas never created:",
-            err
-          );
-        });
-    });
+    let initializationRevision = 0;
+
+    function initialize() {
+      const revision = ++initializationRevision;
+      initializationError = null;
+
+      untrack(() => {
+        void currentEngine
+          .initialize(el, {
+            onCanvasReady,
+            onTrailSettingsChange: (settings) => {
+              externalTrailSettings = settings;
+            },
+            onEffectError,
+            prewarmEffects,
+          })
+          .then(() => {
+            if (disposed || revision !== initializationRevision) return;
+            const ctx = currentEngine.getRenderContext(resolvedContextId, el);
+            if (ctx) {
+              getRenderContextRegistry().register(ctx);
+            }
+          })
+          .catch((err) => {
+            if (disposed || revision !== initializationRevision) return;
+            const failure = err instanceof Error ? err : new Error(String(err));
+            initializationError = failure;
+            console.error(
+              "[CanvasSurface] Animation initialization failed:",
+              failure
+            );
+          });
+      });
+    }
+
+    retryInitialization = () => {
+      initializationError = null;
+      activityGate = createRenderActivityGate({ name: resolvedContextId });
+      engineInstance = createEngine();
+      engineInstance.setActivityGate(activityGate);
+      engine = engineInstance;
+    };
+
+    initialize();
 
     // Dev-only: install the LED/fire console diagnostics on window. Gated on
     // import.meta.env.DEV so production never gets these window globals. The
@@ -421,11 +452,13 @@ captureEffectDiagnostics to the context menu.
 
     return () => {
       disposed = true;
+      ++initializationRevision;
+      retryInitialization = null;
       untrack(() => {
         disposeDiagnostics?.();
-        activityGate.dispose();
+        currentActivityGate.dispose();
         getRenderContextRegistry().unregister(resolvedContextId);
-        engineInstance.dispose();
+        currentEngine.dispose();
       });
     };
   });
@@ -447,6 +480,8 @@ captureEffectDiagnostics to the context menu.
       onAdditionalLayerTextureStatusChange,
       tunnelSpectrum,
       tunnelPropColors,
+      primaryPropColors:
+        primaryPropColors ?? getSettings().primaryPropColors ?? null,
       tunnelSelectedLayer,
       gridVisible,
       gridOpacity,
@@ -562,6 +597,7 @@ captureEffectDiagnostics to the context menu.
          its own fade in/out, so the overlay must stay in the tree for its
          out-transition to play when the Paths toggle flips off. -->
     <PathLinesOverlay
+      {primaryPropColors}
       {sequenceData}
       {currentStep}
       {stepData}
@@ -578,6 +614,18 @@ captureEffectDiagnostics to the context menu.
   {/if}
 
   {@render cornerControl?.()}
+
+  {#if initializationError}
+    <div class="initialization-error">
+      <PanelState
+        type="error"
+        title="Animation unavailable"
+        message="The animation could not start."
+        onretry={() => retryInitialization?.()}
+        compact
+      />
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -611,6 +659,15 @@ captureEffectDiagnostics to the context menu.
     width: 100%;
     height: 100%;
     object-fit: contain;
+  }
+
+  .initialization-error {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: grid;
+    place-items: center;
+    background: var(--theme-panel-bg, #f5f5f5);
   }
 
   @media (prefers-reduced-motion: reduce) {

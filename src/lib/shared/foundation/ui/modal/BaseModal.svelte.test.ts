@@ -163,6 +163,35 @@ describe("BaseModal fit sizing", () => {
     expect(dialog?.open ?? false).toBe(false);
   });
 
+  it("reports closed only once the dialog has left the top layer", async () => {
+    render(BaseModalTestHarness, { animation: "pop" });
+    await expect
+      .element(page.getByRole("dialog", { name: "Scrollable modal" }))
+      .toBeVisible();
+    const closedState = () =>
+      document
+        .querySelector<HTMLOutputElement>(
+          '[data-testid="base-modal-closed-state"]'
+        )
+        ?.textContent?.trim();
+
+    await page.getByRole("button", { name: "Close modal" }).click();
+    await nextLayout();
+
+    // The exit animation is still running: the dialog is still modal, and a
+    // surface opened now would sit beneath it. Nothing has been reported yet.
+    const dialog =
+      document.querySelector<HTMLDialogElement>("dialog.base-modal");
+    expect(dialog?.open ?? false).toBe(true);
+    expect(closedState()).toBe("0:true");
+
+    await expect.poll(closedState).toBe("1:false");
+    expect(
+      document.querySelector<HTMLDialogElement>("dialog.base-modal")?.open ??
+        false
+    ).toBe(false);
+  });
+
   it("keeps a third-party overlay interactive when external overlays are allowed", async () => {
     let overlayClicks = 0;
     const externalOverlay = document.createElement("button");

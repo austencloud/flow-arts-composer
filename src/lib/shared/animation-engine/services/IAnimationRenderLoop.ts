@@ -207,6 +207,8 @@ export interface RenderFrameParams {
   mandalaSteps?: readonly StepLike[] | null;
   /** Path-shape policy shared with live trail interpolation. */
   mandalaPathOptions?: MandalaPathOptions;
+  /** Hand identity shared by props and guides; independent of effect styling. */
+  primaryPropColors?: { left: string; right: string } | null;
 }
 
 /**

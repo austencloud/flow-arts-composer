@@ -346,6 +346,11 @@ presented as an empty list.
 
 ## Snapshot equality and modified state
 
+> Superseded 2026-09-11 by
+> `active/2026-09-11-generate-setup-detach-on-edit-design.md`. A setup is now
+> active only while the live snapshot equals the applied baseline; any edit
+> detaches it and the Modified state no longer exists.
+
 Applying a setup establishes provenance. Editing the panel does not erase that
 provenance.
 

@@ -62,9 +62,17 @@ export interface TransitionGeometrySample {
     selectedButtons: number;
     stageIdentity: number;
     sharedCanvasIdentity?: number;
+    sharedTransportCovered?: boolean;
+    sharedRasterDensity?: number | null;
     sharedInspectorIdentity?: number;
+    motionInspectorOpacity?: number;
+    cardInspectorOpacity?: number;
+    sharedCardInspectorIdentity?: number;
+    selectedStudioHalf?: string | null;
     sharedCardIdentity?: number;
     sharedTransportIdentity?: number;
+    sharedScrubberIdentity?: number;
+    sharedPlayButtonIdentity?: number;
     sharedSurfaces?: Record<
       string,
       { left: number; top: number; width: number; height: number }

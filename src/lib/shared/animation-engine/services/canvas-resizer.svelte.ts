@@ -202,17 +202,13 @@ export class CanvasResizer {
   private async performResize(): Promise<number> {
     if (!this.container || !this.renderer) return this.state.currentSize;
 
-    const rect = this.container.getBoundingClientRect();
-    // Rounded, because a sub-pixel container width would otherwise make every
-    // observation a new size — a fresh canvas allocation and a fresh grid
-    // sprite for a difference nobody can see.
-    const newSize =
-      Math.round(
-        Math.min(
-          rect.width || DEFAULT_CANVAS_SIZE,
-          rect.height || DEFAULT_CANVAS_SIZE
-        )
-      ) || DEFAULT_CANVAS_SIZE;
+    // A flight's transformed rectangle is not the canvas's raster allocation.
+    // Transforms do not notify ResizeObserver when they finish, so sampling one
+    // here can leave a tiny bitmap stretched over the settled canvas.
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    if (width <= 0 || height <= 0) return this.state.currentSize;
+    const newSize = Math.min(width, height);
 
     if (newSize !== this.state.currentSize) {
       this.state.isResizing = true;

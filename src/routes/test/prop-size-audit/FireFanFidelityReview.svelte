@@ -3,14 +3,25 @@
   import { generatePropSvg } from "$lib/shared/animation-engine/services/svg-generator";
 
   interface ReviewFan {
-    id: "fire-bare" | "fire-covered" | "lotus";
+    id: "fire-bare" | "fire-covered" | "lotus" | "flat-grip";
     name: string;
     note: string;
     preview: string;
-    renderKey: "fan__fire_bare" | "fan__fire_covered" | "fan__lotus";
+    renderKey:
+      | "fan__fire_bare"
+      | "fan__fire_covered"
+      | "fan__lotus"
+      | "fan__flat-grip";
   }
 
   const fans: readonly ReviewFan[] = [
+    {
+      id: "flat-grip",
+      name: "Forged Creations Flat Grip Fire",
+      note: "Five wicks, crossed spines, a 2-inch spinning ring, and a flat handle between two rear loops.",
+      preview: "/images/props/build-previews/fan-flat-grip-complete.webp",
+      renderKey: "fan__flat-grip",
+    },
     {
       id: "fire-bare",
       name: "DoodleGrip Fire · bare",
@@ -40,6 +51,7 @@
   >;
 
   let renders = $state<MotionRenders>({
+    "flat-grip": null,
     "fire-bare": null,
     "fire-covered": null,
     lotus: null,

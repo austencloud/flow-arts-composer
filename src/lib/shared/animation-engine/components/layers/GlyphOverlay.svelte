@@ -93,7 +93,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
 
   // Watch for letter changes and poll for dimensions until they're loaded
   $effect(() => {
-    if (!letter) {
+    if (!letter || !tkaGlyphVisible) {
       letterDimensions = { width: 100, height: 100 };
       return;
     }

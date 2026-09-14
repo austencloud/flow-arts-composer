@@ -7,6 +7,187 @@ describe("reparentToInspector", () => {
       "http://www.w3.org/1999/xhtml",
       tag
     ) as HTMLElement;
+  it("aims a returning bar at the stationary panel, not its still-small canvas parent", () => {
+    const origin = element("div"),
+      target = element("div"),
+      anchor = element("div"),
+      surface = element("section");
+    origin.append(surface);
+    document.body.append(origin, target, anchor);
+    const rect = (width: number, height: number) => ({
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      right: width,
+      bottom: height,
+      width,
+      height,
+      toJSON: () => ({}),
+    });
+    surface.getBoundingClientRect = () =>
+      rect(surface.parentNode === origin ? 368 : 692, 61);
+    surface.getAnimations = () => [];
+    anchor.getBoundingClientRect = () => rect(1260, 900);
+    surface.animate = vi.fn(
+      () =>
+        ({
+          finished: new Promise(() => {}),
+          cancel: vi.fn(),
+        }) as unknown as Animation
+    );
+    const action = reparentToInspector(surface, { target, resize: "layout" });
+    action.update({
+      target: null,
+      animate: true,
+      resize: "layout",
+      returnAnchor: anchor,
+    });
+    expect(surface.style.width).toBe("1260px");
+    expect(surface.style.top).toBe("839px");
+    expect(surface.parentNode).toBe(document.body);
+    action.destroy();
+    expect(surface.parentNode).toBe(origin);
+    expect(surface.getAttribute("style")).toBeNull();
+    origin.remove();
+    target.remove();
+    anchor.remove();
+  });
+  it("keeps controls aloft until artwork docks, including across a reversal", () => {
+    vi.useFakeTimers();
+    const origin = element("div"),
+      target = element("div"),
+      surface = element("section");
+    origin.append(surface);
+    document.body.append(origin, target);
+    surface.getAnimations = () => [];
+    surface.getBoundingClientRect = () => ({
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      right: 500,
+      bottom: 61,
+      width: 500,
+      height: 61,
+      toJSON: () => ({}),
+    });
+    let artworkMoving = true;
+    const options = {
+      animate: true,
+      resize: "layout" as const,
+      flightLayer: "controls" as const,
+      canDock: () => !artworkMoving,
+    };
+    const action = reparentToInspector(surface, { ...options, target: null });
+    action.update({ ...options, target });
+    vi.advanceTimersByTime(400);
+    expect(surface.parentNode).toBe(document.body);
+    expect(surface.style.zIndex).toBe("calc(var(--z-debug, 1000) + 1)");
+    action.update({ ...options, target: null });
+    artworkMoving = false;
+    vi.advanceTimersByTime(400);
+    expect(surface.parentNode).toBe(origin);
+    expect(surface.getAttribute("style")).toBeNull();
+    action.destroy();
+    origin.remove();
+    target.remove();
+    vi.useRealTimers();
+  });
+  it("keeps a stationary control row above the host fade and cancels an obsolete landing", () => {
+    vi.useFakeTimers();
+    const origin = element("div"),
+      target = element("div"),
+      surface = element("section");
+    origin.append(surface);
+    document.body.append(origin, target);
+    surface.getAnimations = () => [];
+    surface.getBoundingClientRect = () => ({
+      x: 0,
+      y: 0,
+      left: 0,
+      top: 0,
+      right: 500,
+      bottom: 61,
+      width: 500,
+      height: 61,
+      toJSON: () => ({}),
+    });
+    const action = reparentToInspector(surface, {
+      target: null,
+      animate: true,
+      resize: "layout",
+    });
+    action.update({ target, animate: true, resize: "layout" });
+    expect(surface.parentNode).toBe(document.body);
+    vi.advanceTimersByTime(100);
+    action.update({ target: null, animate: true, resize: "layout" });
+    vi.advanceTimersByTime(180);
+    expect(surface.parentNode).toBe(document.body);
+    vi.advanceTimersByTime(100);
+    expect(surface.parentNode).toBe(origin);
+    action.destroy();
+    origin.remove();
+    target.remove();
+    vi.useRealTimers();
+  });
+  it("resizes a live control row without scaling its buttons or replacing the scrubber", async () => {
+    const origin = element("div"),
+      target = element("div"),
+      surface = element("section"),
+      scrubber = element("div");
+    surface.append(scrubber);
+    origin.append(surface);
+    document.body.append(origin, target);
+    surface.getAnimations = () => [];
+    surface.getBoundingClientRect = () => {
+      const width = surface.parentNode === origin ? 900 : 500;
+      const left = surface.parentNode === origin ? 20 : 100;
+      return {
+        x: left,
+        y: 0,
+        left,
+        top: 0,
+        right: left + width,
+        bottom: 61,
+        width,
+        height: 61,
+        toJSON: () => ({}),
+      };
+    };
+    let finish!: () => void;
+    surface.animate = vi.fn(
+      () =>
+        ({
+          finished: new Promise<void>((resolve) => {
+            finish = resolve;
+          }),
+          cancel: vi.fn(),
+        }) as unknown as Animation
+    );
+    const action = reparentToInspector(surface, {
+      target: null,
+      animate: true,
+      resize: "layout",
+    });
+    action.capture();
+    action.update({ target, animate: true, resize: "layout" });
+    expect(surface.animate).toHaveBeenCalledWith(
+      [
+        { transform: "translate(-80px, 0px)", width: "900px", height: "61px" },
+        { transform: "none" },
+      ],
+      expect.any(Object)
+    );
+    expect(surface.firstElementChild).toBe(scrubber);
+    finish();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(surface.parentNode).toBe(target);
+    expect(surface.firstElementChild).toBe(scrubber);
+    action.destroy();
+    origin.remove();
+    target.remove();
+  });
   it("uses pre-layout visual bounds when sibling chrome leaves the host", () => {
     const origin = element("div"),
       target = element("div"),

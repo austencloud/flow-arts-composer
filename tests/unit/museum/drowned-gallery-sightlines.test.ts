@@ -20,8 +20,21 @@ import { buildVulcanCaveFloorPlan } from "$lib/features/museum/data/vulcan-cave-
 
 const layout = buildDrownedGalleryLayout(buildVulcanCaveFloorPlan().grid)!;
 
-/** Where the visitor takes the last look: inside the Fire threshold. */
-const STAND = { x: 24.5, z: 17.25, y: CAUSEWAY_Y + EYE_ABOVE_FLOOR };
+/**
+ * Where the visitor takes the last look: the centre of the walk-through gap in
+ * the east threshold, read off the layout instead of written down here.
+ *
+ * It was written down as (24.5, 17.25) when this test was committed. The
+ * compiled cave grid has since translated the wing +10 m in z, which left the
+ * stand in the channel a few metres from the cases and reported the payoff view
+ * as broken while every measurement inside the wing was intact. Derived, the
+ * assertions below reproduce the numbers this test was committed with: 39.1
+ * deg of spread, cases at 12.7-21.4 m, 0.36 m of bounce margin.
+ */
+const STAND = {
+	...layout.probes.thresholdOpening,
+	y: CAUSEWAY_Y + EYE_ABOVE_FLOOR,
+};
 /** Head height of a performer standing on the shelf. */
 const HEAD_Y = SHELF_Y + 1.7;
 

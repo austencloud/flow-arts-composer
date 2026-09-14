@@ -93,7 +93,7 @@ export function runMandalaVideoExport(
   void handle.done
     .then((blob) =>
       shareOrDownloadBlob(blob, `mandala-${safeName}.mp4`, {
-        title: "TKA Mandala",
+        title: "Flow Arts Composer Mandala",
       })
     )
     .catch(() => {

@@ -185,7 +185,7 @@ describe("homepage SSR preload policy", () => {
 });
 
 describe("homepage constrained enhancement boundaries", () => {
-  it("keeps heavy renderers off slow links without shipping empty media boxes", () => {
+  it("keeps heavy renderers off slow links", () => {
     const layout = source("src/routes/+layout.svelte");
     const landingEvents = source("src/lib/shared/analytics/landing-events.ts");
     const marketingChrome = source(
@@ -200,10 +200,6 @@ describe("homepage constrained enhancement boundaries", () => {
     const launchpadTile = source(
       "src/lib/shared/landing/components/launchpad/LaunchpadTile.svelte"
     );
-    const sequenceHero = source(
-      "src/lib/shared/landing/components/SequenceHeroDemo.svelte"
-    );
-
     // Measurement starts after first paint on every connection. Heavy media
     // still respects the constrained-link boundary below, but silently
     // excluding those visitors made first-session funnels unknowable.
@@ -227,11 +223,9 @@ describe("homepage constrained enhancement boundaries", () => {
     expect(launchpad).toContain("if (constrainedConnection) return;");
     expect(launchpadTile).toContain("data-tka-static-media");
     expect(launchpadTile).toContain('mediaLoaded = status === "loaded"');
-    expect(sequenceHero).toContain("data-tka-static-preview");
-    expect(sequenceHero).toContain("data-tka-static-notation");
   });
 
-  it("offers a static sequence immediately with live playback on request", () => {
+  it("offers live playback on request for data-saver visitors", () => {
     const sequenceHero = source(
       "src/lib/shared/landing/components/SequenceHeroDemo.svelte"
     );
@@ -255,7 +249,6 @@ describe("homepage constrained enhancement boundaries", () => {
       'request.headers.get("save-data") === "on"'
     );
     expect(sequenceHero).toContain("manualActivationRequested = true;");
-    expect(sequenceHero).toContain("staticPreviewLetters");
     expect(sequenceHero).toContain("Play live preview");
   });
 

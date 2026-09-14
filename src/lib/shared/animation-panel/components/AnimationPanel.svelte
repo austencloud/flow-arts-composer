@@ -11,6 +11,7 @@
 -->
 <script lang="ts">
   import { fade } from "svelte/transition";
+  import { growFade } from "$lib/shared/transitions/motion";
   import type { ExportOptionsStateManager } from "../state/export-options-state.svelte";
   import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
   import {
@@ -40,6 +41,9 @@
   import { getPropTypeDisplayInfo } from "$lib/shared/pictograph/prop/domain/prop-type-display-registry";
   import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
   import type { PropChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
+  import CatDogToggle from "$lib/shared/settings/components/tabs/prop-type/CatDogToggle.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import { viewingPropLabel } from "$lib/shared/foundation/services/prop-viewing";
   import AnimatorInspectorShell from "./AnimatorInspectorShell.svelte";
   import AnimatorInspectorFooter from "./AnimatorInspectorFooter.svelte";
   import { RAIL_CATEGORY_ACCENTS } from "../pill-nav/rail-category-accents";
@@ -130,7 +134,24 @@
      * the surrounding preview never reads.
      */
     propChirality?: PropChiralitySeam;
+    /**
+     * Per-hand picking for hosts whose props live in settings. The Props page
+     * gains the Cat Dog chip and, while it is on, Left/Right hand segments;
+     * `selectedPropType` and `onPropChange` then address `hand`. Hosts with
+     * one local prop (Post Studio, profile photo, landing) omit this and keep
+     * the single grid.
+     */
+    handProps?: {
+      catDog: boolean;
+      hand: "left" | "right";
+      leftPropType: PropType;
+      rightPropType: PropType;
+      onToggleCatDog: () => void;
+      onHandChange: (hand: "left" | "right") => void;
+    };
     onExport?: () => void;
+    /** The host opens the shared file preview instead of rendering immediately. */
+    exportOpensPreparation?: boolean;
     onCancel?: () => void;
     secondaryActions?: (ControlDockLink | ControlDockAction)[];
     /** Compact action at the end of the bottom dock. Export still takes this
@@ -193,7 +214,9 @@
     onPropPickerRequest,
     propPickerActive = false,
     propChirality,
+    handProps,
     onExport,
+    exportOpensPreparation = false,
     onCancel,
     secondaryActions = [],
     dockTrailingAction,
@@ -480,7 +503,15 @@
 
   const propsSummary = $derived(
     computePropsSummary(
-      selectedPropType ? getPropTypeDisplayInfo(selectedPropType).label : ""
+      handProps?.catDog
+        ? viewingPropLabel({
+            leftPropType: handProps.leftPropType,
+            rightPropType: handProps.rightPropType,
+            catDogMode: true,
+          })
+        : selectedPropType
+          ? getPropTypeDisplayInfo(selectedPropType).label
+          : ""
     )
   );
 
@@ -504,7 +535,7 @@
   // it opens the Export tray first and the tray carries its own confirm.
   function handleExportTrigger(): void {
     if (!onExport) return;
-    if (resolvedPill !== "export") {
+    if (!exportOpensPreparation && resolvedPill !== "export") {
       handlePillSelect("export");
       return;
     }
@@ -704,6 +735,30 @@
 
 {#snippet pillBody()}
   {#if resolvedPill === "props" && onPropChange && selectedPropType !== undefined}
+    {#if handProps}
+      <!-- Same chip and hand segments as the global prop drawer, so the viewer
+           picks a pair the way every other settings-backed picker does. -->
+      <div class="hand-toolbar">
+        <CatDogToggle
+          catDogMode={handProps.catDog}
+          onToggle={handProps.onToggleCatDog}
+        />
+        {#if handProps.catDog}
+          <div transition:growFade={{ axis: "y" }}>
+            <SegmentedControl
+              options={[
+                { value: "left", label: "Left", tone: "blue" },
+                { value: "right", label: "Right", tone: "red" },
+              ]}
+              value={handProps.hand}
+              onchange={handProps.onHandChange}
+              ariaLabel="Prop hand selection"
+              semantics="radiogroup"
+            />
+          </div>
+        {/if}
+      </div>
+    {/if}
     {#await import("$lib/shared/settings/components/tabs/prop-type/BentoPropGrid.svelte")}
       <!-- Reserve space while the chunk loads so the body doesn't render
            as a blank slot and then jump when the grid arrives. -->
@@ -711,12 +766,17 @@
         <PanelSpinner />
       </div>
     {:then mod}
+      <!-- The wide sidebar hands the picker its whole page, so the tiles
+           share the height instead of huddling in the top third of it. The
+           tray and the compact sheet grow with their content and keep the
+           dense grid. -->
       <mod.default
         {selectedPropType}
         onSelect={onPropChange}
         chirality={propChirality}
         variant="inline"
         flat
+        fill={layout === "sidebar"}
       />
     {/await}
   {:else if resolvedPill === "effects"}
@@ -1131,7 +1191,9 @@
     onSelect={handlePillSelect}
     direction={panelDirection}
     {reduceMotion}
-    fillBody={resolvedPill === "display" || resolvedPill === "effects"}
+    fillBody={resolvedPill === "display" ||
+      resolvedPill === "effects" ||
+      resolvedPill === "props"}
     regionLabel="Animation export settings"
     onNavMount={(element) => {
       pillNavEl = element;
@@ -1283,6 +1345,18 @@
     align-items: center;
     justify-content: center;
     min-height: 140px;
+  }
+
+  /* Cat Dog chip and hand segments above the grid; mirrors the global prop
+     drawer's toolbar so the pair reads the same wherever it is picked. */
+  .hand-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 8px 16px 4px;
+    flex-shrink: 0;
   }
 
   /* Compact Export body: label-left rows instead of stacked sections. */

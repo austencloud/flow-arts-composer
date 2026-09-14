@@ -72,7 +72,7 @@ export class AnimationShortcutRegistrar {
         id: "animation.play-pause",
         label: "Play / Pause",
         description: "Toggle animation playback",
-        key: " ",
+        key: "Space", // Normalized name; a raw " " never matches
         modifiers: [],
         context: "animation-panel",
         scope: "animation",

@@ -10,6 +10,11 @@
  */
 
 import { LOOPType, ROTATED_LOOP_TYPES } from "$lib/shared/foundation/domain/models/generation/circular-models";
+import {
+  DEFAULT_HAND_RELATIONSHIP,
+  isHandRelationship,
+  relationshipReflectionAxis,
+} from "$lib/shared/create/domain/hand-relationship";
 import { LOOPComponent } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import {
   getLOOPSpecExpansionMultiplier,
@@ -229,20 +234,36 @@ export function resolveLoopConfig(
     inversionInterval?: 2 | 4;
     inversionMode?: "expand" | "overlay";
     reflectionAxis?: ReflectionAxis;
+    /**
+     * A reflection hand relationship (Mirrored, Flipped) only survives LOOP
+     * transforms that commute with it. Quartered rotation and the diagonal
+     * axes do not, so they are coerced here rather than blocked: the LOOP
+     * card, the length stepper and the engine all read this one resolved
+     * value. Accepts the raw config field, so an unknown string reads as free.
+     */
+    handRelationship?: string | null;
   },
 ): ResolvedLoopConfig {
-  const supportsQuartered = ROTATED_LOOP_TYPES.has(loopType as LOOPType);
+  const requestedRelationship = rhythmOpts?.handRelationship;
+  const relationship = isHandRelationship(requestedRelationship)
+    ? requestedRelationship
+    : DEFAULT_HAND_RELATIONSHIP;
+  const keptAxis = relationshipReflectionAxis(relationship);
+  const supportsQuartered =
+    ROTATED_LOOP_TYPES.has(loopType as LOOPType) && keptAxis === null;
   const period: "halved" | "quartered" =
     supportsQuartered && requestedPeriod === "quartered" ? "quartered" : "halved";
+  const requestedAxis: ReflectionAxis =
+    rhythmOpts?.reflectionAxis ??
+    (String(loopType).includes("flipped") ? "east-west" : "north-south");
+  const diagonal =
+    requestedAxis === "northeast-southwest" ||
+    requestedAxis === "northwest-southeast";
   const loopRhythm: LoopRhythm = {
     rotationInterval: period === "quartered" ? 4 : 2,
     inversionInterval: rhythmOpts?.inversionInterval ?? 2,
     inversionMode: rhythmOpts?.inversionMode ?? "expand",
-    reflectionAxis:
-      rhythmOpts?.reflectionAxis ??
-      (String(loopType).includes("flipped")
-        ? "east-west"
-        : "north-south"),
+    reflectionAxis: keptAxis && diagonal ? keptAxis : requestedAxis,
   };
   const loopSpecWire =
     buildLoopSpec(parseLoopComponents(loopType), loopRhythm) ?? undefined;

@@ -14,14 +14,20 @@ import type { PropTipAnchor3D } from "./prop-tip-geometry-3d";
 /**
  * The prop-build inputs that move a prop's tracked effect emitters.
  *
- * `fanBuild` selects which of the five meshes `Fan3D.svelte` renders, and the
- * five do not share a silhouette. Pictograph is a drawn plate sized from
+ * `fanBuild` selects the mesh `Fan3D.svelte` renders. The builds do not share
+ * a silhouette. Pictograph is a drawn plate sized from
  * `getFanPlate(effectiveLength, ...)`, so it follows the user's staff length.
  * Fire and day are fixed-size GLBs: `Fan3D` wraps them in
  * `<T.Group scale={[scale, scale, scale]}>` and never feeds them `length`.
  */
 export interface PropBuildTipGeometry3D {
-  readonly fanBuild: "pictograph" | "fire" | "lotus" | "day" | "moon";
+  readonly fanBuild:
+    | "pictograph"
+    | "fire"
+    | "lotus"
+    | "day"
+    | "moon"
+    | "flat-grip";
   readonly finish: "fire" | "day";
 }
 
@@ -83,6 +89,15 @@ export const FAN_FIRE_WICK_CENTERS_M = [
   { x: 0, y: 0.25363129, z: 0 },
   { x: 0.13347299, y: 0.20877161, z: 0 },
   { x: 0.2217705, y: 0.10651613, z: 0 },
+] as const;
+
+// The same grip-relative metres used by scripts/assets/flat-grip-fire-reference.json.
+export const FAN_FLAT_GRIP_WICK_CENTERS_M = [
+  { x: -0.236230672, y: 0.118622269, z: 0 },
+  { x: -0.134844118, y: 0.224064286, z: 0 },
+  { x: 0.0, y: 0.261577311, z: 0 },
+  { x: 0.127747059, y: 0.215953361, z: 0 },
+  { x: 0.212911765, y: 0.110511345, z: 0 },
 ] as const;
 
 /**
@@ -183,6 +198,9 @@ function fanAnchors(
 ): PropTipAnchor3D[] {
   if (build.fanBuild === "fire") {
     return fixedAnchors(FAN_FIRE_WICK_CENTERS_M, scale);
+  }
+  if (build.fanBuild === "flat-grip") {
+    return fixedAnchors(FAN_FLAT_GRIP_WICK_CENTERS_M, scale);
   }
   if (build.fanBuild === "lotus") {
     return fixedAnchors(FAN_LOTUS_WICK_CENTERS_M, scale);

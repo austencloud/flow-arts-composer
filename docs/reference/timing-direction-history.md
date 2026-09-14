@@ -204,18 +204,22 @@ VTG4 created quarter timing.
 
 ### August 29, 2026: the public launch contains two materially different claims
 
-The caption metadata for the
+The caption for the
 [VTG Crew Instagram post](https://www.instagram.com/vulcantechgospel/p/DcoQATwFrUA/)
-dates it to August 29, 2026 and showed 44 likes when supplied for this audit.
+dates it to August 29, 2026. The public post and Mentive’s reply were both read
+directly on September 8, 2026, following the initial September 4 audit.
 The post says Mentive “has created the next chapter in VTG history” and calls
 quarter placement and timing one of the new chapter's “codes cracked.”
 
-In a comment transcript supplied by Austen on September 4, 2026, Mentive replies:
-“None of these are new concepts, and I take no credit for any of them.” He says
-his contribution was defining, exploring, and visualizing topics taught by other
-people. Instagram's page metadata exposed the caption but not the comment, so the
-comment is preserved here as an Austen-supplied transcript rather than an
-independently retrieved web quotation.
+In [his reply](https://www.instagram.com/p/DcoQATwFrUA/c/17953419501233426/),
+Mentive disclaims invention of the concepts and describes his contribution as
+defining, exploring, and visualizing topics taught by other people. The comment
+was initially supplied as a transcript by Austen; its text and August 29
+timestamp have now been independently verified on the public post.
+
+The [VTG release-history dossier](vtg-release-history.md) records the original
+VTG 3 document and apps, the February 2026 phone-app interruption, and the
+August 2026 announcements linking the VTG 3 grid to SpiroAnim and VTG 4.
 
 The fairest reading is that the launch caption claims a new **chapter,
 integration, and application**, while Mentive expressly disclaims invention of
@@ -362,8 +366,10 @@ The defensible positioning is not “TKA invented quarter time.” It is:
   usernames, post dates, and thread context, but they are live community pages
   rather than immutable snapshots.
 - Noel Yee and FAI pages were read directly on September 4, 2026.
-- Instagram's caption was independently confirmed from the post's public page
-  metadata. The comment transcript and like count were supplied by Austen.
+- Instagram's caption was initially confirmed from public page metadata. On
+  September 8, 2026, the public caption and Mentive’s reply were both read
+  directly, including their August 29 timestamps. The earlier comment-access
+  limitation is resolved; engagement counts are not used as historical evidence.
 - Internet Archive CDX requests made during the audit returned HTTP 429, so no
   unverified Wayback timestamps have been invented or included.
 - “Earliest found” always means earliest located in this bounded audit.
@@ -386,4 +392,4 @@ The defensible positioning is not “TKA invented quarter time.” It is:
 | Current page | [FAI Timing and Direction](https://flowartsinstitute.com/tutsday-timing-direction/) | Two-timing assumption and original four | High for current coverage |
 | June 20, 2025 | [TKA initial commit](https://github.com/austencloud/tka-platform/commit/50bdc56725b54fbb363224b8f9f001228b988e02) | Immutable public QS/QO and separate fields | Very high |
 | July–Aug. 2026 | [SpiroAnim history](https://github.com/rbgirard/spiroanim/commits/main/) | Quarter experiment, TKA comparison, VTG4 branding | Very high for repository chronology |
-| Aug. 29, 2026 | [VTG4 Instagram post](https://www.instagram.com/vulcantechgospel/p/DcoQATwFrUA/) | Launch framing plus supplied disclaimer comment | High for caption; medium for supplied comment |
+| Aug. 29, 2026 | [VTG4 Instagram post](https://www.instagram.com/vulcantechgospel/p/DcoQATwFrUA/) and [Mentive’s reply](https://www.instagram.com/p/DcoQATwFrUA/c/17953419501233426/) | Launch framing and explicit attribution of the underlying concepts to other practitioners | High for both public statements; directly read September 8, 2026 |

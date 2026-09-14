@@ -60,6 +60,9 @@ export interface LayoutMotionConfig {
   /** Reduced-motion-aware duration in ms. 0 disables the transition. */
   getDuration?: () => number;
   easing?: string;
+  /** Controls keep their physical size while the surrounding row changes width.
+   * Use only on explicitly sized boxes; artwork keeps the default scale flight. */
+  resize?: "scale" | "layout";
 }
 
 export interface LayoutMotion {
@@ -127,7 +130,8 @@ function animateGeometry(
   element: HTMLElement,
   beforeRect: DOMRect,
   duration: number,
-  easing: string
+  easing: string,
+  resize: "scale" | "layout"
 ): Animation | null {
   if (duration <= 0) return null;
 
@@ -145,16 +149,30 @@ function animateGeometry(
     Math.abs(scaleY - 1) > MIN_SCALE_DELTA;
   if (!moved) return null;
 
-  const animation = element.animate(
-    [
-      {
-        transformOrigin: "top left",
-        transform: `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`,
-      },
-      { transformOrigin: "top left", transform: "none" },
-    ],
-    { duration, easing, fill: "both" }
-  );
+  const frames: Keyframe[] =
+    resize === "layout"
+      ? [
+          {
+            transform: `translate(${deltaX}px, ${deltaY}px)`,
+            width: `${beforeRect.width}px`,
+            height: `${beforeRect.height}px`,
+          },
+          {
+            // Omit size at the final keyframe: its neutral value is the live
+            // underlying width/height. A reparenting host can keep updating
+            // those while its own track opens, without a stale pixel endpoint
+            // overriding it and snapping when this animation is removed.
+            transform: "none",
+          },
+        ]
+      : [
+          {
+            transformOrigin: "top left",
+            transform: `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`,
+          },
+          { transformOrigin: "top left", transform: "none" },
+        ];
+  const animation = element.animate(frames, { duration, easing, fill: "both" });
   // fill: "both" holds the final frame, which would pin a `transform: none`
   // onto the element forever and defeat the next transition's measurement.
   animation.onfinish = () => animation.cancel();
@@ -169,6 +187,7 @@ export function createLayoutMotion(config: LayoutMotionConfig): LayoutMotion {
     suspendDescendantTransitions = false,
     getDuration = () => LAYOUT_MOTION_DURATION_MS,
     easing = LAYOUT_MOTION_EASING,
+    resize = "scale",
   } = config;
 
   let snapshot: Map<string, DOMRect> | null = null;
@@ -264,7 +283,8 @@ export function createLayoutMotion(config: LayoutMotionConfig): LayoutMotion {
           element,
           beforeRect,
           duration,
-          easing
+          easing,
+          resize
         );
         if (animation) animations.push(animation);
       }

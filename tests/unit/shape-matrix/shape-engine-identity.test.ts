@@ -63,14 +63,24 @@ describe("Shape Engine identity", () => {
     expect(page).toContain('"isBasedOn"');
     expect(page).toContain('"name": "Lorq Nichols"');
     expect(page).toContain("ORIGINAL_SHAPE_MATRIX_VTG_RATIOS");
-    expect(shell).toContain("<span>Lorq Nichols’ original</span>");
+    // The topbar's direct source link moved into the About modal during the
+    // 2026-09-06 demo-layout redesign (commit 31a3411642); the credit itself
+    // did not disappear; it consolidated behind the always-visible About
+    // action, whose content the assertions below still verify in full.
+    expect(shell).toContain("aria-label={`About ${KINETIC_SHAPE_ENGINE_NAME}`}");
     expect(surface).toContain("Build your own 4×4");
     expect(shell).not.toContain("prop:hand ratios");
     expect(about).toContain("<h2>Lorq Nichols’ 144 Shape Matrix</h2>");
-    expect(about).toContain("Each supplied four even-petaled");
-    expect(about).toContain("giving twelve choices per hand");
+    // The 2026-09-06 demo-layout rewrite (commit 31a3411642) reworded the
+    // petal-math explanation but kept the same twelve-per-hand, 144-total
+    // fact; check the surviving phrasing rather than the retired copy.
+    expect(about).toMatch(
+      /pairs twelve driving styles for\s+each hand into 144 combinations/
+    );
     expect(about).not.toContain("prop rotations : hand cycles");
-    expect(about).toContain("<h2>What Austen Cloud built</h2>");
+    // Same rewrite merged the standalone "What Austen Cloud built" section
+    // into this one; the independent-work sentence itself is unchanged.
+    expect(about).toContain("Austen built this app independently");
     expect(about).toContain("KINETIC_SHAPE_ENGINE_AUTHOR");
     expect(about).toMatch(/not an official\s+Spin Science release/);
     expect(menu).toContain("Lorq Nichols’ original 144 Shape Matrix");

@@ -102,14 +102,49 @@ const performanceStage = read(
   "src/lib/shared/sequence-viewer/components/sequence-videos/PerformanceStage.svelte"
 );
 
+/**
+ * The shell's CSS as {selector, body} pairs. Assertions about a rule ask for it
+ * by what it selects; matching raw source text instead makes a prettier reflow
+ * look like a deleted rule, or worse, silently matches a different rule.
+ */
+const shellRules = [...shell.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(
+  (match) => ({
+    selector: match[1]!.trim().replace(/\s+/g, " "),
+    body: match[2]!,
+  })
+);
+
+/** The desktop rule that composes one inspector layer at its own width. */
+function composedRule(layer: string): string {
+  const rule = shellRules.find(
+    (candidate) =>
+      candidate.selector.includes(".viewer-and-export.desktop") &&
+      candidate.selector.includes(`.${layer}`)
+  );
+  expect(rule, `${layer} has no composed-width rule`).toBeDefined();
+  return rule!.body;
+}
+
+/** Every rule whose selector ends at `marker`, whatever precedes it. */
+function rulesSelecting(marker: string): string[] {
+  return shellRules
+    .filter((rule) => rule.selector.includes(marker))
+    .map((rule) => rule.body);
+}
+
 describe("Sequence Viewer transition orchestration contract", () => {
   it("composes 2D and Tunnel settings from one inspector shell", () => {
     expect(animationPanel).toContain("<AnimatorInspectorShell");
     expect(tunnelArtSettings).toContain("<AnimatorInspectorShell");
     expect(animationPanel).toContain("<AnimatorInspectorFooter");
     expect(tunnelArtSettings).toContain("<AnimatorInspectorFooter");
+    // 7672b256d7 gave the wide-sidebar Props page its whole page too (the
+    // 18-tile picker needed the room the old two-way condition didn't grant),
+    // reformatting the three-way check across lines.
     expect(animationPanel).toContain(
-      'fillBody={resolvedPill === "display" || resolvedPill === "effects"}'
+      'fillBody={resolvedPill === "display" ||\n' +
+        '      resolvedPill === "effects" ||\n' +
+        '      resolvedPill === "props"}'
     );
     expect(tunnelArtSettings).toContain(
       'fillBody={tunnelSection === "display" || tunnelSection === "effects"}'
@@ -172,11 +207,17 @@ describe("Sequence Viewer transition orchestration contract", () => {
   });
 
   it("keeps collapsed production panes mounted, hidden, and inert", () => {
-    expect(splitPane).toContain('inert={layout.focusedPane === "image"}');
-    expect(splitPane).toContain('inert={layout.focusedPane === "animation"}');
-    expect(splitPane).toContain('aria-hidden={layout.focusedPane === "image"}');
     expect(splitPane).toContain(
-      'aria-hidden={layout.focusedPane === "animation"}'
+      'inert={layout.focusedPane === "image" || !animationPanelReady}'
+    );
+    expect(splitPane).toContain(
+      'inert={layout.focusedPane === "animation" || !previewPanelReady}'
+    );
+    expect(splitPane).toContain(
+      'aria-hidden={layout.focusedPane === "image" || !animationPanelReady}'
+    );
+    expect(splitPane).toContain(
+      'aria-hidden={layout.focusedPane === "animation" || !previewPanelReady}'
     );
     expect(splitPane).not.toContain("{#if layout.focusedPane");
   });
@@ -244,7 +285,9 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(panelGroup).toContain("data-manually-sized=");
     expect(panelGroup).toContain("panel.resizeLabel ??");
     expect(shell).toContain("data-effects-inspector");
-    expect(shell).toContain("> :global(.export-panel.sidebar)");
+    expect(shell).toContain(
+      ".motion-settings-layer .animator-inspector-origin"
+    );
     expect(shell).toContain("--card-sidebar-width: clamp(480px, 28vw, 640px)");
     expect(shell).toContain('panel-wrapper[data-manually-sized="true"]');
     expect(geometryTrace).toContain("Card → Effects seam");
@@ -253,7 +296,10 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(shell).toContain(
       'class="inspector-content-layer card-settings-layer"'
     );
-    expect(shell).toContain("data-active={layout.isImageExportActive}");
+    expect(shell).toContain("data-active={cardInspectorVisible}");
+    expect(shell).toContain(
+      "const cardInspectorVisible = $derived(\n    layout.isImageExportActive ||"
+    );
     expect(shellLayoutState).toContain(
       'if (previousMode !== "card" && mode === "card")'
     );
@@ -497,14 +543,20 @@ describe("Sequence Viewer transition orchestration contract", () => {
     // revealed from the seam with its overflow past the screen edge. Anchoring
     // by hand gets one direction right and the other wrong.
     const autoAnchored = (marker: string) => {
-      const index = shell.indexOf(marker);
-      expect(index, `${marker} has no composed-width rule`).toBeGreaterThan(-1);
-      expect(shell.slice(index, index + 320)).toContain("margin-left: auto");
+      const bodies = rulesSelecting(marker);
+      expect(
+        bodies.length,
+        `${marker} has no composed-width rule`
+      ).toBeGreaterThan(0);
+      expect(
+        bodies.some((body) => body.includes("margin-left: auto")),
+        `${marker} is anchored by hand`
+      ).toBe(true);
     };
-    autoAnchored("> :global(.export-panel.sidebar) {");
-    autoAnchored("> :global(.performance-inspector) {");
-    autoAnchored(":global(.export-panel:not(.inline)) {");
-    autoAnchored("> :global(.art-settings-panel) {");
+    autoAnchored(".animator-inspector-origin");
+    autoAnchored(":global(.performance-inspector)");
+    autoAnchored(":global(.export-panel:not(.inline))");
+    autoAnchored(":global(.art-settings-panel)");
 
     // The surface belongs to the layer, which spans the whole track, not to the
     // panel, which does not. Otherwise the band the panel does not reach shows
@@ -531,11 +583,7 @@ describe("Sequence Viewer transition orchestration contract", () => {
     // sliding and settling rather than being revealed. Each persistent layer
     // pins its own destination width instead.
     const composed = (layer: string, token: string) => {
-      const index = shell.indexOf(`.${layer}
-`);
-      expect(index, `${layer} has no composed-width rule`).toBeGreaterThan(-1);
-      const block = shell.slice(index, index + 400);
-      expect(block).toContain(`width: var(--${token})`);
+      expect(composedRule(layer)).toContain(`width: var(--${token})`);
     };
     composed("motion-settings-layer", "export-sidebar-width");
     composed("performance-inspector-layer", "performance-sidebar-width");

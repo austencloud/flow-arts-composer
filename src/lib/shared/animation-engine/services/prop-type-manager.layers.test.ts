@@ -63,10 +63,15 @@ describe("PropTypeManager.preloadAdditionalLayerTextures (tunnel export)", () =>
       leftPropType: "sword",
       rightPropType: "club",
     });
+    // PropTypeManager defaults fanAppearance to DEFAULT_FAN_APPEARANCE (build:
+    // "fire" since commit 14fcb713, "default the 2D fan build to DoodleGrip
+    // Fire"), so a forwarded "fan" prop type resolves through
+    // resolveFanRenderKey to its fire-build render key, not the bare notation
+    // name.
     expect(calls[1]).toMatchObject({
       i: 1,
-      leftPropType: "fan",
-      rightPropType: "fan",
+      leftPropType: "fan__fire_bare",
+      rightPropType: "fan__fire_bare",
     });
   });
 

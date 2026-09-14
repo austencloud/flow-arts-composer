@@ -9,6 +9,8 @@
    * The selected room is synced to the URL query param `?room=<id>`.
    */
 
+  import { ROOM_PICKER_ROOMS } from "./room-picker-rooms";
+
   interface Props {
     selectedRoom: string | null;
     onSelect: (roomId: string | null) => void;
@@ -18,25 +20,11 @@
 
   let open = $state(false);
 
-  const ROOM_ORDER: { id: string; name: string; theme: string }[] = [
-    { id: "entrance", name: "Entrance Lobby", theme: "institutional" },
-    { id: "vulcan-cave", name: "Vulcan Cave", theme: "cave" },
-    { id: "egyptian", name: "Egyptian Wing", theme: "classical" },
-    { id: "renaissance", name: "Renaissance Wing", theme: "renaissance" },
-    { id: "victorian", name: "Victorian Wing", theme: "industrial" },
-    { id: "digital", name: "Digital Wing", theme: "digital" },
-    { id: "suppression", name: "The Suppression", theme: "institutional" },
-    { id: "cross-reference", name: "Cross-Reference Room", theme: "institutional" },
-    { id: "crumble", name: "The Crumble", theme: "construction" },
-    { id: "gallery", name: "K's Gallery", theme: "gallery" },
-    { id: "fear", name: "Room of Fear", theme: "institutional" },
-    { id: "isolation", name: "Room of Isolation", theme: "institutional" },
-    { id: "collaboration", name: "Room of Collaboration", theme: "outdoor" },
-    { id: "gift-shop", name: "Gift Shop", theme: "retail" },
-    { id: "vtg-wing", name: "Vulcan Wing", theme: "construction" },
-    { id: "construction-zone", name: "Construction Zone", theme: "construction" },
-    { id: "janitor", name: "Janitor's Closet", theme: "construction" },
-  ];
+  // Derived from the walk, not hand-listed. The old hand-listed array named
+  // `vulcan-cave`, a placeholder the authored cave replaced, and picking it
+  // isolated to zero rooms and crashed the grid builder. It also offered none
+  // of the eleven cave chambers.
+  const ROOM_ORDER = ROOM_PICKER_ROOMS;
 
   const WING_THEME_COLORS: Record<string, string> = {
     institutional: "#8090a0",

@@ -28,7 +28,22 @@ vi.mock("$lib/shared/foundation/services/sequence-hydrator", () => ({
   hydrate: vi.fn(),
 }));
 
-import { batchFetchPublicSequences } from "$lib/shared/library/services/collection-firestore-mapper";
+import {
+  batchFetchPublicSequences,
+  mapDocToCollection,
+} from "$lib/shared/library/services/collection-firestore-mapper";
+import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+
+describe("collection prop storage", () => {
+  it("reads a saved prop and treats missing, cleared, or invalid values as normal selection", () => {
+    expect(
+      mapDocToCollection({ propType: PropType.FAN }, "fans").propType
+    ).toBe(PropType.FAN);
+    for (const propType of [undefined, null, "", "not-a-prop", 42]) {
+      expect(mapDocToCollection({ propType }, "mixed").propType).toBeNull();
+    }
+  });
+});
 
 describe("foreign public collection member query", () => {
   beforeEach(() => {

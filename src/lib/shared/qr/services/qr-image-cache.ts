@@ -31,6 +31,8 @@ const DEFAULT_MAX_BYTES = 8 * 1024 * 1024;
 export interface QrImageCacheValue {
   svg: string;
   dataUrl: string;
+  /** Present only after both themes' scan assets have been verified. */
+  prepared?: { encodedUrl: string; shortCode: string };
 }
 
 interface CachedImageEntry extends QrImageCacheValue {
@@ -84,7 +86,11 @@ export class QrImageCache {
         }
       );
       if (!entry) return null;
-      const value: QrImageCacheValue = { svg: entry.svg, dataUrl: entry.dataUrl };
+      const value: QrImageCacheValue = {
+        svg: entry.svg,
+        dataUrl: entry.dataUrl,
+        prepared: entry.prepared,
+      };
       this.memory.set(key, value);
       return value;
     } catch (error) {
@@ -106,6 +112,7 @@ export class QrImageCache {
         key,
         svg: value.svg,
         dataUrl: value.dataUrl,
+        prepared: value.prepared,
         timestamp: Date.now(),
         sizeBytes: value.svg.length + value.dataUrl.length,
       };
@@ -135,7 +142,8 @@ export class QrImageCache {
         const req = index.openCursor();
         req.onerror = () => reject(req.error);
         req.onsuccess = (event) => {
-          const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+          const cursor = (event.target as IDBRequest<IDBCursorWithValue>)
+            .result;
           if (cursor) {
             const entry = cursor.value as CachedImageEntry;
             entries.push({ key: entry.key, size: entry.sizeBytes });

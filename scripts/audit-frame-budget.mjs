@@ -23,6 +23,7 @@
  * Usage:
  *   node scripts/audit-frame-budget.mjs --route /composer
  *   node scripts/audit-frame-budget.mjs --route /composer --cpu 4
+ *   node scripts/audit-frame-budget.mjs --route /composer --net fast3g
  *   node scripts/audit-frame-budget.mjs --route /composer --json out.json
  *
  * Requires the shared agent Chrome to be listening on --cdp (default 9222):
@@ -60,6 +61,34 @@ const VIEWPORT = (args.get("viewport") ?? "1920x1080").split("x").map(Number);
 /** Pin the budget to a refresh rate instead of measuring it (`--hz 120`). */
 const HZ_OVERRIDE = args.has("hz") ? Number(args.get("hz")) : null;
 
+/**
+ * Network shaping for the cold pass (`--net fast3g`, `--net 1600,750,562`).
+ *
+ * The two named profiles are DevTools' long-standing 3G values, kept because
+ * they are the ones anyone comparing against a Lighthouse run will have in
+ * mind. Explicit `down,up,rtt` (kbps, kbps, ms) is there because a named
+ * preset is a guess about someone else's connection and a number is not.
+ *
+ * This only moves the cold pass. Throttling the network does not make an idle
+ * rAF loop cheaper, so a green idle pass under `--net` proves nothing extra —
+ * what it can prove is that a slow connection stretches the load long enough
+ * for a section to be scrolled into view before its chunk lands.
+ */
+const NET_PROFILES = {
+  fast3g: { downKbps: 1600, upKbps: 750, rttMs: 562.5 },
+  slow3g: { downKbps: 400, upKbps: 400, rttMs: 2000 },
+};
+const NET = (() => {
+  if (!args.has("net")) return null;
+  const raw = String(args.get("net"));
+  if (NET_PROFILES[raw]) return { name: raw, ...NET_PROFILES[raw] };
+  const [d, u, r] = raw.split(",").map(Number);
+  if ([d, u, r].some((n) => !Number.isFinite(n))) {
+    throw new Error(`--net wants a profile (${Object.keys(NET_PROFILES).join("|")}) or "down,up,rtt" in kbps,kbps,ms`);
+  }
+  return { name: `${d}/${u}kbps ${r}ms`, downKbps: d, upKbps: u, rttMs: r };
+})();
+
 /** Interaction probes, per route. A route with no entry runs cold + idle only. */
 const INTERACTIONS = {
   "/composer": [
@@ -68,6 +97,13 @@ const INTERACTIONS = {
       selector:
         '.construct-surface [data-testid="option-card"], .construct-surface [data-testid="option-item"]',
       scrollTo: ".construct-surface",
+      requires: ".construct-surface",
+    },
+    {
+      name: "generate a sequence",
+      selector: ".generate-demo .generate-button",
+      scrollTo: ".generator-surface",
+      requires: ".generate-demo",
     },
   ],
 };
@@ -146,7 +182,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * counted, then restores the original — an unrestored patch would poison every
  * later pass in the same tab.
  */
-const RECORDER = `async ({ ms, scrollTo, click, scrollSweep }) => {
+const RECORDER = `async ({ ms, scrollTo, click, scrollSweep, requires }) => {
   const nativeRaf = window.requestAnimationFrame.bind(window);
   if (scrollTo) {
     document.querySelector(scrollTo)?.scrollIntoView({ behavior: 'instant', block: 'center' });
@@ -228,6 +264,12 @@ const RECORDER = `async ({ ms, scrollTo, click, scrollSweep }) => {
   const ws = frameWork.slice(2).sort((a, b) => a - b);
   const wq = (p) => ws.length ? +ws[Math.min(ws.length - 1, Math.floor(ws.length * p))].toFixed(1) : 0;
 
+  // Was the surface this pass claims to measure actually on the page? Checked
+  // AFTER the recording window, so it describes what was running, not what was
+  // about to mount. A pass whose subject never mounted is the section-level
+  // form of the inert-page hole: an absent 3D viewer drops no frames.
+  const present = requires ? !!document.querySelector(requires) : null;
+
   const allCanvases = Array.from(document.querySelectorAll('canvas'));
   const canvases = allCanvases.length;
   const contentCanvases = allCanvases.filter((c) => !c.closest('.background-canvas-container')).length;
@@ -249,6 +291,7 @@ const RECORDER = `async ({ ms, scrollTo, click, scrollSweep }) => {
     longTasks: longTasks.sort((a, b) => b.duration - a.duration).slice(0, 8),
     longTaskCount: longTasks.length,
     longTaskTotalMs: longTasks.reduce((a, b) => a + b.duration, 0),
+    present,
     clicked
   };
 }`;
@@ -337,6 +380,58 @@ async function waitForLive(ws, sessionId, scrollTo = null, timeoutMs = 45000) {
   return { ms: Date.now() - started, live: last > 0, contentCanvases: last };
 }
 
+/**
+ * Put a sequence into the page so the output bands actually mount.
+ *
+ * /composer gates its tunnel and 3D viewer on `carriedSequence`, which is only
+ * non-null once the hero has latched a live draw or the visitor has composed or
+ * generated something. A harness that scrolls straight to the outputs on a cold
+ * load can therefore measure two empty frames and report the quietest numbers
+ * on the page — which is exactly what happened before this existed. Driving the
+ * generator makes the state deterministic instead of racing the hero.
+ */
+async function seedCarriedSequence(ws, sessionId) {
+  const started = Date.now();
+  await run(
+    ws,
+    sessionId,
+    `() => { document.querySelector('.generator-surface')?.scrollIntoView({ behavior: 'instant', block: 'center' }); }`
+  );
+  await sleep(800);
+  const clicked = await run(
+    ws,
+    sessionId,
+    `() => { const b = document.querySelector('.generate-demo .generate-button'); if (!b) return false; b.click(); return true; }`
+  );
+  await sleep(1200);
+  // The bands mount on intersection, so the generated sequence is not enough on
+  // its own — the outputs section has to be looked at before it exists.
+  await run(
+    ws,
+    sessionId,
+    `() => { document.querySelector('.changing')?.scrollIntoView({ behavior: 'instant', block: 'center' }); }`
+  );
+  while (Date.now() - started < 60000) {
+    const state = await run(
+      ws,
+      sessionId,
+      `() => ({
+         tunnel: !!document.querySelector('.tunnel-band .tunnel-demo'),
+         viewer: !!document.querySelector('.viewer-output canvas'),
+         blocked: !!document.querySelector('.viewer-unavailable')
+       })`
+    );
+    if (state.blocked) return { clicked, ms: Date.now() - started, ...state };
+    if (state.tunnel && state.viewer) {
+      // Both mounted; give the 3D viewer its own boot window before recording.
+      await sleep(2500);
+      return { clicked, ms: Date.now() - started, ...state };
+    }
+    await sleep(500);
+  }
+  return { clicked, ms: Date.now() - started, tunnel: false, viewer: false };
+}
+
 function grade(pass, interval) {
   const budget = interval * 1.05; // one frame, plus scheduling noise
   const dropped = interval * 2;   // a frame the user actually loses
@@ -355,6 +450,16 @@ function grade(pass, interval) {
   if (pass.result.rafPerFrame.max === 0) {
     fails.push("no rAF loop ran — page was inert, not smooth");
   }
+  // Same hole, one level down: the pass ran, the page was live, but the surface
+  // it is named after never mounted. /composer hides the tunnel and the 3D
+  // viewer until a sequence has been carried into them, so an outputs pass on a
+  // fresh load can measure a band holding nothing and grade it clean.
+  if (pass.result.present === false) {
+    fails.push(`surface absent — measured a page without ${pass.requires}`);
+  }
+  if (pass.click && pass.result.clicked === false) {
+    fails.push("click target not found — no interaction was measured");
+  }
   return fails;
 }
 
@@ -370,6 +475,9 @@ function fmt(pass, interval) {
     r.work
       ? `        work/frame median ${r.work.median}ms · p95 ${r.work.p95}ms` +
         ` (lower bound; ${r.work.p95 > 8.3 ? "no" : "possible"} 120Hz headroom)`
+      : null,
+    pass.requires
+      ? `        surface ${pass.requires} ${r.present ? "present" : "ABSENT"}`
       : null,
     `        rAF loops/frame ${r.rafPerFrame.median} (max ${r.rafPerFrame.max}) · ` +
       `long tasks ${r.longTaskCount} totalling ${r.longTaskTotalMs}ms · canvases ${r.canvases ?? 0} (${r.contentCanvases ?? 0} content)`,
@@ -418,6 +526,20 @@ async function main() {
     if (CPU_THROTTLE > 1) {
       await send(ws, "Emulation.setCPUThrottlingRate", { rate: CPU_THROTTLE }, sessionId);
     }
+    if (NET) {
+      await send(ws, "Network.enable", {}, sessionId);
+      await send(
+        ws,
+        "Network.emulateNetworkConditions",
+        {
+          offline: false,
+          latency: NET.rttMs,
+          downloadThroughput: (NET.downKbps * 1024) / 8,
+          uploadThroughput: (NET.upKbps * 1024) / 8,
+        },
+        sessionId
+      );
+    }
 
     await send(ws, "Page.navigate", { url }, sessionId);
     await sleep(1500);
@@ -441,36 +563,83 @@ async function main() {
     // feels before anything moves.
     const liveness = await waitForLive(ws, sessionId, null, 20000);
 
-    // Idle: sitting still at three depths, doing nothing at all.
-    const stops = [
-      { name: "idle at hero", scrollTo: "main, body" },
-      { name: "idle at construct", scrollTo: ".construct-surface, .making" },
-      { name: "idle at outputs", scrollTo: ".changing, .keeping" },
-    ];
-    for (const stop of stops) {
+    // Idle: sitting still at each depth, doing nothing at all.
+    // Split around the seeding step because /composer's output bands do not
+    // exist until a sequence has been carried into them.
+    const composer = ROUTE === "/composer";
+    const beforeSeed = composer
+      ? [
+          { name: "idle at hero", scrollTo: "main, body" },
+          {
+            name: "idle at construct",
+            scrollTo: ".construct-surface, .making",
+            requires: ".construct-surface",
+          },
+          {
+            name: "idle at generator",
+            scrollTo: ".generator-surface",
+            requires: ".generate-demo",
+          },
+        ]
+      : [{ name: "idle at page", scrollTo: "main, body" }];
+    // The three surfaces named as having to be perfect are the construct demo,
+    // the generator, and the 3D viewer. The viewer gets its own stop rather
+    // than being folded into a general outputs sweep, because it is the most
+    // expensive thing on the page and an average hides it.
+    const afterSeed = composer
+      ? [
+          {
+            name: "idle at tunnel",
+            scrollTo: ".tunnel-band",
+            requires: ".tunnel-band .tunnel-demo",
+          },
+          {
+            name: "idle at 3D viewer",
+            scrollTo: ".viewer-output",
+            requires: ".viewer-output canvas",
+          },
+          { name: "idle at outputs", scrollTo: ".changing, .keeping" },
+        ]
+      : [];
+
+    async function recordStop(stop, ms = 4000) {
       // Park at the stop and let its lazily-mounted content finish arriving
       // before recording. A section still fetching its 3D chunk drops no
       // frames, and grading it would report an absence as smoothness.
       const settled = await waitForLive(ws, sessionId, stop.scrollTo);
       passes.push({
         name: stop.name,
+        requires: stop.requires ?? null,
         settled,
         result: await run(
           ws,
           sessionId,
-          `() => (${RECORDER})({ ms: 4000, scrollTo: ${JSON.stringify(stop.scrollTo)} })`
+          `() => (${RECORDER})({ ms: ${ms}, scrollTo: ${JSON.stringify(stop.scrollTo)},` +
+            ` requires: ${JSON.stringify(stop.requires ?? null)} })`
         ),
       });
+    }
+
+    for (const stop of beforeSeed) await recordStop(stop);
+
+    let seeded = null;
+    if (composer) {
+      seeded = await seedCarriedSequence(ws, sessionId);
+      for (const stop of afterSeed) await recordStop(stop);
     }
 
     for (const probe of INTERACTIONS[ROUTE] ?? []) {
       await waitForLive(ws, sessionId, probe.scrollTo);
       passes.push({
         name: `interaction: ${probe.name}`,
+        requires: probe.requires ?? null,
+        click: probe.selector,
         result: await run(
           ws,
           sessionId,
-          `() => (${RECORDER})({ ms: 2500, scrollTo: ${JSON.stringify(probe.scrollTo)}, click: ${JSON.stringify(probe.selector)} })`
+          `() => (${RECORDER})({ ms: 2500, scrollTo: ${JSON.stringify(probe.scrollTo)},` +
+            ` click: ${JSON.stringify(probe.selector)},` +
+            ` requires: ${JSON.stringify(probe.requires ?? null)} })`
         ),
       });
     }
@@ -481,7 +650,8 @@ async function main() {
     console.log(
       `  display ${Math.round(1000 / interval)}Hz (${interval.toFixed(1)}ms/frame)` +
         `  viewport ${VIEWPORT[0]}x${VIEWPORT[1]}` +
-        (CPU_THROTTLE > 1 ? `  CPU ${CPU_THROTTLE}x slowdown` : "")
+        (CPU_THROTTLE > 1 ? `  CPU ${CPU_THROTTLE}x slowdown` : "") +
+        (NET ? `  network ${NET.name}` : "")
     );
     // An override faster than the panel cannot be judged by frame INTERVALS.
     // rAF fires on vsync, so on a 60Hz display every healthy frame measures
@@ -501,6 +671,15 @@ async function main() {
         ? `  content settled after ${(liveness.ms / 1000).toFixed(1)}s — ${liveness.contentCanvases} content canvases`
         : `  NEVER CAME ALIVE — no canvas after ${(liveness.ms / 1000).toFixed(1)}s`
     );
+    if (seeded) {
+      console.log(
+        seeded.blocked
+          ? "  3D unavailable in this browser — viewer passes cannot run here"
+          : `  seeded a generated sequence in ${(seeded.ms / 1000).toFixed(1)}s` +
+            ` — tunnel ${seeded.tunnel ? "mounted" : "MISSING"},` +
+            ` 3D viewer ${seeded.viewer ? "mounted" : "MISSING"}`
+      );
+    }
     console.log("");
     for (const pass of passes) console.log(fmt(pass, interval), "\n");
 
@@ -513,7 +692,7 @@ async function main() {
       const { writeFileSync } = await import("node:fs");
       writeFileSync(
         JSON_OUT,
-        JSON.stringify({ url, interval, cpuThrottle: CPU_THROTTLE, liveness, passes }, null, 2)
+        JSON.stringify({ url, interval, cpuThrottle: CPU_THROTTLE, network: NET, liveness, seeded, passes }, null, 2)
       );
       console.log(`wrote ${JSON_OUT}\n`);
     }

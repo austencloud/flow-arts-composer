@@ -62,7 +62,7 @@ export function getPreviewCacheKey(
   const resolvedLeft = opts.leftPropType ?? settings.leftPropType ?? "staff";
   const resolvedRight = opts.rightPropType ?? settings.rightPropType ?? "staff";
   const mv = `${opts.showLeftMotion === false ? "B0" : "B1"}${opts.showRightMotion === false ? "R0" : "R1"}`;
-  const gv = `${opts.showTnD ? "V1" : "V0"}${opts.showElemental ? "E1" : "E0"}${opts.showPositions ? "P1" : "P0"}${opts.showGrid === false ? "G0" : "G1"}`;
+  const gv = `${opts.showTnD ? "V1" : "V0"}${opts.showElemental ? "E1" : "E0"}${opts.showPositions ? "P1" : "P0"}${opts.showGrid === false ? "G0" : "G1"}${opts.showHandColorKey === false ? "K0" : "K1"}`;
   // includeStartPosition changes the cell layout (start cell present + reserved
   // row/col vs. tightly-packed steps) AND the row/column counts. It MUST be in
   // the key: the global preview cache is shared across every ChoreoCard, so a
@@ -71,7 +71,13 @@ export function getPreviewCacheKey(
   // probe adopts the other mode's cells while the frame sizes for this mode,
   // reserving a phantom start row that spreads the step rows apart.
   const sp = includeStartPosition ? "sp1" : "sp0";
-  return `${seq.id ?? seq.word ?? "?"}-${sequenceContentKey}-${seq.steps?.length ?? 0}-${opts.size}-${opts.showStepNumbers}-${opts.showNonRadialPoints}-${opts.showTKA}-${opts.showReversals}-${opts.handPathMode ?? false}-${resolvedLeft}-${resolvedRight}-${colCount ?? "auto"}-${isDark ? "dark" : "light"}-spl:${spl}-${sp}-d:${durationFingerprint}-vm:${vmKey}-mv:${mv}-gv:${gv}`;
+  // This cache is checked before the palette-aware cell cache. It must also
+  // distinguish colors or a reactive repaint will simply adopt the old images.
+  const paletteKey = opts.primaryPropColors
+    ? `-colors:${opts.primaryPropColors.left}:${opts.primaryPropColors.right}`
+    : "";
+  const fanKey = opts.fanAppearance ? `-fan:${JSON.stringify(opts.fanAppearance)}` : "";
+  return `${seq.id ?? seq.word ?? "?"}-${sequenceContentKey}-${seq.steps?.length ?? 0}-${opts.size}-${opts.showStepNumbers}-${opts.showNonRadialPoints}-${opts.showTKA}-${opts.showReversals}-${opts.handPathMode ?? false}-${resolvedLeft}-${resolvedRight}-${colCount ?? "auto"}-${isDark ? "dark" : "light"}-spl:${spl}-${sp}-d:${durationFingerprint}-vm:${vmKey}-mv:${mv}-gv:${gv}${paletteKey}${fanKey}`;
 }
 
 /**
@@ -198,6 +204,7 @@ export function buildRenderOptions(params: {
   showTnD: boolean;
   showElemental: boolean;
   showPositions: boolean;
+  showHandColorKey?: boolean;
   isSoloMode: boolean;
   handPathMode: boolean;
   browseViewMode: BrowseViewMode | undefined;
@@ -223,6 +230,9 @@ export function buildRenderOptions(params: {
     showTnD: params.isSoloMode ? false : params.showTnD,
     showElemental: params.isSoloMode ? false : params.showElemental,
     showPositions: params.isSoloMode ? false : params.showPositions,
+    showHandColorKey: params.isSoloMode
+      ? false
+      : (params.showHandColorKey ?? true),
     handPathMode: params.handPathMode,
     browseViewMode: params.browseViewMode,
     showLeftMotion: params.showLeftMotion,

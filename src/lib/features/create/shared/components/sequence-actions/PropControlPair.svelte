@@ -130,40 +130,40 @@
   .prop-card.blue {
     background: linear-gradient(
       135deg,
-      rgba(59, 130, 246, 0.15) 0%,
-      rgba(59, 130, 246, 0.05) 100%
+      rgba(var(--user-left-rgb, 59, 130, 246), 0.15) 0%,
+      rgba(var(--user-left-rgb, 59, 130, 246), 0.05) 100%
     );
-    border-color: rgba(59, 130, 246, 0.35);
+    border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.35);
   }
 
   .prop-card.blue:hover {
     background: linear-gradient(
       135deg,
-      rgba(59, 130, 246, 0.2) 0%,
-      rgba(59, 130, 246, 0.1) 100%
+      rgba(var(--user-left-rgb, 59, 130, 246), 0.2) 0%,
+      rgba(var(--user-left-rgb, 59, 130, 246), 0.1) 100%
     );
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
+    border-color: rgba(var(--user-left-rgb, 59, 130, 246), 0.5);
+    box-shadow: 0 4px 16px rgba(var(--user-left-rgb, 59, 130, 246), 0.2);
   }
 
   /* Red - Rose glass pane */
   .prop-card.red {
     background: linear-gradient(
       135deg,
-      rgba(239, 68, 68, 0.15) 0%,
-      rgba(239, 68, 68, 0.05) 100%
+      rgba(var(--user-right-rgb, 239, 68, 68), 0.15) 0%,
+      rgba(var(--user-right-rgb, 239, 68, 68), 0.05) 100%
     );
-    border-color: rgba(239, 68, 68, 0.35);
+    border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.35);
   }
 
   .prop-card.red:hover {
     background: linear-gradient(
       135deg,
-      rgba(239, 68, 68, 0.2) 0%,
-      rgba(239, 68, 68, 0.1) 100%
+      rgba(var(--user-right-rgb, 239, 68, 68), 0.2) 0%,
+      rgba(var(--user-right-rgb, 239, 68, 68), 0.1) 100%
     );
-    border-color: rgba(239, 68, 68, 0.5);
-    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
+    border-color: rgba(var(--user-right-rgb, 239, 68, 68), 0.5);
+    box-shadow: 0 4px 16px rgba(var(--user-right-rgb, 239, 68, 68), 0.2);
   }
 
   .prop-label {
@@ -222,13 +222,13 @@
   }
 
   .prop-card.blue {
-    --prop-color: var(--semantic-info);
-    --prop-color-rgb: 59, 130, 246;
+    --prop-color: var(--user-left-color, var(--semantic-info));
+    --prop-color-rgb: var(--user-left-rgb, 59, 130, 246);
   }
 
   .prop-card.red {
-    --prop-color: var(--semantic-error);
-    --prop-color-rgb: 239, 68, 68;
+    --prop-color: var(--user-right-color, var(--semantic-error));
+    --prop-color-rgb: var(--user-right-rgb, 239, 68, 68);
   }
 
   @media (prefers-reduced-motion: reduce) {

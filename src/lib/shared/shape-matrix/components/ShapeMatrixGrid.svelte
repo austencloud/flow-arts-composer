@@ -17,12 +17,13 @@
   } from "../domain/flower-signature";
   import { claimedViewTransitionName } from "$lib/shared/transitions/claimed-view-transition-name";
   import {
-    CLUB_ARTWORK_PAINTER,
     cellArtworkSrc,
     headerArtworkSrc,
+    shapeMatrixArtworkPainterForColors,
     SHAPE_MATRIX_ACTIVE_STAGE_NAME,
     type ShapeMatrixArtworkPainter,
   } from "../services/shape-matrix-artwork";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import ShapeMatrixMandalaArt from "./ShapeMatrixMandalaArt.svelte";
   import { runShapeMatrixGridReveal } from "../app/services/shape-matrix-reveal";
 
@@ -38,6 +39,13 @@
     /** Upper bound on a cell's edge; the actual size shrinks to fit the viewport. */
     maxCellPx?: number;
     onselect: (pair: { left: TAxis; right: TAxis }) => void;
+    /**
+     * A header was activated: that axis item alone, on that hand. Without
+     * this the headers stay the plain labels they have always been.
+     */
+    onsolo?: (hand: "left" | "right", item: TAxis) => void;
+    /** The hand a header chose, so its header reads as the chosen one. */
+    soloHand?: "left" | "right" | null;
     /** Optional externally-owned selection for restored/shared app state. */
     selectedPair?: { left: TAxis; right: TAxis } | null;
     /** Alternative cell/header painter (e.g. the poi trail painter). Defaults to the club-style painter. */
@@ -80,8 +88,10 @@
     colAxis,
     maxCellPx = 100,
     onselect,
+    onsolo,
+    soloHand = null,
     selectedPair,
-    painter = CLUB_ARTWORK_PAINTER,
+    painter,
     overlayFor,
     dimFor,
     claimSelected = false,
@@ -102,6 +112,16 @@
     corner,
     revealToken = 0,
   }: Props = $props();
+
+  // Ordinary Matrix grids are part of the user's workspace, so their stills
+  // follow the same saved hand inks as the rest of the app. Hosts that supply
+  // a painter remain deliberate, fixed artwork (for example POI curation).
+  const defaultPainter = $derived(
+    shapeMatrixArtworkPainterForColors(getSettings().primaryPropColors)
+  );
+  const effectivePainter = $derived(painter ?? defaultPainter);
+  const painterArtKey = $derived(effectivePainter.cacheKey ?? "");
+  const geometryArtKey = $derived(data?.geometryKey ?? "arc:tips");
 
   /* The reveal answers a token CHANGE after mount. The token the grid mounts
      with (a restored roll, or zero) is a state to show, not a roll to replay. */
@@ -130,13 +150,19 @@
     paintHeader
       ? paintHeader(f, hand, sizePx)
       : data
-        ? headerArtworkSrc(data, f as Flower, hand, sizePx, painter)
+        ? headerArtworkSrc(data, f as Flower, hand, sizePx, effectivePainter)
         : "";
   const cellPaint = (b: TAxis, r: TAxis) => (sizePx: number) =>
     paintCell
       ? paintCell(b, r, sizePx)
       : data
-        ? cellArtworkSrc(data, b as Flower, r as Flower, sizePx, painter)
+        ? cellArtworkSrc(
+            data,
+            b as Flower,
+            r as Flower,
+            sizePx,
+            effectivePainter
+          )
         : "";
 
   let observed = $state(new Set<string>());
@@ -157,11 +183,20 @@
 
   let sel = $state<string | null>(null);
   const selectedKey = $derived(
-    selectedPair === undefined
-      ? sel
-      : selectedPair
-        ? `${keyOf(selectedPair.left)}__${keyOf(selectedPair.right)}`
-        : null
+    soloHand
+      ? null
+      : selectedPair === undefined
+        ? sel
+        : selectedPair
+          ? `${keyOf(selectedPair.left)}__${keyOf(selectedPair.right)}`
+          : null
+  );
+  /* While one hand is on stage the chosen thing is its header, not a cell:
+     the tiles are pairs and none of them is what is playing. */
+  const soloKey = $derived(
+    soloHand && selectedPair
+      ? keyOf(soloHand === "left" ? selectedPair.left : selectedPair.right)
+      : null
   );
 </script>
 
@@ -199,11 +234,28 @@
               scope="col"
               title={labelOf(rf)}
             >
-              <ShapeMatrixMandalaArt
-                paint={headerPaint(rf, "right")}
-                artKey={`right:${keyOf(rf)}`}
-                alt={`right ${labelOf(rf)}`}
-              />
+              {#if onsolo}
+                <button
+                  type="button"
+                  class="head-button"
+                  class:solo={soloHand === "right" && soloKey === keyOf(rf)}
+                  aria-label={`Play right ${labelOf(rf)} on its own`}
+                  aria-pressed={soloHand === "right" && soloKey === keyOf(rf)}
+                  onclick={() => onsolo("right", rf)}
+                >
+                  <ShapeMatrixMandalaArt
+                    paint={headerPaint(rf, "right")}
+                    artKey={`right:${keyOf(rf)}:${geometryArtKey}:${painterArtKey}`}
+                    alt={`right ${labelOf(rf)}`}
+                  />
+                </button>
+              {:else}
+                <ShapeMatrixMandalaArt
+                  paint={headerPaint(rf, "right")}
+                  artKey={`right:${keyOf(rf)}:${geometryArtKey}:${painterArtKey}`}
+                  alt={`right ${labelOf(rf)}`}
+                />
+              {/if}
             </th>
           {/each}
         </tr>
@@ -218,11 +270,28 @@
               scope="row"
               title={labelOf(bf)}
             >
-              <ShapeMatrixMandalaArt
-                paint={headerPaint(bf, "left")}
-                artKey={`left:${keyOf(bf)}`}
-                alt={`left ${labelOf(bf)}`}
-              />
+              {#if onsolo}
+                <button
+                  type="button"
+                  class="head-button"
+                  class:solo={soloHand === "left" && soloKey === keyOf(bf)}
+                  aria-label={`Play left ${labelOf(bf)} on its own`}
+                  aria-pressed={soloHand === "left" && soloKey === keyOf(bf)}
+                  onclick={() => onsolo("left", bf)}
+                >
+                  <ShapeMatrixMandalaArt
+                    paint={headerPaint(bf, "left")}
+                    artKey={`left:${keyOf(bf)}:${geometryArtKey}:${painterArtKey}`}
+                    alt={`left ${labelOf(bf)}`}
+                  />
+                </button>
+              {:else}
+                <ShapeMatrixMandalaArt
+                  paint={headerPaint(bf, "left")}
+                  artKey={`left:${keyOf(bf)}:${geometryArtKey}:${painterArtKey}`}
+                  alt={`left ${labelOf(bf)}`}
+                />
+              {/if}
             </th>
             {#each colAxis as rf, colIndex (colIndex)}
               {@const key = `${keyOf(bf)}__${keyOf(rf)}`}
@@ -253,7 +322,7 @@
                     <span class="artwork">
                       <ShapeMatrixMandalaArt
                         paint={cellPaint(bf, rf)}
-                        artKey={key}
+                        artKey={`${key}:${geometryArtKey}:${painterArtKey}`}
                         claim={claimSelected && selectedKey === key}
                       />
                     </span>
@@ -388,6 +457,57 @@
   /* The art fills the header's content box. Sized to the tile itself it sat
      one border wider than its cell and the whole table overflowed its
      viewport by a few pixels, which is a scrollbar under a grid that fits. */
+  /* A header is a button when the host offers the solo: the whole cell, so
+     the artwork is the target, with the pressed ring the tiles use. */
+  .head-button {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    transition:
+      border-color var(--duration-fast, 150ms) ease,
+      background var(--duration-fast, 150ms) ease;
+  }
+
+  .head-button:hover {
+    border-color: color-mix(
+      in srgb,
+      var(--theme-accent, #f59e0b) 45%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f59e0b) 8%,
+      transparent
+    );
+  }
+
+  .head-button:focus-visible {
+    outline: 2px solid var(--theme-accent, #f59e0b);
+    outline-offset: -2px;
+  }
+
+  .head-button.solo {
+    border-color: var(--theme-accent, #f59e0b);
+    background: color-mix(
+      in srgb,
+      var(--theme-accent, #f59e0b) 14%,
+      transparent
+    );
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .head-button {
+      transition: none;
+    }
+  }
+
   .colhead :global(.mandala-art),
   .rowhead :global(.mandala-art) {
     width: 100%;

@@ -7,6 +7,12 @@ import type {
   WebGLRenderer,
 } from "three";
 
+/**
+ * Keyed by the family-mask channel each map is weighted by (`red` = mask.r,
+ * `green` = mask.g, `blue` = mask.b, `fourth` = mask.a). These are texture
+ * channels, not prop hands: the GLSL below declares the samplers under the
+ * same names, and a rename on one side only leaves the sampler unbound.
+ */
 export interface MaskedGroundDetailMaps {
   red: Texture;
   green: Texture;

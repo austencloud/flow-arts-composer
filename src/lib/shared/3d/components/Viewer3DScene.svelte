@@ -91,7 +91,6 @@
     ? getAvatarGripMotionAudit()
     : null;
 
-
   interface Props {
     sequenceData: SequenceData | null;
     currentStep: number;
@@ -115,6 +114,7 @@
     enableEffects?: boolean;
     /** Stationary stage casts can skip walk, jump, and foot-planting setup. */
     enablePerformerLocomotion?: boolean;
+    weldPerformerGrip?: boolean;
     /** Explicit ensemble budget for the existing effect renderers. */
     effectQualityTier?: QualityTier;
     /** Per-performer count offsets, sampled against the same shared clock. */
@@ -180,6 +180,7 @@
     hideOrientationHelpers = false,
     enableEffects = true,
     enablePerformerLocomotion = true,
+    weldPerformerGrip = false,
     effectQualityTier,
     performerStepOffsets = [],
     performerSteps = null,
@@ -413,14 +414,14 @@
   onMount(() => {
     let mounted = true;
 
-    // Prop fallbacks still belong to app settings. Environment choice does not.
-    if (!leftPropTypeOverride || !rightPropTypeOverride) {
-      void import("$lib/shared/settings/state/settings-state.svelte").then(
-        ({ settingsService }) => {
-          if (mounted) viewerSettings = settingsService;
-        }
-      );
-    }
+    // Prop type overrides choose the choreography's props, but Buugeng
+    // chirality stays a personal setting. Load settings for both so a Browse
+    // viewer with explicit prop types still shows the selected handedness.
+    void import("$lib/shared/settings/state/settings-state.svelte").then(
+      ({ settingsService }) => {
+        if (mounted) viewerSettings = settingsService;
+      }
+    );
 
     if (enableEffects) {
       onEffectsRuntimeReadyChange?.(false);
@@ -677,9 +678,7 @@
 {/if}
 
 <!-- Lighting - reduced when the environment provides its own -->
-<T.AmbientLight
-  intensity={viewerBaseLighting.ambientIntensity}
-/>
+<T.AmbientLight intensity={viewerBaseLighting.ambientIntensity} />
 <T.DirectionalLight
   position={VIEWER_KEY_LIGHT_POSITION}
   intensity={viewerBaseLighting.directionalIntensity}
@@ -860,6 +859,7 @@
                 i < performerCount}
               enableLocomotion={enablePerformerLocomotion}
               enableFootPlanting={enablePerformerLocomotion}
+              weldGrip={weldPerformerGrip}
               isMoving={performer.isMoving}
               moveSpeed={performer.moveSpeed}
               moveDirection={performer.moveDirection}
@@ -896,6 +896,7 @@
                   <T.Group
                     position.z={performerGridOffset}
                     layers={BASE_SCENE_LAYER}
+                    userData={{ performerInteractionExcluded: true }}
                   >
                     <Grid3D
                       visiblePlanes={explicitPlanes}

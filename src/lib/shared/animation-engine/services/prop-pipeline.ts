@@ -48,7 +48,7 @@ export class PropPipeline {
         state,
         getFrameParamsFn,
         darkMode,
-        props.tunnelPropColors ?? null
+        props.tunnelPropColors ?? props.primaryPropColors ?? null
       );
     }
 

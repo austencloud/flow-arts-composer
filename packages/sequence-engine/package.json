@@ -8,41 +8,49 @@
   "exports": {
     ".": {
       "types": "./src/index.ts",
+      "development": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./core": {
       "types": "./src/core/index.ts",
+      "development": "./src/core/index.ts",
       "import": "./dist/core/index.js",
       "default": "./dist/core/index.js"
     },
     "./generation": {
       "types": "./src/generation/index.ts",
+      "development": "./src/generation/index.ts",
       "import": "./dist/generation/index.js",
       "default": "./dist/generation/index.js"
     },
     "./generation/turn-materializer": {
       "types": "./src/generation/turns/TurnMaterializer.ts",
+      "development": "./src/generation/turns/TurnMaterializer.ts",
       "import": "./dist/generation/turns/TurnMaterializer.js",
       "default": "./dist/generation/turns/TurnMaterializer.js"
     },
     "./loop": {
       "types": "./src/loop/index.ts",
+      "development": "./src/loop/index.ts",
       "import": "./dist/loop/index.js",
       "default": "./dist/loop/index.js"
     },
     "./loop/solo": {
       "types": "./src/loop/solo/solo-loop.ts",
+      "development": "./src/loop/solo/solo-loop.ts",
       "import": "./dist/loop/solo/solo-loop.js",
       "default": "./dist/loop/solo/solo-loop.js"
     },
     "./analysis": {
       "types": "./src/analysis/index.ts",
+      "development": "./src/analysis/index.ts",
       "import": "./dist/analysis/index.js",
       "default": "./dist/analysis/index.js"
     },
     "./harness": {
       "types": "./src/harness/index.ts",
+      "development": "./src/harness/index.ts",
       "import": "./dist/harness/index.js",
       "default": "./dist/harness/index.js"
     }

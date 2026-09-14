@@ -255,7 +255,13 @@ function outerWorldRect(b: {
 export function buildAirChimneyLayout(grid: MuseumGrid): AirChimneyLayout | null {
   const airWing = grid.wings.find((w) => w.id === AIR_ROOM_ID);
   const earthWing = grid.wings.find((w) => w.id === EARTH_ROOM_ID);
-  if (!airWing || !earthWing) return null;
+  // The neighbour is optional. It is read only to span the corridor between the
+  // two rooms, and the room picker can isolate this room on its own - a grid
+  // with no neighbour has no such corridor. Requiring it returned null, which
+  // left the wing component with a collapsed origin: the shell mounted at the
+  // world origin instead of around the visitor, and the isolated room rendered
+  // black with no error. Same fault, same fix, as the Root Terrace.
+  if (!airWing) return null;
 
   const shell = outerWorldRect(airWing.bounds);
   const air: WorldRect = {
@@ -359,26 +365,30 @@ export function buildAirChimneyLayout(grid: MuseumGrid): AirChimneyLayout | null
   // the band has to start there or the doorway belongs to nobody. (Fire and
   // Earth own their inbound corridors from the neighbour's wall column the
   // same way.)
-  const eb = earthWing.bounds;
   const ab = airWing.bounds;
-  const corridorTxMin = Math.min(eb.x, ab.x) - 2;
-  const corridorTxMax = Math.max(eb.x + eb.width, ab.x + ab.width) + 2;
-  const corridor = bandRects(
-    grid,
-    corridorTxMin,
-    corridorTxMax,
-    eb.y + eb.height - 1,
-    ab.y,
-    (t) => t === "corridor" || t === "door"
-  );
-  const corridorWalls = bandRects(
-    grid,
-    corridorTxMin,
-    corridorTxMax,
-    eb.y + eb.height,
-    ab.y - 1,
-    (t) => t === "wall"
-  );
+  const eb = earthWing?.bounds;
+  const corridorTxMin = eb ? Math.min(eb.x, ab.x) - 2 : 0;
+  const corridorTxMax = eb ? Math.max(eb.x + eb.width, ab.x + ab.width) + 2 : 0;
+  const corridor = eb
+    ? bandRects(
+        grid,
+        corridorTxMin,
+        corridorTxMax,
+        eb.y + eb.height - 1,
+        ab.y,
+        (t) => t === "corridor" || t === "door"
+      )
+    : [];
+  const corridorWalls = eb
+    ? bandRects(
+        grid,
+        corridorTxMin,
+        corridorTxMax,
+        eb.y + eb.height,
+        ab.y - 1,
+        (t) => t === "wall"
+      )
+    : [];
 
   // ── Floor rects. Ordered high → low, because elevationAt walks this list and
   // picks the first surface at or below the player's feet: the raised ledges

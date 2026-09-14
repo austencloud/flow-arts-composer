@@ -37,7 +37,6 @@ import { detectDeviceTier } from "./device-tier-detector";
 import type { QualityTier } from "../domain/types/quality-types";
 import { AnimatorCanvasInitializer } from "./animator-canvas-initializer";
 import type { FireOverlayConfig } from "../domain/types/fire-types";
-import type { FireDefaultsLoader } from "./fire-defaults-loader";
 import type { LedOverlayConfig } from "../domain/types/led-types";
 import type { EffectsConfigState } from "$lib/shared/effects/state/effects-config-state.svelte";
 
@@ -124,6 +123,7 @@ export interface AnimationEngineProps {
   tunnelSpectrum?: boolean;
   /** Exact Left/Right colors for Custom Tunnel mode. */
   tunnelPropColors?: TunnelPropColorPair | null;
+  primaryPropColors?: TunnelPropColorPair | null;
   /** Tunnel performer spotlight: the selected performer (0 = base, k = copy arm
    *  k), or null. When set, every other copy dims in the render. Default null. */
   tunnelSelectedLayer?: number | readonly number[] | null;
@@ -207,7 +207,6 @@ export class AnimationEngine {
   private readonly canvasInitializer = new AnimatorCanvasInitializer();
   private readonly frameBudgetMonitor: FrameBudgetMonitor =
     new FrameBudgetMonitor(detectDeviceTier());
-  private fireDefaultsLoader: FireDefaultsLoader | null = null;
 
   private containerElement: HTMLDivElement | null = null;
   /**
@@ -364,15 +363,6 @@ export class AnimationEngine {
 
     // Initialize effect-system prev-state (fire sliders, charcoal, effort, ERM flags)
     this.effectSystem.initPrevState(ecs);
-
-    // fireDefaultsLoader - load on demand via getter
-    try {
-      const { getFireDefaultsLoader } =
-        await import("$lib/shared/animation-engine/get-fire-defaults-loader");
-      this.fireDefaultsLoader = getFireDefaultsLoader();
-    } catch {
-      console.warn("[AnimationEngine] Fire defaults loader not available");
-    }
 
     this.state.setVisibilityState({
       grid: vm.getGridMode() !== "none",
@@ -725,6 +715,11 @@ export class AnimationEngine {
       renderFrameSync: (props, timeMs, dtSeconds) =>
         this.renderFrame(props, timeMs, dtSeconds),
     });
+  }
+
+  /** The live render target used for direct, settings-faithful GIF capture. */
+  getCanvas(): HTMLCanvasElement | null {
+    return this.lifecycleManager.animationRenderer?.getCanvas() ?? null;
   }
 
   dispose(): void {

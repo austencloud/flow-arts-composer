@@ -41,11 +41,10 @@
   } from "$lib/shared/shape-matrix/components/PropRelationshipChipRow.svelte";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import AnimationPanel from "$lib/shared/animation-panel/components/AnimationPanel.svelte";
-  import ShapeMatrixCustomizeDock from "$lib/shared/shape-matrix/components/ShapeMatrixCustomizeDock.svelte";
+  import ShapeMatrixStageActions from "$lib/shared/shape-matrix/components/ShapeMatrixStageActions.svelte";
+  import { registerShapeMatrixPlaybackShortcut } from "../services/shape-matrix-playback-shortcut";
   import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
   import { growFade } from "$lib/shared/transitions/motion";
-  import { tick } from "svelte";
-  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
   import { CANVAS2D_HOSTED_EFFECTS } from "$lib/shared/effects/services/canvas2d-effect-host";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
@@ -61,46 +60,6 @@
    * playing on the other.
    */
   const animationState = getShapeMatrixAnimationContext();
-  let compactSettingsElement = $state<HTMLElement | null>(null);
-  const compactSettingsOpen = $derived(
-    app.compact &&
-      app.surface === "theory" &&
-      app.activeView === "detail" &&
-      animationState.activeSection !== null
-  );
-
-  function closeCompactSettings(): void {
-    animationState.showRelationships();
-  }
-
-  function onCompactSettingsKeydown(event: KeyboardEvent): void {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    event.stopPropagation();
-    closeCompactSettings();
-  }
-
-  $effect(() => {
-    if (!compactSettingsOpen) return;
-    const restoreTo = document.activeElement;
-    const unregister = getEscapeLayerManager().register({
-      id: "shape-matrix:theory-compact-settings",
-      canDismiss: () => true,
-      dismiss: closeCompactSettings,
-    });
-    void tick().then(() =>
-      compactSettingsElement
-        ?.querySelector<HTMLButtonElement>("header button")
-        ?.focus({ preventScroll: true })
-    );
-    return () => {
-      unregister();
-      if (restoreTo instanceof HTMLElement && restoreTo.isConnected) {
-        restoreTo.focus({ preventScroll: true });
-      }
-    };
-  });
-
   const BLUE = "var(--dm-motion-blue, #3575e2)";
   const RED = "var(--dm-motion-red, #ed1c24)";
 
@@ -272,6 +231,18 @@
    * it, rather than in a pair of buttons under this stage. One transport
    * control, in one place, on both surfaces.
    */
+  /* Space is the stage's click, reached without a mouse. Through the app's
+     shortcut registry, so it stands aside for text fields and dialogs. The
+     Level Matrix drill is mounted beside this one and binds the same key, so
+     the surface check is what decides which of the two a press reaches. */
+  $effect(() =>
+    registerShapeMatrixPlaybackShortcut(
+      "theory",
+      () => animationState.togglePlaying(),
+      () => app.surface === "theory" && Boolean(pair)
+    )
+  );
+
   const playbackAction = $derived<ControlDockAction>({
     icon: animationState.playing ? "fa-pause" : "fa-play",
     label: animationState.playing ? "Pause" : "Play",
@@ -295,7 +266,11 @@
          also repaints nothing in the grid: a tile is the two hands' shapes, and
          the pairing is what those two hands do to each other, which is a thing
          you watch rather than a thing you look at. -->
-    <div class="mode-picker" transition:growFade={{ axis: "y" }}>
+    <div
+      class="mode-picker"
+      data-focus-mode-chrome
+      transition:growFade={{ axis: "y" }}
+    >
       <ElementChipRow
         selected={app.theoryMode}
         onpick={(mode: VtgMode | null) => {
@@ -318,11 +293,7 @@
       />
     </div>
 
-    <div
-      class="media-stage"
-      inert={compactSettingsOpen}
-      aria-hidden={compactSettingsOpen}
-    >
+    <div class="media-stage">
       <div class="detail-flow">
         {#if !pair}
           <div class="empty">
@@ -330,7 +301,7 @@
             <small>Its two hands run here, in the pairing chosen above.</small>
           </div>
         {:else}
-          <header class="pair-heading">
+          <header class="pair-heading" data-focus-mode-chrome>
             <div class="pair-keys">
               <strong style={`color: ${BLUE};`}>
                 {theoryRatioLabel(pair.left.ratio)}
@@ -342,40 +313,68 @@
             </div>
           </header>
 
-          <button
-            type="button"
-            class="stage-window"
-            aria-label={animationState.playing
-              ? "Pause theory animation"
-              : "Play theory animation"}
-            onclick={animationState.togglePlaying}
-          >
-            <!-- The elemental backdrop from the drill, lit by the two elements
+          <!-- The stage is a button, so the gear is its sibling in a shared
+               frame rather than a control nested inside a control. -->
+          <div class="stage-frame" data-focus-layout="theory-canvas">
+            {#if !app.compact}
+              <ShapeMatrixStageActions />
+            {/if}
+            <button
+              type="button"
+              class="stage-window"
+              aria-label={animationState.playing
+                ? "Pause theory animation"
+                : "Play theory animation"}
+              onclick={animationState.togglePlaying}
+            >
+              <!-- The stage toggles playback on a click; this is how a mouse
+                 finds that out. Hover-gated to fine pointers, and inert to
+                 pointer events so it never eats the click it advertises. The
+                 drill's canvas gets the same affordance from AnimatorCanvas
+                 (hoverHint), which this stage is not. -->
+              <span class="stage-hint" aria-hidden="true">
+                <span class="stage-hint-disc">
+                  <i
+                    class="fas {animationState.playing
+                      ? 'fa-pause'
+                      : 'fa-play'}"
+                  ></i>
+                </span>
+                <span class="stage-hint-word">
+                  {animationState.playing ? "Pause" : "Play"}
+                </span>
+              </span>
+              <!-- The elemental backdrop from the drill, lit by the two elements
                  the bridge above names. It is what tied the animation to the
                  relationship being read instead of leaving it a canvas that
                  happens to sit under one. -->
-            <div
-              class="stage-atmosphere"
-              style={`--atmosphere-hand: ${handAccent}; --atmosphere-prop: ${propAccent}`}
-              aria-hidden="true"
-            ></div>
-            <ShapeMatrixLiveRatioStage
-              {hands}
-              {handPeriod}
-              {alignToken}
-              {propReach}
-              {tipAngle}
-              paused={!animationState.playing}
-              playbackMode={animationState.playbackMode}
-              propType={app.propType}
-            />
-          </button>
+              <div
+                class="stage-atmosphere"
+                style={`--atmosphere-hand: ${handAccent}; --atmosphere-prop: ${propAccent}`}
+                aria-hidden="true"
+              ></div>
+              <ShapeMatrixLiveRatioStage
+                {hands}
+                {handPeriod}
+                {alignToken}
+                {propReach}
+                {tipAngle}
+                paused={!animationState.playing}
+                playbackMode={animationState.playbackMode}
+                propType={app.propType}
+              />
+            </button>
+          </div>
         {/if}
 
         <!-- Outside the branch on purpose: it is true of the whole surface.
              The short question stays visible; the explanation waits until
              someone asks for it so this pane still feels like a toy. -->
-        <div class="boundary-disclosure" transition:growFade={{ axis: "y" }}>
+        <div
+          class="boundary-disclosure"
+          data-focus-mode-chrome
+          transition:growFade={{ axis: "y" }}
+        >
           <PanelButton
             fullWidth
             ariaExpanded={boundaryOpen}
@@ -403,57 +402,18 @@
       </div>
     </div>
 
-    {#if compactSettingsOpen}
+    <!-- Compact hosts only. A wide host reaches Customize from the gear in
+         the stage's corner and playback from the stage itself, so it needs no
+         band here. `sequence` is null because a spin ratio is not one: it has
+         no letter, no steps and no word, and the panel's sequence-shaped
+         affordances are turned off rather than pointed at nothing. -->
+    {#if app.compact}
       <div
-        class="compact-settings"
-        role="dialog"
-        aria-label="Animation settings"
-        tabindex="-1"
-        bind:this={compactSettingsElement}
-        onkeydown={onCompactSettingsKeydown}
+        class="animation-controls"
+        data-focus-mode-chrome
+        data-focus-layout={app.surface === "theory" ? "picker" : undefined}
+        data-shape-matrix-dock
       >
-        <header class="compact-settings-header">
-          <strong>Animation settings</strong>
-          <button
-            type="button"
-            onclick={closeCompactSettings}
-            aria-label="Close settings"
-          >
-            <i class="fas fa-xmark" aria-hidden="true"></i>
-          </button>
-        </header>
-        <div class="compact-settings-body">
-          <AnimationPanel
-            isExporting={false}
-            layout="bottom"
-            presentation="content"
-            controlledSection={animationState.activeSection}
-            isPlaying={animationState.playing}
-            bpm={animationState.bpm}
-            playbackMode={animationState.playbackMode}
-            onPlaybackToggle={animationState.togglePlaying}
-            onPlaybackModeChange={animationState.setPlaybackMode}
-            onBpmChange={animationState.setBpm}
-            showEffectsPlayback={false}
-            selectedPropType={app.propType}
-            onPropChange={(next: PropType) => void app.setPropType(next)}
-            showPathShape={false}
-            showMotionVisibility={true}
-            showSequenceMarks={false}
-            availableEffects={THEORY_EFFECTS}
-            regionLabel="Shape animation settings"
-          />
-        </div>
-      </div>
-    {/if}
-
-    <div class="animation-controls" data-shape-matrix-dock>
-      <!-- The drill's dock, unchanged, on the drill's own scope: one Customize
-           button on a wide host, the pill dock on a compact one. `sequence` is
-           null because a spin ratio is not one: it has no letter, no steps and
-           no word, and the panel's sequence-shaped affordances are turned off
-           rather than pointed at nothing. -->
-      {#if app.compact}
         <AnimationPanel
           isExporting={false}
           layout="bottom"
@@ -480,10 +440,8 @@
           closeRequest={animationState.closeRequest}
           regionLabel="Shape animation controls"
         />
-      {:else}
-        <ShapeMatrixCustomizeDock />
-      {/if}
-    </div>
+      </div>
+    {/if}
   </div>
 </aside>
 
@@ -696,48 +654,66 @@
     min-height: 0;
   }
 
-  .compact-settings {
-    position: absolute;
-    z-index: 8;
-    inset-inline: 0;
-    bottom: 3.65rem;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    height: min(52%, 20rem);
-    overflow: hidden;
-    border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
-    border-radius: 14px 14px 0 0;
-    background:
-      linear-gradient(
-        var(--theme-panel-bg, rgb(16 23 33 / 0.96)),
-        var(--theme-panel-bg, rgb(16 23 33 / 0.96))
-      ),
-      var(--theme-bg-deep, #0a0f14);
-    box-shadow: 0 -0.75rem 2rem var(--theme-shadow, rgb(0 0 0 / 0.4));
-  }
-
-  .compact-settings-header {
+  /* The frame is the positioning context the gear hangs off, and it takes
+     the growth the stage used to take so nothing else moves. */
+  .stage-frame {
+    position: relative;
     display: flex;
-    min-height: var(--min-touch-target, 44px);
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 9rem;
+  }
+
+  .stage-window {
+    position: relative;
+  }
+
+  .stage-hint {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    padding-inline: 0.85rem 0.35rem;
-    border-bottom: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
+    justify-content: center;
+    gap: 0.5rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--duration-fast, 0.15s) ease;
+  }
+
+  .stage-hint-disc {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 999px;
+    background: rgb(0 0 0 / 0.42);
+    color: #fff;
+    font-size: 1.15rem;
+  }
+
+  .stage-hint-word {
     font-size: var(--font-size-min, 0.875rem);
+    font-weight: 600;
+    color: #fff;
+    text-shadow: 0 1px 3px rgb(0 0 0 / 0.55);
   }
 
-  .compact-settings-header button {
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    border: 0;
-    background: transparent;
-    color: var(--theme-text, #fff);
-    cursor: pointer;
+  /* Mouse only: a touch host has no hover, and showing this permanently would
+     put a scrim over the mandala it is describing. */
+  @media (hover: hover) and (pointer: fine) {
+    .stage-window:hover .stage-hint,
+    .stage-window:focus-visible .stage-hint {
+      opacity: 1;
+    }
   }
 
-  .compact-settings-body {
-    min-height: 0;
-    overflow: hidden;
+  @media (prefers-reduced-motion: reduce) {
+    .stage-hint {
+      transition: none;
+    }
   }
 
   @container shape-matrix-app (max-width: 74.99rem) or (max-height: 41.99rem) {
@@ -759,10 +735,6 @@
      is already two columns wide here on its own, which is what the rail was
      sized for. */
   @container shape-matrix-drill (min-width: 42rem) and (max-height: 24rem) {
-    .compact-settings {
-      inset-inline-start: calc(clamp(13rem, 30%, 17rem) + 0.8rem);
-    }
-
     .detail-body {
       grid-template-columns: clamp(13rem, 30%, 17rem) minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr) auto;

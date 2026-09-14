@@ -15,6 +15,8 @@
  * 1400px stage.
  */
 import { compositeMandalaOverlap } from "./mandala-overlap-compositor";
+import { mixColors } from "../domain/mandala-palette";
+import { resolveViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
 import type { PreparedMandalaPath } from "./types";
 
 export type MandalaGuideContext =
@@ -209,6 +211,12 @@ export function paintMandalaGuide(
 		reveal
 	);
 
+	// Derive the intersection from the same hand colors as the visible paths.
+	// A fixed purple incorrectly labels green/red or other custom palettes.
+	const colors = resolveViewerCustomColorPair({
+		left: options.paths.find((path) => path.hand === "left")?.color,
+		right: options.paths.find((path) => path.hand === "right")?.color,
+	});
 	compositeMandalaOverlap({
 		targetContext: context,
 		overlapMaskContext: pair.leftContext,
@@ -216,5 +224,6 @@ export function paintMandalaGuide(
 		otherMaskCanvas: pair.rightCanvas,
 		width: pair.leftCanvas.width,
 		height: pair.leftCanvas.height,
+		color: mixColors(colors.left, colors.right),
 	});
 }

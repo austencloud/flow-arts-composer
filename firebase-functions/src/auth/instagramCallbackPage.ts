@@ -9,13 +9,13 @@ export function instagramFailureMessage(
     case "instagram/cancelled":
       return "Instagram authorization was cancelled.";
     case "instagram/already-linked":
-      return "That Instagram account is connected to another TKA account.";
+      return "That Instagram account is connected to another Flow Arts Composer account.";
     case "instagram/account-type-required":
       return "Instagram login requires a creator or business account.";
     case "instagram/app-configuration-mismatch":
       return "Instagram's connection settings need an app update. Trying again will not fix this.";
     case "instagram/reauth-mismatch":
-      return "That is not the Instagram account connected to this TKA account.";
+      return "That is not the Instagram account connected to this Flow Arts Composer account.";
     case "instagram/state-expired":
       return "This Instagram sign-in request expired.";
     default:

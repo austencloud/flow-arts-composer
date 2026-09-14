@@ -85,11 +85,11 @@ export function metaErrorMessage(code: string): string {
     case "meta/account-type-required":
       return "Direct posting needs an Instagram creator or business account. You can still finish the post in Instagram.";
     case "meta/account-type-unverified":
-      return "Reconnect Instagram so TKA can verify this professional account.";
+      return "Reconnect Instagram so Flow Arts Composer can verify this professional account.";
     case "meta/account-mismatch":
       return "This connection controls a different Instagram account.";
     case "meta/capabilities-missing":
-      return "Reconnect Instagram so TKA can verify what this account supports.";
+      return "Reconnect Instagram so Flow Arts Composer can verify what this account supports.";
     case "meta/facebook-capability-required":
       return "Connect Facebook to use this Instagram option.";
     case "meta/review-required":
@@ -141,7 +141,6 @@ export function metaErrorCode(error: unknown): string {
   }
   return "meta/provider-error";
 }
-
 
 /**
  * Live connection state, straight from the token-free mirror the functions
@@ -238,7 +237,6 @@ export function readMetaPublishStatus(
         : null,
   };
 }
-
 
 interface StartMetaConnectResponse {
   authorizationUrl: string;

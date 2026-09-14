@@ -17,6 +17,8 @@
   import { growFade } from "$lib/shared/transitions/motion";
   import BentoPropGrid from "./BentoPropGrid.svelte";
   import type { PropChiralitySeam } from "./prop-chirality-seam";
+  import PrimaryPropColorSettings from "./PrimaryPropColorSettings.svelte";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import CatDogToggle from "./CatDogToggle.svelte";
 
   let {
@@ -32,7 +34,13 @@
     catDogEnabled = false,
     onCatDogToggle,
     chirality,
+    primaryPropColors,
+    onPrimaryPropColorsChange,
+    darkMode = true,
   } = $props<{
+    primaryPropColors?: ViewerCustomColorPair | null;
+    onPrimaryPropColorsChange?: (colors: ViewerCustomColorPair | null) => void;
+    darkMode?: boolean;
     isOpen?: boolean;
     selectedPropType: PropType;
     color?: "blue" | "red";
@@ -127,62 +135,88 @@
       onClose={handleClose}
     />
 
-    {#if showCatDogToggle || showTabs}
-      <div class="picker-toolbar">
-        {#if showCatDogToggle}
-          <CatDogToggle
-            catDogMode={catDogEnabled}
-            onToggle={() => onCatDogToggle?.()}
+    <div class="picker-body" class:scrolls={!!onPrimaryPropColorsChange}>
+      {#if showCatDogToggle || showTabs}
+        <div class="picker-toolbar">
+          {#if showCatDogToggle}
+            <CatDogToggle
+              catDogMode={catDogEnabled}
+              onToggle={() => onCatDogToggle?.()}
+            />
+          {/if}
+
+          {#if showTabs}
+            <div
+              class="segment-control"
+              role="tablist"
+              aria-label="Prop hand selection"
+              transition:growFade={{ axis: "y" }}
+            >
+              <button
+                type="button"
+                role="tab"
+                class="segment-btn"
+                class:active={activeTab === "left"}
+                aria-selected={activeTab === "left"}
+                onclick={() => handleTabChange("left")}
+              >
+                <span class="color-dot blue" aria-hidden="true"></span>
+                Left
+              </button>
+              <button
+                type="button"
+                role="tab"
+                class="segment-btn"
+                class:active={activeTab === "right"}
+                aria-selected={activeTab === "right"}
+                onclick={() => handleTabChange("right")}
+              >
+                <span class="color-dot red" aria-hidden="true"></span>
+                Right
+              </button>
+            </div>
+          {/if}
+        </div>
+      {/if}
+
+      {#if onPrimaryPropColorsChange}
+        <div class="color-settings">
+          <PrimaryPropColorSettings
+            colors={primaryPropColors}
+            {darkMode}
+            onchange={onPrimaryPropColorsChange}
           />
-        {/if}
+        </div>
+      {/if}
 
-        {#if showTabs}
-          <div
-            class="segment-control"
-            role="tablist"
-            aria-label="Prop hand selection"
-            transition:growFade={{ axis: "y" }}
-          >
-            <button
-              type="button"
-              role="tab"
-              class="segment-btn"
-              class:active={activeTab === "left"}
-              aria-selected={activeTab === "left"}
-              onclick={() => handleTabChange("left")}
-            >
-              <span class="color-dot blue" aria-hidden="true"></span>
-              Left
-            </button>
-            <button
-              type="button"
-              role="tab"
-              class="segment-btn"
-              class:active={activeTab === "right"}
-              aria-selected={activeTab === "right"}
-              onclick={() => handleTabChange("right")}
-            >
-              <span class="color-dot red" aria-hidden="true"></span>
-              Right
-            </button>
-          </div>
-        {/if}
-      </div>
-    {/if}
-
-    <BentoPropGrid
-      {selectedPropType}
-      {color}
-      {title}
-      variant="inline"
-      fill
-      onSelect={handlePropSelect}
-      {chirality}
-    />
+      <BentoPropGrid
+        {selectedPropType}
+        {color}
+        {title}
+        variant="inline"
+        scrollMode={onPrimaryPropColorsChange ? "host" : "internal"}
+        fill={!onPrimaryPropColorsChange}
+        onSelect={handlePropSelect}
+        {chirality}
+      />
+    </div>
   </div>
 </Drawer>
 
 <style>
+  .picker-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+  }
+  .picker-body.scrolls {
+    overflow-y: auto;
+  }
+  .color-settings {
+    padding: 12px 18px;
+    flex-shrink: 0;
+  }
   /* Bottom drawer sizing - centered with margin auto (avoids transform conflicts with drag) */
   :global(.prop-selection-drawer[data-placement="bottom"]) {
     /* DEFINITE height, not fit-content. BentoPropGrid's .grid-scroll is a

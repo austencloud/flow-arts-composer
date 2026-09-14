@@ -19,6 +19,7 @@ const COMMON = {
   activeAxis: "both" as const,
   propType: PropType.STAFF,
   propMode: null,
+  solo: null,
 };
 
 describe("shape matrix URL state", () => {
@@ -51,6 +52,39 @@ describe("shape matrix URL state", () => {
       pair: { left, right },
       mode: "SS",
     });
+  });
+
+  it("carries a soloed hand, and drops it without a pair", () => {
+    const [left, right] = buildFlowerAxis();
+    if (!left || !right) throw new Error("Shape Matrix axis is empty");
+    const url = new URL("https://tkaflowarts.com/shape-engine");
+
+    writeShapeMatrixRouteState(url, {
+      level: 3,
+      leftTurn: 0,
+      rightTurn: 0,
+      ...COMMON,
+      solo: "right",
+      labelMode: "turns",
+      pair: { left, right },
+      mode: "SS",
+    });
+
+    expect(url.searchParams.get("solo")).toBe("right");
+    expect(readShapeMatrixRouteState(url.search).solo).toBe("right");
+
+    // Without a pair there is no hand to solo, so the link says nothing.
+    writeShapeMatrixRouteState(url, {
+      level: 3,
+      leftTurn: 0,
+      rightTurn: 0,
+      ...COMMON,
+      labelMode: "turns",
+      pair: null,
+      mode: null,
+    });
+    expect(url.searchParams.get("solo")).toBeNull();
+    expect(readShapeMatrixRouteState("?level=3&solo=left").solo).toBeNull();
   });
 
   it("rejects partial or unknown selections without inventing a mode", () => {
@@ -122,6 +156,7 @@ describe("shape matrix URL state", () => {
       pair: null,
       mode: null,
       propMode: null,
+      solo: null,
     });
   });
 
@@ -184,6 +219,7 @@ describe("shape matrix URL state", () => {
       pair: { left, right },
       mode: "TS",
       propMode: "SS",
+      solo: null,
     });
 
     expect(url.searchParams.get("propMode")).toBe("SS");

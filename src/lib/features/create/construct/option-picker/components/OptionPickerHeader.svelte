@@ -125,7 +125,11 @@
   }
 </script>
 
-<div class="oph" class:compact={layout === "compact"}>
+<div
+  class="oph"
+  class:compact={layout === "compact"}
+  class:whole-turns={level === 2}
+>
   <!-- Row 1: filter left, Level dead center. The right cell is an empty
        counterweight — equal-fr sides are what keep Level centered on the band
        rather than centered on "whatever is left over". -->
@@ -553,10 +557,8 @@
     text-align: left;
   }
 
-  /* Two full hand palettes need width, not a second visual treatment. Stack
-     their existing surfaces in narrow panes and spend the ample vertical room
-     the picker already has. Resize-driven recomposition intentionally has no
-     transition so it follows the divider directly. */
+  /* Half-turn palettes need more room than Level 2's four values per hand.
+     Resize-driven recomposition follows the divider directly. */
   @container (width < 1000px) {
     .oph:not(.compact) .oph-turns-row {
       flex-direction: column;
@@ -567,6 +569,19 @@
       flex: 0 0 auto;
       width: 100%;
       min-width: 0;
+    }
+  }
+
+  /* Keep Level 2 on one row when both palettes and their spin controls fit. */
+  @container (640px <= width < 1000px) {
+    .oph.whole-turns:not(.compact) .oph-turns-row {
+      flex-direction: row;
+      gap: 10px;
+    }
+
+    .oph.whole-turns:not(.compact) .hand-half {
+      flex: 1 1 0;
+      width: auto;
     }
   }
 

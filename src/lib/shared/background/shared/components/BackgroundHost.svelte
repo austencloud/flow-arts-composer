@@ -28,6 +28,7 @@
 	import { createRenderActivityGate } from '$lib/shared/render-gating/render-activity-gate';
 	import { sharedAnimationState } from '$lib/shared/animation-engine/state/shared-animation-state.svelte';
 	import { shouldReduceBackgroundResolution } from '$lib/shared/platform/network-conditions';
+	import { installBackgroundQualityRecovery } from '../background-quality-recovery';
 
 	const {
 		backgroundType = BackgroundType.COSMIC,
@@ -153,6 +154,7 @@
 	onMount(() => {
 		if (!browser || !containerRef || !controller) return;
 		mounted = true;
+		const disposeQualityRecovery = installBackgroundQualityRecovery(controller);
 		markLanding('background:first-frame');
 		onReady?.();
 
@@ -259,6 +261,7 @@
 		});
 
 		return () => {
+			disposeQualityRecovery();
 			window.removeEventListener('pointermove', onPointerMove);
 			window.removeEventListener('pointerleave', onPointerLeaveWin);
 			window.removeEventListener('pointerdown', onPointerDown);

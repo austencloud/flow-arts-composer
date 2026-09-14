@@ -69,8 +69,8 @@ export const createDonationCheckout = functions.https.onCall(
           price_data: {
             currency: "usd",
             product_data: {
-              name: "Support The Kinetic Alphabet",
-              description: "A contribution toward the development of The Kinetic Alphabet.",
+              name: "Support Flow Arts Composer",
+              description: "A contribution toward the development of Flow Arts Composer.",
             },
             unit_amount: amountCents,
           },

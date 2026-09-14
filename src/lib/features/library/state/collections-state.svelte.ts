@@ -409,7 +409,12 @@ class CollectionsState {
    */
   async saveDetails(
     collectionId: string,
-    details: { name: string; description: string; credit: string }
+    details: {
+      name: string;
+      description: string;
+      credit: string;
+      propType?: LibraryCollection["propType"];
+    }
   ): Promise<boolean> {
     if (this.blockPreviewWrite()) return false;
     const name = details.name.trim();
@@ -419,6 +424,7 @@ class CollectionsState {
         name,
         description: details.description.trim(),
         credit: details.credit.trim(),
+        ...(details.propType !== undefined && { propType: details.propType }),
       });
       return true;
     } catch {

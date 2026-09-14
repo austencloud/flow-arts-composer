@@ -866,8 +866,8 @@ function buildViewer3DState(
       const camera = getBlossomOpeningCamera(currentViewportAspect() < 1);
       const [x, y, z] = camera.position;
       const [tx, ty, tz] = camera.target;
-      shot.eye = { x, y, z };
-      shot.target = { x: tx, y: ty, z: tz };
+      shot.eye.set(x, y, z);
+      shot.target.set(tx, ty, tz);
       return shot;
     }
     const horizontalDistance = Math.hypot(

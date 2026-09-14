@@ -1043,6 +1043,7 @@ export default defineConfig(({ command, mode }) => ({
   ].filter(Boolean),
   resolve: {
     dedupe: ["three", "@threlte/core"],
+    conditions: ["svelte", "module", "browser", "development|production"],
     alias: [
       {
         find: /^@austencloud\/scene-3d$/,
@@ -1160,7 +1161,14 @@ export default defineConfig(({ command, mode }) => ({
     ],
     // Include svelte condition for threlte packages, but node/module first for SSR
     resolve: {
-      conditions: ["svelte", "node", "module", "import", "default"],
+      conditions: [
+        "svelte",
+        "node",
+        "module",
+        "development|production",
+        "import",
+        "default",
+      ],
     },
   },
   // ============================================================================

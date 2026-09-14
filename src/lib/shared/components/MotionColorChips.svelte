@@ -105,7 +105,7 @@
   .chip.blue {
     color: color-mix(
       in srgb,
-      var(--prop-blue, #2196f3) 72%,
+      var(--motion-left-color, var(--prop-blue, #2196f3)) 72%,
       var(--theme-text, #fff)
     );
   }
@@ -113,7 +113,7 @@
   .chip.red {
     color: color-mix(
       in srgb,
-      var(--prop-red, #f44336) 72%,
+      var(--motion-right-color, var(--prop-red, #f44336)) 72%,
       var(--theme-text, #fff)
     );
   }
@@ -124,14 +124,14 @@
   }
 
   .chip.blue.active {
-    background: color-mix(in srgb, var(--prop-blue, #2196f3) 22%, transparent);
-    border-color: var(--prop-blue, #2196f3);
+    background: color-mix(in srgb, var(--motion-left-color, var(--prop-blue, #2196f3)) 22%, transparent);
+    border-color: var(--motion-left-color, var(--prop-blue, #2196f3));
     color: #fff;
   }
 
   .chip.red.active {
-    background: color-mix(in srgb, var(--prop-red, #f44336) 22%, transparent);
-    border-color: var(--prop-red, #f44336);
+    background: color-mix(in srgb, var(--motion-right-color, var(--prop-red, #f44336)) 22%, transparent);
+    border-color: var(--motion-right-color, var(--prop-red, #f44336));
     color: #fff;
   }
 

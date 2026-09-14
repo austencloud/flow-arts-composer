@@ -27,6 +27,12 @@ export const SHAPE_MATRIX_GUIDE_COLORS = {
   right: HERO_TRAIL_PRESET.rightColor,
 } as const;
 
+/** The two user-selected inks applied to a matrix still. */
+export interface ShapeMatrixGuideColors {
+  left: string;
+  right: string;
+}
+
 /** Stroke width in CSS pixels; the live overlay's default. */
 export const SHAPE_MATRIX_GUIDE_STROKE_WIDTH =
   DEFAULT_MANDALA_OVERLAY_CONFIG.strokeWidth;
@@ -35,6 +41,11 @@ export interface ShapeMatrixPaintOptions {
   /** Device pixels per CSS pixel; defaults to the window's. */
   dpr?: number;
   deps?: MandalaGuideImageDependencies;
+  /**
+   * An embedding surface's chosen hand colors. Omit this for intentionally
+   * curated artwork, which retains the Matrix's hero palette.
+   */
+  colors?: ShapeMatrixGuideColors;
 }
 
 function paint(
@@ -45,14 +56,15 @@ function paint(
   fit: MandalaGuideFit,
   options: ShapeMatrixPaintOptions = {}
 ): string {
+  const colors = options.colors ?? SHAPE_MATRIX_GUIDE_COLORS;
   return renderMandalaGuideImage(
     paths,
     {
       size: sizePx,
       dpr: options.dpr,
       show,
-      leftColor: SHAPE_MATRIX_GUIDE_COLORS.left,
-      rightColor: SHAPE_MATRIX_GUIDE_COLORS.right,
+      leftColor: colors.left,
+      rightColor: colors.right,
       strokeWidth: SHAPE_MATRIX_GUIDE_STROKE_WIDTH,
       fit,
       tipDx,
@@ -75,7 +87,11 @@ export function renderCell(
   tipDx: number,
   options?: ShapeMatrixPaintOptions
 ): string {
-  const merged: MandalaPaths = { left: left.left, right: right.right, purple: [] };
+  const merged: MandalaPaths = {
+    left: left.left,
+    right: right.right,
+    purple: [],
+  };
   return renderExtentFit(merged, sizePx, tipDx, options);
 }
 
@@ -108,7 +124,10 @@ export function renderExtentFit(
  * pixels the live canvas draws in the full square, and the same picture a
  * matrix tile shows.
  */
-export function engineExtentBoxRatio(paths: MandalaPaths, tipDx: number): number {
+export function engineExtentBoxRatio(
+  paths: MandalaPaths,
+  tipDx: number
+): number {
   const extentScale = mandalaGuideScale(paths, {
     size: 1,
     fit: "extent",

@@ -350,6 +350,12 @@ describe("lava river source and terminus", () => {
     // on the square chop the audit caught mid-slope.
     expect(widestToe).toBeGreaterThan(midRun * 1.5);
     expect(rowHalfWidth(geometry, rows - 1)).toBeLessThan(midRun * 0.25);
+
+    // The shader cuts the tip off while the lobe is still wide, on the shore
+    // scallop, so the final narrowing rows never render as a dark slab.
+    const source = readFileSync(RIVER_COMPONENT, "utf8");
+    expect(source).toContain("uniform float uCapStart;");
+    expect(source).toContain("if (capT > tipCut) discard;");
   });
 
   it("ends the ribbon on the authored tail, not short of it", () => {
@@ -445,6 +451,28 @@ describe("lava river corridor glow", () => {
       );
     }
     expect(minimumSpan).toBeGreaterThan(volcanicWorldR7.lavaRiver.width);
+  });
+
+  it("keeps the skirt on the corridor instead of fanning with the delta", () => {
+    const { glowGeometry, geometry } = buildStrip({ longitudinalSegments: 152 });
+    const position = glowGeometry!.getAttribute("position");
+    const columns = Math.max(6, Math.round(LAVA_RIVER_GLOW.columns)) + 1;
+    const rows = rowCount(geometry);
+    const span = (row: number) => {
+      const first = row * columns;
+      const last = first + columns - 1;
+      return Math.hypot(
+        position.getX(last) - position.getX(first),
+        position.getZ(last) - position.getZ(first)
+      );
+    };
+    const midSpan = span(Math.round(rows * 0.5));
+    let widestToe = 0;
+    for (let row = Math.round(rows * 0.915); row < rows; row += 1) {
+      widestToe = Math.max(widestToe, span(row));
+    }
+    // The ribbon spreads more than 1.5x here; the light must not.
+    expect(widestToe).toBeLessThanOrEqual(midSpan * 1.15);
   });
 
   it("omits the skirt when the glow is disabled", () => {

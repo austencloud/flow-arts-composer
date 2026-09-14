@@ -5,7 +5,7 @@
 </script>
 
 <Seo
-  title="The Starter Pack | The Kinetic Alphabet"
+  title="The Starter Pack | Flow Arts Composer"
   description="Everything to start TKA in one box: the Timing & Direction trilogy, a mixed LOOP deck, the book, deck boxes, and a waterproof card holder."
   canonical="https://tkaflowarts.com/shop/starter-pack"
 />

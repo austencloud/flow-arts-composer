@@ -16,7 +16,7 @@ within the architecture. The earlier Blender studies remain available.
 - Export: `scripts/blender-export-celestial-citadel.py`, then
   `node scripts/optimize-celestial-citadel.mjs`.
 - Shared measurements: `scripts/celestial-citadel-layout.json`.
-- Runtime asset: `static/models/celestial/sky-citadel.glb`, 12,715,180 bytes;
+- Runtime asset: `static/models/celestial/sky-citadel.glb`, 14,756,084 bytes;
   material/role batching, 24 EZ-Tree trees in three distinct seeded variants,
   instanced wood/foliage pairs, WebP textures and Meshopt compression.
 - Architecture, terrain and mineral textures are original Blender work. The
@@ -27,6 +27,19 @@ within the architecture. The earlier Blender studies remain available.
   The final asset contains no Meshy trees. Each tree is positioned from its
   trunk origin and raycast onto the meadow, or seated in the courtyard planter.
   The tree beside the west terrace moved from (-43,30) to (-47,24) in Blender XY.
+  The remaining east podium collision is corrected from (23,22) to (39,10).
+- Final bounded polish: `scripts/polish-celestial-citadel.py` opens the saved
+  Blender source, replaces its route/grass pass, saves and exports it. Run this
+  after a full castle rebuild or a tree refresh, then run the optimizer above.
+  Six stone crossings connect all seven islands. Four use slopes no steeper
+  than 10%; the two larger elevation changes use shallow stair treads.
+  Landings meet raycast meadow heights; garden stairs join the elevated podium.
+  Forest's existing `forest_ground_ecosystem.py` supplies three blade forms,
+  instanced into 4,880 grass tufts with sage materials. Paving, routes and root
+  flares have exclusion zones. No additional downloaded vegetation is needed.
+  This is a static modeling pass: connected walking surfaces are authored, but
+  player controls, navigation and terrain collision simulation are future work.
+  Measurements and route connectivity live in `polish-manifest.json`.
 - Clouds use a seeded 64³ density texture generated in memory and ray marching.
   The cloud sea and six distant cumulus volumes stay in world space. No cloud
   photograph is requested by the production world. Low tier uses fewer samples.
@@ -48,6 +61,17 @@ preparer retains distant crowns and now also supports OffscreenCanvas workers.
 The 18 Celestial contract tests and six mipmap tests pass. glTF validation:
 zero errors; three generated tangent-space warnings for bark materials and
 notices for extensions outside the validator's support.
+
+The September 8 polish was checked in the production world factory at the
+reported camera (26.84,0.67,-10.54), a garden contact view (45,1.6,-3), and a
+wide bridge-network view (180,155,210), at 1440×900 with standard content and
+motion frozen. These views confirm the concrete is clear, grass/root contacts
+are visible, and the crossings reach all seven land masses. The authoring pass
+asserts route reachability, landing heights, deck grades and trunk clearance
+from masonry. The existing Blender tree verifier and ten focused world,
+adapter and worker-layout tests pass. The asset now has 26 unique meshes and
+2,516,436 triangles before instance reuse; this pass adds detail rather than
+claiming a frame-rate improvement.
 
 Local performance with several review tabs open reached 60 fps for one performer
 and about 15 fps for eight. The eight-performer path remains costly; this is not

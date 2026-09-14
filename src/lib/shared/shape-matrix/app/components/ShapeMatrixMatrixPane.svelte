@@ -3,26 +3,29 @@
   import type { Flower } from "$lib/shared/shape-matrix/domain/flower-signature";
   import { getShapeMatrixAppContext } from "../context/shape-matrix-app-context";
   import { getShapeMatrixAnimationContext } from "../context/shape-matrix-animation-context";
-  import ShapeMatrixCustomizeWorkspace from "./ShapeMatrixCustomizeWorkspace.svelte";
+  import { customizeSection } from "../state/shape-matrix-customize";
+  import ShapeMatrixDifficultyStrip from "./ShapeMatrixDifficultyStrip.svelte";
   import ShapeMatrixGridCorner from "./ShapeMatrixGridCorner.svelte";
   import ShapeMatrixRecipeStrip from "./ShapeMatrixRecipeStrip.svelte";
 
   interface Props {
     /** The shell owns navigation (and the compact tile-to-hero morph). */
     onselect?: (pair: { left: Flower; right: Flower }) => void;
+    /** A header: that axis item alone, on that hand. */
+    onsolo?: (hand: "left" | "right", flower: Flower) => void;
     /** The shell owns the roll too, for the same compact morph. */
     onsurprise?: () => void;
   }
-  let { onselect, onsurprise }: Props = $props();
+  let { onselect, onsolo, onsurprise }: Props = $props();
 
   const state = getShapeMatrixAppContext();
   const animationState = getShapeMatrixAnimationContext();
   const surprise = $derived(onsurprise ?? (() => state.surpriseMe()));
-  /* The customize workspace covers this pane on wide hosts; the grid
-     underneath is not something to tab into while it does. */
+  /* The customize workspace covers this pane on wide hosts (the shell mounts
+     it over the pane, once for both surfaces); the grid underneath is not
+     something to tab into while it does. */
   const workspaceOpen = $derived(
-    !state.compact &&
-      (state.propPickerOpen || animationState.activeSection !== null)
+    customizeSection(state, animationState) !== null
   );
 </script>
 
@@ -37,6 +40,8 @@
 >
   {#if state.compact}
     <ShapeMatrixRecipeStrip surface="level" onsurprise={surprise} />
+  {:else}
+    <ShapeMatrixDifficultyStrip />
   {/if}
   <div class="matrix-stage" inert={workspaceOpen} aria-hidden={workspaceOpen}>
     {#if state.loadError}
@@ -57,10 +62,11 @@
         corner={cornerGuide}
         revealToken={state.revealToken}
         onselect={onselect ?? state.selectPair}
+        onsolo={onsolo ?? state.selectSolo}
+        soloHand={state.soloHand}
       />
     {/if}
   </div>
-  <ShapeMatrixCustomizeWorkspace surface="matrix" />
 </section>
 
 <style>
@@ -69,7 +75,9 @@
     height: 100%;
     min-height: 0;
     display: grid;
-    grid-template-rows: minmax(0, 1fr);
+    /* A strip above the grid in both hosts: difficulty on a wide one, the
+       recipe on a compact one. */
+    grid-template-rows: auto minmax(0, 1fr);
     overflow: hidden;
     border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
     border-radius: 16px;
@@ -90,11 +98,6 @@
     font: inherit;
     font-size: var(--font-size-min, 0.875rem);
     cursor: pointer;
-  }
-
-  /* Compact hosts add the recipe strip above the grid. */
-  .matrix-pane.compact {
-    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .matrix-stage {

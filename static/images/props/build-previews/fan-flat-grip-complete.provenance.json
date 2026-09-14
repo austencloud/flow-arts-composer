@@ -1,0 +1,15 @@
+{
+  "referenceVersion": 1,
+  "source": "https://forgedfans.com/products/flat-grip-fire-fans",
+  "output": {
+    "path": "static/images/props/build-previews/fan-flat-grip-complete.webp",
+    "width": 640,
+    "height": 440
+  },
+  "sourceSha256": {
+    "scripts/assets/flat-grip-fire-reference.json": "1f3960256e3774be16b521b575aaa9161fedbda2b40ef52e3fec2bf7eeb2c2ed",
+    "scripts/build-flat-grip-fan.py": "9be8fa08efa90198d965462acb92b519103d4d92a014b818d5b4c3e9bedf0047",
+    "static/models/props/fan-flat-grip.glb": "bf613bfe2f7d2f4e294eb12df8e30a8dee8811f810df20b111f14a50cd6ae586",
+    "static/images/props/appearances/fan-flat-grip.svg": "dc1c794658ffd79aa777a49fc25a9dc82f823ea1663936ea8b615b3b50c27c3f"
+  }
+}

@@ -3,10 +3,7 @@
   import NavButton from "./NavButton.svelte";
   import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
 
-  let {
-    onLongPress = undefined,
-    longPressMs = 500,
-  } = $props<{
+  let { onLongPress = undefined, longPressMs = 500 } = $props<{
     onLongPress?: () => void;
     longPressMs?: number;
   }>();
@@ -49,18 +46,7 @@
   }
 </script>
 
-<div
-  class="inbox-nav-button-wrapper"
-  onclick={handleClick}
-  onpointerdown={startLongPress}
-  onpointerup={clearLongPress}
-  onpointerleave={clearLongPress}
-  onpointercancel={clearLongPress}
-  oncontextmenu={(e) => { e.preventDefault(); e.stopPropagation(); return false; }}
-  onkeydown={(e) => e.key === "Enter" && handleClick()}
-  role="button"
-  tabindex="0"
->
+<div class="inbox-nav-button-wrapper">
   <div class="inbox-button-container" class:has-unread={hasUnread}>
     <NavButton
       icon="<i class='fas fa-inbox'></i>"
@@ -68,8 +54,19 @@
       type="special"
       color="rgba(255, 255, 255, 1)"
       gradient="rgba(255, 255, 255, 1)"
-      ariaLabel="Open inbox{hasUnread ? `, ${inboxState.totalUnreadCount} unread` : ''}"
+      ariaLabel="Open inbox{hasUnread
+        ? `, ${inboxState.totalUnreadCount} unread`
+        : ''}"
       active={false}
+      onClick={handleClick}
+      onpointerdown={startLongPress}
+      onpointerup={clearLongPress}
+      onpointerleave={clearLongPress}
+      onpointercancel={clearLongPress}
+      oncontextmenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
     />
     {#if hasUnread}
       <span class="unread-badge" aria-hidden="true">
@@ -113,7 +110,8 @@
     text-align: center;
     box-shadow: 0 2px 4px hsl(0 0% 0% / 0.3);
     pointer-events: none;
-    animation: badgePop var(--duration-emphasis) cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: badgePop var(--duration-emphasis)
+      cubic-bezier(0.34, 1.56, 0.64, 1);
     z-index: 1;
   }
 
@@ -131,7 +129,11 @@
 
   /* Subtle glow effect when there are unread items */
   .inbox-button-container.has-unread :global(.nav-button.special) {
-    border-color: color-mix(in srgb, var(--semantic-info) 40%, var(--theme-accent));
+    border-color: color-mix(
+      in srgb,
+      var(--semantic-info) 40%,
+      var(--theme-accent)
+    );
   }
 
   @media (prefers-reduced-motion: reduce) {

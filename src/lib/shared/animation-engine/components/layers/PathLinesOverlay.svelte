@@ -16,6 +16,8 @@
     type AnimationVisibilityStateManager,
   } from "../../state/animation-visibility-state.svelte";
   import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import { fade } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import { motionDuration } from "$lib/shared/transitions/motion";
@@ -27,6 +29,7 @@
     stepData = null,
     showLeft = false,
     showRight = false,
+    primaryPropColors,
     vm = null,
   }: {
     sequenceData?: SequenceData | null;
@@ -38,6 +41,7 @@
     stepData?: StepData | StartPositionData | null;
     showLeft?: boolean;
     showRight?: boolean;
+    primaryPropColors?: ViewerCustomColorPair;
     /** Per-surface visibility manager; falls back to the global singleton. */
     vm?: AnimationVisibilityStateManager | null;
   } = $props();
@@ -92,8 +96,13 @@
     return isVisibleMotion(motion) ? buildPathD(motion) : null;
   });
 
-  const leftColor = $derived(getMotionColor(HandSide.LEFT, "dark"));
-  const rightColor = $derived(getMotionColor(HandSide.RIGHT, "dark"));
+  const colors = $derived(primaryPropColors ?? getSettings().primaryPropColors);
+  const leftColor = $derived(
+    colors?.left ?? getMotionColor(HandSide.LEFT, "dark")
+  );
+  const rightColor = $derived(
+    colors?.right ?? getMotionColor(HandSide.RIGHT, "dark")
+  );
   const drawLeft = $derived(showLeft && leftPathD !== null);
   const drawRight = $derived(showRight && rightPathD !== null);
 </script>

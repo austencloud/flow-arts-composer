@@ -77,6 +77,9 @@
   });
 
   const path = $derived(page.url.pathname);
+  const isTimingLesson = $derived(
+    path === "/learn/concepts/timing-and-direction"
+  );
   // The TnD explorer and articles share one live player through their layout.
   const contentKey = $derived(
     path === "/timing-and-direction" ||
@@ -144,11 +147,13 @@
     <!-- The homepage and archive already carry complete navigation in their
          primary surfaces. The host owns the route decision so SiteFooter also
          remains safe for its independent GuideShell host. -->
-    <SiteFooter
-      variant={footerVariant}
-      surface={footerSurface}
-      immersive={footerImmersive}
-    />
+    {#if !isTimingLesson}
+      <SiteFooter
+        variant={footerVariant}
+        surface={footerSurface}
+        immersive={footerImmersive}
+      />
+    {/if}
   </div>
   <ToastContainer />
 </div>

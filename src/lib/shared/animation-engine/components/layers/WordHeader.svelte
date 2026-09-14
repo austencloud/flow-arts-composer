@@ -103,6 +103,30 @@ Supports letter highlighting during animation playback.
   const EXIT_STAGGER_PER_LETTER = 40;
   const ENTER_DELAY = 100; // Gap between exit and enter
 
+  function startWordTransition() {
+    clearAnimationTimers();
+    animationPhase = "exiting";
+
+    const oldLetterCount = displayedWord
+      ? simplifyAndTruncate(displayedWord, 12).length
+      : 1;
+    const exitDuration =
+      EXIT_DURATION_BASE + oldLetterCount * EXIT_STAGGER_PER_LETTER;
+
+    exitTimer = setTimeout(() => {
+      // `word` is intentionally read when the exit finishes. Several sequence
+      // changes can arrive during the animation, and only the newest title
+      // should enter.
+      displayedWord = word;
+      animationPhase = "entering";
+
+      enterTimer = setTimeout(() => {
+        animationPhase = "idle";
+        if (visible && displayedWord !== word) startWordTransition();
+      }, 400);
+    }, exitDuration + ENTER_DELAY);
+  }
+
   // Handle visibility and word changes with proper exit → enter sequencing.
   // Only tracks `word` and `visible` props. Internal state (animationPhase,
   // displayedWord, wasVisible, lastWord) is read via untrack() to prevent
@@ -128,23 +152,7 @@ Supports letter highlighting during animation playback.
 
     if (wordChanged && currentlyVisible && currentPhase === "idle") {
       // Word changed while visible: exit old, then enter new
-      clearAnimationTimers();
-      animationPhase = "exiting";
-
-      const oldLetterCount = currentDisplayedWord
-        ? simplifyAndTruncate(currentDisplayedWord, 12).length
-        : 1;
-      const exitDuration =
-        EXIT_DURATION_BASE + oldLetterCount * EXIT_STAGGER_PER_LETTER;
-
-      exitTimer = setTimeout(() => {
-        displayedWord = currentWord;
-        animationPhase = "entering";
-
-        enterTimer = setTimeout(() => {
-          animationPhase = "idle";
-        }, 400); // Enter animation duration
-      }, exitDuration + ENTER_DELAY);
+      startWordTransition();
     } else if ((becameVisible || initialMount) && currentPhase === "idle") {
       // First appearance: just enter
       clearAnimationTimers();
@@ -153,6 +161,7 @@ Supports letter highlighting during animation playback.
 
       idleTimer = setTimeout(() => {
         animationPhase = "idle";
+        if (visible && displayedWord !== word) startWordTransition();
       }, 400);
     } else if (!currentlyVisible && prevVisible) {
       // Hiding: reset state

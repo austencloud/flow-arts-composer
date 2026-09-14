@@ -38,12 +38,12 @@
   owns the hands-to-props explanation, so the animation area does not repeat it.
 -->
 <script lang="ts">
-  import { onDestroy, tick, untrack } from "svelte";
+  import { onDestroy, untrack } from "svelte";
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import LazyMount from "$lib/shared/components/LazyMount.svelte";
   import MandalaHeroLayer from "./MandalaHeroLayer.svelte";
   import WordHeader from "$lib/shared/animation-engine/components/layers/WordHeader.svelte";
-  import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
+  import { levelForTurns } from "$lib/shared/create/services/level-turn-values";
   import { tryGetLoopDisplayResolver } from "$lib/shared/loop-labeler/get-loop-display-resolver";
   import { MANDALA_GUIDE_FLOOR_OPACITY } from "$lib/shared/mandala/domain/mandala-overlay-types";
   import ElementChipRow from "./ElementChipRow.svelte";
@@ -80,13 +80,20 @@
   import type { ControlDockAction } from "$lib/shared/sequence-viewer/components/ControlDock.svelte";
   import { getShapeMatrixAnimationContext } from "../app/context/shape-matrix-animation-context";
   import { getOptionalShapeMatrixAppContext } from "../app/context/shape-matrix-app-context";
-  import ShapeMatrixCustomizeDock from "./ShapeMatrixCustomizeDock.svelte";
+  import ShapeMatrixStageActions from "./ShapeMatrixStageActions.svelte";
+  import { registerShapeMatrixPlaybackShortcut } from "../app/services/shape-matrix-playback-shortcut";
   import { foldTrailIntentIntoSettings } from "$lib/shared/effects/translators/canvas2d-translator";
-  import { getEscapeLayerManager } from "$lib/shared/keyboard/get-escape-layer-manager";
 
   interface Props {
     /** Nullable: the drill renders its own "Pick a cell" state before any click. */
     pair: { left: Flower; right: Flower } | null;
+    /**
+     * One hand on stage, chosen from its own axis header. The other prop is
+     * not drawn (the shell hides it through the viewer's motion visibility),
+     * and the two relationship rows go with it: a mode is an agreement
+     * between two hands, and there is only one here.
+     */
+    solo?: "left" | "right" | null;
     data: ShapeMatrixData;
     /** Optional composing surface action. The public archive remains a viewer;
      *  pickers can receive the exact realization this drill already built. */
@@ -117,6 +124,7 @@
   }
   let {
     pair,
+    solo = null,
     data,
     onselectRealization,
     selectLabel = "Use this realization",
@@ -133,47 +141,6 @@
 
   const animationState = getShapeMatrixAnimationContext();
   const appState = getOptionalShapeMatrixAppContext();
-  let compactSettingsElement = $state<HTMLElement | null>(null);
-  const compactSettingsOpen = $derived(
-    !!appState &&
-      appState.compact &&
-      appState.surface === "matrix" &&
-      appState.activeView === "detail" &&
-      animationState.activeSection !== null
-  );
-
-  function closeCompactSettings(): void {
-    animationState.showRelationships();
-  }
-
-  function onCompactSettingsKeydown(event: KeyboardEvent): void {
-    if (event.key !== "Escape") return;
-    event.preventDefault();
-    event.stopPropagation();
-    closeCompactSettings();
-  }
-
-  $effect(() => {
-    if (!compactSettingsOpen) return;
-    const restoreTo = document.activeElement;
-    const unregister = getEscapeLayerManager().register({
-      id: "shape-matrix:compact-settings",
-      canDismiss: () => true,
-      dismiss: closeCompactSettings,
-    });
-    void tick().then(() =>
-      compactSettingsElement
-        ?.querySelector<HTMLButtonElement>("header button")
-        ?.focus({ preventScroll: true })
-    );
-    return () => {
-      unregister();
-      if (restoreTo instanceof HTMLElement && restoreTo.isConnected) {
-        restoreTo.focus({ preventScroll: true });
-      }
-    };
-  });
-
   let animationPlayerModule: ReturnType<typeof importAnimationPlayer> | null =
     null;
 
@@ -209,6 +176,19 @@
     void intent.rightColor;
     return foldTrailIntentIntoSettings(SHAPE_MATRIX_TRAIL_PRESET, intent);
   });
+
+  /* Space is the same toggle the canvas offers a mouse, reached without one.
+     It goes through the app's shortcut registry rather than a listener of our
+     own, so it stands aside for text fields and open dialogs. The theory
+     detail is mounted beside this one and binds the same key, so the surface
+     check is what decides which of the two a press reaches. */
+  $effect(() =>
+    registerShapeMatrixPlaybackShortcut(
+      "matrix",
+      () => animationState.togglePlaying(),
+      () => (!appState || appState.surface === "matrix") && Boolean(pair)
+    )
+  );
 
   const playbackAction = $derived<ControlDockAction>({
     icon: animationState.playing ? "fa-pause" : "fa-play",
@@ -320,8 +300,16 @@
   const heroPaths = $derived.by<MandalaPaths | null>(() => {
     if (!pair) return null;
     return {
-      left: data.left.get(flowerKey(pair.left))?.left ?? [],
-      right: data.right.get(flowerKey(pair.right))?.right ?? [],
+      // A solo draws the header's own mandala: the other hand's paths are
+      // left out, so the hero is the artwork that was pressed.
+      left:
+        solo === "right"
+          ? []
+          : (data.left.get(flowerKey(pair.left))?.left ?? []),
+      right:
+        solo === "left"
+          ? []
+          : (data.right.get(flowerKey(pair.right))?.right ?? []),
       purple: [],
     };
   });
@@ -587,9 +575,15 @@
     return () => visibility.unregisterObserver(sync);
   });
   const headerSequence = $derived(captionRealization?.seq ?? null);
+  $effect(() => {
+    if (appState) animationState.setPreviewSequence(headerSequence);
+  });
+  /* The badge names the level the pair sits on in this engine, one to four.
+     The browse calculator knows three levels and read every quarter-turn pair
+     as level 3. */
   const headerDifficulty = $derived(
-    headerSequence?.steps?.length
-      ? calculateDifficultyLevel([...headerSequence.steps])
+    headerSequence?.steps?.length && pair
+      ? levelForTurns(pair.left.turns, pair.right.turns)
       : null
   );
   const headerLoopDisplay = $derived.by(() => {
@@ -1150,7 +1144,11 @@
             onExternalPlayingChange: animationState.setPlaying,
             backgroundAlpha: 0,
             interactive: true,
-            hoverHint: "none",
+            /* The stage is the play button. It toggles on a click, and the
+               badge is how a mouse learns that -- it is hover-gated to fine
+               pointers, so a touch host is unaffected. This replaced a
+               dedicated button in a row below the canvas. */
+            hoverHint: "badge",
             // This is a full TKA animation surface. Its canonical canvas menu
             // supplies Disassemble/Reassemble and the shared display controls.
             disableContextMenu: false,
@@ -1188,50 +1186,53 @@
     ? `--hand-el: ${captionRealization.element.accentColor}; --hand-dark: ${captionRealization.element.darkComplement}; --prop-el: ${captionRealization.propRelationship.element?.accentColor ?? captionRealization.element.accentColor}`
     : undefined}
 >
-  <div
-    class="mode-picker"
-    data-drill-region="modes"
-    use:claimedViewTransitionName={{
-      name: SHAPE_MATRIX_MODES_NAME,
-      enabled: morphingFrames,
-    }}
-    transition:growFade={{ axis: "y" }}
-  >
-    <ElementChipRow
-      selected={selectedMode}
-      available={availableHandModes}
-      availabilityReady={!building}
-      disabled={!pair}
-      onpick={selectHandMode}
-    />
-    <PropRelationshipChipRow
-      {realizations}
-      {selectedMode}
-      {selectedPropMode}
-      activePropMode={activeReal?.propMode ?? null}
-      disabled={!pair}
-      {building}
-      ontarget={selectPropMode}
-    />
-  </div>
+  {#if !solo}
+    <div
+      class="mode-picker"
+      data-focus-mode-chrome
+      data-drill-region="modes"
+      use:claimedViewTransitionName={{
+        name: SHAPE_MATRIX_MODES_NAME,
+        enabled: morphingFrames,
+      }}
+      transition:growFade={{ axis: "y" }}
+    >
+      <ElementChipRow
+        selected={selectedMode}
+        available={availableHandModes}
+        availabilityReady={!building}
+        disabled={!pair}
+        onpick={selectHandMode}
+      />
+      <PropRelationshipChipRow
+        {realizations}
+        {selectedMode}
+        {selectedPropMode}
+        activePropMode={activeReal?.propMode ?? null}
+        disabled={!pair}
+        {building}
+        ontarget={selectPropMode}
+      />
+    </div>
+  {/if}
 
-  <div
-    class="media-stage"
-    inert={compactSettingsOpen}
-    aria-hidden={compactSettingsOpen}
-  >
+  <div class="media-stage">
     <!-- The stage rectangle is the selected matrix tile's box, arrived. It
          carries the shared stage name so the whole stage flies between the
          tile and the detail view; the mandala inside carries its own. -->
     <div
       class="hero-stage"
+      data-focus-layout="matrix-canvas"
       data-drill-region="hero"
       use:claimedViewTransitionName={{
         name: SHAPE_MATRIX_ACTIVE_STAGE_NAME,
         enabled: mandalaTransition.claim,
       }}
     >
-      <div class="hero-header">
+      {#if appState && !appState.compact}
+        <ShapeMatrixStageActions />
+      {/if}
+      <div class="hero-header" data-focus-mode-chrome>
         <div class="hero-header-ghost" aria-hidden="true">
           <WordHeader word="A" visible={true} darkMode={headerDarkMode} />
         </div>
@@ -1300,6 +1301,7 @@
            name and rises in once the stage has landed. -->
     <div
       class="strip-zone"
+      data-focus-mode-chrome
       data-drill-region="strip"
       role="group"
       aria-label="Pictograph timeline"
@@ -1342,67 +1344,27 @@
     </div>
   </div>
 
-  {#if compactSettingsOpen}
-    <div
-      class="compact-settings"
-      role="dialog"
-      aria-label="Animation settings"
-      tabindex="-1"
-      bind:this={compactSettingsElement}
-      onkeydown={onCompactSettingsKeydown}
-    >
-      <header class="compact-settings-header">
-        <strong>Animation settings</strong>
-        <button
-          type="button"
-          onclick={closeCompactSettings}
-          aria-label="Close settings"
-        >
-          <i class="fas fa-xmark" aria-hidden="true"></i>
-        </button>
-      </header>
-      <div class="compact-settings-body">
-        <AnimationPanel
-          isExporting={false}
-          layout="bottom"
-          presentation="content"
-          controlledSection={animationState.activeSection}
-          isPlaying={animationState.playing}
-          bpm={animationState.bpm}
-          playbackMode={animationState.playbackMode}
-          onPlaybackToggle={animationState.togglePlaying}
-          onPlaybackModeChange={animationState.setPlaybackMode}
-          onBpmChange={animationState.setBpm}
-          showEffectsPlayback={false}
-          selectedPropType={propType}
-          onPropChange={onproptypechange}
-          sequence={captionRealization?.seq ?? null}
-          showPathShape={false}
-          showMotionVisibility={true}
-          regionLabel="Shape animation settings"
-        />
-      </div>
-    </div>
-  {/if}
-
   <!-- The control bar is below the stage, not inside it. It settles in as the
        last frame of the wave rather than arriving complete under the flight.
        A wide host keeps every ability in the customize workspace over the
        grid, so its bar is one Customize button and the transport. Compact
        hosts keep the pill dock: each pill opens its sheet there, and Props
        routes to the canonical prop sheet. -->
-  <div
-    class="animation-controls"
-    data-drill-region="controls"
-    data-shape-matrix-dock
-    use:claimedViewTransitionName={{
-      name: SHAPE_MATRIX_CONTROLS_NAME,
-      enabled: morphingFrames,
-    }}
-  >
-    {#if appState && !appState.compact}
-      <ShapeMatrixCustomizeDock />
-    {:else}
+  <!-- Compact hosts only. A wide host has no control band at all now: the
+       canvas is the play button and the gear sits in its corner, which gave
+       back a row that was carrying one button at each end of a wide gap. -->
+  {#if !appState || appState.compact}
+    <div
+      class="animation-controls"
+      data-focus-mode-chrome
+      data-focus-layout={appState?.surface === "matrix" ? "picker" : undefined}
+      data-drill-region="controls"
+      data-shape-matrix-dock
+      use:claimedViewTransitionName={{
+        name: SHAPE_MATRIX_CONTROLS_NAME,
+        enabled: morphingFrames,
+      }}
+    >
       <AnimationPanel
         isExporting={false}
         layout="bottom"
@@ -1427,8 +1389,8 @@
         closeRequest={animationState.closeRequest}
         regionLabel="Shape animation controls"
       />
-    {/if}
-  </div>
+    </div>
+  {/if}
 
   {#if onselectRealization}
     <div class="select-action" class:available={visibleRealization !== null}>
@@ -1706,46 +1668,6 @@
     min-width: 0;
     min-height: 0;
   }
-  .compact-settings {
-    position: absolute;
-    z-index: 8;
-    inset-inline: 0;
-    bottom: 3.65rem;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    height: min(52%, 20rem);
-    overflow: hidden;
-    border: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
-    border-radius: 14px 14px 0 0;
-    background:
-      linear-gradient(
-        var(--theme-panel-bg, rgb(16 23 33 / 0.96)),
-        var(--theme-panel-bg, rgb(16 23 33 / 0.96))
-      ),
-      var(--theme-bg-deep, #0a0f14);
-    box-shadow: 0 -0.75rem 2rem var(--theme-shadow, rgb(0 0 0 / 0.4));
-  }
-  .compact-settings-header {
-    display: flex;
-    min-height: var(--min-touch-target, 44px);
-    align-items: center;
-    justify-content: space-between;
-    padding-inline: 0.85rem 0.35rem;
-    border-bottom: 1px solid var(--theme-stroke, rgb(255 255 255 / 0.1));
-    font-size: var(--font-size-min, 0.875rem);
-  }
-  .compact-settings-header button {
-    width: var(--min-touch-target, 44px);
-    height: var(--min-touch-target, 44px);
-    border: 0;
-    background: transparent;
-    color: var(--theme-text, #fff);
-    cursor: pointer;
-  }
-  .compact-settings-body {
-    min-height: 0;
-    overflow: hidden;
-  }
   .select-action {
     grid-area: action;
     min-height: var(--min-touch-target, 44px);
@@ -1802,10 +1724,6 @@
 
     .select-action {
       grid-area: action;
-    }
-
-    .compact-settings {
-      inset-inline-start: calc(18rem + 0.8rem);
     }
   }
 </style>

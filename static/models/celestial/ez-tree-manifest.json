@@ -34,19 +34,19 @@
       ],
       "height": 8.199999809265137,
       "variant": "courtyard",
-      "soilZ": 0.73,
+      "soilZ": 0.7299999976158142,
       "rootBurial": 0.04
     },
     {
       "anchor": "Citadel olive.001 anchor",
       "position": [
-        23.0,
-        22.0,
-        -1.3206396102905273
+        39.0,
+        10.0,
+        -1.4924535751342773
       ],
       "height": 7.5,
       "variant": "windswept",
-      "soilZ": -1.2806396484375,
+      "soilZ": -1.4524535751342773,
       "rootBurial": 0.04
     },
     {
@@ -58,7 +58,7 @@
       ],
       "height": 9.0,
       "variant": "garden",
-      "soilZ": -1.1364593505859375,
+      "soilZ": -1.1364593124389648,
       "rootBurial": 0.04
     },
     {
@@ -70,7 +70,7 @@
       ],
       "height": 8.0,
       "variant": "courtyard",
-      "soilZ": -1.512298583984375,
+      "soilZ": -1.5122985458374023,
       "rootBurial": 0.04
     },
     {
@@ -82,7 +82,7 @@
       ],
       "height": 7.0,
       "variant": "windswept",
-      "soilZ": -1.1020965576171875,
+      "soilZ": -1.1020965194702148,
       "rootBurial": 0.04
     },
     {
@@ -94,7 +94,7 @@
       ],
       "height": 6.0,
       "variant": "garden",
-      "soilZ": -0.93914794921875,
+      "soilZ": -0.9391479706764221,
       "rootBurial": 0.04
     },
     {
@@ -106,7 +106,7 @@
       ],
       "height": 6.0,
       "variant": "courtyard",
-      "soilZ": -2.0994720458984375,
+      "soilZ": -2.099472007751465,
       "rootBurial": 0.04
     },
     {
@@ -118,7 +118,7 @@
       ],
       "height": 7.0,
       "variant": "windswept",
-      "soilZ": -1.9920196533203125,
+      "soilZ": -1.9920196151733398,
       "rootBurial": 0.04
     },
     {
@@ -130,7 +130,7 @@
       ],
       "height": 8.0,
       "variant": "garden",
-      "soilZ": -2.3269500732421875,
+      "soilZ": -2.326950035095215,
       "rootBurial": 0.04
     },
     {
@@ -142,7 +142,7 @@
       ],
       "height": 6.0,
       "variant": "courtyard",
-      "soilZ": -1.9100799560546875,
+      "soilZ": -1.9100799179077148,
       "rootBurial": 0.04
     },
     {
@@ -154,7 +154,7 @@
       ],
       "height": 6.0,
       "variant": "windswept",
-      "soilZ": -2.0846405029296875,
+      "soilZ": -2.084640464782715,
       "rootBurial": 0.04
     },
     {
@@ -166,7 +166,7 @@
       ],
       "height": 7.0,
       "variant": "garden",
-      "soilZ": -1.9995574951171875,
+      "soilZ": -1.9995574569702148,
       "rootBurial": 0.04
     },
     {
@@ -178,7 +178,7 @@
       ],
       "height": 8.0,
       "variant": "courtyard",
-      "soilZ": -2.326873779296875,
+      "soilZ": -2.3268737411499023,
       "rootBurial": 0.04
     },
     {
@@ -190,7 +190,7 @@
       ],
       "height": 6.0,
       "variant": "windswept",
-      "soilZ": -1.8907318115234375,
+      "soilZ": -1.8907317733764648,
       "rootBurial": 0.04
     },
     {
@@ -202,7 +202,7 @@
       ],
       "height": 6.0,
       "variant": "garden",
-      "soilZ": 5.8968658447265625,
+      "soilZ": 5.896865882873535,
       "rootBurial": 0.04
     },
     {
@@ -214,7 +214,7 @@
       ],
       "height": 7.0,
       "variant": "courtyard",
-      "soilZ": 6.022857666015625,
+      "soilZ": 6.022857704162598,
       "rootBurial": 0.04
     },
     {
@@ -226,7 +226,7 @@
       ],
       "height": 6.0,
       "variant": "windswept",
-      "soilZ": -8.103561401367188,
+      "soilZ": -8.103561363220216,
       "rootBurial": 0.04
     },
     {
@@ -238,7 +238,7 @@
       ],
       "height": 7.0,
       "variant": "garden",
-      "soilZ": -7.973236083984375,
+      "soilZ": -7.973236045837402,
       "rootBurial": 0.04
     },
     {
@@ -250,7 +250,7 @@
       ],
       "height": 6.0,
       "variant": "courtyard",
-      "soilZ": -3.1038970947265625,
+      "soilZ": -3.10389705657959,
       "rootBurial": 0.04
     },
     {
@@ -262,7 +262,7 @@
       ],
       "height": 7.0,
       "variant": "windswept",
-      "soilZ": -2.9681854248046875,
+      "soilZ": -2.968185386657715,
       "rootBurial": 0.04
     },
     {
@@ -274,7 +274,7 @@
       ],
       "height": 6.0,
       "variant": "garden",
-      "soilZ": -9.091201782226562,
+      "soilZ": -9.09120174407959,
       "rootBurial": 0.04
     },
     {
@@ -286,7 +286,7 @@
       ],
       "height": 7.0,
       "variant": "courtyard",
-      "soilZ": -9.000991821289062,
+      "soilZ": -9.00099178314209,
       "rootBurial": 0.04
     },
     {
@@ -298,7 +298,7 @@
       ],
       "height": 8.0,
       "variant": "windswept",
-      "soilZ": -9.327194213867188,
+      "soilZ": -9.327194175720216,
       "rootBurial": 0.04
     },
     {
@@ -310,7 +310,7 @@
       ],
       "height": 6.0,
       "variant": "garden",
-      "soilZ": -8.894515991210938,
+      "soilZ": -8.894515953063966,
       "rootBurial": 0.04
     }
   ]

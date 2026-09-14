@@ -1,4 +1,8 @@
 import volcanicWorldR7 from "../../domain/models/scene-configs/ember-volcanic-world-r7.json";
+import {
+  LAVA_RIVER_BANK_MARGIN_FRACTION,
+  LAVA_RIVER_TERMINUS,
+} from "./lava-river-geometry";
 
 export interface EmberSurfacePlacement {
   position: [number, number, number];
@@ -32,6 +36,18 @@ const HEIGHT_FIELD_ROWS = 64;
 const LAVA_CORRIDOR = volcanicWorldR7.lavaRiver.pointsRuntimeXZHeight.map(
   ([x, z]) => [x, z] as [number, number]
 );
+
+// Cumulative arc length at each corridor vertex, so a point's position along
+// the run can be recovered from whichever segment it is nearest.
+const LAVA_CORRIDOR_ARC = LAVA_CORRIDOR.reduce<number[]>((arc, point, index) => {
+  if (index === 0) return [0];
+  const [px, pz] = LAVA_CORRIDOR[index - 1]!;
+  arc.push(arc[index - 1]! + Math.hypot(point[0] - px, point[1] - pz));
+  return arc;
+}, []);
+const LAVA_CORRIDOR_LENGTH =
+  LAVA_CORRIDOR_ARC[LAVA_CORRIDOR_ARC.length - 1]! || 1;
+const LAVA_BASE_HALF_WIDTH = volcanicWorldR7.lavaRiver.width * 0.5;
 
 // The bald bearings. Every one of these sits beyond the near talus apron on
 // the east, west and south slopes that the orbit cameras fill with bare
@@ -220,12 +236,12 @@ function createRandom(seed: number): () => number {
   };
 }
 
-function distanceToSegment(
+function projectOntoSegment(
   x: number,
   z: number,
   [ax, az]: [number, number],
   [bx, bz]: [number, number]
-): number {
+): { distance: number; t: number } {
   const dx = bx - ax;
   const dz = bz - az;
   const denominator = dx * dx + dz * dz;
@@ -233,18 +249,66 @@ function distanceToSegment(
     denominator === 0
       ? 0
       : Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / denominator));
-  return Math.hypot(x - (ax + dx * t), z - (az + dz * t));
+  return { distance: Math.hypot(x - (ax + dx * t), z - (az + dz * t)), t };
+}
+
+function nearestCorridorPoint(
+  x: number,
+  z: number
+): { distance: number; run: number } {
+  let distance = Number.POSITIVE_INFINITY;
+  let run = 0;
+  for (let index = 0; index < LAVA_CORRIDOR.length - 1; index += 1) {
+    const projected = projectOntoSegment(
+      x,
+      z,
+      LAVA_CORRIDOR[index]!,
+      LAVA_CORRIDOR[index + 1]!
+    );
+    if (projected.distance >= distance) continue;
+    distance = projected.distance;
+    const segmentLength =
+      LAVA_CORRIDOR_ARC[index + 1]! - LAVA_CORRIDOR_ARC[index]!;
+    run =
+      (LAVA_CORRIDOR_ARC[index]! + projected.t * segmentLength) /
+      LAVA_CORRIDOR_LENGTH;
+  }
+  return { distance, run };
+}
+
+const smootherstep = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+
+/**
+ * Half-width of the river polygon (channel plus bank margin) at normalised arc
+ * position `run`, following the same toe spread the strip builder applies. The
+ * delta more than doubles the channel over its last stretch, which is why a
+ * fixed centreline clearance seated boulders and plates inside the lobe. The
+ * source taper and the rounded tip are ignored on purpose: clearance errs wide
+ * at both ends of the run.
+ */
+export function emberLavaCorridorHalfWidth(run: number): number {
+  const { fraction, spread } = LAVA_RIVER_TERMINUS;
+  const toe =
+    fraction > 0
+      ? Math.max(0, Math.min(1, (run - (1 - fraction)) / fraction))
+      : 0;
+  const widening = 1 + (spread - 1) * smootherstep(toe);
+  return (
+    LAVA_BASE_HALF_WIDTH *
+    (0.9 + Math.sin(run * Math.PI) * 0.1 + 0.025) *
+    widening *
+    (1 + LAVA_RIVER_BANK_MARGIN_FRACTION)
+  );
 }
 
 export function distanceToEmberLavaCorridor(x: number, z: number): number {
-  let distance = Number.POSITIVE_INFINITY;
-  for (let index = 0; index < LAVA_CORRIDOR.length - 1; index += 1) {
-    distance = Math.min(
-      distance,
-      distanceToSegment(x, z, LAVA_CORRIDOR[index]!, LAVA_CORRIDOR[index + 1]!)
-    );
-  }
-  return distance;
+  return nearestCorridorPoint(x, z).distance;
+}
+
+/** Metres from the river polygon's edge; negative inside the run. */
+export function distanceToEmberLavaCorridorEdge(x: number, z: number): number {
+  const { distance, run } = nearestCorridorPoint(x, z);
+  return distance - emberLavaCorridorHalfWidth(run);
 }
 
 export interface EmberHorizonApronGeometryData {
@@ -255,6 +319,17 @@ export interface EmberHorizonApronGeometryData {
 }
 
 const APRON_SEGMENTS_PER_SIDE = 56;
+
+/**
+ * The apron's rim ring starts this far inside the terrain bounds and this far
+ * below the sampled surface. The height field is a 64x64 cell average, so a
+ * ring placed exactly on the rim at exactly the sampled height sat above or
+ * beside the real edge by a fraction of a metre, and from any camera on the
+ * far side of the basin that gap showed a hairline of bright sky along the
+ * whole rim. Tucked under the terrain the seam has nothing to leak.
+ */
+export const EMBER_APRON_RIM_INSET = 4;
+export const EMBER_APRON_RIM_TUCK = 1.4;
 
 function apronPerimeterPoint(
   field: EmberTerrainHeightField,
@@ -303,7 +378,6 @@ export function createEmberHorizonApron(
   for (let step = 0; step <= loop; step += 1) {
     const t = (step % loop) / loop;
     const [x, z] = apronPerimeterPoint(field, t);
-    const rimHeight = sampleEmberTerrainHeight(field, x, z);
     const angle = Math.PI * 2 * t;
     const reachAt =
       reach *
@@ -312,16 +386,25 @@ export function createEmberHorizonApron(
     const outwardX = x - centerX;
     const outwardZ = z - centerZ;
     const outwardLength = Math.hypot(outwardX, outwardZ) || 1;
+    const unitX = outwardX / outwardLength;
+    const unitZ = outwardZ / outwardLength;
+    const innerX = x - unitX * EMBER_APRON_RIM_INSET;
+    const innerZ = z - unitZ * EMBER_APRON_RIM_INSET;
+    const rimHeight =
+      Math.min(
+        sampleEmberTerrainHeight(field, x, z),
+        sampleEmberTerrainHeight(field, innerX, innerZ)
+      ) - EMBER_APRON_RIM_TUCK;
     const u = (x - field.minX) / (field.maxX - field.minX);
     const v = (z - field.minZ) / (field.maxZ - field.minZ);
 
     const inner = step * 6;
-    positions[inner] = x;
+    positions[inner] = innerX;
     positions[inner + 1] = rimHeight;
-    positions[inner + 2] = z;
-    positions[inner + 3] = x + (outwardX / outwardLength) * reachAt;
+    positions[inner + 2] = innerZ;
+    positions[inner + 3] = x + unitX * reachAt;
     positions[inner + 4] = rimHeight - dropAt;
-    positions[inner + 5] = z + (outwardZ / outwardLength) * reachAt;
+    positions[inner + 5] = z + unitZ * reachAt;
 
     const uvOffset = step * 4;
     uvs[uvOffset] = u;
@@ -390,7 +473,7 @@ export function createEmberSurfaceEcology(
   for (let attempt = 0; attempt < 1_000 && rubble.length < 150; attempt += 1) {
     const [x, z] = clusteredPosition(random, TALUS_CLUSTERS);
     if (Math.hypot(x, z) < stageClearance) continue;
-    if (distanceToEmberLavaCorridor(x, z) < 4.3) continue;
+    if (distanceToEmberLavaCorridorEdge(x, z) < 1.4) continue;
     const size = 0.055 + Math.pow(random(), 2.2) * 0.34;
     const familyRoll = random();
     rubble.push({
@@ -408,7 +491,7 @@ export function createEmberSurfaceEcology(
   for (let attempt = 0; attempt < 500 && plates.length < 32; attempt += 1) {
     const [x, z] = clusteredPosition(random, TALUS_CLUSTERS);
     if (Math.hypot(x, z) < stageClearance + 0.8) continue;
-    if (distanceToEmberLavaCorridor(x, z) < 5.1) continue;
+    if (distanceToEmberLavaCorridorEdge(x, z) < 2.2) continue;
     const span = 0.34 + random() * 0.72;
     plates.push({
       position: [x, 0.045 + random() * 0.025, z],
@@ -437,7 +520,10 @@ export function createEmberSurfaceEcology(
       if (Math.hypot(x, z) < 34) continue;
       if (x < heightField.minX + 12 || x > heightField.maxX - 12) continue;
       if (z < heightField.minZ + 12 || z > heightField.maxZ - 12) continue;
-      if (distanceToEmberLavaCorridor(x, z) < 8) continue;
+      // Measured from the polygon edge, not the centreline: the delta more
+      // than doubles the run over its last stretch, and a centreline clearance
+      // seated boulders inside the lobe.
+      if (distanceToEmberLavaCorridorEdge(x, z) < 5) continue;
       // A boulder pinned to a cliff face reads as a floating card, so only
       // seat them where the terrain is walkable-ish.
       if (sampleEmberTerrainSlope(heightField, x, z) > 0.55) continue;

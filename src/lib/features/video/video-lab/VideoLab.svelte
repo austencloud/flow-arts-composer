@@ -32,7 +32,6 @@
   // Beat map produced by the mapping view
   let beatMap = $state<StepMap | null>(null);
 
-
   function handleStartMapping(
     url: string,
     duration: number,
@@ -69,6 +68,19 @@
     activeView = "preview";
   }
 
+  /**
+   * A saved TKA video is its own identity. A local file has no id, so the
+   * sequence plus the file's size and length stand in: pick the same clip
+   * again after a reload and the half-finished run is waiting.
+   */
+  const draftKey = $derived(
+    collaborativeVideoId
+      ? `video:${collaborativeVideoId}`
+      : selectedSequence
+        ? `lab:${selectedSequence.id}:${videoFileSize}:${videoDuration}`
+        : undefined
+  );
+
   function handleBackToUpload() {
     activeView = "upload";
   }
@@ -95,6 +107,7 @@
         stepCount={selectedSequence.steps.length}
         sequence={selectedSequence}
         existingStepMap={beatMap}
+        {draftKey}
         onSave={handleStepMapSaved}
         onBack={handleBackToUpload}
       />

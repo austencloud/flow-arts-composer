@@ -36,7 +36,8 @@ describe("history attribution", () => {
   it("distinguishes Lorq's publication and VTG book material from site-made demonstrations", () => {
     expect(archiveArtifact(entry("lorq"))?.kind).toBe("original");
     expect(archiveArtifact(entry("vtg"))?.kind).toBe("original");
-    for (const id of ["tka", "qft", "caps", "trochoid", "nine-square"]) {
+    expect(archiveArtifact(entry("nine-square"))?.kind).toBe("original");
+    for (const id of ["tka", "qft", "caps", "trochoid"]) {
       expect(archiveArtifact(entry(id))?.kind).toBe("demonstration");
     }
   });

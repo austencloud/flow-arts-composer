@@ -94,7 +94,7 @@
 <svelte:window onpagehide={recordIgnoredOffer} />
 
 <div class="guide-entry">
-  <Crossfade key={showOffer} duration={DURATION.emphasis}>
+  <Crossfade key={showOffer} animateHeight duration={DURATION.emphasis}>
     {#if showOffer}
       <div class="guide-offer">
         <div class="offer-copy">

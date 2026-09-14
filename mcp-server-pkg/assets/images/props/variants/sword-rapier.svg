@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sword: Rapier. Needle blade + swept knuckle-bow basket hilt. Hardware st0 -> recolors; gold wick st1 preserved. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 572.3 64">
+<style type="text/css">
+	.st0{fill:#989498;}
+	.st1{fill:#ffd540;}
+</style>
+<defs>
+	<linearGradient id="sheen" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+		<stop offset="0.05" stop-color="#ffffff" stop-opacity="0"/>
+		<stop offset="0.30" stop-color="#ffffff" stop-opacity="0.85"/>
+		<stop offset="0.46" stop-color="#ffffff" stop-opacity="0.05"/>
+		<stop offset="0.62" stop-color="#000000" stop-opacity="0"/>
+		<stop offset="1" stop-color="#000000" stop-opacity="0.5"/>
+	</linearGradient>
+	<linearGradient id="bladeSheen" x1="0" y1="0" x2="0" y2="64" gradientUnits="userSpaceOnUse">
+		<stop offset="0.3" stop-color="#ffffff" stop-opacity="0"/>
+		<stop offset="0.44" stop-color="#fffbe0" stop-opacity="0.95"/>
+		<stop offset="0.56" stop-color="#6b4e00" stop-opacity="0"/>
+		<stop offset="0.78" stop-color="#6b4e00" stop-opacity="0.5"/>
+	</linearGradient>
+</defs>
+
+<!-- Blade (gold wick): fine needle -->
+<path class="st1" stroke="#3a2c00" stroke-width="0.8" stroke-linejoin="round"
+	d="M292 29.5 L558 31 L566 32 L558 33 L292 34.5 Z"/>
+<path fill="url(#bladeSheen)" d="M292 29.5 L558 31 L566 32 L558 33 L292 34.5 Z"/>
+
+<!-- Swept knuckle bow (sweeps from guard top around to pommel) -->
+<path class="st0" stroke="#141418" stroke-width="1" stroke-linejoin="round"
+	d="M286 20 C328 4 250 0 176 7 C152 9 142 18 141 28 L146 28 C148 19 156 13 178 11 C246 5 320 9 284 26 Z"/>
+<path fill="url(#sheen)"
+	d="M286 20 C328 4 250 0 176 7 C152 9 142 18 141 28 L146 28 C148 19 156 13 178 11 C246 5 320 9 284 26 Z"/>
+
+<!-- Cross quillon -->
+<rect class="st0" stroke="#141418" stroke-width="1.2" x="282" y="20" width="9" height="24" rx="2.5"/>
+<rect fill="url(#sheen)" x="282" y="20" width="9" height="24" rx="2.5"/>
+
+<!-- Grip -->
+<rect class="st0" stroke="#141418" stroke-width="1.1" x="152" y="27.5" width="130" height="9" rx="4.5"/>
+<rect fill="url(#sheen)" x="152" y="27.5" width="130" height="9" rx="4.5"/>
+
+<!-- Pommel -->
+<circle class="st0" stroke="#141418" stroke-width="1.2" cx="143" cy="32" r="10"/>
+<circle fill="url(#sheen)" cx="143" cy="32" r="10"/>
+</svg>

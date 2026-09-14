@@ -5,6 +5,20 @@
  */
 import type { MandalaPalette, MandalaPresetId } from "./mandala-types";
 
+/** Apply hand identity colors while retaining the theme's default palette. */
+export function applyMandalaHandColors(
+	base: MandalaPalette,
+	colors?: { left: string; right: string } | null,
+): MandalaPalette {
+	if (!colors) return base;
+	const overlap = mixColors(colors.left, colors.right);
+	return {
+		leftStroke: colors.left, leftFill: withAlpha(colors.left, 0.2),
+		rightStroke: colors.right, rightFill: withAlpha(colors.right, 0.2),
+		purpleStroke: overlap, purpleFill: withAlpha(overlap, 0.2),
+	};
+}
+
 export const PRESET_COLORS: Record<
 	Exclude<MandalaPresetId, "custom">,
 	{ pair: [string, string]; morph: string[]; bg: string; fillAlpha?: number }

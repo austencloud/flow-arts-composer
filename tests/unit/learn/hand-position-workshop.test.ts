@@ -9,6 +9,8 @@ import {
   POSITION_KINDS,
   positionKindFor,
   positionExample,
+  positionPairPreview,
+  POSITION_LETTERS,
   positionCorrection,
   positionCorrectionPair,
   changePositionGrid,
@@ -33,6 +35,107 @@ function memory(saved?: unknown) {
 }
 
 describe("hand position workshop domain", () => {
+  it("keeps the placement family through 45-degree rotations and every reflection axis", () => {
+    for (const mode of [GridMode.DIAMOND, GridMode.BOX]) {
+      for (const left of getPlacementGridPoints(mode)) {
+        for (const right of getPlacementGridPoints(mode)) {
+          const kind = positionKindFor(left.location, right.location);
+          for (let step = -8; step <= 8; step++) {
+            const rotated = transformPosition(
+              left.location,
+              right.location,
+              "rotate",
+              { rotationSteps: step }
+            );
+            expect(positionKindFor(rotated.left, rotated.right)).toBe(kind);
+            expect(
+              transformPosition(rotated.left, rotated.right, "rotate", {
+                rotationSteps: -step,
+              })
+            ).toEqual({ left: left.location, right: right.location });
+          }
+          for (const reflectionAxis of [0, 1, 2, 3] as const) {
+            const reflected = transformPosition(
+              left.location,
+              right.location,
+              "mirror",
+              { reflectionAxis }
+            );
+            expect(positionKindFor(reflected.left, reflected.right)).toBe(kind);
+            expect(
+              transformPosition(reflected.left, reflected.right, "mirror", {
+                reflectionAxis,
+              })
+            ).toEqual({ left: left.location, right: right.location });
+          }
+        }
+      }
+    }
+    expect(
+      transformPosition(GridLocation.NORTH, GridLocation.EAST, "rotate", {
+        rotationSteps: 1,
+      })
+    ).toEqual({ left: GridLocation.NORTHEAST, right: GridLocation.SOUTHEAST });
+    expect(
+      transformPosition(GridLocation.NORTH, GridLocation.EAST, "mirror", {
+        reflectionAxis: 1,
+      })
+    ).toEqual({ left: GridLocation.EAST, right: GridLocation.NORTH });
+  });
+  it("renders the canonical static letter for every arrangement without changing either hand", () => {
+    for (const mode of [GridMode.DIAMOND, GridMode.BOX]) {
+      for (const left of getPlacementGridPoints(mode)) {
+        for (const right of getPlacementGridPoints(mode)) {
+          const pair = { left: left.location, right: right.location };
+          const preview = positionPairPreview(pair, mode);
+          const kind = positionKindFor(pair.left, pair.right)!;
+          expect(preview.letter).toBe(POSITION_LETTERS[kind]);
+          expect(preview.motions?.left?.startLocation).toBe(pair.left);
+          expect(preview.motions?.right?.startLocation).toBe(pair.right);
+        }
+      }
+    }
+  });
+  it("remembers the exact last arrangement of each family independently in each grid", () => {
+    const workshop = createPositionWorkshopState(memory());
+    workshop.rememberPosition(
+      GridLocation.NORTH,
+      GridLocation.WEST,
+      GridMode.DIAMOND
+    );
+    workshop.rememberPosition(
+      GridLocation.SOUTH,
+      GridLocation.SOUTH,
+      GridMode.DIAMOND
+    );
+    workshop.rememberPosition(
+      GridLocation.NORTHEAST,
+      GridLocation.SOUTHEAST,
+      GridMode.BOX
+    );
+    workshop.rememberPosition(null, null, GridMode.DIAMOND);
+    expect(workshop.examplePair("gamma", GridMode.DIAMOND)).toEqual({
+      left: GridLocation.NORTH,
+      right: GridLocation.WEST,
+    });
+    expect(workshop.examplePair("gamma", GridMode.BOX)).toEqual({
+      left: GridLocation.NORTHEAST,
+      right: GridLocation.SOUTHEAST,
+    });
+    expect(workshop.examplePair("beta", GridMode.DIAMOND)).toEqual({
+      left: GridLocation.SOUTH,
+      right: GridLocation.SOUTH,
+    });
+    workshop.rememberPosition(
+      GridLocation.SOUTH,
+      GridLocation.EAST,
+      GridMode.DIAMOND
+    );
+    expect(workshop.examplePair("gamma", GridMode.DIAMOND)).toEqual({
+      left: GridLocation.SOUTH,
+      right: GridLocation.EAST,
+    });
+  });
   it("switches grids without changing the constructed family or losing a partial hand", () => {
     for (const left of getPlacementGridPoints(GridMode.DIAMOND)) {
       for (const right of getPlacementGridPoints(GridMode.DIAMOND)) {

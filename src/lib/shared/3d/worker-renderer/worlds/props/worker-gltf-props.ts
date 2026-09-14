@@ -322,7 +322,11 @@ export async function createFanModelWorkerProp(
   scale: number
 ): Promise<WorkerPropVisual | null> {
   if (!options.loadModel) return null;
-  const source = await options.loadModel("/models/props/fan.glb");
+  const source = await options.loadModel(
+    options.build.fanBuild === "flat-grip"
+      ? "/models/props/fan-flat-grip.glb"
+      : "/models/props/fan.glb"
+  );
   const scene = source.clone(true);
   const ownedMaterials = new Set<Material>();
   scene.traverse((child) => {

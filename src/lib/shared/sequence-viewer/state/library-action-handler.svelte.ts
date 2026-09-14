@@ -1,4 +1,8 @@
 import {
+  captureActivePropConfig,
+  type ResolvedPropConfig,
+} from "$lib/shared/foundation/services/recorded-prop-intent";
+import {
   isFavorite as checkIsFavorite,
   toggleFavorite as doToggleFavorite,
 } from "$lib/shared/library/services/collection-manager";
@@ -29,6 +33,14 @@ export interface LibraryActionHandlerDeps {
 }
 
 export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
+  let saveProps = $state<ResolvedPropConfig | null>(null);
+  let resolveSaveProps: ((config: ResolvedPropConfig | null) => void) | null =
+    null;
+  function finishPropChoice(save: boolean) {
+    resolveSaveProps?.(save ? saveProps : null);
+    resolveSaveProps = null;
+    saveProps = null;
+  }
   let isSaved = $state(true);
   let isSaving = $state(false);
   let isFavorite = $state(false);
@@ -153,7 +165,18 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
       showToast("No sequence to save", "info");
       return;
     }
-    if (isSaving) return;
+    if (isSaving || saveProps) return;
+    saveProps = captureActivePropConfig({
+      leftPropType: deps.getLeftPropType(),
+      rightPropType: deps.getRightPropType(),
+      catDogMode: deps.getCatDogModeEnabled(),
+    });
+    const selectedProps = await new Promise<ResolvedPropConfig | null>(
+      (resolve) => {
+        resolveSaveProps = resolve;
+      }
+    );
+    if (!selectedProps) return;
 
     savedStateRevision += 1;
     isSaving = true;
@@ -161,9 +184,9 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
     try {
       const coordinator = await getVisualSequenceSaveCoordinator();
       const outcome = await coordinator.save(sequence, {
-        leftPropType: deps.getLeftPropType(),
-        rightPropType: deps.getRightPropType(),
-        catDogModeEnabled: deps.getCatDogModeEnabled(),
+        leftPropType: selectedProps.leftPropType,
+        rightPropType: selectedProps.rightPropType,
+        catDogModeEnabled: selectedProps.catDogMode,
         pathShape: getAnimationVisibilityManager().getPathShape(),
       });
       if (outcome.status === "failed") return;
@@ -174,6 +197,27 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
         isOwnedLibraryRecord =
           outcome.result.persisted && outcome.result.sequenceId === sequence.id;
       }
+    } finally {
+      isSaving = false;
+    }
+  }
+
+  async function savePaths(): Promise<boolean> {
+    const sequence = deps.getSequence();
+    if (!sequence || !deps.getIsOwned() || !isOwnedLibraryRecord || isSaving)
+      return false;
+    isSaving = true;
+    try {
+      await getLibraryRepository().updateSequence(sequence.id, {
+        steps: sequence.steps,
+        metadata: sequence.metadata,
+      });
+      showToast("Motion paths saved", "success");
+      return true;
+    } catch (error) {
+      console.error("[SequenceViewer] Failed to save motion paths", error);
+      showToast("Couldn't save motion paths", "error");
+      return false;
     } finally {
       isSaving = false;
     }
@@ -195,6 +239,13 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
   }
 
   return {
+    get saveProps() {
+      return saveProps;
+    },
+    set saveProps(value: ResolvedPropConfig | null) {
+      saveProps = value;
+    },
+    finishPropChoice,
     get isSaved() {
       return isSaved;
     },
@@ -213,6 +264,7 @@ export function createLibraryActionHandler(deps: LibraryActionHandlerDeps) {
     handlePublishAction,
     handleUnpublishAction,
     saveCardPresentation,
+    savePaths,
     handleSave,
     handleDelete,
   };

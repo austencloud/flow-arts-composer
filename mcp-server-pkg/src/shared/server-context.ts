@@ -39,6 +39,11 @@ export interface UserPreferences {
   showRightMotion: boolean;
   leftPropType: string | null;
   rightPropType: string | null;
+  fanAppearance: {
+    build: "pictograph" | "fire" | "flat-grip" | "lotus" | "day" | "moon";
+    frameColor: "black" | "white";
+    cover: "bare" | "covered";
+  };
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -56,6 +61,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showRightMotion: true,
   leftPropType: null,
   rightPropType: null,
+  fanAppearance: { build: "fire", frameColor: "black", cover: "bare" },
 };
 
 // Current session preferences (starts with defaults)

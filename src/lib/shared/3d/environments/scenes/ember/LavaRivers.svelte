@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onDestroy } from "svelte";
   import { T, useTask } from "@threlte/core";
   import {
     AdditiveBlending,
@@ -153,6 +154,7 @@
     uniform float uGradeRidges;
     uniform float uSourceRadiance;
     uniform float uToeStart;
+    uniform float uCapStart;
     varying float vCross;
     varying float vFlow;
     varying float vRun;
@@ -188,10 +190,18 @@
       // The toe is the last stretch before the tail: a spreading, crusting lobe
       // rather than the square chop the run used to end on mid-slope.
       float toe = smoothstep(uToeStart, 1.0, vRun);
-      // Its downstream edge breaks on the same scallop noise as the shore, so
-      // the lobe ends ragged instead of on the geometry's final row.
-      float tipCut = 0.995 - (shoreScallop - 0.5) * 0.05;
-      if (vRun > tipCut) discard;
+      // The geometry rounds the lobe off over the cap, but its final rows
+      // narrow to a spike that rendered as a dark slab sticking out past the
+      // delta. The lobe is cut while it is still wide, on the same scallop
+      // noise as the shore, so it ends ragged instead of on a row.
+      float capT = clamp(
+        (toe - uCapStart) / max(1.0 - uCapStart, 0.001),
+        0.0,
+        1.0
+      );
+      // Convex across the channel so the end is a lobe, not a chord.
+      float tipCut = 0.76 - bank * bank * 0.34 + (shoreScallop - 0.5) * 0.36;
+      if (capT > tipCut) discard;
 
       // Distance narrows the incandescent thread rather than letting the crust
       // pattern average out into one saturated band.
@@ -396,6 +406,7 @@
     uniform float uIntensity;
     uniform float uSoftness;
     uniform float uThermalFalloff;
+    uniform float uToeStart;
     varying float vCross;
     varying float vFlow;
     varying float vRun;
@@ -408,6 +419,9 @@
       // Nothing inside the channel: the ribbon is drawn over that ground, and
       // doubling the emission there would blow out the axial thread.
       float inner = smoothstep(0.7, 1.1, bank);
+      // The lava crusts over and ends in the delta; a skirt that ran on to the
+      // authored tail lit ground past the last molten lobe as a flat sheet.
+      float toeFade = 1.0 - smoothstep(uToeStart, mix(uToeStart, 1.0, 0.6), vRun);
       float outer = pow(
         clamp((uReach - bank) / max(uReach - 1.0, 0.001), 0.0, 1.0),
         uSoftness
@@ -417,7 +431,8 @@
       float breathe = 0.9 + 0.1 * sin(vFlow * 0.06 - uTime * 0.35);
       float thermal = mix(1.0, uThermalFalloff, smoothstep(0.0, 1.0, vRun));
 
-      float strength = inner * outer * grain * breathe * thermal * uIntensity;
+      float strength =
+        inner * outer * grain * breathe * thermal * toeFade * uIntensity;
       vec3 color = mix(uBaseColor, uHotColor, 0.3 + 0.45 * outer) * strength;
 
       #ifdef USE_FOG
@@ -447,6 +462,99 @@
   }
 
   let rivers = $state<RiverInstance[]>([]);
+
+  interface RiverMaterials {
+    material: ShaderMaterial;
+    glowMaterial: ShaderMaterial;
+  }
+
+  // Materials outlive geometry rebuilds on purpose. The world asset arrives
+  // while the boot warm-up's compileAsync is still polling these programs, and
+  // disposing a material mid-poll dereferences a program three has already
+  // released (`currentProgram` is undefined → `.isReady()` throws inside a
+  // timer, so the warm-up promise never settles and the curtain never lifts).
+  // Rebuilds now only replace geometry; uniforms are refreshed in place.
+  const materialCache = new Map<number, RiverMaterials>();
+
+  function createRiverMaterials(): RiverMaterials {
+    const material = new ShaderMaterial({
+      side: DoubleSide,
+      depthWrite: true,
+      fog: true,
+      extensions: { derivatives: true },
+      // The strip lies in a carved bed that is close to coplanar with it, so
+      // single terrain triangles could win the depth test and punch blocky
+      // holes in the surface.
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -4,
+      uniforms: {
+        // fog: true makes the renderer refresh fogColor/fogDensity on this
+        // material, so the fog uniform set must exist or the render crashes.
+        ...UniformsUtils.clone(UniformsLib.fog),
+        uTime: { value: 0 },
+        uBaseColor: { value: new Color() },
+        uHotColor: { value: new Color() },
+        uCrustColor: { value: new Color() },
+        uLeveeColor: { value: new Color() },
+        uWarpIntensity: { value: 0 },
+        uCrustCoverage: { value: 0 },
+        uEdgeCooling: { value: 0 },
+        uBankRadiance: { value: 0 },
+        uMarginFraction: { value: 0 },
+        uThermalFalloff: { value: 0 },
+        uCrustGain: { value: 0 },
+        uGradeRidges: { value: 0 },
+        uSourceRadiance: { value: 0 },
+        uToeStart: { value: 0 },
+        uCapStart: { value: 0 },
+      },
+      vertexShader,
+      fragmentShader,
+    });
+    const glowMaterial = new ShaderMaterial({
+      side: DoubleSide,
+      transparent: true,
+      depthWrite: false,
+      blending: AdditiveBlending,
+      fog: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -2,
+      uniforms: {
+        ...UniformsUtils.clone(UniformsLib.fog),
+        uTime: { value: 0 },
+        uBaseColor: { value: new Color() },
+        uHotColor: { value: new Color() },
+        uReach: { value: 0 },
+        uToeStart: { value: 1 },
+        uIntensity: { value: 0 },
+        uSoftness: { value: 0 },
+        uThermalFalloff: { value: 0 },
+      },
+      vertexShader: glowVertexShader,
+      fragmentShader: glowFragmentShader,
+    });
+    return { material, glowMaterial };
+  }
+
+  function materialsForChannel(index: number): RiverMaterials {
+    let cached = materialCache.get(index);
+    if (!cached) {
+      cached = createRiverMaterials();
+      materialCache.set(index, cached);
+    }
+    return cached;
+  }
+
+  onDestroy(() => {
+    for (const { material, glowMaterial } of materialCache.values()) {
+      material.dispose();
+      glowMaterial.dispose();
+    }
+    materialCache.clear();
+  });
+
   const bankLight = $derived({ ...DEFAULT_BANK_LIGHT, ...config.bankLight });
   const lightBudget = $derived(
     Math.min(
@@ -493,7 +601,7 @@
     const sampler =
       drape.enabled === false ? null : createLavaTerrainSampler(terrain);
 
-    const created = config.channels.map((channel) => {
+    const created = config.channels.map((channel, index) => {
       const { geometry, ventGeometry, glowGeometry, lightPositions } =
         createLavaRiverStripGeometry({
           channel,
@@ -520,74 +628,39 @@
           lightCount: bankLight.count,
         });
 
-      const material = new ShaderMaterial({
-        side: DoubleSide,
-        depthWrite: true,
-        fog: true,
-        extensions: { derivatives: true },
-        // The strip lies in a carved bed that is close to coplanar with it, so
-        // single terrain triangles could win the depth test and punch blocky
-        // holes in the surface.
-        polygonOffset: true,
-        polygonOffsetFactor: -2,
-        polygonOffsetUnits: -4,
-        uniforms: {
-          // fog: true makes the renderer refresh fogColor/fogDensity on this
-          // material, so the fog uniform set must exist or the render crashes.
-          ...UniformsUtils.clone(UniformsLib.fog),
-          uTime: { value: 0 },
-          uBaseColor: { value: new Color(config.baseColor) },
-          uHotColor: { value: new Color(config.hotColor) },
-          uCrustColor: { value: new Color(config.crustColor) },
-          uLeveeColor: {
-            value: new Color(config.leveeColor ?? config.crustColor),
-          },
-          uWarpIntensity: { value: config.warpIntensity },
-          uCrustCoverage: { value: config.crustCoverage },
-          uEdgeCooling: { value: config.edgeCooling ?? 0.34 },
-          uBankRadiance: { value: config.bankRadiance ?? 0.5 },
-          uMarginFraction: { value: marginFraction },
-          uThermalFalloff: { value: thermal.falloff ?? 0.42 },
-          uCrustGain: { value: thermal.crustGain ?? 0.1 },
-          uGradeRidges: { value: thermal.gradeRidges ?? 0.55 },
-          uSourceRadiance: { value: source.radiance ?? 1 },
-          uToeStart: { value: 1 - toeFraction },
-        },
-        vertexShader,
-        fragmentShader,
-      });
+      const { material, glowMaterial } = materialsForChannel(index);
+      const u = material.uniforms;
+      (u.uBaseColor!.value as Color).set(config.baseColor);
+      (u.uHotColor!.value as Color).set(config.hotColor);
+      (u.uCrustColor!.value as Color).set(config.crustColor);
+      (u.uLeveeColor!.value as Color).set(config.leveeColor ?? config.crustColor);
+      u.uWarpIntensity!.value = config.warpIntensity;
+      u.uCrustCoverage!.value = config.crustCoverage;
+      u.uEdgeCooling!.value = config.edgeCooling ?? 0.34;
+      u.uBankRadiance!.value = config.bankRadiance ?? 0.5;
+      u.uMarginFraction!.value = marginFraction;
+      u.uThermalFalloff!.value = thermal.falloff ?? 0.42;
+      u.uCrustGain!.value = thermal.crustGain ?? 0.1;
+      u.uGradeRidges!.value = thermal.gradeRidges ?? 0.55;
+      u.uSourceRadiance!.value = source.radiance ?? 1;
+      u.uToeStart!.value = 1 - toeFraction;
+      u.uCapStart!.value = terminus.capStart ?? 0.55;
 
-      const glowMaterial = glowGeometry
-        ? new ShaderMaterial({
-            side: DoubleSide,
-            transparent: true,
-            depthWrite: false,
-            blending: AdditiveBlending,
-            fog: true,
-            polygonOffset: true,
-            polygonOffsetFactor: -1,
-            polygonOffsetUnits: -2,
-            uniforms: {
-              ...UniformsUtils.clone(UniformsLib.fog),
-              uTime: { value: 0 },
-              uBaseColor: { value: new Color(config.baseColor) },
-              uHotColor: { value: new Color(config.hotColor) },
-              uReach: { value: glowReach },
-              uIntensity: { value: bankGlow.intensity ?? 0.85 },
-              uSoftness: { value: bankGlow.softness ?? 2.1 },
-              uThermalFalloff: { value: thermal.falloff ?? 0.42 },
-            },
-            vertexShader: glowVertexShader,
-            fragmentShader: glowFragmentShader,
-          })
-        : null;
+      const g = glowMaterial.uniforms;
+      (g.uBaseColor!.value as Color).set(config.baseColor);
+      (g.uHotColor!.value as Color).set(config.hotColor);
+      g.uReach!.value = glowReach;
+      g.uIntensity!.value = bankGlow.intensity ?? 0.85;
+      g.uSoftness!.value = bankGlow.softness ?? 2.1;
+      g.uThermalFalloff!.value = thermal.falloff ?? 0.42;
+      g.uToeStart!.value = 1 - toeFraction;
 
       return {
         geometry,
         ventGeometry,
         glowGeometry,
         material,
-        glowMaterial,
+        glowMaterial: glowGeometry ? glowMaterial : null,
         lightPositions,
       };
     });
@@ -598,8 +671,6 @@
         river.geometry.dispose();
         river.ventGeometry?.dispose();
         river.glowGeometry?.dispose();
-        river.material.dispose();
-        river.glowMaterial?.dispose();
       }
     };
   });

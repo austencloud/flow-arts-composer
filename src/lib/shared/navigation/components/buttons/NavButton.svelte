@@ -1,11 +1,14 @@
 <!-- NavButton - Reusable Navigation Button Component -->
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
-import type { HapticFeedback } from "../../../application/services/haptic-feedback";
+  import type { HapticFeedback } from "../../../application/services/haptic-feedback";
   import { onMount } from "svelte";
+  import type { Snippet } from "svelte";
+  import type { HTMLButtonAttributes } from "svelte/elements";
 
   let {
     icon = "",
+    iconContent,
     label = "",
     active = false,
     disabled = false,
@@ -15,8 +18,14 @@ import type { HapticFeedback } from "../../../application/services/haptic-feedba
     onClick = () => {},
     ariaLabel = "",
     badgeCount = 0,
+    onpointerdown,
+    onpointerup,
+    onpointerleave,
+    onpointercancel,
+    oncontextmenu,
   } = $props<{
-    icon: string;
+    icon?: string;
+    iconContent?: Snippet;
     label: string;
     active?: boolean;
     disabled?: boolean;
@@ -26,6 +35,11 @@ import type { HapticFeedback } from "../../../application/services/haptic-feedba
     onClick?: () => void;
     ariaLabel?: string;
     badgeCount?: number;
+    onpointerdown?: HTMLButtonAttributes["onpointerdown"];
+    onpointerup?: HTMLButtonAttributes["onpointerup"];
+    onpointerleave?: HTMLButtonAttributes["onpointerleave"];
+    onpointercancel?: HTMLButtonAttributes["onpointercancel"];
+    oncontextmenu?: HTMLButtonAttributes["oncontextmenu"];
   }>();
 
   function formatBadgeCount(count: number): string {
@@ -60,6 +74,11 @@ import type { HapticFeedback } from "../../../application/services/haptic-feedba
   class:section={type === "section"}
   class:special={type === "special"}
   onclick={handleClick}
+  {onpointerdown}
+  {onpointerup}
+  {onpointerleave}
+  {onpointercancel}
+  {oncontextmenu}
   {disabled}
   aria-label="{ariaLabel || label}{badgeCount > 0
     ? `, ${badgeCount} unread`
@@ -67,7 +86,9 @@ import type { HapticFeedback } from "../../../application/services/haptic-feedba
   aria-current={active && type === "section" ? "page" : undefined}
   style="--section-color: {color}; --section-gradient: {gradient};"
 >
-  <span class="nav-icon">{@html icon}</span>
+  <span class="nav-icon"
+    >{#if iconContent}{@render iconContent()}{:else}{@html icon}{/if}</span
+  >
   {#if badgeCount > 0}
     <span class="nav-badge" aria-hidden="true">
       {formatBadgeCount(badgeCount)}

@@ -37,6 +37,8 @@ Props:
   import { tryGetViewerVisibilityContext } from "$lib/shared/sequence-viewer/context/viewer-visibility-context";
 
   let {
+    leftColorOverride = undefined,
+    rightColorOverride = undefined,
     turnsTuple = "(0, 0)",
     letter = null,
     letterDimensions = { width: 100, height: 100 },
@@ -55,6 +57,8 @@ Props:
     // Disable opacity transition (for animation canvas overlay where parent handles transitions)
     instantAppear = false,
   } = $props<{
+    leftColorOverride?: string;
+    rightColorOverride?: string;
     turnsTuple: string;
     letter: string | null | undefined;
     letterDimensions?: Dimensions;
@@ -107,18 +111,18 @@ Props:
   // Get motion colors - use static colors when darkMode is explicitly provided (preview isolation)
   // Otherwise use centralized cache (global mode)
   const BLUE_COLOR = $derived(
-    darkMode !== undefined
+    leftColorOverride ?? (darkMode !== undefined
       ? darkMode
         ? STATIC_COLORS.dark.left
         : STATIC_COLORS.light.left
-      : cachedColors.left
+      : cachedColors.left)
   );
   const RED_COLOR = $derived(
-    darkMode !== undefined
+    rightColorOverride ?? (darkMode !== undefined
       ? darkMode
         ? STATIC_COLORS.dark.right
         : STATIC_COLORS.light.right
-      : cachedColors.right
+      : cachedColors.right)
   );
 
   // Track loaded letter dimensions with $state for reactivity

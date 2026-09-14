@@ -35,6 +35,16 @@
   );
 
   const selectedBinding = $derived(composition.selectedBinding);
+  $effect(() => {
+    const mode = selectedBinding?.renderMode;
+    shared?.setInspectorContent(
+      mode === "sequence-animation"
+        ? "animation"
+        : mode === "choreo-card"
+          ? "card"
+          : "studio"
+    );
+  });
   // Everything the studio draws itself has a Look to edit; the exceptions are
   // dropped-in media (a video file has nothing to steer) and the 3D view, which
   // isn't wired up yet. Listing the modes that DO have settings was the older

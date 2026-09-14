@@ -15,6 +15,7 @@
     actionDisabled = false,
     actionRef = $bindable(null),
     showProgress = true,
+    progressAppearance = "dots",
   }: {
     label: string;
     currentStep: number;
@@ -28,6 +29,7 @@
     actionDisabled?: boolean;
     actionRef?: HTMLButtonElement | null;
     showProgress?: boolean;
+    progressAppearance?: "dots" | "steps";
   } = $props();
 </script>
 
@@ -42,7 +44,11 @@
       <span>{previousLabel}</span>
     </PanelButton>
     <div class="progress-stack">
-      <ExperienceProgressIndicator {currentStep} {totalSteps} />
+      <ExperienceProgressIndicator
+        {currentStep}
+        {totalSteps}
+        appearance={progressAppearance}
+      />
       {#if curriculumLabel}
         <span class="curriculum-progress">{curriculumLabel}</span>
       {/if}
@@ -70,6 +76,7 @@
     {#if showProgress}<ExperienceProgressIndicator
         {currentStep}
         {totalSteps}
+        appearance={progressAppearance}
       />{/if}
   {/if}
 </div>

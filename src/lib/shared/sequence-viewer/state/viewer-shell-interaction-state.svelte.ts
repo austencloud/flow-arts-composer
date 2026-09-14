@@ -1,5 +1,6 @@
 import type { VideoExportProgress } from "$lib/shared/compose/domain/video-export-types";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+import type { ViewerPropHand } from "./viewer-prop-visibility-state.svelte";
 import type {
   ScanAnalyticsValue,
   ScanExportStage,
@@ -17,6 +18,17 @@ import {
 } from "../services/viewer-shell-model";
 import type { OrchestratorContext } from "../domain/viewer-orchestrator-context";
 import type { VideoPlayheadBridge } from "../context/video-playhead-context";
+import type {
+  ExportContext,
+  SplitConfig,
+  ViewerMode,
+} from "./viewer-state.svelte";
+
+interface PracticeReturnState {
+  viewerMode: ViewerMode;
+  splitConfig: SplitConfig;
+  exportContext: ExportContext;
+}
 
 export interface ViewerShellExportOverrides {
   onVideoExport: () => void;
@@ -69,6 +81,7 @@ export function createViewerShellInteractionState(
   >();
   let deleteConfirmOpen = $state(false);
   let isDeleting = $state(false);
+  let practiceReturnState: PracticeReturnState | null = null;
 
   const headerActions = $derived(
     buildHeaderActions(inputs.getContext(), "full", {
@@ -245,7 +258,14 @@ export function createViewerShellInteractionState(
 
   function handleEnterPractice(): void {
     const ctx = inputs.getContext();
+    if (ctx.practiceActive) return;
+
     const previousMode = ctx.viewerState.viewerMode;
+    practiceReturnState = {
+      viewerMode: ctx.viewerState.rawViewerMode,
+      splitConfig: { ...ctx.viewerState.rawSplitConfig },
+      exportContext: ctx.viewerState.exportContext,
+    };
     ctx.enterPracticeMode();
     dependencies.captureScanViewChanged(
       previousMode,
@@ -258,11 +278,25 @@ export function createViewerShellInteractionState(
 
   function handleExitPractice(): void {
     const ctx = inputs.getContext();
+    if (!ctx.practiceActive) return;
+
     dependencies.captureScanPracticeChanged("exited", {
       was_running: ctx.practiceRunning,
       bpm: ctx.bpmLocal,
     });
     ctx.exitPracticeMode();
+
+    const returnState = practiceReturnState;
+    practiceReturnState = null;
+    // A mode choice made while Practice was open is newer intent than the
+    // surface that opened Practice. Only restore when Practice still owns its
+    // split surface, so leaving Practice never sends someone back from a view
+    // they deliberately selected.
+    if (!returnState || ctx.viewerState.rawViewerMode !== "split") return;
+
+    ctx.viewerState.setSplitConfig(returnState.splitConfig);
+    ctx.viewerState.setViewerMode(returnState.viewerMode);
+    ctx.viewerState.setExportContext(returnState.exportContext);
   }
 
   function handlePlaybackToggle(source: string): void {
@@ -312,11 +346,15 @@ export function createViewerShellInteractionState(
     });
   }
 
-  function handlePropChange(propType: PropType, source: string): void {
+  function handlePropChange(
+    propType: PropType,
+    source: string,
+    hand: ViewerPropHand | "both" = "both"
+  ): void {
     const ctx = inputs.getContext();
     const previousLeft = ctx.leftPropType ? String(ctx.leftPropType) : null;
     const previousRight = ctx.rightPropType ? String(ctx.rightPropType) : null;
-    ctx.handlePropTypeChange(propType);
+    ctx.handlePropTypeChange(propType, hand);
     const left = ctx.leftPropType ? String(ctx.leftPropType) : null;
     const right = ctx.rightPropType ? String(ctx.rightPropType) : null;
     dependencies.captureScanSettingChanged({

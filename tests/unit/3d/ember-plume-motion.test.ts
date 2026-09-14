@@ -12,8 +12,12 @@ import {
   plumeBuoyancy,
   plumeLitFraction,
   plumeSizeScale,
+  PLUME_FOG_ALPHA_BITE,
+  PLUME_FOG_BLEND_CAP,
   type PlumePuff,
 } from "$lib/shared/3d/environments/scenes/ember/ember-plume-motion";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 /** Deterministic stand-in for Math.random so a life curve is reproducible. */
 function seededRng(seed: number): () => number {
@@ -218,6 +222,85 @@ describe("Ember particle range falloff", () => {
       }
 
       expect(shears.size).toBe(1);
+    }
+  );
+});
+
+describe("plume aerial perspective", () => {
+  const source = readFileSync(
+    resolve(
+      process.cwd(),
+      "src/lib/shared/3d/environments/scenes/ember/EmberPlumes.svelte"
+    ),
+    "utf8"
+  );
+
+  it("caps the fog mix rather than converging a far column onto the haze", () => {
+    // The defect: mixing to a full 1.0 put the far vents at the fog's own
+    // luminance, so they carried no contrast and read as absent.
+    expect(source).toContain("mix(puffColor, uFogColor, fog * uFogBlendCap)");
+    expect(source).not.toContain("mix(puffColor, uFogColor, fog)");
+    expect(PLUME_FOG_BLEND_CAP).toBeLessThan(1);
+    expect(PLUME_FOG_BLEND_CAP).toBeGreaterThan(0);
+  });
+
+  it("charges the fog term against coverage only once", () => {
+    // The shader interpolates the constant, so the source carries the
+    // expression and the built shader can never drift from the tested value.
+    expect(source).toContain(
+      "(1.0 - fog * ${PLUME_FOG_ALPHA_BITE.toFixed(2)})"
+    );
+    expect(source).not.toContain("1.0 - fog * 0.55");
+    // The colour mix already carries distance; the old 0.55 bite was the same
+    // term counted twice.
+    expect(PLUME_FOG_ALPHA_BITE).toBeLessThan(0.55);
+  });
+
+  it.each(EMBER_ATMOSPHERE_LOOK_IDS)(
+    "leaves %s vents visibly darker than their own fog at orbit distance",
+    (lookId) => {
+      const config = createDefaultEmberConfig(lookId);
+      const fog = parseHex(config.fog.color);
+      const fogLum = luminance(fog);
+
+      for (const plume of config.atmosphere.plumes as EmberPlumeConfig[]) {
+        const ash = parseHex(plume.ashColor);
+        // The measured worst case: the deepest vent at the F09 orbit sat at
+        // fog 0.82, where the uncapped mix erased the column entirely.
+        const fogTerm = 0.82;
+        const mix = fogTerm * PLUME_FOG_BLEND_CAP;
+        const seen = {
+          r: ash.r * (1 - mix) + fog.r * mix,
+          g: ash.g * (1 - mix) + fog.g * mix,
+          b: ash.b * (1 - mix) + fog.b * mix,
+        };
+        const contrast = fogLum - luminance(seen);
+        const coverage = plume.opacity * (1 - fogTerm * PLUME_FOG_ALPHA_BITE);
+
+        // Ash is the denser body, so it must stay the darker of the two.
+        expect(contrast).toBeGreaterThan(0);
+        // Contrast alone is not enough if coverage throws it away.
+        expect(contrast * coverage).toBeGreaterThan(0.0004);
+      }
+    }
+  );
+});
+
+describe("look fog reach", () => {
+  const BLACKGLASS = createDefaultEmberConfig("blackglass-inferno").fog.density;
+
+  it.each(EMBER_ATMOSPHERE_LOOK_IDS)(
+    "keeps %s within reach of the look that was judged correct",
+    (lookId) => {
+      const { density } = createDefaultEmberConfig(lookId).fog;
+
+      // Blackglass is the reference: at the F09 orbit its lava run reads end to
+      // end and the far ridge keeps its form. The coloured looks were once set
+      // a third to three-quarters heavier and each collapsed into a flat wash.
+      // A brighter fog colour already carries further at equal density, so a
+      // meaningfully higher density is what erases the frame.
+      expect(density).toBeLessThanOrEqual(BLACKGLASS * 1.15);
+      expect(density).toBeGreaterThan(0);
     }
   );
 });

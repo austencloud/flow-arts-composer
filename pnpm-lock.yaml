@@ -9,7 +9,7 @@ patchedDependencies:
     hash: f163e5ba342f1576ff6fd359c5e5795dfec1fd0415dce6617ebe03d3c3d995e7
     path: patches/@austencloud__backgrounds@0.7.12.patch
   '@austencloud/scene-3d@0.1.6':
-    hash: dd64a84131dff321be2485d9362907681fd9f6c81d4d741b19cb5b2d906711c6
+    hash: 88ce18a6470b7719a3749ec8dc57d10073be8c393cb993bb262c100ea7eb10ef
     path: patches/@austencloud__scene-3d@0.1.6.patch
   svelte-fast-check@0.4.5:
     hash: 79c185fc32c5583774bc91ec4fa0ebcbac5c790d9b132fc5728f5d13a3d72474
@@ -31,6 +31,9 @@ importers:
       '@ai-sdk/deepseek':
         specifier: ^1.0.33
         version: 1.0.33(zod@4.3.6)
+      '@ai-sdk/openai-compatible':
+        specifier: ^2.0.74
+        version: 2.0.74(zod@4.3.6)
       '@ai-sdk/svelte':
         specifier: ^4.0.27
         version: 4.0.70(svelte@5.49.2)(zod@4.3.6)
@@ -57,7 +60,7 @@ importers:
         version: 0.1.0(svelte@5.49.2)
       '@austencloud/scene-3d':
         specifier: ^0.1.6
-        version: 0.1.6(patch_hash=dd64a84131dff321be2485d9362907681fd9f6c81d4d741b19cb5b2d906711c6)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)
+        version: 0.1.6(patch_hash=88ce18a6470b7719a3749ec8dc57d10073be8c393cb993bb262c100ea7eb10ef)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)
       '@austencloud/sidebar':
         specifier: ^1.0.1
         version: 1.0.1(svelte@5.49.2)
@@ -217,6 +220,9 @@ importers:
       firebase-admin:
         specifier: ^13.10.0
         version: 13.10.0(encoding@0.1.13)
+      gifenc:
+        specifier: 1.0.3
+        version: 1.0.3
       globe.gl:
         specifier: ^2.45.3
         version: 2.45.3
@@ -762,6 +768,12 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/openai-compatible@2.0.74':
+    resolution: {integrity: sha512-HdYUgacC08HjHyzL8Y59bjeOJTcsZWpHYZS0K8T4ChV/zYGktqbktzT0nJuhn3r9lVoMzA9Miw7abGQcdhI2yw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider-utils@3.0.20':
     resolution: {integrity: sha512-iXHVe0apM2zUEzauqJwqmpC37A5rihrStAih5Ks+JE32iTe4LZ58y17UGBjpQQTCRw9YxMeo2UFLxLpBluyvLQ==}
     engines: {node: '>=18'}
@@ -774,8 +786,18 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/provider-utils@4.0.50':
+    resolution: {integrity: sha512-YAcB+7M1JhAYsHorTrWyldCyZihjCKr/QRXH2vFrara/+lwqNE7q5KzoucKLZ7ktFiUonhnhFhRoiymsq/2K2Q==}
+    engines: {node: '>=18.17'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider@2.0.1':
     resolution: {integrity: sha512-KCUwswvsC5VsW2PWFqF8eJgSCu5Ysj7m1TxiHTVA6g7k360bk0RNQENT8KTMAYEs+8fWPD3Uu4dEmzGHc+jGng==}
+    engines: {node: '>=18'}
+
+  '@ai-sdk/provider@3.0.15':
+    resolution: {integrity: sha512-XeZW1CcDF2GMbH4wejW6xBRI2QCOgnkVYUnxoeDadB1mf85riL2bMUeDoh+6gJ/r4mjNfzUPW8OjLjvwTP0u1Q==}
     engines: {node: '>=18'}
 
   '@ai-sdk/provider@3.0.7':
@@ -5041,6 +5063,10 @@ packages:
     resolution: {integrity: sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==}
     engines: {node: '>=18.0.0'}
 
+  eventsource-parser@3.1.1:
+    resolution: {integrity: sha512-EKN1vKAMcZ8MlYMpaNuxN6R9yakzH6uajHcHVTqWJzvu5pWw9DyhbP35HH8MVBQ+dZjAfDxk+A8NiR9KWaXiyQ==}
+    engines: {node: '>=18.0.0'}
+
   eventsource@3.0.7:
     resolution: {integrity: sha512-CRT1WTyuQoD771GW56XEZFQ/ZoSfWid1alKGDYMmkt2yl8UXrVR4pspqWNEcqKvVIzg6PAltWjxcSSPrboA4iA==}
     engines: {node: '>=18.0.0'}
@@ -5378,6 +5404,9 @@ packages:
   get-uri@6.0.5:
     resolution: {integrity: sha512-b1O07XYq8eRuVzBNgJLstU6FYc1tS6wnMtF1I1D9lE8LxZSOGZ7LhxN54yPP6mGw5f2CkXY2BQUL9Fx41qvcIg==}
     engines: {node: '>= 14'}
+
+  gifenc@1.0.3:
+    resolution: {integrity: sha512-xdr6AdrfGBcfzncONUOlXMBuc5wJDtOueE3c5rdG0oNgtINLD+f2iFZltrBRZYzACRbKr+mSVU/x98zv2u3jmw==}
 
   github-from-package@0.0.0:
     resolution: {integrity: sha512-SyHy3T1v2NUXn29OsWdxmK6RwHD+vkj3v8en8AOBZ1wBQ/hCAQ5bAQTD02kW4W9tUp/3Qh6J8r9EvntiyCmOOw==}
@@ -8833,6 +8862,12 @@ snapshots:
       '@vercel/oidc': 3.1.0
       zod: 4.3.6
 
+  '@ai-sdk/openai-compatible@2.0.74(zod@4.3.6)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.15
+      '@ai-sdk/provider-utils': 4.0.50(zod@4.3.6)
+      zod: 4.3.6
+
   '@ai-sdk/provider-utils@3.0.20(zod@4.3.6)':
     dependencies:
       '@ai-sdk/provider': 2.0.1
@@ -8854,7 +8889,19 @@ snapshots:
       eventsource-parser: 3.0.6
       zod: 4.3.6
 
+  '@ai-sdk/provider-utils@4.0.50(zod@4.3.6)':
+    dependencies:
+      '@ai-sdk/provider': 3.0.15
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.1.1
+      undici: 6.28.0
+      zod: 4.3.6
+
   '@ai-sdk/provider@2.0.1':
+    dependencies:
+      json-schema: 0.4.0
+
+  '@ai-sdk/provider@3.0.15':
     dependencies:
       json-schema: 0.4.0
 
@@ -8945,7 +8992,7 @@ snapshots:
       '@austencloud/media-tagging-types': 0.1.0
       svelte: 5.49.2
 
-  '@austencloud/scene-3d@0.1.6(patch_hash=dd64a84131dff321be2485d9362907681fd9f6c81d4d741b19cb5b2d906711c6)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)':
+  '@austencloud/scene-3d@0.1.6(patch_hash=88ce18a6470b7719a3749ec8dc57d10073be8c393cb993bb262c100ea7eb10ef)(@threlte/core@8.3.1(svelte@5.49.2)(three@0.182.0))(@threlte/extras@9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0))(svelte@5.49.2)(three@0.182.0)':
     dependencies:
       '@threlte/core': 8.3.1(svelte@5.49.2)(three@0.182.0)
       '@threlte/extras': 9.7.1(@types/three@0.182.0)(svelte@5.49.2)(three@0.182.0)
@@ -13222,6 +13269,8 @@ snapshots:
 
   eventsource-parser@3.0.6: {}
 
+  eventsource-parser@3.1.1: {}
+
   eventsource@3.0.7:
     dependencies:
       eventsource-parser: 3.0.6
@@ -13826,6 +13875,8 @@ snapshots:
       debug: 4.4.3
     transitivePeerDependencies:
       - supports-color
+
+  gifenc@1.0.3: {}
 
   github-from-package@0.0.0: {}
 

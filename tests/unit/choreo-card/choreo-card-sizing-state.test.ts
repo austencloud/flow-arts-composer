@@ -15,6 +15,82 @@ afterEach(() => {
 });
 
 describe("ChoreoCard contained sizing motion", () => {
+  it.each([false, true])(
+    "returns the grid picker to live geometry when the destination is released (collapse first: %s)",
+    (collapseFirst) => {
+      vi.stubGlobal(
+        "ResizeObserver",
+        class {
+          observe(): void {}
+          disconnect(): void {}
+        }
+      );
+      const container = document.createElement("div");
+      let exposed = false;
+      let phase: "restore" | null = "restore";
+      let destination: { width: number; height: number } | null = {
+        width: 760,
+        height: 847,
+      };
+      let sizing!: ReturnType<typeof createChoreoCardSizingState>;
+      disposals.push(
+        effect_root(() => {
+          sizing = createChoreoCardSizingState(() => ({
+            containerElement: exposed ? container : undefined,
+            previewStackElement: undefined,
+            previewAspectRatio: 1.3,
+            forceContain: true,
+            needsScroll: false,
+            fitWidth: true,
+            containSizeMotion: phase,
+            containMotionBox: destination,
+            containModel: {
+              cols: 4,
+              gridHeightUnits: 3,
+              headerUnits: 0,
+              footerUnits: 0,
+              headerMinPx: 0,
+            },
+          }));
+        })
+      );
+      const measure = (width: number, height: number) => {
+        exposed = true;
+        sizing.captureContainerDimensions({ width, height });
+        sizing.updateContainedDimensions({ width, height });
+        exposed = false;
+      };
+
+      measure(8, 847);
+      expect([sizing.containerWidth, sizing.containerHeight]).toEqual([
+        760, 847,
+      ]);
+      destination = null;
+      if (collapseFirst) {
+        measure(8, 20);
+        expect([sizing.containerWidth, sizing.containerHeight]).toEqual([
+          760, 847,
+        ]);
+      }
+      phase = null;
+      measure(366, 287);
+      expect([sizing.containerWidth, sizing.containerHeight]).toEqual([
+        366, 287,
+      ]);
+      measure(420, 280);
+      expect([sizing.containerWidth, sizing.containerHeight]).toEqual([
+        420, 280,
+      ]);
+
+      phase = "restore";
+      destination = { width: 760, height: 847 };
+      measure(20, 847);
+      expect([sizing.containerWidth, sizing.containerHeight]).toEqual([
+        760, 847,
+      ]);
+    }
+  );
+
   it("uses the destination box instead of chasing a moving panel", () => {
     vi.stubGlobal(
       "ResizeObserver",

@@ -11,7 +11,7 @@
     cardIndex = 0,
   } = $props<{
     setupsCardValue?: string;
-    setupsCardStatus?: "active" | "modified" | null;
+    setupsCardStatus?: "active" | null;
     onOpenDrawer?: () => void;
     color?: string;
     shadowColor?: string;
@@ -19,11 +19,7 @@
   }>();
 
   const statusLabel = $derived(
-    setupsCardStatus === "active"
-      ? "Active"
-      : setupsCardStatus === "modified"
-        ? "Modified"
-        : ""
+    setupsCardStatus === "active" ? "Active" : ""
   );
 </script>
 
@@ -39,7 +35,7 @@
     onClick={onOpenDrawer}
   >
     <span class="setup-status">
-      <span class="setup-status-sizer" aria-hidden="true">Modified</span>
+      <span class="setup-status-sizer" aria-hidden="true">Active</span>
       <span class="setup-status-live">{statusLabel}</span>
     </span>
   </BaseCard>

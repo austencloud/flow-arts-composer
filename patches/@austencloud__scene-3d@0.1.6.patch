@@ -5,10 +5,10 @@ diff --git a/dist/index.d.ts.map b/dist/index.d.ts.map
 deleted file mode 100644
 index d554c5bba49036758f9b3c997d025556395cf72b..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/Avatar3D.svelte b/dist/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884e2a965ca 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..6a1620705192db8f4680c17bdb0eb1283eb5ba9d 100644
 --- a/dist/lib/components/Avatar3D.svelte
 +++ b/dist/lib/components/Avatar3D.svelte
-@@ -16,29 +16,41 @@
+@@ -16,29 +16,44 @@
     */
  
    import { onMount, onDestroy, untrack } from "svelte";
@@ -53,12 +53,15 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 -  import type { ILocomotionAnimator } from "../services/contracts/ILocomotionAnimator";
 +  import type {
 +    ILocomotionAnimator,
++    LateralGait,
 +    LocomotionGaitClock,
++    ScheduledGaitTimingSample,
++    TerminalStepPlan,
 +  } from "../services/contracts/ILocomotionAnimator";
    import type { IAnimationStateMachine } from "../services/contracts/IAnimationStateMachine";
    import { LocomotionState } from "../services/contracts/IAnimationStateMachine";
    import type { IRootMotionExtractor } from "../services/contracts/IRootMotionExtractor";
-@@ -51,7 +63,19 @@
+@@ -51,7 +66,19 @@
    import { createAvatarServices } from "../services/implementations/AvatarServicesFactory";
    import { GripType } from "../domain/models/GripPose";
    import { CollisionDetector } from "../services/implementations/CollisionDetector";
@@ -79,7 +82,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
    import { tryGetViewer3DContext } from "../context/viewer-3d-context";
    import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
    import {
-@@ -74,6 +98,17 @@
+@@ -74,6 +101,17 @@
    const blueVisible = $derived(viewerVisibility?.blueMotion ?? true);
    const redVisible = $derived(viewerVisibility?.redMotion ?? true);
  
@@ -97,7 +100,16 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
    // Default Z position for avatars
    // Placing avatar at z=0 (same as grid plane) so hands are exactly at prop positions
    // The avatar's body is thin enough that it won't clip through the grid
-@@ -115,11 +150,46 @@
+@@ -99,6 +137,8 @@
+     moveSpeed?: number;
+     /** Movement direction relative to facing: x (-1 left, +1 right), z (-1 back, +1 forward) */
+     moveDirection?: { x: number; z: number };
++    /** Authored lateral vocabulary selected for pure left/right travel. */
++    lateralGait?: LateralGait;
+     /** Enable idle/walk locomotion animation. False for exhibit performers
+      *  that should only use IK (no idle animation fighting the pose). */
+     enableLocomotion?: boolean;
+@@ -115,11 +155,58 @@
      enableRootMotion?: boolean;
      /** Called each frame with the world-space XZ delta from root motion.
       *  The parent applies this to physics for collision-aware movement. */
@@ -107,8 +119,20 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +      z: number;
 +      yawDelta: number;
 +    }) => void;
++    /** Reports the absolute authored yaw sampled for the active turn. The
++     *  parent owns the world-space heading and can therefore scrub without
++     *  accumulating floating-point drift. */
++    onTurnYawSample?: (yawDelta: number) => void;
++    /** Reports the authored turn's local planar root offset in scene units. */
++    onTurnRootSample?: (offset: { x: number; z: number }) => void;
 +    /** Reports the exact phase driving the walk clips after each update. */
 +    onGaitClock?: (clock: LocomotionGaitClock) => void;
++    /** Authored two-step braking transition for an exact destination. */
++    terminalStepPlan?: TerminalStepPlan | null;
++    /** Score-authored sample that drives the animator's gait clock. */
++    gaitTimingSample?: ScheduledGaitTimingSample | null;
++    /** Changes whenever the owner teleports the rig back to a known origin. */
++    locomotionResetKey?: number;
      /** PropAnchor group ref for blue hand IK target (from PerformerRig) */
      bluePropAnchorRef?: import("three").Group;
      /** PropAnchor group ref for red hand IK target (from PerformerRig) */
@@ -145,7 +169,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
      /** Disable spine twist (dual-wheel: wide lateral targets twist the torso/feet) */
      disableSpineTwist?: boolean;
      /** Current beat index for collision detection logging */
-@@ -128,7 +198,11 @@
+@@ -128,7 +215,11 @@
      beatProgress?: number;
      /** Optional callback invoked each frame with the collision detector's events.
       *  Lets parent components surface collision state without duplicating detection. */
@@ -158,11 +182,24 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
      /** Extra forward pitch (radians) applied to Spine1 before arm IK runs.
       *  Positive values lean the torso forward. Used by the collision lab's
       *  lean-forward stance variant. 0 = no external pitch. */
-@@ -173,8 +247,15 @@
+@@ -166,6 +257,7 @@
+     isMoving = false,
+     moveSpeed = 1,
+     moveDirection = { x: 0, z: 1 },
++    lateralGait = "sidestep",
+     enableLocomotion = false,
+     isGrounded = true,
+     verticalVelocity = 0,
+@@ -173,8 +265,20 @@
      isJumpRequested = false,
      enableRootMotion = false,
      onRootMotion,
++    onTurnYawSample,
++    onTurnRootSample,
 +    onGaitClock,
++    terminalStepPlan = null,
++    gaitTimingSample = null,
++    locomotionResetKey = 0,
      bluePropAnchorRef,
      redPropAnchorRef,
 +    bluePropCorrectionRef,
@@ -174,7 +211,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
      disableSpineTwist = false,
      stepNumber = 0,
      beatProgress = 0,
-@@ -195,8 +276,16 @@
+@@ -195,8 +299,17 @@
    // Services (manually instantiated to ensure shared skeleton instance)
    let skeletonService: IAvatarSkeletonBuilder | null = $state(null);
    let ikSolver: IIKSolver | null = $state(null);
@@ -189,10 +226,11 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +   *  and an unchanged rig does not reconfigure every frame. */
 +  let appliedSoleOffset = 0;
 +  let appliedToeOffset = -1;
++  let appliedLockBlendInTime = 0.08;
    let stateMachine: IAnimationStateMachine | null = null;
    let rootMotionExtractor: IRootMotionExtractor | null = null;
    let footPlanter: IFootPlanter | null = null;
-@@ -210,21 +299,43 @@
+@@ -210,21 +323,43 @@
    // Collision detection - logs when props/arms clip through the avatar body
    const collisionDetector = new CollisionDetector();
    const _boneVecs = {
@@ -248,7 +286,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
  
    /**
     * Base rotation from the staff's local-Y axis to the "horizontal" axis
-@@ -236,8 +347,6 @@
+@@ -236,8 +371,6 @@
    const STAFF_HORIZONTAL_QUAT = new Quaternion().setFromEuler(
      new Euler(0, 0, Math.PI / 2)
    );
@@ -257,12 +295,14 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
    const _blueSegA = new Vector3();
    const _blueSegB = new Vector3();
    const _redSegA = new Vector3();
-@@ -245,42 +354,203 @@
+@@ -245,42 +378,219 @@
  
    const blueSeg: PropSegment = { a: _blueSegA, b: _blueSegB, radius: 0.012 };
    const redSeg: PropSegment = { a: _redSegA, b: _redSegB, radius: 0.012 };
 +  const _leftPalmDiagnostic = new Vector3();
 +  const _rightPalmDiagnostic = new Vector3();
++  const _leftGripAxisDiagnostic = new Vector3();
++  const _rightGripAxisDiagnostic = new Vector3();
 +  const _gripDiagnostics: AvatarGripDiagnostics = {
 +    stepNumber: 0,
 +    beatProgress: 0,
@@ -274,6 +314,8 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +    rightWrist: null,
 +    leftPalm: null,
 +    rightPalm: null,
++    leftGripAxis: null,
++    rightGripAxis: null,
 +    renderedBlueGrip: null,
 +    renderedRedGrip: null,
 +    blueCorrectionLocal: null,
@@ -281,8 +323,13 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +    blueStaffSegment: null,
 +    redStaffSegment: null,
 +  };
++
++  const _unitY = new Vector3(0, 1, 0);
++  const _turnBaseEuler = new Euler();
++  const _turnAuthoredEuler = new Euler();
++  const _turnBlendedEuler = new Euler();
  
--  /**
+   /**
 -   * Build a staff segment (tip-to-tip) from a prop's grip center, its
 -   * rotation state, and the avatar's facing. Writes into the passed
 -   * Vector3s to avoid per-frame allocation.
@@ -293,10 +340,29 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 -   * The result is the final world direction of the cylinder's +Y axis.
 -   * Multiplied by halfLength and added/subtracted from the grip gives
 -   * the two tip positions.
--   */
++   * The middle of a turn belongs fully to the authored clip. Its opening and
++   * terminal frames meet the currently playing idle pose with a fifth-order
++   * ease, which keeps velocity and acceleration continuous at both seams.
+    */
 -  function buildStaffSegment(
 -    gripCenter: Vector3,
-+  const _unitY = new Vector3(0, 1, 0);
++  function turnPoseWeight(phase: number): number {
++    const smootherStep = (value: number) => {
++      const t = Math.max(0, Math.min(1, value));
++      return t * t * t * (t * (t * 6 - 15) + 10);
++    };
++    const blendWindow = 0.18;
++    return Math.min(
++      smootherStep(phase / blendWindow),
++      smootherStep((1 - phase) / blendWindow)
++    );
++  }
++
++  function blendRadians(from: number, to: number, weight: number): number {
++    const twoPi = Math.PI * 2;
++    const delta = ((((to - from + Math.PI) % twoPi) + twoPi) % twoPi) - Math.PI;
++    return from + delta * weight;
++  }
 +
 +  // --- Wrist orientation + last-mile contact lock ---
 +  // Full world staff orientations handed to the animator so the wrist can
@@ -325,7 +391,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +    quaternion: _redRenderedStaffQuat,
 +    halfLen: 0.457,
 +  };
-+  const _noHeadThreats: typeof _blueHeadThreat[] = [];
++  const _noHeadThreats: (typeof _blueHeadThreat)[] = [];
 +  const _blueHeadThreats = [_blueHeadThreat];
 +  const _redHeadThreats = [_redHeadThreat];
 +  const _bothHeadThreats = [_blueHeadThreat, _redHeadThreat];
@@ -337,8 +403,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +  // Grip-weld scratch (no per-frame allocation)
 +  const _knuckleWorld = new Vector3();
 +  const _staffPinkyWorld = new Vector3();
-+  const _planeNormalWorld = new Vector3();
-+  const _knuckleInPlane = new Vector3();
++  const _achievedGripAxis = new Vector3();
 +  const _weldDelta = new Quaternion();
 +  const _anchorWorldQuat = new Quaternion();
 +
@@ -428,29 +493,17 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +      return;
 +    }
 +
-+    // Grip weld (orientation): rotate the rendered prop about its grip
-+    // point so the shaft follows the fist - but only WITHIN the commanded
-+    // spin plane. The achieved knuckle line is projected onto that plane
-+    // (normal = staff-local +Z; calculatePropQuaternion spins about local
-+    // Z, so local Z is the plane normal for every plane) and the commanded
-+    // staff -Y is welded onto the projection. In-plane wrist lag still
-+    // reads as honest hand-drag; the out-of-plane shortfall (the wrist
-+    // deviation clamp starves whenever the shaft sweeps near the forearm
-+    // axis - unavoidable with a straight arm) renders as the shaft giving
-+    // within the fist instead of the whole prop bending its plane.
-+    // Directed on both sides: pinky-ward, so the thumb end (+Y / T-bar)
-+    // always exits the thumb side of the fist, never the flipped solution.
++    // Follow the achieved fist in three dimensions. Projecting its axis into
++    // the score plane lets a breathing or tilted hand slide around the shaft.
 +    if (weldGrip && staffQuat && animationService?.getKnuckleLineWorld) {
 +      const knuckle = animationService.getKnuckleLineWorld(side, _knuckleWorld);
 +      if (knuckle) {
 +        _staffPinkyWorld.set(0, -1, 0).applyQuaternion(staffQuat);
-+        _planeNormalWorld.set(0, 0, 1).applyQuaternion(staffQuat);
-+        _knuckleInPlane
-+          .copy(knuckle)
-+          .addScaledVector(_planeNormalWorld, -knuckle.dot(_planeNormalWorld));
-+        if (_knuckleInPlane.lengthSq() > 1e-4) {
-+          _knuckleInPlane.normalize();
-+          _weldDelta.setFromUnitVectors(_staffPinkyWorld, _knuckleInPlane);
++
++        _achievedGripAxis.copy(knuckle);
++        if (_achievedGripAxis.lengthSq() > 1e-4) {
++          _achievedGripAxis.normalize();
++          _weldDelta.setFromUnitVectors(_staffPinkyWorld, _achievedGripAxis);
 +          anchorRef.getWorldQuaternion(_anchorWorldQuat);
 +          correctionRef.quaternion
 +            .copy(_anchorWorldQuat)
@@ -458,8 +511,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +            .multiply(_weldDelta)
 +            .multiply(_anchorWorldQuat);
 +        } else {
-+          // Knuckle line nearly perpendicular to the plane - no meaningful
-+          // in-plane direction to follow; render the command as-is.
++          // A degenerate hand axis cannot define an attachment rotation.
 +          correctionRef.quaternion.identity();
 +        }
 +      } else {
@@ -489,7 +541,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
    let currentLoadedAvatarId = $state<string | null>(null);
    let isLoading = $state(false);
    let hasShownFallbackToast = $state(false);
-@@ -291,6 +561,66 @@
+@@ -291,6 +601,66 @@
    // Feet offset from model origin (negative value, updated after setHeight)
    let feetOffset = $state(0);
  
@@ -556,7 +608,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
    // Derived values from user proportions
    // avatarHeight is the target height in scene units (cm * CM_TO_UNITS)
    const avatarHeight = $derived(cmToUnits(userProportionsState.heightCm));
-@@ -300,16 +630,74 @@
+@@ -300,16 +670,74 @@
    // If position.y is provided (e.g., from terrain/physics), use it directly
    // Otherwise, use groundY from user proportions (for flat stage mode)
    // feetOffset adjusts so feet touch the ground (it's negative)
@@ -633,7 +685,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
    // Load a GLTF model for a specific avatar
    // Uses hot-swap pattern: keeps old avatar visible until new one is ready
    async function loadAvatar(targetAvatarId: string) {
-@@ -319,12 +707,22 @@
+@@ -319,12 +747,23 @@
      if (currentLoadedAvatarId === targetAvatarId) return;
  
      const url = getAvatarModelPath(targetAvatarId);
@@ -651,13 +703,14 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +      const preparedRoot = takePreparedAvatarRoot(url, renderer);
 +      rendererPreparedForSpan = rendererPrepared;
 +      hadPreparedRootForSpan = preparedRoot != null;
-+      const loadModel = () => skeletonService!.loadModel(url, preparedRoot ?? undefined);
++      const loadModel = () =>
++        skeletonService!.loadModel(url, preparedRoot ?? undefined);
 +      if (preparedRoot) await loadModel();
 +      else await schedulePerformerInitialization(loadModel, loadLabel);
  
        // Scale model to match user's height
        // setHeight() calculates proper scale and stores feet offset
-@@ -333,19 +731,43 @@
+@@ -333,19 +772,43 @@
        // Get the feet offset for positioning (negative value)
        feetOffset = skeletonService.getFeetOffset();
  
@@ -710,7 +763,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
        currentLoadedAvatarId = targetAvatarId;
        modelLoaded = true;
        useProceduralFallback = false;
-@@ -354,22 +776,7 @@
+@@ -354,22 +817,7 @@
        // can fade the avatar back in). Fires on initial load and on every swap.
        onModelSwapped?.(targetAvatarId);
  
@@ -734,7 +787,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
  
        // Verify arm chains are ready
        const leftChain = skeletonService.getLeftArmChain();
-@@ -388,17 +795,21 @@
+@@ -388,17 +836,21 @@
        // use IK only and don't need idle/walk animations.
        if (enableLocomotion && locomotionAnimator && cachedRoot) {
          // Configure before initialize so clips are prepared correctly
@@ -761,13 +814,40 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
            const hipsBone = locomotionAnimator.getHipsBone();
            if (hipsBone) {
              rootMotionExtractor.initialize(hipsBone);
-@@ -418,9 +829,15 @@
+@@ -416,12 +868,54 @@
+             idle: `${animBase}idle${rmSuffix}.glb`,
+             forward: `${animBase}walk-forward${rmSuffix}.glb`,
              backward: `${animBase}walk-backward${rmSuffix}.glb`,
++            // The old Mixamo strafes are crossover walks: one foot changes
++            // sides under the pelvis. These CMU-derived clips are authored
++            // foot-to-foot shuffles, so lateral travel never asks IK to push a
++            // swing leg through the supporting leg.
              strafeLeft: `${animBase}strafe-left${rmSuffix}.glb`,
              strafeRight: `${animBase}strafe-right${rmSuffix}.glb`,
 -            jump: enableRootMotion ? `${animBase}jump-up-rm.glb` : "/animations/jump-up.glb",
 -            fall: enableRootMotion ? `${animBase}falling-idle-rm.glb` : "/animations/falling-idle.glb",
 -            land: enableRootMotion ? `${animBase}falling-to-landing-rm.glb` : "/animations/hard-landing.glb",
++            grapevineLeft: enableRootMotion
++              ? undefined
++              : `${animBase}grapevine-left.glb`,
++            grapevineRight: enableRootMotion
++              ? undefined
++              : `${animBase}grapevine-right.glb`,
++            // Run tier. Omitted under root motion on purpose: run-rm.glb is
++            // byte-identical to run.glb and the strafe runs have no -rm export
++            // at all, so the hips carry no XZ displacement and a root-motion
++            // host would drive the run clip at zero travel. Walk clips keep
++            // their behaviour; a root-motion run needs a real in-place-off
++            // export first.
++            runForward: enableRootMotion
++              ? undefined
++              : `${animBase}run.glb`,
++            runStrafeLeft: enableRootMotion
++              ? undefined
++              : `${animBase}strafe-run-left.glb`,
++            runStrafeRight: enableRootMotion
++              ? undefined
++              : `${animBase}strafe-run-right.glb`,
 +            jump: enableRootMotion
 +              ? `${animBase}jump-up-rm.glb`
 +              : "/animations/jump-up.glb",
@@ -778,9 +858,21 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +              ? `${animBase}falling-to-landing-rm.glb`
 +              : "/animations/hard-landing.glb",
              crouch: "/animations/crouch-idle.glb",
++            terminalStops: {
++              left: {
++                animation: "/animations/terminal-stops/walk-stop-left.glb",
++                motion: "/animations/terminal-stops/walk-stop-left.motion.json",
++              },
++              right: {
++                animation: "/animations/terminal-stops/walk-stop-right.glb",
++                motion:
++                  "/animations/terminal-stops/walk-stop-right.motion.json",
++              },
++            },
            })
            .catch((err) => {
-@@ -444,18 +861,35 @@
+             console.warn(
+@@ -444,18 +938,39 @@
          const turnsBase = "/animations/turns/";
          const probeUrl = `${turnsBase}turn-left-90.glb`;
          const rootForTurns = cachedRoot;
@@ -803,29 +895,33 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +                  glbUrl: `${turnsBase}turn-left-90.glb`,
 +                  contactUrl: `${turnsBase}turn-left-90.contact.json`,
 +                  clipName: "turn-left-90",
++                  includeSpine: false,
 +                },
 +                {
 +                  angleDeg: -90,
 +                  glbUrl: `${turnsBase}turn-right-90.glb`,
 +                  contactUrl: `${turnsBase}turn-right-90.contact.json`,
 +                  clipName: "turn-right-90",
++                  includeSpine: false,
 +                },
 +                {
 +                  angleDeg: 180,
 +                  glbUrl: `${turnsBase}turn-left-180.glb`,
 +                  contactUrl: `${turnsBase}turn-left-180.contact.json`,
 +                  clipName: "turn-left-180",
++                  includeSpine: false,
 +                },
 +                {
 +                  angleDeg: -180,
 +                  glbUrl: `${turnsBase}turn-right-180.glb`,
 +                  contactUrl: `${turnsBase}turn-right-180.contact.json`,
 +                  clipName: "turn-right-180",
++                  includeSpine: false,
 +                },
                ])
                .then(() => {
                  // Register turn clip contact curves so FootPlanter can query them
-@@ -476,7 +910,13 @@
+@@ -476,7 +991,13 @@
        // ikSolver, which is still used by arm IK elsewhere in this file).
        // Gated on enableFootPlanting - off by default so the museum FPS player
        // (which wants responsive code-driven movement) isn't affected.
@@ -840,7 +936,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
          footPlanter.initialize(skeletonService, legIKSolver, contactCurveCache);
        }
  
-@@ -502,6 +942,16 @@
+@@ -502,6 +1023,16 @@
        }
      } finally {
        isLoading = false;
@@ -857,7 +953,23 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
      }
    }
  
-@@ -570,8 +1020,14 @@
+@@ -560,6 +1091,15 @@
+     }
+   });
+ 
++  $effect(() => {
++    void locomotionResetKey;
++    if (!servicesReady) return;
++    stateMachine?.reset();
++    locomotionAnimator?.reset();
++    footPlanter?.reset();
++    currentLocomotionState = LocomotionState.IDLE;
++  });
++
+   // React to height changes - update avatar scale
+   $effect(() => {
+     if (!skeletonService || !modelLoaded || useProceduralFallback) return;
+@@ -570,8 +1110,14 @@
  
      // Update feetOffset for positioning (use untrack to prevent re-triggering)
      const newFeetOffset = skeletonService.getFeetOffset();
@@ -872,7 +984,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
      });
    });
  
-@@ -587,7 +1043,7 @@
+@@ -587,25 +1133,30 @@
  
      // Disable spine twist in dual-wheel mode - wide lateral IK targets
      // twist the torso and shift the feet on the ground.
@@ -881,8 +993,11 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
        (animationService as any).setSpineTwistEnabled(!disableSpineTwist);
      }
  
-@@ -596,16 +1052,19 @@
+     // 1. Full-body animation (idle/walk/jump/fall/land with arm swing, hip sway)
+     // Only runs for locomotion-enabled avatars (player), not exhibit performers
      if (enableLocomotion && locomotionAnimator) {
++      locomotionAnimator.setGaitTimingSample?.(gaitTimingSample);
++      locomotionAnimator.setTerminalStepPlan?.(terminalStepPlan);
        if (stateMachine) {
          // State machine decides what state we're in based on physics signals
 -        const stateOutput = stateMachine.update({
@@ -911,27 +1026,99 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
  
          // Feed state to LocomotionAnimator for clip selection
          locomotionAnimator.setActiveState?.(stateOutput.state);
-@@ -627,6 +1086,8 @@
+@@ -614,6 +1165,7 @@
+           speed: stateOutput.animationSpeed,
+           facingAngle: stateOutput.facingAngle,
+           moveDirection: stateOutput.moveDirection,
++          lateralGait,
+         });
+         // Track state for FootPlanter (airborne states skip foot planting)
+         currentLocomotionState = stateOutput.state;
+@@ -624,9 +1176,19 @@
+           speed: moveSpeed,
+           facingAngle,
+           moveDirection,
++          lateralGait,
          });
        }
        locomotionAnimator.update(delta);
 +      const gaitClock = locomotionAnimator.getGaitClock?.();
 +      if (gaitClock) onGaitClock?.(gaitClock);
++      const terminalOwnsContact =
++        gaitClock?.terminal?.status === "braking" ||
++        gaitClock?.terminal?.status === "landed" ||
++        gaitClock?.terminal?.status === "settled";
++      if (terminalOwnsContact) {
++        currentLocomotionState = LocomotionState.WALKING;
++      }
  
        // Turn clip overlay - when a turn is active, overwrite lower-body
        // and spine bones with the turn clip's authored pose at the current
-@@ -642,7 +1103,9 @@
+@@ -639,20 +1201,52 @@
+       if (turnRequestProp && turnAnimator?.isReady() && skeletonService) {
+         const sample = turnAnimator.sample(turnRequestProp);
+         const bones = skeletonService.getState().bones;
++        const poseWeight =
++          turnRequestProp.poseWeight === undefined
++            ? turnPoseWeight(turnRequestProp.phase)
++            : Math.max(0, Math.min(1, turnRequestProp.poseWeight));
++        if (sample.clipName || !turnRequestProp.requireAuthored) {
++          onTurnYawSample?.(sample.yawDelta);
++        }
  
-         // Apply bone rotations - overwrite animation pose for lower body
-         for (const [boneName, quat] of sample.boneRotations) {
+-        // Apply bone rotations - overwrite animation pose for lower body
+-        for (const [boneName, quat] of sample.boneRotations) {
 -          const bone = bones.get(boneName as import("../services/contracts/IAvatarSkeletonBuilder").BoneName);
+-          if (bone) {
+-            bone.quaternion.copy(quat);
+-          }
++        if (onTurnRootSample) {
++          const cmToScene = avatarHeight / 170;
++          onTurnRootSample({
++            x: (sample.hipsPosition?.x ?? 0) * cmToScene * poseWeight,
++            z: (sample.hipsPosition?.y ?? 0) * cmToScene * poseWeight,
++          });
+         }
+ 
+-        // Apply Hips position for root motion yaw extraction
+-        if (sample.hipsPosition) {
+-          const hipsBone = bones.get("Hips");
+-          if (hipsBone) {
+-            hipsBone.position.copy(sample.hipsPosition);
++        // Blend the authored body mechanics over the live idle pose. World yaw
++        // belongs to PerformerRig, which samples the source clip's explicit
++        // yaw curve. Keeping the target rig's local Hips yaw here avoids both
++        // double rotation and any assumption about its retargeted up axis.
++        for (const [boneName, quat] of sample.boneRotations) {
 +          const bone = bones.get(
 +            boneName as import("../services/contracts/IAvatarSkeletonBuilder").BoneName
 +          );
-           if (bone) {
-             bone.quaternion.copy(quat);
++          if (bone) {
++            if (boneName === "Hips") {
++              _turnBaseEuler.setFromQuaternion(bone.quaternion, "XYZ");
++              _turnAuthoredEuler.setFromQuaternion(quat, "XYZ");
++              _turnBlendedEuler.set(
++                blendRadians(
++                  _turnBaseEuler.x,
++                  _turnAuthoredEuler.x,
++                  poseWeight
++                ),
++                blendRadians(
++                  _turnBaseEuler.y,
++                  _turnAuthoredEuler.y,
++                  poseWeight
++                ),
++                _turnBaseEuler.z,
++                "XYZ"
++              );
++              bone.quaternion.setFromEuler(_turnBlendedEuler);
++            } else {
++              bone.quaternion.slerp(quat, poseWeight);
++            }
            }
-@@ -681,7 +1144,11 @@
+         }
+ 
+@@ -681,7 +1275,11 @@
        // displacement needs the same conversion.
        if (rootMotionExtractor?.isReady() && onRootMotion) {
          const localDelta = rootMotionExtractor.extract();
@@ -944,7 +1131,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
            // Convert Mixamo centimeters to scene units.
            // Our avatar is scaled to ~avatarHeight scene units for ~170cm Mixamo model.
            // So 1 Mixamo cm ≈ avatarHeight/170 scene units.
-@@ -708,28 +1175,79 @@
+@@ -708,28 +1306,98 @@
        // clips without authored curves. Gated on enableFootPlanting so the
        // museum FPS player stays fully code-driven.
        if (enableFootPlanting && footPlanter?.isReady()) {
@@ -961,7 +1148,10 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +        // Stride warping happens along the world axis the performer travels,
 +        // and moveDirection is expressed relative to their facing.
 +        let travelDirection: { x: number; z: number } | undefined;
-+        if (performerRootRef && (moveDirection.x !== 0 || moveDirection.z !== 0)) {
++        if (
++          performerRootRef &&
++          (moveDirection.x !== 0 || moveDirection.z !== 0)
++        ) {
 +          performerRootRef.getWorldQuaternion(footTravelQuat);
 +          footTravelVec
 +            .set(moveDirection.x, 0, moveDirection.z)
@@ -988,16 +1178,33 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +        }
 +
 +        const contact = locomotionAnimator?.getFootContact?.();
++        const lockConfidence = currentTurnClipName
++          ? 1
++          : (locomotionAnimator?.getFootPlantConfidence?.() ?? 1);
 +
++        // One-shot transitions own their contact schedule, so their anchors
++        // take hold more gradually than a cyclic plant. Terminal contact is
++        // held; a turn still needs its next authored placement.
++        const lockBlendInTime = terminalOwnsContact
++          ? 0.3
++          : currentTurnClipName
++            ? 0.18
++            : 0.08;
++        if (lockBlendInTime !== appliedLockBlendInTime) {
++          footPlanter.configure({ lockBlendInTime });
++          appliedLockBlendInTime = lockBlendInTime;
++        }
          footPlanter.update(delta, {
 -          groundY: 0, // Rig-local ground; PerformerRig handles world offset
 +          groundY: footGroundY,
            locomotionState: currentLocomotionState,
-           isMoving,
+-          isMoving,
++          isMoving: isMoving || terminalOwnsContact,
            currentClipName: currentTurnClipName,
            currentClipPhase: currentTurnPhase,
 +          contactLeft: contact?.left,
 +          contactRight: contact?.right,
++          lockConfidence,
 +          strideScale: locomotionAnimator?.getStrideScale?.() ?? 1,
 +          travelDirection,
          });
@@ -1028,7 +1235,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
      }
  
      if (redPropAnchorRef && redPropState) {
-@@ -737,6 +1255,10 @@
+@@ -737,6 +1405,10 @@
        redPropAnchorRef.getWorldPosition(redIKTarget);
      } else if (redPropState) {
        redIKTarget.copy(redPropState.worldPosition);
@@ -1039,7 +1246,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
      }
  
      const blueWorldProp = bluePropState
-@@ -746,15 +1268,129 @@
+@@ -746,15 +1418,137 @@
        ? { ...redPropState, worldPosition: redIKTarget }
        : null;
  
@@ -1061,6 +1268,10 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +          )
 +        : null;
 +
++    // Head avoidance reads the same grip-welded staff pose that was rendered
++    // last frame. The one-frame delay is smoothed by the dodge controller and
++    // avoids the old mismatch where the safety system judged the authored
++    // anchor while the visible shaft had already rotated into the fist.
 +    if (blueVisible && bluePropState) {
 +      updateRenderedStaffPose(
 +        bluePropCorrectionRef,
@@ -1116,6 +1327,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +          ? _redHeadThreats
 +          : _noHeadThreats
 +    );
++
 +    // Close the fingers before measuring the hand-local grip channel. The
 +    // animator can then weld each shaft through the opening formed by this
 +    // frame's posed finger bones instead of reading the previous frame.
@@ -1145,6 +1357,9 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +      _propOrientations.red
 +    );
 +
++    // Contact lock may have moved and rotated either shaft. Refresh the final
++    // render pose before collision detection so telemetry describes the pixels
++    // the user is looking at, not the pre-weld command.
 +    if (blueVisible && bluePropState) {
 +      updateRenderedStaffPose(
 +        bluePropCorrectionRef,
@@ -1169,7 +1384,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
      // 2b. Collision detection - run after IK so bones are at final positions
      if (collisionDetector.enabled && skeletonService) {
        const state = skeletonService.getState();
-@@ -768,56 +1404,55 @@
+@@ -768,56 +1562,55 @@
        bones.get("Spine2")?.getWorldPosition(_boneVecs.spine2);
        bones.get("Spine1")?.getWorldPosition(_boneVecs.spine1);
        bones.get("Hips")?.getWorldPosition(_boneVecs.hips);
@@ -1256,7 +1471,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
            halfStaffLength,
            _redSegA,
            _redSegB
-@@ -825,23 +1460,123 @@
+@@ -825,23 +1618,134 @@
          redSegOrNull = redSeg;
        }
  
@@ -1271,7 +1486,10 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +        _boneVecs.leftShoulder
        );
 -      onCollisionEvents?.(events);
+-    }
 +      _poseDiagnostics.shoulderWidth = _diagnosticShoulderLateral.length();
++      // Arm-segment lengths come straight off the mapped chains, so a rig the
++      // catalog has never seen is measured rather than assumed.
 +      _poseDiagnostics.leftUpperArmLength = leftChain?.upperLength ?? 0;
 +      _poseDiagnostics.leftForearmLength = leftChain?.lowerLength ?? 0;
 +      _poseDiagnostics.rightUpperArmLength = rightChain?.upperLength ?? 0;
@@ -1303,6 +1521,13 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +      } else {
 +        _poseDiagnostics.achievedTorsoPitchRad = 0;
 +      }
+ 
+-    // 3. Finger grips
+-    if (fingerAnimator?.isReady()) {
+-      const leftGrip = bluePropState ? GripType.SQUARE : GripType.IDLE;
+-      const rightGrip = redPropState ? GripType.SQUARE : GripType.IDLE;
+-      fingerAnimator.setGrips(leftGrip, rightGrip);
+-      fingerAnimator.update(delta);
 +      _diagnosticShoulderLateral.y = 0;
 +      _diagnosticRootForward.y = 0;
 +      if (
@@ -1340,6 +1565,10 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +      _poseDiagnostics.appliedStanceYawRad = posture.appliedStanceYawRad;
 +      _poseDiagnostics.appliedReachLeanRad = posture.appliedReachLeanRad;
 +      _poseDiagnostics.appliedHeadDodgeRad = posture.appliedHeadDodgeRad;
++
++      // The skeleton emits a few all-zero frames while a GLB is binding. They
++      // are not poses, and recording them creates fake 13–16 cm penetrations at
++      // step zero that obscure the first real failure.
 +      const events =
 +        _poseDiagnostics.shoulderWidth > 0.05
 +          ? collisionDetector.detect(
@@ -1365,6 +1594,10 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +        animationService.getPalmWorldPoint?.("left", _leftPalmDiagnostic) ?? null;
 +      _gripDiagnostics.rightPalm =
 +        animationService.getPalmWorldPoint?.("right", _rightPalmDiagnostic) ?? null;
++      _gripDiagnostics.leftGripAxis =
++        animationService.getKnuckleLineWorld?.("left", _leftGripAxisDiagnostic) ?? null;
++      _gripDiagnostics.rightGripAxis =
++        animationService.getKnuckleLineWorld?.("right", _rightGripAxisDiagnostic) ?? null;
 +      _gripDiagnostics.renderedBlueGrip = blueSegOrNull
 +        ? _blueRenderedGrip
 +        : null;
@@ -1383,18 +1616,11 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
 +      _gripDiagnostics.redStaffSegment = redSegOrNull;
 +      onCollisionEvents?.(events, _poseDiagnostics, _gripDiagnostics);
      }
- 
--    // 3. Finger grips
--    if (fingerAnimator?.isReady()) {
--      const leftGrip = bluePropState ? GripType.SQUARE : GripType.IDLE;
--      const rightGrip = redPropState ? GripType.SQUARE : GripType.IDLE;
--      fingerAnimator.setGrips(leftGrip, rightGrip);
--      fingerAnimator.update(delta);
--    }
++
    });
  
    // Note: Visibility is handled via the {#if visible} in the template
-@@ -867,20 +1602,15 @@
+@@ -867,20 +1771,15 @@
    // transparent with depth-write off so the fade blends correctly.
    $effect(() => {
      if (!cachedRoot) return;
@@ -1421,7 +1647,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
      // Dispose locomotion animator, state machine, and foot planter
      if (locomotionAnimator) {
        locomotionAnimator.dispose();
-@@ -913,13 +1643,19 @@
+@@ -913,13 +1812,19 @@
  </script>
  
  {#if visible}
@@ -1448,7 +1674,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
      <T.Group
        name={`PERFORMER_${id}`}
        position={[position.x, position.y ?? 0, position.z]}
-@@ -940,9 +1676,10 @@
+@@ -940,9 +1845,10 @@
        - rotation.y: facingAngle (avatar faces movement direction)
  
        groupY calculation:
@@ -1462,7 +1688,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..ffe75f6faa7409a09bde9b228b21e884
        - This positions feet at the correct ground level
  
        Using cachedRoot instead of skeletonService.getRoot() ensures
-@@ -950,6 +1687,7 @@
+@@ -950,6 +1856,7 @@
        preventing visual glitches during avatar swap.
      -->
      <T.Group
@@ -2918,10 +3144,10 @@ diff --git a/dist/lib/components/props/Eightrings3D.svelte.d.ts.map b/dist/lib/c
 deleted file mode 100644
 index fadf6104b043722cb8415eb47964e1527ee8a117..0000000000000000000000000000000000000000
 diff --git a/dist/lib/components/props/Fan3D.svelte b/dist/lib/components/props/Fan3D.svelte
-index dc635e752d11561cb585cbaaffa05b1e525d31e8..8f93dc5db7f5d6d6da7f76381c3217792730aa64 100644
+index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c622320d074 100644
 --- a/dist/lib/components/props/Fan3D.svelte
 +++ b/dist/lib/components/props/Fan3D.svelte
-@@ -1,29 +1,52 @@
+@@ -1,29 +1,51 @@
 +<script module lang="ts">
 +  import type { BufferGeometry } from "three";
 +  import { buildFanShape, FAN_FRAME_WIDTH } from "./fan-profile";
@@ -2967,7 +3193,6 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..8f93dc5db7f5d6d6da7f76381c321779
    import { T } from "@threlte/core";
 -  import { DoubleSide } from "three";
 +  import { useGltf } from "@threlte/extras";
-+  import { untrack } from "svelte";
 +  import type { Material, Mesh, MeshStandardMaterial, Object3D } from "three";
    import type { Prop3DProps } from "./Prop3DProps";
    import { PROP_COLORS } from "./Prop3DProps";
@@ -2989,7 +3214,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..8f93dc5db7f5d6d6da7f76381c321779
  
    let {
      propState,
-@@ -33,156 +56,121 @@
+@@ -33,156 +55,124 @@
      thickness,
      isActivePlayer = false,
      scale = 1,
@@ -3013,7 +3238,10 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..8f93dc5db7f5d6d6da7f76381c321779
  
 -  const staffLength = $derived(
 +  const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
-+  const gltf = useGltf(untrack(() => MODEL_URL));
++  const fanLoader = useGltf();
++  const gltf = $derived(fanLoader.load(
++    build.fanBuild === "flat-grip" ? "/models/props/fan-flat-grip.glb" : MODEL_URL
++  ));
 +  const rotation = $derived(computePropRotation(propState));
 +  const trailMaterial = $derived(getPlateMaterials(color).trail);
 +  const effectiveLength = $derived(
@@ -10754,10 +10982,34 @@ diff --git a/dist/lib/services/implementations/FingerAnimator.d.ts.map b/dist/li
 deleted file mode 100644
 index c81171af6db42d1aee03e56854cbd3557e1a6695..0000000000000000000000000000000000000000
 diff --git a/dist/lib/services/implementations/FingerAnimator.js b/dist/lib/services/implementations/FingerAnimator.js
-index 6c2e8693da61c08f226c11b78b90cc1439db718f..5d20bb62187f500ba7307fe5e7cf876f75f4828a 100644
+index 6c2e8693da61c08f226c11b78b90cc1439db718f..ac0433b79fae9ec46c6b1b13608b7ea2dba861f9 100644
 --- a/dist/lib/services/implementations/FingerAnimator.js
 +++ b/dist/lib/services/implementations/FingerAnimator.js
-@@ -7,6 +7,7 @@ export class FingerAnimator {
+@@ -1,15 +1,35 @@
+-import { Quaternion } from "three";
++import { Euler, Quaternion, Vector3 } from "three";
+ import { GripType, FINGER_BONES, } from "../../domain/models/GripPose";
+ import { STAFF_GRIP_POSES } from "../../data/grip-poses/staff-grip-poses";
++const THUMB_BONE_COUNT = 3;
++const INDEX_MIDDLE_JOINT = 4;
++const MIDDLE_PROXIMAL_JOINT = 6;
++const THUMB_CONTACT_MIN_PALM_FRACTION = 0.12;
++const THUMB_CONTACT_MAX_PALM_FRACTION = 0.5;
++const THUMB_CONTACT_TARGET_PALM_FRACTION = 0.28;
++/**
++ * The taxonomy pose describes a human thumb, but different exporters give the
++ * thumb base a different local frame. These bounded candidates let the posed
++ * thumb find the already-curled index side of this rig's own hand. They only
++ * run when the authored square pose leaves the thumb outside the grip.
++ */
++const SQUARE_THUMB_BASE_FLEXION_DEGREES = [5, 15, 25, 35];
++const SQUARE_THUMB_ABDUCTION_DEGREES = [5, 20, 35];
++const SQUARE_THUMB_OPPOSITION_DEGREES = [-45, -30, -15, 0, 15, 30];
++const SQUARE_THUMB_MIDDLE_FLEXION_DEGREES = [0, 15, 30, 40];
++const SQUARE_THUMB_TIP_FLEXION_DEGREES = [10, 25, 40];
+ export class FingerAnimator {
+     leftHand = null;
+     rightHand = null;
      blendSpeed = 6.0;
      ready = false;
      scratchQuat = new Quaternion();
@@ -10765,7 +11017,12 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..5d20bb62187f500ba7307fe5e7cf876f
      initialize(fingerChains) {
          this.leftHand = this.createHandState(fingerChains.left);
          this.rightHand = this.createHandState(fingerChains.right);
-@@ -47,6 +48,7 @@ export class FingerAnimator {
++        this.calibrateSquareThumb(this.leftHand, "left");
++        this.calibrateSquareThumb(this.rightHand, "right");
+         this.ready = true;
+         this.applyPoseImmediate(this.leftHand, GripType.IDLE, "left");
+         this.applyPoseImmediate(this.rightHand, GripType.IDLE, "right");
+@@ -47,6 +67,7 @@ export class FingerAnimator {
      }
      createHandState(boneMap) {
          const bones = [];
@@ -10773,7 +11030,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..5d20bb62187f500ba7307fe5e7cf876f
          const currentRotations = [];
          for (const boneName of FINGER_BONES) {
              const bone = boneMap.get(boneName);
-@@ -54,32 +56,39 @@ export class FingerAnimator {
+@@ -54,32 +75,137 @@ export class FingerAnimator {
                  throw new Error(`Missing finger bone: ${boneName}`);
              }
              bones.push(bone);
@@ -10786,15 +11043,102 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..5d20bb62187f500ba7307fe5e7cf876f
 +            restRotations,
              currentRotations,
              bones,
++            squareThumbDeltas: null,
          };
      }
 -    // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
 -    // Right-hand mirror negates Y and Z to reflect across the YZ plane.
 -    writeTargetRotation(gripType, boneIndex, hand) {
++    calibrateSquareThumb(state, hand) {
++        const thumbBase = state.bones[0];
++        const thumbTip = state.bones[2];
++        const indexMiddle = state.bones[INDEX_MIDDLE_JOINT];
++        const middleProximal = state.bones[MIDDLE_PROXIMAL_JOINT];
++        const palm = thumbBase?.parent;
++        if (!thumbBase || !thumbTip || !indexMiddle || !middleProximal || !palm) {
++            return;
++        }
++        const savedRotations = state.bones.map((bone) => bone.quaternion.clone());
++        const thumbPosition = thumbTip.getWorldPosition(new Vector3());
++        const indexPosition = indexMiddle.getWorldPosition(new Vector3());
++        const palmPosition = palm.getWorldPosition(new Vector3());
++        const middlePosition = middleProximal.getWorldPosition(new Vector3());
++        const palmLength = palmPosition.distanceTo(middlePosition);
++        if (palmLength < 1e-5)
++            return;
++        const restore = () => {
++            state.bones.forEach((bone, index) => bone.quaternion.copy(savedRotations[index]));
++            palm.updateWorldMatrix(true, true);
++        };
++        const applyDefaultSquare = () => {
++            state.squareThumbDeltas = null;
++            for (let index = 0; index < FINGER_BONES.length; index++) {
++                this.writeTargetRotation(state, GripType.SQUARE, index, hand);
++                state.bones[index].quaternion.copy(this.scratchQuat);
++            }
++            palm.updateWorldMatrix(true, true);
++        };
++        try {
++            applyDefaultSquare();
++            const defaultDistance = thumbPosition
++                .copy(thumbTip.getWorldPosition(thumbPosition))
++                .distanceTo(indexPosition.copy(indexMiddle.getWorldPosition(indexPosition)));
++            if (defaultDistance <= palmLength * THUMB_CONTACT_MAX_PALM_FRACTION) {
++                return;
++            }
++            const desiredDistance = palmLength * THUMB_CONTACT_TARGET_PALM_FRACTION;
++            let bestDeltas = null;
++            let bestScore = Math.abs(defaultDistance - desiredDistance);
++            for (const baseFlexion of SQUARE_THUMB_BASE_FLEXION_DEGREES) {
++                for (const abduction of SQUARE_THUMB_ABDUCTION_DEGREES) {
++                    for (const opposition of SQUARE_THUMB_OPPOSITION_DEGREES) {
++                        for (const middleFlexion of SQUARE_THUMB_MIDDLE_FLEXION_DEGREES) {
++                            for (const tipFlexion of SQUARE_THUMB_TIP_FLEXION_DEGREES) {
++                                const candidate = [
++                                    new Quaternion().setFromEuler(new Euler((baseFlexion * Math.PI) / 180, (abduction * Math.PI) / 180, (opposition * Math.PI) / 180)),
++                                    new Quaternion().setFromEuler(new Euler((middleFlexion * Math.PI) / 180, 0, 0)),
++                                    new Quaternion().setFromEuler(new Euler((tipFlexion * Math.PI) / 180, 0, 0)),
++                                ];
++                                for (let index = 0; index < THUMB_BONE_COUNT; index++) {
++                                    this.writeThumbTargetRotation(state, candidate[index], index, hand);
++                                    state.bones[index].quaternion.copy(this.scratchQuat);
++                                }
++                                palm.updateWorldMatrix(true, true);
++                                const distance = thumbTip
++                                    .getWorldPosition(thumbPosition)
++                                    .distanceTo(indexMiddle.getWorldPosition(indexPosition));
++                                if (distance <
++                                    palmLength * THUMB_CONTACT_MIN_PALM_FRACTION ||
++                                    distance > palmLength * THUMB_CONTACT_MAX_PALM_FRACTION) {
++                                    continue;
++                                }
++                                const score = Math.abs(distance - desiredDistance);
++                                if (score < bestScore) {
++                                    bestScore = score;
++                                    bestDeltas = candidate;
++                                }
++                            }
++                        }
++                    }
++                }
++            }
++            state.squareThumbDeltas = bestDeltas;
++        }
++        finally {
++            restore();
++        }
++    }
 +    // Grip poses are joint deltas, not replacement local rotations. Keeping each
 +    // character's imported reference pose is what lets the same curl work on
 +    // Mixamo, Unreal, and other rigs whose finger axes start differently.
 +    writeTargetRotation(state, gripType, boneIndex, hand) {
++        const calibratedThumb = gripType === GripType.SQUARE && boneIndex < THUMB_BONE_COUNT
++            ? state.squareThumbDeltas?.[boneIndex]
++            : null;
++        if (calibratedThumb) {
++            this.writeThumbTargetRotation(state, calibratedThumb, boneIndex, hand);
++            return;
++        }
          const pose = STAFF_GRIP_POSES[gripType];
          // boneIndex is always within [0, FINGER_BONES.length), guaranteed by callers.
          const raw = pose.rotations[boneIndex];
@@ -10805,6 +11149,17 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..5d20bb62187f500ba7307fe5e7cf876f
          else {
 -            this.scratchQuat.set(raw[0], raw[1], raw[2], raw[3]);
 +            this.scratchDelta.set(raw[0], raw[1], raw[2], raw[3]);
++        }
++        this.scratchQuat
++            .copy(state.restRotations[boneIndex])
++            .multiply(this.scratchDelta)
++            .normalize();
++    }
++    writeThumbTargetRotation(state, delta, boneIndex, hand) {
++        this.scratchDelta.copy(delta);
++        if (hand === "right") {
++            this.scratchDelta.y = -this.scratchDelta.y;
++            this.scratchDelta.z = -this.scratchDelta.z;
          }
 +        this.scratchQuat
 +            .copy(state.restRotations[boneIndex])
@@ -10820,7 +11175,7 @@ index 6c2e8693da61c08f226c11b78b90cc1439db718f..5d20bb62187f500ba7307fe5e7cf876f
              // Arrays are sized to FINGER_BONES.length in createHandState - index is always valid.
              state.currentRotations[i].slerp(this.scratchQuat, alpha);
              state.bones[i].quaternion.copy(state.currentRotations[i]);
-@@ -88,7 +97,7 @@ export class FingerAnimator {
+@@ -88,7 +214,7 @@ export class FingerAnimator {
      applyPoseImmediate(state, gripType, hand) {
          state.targetGrip = gripType;
          for (let i = 0; i < FINGER_BONES.length; i++) {
@@ -15562,7 +15917,7 @@ index 525808ca7068a828865a64e176f7bbd641ccc013..ff0ffc3ad65cb6c617fb582992f392fa
    },
    "files": [
 diff --git a/src/lib/components/Avatar3D.svelte b/src/lib/components/Avatar3D.svelte
-index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7c7fe987a 100644
+index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..6a1620705192db8f4680c17bdb0eb1283eb5ba9d 100644
 --- a/src/lib/components/Avatar3D.svelte
 +++ b/src/lib/components/Avatar3D.svelte
 @@ -16,29 +16,44 @@
@@ -15852,7 +16207,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
    const _blueSegA = new Vector3();
    const _blueSegB = new Vector3();
    const _redSegA = new Vector3();
-@@ -245,42 +378,233 @@
+@@ -245,42 +378,219 @@
  
    const blueSeg: PropSegment = { a: _blueSegA, b: _blueSegB, radius: 0.012 };
    const redSeg: PropSegment = { a: _redSegA, b: _redSegB, radius: 0.012 };
@@ -15960,8 +16315,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
 +  // Grip-weld scratch (no per-frame allocation)
 +  const _knuckleWorld = new Vector3();
 +  const _staffPinkyWorld = new Vector3();
-+  const _planeNormalWorld = new Vector3();
-+  const _knuckleInPlane = new Vector3();
++  const _achievedGripAxis = new Vector3();
 +  const _weldDelta = new Quaternion();
 +  const _anchorWorldQuat = new Quaternion();
 +
@@ -16051,29 +16405,17 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
 +      return;
 +    }
 +
-+    // Grip weld (orientation): rotate the rendered prop about its grip
-+    // point so the shaft follows the fist - but only WITHIN the commanded
-+    // spin plane. The achieved knuckle line is projected onto that plane
-+    // (normal = staff-local +Z; calculatePropQuaternion spins about local
-+    // Z, so local Z is the plane normal for every plane) and the commanded
-+    // staff -Y is welded onto the projection. In-plane wrist lag still
-+    // reads as honest hand-drag; the out-of-plane shortfall (the wrist
-+    // deviation clamp starves whenever the shaft sweeps near the forearm
-+    // axis - unavoidable with a straight arm) renders as the shaft giving
-+    // within the fist instead of the whole prop bending its plane.
-+    // Directed on both sides: pinky-ward, so the thumb end (+Y / T-bar)
-+    // always exits the thumb side of the fist, never the flipped solution.
++    // Follow the achieved fist in three dimensions. Projecting its axis into
++    // the score plane lets a breathing or tilted hand slide around the shaft.
 +    if (weldGrip && staffQuat && animationService?.getKnuckleLineWorld) {
 +      const knuckle = animationService.getKnuckleLineWorld(side, _knuckleWorld);
 +      if (knuckle) {
 +        _staffPinkyWorld.set(0, -1, 0).applyQuaternion(staffQuat);
-+        _planeNormalWorld.set(0, 0, 1).applyQuaternion(staffQuat);
-+        _knuckleInPlane
-+          .copy(knuckle)
-+          .addScaledVector(_planeNormalWorld, -knuckle.dot(_planeNormalWorld));
-+        if (_knuckleInPlane.lengthSq() > 1e-4) {
-+          _knuckleInPlane.normalize();
-+          _weldDelta.setFromUnitVectors(_staffPinkyWorld, _knuckleInPlane);
++
++        _achievedGripAxis.copy(knuckle);
++        if (_achievedGripAxis.lengthSq() > 1e-4) {
++          _achievedGripAxis.normalize();
++          _weldDelta.setFromUnitVectors(_staffPinkyWorld, _achievedGripAxis);
 +          anchorRef.getWorldQuaternion(_anchorWorldQuat);
 +          correctionRef.quaternion
 +            .copy(_anchorWorldQuat)
@@ -16081,8 +16423,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
 +            .multiply(_weldDelta)
 +            .multiply(_anchorWorldQuat);
 +        } else {
-+          // Knuckle line nearly perpendicular to the plane - no meaningful
-+          // in-plane direction to follow; render the command as-is.
++          // A degenerate hand axis cannot define an attachment rotation.
 +          correctionRef.quaternion.identity();
 +        }
 +      } else {
@@ -16112,7 +16453,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
    let currentLoadedAvatarId = $state<string | null>(null);
    let isLoading = $state(false);
    let hasShownFallbackToast = $state(false);
-@@ -291,6 +615,66 @@
+@@ -291,6 +601,66 @@
    // Feet offset from model origin (negative value, updated after setHeight)
    let feetOffset = $state(0);
  
@@ -16179,7 +16520,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
    // Derived values from user proportions
    // avatarHeight is the target height in scene units (cm * CM_TO_UNITS)
    const avatarHeight = $derived(cmToUnits(userProportionsState.heightCm));
-@@ -300,16 +684,74 @@
+@@ -300,16 +670,74 @@
    // If position.y is provided (e.g., from terrain/physics), use it directly
    // Otherwise, use groundY from user proportions (for flat stage mode)
    // feetOffset adjusts so feet touch the ground (it's negative)
@@ -16256,7 +16597,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
    // Load a GLTF model for a specific avatar
    // Uses hot-swap pattern: keeps old avatar visible until new one is ready
    async function loadAvatar(targetAvatarId: string) {
-@@ -319,12 +761,23 @@
+@@ -319,12 +747,23 @@
      if (currentLoadedAvatarId === targetAvatarId) return;
  
      const url = getAvatarModelPath(targetAvatarId);
@@ -16281,7 +16622,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
  
        // Scale model to match user's height
        // setHeight() calculates proper scale and stores feet offset
-@@ -333,19 +786,43 @@
+@@ -333,19 +772,43 @@
        // Get the feet offset for positioning (negative value)
        feetOffset = skeletonService.getFeetOffset();
  
@@ -16334,7 +16675,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
        currentLoadedAvatarId = targetAvatarId;
        modelLoaded = true;
        useProceduralFallback = false;
-@@ -354,22 +831,7 @@
+@@ -354,22 +817,7 @@
        // can fade the avatar back in). Fires on initial load and on every swap.
        onModelSwapped?.(targetAvatarId);
  
@@ -16358,7 +16699,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
  
        // Verify arm chains are ready
        const leftChain = skeletonService.getLeftArmChain();
-@@ -388,17 +850,21 @@
+@@ -388,17 +836,21 @@
        // use IK only and don't need idle/walk animations.
        if (enableLocomotion && locomotionAnimator && cachedRoot) {
          // Configure before initialize so clips are prepared correctly
@@ -16385,7 +16726,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
            const hipsBone = locomotionAnimator.getHipsBone();
            if (hipsBone) {
              rootMotionExtractor.initialize(hipsBone);
-@@ -416,12 +882,54 @@
+@@ -416,12 +868,54 @@
              idle: `${animBase}idle${rmSuffix}.glb`,
              forward: `${animBase}walk-forward${rmSuffix}.glb`,
              backward: `${animBase}walk-backward${rmSuffix}.glb`,
@@ -16443,7 +16784,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
            })
            .catch((err) => {
              console.warn(
-@@ -444,18 +952,39 @@
+@@ -444,18 +938,39 @@
          const turnsBase = "/animations/turns/";
          const probeUrl = `${turnsBase}turn-left-90.glb`;
          const rootForTurns = cachedRoot;
@@ -16492,7 +16833,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
                ])
                .then(() => {
                  // Register turn clip contact curves so FootPlanter can query them
-@@ -476,7 +1005,13 @@
+@@ -476,7 +991,13 @@
        // ikSolver, which is still used by arm IK elsewhere in this file).
        // Gated on enableFootPlanting - off by default so the museum FPS player
        // (which wants responsive code-driven movement) isn't affected.
@@ -16507,7 +16848,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
          footPlanter.initialize(skeletonService, legIKSolver, contactCurveCache);
        }
  
-@@ -502,6 +1037,16 @@
+@@ -502,6 +1023,16 @@
        }
      } finally {
        isLoading = false;
@@ -16524,7 +16865,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
      }
    }
  
-@@ -560,6 +1105,15 @@
+@@ -560,6 +1091,15 @@
      }
    });
  
@@ -16540,7 +16881,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
    // React to height changes - update avatar scale
    $effect(() => {
      if (!skeletonService || !modelLoaded || useProceduralFallback) return;
-@@ -570,8 +1124,14 @@
+@@ -570,8 +1110,14 @@
  
      // Update feetOffset for positioning (use untrack to prevent re-triggering)
      const newFeetOffset = skeletonService.getFeetOffset();
@@ -16555,7 +16896,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
      });
    });
  
-@@ -587,25 +1147,30 @@
+@@ -587,25 +1133,30 @@
  
      // Disable spine twist in dual-wheel mode - wide lateral IK targets
      // twist the torso and shift the feet on the ground.
@@ -16597,7 +16938,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
  
          // Feed state to LocomotionAnimator for clip selection
          locomotionAnimator.setActiveState?.(stateOutput.state);
-@@ -614,6 +1179,7 @@
+@@ -614,6 +1165,7 @@
            speed: stateOutput.animationSpeed,
            facingAngle: stateOutput.facingAngle,
            moveDirection: stateOutput.moveDirection,
@@ -16605,7 +16946,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
          });
          // Track state for FootPlanter (airborne states skip foot planting)
          currentLocomotionState = stateOutput.state;
-@@ -624,9 +1190,19 @@
+@@ -624,9 +1176,19 @@
            speed: moveSpeed,
            facingAngle,
            moveDirection,
@@ -16625,7 +16966,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
  
        // Turn clip overlay - when a turn is active, overwrite lower-body
        // and spine bones with the turn clip's authored pose at the current
-@@ -639,20 +1215,52 @@
+@@ -639,20 +1201,52 @@
        if (turnRequestProp && turnAnimator?.isReady() && skeletonService) {
          const sample = turnAnimator.sample(turnRequestProp);
          const bones = skeletonService.getState().bones;
@@ -16689,7 +17030,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
            }
          }
  
-@@ -681,7 +1289,11 @@
+@@ -681,7 +1275,11 @@
        // displacement needs the same conversion.
        if (rootMotionExtractor?.isReady() && onRootMotion) {
          const localDelta = rootMotionExtractor.extract();
@@ -16702,7 +17043,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
            // Convert Mixamo centimeters to scene units.
            // Our avatar is scaled to ~avatarHeight scene units for ~170cm Mixamo model.
            // So 1 Mixamo cm ≈ avatarHeight/170 scene units.
-@@ -708,28 +1320,98 @@
+@@ -708,28 +1306,98 @@
        // clips without authored curves. Gated on enableFootPlanting so the
        // museum FPS player stays fully code-driven.
        if (enableFootPlanting && footPlanter?.isReady()) {
@@ -16806,7 +17147,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
      }
  
      if (redPropAnchorRef && redPropState) {
-@@ -737,6 +1419,10 @@
+@@ -737,6 +1405,10 @@
        redPropAnchorRef.getWorldPosition(redIKTarget);
      } else if (redPropState) {
        redIKTarget.copy(redPropState.worldPosition);
@@ -16817,7 +17158,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
      }
  
      const blueWorldProp = bluePropState
-@@ -746,15 +1432,137 @@
+@@ -746,15 +1418,137 @@
        ? { ...redPropState, worldPosition: redIKTarget }
        : null;
  
@@ -16955,7 +17296,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
      // 2b. Collision detection - run after IK so bones are at final positions
      if (collisionDetector.enabled && skeletonService) {
        const state = skeletonService.getState();
-@@ -768,56 +1576,55 @@
+@@ -768,56 +1562,55 @@
        bones.get("Spine2")?.getWorldPosition(_boneVecs.spine2);
        bones.get("Spine1")?.getWorldPosition(_boneVecs.spine1);
        bones.get("Hips")?.getWorldPosition(_boneVecs.hips);
@@ -17042,7 +17383,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
            halfStaffLength,
            _redSegA,
            _redSegB
-@@ -825,23 +1632,134 @@
+@@ -825,23 +1618,134 @@
          redSegOrNull = redSeg;
        }
  
@@ -17191,7 +17532,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
    });
  
    // Note: Visibility is handled via the {#if visible} in the template
-@@ -867,20 +1785,15 @@
+@@ -867,20 +1771,15 @@
    // transparent with depth-write off so the fade blends correctly.
    $effect(() => {
      if (!cachedRoot) return;
@@ -17218,7 +17559,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
      // Dispose locomotion animator, state machine, and foot planter
      if (locomotionAnimator) {
        locomotionAnimator.dispose();
-@@ -913,13 +1826,19 @@
+@@ -913,13 +1812,19 @@
  </script>
  
  {#if visible}
@@ -17245,7 +17586,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
      <T.Group
        name={`PERFORMER_${id}`}
        position={[position.x, position.y ?? 0, position.z]}
-@@ -940,9 +1859,10 @@
+@@ -940,9 +1845,10 @@
        - rotation.y: facingAngle (avatar faces movement direction)
  
        groupY calculation:
@@ -17259,7 +17600,7 @@ index 9b167be2ff90dd8f228587b0a15afe75f53cdf9d..91314c3b0e8ad15a0566ff3a9ea347c7
        - This positions feet at the correct ground level
  
        Using cachedRoot instead of skeletonService.getRoot() ensures
-@@ -950,6 +1870,7 @@
+@@ -950,6 +1856,7 @@
        preventing visual glitches during avatar swap.
      -->
      <T.Group
@@ -18712,10 +19053,10 @@ index 12a776e2dc4cc4cf8f484afde470d094690a6dc0..e99e626aef531d417e49111acc3fed41
 +  />
  {/if}
 diff --git a/src/lib/components/props/Fan3D.svelte b/src/lib/components/props/Fan3D.svelte
-index dc635e752d11561cb585cbaaffa05b1e525d31e8..8f93dc5db7f5d6d6da7f76381c3217792730aa64 100644
+index dc635e752d11561cb585cbaaffa05b1e525d31e8..bfd1f4b09de7289a38eba0ba95c00c622320d074 100644
 --- a/src/lib/components/props/Fan3D.svelte
 +++ b/src/lib/components/props/Fan3D.svelte
-@@ -1,29 +1,52 @@
+@@ -1,29 +1,51 @@
 +<script module lang="ts">
 +  import type { BufferGeometry } from "three";
 +  import { buildFanShape, FAN_FRAME_WIDTH } from "./fan-profile";
@@ -18761,7 +19102,6 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..8f93dc5db7f5d6d6da7f76381c321779
    import { T } from "@threlte/core";
 -  import { DoubleSide } from "three";
 +  import { useGltf } from "@threlte/extras";
-+  import { untrack } from "svelte";
 +  import type { Material, Mesh, MeshStandardMaterial, Object3D } from "three";
    import type { Prop3DProps } from "./Prop3DProps";
    import { PROP_COLORS } from "./Prop3DProps";
@@ -18783,7 +19123,7 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..8f93dc5db7f5d6d6da7f76381c321779
  
    let {
      propState,
-@@ -33,156 +56,121 @@
+@@ -33,156 +55,124 @@
      thickness,
      isActivePlayer = false,
      scale = 1,
@@ -18807,7 +19147,10 @@ index dc635e752d11561cb585cbaaffa05b1e525d31e8..8f93dc5db7f5d6d6da7f76381c321779
  
 -  const staffLength = $derived(
 +  const propLayer = $derived(isActivePlayer ? LAYER_PLAYER_BODY : LAYER_WORLD);
-+  const gltf = useGltf(untrack(() => MODEL_URL));
++  const fanLoader = useGltf();
++  const gltf = $derived(fanLoader.load(
++    build.fanBuild === "flat-grip" ? "/models/props/fan-flat-grip.glb" : MODEL_URL
++  ));
 +  const rotation = $derived(computePropRotation(propState));
 +  const trailMaterial = $derived(getPlateMaterials(color).trail);
 +  const effectiveLength = $derived(
@@ -29197,18 +29540,47 @@ index 626111debe6cf0d4a8846c94e3b6847e3aa2758f..beac36ea1ba8dcd58f43158c07c6e709
 +  }
  }
 diff --git a/src/lib/services/implementations/FingerAnimator.ts b/src/lib/services/implementations/FingerAnimator.ts
-index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..276e7f05b2821f5b3099af0aba57b17c754aa1af 100644
+index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..3e34dab31f98d25ae250d9f1fd0a17b04763f727 100644
 --- a/src/lib/services/implementations/FingerAnimator.ts
 +++ b/src/lib/services/implementations/FingerAnimator.ts
-@@ -11,6 +11,7 @@ import { STAFF_GRIP_POSES } from "../../data/grip-poses/staff-grip-poses";
+@@ -1,4 +1,4 @@
+-import { Quaternion } from "three";
++import { Euler, Quaternion, Vector3 } from "three";
+ import type { Bone } from "three";
+ import type { IFingerAnimator } from "../contracts/IFingerAnimator";
+ import {
+@@ -11,20 +11,44 @@ import { STAFF_GRIP_POSES } from "../../data/grip-poses/staff-grip-poses";
  
  interface HandState {
    targetGrip: GripType;
 +  restRotations: Quaternion[];
    currentRotations: Quaternion[];
    bones: Bone[];
++  squareThumbDeltas: Quaternion[] | null;
  }
-@@ -21,6 +22,7 @@ export class FingerAnimator implements IFingerAnimator {
+ 
++const THUMB_BONE_COUNT = 3;
++const INDEX_MIDDLE_JOINT = 4;
++const MIDDLE_PROXIMAL_JOINT = 6;
++const THUMB_CONTACT_MIN_PALM_FRACTION = 0.12;
++const THUMB_CONTACT_MAX_PALM_FRACTION = 0.5;
++const THUMB_CONTACT_TARGET_PALM_FRACTION = 0.28;
++
++/**
++ * The taxonomy pose describes a human thumb, but different exporters give the
++ * thumb base a different local frame. These bounded candidates let the posed
++ * thumb find the already-curled index side of this rig's own hand. They only
++ * run when the authored square pose leaves the thumb outside the grip.
++ */
++const SQUARE_THUMB_BASE_FLEXION_DEGREES = [5, 15, 25, 35] as const;
++const SQUARE_THUMB_ABDUCTION_DEGREES = [5, 20, 35] as const;
++const SQUARE_THUMB_OPPOSITION_DEGREES = [-45, -30, -15, 0, 15, 30] as const;
++const SQUARE_THUMB_MIDDLE_FLEXION_DEGREES = [0, 15, 30, 40] as const;
++const SQUARE_THUMB_TIP_FLEXION_DEGREES = [10, 25, 40] as const;
++
+ export class FingerAnimator implements IFingerAnimator {
+   private leftHand: HandState | null = null;
+   private rightHand: HandState | null = null;
    private blendSpeed = 6.0;
    private ready = false;
    private readonly scratchQuat = new Quaternion();
@@ -29216,7 +29588,13 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..276e7f05b2821f5b3099af0aba57b17c
  
    initialize(fingerChains: FingerChains): void {
      this.leftHand = this.createHandState(fingerChains.left);
-@@ -71,6 +73,7 @@ export class FingerAnimator implements IFingerAnimator {
+     this.rightHand = this.createHandState(fingerChains.right);
++    this.calibrateSquareThumb(this.leftHand, "left");
++    this.calibrateSquareThumb(this.rightHand, "right");
+     this.ready = true;
+ 
+     this.applyPoseImmediate(this.leftHand, GripType.IDLE, "left");
+@@ -71,6 +95,7 @@ export class FingerAnimator implements IFingerAnimator {
  
    private createHandState(boneMap: Map<FingerBoneName, Bone>): HandState {
      const bones: Bone[] = [];
@@ -29224,7 +29602,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..276e7f05b2821f5b3099af0aba57b17c
      const currentRotations: Quaternion[] = [];
  
      for (const boneName of FINGER_BONES) {
-@@ -79,19 +82,23 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -79,31 +104,170 @@ export class FingerAnimator implements IFingerAnimator {
          throw new Error(`Missing finger bone: ${boneName}`);
        }
        bones.push(bone);
@@ -29238,11 +29616,117 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..276e7f05b2821f5b3099af0aba57b17c
 +      restRotations,
        currentRotations,
        bones,
++      squareThumbDeltas: null,
      };
    }
  
 -  // Writes the target rotation for boneIndex into scratchQuat, mirroring for right hand.
 -  // Right-hand mirror negates Y and Z to reflect across the YZ plane.
++  private calibrateSquareThumb(
++    state: HandState,
++    hand: "left" | "right"
++  ): void {
++    const thumbBase = state.bones[0];
++    const thumbTip = state.bones[2];
++    const indexMiddle = state.bones[INDEX_MIDDLE_JOINT];
++    const middleProximal = state.bones[MIDDLE_PROXIMAL_JOINT];
++    const palm = thumbBase?.parent;
++    if (!thumbBase || !thumbTip || !indexMiddle || !middleProximal || !palm) {
++      return;
++    }
++
++    const savedRotations = state.bones.map((bone) => bone.quaternion.clone());
++    const thumbPosition = thumbTip.getWorldPosition(new Vector3());
++    const indexPosition = indexMiddle.getWorldPosition(new Vector3());
++    const palmPosition = palm.getWorldPosition(new Vector3());
++    const middlePosition = middleProximal.getWorldPosition(new Vector3());
++    const palmLength = palmPosition.distanceTo(middlePosition);
++    if (palmLength < 1e-5) return;
++
++    const restore = () => {
++      state.bones.forEach((bone, index) =>
++        bone.quaternion.copy(savedRotations[index]!)
++      );
++      palm.updateWorldMatrix(true, true);
++    };
++    const applyDefaultSquare = () => {
++      state.squareThumbDeltas = null;
++      for (let index = 0; index < FINGER_BONES.length; index++) {
++        this.writeTargetRotation(state, GripType.SQUARE, index, hand);
++        state.bones[index]!.quaternion.copy(this.scratchQuat);
++      }
++      palm.updateWorldMatrix(true, true);
++    };
++
++    try {
++      applyDefaultSquare();
++      const defaultDistance = thumbPosition
++        .copy(thumbTip.getWorldPosition(thumbPosition))
++        .distanceTo(indexPosition.copy(indexMiddle.getWorldPosition(indexPosition)));
++      if (defaultDistance <= palmLength * THUMB_CONTACT_MAX_PALM_FRACTION) {
++        return;
++      }
++
++      const desiredDistance = palmLength * THUMB_CONTACT_TARGET_PALM_FRACTION;
++      let bestDeltas: Quaternion[] | null = null;
++      let bestScore = Math.abs(defaultDistance - desiredDistance);
++
++      for (const baseFlexion of SQUARE_THUMB_BASE_FLEXION_DEGREES) {
++        for (const abduction of SQUARE_THUMB_ABDUCTION_DEGREES) {
++          for (const opposition of SQUARE_THUMB_OPPOSITION_DEGREES) {
++            for (const middleFlexion of SQUARE_THUMB_MIDDLE_FLEXION_DEGREES) {
++              for (const tipFlexion of SQUARE_THUMB_TIP_FLEXION_DEGREES) {
++                const candidate = [
++                  new Quaternion().setFromEuler(
++                    new Euler(
++                      (baseFlexion * Math.PI) / 180,
++                      (abduction * Math.PI) / 180,
++                      (opposition * Math.PI) / 180
++                    )
++                  ),
++                  new Quaternion().setFromEuler(
++                    new Euler((middleFlexion * Math.PI) / 180, 0, 0)
++                  ),
++                  new Quaternion().setFromEuler(
++                    new Euler((tipFlexion * Math.PI) / 180, 0, 0)
++                  ),
++                ];
++                for (let index = 0; index < THUMB_BONE_COUNT; index++) {
++                  this.writeThumbTargetRotation(
++                    state,
++                    candidate[index]!,
++                    index,
++                    hand
++                  );
++                  state.bones[index]!.quaternion.copy(this.scratchQuat);
++                }
++                palm.updateWorldMatrix(true, true);
++                const distance = thumbTip
++                  .getWorldPosition(thumbPosition)
++                  .distanceTo(indexMiddle.getWorldPosition(indexPosition));
++                if (
++                  distance <
++                    palmLength * THUMB_CONTACT_MIN_PALM_FRACTION ||
++                  distance > palmLength * THUMB_CONTACT_MAX_PALM_FRACTION
++                ) {
++                  continue;
++                }
++                const score = Math.abs(distance - desiredDistance);
++                if (score < bestScore) {
++                  bestScore = score;
++                  bestDeltas = candidate;
++                }
++              }
++            }
++          }
++        }
++      }
++      state.squareThumbDeltas = bestDeltas;
++    } finally {
++      restore();
++    }
++  }
++
 +  // Grip poses are joint deltas, not replacement local rotations. Keeping each
 +  // character's imported reference pose is what lets the same curl work on
 +  // Mixamo, Unreal, and other rigs whose finger axes start differently.
@@ -29251,7 +29735,16 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..276e7f05b2821f5b3099af0aba57b17c
      gripType: GripType,
      boneIndex: number,
      hand: "left" | "right"
-@@ -100,10 +107,14 @@ export class FingerAnimator implements IFingerAnimator {
+   ): void {
++    const calibratedThumb =
++      gripType === GripType.SQUARE && boneIndex < THUMB_BONE_COUNT
++        ? state.squareThumbDeltas?.[boneIndex]
++        : null;
++    if (calibratedThumb) {
++      this.writeThumbTargetRotation(state, calibratedThumb, boneIndex, hand);
++      return;
++    }
+     const pose = STAFF_GRIP_POSES[gripType];
      // boneIndex is always within [0, FINGER_BONES.length), guaranteed by callers.
      const raw = pose.rotations[boneIndex]!;
      if (hand === "right") {
@@ -29260,6 +29753,23 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..276e7f05b2821f5b3099af0aba57b17c
      } else {
 -      this.scratchQuat.set(raw[0], raw[1], raw[2], raw[3]);
 +      this.scratchDelta.set(raw[0], raw[1], raw[2], raw[3]);
++    }
++    this.scratchQuat
++      .copy(state.restRotations[boneIndex]!)
++      .multiply(this.scratchDelta)
++      .normalize();
++  }
++
++  private writeThumbTargetRotation(
++    state: HandState,
++    delta: Quaternion,
++    boneIndex: number,
++    hand: "left" | "right"
++  ): void {
++    this.scratchDelta.copy(delta);
++    if (hand === "right") {
++      this.scratchDelta.y = -this.scratchDelta.y;
++      this.scratchDelta.z = -this.scratchDelta.z;
      }
 +    this.scratchQuat
 +      .copy(state.restRotations[boneIndex]!)
@@ -29268,7 +29778,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..276e7f05b2821f5b3099af0aba57b17c
    }
  
    private updateHand(
-@@ -115,7 +126,7 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -115,7 +279,7 @@ export class FingerAnimator implements IFingerAnimator {
      const alpha = Math.min(1, this.blendSpeed * deltaTime);
  
      for (let i = 0; i < FINGER_BONES.length; i++) {
@@ -29277,7 +29787,7 @@ index 0b10e18f5606c70eae1b5f61a7322173ad38e1d3..276e7f05b2821f5b3099af0aba57b17c
        // Arrays are sized to FINGER_BONES.length in createHandState - index is always valid.
        state.currentRotations[i]!.slerp(this.scratchQuat, alpha);
        state.bones[i]!.quaternion.copy(state.currentRotations[i]!);
-@@ -129,7 +140,7 @@ export class FingerAnimator implements IFingerAnimator {
+@@ -129,7 +293,7 @@ export class FingerAnimator implements IFingerAnimator {
    ): void {
      state.targetGrip = gripType;
      for (let i = 0; i < FINGER_BONES.length; i++) {
@@ -34777,7 +35287,7 @@ index 0000000000000000000000000000000000000000..30ccfb4de78798dd472a76de1d3aa7c2
 +}
 diff --git a/src/lib/state/prop-finish-state.svelte.ts b/src/lib/state/prop-finish-state.svelte.ts
 new file mode 100644
-index 0000000000000000000000000000000000000000..0392476d03b2fde881b69ea77a9e83303356ce0a
+index 0000000000000000000000000000000000000000..e9a22a5cd6230bdadb78732327aa466498d4d536
 --- /dev/null
 +++ b/src/lib/state/prop-finish-state.svelte.ts
 @@ -0,0 +1,106 @@
@@ -34795,7 +35305,7 @@ index 0000000000000000000000000000000000000000..0392476d03b2fde881b69ea77a9e8330
 +import { PropType } from "../domain/enums/PropType";
 +
 +export type PropFinish = "fire" | "day";
-+export type FanBuild = "pictograph" | "fire" | "lotus" | "day" | "moon";
++export type FanBuild = "pictograph" | "fire" | "lotus" | "day" | "moon" | "flat-grip";
 +export type FanFrameColor = "black" | "white";
 +export type FanCover = "bare" | "covered";
 +

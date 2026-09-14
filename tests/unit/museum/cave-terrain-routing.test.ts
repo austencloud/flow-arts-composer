@@ -20,7 +20,7 @@ import {
   MUSEUM_WALK_EDGES,
   attachMuseumWalkTerrain,
 } from "$lib/features/museum/data/museum-walk";
-import { buildEarthCanyonLayout } from "$lib/features/museum/data/earth-canyon-layout";
+import { buildEarthRootTerraceLayout } from "$lib/features/museum/data/earth-root-terrace-terrain";
 import {
   buildAirChimneyLayout,
   AIR_FLOOR_Y,
@@ -48,7 +48,7 @@ const PROBES = [
 const grid = buildMuseumGrid(MUSEUM_WALK_ROOMS, MUSEUM_WALK_EDGES, GRID_CONFIG).grid;
 attachMuseumWalkTerrain(grid);
 const terrain = grid.terrain!;
-const earth = buildEarthCanyonLayout(grid)!;
+const earth = buildEarthRootTerraceLayout(grid)!;
 const air = buildAirChimneyLayout(grid)!;
 const earthWing = grid.wings.find((w) => w.id === EARTH_ROOM_ID)!.bounds;
 const airWing = grid.wings.find((w) => w.id === AIR_ROOM_ID)!.bounds;

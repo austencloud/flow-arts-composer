@@ -19,6 +19,9 @@ import {
 import { VIEWER_STATE_PARAM_NAMES } from "../services/viewer-url-state-codec";
 import type { SequenceViewerSource } from "$lib/shared/sequence-viewer/analytics/viewer-events";
 
+import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+
+let _collectionPropType = $state<PropType | null>(null);
 let _isOpen = $state(false);
 let _sequence = $state<SequenceData | null>(null);
 let _variations = $state<SequenceData[]>([]);
@@ -46,6 +49,7 @@ export function openSequenceOverlay(
   options: {
     analyticsSource: SequenceViewerSource;
     returnLabel?: string;
+    collectionPropType?: PropType | null;
     initialBpm?: number;
     initialPlaybackMode?: PlaybackMode;
     initialStep?: number;
@@ -66,6 +70,7 @@ export function openSequenceOverlay(
   }
 ): void {
   _sequence = sequence;
+  _collectionPropType = options.collectionPropType ?? null;
   _variations = options.variations ?? [sequence];
   _variationIndex = _variations.findIndex((v) => v.id === sequence.id);
   if (_variationIndex < 0) _variationIndex = 0;
@@ -188,6 +193,7 @@ export function closeSequenceOverlay(): void {
   _variations = [];
   _variationIndex = 0;
   _returnLabel = "Back";
+  _collectionPropType = null;
   _initialBpm = 60;
   _initialPlaybackMode = "continuous";
   _initialStep = 0;
@@ -230,6 +236,9 @@ export function getSequenceOverlayState() {
     },
     get variationIndex() {
       return _variationIndex;
+    },
+    get collectionPropType() {
+      return _collectionPropType;
     },
     get returnLabel() {
       return _returnLabel;

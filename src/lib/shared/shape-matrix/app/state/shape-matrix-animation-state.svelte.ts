@@ -27,6 +27,11 @@ const CUSTOMIZE_SECTIONS: readonly PillId[] = [
   "display",
 ];
 
+type SequencePreview = {
+  word?: string | null;
+  steps?: ReadonlyArray<{ letter?: string | null }> | null;
+};
+
 export function createShapeMatrixAnimationState() {
   const scope = createAnimationScope({ persistence: "ephemeral" });
   scope.settings.setBpm(60);
@@ -52,6 +57,7 @@ export function createShapeMatrixAnimationState() {
   let activeSection = $state<PillId | null>(null);
   let closeRequest = $state(0);
   let disassembled = $state(false);
+  let previewSequence = $state.raw<SequencePreview | null>(null);
 
   function setPlaying(next: boolean): void {
     playing = next;
@@ -100,6 +106,12 @@ export function createShapeMatrixAnimationState() {
 
   return {
     scope,
+    get previewSequence() {
+      return previewSequence;
+    },
+    setPreviewSequence(next: SequencePreview | null) {
+      previewSequence = next;
+    },
     get playing() {
       return playing;
     },

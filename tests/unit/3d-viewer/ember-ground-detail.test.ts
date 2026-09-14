@@ -325,6 +325,33 @@ describe("Ember Fresh Rift ground detail", () => {
     patch.dispose();
   });
 
+  it("declares every uniform it binds, so no sampler falls back to unit 0", () => {
+    // A hand-migration codemod once renamed the JS side of the red/blue
+    // samplers (red→right, blue→left) without touching the GLSL. WebGL binds
+    // an undeclared sampler to nothing and reads texture unit 0 instead, which
+    // flooded the whole ember basin with whatever texture happened to sit
+    // there. Every bound uniform must have a matching GLSL declaration.
+    const { shader, patch } = compileEmberGroundDetail();
+    const glsl = `${shader.vertexShader}\n${shader.fragmentShader}`;
+    const bound = Object.keys(shader.uniforms).filter((name) =>
+      name.startsWith("uMaskedGround")
+    );
+    expect(bound.length).toBeGreaterThan(10);
+    const undeclared = bound.filter(
+      (name) => !new RegExp(`uniform\\s+\\w+\\s+${name}\\s*;`).test(glsl)
+    );
+    expect(undeclared).toEqual([]);
+
+    // And the reverse: nothing the shader reads may be left unbound.
+    const declared = Array.from(
+      glsl.matchAll(/uniform\s+\w+\s+(uMaskedGround\w+)\s*;/g),
+      (match) => match[1]!
+    );
+    const unbound = declared.filter((name) => !(name in shader.uniforms));
+    expect(unbound).toEqual([]);
+    patch.dispose();
+  });
+
   it("keeps the shared owner's de-tiling opt-in, so other scenes pay nothing", () => {
     const material = new MeshStandardMaterial({ name: "Shared_Ground" });
     const shader = createShaderStub();
@@ -332,9 +359,9 @@ describe("Ember Fresh Rift ground detail", () => {
     patchMaskedGroundDetailMaterial(
       material,
       {
-        right: new Texture(),
+        red: new Texture(),
         green: new Texture(),
-        left: new Texture(),
+        blue: new Texture(),
         fourth: new Texture(),
       },
       new Texture(),

@@ -1,3 +1,6 @@
+import { untrack } from "svelte";
+import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+import { withSavedProps } from "$lib/shared/foundation/services/prop-viewing";
 import { authState } from "$lib/shared/auth/state/auth-state.svelte";
 import { getSettings } from "$lib/shared/application/state/app-state.svelte";
 import { libraryState } from "$lib/features/library/state/library-state.svelte";
@@ -81,6 +84,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
   let publishToCommunity = $state(false);
 
   // Form state
+  let saveProps = $state(captureActivePropConfig(getSettings()));
   let notes = $state("");
   let title = $state("");
   let showNotes = $state(false);
@@ -243,6 +247,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
   // Reset form when sequence changes or panel opens
   $effect(() => {
     if (sequence && _propsGetter().show) {
+      saveProps = untrack(() => captureActivePropConfig(getSettings()));
       notes = "";
       title =
         motionProfile.kind === "solo"
@@ -389,7 +394,7 @@ export function createSavePanelState(deps: SavePanelDeps) {
       });
 
       const result = await librarySaveService.saveSequence(
-        { ...sequence, cardPresentation },
+        { ...withSavedProps(sequence, saveProps), cardPresentation },
         {
           name: tkaName,
           visibility: publishToCommunity && !isFlagged ? "public" : "private",
@@ -568,6 +573,12 @@ export function createSavePanelState(deps: SavePanelDeps) {
   // ---------------------------------------------------------------------------
 
   return {
+    get saveProps() {
+      return saveProps;
+    },
+    set saveProps(value) {
+      saveProps = value;
+    },
     // Static data
     saveSteps,
     headerTitle,

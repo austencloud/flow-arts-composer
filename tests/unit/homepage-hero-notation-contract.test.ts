@@ -55,7 +55,7 @@ describe("homepage hero notation rail contract", () => {
       "active={active && !!sequence && !isNamedRouteMorphActive()}"
     );
     expect(sequenceHero).toMatch(
-      /active=\{active &&\s*!!sequence &&\s*shouldMountNotationRail &&\s*!isNamedRouteMorphActive\(\)\}/
+      /active=\{active &&\s*canvasReady &&\s*!!sequence &&\s*shouldMountNotationRail &&\s*!isNamedRouteMorphActive\(\)\}/
     );
     expect(stepStrip).toContain(
       "const resolvedCells = $derived(cells ?? buildNotationCells(sequence))"

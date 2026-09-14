@@ -17,6 +17,7 @@ import type { TimeSignatureKey } from "../../foundation/domain/models/time-signa
 import { normalizeLegacyPropConfig } from "@tka/tka-types";
 import type { FanAppearance } from "../../pictograph/prop/domain/fan-appearance";
 import type { PropLook } from "../../pictograph/prop/domain/prop-look";
+import { resolveViewerCustomColorPair, type ViewerCustomColorPair } from "../../sequence-viewer/domain/viewer-custom-colors";
 
 /**
  * Prop Preset - A saved prop configuration for quick switching
@@ -30,6 +31,7 @@ export interface PropPreset {
 }
 
 export interface AppSettings {
+  propViewingMode?: "my-props" | "as-saved";
   // Metadata for sync tracking (not persisted to Firebase)
   _localTimestamp?: number;
 
@@ -38,6 +40,8 @@ export interface AppSettings {
   propType?: PropType; // Legacy - kept for backward compatibility
   leftPropType?: PropType; // Prop type held in the performer's left hand
   rightPropType?: PropType; // Prop type held in the performer's right hand
+  /** Null follows the theme's blue/red defaults. Hand identity stays left/right. */
+  primaryPropColors?: ViewerCustomColorPair | null;
   /** Shared visual build for fan/bigfan across 2D, Tunnel, 3D, and rails. */
   fanAppearance?: FanAppearance;
   /** How the 2D canvas draws every non-fan prop: flat 3D-model sprite or pictograph. */
@@ -102,6 +106,7 @@ export interface AppSettings {
     reversalIndicators?: boolean;
     showGrid?: boolean; // Master toggle for grid visibility
     nonRadialPoints?: boolean;
+    handColorKey?: boolean; // L/R colour key in the start-position bottom band
     handPointVisibility?: "all" | "active" | "none"; // all hand points, only where props are, or hidden
     stepNumbers?: boolean; // Show beat numbers on pictographs in sequences
     beatPositionGlyph?: boolean; // Show beat position glyph (musical timeline position)
@@ -177,6 +182,10 @@ export function normalizeLegacyAppSettings(value: unknown): AppSettings {
 
   const source = value as Record<string, unknown>;
   const normalized = normalizeLegacyPropConfig(source) as Record<string, unknown>;
+  if (source.primaryPropColors != null) {
+    const colors = resolveViewerCustomColorPair(source.primaryPropColors);
+    normalized.primaryPropColors = { left: colors.left.toLowerCase(), right: colors.right.toLowerCase() };
+  }
   if (normalized.leftBuugengFlipped === undefined && source.blueBuugengFlipped !== undefined) {
     normalized.leftBuugengFlipped = source.blueBuugengFlipped;
   }

@@ -19,6 +19,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import packageJson from "./package.json" with { type: "json" };
 import {
   registerDataTools,
   registerPreferenceTools,
@@ -43,7 +44,7 @@ const HTTP_PORT = resolveHttpPort(process.env.MCP_HTTP_PORT);
 function createMcpServer() {
   const server = new McpServer({
     name: "flow-arts-knowledge",
-    version: "3.0.0",
+    version: packageJson.version,
   });
 
   registerDataTools(server);
@@ -63,7 +64,9 @@ function createMcpServer() {
 loadKnowledgeBase();
 
 async function main() {
-  console.error("[MCP] Starting Flow Arts Knowledge MCP Server v3.0.0...");
+  console.error(
+    `[MCP] Starting Flow Arts Knowledge MCP Server v${packageJson.version}...`
+  );
 
   console.error("[MCP] Initializing transition graph...");
   await ensureTransitionGraphInitialized();
@@ -96,7 +99,9 @@ async function main() {
     // Explicit 127.0.0.1: cloudflared resolves "localhost" to ::1 first, which
     // an IPv4-only listener never answers.
     app.listen(HTTP_PORT, "127.0.0.1", () => {
-      console.error(`[MCP-HTTP] Listening on 127.0.0.1:${HTTP_PORT}/mcp (authorization required)`);
+      console.error(
+        `[MCP-HTTP] Listening on 127.0.0.1:${HTTP_PORT}/mcp (authorization required)`
+      );
     });
   }
 

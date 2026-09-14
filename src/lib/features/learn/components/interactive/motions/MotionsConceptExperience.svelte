@@ -32,6 +32,12 @@
   } from "./hand-motions-stage";
   import TimingDirectionBoard from "./TimingDirectionBoard.svelte";
   import TimingDirectionIntro from "./TimingDirectionIntro.svelte";
+  import TimingDirectionExamples from "./TimingDirectionExamples.svelte";
+  import {
+    TIMING_LESSON_TOPICS,
+    TIMING_LESSON_SCHEMA_VERSION,
+    migrateTimingLessonSavedStep,
+  } from "./timing-lesson-stage";
 
   let {
     onComplete,
@@ -63,7 +69,9 @@
     requireMode(element.familyId)
   );
   const timingDirectionIndex = HAND_PATH_STEPS.length;
-  const comparisonIndex = timingDirectionIndex + 1;
+  const comparisonIndex =
+    timingDirectionIndex +
+    (timingDirectionOnly ? TIMING_LESSON_TOPICS.length : 1);
   const firstStage = timingDirectionOnly ? timingDirectionIndex : 0;
   const totalStages = comparisonIndex - firstStage + 1;
 
@@ -79,8 +87,18 @@
   );
   const saved = persistence.load();
   const savedSchemaVersion = persistence.getPhaseData("stageSchemaVersion", 1);
+  const stageSchemaVersion = timingDirectionOnly
+    ? TIMING_LESSON_SCHEMA_VERSION
+    : HAND_MOTIONS_STAGE_SCHEMA_VERSION;
+  const schemaKey = timingDirectionOnly
+    ? "timingLessonSchemaVersion"
+    : "stageSchemaVersion";
   const savedStep = timingDirectionOnly
-    ? saved.step
+    ? migrateTimingLessonSavedStep(
+        saved.step,
+        persistence.getPhaseData(schemaKey, 1),
+        HAND_PATH_STEPS.length
+      )
     : migrateHandMotionsSavedStep(
         saved.step,
         savedSchemaVersion,
@@ -118,17 +136,21 @@
 
   if (viewMode !== "scroll" && savedStep !== (saved.step || 1)) {
     persistence.saveStep(savedStep);
-    persistence.savePhaseData(
-      "stageSchemaVersion",
-      HAND_MOTIONS_STAGE_SCHEMA_VERSION
-    );
+    persistence.savePhaseData(schemaKey, stageSchemaVersion);
   }
 
   const activeMotion = $derived(
     stepIndex < HAND_PATH_STEPS.length ? HAND_PATH_STEPS[stepIndex] : undefined
   );
   const isComparison = $derived(stepIndex === comparisonIndex);
-  const headingTitle = $derived(activeMotion?.name ?? "Timing and Direction");
+  const topic = $derived(
+    timingDirectionOnly && !isComparison
+      ? TIMING_LESSON_TOPICS[stepIndex - timingDirectionIndex]
+      : undefined
+  );
+  const headingTitle = $derived(
+    topic?.title ?? activeMotion?.name ?? "Timing and Direction"
+  );
   const headingEyebrow = $derived(
     activeMotion
       ? `Hand motion ${stepIndex + 1} of ${HAND_PATH_STEPS.length}`
@@ -154,10 +176,7 @@
       });
     }
     persistence.saveStep(stepIndex + 1);
-    persistence.savePhaseData(
-      "stageSchemaVersion",
-      HAND_MOTIONS_STAGE_SCHEMA_VERSION
-    );
+    persistence.savePhaseData(schemaKey, stageSchemaVersion);
     haptic?.trigger("selection");
   }
 
@@ -169,7 +188,7 @@
   function complete(): void {
     persistence.reset();
     haptic?.trigger("success");
-    onComplete?.();
+    onComplete?.(timingDirectionOnly ? "reading-choreo-cards" : undefined);
   }
 
   function handlePrimaryAction(): void {
@@ -220,8 +239,14 @@
 <div
   bind:this={experienceElement}
   class="motions-experience"
+  class:device-fit={timingDirectionOnly}
   class:is-intro={!activeMotion && !isComparison}
   class:has-focused-comparison={comparisonFocused}
+  style:--intro-artifact-height={topic?.id === "placement"
+    ? "min(clamp(48rem, 32vw, 70rem), max(30rem, 46cqw))"
+    : topic?.id === "direction"
+      ? "min(clamp(36rem, 20vw, 48rem), max(24rem, 34cqw))"
+      : "min(clamp(32rem, 17vw, 44rem), max(18rem, 30cqw))"}
   onkeydown={handleKeydown}
   tabindex="0"
   role="application"
@@ -241,7 +266,9 @@
         eyebrow={headingEyebrow}
       >
         <p class="motion-description">
-          {#if activeMotion}
+          {#if topic}
+            {topic.description}
+          {:else if activeMotion}
             {activeMotion.guideCaption}
           {:else}
             <span class="description-phrase"
@@ -264,7 +291,7 @@
         {#snippet first()}
           <Crossfade
             key={activeMotion?.name ?? "timing-intro"}
-            fill={!!activeMotion}
+            fill={!!activeMotion || timingDirectionOnly}
           >
             {#if activeMotion}
               <div class="artifact-state motion-state">
@@ -281,7 +308,16 @@
               </div>
             {:else}
               <div class="artifact-state timing-direction-state">
-                <TimingDirectionIntro active={!isComparison && !activeMotion} />
+                {#if timingDirectionOnly}
+                  <TimingDirectionExamples
+                    topic={topic?.id ?? "direction"}
+                    active={!isComparison}
+                  />
+                {:else}
+                  <TimingDirectionIntro
+                    active={!isComparison && !activeMotion}
+                  />
+                {/if}
               </div>
             {/if}
           </Crossfade>
@@ -292,6 +328,7 @@
               <TimingDirectionBoard
                 bind:this={comparisonBoard}
                 modes={ELEMENTAL_MODES}
+                showChoreoCards={!timingDirectionOnly}
                 articleHrefFor={(mode) =>
                   `/timing-and-direction/${mode.timing.toLowerCase()}-time-${mode.direction.toLowerCase()}-direction`}
                 active={isComparison && comparisonPresented}
@@ -306,6 +343,7 @@
 
     {#snippet controls()}
       <LessonStageControls
+        progressAppearance="steps"
         label={isComparison
           ? viewMode === "scroll"
             ? "Done"
@@ -348,7 +386,12 @@
   }
 
   .motions-experience :global(.progress-stack) {
-    gap: 0.45rem;
+    gap: 0.6rem;
+  }
+
+  .motions-experience :global(.curriculum-progress) {
+    color: var(--theme-text-dim);
+    font-weight: 500;
   }
 
   .motions-experience.has-focused-comparison {
@@ -418,7 +461,8 @@
     --lesson-workshop-max: clamp(96rem, 80vw, 160rem);
     --lesson-artifact-wide-max: clamp(96rem, 80vw, 160rem);
   }
-  .motions-experience.is-intro :global(.dual-source > .source:first-child) {
+  .motions-experience.is-intro:not(.device-fit)
+    :global(.dual-source > .source:first-child) {
     position: relative;
   }
 
@@ -526,6 +570,132 @@
 
     .timing-direction-state {
       place-items: start center;
+    }
+  }
+
+  /* The lesson uses the space allocated by Learn, not another viewport inside it.
+     Only the examples scroll; the title and lesson navigation stay in reach. */
+  .motions-experience.device-fit {
+    height: 100%;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+    container-type: size;
+  }
+
+  .motions-experience.device-fit :global(.lesson-stage-frame) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    align-content: stretch;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    min-width: 0;
+    padding: 4.5rem clamp(0.75rem, 3cqw, 4rem)
+      max(0.75rem, env(safe-area-inset-bottom));
+    gap: clamp(0.75rem, 1.5cqh, 1.5rem);
+    --lesson-artifact-wide-max: 100%;
+  }
+
+  .device-fit :global(.stage-artifact) {
+    container-type: size;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .device-fit.is-intro :global(.lesson-stage-frame) {
+    grid-template-rows:
+      auto minmax(0, min(var(--intro-artifact-height), calc(100cqh - 18rem)))
+      auto;
+    align-content: center;
+    max-width: 110rem;
+    margin-inline: auto;
+  }
+
+  @media (min-width: 2400px) {
+    .device-fit.is-intro :global(.lesson-stage-frame) {
+      max-width: min(82cqw, 156rem);
+    }
+  }
+
+  .device-fit :global(.artifact-inner.wide) {
+    width: 100%;
+    height: 100%;
+  }
+
+  .device-fit :global(.dual-source > .source:first-child) {
+    position: absolute;
+  }
+
+  .device-fit .timing-direction-state,
+  .device-fit .comparison-state {
+    display: block;
+    height: 100%;
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .device-fit .timing-direction-state {
+    overflow: hidden;
+  }
+
+  .device-fit :global(.stage-controls) {
+    position: static;
+    width: 100%;
+    min-height: 0;
+    padding-block: 0.5rem;
+    border: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+
+  .device-fit :global(.lesson-stage-controls) {
+    gap: 0.65rem;
+  }
+
+  .device-fit :global(.comparison-board:not(.has-focus)) {
+    min-height: 28rem;
+  }
+
+  @container learn-tab (max-width: 850px) {
+    .device-fit :global(.comparison-board:not(.has-focus)) {
+      min-height: 48rem;
+    }
+  }
+
+  @container learn-tab (max-width: 650px) {
+    .device-fit.is-intro :global(.lesson-stage-frame) {
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      align-content: stretch;
+    }
+  }
+
+  @media (max-height: 540px) and (min-width: 641px) {
+    .motions-experience.device-fit :global(.lesson-stage-frame) {
+      padding-top: 0.75rem;
+      gap: 0.5rem;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      align-content: stretch;
+    }
+
+    .device-fit :global(.stage-heading) {
+      width: calc(100% - 22rem);
+      min-height: 44px;
+      display: grid;
+      align-items: center;
+    }
+
+    .device-fit :global(.lesson-stage-heading .description) {
+      display: none;
+    }
+
+    .device-fit :global(.progress-stack) {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
   }
 </style>

@@ -22,7 +22,10 @@ import {
   type SpinRatio,
   type SpinStyle,
 } from "@vtg/domain";
-import type { QftKnobs } from "$lib/shared/notation/qft/qft-model";
+import {
+  propRateForKnobs,
+  type QftKnobs,
+} from "$lib/shared/notation/qft/qft-model";
 import { theoryRatioLabel } from "./theory-ratio";
 import type { VtgMode } from "../services/shape-matrix-realizations";
 
@@ -250,6 +253,32 @@ export function theorySoloKnobs(flower: TheoryFlower): QftKnobs {
  * entirely as the right hand's offset and sign. That is a choice of frame, not
  * of physics — rotating both hands together would spin the whole picture
  * without changing a single relationship in it.
+ *
+ * `phase` has to move with `handPhase`, and it does not move by the same
+ * amount. The model reads `hand = h·u + handPhase` and
+ * `prop = s·u + handPhase + phase`, so shifting `handPhase` alone carries the
+ * prop one eighth for every eighth it carries the hand — while a hand that is
+ * genuinely δ steps ahead has already turned its prop `s·δ`. The two agree
+ * only when `s` is `h`, which is a prop locked to its hand and nothing else.
+ *
+ * So the two pairings are transformed rather than merely offset:
+ *
+ * - Same Direction is the same motion δ = offset steps ahead, which leaves the
+ *   prop needing the remaining `(s − 1)·offset` on top of its own start.
+ * - Opposite Direction is the same motion run BACKWARDS from δ steps in:
+ *   `hand(u) = left(δ − u)`, `prop(u) = leftProp(δ − u)`. The model already
+ *   flips the prop's rate with the hand's sign, so the prop's own start needs
+ *   exactly the same `(s − 1)·offset` the forward play needs.
+ *
+ * Both rules keep each hand on its tile's locus, which is the whole point:
+ * timing and direction live between the hands, never in the shape. The
+ * earlier reading of Opposite Direction as a MIRROR about the axis between
+ * the hands only holds when the flower happens to be symmetric about that
+ * axis — an integer-turn ratio at split time — and rotated every other
+ * flower (2:3 in Fire turned the red hand's five petals into their gaps).
+ *
+ * A stationary hand has no clock to be ahead of, so its timing stays the plain
+ * bearing offset it always was.
  */
 export function theoryKnobs(
   flower: TheoryFlower,
@@ -258,10 +287,19 @@ export function theoryKnobs(
 ): QftKnobs {
   const solo = theorySoloKnobs(flower);
   if (hand === "left") return solo;
+
+  const offset = TIMING_OFFSET[mode.charAt(0)] ?? 0;
+  const opposite = mode.charAt(1) === "O";
+  const soloPhase = solo.phase ?? 0;
+  const travelling = !isStationaryRatio(flower.ratio);
+
   return {
     ...solo,
-    handPhase: HAND_HOME + (TIMING_OFFSET[mode.charAt(0)] ?? 0),
-    handDirection: mode.charAt(1) === "O" ? -1 : 1,
+    handPhase: HAND_HOME + offset,
+    handDirection: opposite ? -1 : 1,
+    phase: travelling
+      ? soloPhase + (propRateForKnobs(solo) - 1) * offset
+      : soloPhase,
   };
 }
 

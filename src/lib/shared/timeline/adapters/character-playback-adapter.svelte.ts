@@ -51,6 +51,8 @@ export interface OrchestratorCallbacks {
   /** Sequence-owned fallback while the first 3D character is still hydrating. */
   getCurrentStep?: () => number;
   getTotalSteps?: () => number;
+  getIsLooping?: () => boolean;
+  onLoopToggle?: () => void;
 }
 
 export interface TempoCallbacks {
@@ -59,7 +61,6 @@ export interface TempoCallbacks {
   getPlaybackMode: () => PlaybackMode;
   onPlaybackModeChange: (mode: PlaybackMode) => void;
 }
-
 
 export function createCharacterPlaybackAdapter(
   getCharacter: () => CharacterPlaybackHandle | null,
@@ -103,7 +104,7 @@ export function createCharacterPlaybackAdapter(
       return getCharacter()?.isPlaying ?? false;
     },
     get isLooping() {
-      return getCharacter()?.loop ?? false;
+      return orchestrator?.getIsLooping?.() ?? getCharacter()?.loop ?? false;
     },
     get duration() {
       const av = getCharacter();
@@ -152,6 +153,10 @@ export function createCharacterPlaybackAdapter(
       getCharacter()?.togglePlay();
     },
     toggleLoop() {
+      if (orchestrator?.onLoopToggle) {
+        orchestrator.onLoopToggle();
+        return;
+      }
       const av = getCharacter();
       if (av) av.loop = !av.loop;
     },

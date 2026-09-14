@@ -8,7 +8,8 @@
  * pattern is a period rather than an array: it is read modulo its own length,
  * so it has an answer at every index that will ever exist.
  */
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { LOOPType, Period } from "../../src/loop/loop-types.js";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -87,6 +88,45 @@ class CsvVariationProvider implements IVariationProvider {
 function builder(): SequenceBuilder {
   return new SequenceBuilder(new CsvVariationProvider(loadVariations(CSV_PATH)));
 }
+
+it("preserves Level 2 turns through freeform generation and short LOOP expansion", () => {
+  let seed = 42;
+  const random = vi.spyOn(Math, "random").mockImplementation(() => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  });
+  try {
+    for (const looping of [false, true]) {
+      for (let i = 0; i < 30; i++) {
+        const result = builder().build({
+          length: looping ? 2 : 8,
+          level: 2,
+          gridMode: "diamond",
+          maxTurnIntensity: 1,
+          constraintOptions: {
+            propContinuity: "maximize",
+            handPathContinuity: "allow-reversals",
+          },
+          ...(looping ? {
+            loop: {
+              type: LOOPType.ROTATED,
+              period: Period.QUARTERED,
+              useTargetedGeneration: true,
+              requestedTotalLength: 8,
+            },
+          } : {}),
+        });
+        const steps = result.sequence.slice(1);
+        const turns = steps.flatMap((s) => [s.motions.left.turns, s.motions.right.turns]);
+        expect(steps).toHaveLength(8);
+        expect(turns.some((turn) => turn === 1)).toBe(true);
+        expect(turns.every((turn) => turn === 0 || turn === 1)).toBe(true);
+      }
+    }
+  } finally {
+    random.mockRestore();
+  }
+});
 
 beforeAll(async () => {
   const graph = new TransitionGraph({

@@ -37,6 +37,13 @@ const factories = {
 };
 
 const expectedHashes: Record<keyof typeof factories, string> = {
+  // Re-baselined 2026-09-07: blossom and celestial were rebuilt after the
+  // 2026-09-05 re-stamp below and left this guard stale again. Blossom moved
+  // in d6879d45aa (lantern garden + opening composition: sky/fog retune,
+  // hemisphere 0.85 -> 0.58, moonlight 4.1 -> 3.4 at [14, 21, 72]). Celestial
+  // moved in 75cc9f0976 (Dawn Observatory) and e6b55c9f79 (sky citadel +
+  // volumetric clouds: cloud dome on, sun re-authored to the citadel layout).
+  // Only these two moved; every other hash is unchanged.
   // Re-baselined 2026-09-05: blossom (moonlit cherry amphitheatre rebuild),
   // rainbow (spectrum-commons world) and winter all changed deliberately and
   // left this guard stale. Only these three moved; every other hash is
@@ -45,20 +52,20 @@ const expectedHashes: Record<keyof typeof factories, string> = {
   // ground through haze) after the approved fog and horizon-colour retune.
   createDefaultAutumnConfig:
     "2707056bcbed71fb20af8acb0eecb3888b4238ddb64edc8ff153a56340f9b3ef",
-  // Re-baselined 2026-08-23 by 7f67e5c785 (feat(blossom): preserve the
-  // site-system review build) — the approved sky/fog/petal/moonlight retune.
   createDefaultBlossomConfig:
-    "60446316de566999c152d8f517f0b107838d261664145a16b94bab70f0e56dde",
+    "5c298691285086c1dfbd4480bd306f2ff0cb51e7e2e2c0db9e400e7314780074",
   createDefaultCelestialConfig:
-    "e9a9024f696ca5d692eececc3625d01914e5e99690b91356ebd7aa04f10fe164",
+    "9fe4b09cb0b548835f6750b532cf3cac8c8298091b7dc60bf249040ffa36a42e",
   createDefaultCosmicAuroraConfig:
     "0bd38acd71a42d1944bcdf0d61b9998b5bbed1800bc4f5cc0fe7e30a6d5763b4",
   createDefaultCosmicNightConfig:
     "36a5c5c124f80ad24e50ac7e5926ac5ca37df95f18c16dd30ae0278aed72f50c",
   // Re-baselined 2026-08-30 by the four-lane field-audit fix queue (river
   // drape/source/terminus, plume rebuild, upcountry detail reach, sky depth).
+  // Re-baselined 2026-09-02 for the plume coverage lift that finally made the
+  // vents read at the orbit and ground cameras (field-audit follow-up N5).
   createDefaultEmberConfig:
-    "500b780cada771ca043948f7772a0b8684fc3df7d6f6c48bad5d9cfe2fd89ac3",
+    "6009dc461e7959117d30dfb7c02e09e3eadf2a1dd8e1e70d1f717618423e1031",
   createDefaultForestAutumnConfig:
     "5429d3c565a020b03582d6fe83b48e2a430f160e7f533363d4d6ebe689f70a8e",
   createDefaultForestFireflyConfig:

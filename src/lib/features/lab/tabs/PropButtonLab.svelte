@@ -167,12 +167,12 @@
   }
 
   function getRecipe(propType: PropType): CompositionRecipe {
-    return overrides[propType] ?? getCompositionRecipe(propType);
+    return overrides[propType] ?? getCompositionRecipe(propType, true);
   }
 
   function ensureOverride(propType: PropType) {
     if (!overrides[propType]) {
-      overrides[propType] = $state.snapshot(getCompositionRecipe(propType));
+      overrides[propType] = $state.snapshot(getCompositionRecipe(propType, true));
     }
   }
 
@@ -284,7 +284,7 @@
       <div class="family-card" class:expanded={isExpanded}>
         <button class="family-header" onclick={() => toggleFamily(propType)}>
           <div class="preview-container" class:preview-large={isExpanded}>
-            <PropCompositionPreview
+            <PropCompositionPreview pairedGlyph colors={getSettings().primaryPropColors} appearanceOverride={{ fanAppearance: getSettings().fanAppearance, propLook: getSettings().propArtwork }}
               {propType}
               size={isExpanded ? 280 : 100}
               recipeOverride={overrides[propType]}
@@ -309,7 +309,7 @@
                       title={preset.label}
                     >
                       <div class="preset-preview">
-                        <PropCompositionPreview
+                        <PropCompositionPreview pairedGlyph colors={getSettings().primaryPropColors} appearanceOverride={{ fanAppearance: getSettings().fanAppearance, propLook: getSettings().propArtwork }}
                           {propType}
                           size={80}
                           recipeOverride={preset.recipe}

@@ -42,11 +42,11 @@
 {#if show}
   <div class="pwa-migration-banner" role="alert">
     <p class="banner-text">
-      Hey, it's Austen. TKA has a new home at <strong>tkaflowarts.com</strong>.
+      Hey, it's Austen. Flow Arts Composer has a new home at <strong>tkaflowarts.com</strong>.
       To get rid of the URL bar at the top:
     </p>
     <ol class="banner-steps">
-      <li>Long-press the TKA icon on your home screen and delete it</li>
+      <li>Long-press the Flow Arts Composer icon on your home screen and delete it</li>
       <li>Open <strong>tkaflowarts.com</strong> in your browser</li>
       <li>Tap the menu (three dots) and "Add to Home Screen"</li>
     </ol>

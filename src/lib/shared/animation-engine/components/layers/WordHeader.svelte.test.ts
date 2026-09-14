@@ -121,3 +121,25 @@ describe("WordHeader glyph sizing", () => {
     expect(dashEm).toBeGreaterThan(plainEm * 1.5);
   });
 });
+
+describe("WordHeader title transitions", () => {
+  it("eventually displays the latest word after changes during an active transition", async () => {
+    const screen = render(WordHeader, { word: "A", visible: true });
+
+    await vi.waitFor(() => {
+      expect(document.querySelector(".word-text")?.textContent).toContain("A");
+    });
+
+    await screen.rerender({ word: "B", visible: true });
+    await screen.rerender({ word: "C", visible: true });
+
+    await vi.waitFor(
+      () => {
+        expect(document.querySelector(".word-text")?.textContent).toContain(
+          "C"
+        );
+      },
+      { timeout: 1500 }
+    );
+  });
+});

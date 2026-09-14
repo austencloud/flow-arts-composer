@@ -41,6 +41,16 @@
 
 <div class="guide-tab">
   <div class="level-bar">
+    <a
+      class="lessons-link"
+      href="/guide/motion-paths"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Motion paths guide (opens in a new tab)"
+    >
+      <i class="fa-solid fa-draw-polygon" aria-hidden="true"></i>
+      <span>Motion paths</span>
+    </a>
     <a class="lessons-link" href="/learn/concepts">
       <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
       <span>Interactive lessons</span>
@@ -96,6 +106,7 @@
     justify-content: center;
     gap: 0.5rem;
     min-height: var(--min-touch-target, 44px);
+    min-width: var(--min-touch-target, 44px);
     padding: 0.5rem 0.75rem;
     border: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.08));
     border-radius: 10px;

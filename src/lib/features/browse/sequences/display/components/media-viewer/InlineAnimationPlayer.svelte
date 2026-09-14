@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy, untrack } from "svelte";
+  import type { ViewerCustomColorPair } from "$lib/shared/sequence-viewer/domain/viewer-custom-colors";
   import {
     createRenderActivityGate,
     renderGateTarget,
@@ -110,11 +111,13 @@
 
   let {
     sequence,
+    sequenceLoadKey = null,
     autoPlay = true,
     autoPlayDelay = 300,
     showControls = true,
     leftPropType = null,
     rightPropType = null,
+    primaryPropColors,
     externalBpm = null,
     externalPlaying = null,
     externalPlaybackMode = null,
@@ -149,6 +152,7 @@
     interactive = true,
     hoverHint = "badge",
     cornerToggle = false,
+    showScrubberPlaybackControl = false,
     playbackAllowed = true,
     resumeWhenPlaybackAllowed = false,
     onTogglePlaybackRef = undefined,
@@ -162,6 +166,8 @@
     initialStep = null,
   }: {
     sequence: SequenceData;
+    /** Distinguishes a deliberate host reload when selections share an ID. */
+    sequenceLoadKey?: string | null;
     autoPlay?: boolean;
     /** Delay before autoplay begins after a sequence is ready. Most embeds keep
      *  the settled 300ms default; prewarmed dual-source stages pass 0 because
@@ -316,6 +322,8 @@
     hoverHint?: "badge" | "none";
     /** Show the canvas-owned keyboard-accessible play/pause button. */
     cornerToggle?: boolean;
+    /** Keeps a persistent transport action adjacent to a minimal scrubber. */
+    showScrubberPlaybackControl?: boolean;
     /** Pause this player while its host is not visible. Returning to view does
      *  not resume motion unless autoplay has not happened yet. */
     playbackAllowed?: boolean;
@@ -327,21 +335,24 @@
      *  control, demo acts). Same contract as AnimationPlayer's prop of the
      *  same name. */
     onTogglePlaybackRef?: (toggleFn: () => void) => void;
-    /** Fires after the sequence and its playback services are ready. */
-    onReady?: () => void;
+    /** Fires after the sequence and its playback services are ready. The load
+     * identity lets a retained host reject an older async reload. */
+    onReady?: (loadIdentity: string | null) => void;
     /** Fires after AnimatorCanvas has initialized and painted its first frame.
      *  Heavy dual-source hosts wait for this before revealing a prewarmed
      *  replacement; `onReady` only means the sequence data is loaded. */
     onCanvasInitialized?: () => void;
     /** Reports an engine/data load failure to a host that keeps a poster above
      *  the player until readiness is confirmed. */
-    onLoadError?: (message: string) => void;
+    /** Reports the load identity so retained hosts can reject a stale failure. */
+    onLoadError?: (message: string, loadIdentity: string | null) => void;
     /** Per-instance visibility manager (ephemeral scope). Routes the
      *  orchestrator's effort/path-shape reads AND setSpeed's write-back away
      *  from the global singleton, so a public embed neither inherits the
      *  visitor's in-app settings nor mutates them. Forwarded to AnimatorCanvas
      *  so the engine-side reads scope the same way. */
     visibilityManagerOverride?: AnimationVisibilityStateManager;
+    primaryPropColors?: ViewerCustomColorPair;
     /** Optional prop timing/direction relationship for the canvas's top-right corner. */
     propElementalType?: ElementalType | null;
     /** Let annotation chrome use a rectangular host while preserving the
@@ -672,7 +683,9 @@
   // Watch for sequence changes and reload animation
   // Only triggers when sequence ID changes, not on every state update
   $effect(() => {
-    const sequenceId = sequence ? getSequenceLoadId(sequence) : null;
+    const sequenceId = sequence
+      ? (sequenceLoadKey ?? getSequenceLoadId(sequence))
+      : null;
 
     if (sequence && servicesReady && sequenceId !== lastLoadedSequenceId) {
       // Use untrack to avoid creating dependency on isPlaying
@@ -693,7 +706,8 @@
     if (!playbackController || !sequence) return;
 
     const loadStartedAt = import.meta.env.DEV ? performance.now() : 0;
-    const loadIdentity = getSequenceLoadId(sequence) ?? "unknown";
+    const loadIdentity =
+      sequenceLoadKey ?? getSequenceLoadId(sequence) ?? "unknown";
     loading = true;
     error = null;
 
@@ -746,11 +760,11 @@
       }
 
       hasLoadedOnce = true;
-      onReady?.();
+      onReady?.(loadIdentity);
     } catch (err) {
       console.error("Failed to load animation:", err);
       error = err instanceof Error ? err.message : "Failed to load animation";
-      onLoadError?.(error);
+      onLoadError?.(error, loadIdentity);
     } finally {
       loading = false;
       if (import.meta.env.DEV) {
@@ -814,6 +828,10 @@
       playbackController.stop();
     }
     playbackController.togglePlayback();
+    // Most UI can tolerate the 50ms polling mirror above, but a direct export
+    // must know synchronously whether its temporary playback actually paused.
+    // Read the controller's authoritative state immediately after toggling.
+    isPlaying = animationState.isPlaying;
   }
 
   function handleBpmChange(newBpm: number) {
@@ -857,11 +875,27 @@
     playbackController?.seekToStep(targetStep);
   }
 
+  // LazyMount forwards a newly-created props object whenever its host updates.
+  // Svelte may therefore re-run this effect even when the callback identity is
+  // unchanged. Publishing again makes state owners replay their pending seek,
+  // pinning a continuous player inside that count. Keep imperative registration
+  // at the callback-identity boundary instead of the spread-props boundary.
+  let publishedSeekRef: typeof onSeekRef = undefined;
+
   $effect(() => {
-    const publishSeek = onSeekRef;
-    if (!publishSeek) return;
-    publishSeek(handleSeek);
-    return () => publishSeek(null);
+    const nextSeekRef = onSeekRef;
+    if (nextSeekRef === publishedSeekRef) return;
+
+    const previousSeekRef = publishedSeekRef;
+    publishedSeekRef = nextSeekRef;
+    untrack(() => {
+      previousSeekRef?.(null);
+      nextSeekRef?.(handleSeek);
+    });
+  });
+
+  onDestroy(() => {
+    untrack(() => publishedSeekRef?.(null));
   });
 </script>
 
@@ -907,6 +941,7 @@
         {effectsConfigState}
         {leftPropType}
         {rightPropType}
+        {primaryPropColors}
         positionGlyphVisible={showPositionGlyph}
         {propElementalType}
         {glyphFrame}
@@ -922,6 +957,7 @@
         hideHeader={fill && !showWordHeader}
         hideProgressBar={fill && !scrubbable}
         {cornerToggle}
+        {showScrubberPlaybackControl}
         onInitialized={onCanvasInitialized}
         onProgressBarSeek={scrubbable ? handleSeek : null}
         onProgressBarScrubStart={scrubbable ? handleScrubStart : null}

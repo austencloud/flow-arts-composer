@@ -853,6 +853,17 @@ export const TOYS_TABS: Section[] = [
     color: "#c084fc",
     gradient: "linear-gradient(135deg, #60a5fa 0%, #c084fc 50%, #f87171 100%)",
   },
+  {
+    id: "hand-tunnel",
+    labelKey: "tab_toys_hand_tunnel",
+    descKey: "tab_desc_toys_hand_tunnel",
+    label: "Hand Tunnel",
+    icon: '<i class="fas fa-hands" aria-hidden="true"></i>',
+    description:
+      "Stack several performers' timing-and-direction hand paths in one plane",
+    color: "#fb923c",
+    gradient: "linear-gradient(135deg, #fbbf24 0%, #fb923c 50%, #f472b6 100%)",
+  },
 ];
 
 // Video module tabs (graduated from Lab Mar 2026)

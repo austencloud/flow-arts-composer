@@ -1,4 +1,6 @@
 <script lang="ts">
+  import VisualSavePrompt from "./VisualSavePrompt.svelte";
+  let savePrompt: VisualSavePrompt | undefined = $state();
   import ContextMenu from "$lib/shared/components/context-menu/ContextMenu.svelte";
   import type {
     ContextMenuEntry,
@@ -14,21 +16,23 @@
     onSaveToLibrary?: () => void | Promise<void>;
   }
 
-  let {
-    sequence,
-    intent = {},
-    onSaveToLibrary,
-  }: Props = $props();
+  let { sequence, intent = {}, onSaveToLibrary }: Props = $props();
 
   let menuState: ContextMenuState = $state({ open: false });
   const menuItems = $derived<ContextMenuEntry[]>([
-    buildVisualSequenceSaveMenuItem(sequence, intent, onSaveToLibrary),
+    buildVisualSequenceSaveMenuItem(
+      sequence,
+      intent,
+      onSaveToLibrary ?? (() => savePrompt?.request(sequence, intent))
+    ),
   ]);
 
   export function openContextMenu(x: number, y: number): void {
     menuState = { open: true, x, y };
   }
 </script>
+
+<VisualSavePrompt bind:this={savePrompt} />
 
 <ContextMenu
   {menuState}

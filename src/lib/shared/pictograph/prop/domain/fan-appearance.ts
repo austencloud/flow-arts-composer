@@ -1,8 +1,14 @@
 import { PropType } from "./enums/prop-type";
+export {
+  applyFanFrameColor,
+  applyFanPaperContrast,
+  FAN_PAPER_CONTRAST,
+} from "@tka/render-core";
 
 export const FAN_BUILDS = [
   "pictograph",
   "fire",
+  "flat-grip",
   "lotus",
   "day",
   "moon",
@@ -31,6 +37,17 @@ export interface PropBuildPreviewOption<T extends string> {
     sourceUrl: string;
   };
 }
+
+export const COMPACT_FAN_LOOKS = [
+  "pictograph",
+  "fire",
+  "lotus",
+  "flat-grip",
+  "day",
+  "moon",
+  "covered-fire",
+] as const;
+export type CompactFanLook = (typeof COMPACT_FAN_LOOKS)[number];
 
 /**
  * New users see the measured DoodleGrip Fire build so the 2D canvas matches the
@@ -96,6 +113,9 @@ export function resolveFanRenderKey(
   if (appearance.build === "moon") {
     return `${normalized}__moon`;
   }
+  if (appearance.build === "flat-grip") {
+    return `${normalized}__flat-grip`;
+  }
   return `${normalized}__lotus`;
 }
 
@@ -108,6 +128,15 @@ export interface FanRenderKey {
 
 export function parseFanRenderKey(value: string): FanRenderKey | null {
   const normalized = value.toLowerCase();
+  const flatGrip = /^(fan|bigfan)__flat-grip$/.exec(normalized);
+  if (flatGrip) {
+    return {
+      propType: flatGrip[1] as FanRenderKey["propType"],
+      build: "flat-grip",
+      frameColor: DEFAULT_FAN_APPEARANCE.frameColor,
+      cover: DEFAULT_FAN_APPEARANCE.cover,
+    };
+  }
   const lotus = /^(fan|bigfan)__lotus$/.exec(normalized);
   if (lotus) {
     return {
@@ -155,6 +184,9 @@ export function fanAppearanceArtwork(
   cover: FanCover = "bare"
 ): string | null {
   if (build === "pictograph") return null;
+  if (build === "flat-grip") {
+    return "/images/props/appearances/fan-flat-grip.svg?v=1";
+  }
   if (build === "fire") {
     const file = cover === "covered" ? "fan-fire-covered.svg" : "fan-fire.svg";
     return `/images/props/appearances/${file}?v=2`;
@@ -189,32 +221,10 @@ export function scaleFanAppearanceForBigFan(svg: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 566.9"><g transform="translate(60 92.3731) scale(1.8461538)">${body}</g></svg>`;
 }
 
-/**
- * Physical fan artwork owns its material colors. Only the marked frame group
- * follows the motion color: its stroke for the rod-built fire and lotus fans,
- * and its fill for the solid DoodleGrip Day plate. Kevlar wicks and fitted
- * covers stay physical. Regex only: the composition worker has no DOM.
- */
-export function applyFanFrameColor(svg: string, color: string): string {
-  return svg.replace(
-    /<g\b(?=[^>]*\bdata-fan-frame=(?:""|''))[^>]*>/i,
-    (tag) => {
-      const filled = tag.replace(
-        /\bfill=(?:"(?!none")[^"]*"|'(?!none')[^']*')/i,
-        `fill="${color}"`
-      );
-      if (/\bstroke=(?:"[^"]*"|'[^']*')/i.test(filled)) {
-        return filled.replace(
-          /\bstroke=(?:"[^"]*"|'[^']*')/i,
-          `stroke="${color}"`
-        );
-      }
-      return filled.replace(/>$/, ` stroke="${color}">`);
-    }
-  );
-}
-
 export function fanPreviewImage(appearance: FanAppearance): string {
+  if (appearance.build === "flat-grip") {
+    return previewImage("fan-flat-grip-complete.webp");
+  }
   if (appearance.build === "pictograph") {
     return previewImage("fan-pictograph-front.webp");
   }
@@ -240,11 +250,16 @@ export function fanBuildPreviewOptions(
       id: "pictograph",
       label: "Pictograph",
       image: fanPreviewImage({ ...appearance, build: "pictograph" }),
+      imageScale: 1.76,
     },
     {
       id: "fire",
       label: "DoodleGrip Fire",
       image: fanPreviewImage({ ...appearance, build: "fire" }),
+      // Its 279px outer width sits inside the same 640px render as the Flat
+      // Grip's 536px width. Scaling its complete image 536 / 279 keeps the
+      // artwork equal in the tall rail without distorting it.
+      imageScale: 1.92,
       designCredit: {
         originator: "Doodle",
         sourceUrl: "https://forgedfans.com/products/doodlegrip-fire-fans",
@@ -254,6 +269,8 @@ export function fanBuildPreviewOptions(
       id: "lotus",
       label: "Lotus Fire",
       image: fanPreviewImage({ ...appearance, build: "lotus" }),
+      // Its 296px outer width needs the same treatment: 536 / 296, uniformly.
+      imageScale: 1.81,
       designCredit: {
         originator: "Home of Poi",
         sourceUrl:
@@ -261,9 +278,20 @@ export function fanBuildPreviewOptions(
       },
     },
     {
+      id: "flat-grip",
+      label: "Flat Grip Fire",
+      image: fanPreviewImage({ ...appearance, build: "flat-grip" }),
+      imageScale: 1,
+      designCredit: {
+        originator: "Forged Creations",
+        sourceUrl: "https://forgedfans.com/products/flat-grip-fire-fans",
+      },
+    },
+    {
       id: "day",
       label: "DoodleGrip Day",
       image: fanPreviewImage({ ...appearance, build: "day" }),
+      imageScale: 2.02,
       designCredit: {
         originator: "Doodle",
         sourceUrl: "https://flowtoys.com/products/doodlegrip-practice-fans",
@@ -273,10 +301,34 @@ export function fanBuildPreviewOptions(
       id: "moon",
       label: "Moon LED",
       image: fanPreviewImage({ ...appearance, build: "moon" }),
+      imageScale: 1.54,
       designCredit: {
         originator: "Lighttoys",
         sourceUrl: "https://www.lighttoys.cz/product/moon-fans-ft/",
       },
+    },
+  ];
+}
+
+/**
+ * The compact 2D Fan Look rail makes one visual decision at a time. Covers
+ * remain a full appearance modifier for 3D and settings, while its existing
+ * DoodleGrip Fire covered rendering is an honest, direct visual choice here.
+ */
+export function compactFanLookPreviewOptions(
+  appearance: FanAppearance
+): readonly PropBuildPreviewOption<CompactFanLook>[] {
+  return [
+    ...fanBuildPreviewOptions({ ...appearance, cover: "bare" }),
+    {
+      id: "covered-fire",
+      label: "Covered Fan",
+      image: fanPreviewImage({
+        ...appearance,
+        build: "fire",
+        cover: "covered",
+      }),
+      imageScale: 1.91,
     },
   ];
 }

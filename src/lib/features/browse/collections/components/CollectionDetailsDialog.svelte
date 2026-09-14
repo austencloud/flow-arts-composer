@@ -1,8 +1,7 @@
 <!--
 CollectionDetailsDialog.svelte
 
-Edits the three things a collection says about itself: its name, its notes,
-and who to credit.
+Edits a collection's name, notes, credit, and display prop.
 
 Credit exists because the person who authored the material often isn't on the
 platform. "Gage's 12-step CAPs" is Gage DeMello's handpath work, and he has no
@@ -11,7 +10,10 @@ owned by someone with an account; this fills that same line by hand until the
 real profile exists.
 -->
 <script lang="ts">
-  import { Dialog as DialogPrimitive } from "bits-ui";
+  import CollectionPropField from "$lib/features/library/components/CollectionPropField.svelte";
+  import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import BaseModal from "$lib/shared/foundation/ui/modal/BaseModal.svelte";
   import type { LibraryCollection } from "$lib/shared/library/domain/models/collection";
   import { collectionsState } from "$lib/features/library/state/collections-state.svelte";
   import { communityCollectionsState } from "../state/community-collections-state.svelte";
@@ -24,9 +26,11 @@ real profile exists.
     open?: boolean;
   } = $props();
 
+  const titleId = $props.id();
   let name = $state("");
   let description = $state("");
   let credit = $state("");
+  let propType = $state<PropType | null>(null);
   let saving = $state(false);
 
   // Reload the fields from the collection each time the dialog opens, so a
@@ -34,12 +38,14 @@ real profile exists.
   $effect(() => {
     if (!open) return;
     name = collection.name;
+    propType = collection.propType ?? null;
     description = collection.description ?? "";
     credit = collection.credit ?? "";
   });
 
   const dirty = $derived(
-    name.trim() !== collection.name ||
+    propType !== (collection.propType ?? null) ||
+      name.trim() !== collection.name ||
       description.trim() !== (collection.description ?? "") ||
       credit.trim() !== (collection.credit ?? "")
   );
@@ -52,6 +58,7 @@ real profile exists.
         name,
         description,
         credit,
+        propType,
       });
       // A public collection shows all three of these in the Community feed.
       if (ok && collection.isPublic) communityCollectionsState.invalidate();
@@ -71,75 +78,70 @@ real profile exists.
   }
 </script>
 
-<DialogPrimitive.Root bind:open>
-  <DialogPrimitive.Portal>
-    <DialogPrimitive.Overlay class="dialog-backdrop" />
-    <DialogPrimitive.Content class="dialog-container details-dialog">
-      <DialogPrimitive.Title class="details-title"
-        >Collection details</DialogPrimitive.Title
+<BaseModal bind:open size="md" labelledBy={titleId}>
+  <div class="details-dialog">
+    <h2 id={titleId} class="details-title">Collection details</h2>
+
+    <label class="field">
+      <span class="field-label">Name</span>
+      <input
+        type="text"
+        class="field-input"
+        bind:value={name}
+        onkeydown={handleKeydown}
+        maxlength="60"
+      />
+    </label>
+
+    <label class="field">
+      <span class="field-label">Notes</span>
+      <textarea
+        class="field-input field-notes"
+        bind:value={description}
+        rows="4"
+        maxlength="500"
+        placeholder="What this collection is, and where it came from."
+      ></textarea>
+    </label>
+
+    <label class="field">
+      <span class="field-label">Credit</span>
+      <input
+        type="text"
+        class="field-input"
+        bind:value={credit}
+        onkeydown={handleKeydown}
+        maxlength="80"
+        placeholder="Concepts by Gage DeMello"
+      />
+      <span class="field-hint">
+        Shows on the card as a "by" line. Use it for someone who doesn't have a
+        profile yet.
+      </span>
+    </label>
+
+    <CollectionPropField bind:value={propType} disabled={saving} />
+  </div>
+  {#snippet footer()}
+    <div class="details-actions">
+      <PanelButton
+        variant="secondary"
+        disabled={saving}
+        onclick={() => (open = false)}>Cancel</PanelButton
       >
-
-      <label class="field">
-        <span class="field-label">Name</span>
-        <input
-          type="text"
-          class="field-input"
-          bind:value={name}
-          onkeydown={handleKeydown}
-          maxlength="60"
-        />
-      </label>
-
-      <label class="field">
-        <span class="field-label">Notes</span>
-        <textarea
-          class="field-input field-notes"
-          bind:value={description}
-          rows="4"
-          maxlength="500"
-          placeholder="What this collection is, and where it came from."
-        ></textarea>
-      </label>
-
-      <label class="field">
-        <span class="field-label">Credit</span>
-        <input
-          type="text"
-          class="field-input"
-          bind:value={credit}
-          onkeydown={handleKeydown}
-          maxlength="80"
-          placeholder="Concepts by Gage DeMello"
-        />
-        <span class="field-hint">
-          Shows on the card as a "by" line. Use it for someone who doesn't have
-          a profile yet.
-        </span>
-      </label>
-
-      <div class="details-actions">
-        <button
-          type="button"
-          class="details-button cancel"
-          onclick={() => (open = false)}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="details-button save"
-          disabled={saving || !name.trim() || !dirty}
-          onclick={save}
-        >
-          {saving ? "Saving…" : "Save"}
-        </button>
-      </div>
-    </DialogPrimitive.Content>
-  </DialogPrimitive.Portal>
-</DialogPrimitive.Root>
+      <PanelButton
+        variant="primary"
+        disabled={saving || !name.trim() || !dirty}
+        onclick={save}
+      >
+        {saving ? "Saving…" : "Save"}
+      </PanelButton>
+    </div>
+  {/snippet}
+</BaseModal>
 
 <style>
-  :global(.dialog-container.details-dialog) {
+  .details-dialog {
     display: flex;
     flex-direction: column;
     gap: 18px;
@@ -147,7 +149,7 @@ real profile exists.
     text-align: left;
   }
 
-  :global(.details-title) {
+  .details-title {
     margin: 0;
     font-size: var(--font-size-xl);
     font-weight: 600;
@@ -199,48 +201,6 @@ real profile exists.
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-  }
-
-  .details-button {
-    min-height: 44px;
-    min-width: 110px;
-    padding: 0 24px;
-    border: 2px solid var(--theme-stroke, rgba(255, 255, 255, 0.15));
-    border-radius: 10px;
-    font-size: var(--font-size-base, 16px);
-    font-weight: 500;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all var(--duration-fast, 150ms) ease;
-  }
-
-  .details-button.cancel {
-    background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
-    color: var(--theme-text, white);
-  }
-
-  .details-button.cancel:hover {
-    background: var(--theme-card-hover-bg, rgba(255, 255, 255, 0.08));
-    border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.25));
-  }
-
-  .details-button.save {
-    background: linear-gradient(
-      135deg,
-      var(--theme-accent, #8b6cff) 0%,
-      var(--theme-accent-strong, #6d4dff) 100%
-    );
-    color: white;
-  }
-
-  .details-button.save:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-
-  .details-button.save:not(:disabled):hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px
-      color-mix(in srgb, var(--theme-accent, #8b6cff) 40%, transparent);
+    padding: 16px 28px;
   }
 </style>

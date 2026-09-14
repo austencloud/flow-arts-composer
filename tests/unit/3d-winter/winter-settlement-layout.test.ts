@@ -186,21 +186,22 @@ function expectAuthoredSource(source: string): void {
   );
 }
 
-function localToRuntime(
-  local: [number, number, number]
-): [number, number, number] {
-  const [centerX, centerZ] = layout.lodge.center;
-  const directionX = layout.lodge.frontFaces[0] - centerX;
-  const directionBlenderY = -layout.lodge.frontFaces[1] + centerZ;
-  const yaw =
-    Math.atan2(directionX, -directionBlenderY) +
-    (lodgeProduction.asset.yawCorrectionDegrees * Math.PI) / 180;
-  const worldX = centerX + local[0] * Math.cos(yaw) - local[1] * Math.sin(yaw);
-  const worldBlenderY =
-    -centerZ + local[0] * Math.sin(yaw) + local[1] * Math.cos(yaw);
-  return [worldX, -worldBlenderY, local[2]];
-}
-
+/**
+ * SCOPE: this file is the contract for the Keeper's Hollow *authoring*
+ * artifacts — `winter-settlement-layout.json`, its Gate 1 composition plan, and
+ * the lodge/hearth production manifests that `scripts/build-winter-environment.py`
+ * consumes. It used to also assert `createDefaultWinterConfig()` against those
+ * coordinates, which was correct while Moonlit Winter Hollow was the shipped
+ * venue.
+ *
+ * It no longer is. `66d9541160` replaced it with the Blue Hour Lodge on
+ * 2026-09-05 (`static/models/winter/README.md`), the boot manifest now
+ * prefetches `blue-hour-lodge.glb`, and `601c12032f` re-baselined the Winter
+ * config hash onto the new values 56 minutes later. Re-stamping this file's
+ * numbers would have pointed a live guard at a retired venue, so the runtime
+ * anchors moved to `winter-bluehour-anchors.test.ts`, which asserts them
+ * against the shipped asset's own manifest.
+ */
 describe("Winter Keeper's Hollow settlement layout", () => {
   it("derives every retreat-triangle landmark from the approved Gate 1 plan", () => {
     const approved = composition.proposedArrangement;
@@ -230,23 +231,6 @@ describe("Winter Keeper's Hollow settlement layout", () => {
       radiusX: approved.pond.radiusX,
       radiusZ: approved.pond.radiusZ,
       surfaceElevation: approved.pond.surfaceElevation,
-    });
-  });
-
-  it("keeps the runtime fire at the authored hearth coordinate", () => {
-    const config = createDefaultWinterConfig();
-
-    expect(config.campfire?.position).toEqual({
-      x: layout.hearth.center[0],
-      z: layout.hearth.center[1],
-    });
-    expect(config.cabin.position).toEqual({
-      x: layout.lodge.center[0],
-      z: layout.lodge.center[1],
-    });
-    expect(config.pond?.position).toEqual({
-      x: layout.pond.center[0],
-      z: layout.pond.center[1],
     });
   });
 
@@ -312,7 +296,6 @@ describe("Winter Keeper's Hollow settlement layout", () => {
   });
 
   it("keeps the production hearth grounded, open, and safely spaced", () => {
-    const config = createDefaultWinterConfig();
     const sortedAngles = [...layout.hearth.seatAnglesDegrees].sort(
       (a, b) => a - b
     );
@@ -353,9 +336,6 @@ describe("Winter Keeper's Hollow settlement layout", () => {
     );
     expect(hearthProduction.fireBed.emberCount).toBeGreaterThanOrEqual(
       hearthProduction.requirements.minimumEmberCount
-    );
-    expect(config.campfire?.groundOffset).toBe(
-      hearthProduction.fireBed.runtimeFlameGroundOffset
     );
     const minimumChairDimensions =
       hearthProduction.requirements.minimumChairDimensions;
@@ -405,22 +385,14 @@ describe("Winter Keeper's Hollow settlement layout", () => {
     }
   });
 
-  it("keeps lodge smoke and warm light on their measured Blender anchors", () => {
+  it("keeps the authored plume look on the runtime chimney", () => {
+    // The Blue Hour Lodge re-authored WHERE the flue and the warm window sit;
+    // `winter-bluehour-anchors.test.ts` guards those against the shipped
+    // manifest. What it did not touch is HOW the plume and the window read,
+    // and those values still come from this record, so they stay pinned here.
     const config = createDefaultWinterConfig();
-    const [chimneyX, chimneyZ, chimneyLocalHeight] = localToRuntime(
-      lodgeProduction.chimney.local
-    );
-    const [windowX, windowZ, windowLocalHeight] = localToRuntime(
-      lodgeProduction.windowLight.local
-    );
-    const expectedPadHeight =
-      config.cabin.smoke.heightOffset -
-      chimneyLocalHeight +
-      lodgeProduction.asset.burialDepth;
 
     expect(config.cabin.enabled).toBe(true);
-    expect(config.cabin.smoke.position.x).toBeCloseTo(chimneyX, 5);
-    expect(config.cabin.smoke.position.z).toBeCloseTo(chimneyZ, 5);
     expect(config.cabin.smoke.area).toEqual({
       width: lodgeProduction.chimney.smokeArea[0],
       height: lodgeProduction.chimney.smokeArea[1],
@@ -437,15 +409,10 @@ describe("Winter Keeper's Hollow settlement layout", () => {
     expect(config.cabin.smoke.opacity).toBe(
       lodgeProduction.chimney.smokeOpacity
     );
-    expect(config.cabin.windowLight.position.x).toBeCloseTo(windowX, 5);
-    expect(config.cabin.windowLight.position.z).toBeCloseTo(windowZ, 5);
-    expect(config.cabin.windowLight.heightOffset).toBeCloseTo(
-      expectedPadHeight - lodgeProduction.asset.burialDepth + windowLocalHeight,
-      5
-    );
+    // Intensity was re-authored for the new glazed facade (28 -> 60); colour,
+    // throw and falloff carried over untouched.
     expect(config.cabin.windowLight).toMatchObject({
       color: lodgeProduction.windowLight.color,
-      intensity: lodgeProduction.windowLight.intensity,
       distance: lodgeProduction.windowLight.distance,
       decay: lodgeProduction.windowLight.decay,
     });

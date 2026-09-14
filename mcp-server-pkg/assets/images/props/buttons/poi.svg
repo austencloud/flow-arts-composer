@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 150">
+  <!-- Picker tile: the same anatomy and proportions as the prop art
+       (static/images/props/pictograph/poi.svg) at 1.86x, shifted so the visible
+       half fills the tile instead of sitting in the art's mirror reserve.
+       Tiles are shown uncoloured, so this is the authored neutral material with
+       the head in the unsaturated grey that selective recolouring repaints. -->
+  <rect x="23.6" y="70.91" width="240.57" height="8.18" rx="4.09"
+    fill="#9AA4B2" stroke="#202126" stroke-width="1.3"/>
+  <circle cx="264.17" cy="75" r="30.69"
+    fill="#BDBDBD" stroke="#202126" stroke-width="1.67"/>
+  <path d="M8.29 75C8.29 59.93 13.13 56.4 22.06 56.4C31.73 56.4 38.98 63.84 38.98 75C38.98 86.16 31.73 93.6 22.06 93.6C13.13 93.6 8.29 90.07 8.29 75Z"
+    fill="#5A6472" stroke="#202126" stroke-width="1.49"/>
+</svg>

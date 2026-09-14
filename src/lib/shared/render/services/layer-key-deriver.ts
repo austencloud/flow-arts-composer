@@ -13,6 +13,7 @@ import type { LayerRenderOptions } from "../services/types";
 
 export interface BaseLayerKeyComponents {
   motionHash: string;
+  fanAppearance?: string;
   leftPropType: string;
   rightPropType: string;
   // Chirality mirrors the prop AND (via the preparer) can collapse the beta
@@ -26,6 +27,7 @@ export interface BaseLayerKeyComponents {
   showTnD: boolean;
   showElemental: boolean;
   showPositions: boolean;
+  showHandColorKey: boolean;
   handPathMode: boolean;
   showGrid: boolean;
 }
@@ -105,6 +107,7 @@ export function getBaseLayerComponents(
 ): BaseLayerKeyComponents {
   return {
     motionHash: deriveMotionHash(pictograph),
+    ...(options.fanAppearance && { fanAppearance: JSON.stringify(options.fanAppearance) }),
     leftPropType: options.leftPropType ?? pictograph.motions?.left?.propType ?? "staff",
     rightPropType: options.rightPropType ?? pictograph.motions?.right?.propType ?? "staff",
     leftBuugengFlipped: options.leftBuugengFlipped ?? false,
@@ -116,6 +119,7 @@ export function getBaseLayerComponents(
     showTnD: options.showTnD ?? false,
     showElemental: options.showElemental ?? false,
     showPositions: options.showPositions ?? false,
+    showHandColorKey: options.showHandColorKey ?? true,
     handPathMode: options.handPathMode ?? false,
     showGrid: options.showGrid ?? true,
   };

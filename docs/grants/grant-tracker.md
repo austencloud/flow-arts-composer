@@ -46,24 +46,51 @@
 - **Notes:** Partners include Anthropic, Snap, Hyundai, MIT Media Lab, NASA JPL. Two-year grant (24 months). 3-5 projects selected. Prior tech experience not required. Program explicitly emphasizes process over finished work — "safe-to-fail rapid prototyping." Prefers projects producing "models, prototypes, data, code, or other material that can be shared broadly." Public demonstration strongly preferred. Via Submittable.
 
 ## [EPIC] Epic MegaGrants
-- **Status:** not-started
+- **Status:** submitted
 - **Deadline:** 2026-09-04
 - **Amount:** $5,000 to $150,000
 - **URL:** https://www.unrealengine.com/en-US/megagrants
 - **Framing:** UE5 narrative walking sim, solo developer, museum game
 - **Sections:**
-  - [ ] TBD — review application when window opens June 29
-- **Notes:** No IP transfer. No forced milestones. Solo devs welcome. Average grant $5K-$75K. Need UE5 prototype or concept materials by June.
+  - [x] Capture the current portal prompts and limits
+        (draft: EPIC-01-portal-prompt-inventory.md)
+  - [ ] Lock the project identity, category, phase, Unreal status, and
+        open-source claim
+  - [x] Project elevator pitch (draft: EPIC-03-elevator-pitch.md) — 223 chars
+  - [x] Community contribution response
+        (draft: EPIC-05-community-contribution.md) — 448 chars
+  - [x] Full project details
+        (draft: EPIC-07-full-project-details.md) — 5,431 chars
+  - [x] Unique features
+        (draft: EPIC-09-unique-features.md) — 1,720 chars
+  - [x] Use of funds
+        (draft: EPIC-11-use-of-funds.md) — 218 words / 1,531 chars
+  - [x] Refillable application recovery sheet
+        (draft: EPIC-12-application-recovery-checklist.md)
+  - [ ] Complete an interview and source map for every prose response
+  - [ ] Approve each response angle before drafting
+  - [ ] Run AI-bust and voice comparison on every draft
+  - [x] Assemble project media and supporting links
+  - [ ] Austen review and submission
+- **Notes:** Submitted by Austen on August 31, 2026. Official Cycle 2 notices are scheduled for December 7-11, 2026. The recovery sheet is `EPIC-12-application-recovery-checklist.md`.
 
 ## [ILCAF] Illinois Creative Accelerator Fund
-- **Status:** not-started
-- **Deadline:** 2026-10-15
+- **Status:** drafting
+- **Deadline:** 2026-10-14
 - **Amount:** $10,000
 - **URL:** https://arts.illinois.gov/granting-opportunities/grants-programs/creative-accelerator-fund.html
 - **Framing:** strengthening creative workforce, individual artist, Illinois-based
 - **Sections:**
-  - [ ] TBD — opens September 2026
-- **Notes:** Unrestricted $10K award. Straightforward state-level grant.
+  - [ ] Confirm applicant eligibility and residency documents
+  - [ ] Application narrative: art practice, Illinois community, and benefit
+  - [ ] Work Sample 1 created during 2024-2026
+  - [ ] Work Sample 1 description with completion date
+  - [ ] Work Sample 2 created during 2023 or earlier
+  - [ ] Work Sample 2 description with completion date
+  - [x] Assemble alpha evidence and application recovery package
+  - [ ] Run AI-bust and voice comparison on every prose response
+  - [ ] Austen review and submission
+- **Notes:** Opens September 2, 2026. Deadline is October 14 at 11:59 PM CT. $10,000 taxable award. Selection order is randomized by region after applications pass eligibility and completeness review; artistic quality is not ranked. Frame the application around performance, choreography, media art, and community-based art; software development is explicitly ineligible. The narrative may be one page or a two-minute recording. Each work-sample description is limited to 1,000 characters and must state its completion date. The evidence-first alpha package is in `docs/grants/ilcaf-alpha/`. Its recommended pair is the May 23, 2024 `Kinetic Fire 2024 - Words with Friends` video and the November 25, 2023 `docs/TKA Level 1 Guide.pdf`. Confirm the Illinois ID issue and expiration dates before deciding whether a second residency document is required. Every prose response follows `docs/grants/AUTHORSHIP-GATES.md`.
 
 ## [ILAIF] Illinois Artist Fellowship
 - **Status:** not-started
@@ -91,6 +118,6 @@
 - [ ] Send follow-up email to existing grant contact about scope change
 - [ ] Start Creative Capital application (due April 2)
 - [ ] Start LACMA application (due April 22)
-- [ ] Prepare Epic MegaGrants materials by June
-- [ ] Apply Illinois Creative Accelerator in September
+- [x] Epic MegaGrants submitted August 31, 2026
+- [ ] Complete Illinois Creative Accelerator application by October 14
 - [ ] Mark calendar for Chicago IAP January 2027

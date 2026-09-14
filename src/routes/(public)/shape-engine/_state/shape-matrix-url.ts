@@ -103,6 +103,9 @@ export function readShapeMatrixRouteState(
   const level = readLevel(params);
   const leftTurn = readTurn(params, level, "leftTurn", "blueTurn");
   const rightTurn = readTurn(params, level, "rightTurn", "redTurn");
+  const requestedSolo = params.get("solo");
+  const solo =
+    requestedSolo === "left" || requestedSolo === "right" ? requestedSolo : null;
   const requestedLabels = params.get("labels") as MatrixLabelMode | null;
   const labelMode =
     requestedLabels && LABEL_MODES.has(requestedLabels)
@@ -162,6 +165,7 @@ export function readShapeMatrixRouteState(
         ? requestedProp
         : PropType.STAFF,
     pair,
+    solo: pair ? solo : null,
     mode:
       pair && requestedMode && MODES.has(requestedMode) ? requestedMode : null,
     propMode:
@@ -192,6 +196,8 @@ export function writeShapeMatrixRouteState(
   url.searchParams.set("leftTurn", turnValueToKey(state.leftTurn));
   url.searchParams.set("rightTurn", turnValueToKey(state.rightTurn));
   url.searchParams.set("axis", state.activeAxis);
+  if (state.solo) url.searchParams.set("solo", state.solo);
+  else url.searchParams.delete("solo");
   url.searchParams.set("labels", state.labelMode);
   url.searchParams.set("prop", state.propType);
   // Older links used this parameter to switch between two different picker

@@ -111,6 +111,8 @@
     ) => void;
     onCameraStateChange?: (state: CameraStateSnapshot) => void;
     onPlaybackToggle?: () => void;
+    isLooping?: boolean;
+    onLoopToggle?: () => void;
     onSystemPlaybackChange?: (
       playing: boolean,
       source: "system_3d_loading"
@@ -133,6 +135,8 @@
     enableEffects?: boolean;
     /** Stationary review casts do not need the game locomotion pack. */
     enablePerformerLocomotion?: boolean;
+    /** Attach props to the achieved palm and knuckle line. Requires the main-thread rig. */
+    weldPerformerGrip?: boolean;
     /** Cap expensive prop effects when one shot contains a large ensemble. */
     effectQualityTier?: QualityTier;
     /** Keep the first-load curtain up until every active character is visible. */
@@ -186,6 +190,8 @@
     onEnvironmentTransitionChange,
     onCameraStateChange,
     onPlaybackToggle,
+    isLooping,
+    onLoopToggle,
     onSystemPlaybackChange,
     onProgressBarSeek,
     playbackMode,
@@ -195,6 +201,7 @@
     initialRevealMode = "gated",
     enableEffects = true,
     enablePerformerLocomotion = true,
+    weldPerformerGrip = false,
     effectQualityTier,
     waitForPerformersOnInitialReveal = false,
     performerStepOffsets = [],
@@ -258,6 +265,9 @@
             getIsPlaying: () => isPlaying,
             getCurrentStep: () => currentStep,
             getTotalSteps: () => sequenceData?.steps.length ?? 0,
+            getIsLooping:
+              isLooping === undefined ? undefined : () => isLooping ?? false,
+            onLoopToggle,
           }
         : undefined,
       onPlaybackModeChange
@@ -351,7 +361,8 @@
       cameraMode: viewer3DState.navMode,
       captureInProgress: viewer3DState.isExporting,
       rendererHandleConsumerCount:
-        (onRendererReady ? 1 : 0) + (rendererHandleRequired ? 1 : 0),
+        (onRendererReady ? 1 : 0) +
+        (rendererHandleRequired || weldPerformerGrip ? 1 : 0),
     })
   );
   const workerHostExact = $derived(
@@ -779,6 +790,7 @@
                   {hideSceneMarkers}
                   {hidePerformerBadges}
                   {hideOrientationHelpers}
+                  {weldPerformerGrip}
                   {enableEffects}
                   {enablePerformerLocomotion}
                   {effectQualityTier}

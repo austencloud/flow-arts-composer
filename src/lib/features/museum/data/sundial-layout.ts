@@ -299,7 +299,13 @@ function angleDelta(a: number, b: number): number {
 export function buildSundialLayout(grid: MuseumGrid): SundialLayout | null {
   const sunWing = grid.wings.find((w) => w.id === SUN_ROOM_ID);
   const airWing = grid.wings.find((w) => w.id === AIR_ROOM_ID_FOR_SUN);
-  if (!sunWing || !airWing) return null;
+  // The neighbour is optional. It is read only to span the corridor between the
+  // two rooms, and the room picker can isolate this room on its own - a grid
+  // with no neighbour has no such corridor. Requiring it returned null, which
+  // left the wing component with a collapsed origin: the shell mounted at the
+  // world origin instead of around the visitor, and the isolated room rendered
+  // black with no error. Same fault, same fix, as the Root Terrace.
+  if (!sunWing) return null;
 
   const shell = outerWorldRect(sunWing.bounds);
   const interior: WorldRect = {
@@ -471,26 +477,30 @@ export function buildSundialLayout(grid: MuseumGrid): SundialLayout | null {
 
   // ── Corridor from Air. Air and Sun both suppress their tile geometry, so the
   // corridor between them is suppressed too and this module owns it.
-  const ab = airWing.bounds;
   const sb = sunWing.bounds;
-  const corridorTxMin = Math.min(ab.x, sb.x) - 2;
-  const corridorTxMax = Math.max(ab.x + ab.width, sb.x + sb.width) + 2;
-  const corridor = bandRects(
-    grid,
-    corridorTxMin,
-    corridorTxMax,
-    ab.y + ab.height,
-    sb.y,
-    (t) => t === "corridor" || t === "door"
-  );
-  const corridorWalls = bandRects(
-    grid,
-    corridorTxMin,
-    corridorTxMax,
-    ab.y + ab.height,
-    sb.y - 1,
-    (t) => t === "wall"
-  );
+  const ab = airWing?.bounds;
+  const corridorTxMin = ab ? Math.min(ab.x, sb.x) - 2 : 0;
+  const corridorTxMax = ab ? Math.max(ab.x + ab.width, sb.x + sb.width) + 2 : 0;
+  const corridor = ab
+    ? bandRects(
+        grid,
+        corridorTxMin,
+        corridorTxMax,
+        ab.y + ab.height,
+        sb.y,
+        (t) => t === "corridor" || t === "door"
+      )
+    : [];
+  const corridorWalls = ab
+    ? bandRects(
+        grid,
+        corridorTxMin,
+        corridorTxMax,
+        ab.y + ab.height,
+        sb.y - 1,
+        (t) => t === "wall"
+      )
+    : [];
 
   // ── Floor rects. These exist so the terrain program and the graybox share a
   // list for the RECTANGULAR parts of the bay — the approaches and the

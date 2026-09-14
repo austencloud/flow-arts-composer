@@ -17,6 +17,8 @@
     stepCount: number;
     sequence: SequenceData;
     existingStepMap: StepMap | null;
+    /** Keys the editor's autosaved draft; see StepMapEditor. */
+    draftKey?: string;
     onSave: (beatMap: StepMap) => void | Promise<void>;
     onBack: () => void;
   }
@@ -27,6 +29,7 @@
     stepCount,
     sequence,
     existingStepMap,
+    draftKey,
     onSave,
     onBack,
   }: Props = $props();
@@ -72,6 +75,7 @@
       startPosition={sequence.startPosition ?? sequence.startingPosition}
       bpm={defaultBpm}
       initialStepMap={existingStepMap ?? undefined}
+      {draftKey}
       onSave={handleEditorSave}
       onClose={onBack}
     />

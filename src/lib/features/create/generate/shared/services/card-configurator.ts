@@ -5,6 +5,11 @@ import {
   periodToNumber,
 } from "../../circular/domain/models/circular-models";
 import { minLength as minLengthEngine } from "@tka/sequence-engine/generation";
+import {
+  expanderMultiplier,
+  resolveLoopConfig,
+  specHasExpandInversion,
+} from "$lib/shared/create/services/loop-type-utils";
 import type {
   CardDescriptor,
   CardHandlers,
@@ -42,7 +47,36 @@ function deriveLoopMinOverride(
     level,
     gridMode: config.gridMode,
   });
-  return Number.isFinite(minimum) ? minimum : undefined;
+  const { loopSpecWire } = resolveLoopConfig(
+    config.loopType,
+    config.period,
+    config
+  );
+  if (!loopSpecWire) return Number.isFinite(minimum) ? minimum : undefined;
+  const multiplier = expanderMultiplier(loopSpecWire);
+  const seedMinimum = specHasExpandInversion(loopSpecWire) ? 2 : 1;
+  return Math.max(
+    seedMinimum * multiplier,
+    Math.ceil((Number.isFinite(minimum) ? minimum : 4) / multiplier) *
+      multiplier
+  );
+}
+
+function deriveLoopStepOverride(
+  config: UIGenerationConfig,
+  loopEnabled: boolean
+): number | undefined {
+  if (!loopEnabled) return undefined;
+  const { loopSpecWire } = resolveLoopConfig(
+    config.loopType,
+    config.period,
+    config
+  );
+  // Step between lengths that keep the chosen rhythm, so passing through 10
+  // on the way to 16 cannot silently replace quartered rotation with halved.
+  return loopSpecWire
+    ? Math.max(2, expanderMultiplier(loopSpecWire))
+    : undefined;
 }
 
 /**
@@ -143,6 +177,7 @@ export function buildCardDescriptors(
         onLengthChange: handlers.handleLengthChange,
         locked: false,
         minOverride: deriveLoopMinOverride(config, loopEnabled),
+        stepOverride: deriveLoopStepOverride(config, loopEnabled),
         cardIndex: cardIndex++,
       },
       gridColumnSpan: 2,
@@ -193,6 +228,13 @@ export function buildCardDescriptors(
         onConstraintPresetChange: handlers.handleConstraintPresetChange,
         onHandPathModeChange: handlers.handleHandPathModeChange,
         onMotionTypeFilterChange: handlers.handleMotionTypeFilterChange,
+        handRelationship: config.handRelationship,
+        handRelationshipInverted: config.handRelationshipInverted,
+        matchHandTurns: config.matchHandTurns,
+        onHandRelationshipChange: handlers.handleHandRelationshipChange ?? null,
+        onHandRelationshipInvertedChange:
+          handlers.handleHandRelationshipInvertedChange ?? null,
+        onMatchHandTurnsChange: handlers.handleMatchHandTurnsChange ?? null,
         onStartEndChange: hasStartEnd ? handlers.handleStartEndChange : null,
         onResetAll: handlers.handleResetAll ?? null,
         cardIndex: cardIndex++,
@@ -215,6 +257,7 @@ export function buildCardDescriptors(
         inversionInterval: config.inversionInterval,
         inversionMode: config.inversionMode,
         reflectionAxis: config.reflectionAxis,
+        handRelationship: config.handRelationship,
         onLOOPTypeChange: handlers.handleLOOPTypeChange,
         cardIndex: cardIndex++,
       },

@@ -1,3 +1,4 @@
+import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
 import type { SequenceRenderer } from "$lib/shared/render/services/sequence-renderer";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import type { ShareOptions } from "../domain/models/share-options";
@@ -90,6 +91,7 @@ export class Sharer {
   async getCardImageBlob(
     sequence: SequenceData,
     opts: {
+      propConfig?: ResolvedPropConfig;
       darkMode: boolean;
       /**
        * Geometry the live card preview measured. Auto columns have no fixed
@@ -107,6 +109,7 @@ export class Sharer {
       format: "PNG" as const,
       quality: 1.0,
       ...buildCardRenderOptions(sequence, {
+        propConfig: opts.propConfig,
         darkMode: opts.darkMode,
         isHandPath: !!sequence.metadata?.isHandPathVisualization,
         resolvedAutoLayout: opts.resolvedAutoLayout ?? null,

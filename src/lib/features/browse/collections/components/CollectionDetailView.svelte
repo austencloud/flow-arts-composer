@@ -298,12 +298,18 @@ becomes private while open, we bail back to the list instead of showing a ghost.
     );
   }
 
-  function handleSequenceAction(action: string, sequence: SequenceData) {
+  function handleSequenceAction(
+    action: string,
+    sequence: SequenceData,
+    variations?: SequenceData[]
+  ) {
     if (action === "view-detail") {
       openSequenceViewer(sequence, {
         source: "browse_collection",
+        collectionPropType: collection?.propType,
         returnPath: "/browse",
         returnLabel: collection?.name ?? "Collection",
+        variations,
       });
     }
   }
@@ -853,6 +859,7 @@ becomes private while open, we bail back to the list instead of showing a ghost.
       </div>
     {:else}
       <BrowsePanel
+        collectionPropType={collection?.propType}
         {engine}
         layout="compact"
         eager={false}

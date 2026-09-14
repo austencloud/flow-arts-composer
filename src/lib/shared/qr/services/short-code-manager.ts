@@ -388,6 +388,11 @@ export class ShortCodeManager {
    * Build URL with optional prop type query params.
    * Props are encoded as single characters (bp=S for blue staff, rp=F for red fan).
    */
+  /** Format an already-published code without allocating or changing its record. */
+  urlForExistingCode(code: string, options?: ShortCodeURLOptions): string {
+    return this.buildUrlWithOptions(this.getBaseUrl(), code, options);
+  }
+
   private buildUrlWithOptions(
     baseUrl: string,
     code: string,

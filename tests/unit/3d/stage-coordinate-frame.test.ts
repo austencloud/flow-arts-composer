@@ -9,6 +9,7 @@ import {
   getStageCoordinateFrame,
   isRenderable3DEnvironment,
 } from "$lib/shared/3d/environments/domain/stage-coordinate-frame";
+import { createBlossomStageTransform } from "$lib/shared/3d/environments/scenes/cherry-blossom/blossom-runtime";
 
 const BACKGROUNDS = [
   BackgroundType.FOREST,
@@ -64,10 +65,11 @@ describe("stage coordinate frame", () => {
     //
     // The 2026-09-04 worker-renderer refactors moved Autumn's and Blossom's
     // deck out of their Svelte scenes into imperative `worlds/*-stage.ts`
-    // builders, so both kinds of owner are enumerated. A deck owner is any
-    // file under `environments/` that mounts <Stage3D> or reads the canonical
-    // deck height; `domain/` is excluded because it defines that height rather
-    // than standing performers on it.
+    // builders, so both kinds of owner are enumerated. Discovery stays broad —
+    // any file under `environments/` that mounts <Stage3D> or so much as names
+    // the canonical deck height — so that a new file has to be classified here
+    // before this suite goes green. `domain/` is excluded because it defines
+    // that height rather than standing performers on it.
     const ENVIRONMENTS_DIR = "src/lib/shared/3d/environments";
     const DECK_OWNER_BACKGROUNDS: Record<string, BackgroundType> = {
       "scenes/forest/ForestConfigurableScene.svelte": BackgroundType.FOREST,
@@ -75,6 +77,13 @@ describe("stage coordinate frame", () => {
       "worlds/autumn/autumn-stage.ts": BackgroundType.AUTUMN,
       "worlds/blossom/blossom-stage.ts": BackgroundType.BLOSSOM,
     };
+    // Files that read the canonical anchor to sit *on* the deck rather than to
+    // build it. `d6879d45aa` made `blossom-runtime.ts` one of these: it used to
+    // hardcode `AUTHORING_STAGE_TOP_Y = 0.35`, the exact 0.20 m foot-sinking
+    // this suite was written to catch, and now derives it from the constant.
+    // That is the fix, not a violation — but the file still has to be named
+    // here, and its behaviour is asserted below instead of by regex.
+    const ANCHOR_CONSUMERS = ["scenes/cherry-blossom/blossom-runtime.ts"];
 
     function collectFiles(relativeDir: string): string[] {
       return readdirSync(join(ENVIRONMENTS_DIR, relativeDir), {
@@ -105,11 +114,32 @@ describe("stage coordinate frame", () => {
 
     it("has a known background mapping for each one", () => {
       expect(deckOwners.sort()).toEqual(
-        Object.keys(DECK_OWNER_BACKGROUNDS).sort()
+        [...Object.keys(DECK_OWNER_BACKGROUNDS), ...ANCHOR_CONSUMERS].sort()
       );
     });
 
-    it.each(deckOwners)("declares the deck top for %s", (file) => {
+    it("stands the Blossom garden transform on the canonical anchor", () => {
+      // The regex checks below describe deck builders. This consumer is worth
+      // asserting directly: whatever it names its constant, the stage top it
+      // hands the runtime must land on the anchor, never 0.35 again.
+      const transform = createBlossomStageTransform({
+        stageWidth: 6,
+        stageDepth: 4,
+        stageZOffset: -2,
+        groundY: 1.5,
+      });
+
+      expect(transform.stageTopY).toBeCloseTo(
+        1.5 + CANONICAL_PERFORMER_ANCHOR_Y
+      );
+      expect(transform.position).toEqual([0, 1.5, -2]);
+    });
+
+    const deckBuilders = deckOwners.filter(
+      (file) => !ANCHOR_CONSUMERS.includes(file)
+    );
+
+    it.each(deckBuilders)("declares the deck top for %s", (file) => {
       const source = readFileSync(join(ENVIRONMENTS_DIR, file), "utf8");
 
       if (file.endsWith(".svelte")) {

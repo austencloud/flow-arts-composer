@@ -22,11 +22,11 @@ export function summarizeStudioSurfaceMotion(samples: Sample[]) {
     }
   > = {};
   for (let start = 1; start < samples.length; start++) {
-    const from = samples[start - 1].selectedMode;
-    const to = samples[start].selectedMode;
+    const from = samples[start - 1]!.selectedMode;
+    const to = samples[start]!.selectedMode;
     if (from === to || ![from, to].includes("post-studio")) continue;
     let end = start + 1;
-    while (end < samples.length && samples[end].selectedMode === to) end++;
+    while (end < samples.length && samples[end]!.selectedMode === to) end++;
     const segment = samples.slice(start - 1, end);
     for (const name of Object.keys(
       segment.at(-1)?.workspace?.sharedSurfaces ?? {}
@@ -41,16 +41,18 @@ export function summarizeStudioSurfaceMotion(samples: Sample[]) {
         sizeTravel = 0,
         maxStepPx = 0;
       for (let i = 1; i < measured.length; i++) {
-        const dx = measured[i].left - measured[i - 1].left;
-        const dy = measured[i].top - measured[i - 1].top;
+        const previousBox = measured[i - 1]!;
+        const box = measured[i]!;
+        const dx = box.left - previousBox.left;
+        const dy = box.top - previousBox.top;
         travelX += Math.abs(dx);
         travelY += Math.abs(dy);
         sizeTravel +=
-          Math.abs(measured[i].width - measured[i - 1].width) +
-          Math.abs(measured[i].height - measured[i - 1].height);
+          Math.abs(box.width - previousBox.width) +
+          Math.abs(box.height - previousBox.height);
         maxStepPx = Math.max(maxStepPx, Math.hypot(dx, dy));
       }
-      const first = measured[0],
+      const first = measured[0]!,
         last = measured.at(-1)!;
       const backtrackPx = Math.max(
         0,

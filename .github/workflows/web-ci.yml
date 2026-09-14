@@ -15,6 +15,30 @@ on:
       - "*.md"
 
 jobs:
+  card-render-parity:
+    name: Composer and MCP Card Parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+      - run: cp .env.example .env
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build:packages
+      - run: npm ci --prefix mcp-server --ignore-scripts
+      - run: npm ci --prefix mcp-server-pkg --ignore-scripts
+      - run: npm run build --prefix mcp-server-pkg
+      - name: Canonical packaged assets must be current
+        run: |
+          git diff --exit-code -- mcp-server-pkg/assets
+          test -z "$(git ls-files --others --exclude-standard -- mcp-server-pkg/assets)"
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run test:card-mcp-parity
+
   validate:
     name: Type Check, Test, Build
     runs-on: ubuntu-latest
@@ -32,11 +56,19 @@ jobs:
           node-version: "24"
           cache: "pnpm"
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
+      # Before `pnpm install`, not after: `postinstall` runs
+      # `svelte-kit sync`, which is what generates the `$env/static/public`
+      # declarations. Sync with no `.env` present emits a module with no
+      # members, and `svelte-kit-sync-if-needed.mjs` then correctly skips the
+      # re-sync -- its fingerprint covers route shape, `svelte.config.js` and
+      # the Kit version, none of which moved. Every `$env/static/public` import
+      # in a `.ts` file then fails `check:tsc`, which is a production outage
+      # because the deploy is gated on this workflow.
       - name: Create .env from .env.example
         run: cp .env.example .env
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build workspace packages
         run: pnpm run build:packages

@@ -8,9 +8,11 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   import { GridMode, GridLocation } from "../domain/enums/grid-enums";
   import { svgPreloader } from "$lib/shared/pictograph/shared/services/svg-preloader";
   import { getGridRotationDirection } from "../state/grid-rotation-state.svelte";
+  import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
 
   let {
     gridMode = GridMode.DIAMOND,
+    rotationOverride = null,
     showNonRadialPoints = false,
     previewMode = false,
     visible = true,
@@ -22,9 +24,12 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     // Hand point visibility control
     handPointVisibility = "all",
     activeLocations = undefined,
+    layer = "all",
   } = $props<{
     /** Grid mode - derived from motion data */
     gridMode?: GridMode;
+    /** Caller-owned cumulative degrees keep this grid in step with animated props. */
+    rotationOverride?: number | null;
     /** Show non-radial points (layer 2 diagonal points) */
     showNonRadialPoints?: boolean;
     /** Preview mode: show "off" elements at 40% opacity instead of hidden */
@@ -43,6 +48,8 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     handPointVisibility?: "all" | "active" | "none";
     /** Locations where props are positioned (used when handPointVisibility="active") */
     activeLocations?: GridLocation[];
+    /** The bitmap card compositor places hand/non-radial points above props. */
+    layer?: "all" | "base" | "points";
   }>();
 
   // Map hand point IDs to their grid locations
@@ -90,12 +97,17 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     // Skip reload if we already have the right grid
     if (loadedGridType === gridType && baseGridSvg) return;
 
+    const finishGrid = bootProfiler.startSpan("pictograph:grid-svg", {
+      gridType,
+    });
     try {
       const svgText = await svgPreloader.getSvgContent("grid", gridFileName);
       baseGridSvg = svgText;
       loadedGridType = gridType;
+      finishGrid();
       onLoaded?.();
     } catch (error) {
+      finishGrid("error");
       hasError = true;
       errorMessage = `Failed to load ${gridFileName}`;
       onError?.(errorMessage);
@@ -200,8 +212,16 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
       }
 
       // Apply hand point filtering for skewed mode
-      if (handPointMode === "active" && activeHandLocations && activeHandLocations.length > 0) {
-        modifiedSvg = applyHandPointFiltering(modifiedSvg, activeHandLocations, isPreviewMode);
+      if (
+        handPointMode === "active" &&
+        activeHandLocations &&
+        activeHandLocations.length > 0
+      ) {
+        modifiedSvg = applyHandPointFiltering(
+          modifiedSvg,
+          activeHandLocations,
+          isPreviewMode
+        );
       }
 
       // "none" mode export: inline-hide all hand points (CSS class handles live DOM)
@@ -386,8 +406,16 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     // Hand point visibility filtering
     // When mode is "active" and we have active locations, hide non-active hand points
     // In preview mode, inactive points show at 40% opacity instead of hidden
-    if (handPointMode === "active" && activeHandLocations && activeHandLocations.length > 0) {
-      modifiedSvg = applyHandPointFiltering(modifiedSvg, activeHandLocations, isPreviewMode);
+    if (
+      handPointMode === "active" &&
+      activeHandLocations &&
+      activeHandLocations.length > 0
+    ) {
+      modifiedSvg = applyHandPointFiltering(
+        modifiedSvg,
+        activeHandLocations,
+        isPreviewMode
+      );
     }
 
     // "none" mode export: inline-hide all hand points (CSS class handles live DOM)
@@ -417,7 +445,11 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
    * Filter hand points to only show those at active locations
    * In preview mode, uses CSS classes for smooth transitions instead of inline opacity
    */
-  function applyHandPointFiltering(svgContent: string, activeLocations: GridLocation[], isPreviewMode: boolean = false): string {
+  function applyHandPointFiltering(
+    svgContent: string,
+    activeLocations: GridLocation[],
+    isPreviewMode: boolean = false
+  ): string {
     let modifiedSvg = svgContent;
     const activeSet = new Set(activeLocations);
 
@@ -440,14 +472,21 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
           if (isPreviewMode) {
             // In preview mode, add CSS class for smooth transitions
             // Don't set inline opacity - let CSS handle it
-            const stateClass = isActive ? "hand-point-active" : "hand-point-inactive";
+            const stateClass = isActive
+              ? "hand-point-active"
+              : "hand-point-inactive";
             // Add class to existing class attribute or create new one
             if (cleaned.includes('class="')) {
-              cleaned = cleaned.replace(/class="([^"]*)"/, `class="$1 ${stateClass}"`);
+              cleaned = cleaned.replace(
+                /class="([^"]*)"/,
+                `class="$1 ${stateClass}"`
+              );
             } else {
-              cleaned = cleaned.replace(/>$/, ` class="${stateClass}">`).replace(/\/>$/, ` class="${stateClass}"/>`);
+              cleaned = cleaned
+                .replace(/>$/, ` class="${stateClass}">`)
+                .replace(/\/>$/, ` class="${stateClass}"/>`);
               // Handle case where there's no class - add before closing
-              if (!cleaned.includes('class=')) {
+              if (!cleaned.includes("class=")) {
                 cleaned = `${cleaned} class="${stateClass}"`;
               }
             }
@@ -505,6 +544,7 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   // SKEWED mode: no rotation needed (shows all 8 positions without rotation)
   $effect(() => {
     // First render - set initial rotation without animation
+    if (rotationOverride !== null) return;
     if (previousGridMode === null) {
       // SKEWED mode: no rotation (already shows all positions)
       // BOX mode: 45° rotation
@@ -574,6 +614,7 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
 <g
   bind:this={gridContainerElement}
   class="grid-container"
+  data-grid-layer={layer}
   class:visible
   class:box-mode={gridMode === GridMode.BOX}
   class:skewed-mode={gridMode === GridMode.SKEWED}
@@ -585,7 +626,7 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   class:dark-mode-override={darkMode === true}
   class:light-mode-override={darkMode === false}
   data-grid-mode={gridMode}
-  transform="rotate({cumulativeRotation}, 475, 475)"
+  transform="rotate({rotationOverride ?? cumulativeRotation}, 475, 475)"
 >
   {#if !hasError && styledGridSvg}
     <g class="grid-layer">
@@ -614,6 +655,16 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
 </g>
 
 <style>
+  .grid-container[data-grid-layer="base"] :global(.normal-hand-point),
+  .grid-container[data-grid-layer="base"] :global(.normal-layer2-point) {
+    display: none;
+  }
+
+  .grid-container[data-grid-layer="points"] :global(circle:not(.normal-hand-point):not(.normal-layer2-point)),
+  .grid-container[data-grid-layer="points"] :global(path:not(.normal-hand-point):not(.normal-layer2-point)) {
+    display: none;
+  }
+
   .grid-container {
     z-index: 1;
     /* Beautiful fade in/out effect matching other pictograph elements */
@@ -720,17 +771,17 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
 
   /* Preview mode: show "off" non-radial points at 40% opacity instead of hidden */
   :global(
-      .grid-container.preview-mode:not(.show-non-radial) #ne_diamond_layer2_point
-    ),
+    .grid-container.preview-mode:not(.show-non-radial) #ne_diamond_layer2_point
+  ),
   :global(
-      .grid-container.preview-mode:not(.show-non-radial) #se_diamond_layer2_point
-    ),
+    .grid-container.preview-mode:not(.show-non-radial) #se_diamond_layer2_point
+  ),
   :global(
-      .grid-container.preview-mode:not(.show-non-radial) #sw_diamond_layer2_point
-    ),
+    .grid-container.preview-mode:not(.show-non-radial) #sw_diamond_layer2_point
+  ),
   :global(
-      .grid-container.preview-mode:not(.show-non-radial) #nw_diamond_layer2_point
-    ) {
+    .grid-container.preview-mode:not(.show-non-radial) #nw_diamond_layer2_point
+  ) {
     opacity: 0.4;
   }
 
@@ -779,7 +830,9 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   }
 
   /* Preview mode: show hidden hand points at 40% instead of fully off */
-  :global(.grid-container.preview-mode.hide-all-hand-points .normal-hand-point) {
+  :global(
+    .grid-container.preview-mode.hide-all-hand-points .normal-hand-point
+  ) {
     opacity: 0.4;
   }
 
@@ -937,10 +990,18 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   }
 
   /* Export mode overrides for skewed mode - light */
-  :global(.grid-container.skewed-mode.light-mode-override #n_diamond_outer_point),
-  :global(.grid-container.skewed-mode.light-mode-override #e_diamond_outer_point),
-  :global(.grid-container.skewed-mode.light-mode-override #s_diamond_outer_point),
-  :global(.grid-container.skewed-mode.light-mode-override #w_diamond_outer_point),
+  :global(
+    .grid-container.skewed-mode.light-mode-override #n_diamond_outer_point
+  ),
+  :global(
+    .grid-container.skewed-mode.light-mode-override #e_diamond_outer_point
+  ),
+  :global(
+    .grid-container.skewed-mode.light-mode-override #s_diamond_outer_point
+  ),
+  :global(
+    .grid-container.skewed-mode.light-mode-override #w_diamond_outer_point
+  ),
   :global(.grid-container.skewed-mode.light-mode-override #center_point),
   :global(.grid-container.skewed-mode.light-mode-override .normal-hand-point) {
     fill: #000000;
@@ -951,10 +1012,18 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
   }
 
   /* Export mode overrides for skewed mode - dark */
-  :global(.grid-container.skewed-mode.dark-mode-override #n_diamond_outer_point),
-  :global(.grid-container.skewed-mode.dark-mode-override #e_diamond_outer_point),
-  :global(.grid-container.skewed-mode.dark-mode-override #s_diamond_outer_point),
-  :global(.grid-container.skewed-mode.dark-mode-override #w_diamond_outer_point),
+  :global(
+    .grid-container.skewed-mode.dark-mode-override #n_diamond_outer_point
+  ),
+  :global(
+    .grid-container.skewed-mode.dark-mode-override #e_diamond_outer_point
+  ),
+  :global(
+    .grid-container.skewed-mode.dark-mode-override #s_diamond_outer_point
+  ),
+  :global(
+    .grid-container.skewed-mode.dark-mode-override #w_diamond_outer_point
+  ),
   :global(.grid-container.skewed-mode.dark-mode-override #center_point),
   :global(.grid-container.skewed-mode.dark-mode-override .normal-hand-point) {
     fill: #d0d0d0;

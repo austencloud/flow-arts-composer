@@ -11,6 +11,8 @@
 	} from "$lib/shared/render-gating/render-activity-gate";
 	import { cubicInOut } from "svelte/easing";
 	import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+	import { getSettings } from "$lib/shared/application/state/app-state.svelte";
+	import { applyMandalaHandColors } from "../domain/mandala-palette";
 	import type {
 		MandalaHandVisibility,
 		MandalaMode,
@@ -95,6 +97,8 @@
 	};
 
 	interface Props {
+		/** Explicit card/sequence palette; null retains the canonical theme colors. */
+		primaryPropColors?: { left: string; right: string } | null;
 		sequence: any;
 		mode?: MandalaMode;
 		style?: "stroke" | "filled";
@@ -160,6 +164,7 @@
 		morphChanges = false,
 		tipDx,
 		palette: paletteOverride,
+		primaryPropColors,
 		strokeWidth,
 		gradient,
 		tipEnds,
@@ -467,7 +472,10 @@
 			size,
 			style,
 			show,
-			palette: paletteOverride ?? (effectiveDarkMode ? DARK_MOTION_PALETTE : LIGHT_MOTION_PALETTE),
+			palette: paletteOverride ?? applyMandalaHandColors(
+				effectiveDarkMode ? DARK_MOTION_PALETTE : LIGHT_MOTION_PALETTE,
+				primaryPropColors === undefined ? getSettings().primaryPropColors : primaryPropColors,
+			),
 			tipDx: effectiveDx,
 			strokeWidth,
 			gradient,

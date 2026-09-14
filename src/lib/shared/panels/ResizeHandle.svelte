@@ -27,6 +27,8 @@
     onDragEnd?: () => void;
     /** Keyboard resizing stays with the host because it owns the size bounds. */
     onKeydown?: (event: KeyboardEvent) => void;
+    /** Optional host-owned collapse/restore action. */
+    onDoubleClick?: () => void;
     /** Accessible description of the two regions this handle resizes. */
     ariaLabel?: string;
     /** Current leading-panel share, expressed as a percentage. */
@@ -43,6 +45,7 @@
     onDrag,
     onDragEnd,
     onKeydown,
+    onDoubleClick,
     ariaLabel,
     ariaValueNow = 50,
     size = 6,
@@ -105,6 +108,7 @@
   onpointerup={handlePointerUp}
   onpointercancel={handlePointerUp}
   onkeydown={onKeydown}
+  ondblclick={onDoubleClick}
   role="separator"
   aria-label={ariaLabel}
   aria-orientation={direction === "horizontal" ? "vertical" : "horizontal"}
@@ -168,6 +172,11 @@
 
   .resize-handle:hover .handle-visual {
     background: var(--theme-stroke-strong, rgba(255, 255, 255, 0.25));
+  }
+
+  .resize-handle:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: -2px;
   }
 
   .resize-handle.dragging .handle-visual {

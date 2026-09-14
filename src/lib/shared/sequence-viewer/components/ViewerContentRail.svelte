@@ -7,6 +7,7 @@
   } from "../services/viewer-modes";
   import { canAccessPostStudio } from "../services/post-studio-access";
   import { viewportFits3D } from "$lib/shared/3d/capabilities/viewport-3d-gate.svelte";
+  import ResizeHandle from "$lib/shared/panels/ResizeHandle.svelte";
 
   const RAIL_WIDTH_KEY = "tka-viewer-rail-width";
   const DEFAULT_WIDTH = 180;
@@ -101,6 +102,7 @@
   let displayWidth = $derived(compact ? MIN_WIDTH : railWidth);
   let collapsed = $derived(compact || railWidth < 100);
   let dragging = $state(false);
+  let dragStartWidth = DEFAULT_WIDTH;
 
   function persistWidth(w: number) {
     try {
@@ -110,23 +112,18 @@
     }
   }
 
-  function onPointerDown(e: PointerEvent) {
-    e.preventDefault();
+  function onResizeStart() {
+    dragStartWidth = railWidth;
     dragging = true;
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture(e.pointerId);
   }
 
-  function onPointerMove(e: PointerEvent) {
-    if (!dragging || !navEl) return;
-    const rect = navEl.getBoundingClientRect();
-    const newWidth = Math.round(
-      Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, e.clientX - rect.left))
+  function onResize(delta: number) {
+    railWidth = Math.round(
+      Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, dragStartWidth + delta))
     );
-    railWidth = newWidth;
   }
 
-  function onPointerUp() {
+  function onResizeEnd() {
     if (!dragging) return;
     dragging = false;
     persistWidth(railWidth);
@@ -134,6 +131,33 @@
 
   function onHandleDoubleClick() {
     railWidth = railWidth < 100 ? DEFAULT_WIDTH : MIN_WIDTH;
+    persistWidth(railWidth);
+  }
+
+  function onResizeKeydown(event: KeyboardEvent) {
+    let nextWidth: number;
+    switch (event.key) {
+      case "ArrowLeft":
+        nextWidth = railWidth - 16;
+        break;
+      case "ArrowRight":
+        nextWidth = railWidth + 16;
+        break;
+      case "Home":
+        nextWidth = MIN_WIDTH;
+        break;
+      case "End":
+        nextWidth = MAX_WIDTH;
+        break;
+      case "Enter":
+        event.preventDefault();
+        onHandleDoubleClick();
+        return;
+      default:
+        return;
+    }
+    event.preventDefault();
+    railWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, nextWidth));
     persistWidth(railWidth);
   }
 
@@ -241,21 +265,19 @@
   {/if}
 
   {#if !compact}
-    <div
-      class="resize-handle"
-      onpointerdown={onPointerDown}
-      onpointermove={onPointerMove}
-      onpointerup={onPointerUp}
-      onpointercancel={onPointerUp}
-      ondblclick={onHandleDoubleClick}
-      role="slider"
-      aria-orientation="vertical"
-      aria-valuenow={railWidth}
-      aria-valuemin={MIN_WIDTH}
-      aria-valuemax={MAX_WIDTH}
-      aria-label="Resize sidebar"
-      tabindex="0"
-    ></div>
+    <div class="resize-track">
+      <ResizeHandle
+        direction="horizontal"
+        size={10}
+        ariaLabel="Resize sidebar"
+        ariaValueNow={(100 * (railWidth - MIN_WIDTH)) / (MAX_WIDTH - MIN_WIDTH)}
+        onDragStart={onResizeStart}
+        onDrag={onResize}
+        onDragEnd={onResizeEnd}
+        onKeydown={onResizeKeydown}
+        onDoubleClick={onHandleDoubleClick}
+      />
+    </div>
   {/if}
 </nav>
 
@@ -276,68 +298,11 @@
     user-select: none;
   }
 
-  .resize-handle {
+  .resize-track {
     position: absolute;
-    top: 0;
-    right: -5px;
+    inset: 0 0 0 auto;
     width: 10px;
-    height: 100%;
-    cursor: col-resize;
     z-index: 10;
-    touch-action: none;
-  }
-
-  .resize-handle::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 1px;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.08);
-    transition:
-      background 150ms ease,
-      width 150ms ease;
-  }
-
-  .resize-handle::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 4px;
-    height: 40px;
-    border-radius: 2px;
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow:
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.1),
-      0 0 4px rgba(0, 0, 0, 0.3);
-    transition:
-      background 150ms ease,
-      height 150ms ease,
-      box-shadow 150ms ease;
-  }
-
-  .resize-handle:hover::before,
-  .dragging .resize-handle::before {
-    background: var(--theme-accent, #6366f1);
-    width: 2px;
-  }
-
-  .resize-handle:hover::after,
-  .dragging .resize-handle::after {
-    background: color-mix(
-      in srgb,
-      var(--theme-accent, #6366f1) 60%,
-      transparent
-    );
-    height: 56px;
-    box-shadow:
-      inset 0 0 0 0.5px
-        color-mix(in srgb, var(--theme-accent, #6366f1) 40%, transparent),
-      0 0 8px color-mix(in srgb, var(--theme-accent, #6366f1) 20%, transparent);
   }
 
   .rail-modes {

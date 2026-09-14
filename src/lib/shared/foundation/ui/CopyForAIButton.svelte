@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { copyTextToClipboard } from "$lib/shared/share/services/link-share";
   import { toast } from "$lib/shared/toast/state/toast-state.svelte";
 
   interface Props {
@@ -109,48 +110,6 @@
     isSuccess ? "Copied to clipboard" : isError ? "Copy failed" : ""
   );
 
-  /**
-   * Fallback copy method for browsers without clipboard API
-   * Uses the legacy execCommand approach
-   */
-  async function fallbackCopyToClipboard(text: string): Promise<void> {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-
-    // Avoid scrolling to bottom
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.position = "fixed";
-    textArea.style.opacity = "0";
-
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    try {
-      const successful = document.execCommand("copy");
-      if (!successful) {
-        throw new Error("execCommand copy failed");
-      }
-    } finally {
-      document.body.removeChild(textArea);
-    }
-  }
-
-  /**
-   * Copy text to clipboard with fallback support
-   */
-  async function copyToClipboard(text: string): Promise<void> {
-    // Try modern clipboard API first
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return;
-    }
-
-    // Fallback for older browsers or restricted contexts
-    await fallbackCopyToClipboard(text);
-  }
-
   async function handleClick() {
     if (isLoading || disabled) return;
     if (resetTimer) clearTimeout(resetTimer);
@@ -163,7 +122,7 @@
 
     try {
       const text = await Promise.resolve(getData());
-      await copyToClipboard(text);
+      await copyTextToClipboard(text);
 
       copyState = "success";
       onSuccess?.();

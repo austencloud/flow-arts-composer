@@ -214,6 +214,28 @@ describe("shape matrix app state", () => {
     );
   });
 
+  it("solos one hand from its header, over a whole pair", () => {
+    // A header is one hand's flower. Soloing it keeps a solvable pair
+    // underneath, because a realization needs both hands; only the other
+    // hand's prop goes quiet. Choosing a cell is both hands again.
+    const { state } = createState(false);
+    const [left, right] = buildFlowerAxis();
+    if (!left || !right) throw new Error("Shape Matrix axis is empty");
+
+    state.selectSolo("right", right);
+
+    expect(state.soloHand).toBe("right");
+    expect(state.selectedPair?.right.style).toBe(right.style);
+    expect(state.selectedPair?.left).toBeTruthy();
+    expect(state.selectedMode).toBeTruthy();
+
+    state.selectSolo("left", left);
+    expect(state.soloHand).toBe("left");
+
+    state.selectPair({ left, right });
+    expect(state.soloHand).toBeNull();
+  });
+
   it("restores a shared route without writing it back", () => {
     const { state, syncState } = createState(false);
     const [left, right] = buildFlowerAxis();

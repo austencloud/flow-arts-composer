@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
+  import ToastContainer from "$lib/shared/toast/components/ToastContainer.svelte";
   import "../../app.css";
 
   let { children } = $props<{
@@ -13,3 +14,7 @@
 </svelte:head>
 
 {@render children()}
+
+<!-- The public section had no home for the shared toast owner, so anything it
+     said (a copied link, a failure) was raised into an empty room. -->
+<ToastContainer />

@@ -18,6 +18,8 @@
   Do NOT rebuild scan-specific header/body variants — extend this shell.
 -->
 <script lang="ts">
+  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
+  import { authDrawerState } from "$lib/shared/auth/state/auth-drawer-state.svelte";
   import { onDestroy, onMount, untrack, type Snippet } from "svelte";
   import { createViewerStudioSurfaces } from "../state/viewer-studio-surfaces.svelte";
   import { setViewerStudioSurfaces } from "../context/viewer-studio-surfaces-context";
@@ -67,12 +69,8 @@
   import { uploadRenderedFilm } from "$lib/shared/video-collaboration/services/upload-rendered-film";
   import { canAccessPostStudio } from "../services/post-studio-access";
   import ChoreoCardContextMenuHost from "./choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
-  import {
-    openSendSequenceSheet,
-    buildSequenceSharePayload,
-    buildThumbnailUrl,
-  } from "$lib/shared/inbox/state/send-sequence-state.svelte";
-  import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
+  import { openSendSequenceSheetWithCard } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  import { getSharer } from "$lib/shared/share/get-sharer";
   import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
   import { sendToStickerLab } from "$lib/shared/sequence-viewer/services/send-to-sticker-lab";
@@ -358,12 +356,17 @@
     {
       getContext: () => ctx,
       getSequence: () => sequence,
-      getDefaultBluePropType: () => settingsService.settings.leftPropType,
     },
     {
-      openSendSequenceSheet,
-      buildSequenceSharePayload,
-      buildThumbnailUrl,
+      openSendSequenceSheetWithCard,
+      // Same inputs the share sheet's own card download uses, so the send
+      // preview matches the card on screen.
+      renderCardPreview: (target) =>
+        getSharer().getCardImageBlob(target, {
+          darkMode: ctx.exportOptions.imageDarkMode,
+          resolvedAutoLayout: ctx.resolvedCardAutoLayout,
+          cardPresentation: cardPresentation.value,
+        }),
       sendToStickerLab,
       captureScanAction: captureViewerAndScanAction,
     }
@@ -458,7 +461,7 @@
     // Not for a scene share: that session is ABOUT a live 3D take, and a post
     // render left behind by the studio would both stand in for the take and
     // no-op the request that records it.
-    if (postStudioVideoUrl && !target && !share.sceneShare) {
+    if (postStudioVideoUrl && share.postShare && !target && !share.sceneShare) {
       return {
         blobUrl: postStudioVideoUrl,
         exporting: false,
@@ -467,6 +470,7 @@
         // Post Studio owns re-rendering; the sheet must not kick off an
         // animation export that would replace the composed post.
         request: () => Promise.resolve(),
+        cancel: () => {},
       };
     }
 
@@ -478,6 +482,7 @@
         progress: mandala.exporting ? mandala.exportProgress : null,
         label: "Mandala",
         request: () => Promise.resolve(mandala.startExport({ deliver: false })),
+        cancel: () => mandala.cancelExport(),
       };
     }
 
@@ -488,6 +493,7 @@
         progress: ctx.exportProgress?.progress ?? null,
         label: "Tunnel",
         request: () => interactions.handleArtExport(target),
+        cancel: () => interactions.handleCancelVideoExport(),
       };
     }
 
@@ -500,6 +506,7 @@
       // that, because only there is the user unambiguously looking at a scene.
       label: share.sceneShare ? "Scene" : "Video",
       request: requestShareVideo,
+      cancel: () => interactions.handleCancelVideoExport(),
     };
   });
 
@@ -651,6 +658,18 @@
   const studioUsesSideInspector = $derived(
     layout.showPostStudio && studioCanShareSideInspector
   );
+  const motionInspectorVisible = $derived(
+    layout.isVideoExportActive ||
+      (studioUsesSideInspector &&
+        studioSurfaces.inspectorContent === "animation")
+  );
+  const cardInspectorVisible = $derived(
+    layout.isImageExportActive ||
+      (studioUsesSideInspector && studioSurfaces.inspectorContent === "card")
+  );
+  const studioInspectorVisible = $derived(
+    studioUsesSideInspector && studioSurfaces.inspectorContent === "studio"
+  );
   $effect(() => {
     studioSurfaces.setExternalInspectorTarget(
       studioCanShareSideInspector ? studioInspectorOrigin : null
@@ -689,7 +708,11 @@
     class="shared-animator-inspector"
     use:ownInspector
     use:reparentToInspector={{
-      target: studioSurfaces.inspectorTarget ?? animatorInspectorOrigin,
+      // Desktop shares the same stationary settings layer. Moving its contents
+      // into a hidden layer on exit would empty the outgoing fade in one frame.
+      target: studioCanShareSideInspector
+        ? animatorInspectorOrigin
+        : (studioSurfaces.inspectorTarget ?? animatorInspectorOrigin),
       animate: true,
       onMoving: (moving) =>
         studioSurfaces.setSurfaceMoving("inspector", moving),
@@ -712,19 +735,43 @@
       bpm={studioSurfaces.controls?.bpm ?? ctx.bpmLocal}
       renderMode={studioSurfaces.active ? "2d" : ctx.renderMode}
       playbackMode={ctx.playbackMode}
-      selectedPropType={studioSurfaces.controls?.propType ?? ctx.leftPropType}
+      selectedPropType={studioSurfaces.controls?.propType ??
+        (ctx.catDogModeEnabled && ctx.propHand === "right"
+          ? ctx.rightPropType
+          : ctx.leftPropType)}
       fanAppearance={ctx.fanAppearance}
       onFanAppearanceChange={ctx.handleFanAppearanceChange}
-      propChirality={createGlobalChiralitySeam()}
+      propChirality={createGlobalChiralitySeam(
+        ctx.catDogModeEnabled ? ctx.propHand : undefined
+      )}
+      handProps={studioSurfaces.active ||
+      ctx.effectiveSequence?.sequenceKind === "hand-path" ||
+      ctx.leftPropType === undefined ||
+      ctx.rightPropType === undefined
+        ? undefined
+        : {
+            catDog: ctx.catDogModeEnabled ?? false,
+            hand: ctx.propHand,
+            leftPropType: ctx.leftPropType,
+            rightPropType: ctx.rightPropType,
+            onToggleCatDog: ctx.handleCatDogToggle,
+            onHandChange: ctx.setPropHand,
+          }}
       sequence={ctx.effectiveSequence}
       showInlineExportProgress={false}
       showTempoControls={false}
-      showPathShape={false}
+      showPathShape={!studioSurfaces.active}
       onPropChange={ctx.effectiveSequence?.sequenceKind === "hand-path"
         ? undefined
         : (prop) => {
             studioSurfaces.controls?.setProp(prop);
-            interactions.handlePropChange(prop, "video_export");
+            interactions.handlePropChange(
+              prop,
+              "video_export",
+              !studioSurfaces.active && ctx.catDogModeEnabled
+                ? ctx.propHand
+                : "both"
+            );
           }}
       onPlaybackToggle={() => {
         if (studioSurfaces.controls) studioSurfaces.controls.toggle();
@@ -734,9 +781,8 @@
         studioSurfaces.controls?.setBpm(bpm);
         interactions.handleBpmChange(bpm, "video_export");
       }}
-      onExport={studioSurfaces.active
-        ? undefined
-        : () => interactions.handleVideoExport()}
+      onExport={studioSurfaces.active ? undefined : share.openFilePreparation}
+      exportOpensPreparation
       onCancel={interactions.handleCancelVideoExport}
       onSettingChange={scanInstrumentationEnabled
         ? interactions.handleViewerControlSetting
@@ -1120,7 +1166,9 @@
                   second={studioSource}
                   duration={DURATION.emphasis}
                 />
-                {#if ctx.renderMode === "3d" && (ctx.countdownValue > 0 || ctx.isRecording3D || ctx.isExporting || ctx.pendingFilmRender)}
+                <!-- Share owns progress and cancellation while open. A second
+                     native modal would intercept its visible controls. -->
+                {#if ctx.renderMode === "3d" && !share.postSheetOpen && (ctx.countdownValue > 0 || ctx.isRecording3D || ctx.isExporting || ctx.pendingFilmRender)}
                   <Recording3DOverlay
                     countdownValue={ctx.countdownValue}
                     isRecording={ctx.isRecording3D}
@@ -1134,7 +1182,7 @@
                     onDiscardRender={interactions.handleDiscardFilmRender}
                   />
                 {/if}
-                {#if ctx.renderMode !== "3d" && shellRendersTakeover && animTakeover.phase !== "idle"}
+                {#if ctx.renderMode !== "3d" && !share.postSheetOpen && shellRendersTakeover && animTakeover.phase !== "idle"}
                   <ExportTakeover
                     phase={animTakeover.phase}
                     progress={interactions.videoProgress?.progress ?? 0}
@@ -1200,28 +1248,29 @@
                      Card/inspector seam; there is no second mount-intro. -->
                 <div
                   class="inspector-content-layer studio-settings-layer"
-                  data-active={studioUsesSideInspector}
-                  inert={!studioUsesSideInspector}
-                  aria-hidden={!studioUsesSideInspector}
+                  data-active={studioInspectorVisible}
+                  inert={!studioInspectorVisible}
+                  aria-hidden={!studioInspectorVisible}
                   bind:this={studioInspectorOrigin}
                 ></div>
                 <div
                   class="inspector-content-layer motion-settings-layer"
-                  data-active={layout.isVideoExportActive}
-                  inert={!layout.isVideoExportActive || undefined}
-                  aria-hidden={!layout.isVideoExportActive}
+                  data-active={motionInspectorVisible}
+                  inert={!motionInspectorVisible || undefined}
+                  aria-hidden={!motionInspectorVisible}
                   data-effects-inspector
                 >
                   {#if ctx.previewBlobUrl}
                     <VideoPreviewPanel
                       blobUrl={ctx.previewBlobUrl}
-                      saveLabel="Save"
+                      saveLabel="Download video"
                       onDismiss={interactions.handleDismissExportedVideo}
                       onRedownload={() =>
                         void interactions.handleRedownloadExportedVideo()}
                       onSaveToCloud={canSaveFilmToSequence
                         ? saveFilmToSequence
                         : undefined}
+                      cloudSaveLabel="Attach video to sequence"
                     />
                   {:else}
                     <!-- No tempo and no playback mode on the Motion page: the
@@ -1264,9 +1313,10 @@
                 {#if !isMobile}
                   <div
                     class="inspector-content-layer card-settings-layer"
-                    data-active={layout.isImageExportActive}
-                    inert={!layout.isImageExportActive || undefined}
-                    aria-hidden={!layout.isImageExportActive}
+                    data-active={cardInspectorVisible}
+                    inert={!cardInspectorVisible || undefined}
+                    aria-hidden={!cardInspectorVisible}
+                    data-shared-card-inspector
                   >
                     <!-- Card settings share the persistent inspector layers on
                          desktop. A direct Card-to-Motion switch can now fade
@@ -1428,10 +1478,22 @@
     isRecordingScene={!share.artShare && ctx.isRecording3D}
     exportProgress={artShareVideo.progress}
     onRequestVideo={artShareVideo.request}
+    onCancelVideo={artShareVideo.cancel}
+    onPrepareFile={share.prepareFile}
+    initialEntry={share.initialEntry}
+    preserveSession={share.preserveSession}
+    onSessionResumed={share.markSessionResumed}
     videoLabel={artShareVideo.label}
+    captureAnimationPreview={share.artShare || share.postShare
+      ? () => ""
+      : ctx.captureAnimationPreview}
+    is3DExport={ctx.renderMode === "3d"}
+    videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}`}
     initialArtifact={share.artShare ||
     share.sceneShare ||
-    (share.postShare && !!postStudioVideoUrl)
+    (share.postShare && !!postStudioVideoUrl) ||
+    share.initialEntry === "download" ||
+    ctx.viewerState.viewerMode === "animation"
       ? "video"
       : "card"}
     resolvedCardAutoLayout={ctx.resolvedCardAutoLayout}
@@ -1440,6 +1502,8 @@
       ? persistCardPresentation
       : undefined}
     onSendInTka={() => share.sendToInbox()}
+    needsAccountForFiles={!authState.isFullAccount}
+    onRequestAccount={() => authDrawerState.show("signup", "export")}
     onOpenPostStudio={canAccessPostStudio()
       ? () => layout.selectViewerMode("post-studio")
       : undefined}
@@ -1748,6 +1812,23 @@
       visibility 0s linear 0s;
   }
 
+  /* These are whole workspaces of controls, not button feedback. A fast,
+     front-loaded fade reads as a pop beside the travelling Card. Let the
+     existing layers dissolve over the same deliberate beat in either direction. */
+  .inspector-content-layer:is(.motion-settings-layer, .card-settings-layer) {
+    will-change: opacity;
+    transition:
+      opacity var(--duration-dramatic) var(--ease-in-out),
+      visibility 0s linear var(--duration-dramatic);
+  }
+
+  .inspector-content-layer:is(
+      .motion-settings-layer,
+      .card-settings-layer
+    )[data-active="true"] {
+    transition-delay: 0s, 0s;
+  }
+
   .motion-settings-layer {
     display: flex;
     justify-content: flex-start;
@@ -1794,9 +1875,7 @@
      width while the zero-width inspector track is closed. PanelGroup then
      reveals that stable surface through a moving clip instead of asking every
      control row to rewrap at each intermediate width. */
-  .viewer-and-export.desktop
-    .motion-settings-layer
-    > :global(.export-panel.sidebar) {
+  .viewer-and-export.desktop .motion-settings-layer .animator-inspector-origin {
     width: var(--export-sidebar-width);
     min-width: var(--export-sidebar-width);
     flex: 0 0 var(--export-sidebar-width);
@@ -1863,7 +1942,7 @@
 
   :global(.panel-wrapper[data-manually-sized="true"])
     .motion-settings-layer
-    > :global(.export-panel.sidebar) {
+    .animator-inspector-origin {
     width: 100%;
     min-width: 0;
     flex-basis: 100%;
@@ -1879,6 +1958,7 @@
 
   :global(:root[data-motion-preference="reduce"]) .inspector-content-layer {
     transition-duration: 0ms, 0s;
+    transition-delay: 0s, 0s;
   }
 
   /* PanelGroup owns the dock's structural motion. Keep Card settings composed

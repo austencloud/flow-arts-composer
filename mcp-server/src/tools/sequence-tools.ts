@@ -12,6 +12,7 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { COMPOSER_CARD_EXPORT_PROFILE_V1 } from "@tka/render-composition";
 import {
   ensureDataLoaded,
   ensureDataLoadedAsync,
@@ -856,22 +857,22 @@ export function registerSequenceTools(server: McpServer): void {
       layout: z
         .enum(["grid", "strip"])
         .optional()
-        .default("grid")
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.layout)
         .describe("Layout: grid (square) or strip (single row)"),
       cellSize: z
         .number()
         .optional()
-        .default(900)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize)
         .describe("Size of each pictograph cell in pixels"),
       showStepNumbers: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers)
         .describe("Show step numbers overlaid on each pictograph"),
       showWord: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showWord)
         .describe("Show word header at the top"),
       displayWord: z
         .string()
@@ -880,17 +881,55 @@ export function registerSequenceTools(server: McpServer): void {
       darkMode: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode)
         .describe("Use dark background"),
+      exportProfile: z
+        .enum(["composer", "print"])
+        .optional()
+        .describe("Card export profile"),
+      columnCount: z
+        .number()
+        .int()
+        .min(1)
+        .optional()
+        .describe("Requested card grid column count"),
+      primaryPropColors: z
+        .object({
+          left: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+          right: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+        })
+        .optional()
+        .describe(
+          'Custom left/right hand colors as hex values, e.g. { left: "#00e5ff", right: "#ff2ea6" }. Applied consistently to props, arrows, turn labels, reversal dots, and mandalas.'
+        ),
+      leftPropType: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("Left-hand prop type; overrides propType for that hand"),
+      rightPropType: z
+        .string()
+        .nullable()
+        .optional()
+        .describe("Right-hand prop type; overrides propType for that hand"),
+      fanAppearance: z
+        .object({
+          build: z
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .optional(),
+          frameColor: z.enum(["black", "white"]).optional(),
+          cover: z.enum(["bare", "covered"]).optional(),
+        })
+        .nullable()
+        .optional(),
       showDifficulty: z
         .boolean()
         .optional()
-        .default(true)
         .describe("Show difficulty level badge in header"),
       showReversals: z
         .boolean()
         .optional()
-        .default(true)
+        .default(COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals)
         .describe("Show reversal indicators"),
       loopComponents: z
         .array(
@@ -947,14 +986,20 @@ export function registerSequenceTools(server: McpServer): void {
       bridgeSelections,
       leftStartOrientation,
       rightStartOrientation,
-      layout = "grid",
-      cellSize = 900,
-      showStepNumbers = true,
-      showWord = true,
+      layout = COMPOSER_CARD_EXPORT_PROFILE_V1.layout,
+      cellSize = COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize,
+      showStepNumbers = COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
+      showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
       displayWord,
-      darkMode = true,
-      showDifficulty = true,
-      showReversals = true,
+      darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
+      exportProfile,
+      columnCount,
+      primaryPropColors,
+      leftPropType,
+      rightPropType,
+      fanAppearance,
+      showDifficulty,
+      showReversals = COMPOSER_CARD_EXPORT_PROFILE_V1.showReversals,
       loopComponents,
       userName,
       notes,
@@ -1145,8 +1190,16 @@ export function registerSequenceTools(server: McpServer): void {
             showStepNumbers,
             showWord,
             darkMode,
-            padding: 8,
-            showDifficulty,
+            exportProfile,
+            columnCount,
+            padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
+            showDifficulty:
+              showDifficulty ??
+              (exportProfile === "print" ||
+                COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
+            showFooter: Boolean(notes && notes !== "none"),
+            startPositionLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
             userName,
             notes,
             birthday: birthdayDate,
@@ -1158,10 +1211,24 @@ export function registerSequenceTools(server: McpServer): void {
                 : 2
               : undefined,
             showReversals,
-            seedWord: displayWord?.toUpperCase() ?? engineSeedWord,
+            displayWord: displayWord?.toUpperCase(),
+            seedWord: engineSeedWord,
+            rotationPeriod: finalLoopComponents?.includes(LOOPComponent.ROTATED)
+              ? (period as "halved" | "quartered")
+              : undefined,
+            inversionPeriod: finalLoopComponents?.includes(
+              LOOPComponent.INVERTED
+            )
+              ? (period as "halved" | "quartered")
+              : undefined,
+            reflectionAxis:
+              reflectionAxis ?? detectedLoop.reflectionAxis ?? undefined,
             derivedStepIndices: engineDerivedStepIndices,
-            leftPropType: propType,
-            rightPropType: propType,
+            leftPropType: leftPropType === undefined ? propType : leftPropType,
+            rightPropType:
+              rightPropType === undefined ? propType : rightPropType,
+            fanAppearance,
+            primaryPropColors,
           }
         );
 

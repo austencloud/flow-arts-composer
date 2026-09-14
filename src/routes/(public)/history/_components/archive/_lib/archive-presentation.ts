@@ -20,27 +20,27 @@ const ARTIFACTS: Record<string, ArchiveArtifactPresentation> = {
   caps: {
     kind: "demonstration",
     label: "Interactive explanation",
-    note: "A demonstration made for this site to illustrate Continuous Assembly Patterns.",
+    note: "Our animation of how smaller movements join into a Continuous Assembly Pattern.",
   },
   trochoid: {
     kind: "demonstration",
     label: "Interactive explanation",
-    note: "A visualization made for this site to illustrate the trochoid model.",
+    note: "Our diagrams of the trochoid model.",
   },
   "nine-square": {
-    kind: "demonstration",
-    label: "Visual explanation",
-    note: "A grid visualization made for this site. Cushing’s original lessons are linked below.",
+    kind: "original",
+    label: "From the original lessons",
+    note: "Frames from Charlie Cushing’s video series. Choose a lesson to find its original video.",
   },
   qft: {
     kind: "demonstration",
     label: "Interactive explanation",
-    note: "A demonstration made for this site to illustrate QFT notation. The original primer is linked below.",
+    note: "Our animation of QFT notation. Read the original primer under Sources.",
   },
   poinotation: {
     kind: "demonstration",
     label: "Notation example",
-    note: "An example presented here from PoiNotation’s repository documentation.",
+    note: "An example from PoiNotation’s documentation.",
   },
   tka: {
     kind: "demonstration",

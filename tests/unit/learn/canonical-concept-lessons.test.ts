@@ -157,9 +157,6 @@ describe("canonical concept lesson composition", () => {
     expect(motions).toContain(
       "const timingDirectionIndex = HAND_PATH_STEPS.length"
     );
-    expect(motions).toContain(
-      "const comparisonIndex = timingDirectionIndex + 1"
-    );
     expect(motions).toContain('activeMotion?.name ?? "Timing and Direction"');
     expect(motions).toContain('"stageSchemaVersion"');
     expect(motions).toContain("migrateHandMotionsSavedStep");
@@ -179,7 +176,14 @@ describe("canonical concept lesson composition", () => {
     expect(positions).toContain("PictographContainer");
     expect(positions).toContain("leftPropType={PropType.HAND}");
     expect(positions).toContain("rightPropType={PropType.HAND}");
-    expect(positions).toContain("TKAWordGlyph");
+    // The readout and every example name the position. The canonical
+    // pictograph already draws the glyph, so a second decorative one beside it
+    // would print the same fact twice.
+    expect(positions).toContain(
+      'built ? POSITION_TYPE_INFO[built].label : "Your position"'
+    );
+    expect(positions).toContain("POSITION_TYPE_INFO[example.kind].label");
+    expect(positions).not.toContain("TKAWordGlyph");
     expect(positions).not.toContain("focusPhase");
     expect(positions).not.toContain("Try it");
     expect(handPlayer).toContain("InlineAnimationPlayer");
@@ -226,12 +230,20 @@ describe("canonical concept lesson composition", () => {
     expect(timingBoard).not.toMatch(
       /border-(left|right|top|bottom):\s*[2-9]\d*px/
     );
-    expect(timingIntro).toContain('<h3 id="timing-heading">Timing</h3>');
-    expect(timingIntro).toContain('<h3 id="direction-heading">Direction</h3>');
+    // 2d3b8d4e86 rewrote the combined timing/direction panel into three
+    // independent examples (placement, timing, direction), dropping the old
+    // timing-heading/direction-heading ids and the timingMode/directionMode
+    // state names along with it. Assert the current structure instead.
+    expect(timingIntro).toContain('aria-label="Timing" use:renderGateTarget={gate}>');
+    expect(timingIntro).toContain("<h3>Timing</h3>");
+    expect(timingIntro).toContain('aria-label="Direction">');
+    expect(timingIntro).toContain("<h3>Direction</h3>");
     expect(timingIntro).toContain("SegmentedControl");
     expect(timingIntro).toContain('semantics="radiogroup"');
-    expect(timingIntro).toContain("data-timing={timingMode}");
-    expect(timingIntro).toContain("data-direction={directionMode}");
+    expect(timingIntro).toContain('let timing = $state<TimingMode>("together");');
+    expect(timingIntro).toContain(
+      'rotations[0] === rotations[1] ? "same" : "opposite"'
+    );
     // Static diagrams delegate their selection transitions to the reduced-motion-aware owner.
     expect(timingIntro).toContain(
       'import Crossfade from "$lib/shared/components/Crossfade.svelte"'

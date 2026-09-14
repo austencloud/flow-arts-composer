@@ -1,15 +1,25 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
+  import { onDestroy, type Snippet } from "svelte";
   import { getAnimationVisibilityManager } from "../../state/animation-visibility-state.svelte";
   import { getAnimationVisibilityContext } from "../../state/animation-visibility-context";
+  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import { getViewerPathContext } from "$lib/shared/sequence-viewer/context/viewer-path-context";
+  import { showToast } from "$lib/shared/toast/state/toast-state.svelte";
 
   let {
     onSettingChange,
+    preview,
+    showHelp = true,
   }: {
     onSettingChange?: (previousValue: string, value: string) => void;
+    preview?: Snippet<["arc" | "linear" | "concave" | "hybrid", number]>;
+    showHelp?: boolean;
   } = $props();
 
   const vm = getAnimationVisibilityContext() ?? getAnimationVisibilityManager();
+  const viewerPaths = getViewerPathContext();
+  let session = $state(vm.getPathSession());
+  let previewWidth = $state(0);
 
   let pathShape = $state(vm.getPathShape());
   let motionAware = $state(vm.getMotionAwarePaths());
@@ -17,26 +27,14 @@
   function handleVisibilityChange(): void {
     pathShape = vm.getPathShape();
     motionAware = vm.getMotionAwarePaths();
+    session = vm.getPathSession();
   }
 
   vm.registerObserver(handleVisibilityChange);
   onDestroy(() => vm.unregisterObserver(handleVisibilityChange));
 
-  // One exactly-one-active row selecting how the hands TRAVEL: the three fixed
-  // shapes plus "By Motion" (motion-aware: each motion type gets its natural
-  // shape — Pro arcs, Anti curves concave, Dash stays linear). This is
-  // behavior, not decoration — prop-interpolator computes the props' actual
-  // positions from this shape, so it applies even when no path lines are
-  // drawn. Whether the LINES render is a separate visibility concern (the
-  // color-agnostic "Paths" chip in DisplayPanel's grid). By Motion is a peer
-  // option, not a modifier: while it's active no fixed shape reads as
-  // selected, and picking a fixed shape turns it off. (Hand-built rather than
-  // SegmentedControl: per-option colors.)
-  //
-  // Options carry a mini hand-path glyph (two endpoint dots + the curve
-  // between them, matching prop-interpolator geometry: arc bows out along the
-  // circle, linear cuts the chord, concave is the arc mirrored across the
-  // chord) and a one-line caption shown in the header while selected.
+  // These choices change the movement even when path guides are hidden.
+  // Hybrid is a peer option: selecting a fixed shape always turns it off.
   interface PathOption {
     id: "arc" | "linear" | "concave" | "byMotion";
     label: string;
@@ -83,7 +81,7 @@
     },
     {
       id: "byMotion",
-      label: "By Motion",
+      label: "Hybrid",
       color: "#2dd4bf",
       caption: "Pro → Arc · Anti → Concave",
       glyph: ["M3 6 Q12 -1 21 6", "M3 6 Q12 13 21 6"],
@@ -100,13 +98,20 @@
 
   function select(o: PathOption): void {
     const previous = motionAware ? "byMotion" : pathShape;
-    if (o.id === "byMotion") {
-      vm.setMotionAwarePaths(true);
-    } else {
-      vm.setMotionAwarePaths(false);
-      vm.setPathShape(o.id);
-    }
+    vm.setPathPolicy({
+      pathShape: o.id === "byMotion" ? pathShape : o.id,
+      motionAwarePaths: o.id === "byMotion",
+    });
     onSettingChange?.(previous, o.id);
+  }
+
+  function makeDefault(): void {
+    try {
+      vm.makePathsDefault();
+      showToast("Motion path default saved", "success");
+    } catch {
+      showToast("Couldn't save the motion path default", "error");
+    }
   }
 </script>
 
@@ -120,7 +125,11 @@
   >
 </div>
 
-<div class="path-shape-grid">
+<div
+  class="path-shape-grid"
+  class:with-preview={!!preview}
+  bind:clientWidth={previewWidth}
+>
   {#each options as option (option.id)}
     <button
       class="path-btn"
@@ -130,20 +139,104 @@
       onclick={() => select(option)}
       style:--path-color={option.color}
     >
-      <svg class="path-glyph" viewBox="0 0 24 12" aria-hidden="true">
-        {#each option.glyph as d}
-          <path {d} />
-        {/each}
-        {#each option.dots as [cx, cy]}
-          <circle {cx} {cy} r="1.8" />
-        {/each}
-      </svg>
+      {#if preview}
+        <span class="path-preview" aria-hidden="true">
+          {@render preview(
+            option.id === "byMotion" ? "hybrid" : option.id,
+            Math.max(1, (previewWidth - 8) / 2 - 20)
+          )}
+        </span>
+      {:else}
+        <svg class="path-glyph" viewBox="0 0 24 12" aria-hidden="true">
+          {#each option.glyph as d}
+            <path {d} />
+          {/each}
+          {#each option.dots as [cx, cy]}
+            <circle {cx} {cy} r="1.8" />
+          {/each}
+        </svg>
+      {/if}
       <span>{option.label}</span>
     </button>
   {/each}
 </div>
 
+{#if session}
+  <p class="path-scope" aria-live="polite">
+    {session.preview ? "Preview for this sequence" : "Saved paths"}
+    {#if session.overrideCount > 0}
+      · {session.overrideCount} step {session.overrideCount === 1
+        ? "exception"
+        : "exceptions"}{session.preview ? " overridden" : ""}
+    {/if}
+  </p>
+  <div class="path-actions">
+    <PanelButton
+      disabled={!session.preview}
+      onclick={() => vm.restoreSavedPaths()}>Restore saved paths</PanelButton
+    >
+    {#if viewerPaths?.canSave}
+      <PanelButton
+        disabled={!session.preview || viewerPaths.saving}
+        onclick={() => viewerPaths.save()}
+        ariaBusy={viewerPaths.saving}>Save paths</PanelButton
+      >
+    {/if}
+    <PanelButton onclick={makeDefault}>Make default</PanelButton>
+  </div>
+{/if}
+
+{#if showHelp}
+  <a
+    class="path-help"
+    href="/guide/motion-paths"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    About motion paths <span class="sr-only">(opens in a new tab)</span>
+  </a>
+{/if}
+
 <style>
+  .path-help {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--min-touch-target, 44px);
+    color: var(--theme-accent);
+    font-size: var(--font-size-sm, 14px);
+    text-underline-offset: 3px;
+  }
+  .path-help:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
+  }
+  .path-shape-grid.with-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-sm, 8px);
+  }
+  .path-preview {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    min-width: 0;
+    pointer-events: none;
+  }
+  .with-preview .path-btn {
+    padding: var(--spacing-sm, 8px);
+    min-width: 0;
+  }
+  .path-scope {
+    color: var(--theme-text-muted);
+    font-size: var(--font-size-sm, 14px);
+    min-height: 2.8em;
+    margin: 8px 0;
+  }
+
+  .path-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
   .path-header {
     display: flex;
     align-items: baseline;
@@ -181,11 +274,13 @@
     border-radius: 8px;
     background: var(--theme-card-bg, rgba(255, 255, 255, 0.04));
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));
-    font-size: var(--font-size-compact, 12px);
+    font-size: var(--font-size-min, 14px);
     font-weight: 500;
     white-space: nowrap;
     cursor: pointer;
-    transition: all var(--duration-fast, 100ms) ease;
+    transition:
+      background-color var(--duration-fast, 100ms) ease,
+      border-color var(--duration-fast, 100ms) ease;
   }
 
   .path-glyph {

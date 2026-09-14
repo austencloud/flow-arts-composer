@@ -339,35 +339,39 @@ Controls moved below the grid for better UX
   }
 </script>
 
-<!-- The build path is vertically hungry in a way the preset grid is not: it has
-     a square board plus its own controls, where Presets has three cards and
-     slack to spare. The heading band and footer padding shrink for it. -->
-<div
-  class="start-pos-picker"
-  class:build-path={pickerPath === "build"}
-  data-testid="start-position-picker"
->
-  {#if !embedded}
-    <div class="workspace-heading" class:heading-suppressed={suppressHeading}>
-      {#if !suppressHeading}
-        {#if heading}
-          {@render heading()}
-        {:else}
-          <p class="workspace-hint">Choose your start position</p>
-        {/if}
-      {/if}
-    </div>
-  {/if}
+<!-- The header keeps its geometry when the selected method changes. -->
+<div class="start-pos-picker" data-testid="start-position-picker">
+  <div class="picker-header">
+    {#if !embedded}
+      <div class="heading-region">
+        <Crossfade
+          key={suppressHeading}
+          animateHeight
+          duration={DURATION.emphasis}
+        >
+          {#if !suppressHeading}
+            <div class="workspace-heading">
+              {#if heading}
+                {@render heading()}
+              {:else}
+                <p class="workspace-hint">Choose your start position</p>
+              {/if}
+            </div>
+          {/if}
+        </Crossfade>
+      </div>
+    {/if}
 
-  <div class="path-selector">
-    <SegmentedControl
-      options={START_POSITION_PATHS}
-      value={pickerPath}
-      onchange={handlePathChange}
-      color="accent"
-      size="sm"
-      ariaLabel="Start position method"
-    />
+    <div class="path-selector">
+      <SegmentedControl
+        options={START_POSITION_PATHS}
+        value={pickerPath}
+        onchange={handlePathChange}
+        color="accent"
+        size="md"
+        ariaLabel="Start position method"
+      />
+    </div>
   </div>
 
   {#if validationMessage}
@@ -496,18 +500,17 @@ Controls moved below the grid for better UX
     container-type: inline-size;
   }
 
-  .workspace-heading {
+  .heading-region {
     flex-shrink: 0;
+  }
+
+  .workspace-heading {
     display: grid;
     align-items: start;
-    height: clamp(96px, 14vh, 148px);
+    min-height: clamp(96px, 14vh, 148px);
     padding: clamp(12px, 4vh, 52px)
       calc(1rem + var(--picker-leading-action-offset, 0px)) 0;
     box-sizing: border-box;
-    overflow: hidden;
-    transition:
-      height var(--duration-emphasis) var(--transition-easing, ease),
-      padding var(--duration-emphasis) var(--transition-easing, ease);
   }
 
   .workspace-hint {
@@ -524,94 +527,6 @@ Controls moved below the grid for better UX
     white-space: nowrap;
     color: var(--theme-text, #fff);
     text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
-  }
-
-  /* Presets can afford the deep band above the heading; Build spends that same
-     height on the board someone is aiming at. Bounded by vh so it only tightens
-     where the screen is actually short. */
-  .start-pos-picker.build-path .workspace-heading {
-    height: clamp(72px, 9vh, 96px);
-    padding-top: clamp(12px, 3vh, 36px);
-  }
-
-  /* Wide and short — a Fold in landscape, a laptop with half the screen gone to
-     browser chrome, the composer's embedded pane. Stacking heading, method
-     toggle, board, and footer down a 370px-tall screen leaves the board about
-     130px: too small to read the points, let alone press one.
-
-     Here the whole picker turns sideways. The board owns the left side and
-     takes the full height; every control — heading, method toggle, orientation,
-     the action button, grid mode — lives in a column on the right. Horizontal
-     room is the room we actually have. */
-  /* Two triggers, one layout. Short-and-wide is the Fold/composer case above.
-     The second is plain WIDE at the shared 1680 seam: on a 4K display the
-     stacked version is a 1539px square with ~1150px of dead rail either side
-     and the controls huddled underneath it — the exact "scaled-up phone
-     layout" `4k-native-layout.md` exists to prevent. The band is capped and
-     centred so the board and its controls read as one composed pair rather
-     than a square stranded in a field. */
-  @media (max-height: 620px) and (min-width: 60rem) {
-    .start-pos-picker.build-path {
-      display: grid;
-      /* Title and method share one compact header row. The builder then owns the
-         full width below it, rather than being squeezed beside a mostly empty
-         header column. */
-      grid-template-columns: minmax(0, 1fr) clamp(18rem, 38vw, 32rem);
-      grid-template-areas:
-        "hint sel"
-        "view view";
-      grid-template-rows: auto minmax(0, 1fr);
-      column-gap: clamp(12px, 2vw, 48px);
-      row-gap: 6px;
-      padding: 8px 12px;
-      box-sizing: border-box;
-    }
-
-    .start-pos-picker.build-path .workspace-heading {
-      grid-area: hint;
-      align-self: center;
-      height: auto;
-      padding: 0 0 0 var(--picker-leading-action-offset, 0px);
-    }
-
-    .start-pos-picker.build-path .workspace-hint {
-      /* The nowrap that keeps this on one line across the full width would
-         overflow a 17rem column. */
-      white-space: normal;
-      font-size: clamp(1rem, 1.4vw, 1.4rem);
-      text-align: center;
-    }
-
-    .start-pos-picker.build-path .path-selector {
-      grid-area: sel;
-      width: 100%;
-      height: fit-content;
-      margin: 0;
-      align-self: center;
-    }
-
-    .start-pos-picker.build-path .picker-view {
-      grid-area: view;
-      align-self: stretch;
-    }
-  }
-
-  /* A phone in portrait has no spare band at all — the heading sits right at
-     the top and everything it isn't using goes to the board. */
-  @media (max-height: 780px) {
-    .start-pos-picker.build-path .workspace-heading {
-      height: 74px;
-      padding-top: 6px;
-    }
-
-    .start-pos-picker.build-path .workspace-hint {
-      font-size: clamp(0.95rem, 4.2cqi, 1.5rem);
-    }
-
-    .start-pos-picker.build-path .path-selector {
-      margin-top: 6px;
-      margin-bottom: 0;
-    }
   }
 
   .path-selector {
@@ -872,15 +787,95 @@ Controls moved below the grid for better UX
     }
   }
 
-  .start-pos-picker .workspace-heading.heading-suppressed,
-  .start-pos-picker.build-path .workspace-heading.heading-suppressed {
-    height: 0;
-    padding: 0;
+  .picker-header {
+    flex-shrink: 0;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .workspace-heading {
-      transition: none;
+  .start-pos-picker {
+    max-width: 58rem;
+    margin-inline: auto;
+  }
+
+  .start-pos-picker .workspace-heading {
+    min-height: 68px;
+    padding-top: 20px;
+  }
+
+  .start-pos-picker :global(.workspace-hint) {
+    font-family: inherit;
+    font-size: clamp(1.125rem, 3cqi, 1.75rem);
+    font-weight: 600;
+    letter-spacing: normal;
+    white-space: normal;
+  }
+
+  .start-pos-picker .path-selector {
+    width: min(calc(100% - 24px), 18rem);
+    margin: 0 auto;
+  }
+
+  @media (max-height: 620px) and (min-width: 60rem) {
+    .picker-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) clamp(18rem, 38vw, 32rem);
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+    }
+
+    .start-pos-picker .workspace-heading {
+      min-height: 0;
+      padding: 0 0 0 var(--picker-leading-action-offset, 0px);
+    }
+
+    .start-pos-picker :global(.workspace-hint) {
+      font-size: clamp(1rem, 1.4vw, 1.4rem);
+    }
+  }
+
+  @media (min-width: 1100px) and (min-height: 700px) {
+    .start-pos-picker {
+      max-width: none;
+      gap: 12px;
+      padding: 14px clamp(24px, 2.5vw, 64px) clamp(24px, 2.5vw, 64px);
+      box-sizing: border-box;
+      background: var(--theme-panel-bg);
+    }
+
+    .picker-header {
+      display: grid;
+      grid-template-columns: minmax(12rem, 1fr) auto minmax(12rem, 1fr);
+      grid-template-areas: ". hint sel";
+      align-items: center;
+      gap: 12px;
+    }
+
+    .heading-region {
+      grid-area: hint;
+    }
+
+    .start-pos-picker .workspace-heading {
+      min-height: 56px;
+      align-items: center;
+      padding: 0;
+    }
+
+    .start-pos-picker :global(.workspace-hint) {
+      text-align: center;
+      font-size: clamp(24px, 1.7vw, 36px);
+    }
+
+    .start-pos-picker .path-selector {
+      grid-area: sel;
+      margin: 0;
+      width: min(100%, 18rem);
+      justify-self: end;
+    }
+
+    .picker-view {
+      border-top: 1px solid var(--theme-stroke);
+      padding-top: 16px;
+      box-sizing: border-box;
     }
   }
 </style>

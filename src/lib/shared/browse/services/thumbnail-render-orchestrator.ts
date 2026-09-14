@@ -62,8 +62,9 @@ export interface ThumbnailRequest {
   /** Cancels only this caller; shared same-key rendering continues for others. */
   signal?: AbortSignal;
 
-  /** Gallery previews may reuse a QR image, but must not prepare scan assets. */
-  qrPolicy?: "generate" | "cache-only" | "background";
+  /** Gallery requests either prepare scan assets in the background or reuse a
+   * public prepared QR, depending on the caller's authorization. */
+  qrPolicy?: "generate" | "cache-only" | "background" | "prepared-only";
 
   /** Paint a separately cached preview while its QR version is prepared. */
   onPreview?: (preview: ThumbnailResult) => void;
@@ -171,24 +172,31 @@ export async function saveCloudBlobToLocal(
 // Static thumbnail manifest - loaded once, lists all bundled thumbnails
 let staticManifest: Set<string> | null = null;
 let staticManifestLoading: Promise<Set<string>> | null = null;
+let staticManifestRetryAt = 0;
+const STATIC_MANIFEST_RETRY_COOLDOWN_MS = 5_000;
+const UNAVAILABLE_STATIC_MANIFEST = new Set<string>();
 
 async function getStaticManifest(): Promise<Set<string>> {
-  if (staticManifest) return staticManifest;
+  if (staticManifest !== null) return staticManifest;
   if (staticManifestLoading) return staticManifestLoading;
+  if (Date.now() < staticManifestRetryAt) return UNAVAILABLE_STATIC_MANIFEST;
 
   staticManifestLoading = (async () => {
     try {
       const response = await fetch("/thumbnails/manifest.json");
       if (!response.ok) {
-        staticManifest = new Set();
-        return staticManifest;
+        throw new Error(
+          `Static thumbnail manifest returned ${response.status}`
+        );
       }
       const data = (await response.json()) as { keys: string[] };
       staticManifest = new Set(data.keys);
+      staticManifestRetryAt = 0;
       return staticManifest;
-    } catch {
-      staticManifest = new Set();
-      return staticManifest;
+    } catch (error) {
+      staticManifestRetryAt = Date.now() + STATIC_MANIFEST_RETRY_COOLDOWN_MS;
+      console.warn("[Static] Thumbnail manifest unavailable:", error);
+      return UNAVAILABLE_STATIC_MANIFEST;
     } finally {
       staticManifestLoading = null;
     }
@@ -340,6 +348,7 @@ export class ThumbnailRenderOrchestrator {
     cloudCacheModule.clearMemoryCache(true);
     // Reset static manifest so stale bundled thumbnails aren't served
     staticManifest = new Set();
+    staticManifestRetryAt = 0;
   }
 
   getCached(hash: string): string | null {
@@ -349,7 +358,11 @@ export class ThumbnailRenderOrchestrator {
   }
 
   async getThumbnail(request: ThumbnailRequest): Promise<ThumbnailResult> {
-    if (request.qrPolicy !== "background") return this.loadThumbnail(request);
+    if (
+      request.qrPolicy !== "background" &&
+      request.qrPolicy !== "prepared-only"
+    )
+      return this.loadThumbnail(request);
 
     const preview = await this.loadThumbnail({
       ...request,
@@ -365,12 +378,38 @@ export class ThumbnailRenderOrchestrator {
     if (request.signal?.aborted) throw cancellationError(request.signal);
     request.onPreview?.(preview);
 
-    // The preview stays visible, without a loading overlay. Only one QR warm
-    // runs at a time, on a separate queue that cannot block new preview jobs.
+    // A gallery miss is ordinary. Do this check before handing work to the
+    // renderer so it doesn't compose another QR-free image after the preview
+    // already painted. Fail closed for older/lightweight renderer harnesses:
+    // prepared-only must never fall through to QR generation.
+    if (request.qrPolicy === "prepared-only") {
+      let hasPreparedQR = false;
+      try {
+        hasPreparedQR =
+          (await this.renderer.hasPreparedQR?.(
+            request.sequence,
+            request.input,
+            request.signal
+          )) ?? false;
+      } catch {
+        // A public prepared record can disappear or be unreachable while a
+        // card is on screen. Keep the preview rather than surfacing an error.
+        if (request.signal?.aborted) throw cancellationError(request.signal);
+        return preview;
+      }
+      if (!hasPreparedQR) return preview;
+      if (request.signal?.aborted) throw cancellationError(request.signal);
+    }
+
+    // The preview stays visible, without a loading overlay. Only one background
+    // QR job runs at a time, on a separate queue that cannot block new previews.
+    // Signed-in gallery cards prepare scan assets there; guest cards only reuse
+    // a public prepared QR.
     const final = await this.loadThumbnail(
       {
         ...request,
-        qrPolicy: "generate",
+        qrPolicy:
+          request.qrPolicy === "prepared-only" ? "prepared-only" : "generate",
         onStatusChange: undefined,
       },
       undefined,
@@ -581,7 +620,9 @@ export class ThumbnailRenderOrchestrator {
           const { blob, qrConsistent } = await this.renderer.render(
             request.sequence,
             key.inputs,
-            undefined, // use default render options
+            request.qrPolicy === "prepared-only"
+              ? { qrLookup: "prepared-only" }
+              : undefined,
             (progress) => {
               if (signal.aborted || request.signal?.aborted) return;
               reportActivity();

@@ -44,7 +44,7 @@ describe("public collection live propagation contract", () => {
 describe("collection-to-print contract", () => {
   it("bulk-adds a selected collection to Choreo", () => {
     const source = read(
-      "src/lib/features/write/components/sheet/SheetBrowserDrawer.svelte"
+      "src/lib/features/write/components/sheet/SheetBrowserDock.svelte"
     );
 
     expect(source).toContain("onAddCollection");

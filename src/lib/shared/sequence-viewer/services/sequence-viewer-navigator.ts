@@ -17,7 +17,10 @@ import { cellPreWarmer } from "./cell-pre-warmer";
 import { getCached } from "$lib/shared/sequence-viewer/services/sequence-data-provider";
 import type { SequenceViewerSource } from "$lib/shared/sequence-viewer/analytics/viewer-events";
 
+import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
+
 export interface OpenSequenceViewerOptions {
+  collectionPropType?: PropType | null;
   /** Stable product surface that handed this sequence to the viewer. */
   source: SequenceViewerSource;
   /** Path to return to when closing (e.g., "/browse/gallery") */
@@ -82,6 +85,7 @@ export function openSequenceViewer(
   // so content is immediately visible behind the drawer on dismiss
   openSequenceOverlay(seqToOpen, {
     analyticsSource: options.source,
+    collectionPropType: options.collectionPropType,
     returnLabel: options.returnLabel,
     initialBpm: options.initialBpm,
     initialStep: options.initialStep,

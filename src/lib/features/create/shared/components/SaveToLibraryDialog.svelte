@@ -7,7 +7,9 @@ Allows user to set name, visibility, tags, collections, and notes.
 <script lang="ts" module>
   import type { SequenceVisibility } from "$lib/shared/library/domain/models/library-sequence";
 
+  import type { ResolvedPropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
   export interface SaveMetadata {
+    propConfig: ResolvedPropConfig;
     name: string;
     visibility: SequenceVisibility;
     tags: string[];
@@ -17,6 +19,10 @@ Allows user to set name, visibility, tags, collections, and notes.
 </script>
 
 <script lang="ts">
+  import { untrack } from "svelte";
+  import PropPairField from "$lib/shared/pictograph/prop/components/PropPairField.svelte";
+  import { captureActivePropConfig } from "$lib/shared/foundation/services/recorded-prop-intent";
+  import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import Drawer from "$lib/shared/foundation/ui/Drawer.svelte";
   import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -36,6 +42,7 @@ Allows user to set name, visibility, tags, collections, and notes.
   }>();
 
   // Form state
+  let saveProps = $state(captureActivePropConfig(getSettings()));
   let name = $state("");
   let tagInput = $state("");
   let tags = $state<string[]>([]);
@@ -56,6 +63,7 @@ Allows user to set name, visibility, tags, collections, and notes.
   // Reset form when sequence changes
   $effect(() => {
     if (sequence && isOpen) {
+      saveProps = untrack(() => captureActivePropConfig(getSettings()));
       name = sequence.name || sequence.word || "";
       tags = [];
       tagInput = "";
@@ -91,6 +99,7 @@ Allows user to set name, visibility, tags, collections, and notes.
     }
 
     const metadata: SaveMetadata = {
+      propConfig: saveProps,
       name: name.trim(),
       visibility: "public", // Always public
       tags,
@@ -141,13 +150,13 @@ Allows user to set name, visibility, tags, collections, and notes.
     <!-- Header -->
     <div class="dialog-header">
       <h2 id="save-to-library-title">Add to Gallery</h2>
-      <p class="subtitle">
-        Your sequence will be published to the gallery
-      </p>
+      <p class="subtitle">Your sequence will be published to the gallery</p>
     </div>
 
     <!-- Form -->
     <div class="dialog-body">
+      <PropPairField bind:value={saveProps} />
+      <p>Used when someone chooses As saved.</p>
       <!-- Sequence Name -->
       <div class="form-group">
         <label for="sequence-name">
@@ -218,7 +227,10 @@ Allows user to set name, visibility, tags, collections, and notes.
       <!-- Collections -->
       <div class="form-group">
         <span class="form-label">Collections</span>
-        <CollectionPickerContent mode="select" bind:selectedIds={selectedCollectionIds} />
+        <CollectionPickerContent
+          mode="select"
+          bind:selectedIds={selectedCollectionIds}
+        />
       </div>
 
       <!-- Notes -->

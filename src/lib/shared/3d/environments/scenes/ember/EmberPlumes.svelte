@@ -34,6 +34,8 @@
     advancePlumePuff,
     createPlumePuff,
     plumeLitFraction,
+    PLUME_FOG_ALPHA_BITE,
+    PLUME_FOG_BLEND_CAP,
     type PlumePuff,
   } from "./ember-plume-motion";
 
@@ -83,6 +85,7 @@
     uniform float uMaxPointSize;
     uniform float uFogDensity;
     uniform vec3 uFogColor;
+    uniform float uFogBlendCap;
 
     varying float vAlpha;
     varying float vRotation;
@@ -102,8 +105,16 @@
 
       float depth = uFogDensity * dist;
       float fog = 1.0 - exp(-depth * depth);
-      vColor = mix(puffColor, uFogColor, fog);
-      vAlpha = alpha * subPixel * (1.0 - fog * 0.55);
+
+      // A column is denser than the air around it, so it never converges all
+      // the way onto the haze. Mixing to a full 1.0 did exactly that: at 300m
+      // the ash sat at the fog's own luminance and the vent vanished. Capping
+      // the mix keeps a far column reading as a darker body inside the haze.
+      vColor = mix(puffColor, uFogColor, fog * uFogBlendCap);
+      // The colour mix above already carries aerial perspective. Charging the
+      // same fog term against coverage a second time threw away what little
+      // contrast survived, so this term only softens the edge.
+      vAlpha = alpha * subPixel * (1.0 - fog * ${PLUME_FOG_ALPHA_BITE.toFixed(2)});
 
       vRotation = rotation;
       vSeed = seed;
@@ -237,6 +248,7 @@
         uMaxPointSize: { value: 512 },
         uFogColor: { value: new Color(fogColor) },
         uFogDensity: { value: fogDensity },
+        uFogBlendCap: { value: PLUME_FOG_BLEND_CAP },
       },
       vertexShader,
       fragmentShader,

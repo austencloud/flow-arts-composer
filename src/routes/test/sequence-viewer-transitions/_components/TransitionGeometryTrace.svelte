@@ -330,6 +330,38 @@
       <span>Mode path: {summary.modePath.join(" → ") || "n/a"}</span>
       <span>Mode commit: {modeCommitSummary || "n/a"}</span>
       {#if trace.command.includes("studio")}
+        <span
+          >Selected Studio half: {workspaceSamples.at(-1)?.selectedStudioHalf ??
+            "unmeasured"}</span
+        >
+        <span
+          >Live Card settings identities: {new Set(
+            workspaceSamples
+              .map((s) => s.sharedCardInspectorIdentity)
+              .filter(Boolean)
+          ).size}</span
+        >
+        <span
+          >Motion settings fading: {workspaceSamples.filter(
+            (s) =>
+              (s.motionInspectorOpacity ?? 0) > 0.01 &&
+              (s.motionInspectorOpacity ?? 1) < 0.99
+          ).length} frames</span
+        >
+        {@const coveredFrames = workspaceSamples.filter(
+          (sample) => sample.sharedTransportCovered
+        ).length}
+        {@const rasterDensity = workspaceSamples
+          .filter((sample) => sample.sharedRasterDensity != null)
+          .at(-1)?.sharedRasterDensity}
+        <span data-problem={coveredFrames > 0}
+          >Canvas covering scrubber: {coveredFrames} frames</span
+        >
+        <span
+          >Final canvas raster density: {rasterDensity == null
+            ? "unmeasured"
+            : `${rasterDensity.toFixed(2)}× device pixels`}</span
+        >
         {#each Object.entries(summarizeStudioSurfaceMotion(trace.samples)) as [name, motion]}
           <span
             data-problem={motion.backtrackPx > 2 || motion.sizeBacktrackPx > 2}
@@ -339,7 +371,7 @@
             frames
           </span>
         {/each}
-        {#each ["sharedCanvasIdentity", "sharedInspectorIdentity", "sharedCardIdentity", "sharedTransportIdentity"] as key}
+        {#each ["sharedCanvasIdentity", "sharedInspectorIdentity", "sharedCardIdentity", "sharedTransportIdentity", "sharedScrubberIdentity", "sharedPlayButtonIdentity"] as key}
           {@const identities = new Set(
             workspaceSamples
               .map(
@@ -350,6 +382,8 @@
                       | "sharedInspectorIdentity"
                       | "sharedCardIdentity"
                       | "sharedTransportIdentity"
+                      | "sharedScrubberIdentity"
+                      | "sharedPlayButtonIdentity"
                   ]
               )
               .filter(Boolean)
@@ -361,7 +395,11 @@
                 ? "Shared inspector"
                 : key === "sharedCardIdentity"
                   ? "Shared Card"
-                  : "Shared transport"} identities: {identities.size}
+                  : key === "sharedScrubberIdentity"
+                    ? "Live scrubber"
+                    : key === "sharedPlayButtonIdentity"
+                      ? "Live play button"
+                      : "Shared transport"} identities: {identities.size}
           </span>
         {/each}
         <span

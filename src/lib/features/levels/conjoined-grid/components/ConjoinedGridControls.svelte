@@ -564,11 +564,11 @@
   }
 
   .blue-dot {
-    background: #3575e2;
+    background: var(--dm-motion-blue, #3575e2);
   }
 
   .red-dot {
-    background: #ed1c24;
+    background: var(--dm-motion-red, #ed1c24);
   }
 
   .placement-text {

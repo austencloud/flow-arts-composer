@@ -59,7 +59,7 @@ export function createCatalogPerformanceSelection(
     id: `collaborative-video:${video.id}`,
     url: video.videoUrl,
     duration: video.duration,
-    label: video.description?.trim() || "TKA performance video",
+    label: video.description?.trim() || "Performance video",
   };
 
   if (!video.beatMap) return createUnmappedPerformanceSelection(base);

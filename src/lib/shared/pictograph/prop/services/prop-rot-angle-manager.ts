@@ -1,5 +1,6 @@
 import { GridLocation, GridMode } from "../../grid/domain/enums/grid-enums";
 import { Orientation } from "../../shared/domain/enums/pictograph-enums";
+import { canonicalOrientation } from "$lib/shared/render/core/calculations/orientation";
 
 // Cardinal locations use diamond grid rotation
 const CARDINAL_LOCATIONS: ReadonlySet<GridLocation> = new Set<GridLocation>([
@@ -207,7 +208,7 @@ export class PropRotAngleManager {
     gridMode: GridMode;
   }) {
     this.location = location;
-    this.orientation = orientation;
+    this.orientation = canonicalOrientation(orientation);
     this.gridMode = gridMode;
   }
 
@@ -244,6 +245,9 @@ export class PropRotAngleManager {
     orientation: Orientation,
     gridMode: GridMode
   ): number {
+    // Older saved links contain lowercased compound names such as "centere".
+    // Restore the existing enum spelling before indexing the angle tables.
+    orientation = canonicalOrientation(orientation);
     if (location === GridLocation.CENTER) {
       return PropRotAngleManager.CENTRIC_ANGLE_MAP[orientation] ?? 0;
     }

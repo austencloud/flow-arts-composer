@@ -19,15 +19,12 @@ import {
   LOOPComponent,
 } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import {
-  calculateHeaderHeight as sharedHeaderHeight,
-  calculateFooterHeight as sharedFooterHeight,
+  calculateCardSurface,
   CARD_FRONT_INDICATOR_SIZE_SCALE,
 } from "@tka/render-composition";
 import { calculateDifficultyLevel as calculateSequenceDifficultyLevel } from "$lib/shared/browse/services/sequence-difficulty-calculator";
 // TEMP assembly profiler — header/footer/border phase timing for the cold-deck profiler.
 
-const DECK_HEADER_RATIO = 0.133;
-const DECK_FOOTER_RATIO = 0.067;
 const DECK_HEADER_BG = "rgba(245, 245, 245, 0.98)";
 const DECK_BORDER_COLOR = "rgba(0, 0, 0, 0.1)";
 
@@ -52,19 +49,6 @@ export interface CardFrontLayout {
   startRow: number;
   stepsPerRow: number;
   hasStartPosition: boolean;
-}
-
-function localHeaderHeight(
-  stepCount: number,
-  stepSize: number,
-  columns?: number
-): number {
-  if (stepCount === 0) return 0;
-  return sharedHeaderHeight(stepSize, columns);
-}
-
-function localFooterHeight(stepSize: number, columns?: number): number {
-  return sharedFooterHeight(stepSize, columns);
 }
 
 /**
@@ -122,71 +106,25 @@ export function computeCardFrontLayout(
     showNotes || options.leftLabel || options.rightLabel || options.iconPath
   );
 
-  let stepSize: number;
-  let canvasWidth: number;
-  let canvasHeight: number;
-  let headerHeight: number;
-  let footerHeight: number;
-
-  if (options.deckCard) {
-    const { contentWidth, contentHeight } = options.deckCard;
-    canvasWidth = contentWidth;
-
-    headerHeight = showHeaderForLayout
-      ? Math.floor(contentWidth * DECK_HEADER_RATIO)
-      : 0;
-    footerHeight = hasAnyFooterContent
-      ? Math.floor(contentWidth * DECK_FOOTER_RATIO)
-      : 0;
-
-    const availableHeight = contentHeight - headerHeight - footerHeight;
-    stepSize = Math.floor(
-      Math.min(contentWidth / columns, availableHeight / rows)
-    );
-
-    canvasHeight = contentHeight;
-  } else {
-    const baseBeatSize = options.stepSize || 120;
-    stepSize = Math.floor(baseBeatSize * (options.stepScale || 1));
-    canvasWidth = columns * stepSize;
-
-    headerHeight = showHeaderForLayout
-      ? localHeaderHeight(stepCount, stepSize, columns)
-      : 0;
-    footerHeight = hasAnyFooterContent
-      ? localFooterHeight(stepSize, columns)
-      : 0;
-
-    canvasHeight = rows * stepSize + headerHeight + footerHeight;
-  }
-
+  const surface = calculateCardSurface({
+    columns,
+    rows,
+    cellSize: Math.floor((options.stepSize || 120) * (options.stepScale || 1)),
+    showHeader: !!showHeaderForLayout && stepCount > 0,
+    showFooter: hasAnyFooterContent,
+    deckCard: options.deckCard,
+    gridCentering: options.gridCentering,
+  });
+  const {
+    cellSize: stepSize,
+    width: canvasWidth,
+    height: canvasHeight,
+    headerHeight,
+    footerHeight,
+    gridStartX: gridOffsetX,
+    gridStartY: gridOffsetY,
+  } = surface;
   const isDarkMode = visibility.darkMode ?? false;
-
-  const gridHeight = rows * stepSize;
-  const gridWidth = columns * stepSize;
-  const gridOffsetY = options.deckCard
-    ? headerHeight +
-      Math.floor((canvasHeight - headerHeight - footerHeight - gridHeight) / 2)
-    : headerHeight;
-  // Optical centering for print cards: pictograph annotations (step number
-  // and TKA letter at x=50, reversal dots at x≈71 in the 950-unit viewbox)
-  // all anchor near each cell's LEFT edge, while the right edge is bare grid
-  // circle ending at x=775. Centering the geometric cell grid therefore
-  // leaves ~2.5x more blank margin on the right of the card than the left
-  // (measured 35px vs 57px on a 678px content). Shift the grid right by half
-  // the per-cell ink-inset difference so the INK centers, not the cells.
-  const INK_INSET_LEFT_UNITS = 50; // tightest left anchor (step number / letter)
-  const INK_INSET_RIGHT_UNITS = 175; // 950 - grid outer point at x=775
-  const opticalShiftX =
-    options.deckCard && options.gridCentering !== "geometric"
-      ? Math.round(
-          (((INK_INSET_RIGHT_UNITS - INK_INSET_LEFT_UNITS) / 950) * stepSize) /
-            2
-        )
-      : 0;
-  const gridOffsetX = options.deckCard
-    ? Math.floor((canvasWidth - gridWidth) / 2) + opticalShiftX
-    : 0;
 
   const layoutMode = options.startPositionLayout ?? "row";
   const useColumnMode = layoutMode === "column" && options.includeStartPosition;
@@ -294,6 +232,7 @@ export function buildCellLayerOptions(
     rawHandVisibility === "none" ? "active" : rawHandVisibility;
 
   const options: LayerRenderOptions = {
+    fanAppearance: visibility.fanAppearance,
     size: stepSize,
     darkMode: visibility.darkMode ?? false,
     showNonRadialPoints: visibility.showNonRadialPoints ?? false,
@@ -306,6 +245,7 @@ export function buildCellLayerOptions(
     showLeftMotion: visibility.showLeftMotion,
     showRightMotion: visibility.showRightMotion,
     showPositions: visibility.showPositions ?? false,
+    showHandColorKey: visibility.showHandColorKey ?? true,
     handPathMode: visibility.handPathMode ?? false,
   };
 

@@ -7,27 +7,20 @@
   per-cell visual presentation.
 -->
 <script lang="ts">
+  import LiveCardPictograph from "./LiveCardPictograph.svelte";
   import { fade } from "svelte/transition";
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import { getScanCardCloudProbe } from "../scan-card-cloud-context";
 
-  interface CellData {
-    index: number;
-    label: string;
-    imageUrl: string;
-    isLoaded: boolean;
-    renderFailed?: boolean;
-    gridColumn: number;
-    gridRow: number;
-    duration: number;
-    fadeOutUrl?: string;
-  }
+  import type { ChoreoCardCell as CellData } from "$lib/shared/choreo-card/services/choreo-card-render-engine";
 
   interface Props {
     cell: CellData;
     showDurBadge: boolean;
     showStepNumbers: boolean;
+    /** Choose Start picker: step cells render as poses; the start cell does not. */
+    posePicker?: boolean;
     activeDarkMode: boolean;
     crossfadeActive: boolean;
     transitionMode: "crossfade" | "swap";
@@ -46,6 +39,7 @@
     cell,
     showDurBadge,
     showStepNumbers,
+    posePicker = false,
     activeDarkMode,
     crossfadeActive,
     transitionMode,
@@ -64,7 +58,15 @@
   const scanUsesHtmlStepNumbers = getScanCardCloudProbe();
 </script>
 
-{#if cell.renderFailed}
+{#if cell.live}
+  <LiveCardPictograph
+    live={cell.live}
+    darkMode={activeDarkMode}
+    stepNumber={cell.index + 1}
+    showStepNumber={showStepNumbers && !isMotionSoloMode && (!isBrowseSoloMode || cell.index === -1)}
+    poseOnly={posePicker && cell.index !== -1}
+  />
+{:else if cell.renderFailed}
   <div class="cell-render-error" role="img" aria-label="Pictograph unavailable">
     <span aria-hidden="true">!</span>
   </div>
@@ -88,12 +90,19 @@
     alt={cell.label}
     draggable="false"
   />
+{:else}
+  <div class="cell-spinner-container">
+    <ProgressRing percent={-1} size={20} strokeWidth={2} />
+  </div>
+{/if}
+
+{#if cell.live || cell.isLoaded}
   <!-- Normal-mode step numbers are baked into the cell image (see
        step-number-compositor) so they dissolve in lockstep with the pictograph
        during crossfades. Scan cards skip that expensive bitmap rewrite and use
        the same positioned HTML number; motion-solo and start cells already use
        it everywhere. -->
-  {#if showStepNumbers && ((scanUsesHtmlStepNumbers && !isBrowseSoloMode) || isMotionSoloMode || cell.index === -1)}<span
+  {#if showStepNumbers && !(posePicker && cell.index !== -1) && ((scanUsesHtmlStepNumbers && !isBrowseSoloMode) || isMotionSoloMode || (!cell.live && cell.index === -1))}<span
       class="step-number-overlay"
       class:dark-mode={activeDarkMode}
       style="font-size: {stepNumFontSize}px;"
@@ -160,10 +169,6 @@
       {/if}
     {/if}
   {/if}
-{:else}
-  <div class="cell-spinner-container">
-    <ProgressRing percent={-1} size={20} strokeWidth={2} />
-  </div>
 {/if}
 
 <style>

@@ -7,6 +7,12 @@ import {
   GridMode,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { isBuugengFamilyProp } from "$lib/shared/render/core/constants/prop-classification";
+import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import {
+  isFanPropType,
+  fanAppearanceSignature,
+  normalizeFanAppearance,
+} from "$lib/shared/pictograph/prop/domain/fan-appearance";
 // getSettings loaded dynamically to avoid pulling $app/environment into worker bundle
 
 interface MotionKeyData {
@@ -42,10 +48,14 @@ interface PictographKeyInput {
   propAppearanceRevision?: string;
   turnGlyphRevision?: string;
   visibility: {
+    fanAppearance?: string;
+    primaryPropColors?: { left: string; right: string };
+    primaryPropColorRevision?: string;
     showTKA: boolean;
     showTnD: boolean;
     showElemental: boolean;
     showPositions: boolean;
+    showHandColorKey: boolean;
     showReversals: boolean;
     showNonRadialPoints: boolean;
     showGrid: boolean;
@@ -93,8 +103,8 @@ const REVISED_NON_RADIAL_SHIFT_TRANSITIONS = new Set([
 const LETTERS_WITH_INDEPENDENT_BETA_DIRECTION_MAPS = new Set(["G", "H", "I"]);
 
 /**
- * Returns a render-identity revision only for cells whose prop pixels can be
- * changed by the corrected box/non-radial shift-direction entries.
+ * Rekeys only cells affected by a prop geometry repair: legacy orientation
+ * spelling or corrected box/non-radial shift-direction entries.
  *
  * Keeping this predicate narrow avoids invalidating the established lsp11
  * cloud corpus for pictographs that never consult those entries.
@@ -102,9 +112,35 @@ const LETTERS_WITH_INDEPENDENT_BETA_DIRECTION_MAPS = new Set(["G", "H", "I"]);
 export function getPictographGeometryRevision(
   data: StepData | PictographData
 ): string | undefined {
+  const legacyCase = Object.values(data.motions ?? {}).some(
+    (motion) =>
+      motion &&
+      motion.isVisible !== false &&
+      Object.values(Orientation).some(
+        (orientation) =>
+          orientation !== motion.endOrientation &&
+          orientation.toLowerCase() === motion.endOrientation?.toLowerCase()
+      )
+  );
+  const betaRevision = getBetaShiftGeometryRevision(data);
+  return (
+    [betaRevision, legacyCase ? "orientation-case-v1" : undefined]
+      .filter(Boolean)
+      .join("+") || undefined
+  );
+}
+
+function getBetaShiftGeometryRevision(
+  data: StepData | PictographData
+): string | undefined {
   const left = data.motions?.left;
   const right = data.motions?.right;
-  if (!left || !right || left.isVisible === false || right.isVisible === false) {
+  if (
+    !left ||
+    !right ||
+    left.isVisible === false ||
+    right.isVisible === false
+  ) {
     return undefined;
   }
 
@@ -254,10 +290,22 @@ export class PictographKeyHasher {
       ...(propAppearanceRevision && { propAppearanceRevision }),
       ...(turnGlyphRevision && { turnGlyphRevision }),
       visibility: {
+        ...(visibility.fanAppearance &&
+          (isFanPropType(resolvedLeftProp) ||
+            isFanPropType(resolvedRightProp)) && {
+            fanAppearance: fanAppearanceSignature(
+              normalizeFanAppearance(visibility.fanAppearance)
+            ),
+          }),
+        ...(visibility.primaryPropColors && {
+          primaryPropColors: visibility.primaryPropColors,
+          primaryPropColorRevision: "material-colors-v2",
+        }),
         showTKA: visibility.showTKA ?? true,
         showTnD: visibility.showTnD ?? false,
         showElemental: visibility.showElemental ?? false,
         showPositions: visibility.showPositions ?? false,
+        showHandColorKey: visibility.showHandColorKey ?? true,
         showReversals: visibility.showReversals ?? true,
         showNonRadialPoints: visibility.showNonRadialPoints ?? true,
         showGrid: visibility.showGrid ?? true,

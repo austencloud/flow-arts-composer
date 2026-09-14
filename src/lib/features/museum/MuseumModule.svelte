@@ -1,5 +1,6 @@
 <script lang="ts">
   import { buildMuseumGrid } from "./services/museum-grid-builder";
+  import { resolveRoomIsolation } from "./services/room-isolation";
   import { GRID_CONFIG } from "./data/museum-room-graph";
   // The museum's rooms come from the composition, not from the raw graph: the
   // graph still carries `vulcan-cave` as one placeholder room, and the walk
@@ -239,48 +240,31 @@
     }
   }
 
-  // Some "rooms" are multi-room suites: the Drowned Gallery spans the water
-  // approach, gallery, and grotto, and the gallery graybox only mounts when
-  // cave-water-gallery is in the grid. Isolating any water room without its
-  // siblings renders a black void, so isolation expands to the whole suite.
-  const ROOM_ISOLATION_GROUPS: Record<string, readonly string[]> = {
-    "cave-water": ["cave-water", "cave-water-gallery", "cave-water-approach"],
-    "cave-water-gallery": [
-      "cave-water-gallery",
-      "cave-water-approach",
-      "cave-water",
-    ],
-    "cave-water-approach": [
-      "cave-water-approach",
-      "cave-water-gallery",
-      "cave-water",
-    ],
-  };
-
   // Build grid for the given room filter. When a room is selected, we pass
   // that room's isolation group (usually just itself) plus the edges between
   // group members, so multi-room suites keep their internal corridors. When
-  // null, the full museum is built.
+  // null - or when the URL names a room the walk does not contain - the full
+  // museum is built. See services/room-isolation.ts for why the fallback is
+  // load-bearing rather than defensive padding.
   function buildGridForRoom(roomFilter: string | null): {
     grid: MuseumGrid;
     validation: { valid: boolean; errors: string[] };
   } {
-    const groupIds = roomFilter
-      ? (ROOM_ISOLATION_GROUPS[roomFilter] ?? [roomFilter])
-      : null;
-    const rooms = groupIds
-      ? // Preserve group order: buildMuseumGrid spawns the visitor in rooms[0],
-        // which stays the room the URL named.
-        groupIds.flatMap((id) => MUSEUM_ROOMS.filter((r) => r.id === id))
-      : MUSEUM_ROOMS;
-    const edges = groupIds
-      ? MUSEUM_EDGES.filter(
-          (e) => groupIds.includes(e.from) && groupIds.includes(e.to)
-        )
-      : MUSEUM_EDGES;
+    const isolation = resolveRoomIsolation(
+      roomFilter,
+      MUSEUM_ROOMS,
+      MUSEUM_EDGES
+    );
+    const { rooms, edges } = isolation;
+
+    if (isolation.unresolved) {
+      console.warn(
+        `Museum: no room named "${roomFilter}" - showing the whole museum.`
+      );
+    }
 
     // Only use cache for the full museum (isolated rooms are cheap to build)
-    if (!roomFilter) {
+    if (!roomFilter || isolation.unresolved) {
       const cached = loadCachedGrid(rooms, edges);
       if (cached) {
         // Terrain is behaviour, not tiles, and does not survive serialization.
@@ -295,7 +279,7 @@
     const result = buildMuseumGrid(rooms, edges, GRID_CONFIG);
     attachMuseumWalkTerrain(result.grid);
 
-    if (!roomFilter) {
+    if (!roomFilter || isolation.unresolved) {
       cacheGrid(result.grid, rooms, edges);
     }
 
