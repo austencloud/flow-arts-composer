@@ -75,6 +75,7 @@ with pre-prepared data for better performance.
     showElemental = undefined,
     propElementalType = null,
     showPositions = undefined,
+    showHandColorKey = undefined,
     // Preview mode for visibility settings
     previewMode = false,
     // Show only one hand's prop/arrow (null = show both)
@@ -160,6 +161,8 @@ with pre-prepared data for better performance.
     /** Optional prop-path TnD element for the top-right sister glyph. */
     propElementalType?: ElementalType | null;
     showPositions?: boolean;
+    /** L/R colour key on start positions; undefined follows the global toggle. */
+    showHandColorKey?: boolean;
     previewMode?: boolean;
     visibleHand?: HandSide | null;
     arrowsClickable?: boolean;
@@ -249,6 +252,7 @@ with pre-prepared data for better performance.
     tndGlyph: visibilityManager.getGlyphVisibility("tndGlyph"),
     elementalGlyph: visibilityManager.getGlyphVisibility("elementalGlyph"),
     positionsGlyph: visibilityManager.getGlyphVisibility("positionsGlyph"),
+    handColorKey: visibilityManager.getGlyphVisibility("handColorKey"),
     handPointVisibility: visibilityManager.getHandPointVisibility(),
     stepNumbers: visibilityManager.getStepNumbersVisibility(),
     darkMode: animVisibilityManager.isDarkMode(),
@@ -274,6 +278,7 @@ with pre-prepared data for better performance.
       tndGlyph: visibilityManager.getGlyphVisibility("tndGlyph"),
       elementalGlyph: visibilityManager.getGlyphVisibility("elementalGlyph"),
       positionsGlyph: visibilityManager.getGlyphVisibility("positionsGlyph"),
+      handColorKey: visibilityManager.getGlyphVisibility("handColorKey"),
       handPointVisibility: visibilityManager.getHandPointVisibility(),
       stepNumbers: visibilityManager.getStepNumbersVisibility(),
       darkMode: syncedVisibility.darkMode, // Keep dark mode unchanged
@@ -363,6 +368,16 @@ with pre-prepared data for better performance.
     showPositions !== undefined
       ? showPositions
       : syncedVisibility.positionsGlyph
+  );
+
+  // The renderer draws the key on start positions when this is undefined, so
+  // the global toggle only ever forces it OFF; an explicit prop still wins.
+  const effectiveShowHandColorKey = $derived<boolean | undefined>(
+    showHandColorKey !== undefined
+      ? showHandColorKey
+      : syncedVisibility.handColorKey
+        ? undefined
+        : false
   );
 
   // Hand point visibility mode - prop override forces show-all or hide-inactive, else use global
@@ -702,6 +717,7 @@ with pre-prepared data for better performance.
         showElemental={effectiveShowElemental}
         {propElementalType}
         showPositions={effectiveShowPositions}
+        showHandColorKey={effectiveShowHandColorKey}
         handPointVisibility={effectiveHandPointVisibility}
         {activeLocations}
         {poseOnly}
@@ -754,6 +770,7 @@ with pre-prepared data for better performance.
             showElemental={effectiveShowElemental}
             {propElementalType}
             showPositions={effectiveShowPositions}
+            showHandColorKey={effectiveShowHandColorKey}
             handPointVisibility={effectiveHandPointVisibility}
             {activeLocations}
             {poseOnly}

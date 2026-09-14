@@ -106,6 +106,7 @@ export interface AppSettings {
     reversalIndicators?: boolean;
     showGrid?: boolean; // Master toggle for grid visibility
     nonRadialPoints?: boolean;
+    handColorKey?: boolean; // L/R colour key in the start-position bottom band
     handPointVisibility?: "all" | "active" | "none"; // all hand points, only where props are, or hidden
     stepNumbers?: boolean; // Show beat numbers on pictographs in sequences
     beatPositionGlyph?: boolean; // Show beat position glyph (musical timeline position)

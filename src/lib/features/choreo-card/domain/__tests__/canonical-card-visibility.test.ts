@@ -19,6 +19,7 @@ describe("canonical deck-card visibility", () => {
     expect(v.showNonRadialPoints).toBe(false);
     expect(v.showPositions).toBe(false);
     expect(v.showTnD).toBe(false);
+    expect(v.showHandColorKey).toBe(true);
     expect(v.printMode).toBe(true);
     expect(v.darkMode).toBe(false);
   });
