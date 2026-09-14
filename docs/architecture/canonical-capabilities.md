@@ -31,8 +31,9 @@ same recipes. Navigation reads the existing app settings for both hands,
 chirality and colors. Drawer activation, haptics and navigation geometry keep
 their existing owners.
 
-Hand identity colors reuse `viewer-custom-colors.ts` for normalization and
-`mandala-palette.ts` for overlap blending. Searches: primary prop colors,
+Hand identity colors reuse `packages/render-composition/src/hand-colors.ts` for
+cross-runtime normalization and `mandala-palette.ts` for overlap blending.
+`viewer-custom-colors.ts` retains the app-facing compatibility API. Searches: primary prop colors,
 hand-color key, mandala overlap, start-position legend. `PictographRenderer`
 owns the SVG start key; `StartTile` and `LiveCardPictograph` compose that owner.
 `ChoreoCard` resolves its palette once for cells and `CardGridLayout` mandalas.

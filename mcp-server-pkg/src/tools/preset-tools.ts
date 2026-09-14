@@ -41,6 +41,11 @@ import {
   isLOOPValidForPositionPair,
   LOOPComponent,
 } from "../core/loop/index.js";
+
+const primaryPropColorsSchema = z.object({
+  left: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+  right: z.string().regex(/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i),
+});
 import {
   createPreset,
   updatePreset,
@@ -301,6 +306,11 @@ export function registerPresetTools(server: McpServer): void {
         .optional()
         .describe("Override: grid mode"),
       darkMode: z.boolean().optional().describe("Override: dark mode"),
+      primaryPropColors: primaryPropColorsSchema
+        .optional()
+        .describe(
+          "Override left/right colors for every hand-colored card mark"
+        ),
       includeImage: z
         .boolean()
         .optional()
@@ -497,6 +507,7 @@ export function registerPresetTools(server: McpServer): void {
               startPositionLayout:
                 COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
               level: level as 1 | 2 | 3,
+              primaryPropColors: input.primaryPropColors,
             }
           );
 
@@ -598,6 +609,7 @@ export function registerPresetTools(server: McpServer): void {
           startPositionLayout:
             COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
           level: level as 1 | 2 | 3,
+          primaryPropColors: input.primaryPropColors,
         });
 
         saveAndOpenImage(pngBuffer, sequenceWord);

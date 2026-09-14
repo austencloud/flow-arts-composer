@@ -61,6 +61,13 @@ export {
 export { renderStepNumber } from "./step-number-renderer.js";
 export { renderSmartBorders } from "./border-renderer.js";
 export {
+  DARK_HAND_COLORS,
+  LIGHT_HAND_COLORS,
+  normalizeHandHexColor,
+  resolveHandColorPair,
+  type HandColorPair,
+} from "./hand-colors.js";
+export {
   calculateCardMandalaPaths,
   renderCardMandala,
   type CardMandalaMotion,

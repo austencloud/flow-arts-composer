@@ -7,11 +7,15 @@ import {
 import { detectReversals, type SequenceStep } from "./sequence-builder.js";
 import {
   COMPOSER_CARD_EXPORT_PROFILE_V1,
+  DARK_HAND_COLORS,
+  LIGHT_HAND_COLORS,
   calculateCardMandalaPaths,
   composeSequenceCard,
   renderFooter,
   renderCardMandala,
   renderHeader,
+  resolveHandColorPair,
+  type HandColorPair,
   type LOOPComponentId,
   type LetterStyle,
   type SequenceCardHeader,
@@ -66,6 +70,7 @@ export interface SequenceRenderOptions {
   startPositionLayout?: "row" | "column";
   showFooter?: boolean;
   showMandala?: boolean;
+  primaryPropColors?: HandColorPair | null;
 }
 const DEFAULT_OPTIONS = {
   ...COMPOSER_CARD_EXPORT_PROFILE_V1,
@@ -81,6 +86,12 @@ export async function renderSequenceToImage(
   options: Partial<SequenceRenderOptions> = {}
 ): Promise<Buffer> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
+  const primaryPropColors = opts.primaryPropColors
+    ? resolveHandColorPair(
+        opts.primaryPropColors,
+        opts.darkMode ? DARK_HAND_COLORS : LIGHT_HAND_COLORS
+      )
+    : null;
   const renderer = getStandaloneRenderer();
   const canvasApi = await getCanvas();
   const isLoop = !!opts.loopComponents?.length;
@@ -95,6 +106,7 @@ export async function renderSequenceToImage(
     showPositions: false,
     showReversals: opts.showReversals ?? false,
     showNonRadialPoints: false,
+    primaryPropColors,
   };
   return composeSequenceCard<SequenceStep, import("canvas").Canvas>({
     steps,
@@ -169,7 +181,13 @@ export async function renderSequenceToImage(
             opts.turnAllocation
           );
           for (const placement of placements) {
-            renderCardMandala(ctx, paths, placement, opts.darkMode);
+            renderCardMandala(
+              ctx,
+              paths,
+              placement,
+              opts.darkMode,
+              primaryPropColors
+            );
           }
         }
       : undefined,
