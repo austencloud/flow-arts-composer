@@ -19,8 +19,10 @@ import { GridLocation, GridMode, MotionType, Orientation } from "./enums.js";
 import {
   // Grid position calculations
   getLayer2PointCoordinates,
+  getNormalHandPointCoordinates,
   // Prop placement calculations
   calculatePropPlacement,
+  pictographRequiresStrictHandpoints,
   // Beta offset
   calculateBetaOffset,
   type BetaOffsetInput,
@@ -30,6 +32,10 @@ import {
   calculateDashLocation,
   type DashLocationInput,
   calculateReversalPositions,
+  applyColorToSvg,
+  applyFanFrameColor,
+  applyFanPaperContrast,
+  SELECTIVE_COLOR_PROP_TYPES,
   BLUE_COLOR_DARK,
   BLUE_COLOR_LIGHT,
   RED_COLOR_DARK,
@@ -287,7 +293,69 @@ export interface RenderVisibilityOptions {
   // Prop type options (null = use default staff)
   leftPropType?: string | null;
   rightPropType?: string | null;
+  /** Physical fan build used when either hand holds fan or bigfan. */
+  fanAppearance?: FanAppearanceInput | null;
   primaryPropColors?: HandColorPair | null;
+}
+
+const FAN_BUILDS = [
+  "pictograph",
+  "fire",
+  "flat-grip",
+  "lotus",
+  "day",
+  "moon",
+] as const;
+type FanBuild = (typeof FAN_BUILDS)[number];
+
+export interface FanAppearanceInput {
+  build?: FanBuild;
+  frameColor?: "black" | "white";
+  cover?: "bare" | "covered";
+}
+
+interface ResolvedFanAppearance {
+  build: FanBuild;
+  frameColor: "black" | "white";
+  cover: "bare" | "covered";
+}
+
+const DEFAULT_FAN_APPEARANCE: ResolvedFanAppearance = {
+  build: "fire",
+  frameColor: "black",
+  cover: "bare",
+};
+
+function resolveFanAppearance(
+  value: FanAppearanceInput | null | undefined
+): ResolvedFanAppearance {
+  return {
+    build: FAN_BUILDS.includes(value?.build as FanBuild)
+      ? (value?.build as FanBuild)
+      : DEFAULT_FAN_APPEARANCE.build,
+    frameColor: value?.frameColor === "white" ? "white" : "black",
+    cover: value?.cover === "covered" ? "covered" : "bare",
+  };
+}
+
+function isFanPropType(propType: string | null): boolean {
+  const normalized = propType?.toLowerCase();
+  return normalized === "fan" || normalized === "bigfan";
+}
+
+function fanAppearanceFile(appearance: ResolvedFanAppearance): string | null {
+  if (appearance.build === "pictograph") return null;
+  if (appearance.build === "fire") {
+    return appearance.cover === "covered"
+      ? "fan-fire-covered.svg"
+      : "fan-fire.svg";
+  }
+  if (appearance.build === "day") {
+    return appearance.cover === "covered"
+      ? "fan-day-covered.svg"
+      : "fan-day.svg";
+  }
+  return `fan-${appearance.build}.svg`;
 }
 
 export class StandaloneRenderer {
@@ -368,6 +436,7 @@ export class StandaloneRenderer {
       showRightMotion = true,
       leftPropType = null,
       rightPropType = null,
+      fanAppearance = null,
       primaryPropColors = null,
     } = options;
 
@@ -396,6 +465,7 @@ export class StandaloneRenderer {
         darkMode,
         leftPropType,
         rightPropType,
+        fanAppearance,
         primaryPropColors
       );
       if (leftProp) svgParts.push(leftProp);
@@ -408,6 +478,7 @@ export class StandaloneRenderer {
         darkMode,
         leftPropType,
         rightPropType,
+        fanAppearance,
         primaryPropColors
       );
       if (rightProp) svgParts.push(rightProp);
@@ -488,8 +559,9 @@ export class StandaloneRenderer {
       if (reversalSvg) svgParts.push(reversalSvg);
     }
 
+    const halo = `<defs><filter id="arrow-halo" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="${darkMode ? "#0a0a0f" : "white"}"/><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="${darkMode ? "#0a0a0f" : "white"}"/><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="${darkMode ? "#0a0a0f" : "white"}"/></filter></defs>`;
     return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}" width="${VIEWBOX_SIZE}" height="${VIEWBOX_SIZE}">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}" width="${VIEWBOX_SIZE}" height="${VIEWBOX_SIZE}">${halo}
 ${svgParts.join("\n")}
 </svg>`;
   }
@@ -515,7 +587,7 @@ ${svgParts.join("\n")}
       // 3. Layer 2 points use fill:none (not visible in normal mode)
       //
       // Solution: Add explicit fill to circles without fill attribute
-      const gridColor = darkMode ? "#d0d0d0" : "#000000";
+      const gridColor = darkMode ? "#ffffff" : "#000000";
       const opacity = darkMode ? "0.85" : "1.0"; // Solid black in light mode
 
       // Add fill attribute to circles that don't have one
@@ -600,6 +672,7 @@ ${svgParts.join("\n")}
     darkMode: boolean,
     leftPropType: string | null = null,
     rightPropType: string | null = null,
+    fanAppearance: FanAppearanceInput | null = null,
     customColors?: HandColorPair | null
   ): string {
     // Get the end location and orientation
@@ -614,6 +687,16 @@ ${svgParts.join("\n")}
       endOrientation,
       gridMode
     );
+    const useStrictHandPoints = pictographRequiresStrictHandpoints(
+      leftPropType ?? "staff",
+      rightPropType ?? "staff"
+    );
+    const propPosition = useStrictHandPoints
+      ? placement
+      : {
+          ...placement,
+          ...getNormalHandPointCoordinates(endLocation, gridMode),
+        };
 
     // Apply beta offset if both props end at the same location
     // Pass BOTH propTypes so hand props get the special "right on right, left on left" logic
@@ -624,17 +707,21 @@ ${svgParts.join("\n")}
       leftPropType,
       rightPropType
     );
-    const finalX = placement.x + betaOffset.x;
-    const finalY = placement.y + betaOffset.y;
+    const finalX = propPosition.x + betaOffset.x;
+    const finalY = propPosition.y + betaOffset.y;
 
     // Determine prop file name - use provided prop type or default to staff
     // Use the current motion's prop type
     const currentPropType =
       motion.hand === "left" ? leftPropType : rightPropType;
-    const propFileName = currentPropType
-      ? `${currentPropType}.svg`
-      : "staff.svg";
-    const propPath = join(this.assetsRoot, "images/props", propFileName);
+    const fanFile = isFanPropType(currentPropType)
+      ? fanAppearanceFile(resolveFanAppearance(fanAppearance))
+      : null;
+    const propFileName =
+      fanFile ?? (currentPropType ? `${currentPropType}.svg` : "staff.svg");
+    const propPath = fanFile
+      ? join(this.assetsRoot, "images/props/appearances", propFileName)
+      : join(this.assetsRoot, "images/props", propFileName);
     if (!existsSync(propPath)) {
       console.error("[Renderer] Prop file not found:", propPath);
       return "";
@@ -648,7 +735,7 @@ ${svgParts.join("\n")}
     const rotation = isHand ? 0 : placement.rotation;
 
     try {
-      let propSvg = readFileSync(propPath, "utf-8");
+      const propSvg = readFileSync(propPath, "utf-8");
 
       // Get viewBox dimensions
       const viewBoxMatch = propSvg.match(/viewBox\s*=\s*"([^"]+)"/i);
@@ -660,19 +747,34 @@ ${svgParts.join("\n")}
         height = parts[3] || 100;
       }
 
-      // Extract inner content
-      const innerMatch = propSvg.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
-      let innerContent = innerMatch ? innerMatch[1] : propSvg;
-
-      // Apply color - replace any existing fill colors with the prop color
-      // Staff SVG uses #2e3192 as its base color
       const color = resolveMotionColor(motion.hand, darkMode, customColors);
+      const colorSuffix = motion.hand === "left" ? "blue" : "red";
+      const selectiveColorMode =
+        !!currentPropType &&
+        (SELECTIVE_COLOR_PROP_TYPES as readonly string[]).includes(
+          currentPropType.toLowerCase()
+        );
+      const coloredPropSvg = fanFile
+        ? applyFanFrameColor(propSvg, color)
+        : applyColorToSvg(propSvg, color, {
+            makeClassNamesUnique: true,
+            colorSuffix,
+            selectiveColorMode,
+          });
+      const renderedPropSvg = fanFile
+        ? applyFanPaperContrast(coloredPropSvg, darkMode ? "dark" : "light")
+        : coloredPropSvg;
+      const innerMatch = renderedPropSvg.match(/<svg[^>]*>([\s\S]*)<\/svg>/i);
+      let innerContent = innerMatch ? innerMatch[1] : renderedPropSvg;
 
-      innerContent = innerContent.replace(/#000000/gi, color);
-      innerContent = innerContent.replace(/black/gi, color);
-      innerContent = innerContent.replace(/#2e3192/gi, color); // Staff/arrow base color
-      innerContent = innerContent.replace(/#bdbdbd/gi, color); // Club body; hardware keeps authored colors
-      innerContent = innerContent.replace(/#00f/gi, color); // Center point marker
+      // App fan appearances share the regular fan's 260×207 pivot box. Big
+      // Fan enlarges that same artwork inside its canonical 600×566.9 box so
+      // the shared placement math continues to land on the grip.
+      if (fanFile && currentPropType?.toLowerCase() === "bigfan") {
+        width = 600;
+        height = 566.9;
+        innerContent = `<g transform="translate(60 92.3731) scale(1.8461538)">${innerContent}</g>`;
+      }
 
       // The prop's center point is at the middle of its viewBox
       const centerX = width / 2;
@@ -906,7 +1008,7 @@ ${svgParts.join("\n")}
       // Canvas2D renderer transform order:
       // translate to position → rotate → mirror (if needed) → translate by -center
       const mirrorTransform = shouldMirror ? " scale(-1, 1)" : "";
-      return `<g transform="translate(${finalX}, ${finalY}) rotate(${placement.rotation})${mirrorTransform} translate(${-centerX}, ${-centerY})">
+      return `<g filter="url(#arrow-halo)" transform="translate(${finalX}, ${finalY}) rotate(${placement.rotation})${mirrorTransform} translate(${-centerX}, ${-centerY})">
   ${innerContent}
 </g>`;
     } catch (error) {

@@ -528,6 +528,21 @@ export function registerLoopTools(server: McpServer): void {
       primaryPropColors: primaryPropColorsSchema
         .optional()
         .describe("Custom left/right colors for every hand-colored card mark"),
+      exportProfile: z.enum(["composer", "print"]).optional(),
+      columnCount: z.number().int().min(1).optional(),
+      showDifficulty: z.boolean().optional(),
+      leftPropType: z.string().nullable().optional(),
+      rightPropType: z.string().nullable().optional(),
+      fanAppearance: z
+        .object({
+          build: z
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .optional(),
+          frameColor: z.enum(["black", "white"]).optional(),
+          cover: z.enum(["bare", "covered"]).optional(),
+        })
+        .nullable()
+        .optional(),
       maxAttempts: z
         .number()
         .optional()
@@ -593,6 +608,12 @@ export function registerLoopTools(server: McpServer): void {
       showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
       darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
       primaryPropColors,
+      exportProfile,
+      columnCount,
+      showDifficulty,
+      leftPropType,
+      rightPropType,
+      fanAppearance,
       maxAttempts = 500,
       loopComponents,
       level = 1,
@@ -788,7 +809,10 @@ export function registerLoopTools(server: McpServer): void {
             showWord,
             darkMode,
             padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
-            showDifficulty: COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
+            showDifficulty:
+              showDifficulty ??
+              (exportProfile === "print" ||
+                COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
             showFooter: Boolean(notes && notes !== "none"),
             startPositionLayout:
               COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
@@ -799,9 +823,17 @@ export function registerLoopTools(server: McpServer): void {
             turnAllocation,
             loopComponents: parsedLoopComponents,
             period: period === "quartered" ? 4 : 2,
+            rotationPeriod: parsedLoopComponents.includes(LOOPComponent.ROTATED)
+              ? (period as "halved" | "quartered")
+              : undefined,
             derivedStepIndices: loopResult.derivedStepIndices,
             seedWord: loopResult.seedWord,
             primaryPropColors,
+            exportProfile,
+            columnCount,
+            leftPropType,
+            rightPropType,
+            fanAppearance,
           }
         );
 
@@ -893,6 +925,21 @@ export function registerLoopTools(server: McpServer): void {
       primaryPropColors: primaryPropColorsSchema
         .optional()
         .describe("Custom left/right colors for every hand-colored card mark"),
+      exportProfile: z.enum(["composer", "print"]).optional(),
+      columnCount: z.number().int().min(1).optional(),
+      showDifficulty: z.boolean().optional(),
+      leftPropType: z.string().nullable().optional(),
+      rightPropType: z.string().nullable().optional(),
+      fanAppearance: z
+        .object({
+          build: z
+            .enum(["pictograph", "fire", "flat-grip", "lotus", "day", "moon"])
+            .optional(),
+          frameColor: z.enum(["black", "white"]).optional(),
+          cover: z.enum(["bare", "covered"]).optional(),
+        })
+        .nullable()
+        .optional(),
       maxAttempts: z
         .number()
         .optional()
@@ -958,6 +1005,12 @@ export function registerLoopTools(server: McpServer): void {
       showWord = COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
       darkMode = COMPOSER_CARD_EXPORT_PROFILE_V1.darkMode,
       primaryPropColors,
+      exportProfile,
+      columnCount,
+      showDifficulty,
+      leftPropType,
+      rightPropType,
+      fanAppearance,
       maxAttempts = 500,
       loopComponents,
       level = 1,
@@ -1152,7 +1205,10 @@ export function registerLoopTools(server: McpServer): void {
             showWord,
             darkMode,
             padding: COMPOSER_CARD_EXPORT_PROFILE_V1.padding,
-            showDifficulty: COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
+            showDifficulty:
+              showDifficulty ??
+              (exportProfile === "print" ||
+                COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
             showFooter: Boolean(notes && notes !== "none"),
             startPositionLayout:
               COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
@@ -1163,9 +1219,17 @@ export function registerLoopTools(server: McpServer): void {
             turnAllocation,
             loopComponents: parsedLoopComponents,
             period: period === "quartered" ? 4 : 2,
+            rotationPeriod: parsedLoopComponents.includes(LOOPComponent.ROTATED)
+              ? (period as "halved" | "quartered")
+              : undefined,
             derivedStepIndices: loopResult.derivedStepIndices,
             seedWord: loopResult.seedWord,
             primaryPropColors,
+            exportProfile,
+            columnCount,
+            leftPropType,
+            rightPropType,
+            fanAppearance,
           }
         );
 
