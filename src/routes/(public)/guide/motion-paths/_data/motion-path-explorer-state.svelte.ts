@@ -34,6 +34,10 @@ export function createMotionPathExplorerState() {
   let guides = $state(true);
   let playing = $state(false);
   let liveStep = $state(0);
+  // InlineAnimationPlayer only reloads when its sequence identity changes. A
+  // completed matrix selection can legitimately reuse that identity, so this
+  // monotonically increasing key tells the two-source stage to prepare it.
+  let transitionVersion = $state(0);
   const variants = $derived(
     Object.fromEntries(
       (["arc", "linear", "concave", "hybrid"] as const).map((path) => [
@@ -76,7 +80,7 @@ export function createMotionPathExplorerState() {
         return;
       }
       original = built;
-      liveStep = 0;
+      transitionVersion += 1;
       pickerStatus = "idle";
     } catch {
       if (version !== selectionVersion) return;
@@ -129,6 +133,9 @@ export function createMotionPathExplorerState() {
     set liveStep(value: number) {
       liveStep = value;
     },
+    get transitionKey() {
+      return `${original.id}:${transitionVersion}:${selectedPath}`;
+    },
     syncPolicy() {
       policy = scope.visibility.getPathPolicy();
     },
@@ -161,7 +168,7 @@ export function createMotionPathExplorerState() {
       selectedPair = null;
       pickerStatus = "idle";
       pickerError = null;
-      liveStep = 0;
+      transitionVersion += 1;
     },
     toggleGuides() {
       guides = !guides;

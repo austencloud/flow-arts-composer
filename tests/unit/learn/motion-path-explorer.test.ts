@@ -110,6 +110,13 @@ describe("motion path guide isolation", () => {
     expect(explorer.sequence.id).toBe("newest-matrix-realization-arc");
   });
 
+  it("gives every completed selection a new transition key, even for the same sequence id", () => {
+    const explorer = createMotionPathExplorerState();
+    const before = explorer.transitionKey;
+    explorer.chooseSequence(structuredClone(motionPathExamples[2]!));
+    expect(explorer.transitionKey).not.toBe(before);
+  });
+
   it("keeps the selected path policy while changing a matrix relationship", async () => {
     const explorer = createMotionPathExplorerState();
     explorer.scope.visibility.setPathPolicy({
