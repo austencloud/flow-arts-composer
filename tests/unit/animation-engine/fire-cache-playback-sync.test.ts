@@ -6,12 +6,13 @@ import {
 
 describe("fire frame-cache playback synchronization", () => {
   it("accepts only a known end-to-start transition as a cache boundary", () => {
-    expect(isConfirmedFireCacheLoop(3.9, 0.1, 4, true, true)).toBe(true);
+    expect(isConfirmedFireCacheLoop(4.9, 1.1, 4, true, true)).toBe(true);
     expect(isConfirmedFireCacheLoop(3, 1, 4, true, true)).toBe(false);
-    expect(isConfirmedFireCacheLoop(3.9, 0.1, undefined, true, true)).toBe(
+    expect(isConfirmedFireCacheLoop(4.9, 1.1, undefined, true, true)).toBe(
       false
     );
-    expect(isConfirmedFireCacheLoop(3.9, 0.1, 4, true, false)).toBe(false);
+    expect(isConfirmedFireCacheLoop(4.9, 1.1, 4, true, false)).toBe(false);
+    expect(isConfirmedFireCacheLoop(3.9, 1.1, 4, true, true)).toBe(false);
   });
 
   it("invalidates cached fire across paused and playing seeks", () => {
@@ -23,8 +24,8 @@ describe("fire frame-cache playback synchronization", () => {
     ).toBe(true);
     expect(
       hasFireCachePlaybackDiscontinuity(
-        3.9,
-        0.1,
+        4.9,
+        1.1,
         true,
         1 / 60,
         false,
