@@ -237,6 +237,8 @@ export async function renderSequenceToImage(
       };
       const png = await renderer.renderToPng(pictograph, {
         ...visibilityOptions,
+        // The start cell is part of the pictograph canon: it carries the L/R key.
+        showHandColorKey: step.stepNumber === 0,
         size: cell.cellSize,
       });
       const { loadImage } = await import("@napi-rs/canvas/node-canvas.js");

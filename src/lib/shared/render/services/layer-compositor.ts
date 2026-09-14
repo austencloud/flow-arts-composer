@@ -23,6 +23,7 @@ import {
   renderStepNumber,
 } from "@tka/render-composition";
 import { ensureCardFonts } from "./gelasio-fonts";
+import { drawHandColorKey } from "./canvas-2d-glyph-renderer";
 
 const VIEWBOX_SIZE = 950;
 const TKA_GLYPH_X = 50;
@@ -150,6 +151,13 @@ export class LayerCompositor {
       ctx.drawImage(core, Math.round((width - options.size) / 2), 0);
       if (typeof stepNumber === "number" && stepNumber !== -1) {
         this.drawStepNumber(ctx, stepNumber, options.size, options.darkMode);
+        this.drawStartHandKey(
+          ctx,
+          pictograph,
+          options,
+          stepNumber,
+          Math.round((width - options.size) / 2)
+        );
       }
       timing.totalMs = performance.now() - totalStart;
       return { canvas, timing, cacheStats };
@@ -225,6 +233,7 @@ export class LayerCompositor {
     if (typeof stepNumber === "number" && stepNumber !== -1) {
       const beatStart = performance.now();
       this.drawStepNumber(ctx, stepNumber, options.size, options.darkMode);
+      this.drawStartHandKey(ctx, pictograph, options, stepNumber, coreOffset);
       timing.beatLayerMs = performance.now() - beatStart;
     }
 
@@ -643,6 +652,35 @@ export class LayerCompositor {
     darkMode: boolean
   ): void {
     renderStepNumber(ctx, stepNumber, 0, 0, size, darkMode);
+  }
+
+  /**
+   * The start cell (step 0) carries the L/R hand colour key as part of the
+   * pictograph canon. Hidden or absent hands drop out of the key.
+   */
+  private drawStartHandKey(
+    ctx: RenderContext2D,
+    pictograph: PreparedPictographData,
+    options: LayerRenderOptions,
+    stepNumber: number,
+    coreOffset: number
+  ): void {
+    if (stepNumber !== 0) return;
+    drawHandColorKey(
+      ctx,
+      options.size,
+      options.darkMode,
+      {
+        showLeft:
+          (options.showLeftMotion ?? true) &&
+          isVisibleMotion(pictograph.motions?.left),
+        showRight:
+          (options.showRightMotion ?? true) &&
+          isVisibleMotion(pictograph.motions?.right),
+        primaryPropColors: options.primaryPropColors,
+      },
+      coreOffset
+    );
   }
 
   private async drawTKAGlyph(
