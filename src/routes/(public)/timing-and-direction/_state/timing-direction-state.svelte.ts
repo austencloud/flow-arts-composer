@@ -24,8 +24,11 @@ export function createTimingDirectionState(initialSlug?: string) {
   let target = $state.raw<HTMLElement | null>(null);
   let exampleSequence = $state.raw<SequenceData | null>(null);
   let seek: ((step: number) => void) | null = null;
-  let seekStep = $state(0);
+  let pendingSeekStep = $state(0);
   let seekVersion = $state(0);
+  let propDisplay = $state<"hands" | "staff">(
+    selected.article.code === "TO" ? "staff" : "hands"
+  );
 
   return {
     get selected() {
@@ -44,35 +47,69 @@ export function createTimingDirectionState(initialSlug?: string) {
       return exampleSequence ?? selected.motion.sequence;
     },
     get pendingSeek() {
-      return { step: seekStep, version: seekVersion };
+      return { step: pendingSeekStep, version: seekVersion };
     },
     followStep(value: number, sequenceId: string | null) {
-      if (sequenceId === (exampleSequence ?? selected.motion.sequence).id) {
+      const sequence = exampleSequence ?? selected.motion.sequence;
+      if (sequenceId === sequence.id) {
         step = value;
+        if (
+          (sequence.metadata as { turnLoopClosed?: boolean } | undefined)
+            ?.turnLoopClosed === false &&
+          value >= sequence.steps.length + 0.99
+        ) {
+          playing = false;
+        }
       }
+    },
+    togglePlayback() {
+      const sequence = exampleSequence ?? selected.motion.sequence;
+      if (
+        !playing &&
+        (sequence.metadata as { turnLoopClosed?: boolean } | undefined)
+          ?.turnLoopClosed === false &&
+        step >= sequence.steps.length + 0.99
+      ) {
+        step = 0;
+        pendingSeekStep = 0;
+        seekVersion += 1;
+      }
+      playing = !playing;
     },
     select(slug: string) {
       const next = timingDirectionPreviews.find(
         (mode) => mode.article.slug === slug
       );
       if (next) selected = next;
+      propDisplay = selected.article.code === "TO" ? "staff" : "hands";
       exampleSequence = null;
       step = 0;
-      seekStep = 0;
+      pendingSeekStep = 0;
       seekVersion += 1;
     },
     selectExample(sequence: SequenceData, nextStep: number) {
       exampleSequence = sequence;
       step = nextStep;
-      seekStep = nextStep;
+      pendingSeekStep = nextStep;
+      seekVersion += 1;
+    },
+    seekStep(nextStep: number) {
+      step = nextStep;
+      pendingSeekStep = nextStep;
       seekVersion += 1;
     },
     runPendingSeek() {
-      seek?.(seekStep);
+      seek?.(pendingSeekStep);
     },
     registerSeek(next: ((step: number) => void) | null) {
       seek = next;
-      untrack(() => seek?.(seekStep));
+      untrack(() => seek?.(pendingSeekStep));
+    },
+    get propDisplay() {
+      return propDisplay;
+    },
+    set propDisplay(value: "hands" | "staff") {
+      propDisplay = value;
     },
     get target() {
       return target;
