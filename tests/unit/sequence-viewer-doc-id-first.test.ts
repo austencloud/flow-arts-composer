@@ -93,4 +93,18 @@ describe("loadByIdentifier", () => {
     });
     expect(sequence?.id).toBe(WORD);
   });
+
+  it("does not let a bare word resolve when the caller holds an address", async () => {
+    localRepository.getSequence.mockResolvedValue(null);
+    // Only the word-only lookup (no id) knows this sequence.
+    browseLoader.loadFullSequenceData.mockImplementation(
+      async (word: string, id?: string) =>
+        id === undefined ? { id: "a-uuid", word, name: word, steps: [stepWithMotion] } : null
+    );
+
+    expect(await loadByIdentifier(WORD, { wordFallback: false })).toBeNull();
+    expect(browseLoader.loadFullSequenceData).not.toHaveBeenCalledWith(WORD);
+
+    expect((await loadByIdentifier(WORD))?.id).toBe("a-uuid");
+  });
 });

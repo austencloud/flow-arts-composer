@@ -24,7 +24,7 @@ Design:
   import { cubicOut } from "svelte/easing";
   import { motionDuration } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
-  import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
+  import TransportControls from "../controls/TransportControls.svelte";
 
   let {
     currentStep = 0,
@@ -184,6 +184,9 @@ Design:
 
 {#if visible && totalSteps > 0}
   <div class="progress-row" class:with-playback-control={showPlaybackControl}>
+    {#if showPlaybackControl && onPlaybackToggle}
+      <TransportControls appearance="inline" {isPlaying} {onPlaybackToggle} />
+    {/if}
     {#if interactive}
       <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
       <div
@@ -231,19 +234,6 @@ Design:
           ></div>
         </div>
       </div>
-    {/if}
-    {#if showPlaybackControl && onPlaybackToggle}
-      <PanelButton
-        variant="secondary"
-        ariaLabel={isPlaying ? "Pause playback" : "Resume playback"}
-        onclick={onPlaybackToggle}
-      >
-        <i
-          class="fa-solid {isPlaying ? 'fa-pause' : 'fa-play'}"
-          aria-hidden="true"
-        ></i>
-        <span>{isPlaying ? "Pause" : "Resume"}</span>
-      </PanelButton>
     {/if}
   </div>
 {/if}
@@ -393,26 +383,22 @@ Design:
   .progress-row.with-playback-control {
     display: flex;
     align-items: center;
-    gap: var(--space-2, 0.5rem);
-    padding-inline: clamp(8px, 4cqw, 16px);
+    gap: var(--space-1, 4px);
+    /* The toggle's 44px hit box already pads its glyph, so the row's start
+       inset shrinks to keep the glyph and the track end optically aligned. */
+    padding-inline: clamp(2px, 1cqw, 4px) clamp(8px, 4cqw, 16px);
     box-sizing: border-box;
     background: var(--theme-panel-bg, rgba(240, 240, 240, 0.98));
   }
-  .with-playback-control .progress-bar-container {
+  .with-playback-control .progress-bar-container,
+  .with-playback-control .progress-bar-container.dark-mode,
+  :global(:root.dark) .with-playback-control .progress-bar-container {
+    flex: 1;
+    min-width: 0;
     padding-inline: 0;
-  }
-  .with-playback-control :global(.panel-btn) {
-    flex: 0 0 var(--min-touch-target, 44px);
-    width: var(--min-touch-target, 44px);
-    min-width: var(--min-touch-target, 44px);
-    padding: 0;
-  }
-  .with-playback-control :global(.panel-btn span) {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
+    padding-block: 0;
+    /* The row paints the panel background once; a second translucent coat
+       here would darken the track area against the toggle beside it. */
+    background: transparent;
   }
 </style>
