@@ -35,6 +35,31 @@ type LetterType =
 export const BLUE_HEX: TurnNumberColor = getMotionColor(HandSide.LEFT, "dark");
 export const RED_HEX: TurnNumberColor = getMotionColor(HandSide.RIGHT, "dark");
 
+/** Which hand an interpreter color stands for. Red is the right hand; everything else is left. */
+export function turnColorHand(interpreterColor: TurnNumberColor): HandSide {
+  return interpreterColor.toLowerCase() === RED_HEX.toLowerCase()
+    ? HandSide.RIGHT
+    : HandSide.LEFT;
+}
+
+/**
+ * The paint color for a turn number. `interpretTurnColors` only says which
+ * hand owns a number (as the dark-palette hex); the pixels must use the same
+ * color the prop and arrow of that hand use, which is the theme palette or the
+ * user prop color override. Every renderer that paints turn numbers goes
+ * through here so the digits never drift from the hand they belong to.
+ */
+export function resolveTurnDisplayColor(
+  interpreterColor: TurnNumberColor,
+  isDarkMode: boolean,
+  primaryPropColors?: { left: string; right: string } | null
+): string {
+  const hand = turnColorHand(interpreterColor);
+  return (
+    primaryPropColors?.[hand] ?? getMotionColor(hand, isDarkMode ? "dark" : "light")
+  );
+}
+
 function determineLetterType(letter: string): LetterType {
   if (["Φ-", "Ψ-", "Λ-"].includes(letter)) return "TYPE5";
   if (["α", "β", "γ"].includes(letter)) return "TYPE6";

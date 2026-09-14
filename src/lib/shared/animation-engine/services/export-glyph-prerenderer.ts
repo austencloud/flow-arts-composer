@@ -41,7 +41,7 @@ export interface ElementalGlyphAsset {
   sourceHeight: number;
 }
 import { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/placement/services/turns-tuple-generator";
-import { interpretTurnColors } from "$lib/shared/pictograph/tka-glyph/services/turn-color-interpreter";
+import { interpretTurnColors, resolveTurnDisplayColor } from "$lib/shared/pictograph/tka-glyph/services/turn-color-interpreter";
 import {
   getLetterImagePath,
   isDashLetter,
@@ -72,16 +72,6 @@ const NUMBER_HEIGHT = 45;
 const TURN_Y_PADDING = 5;
 
 // Mode-specific colors for turn numbers.
-// Must match TurnsColumn.svelte STATIC_COLORS and MOTION_COLOR_MAP in svg-color-utils.ts.
-const TURN_COLORS = {
-  dark: { left: "#3575E2", right: "#ED1C24" },
-  light: { left: "#3D44B8", right: "#DC2626" },
-} as const;
-
-// TurnColorInterpreter always returns "dark" mode hex values.
-// Use these to identify which hand (blue vs red) a returned color represents.
-const INTERPRETER_BLUE_HEX = "#3575E2";
-
 interface GlyphBuildData {
   letter: string;
   turnsTuple: string;
@@ -118,12 +108,9 @@ export class ExportGlyphPrerenderer {
         step
       );
 
-      // Map interpreter colors (always dark mode) to the correct export colors
-      const topColor = this.resolveExportColor(
-        interpreterColors.top,
-        isDarkMode
-      );
-      const bottomColor = this.resolveExportColor(
+      // Interpreter colors name the hand; paint with that hand's theme color.
+      const topColor = resolveTurnDisplayColor(interpreterColors.top, isDarkMode);
+      const bottomColor = resolveTurnDisplayColor(
         interpreterColors.bottom,
         isDarkMode
       );
@@ -266,20 +253,6 @@ export class ExportGlyphPrerenderer {
   // ---------------------------------------------------------------------------
   // Private helpers
   // ---------------------------------------------------------------------------
-
-  /**
-   * Map TurnColorInterpreter output (always dark-mode hex) to the correct
-   * export color based on the actual dark/light mode.
-   */
-  private resolveExportColor(
-    interpreterColor: string,
-    isDarkMode: boolean
-  ): string {
-    const isBlue =
-      interpreterColor.toLowerCase() === INTERPRETER_BLUE_HEX.toLowerCase();
-    const palette = isDarkMode ? TURN_COLORS.dark : TURN_COLORS.light;
-    return isBlue ? palette.left : palette.right;
-  }
 
   /**
    * Fetch an SVG file and cache its text + viewBox dimensions.

@@ -16,7 +16,7 @@ import {
   getSlotUnitWidth,
   getSlotOffsetX,
 } from "../../pictograph/tka-glyph/utils/turn-tuple-parser";
-import { interpretTurnColors, BLUE_HEX, RED_HEX } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
+import { interpretTurnColors, resolveTurnDisplayColor, BLUE_HEX, RED_HEX } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
 import { calculateTurnPositions } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
 import { deriveTnDFromPictograph } from "../../pictograph/shared/domain/utils/tnd-deriver";
 import { calculateReversalPositions, calculateHandColorKeyLayout, HAND_COLOR_KEY } from "../core";
@@ -227,9 +227,8 @@ export async function drawTurnsColumn(
     pictograph
   );
 
-  const displayColor = (color: string) => color === BLUE_HEX
-    ? motionVisibility?.primaryPropColors?.left ?? color
-    : color === RED_HEX ? motionVisibility?.primaryPropColors?.right ?? color : color;
+  const displayColor = (color: string) =>
+    resolveTurnDisplayColor(color, isDarkMode, motionVisibility?.primaryPropColors);
 
   const isColorHidden = (color: string) => {
     if (color === BLUE_HEX && motionVisibility?.showLeftMotion === false) return true;
