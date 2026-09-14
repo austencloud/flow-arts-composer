@@ -199,6 +199,7 @@ The top explorer remains the selection owner. One explanation now receives its d
 Ownership ledger: keep MotionPathExplorer and ShapeMatrixGrid for selection, MotionPathTransitionStage for playback and notation; compose interpolatePropAngles and applySequencePathPreview for the route diagram; reuse SequenceMandala for whole-sequence geometry and one-tip rendering; getSettings owns hand colors; native labelled range/select provide keyboard and touch interaction. The SVG is a new presentation of canonical calculations, not a new interpolation system. The existing GuideShell and theme tokens own layout and typography. No new notation glyphs are drawn. Rejected: multiple disconnected toys, tab navigation between them, third-order simulation, pretend save/restore workflow. Wide layouts compare movement and whole-sequence drawings side by side; narrow layouts stack the drawings beneath the scrubber.
 
 Copy and evidence:
+
 - “Change the path. See what it draws.” / “Same endpoints, different routes” / “Compare one movement from your sequence above.” Describe the selected sequence preview; endpoint preservation is tested against PropInterpolator.
 - “Look at” / “Step [number] · Left/Right hand” / “Drag to follow the hand” / percentage identify the selected motion and its time directly.
 - “The hand reaches the same endpoint by a different route.” Supported by PropInterpolator and endpoint tests.
@@ -211,3 +212,26 @@ AI-bust review: clean. Copy names the action and visible result; no claims of le
 ## September 14: visible movement selection
 
 Austen rejected the native dropdown and restated the preference for visible selection patterns. This supersedes the dropdown ownership recorded above and is a repeated-preference correction in the same task. The replacement composes the canonical StepStrip (pictographs, whole-object selection and keyboard activation) with SegmentedControl (Left hand / Right hand, shared color tones and arrow-key navigation). The current step number remains visible. Step changes preserve the chosen hand when it is present, otherwise choose the visible hand in that step. Hand colors follow the user's settings; scrub progress is retained. Existing explanation copy is unchanged apart from removing “Look at” and replacing the combined dropdown label with the visible step and hand labels. AI-bust: clean. User review remains pending.
+
+## September 14: teach one idea at a time
+
+Review state: DRAFT under Austen's delegated editorial authorization. User review pending.
+
+Austen rejected the entire sequence-based introduction: step selection, pictographs, hand selection, scrubbing, and whole-sequence comparisons all introduce decisions before the basic path concept is clear. This supersedes both comparison revisions above. The Grid lesson is the explicit pacing reference: one persistent drawing, one small reveal per press of Next, and deliberate transitions between reveals.
+
+The lower introduction now has six bites. The top explorer remains independent. There is one action, Next, becoming Start again at the end. Stages never advance automatically. A finite animation demonstrates each reveal; reduced motion shows the completed drawing. Only the last reveal shows the three routes together.
+
+| Title       | Caption                     |
+| ----------- | --------------------------- |
+| Your hand   | This is your hand.          |
+| Two points  | It moves from here to here. |
+| Arc         | Go around.                  |
+| Linear      | Go straight.                |
+| Concave     | Bend inward.                |
+| Three paths | Same start. Same finish.    |
+
+Ownership ledger: compose LessonStageControls and Crossfade for progression and text transitions; use RenderActivityGate and shared motion preferences for animation lifecycle; retain settings-owned hand color and render the actual hand through PropCompositionPreview with PropType.HAND. The SVG samples the canonical PropInterpolator's Arc, Linear, and Concave routes and applies only a rigid presentation transform and scale. Equal sample counts support continuous route morphs. The source fixture remains unchanged. The former comparison helper and its obsolete tests are removed.
+
+The lead applied the Teacher briefing and Grid reference; a bounded implementation worker owns the visual component. AI-bust review: clean. Copy describes only the visible hand, endpoints, and routes. No sequence terminology or new third-order claims enter this introduction. No learning outcome or user acceptance is inferred.
+
+Austen also rejected substituting a dot for the hand. The introduction uses the existing recolorable hand artwork, with neutral endpoint markers only. This is a repeated reuse correction; no new hand symbol is invented.
