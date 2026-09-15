@@ -33,6 +33,7 @@ import {
   mediaAssociationKey,
   normalizeMediaAssociations,
 } from "../domain/collaborative-video";
+import { isHandLabeling, type HandLabeling } from "../domain/hand-labeling";
 import type { UserVideoLibrary } from "./types";
 import { isArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
 
@@ -246,6 +247,9 @@ function docToVideo(
     collaborators,
     pendingInvites,
     beatMap,
+    ...(isHandLabeling(docData.handLabeling)
+      ? { handLabeling: docData.handLabeling }
+      : {}),
     // Missing visibility predates the publishing contract. Fail closed rather
     // than manufacturing public consent for a legacy document.
     visibility: (docData.visibility as VideoVisibility) ?? "private",
@@ -307,6 +311,7 @@ function videoToDoc(video: CollaborativeVideo): Record<string, unknown> {
           updatedAt: video.beatMap.updatedAt,
         }
       : null,
+    handLabeling: video.handLabeling ?? null,
     visibility: video.visibility,
     description: video.description ?? null,
     createdAt: serverTimestamp(),
@@ -461,6 +466,43 @@ export async function updateStepMap(
       error
     );
     toast.error("Failed to save beat mapping.");
+    throw error;
+  }
+}
+
+/**
+ * Persist how the notation beside this footage labels hands. Same access rule
+ * as the beat map: collaborators only.
+ */
+export async function updateHandLabeling(
+  videoId: string,
+  handLabeling: HandLabeling
+): Promise<void> {
+  try {
+    const firestore = await getFirestoreInstance();
+    const userId = getUserId();
+    const video = await getVideo(videoId);
+
+    if (!video) {
+      throw new Error("Video not found");
+    }
+
+    if (!canEditVideo(video, userId)) {
+      throw new Error("Only collaborators can change hand labeling");
+    }
+
+    const docRef = doc(firestore, VIDEOS_COLLECTION, videoId);
+    await updateDoc(docRef, {
+      ...missingCreatorRepair(video, userId),
+      handLabeling,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error(
+      "❌ [CollaborativeVideoManager] Failed to update hand labeling:",
+      error
+    );
+    toast.error("Failed to save hand labeling.");
     throw error;
   }
 }
