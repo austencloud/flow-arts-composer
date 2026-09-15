@@ -47,7 +47,7 @@
   } from "$lib/shared/render/services/container-aware-layout";
 
   // Extracted sub-components
-  import CardHeader from "./CardHeader.svelte";
+  import CardHeader, { HEADER_MOTION_MS } from "./CardHeader.svelte";
   import CardFooter from "./CardFooter.svelte";
   import CardGridLayout from "./CardGridLayout.svelte";
 
@@ -340,6 +340,31 @@
     displayState.effectiveShowDifficulty
   );
   const showHeader = $derived(displayState.showHeader);
+
+  // The header folds in flow over HEADER_MOTION_MS, but the contain solve hands
+  // the stack its new height in the very next commit. Left alone, the grid
+  // gets squashed under the still-folding header and then snaps when it goes.
+  // This flag rides the same DOM commit as the new dimensions (the sizeJump
+  // pattern in choreo-card-sizing-state), so the stack's height transition
+  // runs on the header's clock and the grid never changes size.
+  let headerMotion = $state(false);
+  let headerMotionTimer: ReturnType<typeof setTimeout> | null = null;
+  let headerMotionSeen: boolean | null = null;
+  $effect(() => {
+    const next = showHeader;
+    if (headerMotionSeen === null) {
+      headerMotionSeen = next;
+      return;
+    }
+    if (next === headerMotionSeen) return;
+    headerMotionSeen = next;
+    headerMotion = true;
+    if (headerMotionTimer !== null) clearTimeout(headerMotionTimer);
+    headerMotionTimer = setTimeout(() => {
+      headerMotionTimer = null;
+      headerMotion = false;
+    }, HEADER_MOTION_MS);
+  });
   const hasPathShapeMetadata = $derived(displayState.hasPathShapeMetadata);
   const showFooter = $derived(displayState.showFooter);
 
@@ -871,6 +896,7 @@
 
   onDestroy(() => {
     cancelLongPress();
+    if (headerMotionTimer !== null) clearTimeout(headerMotionTimer);
   });
 </script>
 
@@ -883,6 +909,7 @@
   class:force-contain={forceContain}
   data-contain-size-motion={containSizeMotion}
   data-contain-size-jump={sizingState.sizeJump ? "true" : undefined}
+  data-header-motion={headerMotion ? "true" : undefined}
   aria-busy={isRefreshing ? "true" : undefined}
   data-layout-columns={effectiveColumns}
   data-layout-rows={effectiveRows}
@@ -1172,6 +1199,16 @@
     height: 100%;
   }
 
+  /* A header toggle: the stack resizes on the header's own fold clock
+     (HEADER_MOTION_MS in CardHeader, same ease-out cubic) so the grid holds
+     still while the header folds. The size-jump and pane-motion rules below
+     take precedence when they apply. */
+  .choreo-card-root[data-header-motion="true"] .preview-stack {
+    transition:
+      width 250ms cubic-bezier(0.33, 1, 0.68, 1),
+      height 250ms cubic-bezier(0.33, 1, 0.68, 1);
+  }
+
   /* The Card was never readable at its previous size, so there is nothing to
      animate from. Place it at the destination without a transition. */
   .choreo-card-root[data-contain-size-jump="true"] .preview-stack {
@@ -1214,7 +1251,8 @@
 
   /* Accessibility: Respect user's motion preferences (WCAG AAA) */
   @media (prefers-reduced-motion: reduce) {
-    .preview-stack {
+    .preview-stack,
+    .choreo-card-root[data-header-motion="true"] .preview-stack {
       transition: none;
     }
   }
