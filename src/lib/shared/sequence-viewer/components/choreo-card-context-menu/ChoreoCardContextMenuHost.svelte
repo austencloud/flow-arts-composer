@@ -18,6 +18,8 @@
   import { buildCardMenuSection } from "$lib/shared/choreo-card/services/card-menu-section";
   import { buildPictographContextMenuItems } from "$lib/shared/pictograph/shared/components/context-menu/pictograph-context-menu-builder";
   import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
+  import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
+  import { authState } from "$lib/shared/auth/state/auth-state.svelte";
   import type { ExportOptionsStateManager } from "$lib/shared/animation-panel/state/export-options-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import {
@@ -57,18 +59,28 @@
   }: Props = $props();
 
   const visibilityManager = getVisibilityStateManager();
+  const imageComposition = getImageCompositionManager();
 
   let menuState: ContextMenuState = $state({ open: false });
   let menuVersion = $state(0);
 
-  // Rebuild menu items (fresh checked states) whenever any visibility changes.
+  // Rebuild menu items (fresh checked states) whenever any visibility changes —
+  // pictograph glyphs and the card-composition toggles (header, QR, theme…)
+  // both live in the menu, so both managers bump it.
   onMount(() => {
-    if (!includePictographSection) return;
     const bump = () => {
       menuVersion++;
     };
-    visibilityManager.registerObserver(bump, ["all"]);
-    return () => visibilityManager.unregisterObserver(bump);
+    if (includePictographSection) {
+      visibilityManager.registerObserver(bump, ["all"]);
+    }
+    imageComposition.registerObserver(bump);
+    return () => {
+      if (includePictographSection) {
+        visibilityManager.unregisterObserver(bump);
+      }
+      imageComposition.unregisterObserver(bump);
+    };
   });
 
   function closeContextMenu(
@@ -105,6 +117,14 @@
       header: "Card",
       entries: instrumentContextMenuEntries(
         buildCardMenuSection({
+          visibility: {
+            composition: imageComposition,
+            // Dark Mode only while the card options panel is open — that's the
+            // only time the preview card reads imageDarkMode.
+            exportOptions: isExportMode ? exportOptions : undefined,
+            // Same gate as ExportImagePanel: guests can't mint a scannable QR.
+            canQRCode: authState.isAuthenticated,
+          },
           sequenceForLibrarySave: sequence ?? undefined,
           onSaveToLibrary,
           onSendTo: onSendTo
