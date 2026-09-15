@@ -196,12 +196,7 @@
         {#each leftButtons as btn (btn.id)}
           {#if btn.id === "clear" && canClearSequence && onClearSequence}
             <div transition:presenceTransition>
-              <ClearSequencePanelButton
-                onclick={() => {
-                  panelState.stopWorkspacePlayback();
-                  onClearSequence?.();
-                }}
-              />
+              <ClearSequencePanelButton onclick={() => onClearSequence?.()} />
             </div>
           {/if}
         {/each}

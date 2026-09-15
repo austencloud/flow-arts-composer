@@ -86,6 +86,43 @@ describe("workspace playback", () => {
     expect(state.isStepEditorPanelOpen).toBe(true);
   });
 
+  it("keeps playing under sheets that sit beside the workspace", () => {
+    const state = createState();
+    const session = startPlayback(state);
+    state.openSequenceActionsPanel("workspace_button");
+    expect(state.workspacePlayback).toBe(session);
+    expect(state.isSequenceActionsPanelOpen).toBe(true);
+    state.openSaveToLibraryPanel();
+    state.openFilterPanel();
+    state.openPresetDrawer();
+    state.openLOOPPanel("rotated" as never, new Set(), () => {});
+    state.openCustomizeOverlay({} as never);
+    expect(state.workspacePlayback).toBe(session);
+    expect(state.workspacePlaybackSourceRevision).toBe(1);
+  });
+
+  it("ends for surfaces that need the card or run their own engine", () => {
+    const openers: ((state: PanelCoordinationState) => void)[] = [
+      (s) => s.openStepEditorPanel(),
+      (s) => s.openEditPanel(0, {} as StepData),
+      (s) => s.openBatchEditPanel([]),
+      // openAnimationPanel drops playback the same way but lazily requires
+      // the module state, which Vitest cannot resolve here.
+      (s) => s.openExportPanel("animation"),
+      (s) => s.openVideoRecordPanel(),
+      (s) => s.enterDurationPreviewMode(sequence()),
+      (s) => s.enterShiftStartMode(() => {}),
+    ];
+    for (const open of openers) {
+      const state = createState();
+      startPlayback(state);
+      open(state);
+      expect(state.workspacePlayback).toBeNull();
+      expect(state.workspacePlaybackSourceRevision).toBeNull();
+      cleanup?.();
+    }
+  });
+
   it("hands off to another panel without restoring a competing editor", () => {
     const state = createState();
     state.openStepEditorPanel();
