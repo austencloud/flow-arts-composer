@@ -2249,6 +2249,18 @@
     color: var(--theme-text-secondary);
     font-size: var(--font-size-min, 0.875rem);
   }
+  /* Segmented groups grow to fill the row; the stepper keeps its fixed keys. */
+  .video-setting {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-items: stretch;
+  }
+  .video-setting > span {
+    justify-self: start;
+  }
+  .repeat-stepper {
+    flex: 0 0 auto;
+  }
   /* Short labels like "120 fps" stay on one line inside the compact row. */
   .compact-settings :global(.segment) {
     white-space: nowrap;
