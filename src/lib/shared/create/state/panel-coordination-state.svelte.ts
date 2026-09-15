@@ -556,13 +556,32 @@ export function createPanelCoordinationState(): PanelCoordinationState {
    * CRITICAL: Close all panels to enforce mutual exclusivity
    * This ensures only ONE panel is open at a time, preventing state conflicts
    */
-  function closeAllPanels() {
+  /**
+   * Ends the quick preview without restoring the step editor. Used by
+   * surfaces that need the editable card (step editor, duration preview,
+   * shift-start) or run their own animation engine (viewer, export,
+   * animation and video panels). The Stop button goes through
+   * stopWorkspacePlayback, which does restore the editor.
+   */
+  function dropWorkspacePlayback() {
     workspacePlayback = null;
     workspacePlaybackPreparation = null;
     workspacePlaybackPreparationError = null;
-    workspacePlaybackHandoff = null;
     workspacePlaybackSourceRevision = null;
     restoreStepEditorAfterPlayback = false;
+  }
+
+  /**
+   * CRITICAL: Close all panels to enforce mutual exclusivity
+   * This ensures only ONE panel is open at a time, preventing state conflicts
+   *
+   * The quick preview is not a panel. Sheets and drawers that sit beside the
+   * workspace (sequence actions, share, save, filter, generate settings) open
+   * over a running preview and leave it running; see dropWorkspacePlayback for
+   * the surfaces that must end it.
+   */
+  function closeAllPanels() {
+    workspacePlaybackHandoff = null;
     // Exit shift start mode
     isShiftStartMode = false;
     shiftStartHandler = null;
@@ -635,6 +654,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     },
 
     enterShiftStartMode(handler: (tileIndex: number) => void) {
+      dropWorkspacePlayback();
       isShiftStartMode = true;
       shiftStartHandler = handler;
     },
@@ -659,6 +679,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     },
 
     openEditPanel(stepIndex: number, stepData: StepData) {
+      dropWorkspacePlayback();
       closeAllPanels();
       editPanelStepIndex = stepIndex;
       editPanelStepData = stepData;
@@ -667,6 +688,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     },
 
     openBatchEditPanel(stepsData: StepData[]) {
+      dropWorkspacePlayback();
       closeAllPanels();
       editPanelStepsData = stepsData;
       editPanelStepIndex = null;
@@ -693,6 +715,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     },
 
     openAnimationPanel() {
+      dropWorkspacePlayback();
       closeAllPanels();
       // Clear beat editor selection when opening animation panel
       const moduleState = getCreateModuleStateRefLazy();
@@ -748,6 +771,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
       const wasOpen = isExportPanelOpen;
       // Set guard flag BEFORE closeAllPanels to prevent effects from seeing transient close
       isExportPanelReopening = true;
+      dropWorkspacePlayback();
       closeAllPanels();
       // Increment viewId when transitioning from closed to open
       // This forces remount after close, ensuring clean state
@@ -790,6 +814,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     set isVideoRecordPanelOpen(value: boolean) {
       if (value) {
         // Opening should respect mutual exclusivity rules
+        dropWorkspacePlayback();
         closeAllPanels();
       }
 
@@ -797,6 +822,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     },
 
     openVideoRecordPanel() {
+      dropWorkspacePlayback();
       closeAllPanels();
       isVideoRecordPanelOpen = true;
     },
@@ -860,6 +886,8 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     openStepEditorPanel() {
       // Beat Editor is non-modal - it does NOT close other panels
       // This allows the user to click on pictographs while the panel is open
+      // It does need the editable card, so a running preview ends here.
+      dropWorkspacePlayback();
       mandalaViewerSelection = null;
       isStepEditorPanelOpen = true;
     },
@@ -1014,6 +1042,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     },
 
     openSequenceViewer() {
+      dropWorkspacePlayback();
       closeAllPanels();
       isSequenceViewerOpen = true;
     },
@@ -1055,6 +1084,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
     },
 
     enterDurationPreviewMode(sequence: SequenceData) {
+      dropWorkspacePlayback();
       optionAudition = null;
       isDurationPreviewMode = true;
       originalSequence = sequence;
@@ -1177,6 +1207,7 @@ export function createPanelCoordinationState(): PanelCoordinationState {
         initialStep: workspacePlaybackStep,
         playing: workspacePlaybackPlaying,
       };
+      dropWorkspacePlayback();
       closeAllPanels();
       workspacePlaybackHandoff = handoff;
       isSequenceViewerOpen = true;

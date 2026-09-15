@@ -102,10 +102,19 @@
   });
 
   function stopOnEscape(event: KeyboardEvent) {
-    if (event.key === "Escape" && playbackCandidate) {
-      event.preventDefault();
-      panelState.stopWorkspacePlayback();
+    if (event.key !== "Escape" || !playbackCandidate) return;
+    if (event.defaultPrevented) return;
+    // A modal on top (save, share, clear confirm) owns Escape; the preview
+    // keeps running underneath it.
+    if (
+      document.querySelector(
+        'dialog[open], [role="dialog"], [role="alertdialog"], [aria-modal="true"]'
+      )
+    ) {
+      return;
     }
+    event.preventDefault();
+    panelState.stopWorkspacePlayback();
   }
 
   $effect(() => {
