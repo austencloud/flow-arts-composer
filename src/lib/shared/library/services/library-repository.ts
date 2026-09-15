@@ -414,10 +414,15 @@ export class LibraryRepository {
 
   async saveSequence(
     sequence: SequenceData,
-    overrides?: { visibility?: SequenceVisibility; notes?: string }
+    overrides?: {
+      visibility?: SequenceVisibility;
+      notes?: string;
+      /** Refuse the write if the account captured by the caller changed. */
+      expectedOwnerId?: string;
+    }
   ): Promise<LibrarySequence> {
     const firestore = await getFirestoreInstance();
-    const userId = this.getWritableUserId();
+    const userId = this.ownerFor(overrides?.expectedOwnerId);
 
     if (isEmptySequence(sequence)) {
       throw new LibraryError(
@@ -803,6 +808,8 @@ export class LibraryRepository {
       tags: string[];
       notes: string;
       thumbnailUrl?: string;
+      /** Forwarded to saveSequence's identity fence. */
+      expectedOwnerId?: string;
     }
   ): Promise<LibrarySequence> {
     // Put the new thumbnail first, filter out duplicates so re-saves
@@ -848,6 +855,7 @@ export class LibraryRepository {
       return this.saveSequence(enrichedSequence, {
         visibility: metadata.visibility,
         notes: metadata.notes,
+        expectedOwnerId: metadata.expectedOwnerId,
       });
     };
 
@@ -863,10 +871,11 @@ export class LibraryRepository {
    */
   async attachThumbnail(
     sequenceId: string,
-    thumbnailUrl: string
+    thumbnailUrl: string,
+    expectedOwnerId?: string
   ): Promise<void> {
     const firestore = await getFirestoreInstance();
-    const userId = this.getWritableUserId();
+    const userId = this.ownerFor(expectedOwnerId);
     const existing = await this.getSequence(sequenceId);
     if (!existing) {
       throw new LibraryError("Sequence not found", "NOT_FOUND", sequenceId);

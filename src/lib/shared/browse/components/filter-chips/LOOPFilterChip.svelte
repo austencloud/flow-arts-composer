@@ -109,7 +109,12 @@ Color-coded icons per primitive. Rotated splits into halved/quartered.
   $effect(() => {
     if (!isOpen) return;
     document.addEventListener("pointerdown", handlePointerDownOutside, true);
-    return () => document.removeEventListener("pointerdown", handlePointerDownOutside, true);
+    return () =>
+      document.removeEventListener(
+        "pointerdown",
+        handlePointerDownOutside,
+        true
+      );
   });
 </script>
 
@@ -118,9 +123,10 @@ Color-coded icons per primitive. Rotated splits into halved/quartered.
     label={chipLabel}
     icon="fas fa-sync-alt"
     active={isActive}
-    chipColor={chipColor}
+    {chipColor}
     mode="dropdown"
     expanded={isOpen}
+    ondismiss={() => (isOpen = false)}
     onclick={handleToggle}
     ghostKind="browse-filter"
   >

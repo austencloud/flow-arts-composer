@@ -2,6 +2,11 @@ import type { CanvasResizer } from "./canvas-resizer.svelte";
 import type { EffectRendererManager } from "./effect-renderer-manager";
 import type { TrailCapturer } from "./trail-capturer";
 import type { IAnimationRenderLoop } from "$lib/shared/animation-engine/services/IAnimationRenderLoop";
+import {
+  sameFrame,
+  squareFrame,
+  type CanvasFrame,
+} from "../domain/types/canvas-frame";
 
 export interface SyncServiceDeps {
   canvasResizerService: CanvasResizer | null;
@@ -11,26 +16,29 @@ export interface SyncServiceDeps {
 }
 
 export class StateSynchronizer {
-  private canvasSize: number = 500;
+  private frame: CanvasFrame = squareFrame(500);
 
   syncResizeState(deps: SyncServiceDeps): number {
     if (deps.canvasResizerService) {
-      const newSize = deps.canvasResizerService.state.currentSize;
-      if (newSize && newSize !== this.canvasSize) {
-        this.canvasSize = newSize;
-        deps.trailCapturer?.updateConfig({ canvasSize: newSize });
-        deps.renderLoopService?.updateConfig({ canvasSize: newSize });
-        deps.effectRendererManager.resizeAll(newSize);
+      const next = deps.canvasResizerService.state.frame;
+      if (next.size && !sameFrame(next, this.frame)) {
+        this.frame = next;
+        deps.trailCapturer?.updateConfig({ canvasSize: next.size });
+        deps.renderLoopService?.updateConfig({
+          canvasSize: next.size,
+          canvasFrame: next,
+        });
+        deps.effectRendererManager.resizeAll(next);
       }
     }
-    return this.canvasSize;
+    return this.frame.size;
   }
 
   getCanvasSize(): number {
-    return this.canvasSize;
+    return this.frame.size;
   }
 
   setCanvasSize(size: number): void {
-    this.canvasSize = size;
+    this.frame = squareFrame(size);
   }
 }

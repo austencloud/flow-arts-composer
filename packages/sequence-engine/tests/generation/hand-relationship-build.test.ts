@@ -3,10 +3,16 @@
  * pre-filter, first-step selection, beam search, turn materialization and
  * LOOP extension. Runs against the production dataframes.
  */
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { TransitionGraph } from "../../src/core/transition-graph/TransitionGraph.js";
+import { setLetterTransitionGraph } from "../../src/core/transition-graph/LetterTransitionGraph.js";
 import { SequenceBuilder } from "../../src/generation/index.js";
 import type { BuildOptions } from "../../src/generation/builder/SequenceBuilder.js";
-import { loopSpecFromWire } from "../../src/loop/loop-spec.js";
+import {
+  loopSpecFromWire,
+  loopSpecFromLegacy,
+} from "../../src/loop/loop-spec.js";
 import {
   handRelationshipHolds,
   type HandRelationshipOptions,
@@ -27,6 +33,95 @@ const diamond = () =>
   new SequenceBuilder(new CsvVariationProvider(loadDiamondVariations()));
 const box = () =>
   new SequenceBuilder(new CsvVariationProvider(loadBoxVariations()));
+
+describe("hand relationships across LOOP extensions", () => {
+  beforeAll(async () => {
+    const graph = new TransitionGraph({
+      loadLetterMappings: async () =>
+        JSON.parse(
+          readFileSync(
+            new URL(
+              "../../../../static/data/learn/letter-mappings.json",
+              import.meta.url
+            ),
+            "utf8"
+          )
+        ),
+    } as never);
+    await graph.initialize();
+    setLetterTransitionGraph(graph);
+  });
+  for (const gridMode of ["diamond", "box"] as const) {
+    for (const map of [
+      "reflect-north-south",
+      "reflect-east-west",
+      "identity",
+      "rotate-180",
+    ] as const) {
+      for (const inverted of [false, true]) {
+        it.each(Object.values(LOOPType))(
+          `${gridMode} ${map} inverted=${inverted}: %s`,
+          (type) => {
+            const relationship = { map, inverted };
+            const result = (gridMode === "box" ? box() : diamond()).build({
+              length: 4,
+              gridMode,
+              level: 2,
+              maxTurnIntensity: 1,
+              constraintOptions: { handRelationship: relationship },
+              loop: {
+                type,
+                period: Period.HALVED,
+                useTargetedGeneration: true,
+                requestedTotalLength: 16,
+                loopSpec: loopSpecFromLegacy(type, 2),
+              },
+            });
+            expectRelationship(result.sequence, relationship);
+            expect(result.sequence).toHaveLength(17);
+            expect(isSequenceCircular(result.sequence)).toBe(true);
+          }
+        );
+      }
+    }
+  }
+
+  it.each(["AAAA", "DAAA"])(
+    "fails incompatible spell %s instead of returning a partial word",
+    (word) => {
+      expect(() =>
+        diamond().build({
+          word,
+          gridMode: "diamond",
+          level: 1,
+          constraintOptions: { handRelationship: MIRRORED },
+        })
+      ).toThrow();
+    }
+  );
+
+  it("keeps a compatible spell mirrored with matched turns through LOOP extension", () => {
+    const result = diamond().build({
+      word: "DJDJ",
+      gridMode: "diamond",
+      level: 3,
+      maxTurnIntensity: 1,
+      matchHandTurns: true,
+      constraintOptions: { handRelationship: MIRRORED },
+      loop: {
+        type: LOOPType.ROTATED,
+        period: Period.HALVED,
+        useTargetedGeneration: true,
+        loopSpec: loopSpecFromLegacy(LOOPType.ROTATED, 2),
+      },
+    });
+    expectRelationship(result.sequence, MIRRORED);
+    expect(isSequenceCircular(result.sequence)).toBe(true);
+    for (const step of result.sequence.slice(1)) {
+      expect(step.motions.left.turns).toBe(step.motions.right.turns);
+    }
+  });
+});
 
 function noDashUnisonLoop(gridMode: "box" | "diamond"): BuildOptions {
   return {

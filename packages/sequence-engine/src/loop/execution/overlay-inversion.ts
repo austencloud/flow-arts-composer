@@ -12,7 +12,10 @@
  *
  * Verified semantics: variant E, 2026-07-12 spec.
  */
-import type { SequenceStep, MotionData } from "../../core/types/sequence-engine-types.js";
+import type {
+  SequenceStep,
+  MotionData,
+} from "../../core/types/sequence-engine-types.js";
 import { updateStepOrientations } from "./orientation-helpers.js";
 
 function invertType(motionType: string): string {
@@ -31,19 +34,31 @@ function invertMotion(motion: MotionData): MotionData {
   return {
     ...motion,
     motionType: invertType(motion.motionType) as MotionData["motionType"],
-    rotationDirection: flipRot(motion.rotationDirection) as MotionData["rotationDirection"],
+    rotationDirection: flipRot(
+      motion.rotationDirection
+    ) as MotionData["rotationDirection"],
+    ...(motion.prefloatMotionType !== undefined && {
+      prefloatMotionType: invertType(
+        motion.prefloatMotionType
+      ) as MotionData["motionType"],
+    }),
+    ...(motion.prefloatRotationDirection !== undefined && {
+      prefloatRotationDirection: flipRot(
+        motion.prefloatRotationDirection
+      ) as MotionData["rotationDirection"],
+    }),
   };
 }
 
 export function applyOverlayInversion(
   sequence: SequenceStep[],
-  period: number,
+  period: number
 ): SequenceStep[] {
   const letterCount = sequence.length - 1; // index 0 = start position
   if (letterCount <= 0) return sequence;
   if (letterCount % period !== 0) {
     throw new Error(
-      `Overlay inversion requires the step count (${letterCount}) to be divisible by the period (${period}).`,
+      `Overlay inversion requires the step count (${letterCount}) to be divisible by the period (${period}).`
     );
   }
   const blockSize = letterCount / period;

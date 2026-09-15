@@ -1,0 +1,2518 @@
+{
+  "before": {
+    "label": "before",
+    "base": "http://127.0.0.1:4174",
+    "windowMs": 12000,
+    "cpuRate": 4,
+    "results": [
+      {
+        "route": "/",
+        "condition": "fast",
+        "fcp": 372,
+        "dcl": 58,
+        "load": 326,
+        "hydrated": 906,
+        "marks": {
+          "tka:hero:activate": 904,
+          "tka:hydrated": 906,
+          "tka:hero:player-loaded": 1791,
+          "tka:hero:canvas-ready": 2271
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3870217,
+          "gzipBytes": 1106096
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at3s": {
+          "requests": 152,
+          "rawBytes": 9478555,
+          "gzipBytes": 2757170
+        },
+        "at10s": {
+          "requests": 152,
+          "rawBytes": 9478555,
+          "gzipBytes": 2757170
+        },
+        "longTasks3s": {
+          "count": 10,
+          "ms": 776
+        },
+        "longTasksAll": {
+          "count": 65,
+          "ms": 3896
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "fcp": 284,
+        "dcl": 39,
+        "load": 248,
+        "hydrated": 624,
+        "marks": {
+          "tka:hero:activate": 622,
+          "tka:hydrated": 624,
+          "tka:hero:player-loaded": 1295,
+          "tka:hero:canvas-ready": 1689
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3879607,
+          "gzipBytes": 1109060
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at3s": {
+          "requests": 152,
+          "rawBytes": 9478555,
+          "gzipBytes": 2757170
+        },
+        "at10s": {
+          "requests": 152,
+          "rawBytes": 9478555,
+          "gzipBytes": 2757170
+        },
+        "longTasks3s": {
+          "count": 9,
+          "ms": 732
+        },
+        "longTasksAll": {
+          "count": 58,
+          "ms": 3468
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "fcp": 252,
+        "dcl": 40,
+        "load": 215,
+        "hydrated": 653,
+        "marks": {
+          "tka:hero:activate": 651,
+          "tka:hydrated": 653,
+          "tka:hero:player-loaded": 1199,
+          "tka:hero:canvas-ready": 1583
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3870217,
+          "gzipBytes": 1106096
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at3s": {
+          "requests": 152,
+          "rawBytes": 9478555,
+          "gzipBytes": 2757170
+        },
+        "at10s": {
+          "requests": 152,
+          "rawBytes": 9478555,
+          "gzipBytes": 2757170
+        },
+        "longTasks3s": {
+          "count": 7,
+          "ms": 598
+        },
+        "longTasksAll": {
+          "count": 47,
+          "ms": 2799
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "fcp": 168,
+        "dcl": 85,
+        "load": 235,
+        "hydrated": 682,
+        "marks": {
+          "tka:hero:activate": 680,
+          "tka:hydrated": 682,
+          "tka:hero:player-loaded": 1193,
+          "tka:hero:canvas-ready": 1571
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3870217,
+          "gzipBytes": 1106096
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at3s": {
+          "requests": 152,
+          "rawBytes": 9478555,
+          "gzipBytes": 2757170
+        },
+        "at10s": {
+          "requests": 152,
+          "rawBytes": 9478555,
+          "gzipBytes": 2757170
+        },
+        "longTasks3s": {
+          "count": 8,
+          "ms": 638
+        },
+        "longTasksAll": {
+          "count": 57,
+          "ms": 3307
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "fcp": 284,
+        "dcl": 33,
+        "load": 256,
+        "hydrated": 731,
+        "marks": {
+          "tka:hero:activate": 729,
+          "tka:hydrated": 731,
+          "tka:hero:player-loaded": 1238,
+          "tka:hero:canvas-ready": 1576
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3870217,
+          "gzipBytes": 1106096
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at3s": {
+          "requests": 152,
+          "rawBytes": 9478555,
+          "gzipBytes": 2757170
+        },
+        "at10s": {
+          "requests": 152,
+          "rawBytes": 9478555,
+          "gzipBytes": 2757170
+        },
+        "longTasks3s": {
+          "count": 9,
+          "ms": 709
+        },
+        "longTasksAll": {
+          "count": 60,
+          "ms": 3530
+        },
+        "repeat": 4
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "fcp": 320,
+        "dcl": 104,
+        "load": 443,
+        "hydrated": 669,
+        "marks": {
+          "tka:hydrated": 669,
+          "tka:background:first-frame": 1298,
+          "module-chunk:create:start": 7492,
+          "module-chunk:create:end": 7743
+        },
+        "beforeLoad": {
+          "requests": 25,
+          "rawBytes": 3932061,
+          "gzipBytes": 1118429
+        },
+        "beforeHydration": {
+          "requests": 172,
+          "rawBytes": 9731664,
+          "gzipBytes": 2848345
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 9731664,
+          "gzipBytes": 2848345
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 9731664,
+          "gzipBytes": 2848345
+        },
+        "longTasks3s": {
+          "count": 10,
+          "ms": 869
+        },
+        "longTasksAll": {
+          "count": 40,
+          "ms": 2909
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "fcp": 288,
+        "dcl": 76,
+        "load": 285,
+        "hydrated": 662,
+        "marks": {
+          "tka:hydrated": 662,
+          "tka:background:first-frame": 1343,
+          "module-chunk:create:start": 7435,
+          "module-chunk:create:end": 7835
+        },
+        "beforeLoad": {
+          "requests": 25,
+          "rawBytes": 3932061,
+          "gzipBytes": 1118429
+        },
+        "beforeHydration": {
+          "requests": 172,
+          "rawBytes": 9634059,
+          "gzipBytes": 2823242
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 9634059,
+          "gzipBytes": 2823242
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 9634059,
+          "gzipBytes": 2823242
+        },
+        "longTasks3s": {
+          "count": 9,
+          "ms": 852
+        },
+        "longTasksAll": {
+          "count": 35,
+          "ms": 2865
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "fcp": 284,
+        "dcl": 72,
+        "load": 480,
+        "hydrated": 608,
+        "marks": {
+          "tka:hydrated": 608,
+          "tka:background:first-frame": 1230,
+          "module-chunk:create:start": 6935,
+          "module-chunk:create:end": 7232
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 172,
+          "rawBytes": 9320905,
+          "gzipBytes": 2750018
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 9320905,
+          "gzipBytes": 2750018
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 9320905,
+          "gzipBytes": 2750018
+        },
+        "longTasks3s": {
+          "count": 12,
+          "ms": 954
+        },
+        "longTasksAll": {
+          "count": 33,
+          "ms": 2383
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "fcp": 284,
+        "dcl": 69,
+        "load": 442,
+        "hydrated": 609,
+        "marks": {
+          "tka:hydrated": 609,
+          "tka:background:first-frame": 1259,
+          "module-chunk:create:start": 6363,
+          "module-chunk:create:end": 6628
+        },
+        "beforeLoad": {
+          "requests": 25,
+          "rawBytes": 3932061,
+          "gzipBytes": 1118429
+        },
+        "beforeHydration": {
+          "requests": 172,
+          "rawBytes": 9320905,
+          "gzipBytes": 2750018
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 9320905,
+          "gzipBytes": 2750018
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 9320905,
+          "gzipBytes": 2750018
+        },
+        "longTasks3s": {
+          "count": 12,
+          "ms": 930
+        },
+        "longTasksAll": {
+          "count": 31,
+          "ms": 2190
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "fcp": 308,
+        "dcl": 68,
+        "load": 432,
+        "hydrated": 749,
+        "marks": {
+          "tka:hydrated": 749,
+          "tka:background:first-frame": 1421,
+          "module-chunk:create:start": 7346,
+          "module-chunk:create:end": 7630
+        },
+        "beforeLoad": {
+          "requests": 25,
+          "rawBytes": 3932061,
+          "gzipBytes": 1118429
+        },
+        "beforeHydration": {
+          "requests": 172,
+          "rawBytes": 9320905,
+          "gzipBytes": 2750018
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 9320905,
+          "gzipBytes": 2750018
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 9320905,
+          "gzipBytes": 2750018
+        },
+        "longTasks3s": {
+          "count": 9,
+          "ms": 834
+        },
+        "longTasksAll": {
+          "count": 32,
+          "ms": 2482
+        },
+        "repeat": 4
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "fcp": 276,
+        "dcl": 64,
+        "load": 271,
+        "hydrated": 624,
+        "marks": {
+          "tka:hydrated": 624,
+          "tka:background:first-frame": 1402,
+          "module-chunk:browse:start": 6802,
+          "module-chunk:browse:end": 7098
+        },
+        "beforeLoad": {
+          "requests": 25,
+          "rawBytes": 3932061,
+          "gzipBytes": 1118429
+        },
+        "beforeHydration": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "at3s": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "at10s": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "longTasks3s": {
+          "count": 11,
+          "ms": 857
+        },
+        "longTasksAll": {
+          "count": 30,
+          "ms": 2196
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "fcp": 296,
+        "dcl": 70,
+        "load": 276,
+        "hydrated": 622,
+        "marks": {
+          "tka:hydrated": 622,
+          "tka:background:first-frame": 1291,
+          "module-chunk:browse:start": 7386,
+          "module-chunk:browse:end": 7699
+        },
+        "beforeLoad": {
+          "requests": 25,
+          "rawBytes": 3932061,
+          "gzipBytes": 1118429
+        },
+        "beforeHydration": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "at3s": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "at10s": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "longTasks3s": {
+          "count": 13,
+          "ms": 1036
+        },
+        "longTasksAll": {
+          "count": 36,
+          "ms": 2785
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "fcp": 304,
+        "dcl": 73,
+        "load": 281,
+        "hydrated": 653,
+        "marks": {
+          "tka:hydrated": 653,
+          "tka:background:first-frame": 1384,
+          "module-chunk:browse:start": 6879,
+          "module-chunk:browse:end": 7170
+        },
+        "beforeLoad": {
+          "requests": 25,
+          "rawBytes": 3932061,
+          "gzipBytes": 1118429
+        },
+        "beforeHydration": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "at3s": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "at10s": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "longTasks3s": {
+          "count": 10,
+          "ms": 890
+        },
+        "longTasksAll": {
+          "count": 29,
+          "ms": 2332
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "fcp": 272,
+        "dcl": 63,
+        "load": 278,
+        "hydrated": 652,
+        "marks": {
+          "tka:hydrated": 652,
+          "tka:background:first-frame": 1370,
+          "module-chunk:browse:start": 7057,
+          "module-chunk:browse:end": 7337
+        },
+        "beforeLoad": {
+          "requests": 25,
+          "rawBytes": 3932061,
+          "gzipBytes": 1118429
+        },
+        "beforeHydration": {
+          "requests": 168,
+          "rawBytes": 9258693,
+          "gzipBytes": 2678621
+        },
+        "at3s": {
+          "requests": 168,
+          "rawBytes": 9258693,
+          "gzipBytes": 2678621
+        },
+        "at10s": {
+          "requests": 168,
+          "rawBytes": 9258693,
+          "gzipBytes": 2678621
+        },
+        "longTasks3s": {
+          "count": 11,
+          "ms": 893
+        },
+        "longTasksAll": {
+          "count": 30,
+          "ms": 2294
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "fcp": 304,
+        "dcl": 67,
+        "load": 427,
+        "hydrated": 643,
+        "marks": {
+          "tka:hydrated": 643,
+          "tka:background:first-frame": 1381,
+          "module-chunk:browse:start": 6974,
+          "module-chunk:browse:end": 7268
+        },
+        "beforeLoad": {
+          "requests": 25,
+          "rawBytes": 3932061,
+          "gzipBytes": 1118429
+        },
+        "beforeHydration": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "at3s": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "at10s": {
+          "requests": 168,
+          "rawBytes": 9270114,
+          "gzipBytes": 2681529
+        },
+        "longTasks3s": {
+          "count": 13,
+          "ms": 947
+        },
+        "longTasksAll": {
+          "count": 33,
+          "ms": 2286
+        },
+        "repeat": 4
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "fcp": 344,
+        "dcl": 311,
+        "load": 1189,
+        "hydrated": 9170,
+        "marks": {
+          "tka:hero:activate": 9162,
+          "tka:hydrated": 9170
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3870217,
+          "gzipBytes": 1106096
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at3s": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at10s": {
+          "requests": 72,
+          "rawBytes": 5179481,
+          "gzipBytes": 1514906
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 187
+        },
+        "longTasksAll": {
+          "count": 7,
+          "ms": 1099
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "fcp": 312,
+        "dcl": 293,
+        "load": 1189,
+        "hydrated": 9181,
+        "marks": {
+          "tka:hero:activate": 9173,
+          "tka:hydrated": 9181
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3870217,
+          "gzipBytes": 1106096
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at3s": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at10s": {
+          "requests": 71,
+          "rawBytes": 5163562,
+          "gzipBytes": 1509197
+        },
+        "longTasks3s": {
+          "count": 4,
+          "ms": 286
+        },
+        "longTasksAll": {
+          "count": 7,
+          "ms": 1146
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "fcp": 304,
+        "dcl": 279,
+        "load": 1173,
+        "hydrated": 9180,
+        "marks": {
+          "tka:hero:activate": 9173,
+          "tka:hydrated": 9180
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3870217,
+          "gzipBytes": 1106096
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at3s": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at10s": {
+          "requests": 71,
+          "rawBytes": 5163562,
+          "gzipBytes": 1509197
+        },
+        "longTasks3s": {
+          "count": 4,
+          "ms": 269
+        },
+        "longTasksAll": {
+          "count": 7,
+          "ms": 1135
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "fcp": 308,
+        "dcl": 283,
+        "load": 1197,
+        "hydrated": 9180,
+        "marks": {
+          "tka:hero:activate": 9171,
+          "tka:hydrated": 9180
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3870217,
+          "gzipBytes": 1106096
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at3s": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at10s": {
+          "requests": 71,
+          "rawBytes": 5163562,
+          "gzipBytes": 1509197
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 234
+        },
+        "longTasksAll": {
+          "count": 6,
+          "ms": 1106
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "fcp": 292,
+        "dcl": 275,
+        "load": 1196,
+        "hydrated": 9208,
+        "marks": {
+          "tka:hero:activate": 9200,
+          "tka:hydrated": 9208
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3870217,
+          "gzipBytes": 1106096
+        },
+        "beforeHydration": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at3s": {
+          "requests": 42,
+          "rawBytes": 4651739,
+          "gzipBytes": 1347424
+        },
+        "at10s": {
+          "requests": 71,
+          "rawBytes": 5163562,
+          "gzipBytes": 1509197
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 210
+        },
+        "longTasksAll": {
+          "count": 6,
+          "ms": 1033
+        },
+        "repeat": 4
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "fcp": 936,
+        "dcl": 702,
+        "load": 4363,
+        "hydrated": 9202,
+        "marks": {
+          "tka:hydrated": 9202
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 50,
+          "rawBytes": 5034973,
+          "gzipBytes": 1458393
+        },
+        "at3s": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "at10s": {
+          "requests": 50,
+          "rawBytes": 5034973,
+          "gzipBytes": 1458393
+        },
+        "longTasks3s": {
+          "count": 1,
+          "ms": 64
+        },
+        "longTasksAll": {
+          "count": 3,
+          "ms": 1084
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "fcp": 896,
+        "dcl": 702,
+        "load": 4364,
+        "hydrated": 9185,
+        "marks": {
+          "tka:hydrated": 9185
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 50,
+          "rawBytes": 5034973,
+          "gzipBytes": 1458393
+        },
+        "at3s": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "at10s": {
+          "requests": 50,
+          "rawBytes": 5034973,
+          "gzipBytes": 1458393
+        },
+        "longTasks3s": {
+          "count": 0,
+          "ms": 0
+        },
+        "longTasksAll": {
+          "count": 2,
+          "ms": 1005
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "fcp": 932,
+        "dcl": 700,
+        "load": 4335,
+        "hydrated": 9118,
+        "marks": {
+          "tka:hydrated": 9118
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 50,
+          "rawBytes": 5034973,
+          "gzipBytes": 1458393
+        },
+        "at3s": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "at10s": {
+          "requests": 50,
+          "rawBytes": 5034973,
+          "gzipBytes": 1458393
+        },
+        "longTasks3s": {
+          "count": 1,
+          "ms": 64
+        },
+        "longTasksAll": {
+          "count": 3,
+          "ms": 1000
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "fcp": 896,
+        "dcl": 698,
+        "load": 4349,
+        "hydrated": 9194,
+        "marks": {
+          "tka:hydrated": 9194
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 50,
+          "rawBytes": 5034973,
+          "gzipBytes": 1458393
+        },
+        "at3s": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "at10s": {
+          "requests": 50,
+          "rawBytes": 5034973,
+          "gzipBytes": 1458393
+        },
+        "longTasks3s": {
+          "count": 1,
+          "ms": 51
+        },
+        "longTasksAll": {
+          "count": 3,
+          "ms": 1055
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "fcp": 948,
+        "dcl": 705,
+        "load": 4347,
+        "hydrated": 9238,
+        "marks": {
+          "tka:hydrated": 9238
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 50,
+          "rawBytes": 5034973,
+          "gzipBytes": 1458393
+        },
+        "at3s": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "at10s": {
+          "requests": 50,
+          "rawBytes": 5034973,
+          "gzipBytes": 1458393
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 191
+        },
+        "longTasksAll": {
+          "count": 5,
+          "ms": 1243
+        },
+        "repeat": 4
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "fcp": 928,
+        "dcl": 700,
+        "load": 4374,
+        "hydrated": 9196,
+        "marks": {
+          "tka:hydrated": 9196
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 49,
+          "rawBytes": 4949040,
+          "gzipBytes": 1441010
+        },
+        "at3s": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "at10s": {
+          "requests": 49,
+          "rawBytes": 4949040,
+          "gzipBytes": 1441010
+        },
+        "longTasks3s": {
+          "count": 1,
+          "ms": 55
+        },
+        "longTasksAll": {
+          "count": 2,
+          "ms": 1094
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "fcp": 924,
+        "dcl": 697,
+        "load": 4370,
+        "hydrated": 9217,
+        "marks": {
+          "tka:hydrated": 9217
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 49,
+          "rawBytes": 4949040,
+          "gzipBytes": 1441010
+        },
+        "at3s": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "at10s": {
+          "requests": 49,
+          "rawBytes": 4949040,
+          "gzipBytes": 1441010
+        },
+        "longTasks3s": {
+          "count": 1,
+          "ms": 58
+        },
+        "longTasksAll": {
+          "count": 3,
+          "ms": 1078
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "fcp": 940,
+        "dcl": 698,
+        "load": 4342,
+        "hydrated": 9143,
+        "marks": {
+          "tka:hydrated": 9143
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 49,
+          "rawBytes": 4949040,
+          "gzipBytes": 1441010
+        },
+        "at3s": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "at10s": {
+          "requests": 49,
+          "rawBytes": 4949040,
+          "gzipBytes": 1441010
+        },
+        "longTasks3s": {
+          "count": 1,
+          "ms": 70
+        },
+        "longTasksAll": {
+          "count": 2,
+          "ms": 1070
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "fcp": 884,
+        "dcl": 683,
+        "load": 4266,
+        "hydrated": 9271,
+        "marks": {
+          "tka:hydrated": 9271
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 49,
+          "rawBytes": 4949040,
+          "gzipBytes": 1441010
+        },
+        "at3s": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "at10s": {
+          "requests": 49,
+          "rawBytes": 4949040,
+          "gzipBytes": 1441010
+        },
+        "longTasks3s": {
+          "count": 2,
+          "ms": 113
+        },
+        "longTasksAll": {
+          "count": 4,
+          "ms": 1204
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "fcp": 940,
+        "dcl": 698,
+        "load": 4344,
+        "hydrated": 9197,
+        "marks": {
+          "tka:hydrated": 9197
+        },
+        "beforeLoad": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "beforeHydration": {
+          "requests": 49,
+          "rawBytes": 4949040,
+          "gzipBytes": 1441010
+        },
+        "at3s": {
+          "requests": 36,
+          "rawBytes": 4542305,
+          "gzipBytes": 1309628
+        },
+        "at10s": {
+          "requests": 49,
+          "rawBytes": 4949040,
+          "gzipBytes": 1441010
+        },
+        "longTasks3s": {
+          "count": 1,
+          "ms": 62
+        },
+        "longTasksAll": {
+          "count": 3,
+          "ms": 1066
+        },
+        "repeat": 4
+      }
+    ]
+  },
+  "after": {
+    "label": "after",
+    "base": "http://127.0.0.1:4174",
+    "windowMs": 12000,
+    "cpuRate": 4,
+    "results": [
+      {
+        "route": "/",
+        "condition": "fast",
+        "fcp": 276,
+        "dcl": 40,
+        "load": 232,
+        "hydrated": 669,
+        "marks": {
+          "tka:hero:activate": 667,
+          "tka:hydrated": 669,
+          "tka:hero:player-loaded": 1381,
+          "tka:hero:canvas-ready": 1710
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3859785,
+          "gzipBytes": 1103506
+        },
+        "beforeHydration": {
+          "requests": 40,
+          "rawBytes": 4366313,
+          "gzipBytes": 1253933
+        },
+        "at3s": {
+          "requests": 147,
+          "rawBytes": 9182277,
+          "gzipBytes": 2675517
+        },
+        "at10s": {
+          "requests": 147,
+          "rawBytes": 9182277,
+          "gzipBytes": 2675517
+        },
+        "longTasks3s": {
+          "count": 12,
+          "ms": 849
+        },
+        "longTasksAll": {
+          "count": 59,
+          "ms": 3498
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "fcp": 248,
+        "dcl": 29,
+        "load": 209,
+        "hydrated": 620,
+        "marks": {
+          "tka:hero:activate": 618,
+          "tka:hydrated": 620,
+          "tka:hero:player-loaded": 1132,
+          "tka:hero:canvas-ready": 1446
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3859785,
+          "gzipBytes": 1103506
+        },
+        "beforeHydration": {
+          "requests": 40,
+          "rawBytes": 4366313,
+          "gzipBytes": 1253933
+        },
+        "at3s": {
+          "requests": 147,
+          "rawBytes": 9182277,
+          "gzipBytes": 2675517
+        },
+        "at10s": {
+          "requests": 147,
+          "rawBytes": 9182277,
+          "gzipBytes": 2675517
+        },
+        "longTasks3s": {
+          "count": 11,
+          "ms": 744
+        },
+        "longTasksAll": {
+          "count": 61,
+          "ms": 3602
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "fcp": 160,
+        "dcl": 64,
+        "load": 125,
+        "hydrated": 670,
+        "marks": {
+          "tka:hero:activate": 669,
+          "tka:hydrated": 670,
+          "tka:hero:player-loaded": 1145,
+          "tka:hero:canvas-ready": 1484
+        },
+        "beforeLoad": {
+          "requests": 18,
+          "rawBytes": 473881,
+          "gzipBytes": 150679
+        },
+        "beforeHydration": {
+          "requests": 40,
+          "rawBytes": 4366313,
+          "gzipBytes": 1253933
+        },
+        "at3s": {
+          "requests": 147,
+          "rawBytes": 9182277,
+          "gzipBytes": 2675517
+        },
+        "at10s": {
+          "requests": 147,
+          "rawBytes": 9182277,
+          "gzipBytes": 2675517
+        },
+        "longTasks3s": {
+          "count": 9,
+          "ms": 677
+        },
+        "longTasksAll": {
+          "count": 60,
+          "ms": 3529
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "fcp": 156,
+        "dcl": 91,
+        "load": 131,
+        "hydrated": 696,
+        "marks": {
+          "tka:hero:activate": 694,
+          "tka:hydrated": 696,
+          "tka:hero:player-loaded": 1227,
+          "tka:hero:canvas-ready": 1563
+        },
+        "beforeLoad": {
+          "requests": 18,
+          "rawBytes": 473881,
+          "gzipBytes": 150679
+        },
+        "beforeHydration": {
+          "requests": 40,
+          "rawBytes": 4366313,
+          "gzipBytes": 1253933
+        },
+        "at3s": {
+          "requests": 147,
+          "rawBytes": 9182277,
+          "gzipBytes": 2675517
+        },
+        "at10s": {
+          "requests": 147,
+          "rawBytes": 9182277,
+          "gzipBytes": 2675517
+        },
+        "longTasks3s": {
+          "count": 10,
+          "ms": 722
+        },
+        "longTasksAll": {
+          "count": 61,
+          "ms": 3490
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/",
+        "condition": "fast",
+        "fcp": 224,
+        "dcl": 27,
+        "load": 194,
+        "hydrated": 593,
+        "marks": {
+          "tka:hero:activate": 591,
+          "tka:hydrated": 593,
+          "tka:hero:player-loaded": 1127,
+          "tka:hero:canvas-ready": 1465
+        },
+        "beforeLoad": {
+          "requests": 21,
+          "rawBytes": 3859785,
+          "gzipBytes": 1103506
+        },
+        "beforeHydration": {
+          "requests": 40,
+          "rawBytes": 4366313,
+          "gzipBytes": 1253933
+        },
+        "at3s": {
+          "requests": 147,
+          "rawBytes": 9182277,
+          "gzipBytes": 2675517
+        },
+        "at10s": {
+          "requests": 147,
+          "rawBytes": 9182277,
+          "gzipBytes": 2675517
+        },
+        "longTasks3s": {
+          "count": 7,
+          "ms": 544
+        },
+        "longTasksAll": {
+          "count": 43,
+          "ms": 2553
+        },
+        "repeat": 4
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "fcp": 248,
+        "dcl": 81,
+        "load": 280,
+        "hydrated": 603,
+        "marks": {
+          "tka:hydrated": 603,
+          "tka:background:first-frame": 1270,
+          "module-chunk:create:start": 6615,
+          "module-chunk:create:end": 6931
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3835684,
+          "gzipBytes": 1095700
+        },
+        "beforeHydration": {
+          "requests": 172,
+          "rawBytes": 9462249,
+          "gzipBytes": 2777497
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 9462249,
+          "gzipBytes": 2777497
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 9462249,
+          "gzipBytes": 2777497
+        },
+        "longTasks3s": {
+          "count": 11,
+          "ms": 883
+        },
+        "longTasksAll": {
+          "count": 35,
+          "ms": 2512
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "fcp": 212,
+        "dcl": 66,
+        "load": 284,
+        "hydrated": 589,
+        "marks": {
+          "tka:hydrated": 589,
+          "tka:background:first-frame": 1218,
+          "module-chunk:create:start": 6865,
+          "module-chunk:create:end": 7151
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3835684,
+          "gzipBytes": 1095700
+        },
+        "beforeHydration": {
+          "requests": 172,
+          "rawBytes": 9465253,
+          "gzipBytes": 2778516
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 9465253,
+          "gzipBytes": 2778516
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 9465253,
+          "gzipBytes": 2778516
+        },
+        "longTasks3s": {
+          "count": 12,
+          "ms": 938
+        },
+        "longTasksAll": {
+          "count": 31,
+          "ms": 2225
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "fcp": 216,
+        "dcl": 70,
+        "load": 251,
+        "hydrated": 580,
+        "marks": {
+          "tka:hydrated": 580,
+          "tka:background:first-frame": 1242,
+          "module-chunk:create:start": 5244,
+          "module-chunk:create:end": 5528
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3835684,
+          "gzipBytes": 1095700
+        },
+        "beforeHydration": {
+          "requests": 172,
+          "rawBytes": 9455470,
+          "gzipBytes": 2775524
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 9455470,
+          "gzipBytes": 2775524
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 9455470,
+          "gzipBytes": 2775524
+        },
+        "longTasks3s": {
+          "count": 10,
+          "ms": 887
+        },
+        "longTasksAll": {
+          "count": 30,
+          "ms": 2292
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "fcp": 220,
+        "dcl": 71,
+        "load": 431,
+        "hydrated": 650,
+        "marks": {
+          "tka:hydrated": 650,
+          "tka:background:first-frame": 1252,
+          "module-chunk:create:start": 6927,
+          "module-chunk:create:end": 7237
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3835684,
+          "gzipBytes": 1095700
+        },
+        "beforeHydration": {
+          "requests": 172,
+          "rawBytes": 9455470,
+          "gzipBytes": 2775524
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 9455470,
+          "gzipBytes": 2775524
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 9455470,
+          "gzipBytes": 2775524
+        },
+        "longTasks3s": {
+          "count": 12,
+          "ms": 1006
+        },
+        "longTasksAll": {
+          "count": 33,
+          "ms": 2611
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/create",
+        "condition": "fast",
+        "fcp": 240,
+        "dcl": 79,
+        "load": 280,
+        "hydrated": 568,
+        "marks": {
+          "tka:hydrated": 568,
+          "tka:background:first-frame": 1252,
+          "module-chunk:create:start": 6591,
+          "module-chunk:create:end": 6881
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3835684,
+          "gzipBytes": 1095700
+        },
+        "beforeHydration": {
+          "requests": 172,
+          "rawBytes": 9455470,
+          "gzipBytes": 2775524
+        },
+        "at3s": {
+          "requests": 172,
+          "rawBytes": 9455470,
+          "gzipBytes": 2775524
+        },
+        "at10s": {
+          "requests": 172,
+          "rawBytes": 9455470,
+          "gzipBytes": 2775524
+        },
+        "longTasks3s": {
+          "count": 10,
+          "ms": 793
+        },
+        "longTasksAll": {
+          "count": 32,
+          "ms": 2194
+        },
+        "repeat": 4
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "fcp": 220,
+        "dcl": 60,
+        "load": 405,
+        "hydrated": 593,
+        "marks": {
+          "tka:hydrated": 593,
+          "tka:background:first-frame": 1313,
+          "module-chunk:browse:start": 6032,
+          "module-chunk:browse:end": 6292
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3835684,
+          "gzipBytes": 1095700
+        },
+        "beforeHydration": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "at3s": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "at10s": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "longTasks3s": {
+          "count": 10,
+          "ms": 812
+        },
+        "longTasksAll": {
+          "count": 29,
+          "ms": 2125
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "fcp": 236,
+        "dcl": 62,
+        "load": 281,
+        "hydrated": 634,
+        "marks": {
+          "tka:hydrated": 634,
+          "tka:background:first-frame": 1378,
+          "module-chunk:browse:start": 6593,
+          "module-chunk:browse:end": 6865
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3835684,
+          "gzipBytes": 1095700
+        },
+        "beforeHydration": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "at3s": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "at10s": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "longTasks3s": {
+          "count": 11,
+          "ms": 850
+        },
+        "longTasksAll": {
+          "count": 30,
+          "ms": 2037
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "fcp": 232,
+        "dcl": 77,
+        "load": 434,
+        "hydrated": 612,
+        "marks": {
+          "tka:hydrated": 612,
+          "tka:background:first-frame": 1291,
+          "module-chunk:browse:start": 6708,
+          "module-chunk:browse:end": 6948
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3835684,
+          "gzipBytes": 1095700
+        },
+        "beforeHydration": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "at3s": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "at10s": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "longTasks3s": {
+          "count": 11,
+          "ms": 866
+        },
+        "longTasksAll": {
+          "count": 31,
+          "ms": 2267
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "fcp": 208,
+        "dcl": 69,
+        "load": 201,
+        "hydrated": 595,
+        "marks": {
+          "tka:hydrated": 595,
+          "tka:background:first-frame": 1272,
+          "module-chunk:browse:start": 6483,
+          "module-chunk:browse:end": 6779
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3835684,
+          "gzipBytes": 1095700
+        },
+        "beforeHydration": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "at3s": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "at10s": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "longTasks3s": {
+          "count": 11,
+          "ms": 868
+        },
+        "longTasksAll": {
+          "count": 32,
+          "ms": 2328
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/browse",
+        "condition": "fast",
+        "fcp": 200,
+        "dcl": 63,
+        "load": 183,
+        "hydrated": 568,
+        "marks": {
+          "tka:hydrated": 568,
+          "tka:background:first-frame": 1301,
+          "module-chunk:browse:start": 6437,
+          "module-chunk:browse:end": 6721
+        },
+        "beforeLoad": {
+          "requests": 22,
+          "rawBytes": 3835684,
+          "gzipBytes": 1095700
+        },
+        "beforeHydration": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "at3s": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "at10s": {
+          "requests": 168,
+          "rawBytes": 9071403,
+          "gzipBytes": 2632899
+        },
+        "longTasks3s": {
+          "count": 10,
+          "ms": 801
+        },
+        "longTasksAll": {
+          "count": 29,
+          "ms": 2121
+        },
+        "repeat": 4
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "fcp": 308,
+        "dcl": 276,
+        "load": 1206,
+        "hydrated": 3754,
+        "marks": {
+          "tka:hero:activate": 3747,
+          "tka:hydrated": 3754
+        },
+        "beforeLoad": {
+          "requests": 18,
+          "rawBytes": 473881,
+          "gzipBytes": 150679
+        },
+        "beforeHydration": {
+          "requests": 39,
+          "rawBytes": 1085551,
+          "gzipBytes": 336154
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 1085551,
+          "gzipBytes": 336154
+        },
+        "at10s": {
+          "requests": 131,
+          "rawBytes": 3966477,
+          "gzipBytes": 1208459
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 199
+        },
+        "longTasksAll": {
+          "count": 8,
+          "ms": 648
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "fcp": 300,
+        "dcl": 360,
+        "load": 1160,
+        "hydrated": 3783,
+        "marks": {
+          "tka:hero:activate": 3776,
+          "tka:hydrated": 3783
+        },
+        "beforeLoad": {
+          "requests": 18,
+          "rawBytes": 473881,
+          "gzipBytes": 150679
+        },
+        "beforeHydration": {
+          "requests": 39,
+          "rawBytes": 1085551,
+          "gzipBytes": 336154
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 1085551,
+          "gzipBytes": 336154
+        },
+        "at10s": {
+          "requests": 131,
+          "rawBytes": 3966477,
+          "gzipBytes": 1208459
+        },
+        "longTasks3s": {
+          "count": 2,
+          "ms": 151
+        },
+        "longTasksAll": {
+          "count": 4,
+          "ms": 436
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "fcp": 308,
+        "dcl": 286,
+        "load": 1209,
+        "hydrated": 3721,
+        "marks": {
+          "tka:hero:activate": 3714,
+          "tka:hydrated": 3721
+        },
+        "beforeLoad": {
+          "requests": 18,
+          "rawBytes": 473881,
+          "gzipBytes": 150679
+        },
+        "beforeHydration": {
+          "requests": 39,
+          "rawBytes": 1085551,
+          "gzipBytes": 336154
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 1085551,
+          "gzipBytes": 336154
+        },
+        "at10s": {
+          "requests": 132,
+          "rawBytes": 3988099,
+          "gzipBytes": 1213978
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 217
+        },
+        "longTasksAll": {
+          "count": 5,
+          "ms": 468
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "fcp": 304,
+        "dcl": 277,
+        "load": 1207,
+        "hydrated": 3763,
+        "marks": {
+          "tka:hero:activate": 3753,
+          "tka:hydrated": 3763
+        },
+        "beforeLoad": {
+          "requests": 18,
+          "rawBytes": 473881,
+          "gzipBytes": 150679
+        },
+        "beforeHydration": {
+          "requests": 39,
+          "rawBytes": 1085551,
+          "gzipBytes": 336154
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 1085551,
+          "gzipBytes": 336154
+        },
+        "at10s": {
+          "requests": 131,
+          "rawBytes": 3966477,
+          "gzipBytes": 1208459
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 231
+        },
+        "longTasksAll": {
+          "count": 5,
+          "ms": 523
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/",
+        "condition": "throttled",
+        "fcp": 300,
+        "dcl": 272,
+        "load": 1177,
+        "hydrated": 3708,
+        "marks": {
+          "tka:hero:activate": 3701,
+          "tka:hydrated": 3708
+        },
+        "beforeLoad": {
+          "requests": 18,
+          "rawBytes": 473881,
+          "gzipBytes": 150679
+        },
+        "beforeHydration": {
+          "requests": 39,
+          "rawBytes": 1085551,
+          "gzipBytes": 336154
+        },
+        "at3s": {
+          "requests": 39,
+          "rawBytes": 1085551,
+          "gzipBytes": 336154
+        },
+        "at10s": {
+          "requests": 131,
+          "rawBytes": 3966477,
+          "gzipBytes": 1208459
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 209
+        },
+        "longTasksAll": {
+          "count": 5,
+          "ms": 486
+        },
+        "repeat": 4
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "fcp": 840,
+        "dcl": 612,
+        "load": 6225,
+        "hydrated": 3669,
+        "marks": {
+          "tka:hydrated": 3669
+        },
+        "beforeLoad": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "beforeHydration": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "at3s": {
+          "requests": 31,
+          "rawBytes": 907174,
+          "gzipBytes": 282306
+        },
+        "at10s": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 194
+        },
+        "longTasksAll": {
+          "count": 4,
+          "ms": 577
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "fcp": 804,
+        "dcl": 619,
+        "load": 6258,
+        "hydrated": 3703,
+        "marks": {
+          "tka:hydrated": 3703
+        },
+        "beforeLoad": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "beforeHydration": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "at3s": {
+          "requests": 31,
+          "rawBytes": 907174,
+          "gzipBytes": 282306
+        },
+        "at10s": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "longTasks3s": {
+          "count": 2,
+          "ms": 121
+        },
+        "longTasksAll": {
+          "count": 3,
+          "ms": 497
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "fcp": 820,
+        "dcl": 629,
+        "load": 6270,
+        "hydrated": 3748,
+        "marks": {
+          "tka:hydrated": 3748
+        },
+        "beforeLoad": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "beforeHydration": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "at3s": {
+          "requests": 31,
+          "rawBytes": 907174,
+          "gzipBytes": 282306
+        },
+        "at10s": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "longTasks3s": {
+          "count": 2,
+          "ms": 122
+        },
+        "longTasksAll": {
+          "count": 3,
+          "ms": 541
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "fcp": 832,
+        "dcl": 619,
+        "load": 6239,
+        "hydrated": 3689,
+        "marks": {
+          "tka:hydrated": 3689
+        },
+        "beforeLoad": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "beforeHydration": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "at3s": {
+          "requests": 31,
+          "rawBytes": 907174,
+          "gzipBytes": 282306
+        },
+        "at10s": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "longTasks3s": {
+          "count": 2,
+          "ms": 128
+        },
+        "longTasksAll": {
+          "count": 4,
+          "ms": 589
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/create",
+        "condition": "throttled",
+        "fcp": 824,
+        "dcl": 620,
+        "load": 6243,
+        "hydrated": 3687,
+        "marks": {
+          "tka:hydrated": 3687
+        },
+        "beforeLoad": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "beforeHydration": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "at3s": {
+          "requests": 31,
+          "rawBytes": 907174,
+          "gzipBytes": 282306
+        },
+        "at10s": {
+          "requests": 118,
+          "rawBytes": 3412305,
+          "gzipBytes": 1062533
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 175
+        },
+        "longTasksAll": {
+          "count": 4,
+          "ms": 555
+        },
+        "repeat": 4
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "fcp": 828,
+        "dcl": 620,
+        "load": 7266,
+        "hydrated": 3719,
+        "marks": {
+          "tka:hydrated": 3719
+        },
+        "beforeLoad": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "beforeHydration": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "at3s": {
+          "requests": 31,
+          "rawBytes": 907174,
+          "gzipBytes": 282306
+        },
+        "at10s": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "longTasks3s": {
+          "count": 2,
+          "ms": 120
+        },
+        "longTasksAll": {
+          "count": 4,
+          "ms": 611
+        },
+        "repeat": 0
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "fcp": 832,
+        "dcl": 626,
+        "load": 7302,
+        "hydrated": 3679,
+        "marks": {
+          "tka:hydrated": 3679
+        },
+        "beforeLoad": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "beforeHydration": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "at3s": {
+          "requests": 31,
+          "rawBytes": 907174,
+          "gzipBytes": 282306
+        },
+        "at10s": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "longTasks3s": {
+          "count": 1,
+          "ms": 54
+        },
+        "longTasksAll": {
+          "count": 3,
+          "ms": 518
+        },
+        "repeat": 1
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "fcp": 844,
+        "dcl": 620,
+        "load": 7270,
+        "hydrated": 3739,
+        "marks": {
+          "tka:hydrated": 3739
+        },
+        "beforeLoad": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "beforeHydration": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "at3s": {
+          "requests": 31,
+          "rawBytes": 907174,
+          "gzipBytes": 282306
+        },
+        "at10s": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 199
+        },
+        "longTasksAll": {
+          "count": 5,
+          "ms": 724
+        },
+        "repeat": 2
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "fcp": 804,
+        "dcl": 611,
+        "load": 7255,
+        "hydrated": 3696,
+        "marks": {
+          "tka:hydrated": 3696
+        },
+        "beforeLoad": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "beforeHydration": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "at3s": {
+          "requests": 31,
+          "rawBytes": 907174,
+          "gzipBytes": 282306
+        },
+        "at10s": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "longTasks3s": {
+          "count": 2,
+          "ms": 120
+        },
+        "longTasksAll": {
+          "count": 4,
+          "ms": 600
+        },
+        "repeat": 3
+      },
+      {
+        "route": "/browse",
+        "condition": "throttled",
+        "fcp": 844,
+        "dcl": 627,
+        "load": 7286,
+        "hydrated": 3680,
+        "marks": {
+          "tka:hydrated": 3680
+        },
+        "beforeLoad": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "beforeHydration": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "at3s": {
+          "requests": 31,
+          "rawBytes": 907174,
+          "gzipBytes": 282306
+        },
+        "at10s": {
+          "requests": 89,
+          "rawBytes": 4374927,
+          "gzipBytes": 1307862
+        },
+        "longTasks3s": {
+          "count": 3,
+          "ms": 190
+        },
+        "longTasksAll": {
+          "count": 5,
+          "ms": 670
+        },
+        "repeat": 4
+      }
+    ]
+  }
+}

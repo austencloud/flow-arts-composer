@@ -74,6 +74,49 @@ describe("CanvasResizer", () => {
     resizer.dispose();
   });
 
+  it("reports the whole frame and counts a sideways-only change as a resize", async () => {
+    // A wide viewer pane: the square is the height, the overlays get the width.
+    let width = 1200;
+    let height = 800;
+    const container = {
+      get clientWidth() {
+        return width;
+      },
+      get clientHeight() {
+        return height;
+      },
+      closest: () => null,
+      getBoundingClientRect: () => ({ width, height }),
+    } as unknown as HTMLDivElement;
+    const renderer = { resize: vi.fn().mockResolvedValue(undefined) };
+    const resizer = new CanvasResizer();
+    resizer.initialize(container, renderer);
+    resizer.setup();
+
+    notifyResize([], {} as ResizeObserver);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(renderer.resize).toHaveBeenLastCalledWith(800);
+    expect(resizer.state.frame).toEqual({ size: 800, width: 1200, height: 800 });
+    expect(resizer.state.resizeCount).toBe(1);
+
+    // A settings panel closing widens the pane at the same height. The main
+    // canvas square is untouched, but the overlays must be reallocated, so
+    // the frame and the resize count both move.
+    width = 1500;
+    notifyResize([], {} as ResizeObserver);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(renderer.resize).toHaveBeenCalledTimes(1);
+    expect(resizer.state.frame).toEqual({ size: 800, width: 1500, height: 800 });
+    expect(resizer.state.resizeCount).toBe(2);
+
+    // Same frame again: nothing happens.
+    notifyResize([], {} as ResizeObserver);
+    await vi.advanceTimersByTimeAsync(50);
+    expect(resizer.state.resizeCount).toBe(2);
+
+    resizer.dispose();
+  });
+
   it("retains the readable backing size while its workspace pane is inert", async () => {
     let width = 630;
     let inert = false;

@@ -2,12 +2,25 @@
 status: backlog
 value: 3
 effort: M
-remaining: "Body status: Draft"
+remaining: "Genuinely unimplemented — verified 2026-09-13, not merely un-updated. src/lib/shared/3d/environments/components/Environment3D.svelte:100 still switches on the external BackgroundType enum (AUTUMN/FOREST/COSMIC/WINTER/OCEAN/EMBER/BLOSSOM/...), and no manifest or registry module exists anywhere under src/lib/shared/3d/environments/. Start at step 1 of the Design section: the self-describing scene manifest co-located with each GLB."
 depends_on: ""
 plan_path: ""
-tags: []
-last_triaged: 2026-07-25
+tags: [3d, environments, registry, pipeline]
+last_triaged: 2026-09-13
 ---
+
+<!--
+Reconciliation note, 2026-09-13. The read-only drift detector classified this
+spec DIVERGENT (15 topical commits of 175 touching its paths, 3 on named files).
+Adjudicated as a FALSE POSITIVE: the traffic is shared-3D-infrastructure work
+that happens to live on the same paths -- `perf(3d): stream environments and
+retain shared resources`, `refactor(3d): shared environment infra, scene audio,
+and performer stage bounds`, `feat(3d): preserve performers across environment
+transitions` -- none of which touches the hardcoded switch this design exists to
+remove. The switch was read directly and is still there. This is the detector's
+documented "broad paths" failure mode; the spec is not a rebuild hazard.
+-->
+
 # Data-Driven GLB Environment Registry — Design
 
 **Date:** 2026-05-29
