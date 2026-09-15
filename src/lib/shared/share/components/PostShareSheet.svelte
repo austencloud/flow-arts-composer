@@ -853,7 +853,8 @@
       if (target && linkSessionIsCurrent(session, target) && result.message) {
         copyLinkMessage = result.message;
         if (result.status === "failed") {
-          const fallbackUrl = copyLinkUrl || buildCopyLinkUrl(shortUrl || viewerUrl, viewerUrl);
+          const fallbackUrl =
+            copyLinkUrl || buildCopyLinkUrl(shortUrl || viewerUrl, viewerUrl);
           if (fallbackUrl) {
             revealedLinkUrl = fallbackUrl;
             copyLinkMessage = "Copy it from the link below";
@@ -1646,7 +1647,7 @@
                   onclick={() => {
                     shareRoute = "publish";
                     publishOpen = true;
-                    preparePostLink();
+                    if (!needsAccountForFiles) preparePostLink();
                   }}
                 >
                   <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
@@ -1768,7 +1769,6 @@
                       : "Video could not be rendered. Check the settings and try again."}
                 </p>
               {/if}
-
             </div>
             <div class="editing-column">
               {#if !qrDataUrl}
@@ -1870,7 +1870,8 @@
                           <SegmentedControl
                             options={videoFpsOptions}
                             value={exportOptions.videoFps}
-                            onchange={(value) => exportOptions.setVideoFps(value)}
+                            onchange={(value) =>
+                              exportOptions.setVideoFps(value)}
                             color="accent"
                             size="sm"
                             ariaLabelledby="share-video-fps"
@@ -1943,8 +1944,8 @@
             {#if !qrDataUrl}
               {#if needsAccountForFiles}
                 <p class="account-note">
-                  Saving this {artifact === "card" ? "card" : "video"} needs a
-                  free account. Your settings are kept.
+                  Saving this {artifact === "card" ? "card" : "video"} needs a free
+                  account. Your settings are kept.
                 </p>
                 <PanelButton
                   variant="primary"
@@ -2013,7 +2014,20 @@
               class="back-to-chooser"
               onclick={() => (shareRoute = "home")}>Back to sharing</button
             >
-            {#if artifact === "video" && activeVideoUrl}
+            {#if needsAccountForFiles}
+              <p class="account-note">
+                Publishing a post needs a free account so it can connect to your
+                social accounts.
+              </p>
+              <PanelButton
+                variant="primary"
+                fullWidth
+                onclick={requestAccountForFile}
+              >
+                <i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+                Create free account
+              </PanelButton>
+            {:else if artifact === "video" && activeVideoUrl}
               <video
                 class="preview publish-preview"
                 src={activeVideoUrl}
@@ -2042,25 +2056,27 @@
                   : "Prepare card"}</PanelButton
               >
             {/if}
-            <label for="post-share-caption" class="post-caption"
-              >Post caption</label
-            >
-            <textarea
-              id="post-share-caption"
-              aria-label="Post caption"
-              value={caption}
-              oninput={(event) => {
-                shareDraft.caption = event.currentTarget.value;
-                shareDraft.captionTouched = true;
-              }}
-              rows="3"
-              placeholder="Write a caption…"
-            ></textarea>
-            <div class="actions">
-              {#each networks as plan (plan.key)}{@render networkButton(
-                  plan
-                )}{/each}
-            </div>
+            {#if !needsAccountForFiles}
+              <label for="post-share-caption" class="post-caption"
+                >Post caption</label
+              >
+              <textarea
+                id="post-share-caption"
+                aria-label="Post caption"
+                value={caption}
+                oninput={(event) => {
+                  shareDraft.caption = event.currentTarget.value;
+                  shareDraft.captionTouched = true;
+                }}
+                rows="3"
+                placeholder="Write a caption…"
+              ></textarea>
+              <div class="actions">
+                {#each networks as plan (plan.key)}{@render networkButton(
+                    plan
+                  )}{/each}
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
