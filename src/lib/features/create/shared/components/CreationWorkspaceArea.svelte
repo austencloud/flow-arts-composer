@@ -192,6 +192,7 @@
             if (failedRun === playbackRun)
               panelState.failWorkspacePlaybackPreparation(playbackCandidate!);
           },
+          onclose: () => panelState.stopWorkspacePlayback(),
           onStepChange: (step: number) => (playbackStep = Math.floor(step)),
           onPlaybackChange: (
             reportedRun: number,
