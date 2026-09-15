@@ -13,11 +13,6 @@
  */
 export type HandLabeling = "mirror-me" | "as-performed";
 
-export const HAND_LABELINGS: readonly HandLabeling[] = [
-  "mirror-me",
-  "as-performed",
-];
-
 export const DEFAULT_HAND_LABELING: HandLabeling = "mirror-me";
 
 export function isHandLabeling(value: unknown): value is HandLabeling {
