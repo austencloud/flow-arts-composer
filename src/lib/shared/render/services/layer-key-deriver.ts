@@ -26,6 +26,7 @@ export interface BaseLayerKeyComponents {
   showRightMotion: boolean;
   showTnD: boolean;
   showElemental: boolean;
+  showPropTnD: boolean;
   showPositions: boolean;
   showHandColorKey: boolean;
   handPathMode: boolean;
@@ -118,6 +119,7 @@ export function getBaseLayerComponents(
     showRightMotion: options.showRightMotion ?? true,
     showTnD: options.showTnD ?? false,
     showElemental: options.showElemental ?? false,
+    showPropTnD: options.showPropTnD ?? false,
     showPositions: options.showPositions ?? false,
     showHandColorKey: options.showHandColorKey ?? true,
     handPathMode: options.handPathMode ?? false,
