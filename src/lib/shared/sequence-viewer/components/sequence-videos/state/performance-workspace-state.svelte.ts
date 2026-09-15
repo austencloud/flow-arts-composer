@@ -9,6 +9,7 @@ import {
   passCountFromStepMap,
   passNumberFromVideo,
 } from "$lib/shared/video-collaboration/utils/step-map-utils";
+import { resolveHandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 import type { VideoPlayheadBridge } from "../../../context/video-playhead-context";
 
 export type PerformanceWorkspaceView = "browse" | "upload" | "map";
@@ -89,9 +90,13 @@ export function createPerformanceWorkspaceState(
 
   $effect(() => {
     const map = activeMap;
-    dependencies.playhead?.attach(map ?? null);
+    const labeling =
+      inputs.getActive() && view === "browse" && selectedVideo
+        ? resolveHandLabeling(selectedVideo)
+        : null;
+    dependencies.playhead?.attach(map ?? null, labeling);
     playerTime = 0;
-    return () => dependencies.playhead?.attach(null);
+    return () => dependencies.playhead?.attach(null, null);
   });
 
   $effect(() => {

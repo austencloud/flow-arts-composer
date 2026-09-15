@@ -91,6 +91,7 @@
   const playhead = createVideoPlayheadBridge({
     setPlaybackSource: () => {},
     setActiveStepMap: (map) => (activeMap = map),
+    setActiveHandLabeling: () => {},
     onVideoTimeUpdate: (seconds) => (videoTime = seconds),
   });
   setVideoPlayheadContext(playhead);

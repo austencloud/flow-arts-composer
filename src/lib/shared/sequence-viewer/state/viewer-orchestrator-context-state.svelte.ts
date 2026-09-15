@@ -124,8 +124,10 @@ export function createViewerOrchestratorContextState(
       playbackSource: inputs.presentation.playbackSource,
       videoPlaybackBeatIndex: inputs.presentation.videoPlaybackBeatIndex,
       activeStepMap: inputs.presentation.activeStepMap,
+      activeHandLabeling: inputs.presentation.activeHandLabeling,
       setPlaybackSource: inputs.presentation.setPlaybackSource,
       setActiveStepMap: inputs.presentation.setActiveStepMap,
+      setActiveHandLabeling: inputs.presentation.setActiveHandLabeling,
       onVideoTimeUpdate: inputs.presentation.handleVideoTimeUpdate,
 
       viewMode: inputs.getViewMode(),

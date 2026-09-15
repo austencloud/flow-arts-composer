@@ -24,6 +24,7 @@ import type { ViewerPropHand } from "$lib/shared/sequence-viewer/state/viewer-pr
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import type { CardPresentation } from "$lib/shared/share/domain/models/card-presentation";
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
+import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 import type {
   ImageCompositionProps,
   PropRenderingProps,
@@ -53,8 +54,11 @@ export interface OrchestratorContext {
   playbackSource: PlaybackSource;
   videoPlaybackBeatIndex: number | null;
   activeStepMap: StepMap | null;
+  /** Null when no performance footage is on screen. */
+  activeHandLabeling: HandLabeling | null;
   setPlaybackSource: (source: PlaybackSource) => void;
   setActiveStepMap: (beatMap: StepMap | null) => void;
+  setActiveHandLabeling: (labeling: HandLabeling | null) => void;
   onVideoTimeUpdate: (currentTime: number) => void;
   modalAnimationState: AnimationPanelState;
 

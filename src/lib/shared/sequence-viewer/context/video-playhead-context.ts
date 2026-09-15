@@ -18,12 +18,16 @@
 import { getContext, setContext } from "svelte";
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import { seekTimeForStep } from "$lib/shared/video-collaboration/utils/step-map-utils";
+import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 
 const KEY = Symbol("sequence-viewer-video-playhead");
 
 export interface VideoPlayheadBridge {
-  /** The performance on screen changed. Null when it carries no timing. */
-  attach(map: StepMap | null): void;
+  /**
+   * The performance on screen changed. `map` is null when it carries no
+   * timing; `handLabeling` is null when no performance is on screen at all.
+   */
+  attach(map: StepMap | null, handLabeling: HandLabeling | null): void;
   /** The footage moved. */
   reportTime(seconds: number): void;
   /** The player a step click should drive. Null when none is mounted. */
@@ -38,16 +42,19 @@ export interface VideoPlayheadBridge {
 interface BridgeHost {
   setPlaybackSource(source: "animation" | "video"): void;
   setActiveStepMap(map: StepMap | null): void;
+  setActiveHandLabeling(labeling: HandLabeling | null): void;
   onVideoTimeUpdate(seconds: number): void;
 }
 
-export function createVideoPlayheadBridge(host: BridgeHost): VideoPlayheadBridge {
+export function createVideoPlayheadBridge(
+  host: BridgeHost
+): VideoPlayheadBridge {
   let map: StepMap | null = null;
   let seek: ((seconds: number) => void) | null = null;
   let time = 0;
 
   return {
-    attach(next) {
+    attach(next, handLabeling) {
       // A video without timing cannot drive anything, so it hands the playhead
       // back to the animation rather than freezing the notation on whatever
       // step the previous one left behind.
@@ -55,6 +62,7 @@ export function createVideoPlayheadBridge(host: BridgeHost): VideoPlayheadBridge
       map = usable;
       time = 0;
       host.setActiveStepMap(usable);
+      host.setActiveHandLabeling(handLabeling);
       host.setPlaybackSource(usable ? "video" : "animation");
     },
     reportTime(seconds) {

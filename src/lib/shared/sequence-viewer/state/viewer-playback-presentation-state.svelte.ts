@@ -5,6 +5,7 @@ import {
 import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import { getStepIndexFromVideo } from "$lib/shared/video-collaboration/utils/step-map-utils";
+import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 import type { PlaybackControllerState } from "../components/playback-controller.svelte";
 import type { PlaybackSource } from "../domain/viewer-orchestrator-context";
 import { resolveCurrentStepData } from "../services/viewer-orchestrator-model";
@@ -20,6 +21,7 @@ export function createViewerPlaybackPresentationState(
   let playbackSource = $state<PlaybackSource>("animation");
   let videoPlaybackBeatIndex = $state<number | null>(null);
   let activeStepMap = $state<StepMap | null>(null);
+  let activeHandLabeling = $state<HandLabeling | null>(null);
 
   const showPreviousBeat = $derived.by(() => {
     const currentStep = inputs.playback.currentStepLocal;
@@ -85,6 +87,10 @@ export function createViewerPlaybackPresentationState(
     }
   }
 
+  function setActiveHandLabeling(labeling: HandLabeling | null): void {
+    activeHandLabeling = labeling;
+  }
+
   return {
     get playbackSource() {
       return playbackSource;
@@ -94,6 +100,9 @@ export function createViewerPlaybackPresentationState(
     },
     get activeStepMap() {
       return activeStepMap;
+    },
+    get activeHandLabeling() {
+      return activeHandLabeling;
     },
     get currentStepData() {
       return currentStepData;
@@ -107,6 +116,7 @@ export function createViewerPlaybackPresentationState(
     handleVideoTimeUpdate,
     setPlaybackSource,
     setActiveStepMap,
+    setActiveHandLabeling,
   };
 }
 
