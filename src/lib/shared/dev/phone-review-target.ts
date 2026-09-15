@@ -37,6 +37,7 @@ export function parsePhoneReviewTarget(
   if (
     typeof path !== "string" ||
     !isSafePath(path) ||
+    typeof revision !== "number" ||
     !Number.isSafeInteger(revision) ||
     revision < 0 ||
     typeof updatedAt !== "string" ||

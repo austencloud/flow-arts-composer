@@ -13,14 +13,20 @@ describe("timing and direction playback continuity", () => {
     }
   });
 
-  it("retains phase and pause state across selection and ignores stale player callbacks", () => {
+  it("restarts the loop on selection, keeps pause state, and ignores stale player callbacks", () => {
     const playback = createTimingDirectionState();
     const oldSequenceId = playback.selected.motion.sequence.id;
     playback.playing = false;
     playback.followStep(2.375, oldSequenceId);
-    playback.select("quarter-time-opposite-direction");
-    playback.followStep(0, oldSequenceId);
     expect(playback.step).toBe(2.375);
+    // Modes no longer share a step count, so selection restarts the new loop
+    // from its first beat and bumps the seek version for the player.
+    const { version } = playback.pendingSeek;
+    playback.select("quarter-time-opposite-direction");
+    expect(playback.step).toBe(0);
+    expect(playback.pendingSeek).toEqual({ step: 0, version: version + 1 });
+    playback.followStep(1.5, oldSequenceId);
+    expect(playback.step).toBe(0);
     expect(playback.playing).toBe(false);
     playback.followStep(2.5, playback.selected.motion.sequence.id);
     expect(playback.step).toBe(2.5);

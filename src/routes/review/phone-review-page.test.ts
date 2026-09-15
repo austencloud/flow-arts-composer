@@ -16,7 +16,7 @@ describe("phone review page", () => {
     document.body.innerHTML = `
       <p id="path"></p><button id="control"></button><iframe id="preview"></iframe>
       <p id="status"></p><p id="served"></p>`;
-    vi.spyOn(window, "setInterval").mockReturnValue(0 as unknown as number);
+    vi.spyOn(window, "setInterval").mockReturnValue(0 as unknown as ReturnType<typeof window.setInterval>);
 
     let resolveResponse: ((response: Response) => void) | undefined;
     vi.stubGlobal(
@@ -62,7 +62,7 @@ describe("phone review page", () => {
     Object.defineProperty(preview, "contentDocument", { value: frame });
     Object.defineProperty(preview, "contentWindow", { value: { location: { href: "http://localhost/test/hand-tunnel?reviewRevision=0" } } });
     const intervals: (() => void)[] = [];
-    vi.spyOn(window, "setInterval").mockImplementation((callback) => { intervals.push(callback as () => void); return 0 as unknown as number; });
+    vi.spyOn(window, "setInterval").mockImplementation((callback) => { intervals.push(callback as () => void); return 0 as unknown as ReturnType<typeof window.setInterval>; });
     vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true })));
     vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue([{}] as unknown as DOMRectList);
     sessionStorage.setItem("tka-phone-review-client-id", "review-test");

@@ -62,8 +62,8 @@ describe("mounted CanvasSurface fire lifecycle", () => {
   it("fades live staff fire through hands and re-lights when staffs return", async () => {
     const screen = render(CanvasSurfaceFireSwitchHarness);
     await expect
-      .element(page.getByTestId("initialized"))
-      .toHaveTextContent("ready", { timeout: 15_000 });
+      .element(page.getByTestId("initialized"), { timeout: 15_000 })
+      .toHaveTextContent("ready");
 
     await vi.waitFor(
       () => {

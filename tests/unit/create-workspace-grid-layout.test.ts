@@ -356,7 +356,9 @@ describe("Create workspace action rail contract", () => {
       WORKSPACE_BUTTON_ICON.view.actionLabel
     );
     expect(buttonPanelSource).toContain('purpose="play"');
-    expect(drawerLauncherSource).toContain("playOnOpen: true");
+    expect(drawerLauncherSource).toContain(
+      "playOnOpen: handoff?.playing ?? true"
+    );
   });
 
   it("keeps recovery in the leading header and four controls below it", () => {
