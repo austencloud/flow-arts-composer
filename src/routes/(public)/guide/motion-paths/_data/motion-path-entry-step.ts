@@ -81,7 +81,7 @@ export function resolveMotionPathEntryStep({
   const preferredIndex = cyclicIndex(fallback, incomingCount);
   let best: { index: number; score: number; distance: number } | null = null;
 
-  incoming.steps.forEach((step, index) => {
+  for (let index = 0; index < incomingCount; index += 1) {
     const score =
       Number(
         preservesWholeLoop("left", outgoing, outgoingIndex, incoming, index)
@@ -89,7 +89,7 @@ export function resolveMotionPathEntryStep({
       Number(
         preservesWholeLoop("right", outgoing, outgoingIndex, incoming, index)
       );
-    if (score === 0) return;
+    if (score === 0) continue;
     const rawDistance = Math.abs(index - preferredIndex);
     const distance = Math.min(rawDistance, incomingCount - rawDistance);
     if (
@@ -99,7 +99,7 @@ export function resolveMotionPathEntryStep({
     ) {
       best = { index, score, distance };
     }
-  });
+  }
 
   return best ? 1 + best.index + fraction : fallback;
 }

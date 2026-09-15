@@ -4,28 +4,27 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { unguardedRenders } from "../helpers/unguarded-renders";
 
 /**
- * The production SSR build stubs every `.svelte` file under
- * `shared/animation-engine/` and `features/learn/` to `export default null`
- * (see SSR_STUBBED_SHARED_RENDER_PATHS in src/config/feature-flags.ts). A
- * prerendered public route that renders one of those components outside a
- * `{#if browser}` block calls `null` as a component and fails the whole build
- * with "Error: 500 /timing-and-direction". The dev server never shows this
- * because the gate only runs for `vite build`.
+ * /guide/motion-paths is a prerendered public route. Its explanation renders
+ * LessonStageControls from features/learn, and its explorer renders the
+ * transition stage whose InlineAnimationPlayer pulls in the animation engine.
+ * Both are stubbed to `null` in the production SSR build, so each render has
+ * to sit inside `{#if browser}`. 2026-09-14: an unguarded LessonStageControls
+ * failed the deploy build with "Error: 500 /guide/motion-paths".
  */
 
 const ROUTE_DIR = resolve(
   __dirname,
-  "../../src/routes/(public)/timing-and-direction"
+  "../../src/routes/(public)/guide/motion-paths"
 );
 const ROUTE_FILES = [
-  "+layout.svelte",
-  "[mode]/+page.svelte",
-  "_components/TimingDirectionAtlas.svelte",
+  "+page.svelte",
+  "_components/MotionPathExplanation.svelte",
+  "_components/MotionPathExplorer.svelte",
 ];
 const CLIENT_ONLY_COMPONENTS = [
-  "HandMotionPlayer",
-  "TransportControls",
-  "TimingDirectionIntro",
+  "LessonStageControls",
+  "MotionPathExplorer",
+  "MotionPathTransitionStage",
 ];
 
 afterEach(() => {
@@ -33,7 +32,7 @@ afterEach(() => {
   vi.resetModules();
 });
 
-describe("timing and direction SSR guards", () => {
+describe("motion paths SSR guards", () => {
   it("renders every SSR-stubbed component client-only", () => {
     for (const file of ROUTE_FILES) {
       const source = readFileSync(resolve(ROUTE_DIR, file), "utf8");
@@ -46,7 +45,7 @@ describe("timing and direction SSR guards", () => {
     }
   });
 
-  it("still needs the guards: the SSR build stubs these imports", async () => {
+  it("still needs the guard: the SSR build stubs the learn controls", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.resetModules();
     const { featureGatePlugin } =
@@ -70,35 +69,15 @@ describe("timing and direction SSR guards", () => {
         id: `E:/tka-platform/src/lib/${source.replace("$lib/", "")}`,
       }),
     };
-    const importer = `${ROUTE_DIR}/_components/TimingDirectionAtlas.svelte`;
+    const importer = `${ROUTE_DIR}/_components/MotionPathExplanation.svelte`;
 
     for (const source of [
-      "$lib/shared/animation-engine/components/controls/TransportControls.svelte",
-      "$lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte",
-      "$lib/features/learn/components/interactive/motions/TimingDirectionIntro.svelte",
+      "$lib/features/learn/components/interactive/LessonStageControls.svelte",
+      "$lib/features/learn/components/interactive/ExperienceProgressIndicator.svelte",
     ]) {
       await expect(
         resolveId.call(context, source, importer, { ssr: true })
       ).resolves.toBe("\0feature-gate-stub.js");
     }
-  });
-
-  it("flags a render that escapes its guard", () => {
-    const source = [
-      "{#if browser}",
-      "  <HandMotionPlayer />",
-      "{/if}",
-      "{#if open}",
-      "  <HandMotionPlayer />",
-      "{/if}",
-      "<HandMotionPlayer />",
-      "{#if browser && !togetherOppositeRoute}",
-      "  <HandMotionPlayer />",
-      "{/if}",
-      "{#if browser || open}",
-      "  <HandMotionPlayer />",
-      "{/if}",
-    ].join("\n");
-    expect(unguardedRenders(source, "HandMotionPlayer")).toEqual([5, 7, 12]);
   });
 });

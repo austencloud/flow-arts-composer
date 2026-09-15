@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { browser } from "$app/environment";
   import { onDestroy, onMount } from "svelte";
   import { cubicInOut } from "svelte/easing";
   import { fade } from "svelte/transition";
@@ -451,13 +452,18 @@
     </svg>
   </div>
 
-  <LessonStageControls
-    label={isFinal ? "Start again" : "Next"}
-    currentStep={stage + 1}
-    totalSteps={STAGES.length}
-    progressAppearance="steps"
-    onAction={advance}
-  />
+  <!-- The production SSR build stubs every features/learn component to null,
+       so the controls only render in the browser; the explanation itself still
+       prerenders. -->
+  {#if browser}
+    <LessonStageControls
+      label={isFinal ? "Start again" : "Next"}
+      currentStep={stage + 1}
+      totalSteps={STAGES.length}
+      progressAppearance="steps"
+      onAction={advance}
+    />
+  {/if}
 </section>
 
 <style>

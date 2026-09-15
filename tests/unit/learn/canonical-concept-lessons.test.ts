@@ -193,16 +193,19 @@ describe("canonical concept lesson composition", () => {
     // for one branch.
     expect(handPlayer).toContain("neutralMarkers");
     expect(handPlayer).toMatch(
-      /leftPropType=\{neutralMarkers \? "[^"]+" : "hand"\}/
+      /leftPropType=\{neutralMarkers\s*\?\s*"[^"]+"[\s\S]*?:\s*"hand"\}/
     );
     expect(handPlayer).toMatch(
-      /rightPropType=\{neutralMarkers \? "[^"]+" : "hand"\}/
+      /rightPropType=\{neutralMarkers\s*\?\s*"[^"]+"[\s\S]*?:\s*"hand"\}/
     );
     expect(handPlayer).toContain("hideTkaGlyph");
     expect(handPlayer).toContain("elementalGlyph: showElementalGlyph");
     expect(handPlayer).toContain("{onStepChange}");
     expect(handPlayer).toContain("{onSeekRef}");
-    expect(inlinePlayer).toContain("publishSeek(handleSeek)");
+    // The player hands its seek to whichever ref the lesson supplied, and
+    // clears the previous ref when that prop changes.
+    expect(inlinePlayer).toContain("publishedSeekRef = nextSeekRef;");
+    expect(inlinePlayer).toContain("nextSeekRef?.(handleSeek);");
     expect(timingBoard).toContain("createLayoutMotion");
     expect(timingBoard).toContain("ChoreoCard");
     expect(timingBoard).toContain("handPathMode");

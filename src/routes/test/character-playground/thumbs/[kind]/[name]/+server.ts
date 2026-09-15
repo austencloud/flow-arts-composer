@@ -40,7 +40,7 @@ export const GET: RequestHandler = async ({
     error(404, "Not found");
   if (!Object.hasOwn(allowed, params.kind)) error(404, "Not found");
   const kind = params.kind as keyof typeof allowed;
-  const names = allowed[kind];
+  const names: ReadonlySet<string> = allowed[kind];
   if (!names || !params.name || !names.has(params.name))
     error(404, "Not found");
   try {

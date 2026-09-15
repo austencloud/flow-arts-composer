@@ -190,18 +190,24 @@ describe("staff grip contact contract", () => {
       'import { resolvePerformerUpperBodyStance } from "../domain/performer-upper-body-stance"'
     );
     expect(viewerScene).toContain("resolvePerformerUpperBodyStance(performer)");
+    // An authored stance (the isolation study) may override the planned one,
+    // so the render props read the resolved `renderedUpperBodyStance`, which
+    // falls back to the shared owner's result.
     expect(liveSequencePerformer).toContain(
-      "stanceYaw={upperBodyStance.yawRad}"
+      "props.authoredUpperBodyStance ?? {"
     );
     expect(liveSequencePerformer).toContain(
-      "stanceSegments={upperBodyStance.segments}"
+      "stanceYaw={renderedUpperBodyStance.yawRad}"
+    );
+    expect(liveSequencePerformer).toContain(
+      "stanceSegments={renderedUpperBodyStance.segments ?? null}"
     );
     expect(viewerScene).toContain("stanceSegments={upperBodyStance.segments}");
     expect(liveSequencePerformer).toContain(
-      "spinePitchOffset={upperBodyStance.pitchRad}"
+      "spinePitchOffset={renderedUpperBodyStance.pitchRad ?? 0}"
     );
     expect(liveSequencePerformer).toContain(
-      "redHandDepthOffset={upperBodyStance.rightDepthOffsetM}"
+      ": upperBodyStance.rightDepthOffsetM}"
     );
   });
 

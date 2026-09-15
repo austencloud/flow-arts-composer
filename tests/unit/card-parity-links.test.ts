@@ -19,7 +19,12 @@ describe("card parity QR links open the steps on the card", () => {
       const { url } = generateViewerURL(sequence as unknown as SequenceData, {
         compress: true,
       });
-      expect(DEMO_SEQUENCE_LINKS[count]).toBe(`${APP_DOMAIN}${url}`);
+      // The encoder prefixes the current origin (jsdom's localhost here); the
+      // printed card carries the production domain in front of the same path.
+      const { pathname, search } = new URL(url, window.location.origin);
+      expect(DEMO_SEQUENCE_LINKS[count]).toBe(
+        `${APP_DOMAIN}${pathname}${search}`
+      );
     });
   }
 });

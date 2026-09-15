@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { HandSide } from "../../../shared/domain/enums/pictograph-enums";
 import { applyMotionColorToSvg } from "$lib/shared/utils/svg-color-utils";
@@ -7,11 +8,10 @@ import { applyHandColorOverride } from "../prop-preview-color";
 // The same bundled artwork propSvgLoader serves, already carrying the default
 // hand color the loader paints on (right = #ED1C24). The override must replace
 // that paint, not just add another rule after it.
+// Resolved from the repo root: under the jsdom project `import.meta.url` is an
+// http URL, so a file-relative `new URL()` cannot reach the static asset.
 const staffSvg = readFileSync(
-  new URL(
-    "../../../../../../../static/images/props/pictograph/staff.svg",
-    import.meta.url
-  ),
+  resolve("static/images/props/pictograph/staff.svg"),
   "utf8"
 );
 const loaderColoredRight = applyMotionColorToSvg(staffSvg, HandSide.RIGHT);
@@ -51,10 +51,7 @@ describe("applyHandColorOverride", () => {
 
   it("recolors a selective prop's hand paint without touching its neutral materials", () => {
     const torchSvg = readFileSync(
-      new URL(
-        "../../../../../../../static/images/props/pictograph/torch.svg",
-        import.meta.url
-      ),
+      resolve("static/images/props/pictograph/torch.svg"),
       "utf8"
     );
     const loaderTorch = applyMotionColorToSvg(torchSvg, HandSide.RIGHT, {

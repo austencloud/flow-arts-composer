@@ -200,8 +200,10 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(splitPane).toContain(
       "<PanelGroup\n    direction={panelLayout.direction}"
     );
-    expect(splitPane).toContain(
-      '{ id: "animation", content: animationPanel, resizable: false }'
+    // The animation panel becomes resizable when the Side by Side divider is
+    // on; the preview panel stays fixed.
+    expect(splitPane).toMatch(
+      /id: "animation",\s*content: animationPanel,\s*resizable: splitResizable,/
     );
     expect(splitPane).toContain("content: previewPanel");
   });
