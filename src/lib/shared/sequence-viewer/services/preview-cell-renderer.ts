@@ -69,6 +69,8 @@ export interface PreviewCellRenderOptions {
 
   /** Show elemental glyph (paired with TnD, same corner) */
   showElemental?: boolean;
+  /** Show the prop timing-and-direction element (top-right, dashed ring). Default: false. */
+  showPropTnD?: boolean;
 
   /** Show start/end position letters (alpha/beta/gamma labels) */
   showPositions?: boolean;

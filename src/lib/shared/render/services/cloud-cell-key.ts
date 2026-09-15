@@ -31,6 +31,7 @@ export const CANONICAL_CARD_VISIBILITY = {
   showReversals: true,
   showTnD: false,
   showElemental: false,
+  showPropTnD: false,
   showPositions: false,
   showHandColorKey: true,
   showLeftMotion: true,
