@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
+  import { fade } from "svelte/transition";
+  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { DURATION } from "$lib/shared/transitions/transitions";
   import { browser } from "$app/environment";
   import MotionPathTransitionStage from "./MotionPathTransitionStage.svelte";
   import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
@@ -40,6 +43,16 @@
   const matrixTipDx = shapeMatrixTipPoint(PropType.STAFF)?.dx;
   setAnimationVisibilityContext(explorer.scope.visibility);
   let pickerOpen = $state(false);
+  // The intro just taught paths, so paths are the first control here. The
+  // shape selection stays one click away and remains open once revealed.
+  let shapesOpen = $state(false);
+  let shapePickerHeading = $state<HTMLHeadingElement | null>(null);
+
+  async function revealShapes(): Promise<void> {
+    shapesOpen = true;
+    await tick();
+    shapePickerHeading?.focus();
+  }
   let ready = $state(false);
   let playerFailed = $state(false);
   let matrixData = $state<ShapeMatrixData | null>(null);
@@ -148,78 +161,7 @@
 </script>
 
 <section class="explorer" aria-label="Motion path comparison">
-  <div class="explorer-workspace">
-    <section class="shape-picker" aria-labelledby="shape-picker-title">
-      <div class="source-controls">
-        <div class="picker-heading">
-          <h3 id="shape-picker-title">Sequence</h3>
-          <PanelButton onclick={() => (pickerOpen = true)}
-            >Browse sequences</PanelButton
-          >
-        </div>
-
-        <div class="relationship-picker">
-          <span class="control-label">Timing and direction</span>
-          <ElementChipRow
-            selected={explorer.selectedMode}
-            columns={3}
-            compact
-            onpick={(mode) =>
-              explorer.chooseHandRelationship(mode, buildMatrixSequence)}
-          />
-        </div>
-
-        <div class="turn-picker">
-          <TurnNotationControls
-            {leftTurn}
-            {rightTurn}
-            {labelMode}
-            onturn={chooseTurn}
-            onlabelmodechange={(value) => (labelMode = value)}
-          />
-        </div>
-      </div>
-      <div class="matrix-stage" aria-busy={!matrixData && !matrixError}>
-        {#if matrixError}
-          <div class="matrix-status error" role="alert">
-            <p>{matrixError}</p>
-            <PanelButton onclick={() => void loadMatrix()}
-              >Try again</PanelButton
-            >
-          </div>
-        {:else if !matrixData}
-          <p class="matrix-status" role="status">Building the Shape Matrix…</p>
-        {:else}
-          <ShapeMatrixGrid
-            data={previewMatrix}
-            {rowAxis}
-            {colAxis}
-            maxCellPx={108}
-            selectedPair={explorer.selectedPair}
-            onselect={(pair) =>
-              explorer.chooseMatrixPair(pair, buildMatrixSequence)}
-          />
-        {/if}
-      </div>
-
-      <div class="picker-feedback" aria-live="polite">
-        {#if explorer.pickerStatus === "loading"}
-          <span>Building that sequence…</span>
-        {:else if explorer.pickerError}
-          <span role="alert">{explorer.pickerError}</span>
-          <PanelButton onclick={explorer.retryMatrixSelection}
-            >Try again</PanelButton
-          >
-        {:else}
-          <span
-            >{explorer.selectedPair
-              ? "Change the motion path to compare these shapes."
-              : "Pick a cell to animate its shapes."}</span
-          >
-        {/if}
-      </div>
-    </section>
-
+  <div class="explorer-workspace" class:shapes-open={shapesOpen}>
     <div class="comparison">
       <div class="motion-column">
         <div class="transport">
@@ -287,6 +229,16 @@
               />
             {/if}
           </div>
+          {#if !shapesOpen}
+            <div
+              class="reveal-shapes"
+              out:fade={{ duration: motionDuration(DURATION.fast) }}
+            >
+              <PanelButton onclick={() => void revealShapes()}
+                >Change the shapes</PanelButton
+              >
+            </div>
+          {/if}
         </div>
       </div>
 
@@ -324,6 +276,90 @@
         </div>
       </div>
     </div>
+    {#if shapesOpen}
+      <section
+        class="shape-picker"
+        aria-labelledby="shape-picker-title"
+        in:fade={{ duration: motionDuration(DURATION.normal) }}
+      >
+        <div class="source-controls">
+          <div class="picker-heading">
+            <h3
+              id="shape-picker-title"
+              tabindex="-1"
+              bind:this={shapePickerHeading}
+            >
+              Sequence
+            </h3>
+            <PanelButton onclick={() => (pickerOpen = true)}
+              >Browse sequences</PanelButton
+            >
+          </div>
+
+          <div class="relationship-picker">
+            <span class="control-label">Timing and direction</span>
+            <ElementChipRow
+              selected={explorer.selectedMode}
+              columns={3}
+              compact
+              onpick={(mode) =>
+                explorer.chooseHandRelationship(mode, buildMatrixSequence)}
+            />
+          </div>
+
+          <div class="turn-picker">
+            <TurnNotationControls
+              {leftTurn}
+              {rightTurn}
+              {labelMode}
+              onturn={chooseTurn}
+              onlabelmodechange={(value) => (labelMode = value)}
+            />
+          </div>
+        </div>
+        <div class="matrix-stage" aria-busy={!matrixData && !matrixError}>
+          {#if matrixError}
+            <div class="matrix-status error" role="alert">
+              <p>{matrixError}</p>
+              <PanelButton onclick={() => void loadMatrix()}
+                >Try again</PanelButton
+              >
+            </div>
+          {:else if !matrixData}
+            <p class="matrix-status" role="status">
+              Building the Shape Matrix…
+            </p>
+          {:else}
+            <ShapeMatrixGrid
+              data={previewMatrix}
+              {rowAxis}
+              {colAxis}
+              maxCellPx={108}
+              selectedPair={explorer.selectedPair}
+              onselect={(pair) =>
+                explorer.chooseMatrixPair(pair, buildMatrixSequence)}
+            />
+          {/if}
+        </div>
+
+        <div class="picker-feedback" aria-live="polite">
+          {#if explorer.pickerStatus === "loading"}
+            <span>Building that sequence…</span>
+          {:else if explorer.pickerError}
+            <span role="alert">{explorer.pickerError}</span>
+            <PanelButton onclick={explorer.retryMatrixSelection}
+              >Try again</PanelButton
+            >
+          {:else}
+            <span
+              >{explorer.selectedPair
+                ? "Change the motion path to compare these shapes."
+                : "Pick a cell to animate its shapes."}</span
+            >
+          {/if}
+        </div>
+      </section>
+    {/if}
   </div>
 </section>
 
@@ -469,6 +505,16 @@
   .transport {
     margin-bottom: var(--spacing-sm, 8px);
   }
+  .reveal-shapes {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--spacing-md, 16px);
+  }
+  .picker-heading h3:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
   .path-column :global(.path-header) {
     align-items: center;
     min-height: 44px;
@@ -521,12 +567,16 @@
   }
   @container (min-width: 1100px) {
     .explorer-workspace {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    }
+    .explorer-workspace.shapes-open {
       grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.4fr) minmax(0, 1fr);
     }
     .comparison {
       display: contents;
     }
     .shape-picker {
+      order: -1;
       display: flex;
       flex-direction: column;
       gap: var(--spacing-sm, 8px);
