@@ -9,7 +9,10 @@ import {
   passCountFromStepMap,
   passNumberFromVideo,
 } from "$lib/shared/video-collaboration/utils/step-map-utils";
-import { resolveHandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+import {
+  resolveHandLabeling,
+  type HandLabeling,
+} from "$lib/shared/video-collaboration/domain/hand-labeling";
 import type { VideoPlayheadBridge } from "../../../context/video-playhead-context";
 
 export type PerformanceWorkspaceView = "browse" | "upload" | "map";
@@ -179,6 +182,11 @@ export function createPerformanceWorkspaceState(
     returnToBrowsing();
   }
 
+  async function setHandLabeling(labeling: HandLabeling): Promise<void> {
+    if (!selectedVideo) return;
+    await store.applyHandLabeling(selectedVideo.id, labeling);
+  }
+
   function requestDelete(videoId: string): void {
     deleteError = "";
     pendingDeleteId = videoId;
@@ -250,6 +258,7 @@ export function createPerformanceWorkspaceState(
     returnToBrowsing,
     handleUploaded,
     saveStepMap,
+    setHandLabeling,
     requestDelete,
     cancelDelete,
     confirmDelete,
