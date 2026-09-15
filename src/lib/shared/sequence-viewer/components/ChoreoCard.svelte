@@ -37,6 +37,9 @@
   import { getScanCardCloudProbe } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
   import { CANONICAL_CARD_VISIBILITY } from "$lib/shared/render/services/cloud-cell-key";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+  import { handLegendFor } from "../services/hand-legend";
+  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
 
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
@@ -105,6 +108,12 @@
     /** Plain-text artifact title for cards whose identity is not a TKA word. */
     customTitleText?: string;
     customNotesText?: string;
+    /**
+     * Set only beside performance footage. Draws the "which color is your
+     * right hand" line in the footer. The caller is responsible for passing
+     * the matching (mirrored and swapped, or canonical) sequence.
+     */
+    handLabeling?: HandLabeling | null;
     // Prop overrides
     leftPropType?: PropType;
     rightPropType?: PropType;
@@ -178,6 +187,7 @@
     cardAspectRatio,
     customTitleText: requestedTitleText,
     customNotesText = "Created using Flow Arts Composer",
+    handLabeling = null,
     leftPropType,
     rightPropType,
     catDogModeEnabled = false,
@@ -341,7 +351,16 @@
   );
   const showHeader = $derived(displayState.showHeader);
   const hasPathShapeMetadata = $derived(displayState.hasPathShapeMetadata);
-  const showFooter = $derived(displayState.showFooter);
+  const handLegend = $derived(
+    handLabeling
+      ? handLegendFor(
+          handLabeling,
+          primaryPropColors?.right ??
+            getMotionColor(HandSide.RIGHT, activeDarkMode ? "dark" : "light")
+        )
+      : null
+  );
+  const showFooter = $derived(displayState.showFooter || handLegend !== null);
 
   // Observe composition manager so per-step-count settings (start position
   // layout, column overrides) trigger layout re-derivation.
@@ -1045,6 +1064,7 @@
         {footerFontSize}
         {footerMargin}
         {activeDarkMode}
+        {handLegend}
       />
     </div>
   {/if}
