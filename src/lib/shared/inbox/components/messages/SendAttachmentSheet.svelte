@@ -1153,7 +1153,9 @@
   */
   @container (min-width: 42rem) {
     .send-attachment-sheet {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+      /* The recipient list needs a conversation's width and no more; every
+         extra pixel goes to the card. */
+      grid-template-columns: minmax(0, 1fr) clamp(20rem, 38%, 26rem);
       /* Card, note, send, then whatever is left. The recipients column spans
          every row, so the slack lands under the send button instead of
          between it and the card. */
@@ -1172,7 +1174,9 @@
     }
 
     .preview-thumbnail {
-      --preview-cap: 65dvh;
+      /* Whatever height the header, note, and Send do not need. 18rem is
+         their combined height with the sheet's padding and gaps. */
+      --preview-cap: max(14rem, calc(100dvh - 18rem));
     }
 
     .message-section {
