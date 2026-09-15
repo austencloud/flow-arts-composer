@@ -7,10 +7,14 @@
   import { getViewerTunnelStageContext } from "../context/viewer-tunnel-stage-context";
   import { getViewerStudioSurfaces } from "../context/viewer-studio-surfaces-context";
   import { reparentToInspector } from "./reparent-to-inspector";
+  import { sequenceForHandLabeling } from "../services/hand-labeled-sequence";
+  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+  import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
   let {
     side,
     sequence,
+    activeHandLabeling = null,
     playback,
     imageComposition,
     propRendering,
@@ -46,6 +50,29 @@
     tunnelSaveTarget = null,
     onTunnelSaved,
   }: ViewerCompanionSurfaceProps = $props();
+
+  /**
+   * Beside performance footage the card draws the sequence the viewer should
+   * copy, not the stored one. Resolved asynchronously; until it lands the card
+   * keeps its previous sequence so the swap never flashes a blank.
+   */
+  let labeledSequence = $state<SequenceData | null>(null);
+  $effect(() => {
+    const source = sequence;
+    const labeling = activeHandLabeling;
+    if (!labeling) {
+      labeledSequence = null;
+      return;
+    }
+    let cancelled = false;
+    void sequenceForHandLabeling(source, labeling).then((resolved) => {
+      if (!cancelled) labeledSequence = resolved;
+    });
+    return () => {
+      cancelled = true;
+    };
+  });
+  const cardSequence = $derived(labeledSequence ?? sequence);
 
   const selectedPane = $derived(
     side === "left" ? splitConfig.leftPane : splitConfig.rightPane
@@ -109,7 +136,8 @@
       }}
     >
       <ChoreoCard
-        sequence={studioCard?.sequence ?? sequence}
+        sequence={studioCard?.sequence ?? cardSequence}
+        handLabeling={studioCard ? null : activeHandLabeling}
         customTitleText={sequence.sequenceKind === "hand-path"
           ? sequence.displayName || sequence.name
           : undefined}

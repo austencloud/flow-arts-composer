@@ -3,6 +3,7 @@ import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-typ
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
 import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 import type { ArtExportEventSink } from "../domain/art-export-analytics";
 import type { MandalaViewerController } from "../state/mandala-viewer-controller.svelte";
 import type { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
@@ -28,6 +29,8 @@ export type ViewerPaneSide = "left" | "right";
 
 export interface ViewerSplitPaneProps {
   sequence: SequenceData;
+  /** Null unless performance footage is on screen. */
+  activeHandLabeling?: HandLabeling | null;
   playback: ViewerPlaybackState;
   imageComposition: ImageCompositionProps;
   propRendering: PropRenderingProps;
@@ -145,6 +148,8 @@ export interface ViewerMotionSurfaceProps {
 export interface ViewerCompanionSurfaceProps {
   side: ViewerPaneSide;
   sequence: SequenceData;
+  /** Null unless performance footage is on screen. */
+  activeHandLabeling?: HandLabeling | null;
   playback: ViewerPlaybackState;
   imageComposition: ImageCompositionProps;
   propRendering: PropRenderingProps;

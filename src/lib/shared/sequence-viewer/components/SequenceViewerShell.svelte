@@ -1010,6 +1010,7 @@
                     >
                       <ViewerSplitPane
                         sequence={ctx.effectiveSequence}
+                        activeHandLabeling={ctx.activeHandLabeling}
                         {tunnelComposition}
                         {tunnelSaveTarget}
                         {onTunnelSaved}
