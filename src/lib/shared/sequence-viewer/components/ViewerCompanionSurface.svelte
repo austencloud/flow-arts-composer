@@ -54,19 +54,29 @@
   /**
    * Beside performance footage the card draws the sequence the viewer should
    * copy, not the stored one. Resolved asynchronously; until it lands the card
-   * keeps its previous sequence so the swap never flashes a blank.
+   * keeps its previous sequence so a pure labeling flip on the same source
+   * never flashes a blank. A change of source, though, invalidates the held
+   * value immediately - it was derived from the old sequence and would
+   * otherwise draw the wrong one until the new resolve lands.
    */
   let labeledSequence = $state<SequenceData | null>(null);
+  let labeledSource: SequenceData | null = null;
   $effect(() => {
     const source = sequence;
     const labeling = activeHandLabeling;
     if (!labeling) {
       labeledSequence = null;
+      labeledSource = null;
       return;
+    }
+    if (labeledSource !== source) {
+      labeledSequence = null;
     }
     let cancelled = false;
     void sequenceForHandLabeling(source, labeling).then((resolved) => {
-      if (!cancelled) labeledSequence = resolved;
+      if (cancelled) return;
+      labeledSequence = resolved;
+      labeledSource = source;
     });
     return () => {
       cancelled = true;
@@ -137,7 +147,9 @@
     >
       <ChoreoCard
         sequence={studioCard?.sequence ?? cardSequence}
-        handLabeling={studioCard ? null : activeHandLabeling}
+        handLabeling={studioCard || labeledSequence === null
+          ? null
+          : activeHandLabeling}
         customTitleText={sequence.sequenceKind === "hand-path"
           ? sequence.displayName || sequence.name
           : undefined}

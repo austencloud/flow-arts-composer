@@ -93,13 +93,21 @@ export function createPerformanceWorkspaceState(
 
   $effect(() => {
     const map = activeMap;
+    dependencies.playhead?.attach(map ?? null);
+    playerTime = 0;
+    return () => dependencies.playhead?.attach(null);
+  });
+
+  // Separate from the attach effect above: re-attaching resets the playhead
+  // (map, time, playback source), so a labeling-only change - such as
+  // toggling "Mirror me" on a paused video - must not re-run attach.
+  $effect(() => {
     const labeling =
       inputs.getActive() && view === "browse" && selectedVideo
         ? resolveHandLabeling(selectedVideo)
         : null;
-    dependencies.playhead?.attach(map ?? null, labeling);
-    playerTime = 0;
-    return () => dependencies.playhead?.attach(null, null);
+    dependencies.playhead?.setHandLabeling(labeling);
+    return () => dependencies.playhead?.setHandLabeling(null);
   });
 
   $effect(() => {

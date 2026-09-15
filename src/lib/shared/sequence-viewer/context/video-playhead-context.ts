@@ -24,10 +24,16 @@ const KEY = Symbol("sequence-viewer-video-playhead");
 
 export interface VideoPlayheadBridge {
   /**
-   * The performance on screen changed. `map` is null when it carries no
-   * timing; `handLabeling` is null when no performance is on screen at all.
+   * The performance on screen changed. Null when it carries no timing.
    */
-  attach(map: StepMap | null, handLabeling: HandLabeling | null): void;
+  attach(map: StepMap | null): void;
+  /**
+   * The active performance's hand labeling changed independently of `attach`.
+   * Re-running `attach` resets the playhead (map, time, playback source), so
+   * a labeling-only change - like toggling "Mirror me" on a paused video -
+   * must not go through it. Null when no performance is on screen at all.
+   */
+  setHandLabeling(labeling: HandLabeling | null): void;
   /** The footage moved. */
   reportTime(seconds: number): void;
   /** The player a step click should drive. Null when none is mounted. */
@@ -54,7 +60,7 @@ export function createVideoPlayheadBridge(
   let time = 0;
 
   return {
-    attach(next, handLabeling) {
+    attach(next) {
       // A video without timing cannot drive anything, so it hands the playhead
       // back to the animation rather than freezing the notation on whatever
       // step the previous one left behind.
@@ -62,8 +68,10 @@ export function createVideoPlayheadBridge(
       map = usable;
       time = 0;
       host.setActiveStepMap(usable);
-      host.setActiveHandLabeling(handLabeling);
       host.setPlaybackSource(usable ? "video" : "animation");
+    },
+    setHandLabeling(labeling) {
+      host.setActiveHandLabeling(labeling);
     },
     reportTime(seconds) {
       time = seconds;
