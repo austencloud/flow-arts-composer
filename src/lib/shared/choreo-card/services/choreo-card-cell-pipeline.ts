@@ -62,7 +62,7 @@ export function getPreviewCacheKey(
   const resolvedLeft = opts.leftPropType ?? settings.leftPropType ?? "staff";
   const resolvedRight = opts.rightPropType ?? settings.rightPropType ?? "staff";
   const mv = `${opts.showLeftMotion === false ? "B0" : "B1"}${opts.showRightMotion === false ? "R0" : "R1"}`;
-  const gv = `${opts.showTnD ? "V1" : "V0"}${opts.showElemental ? "E1" : "E0"}${opts.showPositions ? "P1" : "P0"}${opts.showGrid === false ? "G0" : "G1"}${opts.showHandColorKey === false ? "K0" : "K1"}`;
+  const gv = `${opts.showTnD ? "V1" : "V0"}${opts.showElemental ? "E1" : "E0"}${opts.showPositions ? "P1" : "P0"}${opts.showGrid === false ? "G0" : "G1"}${opts.showHandColorKey === false ? "K0" : "K1"}${opts.showPropTnD ? "T1" : "T0"}`;
   // includeStartPosition changes the cell layout (start cell present + reserved
   // row/col vs. tightly-packed steps) AND the row/column counts. It MUST be in
   // the key: the global preview cache is shared across every ChoreoCard, so a
@@ -203,6 +203,7 @@ export function buildRenderOptions(params: {
   showReversals: boolean;
   showTnD: boolean;
   showElemental: boolean;
+  showPropTnD?: boolean;
   showPositions: boolean;
   showHandColorKey?: boolean;
   isSoloMode: boolean;
@@ -229,6 +230,7 @@ export function buildRenderOptions(params: {
     showReversals: params.isSoloMode ? false : params.showReversals,
     showTnD: params.isSoloMode ? false : params.showTnD,
     showElemental: params.isSoloMode ? false : params.showElemental,
+    showPropTnD: params.isSoloMode ? false : (params.showPropTnD ?? false),
     showPositions: params.isSoloMode ? false : params.showPositions,
     showHandColorKey: params.isSoloMode
       ? false

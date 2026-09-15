@@ -19,6 +19,7 @@ export const CANONICAL_DECK_CARD_PROFILE = Object.freeze({
   showReversals: true,
   showPositions: false,
   showTnD: false,
+  showPropTnD: false,
   showHandColorKey: true,
   // Composition flags that are always-on for deck cards
   addWord: true,
@@ -40,6 +41,7 @@ export interface CanonicalCardVisibility {
     | "showReversals"
     | "showPositions"
     | "showTnD"
+    | "showPropTnD"
     | "showHandColorKey"
     | "showElemental"
     | "showQRCode"
@@ -69,6 +71,7 @@ export function buildCanonicalCardVisibility(args: {
       showReversals: CANONICAL_DECK_CARD_PROFILE.showReversals,
       showPositions: CANONICAL_DECK_CARD_PROFILE.showPositions,
       showTnD: CANONICAL_DECK_CARD_PROFILE.showTnD,
+      showPropTnD: CANONICAL_DECK_CARD_PROFILE.showPropTnD,
       showHandColorKey: CANONICAL_DECK_CARD_PROFILE.showHandColorKey,
       showElemental: args.tndElement != null,
       showQRCode: CANONICAL_DECK_CARD_PROFILE.showQRCode,

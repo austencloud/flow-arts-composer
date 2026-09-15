@@ -54,6 +54,7 @@ interface PictographKeyInput {
     showTKA: boolean;
     showTnD: boolean;
     showElemental: boolean;
+    showPropTnD?: boolean;
     showPositions: boolean;
     showHandColorKey: boolean;
     showReversals: boolean;
@@ -304,6 +305,8 @@ export class PictographKeyHasher {
         showTKA: visibility.showTKA ?? true,
         showTnD: visibility.showTnD ?? false,
         showElemental: visibility.showElemental ?? false,
+        // Optional so established keys keep hashing byte-identically when OFF.
+        ...(visibility.showPropTnD ? { showPropTnD: true } : {}),
         showPositions: visibility.showPositions ?? false,
         showHandColorKey: visibility.showHandColorKey ?? true,
         showReversals: visibility.showReversals ?? true,

@@ -130,6 +130,12 @@ export function registerPictographTools(server: McpServer): void {
         .describe(
           "Render as a start position: adds the L/R hand colour key in the bottom band"
         ),
+      showPropTnD: z
+        .boolean()
+        .optional()
+        .describe(
+          "Override: show the prop timing & direction element (top-right, dashed spin ring)"
+        ),
       showGrid: z.boolean().optional().describe("Override: show grid"),
       showNonRadialPoints: z
         .boolean()
@@ -236,6 +242,7 @@ export function registerPictographTools(server: McpServer): void {
           showPositions: prefs.showPositions,
           showReversals: prefs.showReversals,
           showHandColorKey: overrides.showHandColorKey,
+          showPropTnD: overrides.showPropTnD,
           showGrid: prefs.showGrid,
           showNonRadialPoints: prefs.showNonRadialPoints,
           showLeftMotion: prefs.showLeftMotion,
@@ -343,6 +350,12 @@ export function registerPictographTools(server: McpServer): void {
         .describe(
           "Render as a start position: adds the L/R hand colour key in the bottom band"
         ),
+      showPropTnD: z
+        .boolean()
+        .optional()
+        .describe(
+          "Override: show the prop timing & direction element (top-right, dashed spin ring)"
+        ),
       showGrid: z.boolean().optional().describe("Override: show grid"),
       showNonRadialPoints: z
         .boolean()
@@ -441,6 +454,7 @@ export function registerPictographTools(server: McpServer): void {
           showPositions: prefs.showPositions,
           showReversals: prefs.showReversals,
           showHandColorKey: overrides.showHandColorKey,
+          showPropTnD: overrides.showPropTnD,
           showGrid: prefs.showGrid,
           showNonRadialPoints: prefs.showNonRadialPoints,
           showLeftMotion: prefs.showLeftMotion,
