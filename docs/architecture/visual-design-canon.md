@@ -170,6 +170,10 @@ that is hidden or absent drops out of the key; the remaining pair recentres.
 The key is on by default and is the `Hand key` chip in the export panel's
 Pictograph row (`handColorKey` in the visibility manager, `showHandColorKey`
 in the render and export options); locked deck cards always keep it.
+Live card cells pass `animateVisibility`, so every in-cell overlay (both grid
+layers, non-radial points, TKA, TnD, Positions, hand key) stays mounted and
+fades through its opacity transition when toggled; exports omit the flag and
+still hard-unmount hidden overlays.
 
 ## 6. Controls and Selection
 

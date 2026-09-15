@@ -15,6 +15,7 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     rotationOverride = null,
     showNonRadialPoints = false,
     previewMode = false,
+    animateVisibility = false,
     visible = true,
     onLoaded,
     onError,
@@ -34,6 +35,8 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     showNonRadialPoints?: boolean;
     /** Preview mode: show "off" elements at 40% opacity instead of hidden */
     previewMode?: boolean;
+    /** Live DOM only: non-radial points fade via CSS instead of a rebuilt SVG string */
+    animateVisibility?: boolean;
     /** Visibility control for fade effect */
     visible?: boolean;
     /** Called when grid is successfully loaded */
@@ -140,7 +143,8 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     const unwrappedSvg = stripSvgWrapper(baseGridSvg);
     // In preview mode, always pass false for showNonRadial since CSS classes handle visibility
     // This prevents SVG re-rendering when toggling, allowing CSS transitions to work
-    const effectiveShowNonRadial = previewMode ? false : showNonRadialPoints;
+    const effectiveShowNonRadial =
+      previewMode || animateVisibility ? false : showNonRadialPoints;
     // In preview mode, always use "active" mode to add classes, but CSS controls actual visibility
     // This prevents re-rendering when toggling hand points, allowing CSS transitions
     const effectiveHandPointMode = previewMode ? "active" : handPointVisibility;
@@ -151,7 +155,8 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
       previewMode,
       darkMode,
       effectiveHandPointMode,
-      activeLocations
+      activeLocations,
+      animateVisibility
     );
   });
 
@@ -180,7 +185,8 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
     isPreviewMode: boolean,
     exportDarkMode?: boolean,
     handPointMode: "all" | "active" | "none" = "all",
-    activeHandLocations?: GridLocation[]
+    activeHandLocations?: GridLocation[],
+    cssNonRadial = false
   ): string {
     // SKEWED mode: minimal processing - CSS handles everything
     // The skewed_grid.svg has different structure (both diamond and box points)
@@ -328,6 +334,14 @@ Pure reactive approach - grid mode determines styling, rotation provides animati
           // Remove any existing opacity and fill attributes
           let cleaned = opening.replace(/\s*opacity="[^"]*"/g, "");
           cleaned = cleaned.replace(/\s*fill="[^"]*"/g, "");
+
+          // Live DOM with animated visibility: leave opacity to the
+          // .show-non-radial CSS rule so the points fade instead of popping.
+          if (cssNonRadial) {
+            return shouldInlineColors
+              ? `${cleaned} fill="${gridColor}"${closing}`
+              : `${cleaned}${closing}`;
+          }
 
           // When exporting, inline fill color (CSS class won't work in exported SVG)
           if (shouldInlineColors) {
