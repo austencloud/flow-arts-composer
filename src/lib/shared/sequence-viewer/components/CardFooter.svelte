@@ -43,7 +43,7 @@
     transition:fly|local={{ y: 20, duration: 250, easing: cubicOut }}
   >
     {#if handLegend}
-      <span class="footer-hand-legend" data-hand-legend>
+      <span class="footer-hand-legend" data-hand-legend aria-label={handLegend.spoken}>
         {handLegend.lead}
         <span
           class="hand-swatch"
@@ -111,15 +111,17 @@
   }
 
   .footer-hand-legend {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 0.35em;
     font-weight: 600;
     white-space: nowrap;
+    min-width: 0;
   }
 
   .hand-swatch {
     display: inline-block;
+    flex-shrink: 0;
     width: 0.9em;
     height: 0.9em;
     border-radius: 0.2em;

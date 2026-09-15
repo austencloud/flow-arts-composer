@@ -1,8 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import {
-  createHandLabeledSequenceResolver,
-} from "./hand-labeled-sequence";
+import { createHandLabeledSequenceResolver } from "./hand-labeled-sequence";
 
 function makeSequence(id: string): SequenceData {
   return {
@@ -49,6 +47,23 @@ describe("hand labeled sequence", () => {
 
     const b = makeSequence("a"); // same id, different object
     await resolve(b, "mirror-me");
+    expect(mirror).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not cache a failed mirror, so a retry tries again", async () => {
+    const mirrored = makeSequence("mirrored");
+    const swapped = makeSequence("swapped");
+    const mirror = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("no data"))
+      .mockResolvedValue(mirrored);
+    const swap = vi.fn(() => swapped);
+    const resolve = createHandLabeledSequenceResolver({ mirror, swap });
+    const source = makeSequence("s");
+
+    await expect(resolve(source, "mirror-me")).rejects.toThrow("no data");
+
+    expect(await resolve(source, "mirror-me")).toBe(swapped);
     expect(mirror).toHaveBeenCalledTimes(2);
   });
 });

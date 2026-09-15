@@ -7,6 +7,7 @@ describe("hand legend", () => {
       lead: "Mirror me.",
       swatch: "#ED1C24",
       rest: "is your right hand.",
+      spoken: "Mirror me. The color on your right is your right hand.",
     });
   });
 
@@ -15,6 +16,7 @@ describe("hand legend", () => {
       lead: "As performed.",
       swatch: "#DC2626",
       rest: "is my right hand, on your left.",
+      spoken: "As performed. The performer's right hand appears on your left.",
     });
   });
 });

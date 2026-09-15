@@ -5,6 +5,8 @@ export interface HandLegend {
   lead: string;
   swatch: string;
   rest: string;
+  /** Screen-reader text for the line, spelling out what the swatch means. */
+  spoken: string;
 }
 
 /**
@@ -22,11 +24,13 @@ export function handLegendFor(
       lead: "Mirror me.",
       swatch: rightHandColor,
       rest: "is your right hand.",
+      spoken: "Mirror me. The color on your right is your right hand.",
     };
   }
   return {
     lead: "As performed.",
     swatch: rightHandColor,
     rest: "is my right hand, on your left.",
+    spoken: "As performed. The performer's right hand appears on your left.",
   };
 }

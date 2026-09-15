@@ -351,16 +351,6 @@
   );
   const showHeader = $derived(displayState.showHeader);
   const hasPathShapeMetadata = $derived(displayState.hasPathShapeMetadata);
-  const handLegend = $derived(
-    handLabeling
-      ? handLegendFor(
-          handLabeling,
-          primaryPropColors?.right ??
-            getMotionColor(HandSide.RIGHT, activeDarkMode ? "dark" : "light")
-        )
-      : null
-  );
-  const showFooter = $derived(displayState.showFooter || handLegend !== null);
 
   // Observe composition manager so per-step-count settings (start position
   // layout, column overrides) trigger layout re-derivation.
@@ -428,8 +418,20 @@
   // True only under a scan-origin /sequence route — cells use the cloud cache.
   const cloudProbeEnabled = getScanCardCloudProbe();
   const effectivePrimaryPropColors = $derived(
-    cloudProbeEnabled ? null : (primaryPropColors ?? getSettings().primaryPropColors)
+    cloudProbeEnabled
+      ? null
+      : (primaryPropColors ?? getSettings().primaryPropColors)
   );
+  const handLegend = $derived(
+    handLabeling
+      ? handLegendFor(
+          handLabeling,
+          effectivePrimaryPropColors?.right ??
+            getMotionColor(HandSide.RIGHT, activeDarkMode ? "dark" : "light")
+        )
+      : null
+  );
+  const showFooter = $derived(displayState.showFooter || handLegend !== null);
 
   const qrState = createChoreoCardQrState(
     () => ({
@@ -1057,7 +1059,7 @@
       <!-- Footer section -->
       <CardFooter
         {showFooter}
-        {showNotes}
+        showNotes={showNotes && handLegend === null}
         {hasPathShapeMetadata}
         {customNotesText}
         {scaledFooterHeight}
