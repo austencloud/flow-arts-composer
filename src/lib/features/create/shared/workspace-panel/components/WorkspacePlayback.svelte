@@ -16,6 +16,7 @@
     onerror,
     onStepChange,
     onPlaybackChange,
+    onclose,
   }: {
     sequence: SequenceData;
     active: boolean;
@@ -27,6 +28,9 @@
     onerror: (run: number) => void;
     onStepChange?: (step: number) => void;
     onPlaybackChange?: (run: number, step: number, playing: boolean) => void;
+    /** Returns the workspace to the editable card. Rendered as a corner X so
+     *  the preview carries its own exit instead of relying on Stop or Escape. */
+    onclose?: () => void;
   } = $props();
 
   let currentStep = $state(0);
@@ -107,6 +111,17 @@
           }}
           onSeekRef={(callback) => (seek = callback)}
         />
+        {#if onclose}
+          <button
+            type="button"
+            class="close-preview"
+            onclick={onclose}
+            aria-label="Close preview"
+            title="Close preview"
+          >
+            <i class="fas fa-times" aria-hidden="true"></i>
+          </button>
+        {/if}
       </div>
       <div class="notation-rail" role="group" aria-label="Sequence pictographs">
         <StepStrip
@@ -154,8 +169,48 @@
     );
   }
   .player-stage {
+    position: relative;
     width: 100%;
     height: calc(100% - var(--notation-height));
+  }
+  /* Corner exit. Sits over the canvas's empty top-right, matching the quiet
+     chrome of the rest of the preview: a translucent disc that only firms up
+     on hover. */
+  .close-preview {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    /* The animator canvas is position:relative at z-index 3; sit above it or
+       taps fall through to its tap-to-pause handler. */
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--theme-text, #fff) 12%, transparent);
+    color: var(--theme-text, #fff);
+    font-size: var(--font-size-sm, 14px);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      background var(--duration-fast) ease-out,
+      opacity var(--duration-fast) ease-out;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .close-preview:hover {
+      background: color-mix(in srgb, var(--theme-text, #fff) 24%, transparent);
+    }
+  }
+  .close-preview:active {
+    opacity: 0.6;
+  }
+  .close-preview:focus-visible {
+    outline: 2px solid var(--theme-accent);
+    outline-offset: 2px;
   }
   .notation-rail {
     display: none;
