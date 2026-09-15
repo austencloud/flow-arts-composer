@@ -15,11 +15,13 @@ import {
   getVideosForSequence,
   saveVideo,
   updateStepMap,
+  updateHandLabeling,
 } from "../services/collaborative-video-manager";
 import type {
   CollaborativeVideo,
   StepMap,
 } from "../domain/collaborative-video";
+import type { HandLabeling } from "../domain/hand-labeling";
 
 /**
  * How many sequences keep a live list. A browse session moves through a lot of
@@ -41,6 +43,7 @@ export interface SequenceVideosStore {
   add(video: CollaborativeVideo): void;
   remove(videoId: string): Promise<void>;
   applyStepMap(videoId: string, stepMap: StepMap): Promise<void>;
+  applyHandLabeling(videoId: string, handLabeling: HandLabeling): Promise<void>;
 }
 
 function createStore(sequenceId: string): SequenceVideosStore {
@@ -107,6 +110,14 @@ function createStore(sequenceId: string): SequenceVideosStore {
       videos = videos.map((held) =>
         held.id === videoId
           ? { ...held, beatMap: stepMap, updatedAt: new Date() }
+          : held
+      );
+    },
+    async applyHandLabeling(videoId, handLabeling) {
+      await updateHandLabeling(videoId, handLabeling);
+      videos = videos.map((held) =>
+        held.id === videoId
+          ? { ...held, handLabeling, updatedAt: new Date() }
           : held
       );
     },

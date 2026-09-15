@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getVideosForSequence = vi.fn();
+const updateHandLabeling = vi.fn();
 
 vi.mock(
   "$lib/shared/video-collaboration/services/collaborative-video-manager",
@@ -9,6 +10,8 @@ vi.mock(
     deleteVideo: vi.fn(),
     saveVideo: vi.fn(),
     updateStepMap: vi.fn(),
+    updateHandLabeling: (id: string, labeling: string) =>
+      updateHandLabeling(id, labeling),
   })
 );
 
@@ -58,5 +61,34 @@ describe("sequence videos store", () => {
 
     expect(store.videos).toEqual([]);
     expect(store.error).toBe("");
+  });
+
+  it("applyHandLabeling persists and patches the held record", async () => {
+    updateHandLabeling.mockResolvedValue(undefined);
+    resetSequenceVideoStores();
+    const store = getSequenceVideosStore("seq-a");
+    store.add({
+      id: "v1",
+      videoUrl: "https://example.test/v1.mp4",
+      storagePath: "videos/v1.mp4",
+      duration: 10,
+      fileSize: 1,
+      mimeType: "video/mp4",
+      sequenceId: "seq-a",
+      associations: [],
+      performers: [],
+      creatorId: "u1",
+      collaborators: [],
+      pendingInvites: [],
+      visibility: "private",
+      createdAt: new Date(0),
+      updatedAt: new Date(0),
+    });
+
+    await store.applyHandLabeling("v1", "as-performed");
+
+    expect(updateHandLabeling).toHaveBeenCalledWith("v1", "as-performed");
+    expect(store.videos[0]?.handLabeling).toBe("as-performed");
+    expect(store.videos[0]?.updatedAt.getTime()).toBeGreaterThan(0);
   });
 });
