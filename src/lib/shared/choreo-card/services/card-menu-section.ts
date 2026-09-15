@@ -20,6 +20,10 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import { getCanonicalCardStepColumnCounts } from "$lib/shared/render/services/card-step-column-options";
 import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
 import { buildVisualSequenceSaveMenuItem } from "$lib/shared/library/services/visual-sequence-save-menu-item";
+import {
+  buildCardVisibilityMenuItems,
+  type CardVisibilityMenuDeps,
+} from "./card-visibility-menu";
 
 export interface CardMenuSectionDeps {
   /** Step count of the sequence — enables the columns submenu (>=4 steps). */
@@ -36,10 +40,22 @@ export interface CardMenuSectionDeps {
   sequenceForImageActions?: SequenceData;
   /** Gate for the image actions — they render only when this is true. */
   isAdmin?: boolean;
+  /** Card-composition toggles (header, QR, mandala, theme) — the twin of the
+   *  animation canvas's Visibility submenu. Listed first when provided. */
+  visibility?: CardVisibilityMenuDeps;
 }
 
 export function buildCardMenuSection(deps: CardMenuSectionDeps): ContextMenuEntry[] {
   const items: ContextMenuEntry[] = [];
+
+  if (deps.visibility) {
+    items.push({
+      id: "card-visibility-submenu",
+      label: "Visibility",
+      icon: "fa-eye",
+      children: buildCardVisibilityMenuItems(deps.visibility),
+    });
+  }
 
   if (deps.sequenceForLibrarySave) {
     items.push(

@@ -3,6 +3,7 @@
      prevents state changes from moving the sheet. -->
 <script lang="ts">
   import { onDestroy, untrack } from "svelte";
+  import { MediaQuery } from "svelte/reactivity";
   import { growFade } from "$lib/shared/transitions/motion";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import ShareSheetFrame from "./ShareSheetFrame.svelte";
@@ -232,6 +233,11 @@
   let pendingDownloadSourceKey = $state<string | null>(null);
   let animationPreviewUrl = $state<string | null>(null);
   let videoSettingsOpen = $state(false);
+  // A tall sheet has room to show the settings without a disclosure.
+  const roomySheet = new MediaQuery("(min-height: 760px)");
+  const videoSettingsExpanded = $derived(
+    videoSettingsOpen || roomySheet.current
+  );
   const videoResolutionOptions: { value: VideoResolution; label: string }[] = [
     { value: 720, label: "720p" },
     { value: 1080, label: "1080p" },
@@ -1830,26 +1836,38 @@
                     aria-label="Video settings"
                     disabled={videoBusy}
                   >
-                    <PanelButton
-                      fullWidth
-                      ariaExpanded={videoSettingsOpen}
-                      onclick={() => (videoSettingsOpen = !videoSettingsOpen)}
-                    >
-                      Video settings
-                      <span class="setting-value"
-                        >{exportOptions.videoResolution}p · {exportOptions.videoFps}
-                        fps · {exportOptions.videoLoopCount}×{is3DExport
-                          ? ` · ${exportOptions.videoQuality}`
-                          : ""}</span
+                    {#if roomySheet.current}
+                      <div class="settings-heading">
+                        Video settings
+                        <span class="setting-value"
+                          >{exportOptions.videoResolution}p · {exportOptions.videoFps}
+                          fps · {exportOptions.videoLoopCount}×{is3DExport
+                            ? ` · ${exportOptions.videoQuality}`
+                            : ""}</span
+                        >
+                      </div>
+                    {:else}
+                      <PanelButton
+                        fullWidth
+                        ariaExpanded={videoSettingsOpen}
+                        onclick={() => (videoSettingsOpen = !videoSettingsOpen)}
                       >
-                      <i
-                        class={videoSettingsOpen
-                          ? "fa-solid fa-chevron-up"
-                          : "fa-solid fa-chevron-down"}
-                        aria-hidden="true"
-                      ></i>
-                    </PanelButton>
-                    {#if videoSettingsOpen}<div
+                        Video settings
+                        <span class="setting-value"
+                          >{exportOptions.videoResolution}p · {exportOptions.videoFps}
+                          fps · {exportOptions.videoLoopCount}×{is3DExport
+                            ? ` · ${exportOptions.videoQuality}`
+                            : ""}</span
+                        >
+                        <i
+                          class={videoSettingsOpen
+                            ? "fa-solid fa-chevron-up"
+                            : "fa-solid fa-chevron-down"}
+                          aria-hidden="true"
+                        ></i>
+                      </PanelButton>
+                    {/if}
+                    {#if videoSettingsExpanded}<div
                         class="compact-settings"
                         transition:growFade={{ axis: "y" }}
                       >
@@ -2204,27 +2222,57 @@
     font-weight: 650;
     text-transform: capitalize;
   }
-  .compact-settings {
-    display: grid;
-    gap: 0.625rem;
-    padding: 0.75rem 0.25rem 0;
-  }
-  .video-setting,
-  .repeat-stepper {
+  .settings-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
     min-height: var(--min-touch-target, 44px);
+    padding-inline: 0.25rem;
+    font-size: var(--font-size-min, 0.875rem);
+    font-weight: 600;
+  }
+  /* Each setting is a label over its control; the groups share one row when
+     the sheet is wide enough and wrap into a column when it is not. */
+  .compact-settings {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: 0.75rem 1.25rem;
+    padding: 0.5rem 0.25rem 0;
+  }
+  .video-setting,
+  .repeat-stepper {
+    display: grid;
+    gap: 0.375rem;
+    justify-items: start;
     color: var(--theme-text-secondary);
     font-size: var(--font-size-min, 0.875rem);
   }
-  /* The label keeps its own line when the segments need the row's width. */
+  /* Segmented groups grow to fill the row; the stepper keeps its fixed keys. */
   .video-setting {
-    flex-wrap: wrap;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-items: stretch;
   }
   .video-setting > span {
-    margin-right: auto;
+    justify-self: start;
+  }
+  .repeat-stepper {
+    flex: 0 0 auto;
+  }
+  /* Short labels like "120 fps" stay on one line inside the compact row. */
+  .compact-settings :global(.segment) {
+    white-space: nowrap;
+  }
+  .repeat-stepper {
+    grid-template-columns: repeat(3, auto);
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .repeat-stepper > span {
+    grid-column: 1 / -1;
+    margin-bottom: 0.125rem;
   }
   .repeat-stepper strong {
     min-width: 1.5rem;
@@ -2241,12 +2289,6 @@
     font: inherit;
     font-size: 1.125rem;
     cursor: pointer;
-  }
-  .repeat-stepper {
-    justify-content: flex-end;
-  }
-  .repeat-stepper > span {
-    margin-right: auto;
   }
   .publish-preview {
     max-height: 20rem;
