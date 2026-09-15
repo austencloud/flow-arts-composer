@@ -31,6 +31,7 @@
   import { createCardPreviewState } from "$lib/shared/share/state/card-preview-state.svelte";
   import { createPostShareDraftState } from "$lib/shared/share/state/post-share-draft-state.svelte";
   import ExportImagePanel from "$lib/shared/sequence-viewer/components/ExportImagePanel.svelte";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
   import {
     cardPresentationFromFooterSettings,
     type CardPresentation,
@@ -231,6 +232,21 @@
   let pendingDownloadSourceKey = $state<string | null>(null);
   let animationPreviewUrl = $state<string | null>(null);
   let videoSettingsOpen = $state(false);
+  const videoResolutionOptions: { value: VideoResolution; label: string }[] = [
+    { value: 720, label: "720p" },
+    { value: 1080, label: "1080p" },
+    { value: 2160, label: "4K" },
+    { value: 4320, label: "8K" },
+  ];
+  const videoFpsOptions: { value: VideoFps; label: string }[] = [
+    { value: 30, label: "30 fps" },
+    { value: 60, label: "60 fps" },
+    { value: 120, label: "120 fps" },
+  ];
+  const videoQualityOptions: { value: VideoQuality; label: string }[] = [
+    { value: "standard", label: "Standard" },
+    { value: "cinema", label: "Cinema" },
+  ];
   let captionOpen = $state(false);
   let publishOpen = $state(false);
   let failedPreviewUrl = $state<string | null>(null);
@@ -1837,46 +1853,43 @@
                         class="compact-settings"
                         transition:growFade={{ axis: "y" }}
                       >
-                        <label
-                          >Resolution <select
-                            value={String(exportOptions.videoResolution)}
-                            onchange={(event) =>
-                              exportOptions.setVideoResolution(
-                                Number(
-                                  event.currentTarget.value
-                                ) as VideoResolution
-                              )}
-                            ><option value="720">720p</option><option
-                              value="1080">1080p</option
-                            ><option value="2160">4K</option><option
-                              value="4320">8K</option
-                            ></select
-                          ></label
-                        >
-                        <label
-                          >Frame rate <select
-                            value={String(exportOptions.videoFps)}
-                            onchange={(event) =>
-                              exportOptions.setVideoFps(
-                                Number(event.currentTarget.value) as VideoFps
-                              )}
-                            ><option value="30">30 fps</option><option
-                              value="60">60 fps</option
-                            ><option value="120">120 fps</option></select
-                          ></label
-                        >
-                        {#if is3DExport}<label
-                            >Quality <select
+                        <div class="video-setting">
+                          <span id="share-video-resolution">Resolution</span>
+                          <SegmentedControl
+                            options={videoResolutionOptions}
+                            value={exportOptions.videoResolution}
+                            onchange={(value) =>
+                              exportOptions.setVideoResolution(value)}
+                            color="accent"
+                            size="sm"
+                            ariaLabelledby="share-video-resolution"
+                          />
+                        </div>
+                        <div class="video-setting">
+                          <span id="share-video-fps">Frame rate</span>
+                          <SegmentedControl
+                            options={videoFpsOptions}
+                            value={exportOptions.videoFps}
+                            onchange={(value) => exportOptions.setVideoFps(value)}
+                            color="accent"
+                            size="sm"
+                            ariaLabelledby="share-video-fps"
+                          />
+                        </div>
+                        {#if is3DExport}
+                          <div class="video-setting">
+                            <span id="share-video-quality">Quality</span>
+                            <SegmentedControl
+                              options={videoQualityOptions}
                               value={exportOptions.videoQuality}
-                              onchange={(event) =>
-                                exportOptions.setVideoQuality(
-                                  event.currentTarget.value as VideoQuality
-                                )}
-                              ><option value="standard">Standard</option><option
-                                value="cinema">Cinema</option
-                              ></select
-                            ></label
-                          >{/if}
+                              onchange={(value) =>
+                                exportOptions.setVideoQuality(value)}
+                              color="accent"
+                              size="sm"
+                              ariaLabelledby="share-video-quality"
+                            />
+                          </div>
+                        {/if}
                         <div class="repeat-stepper">
                           <span>Repeats</span><button
                             type="button"
@@ -2180,7 +2193,7 @@
     gap: 0.625rem;
     padding: 0.75rem 0.25rem 0;
   }
-  .compact-settings label,
+  .video-setting,
   .repeat-stepper {
     display: flex;
     align-items: center;
@@ -2190,15 +2203,12 @@
     color: var(--theme-text-secondary);
     font-size: var(--font-size-min, 0.875rem);
   }
-  .compact-settings select {
-    min-height: 2.5rem;
-    min-width: 7.5rem;
-    padding-inline: 0.625rem;
-    border: 1px solid var(--theme-stroke);
-    border-radius: 0.5rem;
-    background: var(--theme-panel-bg);
-    color: var(--theme-text);
-    font: inherit;
+  /* The label keeps its own line when the segments need the row's width. */
+  .video-setting {
+    flex-wrap: wrap;
+  }
+  .video-setting > span {
+    margin-right: auto;
   }
   .repeat-stepper strong {
     min-width: 1.5rem;
