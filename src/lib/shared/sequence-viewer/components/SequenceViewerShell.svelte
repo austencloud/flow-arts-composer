@@ -65,6 +65,7 @@
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import DeleteConfirmDialog from "./DeleteConfirmDialog.svelte";
   import PostShareSheet from "$lib/shared/share/components/PostShareSheet.svelte";
+  import type { VideoRenderRequest } from "$lib/shared/share/domain/video-opener";
   import { VIDEO_UPLOAD_ENABLED } from "../config/viewer-feature-flags";
   import { uploadRenderedFilm } from "$lib/shared/video-collaboration/services/upload-rendered-film";
   import { canAccessPostStudio } from "../services/post-studio-access";
@@ -522,7 +523,9 @@
    */
   let armedExportForShare = $state(false);
 
-  function requestShareVideo(): Promise<boolean> {
+  function requestShareVideo(
+    request?: VideoRenderRequest
+  ): Promise<boolean> {
     if (ctx.editingPane !== "animation") {
       // setExportContext, NOT enterEditMode/enterExport: those also move
       // viewerMode, and moving it remounts the 3D canvas — so the export ran one
@@ -533,7 +536,7 @@
       ctx.viewerState.setExportContext("animation-export");
       armedExportForShare = true;
     }
-    return ctx.handleExport({ autoDeliver: false });
+    return ctx.handleExport({ autoDeliver: false, opener: request?.opener });
   }
 
   $effect(() => {
@@ -1487,6 +1490,12 @@
     captureAnimationPreview={share.artShare || share.postShare
       ? () => ""
       : ctx.captureAnimationPreview}
+    captureVideoOpener={share.artShare ||
+    share.postShare ||
+    share.sceneShare ||
+    ctx.renderMode === "3d"
+      ? undefined
+      : ctx.captureVideoOpener}
     is3DExport={ctx.renderMode === "3d"}
     videoSourceKey={`${ctx.effectiveSequence?.id ?? ctx.effectiveSequence?.word ?? "unsaved"}:${share.getShareUrl()}`}
     initialArtifact={share.artShare ||

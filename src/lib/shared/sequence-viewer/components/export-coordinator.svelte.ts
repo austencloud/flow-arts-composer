@@ -38,6 +38,16 @@ import {
   pruneRenderedFilms,
 } from "$lib/shared/video-export/services/rendered-film-store";
 import { ensureFullAccountForExport } from "$lib/shared/auth/domain/export-gate";
+import {
+  openerAddsHold,
+  VIDEO_OPENER_HOLD_BEATS,
+  type VideoOpener,
+  type VideoOpenerRequest,
+} from "$lib/shared/share/domain/video-opener";
+import { loadOpenerImage } from "$lib/shared/compose/domain/video-opener-frame";
+import { getRenderContextRegistry } from "$lib/shared/animation-engine/get-render-context-registry";
+import { renderMandalaOpener } from "$lib/shared/share/services/video-opener-mandala";
+import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
 import { buildCardRenderOptions } from "$lib/shared/share/services/card-render-options";
 import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
 import {
@@ -58,6 +68,8 @@ type ExportType = "animation" | "image" | "both";
  */
 export interface ExportRequestOptions {
   autoDeliver?: boolean;
+  /** The image the clip opens with; the share sheet's choice. */
+  opener?: VideoOpenerRequest;
 }
 
 type Viewer3DState = ReturnType<typeof createViewer3DState>;
@@ -174,6 +186,71 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
       width,
       height,
     });
+  }
+
+  /** Yields to the live render loop so a jumped-to pose is on the canvas. */
+  function waitForPaint(frames: number): Promise<void> {
+    return new Promise((resolve) => {
+      let remaining = frames;
+      const step = () => {
+        remaining -= 1;
+        if (remaining <= 0) resolve();
+        else requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  /**
+   * The image a shared clip opens with, as a data URL for the sheet's stage.
+   * "First beat" reuses the export's own start-up dance: pause, jump to the
+   * start position, let the live canvas paint it, capture, and put playback
+   * back where it was. "This frame" is the plain current-view capture and
+   * "Mandala" is drawn from the sequence, so neither touches playback.
+   */
+  async function captureVideoOpener(
+    kind: VideoOpener,
+    playbackController: AnimationPlaybackController | null,
+    panelState: AnimationPanelState,
+    sequence: SequenceData | null
+  ): Promise<string> {
+    if (kind === "mandala") {
+      if (!sequence) return "";
+      const config = deps.getPropConfig?.();
+      return renderMandalaOpener(sequence, {
+        leftPropType:
+          config?.leftPropType ??
+          settingsService.settings.leftPropType ??
+          settingsService.settings.propType ??
+          "staff",
+        rightPropType:
+          config?.rightPropType ??
+          settingsService.settings.rightPropType ??
+          settingsService.settings.propType ??
+          "staff",
+      });
+    }
+    if (kind === "this-frame" || !playbackController || !animationCanvas) {
+      return captureAnimationPreview();
+    }
+    const wasPlaying = panelState.isPlaying;
+    const step = panelState.currentStep;
+    if (wasPlaying) playbackController.togglePlayback();
+    // The export clears its trail history and overlay buffers before its first
+    // frame. Do the same on the live context that owns this canvas, then jump,
+    // so the thumbnail is the pose the clip opens on and nothing the trail was
+    // still fading out. Sibling layers such as path lines repaint as usual.
+    const live = getRenderContextRegistry()
+      .getAll()
+      .find((context) => context.canvas === animationCanvas);
+    live?.trailCapturer.clearTrails();
+    live?.effectManager.trailOverlay?.clearBuffers();
+    playbackController.jumpToStep(0);
+    await waitForPaint(3);
+    const url = captureAnimationPreview();
+    playbackController.jumpToStep(step);
+    if (wasPlaying) playbackController.togglePlayback();
+    return url;
   }
 
   function handleCancelExport() {
@@ -734,6 +811,13 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     if (exportType === "animation" && playbackController && animationCanvas) {
       const opts = exportOptions.getVideoOptions();
       const motion = getMotionVisibility?.();
+      // The opener hold is baked from the very image the sheet showed, so the
+      // clip's first frame is exactly the thumbnail the person chose.
+      const openerRequest = options?.opener;
+      const openerImage =
+        openerRequest && openerAddsHold(openerRequest.kind)
+          ? await loadOpenerImage(openerRequest.imageUrl)
+          : null;
       await sequenceModalExporter.exportAnimation(
         {
           fps: opts.fps,
@@ -743,6 +827,9 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
           includeEndHold: opts.includeEndHold,
           leftMotionVisible: motion?.left,
           rightMotionVisible: motion?.right,
+          opener: openerImage
+            ? { image: openerImage, holdBeats: VIDEO_OPENER_HOLD_BEATS }
+            : undefined,
         },
         {
           canvas: animationCanvas,
@@ -833,6 +920,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
     handleDiscardFilmRender,
     handleCanvasReady,
     captureAnimationPreview,
+    captureVideoOpener,
     handleCancelExport,
     handleRetryExport,
     handleExport,
