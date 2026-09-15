@@ -728,6 +728,7 @@
           focused={side === "left" && layout.focusedPane === "animation"}
           suppress2DOverlays={false}
           fillContainer
+          glyphFrame="stage"
           hideProgressBar={inStudio ||
             (side === "left"
               ? suppressProgress ||

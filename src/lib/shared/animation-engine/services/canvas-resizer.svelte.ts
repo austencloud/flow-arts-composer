@@ -9,6 +9,12 @@
 
 import { motionDuration } from "$lib/shared/transitions/motion";
 import { DURATION } from "$lib/shared/transitions/transitions";
+import {
+  measureFrame,
+  sameFrame,
+  squareFrame,
+  type CanvasFrame,
+} from "../domain/types/canvas-frame";
 
 /**
  * Default canvas size
@@ -33,8 +39,10 @@ export interface ResizableRenderer {
  * Reactive state owned by the service
  */
 export interface CanvasResizeState {
-  /** Current canvas size */
+  /** Current canvas size: the side of the engine's square */
   currentSize: number;
+  /** The whole rectangle the container occupies; the square is centred in it */
+  frame: CanvasFrame;
   /** Increments on each completed resize (for triggering reactivity) */
   resizeCount: number;
   /** Whether a resize is in progress */
@@ -45,6 +53,7 @@ export class CanvasResizer {
   // Reactive state - owned by service
   state = $state<CanvasResizeState>({
     currentSize: DEFAULT_CANVAS_SIZE,
+    frame: squareFrame(DEFAULT_CANVAS_SIZE),
     resizeCount: 0,
     isResizing: false,
   });
@@ -97,6 +106,7 @@ export class CanvasResizer {
   async resize(currentSize: number): Promise<number> {
     this.cancelSettle();
     this.state.currentSize = currentSize;
+    this.state.frame = squareFrame(currentSize);
     return this.performResize();
   }
 
@@ -119,6 +129,7 @@ export class CanvasResizer {
     this.container = null;
     this.renderer = null;
     this.state.currentSize = DEFAULT_CANVAS_SIZE;
+    this.state.frame = squareFrame(DEFAULT_CANVAS_SIZE);
     this.state.resizeCount = 0;
     this.state.isResizing = false;
   }
@@ -208,12 +219,18 @@ export class CanvasResizer {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     if (width <= 0 || height <= 0) return this.state.currentSize;
-    const newSize = Math.min(width, height);
+    const frame = measureFrame(width, height);
+    const newSize = frame.size;
 
-    if (newSize !== this.state.currentSize) {
+    // The main canvas only rebuilds when its square changes. A wrapper that
+    // grows sideways at the same height still counts as a resize, because the
+    // effect overlays paint the whole rectangle and must be reallocated to it.
+    if (!sameFrame(frame, this.state.frame)) {
       this.state.isResizing = true;
+      const squareChanged = newSize !== this.state.currentSize;
       this.state.currentSize = newSize;
-      await this.renderer.resize(newSize);
+      this.state.frame = frame;
+      if (squareChanged) await this.renderer.resize(newSize);
       this.state.isResizing = false;
       this.state.resizeCount++; // Increment to trigger reactivity
     }

@@ -444,10 +444,14 @@ export class CanvasLifecycleManager {
   syncMandalaOverlay(enabled: boolean): void {
     if (enabled) {
       if (this._mandalaOverlay || !this._containerElement) return;
-      const size =
-        this._resizer?.state.currentSize || this._initialCanvasSize || 500;
+      const frame = this._resizer?.state.frame;
+      const size = frame?.size || this._initialCanvasSize || 500;
       const overlay = new MandalaOverlayCanvas();
-      overlay.initialize(this._containerElement, size, size);
+      overlay.initialize(
+        this._containerElement,
+        frame?.width || size,
+        frame?.height || size
+      );
       this._mandalaOverlay = overlay;
       this._renderLoop?.updateConfig({ mandalaOverlay: overlay });
       return;

@@ -121,7 +121,7 @@ function paintHandMask(
 	hand: PreparedMandalaPath["hand"],
 	target: MandalaGuidePaintTarget,
 	options: MandalaGuidePaintOptions,
-	center: number,
+	center: { x: number; y: number },
 	adjustedStrokeWidth: number,
 	progress: number,
 	reveal: boolean
@@ -131,7 +131,7 @@ function paintHandMask(
 	context.globalCompositeOperation = "source-over";
 	context.globalAlpha = 1;
 	context.setTransform(target.dpr, 0, 0, target.dpr, 0, 0);
-	context.translate(center, center);
+	context.translate(center.x, center.y);
 	context.scale(options.scale, options.scale);
 	context.strokeStyle = "white";
 	context.lineWidth = adjustedStrokeWidth;
@@ -159,7 +159,10 @@ export function paintMandalaGuide(
 	const { context, pixelWidth, pixelHeight, dpr } = target;
 	const reveal = options.reveal ?? false;
 	const progress = reveal ? (options.progress ?? 1) : 1;
-	const center = pixelWidth / dpr / 2;
+	// The guide is centred in whatever rectangle it is handed. On a square that
+	// is the engine's grid centre; on a wider overlay frame the square sits
+	// centred too, so the two still coincide.
+	const center = { x: pixelWidth / dpr / 2, y: pixelHeight / dpr / 2 };
 	// Compensate stroke width for the scale transform so it stays constant in
 	// CSS pixels.
 	const adjustedStrokeWidth = options.strokeWidth / options.scale;
@@ -168,7 +171,7 @@ export function paintMandalaGuide(
 	context.setTransform(1, 0, 0, 1, 0, 0);
 	context.clearRect(0, 0, pixelWidth, pixelHeight);
 	context.setTransform(dpr, 0, 0, dpr, 0, 0);
-	context.translate(center, center);
+	context.translate(center.x, center.y);
 	context.scale(options.scale, options.scale);
 
 	for (const path of options.paths) {
