@@ -54,7 +54,9 @@ interface PictographKeyInput {
     showTKA: boolean;
     showTnD: boolean;
     showElemental: boolean;
-    showPlacements: boolean;
+    showPropTnD?: boolean;
+    /** Preimage key keeps its pre-rename spelling so stored keys stay stable. */
+    showPositions: boolean;
     showHandColorKey: boolean;
     showReversals: boolean;
     showNonRadialPoints: boolean;
@@ -304,7 +306,9 @@ export class PictographKeyHasher {
         showTKA: visibility.showTKA ?? true,
         showTnD: visibility.showTnD ?? false,
         showElemental: visibility.showElemental ?? false,
-        showPlacements: visibility.showPlacements ?? false,
+        // Optional so established keys keep hashing byte-identically when OFF.
+        ...(visibility.showPropTnD ? { showPropTnD: true } : {}),
+        showPositions: visibility.showPlacements ?? false,
         showHandColorKey: visibility.showHandColorKey ?? true,
         showReversals: visibility.showReversals ?? true,
         showNonRadialPoints: visibility.showNonRadialPoints ?? true,

@@ -37,6 +37,9 @@
   import { getScanCardCloudProbe } from "$lib/shared/sequence-viewer/scan-card-cloud-context";
   import { CANONICAL_CARD_VISIBILITY } from "$lib/shared/render/services/cloud-cell-key";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
+  import { handLegendFor } from "../services/hand-legend";
+  import { getMotionColor } from "$lib/shared/utils/svg-color-utils";
 
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { getImageCompositionManager } from "$lib/shared/share/state/image-composition-state.svelte";
@@ -90,6 +93,12 @@
     showQRCode?: boolean;
     /** Reuse a published scan link without creating an account-owned code. */
     qrUrl?: string;
+    /**
+     * The sequence a scan opens. Defaults to `sequence`. A hand-labeled card
+     * draws a derived sequence that has no record of its own, so the surface
+     * passes the source here and the code keeps pointing at the real one.
+     */
+    qrSequence?: SequenceData;
     /** When true, fill empty col-0 cells with mandala visualizations */
     showMandala?: boolean;
     /** Render as hand path visualization (HAND props, float arrows, no TKA) */
@@ -105,6 +114,12 @@
     /** Plain-text artifact title for cards whose identity is not a TKA word. */
     customTitleText?: string;
     customNotesText?: string;
+    /**
+     * Set only beside performance footage. Draws the "which color is your
+     * right hand" line in the footer. The caller is responsible for passing
+     * the matching (mirrored and swapped, or canonical) sequence.
+     */
+    handLabeling?: HandLabeling | null;
     // Prop overrides
     leftPropType?: PropType;
     rightPropType?: PropType;
@@ -169,6 +184,7 @@
     showLoopGlyph = true,
     showQRCode = false,
     qrUrl,
+    qrSequence,
     showMandala = false,
     handPathMode: requestedHandPathMode = false,
     browseViewMode,
@@ -178,6 +194,7 @@
     cardAspectRatio,
     customTitleText: requestedTitleText,
     customNotesText = "Created using Flow Arts Composer",
+    handLabeling = null,
     leftPropType,
     rightPropType,
     catDogModeEnabled = false,
@@ -316,6 +333,7 @@
   const allMotionsVisible = $derived(displayState.allMotionsVisible);
   const showTnD = $derived(displayState.showTnD);
   const showElemental = $derived(displayState.showElemental);
+  const showPropTnD = $derived(displayState.showPropTnD);
   const showPlacements = $derived(displayState.showPlacements);
   const showHandColorKey = $derived(displayState.showHandColorKey);
   const showGrid = $derived(displayState.showGrid);
@@ -366,7 +384,6 @@
     }, HEADER_MOTION_MS);
   });
   const hasPathShapeMetadata = $derived(displayState.hasPathShapeMetadata);
-  const showFooter = $derived(displayState.showFooter);
 
   // Observe composition manager so per-step-count settings (start position
   // layout, column overrides) trigger layout re-derivation.
@@ -434,12 +451,24 @@
   // True only under a scan-origin /sequence route — cells use the cloud cache.
   const cloudProbeEnabled = getScanCardCloudProbe();
   const effectivePrimaryPropColors = $derived(
-    cloudProbeEnabled ? null : (primaryPropColors ?? getSettings().primaryPropColors)
+    cloudProbeEnabled
+      ? null
+      : (primaryPropColors ?? getSettings().primaryPropColors)
   );
+  const handLegend = $derived(
+    handLabeling
+      ? handLegendFor(
+          handLabeling,
+          effectivePrimaryPropColors?.right ??
+            getMotionColor(HandSide.RIGHT, activeDarkMode ? "dark" : "light")
+        )
+      : null
+  );
+  const showFooter = $derived(displayState.showFooter || handLegend !== null);
 
   const qrState = createChoreoCardQrState(
     () => ({
-      sequence,
+      sequence: qrSequence ?? sequence,
       showQRCode: effShowQRCode,
       qrUrl,
       darkMode,
@@ -662,6 +691,7 @@
       showReversals,
       showTnD,
       showElemental,
+      showPropTnD,
       showPlacements,
       showHandColorKey,
       isSoloMode,
@@ -752,6 +782,7 @@
       showReversals,
       showTnD,
       showElemental,
+      showPropTnD,
       showPlacements,
       showHandColorKey,
       showGrid,
@@ -1065,13 +1096,14 @@
       <!-- Footer section -->
       <CardFooter
         {showFooter}
-        {showNotes}
-        {hasPathShapeMetadata}
+        showNotes={showNotes && handLegend === null}
+        hasPathShapeMetadata={hasPathShapeMetadata && handLegend === null}
         {customNotesText}
         {scaledFooterHeight}
         {footerFontSize}
         {footerMargin}
         {activeDarkMode}
+        {handLegend}
       />
     </div>
   {/if}

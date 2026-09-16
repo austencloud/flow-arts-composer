@@ -146,6 +146,7 @@ export class CellPreWarmer {
         showReversals: vm.getRawGlyphVisibility("reversalIndicators"),
         showTnD: vm.getRawGlyphVisibility("tndGlyph"),
         showElemental: vm.getRawGlyphVisibility("elementalGlyph"),
+        showPropTnD: vm.getRawGlyphVisibility("propTndGlyph"),
         showPlacements: vm.getRawGlyphVisibility("placementsGlyph"),
         showHandColorKey: vm.getRawGlyphVisibility("handColorKey"),
         isSoloMode: false,

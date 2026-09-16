@@ -27,7 +27,21 @@
 	const PROP_FAMILIES: PropFamily[] = [
 		{ label: "Staff", types: ["staff", "bigstaff", "simple_staff", "staff_v2"] },
 		{ label: "Club", types: ["club", "bigclub"] },
-		{ label: "Fan", types: ["fan", "bigfan"] },
+		// Fan builds carry their own tip tables (PROP_RENDER_KEY_TIP_POINTS);
+		// the plain "fan" entry is the notation glyph.
+		{
+			label: "Fan",
+			types: [
+				"fan",
+				"fan__fire_bare",
+				"fan__lotus",
+				"fan__flat-grip",
+				"fan__day_black_bare",
+				"fan__moon",
+				"bigfan",
+				"bigfan__fire_bare",
+			],
+		},
 		{ label: "Triad", types: ["triad", "bigtriad"] },
 		{ label: "Hoop", types: ["minihoop", "bighoop"] },
 		{ label: "Buugeng", types: ["buugeng", "bigbuugeng", "trigeng"] },
@@ -87,7 +101,10 @@
 	}
 
 	function displayName(propType: string): string {
-		return propType.replace(/_/g, " ");
+		const [base, build] = propType.split("__");
+		const name = (base ?? propType).replace(/_/g, " ");
+		if (!build) return name;
+		return `${name} · ${build.replace(/[_-]bare$/, "").replace(/[_-]/g, " ")}`;
 	}
 
 	// Track which families have any prop with a saved default

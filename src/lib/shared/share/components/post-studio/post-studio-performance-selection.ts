@@ -5,6 +5,11 @@ import {
   type SequenceTimeMap,
 } from "$lib/shared/media-composition/domain/sequence-time-map";
 import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/collaborative-video";
+import {
+  resolveHandLabeling,
+  DEFAULT_HAND_LABELING,
+  type HandLabeling,
+} from "$lib/shared/video-collaboration/domain/hand-labeling";
 
 export type PerformanceAlignmentStatus =
   | "saved-manual"
@@ -16,6 +21,9 @@ export interface PostStudioPerformanceSelection {
   url: string;
   duration?: number;
   label: string;
+  /** The catalog record behind this selection, or null for a local file. */
+  videoId: string | null;
+  handLabeling: HandLabeling;
   sequenceTimeMap: SequenceTimeMap | null;
   alignmentStatus: PerformanceAlignmentStatus;
   alignmentDetail: string;
@@ -42,9 +50,13 @@ export function createUnmappedPerformanceSelection(input: {
   url: string;
   duration?: number;
   label: string;
+  videoId?: string;
+  handLabeling?: HandLabeling;
 }): PostStudioPerformanceSelection {
   return {
     ...input,
+    videoId: input.videoId ?? null,
+    handLabeling: input.handLabeling ?? DEFAULT_HAND_LABELING,
     sequenceTimeMap: null,
     alignmentStatus: "unmapped",
     alignmentDetail: "Unmapped · even timing preview",
@@ -60,6 +72,8 @@ export function createCatalogPerformanceSelection(
     url: video.videoUrl,
     duration: video.duration,
     label: video.description?.trim() || "Performance video",
+    videoId: video.id,
+    handLabeling: resolveHandLabeling(video),
   };
 
   if (!video.beatMap) return createUnmappedPerformanceSelection(base);

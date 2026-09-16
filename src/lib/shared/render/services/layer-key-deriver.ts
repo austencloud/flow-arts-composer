@@ -26,7 +26,9 @@ export interface BaseLayerKeyComponents {
   showRightMotion: boolean;
   showTnD: boolean;
   showElemental: boolean;
-  showPlacements: boolean;
+  showPropTnD: boolean;
+  /** Preimage key keeps its pre-rename spelling so stored keys stay stable. */
+  showPositions: boolean;
   showHandColorKey: boolean;
   handPathMode: boolean;
   showGrid: boolean;
@@ -118,7 +120,8 @@ export function getBaseLayerComponents(
     showRightMotion: options.showRightMotion ?? true,
     showTnD: options.showTnD ?? false,
     showElemental: options.showElemental ?? false,
-    showPlacements: options.showPlacements ?? false,
+    showPropTnD: options.showPropTnD ?? false,
+    showPositions: options.showPlacements ?? false,
     showHandColorKey: options.showHandColorKey ?? true,
     handPathMode: options.handPathMode ?? false,
     showGrid: options.showGrid ?? true,

@@ -32,6 +32,23 @@ describe("VisibilityStateManager — hand colour key", () => {
   });
 });
 
+describe("VisibilityStateManager — prop TnD glyph", () => {
+  it("defaults the prop timing-and-direction glyph OFF", () => {
+    const vm = new VisibilityStateManager();
+    expect(vm.getRawGlyphVisibility("propTndGlyph")).toBe(false);
+    expect(vm.getState().propTndGlyph).toBe(false);
+  });
+
+  it("toggles independently of the hand TnD glyph and persists", () => {
+    const vm = new VisibilityStateManager();
+    vm.setGlyphVisibility("propTndGlyph", true);
+    expect(vm.getRawGlyphVisibility("propTndGlyph")).toBe(true);
+    expect(vm.getRawGlyphVisibility("tndGlyph")).toBe(false);
+    expect(vm.toAppSettings().propTndGlyph).toBe(true);
+    expect(vm.getVisibleGlyphs()).toContain("propTndGlyph");
+  });
+});
+
 describe("VisibilityStateManager — non-radial points", () => {
   it("defaults non-radial points OFF (matches the export-panel toggle)", () => {
     const vm = new VisibilityStateManager();

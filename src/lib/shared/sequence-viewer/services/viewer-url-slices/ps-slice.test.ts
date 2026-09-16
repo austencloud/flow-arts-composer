@@ -1,11 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-const { capturePsSlice, seedFromPsSlice, persistedPsSlice } = await import(
-  "./ps-slice"
-);
-const { PropType } = await import(
-  "$lib/shared/pictograph/prop/domain/enums/prop-type"
-);
+const { capturePsSlice, seedFromPsSlice, persistedPsSlice } =
+  await import("./ps-slice");
+const { PropType } =
+  await import("$lib/shared/pictograph/prop/domain/enums/prop-type");
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -19,7 +17,6 @@ describe("ps slice", () => {
         defaultPropType: PropType.STAFF,
         audioMode: "original",
         audioModeTouched: false,
-        notationMirrored: false,
       })
     ).toBeNull();
   });
@@ -35,7 +32,6 @@ describe("ps slice", () => {
         defaultPropType: PropType.FAN,
         audioMode: "original",
         audioModeTouched: false,
-        notationMirrored: false,
       })
     ).toBeNull();
 
@@ -47,7 +43,6 @@ describe("ps slice", () => {
         defaultPropType: PropType.STAFF,
         audioMode: "original",
         audioModeTouched: false,
-        notationMirrored: false,
       })
     ).toEqual({ propType: PropType.FAN });
   });
@@ -62,7 +57,6 @@ describe("ps slice", () => {
         defaultPropType: PropType.STAFF,
         audioMode: "instagram",
         audioModeTouched: false,
-        notationMirrored: false,
       })
     ).toBeNull();
 
@@ -74,21 +68,8 @@ describe("ps slice", () => {
         defaultPropType: PropType.STAFF,
         audioMode: "original",
         audioModeTouched: true,
-        notationMirrored: false,
       })
     ).toEqual({ audioMode: "original" });
-  });
-
-  it("captures notationMirrored as `true` only, never a false", () => {
-    expect(
-      capturePsSlice({
-        propType: PropType.STAFF,
-        defaultPropType: PropType.STAFF,
-        audioMode: "original",
-        audioModeTouched: false,
-        notationMirrored: true,
-      })
-    ).toEqual({ notationMirrored: true });
   });
 
   it("captures a combination of fields together", () => {
@@ -98,12 +79,10 @@ describe("ps slice", () => {
         defaultPropType: PropType.STAFF,
         audioMode: "instagram",
         audioModeTouched: true,
-        notationMirrored: true,
       })
     ).toEqual({
       propType: PropType.CLUB,
       audioMode: "instagram",
-      notationMirrored: true,
     });
   });
 
@@ -113,7 +92,6 @@ describe("ps slice", () => {
       defaultPropType: PropType.STAFF,
       audioMode: "instagram",
       audioModeTouched: true,
-      notationMirrored: true,
     });
     const seed = seedFromPsSlice(slice!);
 
@@ -124,7 +102,6 @@ describe("ps slice", () => {
         defaultPropType: PropType.STAFF,
         audioMode: seed.audioMode ?? "original",
         audioModeTouched: seed.audioMode !== undefined,
-        notationMirrored: seed.notationMirrored ?? false,
       })
     ).toEqual(slice);
   });
@@ -146,15 +123,8 @@ describe("ps slice", () => {
       propType: "not-a-real-prop",
       // @ts-expect-error -- deliberately invalid
       audioMode: "surround-sound",
-      notationMirrored: true,
     });
-    expect(seed).toEqual({ notationMirrored: true });
-  });
-
-  it("seedFromPsSlice drops notationMirrored: false (only `true` is meaningful)", () => {
-    expect(
-      seedFromPsSlice({ notationMirrored: false as unknown as true })
-    ).toEqual({});
+    expect(seed).toEqual({});
   });
 
   it("persistedPsSlice always returns null -- no encoded field has a disk-backed form", () => {
@@ -171,13 +141,11 @@ describe("ps slice", () => {
       defaultPropType: PropType.STAFF,
       audioMode: "instagram",
       audioModeTouched: true,
-      notationMirrored: true,
     });
     const seed = seedFromPsSlice(slice!);
     let selectedPropType = seed.propType ?? PropType.STAFF;
     let audioMode = seed.audioMode ?? "original";
     let audioModeTouched = seed.audioMode !== undefined;
-    let notationMirrored = seed.notationMirrored ?? false;
 
     // A recipient tweaking during the session stays session-local too --
     // none of ps-slice's own functions has a storage sink to exercise, so
@@ -185,14 +153,12 @@ describe("ps slice", () => {
     selectedPropType = PropType.QUIAD;
     audioMode = "original";
     audioModeTouched = true;
-    notationMirrored = false;
     expect(
       capturePsSlice({
         propType: selectedPropType,
         defaultPropType: PropType.STAFF,
         audioMode,
         audioModeTouched,
-        notationMirrored,
       })
     ).toEqual({ propType: PropType.QUIAD, audioMode: "original" });
 
@@ -218,14 +184,13 @@ describe("ps slice", () => {
   });
 
   describe("full snapshot", () => {
-    it("always emits propType; audioMode stays touched-gated; mirror stays true-only", () => {
+    it("always emits propType; audioMode stays touched-gated", () => {
       const full = capturePsSlice(
         {
           propType: PropType.FAN,
           defaultPropType: PropType.FAN,
           audioMode: "original",
           audioModeTouched: false,
-          notationMirrored: false,
         },
         { full: true }
       );

@@ -25,6 +25,13 @@ export interface FireTipTrackerConfig {
   rightPropDimensions: { width: number; height: number };
   leftPropType?: string;
   rightPropType?: string;
+  /**
+   * Render keys of the sprites the canvas is painting (`fan__lotus`,
+   * `club__model`). When present they resolve the tip table instead of the
+   * notation type, so effects attach to the artwork on screen.
+   */
+  leftPropRenderKey?: string;
+  rightPropRenderKey?: string;
   /** Transforms from the Canvas2D renderer. When provided, used instead of recomputing positions. */
   renderedTransforms?: {
     left: RenderedPropTransform | null;
@@ -169,7 +176,7 @@ export class FireTipTracker {
         leftProp,
         config.canvasSize,
         config.leftPropDimensions,
-        config.leftPropType ?? null,
+        config.leftPropRenderKey ?? config.leftPropType ?? null,
         0, // propIndex
         0, // prevTipOffset
         currentTime,
@@ -186,7 +193,7 @@ export class FireTipTracker {
         rightProp,
         config.canvasSize,
         config.rightPropDimensions,
-        config.rightPropType ?? null,
+        config.rightPropRenderKey ?? config.rightPropType ?? null,
         1, // propIndex
         MAX_TOTAL_TIPS / 2, // prevTipOffset (red starts at slot 8)
         currentTime,

@@ -2,6 +2,7 @@ import type { AnimationPlaybackController } from "$lib/shared/animation-engine/s
 import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
 import type { AdditionalLayerProps } from "$lib/shared/animation-engine/domain/types/trail-capture-types";
 import type { TunnelPropColorPair } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
+import type { VideoOpenerImage } from "./video-opener-frame";
 
 export type VideoExportFormat = "webm" | "mp4";
 
@@ -54,6 +55,14 @@ export interface VideoExportOrchestratorOptions {
   includeStartPlacement?: boolean;
   includeAnimationStartPlacement?: boolean;
   includeEndHold?: boolean;
+  /**
+   * An image held at the very start of the clip, before the animation. This
+   * is the frame players and thumbnails show, so the share sheet lets the
+   * person choose it. Drawn contain-fit over black at output resolution and
+   * held for `openerHoldBeats` beats (default one) at the export speed.
+   */
+  openerImage?: VideoOpenerImage;
+  openerHoldBeats?: number;
   /** Prop type strings (e.g. "staff"). Drive the prop BODY textures the offscreen
    *  export engine loads — without them the export falls back to global settings
    *  (default "staff") and on the QR landing page (no DI bootstrap) renders the

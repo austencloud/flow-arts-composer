@@ -237,3 +237,90 @@ export function readViewerCardPaneBox(
 ): ViewerPaneBox | null {
   return viewerCardPaneBoxes.get(cardPaneBoxMemoKey(key, vw, vh)) ?? null;
 }
+
+/** Test-only: forget every settled box. */
+export function clearViewerCardPaneBoxes(): void {
+  viewerCardPaneBoxes.clear();
+}
+
+interface ViewerSplitCardPaneBoxInput {
+  key: string;
+  vw: number;
+  vh: number;
+  direction: ViewerPanelDirection;
+  /** The animation pane's share of the split axis, as the user set it. */
+  share: number;
+  splitWidth: number;
+  splitHeight: number;
+}
+
+/**
+ * Teach the Card the pane box a user-chosen split share produces, and return
+ * that box.
+ *
+ * The settle timer learns boxes by watching the pane hold still, which is the
+ * right source for a mode change. It is the wrong source for the divider: the
+ * user has already decided the allocation, and until the timer catches up the
+ * memo still holds the box the Card is leaving. When the divider shrinks the
+ * Card's pane, that stale wider box reads as "still opening" and the Card
+ * solves its grid for a pane it no longer has. Remembering the chosen box the
+ * moment the share changes keeps the memo honest for every frame after.
+ *
+ * Returns null, and leaves the memo alone, while the split is unmeasured.
+ */
+export function rememberViewerSplitCardPaneBox(
+  input: ViewerSplitCardPaneBoxInput
+): ViewerPaneBox | null {
+  const box = resolveViewerPaneDestinationBox({
+    pane: "image",
+    direction: input.direction,
+    sizes: [input.share, 1 - input.share],
+    splitWidth: input.splitWidth,
+    splitHeight: input.splitHeight,
+  });
+  if (box === null) return null;
+  rememberViewerCardPaneBox(input.key, input.vw, input.vh, box);
+  return box;
+}
+
+interface ViewerCardMotionBoxInput {
+  /** The box this layout last settled at this viewport, if any. */
+  remembered: ViewerPaneBox | null;
+  /** The box the Card's pane occupies right now, if the split is measured. */
+  live: ViewerPaneBox | null;
+  /** Whether the Card's pane is known to be animating. */
+  inMotion: boolean;
+}
+
+/**
+ * A pane this much smaller than its settled box is still opening, whatever
+ * the motion flag says.
+ */
+const CARD_PANE_SETTLED_RATIO = 0.98;
+
+/**
+ * The box the Card should solve against: its destination while the pane is
+ * on its way somewhere, and its live pane once it has arrived.
+ *
+ * Before this layout has settled once at this viewport there is nothing to
+ * remember. Publishing no destination is better than publishing the box the
+ * Card is leaving: that one makes it solve a grid for the wrong shape and
+ * correct in public. The ordinary measurement path carries the first entry.
+ *
+ * A pane measurably smaller than the one this layout settled at is still
+ * opening. The incoming Card can mount a frame before the motion flag is set,
+ * and a sliver read as a settled measurement is what makes it solve for a
+ * speck and then grow.
+ */
+export function resolveViewerCardMotionBox(
+  input: ViewerCardMotionBoxInput
+): ViewerPaneBox | null {
+  const { remembered, live, inMotion } = input;
+  if (remembered === null) return live;
+  if (inMotion) return remembered;
+  if (live === null) return remembered;
+  const stillOpening =
+    live.width < remembered.width * CARD_PANE_SETTLED_RATIO ||
+    live.height < remembered.height * CARD_PANE_SETTLED_RATIO;
+  return stillOpening ? remembered : live;
+}

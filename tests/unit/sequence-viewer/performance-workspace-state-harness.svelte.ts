@@ -1,3 +1,4 @@
+import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type {
   CollaborativeVideo,
@@ -24,6 +25,7 @@ export function createPerformanceWorkspaceHarness(
   setUploadRequested: (requested: boolean) => void;
   openChanges: boolean[];
   attachedMaps: Array<StepMap | null>;
+  labelings: Array<HandLabeling | null>;
   timingSaved: string[];
   dispose: () => void;
 } {
@@ -32,6 +34,7 @@ export function createPerformanceWorkspaceHarness(
   let videos = $state([...initialVideos]);
   const openChanges: boolean[] = [];
   const attachedMaps: Array<StepMap | null> = [];
+  const labelings: Array<HandLabeling | null> = [];
   const timingSaved: string[] = [];
 
   const store: SequenceVideosStore = {
@@ -54,10 +57,16 @@ export function createPerformanceWorkspaceHarness(
         video.id === videoId ? { ...video, beatMap: stepMap } : video
       );
     },
+    applyHandLabeling: async (videoId, handLabeling) => {
+      videos = videos.map((video) =>
+        video.id === videoId ? { ...video, handLabeling } : video
+      );
+    },
   };
 
   const playhead: VideoPlayheadBridge = {
     attach: (map) => attachedMaps.push(map),
+    setHandLabeling: (labeling) => labelings.push(labeling),
     reportTime: () => {},
     registerSeek: () => {},
     seekToStep: () => false,
@@ -90,6 +99,7 @@ export function createPerformanceWorkspaceHarness(
     },
     openChanges,
     attachedMaps,
+    labelings,
     timingSaved,
     dispose,
   };

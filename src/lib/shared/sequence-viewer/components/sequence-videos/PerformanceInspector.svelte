@@ -9,6 +9,11 @@
     performanceCreatorName,
     performanceTimingLabel,
   } from "./performance-video-copy";
+  import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
+  import {
+    resolveHandLabeling,
+    type HandLabeling,
+  } from "$lib/shared/video-collaboration/domain/hand-labeling";
 
   interface Props {
     isOwned: boolean;
@@ -72,6 +77,26 @@
         </p>
         {#if workspace.selectedVideo.description}
           <p class="description">{workspace.selectedVideo.description}</p>
+        {/if}
+        {#if workspace.selectedVideo.creatorId === authState.user?.uid}
+          <div class="hand-labeling">
+            <span class="eyebrow" id="hand-labeling-label"
+              >Read the card as</span
+            >
+            <SegmentedControl
+              options={[
+                { value: "mirror-me", label: "Mirror me" },
+                { value: "as-performed", label: "As performed" },
+              ]}
+              value={resolveHandLabeling(workspace.selectedVideo)}
+              onchange={(value: HandLabeling) =>
+                void workspace.persistHandLabeling(value)}
+              size="sm"
+              color="accent"
+              semantics="radiogroup"
+              ariaLabelledby="hand-labeling-label"
+            />
+          </div>
         {/if}
       </div>
 
@@ -253,6 +278,12 @@
 
   .selected-copy .description {
     color: var(--theme-text, #fff);
+  }
+
+  .hand-labeling {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
   }
 
   .selected-actions {

@@ -39,7 +39,11 @@
   import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
   import { hasDecodableAudioTrack } from "$lib/shared/media-composition/services/media-audio-inspector";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import { mirrorSequence } from "$lib/shared/create/services/sequence-transformer";
+  import { createHandLabeledCard } from "$lib/shared/sequence-viewer/services/hand-labeled-card.svelte";
+  import {
+    DEFAULT_HAND_LABELING,
+    type HandLabeling,
+  } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { tryGetViewerUrlSessionContext } from "$lib/shared/sequence-viewer/services/viewer-url-session";
   import {
@@ -395,60 +399,49 @@
   });
 
   /**
-   * A performer works in their own frame and the camera sees it reflected, so a
-   * take and the notation beside it disagree about left and right more often
-   * than not. Either side can be the one that moves: footage flips its pixels
-   * (the clip transform's `flipHorizontal`), notation mirrors its DATA here.
+   * The performer works in their own frame and the camera sees it reflected.
+   * Beside footage the notation follows the performance's hand labeling:
+   * "mirror me" (the default) mirrors the DATA and swaps hands so the color on
+   * the viewer's right is their right hand; "as performed" leaves it alone.
+   * Data, not pixels, because notation carries letters and glyphs.
    *
-   * Data, not pixels, because notation carries letters and glyphs — flipping
-   * the render would reverse the text along with the geometry. `mirrorSequence`
-   * is the owner of that transform, the same one the composer's Actions use.
-   *
-   * It is async, and the result is cached against the sequence it came from, so
-   * toggling back and forth costs one computation and a changed sequence can
-   * never show a mirror of the previous one.
+   * `createHandLabeledCard` owns the transform, its cache, and the pairing of
+   * a drawn sequence with the labeling it was resolved under. With no
+   * performance on the canvas there is no labeling and the notation is
+   * canonical.
    */
-  let notationMirrored = $state(false);
-  let notationMirrorPending = $state(false);
-  let mirrorCache = $state<{
-    source: SequenceData;
-    mirrored: SequenceData;
-  } | null>(null);
-  const displaySequence = $derived(
-    notationMirrored && mirrorCache?.source === sequence
-      ? mirrorCache.mirrored
-      : sequence
+  const handLabeling = $derived<HandLabeling | null>(
+    performanceUrl
+      ? (chosenPerformance?.handLabeling ?? DEFAULT_HAND_LABELING)
+      : null
   );
+  const labeledCard = createHandLabeledCard({
+    getSequence: () => sequence,
+    getLabeling: () => handLabeling,
+  });
+  const displaySequence = $derived(labeledCard.sequence);
+  const handLabelingPending = $derived(labeledCard.pending);
 
-  async function toggleNotationMirror(): Promise<void> {
-    if (notationMirrored) {
-      notationMirrored = false;
-      return;
+  /**
+   * Flip between mirror me and as performed. A catalog video remembers the
+   * choice; a local file keeps it for this session only.
+   */
+  async function toggleHandLabeling(): Promise<void> {
+    const current = chosenPerformance;
+    if (!current) return;
+    const next: HandLabeling =
+      current.handLabeling === "mirror-me" ? "as-performed" : "mirror-me";
+    chosenPerformance = { ...current, handLabeling: next };
+    if (current.videoId && videoLibrary) {
+      try {
+        await videoLibrary.applyHandLabeling(current.videoId, next);
+      } catch {
+        // Only undo the flip; a performance picked meanwhile stands.
+        if (chosenPerformance?.url === current.url) {
+          chosenPerformance = { ...current };
+        }
+      }
     }
-    if (mirrorCache?.source === sequence) {
-      notationMirrored = true;
-      return;
-    }
-    const source = sequence;
-    notationMirrorPending = true;
-    try {
-      mirrorCache = { source, mirrored: await mirrorSequence(source) };
-      notationMirrored = true;
-    } catch (error) {
-      console.error("[PostStudio] Could not mirror the notation:", error);
-    } finally {
-      notationMirrorPending = false;
-    }
-  }
-
-  // Seeded mirror: `toggleNotationMirror` FLIPS (it un-mirrors when already
-  // mirrored), so a seeded `notationMirrored: true` cannot call it as-is.
-  // `notationMirrored`/`mirrorCache` both still hold their fresh-mount values
-  // at this point in setup, so this call always takes the function's own
-  // async-build "turn on" branch above — reusing that branch rather than
-  // duplicating its cache-population logic here.
-  if (psSeed?.notationMirrored) {
-    void toggleNotationMirror();
   }
 
   // Tunnel and mandala controllers live here, above both the slot that draws
@@ -593,7 +586,6 @@
           settingsService.settings.leftPropType ?? PropType.STAFF,
         audioMode,
         audioModeTouched,
-        notationMirrored,
       },
       options
     );
@@ -784,9 +776,9 @@
     {exportedUrl}
     {exportFilename}
     {exportError}
-    {notationMirrored}
-    {notationMirrorPending}
-    onToggleNotationMirror={toggleNotationMirror}
+    handLabeling={labeledCard.labeling ?? handLabeling}
+    {handLabelingPending}
+    onToggleHandLabeling={chosenPerformance ? toggleHandLabeling : undefined}
     {audioMode}
     {canKeepOriginalAudio}
     onAudioModeChange={setAudioMode}
@@ -812,6 +804,8 @@
       <div class="canvas-stage">
         <PostStudioPreview
           sequence={displaySequence}
+          qrSequence={sequence}
+          handLabeling={labeledCard.labeling}
           cardRenderOptions={synchronizedCardRenderOptions}
           durationLabel={`${composition.durationSeconds.toFixed(1)}s`}
           onRootReady={setPreviewRoot}

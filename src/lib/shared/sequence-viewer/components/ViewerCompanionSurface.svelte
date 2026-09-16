@@ -7,10 +7,12 @@
   import { getViewerTunnelStageContext } from "../context/viewer-tunnel-stage-context";
   import { getViewerStudioSurfaces } from "../context/viewer-studio-surfaces-context";
   import { reparentToInspector } from "./reparent-to-inspector";
+  import { createHandLabeledCard } from "../services/hand-labeled-card.svelte";
 
   let {
     side,
     sequence,
+    activeHandLabeling = null,
     playback,
     imageComposition,
     propRendering,
@@ -46,6 +48,14 @@
     tunnelSaveTarget = null,
     onTunnelSaved,
   }: ViewerCompanionSurfaceProps = $props();
+
+  // Beside performance footage the card draws the sequence the viewer should
+  // copy, not the stored one, and the footer legend must always describe the
+  // sequence actually drawn - never the labeling still in flight.
+  const labeledCard = createHandLabeledCard({
+    getSequence: () => sequence,
+    getLabeling: () => activeHandLabeling,
+  });
 
   const selectedPane = $derived(
     side === "left" ? splitConfig.leftPane : splitConfig.rightPane
@@ -109,7 +119,11 @@
       }}
     >
       <ChoreoCard
-        sequence={studioCard?.sequence ?? sequence}
+        sequence={studioCard?.sequence ?? labeledCard.sequence}
+        handLabeling={studioCard
+          ? studioCard.handLabeling
+          : labeledCard.labeling}
+        qrSequence={studioCard ? studioCard.qrSequence : sequence}
         customTitleText={sequence.sequenceKind === "hand-path"
           ? sequence.displayName || sequence.name
           : undefined}

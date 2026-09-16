@@ -4,6 +4,7 @@ import { buildViewerShareActions } from "../services/viewer-shell-model";
 import type { MandalaViewerController } from "./mandala-viewer-controller.svelte";
 import type { TunnelViewController } from "../tunnel/tunnel-view-controller.svelte";
 import type { ShareArtifact } from "$lib/shared/share/services/post-handoff";
+import type { SequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
 
 type ViewerShareActionId = "share-sequence" | "send-sequence" | "copy-link";
 
@@ -24,7 +25,7 @@ interface ViewerShellShareInputs {
 }
 
 interface ViewerShellShareDependencies {
-  openSendSequenceSheetWithCard: typeof import("$lib/shared/inbox/state/send-sequence-state.svelte").openSendSequenceSheetWithCard;
+  createSequenceSendSession: typeof import("$lib/shared/inbox/state/send-sequence-state.svelte").createSequenceSendSession;
   /** The Choreo Card the current pipeline draws for this sequence. */
   renderCardPreview: (sequence: SequenceData) => Promise<Blob>;
   sendToStickerLab: typeof import("../services/send-to-sticker-lab").sendToStickerLab;
@@ -70,6 +71,13 @@ export function createViewerShellShareState(
    */
   let sceneTakeSuspended = $state(false);
   let shareLinkFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
+  /**
+   * Send mode: the viewer itself morphs into the recipient picker, the way it
+   * morphs into Practice. `$state.raw` because the session carries its own
+   * `$state` fields (the card render) behind getters, and a deep proxy would
+   * only get in their way. Null when the viewer is not sending.
+   */
+  let sendSession = $state.raw<SequenceSendSession | null>(null);
 
   const actions = $derived(buildViewerShareActions(shareLinkCopied));
   const statusMessage = $derived(shareLinkCopied ? "Link copied." : "");
@@ -78,13 +86,32 @@ export function createViewerShellShareState(
     if (shareLinkFeedbackTimer) clearTimeout(shareLinkFeedbackTimer);
   }
 
+  /**
+   * Enter send mode. The card is drawn with the viewer's current settings and
+   * the render is handed to the stage as soon as it lands. A share sheet that
+   * was open (Send in Flow Arts Composer lives in it too) closes first: the
+   * viewer is about to become the sending surface, and a dialog over it would
+   * hide the recipients it is asking for.
+   */
   function sendToInbox(): void {
     const sequence = inputs.getSequence();
     dependencies.captureScanAction("send");
-    dependencies.openSendSequenceSheetWithCard(
+    if (sendSession) return;
+    const session = dependencies.createSequenceSendSession(
       sequence,
       dependencies.renderCardPreview
     );
+    if (!session) return;
+    if (postSheetOpen) {
+      postSheetOpen = false;
+      endShareSession();
+    }
+    sendSession = session;
+  }
+
+  /** Cancel, Escape, or a completed send: the viewer is a viewer again. */
+  function exitSendMode(): void {
+    sendSession = null;
   }
 
   /**
@@ -314,6 +341,12 @@ export function createViewerShellShareState(
     get preserveSession() {
       return preserveSession;
     },
+    get sendSession() {
+      return sendSession;
+    },
+    get sendModeActive() {
+      return sendSession !== null;
+    },
     /** The user opening or dismissing the sheet. Dismissing ends the session. */
     setPostSheetOpen(open: boolean) {
       postSheetOpen = open;
@@ -347,6 +380,7 @@ export function createViewerShellShareState(
       return inputs.getContext().getShareUrl();
     },
     sendToInbox,
+    exitSendMode,
     setArtShareTarget,
     selectAction,
     prepareFile,

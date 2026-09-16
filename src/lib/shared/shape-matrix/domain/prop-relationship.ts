@@ -10,6 +10,11 @@ import {
 } from "$lib/shared/animation-engine/services/angle-calculator";
 import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
+import {
+  isVisibleMotion,
+  type MotionData,
+} from "$lib/shared/pictograph/shared/domain/models/motion-data";
+import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 
 export type PropDirectionRelationship = "same" | "opp";
 export type PropTimingRelationship = "tog" | "split" | "quarter";
@@ -57,6 +62,18 @@ export function propTimingBetween(
   return timingFromPhase(normalizedPhaseDelta(a, b));
 }
 
+type RelationshipMotion = Pick<
+  MotionData,
+  "rotationDirection" | "startOrientation" | "startLocation"
+>;
+
+const FLOAT: PropRelationship = {
+  kind: "float",
+  direction: null,
+  timing: null,
+  element: null,
+};
+
 /**
  * Classify the props separately from the hands. Direction survives unequal
  * turn rates; timing does not. Float is neither clockwise nor counter-clockwise,
@@ -74,24 +91,27 @@ export function derivePropRelationship(
   );
   const left = step?.motions.left;
   const right = step?.motions.right;
-  if (
-    !left ||
-    !right ||
-    pair.left.turns === "fl" ||
-    pair.right.turns === "fl"
-  ) {
-    return { kind: "float", direction: null, timing: null, element: null };
-  }
+  if (!left || !right) return FLOAT;
+  return relationshipFromMotions(left, right, pair.left.turns, pair.right.turns);
+}
+
+function relationshipFromMotions(
+  left: RelationshipMotion,
+  right: RelationshipMotion,
+  leftTurns: number | "fl" | undefined,
+  rightTurns: number | "fl" | undefined
+): PropRelationship {
+  if (leftTurns === "fl" || rightTurns === "fl") return FLOAT;
   if (
     left.rotationDirection === RotationDirection.NO_ROTATION ||
     right.rotationDirection === RotationDirection.NO_ROTATION
   ) {
-    return { kind: "float", direction: null, timing: null, element: null };
+    return FLOAT;
   }
 
   const direction: PropDirectionRelationship =
     left.rotationDirection === right.rotationDirection ? "same" : "opp";
-  if (pair.left.turns !== pair.right.turns) {
+  if (leftTurns !== rightTurns) {
     return { kind: "direction-only", direction, timing: null, element: null };
   }
 
@@ -129,6 +149,29 @@ export function derivePropElementalType(
     left: { turns: left.turns },
     right: { turns: right.turns },
   });
+  return relationship.kind === "full"
+    ? (relationship.element.element as ElementalType)
+    : null;
+}
+
+/**
+ * The prop relationship of ONE step, read from its own two motions. This is
+ * the entry point for per-pictograph surfaces (viewer cells, card fronts,
+ * exports): a start position or a float step has no prop element, so those
+ * pictographs draw no prop glyph.
+ */
+export function derivePropElementalTypeForStep(
+  step: Pick<PictographData, "motions"> | null | undefined
+): ElementalType | null {
+  const left = step?.motions?.left;
+  const right = step?.motions?.right;
+  if (!isVisibleMotion(left) || !isVisibleMotion(right)) return null;
+  const relationship = relationshipFromMotions(
+    left,
+    right,
+    left.turns,
+    right.turns
+  );
   return relationship.kind === "full"
     ? (relationship.element.element as ElementalType)
     : null;

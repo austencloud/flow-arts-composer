@@ -124,8 +124,10 @@ export function createViewerOrchestratorContextState(
       playbackSource: inputs.presentation.playbackSource,
       videoPlaybackBeatIndex: inputs.presentation.videoPlaybackBeatIndex,
       activeStepMap: inputs.presentation.activeStepMap,
+      activeHandLabeling: inputs.presentation.activeHandLabeling,
       setPlaybackSource: inputs.presentation.setPlaybackSource,
       setActiveStepMap: inputs.presentation.setActiveStepMap,
+      setActiveHandLabeling: inputs.presentation.setActiveHandLabeling,
       onVideoTimeUpdate: inputs.presentation.handleVideoTimeUpdate,
 
       viewMode: inputs.getViewMode(),
@@ -249,6 +251,15 @@ export function createViewerOrchestratorContextState(
             })
           : inputs.exportCoordinator.captureAnimationPreview();
       },
+      captureVideoOpener: (kind) =>
+        inputs.viewer3DState.renderMode === "3d"
+          ? Promise.resolve("")
+          : inputs.exportCoordinator.captureVideoOpener(
+              kind,
+              inputs.interactive.playbackController,
+              inputs.modalAnimationState,
+              inputs.getEffectiveSequence()
+            ),
       handleSyncToggle: inputs.lanSync.handleSyncToggle,
       handleOpenInCompose: inputs.handlers.handleOpenInCompose,
       handleEdit: inputs.handlers.handleEdit,

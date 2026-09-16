@@ -18,6 +18,7 @@ import {
   drawTurnsColumn,
   drawDirectionDot,
   drawElementalGlyph,
+  drawPropElementalGlyph,
   drawPlacementGlyph,
   drawSoloMotionGlyph,
   drawReversalIndicators,
@@ -269,6 +270,11 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
     // 9. Draw fused Elemental+TnD glyph (bottom-right corner)
     if (visibility.showTnD || visibility.showElemental) {
       await drawElementalGlyph(ctx, preparedPictograph, gridMode, size, isDarkMode);
+    }
+
+    // 9b. Prop timing-and-direction glyph (top-right, dashed ring)
+    if (visibility.showPropTnD) {
+      await drawPropElementalGlyph(ctx, preparedPictograph, size, isDarkMode);
     }
 
     // 11. Draw Position glyph or Solo motion glyph (top center)

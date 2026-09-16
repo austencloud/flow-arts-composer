@@ -177,7 +177,7 @@
   // without paying the conversation subscription on every viewer visit.
   let inboxHostMounted = $state(false);
   $effect(() => {
-    if (inboxState.isOpen) inboxHostMounted = true;
+    if (inboxState.isOpen || inboxState.hostRequested) inboxHostMounted = true;
   });
   let isLoading = $state(true);
   let loadError = $state<string | null>(null);
@@ -261,7 +261,10 @@
         composer.getImageComposer().setQRCodeGenerator(qr.getQRCodeGenerator())
       )
       .catch((error) =>
-        console.warn("[SequenceViewerPage] QR generator injection failed:", error)
+        console.warn(
+          "[SequenceViewerPage] QR generator injection failed:",
+          error
+        )
       );
 
     // Non-blocking: settings sync happens in background.

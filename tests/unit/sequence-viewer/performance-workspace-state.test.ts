@@ -71,6 +71,31 @@ describe("performance workspace state", () => {
     }
   });
 
+  it("tells the playhead about a labeling change without re-attaching the step map", async () => {
+    const beatMap = {
+      source: "manual",
+      beatTimestamps: [0, 1],
+    } as StepMap;
+    const harness = createPerformanceWorkspaceHarness([
+      performance("first", beatMap),
+    ]);
+    try {
+      flushSync();
+      expect(harness.attachedMaps.at(-1)).toEqual(beatMap);
+      expect(harness.labelings.at(-1)).toBe("mirror-me");
+      const attachCount = harness.attachedMaps.length;
+
+      await harness.state.persistHandLabeling("as-performed");
+      flushSync();
+
+      // Re-attaching would reset the playhead; the flip is presentation only.
+      expect(harness.attachedMaps.length).toBe(attachCount);
+      expect(harness.labelings.at(-1)).toBe("as-performed");
+    } finally {
+      harness.dispose();
+    }
+  });
+
   it("pauses and releases a mounted player when Performances becomes inactive", () => {
     const harness = createPerformanceWorkspaceHarness([performance("first")]);
     const player = {

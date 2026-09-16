@@ -89,6 +89,7 @@ export function resolvePreviewCellRender(
     showRightMotion: options.showRightMotion,
     showTnD: suppressOverlays ? false : (options.showTnD ?? false),
     showElemental: suppressOverlays ? false : (options.showElemental ?? false),
+    showPropTnD: suppressOverlays ? false : (options.showPropTnD ?? false),
     showPlacements: suppressOverlays ? false : (options.showPlacements ?? false),
     showHandColorKey: suppressOverlays
       ? false

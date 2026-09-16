@@ -26,6 +26,8 @@ interface VisibilitySettings {
   tkaGlyph: boolean; 
   tndGlyph: boolean;
   elementalGlyph: boolean;
+  /** Prop timing-and-direction element (top-right, dashed ring). */
+  propTndGlyph: boolean;
   placementsGlyph: boolean;
   showGrid: boolean; 
   nonRadialPoints: boolean;
@@ -59,6 +61,7 @@ export class VisibilityStateManager {
       tkaGlyph: true,
       tndGlyph: false,
       elementalGlyph: false,
+      propTndGlyph: false,
       placementsGlyph: false,
       showGrid: true,
       nonRadialPoints: false,
@@ -98,6 +101,8 @@ export class VisibilityStateManager {
         if (v.tndGlyph !== undefined) this.settings.tndGlyph = v.tndGlyph;
         if (v.elementalGlyph !== undefined)
           this.settings.elementalGlyph = v.elementalGlyph;
+        if (v.propTndGlyph !== undefined)
+          this.settings.propTndGlyph = v.propTndGlyph;
         if (v.placementsGlyph !== undefined)
           this.settings.placementsGlyph = v.placementsGlyph;
         if (v.reversalIndicators !== undefined)
@@ -145,6 +150,7 @@ export class VisibilityStateManager {
       tkaGlyph: this.settings.tkaGlyph,
       tndGlyph: this.settings.tndGlyph,
       elementalGlyph: this.settings.elementalGlyph,
+      propTndGlyph: this.settings.propTndGlyph,
       placementsGlyph: this.settings.placementsGlyph,
       reversalIndicators: this.settings.reversalIndicators,
       showGrid: this.settings.showGrid,
@@ -169,6 +175,7 @@ export class VisibilityStateManager {
       reversalIndicators: this.settings.reversalIndicators,
       tndGlyph: this.settings.tndGlyph,
       elementalGlyph: this.settings.elementalGlyph,
+      propTndGlyph: this.settings.propTndGlyph,
       placementsGlyph: this.settings.placementsGlyph,
       nonRadialPoints: this.settings.nonRadialPoints,
       handColorKey: this.settings.handColorKey,
@@ -313,6 +320,7 @@ export class VisibilityStateManager {
       "reversalIndicators",
       "tndGlyph",
       "elementalGlyph",
+      "propTndGlyph",
       "placementsGlyph",
       "handColorKey",
     ].filter((glyph) => this.getGlyphVisibility(glyph));

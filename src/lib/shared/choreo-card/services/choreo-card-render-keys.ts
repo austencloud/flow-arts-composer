@@ -21,6 +21,8 @@ export interface ChoreoCardRenderKeyInputs {
   showReversals: boolean;
   showTnD: boolean;
   showElemental: boolean;
+  /** Optional so older callers and fixtures default to OFF. */
+  showPropTnD?: boolean;
   showPlacements: boolean;
   /** Optional so older callers and fixtures default to the baked-in key. */
   showHandColorKey?: boolean;
@@ -84,7 +86,7 @@ export function buildChoreoCardRenderKeys(
   // it changes prop GEOMETRY — it belongs in the structural key, not the
   // overlay-only bucket.
   const ch = `${i.leftBuugengFlipped ? "1" : "0"}${i.rightBuugengFlipped ? "1" : "0"}`;
-  const gv = `${i.showTnD ? "1" : "0"}${i.showElemental ? "1" : "0"}${i.showPlacements ? "1" : "0"}${i.showGrid ? "1" : "0"}${i.showHandColorKey === false ? "0" : "1"}`;
+  const gv = `${i.showTnD ? "1" : "0"}${i.showElemental ? "1" : "0"}${i.showPlacements ? "1" : "0"}${i.showGrid ? "1" : "0"}${i.showHandColorKey === false ? "0" : "1"}${i.showPropTnD ? "1" : "0"}`;
   const paletteKey = i.primaryPropColors
     ? `-colors:${i.primaryPropColors.left}:${i.primaryPropColors.right}`
     : "";

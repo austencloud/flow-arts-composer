@@ -327,6 +327,7 @@
   });
 </script>
 
+<div class="intro-frame">
 <section
   class="motion-path-intro"
   aria-labelledby="motion-path-intro-heading"
@@ -455,24 +456,35 @@
   <!-- The production SSR build stubs every features/learn component to null,
        so the controls only render in the browser; the explanation itself still
        prerenders. -->
-  {#if browser}
-    <LessonStageControls
-      label={isFinal ? "Start again" : "Next"}
-      currentStep={stage + 1}
-      totalSteps={STAGES.length}
-      progressAppearance="steps"
-      onAction={advance}
-    />
-  {/if}
+  <div class="intro-controls">
+    {#if browser}
+      <LessonStageControls
+        label={isFinal ? "Start again" : "Next"}
+        currentStep={stage + 1}
+        totalSteps={STAGES.length}
+        progressAppearance="steps"
+        onAction={advance}
+      />
+    {/if}
+  </div>
 </section>
+</div>
 
 <style>
+  .intro-frame {
+    width: 100%;
+    min-width: 0;
+    container-type: inline-size;
+  }
+
+  /* Portrait: copy, drawing, controls stacked in one column. */
   .motion-path-intro {
     --settings-stage-width: min(100%, 47.5rem);
     width: var(--settings-stage-width);
     min-height: clamp(36rem, 70vh, 44rem);
     display: grid;
     grid-template-rows: 5.5rem minmax(22rem, 1fr) auto;
+    grid-template-areas: "copy" "stage" "controls";
     justify-items: center;
     gap: clamp(1rem, 2.5cqw, 1.75rem);
     margin: clamp(2rem, 6vw, 4.5rem) auto;
@@ -480,7 +492,17 @@
     color: var(--theme-text);
   }
 
+  .intro-controls {
+    grid-area: controls;
+    width: 100%;
+    min-height: 5.75rem;
+    display: grid;
+    justify-items: center;
+    align-items: start;
+  }
+
   .intro-copy {
+    grid-area: copy;
     width: 100%;
     min-height: 5.5rem;
     display: grid;
@@ -513,6 +535,7 @@
   }
 
   .route-stage {
+    grid-area: stage;
     width: min(100%, 40rem);
     min-width: 0;
     min-height: 0;
@@ -641,6 +664,43 @@
       filter: drop-shadow(
         0 0 0.35rem color-mix(in srgb, var(--hand-color) 50%, transparent)
       );
+    }
+  }
+
+  /* Landscape: the words and the button sit beside the drawing instead of
+     leaving both rails empty. The copy and controls cluster at the vertical
+     center of the stage. */
+  @container (min-width: 52rem) {
+    .motion-path-intro {
+      width: 100%;
+      min-height: 0;
+      grid-template-columns: minmax(18rem, 0.9fr) minmax(0, 1.1fr);
+      grid-template-rows: auto auto;
+      grid-template-areas:
+        "copy stage"
+        "controls stage";
+      align-content: center;
+      column-gap: clamp(2rem, 5cqw, 5rem);
+      row-gap: clamp(1rem, 2cqw, 1.5rem);
+      margin-block: clamp(1.5rem, 4vw, 3rem);
+    }
+
+    .intro-copy {
+      align-self: end;
+    }
+
+    .intro-controls {
+      align-self: start;
+      min-height: 0;
+    }
+
+    .route-stage {
+      width: 100%;
+      align-self: center;
+    }
+
+    svg {
+      max-height: min(30rem, 62vh);
     }
   }
 

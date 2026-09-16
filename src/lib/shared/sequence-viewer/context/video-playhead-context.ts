@@ -18,12 +18,22 @@
 import { getContext, setContext } from "svelte";
 import type { StepMap } from "$lib/shared/video-collaboration/domain/collaborative-video";
 import { seekTimeForStep } from "$lib/shared/video-collaboration/utils/step-map-utils";
+import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 
 const KEY = Symbol("sequence-viewer-video-playhead");
 
 export interface VideoPlayheadBridge {
-  /** The performance on screen changed. Null when it carries no timing. */
+  /**
+   * The performance on screen changed. Null when it carries no timing.
+   */
   attach(map: StepMap | null): void;
+  /**
+   * The active performance's hand labeling changed independently of `attach`.
+   * Re-running `attach` resets the playhead (map, time, playback source), so
+   * a labeling-only change - like toggling "Mirror me" on a paused video -
+   * must not go through it. Null when no performance is on screen at all.
+   */
+  setHandLabeling(labeling: HandLabeling | null): void;
   /** The footage moved. */
   reportTime(seconds: number): void;
   /** The player a step click should drive. Null when none is mounted. */
@@ -38,10 +48,13 @@ export interface VideoPlayheadBridge {
 interface BridgeHost {
   setPlaybackSource(source: "animation" | "video"): void;
   setActiveStepMap(map: StepMap | null): void;
+  setActiveHandLabeling(labeling: HandLabeling | null): void;
   onVideoTimeUpdate(seconds: number): void;
 }
 
-export function createVideoPlayheadBridge(host: BridgeHost): VideoPlayheadBridge {
+export function createVideoPlayheadBridge(
+  host: BridgeHost
+): VideoPlayheadBridge {
   let map: StepMap | null = null;
   let seek: ((seconds: number) => void) | null = null;
   let time = 0;
@@ -56,6 +69,9 @@ export function createVideoPlayheadBridge(host: BridgeHost): VideoPlayheadBridge
       time = 0;
       host.setActiveStepMap(usable);
       host.setPlaybackSource(usable ? "video" : "animation");
+    },
+    setHandLabeling(labeling) {
+      host.setActiveHandLabeling(labeling);
     },
     reportTime(seconds) {
       time = seconds;

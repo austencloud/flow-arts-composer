@@ -61,6 +61,13 @@
     videoDownloadSettingsKey,
   } from "$lib/shared/share/domain/video-download-intent";
   import {
+    VIDEO_OPENER_OPTIONS,
+    openerAddsHold,
+    openerCoverOffsetMs,
+    type VideoOpener,
+    type VideoRenderRequest,
+  } from "$lib/shared/share/domain/video-opener";
+  import {
     connectMetaAccount,
     disconnectMetaAccount,
     publishToMeta,
@@ -84,8 +91,11 @@
     /** Distinguishes a user-driven scene take from background export work. */
     isRecordingScene?: boolean;
     exportProgress: number | null;
-    /** `false` means no render started, so the sheet must stop waiting. */
-    onRequestVideo?: () => void | boolean | Promise<boolean>;
+    /** `false` means no render started, so the sheet must stop waiting. The
+     * request carries the chosen opener image so the render opens on it. */
+    onRequestVideo?: (
+      request?: VideoRenderRequest
+    ) => void | boolean | Promise<boolean>;
     /** Stops the same export source that `onRequestVideo` started. */
     onCancelVideo?: () => void;
     /** Hosts retire an unrelated old video only when this share prepares video. */
@@ -106,6 +116,9 @@
     /** A host-owned current-view capture. It is only presentation: exports still
      * use the existing video callback and never mount another animation engine. */
     captureAnimationPreview?: () => string;
+    /** The image a shared clip opens with, per choice. Omitted by hosts whose
+     * render cannot open on a chosen image; the "Opens with" row is then hidden. */
+    captureVideoOpener?: (kind: VideoOpener) => Promise<string>;
     /** Cinema is meaningful only for the 3D exporter. */
     is3DExport?: boolean;
     videoSourceKey?: string;
@@ -149,6 +162,7 @@
     onRequestAccount,
     videoLabel = "Video",
     captureAnimationPreview = () => "",
+    captureVideoOpener,
     is3DExport = false,
     videoSourceKey = "",
     initialArtifact = "card",
@@ -232,6 +246,10 @@
   let pendingDownloadSettingsKey = $state<string | null>(null);
   let pendingDownloadSourceKey = $state<string | null>(null);
   let animationPreviewUrl = $state<string | null>(null);
+  /** Captured once per session and choice; "this frame" is the preview itself. */
+  let openerPreviews = $state<Partial<Record<VideoOpener, string>>>({});
+  let openerCaptureSession = 0;
+  const openerOptions = [...VIDEO_OPENER_OPTIONS];
   let videoSettingsOpen = $state(false);
   // A tall sheet has room to show the settings without a disclosure.
   const roomySheet = new MediaQuery("(min-height: 760px)");
@@ -554,6 +572,55 @@
   /** Busy means work is actually running, including bytes arriving for delivery. */
   const videoBusy = $derived(videoStatus === "rendering");
 
+  /** The opener is offered only where the host can bake it into the render. */
+  const openerEnabled = $derived(
+    !!captureVideoOpener && !is3DExport && artifact === "video"
+  );
+  const opener = $derived<VideoOpener>(
+    openerEnabled ? exportOptions.videoOpener : "first-beat"
+  );
+  const openerLabel = $derived(
+    VIDEO_OPENER_OPTIONS.find((option) => option.value === opener)?.label ??
+      "First beat"
+  );
+  /** The stage shows exactly the image the clip will open with. */
+  const openerPreviewUrl = $derived(
+    openerEnabled && opener !== "this-frame"
+      ? (openerPreviews[opener] ?? animationPreviewUrl)
+      : animationPreviewUrl
+  );
+
+  async function ensureOpenerPreview(kind: VideoOpener): Promise<void> {
+    if (!captureVideoOpener || kind === "this-frame") return;
+    if (openerPreviews[kind]) return;
+    const session = openerCaptureSession;
+    try {
+      const url = await captureVideoOpener(kind);
+      if (session !== openerCaptureSession || !url) return;
+      openerPreviews = { ...openerPreviews, [kind]: url };
+    } catch (error) {
+      console.error("[PostShareSheet] Could not capture the opener:", error);
+    }
+  }
+
+  $effect(() => {
+    if (!openerEnabled || shareRoute === "home") return;
+    const kind = opener;
+    // Reading the cache here re-runs the capture after a session reset clears it.
+    if (kind === "this-frame" || openerPreviews[kind]) return;
+    untrack(() => void ensureOpenerPreview(kind));
+  });
+
+  function openerRequest(): VideoRenderRequest | undefined {
+    if (!openerEnabled) return undefined;
+    return {
+      opener: {
+        kind: opener,
+        imageUrl: openerAddsHold(opener) ? (openerPreviewUrl ?? "") : "",
+      },
+    };
+  }
+
   /** Detect setting changes without automatically replacing an expensive render. */
   const videoSettingsKey = $derived(
     videoDownloadSettingsKey({
@@ -562,6 +629,7 @@
       repeats: exportOptions.videoLoopCount,
       quality: exportOptions.videoQuality,
       is3DExport,
+      opener: openerEnabled ? opener : undefined,
     })
   );
   let renderedVideoKey = $state<string | null>(null);
@@ -659,6 +727,8 @@
     filePreparationOpen = shareRoute === "download";
     animationPreviewUrl =
       shareRoute === "download" ? captureAnimationPreview() || null : null;
+    openerPreviews = {};
+    openerCaptureSession += 1;
     if (initialEntry === "download") shareDraft.selectArtifact(initialArtifact);
   });
 
@@ -1017,7 +1087,7 @@
     requestedVideoSourceKey = untrack(() => videoSourceKey);
     let started: void | boolean | Promise<boolean>;
     try {
-      started = onRequestVideo();
+      started = onRequestVideo(openerRequest());
     } catch {
       if (requestVersion === videoRequestVersion) videoStatus = "failed";
       return;
@@ -1299,7 +1369,9 @@
                 thumbOffsetMs:
                   postDeliveryState.draft.instagram.cover?.kind === "frame"
                     ? postDeliveryState.draft.instagram.cover.offsetMs
-                    : null,
+                    : openerEnabled
+                      ? openerCoverOffsetMs()
+                      : null,
               }
             : undefined,
       });
@@ -1734,12 +1806,15 @@
                     muted
                     playsinline
                   ></video>
-                {:else if artifact === "video" && animationPreviewUrl}
-                  <!-- This capture belongs to the viewer. The sheet only presents it. -->
+                {:else if artifact === "video" && openerPreviewUrl}
+                  <!-- This capture belongs to the viewer. The sheet only presents
+                       it, and it is the exact image the clip opens with. -->
                   <img
                     class="preview"
-                    src={animationPreviewUrl}
-                    alt="Current animation view"
+                    src={openerPreviewUrl}
+                    alt={openerEnabled
+                      ? `Video opens with ${openerLabel.toLowerCase()}`
+                      : "Current animation view"}
                   />
                 {:else if artifact === "video" && !videoBusy}
                   <div class="stage-pending stage-refused" role="status">
@@ -1765,6 +1840,24 @@
                   </div>
                 {/if}
               </div>
+
+              {#if openerEnabled && sequence && !qrDataUrl}
+                <fieldset
+                  class="opener-row"
+                  aria-label="Opens with"
+                  disabled={videoBusy}
+                >
+                  <span id="share-video-opener">Opens with</span>
+                  <SegmentedControl
+                    options={openerOptions}
+                    value={exportOptions.videoOpener}
+                    onchange={(value) => exportOptions.setVideoOpener(value)}
+                    color="accent"
+                    size="sm"
+                    ariaLabelledby="share-video-opener"
+                  />
+                </fieldset>
+              {/if}
 
               {#if artifact === "video" && (videoBusy || videoStatus === "failed" || videoStatus === "canceled")}
                 <p class="render-feedback" role="status">
@@ -2215,6 +2308,33 @@
     font-weight: 600;
   }
   .video-settings:disabled {
+    opacity: 0.6;
+  }
+  /* The thumbnail choice sits under the stage it previews. */
+  .opener-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0 0.25rem;
+    border: 0;
+    color: var(--theme-text-secondary);
+    font-size: var(--font-size-min, 0.875rem);
+  }
+  .opener-row > span {
+    flex: 0 0 auto;
+    font-weight: 600;
+  }
+  .opener-row :global(.segmented-control) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .opener-row :global(.segment) {
+    white-space: nowrap;
+  }
+  .opener-row:disabled {
     opacity: 0.6;
   }
   .download-title {

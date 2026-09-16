@@ -218,6 +218,7 @@
                 showHandPoints
                 stepNumberOverride
                 {propElementalType}
+                showPropTnD={propElementalType !== null}
               />
               {#if current.region}
                 <ArtifactRegionSpotlight

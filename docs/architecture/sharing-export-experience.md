@@ -118,7 +118,13 @@ to a card merely because an old sheet default used that artifact.
   control. It does not render media. A copied link should preserve the intended
   view and must not misrepresent who can open it.
 - Sending to a friend in Flow Arts Composer uses the existing sequence-attachment
-  workflow; it is not a social publishing operation.
+  workflow; it is not a social publishing operation. From the viewer it is a
+  mode, not a dialog: the workspace morphs the way it does for Practice. The
+  card as currently configured fills the stage, recipients take the inspector
+  column, and the note and Send sit in a bar across the bottom. Choosing who
+  must not change what, so the card settings stay on the Card pane. Cancel or
+  Escape restores the pane the person was on. The inbox drawer keeps its own
+  send sheet for shares that start inside the inbox.
 - Native sharing is available when the actual payload is supported. After a long
   render, a clear Choose app or Share video action may be required for browser
   user activation. Do not promise automatic chooser opening everywhere.
@@ -166,6 +172,13 @@ to phone, prepared file, viewer source.
   reuse actual rendering and cancellation.
 - `src/lib/shared/share/services/post-handoff.ts`: reuse file, clipboard, and
   native delivery behavior.
+- `src/lib/shared/inbox/state/send-attachment-state.svelte.ts` owns recipient
+  selection and delivery for both send surfaces;
+  `SendDestinationPicker.svelte` is the shared picker. The viewer's
+  `SendSequenceWorkspace.svelte` and the drawer's `SendAttachmentSheet.svelte`
+  are presentation only. The outbox is the drawer's; hosts that mount the
+  drawer lazily mount it on `inboxState.hostRequested`, and the workspace
+  reads the registered outbox from `message-delivery-context.ts`.
 - Existing post composition and publishing components remain their respective
   owners. Do not introduce a second renderer, modal stack, or delivery service.
 
@@ -182,6 +195,26 @@ viewer that refuses to render reports as a
 failure, not a cancel; cancel is reserved for the user's own action. When the
 clipboard API is denied, copy link falls back to selection copy and, if that
 also fails, reveals the link in a selectable field.
+
+### The image a clip opens with
+
+Players and file thumbnails show a video's first frame, so the download task
+lets the person choose it. One row under the stage, labelled `Opens with`,
+offers three choices: `First beat` (the sequence's start position), `This
+frame` (the pose on screen when the sheet opened), and `Mandala` (the
+sequence's mandala fingerprint). There is no scrubber. The stage shows exactly
+the chosen image, so what the person sees is what the clip opens on. The
+choice persists with the other video settings and marks an existing render
+stale like any other setting. `First beat` adds nothing, because the export
+already opens with one beat of the start position. The other two prepend a
+one-beat hold of the chosen image at the export speed, drawn contain-fit over
+black at output resolution, before the animation. The viewer owns the images:
+the sheet receives a capture callback per choice and hands the chosen data URL
+back with the render request, so the baked hold is the very image the stage
+showed. The row is hidden for hosts whose render cannot open on a chosen image
+(3D takes, art views, Post Studio renders). When an opener applies, the
+Instagram cover points at time zero unless the person picked a cover frame
+explicitly.
 
 ## Acceptance and future evaluation
 

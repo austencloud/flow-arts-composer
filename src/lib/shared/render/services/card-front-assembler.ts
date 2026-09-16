@@ -246,6 +246,7 @@ export function buildCellLayerOptions(
     showRightMotion: visibility.showRightMotion,
     showPlacements: visibility.showPlacements ?? false,
     showHandColorKey: visibility.showHandColorKey ?? true,
+    showPropTnD: visibility.showPropTnD ?? false,
     handPathMode: visibility.handPathMode ?? false,
   };
 

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import { isCardLayoutAutomatic } from "$lib/shared/share/services/card-render-options";
@@ -11,10 +12,15 @@
     sequence,
     displayedBeatNumber,
     cardRenderOptions = null,
+    handLabeling = null,
+    qrSequence = sequence,
   }: {
     sequence: SequenceData;
     displayedBeatNumber: number;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
+    handLabeling?: HandLabeling | null;
+    /** The source behind a labeled `sequence`; what a scan of the card opens. */
+    qrSequence?: SequenceData;
   } = $props();
 
   const highlightedStepIndex = $derived(
@@ -52,6 +58,8 @@
     return {
       destroy: shared?.requestCard(owner, node, () => ({
         sequence,
+        handLabeling,
+        qrSequence,
         highlightedStepIndex,
         options: cardRenderOptions,
         automatic,
@@ -64,6 +72,8 @@
   {#if !shared?.ownsCard(owner)}
     <ChoreoCard
       {sequence}
+      {handLabeling}
+      {qrSequence}
       {highlightedStepIndex}
       showHighlight
       darkMode={cardRenderOptions?.visibilityOverrides?.darkMode ?? true}

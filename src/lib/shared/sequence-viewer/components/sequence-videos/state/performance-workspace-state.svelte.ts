@@ -9,6 +9,10 @@ import {
   passCountFromStepMap,
   passNumberFromVideo,
 } from "$lib/shared/video-collaboration/utils/step-map-utils";
+import {
+  resolveHandLabeling,
+  type HandLabeling,
+} from "$lib/shared/video-collaboration/domain/hand-labeling";
 import type { VideoPlayheadBridge } from "../../../context/video-playhead-context";
 
 export type PerformanceWorkspaceView = "browse" | "upload" | "map";
@@ -94,6 +98,18 @@ export function createPerformanceWorkspaceState(
     return () => dependencies.playhead?.attach(null);
   });
 
+  // Separate from the attach effect above: re-attaching resets the playhead
+  // (map, time, playback source), so a labeling-only change - such as
+  // toggling "Mirror me" on a paused video - must not re-run attach.
+  $effect(() => {
+    const labeling =
+      inputs.getActive() && view === "browse" && selectedVideo
+        ? resolveHandLabeling(selectedVideo)
+        : null;
+    dependencies.playhead?.setHandLabeling(labeling);
+    return () => dependencies.playhead?.setHandLabeling(null);
+  });
+
   $effect(() => {
     const player = activePlayer;
     const enabled = inputs.getActive() && view === "browse" && player !== null;
@@ -174,6 +190,18 @@ export function createPerformanceWorkspaceState(
     returnToBrowsing();
   }
 
+  // The manager already toasts a failed write, and the control reads its
+  // value straight from the stored record, so a rejection here only needs to
+  // stop short of an unhandled rejection - the control snaps back on its own.
+  async function persistHandLabeling(labeling: HandLabeling): Promise<void> {
+    if (!selectedVideo) return;
+    try {
+      await store.applyHandLabeling(selectedVideo.id, labeling);
+    } catch {
+      // Already surfaced to the user by the store/manager.
+    }
+  }
+
   function requestDelete(videoId: string): void {
     deleteError = "";
     pendingDeleteId = videoId;
@@ -245,6 +273,7 @@ export function createPerformanceWorkspaceState(
     returnToBrowsing,
     handleUploaded,
     saveStepMap,
+    persistHandLabeling,
     requestDelete,
     cancelDelete,
     confirmDelete,

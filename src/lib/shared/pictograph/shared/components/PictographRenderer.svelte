@@ -82,6 +82,7 @@ Usage:
     showTnD = false,
     showElemental = false,
     propElementalType = null,
+    showPropTnD = false,
     showPlacements = false,
     // Hand point visibility (all = show all 8, active = only where props are)
     handPointVisibility = "all",
@@ -173,6 +174,8 @@ Usage:
     showElemental?: boolean;
     /** Optional prop-path TnD element, rendered opposite the hand-path glyph. */
     propElementalType?: ElementalType | null;
+    /** Shows the prop-path glyph (its own Card-panel chip; independent of TnD). */
+    showPropTnD?: boolean;
     showPlacements?: boolean;
     /** Hand point visibility mode: "all" shows all 8 points, "active" shows only where props are, "none" hides all */
     handPointVisibility?: "all" | "active" | "none";
@@ -773,20 +776,22 @@ Usage:
       />
     </g>
 
-    <!-- Optional prop-path relationship (top-right). The existing bottom-right
-         glyph remains the hand-path relationship. Position carries the visual
-         distinction without adding repeated labels to every pictograph. -->
+    <!-- Prop-path relationship (top-right, dashed spin ring). The bottom-right
+         glyph remains the hand-path relationship; corner and ring carry the
+         distinction without adding labels to every pictograph. Mounted whenever
+         the step has a prop element so the Card-panel chip can fade it. -->
     {#if propElementalType}
       <g opacity={glyphOpacity}>
         <ElementalGlyph
           elementalType={propElementalType}
           {hasValidData}
-          visible={(showElemental || showTnD) && !poseOnly}
+          visible={showPropTnD && !poseOnly}
           {previewMode}
           {animateVisibility}
-          onToggle={onToggleElemental ?? onToggleTnD}
           xOffset={rightGlyphOffset}
           corner="top-right"
+          variant="prop"
+          darkMode={darkMode === true}
           ariaLabel={`Prop timing and direction element: ${propElementalType}`}
         />
       </g>

@@ -53,6 +53,7 @@ import {
   calculateArrowPlacement,
   calculateArrowRotation,
 } from "./arrow-placement.js";
+import { derivePropElementalType } from "./prop-tnd.js";
 import {
   calculateArrowAdjustment,
   type PictographAdjustmentInput,
@@ -150,6 +151,15 @@ const DIAMOND_VTG_MAP: Record<
 const ELEMENTAL_GLYPH_WIDTH = 95;
 const ELEMENTAL_GLYPH_HEIGHT = 125;
 const ELEMENTAL_OFFSET_PERCENTAGE = 0.04;
+// Prop timing-and-direction glyph: same element icon, wrapped in a dashed
+// spin ring so the prop relationship reads differently from the hand one.
+// Radius clears the 95x125 icon's corners inside the top-right slot.
+const PROP_TND_RING = {
+  radius: 80,
+  strokeWidth: 5,
+  dash: "14 10",
+  opacity: 0.75,
+} as const;
 
 // Type1 letters (A-V) - only these show elemental glyphs
 const TYPE1_LETTERS = new Set([
@@ -281,6 +291,8 @@ export interface RenderVisibilityOptions {
   showTKA?: boolean;
   showTND?: boolean;
   showElemental?: boolean;
+  /** Prop timing-and-direction element: top-right slot, dashed spin ring. */
+  showPropTnD?: boolean;
   showPlacements?: boolean;
   showReversals?: boolean;
   /** Start-placement legend: L/R swatches in the bottom-centre band. */
@@ -448,6 +460,7 @@ export class StandaloneRenderer {
       showTKA = true,
       showTND: showTND = false,
       showElemental = false,
+      showPropTnD = false,
       showPlacements = false,
       showReversals = false,
       showHandColorKey = false,
@@ -556,17 +569,33 @@ export class StandaloneRenderer {
         );
     }
 
-    // 6. Elemental glyph (top right) - only for Type1 letters
+    // 6. Elemental glyph (top right) - only for Type1 letters. When the prop
+    //    glyph owns the corner, the hand element steps one slot to the left.
     if (showElemental && input.letter && input.startPlacement) {
       const elementalSvg = this.renderElementalGlyph(
         input.letter,
         input.startPlacement,
         darkMode,
-        themeable
+        themeable,
+        showPropTnD ? ELEMENTAL_GLYPH_WIDTH + PROP_TND_RING.radius / 2 : 0
       );
       if (elementalSvg)
         svgParts.push(
           `<g class="svg-glyph svg-glyph-elemental">${elementalSvg}</g>`
+        );
+    }
+
+    // 6b. Prop timing-and-direction glyph (top right, dashed spin ring)
+    if (showPropTnD && input.leftMotion && input.rightMotion) {
+      const propSvg = this.renderPropTnDGlyph(
+        input.leftMotion,
+        input.rightMotion,
+        darkMode,
+        themeable
+      );
+      if (propSvg)
+        svgParts.push(
+          `<g class="svg-glyph svg-glyph-prop-tnd">${propSvg}</g>`
         );
     }
 
@@ -1493,8 +1522,11 @@ ${turnNumbersSvg}
     letter: string,
     startPlacement: string,
     darkMode: boolean,
-    themeable: boolean = false
+    themeable: boolean = false,
+    xShift: number = 0
   ): string {
+    void darkMode;
+    void themeable;
     const letterUpper = letter.toUpperCase();
 
     // Only show for Type1 letters
@@ -1509,6 +1541,44 @@ ${turnNumbersSvg}
     const elementalType = VTG_TO_ELEMENTAL[vtgMode];
     if (!elementalType) return "";
 
+    const markup = this.loadElementalGlyphMarkup(elementalType);
+    return markup ? this.placeElementalGlyph(markup, xShift) : "";
+  }
+
+  /**
+   * Prop timing-and-direction glyph: the props' element (spin direction and
+   * start-bearing phase, not the hand paths) in the top-right slot inside a
+   * dashed spin ring. Mirrors ElementalGlyph.svelte variant="prop".
+   */
+  private renderPropTnDGlyph(
+    left: MotionInput,
+    right: MotionInput,
+    darkMode: boolean,
+    themeable: boolean = false
+  ): string {
+    const elementalType = derivePropElementalType(left, right);
+    if (!elementalType) return "";
+    const markup = this.loadElementalGlyphMarkup(elementalType);
+    if (!markup) return "";
+
+    const offset = VIEWBOX_SIZE * ELEMENTAL_OFFSET_PERCENTAGE;
+    const cx = VIEWBOX_SIZE - offset - ELEMENTAL_GLYPH_WIDTH / 2;
+    const cy = offset + ELEMENTAL_GLYPH_HEIGHT / 2;
+    const stroke = this.resolveColor(
+      "--dm-glyph-fill",
+      "#e6e6e6",
+      "#000000",
+      darkMode,
+      themeable
+    );
+    const ring = `<circle cx="${cx}" cy="${cy}" r="${PROP_TND_RING.radius}" fill="none" stroke="${stroke}" stroke-width="${PROP_TND_RING.strokeWidth}" stroke-dasharray="${PROP_TND_RING.dash}" stroke-linecap="round" opacity="${PROP_TND_RING.opacity}"/>`;
+    return `<g>${ring}${this.placeElementalGlyph(markup, 0)}</g>`;
+  }
+
+  /** Load one element icon and inline its class fills and gradient defs. */
+  private loadElementalGlyphMarkup(
+    elementalType: ElementalType
+  ): { viewBox: string; innerContent: string; defsBlock: string } | null {
     const elementalPath = join(
       this.projectRoot,
       "static/images/elements",
@@ -1516,7 +1586,7 @@ ${turnNumbersSvg}
     );
     if (!existsSync(elementalPath)) {
       console.error("[Renderer] Elemental glyph not found:", elementalPath);
-      return "";
+      return null;
     }
 
     try {
@@ -1593,25 +1663,30 @@ ${turnNumbersSvg}
         );
       }
 
-      // Position in top-right corner (matching ElementalGlyph.svelte)
-      const offsetWidth = VIEWBOX_SIZE * ELEMENTAL_OFFSET_PERCENTAGE;
-      const offsetHeight = VIEWBOX_SIZE * ELEMENTAL_OFFSET_PERCENTAGE;
-      const xPosition = VIEWBOX_SIZE - ELEMENTAL_GLYPH_WIDTH - offsetWidth;
-      const yPosition = offsetHeight;
-
-      // Build the final SVG with gradient defs at the top level
       const defsBlock = gradientDefs ? `<defs>${gradientDefs}</defs>` : "";
-
-      return `<g>
-  ${defsBlock}
-  <svg x="${xPosition}" y="${yPosition}" width="${ELEMENTAL_GLYPH_WIDTH}" height="${ELEMENTAL_GLYPH_HEIGHT}" viewBox="${viewBox}" preserveAspectRatio="xMidYMid meet">
-    ${innerContent}
-  </svg>
-</g>`;
+      return { viewBox, innerContent, defsBlock };
     } catch (error) {
       console.error("[Renderer] Failed to load elemental glyph:", error);
-      return "";
+      return null;
     }
+  }
+
+  /** Place a loaded element icon in the top-right slot (matching ElementalGlyph.svelte). */
+  private placeElementalGlyph(
+    markup: { viewBox: string; innerContent: string; defsBlock: string },
+    xShift: number
+  ): string {
+    const offsetWidth = VIEWBOX_SIZE * ELEMENTAL_OFFSET_PERCENTAGE;
+    const offsetHeight = VIEWBOX_SIZE * ELEMENTAL_OFFSET_PERCENTAGE;
+    const xPosition = VIEWBOX_SIZE - ELEMENTAL_GLYPH_WIDTH - offsetWidth - xShift;
+    const yPosition = offsetHeight;
+
+    return `<g>
+  ${markup.defsBlock}
+  <svg x="${xPosition}" y="${yPosition}" width="${ELEMENTAL_GLYPH_WIDTH}" height="${ELEMENTAL_GLYPH_HEIGHT}" viewBox="${markup.viewBox}" preserveAspectRatio="xMidYMid meet">
+    ${markup.innerContent}
+  </svg>
+</g>`;
   }
 
   private renderPlacementGlyph(

@@ -2,6 +2,7 @@ import type {
   IVideoExportOrchestrator,
   VideoExportProgress,
 } from "$lib/shared/compose/domain/video-export-types";
+import type { VideoOpenerImage } from "$lib/shared/compose/domain/video-opener-frame";
 import type { Offline3DExporter } from "$lib/shared/3d/services/offline-3d-exporter";
 import type { SequenceRenderer } from "$lib/shared/render/services/sequence-renderer";
 import { getSequenceRenderer } from "$lib/shared/render/get-sequence-renderer";
@@ -42,6 +43,8 @@ export interface VideoExportOptions {
   /** Viewer Blue/Red motion toggles; a hand hidden on screen stays hidden in the file. */
   leftMotionVisible?: boolean;
   rightMotionVisible?: boolean;
+  /** An image held at time zero before the animation (2D sequence export). */
+  opener?: { image: VideoOpenerImage; holdBeats: number };
   /**
    * "standard" (default): one render per output frame, native resolution.
    * "cinema": 2× supersampling + 4× temporal motion blur. Roughly 4-8×
@@ -255,6 +258,8 @@ export class SequenceModalExporter {
           includeEndHold: options.includeEndHold,
           leftMotionVisible: options.leftMotionVisible,
           rightMotionVisible: options.rightMotionVisible,
+          openerImage: options.opener?.image,
+          openerHoldBeats: options.opener?.holdBeats,
           // App mode: the offscreen export engine has no settings wiring, so pass
           // the user's chosen prop explicitly. Without it the export renders the
           // default "staff" instead of the live prop.

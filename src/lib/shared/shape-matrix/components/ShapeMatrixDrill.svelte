@@ -1131,6 +1131,9 @@
             // The drill owns the word header band above the square; the
             // player's own header would push its canvas below the floor.
             showWordHeader: false,
+            // A solo plays one hand of a two-hand letter, so the corner
+            // glyph would name a relationship that is not on stage.
+            hideTkaGlyph: solo !== null,
             beatIndicators: false,
             leftPropType: layer.propType,
             rightPropType: layer.propType,
@@ -1222,6 +1225,7 @@
          tile and the detail view; the mandala inside carries its own. -->
     <div
       class="hero-stage"
+      class:solo={solo !== null}
       data-focus-layout="matrix-canvas"
       data-drill-region="hero"
       use:claimedViewTransitionName={{
@@ -1232,30 +1236,38 @@
       {#if appState && !appState.compact}
         <ShapeMatrixStageActions />
       {/if}
-      <div class="hero-header" data-focus-mode-chrome>
-        <div class="hero-header-ghost" aria-hidden="true">
-          <WordHeader word="A" visible={true} darkMode={headerDarkMode} />
-        </div>
-        {#if headerSequence}
-          <div class="hero-header-live">
-            <WordHeader
-              word={headerSequence.word}
-              visible={wordHeaderVisible}
-              darkMode={headerDarkMode}
-              activeStepNumber={headerStepNumber}
-              difficultyLevel={headerDifficulty}
-              loopComponents={headerLoopDisplay &&
-              headerLoopDisplay.components.size > 0
-                ? headerLoopDisplay.components
-                : null}
-              rotationPeriod={headerLoopDisplay?.rotationPeriod}
-              inversionPeriod={headerLoopDisplay?.inversionPeriod}
-              reflectionAxis={headerLoopDisplay?.reflectionAxis}
-              overlayComponents={headerLoopDisplay?.overlayComponents}
-            />
+      <!-- A solo has no word. The letter, its difficulty badge and the
+           pictograph carousel all describe the realization built for the
+           PAIR: a Kinetic Alphabet letter names how two hands relate, and a
+           pictograph draws both of them. One prop alone is neither, so the
+           header band and the strip leave with the mode picker and the
+           canvas takes the height back. -->
+      {#if !solo}
+        <div class="hero-header" data-focus-mode-chrome>
+          <div class="hero-header-ghost" aria-hidden="true">
+            <WordHeader word="A" visible={true} darkMode={headerDarkMode} />
           </div>
-        {/if}
-      </div>
+          {#if headerSequence}
+            <div class="hero-header-live">
+              <WordHeader
+                word={headerSequence.word}
+                visible={wordHeaderVisible}
+                darkMode={headerDarkMode}
+                activeStepNumber={headerStepNumber}
+                difficultyLevel={headerDifficulty}
+                loopComponents={headerLoopDisplay &&
+                headerLoopDisplay.components.size > 0
+                  ? headerLoopDisplay.components
+                  : null}
+                rotationPeriod={headerLoopDisplay?.rotationPeriod}
+                inversionPeriod={headerLoopDisplay?.inversionPeriod}
+                reflectionAxis={headerLoopDisplay?.reflectionAxis}
+                overlayComponents={headerLoopDisplay?.overlayComponents}
+              />
+            </div>
+          {/if}
+        </div>
+      {/if}
       <div class="hero-frame">
         {#if pair && heroPaths}
           <!-- The still mandala is a cold-load floor only. Once the canonical
@@ -1299,49 +1311,51 @@
     <!-- The carousel is its own card below the canvas box, never part of
            the rectangle that flies. During the morph it carries its own
            name and rises in once the stage has landed. -->
-    <div
-      class="strip-zone"
-      data-focus-mode-chrome
-      data-drill-region="strip"
-      role="group"
-      aria-label="Pictograph timeline"
-      use:claimedViewTransitionName={{
-        name: SHAPE_MATRIX_STRIP_NAME,
-        enabled: morphingFrames,
-      }}
-      transition:growFade={{ axis: "y" }}
-    >
-      {#if railRealization && pictographRailReady}
-        <LazyMount
-          loader={() => import("$lib/shared/timeline/StepStrip.svelte")}
-          active={true}
-          keepAlive={false}
-          debugName="shape matrix pictograph carousel"
-          placeholder={railPlaceholder}
-          error={railLoadError}
-          props={{
-            sequence: railRealization.seq,
-            includeStartPlacement: false,
-            currentStep: visibleStep,
-            bpm: animationState.bpm,
-            density: "compact",
-            fillHeight: true,
-            anchor: "center",
-            orientation: "horizontal",
-            loop: true,
-            leftPropType: propType,
-            rightPropType: propType,
-            propElementalType: railPropElementalType,
-            stepPulse: false,
-            staggerCellUpdates: true,
-          }}
-        />
-      {:else if railRealization}
-        <p class="quarter-status">
-          Level 4 pictograph are in visual calibration.
-        </p>
-      {/if}
-    </div>
+    {#if !solo}
+      <div
+        class="strip-zone"
+        data-focus-mode-chrome
+        data-drill-region="strip"
+        role="group"
+        aria-label="Pictograph timeline"
+        use:claimedViewTransitionName={{
+          name: SHAPE_MATRIX_STRIP_NAME,
+          enabled: morphingFrames,
+        }}
+        transition:growFade={{ axis: "y" }}
+      >
+        {#if railRealization && pictographRailReady}
+          <LazyMount
+            loader={() => import("$lib/shared/timeline/StepStrip.svelte")}
+            active={true}
+            keepAlive={false}
+            debugName="shape matrix pictograph carousel"
+            placeholder={railPlaceholder}
+            error={railLoadError}
+            props={{
+              sequence: railRealization.seq,
+              includeStartPlacement: false,
+              currentStep: visibleStep,
+              bpm: animationState.bpm,
+              density: "compact",
+              fillHeight: true,
+              anchor: "center",
+              orientation: "horizontal",
+              loop: true,
+              leftPropType: propType,
+              rightPropType: propType,
+              propElementalType: railPropElementalType,
+              stepPulse: false,
+              staggerCellUpdates: true,
+            }}
+          />
+        {:else if railRealization}
+          <p class="quarter-status">
+            Level 4 pictograph are in visual calibration.
+          </p>
+        {/if}
+      </div>
+    {/if}
   </div>
 
   <!-- The control bar is below the stage, not inside it. It settles in as the
@@ -1483,6 +1497,10 @@
         transparent 54%
       ),
       var(--theme-card-bg, #0a0f14);
+  }
+  /* No header band on a solo, so the frame is the only row. */
+  .hero-stage.solo {
+    grid-template-rows: minmax(0, 1fr);
   }
 
   .strip-zone {

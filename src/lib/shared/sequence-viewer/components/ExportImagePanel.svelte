@@ -285,13 +285,23 @@
     void vmVersion;
     return vm.getRawGlyphVisibility("handColorKey");
   });
+  const propTndGlyph = $derived.by(() => {
+    void vmVersion;
+    return vm.getRawGlyphVisibility("propTndGlyph");
+  });
 
   // Master toggles: clicking a section label flips all its children.
   // If any child is on, master is "on" and a click turns everything off;
   // if all are off, a click turns everything on.
   const headerAnyOn = $derived(showWord || showDifficulty || showLoopGlyph);
   const pictographAnyOn = $derived(
-    showGrid || tkaGlyph || tndGlyph || placementsGlyph || handColorKey || nonRadial
+    showGrid ||
+      tkaGlyph ||
+      tndGlyph ||
+      propTndGlyph ||
+      placementsGlyph ||
+      handColorKey ||
+      nonRadial
   );
 
   function toggleHeader(): void {
@@ -308,6 +318,7 @@
     vm.setGlyphVisibility("tkaGlyph", target);
     vm.setGlyphVisibility("tndGlyph", target);
     vm.setGlyphVisibility("elementalGlyph", target);
+    vm.setGlyphVisibility("propTndGlyph", target);
     vm.setGlyphVisibility("placementsGlyph", target);
     vm.setGlyphVisibility("handColorKey", target);
     vm.setNonRadialVisibility(target);
@@ -501,6 +512,17 @@
                   class="rt-chip"
                   aria-pressed={tndGlyph}
                   onclick={toggleTnD}>TnD</button
+                >
+                <button
+                  type="button"
+                  class="rt-chip"
+                  aria-pressed={propTndGlyph}
+                  onclick={() =>
+                    togglePictographSetting(
+                      "prop_tnd_glyph",
+                      propTndGlyph,
+                      (value) => vm.setGlyphVisibility("propTndGlyph", value)
+                    )}>Prop TnD</button
                 >
                 <button
                   type="button"
@@ -812,6 +834,18 @@
               class:active={tndGlyph}
               onclick={toggleTnD}
               aria-pressed={tndGlyph}>TnD</button
+            >
+            <button
+              type="button"
+              class="chip"
+              class:active={propTndGlyph}
+              onclick={() =>
+                togglePictographSetting(
+                  "prop_tnd_glyph",
+                  propTndGlyph,
+                  (value) => vm.setGlyphVisibility("propTndGlyph", value)
+                )}
+              aria-pressed={propTndGlyph}>Prop TnD</button
             >
             <button
               type="button"
