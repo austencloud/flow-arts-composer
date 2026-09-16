@@ -4,6 +4,7 @@
   import type { EvaluatedFrameLayer } from "$lib/shared/media-composition/services/frame-evaluator";
   import { getMediaCompositionContext } from "$lib/shared/media-composition/state/media-composition-context";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
+  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
   import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
   import PostStudioSequenceAnimationLayer from "./PostStudioSequenceAnimationLayer.svelte";
   import PostStudioChoreoLayer from "./PostStudioChoreoLayer.svelte";
@@ -22,6 +23,8 @@
     sourceTimeSeconds: number;
     playing: boolean;
     sequence: SequenceData;
+    handLabeling?: HandLabeling | null;
+    qrSequence?: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     sequencePosition?: number;
     displayedBeatNumber?: number;
@@ -36,6 +39,8 @@
     sourceTimeSeconds,
     playing,
     sequence,
+    handLabeling = null,
+    qrSequence,
     cardRenderOptions = null,
     sequencePosition,
     displayedBeatNumber,
@@ -152,6 +157,8 @@
       {sequence}
       {displayedBeatNumber}
       {cardRenderOptions}
+      {handLabeling}
+      {qrSequence}
     />
   {:else if binding.renderMode === "tunnel"}
     <PostStudioTunnelLayer

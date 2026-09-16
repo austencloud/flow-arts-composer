@@ -14,6 +14,7 @@
   import { onMount } from "svelte";
   import StepMapEditor from "$lib/shared/sequence-viewer/components/step-mapping/StepMapEditor.svelte";
   import ChoreoCard from "$lib/shared/sequence-viewer/components/ChoreoCard.svelte";
+  import { createHandLabeledCard } from "$lib/shared/sequence-viewer/services/hand-labeled-card.svelte";
   import SequenceVideos from "$lib/shared/sequence-viewer/components/sequence-videos/SequenceVideos.svelte";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
@@ -42,6 +43,7 @@
     CollaborativeVideo,
     StepMap,
   } from "$lib/shared/video-collaboration/domain/collaborative-video";
+  import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 
   /** OmLam-XJ: the published LOOP whose word simplifies to ΩΛ-XJ. */
   const SEQUENCE_WORD = "ΩΛ-XJΩΛ-XJΩΛ-XJΩΛ-XJ";
@@ -83,17 +85,27 @@
   // sequence-videos store, and the notation beside it is a real ChoreoCard.
   // The only thing standing in for production here is the orchestrator: the
   // shell feeds the bridge into its viewer context, and this page feeds it
-  // into the two pieces of state that context would drive.
+  // into the three pieces of state that context would drive.
 
   let videoTime = $state(0);
   let activeMap = $state<StepMap | null>(null);
+  let activeHandLabeling = $state<HandLabeling | null>(null);
 
   const playhead = createVideoPlayheadBridge({
     setPlaybackSource: () => {},
     setActiveStepMap: (map) => (activeMap = map),
+    setActiveHandLabeling: (labeling) => (activeHandLabeling = labeling),
     onVideoTimeUpdate: (seconds) => (videoTime = seconds),
   });
   setVideoPlayheadContext(playhead);
+
+  // The card beside the footage, labeled the way the shell's companion
+  // surface labels it. Before the sequence loads the helper only holds the
+  // null by identity and nothing renders it, so the assertion is safe.
+  const labeledCard = createHandLabeledCard({
+    getSequence: () => sequence!,
+    getLabeling: () => (sequence ? activeHandLabeling : null),
+  });
 
   /** -1 before the first mark; the card wants null for "nothing lit". */
   const highlightedStepIndex = $derived.by(() => {
@@ -134,7 +146,14 @@
       updatedAt: now,
     };
     resetSequenceVideoStores();
-    getSequenceVideosStore(record.sequenceId).add(record);
+    const store = getSequenceVideosStore(record.sequenceId);
+    store.add(record);
+    // The real method writes to Firestore. The harness keeps the choice in
+    // memory, the same way the step map above never leaves the browser.
+    store.applyHandLabeling = async (videoId, handLabeling) => {
+      const held = store.videos.find((video) => video.id === videoId);
+      if (held) store.add({ ...held, handLabeling, updatedAt: new Date() });
+    };
   }
 
   async function handleSave(stepMap: StepMap) {
@@ -216,7 +235,8 @@
         </div>
         <div class="paired-notation">
           <ChoreoCard
-            {sequence}
+            sequence={labeledCard.sequence}
+            handLabeling={labeledCard.labeling}
             darkMode
             showHighlight
             {highlightedStepIndex}

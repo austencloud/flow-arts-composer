@@ -4,9 +4,14 @@ import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-typ
 import type { Snippet } from "svelte";
 import type { UnifiedPlaybackContext } from "$lib/shared/timeline/unified-playback-context";
 import type { SequenceExportOptions } from "$lib/shared/render/domain/models/sequence-export-options";
+import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 
 export interface StudioCardFrame {
   sequence: SequenceData;
+  /** The labeling `sequence` was resolved under, so the host draws its legend. */
+  handLabeling: HandLabeling | null;
+  /** The record a scan of the card should open: the source, not the labeled copy. */
+  qrSequence: SequenceData;
   highlightedStepIndex: number;
   options: Partial<SequenceExportOptions> | null;
   automatic: boolean;

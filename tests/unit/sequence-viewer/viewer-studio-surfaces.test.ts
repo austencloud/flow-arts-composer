@@ -107,12 +107,16 @@ describe("shared Studio surfaces", () => {
     let step = 1;
     const releaseCard = state.requestCard(owner, target, () => ({
       sequence: frame(0).sequence,
+      handLabeling: null,
+      qrSequence: frame(0).sequence,
       highlightedStepIndex: step,
       options: null,
       automatic: true,
     }));
     state.requestCard(extra, node, () => ({
       sequence: frame(0).sequence,
+      handLabeling: null,
+      qrSequence: frame(0).sequence,
       highlightedStepIndex: 7,
       options: null,
       automatic: true,

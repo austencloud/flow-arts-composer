@@ -65,6 +65,7 @@
 
   let {
     sequence,
+    activeHandLabeling = null,
     playback,
     imageComposition,
     propRendering,
@@ -588,6 +589,7 @@
     <ViewerCompanionSurface
       side="left"
       {sequence}
+      {activeHandLabeling}
       {playback}
       {imageComposition}
       {propRendering}
@@ -674,6 +676,7 @@
       <ViewerCompanionSurface
         side="right"
         {sequence}
+        {activeHandLabeling}
         {playback}
         {imageComposition}
         {propRendering}

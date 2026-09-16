@@ -86,7 +86,14 @@
       updatedAt: now,
     };
     resetSequenceVideoStores();
-    getSequenceVideosStore(sequenceId).add(record);
+    const store = getSequenceVideosStore(sequenceId);
+    store.add(record);
+    // The real method writes to Firestore, which needs a signed-in creator.
+    // The harness keeps the choice in memory so the toggle can be exercised.
+    store.applyHandLabeling = async (videoId, handLabeling) => {
+      const held = store.videos.find((video) => video.id === videoId);
+      if (held) store.add({ ...held, handLabeling, updatedAt: new Date() });
+    };
   }
 
   onMount(async () => {

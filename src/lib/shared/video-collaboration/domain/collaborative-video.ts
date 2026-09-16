@@ -3,8 +3,10 @@ import {
   type VideoVisibility,
 } from "./video-visibility";
 import type { ArtifactRevisionRef } from "$lib/shared/artifact-revisions/domain/artifact-revision";
+import type { HandLabeling } from "./hand-labeling";
 
 export type { VideoVisibility } from "./video-visibility";
+export type { HandLabeling } from "./hand-labeling";
 
 export type InviteStatus = "pending" | "accepted" | "declined" | "expired";
 
@@ -187,6 +189,13 @@ export interface CollaborativeVideo {
 
   // ---- Beat mapping ----
   readonly beatMap?: StepMap;
+
+  // ---- Presentation ----
+  /**
+   * How the notation beside this footage labels hands. Missing reads as
+   * "mirror-me" through `resolveHandLabeling`; never read this directly.
+   */
+  readonly handLabeling?: HandLabeling;
 
   // ---- Timestamps ----
   readonly createdAt: Date;

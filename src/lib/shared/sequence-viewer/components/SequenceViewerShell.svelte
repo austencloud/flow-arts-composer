@@ -381,6 +381,7 @@
   const videoPlayhead = createVideoPlayheadBridge({
     setPlaybackSource: (source) => ctx.setPlaybackSource(source),
     setActiveStepMap: (map) => ctx.setActiveStepMap(map),
+    setActiveHandLabeling: (labeling) => ctx.setActiveHandLabeling(labeling),
     onVideoTimeUpdate: (seconds) => ctx.onVideoTimeUpdate(seconds),
   });
   setVideoPlayheadContext(videoPlayhead);
@@ -1066,6 +1067,7 @@
                     >
                       <ViewerSplitPane
                         sequence={ctx.effectiveSequence}
+                        activeHandLabeling={ctx.activeHandLabeling}
                         {tunnelComposition}
                         {tunnelSaveTarget}
                         {onTunnelSaved}

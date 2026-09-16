@@ -4,6 +4,7 @@ import type { CollaborativeVideo } from "$lib/shared/video-collaboration/domain/
 import {
   createCatalogPerformanceSelection,
   createPostStudioSequenceRef,
+  createUnmappedPerformanceSelection,
 } from "$lib/shared/share/components/post-studio/post-studio-performance-selection";
 
 const sequence = {
@@ -98,5 +99,34 @@ describe("Post Studio performance selection", () => {
 
     expect(selection.sequenceTimeMap).toBeNull();
     expect(selection.alignmentDetail).toContain("needs repair");
+  });
+});
+
+describe("post studio performance selection hand labeling", () => {
+  it("a catalog video without a stored choice reads as mirror me", () => {
+    const selection = createCatalogPerformanceSelection(
+      video(),
+      createPostStudioSequenceRef(sequence)
+    );
+    expect(selection.handLabeling).toBe("mirror-me");
+    expect(selection.videoId).toBe("video-1");
+  });
+
+  it("a catalog video keeps its stored choice", () => {
+    const selection = createCatalogPerformanceSelection(
+      video({ handLabeling: "as-performed" }),
+      createPostStudioSequenceRef(sequence)
+    );
+    expect(selection.handLabeling).toBe("as-performed");
+  });
+
+  it("a local upload starts as mirror me", () => {
+    const selection = createUnmappedPerformanceSelection({
+      id: "local",
+      url: "blob:x",
+      label: "Local",
+    });
+    expect(selection.handLabeling).toBe("mirror-me");
+    expect(selection.videoId).toBeNull();
   });
 });
