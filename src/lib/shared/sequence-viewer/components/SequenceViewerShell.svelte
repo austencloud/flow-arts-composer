@@ -564,9 +564,7 @@
    */
   let armedExportForShare = $state(false);
 
-  function requestShareVideo(
-    request?: VideoRenderRequest
-  ): Promise<boolean> {
+  function requestShareVideo(request?: VideoRenderRequest): Promise<boolean> {
     if (ctx.editingPane !== "animation") {
       // setExportContext, NOT enterEditMode/enterExport: those also move
       // viewerMode, and moving it remounts the 3D canvas — so the export ran one
@@ -1917,6 +1915,15 @@
     display: flex;
     justify-content: flex-start;
     overflow: hidden;
+  }
+
+  /* Stacked (effectiveMobile above the phone breakpoint): the layer hosts the
+     bottom ControlDock, which sizes itself from its contents. As a flex row
+     the dock shrink-wrapped to its icon-only bar width and sat in the corner
+     of the track; a column lets it span the stacked inspector's full width. */
+  .viewer-and-export:not(.desktop) .card-settings-layer {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   /* Art settings paint the card fill rather than the panel fill, so their layer
