@@ -23,13 +23,13 @@ type VisibilityCategory = "glyph" | "non_radial" | "all" | "buttons";
 
 interface VisibilitySettings {
   reversalIndicators: boolean;
-  tkaGlyph: boolean; 
+  tkaGlyph: boolean;
   tndGlyph: boolean;
   elementalGlyph: boolean;
-  /** Prop timing-and-direction element (top-right, dashed ring). */
+  /** Prop timing-and-direction element (top-right). */
   propTndGlyph: boolean;
   placementsGlyph: boolean;
-  showGrid: boolean; 
+  showGrid: boolean;
   nonRadialPoints: boolean;
   /** L/R colour key on the start position. */
   handColorKey: boolean;
@@ -107,8 +107,7 @@ export class VisibilityStateManager {
           this.settings.placementsGlyph = v.placementsGlyph;
         if (v.reversalIndicators !== undefined)
           this.settings.reversalIndicators = v.reversalIndicators;
-        if (v.showGrid !== undefined)
-          this.settings.showGrid = v.showGrid;
+        if (v.showGrid !== undefined) this.settings.showGrid = v.showGrid;
         if (v.nonRadialPoints !== undefined)
           this.settings.nonRadialPoints = v.nonRadialPoints;
         if (v.handColorKey !== undefined)
@@ -229,8 +228,7 @@ export class VisibilityStateManager {
 
   getGlyphVisibility(glyphType: string): boolean {
     return (
-      (this.settings[glyphType as keyof VisibilitySettings] as boolean) ??
-      false
+      (this.settings[glyphType as keyof VisibilitySettings] as boolean) ?? false
     );
   }
 
@@ -305,9 +303,10 @@ export class VisibilityStateManager {
   private _loadAnimationVisibilityManager(): void {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const module = require("../../../animation-engine/state/animation-visibility-state.svelte") as {
-        getAnimationVisibilityManager: () => { isDarkMode(): boolean };
-      };
+      const module =
+        require("../../../animation-engine/state/animation-visibility-state.svelte") as {
+          getAnimationVisibilityManager: () => { isDarkMode(): boolean };
+        };
       this._animationVisibilityManager = module.getAnimationVisibilityManager();
     } catch {
       // Silent

@@ -3,7 +3,10 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { GridMode } from "../../pictograph/grid/domain/enums/grid-enums";
 import { getSvgImageCache, type DrawableImage } from "./svg-image-cache";
 import { getSvgAssetLoader } from "./svg-asset-loader";
-import { getLetterImagePath, isDashLetter } from "../../pictograph/tka-glyph/utils/letter-image-getter";
+import {
+  getLetterImagePath,
+  isDashLetter,
+} from "../../pictograph/tka-glyph/utils/letter-image-getter";
 import { Letter, getLetterType } from "../../foundation/domain/models/letter";
 import { LetterType } from "../../foundation/domain/models/letter-type";
 import {
@@ -16,26 +19,32 @@ import {
   getSlotUnitWidth,
   getSlotOffsetX,
 } from "../../pictograph/tka-glyph/utils/turn-tuple-parser";
-import { interpretTurnColors, BLUE_HEX, RED_HEX } from "../../pictograph/tka-glyph/services/turn-color-interpreter";
+import {
+  interpretTurnColors,
+  BLUE_HEX,
+  RED_HEX,
+} from "../../pictograph/tka-glyph/services/turn-color-interpreter";
 import { calculateTurnPositions } from "../../pictograph/tka-glyph/utils/turn-position-calculator";
 import { deriveTnDFromPictograph } from "../../pictograph/shared/domain/utils/tnd-deriver";
-import { calculateReversalPositions, calculateHandColorKeyLayout, HAND_COLOR_KEY } from "../core";
+import {
+  calculateReversalPositions,
+  calculateHandColorKeyLayout,
+  HAND_COLOR_KEY,
+} from "../core";
 import type { TurnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
 import type { GridPlacement } from "../../pictograph/grid/domain/enums/grid-enums";
 import type { MotionData } from "../../pictograph/shared/domain/models/motion-data";
-import { HandSide, getElementImagePath } from "../../pictograph/shared/domain/enums/pictograph-enums";
+import {
+  HandSide,
+  getElementImagePath,
+} from "../../pictograph/shared/domain/enums/pictograph-enums";
 import {
   containElementalGlyph,
   getElementalGlyphBox,
-  getPropGlyphRing,
-  PROP_GLYPH_RING,
 } from "../../pictograph/shared/domain/constants/elemental-glyph-layout";
 import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
 import { getMotionColor } from "../../utils/svg-color-utils";
-import {
-  drawMonochromeImage,
-  drawTintedImage,
-} from "@tka/render-composition";
+import { drawMonochromeImage, drawTintedImage } from "@tka/render-composition";
 
 const VIEWBOX_SIZE = 950;
 
@@ -58,13 +67,20 @@ const POSITION_SPACING = 25;
 const POSITION_ARROW_WIDTH = 88.9;
 const POSITION_ARROW_HEIGHT = 34.8;
 
-const POSITION_LETTER_DIMENSIONS: Record<string, { width: number; height: number; yOffset: number }> = {
+const POSITION_LETTER_DIMENSIONS: Record<
+  string,
+  { width: number; height: number; yOffset: number }
+> = {
   alpha: { width: 92.22, height: 100, yOffset: 10.0 },
   beta: { width: 66.05, height: 100, yOffset: 0.0 },
   gamma: { width: 79, height: 100.11, yOffset: 0.0 },
 };
 
-const STATIC_LETTERS: readonly Letter[] = [Letter.ALPHA, Letter.BETA, Letter.GAMMA];
+const STATIC_LETTERS: readonly Letter[] = [
+  Letter.ALPHA,
+  Letter.BETA,
+  Letter.GAMMA,
+];
 
 export function drawTKAGlyphText(
   ctx: CanvasRenderingContext2D,
@@ -201,7 +217,11 @@ export async function drawTurnsColumn(
   scale: number,
   isDarkMode: boolean,
   turnsTupleGeneratorGetter?: () => TurnsTupleGenerator | undefined,
-  motionVisibility?: { showLeftMotion?: boolean; showRightMotion?: boolean; primaryPropColors?: { left: string; right: string } | null }
+  motionVisibility?: {
+    showLeftMotion?: boolean;
+    showRightMotion?: boolean;
+    primaryPropColors?: { left: string; right: string } | null;
+  }
 ): Promise<void> {
   let turnsTuple = "(s, 0, 0)";
   try {
@@ -225,24 +245,30 @@ export async function drawTurnsColumn(
 
   if (!showTop && !showBottom) return;
 
-  const turnColors = interpretTurnColors(
-    pictograph.letter,
-    pictograph
-  );
+  const turnColors = interpretTurnColors(pictograph.letter, pictograph);
 
-  const displayColor = (color: string) => color === BLUE_HEX
-    ? motionVisibility?.primaryPropColors?.left ?? color
-    : color === RED_HEX ? motionVisibility?.primaryPropColors?.right ?? color : color;
+  const displayColor = (color: string) =>
+    color === BLUE_HEX
+      ? (motionVisibility?.primaryPropColors?.left ?? color)
+      : color === RED_HEX
+        ? (motionVisibility?.primaryPropColors?.right ?? color)
+        : color;
 
   const isColorHidden = (color: string) => {
-    if (color === BLUE_HEX && motionVisibility?.showLeftMotion === false) return true;
-    if (color === RED_HEX && motionVisibility?.showRightMotion === false) return true;
+    if (color === BLUE_HEX && motionVisibility?.showLeftMotion === false)
+      return true;
+    if (color === RED_HEX && motionVisibility?.showRightMotion === false)
+      return true;
     return false;
   };
 
   const hasDash = isDashLetter(pictograph.letter);
 
-  const positions = calculateTurnPositions(letterDimensions, TURN_NUMBER_HEIGHT, hasDash);
+  const positions = calculateTurnPositions(
+    letterDimensions,
+    TURN_NUMBER_HEIGHT,
+    hasDash
+  );
 
   // Own (number-only) width per slot, plus the shared column box each slot's
   // unit (number, or number+gap+mark when halved) centers within. Matches
@@ -258,7 +284,11 @@ export async function drawTurnsColumn(
   );
 
   const topOffsetX = getSlotOffsetX(columnWidth, topOwnWidth, parsed.topHalved);
-  const bottomOffsetX = getSlotOffsetX(columnWidth, bottomOwnWidth, parsed.bottomHalved);
+  const bottomOffsetX = getSlotOffsetX(
+    columnWidth,
+    bottomOwnWidth,
+    parsed.bottomHalved
+  );
 
   const baseX = TKA_GLYPH_X * scale;
   const baseY = TKA_GLYPH_Y * scale;
@@ -277,10 +307,25 @@ export async function drawTurnsColumn(
             const drawWidth = topOwnWidth * scale;
             const drawHeight = TURN_NUMBER_HEIGHT * scale;
 
-            drawColoredImage(ctx, topImg, drawX, drawY, drawWidth, drawHeight, displayColor(turnColors.top));
+            drawColoredImage(
+              ctx,
+              topImg,
+              drawX,
+              drawY,
+              drawWidth,
+              drawHeight,
+              displayColor(turnColors.top)
+            );
           }
         } catch {
-          drawTurnText(ctx, parsed.top, displayColor(turnColors.top), baseX + positions.top.x * scale, baseY + positions.top.y * scale, scale);
+          drawTurnText(
+            ctx,
+            parsed.top,
+            displayColor(turnColors.top),
+            baseX + positions.top.x * scale,
+            baseY + positions.top.y * scale,
+            scale
+          );
         }
       }
     }
@@ -289,9 +334,19 @@ export async function drawTurnsColumn(
       try {
         const markImg = await assetLoader.getHalfMarkImage();
         if (markImg) {
-          const markX = baseX + (positions.top.x + topOffsetX + topOwnWidth + MARK_GAP) * scale;
+          const markX =
+            baseX +
+            (positions.top.x + topOffsetX + topOwnWidth + MARK_GAP) * scale;
           const markY = baseY + positions.top.y * scale;
-          drawColoredImage(ctx, markImg, markX, markY, markWidth * scale, TURN_NUMBER_HEIGHT * scale, displayColor(turnColors.top));
+          drawColoredImage(
+            ctx,
+            markImg,
+            markX,
+            markY,
+            markWidth * scale,
+            TURN_NUMBER_HEIGHT * scale,
+            displayColor(turnColors.top)
+          );
         }
       } catch {
         // No text fallback for the mark - the number (if any) already
@@ -312,10 +367,25 @@ export async function drawTurnsColumn(
             const drawWidth = bottomOwnWidth * scale;
             const drawHeight = TURN_NUMBER_HEIGHT * scale;
 
-            drawColoredImage(ctx, bottomImg, drawX, drawY, drawWidth, drawHeight, displayColor(turnColors.bottom));
+            drawColoredImage(
+              ctx,
+              bottomImg,
+              drawX,
+              drawY,
+              drawWidth,
+              drawHeight,
+              displayColor(turnColors.bottom)
+            );
           }
         } catch {
-          drawTurnText(ctx, parsed.bottom, displayColor(turnColors.bottom), baseX + positions.bottom.x * scale, baseY + positions.bottom.y * scale, scale);
+          drawTurnText(
+            ctx,
+            parsed.bottom,
+            displayColor(turnColors.bottom),
+            baseX + positions.bottom.x * scale,
+            baseY + positions.bottom.y * scale,
+            scale
+          );
         }
       }
     }
@@ -324,9 +394,20 @@ export async function drawTurnsColumn(
       try {
         const markImg = await assetLoader.getHalfMarkImage();
         if (markImg) {
-          const markX = baseX + (positions.bottom.x + bottomOffsetX + bottomOwnWidth + MARK_GAP) * scale;
+          const markX =
+            baseX +
+            (positions.bottom.x + bottomOffsetX + bottomOwnWidth + MARK_GAP) *
+              scale;
           const markY = baseY + positions.bottom.y * scale;
-          drawColoredImage(ctx, markImg, markX, markY, markWidth * scale, TURN_NUMBER_HEIGHT * scale, displayColor(turnColors.bottom));
+          drawColoredImage(
+            ctx,
+            markImg,
+            markX,
+            markY,
+            markWidth * scale,
+            TURN_NUMBER_HEIGHT * scale,
+            displayColor(turnColors.bottom)
+          );
         }
       } catch {
         // No text fallback for the mark - see the top-slot comment above.
@@ -375,7 +456,7 @@ export async function drawTnDGlyph(
 
     ctx.save();
     if (isDarkMode) {
-      ctx.filter = 'invert(1)';
+      ctx.filter = "invert(1)";
     }
     ctx.drawImage(img, x, y, drawWidth, drawHeight);
     ctx.restore();
@@ -426,20 +507,18 @@ export async function drawElementalGlyph(
 
 /**
  * Prop timing-and-direction glyph: the step's prop element in the top-right
- * slot inside the dashed spin ring. Same geometry as ElementalGlyph.svelte
- * (variant="prop") so live cells and rasterized cells match.
+ * slot. Same geometry as ElementalGlyph.svelte (corner="top-right") so live
+ * cells and rasterized cells match.
  */
 export async function drawPropElementalGlyph(
   ctx: CanvasRenderingContext2D,
   pictograph: PictographData,
-  size: number,
-  isDarkMode: boolean
+  size: number
 ): Promise<void> {
   const elementalType = derivePropElementalTypeForStep(pictograph);
   if (!elementalType) return;
 
   const box = getElementalGlyphBox(size, 0, "top-right");
-  const ring = getPropGlyphRing(size);
 
   try {
     const response = await fetch(getElementImagePath(elementalType));
@@ -447,19 +526,6 @@ export async function drawPropElementalGlyph(
     const img = await createImageBitmap(await response.blob());
     const fitted = containElementalGlyph(box, img.width, img.height);
     if (!fitted) return;
-
-    ctx.save();
-    ctx.globalAlpha = PROP_GLYPH_RING.opacity;
-    ctx.strokeStyle = isDarkMode
-      ? PROP_GLYPH_RING.color.dark
-      : PROP_GLYPH_RING.color.light;
-    ctx.lineWidth = ring.strokeWidth;
-    ctx.lineCap = "round";
-    ctx.setLineDash([ring.dash[0], ring.dash[1]]);
-    ctx.beginPath();
-    ctx.arc(ring.cx, ring.cy, ring.r, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
 
     ctx.save();
     ctx.drawImage(img, fitted.x, fitted.y, fitted.width, fitted.height);
@@ -475,7 +541,10 @@ export async function drawPlacementGlyph(
   size: number,
   isDarkMode: boolean
 ): Promise<void> {
-  if (pictograph.letter && STATIC_LETTERS.includes(pictograph.letter as Letter)) {
+  if (
+    pictograph.letter &&
+    STATIC_LETTERS.includes(pictograph.letter as Letter)
+  ) {
     return;
   }
 
@@ -523,14 +592,23 @@ export async function drawPlacementGlyph(
 
   const maxHeight = Math.max(scaledStartHeight, scaledEndHeight);
 
-  const totalWidth = scaledStartWidth + POSITION_SPACING * POSITION_SCALE_FACTOR + scaledArrowWidth + POSITION_SPACING * POSITION_SCALE_FACTOR + scaledEndWidth;
+  const totalWidth =
+    scaledStartWidth +
+    POSITION_SPACING * POSITION_SCALE_FACTOR +
+    scaledArrowWidth +
+    POSITION_SPACING * POSITION_SCALE_FACTOR +
+    scaledEndWidth;
   const groupX = VIEWBOX_SIZE / 2 - totalWidth / 2;
 
   const centerLine = maxHeight / 2;
 
   try {
     const [startImg, arrowImg, endImg] = await Promise.all([
-      loadPositionImage(startSvgPath, `pos_${startGroup}_${isDarkMode}`, svgCache),
+      loadPositionImage(
+        startSvgPath,
+        `pos_${startGroup}_${isDarkMode}`,
+        svgCache
+      ),
       loadPositionImage(arrowSvgPath, `pos_arrow_${isDarkMode}`, svgCache),
       loadPositionImage(endSvgPath, `pos_${endGroup}_${isDarkMode}`, svgCache),
     ]);
@@ -542,7 +620,8 @@ export async function drawPlacementGlyph(
 
     const startX = 0;
     const arrowX = scaledStartWidth + POSITION_SPACING * POSITION_SCALE_FACTOR;
-    const endX = arrowX + scaledArrowWidth + POSITION_SPACING * POSITION_SCALE_FACTOR;
+    const endX =
+      arrowX + scaledArrowWidth + POSITION_SPACING * POSITION_SCALE_FACTOR;
 
     const startYOffset = startDims.yOffset * POSITION_SCALE_FACTOR;
     drawMonochromeImage(
@@ -581,8 +660,15 @@ export async function drawPlacementGlyph(
 }
 
 const LOCATION_LABELS: Record<string, string> = {
-  n: "N", e: "E", s: "S", w: "W",
-  ne: "NE", se: "SE", sw: "SW", nw: "NW", c: "C",
+  n: "N",
+  e: "E",
+  s: "S",
+  w: "W",
+  ne: "NE",
+  se: "SE",
+  sw: "SW",
+  nw: "NW",
+  c: "C",
 };
 
 const SOLO_GLYPH_Y = 50;
@@ -600,15 +686,18 @@ export function drawSoloMotionGlyph(
   showRightMotion: boolean,
   isHandPathMode: boolean
 ): void {
-  const visibleMotion: MotionData | null =
-    showLeftMotion ? pictograph.motions?.left ?? null :
-    showRightMotion ? pictograph.motions?.right ?? null :
-    null;
+  const visibleMotion: MotionData | null = showLeftMotion
+    ? (pictograph.motions?.left ?? null)
+    : showRightMotion
+      ? (pictograph.motions?.right ?? null)
+      : null;
 
   if (!visibleMotion) return;
 
-  const startLoc = LOCATION_LABELS[visibleMotion.startLocation] ?? visibleMotion.startLocation;
-  const endLoc = LOCATION_LABELS[visibleMotion.endLocation] ?? visibleMotion.endLocation;
+  const startLoc =
+    LOCATION_LABELS[visibleMotion.startLocation] ?? visibleMotion.startLocation;
+  const endLoc =
+    LOCATION_LABELS[visibleMotion.endLocation] ?? visibleMotion.endLocation;
   if (!startLoc || !endLoc) return;
 
   const motionColor = showLeftMotion ? HandSide.LEFT : HandSide.RIGHT;
@@ -663,7 +752,11 @@ export function drawSoloMotionGlyph(
   ctx.fillText(arrowText, baseX + startWidth + spacing, baseY + arrowYShift);
 
   ctx.font = locationFont;
-  ctx.fillText(endLoc, baseX + startWidth + spacing + arrowWidth + spacing, baseY);
+  ctx.fillText(
+    endLoc,
+    baseX + startWidth + spacing + arrowWidth + spacing,
+    baseY
+  );
 
   if (showRotation) {
     ctx.font = rotFont;
@@ -694,24 +787,40 @@ export function drawReversalIndicators(
   pictograph: PictographData | StepData,
   size: number,
   isDarkMode: boolean,
-  motionVisibility?: { showLeftMotion?: boolean; showRightMotion?: boolean; primaryPropColors?: { left: string; right: string } | null }
+  motionVisibility?: {
+    showLeftMotion?: boolean;
+    showRightMotion?: boolean;
+    primaryPropColors?: { left: string; right: string } | null;
+  }
 ): void {
   let leftReversal = false;
   let rightReversal = false;
 
   if (isStepData(pictograph)) {
-    leftReversal = (pictograph.leftReversal ?? false) && (motionVisibility?.showLeftMotion ?? true);
-    rightReversal = (pictograph.rightReversal ?? false) && (motionVisibility?.showRightMotion ?? true);
+    leftReversal =
+      (pictograph.leftReversal ?? false) &&
+      (motionVisibility?.showLeftMotion ?? true);
+    rightReversal =
+      (pictograph.rightReversal ?? false) &&
+      (motionVisibility?.showRightMotion ?? true);
   }
 
-  const { dots } = calculateReversalPositions(leftReversal, rightReversal, isDarkMode);
+  const { dots } = calculateReversalPositions(
+    leftReversal,
+    rightReversal,
+    isDarkMode
+  );
 
   if (dots.length === 0) return;
 
   const scale = size / VIEWBOX_SIZE;
 
   for (const dot of dots) {
-    const hand = dot.color.toLowerCase() === getMotionColor(HandSide.LEFT, isDarkMode ? "dark" : "light").toLowerCase() ? "left" : "right";
+    const hand =
+      dot.color.toLowerCase() ===
+      getMotionColor(HandSide.LEFT, isDarkMode ? "dark" : "light").toLowerCase()
+        ? "left"
+        : "right";
     ctx.fillStyle = motionVisibility?.primaryPropColors?.[hand] ?? dot.color;
     ctx.beginPath();
     ctx.arc(dot.cx * scale, dot.cy * scale, dot.r * scale, 0, Math.PI * 2);
@@ -719,7 +828,9 @@ export function drawReversalIndicators(
   }
 }
 
-function isStepData(pictograph: PictographData | StepData): pictograph is StepData {
+function isStepData(
+  pictograph: PictographData | StepData
+): pictograph is StepData {
   return "leftReversal" in pictograph || "rightReversal" in pictograph;
 }
 

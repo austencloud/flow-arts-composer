@@ -17,9 +17,7 @@ text embedded within the elemental shape. Known non-Type1 letters are rejected.
   } from "../../../foundation/domain/models/letter";
   import {
     ELEMENTAL_GLYPH_VIEWBOX_SIZE,
-    PROP_GLYPH_RING,
     getElementalGlyphBox,
-    getPropGlyphRing,
     type ElementalGlyphCorner,
   } from "../domain/constants/elemental-glyph-layout";
 
@@ -34,8 +32,6 @@ text embedded within the elemental shape. Known non-Type1 letters are rejected.
     xOffset = 0,
     corner = "bottom-right",
     ariaLabel = undefined,
-    variant = "hand",
-    darkMode = false,
   } = $props<{
     /** The elemental type to display (water, fire, earth, air, sun, moon) */
     elementalType?: ElementalType | null;
@@ -57,10 +53,6 @@ text embedded within the elemental shape. Known non-Type1 letters are rejected.
     corner?: ElementalGlyphCorner;
     /** Accessible relationship label when the host needs to distinguish two glyphs. */
     ariaLabel?: string;
-    /** "prop" wraps the icon in the dashed spin ring that marks the prop relationship. */
-    variant?: "hand" | "prop";
-    /** Ring colour follows the pictograph theme (live DOM inlines it for export). */
-    darkMode?: boolean;
   }>();
 
   // A known non-Type1 letter cannot carry an elemental relationship. Some
@@ -100,15 +92,6 @@ text embedded within the elemental shape. Known non-Type1 letters are rejected.
   // Center point for scale animation
   const centerX = $derived(glyphBox.x + glyphBox.width / 2);
   const centerY = $derived(glyphBox.y + glyphBox.height / 2);
-
-  const ring = $derived(
-    variant === "prop"
-      ? getPropGlyphRing(ELEMENTAL_GLYPH_VIEWBOX_SIZE, xOffset)
-      : null
-  );
-  const ringColor = $derived(
-    darkMode ? PROP_GLYPH_RING.color.dark : PROP_GLYPH_RING.color.light
-  );
 
   // Track when elemental type changes to trigger a subtle scale-pulse animation.
 
@@ -156,20 +139,6 @@ text embedded within the elemental shape. Known non-Type1 letters are rejected.
           "aria-label": ariaLabel ?? `Elemental symbol: ${elementalType}`,
         }}
   >
-    {#if ring}
-      <circle
-        class="prop-ring"
-        cx={ring.cx}
-        cy={ring.cy}
-        r={ring.r}
-        fill="none"
-        stroke={ringColor}
-        stroke-width={ring.strokeWidth}
-        stroke-dasharray="{ring.dash[0]} {ring.dash[1]}"
-        stroke-linecap="round"
-        opacity={PROP_GLYPH_RING.opacity}
-      />
-    {/if}
     <image
       class="elemental-image"
       class:animating={isAnimating}

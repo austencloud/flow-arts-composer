@@ -178,13 +178,12 @@ still hard-unmount hidden overlays.
 A pictograph can carry two timing-and-direction relationships. The hand
 relationship is the fused element glyph in the bottom-right slot (`TnD`
 chip). The prop relationship, read from each step's spin directions and
-start bearings, is the same element icon in the top-right slot wrapped in a
-dashed spin ring (`Prop TnD` chip, `propTndGlyph`, off by default). Corner
-plus ring is the whole distinction; neither glyph carries a label. The ring
-geometry lives in `elemental-glyph-layout.ts` (`getPropGlyphRing`) so the
-live DOM, the canvas compositor and the MCP renderer draw the same mark. A
-start position, a float, and unequal turn rates have no prop element and
-draw nothing.
+start bearings, is the same element icon in the top-right slot (`Prop TnD`
+chip, `propTndGlyph`, off by default). The corner is the whole distinction;
+neither glyph carries a ring or label. The slot geometry lives in
+`elemental-glyph-layout.ts` (`getElementalGlyphBox`) so the live DOM, the
+canvas compositor and the MCP renderer draw the same mark. A start position,
+a float, and unequal turn rates have no prop element and draw nothing.
 
 ## 6. Controls and Selection
 

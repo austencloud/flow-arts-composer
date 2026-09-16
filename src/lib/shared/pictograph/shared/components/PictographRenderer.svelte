@@ -776,9 +776,9 @@ Usage:
       />
     </g>
 
-    <!-- Prop-path relationship (top-right, dashed spin ring). The bottom-right
-         glyph remains the hand-path relationship; corner and ring carry the
-         distinction without adding labels to every pictograph. Mounted whenever
+    <!-- Prop-path relationship (top-right). The bottom-right glyph remains
+         the hand-path relationship; the corner alone carries the distinction
+         without adding labels to every pictograph. Mounted whenever
          the step has a prop element so the Card-panel chip can fade it. -->
     {#if propElementalType}
       <g opacity={glyphOpacity}>
@@ -790,8 +790,6 @@ Usage:
           {animateVisibility}
           xOffset={rightGlyphOffset}
           corner="top-right"
-          variant="prop"
-          darkMode={darkMode === true}
           ariaLabel={`Prop timing and direction element: ${propElementalType}`}
         />
       </g>

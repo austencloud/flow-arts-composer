@@ -104,14 +104,14 @@ describe("standalone renderer prop TnD glyph", () => {
     expect(propGroup(svg)).toBeNull();
   });
 
-  it("draws the element inside a dashed spin ring in the top-right slot", async () => {
+  it("draws the bare element in the top-right slot", async () => {
     const svg = await getStandaloneRenderer().renderToSvg(LETTER_A, {
       showTKA: false,
       showPropTnD: true,
     });
     const group = propGroup(svg);
     expect(group).not.toBeNull();
-    expect(group).toContain('stroke-dasharray="14 10"');
+    expect(group).not.toContain("stroke-dasharray");
     expect(group).toContain('preserveAspectRatio="xMidYMid meet"');
   });
 

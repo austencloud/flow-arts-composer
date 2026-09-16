@@ -134,7 +134,7 @@ export function registerPictographTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe(
-          "Override: show the prop timing & direction element (top-right, dashed spin ring)"
+          "Override: show the prop timing & direction element (top-right)"
         ),
       showGrid: z.boolean().optional().describe("Override: show grid"),
       showNonRadialPoints: z
@@ -354,7 +354,7 @@ export function registerPictographTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe(
-          "Override: show the prop timing & direction element (top-right, dashed spin ring)"
+          "Override: show the prop timing & direction element (top-right)"
         ),
       showGrid: z.boolean().optional().describe("Override: show grid"),
       showNonRadialPoints: z

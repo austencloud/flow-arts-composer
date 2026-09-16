@@ -68,7 +68,7 @@ export interface SequenceExportOptions {
     showTKA?: boolean;
     showTnD?: boolean;
     showElemental?: boolean;
-    /** Prop timing-and-direction element (top-right, dashed ring). Default: false. */
+    /** Prop timing-and-direction element (top-right). Default: false. */
     showPropTnD?: boolean;
     showPlacements?: boolean;
     /** L/R colour key on the start cell. Default: true. */
