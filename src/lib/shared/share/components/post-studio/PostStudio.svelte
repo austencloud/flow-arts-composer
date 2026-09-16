@@ -431,13 +431,15 @@
     if (!current) return;
     const next: HandLabeling =
       current.handLabeling === "mirror-me" ? "as-performed" : "mirror-me";
-    performanceSelectionTouched = true;
     chosenPerformance = { ...current, handLabeling: next };
     if (current.videoId && videoLibrary) {
       try {
         await videoLibrary.applyHandLabeling(current.videoId, next);
       } catch {
-        chosenPerformance = { ...current };
+        // Only undo the flip; a performance picked meanwhile stands.
+        if (chosenPerformance?.url === current.url) {
+          chosenPerformance = { ...current };
+        }
       }
     }
   }
@@ -584,7 +586,6 @@
           settingsService.settings.leftPropType ?? PropType.STAFF,
         audioMode,
         audioModeTouched,
-        notationMirrored: handLabeling === "mirror-me",
       },
       options
     );
@@ -775,9 +776,9 @@
     {exportedUrl}
     {exportFilename}
     {exportError}
-    {handLabeling}
+    handLabeling={labeledCard.labeling ?? handLabeling}
     {handLabelingPending}
-    onToggleHandLabeling={toggleHandLabeling}
+    onToggleHandLabeling={chosenPerformance ? toggleHandLabeling : undefined}
     {audioMode}
     {canKeepOriginalAudio}
     onAudioModeChange={setAudioMode}
@@ -803,6 +804,7 @@
       <div class="canvas-stage">
         <PostStudioPreview
           sequence={displaySequence}
+          qrSequence={sequence}
           handLabeling={labeledCard.labeling}
           cardRenderOptions={synchronizedCardRenderOptions}
           durationLabel={`${composition.durationSeconds.toFixed(1)}s`}

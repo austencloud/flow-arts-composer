@@ -110,10 +110,15 @@ two surfaces reads the flag.
 ## Section 3: the legend
 
 The card footer already has modes `off`, `credit`, and `custom`. The legend is
-not a fourth mode. It is an extra line the footer draws whenever the card is
-rendered under a hand labeling, above whatever the footer mode shows. It
-appears on the two surfaces above only, since they are the only ones that pass
-a labeling in.
+not a fourth mode. It is a line the footer draws whenever the card is rendered
+under a hand labeling. It appears on the two surfaces above only, since they
+are the only ones that pass a labeling in.
+
+Implementation note: the footer is one fixed-height row sized by the card's
+layout math, so the legend takes that row and the notes line and the path
+shape note stay hidden while a labeling is active, instead of stacking above
+them as first written. Growing the footer would change card geometry, which
+the export and the print layout both depend on.
 
 Wording, with a color swatch drawn inline where the brackets are:
 

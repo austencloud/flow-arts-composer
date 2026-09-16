@@ -93,6 +93,12 @@
     showQRCode?: boolean;
     /** Reuse a published scan link without creating an account-owned code. */
     qrUrl?: string;
+    /**
+     * The sequence a scan opens. Defaults to `sequence`. A hand-labeled card
+     * draws a derived sequence that has no record of its own, so the surface
+     * passes the source here and the code keeps pointing at the real one.
+     */
+    qrSequence?: SequenceData;
     /** When true, fill empty col-0 cells with mandala visualizations */
     showMandala?: boolean;
     /** Render as hand path visualization (HAND props, float arrows, no TKA) */
@@ -178,6 +184,7 @@
     showLoopGlyph = true,
     showQRCode = false,
     qrUrl,
+    qrSequence,
     showMandala = false,
     handPathMode: requestedHandPathMode = false,
     browseViewMode,
@@ -461,7 +468,7 @@
 
   const qrState = createChoreoCardQrState(
     () => ({
-      sequence,
+      sequence: qrSequence ?? sequence,
       showQRCode: effShowQRCode,
       qrUrl,
       darkMode,
@@ -1090,7 +1097,7 @@
       <CardFooter
         {showFooter}
         showNotes={showNotes && handLegend === null}
-        {hasPathShapeMetadata}
+        hasPathShapeMetadata={hasPathShapeMetadata && handLegend === null}
         {customNotesText}
         {scaledFooterHeight}
         {footerFontSize}

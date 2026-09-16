@@ -36,11 +36,6 @@
  *   `audioModeTouched` (the user explicitly picked one) — see "Touched-flag
  *   diffing" below. Never written to storage; `setAudioMode` only reassigns
  *   local `$state`.
- * - `notationMirrored` — whether the notation half of the studio is mirrored.
- *   Boolean, diffed against its fixed default (`false`). Derived from the
- *   chosen performance's hand labeling (`mirror-me` mirrors, the default), so
- *   any studio with footage on the canvas emits it. The studio does not read
- *   it back: a recipient's labeling comes from the performance record.
  *
  * EXCLUDED, with reasons:
  * - `chosenPerformance`: references a locally-uploaded or user-library video
@@ -114,11 +109,11 @@
  *
  * fx/t3/tn/cd's seed functions merge a payload onto a COMPLETE default object,
  * because their live stores need a complete value to construct with. Post
- * Studio's `$state` locals need no such thing: `propType`, `audioMode`, and
- * `notationMirrored` are three independent local variables, and each already
- * has its own default-computation `PostStudio.svelte` runs when nothing seeds
- * it (the settingsService read, the async audio-mode effect, the seeded
- * `false`). `seedFromPsSlice` therefore only validates and narrows the decoded
+ * Studio's `$state` locals need no such thing: `propType` and `audioMode` are
+ * two independent local variables, and each already has its own
+ * default-computation `PostStudio.svelte` runs when nothing seeds it (the
+ * settingsService read, the async audio-mode effect). `seedFromPsSlice`
+ * therefore only validates and narrows the decoded
  * payload — filtering unrecognized enum strings from a hand-edited URL — and
  * leaves an absent field absent, letting the component's own logic run
  * unchanged for anything the sender did not touch.
@@ -149,8 +144,6 @@ export interface PsSlicePayload {
   propType?: PropTypeValue;
   /** Present only when the sender explicitly picked a track (`audioModeTouched`). */
   audioMode?: PsAudioMode;
-  /** `true` only — absent means "not mirrored" (the default). */
-  notationMirrored?: true;
 }
 
 /** The live component state this slice reads, narrowed to the three encoded fields. */
@@ -165,15 +158,13 @@ export interface PsSliceSource {
   defaultPropType: PropTypeValue;
   audioMode: PsAudioMode;
   audioModeTouched: boolean;
-  notationMirrored: boolean;
 }
 
 /**
  * `full` always emits `propType` (Share/Copy Link — the recipient's own prop
  * preference must not leak into a borrowed view). `audioMode` stays gated on
  * the touched flag in both modes: its untouched value is an async probe
- * result the recipient re-derives from the same video. `notationMirrored`
- * is a `true`-only flag in both modes; absent already means the default.
+ * result the recipient re-derives from the same video.
  */
 export function capturePsSlice(
   source: PsSliceSource,
@@ -189,9 +180,6 @@ export function capturePsSlice(
   if (source.audioModeTouched) {
     payload.audioMode = source.audioMode;
   }
-  if (source.notationMirrored) {
-    payload.notationMirrored = true;
-  }
 
   return Object.keys(payload).length > 0 ? payload : null;
 }
@@ -202,7 +190,6 @@ const VALID_AUDIO_MODES: readonly PsAudioMode[] = ["original", "instagram"];
 export interface PsSliceSeed {
   propType?: PropTypeValue;
   audioMode?: PsAudioMode;
-  notationMirrored?: boolean;
 }
 
 /**
@@ -219,9 +206,6 @@ export function seedFromPsSlice(payload: PsSlicePayload): PsSliceSeed {
   }
   if (payload.audioMode && VALID_AUDIO_MODES.includes(payload.audioMode)) {
     seed.audioMode = payload.audioMode;
-  }
-  if (payload.notationMirrored === true) {
-    seed.notationMirrored = true;
   }
   return seed;
 }

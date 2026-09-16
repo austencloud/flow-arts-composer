@@ -12,6 +12,7 @@
     sequence,
     cardRenderOptions,
     handLabeling = null,
+    qrSequence,
     durationLabel,
     onRootReady,
     onEditRegion,
@@ -19,6 +20,7 @@
     sequence: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     handLabeling?: HandLabeling | null;
+    qrSequence?: SequenceData;
     /** Output length, shown beside the format so the canvas needs no header. */
     durationLabel?: string;
     onRootReady?: (root: HTMLElement | null) => void;
@@ -160,6 +162,7 @@
                   {sequence}
                   {cardRenderOptions}
                   {handLabeling}
+                  {qrSequence}
                   sequencePosition={layer.sequencePosition}
                   displayedBeatNumber={layer.displayedBeatNumber}
                   clipId={layer.clipId}

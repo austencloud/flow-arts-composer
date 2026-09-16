@@ -24,6 +24,7 @@
     playing: boolean;
     sequence: SequenceData;
     handLabeling?: HandLabeling | null;
+    qrSequence?: SequenceData;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     sequencePosition?: number;
     displayedBeatNumber?: number;
@@ -39,6 +40,7 @@
     playing,
     sequence,
     handLabeling = null,
+    qrSequence,
     cardRenderOptions = null,
     sequencePosition,
     displayedBeatNumber,
@@ -156,6 +158,7 @@
       {displayedBeatNumber}
       {cardRenderOptions}
       {handLabeling}
+      {qrSequence}
     />
   {:else if binding.renderMode === "tunnel"}
     <PostStudioTunnelLayer

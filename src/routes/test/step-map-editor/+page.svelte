@@ -100,8 +100,8 @@
   setVideoPlayheadContext(playhead);
 
   // The card beside the footage, labeled the way the shell's companion
-  // surface labels it. No labeling arrives before the sequence loads, and the
-  // helper never reads the sequence without one, so the assertion is safe.
+  // surface labels it. Before the sequence loads the helper only holds the
+  // null by identity and nothing renders it, so the assertion is safe.
   const labeledCard = createHandLabeledCard({
     getSequence: () => sequence!,
     getLabeling: () => (sequence ? activeHandLabeling : null),

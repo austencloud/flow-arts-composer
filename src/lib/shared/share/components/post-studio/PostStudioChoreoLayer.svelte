@@ -13,11 +13,14 @@
     displayedBeatNumber,
     cardRenderOptions = null,
     handLabeling = null,
+    qrSequence = sequence,
   }: {
     sequence: SequenceData;
     displayedBeatNumber: number;
     cardRenderOptions?: Partial<SequenceExportOptions> | null;
     handLabeling?: HandLabeling | null;
+    /** The source behind a labeled `sequence`; what a scan of the card opens. */
+    qrSequence?: SequenceData;
   } = $props();
 
   const highlightedStepIndex = $derived(
@@ -56,6 +59,7 @@
       destroy: shared?.requestCard(owner, node, () => ({
         sequence,
         handLabeling,
+        qrSequence,
         highlightedStepIndex,
         options: cardRenderOptions,
         automatic,
@@ -69,6 +73,7 @@
     <ChoreoCard
       {sequence}
       {handLabeling}
+      {qrSequence}
       {highlightedStepIndex}
       showHighlight
       darkMode={cardRenderOptions?.visibilityOverrides?.darkMode ?? true}

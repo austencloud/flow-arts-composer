@@ -10,6 +10,8 @@ export interface StudioCardFrame {
   sequence: SequenceData;
   /** The labeling `sequence` was resolved under, so the host draws its legend. */
   handLabeling: HandLabeling | null;
+  /** The record a scan of the card should open: the source, not the labeled copy. */
+  qrSequence: SequenceData;
   highlightedStepIndex: number;
   options: Partial<SequenceExportOptions> | null;
   automatic: boolean;

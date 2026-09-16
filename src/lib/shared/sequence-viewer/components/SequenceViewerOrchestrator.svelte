@@ -382,7 +382,6 @@
         defaultPropType: propType,
         audioMode: "original",
         audioModeTouched: false,
-        notationMirrored: false,
       },
       options
     );
@@ -979,7 +978,7 @@
     // session ever reaching disk.
     if (anRestore) {
       anStores.settings.replaceAll(anRestore.settings);
-        anStores.visibility.replaceAll(anRestore.visibility, true);
+      anStores.visibility.replaceAll(anRestore.visibility, true);
       anStores.settings.setPersistenceSuspended(false);
       anStores.visibility.setPersistenceSuspended(false);
       anRestore = null;

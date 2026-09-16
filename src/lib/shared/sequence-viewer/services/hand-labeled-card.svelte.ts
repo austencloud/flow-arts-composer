@@ -70,7 +70,8 @@ export function createHandLabeledCard(
         if (!cancelled) held = { source, labeling, sequence };
       })
       .catch((error) => {
-        if (!cancelled) failed = { source, labeling };
+        if (cancelled) return;
+        failed = { source, labeling };
         console.error(
           "[hand-labeled-card] Could not label the notation:",
           error
