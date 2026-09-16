@@ -30,6 +30,12 @@ export type InboxView =
 class InboxState {
   // Drawer state
   isOpen = $state(false);
+  /**
+   * A surface outside the drawer needs the outbox the drawer owns. Hosts that
+   * mount the drawer lazily (the standalone viewer route) mount it on this as
+   * well as on `isOpen`; the drawer itself stays closed.
+   */
+  hostRequested = $state(false);
   activeTab = $state<InboxTab>("messages");
   currentView = $state<InboxView>("list");
 
@@ -118,6 +124,10 @@ class InboxState {
   });
 
   // Actions
+  requestHost() {
+    this.hostRequested = true;
+  }
+
   open(tab?: InboxTab) {
     this.isOpen = true;
     if (tab) {

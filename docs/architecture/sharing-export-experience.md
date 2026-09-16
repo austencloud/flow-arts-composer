@@ -118,7 +118,13 @@ to a card merely because an old sheet default used that artifact.
   control. It does not render media. A copied link should preserve the intended
   view and must not misrepresent who can open it.
 - Sending to a friend in Flow Arts Composer uses the existing sequence-attachment
-  workflow; it is not a social publishing operation.
+  workflow; it is not a social publishing operation. From the viewer it is a
+  mode, not a dialog: the workspace morphs the way it does for Practice. The
+  card as currently configured fills the stage, recipients take the inspector
+  column, and the note and Send sit in a bar across the bottom. Choosing who
+  must not change what, so the card settings stay on the Card pane. Cancel or
+  Escape restores the pane the person was on. The inbox drawer keeps its own
+  send sheet for shares that start inside the inbox.
 - Native sharing is available when the actual payload is supported. After a long
   render, a clear Choose app or Share video action may be required for browser
   user activation. Do not promise automatic chooser opening everywhere.
@@ -166,6 +172,13 @@ to phone, prepared file, viewer source.
   reuse actual rendering and cancellation.
 - `src/lib/shared/share/services/post-handoff.ts`: reuse file, clipboard, and
   native delivery behavior.
+- `src/lib/shared/inbox/state/send-attachment-state.svelte.ts` owns recipient
+  selection and delivery for both send surfaces;
+  `SendDestinationPicker.svelte` is the shared picker. The viewer's
+  `SendSequenceWorkspace.svelte` and the drawer's `SendAttachmentSheet.svelte`
+  are presentation only. The outbox is the drawer's; hosts that mount the
+  drawer lazily mount it on `inboxState.hostRequested`, and the workspace
+  reads the registered outbox from `message-delivery-context.ts`.
 - Existing post composition and publishing components remain their respective
   owners. Do not introduce a second renderer, modal stack, or delivery service.
 

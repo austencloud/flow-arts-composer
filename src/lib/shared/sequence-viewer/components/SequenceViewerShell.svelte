@@ -40,7 +40,7 @@
   import DualSourceCrossfade from "$lib/shared/components/DualSourceCrossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { getSequenceVideosStore } from "$lib/shared/video-collaboration/state/sequence-videos-store.svelte";
-  import { toast } from "$lib/shared/toast/state/toast-state.svelte";
+  import { showToast, toast } from "$lib/shared/toast/state/toast-state.svelte";
   import { createPerformanceWorkspaceState } from "./sequence-videos/state/performance-workspace-state.svelte";
   import { setPerformanceWorkspaceContext } from "./sequence-videos/context/performance-workspace-context";
   import PerformanceStage from "./sequence-videos/PerformanceStage.svelte";
@@ -55,6 +55,7 @@
   import PostStudioPane from "./PostStudioPane.svelte";
   import { createPaneKeepAlive } from "./pane-keep-alive.svelte";
   import PracticeSetupBar from "./PracticeSetupBar.svelte";
+  import SendSequenceWorkspace from "./SendSequenceWorkspace.svelte";
   import Recording3DOverlay from "./Recording3DOverlay.svelte";
   import ExportTakeover from "$lib/shared/video-export/components/ExportTakeover.svelte";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
@@ -69,7 +70,8 @@
   import { uploadRenderedFilm } from "$lib/shared/video-collaboration/services/upload-rendered-film";
   import { canAccessPostStudio } from "../services/post-studio-access";
   import ChoreoCardContextMenuHost from "./choreo-card-context-menu/ChoreoCardContextMenuHost.svelte";
-  import { openSendSequenceSheetWithCard } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  import { createSequenceSendSession } from "$lib/shared/inbox/state/send-sequence-state.svelte";
+  import { inboxState } from "$lib/shared/inbox/state/inbox-state.svelte";
   import { getSharer } from "$lib/shared/share/get-sharer";
   import { createGlobalChiralitySeam } from "$lib/shared/settings/components/tabs/prop-type/prop-chirality-seam";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
@@ -358,7 +360,7 @@
       getSequence: () => sequence,
     },
     {
-      openSendSequenceSheetWithCard,
+      createSequenceSendSession,
       // Same inputs the share sheet's own card download uses, so the send
       // preview matches the card on screen.
       renderCardPreview: (target) =>
@@ -423,6 +425,44 @@
   const performanceEditorActive = $derived(
     layout.showVideoGallery && performanceWorkspace.view !== "browse"
   );
+  /**
+   * Send mode takes the whole workspace the way the performance editor does:
+   * the stage and inspector stay mounted underneath and the canonical
+   * crossfade owns the handoff, so the animation is exactly where it was when
+   * the person comes back.
+   */
+  const workspaceTakeoverActive = $derived(
+    performanceEditorActive || share.sendModeActive
+  );
+  /** Practice and Send both clear the chrome that is not the decision. */
+  const focusedModeActive = $derived(
+    ctx.practiceActive || share.sendModeActive
+  );
+
+  /**
+   * The outbox took it. Leave send mode and say so where the person is; the
+   * inbox stays closed, the thread is one tap away for a single recipient.
+   * The drawer's sheet navigates into the thread instead, because the person
+   * was already in the inbox there.
+   */
+  function handleSequenceSent(conversationIds: string[]): void {
+    share.exitSendMode();
+    const single = conversationIds.length === 1 ? conversationIds[0]! : null;
+    showToast({
+      type: "success",
+      message:
+        conversationIds.length > 1
+          ? `Sent to ${conversationIds.length} conversations`
+          : "Sent",
+      duration: 5000,
+      action: single
+        ? {
+            label: "Open",
+            onClick: () => inboxState.openToConversationById(single),
+          }
+        : undefined,
+    });
+  }
 
   let consumedShareOnOpen = false;
   $effect(() => {
@@ -829,6 +869,7 @@
         ? interactions.handleExitPractice
         : interactions.handleEnterPractice
       : undefined}
+    onSendCancel={share.sendModeActive ? share.exitSendMode : undefined}
     {canToggleMotionVisibility}
     onMotionToggleLeft={() => interactions.handleMotionToggle("left")}
     onMotionToggleRight={() => interactions.handleMotionToggle("right")}
@@ -934,9 +975,9 @@
           {#if layout.showRail}
             <div
               class="viewer-rail-wrap"
-              class:collapsed={ctx.practiceActive}
-              inert={ctx.practiceActive}
-              aria-hidden={ctx.practiceActive}
+              class:collapsed={focusedModeActive}
+              inert={focusedModeActive}
+              aria-hidden={focusedModeActive}
             >
               <ViewerContentRail
                 reviewPostStudio={import.meta.env.DEV && reviewPostStudio}
@@ -956,10 +997,14 @@
             </div>
           {/if}
 
-          {#snippet performanceEditor()}
+          {#snippet workspaceTakeover()}
+            <!-- Two takeovers share the crossfade's second source. The
+                 performance editor stays mounted across visits (its own
+                 persistence contract); send mode mounts with its session and
+                 leaves with it, so a cancelled send holds nothing. -->
             <div
               class="performance-editor-layer"
-              data-active={performanceEditorActive}
+              data-active={performanceEditorActive && !share.sendModeActive}
               data-persistent-performance-editor
             >
               <PerformanceEditor
@@ -969,6 +1014,15 @@
                 onSaveFirst={interactions.handleVideoUploadSaveFirst}
               />
             </div>
+            {#if share.sendSession}
+              <div class="send-mode-layer" data-viewer-send-mode>
+                <SendSequenceWorkspace
+                  session={share.sendSession}
+                  onSent={handleSequenceSent}
+                  onCancel={share.exitSendMode}
+                />
+              </div>
+            {/if}
           {/snippet}
 
           <ViewerWorkspacePanels
@@ -984,8 +1038,8 @@
             stackedInspectorSize={layout.showVideoGallery
               ? "var(--performance-inspector-height)"
               : "auto"}
-            takeover={performanceEditor}
-            takeoverActive={performanceEditorActive}
+            takeover={workspaceTakeover}
+            takeoverActive={workspaceTakeoverActive}
           >
             {#snippet stage()}
               <div class="viewer-stage-container">
@@ -1345,7 +1399,7 @@
             {/snippet}
           </ViewerWorkspacePanels>
         </div>
-        {#if isMobile && layout.isImageExportActive && ctx.effectiveSequence}
+        {#if isMobile && layout.isImageExportActive && ctx.effectiveSequence && !share.sendModeActive}
           <!-- Entrance/exit fly now lives on ControlDock's root
                (shared by every dock); this wrapper only positions. -->
           <div class="export-footer-overlay">
@@ -1370,7 +1424,7 @@
         {/if}
       {/if}
     </div>
-    {#if isMobile && ctx.hasSequence && ctx.effectiveSequence && !ctx.practiceActive && dockTrayState.openCount === 0}
+    {#if isMobile && ctx.hasSequence && ctx.effectiveSequence && !focusedModeActive && dockTrayState.openCount === 0}
       <!-- Ducks while any ControlDock tray is open — the media switcher is
            noise while the user edits, and the tray gets the room.
            Choreography: the slot height eases closed (outer slide) while
@@ -1691,13 +1745,19 @@
 
   .viewer-motion-stage-content,
   .performance-stage-layer,
-  .performance-editor-layer {
+  .performance-editor-layer,
+  .send-mode-layer {
     display: flex;
     width: 100%;
     height: 100%;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
+  }
+
+  /* The two takeovers stack in one crossfade source; only one is up. */
+  .performance-editor-layer[data-active="false"] {
+    display: none;
   }
 
   /* The settings column never grew with the viewport, so on a big screen its
