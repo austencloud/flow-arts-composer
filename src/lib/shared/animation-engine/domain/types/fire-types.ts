@@ -129,6 +129,11 @@ export interface FireFrameInput {
   playbackSpeed?: number;
   /** Changes when the sequence content changes. Invalidates fire cache so stale frames don't replay over new props. */
   sequenceContentHash?: string;
+  /** Changes when the props' artwork or tip geometry changes: the loaded
+   * render keys of both hands plus the tip points each resolves to. Invalidates
+   * the fire cache so a look change never replays flames recorded for other
+   * artwork. */
+  propGeometryKey?: string;
   /** Continuous sequence phase used for timestamp-indexed cache playback.
    * Render-loop callers use fractional currentStep, so pauses and seeks cannot
    * advance this coordinate independently of the props. */

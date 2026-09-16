@@ -227,3 +227,55 @@ describe("Canvas2DImageLoader prop crossfade snapshots", () => {
     expect(loader.getPreviousRightProp()).toBeNull();
   });
 });
+
+describe("Canvas2DImageLoader requested render keys", () => {
+  beforeEach(() => {
+    vi.stubGlobal("Image", ImmediatelyLoadedImage);
+  });
+
+  afterEach(() => {
+    fakeSvgCache.clear();
+    vi.unstubAllGlobals();
+  });
+
+  it("exposes the requested keys before the textures land and the loaded keys after", async () => {
+    const loader = new Canvas2DImageLoader();
+    await loader.loadPerColorPropImages("staff", "club");
+    expect(loader.getRequestedLeftPropType()).toBe("staff");
+    expect(loader.getRequestedRightPropType()).toBe("club");
+
+    const pending: Array<(image: HTMLImageElement) => void> = [];
+    vi.spyOn(
+      loader as unknown as {
+        createPropImageFromSVG: () => Promise<HTMLImageElement>;
+      },
+      "createPropImageFromSVG"
+    ).mockImplementation(() => new Promise((resolve) => pending.push(resolve)));
+
+    const load = loader.loadPerColorPropImages("fan", "buugeng");
+    expect(loader.getRequestedLeftPropType()).toBe("fan");
+    expect(loader.getRequestedRightPropType()).toBe("buugeng");
+    expect(loader.getLeftPropType()).toBe("staff");
+    expect(loader.getRightPropType()).toBe("club");
+
+    await vi.waitFor(() => expect(pending).toHaveLength(2));
+    pending[0]!(new Image());
+    pending[1]!(new Image());
+    await load;
+    expect(loader.getLeftPropType()).toBe("fan");
+    expect(loader.getRightPropType()).toBe("buugeng");
+    expect(loader.getRequestedLeftPropType()).toBe("fan");
+    expect(loader.getRequestedRightPropType()).toBe("buugeng");
+  });
+
+  it("drops a failed request back to the keys that are still loaded", async () => {
+    const loader = new Canvas2DImageLoader();
+    await loader.loadPerColorPropImages("staff", "staff");
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(
+      loader.loadPerColorPropImages("not-a-prop", "staff")
+    ).rejects.toThrow();
+    expect(loader.getRequestedLeftPropType()).toBe("staff");
+    expect(loader.getRequestedRightPropType()).toBe("staff");
+  });
+});

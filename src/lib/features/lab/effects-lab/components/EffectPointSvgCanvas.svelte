@@ -9,6 +9,7 @@
   import { onMount } from "svelte";
   import { PROP_DIMENSIONS, DEFAULT_PROP_DIMENSIONS, type PropDimensions } from "$lib/shared/animation-engine/services/IPropTextureLoader";
   import { resolvePropSvgPath } from "$lib/shared/animation-engine/services/svg-generator";
+  import { basePropTypeOfRenderKey } from "$lib/shared/pictograph/prop/domain/prop-look";
   import type { EffectPointEditorState } from "../state/effect-point-editor-state.svelte";
 
   interface Props {
@@ -48,7 +49,7 @@
   const NUDGE_STEP_LARGE = 10;
 
   let dims = $derived<PropDimensions>(
-    PROP_DIMENSIONS[editorState.selectedPropType.toLowerCase()] ?? DEFAULT_PROP_DIMENSIONS
+    PROP_DIMENSIONS[basePropTypeOfRenderKey(editorState.selectedPropType)] ?? DEFAULT_PROP_DIMENSIONS
   );
 
   let baseViewBoxWidth = $derived(dims.width + PADDING * 2);
@@ -106,7 +107,7 @@
       // prop-dimension units, but some assets (e.g. simple_staff at 300x92.33
       // vs dims 270x83.1) carry a different coordinate scale. Without this,
       // the ghost renders off-center and tip markers drift off the prop ends.
-      const propDims = PROP_DIMENSIONS[propType.toLowerCase()] ?? DEFAULT_PROP_DIMENSIONS;
+      const propDims = PROP_DIMENSIONS[basePropTypeOfRenderKey(propType)] ?? DEFAULT_PROP_DIMENSIONS;
       const vb = (svgRoot.getAttribute("viewBox") ?? "").trim().split(/[\s,]+/).map(Number);
       let target: Element = propShapeGroup;
       if (

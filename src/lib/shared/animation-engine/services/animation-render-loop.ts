@@ -30,6 +30,7 @@ import type {
 import type { RenderedPropSprite } from "../domain/types/rendered-prop-sprite";
 import type { LedSample } from "../domain/types/led-types";
 import type { FireTipTrackerConfig } from "./fire-tip-tracker";
+import { tipPointSignature } from "../domain/types/prop-tip-points";
 import type { FireTipTracker } from "./fire-tip-tracker";
 import type { WebGLLedRenderer } from "$lib/shared/animation-engine/services/led/web-gl-led-renderer";
 import type { LedSamplerConfig } from "./led-sampler";
@@ -1721,6 +1722,13 @@ export class AnimationRenderLoop {
       this.renderer?.getLastPropTransforms?.() ?? undefined;
     const renderedPropSprites =
       this.renderer?.getLastRenderedPropSprites?.() ?? [];
+    // The sprites actually on the canvas (fan build, model look) decide where
+    // the tips are; a renderer without the accessor falls back to notation.
+    const loadedPropRenderKeys =
+      this.renderer?.getLoadedPropRenderKeys?.() ?? null;
+    const leftTipKey = loadedPropRenderKeys?.left ?? params.leftPropType;
+    const rightTipKey = loadedPropRenderKeys?.right ?? params.rightPropType;
+    const propGeometryKey = `${leftTipKey ?? ""}|${rightTipKey ?? ""}|${tipPointSignature(leftTipKey)}|${tipPointSignature(rightTipKey)}`;
 
     // Fire/charcoal/zap overlays: render after Canvas2D so they composite on top.
     // Fire, charcoal, and zap all consume FireTipTracker output (zap reads the
@@ -1770,6 +1778,8 @@ export class AnimationRenderLoop {
         rightPropDimensions: props.rightPropDimensions,
         leftPropType: params.leftPropType,
         rightPropType: params.rightPropType,
+        leftPropRenderKey: loadedPropRenderKeys?.left ?? undefined,
+        rightPropRenderKey: loadedPropRenderKeys?.right ?? undefined,
         renderedTransforms,
         // Overlaid tunnel layers get tips too, so per-tip effects cover every
         // copy in the kaleidoscope (not just the base pair). Absent for normal
@@ -1830,6 +1840,7 @@ export class AnimationRenderLoop {
           darkMode: params.darkMode ?? false,
           propSprites: overlayPropSprites,
           propColors: params.propColors,
+          propGeometryKey,
           loopDetected: fireLoopDetected,
           loopDuration: fireLoopDetected ? sequenceSteps : undefined,
           playbackDiscontinuity: hasFireCachePlaybackDiscontinuity(

@@ -132,11 +132,16 @@ export function computeFireVisualCacheKey(
   config: FireOverlayConfig,
   input: Pick<
     FireFrameInput,
-    "playbackSpeed" | "sequenceContentHash" | "propColors"
+    | "playbackSpeed"
+    | "sequenceContentHash"
+    | "propColors"
+    | "canvasWidth"
+    | "canvasHeight"
+    | "propGeometryKey"
   >
 ): string {
   return JSON.stringify({
-    rendererRevision: 7,
+    rendererRevision: 8,
     fuelSourceId: config.fuelSourceId ?? "default",
     intensity: config.intensity,
     brightness: config.brightness ?? 0.5,
@@ -153,6 +158,11 @@ export function computeFireVisualCacheKey(
     propColors: input.propColors ?? null,
     playbackSpeed: input.playbackSpeed ?? 1,
     sequenceContentHash: input.sequenceContentHash ?? "",
+    // The recorded loop is a picture of flames at specific canvas positions,
+    // so anything that moves the emitters or the canvas invalidates it.
+    canvasWidth: input.canvasWidth,
+    canvasHeight: input.canvasHeight,
+    propGeometryKey: input.propGeometryKey ?? "",
   });
 }
 
@@ -757,6 +767,14 @@ export class WebGLFireRenderer {
             this.clearVelocityFields();
           }
         }
+      }
+
+      // A loop recorded for another canvas size cannot be replayed here.
+      if (
+        (cache.isWarm() || cache.isRecording()) &&
+        !cache.matchesDisplaySize(this.canvas!.width, this.canvas!.height)
+      ) {
+        cache.invalidate();
       }
 
       // If cache is warm, skip simulation entirely and blit from cache

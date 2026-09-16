@@ -61,6 +61,13 @@ export interface IAnimationRenderer {
   getLastRenderedPropSprites?(): readonly RenderedPropSprite[];
 
   /**
+   * Render keys of the sprites currently on the canvas (a fan build or model
+   * look, or the plain notation type). Effects resolve tip points from these.
+   * Optional; a renderer without it leaves effects on the notation tables.
+   */
+  getLoadedPropRenderKeys?(): { left: string | null; right: string | null };
+
+  /**
    * Get the current prop sprite images, so the echo overlay can onion-skin
    * (ghost) the real prop graphic at past poses instead of drawing a stick line.
    * Optional — only the Canvas2D renderer provides it.
