@@ -73,7 +73,7 @@
   let bakeStatus = $state("");
 
   // ── Repair mode (?transcode → drop spurious frame 0 from existing clips) ────
-  // Each baked clip's frame 0 is the static start-position snapshot (off the
+  // Each baked clip's frame 0 is the static start-placement snapshot (off the
   // continuous mandala curve), which flashes at every MSE loop seam. Decode→drop
   // frame 0→re-mux fixes the seam without re-rendering (no WebGL → no crash).
   // ?efforts=… filters which effort sets to repair, same as bake.

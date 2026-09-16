@@ -17,7 +17,7 @@ import { createStepData } from "$lib/shared/foundation/domain/factories/create-s
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
 import type { LetterTransitionGraph } from "./letter-transition-graph";
-import type { StartPositionValidator } from "./start-position-validator";
+import type { StartPlacementValidator } from "./start-placement-validator";
 import type { OrientationContinuityValidator } from "./orientation-continuity-validator";
 import type {
   SpellGenerationOptions,
@@ -39,7 +39,7 @@ export class WordSequenceGenerator {
     private letterQueryHandler: ILetterQueryHandler,
     private stepConverter: StepConverter,
     private sequenceExtender: SequenceExtender,
-    private startPositionValidator: StartPositionValidator,
+    private startPlacementValidator: StartPlacementValidator,
     private orientationContinuityValidator: OrientationContinuityValidator,
     private reversalDetector: ReversalDetector
   ) {}
@@ -82,24 +82,24 @@ export class WordSequenceGenerator {
 
       const firstLetter = expandedLetters[0]!;
 
-      // Get start position for first letter
+      // Get start placement for first letter
       const gridMode = GridMode.DIAMOND; // Default for now
-      const startPosition = await this.selectStartPosition(
+      const startPlacement = await this.selectStartPlacement(
         firstLetter,
         gridMode
       );
 
-      if (!startPosition) {
+      if (!startPlacement) {
         return this.createErrorResult(
           options.word,
-          `Could not find start position for letter ${firstLetter}`
+          `Could not find start placement for letter ${firstLetter}`
         );
       }
 
       // Generate steps for each letter
       const steps = await this.generateBeats(
         expandedLetters,
-        startPosition,
+        startPlacement,
         gridMode
       );
 
@@ -113,7 +113,7 @@ export class WordSequenceGenerator {
       // Build sequence data (non-circular initially)
       let sequence = this.buildSequenceData(
         options.word,
-        startPosition,
+        startPlacement,
         steps,
         gridMode,
         false // Initially not circular - LOOP is applied after
@@ -121,7 +121,7 @@ export class WordSequenceGenerator {
 
       // Recalculate all orientations to ensure chain integrity
       // The CSV data may not have proper orientation continuity,
-      // so we propagate orientations from the start position
+      // so we propagate orientations from the start placement
       sequence = recalculateAllOrientations(sequence);
 
       // Detect reversals in the sequence
@@ -218,31 +218,31 @@ export class WordSequenceGenerator {
         }
       }
 
-      // If position groups don't match, compute circularization options
-      // These show what bridge letters could be added to enable position-dependent LOOPs
-      // Note: REWOUND is always available (it's position-independent), but we still
+      // If placement groups don't match, compute circularization options
+      // These show what bridge letters could be added to enable placement-dependent LOOPs
+      // Note: REWOUND is always available (it's placement-independent), but we still
       // want to show circularization options for users who want other LOOP types
       let circularizationOptions: CircularizationOption[] | undefined;
       let directLoopUnavailableReason: string | undefined;
 
       if (options.preferences.makeCircular) {
-        const startPosGroup = this.positionToGroup(
-          startPosition.startPosition || startPosition.endPosition || ""
+        const startPosGroup = this.placementToGroup(
+          startPlacement.startPlacement || startPlacement.endPlacement || ""
         );
         const endStep = steps[steps.length - 1];
         const endPosGroup = endStep
-          ? this.positionToGroup(endStep.endPosition || "")
+          ? this.placementToGroup(endStep.endPlacement || "")
           : null;
 
-        // Check if position groups don't match - this means position-dependent LOOPs
+        // Check if placement groups don't match - this means placement-dependent LOOPs
         // (ROTATED, MIRRORED, etc.) won't work without bridge letters
         if (startPosGroup && endPosGroup && startPosGroup !== endPosGroup) {
-          directLoopUnavailableReason = `Sequence ends at ${endPosGroup}, needs to reach ${startPosGroup} for position-dependent LOOPs`;
+          directLoopUnavailableReason = `Sequence ends at ${endPosGroup}, needs to reach ${startPosGroup} for placement-dependent LOOPs`;
 
           // Compute circularization options to show what bridge letters enable which LOOPs
           circularizationOptions = await this.computeCircularizationOptions(
             sequence,
-            startPosition,
+            startPlacement,
             endStep,
             gridMode
           );
@@ -424,31 +424,31 @@ export class WordSequenceGenerator {
   }
 
   /**
-   * Select a start position that works for the first letter.
-   * Uses StartPositionValidator to ensure only static (Type 6) pictographs are used.
+   * Select a start placement that works for the first letter.
+   * Uses StartPlacementValidator to ensure only static (Type 6) pictographs are used.
    */
-  private async selectStartPosition(
+  private async selectStartPlacement(
     firstLetter: Letter,
     gridMode: GridMode
   ): Promise<PictographData | null> {
     try {
-      // Get valid start positions using the validator
+      // Get valid start placements using the validator
       // This ensures only Type 6 (static) letters are used
-      const validStartPositions =
-        await this.startPositionValidator.getValidStartPositions(
+      const validStartPlacements =
+        await this.startPlacementValidator.getValidStartPlacements(
           firstLetter,
           gridMode
         );
 
-      if (validStartPositions.length === 0) {
+      if (validStartPlacements.length === 0) {
         return null;
       }
 
-      // Return random start position
-      const randomIndex = Math.floor(Math.random() * validStartPositions.length);
-      return validStartPositions[randomIndex] ?? null;
+      // Return random start placement
+      const randomIndex = Math.floor(Math.random() * validStartPlacements.length);
+      return validStartPlacements[randomIndex] ?? null;
     } catch (error) {
-      console.error("Error selecting start position:", error);
+      console.error("Error selecting start placement:", error);
       return null;
     }
   }
@@ -459,11 +459,11 @@ export class WordSequenceGenerator {
    */
   private async generateBeats(
     letters: Letter[],
-    startPosition: PictographData,
+    startPlacement: PictographData,
     gridMode: GridMode
   ): Promise<StepData[]> {
     const steps: StepData[] = [];
-    let lastPictograph = startPosition;
+    let lastPictograph = startPlacement;
 
     for (let i = 0; i < letters.length; i++) {
       const letter = letters[i];
@@ -481,8 +481,8 @@ export class WordSequenceGenerator {
         // didn't correctly identify needed bridge letters, or no valid
         // pictograph variation exists for this transition
         throw new Error(
-          `Cannot chain letter "${letter}" from position "${lastPictograph.endPosition}". ` +
-            `No pictograph variation for "${letter}" starts at this position.`
+          `Cannot chain letter "${letter}" from placement "${lastPictograph.endPlacement}". ` +
+            `No pictograph variation for "${letter}" starts at this placement.`
         );
       }
 
@@ -501,7 +501,7 @@ export class WordSequenceGenerator {
 
   /**
    * Find a pictograph for a letter that can follow the last pictograph.
-   * Ensures position continuity (startPosition === lastPictograph.endPosition).
+   * Ensures placement continuity (startPlacement === lastPictograph.endPlacement).
    * Orientations are recalculated afterward by recalculateAllOrientations().
    */
   private async findPictographForLetter(
@@ -521,25 +521,25 @@ export class WordSequenceGenerator {
       return null;
     }
 
-    // Get the end position from the last pictograph
-    const requiredStartPosition = lastPictograph.endPosition;
+    // Get the end placement from the last pictograph
+    const requiredStartPlacement = lastPictograph.endPlacement;
 
-    // Filter by position continuity
-    const positionMatches = letterVariations.filter(
-      (p) => p.startPosition === requiredStartPosition
+    // Filter by placement continuity
+    const placementMatches = letterVariations.filter(
+      (p) => p.startPlacement === requiredStartPlacement
     );
 
-    if (positionMatches.length === 0) {
+    if (placementMatches.length === 0) {
       console.warn(
-        `No pictograph for letter ${letter} starts at position ${requiredStartPosition}`
+        `No pictograph for letter ${letter} starts at placement ${requiredStartPlacement}`
       );
       // Return null - this means we need a bridge letter
       return null;
     }
 
     // Return a random match from valid candidates for variety
-    const randomIndex = Math.floor(Math.random() * positionMatches.length);
-    return positionMatches[randomIndex] ?? null;
+    const randomIndex = Math.floor(Math.random() * placementMatches.length);
+    return placementMatches[randomIndex] ?? null;
   }
 
   /**
@@ -547,13 +547,13 @@ export class WordSequenceGenerator {
    */
   private buildSequenceData(
     name: string,
-    startPosition: PictographData,
+    startPlacement: PictographData,
     steps: StepData[],
     gridMode: GridMode,
     isCircular: boolean = false
   ): SequenceData {
-    const startPositionData = this.stepConverter.convertToStartPosition(
-      startPosition,
+    const startPlacementData = this.stepConverter.convertToStartPlacement(
+      startPlacement,
       gridMode
     );
 
@@ -562,8 +562,8 @@ export class WordSequenceGenerator {
       name,
       word: steps.map((b) => b.letter || "").join(""),
       steps,
-      startPosition: startPositionData, // Primary field for orientation propagation
-      startingPosition: startPositionData, // Legacy field for backward compatibility
+      startPlacement: startPlacementData, // Primary field for orientation propagation
+      startingPlacement: startPlacementData, // Legacy field for backward compatibility
       gridMode,
       // propType removed - prop type is viewer preference, not sequence data
       difficultyLevel: DifficultyLevel.INTERMEDIATE,
@@ -591,42 +591,42 @@ export class WordSequenceGenerator {
     };
   }
 
-  private getEndPosition(pictograph: PictographData): string {
-    return pictograph.endPosition || "";
+  private getEndPlacement(pictograph: PictographData): string {
+    return pictograph.endPlacement || "";
   }
 
-  private positionToGroup(position: string): string | null {
-    if (!position) return null;
-    if (position.startsWith("alpha")) return "alpha";
-    if (position.startsWith("beta")) return "beta";
-    if (position.startsWith("gamma")) return "gamma";
+  private placementToGroup(placement: string): string | null {
+    if (!placement) return null;
+    if (placement.startsWith("alpha")) return "alpha";
+    if (placement.startsWith("beta")) return "beta";
+    if (placement.startsWith("gamma")) return "gamma";
     return null;
   }
 
-  private isStartPositionPictograph(pictograph: PictographData): boolean {
-    return pictograph.startPosition === pictograph.endPosition;
+  private isStartPlacementPictograph(pictograph: PictographData): boolean {
+    return pictograph.startPlacement === pictograph.endPlacement;
   }
 
   /**
    * Compute circularization options for a non-loopable sequence.
-   * When a sequence ends at a different position group than it starts,
+   * When a sequence ends at a different placement group than it starts,
    * we need bridge letters to return to the start group. Different bridge
-   * letters will end at different specific positions, enabling different LOOPs.
+   * letters will end at different specific placements, enabling different LOOPs.
    */
   private async computeCircularizationOptions(
     sequence: SequenceData,
-    startPosition: PictographData,
+    startPlacement: PictographData,
     endStep: StepData | undefined,
     gridMode: GridMode
   ): Promise<CircularizationOption[]> {
     if (!endStep) return [];
 
-    const startPos = startPosition.startPosition || startPosition.endPosition;
-    const endPos = endStep.endPosition;
+    const startPos = startPlacement.startPlacement || startPlacement.endPlacement;
+    const endPos = endStep.endPlacement;
     if (!startPos || !endPos) return [];
 
-    const startGroup = this.positionToGroup(startPos);
-    const endGroup = this.positionToGroup(endPos);
+    const startGroup = this.placementToGroup(startPos);
+    const endGroup = this.placementToGroup(endPos);
     if (!startGroup || !endGroup || startGroup === endGroup) return [];
 
     const options: CircularizationOption[] = [];
@@ -634,22 +634,22 @@ export class WordSequenceGenerator {
       await this.letterQueryHandler.getAllPictographVariations(gridMode);
 
     // Find ALL pictograph variations that:
-    // 1. Start at the sequence's end position (endPos)
-    // 2. End at a position in the start group (startGroup)
+    // 1. Start at the sequence's end placement (endPos)
+    // 2. End at a placement in the start group (startGroup)
     // This gives us all possible bridge letters (X, W-, X-, etc.)
     const bridgeCandidates = allPictographs.filter((p) => {
-      if (p.startPosition !== endPos) return false;
-      const pEndGroup = this.positionToGroup(p.endPosition || "");
+      if (p.startPlacement !== endPos) return false;
+      const pEndGroup = this.placementToGroup(p.endPlacement || "");
       return pEndGroup === startGroup;
     });
 
     if (bridgeCandidates.length === 0) return [];
 
-    // Group candidates by letter and ending position to avoid duplicates
-    // Key: "letter|endPosition" -> PictographData
+    // Group candidates by letter and ending placement to avoid duplicates
+    // Key: "letter|endPlacement" -> PictographData
     const uniqueBridges = new Map<string, PictographData>();
     for (const variation of bridgeCandidates) {
-      const key = `${variation.letter}|${variation.endPosition}`;
+      const key = `${variation.letter}|${variation.endPlacement}`;
       if (!uniqueBridges.has(key)) {
         uniqueBridges.set(key, variation);
       }
@@ -658,7 +658,7 @@ export class WordSequenceGenerator {
     // For each unique bridge variation, check available LOOPs
     for (const [_key, variation] of uniqueBridges) {
       const bridgeLetter = variation.letter as Letter;
-      const bridgeEndPos = variation.endPosition || "";
+      const bridgeEndPos = variation.endPlacement || "";
 
       // Create a temporary beat for the bridge letter (factory fills any
       // missing hand with an invisible placeholder)
@@ -678,15 +678,15 @@ export class WordSequenceGenerator {
       // Analyze what LOOPs are available for this extended sequence
       // Filter out REWOUND since it's always available and shown separately
       const analysis = this.sequenceExtender.analyzeSequence(tempSequence);
-      const positionDependentLOOPs = analysis.availableLOOPOptions.filter(
+      const placementDependentLOOPs = analysis.availableLOOPOptions.filter(
         (opt) => opt.loopType !== LOOPType.STRICT_REWOUND
       );
 
-      if (positionDependentLOOPs.length > 0) {
+      if (placementDependentLOOPs.length > 0) {
         options.push({
           bridgeLetters: [bridgeLetter],
-          endPosition: bridgeEndPos,
-          availableLOOPs: positionDependentLOOPs,
+          endPlacement: bridgeEndPos,
+          availableLOOPs: placementDependentLOOPs,
           description: `Add "${bridgeLetter}" to end at ${bridgeEndPos}`,
         });
       }
@@ -696,11 +696,11 @@ export class WordSequenceGenerator {
   }
 
   /**
-   * Get a representative letter that starts at a given position group.
+   * Get a representative letter that starts at a given placement group.
    * Used to find bridge paths.
    */
   private getFirstLetterInGroup(group: string): Letter {
-    // These are known letters that start at each position group
+    // These are known letters that start at each placement group
     const groupStarters: Record<string, Letter> = {
       alpha: Letter.A,
       beta: Letter.B,
@@ -727,17 +727,17 @@ export class WordSequenceGenerator {
     const allPictographs =
       await this.letterQueryHandler.getAllPictographVariations(gridMode);
 
-    // Find a pictograph variation that starts at the last beat's end position
+    // Find a pictograph variation that starts at the last beat's end placement
     const bridgeVariations = allPictographs.filter(
       (p) =>
-        p.letter === bridgeLetter && p.startPosition === lastStep.endPosition
+        p.letter === bridgeLetter && p.startPlacement === lastStep.endPlacement
     );
 
     if (bridgeVariations.length === 0) {
       return {
         success: false,
         sequence,
-        error: `No variation of "${bridgeLetter}" starts at position "${lastStep.endPosition}"`,
+        error: `No variation of "${bridgeLetter}" starts at placement "${lastStep.endPlacement}"`,
       };
     }
 
@@ -778,7 +778,7 @@ import { letterTransitionGraph } from "./letter-transition-graph";
 import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
 import { stepConverter } from "$lib/features/create/generate/shared/services/step-converter";
 import { sequenceExtender } from "$lib/features/create/shared/services/sequence-extender";
-import { startPositionValidator } from "./start-position-validator";
+import { startPlacementValidator } from "./start-placement-validator";
 import * as orientationContinuityValidator from "./orientation-continuity-validator";
 import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
 
@@ -787,7 +787,7 @@ export const wordSequenceGenerator = new WordSequenceGenerator(
   letterQueryHandler,
   stepConverter,
   sequenceExtender,
-  startPositionValidator,
+  startPlacementValidator,
   orientationContinuityValidator,
   reversalDetector
 );

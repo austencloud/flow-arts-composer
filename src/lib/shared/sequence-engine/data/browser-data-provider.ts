@@ -75,8 +75,8 @@ export class BrowserDataProvider {
 
     return {
       letter: p.letter as string,
-      startPosition: p.startPosition || "",
-      endPosition: p.endPosition || "",
+      startPlacement: p.startPlacement || "",
+      endPlacement: p.endPlacement || "",
       leftMotionType: leftMotion?.motionType || "static",
       leftStartLocation: leftMotion?.startLocation || "",
       leftEndLocation: leftMotion?.endLocation || "",

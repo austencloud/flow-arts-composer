@@ -302,7 +302,7 @@ export function registerSequenceTools(server: McpServer): void {
   // Tool: get_sequence_data
   server.tool(
     "get_sequence_data",
-    "Get sequence data without rendering an image. Use when Claude needs to analyze step data, check positions, or verify generation before showing to user. For showing sequences to users, use generate_sequence instead.",
+    "Get sequence data without rendering an image. Use when Claude needs to analyze step data, check placements, or verify generation before showing to user. For showing sequences to users, use generate_sequence instead.",
     {
       word: z.string().describe('The sequence word, e.g., "ABC" or "DEFGH"'),
       gridMode: z
@@ -496,8 +496,8 @@ export function registerSequenceTools(server: McpServer): void {
             variation: result.variationIndices[i] ?? 0,
             stepNumber: i,
           })),
-          startPosition: result.startPosition,
-          endPosition: result.endPosition,
+          startPlacement: result.startPlacement,
+          endPlacement: result.endPlacement,
           stepCount: result.steps.length - 1,
           constraintReport: {
             score: result.constraintReport.score,
@@ -560,7 +560,7 @@ export function registerSequenceTools(server: McpServer): void {
             content: [
               {
                 type: "text" as const,
-                text: `${result.word}: ${result.steps.length} steps | ${result.startPosition}→${result.endPosition} | Score: ${score.toFixed(2)} | Satisfied: ${satisfiedConstraints}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}`,
+                text: `${result.word}: ${result.steps.length} steps | ${result.startPlacement}→${result.endPlacement} | Score: ${score.toFixed(2)} | Satisfied: ${satisfiedConstraints}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}`,
               },
             ],
           };
@@ -613,7 +613,7 @@ export function registerSequenceTools(server: McpServer): void {
           content: [
             {
               type: "text" as const,
-              text: `${result.word}: ${result.steps.length} steps | ${result.startPosition}→${result.endPosition}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}`,
+              text: `${result.word}: ${result.steps.length} steps | ${result.startPlacement}→${result.endPlacement}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}`,
             },
           ],
         };
@@ -627,8 +627,8 @@ export function registerSequenceTools(server: McpServer): void {
               {
                 word: result.word,
                 steps: result.steps,
-                startPosition: result.startPosition,
-                endPosition: result.endPosition,
+                startPlacement: result.startPlacement,
+                endPlacement: result.endPlacement,
                 stepCount: result.steps.length - 1,
                 bridges: result.bridges,
               },
@@ -645,7 +645,7 @@ export function registerSequenceTools(server: McpServer): void {
   //
   // Supports two code paths:
   // 1. Legacy builder: plain word-based generation (proven, no regressions)
-  // 2. Engine builder: length-based, LOOP, 3-axis constraints, start position targeting
+  // 2. Engine builder: length-based, LOOP, 3-axis constraints, start placement targeting
   //
   // Routing: loopType present OR (length without word) → engine path. Otherwise → legacy.
   const ALL_LOOP_TYPES = [
@@ -694,7 +694,7 @@ export function registerSequenceTools(server: McpServer): void {
         .enum(ALL_LOOP_TYPES)
         .optional()
         .describe(
-          "LOOP type for circular generation. Triggers engine builder with beam search and targeted end positions."
+          "LOOP type for circular generation. Triggers engine builder with beam search and targeted end placements."
         ),
       period: z
         .enum(["halved", "quartered"])
@@ -748,24 +748,24 @@ export function registerSequenceTools(server: McpServer): void {
         .optional()
         .describe("Motion family filter: exclude or prefer dash motions"),
 
-      // Position targeting
-      startPosition: z
+      // Placement targeting
+      startPlacement: z
         .string()
         .optional()
         .describe(
-          'Force a specific start position, e.g., "alpha1", "beta3", "gamma5"'
+          'Force a specific start placement, e.g., "alpha1", "beta3", "gamma5"'
         ),
-      endPosition: z
+      endPlacement: z
         .string()
         .optional()
         .describe(
-          'Force a specific end position for the last step, e.g., "beta5"'
+          'Force a specific end placement for the last step, e.g., "beta5"'
         ),
-      blockedStartPositions: z
+      blockedStartPlacements: z
         .array(z.string())
         .optional()
         .describe(
-          'Start positions to exclude from random selection, e.g., ["alpha1", "gamma5"]'
+          'Start placements to exclude from random selection, e.g., ["alpha1", "gamma5"]'
         ),
 
       // Letter constraints
@@ -973,9 +973,9 @@ export function registerSequenceTools(server: McpServer): void {
       constraints,
       handPathMode,
       motionTypeFilter,
-      startPosition,
-      endPosition,
-      blockedStartPositions,
+      startPlacement,
+      endPlacement,
+      blockedStartPlacements,
       mustContainLetters,
       mustNotContainLetters,
       gridMode = "diamond",
@@ -1068,9 +1068,9 @@ export function registerSequenceTools(server: McpServer): void {
             constraints,
             handPathMode,
             motionTypeFilter,
-            startPosition,
-            endPosition,
-            blockedStartPositions,
+            startPlacement,
+            endPlacement,
+            blockedStartPlacements,
             mustNotContainLetters,
             mustContainLetters,
             loopType,
@@ -1198,8 +1198,8 @@ export function registerSequenceTools(server: McpServer): void {
               (exportProfile === "print" ||
                 COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
             showFooter: Boolean(notes && notes !== "none"),
-            startPositionLayout:
-              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+            startPlacementLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPlacementLayout,
             userName,
             notes,
             birthday: birthdayDate,
@@ -1245,7 +1245,7 @@ export function registerSequenceTools(server: McpServer): void {
           return {
             step: i,
             letter: s.letter,
-            pos: `${s.startPosition}→${s.endPosition}`,
+            pos: `${s.startPlacement}→${s.endPlacement}`,
             left: {
               type: b.motionType,
               dir: b.rotationDirection,

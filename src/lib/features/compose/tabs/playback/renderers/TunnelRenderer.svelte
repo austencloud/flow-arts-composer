@@ -311,9 +311,9 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
     if (
       currentStep === 0 &&
       !primaryAnimationState.isPlaying &&
-      primaryAnimationState.sequenceData.startPosition
+      primaryAnimationState.sequenceData.startPlacement
     ) {
-      return primaryAnimationState.sequenceData.startPosition;
+      return primaryAnimationState.sequenceData.startPlacement;
     }
 
     // For steps, use direct indexing with clamping
@@ -351,9 +351,9 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
     if (
       currentStep === 0 &&
       !secondaryAnimationState.isPlaying &&
-      secondaryAnimationState.sequenceData.startPosition
+      secondaryAnimationState.sequenceData.startPlacement
     ) {
-      return secondaryAnimationState.sequenceData.startPosition.letter || null;
+      return secondaryAnimationState.sequenceData.startPlacement.letter || null;
     }
 
     if (

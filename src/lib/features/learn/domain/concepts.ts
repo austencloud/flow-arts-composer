@@ -14,7 +14,7 @@ import type { ConceptCategory, LearnConcept } from "./types";
  */
 export const TKA_CONCEPTS: LearnConcept[] = [
   // FOUNDATION CATEGORY
-  // Core building blocks - understanding the grid and basic positions/motions
+  // Core building blocks - understanding the grid and basic placements/motions
   {
     id: "grid",
     order: 1,
@@ -34,12 +34,12 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     ],
   },
   {
-    id: "hand-positions",
+    id: "hand-placements",
     order: 2,
     category: "foundation",
-    name: "Hand Positions",
-    shortName: "Positions",
-    description: "Learn Alpha, Beta, and Gamma hand positions",
+    name: "Hand Placements",
+    shortName: "Placements",
+    description: "Learn Alpha, Beta, and Gamma hand placements",
     icon: "fa-hand",
     pdfPages: [8],
     prerequisites: ["grid"],
@@ -59,7 +59,7 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     description: "Shift, dash, and static: three ways a hand can move.",
     icon: "fa-arrow-right",
     pdfPages: [9],
-    prerequisites: ["hand-positions"],
+    prerequisites: ["hand-placements"],
     estimatedMinutes: 10,
     concepts: [
       "Shift - move to adjacent point",
@@ -96,7 +96,7 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     prerequisites: ["timing-and-direction"],
     estimatedMinutes: 4,
     concepts: [
-      "Start position",
+      "Start placement",
       "Numbered hand-path steps",
       "Scan to watch the sequence",
     ],
@@ -143,7 +143,7 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     category: "foundation",
     name: "Gamma Motions",
     shortName: "Gamma",
-    description: "Master quarter-time movements in gamma position",
+    description: "Master quarter-time movements in gamma placement",
     icon: "fa-angle-right",
     pdfPages: [11],
     prerequisites: ["dual-shifts-alpha-beta"],
@@ -160,7 +160,7 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     category: "foundation",
     name: "Type 2: Shifts",
     shortName: "Shifts",
-    description: "Move between Gamma and Alpha/Beta positions",
+    description: "Move between Gamma and Alpha/Beta placements",
     icon: "fa-arrow-up-right",
     pdfPages: [12],
     prerequisites: ["gamma-motion"],
@@ -218,7 +218,7 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     estimatedMinutes: 8,
     concepts: [
       "Simultaneous dashing",
-      "Position maintenance",
+      "Placement maintenance",
       "α→α, β→β, γ→γ patterns",
     ],
   },
@@ -228,7 +228,7 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     category: "foundation",
     name: "Type 6: Static",
     shortName: "Static",
-    description: "Hold positions for steps with no motion",
+    description: "Hold placements for steps with no motion",
     icon: "fa-circle",
     pdfPages: [14],
     prerequisites: ["dual-dash-type5"],
@@ -240,11 +240,11 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     ],
   },
   {
-    id: "staff-positions",
+    id: "staff-placements",
     order: 12,
     category: "foundation",
-    name: "Staff Positions",
-    shortName: "Staff Pos.",
+    name: "Staff Placements",
+    shortName: "Staff Placements",
     description: "Track thumb orientations for staff work",
     icon: "fa-grip-lines-vertical",
     pdfPages: [15],
@@ -265,7 +265,7 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     description: "Learn prospin and antispin rotations",
     icon: "fa-rotate",
     pdfPages: [16],
-    prerequisites: ["staff-positions"],
+    prerequisites: ["staff-placements"],
     estimatedMinutes: 15,
     concepts: [
       "Prospin - rotate with handpath",
@@ -440,7 +440,7 @@ export const TKA_CONCEPTS: LearnConcept[] = [
       "Ψ - Dash (α→β)",
       "Λ - Dash (γ→γ)",
       "Dual-dash (-) variants",
-      "α, β, γ static positions",
+      "α, β, γ static placements",
     ],
   },
 
@@ -505,7 +505,7 @@ export const TKA_CONCEPTS: LearnConcept[] = [
     category: "combinations",
     name: "LOOPs - Continuous Assembly Patterns",
     shortName: "LOOPs",
-    description: "Repeating patterns that return to start position",
+    description: "Repeating patterns that return to start placement",
     icon: "fa-arrows-rotate",
     pdfPages: [31, 32, 33],
     prerequisites: ["gamma-words"],
@@ -517,7 +517,7 @@ export const TKA_CONCEPTS: LearnConcept[] = [
       "Direct reflection returns home without an axis fixed point",
       "Rotated LOOPs",
       "Swapped LOOPs",
-      "Returning to home position",
+      "Returning to home placement",
     ],
   },
   {

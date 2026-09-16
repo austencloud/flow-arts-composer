@@ -47,7 +47,7 @@ const catalogPayload = JSON.parse(
 /** Every field that changes what the stage actually plays. */
 function playbackShape(sequence: {
   readonly steps: readonly unknown[];
-  readonly startPosition?: unknown;
+  readonly startPlacement?: unknown;
 }): unknown {
   const motion = (raw: unknown) => {
     const m = raw as Record<string, unknown>;
@@ -68,8 +68,8 @@ function playbackShape(sequence: {
     const motions = s.motions as Record<string, unknown>;
     return {
       letter: s.letter ?? null,
-      startPosition: s.startPosition ?? null,
-      endPosition: s.endPosition ?? null,
+      startPlacement: s.startPlacement ?? null,
+      endPlacement: s.endPlacement ?? null,
       // Only compared on steps. The seeder leaves it off the start position
       // record itself while the baked document carries it; both agree on the
       // grid mode inside that record's own motions, which is what renders.
@@ -81,8 +81,8 @@ function playbackShape(sequence: {
 
   return {
     steps: sequence.steps.map((step) => framed(step, true)),
-    startPosition: sequence.startPosition
-      ? framed(sequence.startPosition, false)
+    startPlacement: sequence.startPlacement
+      ? framed(sequence.startPlacement, false)
       : null,
   };
 }

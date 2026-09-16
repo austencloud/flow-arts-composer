@@ -225,8 +225,8 @@ const StepPairingWireSchema = z
     letter: z.string().nullable().optional(),
     leftReversal: z.boolean().optional(),
     rightReversal: z.boolean().optional(),
-    startPosition: z.string().nullable().optional(),
-    endPosition: z.string().nullable().optional(),
+    startPlacement: z.string().nullable().optional(),
+    endPlacement: z.string().nullable().optional(),
   })
   .passthrough();
 
@@ -246,7 +246,7 @@ const StepPairingWireSchema = z
  *   `componentDomains`
  * - read only by the public-collection path, dropped by the Browse mapper:
  *   `forkCount`, `viewCount`, `starCount`, `contentHash`, `contentHashVersion`,
- *   `creatorIntent`, `startPosition`
+ *   `creatorIntent`, `startPlacement`
  * - reached today only through a cast in `mapPublicIndexToSequenceData`:
  *   `displayName`, `components`, `componentDomains`, `isCircular`
  * - new in schema 2: the three `publicProjection*` stamps
@@ -312,7 +312,7 @@ const PublicSequenceWireObjectSchema = z
     rightSoloProp: SoloPropWireSchema.optional(),
     stepPairings: z.array(StepPairingWireSchema).optional(),
     /** Not derivable from composition; drives beat-0 avatar orientation. */
-    startPosition: looseObject().optional(),
+    startPlacement: looseObject().optional(),
 
     creatorIntent: looseObject().nullable().optional(),
 
@@ -382,7 +382,7 @@ export interface PublicSequenceProjection extends Omit<
 
   // Written by the syncer, dropped by the Browse mapper.
   readonly contentHashVersion?: number;
-  readonly startPosition?: SequenceData["startPosition"];
+  readonly startPlacement?: SequenceData["startPlacement"];
 
   readonly loopSpec?: SequenceData["loopSpec"];
 
@@ -502,9 +502,9 @@ export function toPublicSequenceProjection(
     ...(wire.stepPairings !== undefined && {
       stepPairings: wire.stepPairings as unknown as readonly StepPairingData[],
     }),
-    ...(wire.startPosition !== undefined && {
-      startPosition:
-        wire.startPosition as unknown as SequenceData["startPosition"],
+    ...(wire.startPlacement !== undefined && {
+      startPlacement:
+        wire.startPlacement as unknown as SequenceData["startPlacement"],
     }),
 
     ...(wire.creatorIntent !== undefined && {

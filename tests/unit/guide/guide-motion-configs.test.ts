@@ -60,7 +60,7 @@ describe("buildGuideMotionSequence", () => {
   });
   it("start position holds both hands static", () => {
     const config = GUIDE_MOTION_CONFIGS.find((c) => c.id === "t1-split-same")!;
-    const sp = buildGuideMotionSequence(config).startPosition!;
+    const sp = buildGuideMotionSequence(config).startPlacement!;
     expect(sp.motions.right.motionType).toBe(MotionType.STATIC);
     expect(sp.motions.left.motionType).toBe(MotionType.STATIC);
   });

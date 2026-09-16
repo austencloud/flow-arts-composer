@@ -151,11 +151,17 @@ export function validateCSVStructure(csvText: string): {
     return { isValid: false, errors };
   }
   const headers = headerLine.split(",").map((h) => h.trim());
-  const requiredHeaders = ["letter", "startPosition", "endPosition"];
+  // Each entry accepts either the canonical or the pre-rename header
+  // spelling, matching the createRowFromValues fallback below.
+  const requiredHeaders: ReadonlyArray<readonly string[]> = [
+    ["letter"],
+    ["startPlacement", "startPosition"],
+    ["endPlacement", "endPosition"],
+  ];
 
-  for (const required of requiredHeaders) {
-    if (!headers.includes(required)) {
-      errors.push(`Missing required header: ${required}`);
+  for (const accepted of requiredHeaders) {
+    if (!accepted.some((name) => headers.includes(name))) {
+      errors.push(`Missing required header: ${accepted[0]}`);
     }
   }
 
@@ -188,8 +194,12 @@ export function createRowFromValues(
 
   return {
     letter: row["letter"] || "",
-    startPosition: row["startPosition"] || "",
-    endPosition: row["endPosition"] || "",
+    // Defense in depth alongside the csv-loader IndexedDB cache-key bump:
+    // accept the pre-rename header spelling too, so any CSV text that still
+    // has an old header row still parses instead of coming back with empty
+    // placements.
+    startPlacement: row["startPlacement"] || row["startPosition"] || "",
+    endPlacement: row["endPlacement"] || row["endPosition"] || "",
     timing: row["timing"] || "",
     direction: row["direction"] || "",
     leftMotionType: row["blueMotionType"] || "",
@@ -206,14 +216,14 @@ export function createRowFromValues(
 
 function isValidRow(row: ParsedCsvRow): boolean {
   const hasLetter = !!(row["letter"] && row["letter"].trim() !== "");
-  const hasStartPosition = !!(
-    row["startPosition"] && row["startPosition"].trim() !== ""
+  const hasStartPlacement = !!(
+    row["startPlacement"] && row["startPlacement"].trim() !== ""
   );
-  const hasEndPosition = !!(
-    row["endPosition"] && row["endPosition"].trim() !== ""
+  const hasEndPlacement = !!(
+    row["endPlacement"] && row["endPlacement"].trim() !== ""
   );
 
-  return hasLetter && hasStartPosition && hasEndPosition;
+  return hasLetter && hasStartPlacement && hasEndPlacement;
 }
 
 export function getColumnMapping(headers: string[]): Record<string, string> {

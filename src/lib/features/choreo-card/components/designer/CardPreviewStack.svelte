@@ -14,8 +14,8 @@
   interface Props {
     sequence: SequenceData | null;
     showWord: boolean;
-    includeStartPosition: boolean;
-    startPositionLayout: "row" | "column";
+    includeStartPlacement: boolean;
+    startPlacementLayout: "row" | "column";
     showQRCode: boolean;
     showInfoCard: boolean;
     printMode?: boolean;
@@ -27,8 +27,8 @@
   let {
     sequence,
     showWord,
-    includeStartPosition,
-    startPositionLayout,
+    includeStartPlacement,
+    startPlacementLayout,
     showQRCode,
     showInfoCard,
     printMode = false,
@@ -148,8 +148,8 @@
         <ChoreoCard
           {sequence}
           {showWord}
-          {includeStartPosition}
-          {startPositionLayout}
+          {includeStartPlacement}
+          {startPlacementLayout}
           showQRCodes={showQRCode}
           {printMode}
           cardMode={!printMode}

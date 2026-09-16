@@ -112,8 +112,8 @@ describe("resolveLoopDisplay", () => {
           rightReversal: false,
           isBlank: false,
           letter: "A",
-          startPosition: startPos,
-          endPosition: endPos,
+          startPlacement: startPos,
+          endPlacement: endPos,
           motions: {
             left: {
               motionType: "pro",
@@ -139,9 +139,9 @@ describe("resolveLoopDisplay", () => {
       const seq = makeSequenceData("quartered-detect", {
         isCircular: true,
         loopType: null,
-        startPosition: {
-          endPosition: "alpha1",
-        } as unknown as SequenceData["startPosition"],
+        startPlacement: {
+          endPlacement: "alpha1",
+        } as unknown as SequenceData["startPlacement"],
         steps: [
           makeStep(1, "n", "e", "s", "w", "alpha1", "alpha2"),
           makeStep(2, "e", "s", "w", "n", "alpha2", "alpha3"),

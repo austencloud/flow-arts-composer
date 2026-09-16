@@ -63,20 +63,20 @@ import {
  * Fields that must never reach a stored document.
  *
  * `steps` is derived from the compositional fields on every read and is not
- * persisted. `startingPosition` / `startingPositionGroup` are dead legacy
+ * persisted. `startingPlacement` / `startingPlacementGroup` are dead legacy
  * aliases. `syncStatus` / `pendingSyncMetadata` are Dexie-local sync bookkeeping
  * that `sequence-data.ts:203-227` documents as browser-only.
  *
  * This is the exact set `library-repository.ts:526-533` nulls out today, so the
  * normalized payload is shape-identical to what already reaches `setDoc`.
- * `startPosition` is deliberately NOT excluded: it is not derivable from the
+ * `startPlacement` is deliberately NOT excluded: it is not derivable from the
  * compositional fields, and dropping it is what produced the empty start cells
  * the 2026-06 backfill had to repair.
  */
 type PersistenceExcludedKey =
   | "steps"
-  | "startingPosition"
-  | "startingPositionGroup"
+  | "startingPlacement"
+  | "startingPlacementGroup"
   | "syncStatus"
   | "pendingSyncMetadata";
 
@@ -215,7 +215,7 @@ export type SequenceNormalizationResult<T extends SequenceData = SequenceData> =
  *      word by one, and the next pairings-only republish throws
  *      IncompleteWordError on the letterless leading pairing — a locked
  *      document. The stripped entry's data is not lost: `ensureComposition`
- *      derives `startPosition` from the first content beat's start locations,
+ *      derives `startPlacement` from the first content beat's start locations,
  *      which the start entry duplicates by construction. This also normalizes
  *      the V2 content hash to the content-beats-only basis, so a legacy-shape
  *      document and its modern twin share one identity (the hasher maps
@@ -250,7 +250,7 @@ export async function normalizeSequenceForPersistence<T extends SequenceData>(
 
   // 2. Strip legacy inline start entries. Only legacy raw-`steps` blobs carry
   //    one (`stepNumber === 0`, letterless by design); the modern write path
-  //    never emits it — `startPosition` is its own field, derived from the
+  //    never emits it — `startPlacement` is its own field, derived from the
   //    first CONTENT beat. Downstream, everything (pairings, solo props,
   //    counts, hash, word gate) must see content beats only.
   const hasStartEntry = asHydrated.steps?.some((step) => step.stepNumber === 0);
@@ -342,8 +342,8 @@ export async function normalizeSequenceForPersistence<T extends SequenceData>(
     contentHash,
     contentHashVersion,
     steps: undefined,
-    startingPosition: undefined,
-    startingPositionGroup: undefined,
+    startingPlacement: undefined,
+    startingPlacementGroup: undefined,
     syncStatus: undefined,
     pendingSyncMetadata: undefined,
   } as unknown as Record<string, unknown>;

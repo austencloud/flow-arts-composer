@@ -3,17 +3,17 @@
  *
  * Executes the Rewound LOOP (Linked Orbital Offset Pattern) by:
  * 1. Taking an existing sequence
- * 2. Reversing the steps and swapping their start/end positions
+ * 2. Reversing the steps and swapping their start/end placements
  * 3. Appending the reversed steps to double the sequence length
  *
  * Unlike traditional LOOPs which use geometric transformations (rotate, mirror, swap),
  * Rewound is a temporal transformation that plays the sequence backwards.
  *
  * Example: [1, 2, 3, 4] → [1, 2, 3, 4, 4', 3', 2', 1']
- * where each reversed step has swapped start/end positions and reversed motion directions.
+ * where each reversed step has swapped start/end placements and reversed motion directions.
  *
- * IMPORTANT: Rewound works on ANY sequence regardless of position relationships.
- * No position validation is needed (unlike rotation-based LOOPs).
+ * IMPORTANT: Rewound works on ANY sequence regardless of placement relationships.
+ * No placement validation is needed (unlike rotation-based LOOPs).
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -33,7 +33,7 @@ export class RewoundLOOPExecutor implements ILOOPExecutor {
   /**
    * Execute the Rewound LOOP
    *
-   * @param sequence - The partial sequence to extend (must include start position at index 0)
+   * @param sequence - The partial sequence to extend (must include start placement at index 0)
    * @param _period - Ignored (Rewound always doubles the sequence)
    * @returns The complete sequence with reversed steps appended
    */
@@ -47,17 +47,17 @@ export class RewoundLOOPExecutor implements ILOOPExecutor {
 
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    // Remove start position (index 0) for processing
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    // Remove start placement (index 0) for processing
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
-    // Get the actual steps (without start position)
+    // Get the actual steps (without start placement)
     const originalSteps = [...sequence];
     const originalLength = originalSteps.length;
 
@@ -68,7 +68,7 @@ export class RewoundLOOPExecutor implements ILOOPExecutor {
       const sourceStep = beatsToReverse[i]!;
       const newStepNumber = originalLength + i + 1;
 
-      // Get the previous step's end position for continuity
+      // Get the previous step's end placement for continuity
       const previousStep =
         i === 0
           ? originalSteps[originalSteps.length - 1]!
@@ -86,15 +86,15 @@ export class RewoundLOOPExecutor implements ILOOPExecutor {
     // Combine: original steps + reversed steps
     const allSteps = [...originalSteps, ...reversedSteps];
 
-    // Re-insert start position at the beginning
-    allSteps.unshift(startPosition);
+    // Re-insert start placement at the beginning
+    allSteps.unshift(startPlacement);
 
     return allSteps;
   }
 
   /**
    * Create a rewound step from a source step
-   * Swaps start/end positions and reverses motion directions
+   * Swaps start/end placements and reverses motion directions
    */
   private createRewoundBeat(
     sourceStep: StepData,
@@ -105,9 +105,9 @@ export class RewoundLOOPExecutor implements ILOOPExecutor {
       ...sourceStep,
       id: `step-${newStepNumber}`,
       stepNumber: newStepNumber,
-      // Swap positions: new start = previous end, new end = source's start
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: sourceStep.startPosition ?? null,
+      // Swap placements: new start = previous end, new end = source's start
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: sourceStep.startPlacement ?? null,
       // Reverse motions
       motions: {
         [HandSide.LEFT]: this.createRewoundMotion(

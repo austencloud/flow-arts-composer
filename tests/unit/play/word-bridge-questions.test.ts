@@ -14,11 +14,11 @@ import {
 } from "$lib/features/learn/play/games/word-bridges/domain/word-bridge-questions";
 
 const LETTERS = {
-  A: { startPositionGroup: "alpha", endPositionGroup: "alpha" },
-  B: { startPositionGroup: "alpha", endPositionGroup: "beta" },
-  C: { startPositionGroup: "beta", endPositionGroup: "alpha" },
-  D: { startPositionGroup: "beta", endPositionGroup: "beta" },
-  E: { startPositionGroup: "beta", endPositionGroup: "alpha" },
+  A: { startPlacementGroup: "alpha", endPlacementGroup: "alpha" },
+  B: { startPlacementGroup: "alpha", endPlacementGroup: "beta" },
+  C: { startPlacementGroup: "beta", endPlacementGroup: "alpha" },
+  D: { startPlacementGroup: "beta", endPlacementGroup: "beta" },
+  E: { startPlacementGroup: "beta", endPlacementGroup: "alpha" },
 } as const;
 
 const graph: WordBridgeGraph = {
@@ -26,10 +26,10 @@ const graph: WordBridgeGraph = {
     const left = LETTERS[from as keyof typeof LETTERS];
     const right = LETTERS[to as keyof typeof LETTERS];
     return (
-      !!left && !!right && left.endPositionGroup === right.startPositionGroup
+      !!left && !!right && left.endPlacementGroup === right.startPlacementGroup
     );
   },
-  getLetterPositionInfo(letter) {
+  getLetterPlacementInfo(letter) {
     return LETTERS[letter as keyof typeof LETTERS] ?? null;
   },
   findAllBridgeOptions(from, to) {
@@ -91,10 +91,10 @@ describe("analyzeWordTransitions", () => {
 
   it("counts a validated multi-letter fallback path", () => {
     const infos = {
-      X: { startPositionGroup: "alpha", endPositionGroup: "beta" },
-      P: { startPositionGroup: "beta", endPositionGroup: "delta" },
-      Q: { startPositionGroup: "delta", endPositionGroup: "gamma" },
-      Y: { startPositionGroup: "gamma", endPositionGroup: "alpha" },
+      X: { startPlacementGroup: "alpha", endPlacementGroup: "beta" },
+      P: { startPlacementGroup: "beta", endPlacementGroup: "delta" },
+      Q: { startPlacementGroup: "delta", endPlacementGroup: "gamma" },
+      Y: { startPlacementGroup: "gamma", endPlacementGroup: "alpha" },
     } as const;
     const fallbackGraph: WordBridgeGraph = {
       canFollow(from, to) {
@@ -103,10 +103,10 @@ describe("analyzeWordTransitions", () => {
         return (
           !!left &&
           !!right &&
-          left.endPositionGroup === right.startPositionGroup
+          left.endPlacementGroup === right.startPlacementGroup
         );
       },
-      getLetterPositionInfo(letter) {
+      getLetterPlacementInfo(letter) {
         return infos[letter as keyof typeof infos] ?? null;
       },
       findAllBridgeOptions() {
@@ -211,18 +211,18 @@ describe("findExactPictographChain", () => {
       [
         "A",
         [
-          { id: "a-wrong", startPosition: "alpha1", endPosition: "alpha3" },
-          { id: "a-right", startPosition: "alpha1", endPosition: "beta1" },
+          { id: "a-wrong", startPlacement: "alpha1", endPlacement: "alpha3" },
+          { id: "a-right", startPlacement: "alpha1", endPlacement: "beta1" },
         ],
       ],
       [
         "C",
         [
-          { id: "c-wrong", startPosition: "alpha3", endPosition: "gamma1" },
-          { id: "c-right", startPosition: "beta1", endPosition: "gamma3" },
+          { id: "c-wrong", startPlacement: "alpha3", endPlacement: "gamma1" },
+          { id: "c-right", startPlacement: "beta1", endPlacement: "gamma3" },
         ],
       ],
-      ["B", [{ id: "b-right", startPosition: "gamma3", endPosition: "beta3" }]],
+      ["B", [{ id: "b-right", startPlacement: "gamma3", endPlacement: "beta3" }]],
     ]);
 
     const chain = findExactPictographChain(["A", "C", "B"], pool);

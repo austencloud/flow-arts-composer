@@ -2,39 +2,39 @@
   /**
    * Level 6 Lab Module (directory name `level5-lab` is historical)
    *
-   * Admin-only sandbox for validating centric position rendering.
-   * Renders all 17 Tau/Terra positions as static pictographs with
+   * Admin-only sandbox for validating centric placement rendering.
+   * Renders all 17 Tau/Terra placements as static pictographs with
    * per-card orientation controls.
    */
 
-  import { GridMode, type GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { GridMode, type GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
-  import type { PositionGroup, PositionSection, CardOrientations } from "./domain/level5-lab-types";
+  import type { PlacementGroup, PlacementSection, CardOrientations } from "./domain/level5-lab-types";
   import {
-    TAU_DIAMOND_POSITIONS,
-    TAU_BOX_POSITIONS,
-    TERRA_POSITIONS,
+    TAU_DIAMOND_PLACEMENTS,
+    TAU_BOX_PLACEMENTS,
+    TERRA_PLACEMENTS,
     isHandAtCenter,
-  } from "./domain/level5-position-data";
+  } from "./domain/level5-placement-data";
   import FilterChips from "./components/FilterChips.svelte";
-  import PositionGrid from "./components/PositionGrid.svelte";
+  import PlacementGrid from "./components/PlacementGrid.svelte";
 
 
-  let selectedGroup = $state<PositionGroup>("all");
+  let selectedGroup = $state<PlacementGroup>("all");
 
-  /** Every position tracked independently */
-  const ALL_POSITIONS = [
-    ...TAU_DIAMOND_POSITIONS,
-    ...TAU_BOX_POSITIONS,
-    ...TERRA_POSITIONS,
+  /** Every placement tracked independently */
+  const ALL_PLACEMENTS = [
+    ...TAU_DIAMOND_PLACEMENTS,
+    ...TAU_BOX_PLACEMENTS,
+    ...TERRA_PLACEMENTS,
   ];
 
   /** Initialize per-card orientation map with sensible defaults */
-  let orientationMap = $state<Map<GridPosition, CardOrientations>>(
+  let orientationMap = $state<Map<GridPlacement, CardOrientations>>(
     new Map(
-      ALL_POSITIONS.map((pos) => [
+      ALL_PLACEMENTS.map((pos) => [
         pos,
         {
           left: isHandAtCenter(pos, "left") ? Orientation.CENTER_N : Orientation.IN,
@@ -45,14 +45,14 @@
   );
 
   function handleOrientationChange(
-    position: GridPosition,
+    placement: GridPlacement,
     hand: "left" | "right",
     value: Orientation
   ): void {
-    const current = orientationMap.get(position);
+    const current = orientationMap.get(placement);
     if (!current) return;
     const updated = new Map(orientationMap);
-    updated.set(position, { ...current, [hand]: value });
+    updated.set(placement, { ...current, [hand]: value });
     orientationMap = updated;
   }
 
@@ -67,28 +67,28 @@
     return (settings.rightPropType ?? settings.propType ?? PropType.STAFF) as PropType;
   });
 
-  const displaySections = $derived.by((): PositionSection[] => {
-    const sections: PositionSection[] = [];
+  const displaySections = $derived.by((): PlacementSection[] => {
+    const sections: PlacementSection[] = [];
 
     if (selectedGroup === "all" || selectedGroup === "tau-diamond") {
       sections.push({
         label: "Tau Diamond",
         gridMode: GridMode.DIAMOND,
-        positions: TAU_DIAMOND_POSITIONS,
+        placements: TAU_DIAMOND_PLACEMENTS,
       });
     }
     if (selectedGroup === "all" || selectedGroup === "tau-box") {
       sections.push({
         label: "Tau Box",
         gridMode: GridMode.BOX,
-        positions: TAU_BOX_POSITIONS,
+        placements: TAU_BOX_PLACEMENTS,
       });
     }
     if (selectedGroup === "all" || selectedGroup === "terra") {
       sections.push({
         label: "Terra",
         gridMode: GridMode.DIAMOND,
-        positions: TERRA_POSITIONS,
+        placements: TERRA_PLACEMENTS,
       });
     }
 
@@ -103,7 +103,7 @@
       <span class="badge">Admin</span>
     </div>
     <p class="description">
-      Centric position rendering. Tau (one hand at center) and Terra (both at center).
+      Centric placement rendering. Tau (one hand at center) and Terra (both at center).
     </p>
   </header>
 
@@ -112,7 +112,7 @@
     onSelect={(group) => (selectedGroup = group)}
   />
 
-  <PositionGrid
+  <PlacementGrid
     sections={displaySections}
     {orientationMap}
     onOrientationChange={handleOrientationChange}

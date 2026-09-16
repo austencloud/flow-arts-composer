@@ -49,8 +49,8 @@
   const columnCount = $derived(
     automatic ? null : (cardRenderOptions?.columnCount ?? null)
   );
-  const startPositionLayoutOverride = $derived(
-    automatic ? null : (cardRenderOptions?.startPositionLayout ?? null)
+  const startPlacementLayoutOverride = $derived(
+    automatic ? null : (cardRenderOptions?.startPlacementLayout ?? null)
   );
   const shared = getViewerStudioSurfaces();
   const owner = {};
@@ -80,7 +80,7 @@
       showWord={cardRenderOptions?.addWord ?? true}
       showStepNumbers={cardRenderOptions?.addStepNumbers ?? true}
       showDifficultyLevel={cardRenderOptions?.addDifficultyLevel ?? true}
-      includeStartPosition={cardRenderOptions?.includeStartPosition ?? true}
+      includeStartPlacement={cardRenderOptions?.includeStartPlacement ?? true}
       showNotes={cardRenderOptions?.showNotes ?? false}
       showLoopGlyph={cardRenderOptions?.showLoopGlyph ?? true}
       showQRCode={cardRenderOptions?.visibilityOverrides?.showQRCode ?? false}
@@ -92,7 +92,7 @@
       rightPropType={cardRenderOptions?.rightPropTypeOverride ??
         cardRenderOptions?.propTypeOverride}
       {columnCount}
-      {startPositionLayoutOverride}
+      {startPlacementLayoutOverride}
       forceContain
       fitWidth
     />

@@ -15,7 +15,7 @@ import type { OverlayRenderContext } from "./types";
 import type { DetectedBeat } from "../domain/models";
 
 /** Grid location to normalized position mapping (0-1 range) */
-const GRID_POSITIONS: Record<string, { x: number; y: number }> = {
+const GRID_PLACEMENTS: Record<string, { x: number; y: number }> = {
   n: { x: 0.5, y: 0.15 },
   ne: { x: 0.8, y: 0.2 },
   e: { x: 0.85, y: 0.5 },
@@ -123,7 +123,7 @@ export class Phase1OverlayRenderer {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    for (const [label, pos] of Object.entries(GRID_POSITIONS)) {
+    for (const [label, pos] of Object.entries(GRID_PLACEMENTS)) {
       const x = pos.x * width;
       const y = pos.y * height;
 

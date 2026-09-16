@@ -28,7 +28,7 @@ function source(
   return {
     showQRCode,
     showMandala,
-    getStartPositionLayoutForStepCount: () => layout,
+    getStartPlacementLayoutForStepCount: () => layout,
     getInfoCellChoiceForStepCount: () => choice,
   };
 }

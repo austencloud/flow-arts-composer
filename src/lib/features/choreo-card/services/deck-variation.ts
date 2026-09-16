@@ -48,7 +48,7 @@ import { recalculateAllOrientations } from "$lib/shared/create/services/orientat
 import { rotateSequenceGeometry } from "$lib/shared/create/services/sequence-derived-fields";
 import {
   resolveStartOrientation,
-  positionFamilyOf,
+  placementFamilyOf,
   type StartOriMode,
 } from "./start-ori-register";
 
@@ -247,17 +247,17 @@ export interface AppliedDescriptorResult {
 }
 
 /**
- * Clone-safely re-seed a sequence's start-position orientations to `mode`'s pair,
+ * Clone-safely re-seed a sequence's start-placement orientations to `mode`'s pair,
  * then propagate forward. The pair is FAMILY-AWARE (alpha/beta/gamma differ — see
  * start-ori-register.ts). Returns the input UNCHANGED when mode is radial/undefined,
- * the sequence has no start position, or the family is unsupported (zeta/eta).
+ * the sequence has no start placement, or the family is unsupported (zeta/eta).
  * NEVER mutates `seq` (shared across cards).
  */
 function applyStartOriMode(seq: SequenceData, mode: StartOriMode | undefined): SequenceData {
   if (!mode || mode === "radial") return seq;
-  const sp = seq.startPosition;
+  const sp = seq.startPlacement;
   if (!sp) return seq;
-  const family = positionFamilyOf(sp);
+  const family = placementFamilyOf(sp);
   if (!family) return seq; // unsupported family — leave at the radial default
   const pair = resolveStartOrientation(mode, family);
   const reseed = (m: typeof sp.motions.left, o: Orientation) =>
@@ -270,7 +270,7 @@ function applyStartOriMode(seq: SequenceData, mode: StartOriMode | undefined): S
       [HandSide.RIGHT]: reseed(sp.motions[HandSide.RIGHT], pair.right),
     },
   };
-  const seeded = updateSequenceData(seq, { startPosition: newStart });
+  const seeded = updateSequenceData(seq, { startPlacement: newStart });
   return recalculateAllOrientations(seeded);
 }
 
@@ -285,7 +285,7 @@ function applyStartOrientationPair(
   pair: { left?: Orientation; right?: Orientation } | undefined,
 ): SequenceData {
   if (!pair || (!pair.left && !pair.right)) return seq;
-  const sp = seq.startPosition;
+  const sp = seq.startPlacement;
   if (!sp) return seq;
   const reseed = (m: typeof sp.motions.left, o: Orientation | undefined) =>
     m && o ? createMotionData({ ...m, startOrientation: o, endOrientation: o }) : m;
@@ -297,15 +297,15 @@ function applyStartOrientationPair(
       [HandSide.RIGHT]: reseed(sp.motions[HandSide.RIGHT], pair.right),
     },
   };
-  const seeded = updateSequenceData(seq, { startPosition: newStart });
+  const seeded = updateSequenceData(seq, { startPlacement: newStart });
   return recalculateAllOrientations(seeded);
 }
 
 /**
  * Re-render a diamond-authored sequence in box mode: rotate the hand path 45°,
- * direction per start-position family (alpha/gamma CW = +1, beta CCW = −1).
+ * direction per start-placement family (alpha/gamma CW = +1, beta CCW = −1).
  * No-op when gridMode isn't "box" or the family is unsupported (zeta/eta).
- * Positions + gridMode self-heal. The TnD element is NOT rotation-invariant —
+ * Placements + gridMode self-heal. The TnD element is NOT rotation-invariant —
  * it must be recomputed from the box-transformed geometry via the deriver
  * (see deck-composer TnD classification). NEVER mutates `seq`.
  */
@@ -314,8 +314,8 @@ export function applyBoxMode(
   gridMode: CardVariation["gridMode"],
 ): SequenceData {
   if (gridMode !== "box") return seq;
-  const sp = seq.startPosition;
-  const family = sp ? positionFamilyOf(sp) : null;
+  const sp = seq.startPlacement;
+  const family = sp ? placementFamilyOf(sp) : null;
   if (!family) return seq; // unsupported family — leave diamond
   const steps = family === "beta" ? -1 : 1; // beta CCW, alpha/gamma CW
   return rotateSequenceGeometry(seq, steps);

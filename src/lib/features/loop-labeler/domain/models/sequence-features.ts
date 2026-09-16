@@ -7,7 +7,7 @@
 
 import type {
   GridMode,
-  GridPositionGroup,
+  GridPlacementGroup,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { CircularityAnalysis, StrictLoopType } from "../../../create/shared/services/sequence-analyzer";
 
@@ -18,7 +18,7 @@ import type { CircularityAnalysis, StrictLoopType } from "../../../create/shared
  */
 export interface PositionDominance {
   /** Primary position group used (most frequent) */
-  readonly primaryGroup: GridPositionGroup | null;
+  readonly primaryGroup: GridPlacementGroup | null;
 
   /** Percentage of steps in each group (0-100) */
   readonly alphaPercent: number;
@@ -113,8 +113,8 @@ export function createDefaultSequenceFeatures(): SequenceFeatures {
     circularity: {
       isCircular: false,
       circularType: null,
-      startPosition: null,
-      endPosition: null,
+      startPlacement: null,
+      endPlacement: null,
       startIsBeta: false,
       endIsBeta: false,
       possibleLoopTypes: [],

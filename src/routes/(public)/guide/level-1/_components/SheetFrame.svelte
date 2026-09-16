@@ -74,7 +74,7 @@
             rightPropTypeOverride={PropType.HAND}
             showGrid={true}
             showTKA={true}
-            showPositions={false}
+            showPlacements={false}
             showReversals={false}
             showTnD={false}
             showElemental={false}
@@ -96,7 +96,8 @@
 
 <style>
   /* Absolute layer over the whole GuidePage sheet - coords map straight to pt×S.
-     Mirrors HandPositionsPage.svelte's .hand-positions/.run/.para/.mini/.glyph/.rule. */
+     Mirrors the original HandPositionsPage.svelte's .hand-positions/.run/.para/.mini/.glyph/.rule
+     (now HandPlacementsPage.svelte, single-source via hand-placements.content.ts). */
   .sheet-frame {
     position: absolute;
     inset: 0;

@@ -49,7 +49,7 @@ describe("sectioned grid measurement identity", () => {
     );
   });
 
-  it("invalidates when the start-position layout changes", () => {
+  it("invalidates when the start-placement layout changes", () => {
     const items = [row("r-letter-a|16-0", [16])];
 
     expect(createSectionedGridMeasurementSignature(items, 5, "row")).not.toBe(

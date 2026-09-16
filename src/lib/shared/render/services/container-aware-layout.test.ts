@@ -9,7 +9,7 @@ import { pickBestFitLayout, type BestFitInput } from "./container-aware-layout";
 function input(overrides: Partial<BestFitInput>): BestFitInput {
   return {
     stepCount: 8,
-    includeStartPosition: true,
+    includeStartPlacement: true,
     containerWidth: 600,
     containerHeight: 800,
     showHeader: true,
@@ -55,10 +55,10 @@ describe("pickBestFitLayout — maximum pictograph size", () => {
 
   it("8, no start, no QR (square): keeps the four-column beat grid", () => {
     const shown = pickBestFitLayout(
-      input({ includeStartPosition: true, showQRCode: false, containerWidth: 800, containerHeight: 800 }),
+      input({ includeStartPlacement: true, showQRCode: false, containerWidth: 800, containerHeight: 800 }),
     )!;
     const hidden = pickBestFitLayout(
-      input({ includeStartPosition: false, showQRCode: false, containerWidth: 800, containerHeight: 800 }),
+      input({ includeStartPlacement: false, showQRCode: false, containerWidth: 800, containerHeight: 800 }),
     )!;
 
     expect(hidden).toEqual({

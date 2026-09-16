@@ -99,8 +99,8 @@ export interface DeckRecipe {
   loopTypes?: string[];
   /** New LOOP axis: which level(s). Absent ⇒ all available. */
   levels?: number[];
-  /** New LOOP axis: start-position subset as GridPosition strings ("alpha1", …). Absent/empty ⇒ any. */
-  startPositionIds?: string[];
+  /** New LOOP axis: start-placement subset as GridPlacement strings ("alpha1", …). Absent/empty ⇒ any. */
+  startPlacementIds?: string[];
   /** Start orientation per hand ("in"|"out"|"clock"|"counter") for live generation. */
   startOriLeft?: string;
   startOriRight?: string;

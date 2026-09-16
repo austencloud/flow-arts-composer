@@ -20,8 +20,8 @@ export enum ConstraintType {
   /** Left hand related to the right hand inside one step (mirror, unison, ...). */
   HAND_RELATIONSHIP = "handRelationship",
 
-  // Position constraints
-  POSITION_GROUP = "positionGroup",
+  // Placement constraints
+  PLACEMENT_GROUP = "placementGroup",
 
   // Timing constraints
   VTG_TIMING = "vtgTiming",
@@ -32,7 +32,7 @@ export enum ConstraintType {
   // Domain constraints (always-on)
   TYPE_6 = "type6",
   PROP_TYPE = "propType",
-  POSITION_CONTINUITY = "positionContinuity",
+  PLACEMENT_CONTINUITY = "placementContinuity",
   FLOAT = "float",
 
   // LOOP closure constraints (Phase 4)
@@ -54,7 +54,7 @@ export type ConstraintMode = "hard" | "soft";
 export enum ConstraintCategory {
   MOTION = "motion",
   SEQUENCE = "sequence",
-  POSITION = "position",
+  PLACEMENT = "placement",
   TIMING = "timing",
   PATTERN = "pattern",
   DOMAIN = "domain",
@@ -72,12 +72,12 @@ export const CONSTRAINT_CATEGORIES: Record<ConstraintType, ConstraintCategory> =
     [ConstraintType.REVERSAL]: ConstraintCategory.SEQUENCE,
     [ConstraintType.HAND_PATH]: ConstraintCategory.SEQUENCE,
     [ConstraintType.HAND_RELATIONSHIP]: ConstraintCategory.MOTION,
-    [ConstraintType.POSITION_GROUP]: ConstraintCategory.POSITION,
+    [ConstraintType.PLACEMENT_GROUP]: ConstraintCategory.PLACEMENT,
     [ConstraintType.VTG_TIMING]: ConstraintCategory.TIMING,
     [ConstraintType.ALTERNATING]: ConstraintCategory.PATTERN,
     [ConstraintType.TYPE_6]: ConstraintCategory.DOMAIN,
     [ConstraintType.PROP_TYPE]: ConstraintCategory.DOMAIN,
-    [ConstraintType.POSITION_CONTINUITY]: ConstraintCategory.DOMAIN,
+    [ConstraintType.PLACEMENT_CONTINUITY]: ConstraintCategory.DOMAIN,
     [ConstraintType.FLOAT]: ConstraintCategory.DOMAIN,
     [ConstraintType.TURN_PARITY]: ConstraintCategory.DOMAIN,
     [ConstraintType.MIRRORED_CLOSURE]: ConstraintCategory.DOMAIN,

@@ -49,18 +49,18 @@
   );
 
   // The header's one-line read of where the sequence actually stands. Closing
-  // in position is not the same as closing in orientation, and the difference
+  // in placement is not the same as closing in orientation, and the difference
   // is exactly what decides whether the repeat option is worth clicking.
   const statusLine = $derived.by(() => {
     if (!analysis) return "";
-    const end = analysis.currentEndPosition;
+    const end = analysis.currentEndPlacement;
     if (analysis.extensionType !== "already_complete") {
       return `Ends at ${end}. Choose a closing pattern.`;
     }
     if (orientationRepeat) {
       return `Returns to ${end} after ${orientationRepeat.count} repeats.`;
     }
-    return "Position and orientation both close.";
+    return "Placement and orientation both close.";
   });
 
   function handleBridgeSelect(option: CircularizationOption) {
@@ -84,15 +84,15 @@
 {:else}
   <div class="options-container">
     <div class="status-header">
-      <div class="position-info">
-        <div class="position-row">
+      <div class="placement-info">
+        <div class="placement-row">
           <span class="label">Start</span>
-          <span class="position">{analysis.startPosition}</span>
+          <span class="placement">{analysis.startPlacement}</span>
         </div>
-        <span class="position-arrow" aria-hidden="true">→</span>
-        <div class="position-row">
+        <span class="placement-arrow" aria-hidden="true">→</span>
+        <div class="placement-row">
           <span class="label">End</span>
-          <span class="position">{analysis.currentEndPosition}</span>
+          <span class="placement">{analysis.currentEndPlacement}</span>
         </div>
       </div>
 
@@ -105,13 +105,13 @@
       <p class="status-line" class:open={orientationRepeat !== null}>
         <span class="status-sizer" aria-hidden="true">
           <span
-            >Ends at {analysis.currentEndPosition}. Choose a closing pattern.</span
+            >Ends at {analysis.currentEndPlacement}. Choose a closing pattern.</span
           >
           <span
-            >Returns to {analysis.currentEndPosition} after
+            >Returns to {analysis.currentEndPlacement} after
             {orientationRepeat?.count ?? 8} repeats.</span
           >
-          <span>Position and orientation both close.</span>
+          <span>Placement and orientation both close.</span>
         </span>
         <span class="status-live">{statusLine}</span>
       </p>
@@ -183,14 +183,14 @@
     flex-shrink: 0;
   }
 
-  .position-info {
+  .placement-info {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     font-size: var(--font-size-sm, 14px);
   }
 
-  .position-row {
+  .placement-row {
     display: flex;
     align-items: baseline;
     gap: 0.375rem;
@@ -203,15 +203,15 @@
     letter-spacing: 0.05em;
   }
 
-  .position {
+  .placement {
     font-family: monospace;
-    /* Positions swap between sequences; equal digit widths keep the row still. */
+    /* Placements swap between sequences; equal digit widths keep the row still. */
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     color: var(--theme-accent);
   }
 
-  .position-arrow {
+  .placement-arrow {
     color: var(--theme-text-muted, rgba(255, 255, 255, 0.4));
   }
 

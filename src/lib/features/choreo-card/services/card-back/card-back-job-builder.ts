@@ -67,7 +67,7 @@ import {
   rasterizeTurnGlyph,
   rasterizeReversalGlyph,
   rasterizeStepCount,
-  rasterizeStartPosPictograph,
+  rasterizeStartPlacementPictograph,
   rasterizeLoopRow,
   type LoopRowCol,
 } from "./card-back-bitmaps-percard";
@@ -156,7 +156,7 @@ export interface BuildBackJobOptions {
   height: number;
   bleedPx: number;
   theme: string;
-  /** Deck prop types, so the back's mini start-position pictograph draws the
+  /** Deck prop types, so the back's mini start-placement pictograph draws the
    *  real prop (fan/club/triad) instead of the renderer's staff default. */
   leftPropType?: PropType;
   rightPropType?: PropType;
@@ -177,7 +177,7 @@ export interface BuildBackJobDeps {
   rasterizeTurnGlyph: typeof rasterizeTurnGlyph;
   rasterizeReversalGlyph: typeof rasterizeReversalGlyph;
   rasterizeStepCount: typeof rasterizeStepCount;
-  rasterizeStartPosPictograph: typeof rasterizeStartPosPictograph;
+  rasterizeStartPlacementPictograph: typeof rasterizeStartPlacementPictograph;
   rasterizeDecorations: typeof rasterizeDecorations;
   /** Produce mandala geometry. Mirrors SequenceMandala's calculator.calculate call. */
   calculatePaths: (
@@ -209,7 +209,7 @@ const realDeps: BuildBackJobDeps = {
   rasterizeTurnGlyph,
   rasterizeReversalGlyph,
   rasterizeStepCount,
-  rasterizeStartPosPictograph,
+  rasterizeStartPlacementPictograph,
   rasterizeDecorations,
   calculatePaths: (steps, left, right, pathOptions, tipOverride) =>
     calculateMandalaGeometry(
@@ -355,7 +355,7 @@ export async function buildBackJob(
     "northwest-southeast": "NW-SE Reflection",
   };
 
-  const hasStartPos = !!sequence.startPosition;
+  const hasStartPos = !!sequence.startPlacement;
 
   // Per-card render context: border-aware cqi basis + the proof text colors the
   // live card sets on `.back` (so bare-mounted glyphs / pictograph borders don't
@@ -417,8 +417,8 @@ export async function buildBackJob(
     d.rasterizeReversalGlyph(data.reversalSequence, data.reversalPeriod, perCardCtx),
     d.rasterizeStepCount(data.stepCount, perCardCtx),
     hasStartPos
-      ? d.rasterizeStartPosPictograph(
-          sequence.startPosition,
+      ? d.rasterizeStartPlacementPictograph(
+          sequence.startPlacement,
           darkMode,
           perCardCtx,
           opts.leftPropType,
@@ -445,7 +445,7 @@ export async function buildBackJob(
 
   if (startPosBmp) {
     bitmaps.push({
-      kind: "start-pos-pictograph",
+      kind: "start-placement-pictograph",
       bitmap: startPosBmp,
       placement: layout.startPos,
     });

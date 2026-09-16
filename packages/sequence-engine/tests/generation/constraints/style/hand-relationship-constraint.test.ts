@@ -35,8 +35,8 @@ function motion(
 function candidate(left: MotionData, right: MotionData): PictographData {
   return {
     letter: "?",
-    startPosition: "?",
-    endPosition: "?",
+    startPlacement: "?",
+    endPlacement: "?",
     timing: "split",
     direction: "opp",
     leftMotion: left,
@@ -225,7 +225,7 @@ describe("against the production dataframes", () => {
     const starts = new Set(
       loadDiamondVariations()
         .filter((p) => constraint.couldSatisfy(p))
-        .map((p) => p.startPosition)
+        .map((p) => p.startPlacement)
     );
     expect([...starts].sort()).toEqual(["alpha3", "alpha7", "beta1", "beta5"]);
   });
@@ -237,7 +237,7 @@ describe("against the production dataframes", () => {
     const starts = new Set(
       loadBoxVariations()
         .filter((p) => constraint.couldSatisfy(p))
-        .map((p) => p.startPosition)
+        .map((p) => p.startPlacement)
     );
     expect([...starts].sort()).toEqual(["gamma12", "gamma16", "gamma2", "gamma6"]);
   });

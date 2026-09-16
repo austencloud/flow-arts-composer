@@ -95,7 +95,7 @@ const OUTPUT_DIR = path.join(__dirname, '..', 'static', 'images', 'grant-feature
       showTKA: true,
       showTND: false,
       showElemental: false,
-      showPositions: false,
+      showPlacements: false,
       showReversals: false,
       showNonRadialPoints: false,
       darkMode: false,

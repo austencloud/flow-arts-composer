@@ -363,8 +363,8 @@
 
   function setStartHold(value: boolean): void {
     if (!exportOptions) return;
-    const previous = exportOptions.videoIncludeStartPosition;
-    exportOptions.setVideoIncludeStartPosition(value);
+    const previous = exportOptions.videoIncludeStartPlacement;
+    exportOptions.setVideoIncludeStartPlacement(value);
     reportSetting("video_export", "include_start_position", previous, value);
   }
 
@@ -571,7 +571,7 @@
   const totalVideoDuration = $derived.by(() => {
     if (singlePlayDuration <= 0 || !exportOptions) return "";
     const unitSeconds = bpm > 0 ? 60 / bpm : 0;
-    const startHold = exportOptions.videoIncludeStartPosition ? unitSeconds : 0;
+    const startHold = exportOptions.videoIncludeStartPlacement ? unitSeconds : 0;
     const endHold = exportOptions.videoIncludeEndHold ? unitSeconds : 0;
     const total =
       startHold + singlePlayDuration * exportOptions.videoLoopCount + endHold;
@@ -1027,9 +1027,9 @@
           <button
             type="button"
             class="rt-chip"
-            aria-pressed={exportOptions.videoIncludeStartPosition}
+            aria-pressed={exportOptions.videoIncludeStartPlacement}
             onclick={() =>
-              setStartHold(!exportOptions.videoIncludeStartPosition)}
+              setStartHold(!exportOptions.videoIncludeStartPlacement)}
           >
             <i class="fas fa-step-backward" aria-hidden="true"></i> Start Hold
           </button>

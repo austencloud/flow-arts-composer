@@ -32,7 +32,7 @@ function makeState(overrides?: {
       clearSequenceCompletely: vi.fn().mockResolvedValue(undefined),
       removeStepAndSubsequentWithAnimation: vi.fn(),
       selectStep: vi.fn(),
-      selectStartPositionForEditing: vi.fn(),
+      selectStartPlacementForEditing: vi.fn(),
     },
   };
 

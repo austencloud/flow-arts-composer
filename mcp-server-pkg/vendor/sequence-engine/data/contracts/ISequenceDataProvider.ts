@@ -13,7 +13,7 @@ import type { LetterMappingsJson } from "../../domain/models/SequenceEngineTypes
  */
 export interface ISequenceDataProvider {
   /**
-   * Contains position transitions and categories for all letters.
+   * Contains placement transitions and categories for all letters.
    */
   loadLetterMappings(): Promise<LetterMappingsJson>;
 
@@ -33,10 +33,10 @@ export interface ISequenceDataProvider {
 export interface LetterVariationData {
   /** The letter */
   letter: string;
-  /** Start position (e.g., "alpha1", "beta3") */
-  startPosition: string;
-  /** End position */
-  endPosition: string;
+  /** Start placement (e.g., "alpha1", "beta3") */
+  startPlacement: string;
+  /** End placement */
+  endPlacement: string;
   /** Left-hand motion type */
   leftMotionType: string;
   /** Left-hand start location */

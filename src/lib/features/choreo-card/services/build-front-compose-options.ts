@@ -71,8 +71,8 @@ export function buildFrontComposeOptions(
 
   const composeOptions: Partial<SequenceExportOptions> = {
     deckCard: { contentWidth: contentW, contentHeight: contentH },
-    includeStartPosition: options.includeStartPosition,
-    startPositionLayout: options.startPositionLayout ?? "row",
+    includeStartPlacement: options.includeStartPlacement,
+    startPlacementLayout: options.startPlacementLayout ?? "row",
     ...(options.totalGridColumns !== undefined && {
       columnCount: options.totalGridColumns,
     }),

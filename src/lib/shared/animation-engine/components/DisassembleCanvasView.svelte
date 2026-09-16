@@ -10,7 +10,7 @@
 -->
 <script lang="ts">
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
@@ -27,7 +27,7 @@
     gridMode?: GridMode | null;
     backgroundAlpha?: number;
     letter?: Letter | null;
-    stepData?: StartPositionData | StepData | null;
+    stepData?: StartPlacementData | StepData | null;
     sequenceData?: SequenceData | null;
     currentStep?: number;
     isPlaying?: boolean;

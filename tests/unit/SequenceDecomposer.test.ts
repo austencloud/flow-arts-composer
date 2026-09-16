@@ -8,7 +8,7 @@ import { deriveSteps } from "$lib/shared/foundation/services/step-deriver";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   Orientation,
@@ -20,7 +20,7 @@ import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 
 function makeMotion(
   startLocation: GridLocation,
@@ -54,8 +54,8 @@ function makeStep(
   return {
     id: crypto.randomUUID(),
     letter: Letter.A,
-    startPosition: GridPosition.ALPHA1,
-    endPosition: GridPosition.BETA1,
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.BETA1,
     motions: {
       left: makeMotion(leftStart, leftEnd, HandSide.LEFT),
       right: makeMotion(rightStart, rightEnd, HandSide.RIGHT),
@@ -70,16 +70,16 @@ function makeStep(
   };
 }
 
-function makeStartPosition(
+function makeStartPlacement(
   leftLocation: GridLocation,
   rightLocation: GridLocation,
   leftOrientation: Orientation = Orientation.IN,
   rightOrientation: Orientation = Orientation.OUT
-): StartPositionData {
+): StartPlacementData {
   return {
     id: crypto.randomUUID(),
-    isStartPosition: true,
-    gridPosition: GridPosition.ALPHA1,
+    isStartPlacement: true,
+    gridPlacement: GridPlacement.ALPHA1,
     motions: {
       left: createMotionData({
         startLocation: leftLocation,
@@ -136,8 +136,8 @@ function createTestSequence() {
       letter: Letter.B,
       leftReversal: true,
       rightReversal: false,
-      startPosition: GridPosition.BETA1,
-      endPosition: GridPosition.GAMMA1,
+      startPlacement: GridPlacement.BETA1,
+      endPlacement: GridPlacement.GAMMA1,
       motions: {
         left: makeMotion(GridLocation.EAST, GridLocation.SOUTH, HandSide.LEFT, {
           motionType: MotionType.ANTI,
@@ -156,7 +156,7 @@ function createTestSequence() {
     }
   );
 
-  const startPos = makeStartPosition(
+  const startPos = makeStartPlacement(
     GridLocation.NORTH,
     GridLocation.SOUTH,
     Orientation.IN,
@@ -165,7 +165,7 @@ function createTestSequence() {
 
   return createSequenceData({
     steps: [step1, step2],
-    startPosition: startPos,
+    startPlacement: startPos,
     word: "AB",
   });
 }
@@ -177,13 +177,13 @@ describe("SequenceDecomposer — extractBlueSoloProp", () => {
     expect(left.steps).toHaveLength(sequence.steps.length);
   });
 
-  it("preserves blue startLocation from startPosition", () => {
+  it("preserves blue startLocation from startPlacement", () => {
     const sequence = createTestSequence();
     const left = extractLeftSoloProp(sequence);
     expect(left.startLocation).toBe(GridLocation.NORTH);
   });
 
-  it("preserves blue startOrientation from startPosition", () => {
+  it("preserves blue startOrientation from startPlacement", () => {
     const sequence = createTestSequence();
     const left = extractLeftSoloProp(sequence);
     expect(left.startOrientation).toBe(Orientation.IN);
@@ -218,7 +218,7 @@ describe("SequenceDecomposer — extractBlueSoloProp", () => {
     expect(left.steps[0]?.duration).toBe(3);
   });
 
-  it("falls back to first step motion when startPosition is absent", () => {
+  it("falls back to first step motion when startPlacement is absent", () => {
     const step = makeStep(
       GridLocation.EAST,
       GridLocation.SOUTH,
@@ -239,13 +239,13 @@ describe("SequenceDecomposer — extractRedSoloProp", () => {
     expect(right.steps).toHaveLength(sequence.steps.length);
   });
 
-  it("preserves red startLocation from startPosition", () => {
+  it("preserves red startLocation from startPlacement", () => {
     const sequence = createTestSequence();
     const right = extractRightSoloProp(sequence);
     expect(right.startLocation).toBe(GridLocation.SOUTH);
   });
 
-  it("preserves red startOrientation from startPosition", () => {
+  it("preserves red startOrientation from startPlacement", () => {
     const sequence = createTestSequence();
     const right = extractRightSoloProp(sequence);
     expect(right.startOrientation).toBe(Orientation.OUT);
@@ -283,11 +283,11 @@ describe("SequenceDecomposer — extractStepPairings", () => {
     expect(pairings[1]?.rightReversal).toBe(false);
   });
 
-  it("preserves startPosition and endPosition", () => {
+  it("preserves startPlacement and endPlacement", () => {
     const sequence = createTestSequence();
     const pairings = extractStepPairings(sequence);
-    expect(pairings[1]?.startPosition).toBe(GridPosition.BETA1);
-    expect(pairings[1]?.endPosition).toBe(GridPosition.GAMMA1);
+    expect(pairings[1]?.startPlacement).toBe(GridPlacement.BETA1);
+    expect(pairings[1]?.endPlacement).toBe(GridPlacement.GAMMA1);
   });
 
   it("converts undefined letter to null", () => {

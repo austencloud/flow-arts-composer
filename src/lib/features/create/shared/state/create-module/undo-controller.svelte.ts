@@ -39,7 +39,7 @@ export function createUndoController({
   getActiveSection,
   setActiveSectionInternal,
 }: UndoControllerDeps) {
-  let showStartPositionPickerCallback: (() => void) | null = null;
+  let showStartPlacementPickerCallback: (() => void) | null = null;
   let syncPickerStateCallback: (() => void) | null = null;
 
   let undoChangeCounter = $state(0);
@@ -56,7 +56,7 @@ export function createUndoController({
 
     if (
       !sequenceState.currentSequence &&
-      type !== UndoOperationType.SELECT_START_POSITION
+      type !== UndoOperationType.SELECT_START_PLACEMENT
     ) {
       return;
     }
@@ -80,8 +80,8 @@ export function createUndoController({
         sequence: sequenceCopy,
         selectedStepNumber: selectedStepNumberRef,
         activeSection: activeSectionRef,
-        shouldShowStartPositionPicker:
-          type === UndoOperationType.SELECT_START_POSITION,
+        shouldShowStartPlacementPicker:
+          type === UndoOperationType.SELECT_START_PLACEMENT,
         timestamp: timestampRef,
       };
 
@@ -161,10 +161,10 @@ export function createUndoController({
       lastEntry.beforeState
     );
 
-    if (lastEntry.type === UndoOperationType.SELECT_START_POSITION) {
+    if (lastEntry.type === UndoOperationType.SELECT_START_PLACEMENT) {
       void sequenceState.clearSequenceCompletely();
-      if (showStartPositionPickerCallback) {
-        showStartPositionPickerCallback();
+      if (showStartPlacementPickerCallback) {
+        showStartPlacementPickerCallback();
       }
       return true;
     }
@@ -251,8 +251,8 @@ export function createUndoController({
     historySuspended = false;
   }
 
-  function setShowStartPositionPickerCallback(callback: () => void) {
-    showStartPositionPickerCallback = callback;
+  function setShowStartPlacementPickerCallback(callback: () => void) {
+    showStartPlacementPickerCallback = callback;
   }
 
   function setSyncPickerStateCallback(callback: () => void) {
@@ -290,10 +290,10 @@ export function createUndoController({
     );
 
     // Restore the state from the entry's beforeState
-    if (entry.type === UndoOperationType.SELECT_START_POSITION) {
+    if (entry.type === UndoOperationType.SELECT_START_PLACEMENT) {
       void sequenceState.clearSequenceCompletely();
-      if (showStartPositionPickerCallback) {
-        showStartPositionPickerCallback();
+      if (showStartPlacementPickerCallback) {
+        showStartPlacementPickerCallback();
       }
     } else {
       sequenceState.setCurrentSequence(entry.beforeState.sequence);
@@ -321,7 +321,7 @@ export function createUndoController({
     suspendHistory,
     resumeHistory,
     jumpToState,
-    setShowStartPositionPickerCallback,
+    setShowStartPlacementPickerCallback,
     setSyncPickerStateCallback,
     get canUndo() {
       void undoChangeCounter;

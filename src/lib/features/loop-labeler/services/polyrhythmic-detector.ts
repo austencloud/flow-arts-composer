@@ -1,8 +1,8 @@
 import {
   analyzeZoneCoverage,
   type ZoneCoverageAnalysis,
-} from "$lib/shared/foundation/domain/models/generation/circular-position-maps";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 export interface StepProperties {
   step: number;
@@ -30,7 +30,7 @@ export interface PropertyConsistency {
 export interface PeriodAnalysis {
   period: number;
   numGroups: number;
-  positionGroups: number[][];
+  placementGroups: number[][];
   consistentProperties: PropertyConsistency[];
   consistencyScore: number;
   dominantPropertyType: "motion" | "spatial" | "both" | "other" | "none";
@@ -124,12 +124,12 @@ function noPolyrhythmResult(reason: string): PolyrhythmicLOOPResult {
 
 function checkPropertyConsistency(
   steps: StepProperties[],
-  positionGroups: number[][],
+  placementGroups: number[][],
   property: string
 ): PropertyConsistency | null {
   const valuesPerPosition: string[] = [];
 
-  for (const group of positionGroups) {
+  for (const group of placementGroups) {
     const values = group.map((stepNum) => {
       const matchingStep = steps.find((b) => b.step === stepNum);
       return matchingStep
@@ -163,13 +163,13 @@ function analyzePeriod(
   const length = steps.length;
   const numGroups = length / period;
 
-  const positionGroups: number[][] = [];
+  const placementGroups: number[][] = [];
   for (let pos = 0; pos < period; pos++) {
     const group: number[] = [];
     for (let g = 0; g < numGroups; g++) {
       group.push(pos + 1 + g * period);
     }
-    positionGroups.push(group);
+    placementGroups.push(group);
   }
 
   const propertiesToCheck = [
@@ -190,7 +190,7 @@ function analyzePeriod(
   let spatialCount = 0;
 
   for (const property of propertiesToCheck) {
-    const result = checkPropertyConsistency(steps, positionGroups, property);
+    const result = checkPropertyConsistency(steps, placementGroups, property);
     if (result) {
       consistentProperties.push(result);
       const propType = getPropertyType(property);
@@ -214,7 +214,7 @@ function analyzePeriod(
   return {
     period,
     numGroups,
-    positionGroups,
+    placementGroups,
     consistentProperties,
     consistencyScore: consistentProperties.length,
     dominantPropertyType,
@@ -261,10 +261,10 @@ export function detectPolyrhythmic(
   );
   const steps = stepRecords.map(extractBeatProperties);
 
-  const endPositions = stepRecords.map((item) => {
+  const endPlacements = stepRecords.map((item) => {
     const endPos = item.endPos as string | undefined;
     if (!endPos) return null;
-    return endPos as GridPosition;
+    return endPos as GridPlacement;
   });
 
   const length = steps.length;
@@ -401,7 +401,7 @@ export function detectPolyrhythmic(
         ? [motionPeriod.period, spatialPeriod.period]
         : [spatialPeriod.period, motionPeriod.period];
 
-    const zoneCoverage = analyzeZoneCoverage(endPositions);
+    const zoneCoverage = analyzeZoneCoverage(endPlacements);
 
     return {
       isPolyrhythmic: true,

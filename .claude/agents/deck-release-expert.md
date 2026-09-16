@@ -54,7 +54,7 @@ Two collection types:
 Since 2026-08-03 (`6862f90db6`), every released deck includes a static insert
 card as **card 1 of the printed stack**. Front teaches the five reading rules
 plus the Greek pronunciation table and prints `Deck NNN`; back covers the four
-corners, levels, LOOPs, and chaining by start position.
+corners, levels, LOOPs, and chaining by start placement.
 
 - Source of truth: `services/info-card-canvas-renderer.ts` (canvas, print-ready).
   There is no Svelte version any more — it was deleted so preview cannot drift

@@ -1,7 +1,7 @@
 <script lang="ts">
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
   import { getArrowSvgPath } from "$lib/shared/pictograph/arrow/rendering/services/arrow-path-resolver";
@@ -34,8 +34,8 @@
   interface RawStep {
     stepNumber: number;
     letter: string;
-    startPosition: string;
-    endPosition: string;
+    startPlacement: string;
+    endPlacement: string;
     /** Legacy checked-in fixture shape. Normalized as it enters the route. */
     motions: { blue: RawMotion; red: RawMotion };
   }
@@ -65,8 +65,8 @@
     return {
       id: `qta-step-${step.stepNumber}`,
       letter: step.letter as Letter,
-      startPosition: step.startPosition as GridPosition,
-      endPosition: step.endPosition as GridPosition,
+      startPlacement: step.startPlacement as GridPlacement,
+      endPlacement: step.endPlacement as GridPlacement,
       gridMode: GridMode.DIAMOND,
       motions: {
         left: toMotion(step.motions.blue, HandSide.LEFT),
@@ -131,7 +131,7 @@
     <div class="detail-head">
       <h2>
         Step {selectedStep.stepNumber} · {selectedStep.letter} ·
-        {selectedStep.startPosition} → {selectedStep.endPosition}
+        {selectedStep.startPlacement} → {selectedStep.endPlacement}
       </h2>
       <p class="motion-line">
         Both hands: {motionSummary(selectedStep.motions.blue)} · quarter asset:

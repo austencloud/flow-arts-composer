@@ -4,7 +4,7 @@ import {
   calculateTimelineRowsByBeatCount,
   type TimelineRow,
 } from "$lib/shared/create/utils/grid-calculations";
-import { createStartPositionFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -15,7 +15,7 @@ import {
   reportScanToStable,
 } from "$lib/shared/analytics/scan-perf";
 import {
-  calculateGridPosition,
+  calculateGridPlacement,
   detectMixedDurations,
   getPreviewCacheKey,
   globalPreviewCache,
@@ -83,8 +83,8 @@ export interface ChoreoCardRenderDeps {
   readonly rightPropType: PropType | undefined;
   readonly browseViewMode: BrowseViewMode | undefined;
   readonly showStepNumbers: boolean;
-  readonly includeStartPosition: boolean;
-  readonly startPositionLayout: "row" | "column";
+  readonly includeStartPlacement: boolean;
+  readonly startPlacementLayout: "row" | "column";
   readonly mandalaLayoutOverride: MandalaLayoutOverride | null;
   readonly effectiveColumns: number;
   readonly effectiveRows: number;
@@ -145,16 +145,16 @@ export function createChoreoCardRenderEngine(
     model.isRefreshing = false;
   }
 
-  function gridPosition(
+  function gridPlacement(
     stepIndex: number,
     columns: number
   ): { gridColumn: number; gridRow: number } {
     const deps = getDeps();
-    return calculateGridPosition(
+    return calculateGridPlacement(
       stepIndex,
       columns,
-      deps.includeStartPosition,
-      deps.startPositionLayout,
+      deps.includeStartPlacement,
+      deps.startPlacementLayout,
       deps.mandalaLayoutOverride
     );
   }
@@ -165,8 +165,8 @@ export function createChoreoCardRenderEngine(
       deps.renderOptions,
       deps.columnCount,
       deps.darkMode,
-      deps.startPositionLayout,
-      deps.includeStartPosition
+      deps.startPlacementLayout,
+      deps.includeStartPlacement
     );
   }
 
@@ -178,7 +178,7 @@ export function createChoreoCardRenderEngine(
     model.rows = deps.effectiveRows;
     model.cells = model.cells.map((cell) => ({
       ...cell,
-      ...gridPosition(cell.index, deps.effectiveColumns),
+      ...gridPlacement(cell.index, deps.effectiveColumns),
     }));
     sizing.updateCellWidth();
 
@@ -211,13 +211,13 @@ export function createChoreoCardRenderEngine(
   ): ChoreoCardCell[] {
     const placeholders: ChoreoCardCell[] = [];
     const firstStep = deps.sequence.steps[0];
-    if (deps.sequence.startPosition || firstStep) {
+    if (deps.sequence.startPlacement || firstStep) {
       placeholders.push({
         index: -1,
         label: "Start",
         imageUrl: "",
         isLoaded: false,
-        ...gridPosition(-1, columns),
+        ...gridPlacement(-1, columns),
         duration: 1,
       });
     }
@@ -229,7 +229,7 @@ export function createChoreoCardRenderEngine(
           : String(index + 1),
         imageUrl: "",
         isLoaded: false,
-        ...gridPosition(index, columns),
+        ...gridPlacement(index, columns),
         duration: deps.sequence.steps[index]?.duration ?? 1,
       });
     }
@@ -242,10 +242,10 @@ export function createChoreoCardRenderEngine(
   ): CellTask[] {
     const tasks: CellTask[] = [];
     const firstStep = deps.sequence.steps[0];
-    if (deps.sequence.startPosition || firstStep) {
+    if (deps.sequence.startPlacement || firstStep) {
       const startData =
-        deps.sequence.startPosition ??
-        createStartPositionFromBeatStart(firstStep!);
+        deps.sequence.startPlacement ??
+        createStartPlacementFromBeatStart(firstStep!);
       tasks.push({
         cellIndex: -1,
         data: startData,
@@ -304,7 +304,7 @@ export function createChoreoCardRenderEngine(
       let computedDurationRows: TimelineRow[] = [];
       if (mixed) {
         const stepsPerRow =
-          deps.includeStartPosition && deps.startPositionLayout === "column"
+          deps.includeStartPlacement && deps.startPlacementLayout === "column"
             ? columns - 1
             : columns;
         computedDurationRows = calculateTimelineRowsByBeatCount(
@@ -313,7 +313,7 @@ export function createChoreoCardRenderEngine(
         );
         rows =
           computedDurationRows.length +
-          (deps.includeStartPosition && deps.startPositionLayout === "row"
+          (deps.includeStartPlacement && deps.startPlacementLayout === "row"
             ? 1
             : 0);
         model.durationRows = computedDurationRows;
@@ -322,15 +322,15 @@ export function createChoreoCardRenderEngine(
           maxStepUnits = Math.max(maxStepUnits, row.totalDuration);
         }
         model.durationColCount =
-          deps.includeStartPosition && deps.startPositionLayout === "column"
+          deps.includeStartPlacement && deps.startPlacementLayout === "column"
             ? maxStepUnits + 1
             : Math.max(
                 maxStepUnits,
-                deps.includeStartPosition && deps.showQRCode ? 2 : 1
+                deps.includeStartPlacement && deps.showQRCode ? 2 : 1
               );
         if (
-          deps.includeStartPosition &&
-          deps.startPositionLayout === "column" &&
+          deps.includeStartPlacement &&
+          deps.startPlacementLayout === "column" &&
           deps.showQRCode
         ) {
           rows = Math.max(rows, 2);
@@ -345,8 +345,8 @@ export function createChoreoCardRenderEngine(
         const generation = ++liveGeneration;
         const firstStep = deps.sequence.steps[0];
         const start =
-          deps.sequence.startPosition ??
-          createStartPositionFromBeatStart(firstStep!);
+          deps.sequence.startPlacement ??
+          createStartPlacementFromBeatStart(firstStep!);
         model.cells = buildPlaceholders(deps, columns).map((cell) => ({
           ...cell,
           live: {
@@ -365,7 +365,7 @@ export function createChoreoCardRenderEngine(
               current.isLoaded = !failed;
               current.renderFailed = failed;
               const visible = model.cells.filter(
-                (item) => deps.includeStartPosition || item.index !== -1
+                (item) => deps.includeStartPlacement || item.index !== -1
               );
               deps.onRenderProgress?.(
                 visible.filter((item) => item.isLoaded || item.renderFailed)
@@ -618,10 +618,10 @@ export function createChoreoCardRenderEngine(
       } else {
         newUrls = new Map();
         const firstStep = deps.sequence.steps[0];
-        if (deps.sequence.startPosition || firstStep) {
+        if (deps.sequence.startPlacement || firstStep) {
           const startData =
-            deps.sequence.startPosition ??
-            createStartPositionFromBeatStart(firstStep!);
+            deps.sequence.startPlacement ??
+            createStartPlacementFromBeatStart(firstStep!);
           newUrls.set(
             -1,
             await renderCell(
@@ -749,10 +749,10 @@ export function createChoreoCardRenderEngine(
     globalPreviewCache.delete(cacheKey(deps));
 
     const firstStep = deps.sequence.steps[0];
-    if (deps.sequence.startPosition || firstStep) {
+    if (deps.sequence.startPlacement || firstStep) {
       const startData =
-        deps.sequence.startPosition ??
-        createStartPositionFromBeatStart(firstStep!);
+        deps.sequence.startPlacement ??
+        createStartPlacementFromBeatStart(firstStep!);
       await deleteCellCache(
         startData,
         undefined,

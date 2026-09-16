@@ -60,9 +60,9 @@ export const LOOP_TYPE_LABELS: Record<LOOPType, string> = {
 };
 
 export const LOOP_TYPE_DESCRIPTIONS: Record<LOOPType, string> = {
-  [LOOPType.ROTATED]: "Rotates positions around the grid",
-  [LOOPType.MIRRORED]: "Mirrors positions vertically",
-  [LOOPType.FLIPPED]: "Mirrors positions horizontally (north/south)",
+  [LOOPType.ROTATED]: "Rotates locations around the grid",
+  [LOOPType.MIRRORED]: "Mirrors locations vertically",
+  [LOOPType.FLIPPED]: "Mirrors locations horizontally (north/south)",
   [LOOPType.SWAPPED]: "Swaps left and right props",
   [LOOPType.INVERTED]: "Inverts motion directions",
   [LOOPType.SWAPPED_INVERTED]: "Swaps colors with inverted motion",

@@ -21,7 +21,7 @@
 
 /** Roles the intention bag knows how to act on. */
 export type GhostKind =
-  | "start-position"
+  | "start-placement"
   | "option"
   | "option-filter"
   | "turn"

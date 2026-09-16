@@ -117,7 +117,7 @@ Delegates ALL logic to services (SRP compliant)
 
   // State
   let headerFontSize = $state("9px");
-  let positionsResetTrigger = $state(0); // Increment to trigger reset animation
+  let placementsResetTrigger = $state(0); // Increment to trigger reset animation
 
   // Derived values - now safe because services are reactive $state
   let currentLevel = $derived(
@@ -327,7 +327,7 @@ Delegates ALL logic to services (SRP compliant)
   function cloneStartEndOptions(options: StartEndOptions): StartEndOptions {
     return {
       ...options,
-      blockedStartPositions: [...options.blockedStartPositions],
+      blockedStartPlacements: [...options.blockedStartPlacements],
       mustContainLetters: [...options.mustContainLetters],
       mustNotContainLetters: [...options.mustNotContainLetters],
     };
@@ -446,16 +446,16 @@ Delegates ALL logic to services (SRP compliant)
   function handleGridModeChange(gridMode: GridMode) {
     updateConfig({ gridMode });
 
-    // Check if we have positions to clear
-    const hasPositions =
-      startEndState?.options?.startPosition !== null ||
-      startEndState?.options?.endPosition !== null;
+    // Check if we have placements to clear
+    const hasPlacements =
+      startEndState?.options?.startPlacement !== null ||
+      startEndState?.options?.endPlacement !== null;
 
-    if (hasPositions) {
+    if (hasPlacements) {
       // Trigger animation FIRST
-      positionsResetTrigger++;
+      placementsResetTrigger++;
 
-      // Clear positions at animation midpoint (150ms into 300ms animation)
+      // Clear placements at animation midpoint (150ms into 300ms animation)
       // This makes the text change happen while it's invisible
       setTimeout(() => {
         startEndState?.setGridMode(gridMode);
@@ -541,7 +541,7 @@ Delegates ALL logic to services (SRP compliant)
   function handleResetAll() {
     resetConfig();
     startEndState?.resetOptions(GENERATE_DEFAULT_CONFIG.gridMode);
-    positionsResetTrigger++;
+    placementsResetTrigger++;
   }
 
   // Preset: open drawer via panel state (drawer rendered in GeneratePanel)
@@ -614,7 +614,7 @@ Delegates ALL logic to services (SRP compliant)
         handleStartEndChange: startEndState ? handleStartEndChange : undefined,
         handleResetAll,
         startEndOptions: startEndState?.options,
-        positionsResetTrigger,
+        placementsResetTrigger,
         currentGridMode: config.gridMode,
         handleGenerateClick: onGenerateClicked,
         setupsCardValue: (() => {

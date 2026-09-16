@@ -24,7 +24,7 @@ import {
   DIRECTOR_LOOP_PERIODS,
   DIRECTOR_MOTION_TYPE_FILTERS,
   DIRECTOR_ORIENTATIONS,
-  DIRECTOR_POSITION_GROUPS,
+  DIRECTOR_PLACEMENT_GROUPS,
   DIRECTOR_ROTATION_DEGREES,
   DIRECTOR_SEQUENCE_LEVELS,
   type DirectorPerformerSequence,
@@ -531,7 +531,7 @@ const cameraKeyframeSchema = z
     }
   });
 
-const positionRefSchema = z.union(
+const placementRefSchema = z.union(
   [
     z.string().min(1),
     z.preprocess(
@@ -540,7 +540,7 @@ const positionRefSchema = z.union(
     ),
     z
       .object({
-        group: z.enum(DIRECTOR_POSITION_GROUPS),
+        group: z.enum(DIRECTOR_PLACEMENT_GROUPS),
         location: z.string().min(1),
       })
       .strict(),
@@ -667,7 +667,7 @@ const SEQUENCE_SOURCE_KEYS = [
   "length",
 ] as const;
 const SEQUENCE_CONTROL_KEYS = [
-  "startPosition",
+  "startPlacement",
   "startOrientation",
   "turns",
   "level",
@@ -678,7 +678,7 @@ const SEQUENCE_CONTROL_KEYS = [
   "loop",
   "mustContain",
   "mustNotContain",
-  "endPosition",
+  "endPlacement",
 ] as const;
 
 const quoted = (keys: readonly string[]) =>
@@ -714,7 +714,7 @@ const performerSequenceSchema = z
     library: z.string().min(1).optional(),
     word: z.string().min(1).max(24).optional(),
     length: z.number().int().min(1).max(64).optional(),
-    startPosition: positionRefSchema.optional(),
+    startPlacement: placementRefSchema.optional(),
     startOrientation: startOrientationSchema.optional(),
     turns: turnsSchema.optional(),
     /**
@@ -746,8 +746,8 @@ const performerSequenceSchema = z
     loop: loopSchema.optional(),
     mustContain: z.array(z.string().min(1)).min(1).max(24).optional(),
     mustNotContain: z.array(z.string().min(1)).min(1).max(24).optional(),
-    endPosition: z
-      .union([positionRefSchema, z.array(positionRefSchema).min(1).max(16)])
+    endPlacement: z
+      .union([placementRefSchema, z.array(placementRefSchema).min(1).max(16)])
       .optional(),
   })
   .strict()

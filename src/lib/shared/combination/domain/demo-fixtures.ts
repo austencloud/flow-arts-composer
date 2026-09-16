@@ -13,12 +13,12 @@
  * ship green:
  *   1. Each loop closes — step i starts where step i-1 ended, and the last step
  *      returns to the first step's seam.
- *   2. Every position LABEL equals `getGridPositionFromLocations` of that step's
+ *   2. Every placement LABEL equals `getGridPlacementFromLocations` of that step's
  *      own motion locations.
  *   3. Every motion's `motionType` equals `deriveMotionType` of its own
  *      locations + rotation direction + turns. motionType is not free data; it
  *      is a function of the other three.
- *   4. Every step is a real (letter, positions, left motion, right motion) row of
+ *   4. Every step is a real (letter, placements, left motion, right motion) row of
  *      the diamond dataframe, and each loop is an orientation fixpoint under
  *      `recalculateAllOrientations`.
  *
@@ -31,7 +31,7 @@
  */
 
 import { withCalculatedArrowLocations } from "$lib/features/assemble-lab/services/builder-step-converter";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import {
@@ -42,7 +42,7 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   HandSide,
@@ -86,17 +86,17 @@ function makeMotion(spec: MotionSpec, hand: HandSide): MotionData {
 export function makeStep(
   stepNumber: number,
   letter: Letter,
-  startPosition: GridPosition,
-  endPosition: GridPosition,
+  startPlacement: GridPlacement,
+  endPlacement: GridPlacement,
   left: MotionSpec,
   right: MotionSpec
 ): StepData {
   const step = createStepData({
-    id: `fixture-${letter}-${stepNumber}-${startPosition}-${endPosition}`,
+    id: `fixture-${letter}-${stepNumber}-${startPlacement}-${endPlacement}`,
     stepNumber,
     letter,
-    startPosition,
-    endPosition,
+    startPlacement,
+    endPlacement,
     gridMode: GridMode.DIAMOND,
     duration: 1,
     motions: {
@@ -137,12 +137,12 @@ export function makeLoop(
     steps,
     isCircular: true,
     gridMode: GridMode.DIAMOND,
-    startPosition: createStartPositionData({
+    startPlacement: createStartPlacementData({
       id: `${id}-start`,
       letter: null,
-      startPosition: first.startPosition,
-      endPosition: first.startPosition,
-      gridPosition: first.startPosition,
+      startPlacement: first.startPlacement,
+      endPlacement: first.startPlacement,
+      gridPlacement: first.startPlacement,
       motions: {
         [HandSide.LEFT]: holdOf(first.motions.left),
         [HandSide.RIGHT]: holdOf(first.motions.right),
@@ -164,7 +164,7 @@ const IN = Orientation.IN;
 const OUT = Orientation.OUT;
 
 const { ALPHA1, ALPHA3, ALPHA5, ALPHA7, BETA1, BETA3, BETA5, BETA7 } =
-  GridPosition;
+  GridPlacement;
 
 const spec =
   (type: MotionType) =>
@@ -268,7 +268,7 @@ export const GHGH: SequenceData = makeLoop("fx-ghgh", "GHGH", [
  * Step 1 is literal from Austen's FALG card:
  *   A alpha3>alpha1: left pro ccw w>s, right pro ccw e>n
  * The rest continues the location cycle left w→s→e→n→w with right always
- * opposite. Every alpha label was READ OFF `getGridPositionFromLocations`.
+ * opposite. Every alpha label was READ OFF `getGridPlacementFromLocations`.
  *
  * Its whole seam set is alpha; GGGG's is entirely beta. That disjointness is
  * what makes "AAAA + GGGG is impossible without a ΦΨ bridge" a real claim.

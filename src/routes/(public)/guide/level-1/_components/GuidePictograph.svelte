@@ -27,7 +27,7 @@
     showTKA = true,
     showTnD = false,
     showElemental = false,
-    showPositions = false,
+    showPlacements = false,
     showReversals = false,
     showNonRadialPoints = false,
     /** Opt-in theme override for the reflow flow view. "dark" renders the
@@ -50,7 +50,7 @@
     showTKA?: boolean;
     showTnD?: boolean;
     showElemental?: boolean;
-    showPositions?: boolean;
+    showPlacements?: boolean;
     showReversals?: boolean;
     showNonRadialPoints?: boolean;
     forceTheme?: "light" | "dark";
@@ -157,7 +157,7 @@
         {showReversals}
         {showTnD}
         {showElemental}
-        {showPositions}
+        {showPlacements}
         {showNonRadialPoints}
         leftMotionVisible={true}
         rightMotionVisible={true}

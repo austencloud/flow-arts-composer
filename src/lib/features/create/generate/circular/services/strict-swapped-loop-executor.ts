@@ -20,17 +20,17 @@ import {
   HandSide,
   MotionType,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   updateStartOrientations,
   updateEndOrientations,
 } from "$lib/shared/pictograph/prop/services/orientation-calculator";
 import {
-  SWAPPED_POSITION_MAP,
+  SWAPPED_PLACEMENT_MAP,
   SWAPPED_LOOP_VALIDATION_SET,
-} from "../domain/constants/strict-loop-position-maps";
+} from "../domain/constants/strict-loop-placement-maps";
 import { Period } from "../domain/models/circular-models";
 import { buildStrictQuarters } from "./loop-quarter-guard";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -41,9 +41,9 @@ export class StrictSwappedLOOPExecutor {
   executeLOOP(sequence: StepData[], period: Period): StepData[] {
     this._validateSequence(sequence);
 
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     const partialLength = sequence.length;
@@ -59,30 +59,30 @@ export class StrictSwappedLOOPExecutor {
       (s, p, n) => this._createCopiedEntry(s, p, n),
     );
 
-    sequence.unshift(startPosition);
+    sequence.unshift(startPlacement);
     return sequence;
   }
 
   private _validateSequence(sequence: StepData[]): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     const key = `${startPos},${endPos}`;
 
     if (!SWAPPED_LOOP_VALIDATION_SET.has(key)) {
-      const expectedEnd = SWAPPED_POSITION_MAP[startPos as GridPosition];
+      const expectedEnd = SWAPPED_PLACEMENT_MAP[startPos as GridPlacement];
       throw new Error(
-        `Invalid position pair for swapped LOOP: ${startPos} → ${endPos}. ` +
+        `Invalid placement pair for swapped LOOP: ${startPos} → ${endPos}. ` +
           `For a swapped LOOP from ${startPos}, the sequence must end at ${expectedEnd}.`
       );
     }
@@ -111,13 +111,13 @@ export class StrictSwappedLOOPExecutor {
       sourceLeft
     );
 
-    const actualStartPosition =
-      getGridPositionFromLocations(
+    const actualStartPlacement =
+      getGridPlacementFromLocations(
         leftMotion.startLocation,
         rightMotion.startLocation
       );
-    const actualEndPosition =
-      getGridPositionFromLocations(
+    const actualEndPlacement =
+      getGridPlacementFromLocations(
         leftMotion.endLocation,
         rightMotion.endLocation
       );
@@ -126,8 +126,8 @@ export class StrictSwappedLOOPExecutor {
       ...sourceStep,
       id: `step-${stepNumber}`,
       stepNumber,
-      startPosition: actualStartPosition,
-      endPosition: actualEndPosition,
+      startPlacement: actualStartPlacement,
+      endPlacement: actualEndPlacement,
       motions: {
         [HandSide.LEFT]: leftMotion,
         [HandSide.RIGHT]: rightMotion,
@@ -158,8 +158,8 @@ export class StrictSwappedLOOPExecutor {
       ...sourceStep,
       id: `step-${stepNumber}`,
       stepNumber,
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: sourceStep.endPosition,
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: sourceStep.endPlacement,
       motions: {
         [HandSide.LEFT]: {
           ...sourceLeft,

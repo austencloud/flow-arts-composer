@@ -28,12 +28,12 @@ export const LOOP_REVIEW_OPTIONS = {
   rotated: option(
     LOOPType.ROTATED,
     "Rotated",
-    "Rotates positions around the grid"
+    "Rotates placements around the grid"
   ),
   mirrored: option(
     LOOPType.MIRRORED,
     "Mirrored",
-    "Mirrors positions vertically"
+    "Mirrors placements vertically"
   ),
 } satisfies Record<string, LOOPOption>;
 

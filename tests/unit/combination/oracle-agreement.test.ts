@@ -5,7 +5,7 @@
  * standard box — unit <= 6 steps, <= 2 connectors, diamond, both cards required
  * — and its printed count-bucket profile is frozen in `oracle-fixtures.ts`. That
  * script is a separate implementation with its own local closure rule; the
- * engine here calls the app's `isLOOPValidForPositionPair` instead. Two
+ * engine here calls the app's `isLOOPValidForPlacementPair` instead. Two
  * independent paths landing on the same nine numbers is the strongest evidence
  * available that the engine enumerates the right space and quotients it by the
  * right relation.
@@ -111,8 +111,8 @@ describe("A + G against the research oracle", () => {
     expect(report.combinations.length).toBeGreaterThan(0);
     for (const combination of report.combinations) {
       const closures = admissibleClosures(
-        combination.unit.startPosition,
-        combination.unit.endPosition
+        combination.unit.startPlacement,
+        combination.unit.endPlacement
       );
       expect(closures.map((closure) => closure.id)).toContain(
         combination.closure.id

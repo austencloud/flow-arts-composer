@@ -7,7 +7,7 @@ import {
   Letter,
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
   MotionType,
   Orientation,
   Plane,
@@ -49,8 +49,8 @@ function baseStep(): Step {
   return createStep({
     id: "step-1-A",
     letter: Letter.A,
-    startPosition: GridPosition.alpha1,
-    endPosition: GridPosition.alpha3,
+    startPlacement: GridPlacement.alpha1,
+    endPlacement: GridPlacement.alpha3,
     motions: { left: makeBlue(), right: makeRed() },
     stepNumber: 1,
     duration: 1,
@@ -63,8 +63,8 @@ describe("createStep", () => {
     const s = baseStep();
     expect(s.stepNumber).toBe(1);
     expect(s.letter).toBe("A");
-    expect(s.startPosition).toBe("alpha1");
-    expect(s.endPosition).toBe("alpha3");
+    expect(s.startPlacement).toBe("alpha1");
+    expect(s.endPlacement).toBe("alpha3");
     expect(s.duration).toBe(1);
     expect(s.gridMode).toBe("diamond");
   });
@@ -78,8 +78,8 @@ describe("createStep", () => {
   it("supplies a default id when omitted", () => {
     const s = createStep({
       letter: Letter.A,
-      startPosition: GridPosition.alpha1,
-      endPosition: GridPosition.alpha3,
+      startPlacement: GridPlacement.alpha1,
+      endPlacement: GridPlacement.alpha3,
       motions: { left: makeBlue(), right: makeRed() },
       stepNumber: 1,
       duration: 1,
@@ -92,8 +92,8 @@ describe("createStep", () => {
     const s = createStep({
       id: "",
       letter: Letter.A,
-      startPosition: GridPosition.alpha1,
-      endPosition: GridPosition.alpha3,
+      startPlacement: GridPlacement.alpha1,
+      endPlacement: GridPlacement.alpha3,
       motions: { left: makeBlue(), right: makeRed() },
       stepNumber: 1,
       duration: 1,
@@ -106,8 +106,8 @@ describe("createStep", () => {
     const s = createStep({
       id: "step-1-A",
       letter: Letter.A,
-      startPosition: GridPosition.alpha1,
-      endPosition: GridPosition.alpha3,
+      startPlacement: GridPlacement.alpha1,
+      endPlacement: GridPlacement.alpha3,
       motions: { left: makeBlue(), right: makeRed() },
       stepNumber: 1,
     });
@@ -119,8 +119,8 @@ describe("createStep", () => {
       createStep({
         id: "x",
         letter: Letter.A,
-        startPosition: GridPosition.alpha1,
-        endPosition: GridPosition.alpha3,
+        startPlacement: GridPlacement.alpha1,
+        endPlacement: GridPlacement.alpha3,
         motions: { left: makeBlue(), right: makeRed() },
         stepNumber: -1,
         duration: 1,
@@ -133,8 +133,8 @@ describe("createStep", () => {
       createStep({
         id: "x",
         letter: Letter.A,
-        startPosition: GridPosition.alpha1,
-        endPosition: GridPosition.alpha3,
+        startPlacement: GridPlacement.alpha1,
+        endPlacement: GridPlacement.alpha3,
         motions: { left: makeBlue(), right: makeRed() },
         stepNumber: 1,
         duration: 0,
@@ -158,8 +158,8 @@ describe("createStep", () => {
       createStep({
         id: "x",
         letter: Letter.A,
-        startPosition: GridPosition.alpha1,
-        endPosition: GridPosition.alpha3,
+        startPlacement: GridPlacement.alpha1,
+        endPlacement: GridPlacement.alpha3,
         motions: { left: blueLookingRed, right: makeRed() },
         stepNumber: 1,
         duration: 1,
@@ -172,8 +172,8 @@ describe("createStep", () => {
       createStep({
         id: "x",
         letter: Letter.A,
-        startPosition: GridPosition.alpha1,
-        endPosition: GridPosition.alpha3,
+        startPlacement: GridPlacement.alpha1,
+        endPlacement: GridPlacement.alpha3,
         motions: { left: makeBlue(), right: makeRed() },
         stepNumber: 1,
         duration: 1,
@@ -187,8 +187,8 @@ describe("createStep", () => {
       createStep({
         id: "x",
         letter: Letter.A,
-        startPosition: GridPosition.alpha1,
-        endPosition: GridPosition.alpha3,
+        startPlacement: GridPlacement.alpha1,
+        endPlacement: GridPlacement.alpha3,
         motions: { left: makeBlue(), right: makeRed() },
         stepNumber: 1,
         duration: 1,
@@ -200,15 +200,15 @@ describe("createStep", () => {
 
 describe("createStartStep", () => {
   it("produces stepNumber 0 with null letter", () => {
-    const s = createStartStep(GridPosition.alpha1);
+    const s = createStartStep(GridPlacement.alpha1);
     expect(s.stepNumber).toBe(0);
     expect(s.letter).toBeNull();
-    expect(s.startPosition).toBe("alpha1");
-    expect(s.endPosition).toBe("alpha1");
+    expect(s.startPlacement).toBe("alpha1");
+    expect(s.endPlacement).toBe("alpha1");
   });
 
   it("colors motions correctly", () => {
-    const s = createStartStep(GridPosition.beta3);
+    const s = createStartStep(GridPlacement.beta3);
     expect(s.motions.left.hand).toBe("left");
     expect(s.motions.right.hand).toBe("right");
     expect(s.motions.left.motionType).toBe("static");
@@ -216,7 +216,7 @@ describe("createStartStep", () => {
   });
 
   it("freezes the result", () => {
-    const s = createStartStep(GridPosition.gamma1);
+    const s = createStartStep(GridPlacement.gamma1);
     expect(Object.isFrozen(s)).toBe(true);
     expect(Object.isFrozen(s.motions)).toBe(true);
   });

@@ -21,8 +21,8 @@ export type BuilderPhase =
   | "complete";
 
 export interface BuilderStep {
-  readonly startPosition: GridLocation;
-  readonly endPosition: GridLocation;
+  readonly startPlacement: GridLocation;
+  readonly endPlacement: GridLocation;
   readonly rotationDirection: RotationDirection;
   readonly turnCount: number;
   readonly startOrientation: Orientation;
@@ -87,7 +87,7 @@ export interface AssembleState {
   readonly stepEditMode: BuilderStepEditMode | null;
   readonly canReorderSteps: boolean;
   readonly canReplaceSelectedStep: boolean;
-  readonly candidateStartPosition: GridLocation | null;
+  readonly candidateStartPlacement: GridLocation | null;
   readonly candidateStartOrientation: Orientation;
   readonly candidateRotationDirection: RotationDirection;
   readonly candidateTurnCount: number;

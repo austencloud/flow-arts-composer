@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore";
 import { getFirestoreInstance } from "$lib/shared/auth/firebase";
 import { getPublicSequencesPath } from "$lib/shared/library/data/firestore-paths";
+import { normalizeLegacySequence } from "@tka/tka-types";
 import type { SequenceEntry, RawStepData, RawMotionAttributes } from "./types";
 import type { LabeledSequence } from "./types";
 import type { FilterMode, SequenceStats } from "./types";
@@ -67,7 +68,10 @@ export async function loadSequenceDetail(
       return null;
     }
 
-    const data = docSnap.data();
+    // Normalize legacy blue/red hand and position/placement keys before this
+    // module's own field lookups, so a document written before either rename
+    // shipped still resolves startPlacement/startingPlacement/endPlacement.
+    const data = normalizeLegacySequence(docSnap.data());
     const result = convertToRawSequence(data);
     return result;
   } catch (error) {
@@ -88,7 +92,7 @@ export async function loadSequenceDetail(
  *    blueAttributes/redAttributes fields are normalized at this boundary.
  *    Includes metadata at [0], start position at [1], steps at [2+].
  * 2. Modern "steps" array: StepData format (motions.left/motions.right, stepNumber).
- *    Separate startPosition field. Needs conversion.
+ *    Separate startPlacement field. Needs conversion.
  */
 function convertToRawSequence(data: Record<string, unknown>): RawStepData[] {
   // Check for raw-format array first (legacy "beats" field)
@@ -130,7 +134,7 @@ function convertToRawSequence(data: Record<string, unknown>): RawStepData[] {
   });
 
   // Element 1: Start position (beat 0)
-  const startPos = (data["startPosition"] || data["startingPosition"]) as
+  const startPos = (data["startPlacement"] || data["startingPlacement"]) as
     | Record<string, unknown>
     | undefined;
   if (startPos) {
@@ -138,12 +142,12 @@ function convertToRawSequence(data: Record<string, unknown>): RawStepData[] {
       | Record<string, Record<string, unknown>>
       | undefined;
     const gridPos =
-      (startPos["gridPosition"] as string) ||
-      (startPos["startPosition"] as string) ||
+      (startPos["gridPlacement"] as string) ||
+      (startPos["startPlacement"] as string) ||
       "";
     result.push({
       beat: 0,
-      sequenceStartPosition: gridPos,
+      sequenceStartPlacement: gridPos,
       endPos: gridPos,
       letter: (startPos["letter"] as string) || undefined,
       leftAttributes: motions
@@ -173,8 +177,8 @@ function convertToRawSequence(data: Record<string, unknown>): RawStepData[] {
     result.push({
       beat: stepNumber,
       letter: (step["letter"] as string) || undefined,
-      startPos: (step["startPosition"] as string) || undefined,
-      endPos: (step["endPosition"] as string) || undefined,
+      startPos: (step["startPlacement"] as string) || undefined,
+      endPos: (step["endPlacement"] as string) || undefined,
       leftAttributes: motions
         ? convertMotionToRawAttributes(motionFor(motions, "left"))
         : undefined,

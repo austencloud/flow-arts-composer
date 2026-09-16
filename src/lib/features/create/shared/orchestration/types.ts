@@ -7,7 +7,7 @@ import type { ViewportManager } from '$lib/shared/device/services/viewport-manag
  */
 
 import type { DeviceDetector } from '$lib/shared/device/services/device-detector'
-import type { StartPositionManager } from "$lib/shared/create/services/start-position-manager";
+import type { StartPlacementManager } from "$lib/shared/create/services/start-placement-manager";
 import type { CreateModuleOrchestrator } from "$lib/features/create/shared/services/create-module-orchestrator";
 import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
 import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
@@ -23,7 +23,7 @@ import type { createConstructTabState } from "../state/construct-tab-state.svelt
 export interface CreateModuleOrchestrators {
   sequenceService: SequenceRepository;
   SequencePersister: SequencePersister;
-  StartPositionManager: StartPositionManager;
+  StartPlacementManager: StartPlacementManager;
   CreateModuleOrchestrator: CreateModuleOrchestrator;
   deviceDetector: DeviceDetector;
   viewportService: ViewportManager;

@@ -7,7 +7,7 @@
 
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { GridPosition, GridPositionGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement, GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import type { ConstraintPresetId } from "$lib/shared/sequence-engine/constraints";
 
@@ -45,10 +45,10 @@ export interface ExtensionAnalysis {
   canExtend: boolean;
   /** The type of extension possible */
   extensionType: ExtensionType;
-  /** Start position of the sequence */
-  startPosition: GridPosition | null;
-  /** Current end position of the sequence */
-  currentEndPosition: GridPosition | null;
+  /** Start placement of the sequence */
+  startPlacement: GridPlacement | null;
+  /** Current end placement of the sequence */
+  currentEndPlacement: GridPlacement | null;
   /** Available LOOP options for extension */
   availableLOOPOptions: LOOPOption[];
   /** Unavailable LOOP options */
@@ -65,7 +65,7 @@ export interface LetterSource {
   letter: Letter;
   /** True if user typed this letter, false if it was interpolated as a bridge */
   isOriginal: boolean;
-  /** The step index in the final sequence (1-indexed, after start position) */
+  /** The step index in the final sequence (1-indexed, after start placement) */
   stepIndex: number;
 }
 
@@ -132,15 +132,15 @@ export interface VariationConstraints {
 
 /**
  * Option for making a non-loopable sequence circular
- * When a sequence ends at a different position group than it starts,
+ * When a sequence ends at a different placement group than it starts,
  * we need bridge letters to get back to the starting group
  */
 export interface CircularizationOption {
-  /** Bridge letters needed to reach a loopable position */
+  /** Bridge letters needed to reach a loopable placement */
   bridgeLetters: Letter[];
-  /** The position we'd end at after adding bridge letters */
-  endPosition: string;
-  /** Available LOOP types for this ending position */
+  /** The placement we'd end at after adding bridge letters */
+  endPlacement: string;
+  /** Available LOOP types for this ending placement */
   availableLOOPs: LOOPOption[];
   /** Description for UI display */
   description: string;
@@ -174,13 +174,13 @@ export interface SpellResult {
 }
 
 /**
- * Information about a letter's position transitions
+ * Information about a letter's placement transitions
  * Used internally by the LetterTransitionGraph
  */
-export interface LetterPositionInfo {
+export interface LetterPlacementInfo {
   letter: Letter;
-  startPositionGroup: GridPositionGroup;
-  endPositionGroup: GridPositionGroup;
+  startPlacementGroup: GridPlacementGroup;
+  endPlacementGroup: GridPlacementGroup;
   category: LetterCategory;
 }
 
@@ -203,8 +203,8 @@ export interface SpellGenerationOptions {
   word: string;
   /** User preferences for generation */
   preferences: SpellPreferences;
-  /** Optional: specific start position to use */
-  startPosition?: GridPositionGroup;
+  /** Optional: specific start placement to use */
+  startPlacement?: GridPlacementGroup;
   /** Optional: seed for randomization (for reproducible results) */
   seed?: number;
   /**

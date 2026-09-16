@@ -25,10 +25,10 @@ import {
   Period,
   LOOP_TYPE_LABELS,
   ALL_LOOP_TYPES,
-  getLOOPOptionsForPositionPair,
+  getLOOPOptionsForPlacementPair,
   executeLOOP,
   findBridgeLettersForLoop,
-  isLOOPValidForPositionPair,
+  isLOOPValidForPlacementPair,
   detectLOOPFromSteps,
   isSequenceCircular,
   loopTypeSchema,
@@ -62,26 +62,26 @@ const orientationEnum = z.enum([
 function autoBridgeForLoop(
   originalWord: string,
   letters: string[],
-  startPosition: string,
-  endPosition: string,
+  startPlacement: string,
+  endPlacement: string,
   loopType: LOOPType,
   period: Period,
   allPictographs: Array<{
     letter: string;
-    startPosition: string;
-    endPosition: string;
+    startPlacement: string;
+    endPlacement: string;
   }>
 ): { word: string; letters: string[]; bridgeAdded: string | null } {
   // Check if already compatible
-  const positionPair = `${startPosition},${endPosition}`;
-  if (isLOOPValidForPositionPair(loopType, positionPair, period)) {
+  const placementPair = `${startPlacement},${endPlacement}`;
+  if (isLOOPValidForPlacementPair(loopType, placementPair, period)) {
     return { word: originalWord, letters, bridgeAdded: null };
   }
 
   // Find bridge letters that would make it compatible
   const bridgeOptions = findBridgeLettersForLoop(
-    startPosition,
-    endPosition,
+    startPlacement,
+    endPlacement,
     loopType,
     period,
     allPictographs
@@ -104,34 +104,70 @@ export function registerLoopTools(server: McpServer): void {
   // Tool: validate_loop_options
   server.tool(
     "validate_loop_options",
-    "Given a sequence's start/end positions, return which LOOP types are valid. LOOPs are circular sequence patterns that transform the first half/quarter of a sequence to create a complete circular motion.",
+    "Given a sequence's start/end placements, return which LOOP types are valid. LOOPs are circular sequence patterns that transform the first half/quarter of a sequence to create a complete circular motion.",
     {
+      startPlacement: z
+        .string()
+        .optional()
+        .describe(
+          "Start placement of the sequence (e.g., alpha1, beta3, gamma5)"
+        ),
+      endPlacement: z
+        .string()
+        .optional()
+        .describe(
+          "End placement of the sequence (e.g., alpha5, beta7, gamma13)"
+        ),
       startPosition: z
         .string()
+        .optional()
         .describe(
-          "Start position of the sequence (e.g., alpha1, beta3, gamma5)"
+          "Deprecated alias for startPlacement. 'Position' is the older TKA term; use startPlacement."
         ),
       endPosition: z
         .string()
+        .optional()
         .describe(
-          "End position of the sequence (e.g., alpha5, beta7, gamma13)"
+          "Deprecated alias for endPlacement. 'Position' is the older TKA term; use endPlacement."
         ),
       period: periodSchema
         .optional()
         .default("halved")
         .describe("LOOP period: halved (2x, default) or quartered (4x)"),
     },
-    async ({ startPosition, endPosition, period = "halved" }) => {
+    async ({
+      startPlacement,
+      endPlacement,
+      startPosition,
+      endPosition,
+      period = "halved",
+    }) => {
+      // Deprecated aliases: startPosition/endPosition map onto the current names.
+      startPlacement = startPlacement ?? startPosition;
+      endPlacement = endPlacement ?? endPosition;
+
+      if (!startPlacement || !endPlacement) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "Both startPlacement and endPlacement (or their deprecated startPosition/endPosition aliases) are required.",
+            },
+          ],
+          isError: true,
+        };
+      }
+
       const slice = period as Period;
-      const result = getLOOPOptionsForPositionPair(
-        startPosition,
-        endPosition,
+      const result = getLOOPOptionsForPlacementPair(
+        startPlacement,
+        endPlacement,
         slice
       );
 
       const output = {
-        startPosition,
-        endPosition,
+        startPlacement,
+        endPlacement,
         period,
         available: result.available.map((opt) => ({
           loopType: opt.loopType,
@@ -141,7 +177,7 @@ export function registerLoopTools(server: McpServer): void {
         unavailable: result.unavailable.map((opt) => ({
           loopType: opt.loopType,
           name: opt.name,
-          reason: opt.reason || "Position pair not valid for this LOOP type",
+          reason: opt.reason || "Placement pair not valid for this LOOP type",
         })),
         supportedTypes: ALL_LOOP_TYPES.map((t) => ({
           loopType: t,
@@ -219,8 +255,8 @@ export function registerLoopTools(server: McpServer): void {
       const output = {
         word: result.word,
         isCircular: circular,
-        startPosition: result.startPosition,
-        endPosition: result.endPosition,
+        startPlacement: result.startPlacement,
+        endPlacement: result.endPlacement,
         stepCount: result.steps.length - 1,
         detection: {
           components: detection.components,
@@ -324,12 +360,12 @@ export function registerLoopTools(server: McpServer): void {
       const slice = period as Period;
 
       // Retry loop: keep generating until we get a LOOP-compatible sequence
-      // The bridge letter is determined by the end position, but rebuilding may land on a different position
+      // The bridge letter is determined by the end placement, but rebuilding may land on a different placement
       let loopResult;
       let bridgeAdded: string | null = null;
 
       for (let loopAttempt = 0; loopAttempt < maxAttempts; loopAttempt++) {
-        // Regenerate base sequence each attempt (randomness may produce different end positions)
+        // Regenerate base sequence each attempt (randomness may produce different end placements)
         if (loopAttempt > 0) {
           baseResult = buildSequenceFromLetters(letters, allPictographs, 1);
           if (!baseResult.isValid) continue;
@@ -339,8 +375,8 @@ export function registerLoopTools(server: McpServer): void {
         const bridgeResult = autoBridgeForLoop(
           baseResult.word,
           letters,
-          baseResult.startPosition,
-          baseResult.endPosition,
+          baseResult.startPlacement,
+          baseResult.endPlacement,
           loopTypeValue,
           slice,
           allPictographs
@@ -359,14 +395,14 @@ export function registerLoopTools(server: McpServer): void {
 
           if (!finalResult.isValid) continue;
 
-          const positionPair = `${finalResult.startPosition},${finalResult.endPosition}`;
-          if (!isLOOPValidForPositionPair(loopTypeValue, positionPair, slice)) {
+          const placementPair = `${finalResult.startPlacement},${finalResult.endPlacement}`;
+          if (!isLOOPValidForPlacementPair(loopTypeValue, placementPair, slice)) {
             continue;
           }
           bridgeAdded = bridgeResult.bridgeAdded;
         } else {
-          const positionPair = `${baseResult.startPosition},${baseResult.endPosition}`;
-          if (!isLOOPValidForPositionPair(loopTypeValue, positionPair, slice)) {
+          const placementPair = `${baseResult.startPlacement},${baseResult.endPlacement}`;
+          if (!isLOOPValidForPlacementPair(loopTypeValue, placementPair, slice)) {
             continue;
           }
         }
@@ -390,7 +426,7 @@ export function registerLoopTools(server: McpServer): void {
           content: [
             {
               type: "text" as const,
-              text: `Failed to generate LOOP sequence: Could not find compatible position after ${maxAttempts} attempts`,
+              text: `Failed to generate LOOP sequence: Could not find compatible placement after ${maxAttempts} attempts`,
             },
           ],
           isError: true,
@@ -414,16 +450,16 @@ export function registerLoopTools(server: McpServer): void {
         period: loopResult.period,
         isCircular: loopResult.isCircular,
         stepCount: loopResult.steps.length - 1,
-        startPosition: baseResult.startPosition,
-        endPosition:
-          loopResult.steps[loopResult.steps.length - 1]?.endPosition || "",
+        startPlacement: baseResult.startPlacement,
+        endPlacement:
+          loopResult.steps[loopResult.steps.length - 1]?.endPlacement || "",
         derivedBeatIndices: loopResult.derivedBeatIndices,
         steps: loopResult.steps.map((step, i) => ({
           stepNumber: i,
           letter: step.letter,
           isDerived: loopResult.derivedBeatIndices.includes(i),
-          startPosition: step.startPosition,
-          endPosition: step.endPosition,
+          startPlacement: step.startPlacement,
+          endPlacement: step.endPlacement,
           leftMotion: {
             startLocation: step.leftMotion.startLocation,
             endLocation: step.leftMotion.endLocation,
@@ -626,8 +662,8 @@ export function registerLoopTools(server: McpServer): void {
         const bridgeResult = autoBridgeForLoop(
           baseResult.word,
           letters,
-          baseResult.startPosition,
-          baseResult.endPosition,
+          baseResult.startPlacement,
+          baseResult.endPlacement,
           loopTypeValue,
           slice,
           allPictographs
@@ -646,14 +682,14 @@ export function registerLoopTools(server: McpServer): void {
 
           if (!finalResult.isValid) continue;
 
-          const positionPair = `${finalResult.startPosition},${finalResult.endPosition}`;
-          if (!isLOOPValidForPositionPair(loopTypeValue, positionPair, slice)) {
+          const placementPair = `${finalResult.startPlacement},${finalResult.endPlacement}`;
+          if (!isLOOPValidForPlacementPair(loopTypeValue, placementPair, slice)) {
             continue;
           }
           bridgeAddedFinal = bridgeResult.bridgeAdded;
         } else {
-          const positionPair = `${baseResult.startPosition},${baseResult.endPosition}`;
-          if (!isLOOPValidForPositionPair(loopTypeValue, positionPair, slice)) {
+          const placementPair = `${baseResult.startPlacement},${baseResult.endPlacement}`;
+          if (!isLOOPValidForPlacementPair(loopTypeValue, placementPair, slice)) {
             continue;
           }
         }
@@ -677,7 +713,7 @@ export function registerLoopTools(server: McpServer): void {
           content: [
             {
               type: "text" as const,
-              text: `Failed to generate LOOP sequence: Could not find compatible position after ${maxAttempts} attempts`,
+              text: `Failed to generate LOOP sequence: Could not find compatible placement after ${maxAttempts} attempts`,
             },
           ],
           isError: true,
@@ -726,8 +762,8 @@ export function registerLoopTools(server: McpServer): void {
               (exportProfile === "print" ||
                 COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
             showFooter: Boolean(notes && notes !== "none"),
-            startPositionLayout:
-              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+            startPlacementLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPlacementLayout,
             userName,
             notes,
             birthday: birthdayDate,
@@ -963,8 +999,8 @@ export function registerLoopTools(server: McpServer): void {
         const bridgeResult = autoBridgeForLoop(
           baseResult.word,
           letters,
-          baseResult.startPosition,
-          baseResult.endPosition,
+          baseResult.startPlacement,
+          baseResult.endPlacement,
           loopTypeValue,
           slice,
           allPictographs
@@ -983,14 +1019,14 @@ export function registerLoopTools(server: McpServer): void {
 
           if (!finalResult.isValid) continue;
 
-          const positionPair = `${finalResult.startPosition},${finalResult.endPosition}`;
-          if (!isLOOPValidForPositionPair(loopTypeValue, positionPair, slice)) {
+          const placementPair = `${finalResult.startPlacement},${finalResult.endPlacement}`;
+          if (!isLOOPValidForPlacementPair(loopTypeValue, placementPair, slice)) {
             continue;
           }
           bridgeAdded = bridgeResult.bridgeAdded;
         } else {
-          const positionPair = `${baseResult.startPosition},${baseResult.endPosition}`;
-          if (!isLOOPValidForPositionPair(loopTypeValue, positionPair, slice)) {
+          const placementPair = `${baseResult.startPlacement},${baseResult.endPlacement}`;
+          if (!isLOOPValidForPlacementPair(loopTypeValue, placementPair, slice)) {
             continue;
           }
         }
@@ -1014,7 +1050,7 @@ export function registerLoopTools(server: McpServer): void {
           content: [
             {
               type: "text" as const,
-              text: `Failed to generate LOOP sequence: Could not find compatible position after ${maxAttempts} attempts`,
+              text: `Failed to generate LOOP sequence: Could not find compatible placement after ${maxAttempts} attempts`,
             },
           ],
           isError: true,
@@ -1062,8 +1098,8 @@ export function registerLoopTools(server: McpServer): void {
               (exportProfile === "print" ||
                 COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
             showFooter: Boolean(notes && notes !== "none"),
-            startPositionLayout:
-              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+            startPlacementLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPlacementLayout,
             userName,
             notes,
             birthday: birthdayDate,

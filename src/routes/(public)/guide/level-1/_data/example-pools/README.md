@@ -30,7 +30,7 @@ instances.
 `pool-adapter.ts` exports a factory, `buildPools(pool)`, that turns any page's
 pool JSON into `{ pools: Record<string, PoolEntry[]>, flagged: FlaggedEntry[] }`.
 It uses the same canonical primitives the hand-authored content uses
-(`createMotionData`, `getGridPositionFromLocations`, `bakeReversals`) so a
+(`createMotionData`, `getGridPlacementFromLocations`, `bakeReversals`) so a
 pooled example renders byte-for-byte like an authored one. A candidate that
 fails to adapt (unmapped letter, non-inverting position) is excluded from its
 slot and recorded in `flagged` - one bad candidate never breaks the page.

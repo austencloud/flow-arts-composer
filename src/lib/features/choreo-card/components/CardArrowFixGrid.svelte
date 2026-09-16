@@ -20,7 +20,7 @@
     sequence: SequenceData;
     leftPropType: PropType;
     rightPropType: PropType;
-    includeStartPosition?: boolean;
+    includeStartPlacement?: boolean;
     onSelect: (step: StepData) => void;
   }
 
@@ -28,7 +28,7 @@
     sequence,
     leftPropType,
     rightPropType,
-    includeStartPosition = true,
+    includeStartPlacement = true,
     onSelect,
   }: Props = $props();
 
@@ -36,19 +36,19 @@
     onSelect(withEffectivePropTypes(step, leftPropType, rightPropType));
   }
 
-  // StepGrid uses 1-based step numbers (0 = start position).
+  // StepGrid uses 1-based step numbers (0 = start placement).
   function handleStepClick(stepNumber: number): void {
     const step = sequence.steps?.[stepNumber - 1];
     if (step) emit(step);
   }
 
   function handleStartClick(): void {
-    const start = sequence.startPosition;
+    const start = sequence.startPlacement;
     if (!start) return;
-    // Drop the start-position-only discriminator and route through the
+    // Drop the start-placement-only discriminator and route through the
     // factory: it fills defaults + any missing hand with an invisible
     // placeholder (both-required canonical Step shape).
-    const { isStartPosition: _isStart, ...pictograph } = start;
+    const { isStartPlacement: _isStart, ...pictograph } = start;
     const step: StepData = createStepData({
       ...pictograph,
       stepNumber: 0,
@@ -62,7 +62,7 @@
 <div class="fix-grid-host">
   <StepGrid
     steps={sequence.steps ?? []}
-    startPosition={includeStartPosition ? sequence.startPosition ?? null : null}
+    startPlacement={includeStartPlacement ? sequence.startPlacement ?? null : null}
     onStepClick={handleStepClick}
     onStartClick={handleStartClick}
     leftPropTypeOverride={leftPropType}

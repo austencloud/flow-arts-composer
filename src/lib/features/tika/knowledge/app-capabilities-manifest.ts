@@ -29,7 +29,7 @@ export const APP_CAPABILITIES: AppCapability[] = [
     tab: "Constructor",
     keywords: ["build", "construct", "manual", "beat", "add beat", "create sequence", "builder"],
     instructions:
-      "Go to Create > Constructor tab. Pick a start position, then add beats one at a time by selecting hand motions for each step.",
+      "Go to Create > Constructor tab. Pick a start placement, then add beats one at a time by selecting hand motions for each step.",
   },
   {
     id: "create-assemble",

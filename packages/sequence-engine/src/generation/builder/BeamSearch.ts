@@ -37,7 +37,7 @@ import type {
   Orientation,
 } from "../../core/types/sequence-engine-types.js";
 import { LetterClassifier } from "../../core/letters/LetterClassifier.js";
-import type { ReachabilityResult } from "../reachability/PositionReachabilityAnalyzer.js";
+import type { ReachabilityResult } from "../reachability/PlacementReachabilityAnalyzer.js";
 import {
   relatedRotationDirection,
   type HandRelationshipOptions,
@@ -179,14 +179,14 @@ export interface BeamSearchResult {
   /** Whether a valid sequence was found */
   success: boolean;
 
-  /** The sequence steps (including start position at index 0) */
+  /** The sequence steps (including start placement at index 0) */
   steps: PictographData[];
 
   /** Variation indices for each step */
   variationIndices: number[];
 
-  /** Current end position of the sequence */
-  endPosition: string;
+  /** Current end placement of the sequence */
+  endPlacement: string;
 
   /** Constraint satisfaction report */
   constraintReport: ConstraintReport;
@@ -286,10 +286,10 @@ export class BeamSearch {
 
   search(
     letters: string[],
-    startPosition: string | undefined,
+    startPlacement: string | undefined,
     constraintSet: ConstraintSet,
     beamWidth?: number,
-    requiredEndPositions?: Set<string>,
+    requiredEndPlacements?: Set<string>,
     turnSource?: TurnSource,
     propContinuity?: PropContinuityMode
   ): BeamSearchResult {
@@ -306,10 +306,10 @@ export class BeamSearch {
     const firstLetter = letters[0]!;
 
     // Step 1: Find first letter variations
-    const firstLetterVariations = startPosition
+    const firstLetterVariations = startPlacement
       ? this.variationProvider.getVariations(
           firstLetter,
-          startPosition,
+          startPlacement,
           this.gridMode
         )
       : this.getAllVariationsForLetter(firstLetter);
@@ -342,8 +342,8 @@ export class BeamSearch {
     for (const scored of firstLetterScores.slice(0, config.beamWidth)) {
       if (!scored.hardConstraintsSatisfied) continue;
 
-      const startPictograph = this.findStartPosition(
-        scored.variation.startPosition,
+      const startPictograph = this.findStartPlacement(
+        scored.variation.startPlacement,
         scored.variation
       );
       if (startPictograph) {
@@ -384,23 +384,23 @@ export class BeamSearch {
       const nextBeam: SearchState[] = [];
 
       for (const state of beam) {
-        // Find variations at current end position
+        // Find variations at current end placement
         let validVariations = this.variationProvider.getVariations(
           letter,
-          state.currentEndPosition,
+          state.currentEndPlacement,
           this.gridMode
         );
 
-        // On the final letter, if LOOP requires specific end positions,
+        // On the final letter, if LOOP requires specific end placements,
         // only keep variations that land there.
         const isFinalLetter = i === letters.length - 1;
         if (
           isFinalLetter &&
-          requiredEndPositions &&
-          requiredEndPositions.size > 0
+          requiredEndPlacements &&
+          requiredEndPlacements.size > 0
         ) {
           validVariations = validVariations.filter((p) =>
-            requiredEndPositions.has(p.endPosition)
+            requiredEndPlacements.has(p.endPlacement)
           );
         }
 
@@ -506,18 +506,18 @@ export class BeamSearch {
   /**
    *
    * Instead of placing specific letters, discovers available letters at each
-   * position and picks the best one according to constraint scoring. No bridges
-   * are needed since every transition is a direct step from the current position.
+   * placement and picks the best one according to constraint scoring. No bridges
+   * are needed since every transition is a direct step from the current placement.
    */
   searchByLength(
     length: number,
-    startPosition: string | undefined,
+    startPlacement: string | undefined,
     constraintSet: ConstraintSet,
     beamWidth?: number,
-    requiredEndPositions?: Set<string>,
-    loopPositionMap?: Record<string, string[]>,
+    requiredEndPlacements?: Set<string>,
+    loopPlacementMap?: Record<string, string[]>,
     options?: {
-      blockedStartPositions?: Set<string>;
+      blockedStartPlacements?: Set<string>;
       mustNotContainLetters?: Set<string>;
       mustContainLetters?: Set<string>;
     },
@@ -559,23 +559,23 @@ export class BeamSearch {
       candidatePool = candidatePool.filter((p) => !excluded.has(p.letter));
     }
 
-    // blockedStartPositions only constrains which position the FIRST step
+    // blockedStartPlacements only constrains which placement the FIRST step
     // can start from. It must NOT filter the shared candidate pool — steps
-    // 2+ need variations at every position the sequence may travel to.
+    // 2+ need variations at every placement the sequence may travel to.
     // If we filtered the pool globally, step 2 would find zero candidates
-    // whenever step 1 transitioned to a position that was "blocked."
+    // whenever step 1 transitioned to a placement that was "blocked."
     let firstStepCandidates: PictographData[];
-    if (startPosition) {
+    if (startPlacement) {
       firstStepCandidates = candidatePool.filter(
-        (p) => p.startPosition === startPosition
+        (p) => p.startPlacement === startPlacement
       );
     } else if (
-      options?.blockedStartPositions &&
-      options.blockedStartPositions.size > 0
+      options?.blockedStartPlacements &&
+      options.blockedStartPlacements.size > 0
     ) {
-      const blocked = options.blockedStartPositions;
+      const blocked = options.blockedStartPlacements;
       firstStepCandidates = candidatePool.filter(
-        (p) => !blocked.has(p.startPosition)
+        (p) => !blocked.has(p.startPlacement)
       );
     } else {
       firstStepCandidates = candidatePool;
@@ -584,34 +584,34 @@ export class BeamSearch {
     const reachableStarts = reachability?.reachableAt[0];
     if (reachableStarts) {
       firstStepCandidates = firstStepCandidates.filter((p) =>
-        reachableStarts.has(p.startPosition)
+        reachableStarts.has(p.startPlacement)
       );
     }
 
-    // A LOOP position map is a start→end relation, not merely a source of
+    // A LOOP placement map is a start→end relation, not merely a source of
     // optional end hints. Remove starts that have no valid relation before
     // scoring so an invalid top-ranked start cannot make the map disappear.
     if (
-      (!requiredEndPositions || requiredEndPositions.size === 0) &&
-      loopPositionMap
+      (!requiredEndPlacements || requiredEndPlacements.size === 0) &&
+      loopPlacementMap
     ) {
       firstStepCandidates = firstStepCandidates.filter((p) => {
-        const validEnds = loopPositionMap[p.startPosition];
+        const validEnds = loopPlacementMap[p.startPlacement];
         return validEnds !== undefined && validEnds.length > 0;
       });
     }
 
-    if (length === 1 && requiredEndPositions && requiredEndPositions.size > 0) {
-      const endSet = requiredEndPositions;
+    if (length === 1 && requiredEndPlacements && requiredEndPlacements.size > 0) {
+      const endSet = requiredEndPlacements;
       firstStepCandidates = firstStepCandidates.filter((p) =>
-        endSet.has(p.endPosition)
+        endSet.has(p.endPlacement)
       );
-    } else if (length === 1 && loopPositionMap) {
+    } else if (length === 1 && loopPlacementMap) {
       // A single-step state never enters the expansion loop below, so enforce
       // its start-specific endpoint directly on the first variation.
       firstStepCandidates = firstStepCandidates.filter((p) => {
-        const validEnds = loopPositionMap[p.startPosition];
-        return validEnds?.includes(p.endPosition) ?? false;
+        const validEnds = loopPlacementMap[p.startPlacement];
+        return validEnds?.includes(p.endPlacement) ?? false;
       });
     }
 
@@ -639,8 +639,8 @@ export class BeamSearch {
     for (const scored of firstScores.slice(0, config.beamWidth)) {
       if (!scored.hardConstraintsSatisfied) continue;
 
-      const startPictograph = this.findStartPosition(
-        scored.variation.startPosition,
+      const startPictograph = this.findStartPlacement(
+        scored.variation.startPlacement,
         scored.variation
       );
       if (startPictograph) {
@@ -671,15 +671,15 @@ export class BeamSearch {
     }
 
     // When seed length is 1, the main loop below doesn't run (i starts at 1,
-    // length is 1). The end-position filter inside the loop never fires, so we
+    // length is 1). The end-placement filter inside the loop never fires, so we
     // must enforce it here. Without this, single-step seeds for quartered LOOPs
-    // can end at any position, causing the executor to reject the sequence.
-    if (length === 1 && requiredEndPositions && requiredEndPositions.size > 0) {
-      beam = beam.filter((s) => requiredEndPositions.has(s.currentEndPosition));
+    // can end at any placement, causing the executor to reject the sequence.
+    if (length === 1 && requiredEndPlacements && requiredEndPlacements.size > 0) {
+      beam = beam.filter((s) => requiredEndPlacements.has(s.currentEndPlacement));
 
       if (beam.length === 0) {
         return this.failResult(
-          `No first-step variation ends at required positions [${Array.from(requiredEndPositions).join(", ")}] for single-step seed`,
+          `No first-step variation ends at required placements [${Array.from(requiredEndPlacements).join(", ")}] for single-step seed`,
           statesExplored,
           beamPrunings
         );
@@ -691,17 +691,17 @@ export class BeamSearch {
       const nextBeam: SearchState[] = [];
 
       for (const state of beam) {
-        // Find all non-Type6 variations at the current end position
+        // Find all non-Type6 variations at the current end placement
         let candidates = candidatePool.filter(
-          (p) => p.startPosition === state.currentEndPosition
+          (p) => p.startPlacement === state.currentEndPlacement
         );
 
-        // Reachability-guided filtering: if we pre-computed which positions
-        // are viable at each step, filter candidates so their endPosition
+        // Reachability-guided filtering: if we pre-computed which placements
+        // are viable at each step, filter candidates so their endPlacement
         // lands in the reachable set for the NEXT step. This prevents the
         // beam from wasting lanes on paths that dead-end at a future step.
         //
-        // On the final step, filter to the LOOP-required end positions
+        // On the final step, filter to the LOOP-required end placements
         // directly (the reachability backward pass already encodes this,
         // but we keep the explicit check as a fallback for when reachability
         // wasn't computed).
@@ -710,22 +710,22 @@ export class BeamSearch {
           const nextReachable = reachability.reachableAt[i + 1];
           if (nextReachable) {
             candidates = candidates.filter((p) =>
-              nextReachable.has(p.endPosition)
+              nextReachable.has(p.endPlacement)
             );
           }
         } else if (isFinalStep) {
-          if (requiredEndPositions && requiredEndPositions.size > 0) {
+          if (requiredEndPlacements && requiredEndPlacements.size > 0) {
             candidates = candidates.filter((p) =>
-              requiredEndPositions.has(p.endPosition)
+              requiredEndPlacements.has(p.endPlacement)
             );
-          } else if (loopPositionMap) {
-            const sequenceStart = state.steps[0]?.startPosition;
+          } else if (loopPlacementMap) {
+            const sequenceStart = state.steps[0]?.startPlacement;
             const validEnds = sequenceStart
-              ? loopPositionMap[sequenceStart]
+              ? loopPlacementMap[sequenceStart]
               : undefined;
             if (!validEnds || validEnds.length === 0) continue;
             candidates = candidates.filter((p) =>
-              validEnds.includes(p.endPosition)
+              validEnds.includes(p.endPlacement)
             );
           }
         }
@@ -844,7 +844,7 @@ export class BeamSearch {
 
         const bridgeVariations = this.variationProvider.getVariations(
           bridgeOption.letter,
-          state.currentEndPosition,
+          state.currentEndPlacement,
           this.gridMode
         );
         if (bridgeVariations.length === 0) continue;
@@ -872,10 +872,10 @@ export class BeamSearch {
         );
         statesExplored++;
 
-        // Find target letter from bridge's end position
+        // Find target letter from bridge's end placement
         const targetVariations = this.variationProvider.getVariations(
           toLetter,
-          stateWithBridge.currentEndPosition,
+          stateWithBridge.currentEndPlacement,
           this.gridMode
         );
         if (targetVariations.length === 0) continue;
@@ -920,7 +920,7 @@ export class BeamSearch {
       for (const bridgeLetter of multiBridgePath) {
         const bridgeVariations = this.variationProvider.getVariations(
           bridgeLetter,
-          currentState.currentEndPosition,
+          currentState.currentEndPlacement,
           this.gridMode
         );
         if (bridgeVariations.length === 0) {
@@ -958,10 +958,10 @@ export class BeamSearch {
         return { newStates, statesExplored };
       }
 
-      // Find target letter from final bridge's end position
+      // Find target letter from final bridge's end placement
       const targetVariations = this.variationProvider.getVariations(
         toLetter,
-        currentState.currentEndPosition,
+        currentState.currentEndPlacement,
         this.gridMode
       );
       if (targetVariations.length === 0) {
@@ -995,8 +995,8 @@ export class BeamSearch {
       .filter((p) => p.letter === letter);
   }
 
-  private findStartPosition(
-    position: string,
+  private findStartPlacement(
+    placement: string,
     firstVariation: PictographData
   ): { variation: PictographData; index: number } | null {
     const allVariations = this.variationProvider.getAllVariations(
@@ -1005,18 +1005,18 @@ export class BeamSearch {
     const validStarts = allVariations.filter(
       (p) =>
         this.letterClassifier.isType6(p.letter) &&
-        p.startPosition === position &&
-        p.endPosition === position
+        p.startPlacement === placement &&
+        p.endPlacement === placement
     );
 
     if (validStarts.length === 0) {
-      const startLetter = this.staticLetterForPosition(position);
+      const startLetter = this.staticLetterForPlacement(placement);
       if (!startLetter) return null;
       return {
         variation: {
           letter: startLetter,
-          startPosition: position,
-          endPosition: position,
+          startPlacement: placement,
+          endPlacement: placement,
           timing: "together",
           direction: "same",
           leftMotion: {
@@ -1047,14 +1047,14 @@ export class BeamSearch {
     return { variation, index };
   }
 
-  private staticLetterForPosition(position: string): string | null {
-    if (position.startsWith("alpha")) return "α";
-    if (position.startsWith("beta")) return "β";
-    if (position.startsWith("gamma")) return "γ";
-    if (position.startsWith("zeta")) return "ζ";
-    if (position.startsWith("eta")) return "η";
-    if (position.startsWith("tau")) return "τ";
-    if (position.startsWith("terra")) return "⊕";
+  private staticLetterForPlacement(placement: string): string | null {
+    if (placement.startsWith("alpha")) return "α";
+    if (placement.startsWith("beta")) return "β";
+    if (placement.startsWith("gamma")) return "γ";
+    if (placement.startsWith("zeta")) return "ζ";
+    if (placement.startsWith("eta")) return "η";
+    if (placement.startsWith("tau")) return "τ";
+    if (placement.startsWith("terra")) return "⊕";
     return null;
   }
 
@@ -1065,15 +1065,15 @@ export class BeamSearch {
     if (steps.length === 0) return steps;
 
     const result: PictographData[] = [];
-    const startPosition = steps[0];
-    if (!startPosition) return steps;
+    const startPlacement = steps[0];
+    if (!startPlacement) return steps;
 
-    let leftOrientation = (startPosition.leftMotion.endOrientation ||
+    let leftOrientation = (startPlacement.leftMotion.endOrientation ||
       "in") as Orientation;
-    let rightOrientation = (startPosition.rightMotion.endOrientation ||
+    let rightOrientation = (startPlacement.rightMotion.endOrientation ||
       "in") as Orientation;
 
-    result.push(startPosition);
+    result.push(startPlacement);
 
     for (let i = 1; i < steps.length; i++) {
       const step = steps[i];
@@ -1136,7 +1136,7 @@ export class BeamSearch {
       success: !isPartial && report.satisfied,
       steps: stepsWithOrientations,
       variationIndices: state.stepScores.map((s) => s.variationIndex),
-      endPosition: state.currentEndPosition,
+      endPlacement: state.currentEndPlacement,
       constraintReport: report,
       statesExplored,
       beamPrunings,
@@ -1154,7 +1154,7 @@ export class BeamSearch {
       success: false,
       steps: [],
       variationIndices: [],
-      endPosition: "",
+      endPlacement: "",
       constraintReport: { score: 0, satisfied: false, details: [] },
       error,
       statesExplored,

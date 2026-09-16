@@ -37,10 +37,10 @@ export function registerPreferenceTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe("Show TnD (timing & direction) glyph"),
-      showPositions: z
+      showPlacements: z
         .boolean()
         .optional()
-        .describe("Show start→end positions glyph"),
+        .describe("Show start→end placements glyph"),
       showReversals: z
         .boolean()
         .optional()
@@ -92,8 +92,8 @@ export function registerPreferenceTools(server: McpServer): void {
       if (newPrefs.size !== undefined) updates.size = newPrefs.size;
       if (newPrefs.showTKA !== undefined) updates.showTKA = newPrefs.showTKA;
       if (newPrefs.showTND !== undefined) updates.showTND = newPrefs.showTND;
-      if (newPrefs.showPositions !== undefined)
-        updates.showPositions = newPrefs.showPositions;
+      if (newPrefs.showPlacements !== undefined)
+        updates.showPlacements = newPrefs.showPlacements;
       if (newPrefs.showReversals !== undefined)
         updates.showReversals = newPrefs.showReversals;
       if (newPrefs.showGrid !== undefined) updates.showGrid = newPrefs.showGrid;
@@ -157,7 +157,7 @@ export function registerPreferenceTools(server: McpServer): void {
           `size:${prefs.size}`,
           `tka:${prefs.showTKA}`,
           `tnd:${prefs.showTND}`,
-          `pos:${prefs.showPositions}`,
+          `pos:${prefs.showPlacements}`,
           `rev:${prefs.showReversals}`,
           `grid:${prefs.showGrid}`,
           `left:${prefs.showLeftMotion}`,
@@ -178,7 +178,7 @@ Display:
 Glyphs:
   • showTKA: ${prefs.showTKA} (letter + turn numbers)
   • showTND: ${prefs.showTND} (timing glyph)
-  • showPositions: ${prefs.showPositions} (start→end)
+  • showPlacements: ${prefs.showPlacements} (start→end)
   • showReversals: ${prefs.showReversals}
 
 Grid:

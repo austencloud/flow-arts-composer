@@ -43,15 +43,15 @@ const NONE: VariantLiberties = {
 };
 
 /**
- * A step's SPATIAL content — position labels, per-hand locations, rotation
+ * A step's SPATIAL content — placement labels, per-hand locations, rotation
  * direction, motion type. Orientations are deliberately EXCLUDED: see the
  * ground-truth test for why the twin's orientations are provisional.
  */
 function spatialKey(step: StepData): string {
   return [
-    step.startPosition,
+    step.startPlacement,
     ">",
-    step.endPosition,
+    step.endPlacement,
     ...HANDS.map((hand) => {
       const m = step.motions[hand];
       return `${hand}:${m.motionType}/${m.rotationDirection}/${m.startLocation}>${m.endLocation}`;
@@ -66,7 +66,7 @@ function spatialKeys(seq: SequenceData): string[] {
 /**
  * The cyclic offset k for which `rotate(actual, k)` equals `expected`, or null
  * when no rotation aligns them. A twin starts at its source's LAST end
- * position, so a loop comparison has to allow for the phase shift.
+ * placement, so a loop comparison has to allow for the phase shift.
  */
 function cyclicOffset(actual: string[], expected: string[]): number | null {
   if (actual.length !== expected.length) return null;
@@ -102,8 +102,8 @@ async function assertRealDataframeRows(
 ): Promise<void> {
   const rowKey = (
     letter: string | null,
-    startPosition: string | null,
-    endPosition: string | null,
+    startPlacement: string | null,
+    endPlacement: string | null,
     left: MotionData,
     right: MotionData
   ): string => {
@@ -111,7 +111,7 @@ async function assertRealDataframeRows(
       [m.motionType, m.rotationDirection, m.startLocation, m.endLocation].join(
         "/"
       );
-    return [letter, startPosition, endPosition, hand(left), hand(right)].join(
+    return [letter, startPlacement, endPlacement, hand(left), hand(right)].join(
       " | "
     );
   };
@@ -125,8 +125,8 @@ async function assertRealDataframeRows(
       variants.map((v) =>
         rowKey(
           v.letter ?? null,
-          v.startPosition ?? null,
-          v.endPosition ?? null,
+          v.startPlacement ?? null,
+          v.endPlacement ?? null,
           v.motions.left!,
           v.motions.right!
         )
@@ -134,8 +134,8 @@ async function assertRealDataframeRows(
     );
     const key = rowKey(
       step.letter,
-      step.startPosition,
-      step.endPosition,
+      step.startPlacement,
+      step.endPlacement,
       step.motions.left,
       step.motions.right
     );
@@ -365,8 +365,8 @@ describe("rotation-faithful twin — ground truth", () => {
     twin.steps.forEach((step, i) => {
       const origin = source[i]!;
       expect(step.stepNumber).toBe(i + 1);
-      expect(step.startPosition).toBe(origin.endPosition);
-      expect(step.endPosition).toBe(origin.startPosition);
+      expect(step.startPlacement).toBe(origin.endPlacement);
+      expect(step.endPlacement).toBe(origin.startPlacement);
       for (const hand of HANDS) {
         expect(step.motions[hand].startLocation).toBe(
           origin.motions[hand].endLocation
@@ -381,13 +381,13 @@ describe("rotation-faithful twin — ground truth", () => {
     });
   });
 
-  it("holds the twin's start position at its own first step", async () => {
+  it("holds the twin's start placement at its own first step", async () => {
     const twin = await buildRotationFaithfulTwin(GGGG_CW);
     const first = twin.steps[0]!;
-    expect(twin.startPosition?.startPosition).toBe(first.startPosition);
-    expect(twin.startPosition?.gridPosition).toBe(first.startPosition);
+    expect(twin.startPlacement?.startPlacement).toBe(first.startPlacement);
+    expect(twin.startPlacement?.gridPlacement).toBe(first.startPlacement);
     for (const hand of HANDS) {
-      const hold = twin.startPosition!.motions[hand]!;
+      const hold = twin.startPlacement!.motions[hand]!;
       expect(hold.motionType).toBe("static");
       expect(hold.startLocation).toBe(first.motions[hand].startLocation);
       expect(hold.endLocation).toBe(first.motions[hand].startLocation);
@@ -416,8 +416,8 @@ describe("rotation-faithful twin — ground truth", () => {
 
   it("produces real dataframe rows, not just plausible ones", async () => {
     // The canon check: a letter lookup can only succeed on a configuration the
-    // dataframe actually contains, but the POSITION labels are computed
-    // separately — this asserts the whole (letter, positions, both motions) row
+    // dataframe actually contains, but the PLACEMENT labels are computed
+    // separately — this asserts the whole (letter, placements, both motions) row
     // exists, the same membership test the fixtures are held to.
     for (const card of [GGGG_CW, FALG]) {
       const twin = await buildRotationFaithfulTwin(card);
@@ -425,7 +425,7 @@ describe("rotation-faithful twin — ground truth", () => {
     }
   });
 
-  it("is an involution on positions, locations and rotations", async () => {
+  it("is an involution on placements, locations and rotations", async () => {
     for (const card of [GGGG_CW, FALG, PHI_PSI_LOOP]) {
       const roundTrip = await buildRotationFaithfulTwin(
         await buildRotationFaithfulTwin(card)
@@ -454,7 +454,7 @@ describe("rotation-faithful twin — dash and static material", () => {
     // of re-deriving from the hand path.
     //
     // Measured, not assumed: the word is preserved but the loop is NOT the same
-    // material — it visits different position instances (it opens beta5>alpha1,
+    // material — it visits different placement instances (it opens beta5>alpha1,
     // where the source opens beta5>alpha5), so this is a genuine second bridge
     // card, not a no-op.
     const twin = await buildRotationFaithfulTwin(PHI_PSI_LOOP);

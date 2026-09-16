@@ -13,7 +13,7 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { deepLinker } from "$lib/shared/navigation/services/deep-linker";
 import { handleModuleChange } from "$lib/shared/navigation-coordinator/navigation-coordinator.svelte";
 import { MUSEUM_EXHIBIT_SEQUENCES } from "../data/museum-exhibit-sequences";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 
 const PENDING_EDIT_KEY = "tka-pending-edit-sequence";
 
@@ -29,8 +29,8 @@ export function buildMuseumSequenceData(
     name: name ?? `Archive: ${museumSeq.word}`,
     word: museumSeq.word,
     steps: [...(museumSeq.steps as readonly StepData[])],
-    ...(museumSeq.startPosition
-      ? { startPosition: createStartPositionData(museumSeq.startPosition) }
+    ...(museumSeq.startPlacement
+      ? { startPlacement: createStartPlacementData(museumSeq.startPlacement) }
       : {}),
     isCircular: true,
     tags: ["kinetic-archive"],

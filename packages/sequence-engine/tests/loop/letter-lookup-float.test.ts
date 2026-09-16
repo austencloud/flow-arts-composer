@@ -4,8 +4,8 @@ import { findLetterByMotions } from "../../src/loop/LetterLookup.js";
 const pictographs = [
   {
     letter: "A",
-    startPosition: "alpha1",
-    endPosition: "alpha3",
+    startPlacement: "alpha1",
+    endPlacement: "alpha3",
     timing: "together",
     direction: "same",
     leftMotion: {

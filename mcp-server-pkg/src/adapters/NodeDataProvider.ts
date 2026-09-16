@@ -127,8 +127,8 @@ export class NodeDataProvider implements ISequenceDataProvider {
 
         variations.push({
           letter: row.letter,
-          startPosition: row.startPosition,
-          endPosition: row.endPosition,
+          startPlacement: row.startPlacement,
+          endPlacement: row.endPlacement,
           leftMotionType,
           leftStartLocation,
           leftEndLocation,

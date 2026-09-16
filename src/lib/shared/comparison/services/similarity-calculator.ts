@@ -25,7 +25,7 @@ import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/mot
 const DEFAULT_OPTIONS: Required<SimilarityOptions> = {
   wordWeight: 0.2,
   motionWeight: 0.35,
-  positionWeight: 0.25,
+  placementWeight: 0.25,
   structuralWeight: 0.2,
   minSubsequenceLength: 2,
   considerSpatialTransforms: true,
@@ -47,7 +47,7 @@ export class SimilarityCalculator {
     // Calculate component similarities
     const wordSimilarity = this.computeWordSimilarity(seqA.word, seqB.word);
     const motionSimilarity = this.computeMotionSimilarity(seqA, seqB, opts);
-    const positionSimilarity = this.computePositionSimilarity(seqA, seqB);
+    const placementSimilarity = this.computePlacementSimilarity(seqA, seqB);
     const structuralSimilarity = this.computeStructuralSimilarity(seqA, seqB);
 
     const stepByBeatScores = this.computeBeatByBeatScores(seqA, seqB);
@@ -64,7 +64,7 @@ export class SimilarityCalculator {
     const overallScore =
       wordSimilarity * opts.wordWeight +
       motionSimilarity * opts.motionWeight +
-      positionSimilarity * opts.positionWeight +
+      placementSimilarity * opts.placementWeight +
       structuralSimilarity * opts.structuralWeight;
 
     // Generate summary
@@ -78,7 +78,7 @@ export class SimilarityCalculator {
       overallScore,
       wordSimilarity,
       motionSimilarity,
-      positionSimilarity,
+      placementSimilarity,
       structuralSimilarity,
       stepByBeatScores,
       commonSubsequences,
@@ -290,7 +290,7 @@ export class SimilarityCalculator {
     return alignment.score;
   }
 
-  private computePositionSimilarity(
+  private computePlacementSimilarity(
     seqA: SequenceData,
     seqB: SequenceData
   ): number {
@@ -316,10 +316,10 @@ export class SimilarityCalculator {
       const sigA = this.stepSignatureGenerator.generateSignature(stepA);
       const sigB = this.stepSignatureGenerator.generateSignature(stepB);
 
-      if (sigA.startPositionGroup === sigB.startPositionGroup) {
+      if (sigA.startPlacementGroup === sigB.startPlacementGroup) {
         matches += 0.5;
       }
-      if (sigA.endPositionGroup === sigB.endPositionGroup) {
+      if (sigA.endPlacementGroup === sigB.endPlacementGroup) {
         matches += 0.5;
       }
     }
@@ -400,8 +400,8 @@ export class SimilarityCalculator {
 
     let motionTypeMatches = 0;
     let motionTypeMismatches = 0;
-    let positionGroupMatches = 0;
-    let positionGroupMismatches = 0;
+    let placementGroupMatches = 0;
+    let placementGroupMismatches = 0;
     let perfectBeatMatches = 0;
     let partialBeatMatches = 0;
     let beatMismatches = 0;
@@ -445,10 +445,10 @@ export class SimilarityCalculator {
       const sigA = this.stepSignatureGenerator.generateSignature(stepA);
       const sigB = this.stepSignatureGenerator.generateSignature(stepB);
 
-      if (sigA.startPositionGroup === sigB.startPositionGroup) {
-        positionGroupMatches++;
+      if (sigA.startPlacementGroup === sigB.startPlacementGroup) {
+        placementGroupMatches++;
       } else {
-        positionGroupMismatches++;
+        placementGroupMismatches++;
       }
 
       // Beat score classification
@@ -474,8 +474,8 @@ export class SimilarityCalculator {
       wordEditDistance: this.levenshteinDistance(seqA.word, seqB.word),
       motionTypeMatches,
       motionTypeMismatches,
-      positionGroupMatches,
-      positionGroupMismatches,
+      placementGroupMatches,
+      placementGroupMismatches,
       perfectBeatMatches,
       partialBeatMatches,
       beatMismatches,

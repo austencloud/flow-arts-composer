@@ -172,15 +172,15 @@ export function fuseSequences(
 		: buildMinimalSteps(rightLocations, targetLength);
 
 	// Build per-step step pairings. Without full motion analysis we mark
-	// letter and positions as null/false - downstream hydration fills them.
+	// letter and placements as null/false - downstream hydration fills them.
 	const stepPairings: StepPairingData[] = [];
 	for (let i = 0; i < targetLength; i++) {
 		stepPairings.push({
 			letter: null,
 			leftReversal: false,
 			rightReversal: false,
-			startPosition: null,
-			endPosition: null,
+			startPlacement: null,
+			endPlacement: null,
 		});
 	}
 
@@ -226,8 +226,8 @@ export function fuseSequences(
 			rightReversal: stepPairings[i]!.rightReversal,
 			isBlank: false,
 			letter: stepPairings[i]!.letter ?? null,
-			startPosition: null,
-			endPosition: null,
+			startPlacement: null,
+			endPlacement: null,
 			// Rehydrate through the canonical owner so the fused motions carry the
 			// same authored fields the two-hand path carries: prefloat provenance
 			// (a float's rotationDirection is noRotation, so dropping it silently
@@ -266,7 +266,7 @@ export function fuseSequences(
 	// Fuse normally receives two already-verified one-hand LOOPs, but this service
 	// also accepts bare hand paths. Measure the combined seam instead of asserting
 	// it, then let the canonical detector compare step 1 with the tail only when
-	// the resulting motion really closes in both position and orientation.
+	// the resulting motion really closes in both placement and orientation.
 	const withCircularity = {
 		...sequence,
 		isCircular: isSeamlesslyLoopable(sequence),

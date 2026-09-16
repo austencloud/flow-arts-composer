@@ -10,7 +10,7 @@ import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/mot
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   GridMode,
-  type GridPosition,
+  type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { LOOPOption } from "./loop-validator";
 import type { OrientationAlignment } from "./orientation-alignment-calculator";
@@ -39,20 +39,20 @@ export interface ExtensionAnalysis {
   canExtend: boolean;
   /** The type of extension possible */
   extensionType: ExtensionType;
-  /** Start position of the sequence */
-  startPosition: GridPosition | null;
-  /** Current end position of the sequence */
-  currentEndPosition: GridPosition | null;
+  /** Start placement of the sequence */
+  startPlacement: GridPlacement | null;
+  /** Current end placement of the sequence */
+  currentEndPlacement: GridPlacement | null;
   /** Available LOOP options for extension */
   availableLOOPOptions: LOOPOption[];
   /** Unavailable LOOP options */
   unavailableLOOPOptions: LOOPOption[];
   /**
-   * Set when the sequence returns to its start POSITION but not its start
+   * Set when the sequence returns to its start PLACEMENT but not its start
    * ORIENTATION. `count` is how many total repeats of the sequence bring the
    * props back to their start orientation, so repeating it verbatim closes
    * the loop. Null when orientation already closes (count 1), or when the
-   * sequence does not return to its start position at all.
+   * sequence does not return to its start placement at all.
    */
   orientationRepeat: { count: 2 | 4 | 8 } | null;
   /** Human-readable description of the extension */
@@ -74,7 +74,7 @@ export interface ExtensionOptions {
 }
 
 /**
- * Describes the rotation relationship between end position and start position.
+ * Describes the rotation relationship between end placement and start placement.
  */
 export type RotationRelation = "exact" | "quarter" | "half";
 
@@ -82,17 +82,17 @@ export type RotationRelation = "exact" | "quarter" | "half";
  * Option for making a non-loopable sequence circular via bridge letter.
  */
 export interface CircularizationOption {
-  /** Bridge letters needed to reach a loopable position */
+  /** Bridge letters needed to reach a loopable placement */
   bridgeLetters: Letter[];
-  /** The position we'd end at after adding bridge letters */
-  endPosition: string;
-  /** Available LOOP types for this ending position */
+  /** The placement we'd end at after adding bridge letters */
+  endPlacement: string;
+  /** Available LOOP types for this ending placement */
   availableLOOPs: LOOPOption[];
   /** Description for UI display */
   description: string;
   /** Pictograph data for visual display of the bridge letter */
   pictographData?: PictographData;
-  /** Rotation relationship to start position */
+  /** Rotation relationship to start placement */
   rotationRelation?: RotationRelation;
   /** Orientation alignment info */
   orientationAlignment?: OrientationAlignment;
@@ -160,7 +160,7 @@ import { recalculateAllOrientations } from "$lib/shared/create/services/orientat
 import {
   HALVED_LOOPS,
   QUARTERED_LOOPS,
-} from "$lib/shared/foundation/domain/models/generation/circular-position-maps";
+} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
 
 export class SequenceExtender {
   constructor(
@@ -178,30 +178,30 @@ export class SequenceExtender {
    * Analyze a sequence to determine if it can be extended
    */
   analyzeSequence(sequence: SequenceData): ExtensionAnalysis {
-    // Get start position from sequence
-    const startPosition = this.sequenceAnalyzer.getStartPosition(sequence);
-    if (!startPosition) {
+    // Get start placement from sequence
+    const startPlacement = this.sequenceAnalyzer.getStartPlacement(sequence);
+    if (!startPlacement) {
       return {
         canExtend: false,
         extensionType: "not_extendable",
-        startPosition: null,
-        currentEndPosition: null,
+        startPlacement: null,
+        currentEndPlacement: null,
         availableLOOPOptions: [],
         unavailableLOOPOptions: [],
         orientationRepeat: null,
-        description: "No start position defined",
+        description: "No start placement defined",
       };
     }
 
-    // Get current end position from the last beat
-    const currentEndPosition =
-      this.sequenceAnalyzer.getCurrentEndPosition(sequence);
-    if (!currentEndPosition) {
+    // Get current end placement from the last beat
+    const currentEndPlacement =
+      this.sequenceAnalyzer.getCurrentEndPlacement(sequence);
+    if (!currentEndPlacement) {
       return {
         canExtend: false,
         extensionType: "not_extendable",
-        startPosition,
-        currentEndPosition: null,
+        startPlacement,
+        currentEndPlacement: null,
         availableLOOPOptions: [],
         unavailableLOOPOptions: [],
         orientationRepeat: null,
@@ -209,11 +209,11 @@ export class SequenceExtender {
       };
     }
 
-    // Check position relationships
-    const positionPair = `${startPosition},${currentEndPosition}`;
-    const isHalvedValid = HALVED_LOOPS.has(positionPair);
-    const isQuarteredValid = QUARTERED_LOOPS.has(positionPair);
-    const isAlreadyComplete = currentEndPosition === startPosition;
+    // Check placement relationships
+    const placementPair = `${startPlacement},${currentEndPlacement}`;
+    const isHalvedValid = HALVED_LOOPS.has(placementPair);
+    const isQuarteredValid = QUARTERED_LOOPS.has(placementPair);
+    const isAlreadyComplete = currentEndPlacement === startPlacement;
 
     // Determine extension type
     let extensionType: ExtensionType = "not_extendable";
@@ -228,18 +228,18 @@ export class SequenceExtender {
       period = Period.QUARTERED;
     }
 
-    // Get LOOP options filtered by validity for this position pair
+    // Get LOOP options filtered by validity for this placement pair
     const { available, unavailable } =
-      this.loopValidator.getLOOPOptionsForPositionPair(
-        startPosition,
-        currentEndPosition,
+      this.loopValidator.getLOOPOptionsForPlacementPair(
+        startPlacement,
+        currentEndPlacement,
         period
       );
 
-    // A sequence back at its start POSITION can still be open in ORIENTATION.
+    // A sequence back at its start PLACEMENT can still be open in ORIENTATION.
     // Repeating it verbatim closes that cycle, so it is a real extension
     // option alongside the transform-based LOOPs. Only meaningful when the
-    // position already closed — otherwise repeating walks further away.
+    // placement already closed — otherwise repeating walks further away.
     const cycleCount = isAlreadyComplete
       ? orientationCycleExtender.getCycleCount(sequence)
       : 1;
@@ -252,12 +252,12 @@ export class SequenceExtender {
       return {
         canExtend: false,
         extensionType: "not_extendable",
-        startPosition,
-        currentEndPosition,
+        startPlacement,
+        currentEndPlacement,
         availableLOOPOptions: [],
         unavailableLOOPOptions: unavailable,
         orientationRepeat: null,
-        description: "No extension patterns available for this position pair",
+        description: "No extension patterns available for this placement pair",
       };
     }
 
@@ -273,8 +273,8 @@ export class SequenceExtender {
     return {
       canExtend: true,
       extensionType,
-      startPosition,
-      currentEndPosition,
+      startPlacement,
+      currentEndPlacement,
       availableLOOPOptions: available,
       unavailableLOOPOptions: unavailable,
       orientationRepeat,
@@ -283,7 +283,7 @@ export class SequenceExtender {
   }
 
   /**
-   * Generate steps to extend a sequence back to its starting position
+   * Generate steps to extend a sequence back to its starting placement
    */
   async generateExtensionSteps(
     sequence: SequenceData,
@@ -296,7 +296,7 @@ export class SequenceExtender {
     }
 
     const { loopType } = options;
-    // Use explicitly provided period, otherwise derive from position pair analysis
+    // Use explicitly provided period, otherwise derive from placement pair analysis
     const period =
       options.period ??
       (analysis.extensionType === "quarter_rotation"
@@ -431,7 +431,7 @@ export class SequenceExtender {
   }
 
   /**
-   * Get extension options that would bring the sequence to a loopable position.
+   * Get extension options that would bring the sequence to a loopable placement.
    * Delegates to BridgeFinder.
    */
   async getAllExtensionOptions(
@@ -455,36 +455,36 @@ export class SequenceExtender {
     bridgeLetter: Letter,
     pictographData?: PictographData
   ): Promise<SequenceData> {
-    const endPosition = this.sequenceAnalyzer.getCurrentEndPosition(sequence);
-    if (!endPosition) {
-      throw new Error("Cannot append bridge: no end position found");
+    const endPlacement = this.sequenceAnalyzer.getCurrentEndPlacement(sequence);
+    if (!endPlacement) {
+      throw new Error("Cannot append bridge: no end placement found");
     }
 
     const gridMode = sequence.gridMode || GridMode.DIAMOND;
 
     let bridgeVariation: PictographData;
 
-    // Use the specific pictograph if provided (preferred - ensures correct end position)
+    // Use the specific pictograph if provided (preferred - ensures correct end placement)
     if (pictographData) {
-      // Validate that the provided pictograph starts at the current end position
-      if (pictographData.startPosition !== endPosition) {
+      // Validate that the provided pictograph starts at the current end placement
+      if (pictographData.startPlacement !== endPlacement) {
         throw new Error(
-          `Provided pictograph for "${bridgeLetter}" starts at "${pictographData.startPosition}" but sequence ends at "${endPosition}"`
+          `Provided pictograph for "${bridgeLetter}" starts at "${pictographData.startPlacement}" but sequence ends at "${endPlacement}"`
         );
       }
       bridgeVariation = pictographData;
     } else {
-      // Fallback: Find a pictograph for the bridge letter that starts at current end position
+      // Fallback: Find a pictograph for the bridge letter that starts at current end placement
       const allPictographs =
         await this.letterQueryHandler.getAllPictographVariations(gridMode);
 
       const bridgeVariations = allPictographs.filter(
-        (p) => p.letter === bridgeLetter && p.startPosition === endPosition
+        (p) => p.letter === bridgeLetter && p.startPlacement === endPlacement
       );
 
       if (bridgeVariations.length === 0) {
         throw new Error(
-          `No variation of "${bridgeLetter}" starts at position "${endPosition}"`
+          `No variation of "${bridgeLetter}" starts at placement "${endPlacement}"`
         );
       }
 
@@ -527,7 +527,7 @@ export class SequenceExtender {
     period?: Period
   ): Promise<SequenceData> {
     // Use appendBridgeBeat to add the bridge, then apply LOOP
-    // Pass pictographData to ensure the exact variation (and thus end position) is used
+    // Pass pictographData to ensure the exact variation (and thus end placement) is used
     const sequenceWithBridge = await this.appendBridgeBeat(
       sequence,
       bridgeLetter,

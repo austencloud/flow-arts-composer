@@ -620,12 +620,12 @@ export class LibraryRepository {
     const rawWriteData = {
       ...libSeq,
       // Steps are derived from compositional fields on read - don't persist.
-      // startPosition IS persisted because it's NOT derivable from compositional
+      // startPlacement IS persisted because it's NOT derivable from compositional
       // fields - without it the 3D viewer has no start pose to show.
       steps: undefined,
-      startPosition: libSeq.startPosition ?? undefined,
-      startingPosition: undefined,
-      startingPositionGroup: undefined,
+      startPlacement: libSeq.startPlacement ?? undefined,
+      startingPlacement: undefined,
+      startingPlacementGroup: undefined,
       // Local-only Dexie sync bookkeeping (see SequenceData) - meaningless on
       // the server and must never leak into the cloud doc.
       syncStatus: undefined,
@@ -1603,9 +1603,21 @@ export class LibraryRepository {
           docRef,
           (docSnap) => {
             if (docSnap.exists()) {
-              callback(
-                this.mapDocToLibrarySequence(docSnap.data(), sequenceId)
+              let seq = this.mapDocToLibrarySequence(
+                docSnap.data(),
+                sequenceId
               );
+              try {
+                // Unlike the other read paths above, this subscription had no
+                // hydrate() call at all, so a document still carrying
+                // pre-rename keys (blue/red, startPosition/startingPosition)
+                // reached subscribers unnormalized.
+                seq = hydrate(seq) as LibrarySequence;
+              } catch {
+                // Hydration failed - use raw data, matching the other read
+                // paths' fallback behavior.
+              }
+              callback(seq);
             } else {
               callback(null);
             }

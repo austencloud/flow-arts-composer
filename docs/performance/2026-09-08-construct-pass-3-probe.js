@@ -18,14 +18,14 @@ async () => {
       }
     };
     await until(() =>
-      document.querySelector('[data-ghost-kind="start-position"]')
+      document.querySelector('[data-ghost-kind="start-placement"]')
     );
     await new Promise((r) => setTimeout(r, 650));
     sessionStorage.setItem("tka-option-picker-panel", "0");
     const start = performance.now();
     let firstDom = null;
     let firstPaintable = null;
-    document.querySelector('[data-ghost-kind="start-position"]').click();
+    document.querySelector('[data-ghost-kind="start-placement"]').click();
     await until(() => {
       const cards = [
         ...document.querySelectorAll('[data-ghost-kind="option"]'),

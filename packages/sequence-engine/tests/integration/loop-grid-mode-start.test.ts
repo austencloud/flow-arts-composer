@@ -4,11 +4,11 @@
  * Bug (2026-07-14): `SequenceBuilder.constrainStartForLoopType` pinned a random
  * start from all 8 beta indices for rotated_swapped[_inverted] LOOPs, ignoring
  * the grid mode. But the two grid modes occupy disjoint grid points — diamond
- * uses the cardinal (odd-index) positions (beta1/3/5/7…), box uses the
+ * uses the cardinal (odd-index) placements (beta1/3/5/7…), box uses the
  * intercardinal (even-index) ones (beta2/4/6/8…). When the pin landed on a
  * parity absent from the active grid, the beam search had zero variations there
  * and the backward reachability pass threw
- *   "No valid N-step path exists: step 1 has no reachable positions …"
+ *   "No valid N-step path exists: step 1 has no reachable placements …"
  * ~50% of the time in BOTH modes (reported in box). Mirror+swap combinations
  * once pinned beta1/beta5 (cardinal only), which made them fail in box.
  *
@@ -34,7 +34,7 @@ import { loopDetectorClass } from "../../src/loop/detection/LOOPDetector.js";
 import {
   REFLECTION_AXES,
   type ReflectionAxis,
-} from "../../src/loop/position-maps/strict-loop-position-maps.js";
+} from "../../src/loop/placement-maps/strict-loop-placement-maps.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const csvPath = (name: string) =>
@@ -55,8 +55,8 @@ function loadCsv(name: string): PictographData[] {
     )
     .map((c) => ({
       letter: value(c, "letter"),
-      startPosition: value(c, "startPosition"),
-      endPosition: value(c, "endPosition"),
+      startPlacement: value(c, "startPlacement"),
+      endPlacement: value(c, "endPlacement"),
       timing: "together",
       direction: "together",
       leftMotion: {
@@ -86,14 +86,14 @@ class CsvVariationProvider implements IVariationProvider {
   private readonly index = new Map<string, PictographData[]>();
   constructor(private readonly all: PictographData[]) {
     for (const p of all) {
-      const k = `${p.letter}:${p.startPosition}`;
+      const k = `${p.letter}:${p.startPlacement}`;
       const bucket = this.index.get(k);
       if (bucket) bucket.push(p);
       else this.index.set(k, [p]);
     }
   }
-  getVariations(letter: string, position: string): PictographData[] {
-    return this.index.get(`${letter}:${position}`) ?? [];
+  getVariations(letter: string, placement: string): PictographData[] {
+    return this.index.get(`${letter}:${placement}`) ?? [];
   }
   getAllVariations(): PictographData[] {
     return this.all;
@@ -110,13 +110,13 @@ const skewedBuilder = new SequenceBuilder(
   new CsvVariationProvider(loadCsv("SkewedPictographDataframe.csv"))
 );
 
-const REACHABILITY_ERROR = /no reachable positions/;
+const REACHABILITY_ERROR = /no reachable placements/;
 
 function buildLoop(
   builder: SequenceBuilder,
   gridMode: string,
   type: LOOPType,
-  startPosition?: string,
+  startPlacement?: string,
   period = Period.HALVED,
   loopSpec?: LOOPSpec
 ) {
@@ -126,7 +126,7 @@ function buildLoop(
     level: 2,
     constraintPreset: "smooth",
     maxTurnIntensity: 1,
-    startPosition,
+    startPlacement,
     loop: { type, period, loopSpec, useTargetedGeneration: true },
   });
 }
@@ -137,8 +137,8 @@ function reflectionSpec(reflectionAxis: ReflectionAxis): LOOPSpec {
   );
 }
 
-function parityOf(position: string | undefined): "even" | "odd" | "none" {
-  const n = Number(position?.match(/\d+$/)?.[0]);
+function parityOf(placement: string | undefined): "even" | "odd" | "none" {
+  const n = Number(placement?.match(/\d+$/)?.[0]);
   if (!Number.isFinite(n)) return "none";
   return n % 2 === 0 ? "even" : "odd";
 }
@@ -150,7 +150,7 @@ describe("LOOP seed start respects grid mode", () => {
   it("box rotated_swapped_inverted never hits the reachability wall; starts stay intercardinal (even)", () => {
     for (let i = 0; i < TRIALS; i++) {
       const r = buildLoop(boxBuilder, "box", LOOPType.ROTATED_SWAPPED_INVERTED);
-      const start = r.sequence[0]?.startPosition;
+      const start = r.sequence[0]?.startPlacement;
       expect(parityOf(start)).toBe("even"); // box has only beta2/4/6/8, gamma even, …
     }
   });
@@ -158,7 +158,7 @@ describe("LOOP seed start respects grid mode", () => {
   it("box rotated_swapped never hits the reachability wall; starts stay intercardinal (even)", () => {
     for (let i = 0; i < TRIALS; i++) {
       const r = buildLoop(boxBuilder, "box", LOOPType.ROTATED_SWAPPED);
-      expect(parityOf(r.sequence[0]?.startPosition)).toBe("even");
+      expect(parityOf(r.sequence[0]?.startPlacement)).toBe("even");
     }
   });
 
@@ -169,12 +169,12 @@ describe("LOOP seed start respects grid mode", () => {
         "diamond",
         LOOPType.ROTATED_SWAPPED_INVERTED
       );
-      expect(parityOf(r.sequence[0]?.startPosition)).toBe("odd");
+      expect(parityOf(r.sequence[0]?.startPlacement)).toBe("odd");
     }
   });
 
   it("forcing a cardinal start (beta1) in box reproduces the reachability wall", () => {
-    // Documents the exact reported failure: a diamond position has zero box
+    // Documents the exact reported failure: a diamond placement has zero box
     // variations, so the backward reachability pass empties out at step 1.
     expect(() =>
       buildLoop(boxBuilder, "box", LOOPType.ROTATED_SWAPPED_INVERTED, "beta1")
@@ -188,7 +188,7 @@ describe("LOOP seed start respects grid mode", () => {
         "box",
         LOOPType.MIRRORED_SWAPPED_INVERTED
       );
-      expect(parityOf(result.sequence[0]?.startPosition)).toBe("even");
+      expect(parityOf(result.sequence[0]?.startPlacement)).toBe("even");
     }
   });
 
@@ -202,8 +202,8 @@ describe("LOOP seed start respects grid mode", () => {
           const result = buildLoop(boxBuilder, "box", type, undefined, period);
           const first = result.sequence[0]!;
           const last = result.sequence[result.sequence.length - 1]!;
-          expect(parityOf(first.startPosition)).toBe("even");
-          expect(last.endPosition).toBe(first.startPosition);
+          expect(parityOf(first.startPlacement)).toBe("even");
+          expect(last.endPlacement).toBe(first.startPlacement);
           expect(last.motions.left.endOrientation).toBe(
             first.motions.left.startOrientation
           );
@@ -239,7 +239,7 @@ describe("real builder supports every reflection axis in every grid mode", () =>
           const last = result.sequence[result.sequence.length - 1]!;
           const detected = loopDetectorClass.detectLOOPType(result.sequence);
 
-          expect(last.endPosition).toBe(first.startPosition);
+          expect(last.endPlacement).toBe(first.startPlacement);
           expect(last.motions.left.endOrientation).toBe(
             first.motions.left.startOrientation
           );

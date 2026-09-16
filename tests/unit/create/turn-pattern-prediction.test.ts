@@ -42,8 +42,8 @@ function loadVariations(): unknown[] {
     if (c.length < 13 || !c[0]) continue;
     out.push({
       letter: c[0],
-      startPosition: c[1]!,
-      endPosition: c[2]!,
+      startPlacement: c[1]!,
+      endPlacement: c[2]!,
       timing: c[3]!,
       direction: c[4]!,
       leftMotion: {
@@ -72,15 +72,15 @@ function loadVariations(): unknown[] {
 function builder(): SequenceBuilder {
   const data = loadVariations();
   const index = new Map<string, unknown[]>();
-  for (const p of data as Array<{ letter: string; startPosition: string }>) {
-    const key = `${p.letter}:${p.startPosition}`;
+  for (const p of data as Array<{ letter: string; startPlacement: string }>) {
+    const key = `${p.letter}:${p.startPlacement}`;
     const bucket = index.get(key);
     if (bucket) bucket.push(p);
     else index.set(key, [p]);
   }
   const provider = {
-    getVariations: (letter: string, position: string) =>
-      index.get(`${letter}:${position}`) ?? [],
+    getVariations: (letter: string, placement: string) =>
+      index.get(`${letter}:${placement}`) ?? [],
     getAllVariations: () => data,
   };
   return new SequenceBuilder(provider as never);

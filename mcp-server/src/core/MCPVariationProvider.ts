@@ -5,7 +5,7 @@
  * into the IVariationProvider interface expected by the shared sequence engine.
  *
  * The MCP server pre-loads all pictograph variations per grid mode into a flat array.
- * This provider indexes them for fast lookup by letter + position.
+ * This provider indexes them for fast lookup by letter + placement.
  */
 
 import type { IVariationProvider } from "@tka/sequence-engine/generation";
@@ -15,17 +15,17 @@ import type { IVariationProvider } from "@tka/sequence-engine/generation";
 import type { PictographData } from "@tka/sequence-engine/generation";
 
 export class MCPVariationProvider implements IVariationProvider {
-  private readonly byLetterAndPosition = new Map<string, PictographData[]>();
+  private readonly byLetterAndPlacement = new Map<string, PictographData[]>();
   private readonly allByGridMode = new Map<string, PictographData[]>();
 
   constructor(allPictographs: PictographData[], gridMode: string) {
-    // Index by letter + startPosition for fast variation lookup
+    // Index by letter + startPlacement for fast variation lookup
     for (const p of allPictographs) {
-      const key = `${p.letter}:${p.startPosition}`;
-      let bucket = this.byLetterAndPosition.get(key);
+      const key = `${p.letter}:${p.startPlacement}`;
+      let bucket = this.byLetterAndPlacement.get(key);
       if (!bucket) {
         bucket = [];
-        this.byLetterAndPosition.set(key, bucket);
+        this.byLetterAndPlacement.set(key, bucket);
       }
       bucket.push(p);
     }
@@ -35,11 +35,11 @@ export class MCPVariationProvider implements IVariationProvider {
 
   getVariations(
     letter: string,
-    position: string,
+    placement: string,
     _gridMode: string,
   ): PictographData[] {
-    const key = `${letter}:${position}`;
-    return this.byLetterAndPosition.get(key) ?? [];
+    const key = `${letter}:${placement}`;
+    return this.byLetterAndPlacement.get(key) ?? [];
   }
 
   getAllVariations(_gridMode: string): PictographData[] {

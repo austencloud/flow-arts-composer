@@ -53,7 +53,7 @@ export function createInitialState(
         constraintScores: new Map(),
       },
     ],
-    currentEndPosition: startPictograph.endPosition,
+    currentEndPlacement: startPictograph.endPlacement,
   };
 }
 
@@ -71,7 +71,7 @@ export function extendState(
   const newStepScores = [...state.stepScores, stepScore];
 
   // Recalculate cumulative score
-  const totalScores = newStepScores.slice(1); // Exclude start position
+  const totalScores = newStepScores.slice(1); // Exclude start placement
   const cumulativeScore =
     totalScores.length > 0
       ? totalScores.reduce((sum, s) => sum + s.totalScore, 0) /
@@ -88,7 +88,7 @@ export function extendState(
     steps: newSteps,
     cumulativeScore,
     stepScores: newStepScores,
-    currentEndPosition: newStep.endPosition,
+    currentEndPlacement: newStep.endPlacement,
     bridgeStepIndices,
   };
 }

@@ -22,7 +22,7 @@ export interface GridOptions {
 }
 
 
-export interface PositionPair {
+export interface PlacementPair {
   readonly left: PointRef;
   readonly right: PointRef;
 }

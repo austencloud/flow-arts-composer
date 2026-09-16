@@ -12,6 +12,7 @@ import type { ArenaRating, ArenaVote, ArenaLeaderboardEntry, ArenaUserStats, Are
 import type { MatchupCandidate } from "./types";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
+import { normalizeLegacySequence } from "@tka/tka-types";
 import {
   INITIAL_MU,
   INITIAL_PHI,
@@ -229,16 +230,19 @@ export async function loadFullSequenceData(sourceRef: string): Promise<SequenceD
     const fullDoc = await getDoc(doc(firestore, sourceRef));
     if (!fullDoc.exists()) return null;
 
-    const raw = fullDoc.data();
+    // Normalize legacy blue/red and position/placement keys before picking
+    // fields off the raw Firestore doc, so a document written before either
+    // rename shipped still resolves startPlacement/startingPlacement.
+    const raw = normalizeLegacySequence(fullDoc.data());
     const mapped: SequenceData = {
       id: fullDoc.id,
       name: (raw.name as string) ?? "",
       displayName: raw.displayName as string | undefined,
       word: (raw.word as string) ?? "",
       steps: (raw.steps as SequenceData["steps"]) ?? (raw.beats as SequenceData["steps"]) ?? [],
-      startPosition: raw.startPosition as SequenceData["startPosition"],
-      startingPosition: raw.startingPosition as SequenceData["startingPosition"],
-      startingPositionGroup: raw.startingPositionGroup as SequenceData["startingPositionGroup"],
+      startPlacement: raw.startPlacement as SequenceData["startPlacement"],
+      startingPlacement: raw.startingPlacement as SequenceData["startingPlacement"],
+      startingPlacementGroup: raw.startingPlacementGroup as SequenceData["startingPlacementGroup"],
       thumbnails: (raw.thumbnails as readonly string[]) ?? [],
       sequenceLength: raw.sequenceLength as number | undefined,
       level: raw.level as number | undefined,

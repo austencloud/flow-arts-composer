@@ -151,7 +151,7 @@
       showElemental={options.showElemental}
       {propElementalType}
       showPropTnD={options.showPropTnD}
-      showPositions={options.showPositions}
+      showPlacements={options.showPlacements}
       leftReversal={!!step.leftReversal && options.showLeftMotion !== false}
       rightReversal={!!step.rightReversal && options.showRightMotion !== false}
       onGridReady={() => {

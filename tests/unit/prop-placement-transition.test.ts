@@ -1,5 +1,5 @@
 /**
- * buildPlacementTransition shapes the in-place start-position move animation:
+ * buildPlacementTransition shapes the in-place start-placement move animation:
  * the moving prop gets a pro-with-zero-turns arc motion (forced "arc" path so
  * the global path-shape setting can't flatten it) and the partner stays a
  * static hold, so calculatePictographMotionPositions resolves its beta offset
@@ -46,20 +46,20 @@ describe("paired placement transforms", () => {
     leftLocation: GridLocation.NORTH,
     rightLocation: GridLocation.SOUTH,
   });
-  const startPositions = {
+  const startPlacements = {
     left: { x: 475, y: 625, rotation: 0 },
     right: { x: 475, y: 325, rotation: 0 },
   };
-  const endPositions = {
-    left: startPositions.right,
-    right: startPositions.left,
+  const endPlacements = {
+    left: startPlacements.right,
+    right: startPlacements.left,
   };
   const common = {
     gridMode: GridMode.DIAMOND,
     leftPropType: PropType.HAND,
     rightPropType: PropType.HAND,
-    startPositions,
-    endPositions,
+    startPlacements,
+    endPlacements,
   };
 
   it("reflects across an axis in straight lines, keeping hand symbols upright", () => {
@@ -98,10 +98,10 @@ describe("paired placement transforms", () => {
     expect(midpoint.right?.rotation).toBe(0);
     expect(
       calculatePictographMotionPositions({ ...input, progress: 0 })
-    ).toEqual(startPositions);
+    ).toEqual(startPlacements);
     expect(
       calculatePictographMotionPositions({ ...input, progress: 1 })
-    ).toEqual(endPositions);
+    ).toEqual(endPlacements);
   });
 
   it("keeps beta overlap ordering in the final static data", () => {

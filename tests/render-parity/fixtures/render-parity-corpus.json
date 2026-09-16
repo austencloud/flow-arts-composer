@@ -40,113 +40,113 @@
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "0o1nnO3m8LB6WWH1bcTStE",
@@ -646,7 +646,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -719,10 +719,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "gridMode": "diamond",
    "contentHashVersion": 2,
@@ -765,85 +765,85 @@
      "letter": "W-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ-",
      "blueReversal": false,
      "redReversal": true,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "O",
      "blueReversal": true,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": true,
      "redReversal": true,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": true,
      "redReversal": true,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": true,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": true,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": true,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "O",
      "blueReversal": true,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": true,
      "redReversal": true,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "D",
      "blueReversal": true,
      "redReversal": true,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ-",
      "blueReversal": false,
      "redReversal": true,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "7A0EmOuQt9BRof8qcmW7Vc",
@@ -1236,7 +1236,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-gamma12",
     "motions": {
      "blue": {
@@ -1309,10 +1309,10 @@
      }
     },
     "letter": "γ",
-    "startPosition": "gamma12",
-    "endPosition": "gamma12",
-    "isStartPosition": true,
-    "gridPosition": "gamma12"
+    "startPlacement": "gamma12",
+    "endPlacement": "gamma12",
+    "isStartPlacement": true,
+    "gridPlacement": "gamma12"
    },
    "gridMode": "box",
    "contentHashVersion": 2,
@@ -1355,57 +1355,57 @@
      "letter": "Θ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "O",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "W-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "O",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "W-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "5Cj03r63diGLEG6zvhifFB",
@@ -1695,7 +1695,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-beta5",
     "motions": {
      "blue": {
@@ -1768,10 +1768,10 @@
      }
     },
     "letter": "β",
-    "startPosition": "beta5",
-    "endPosition": "beta5",
-    "isStartPosition": true,
-    "gridPosition": "beta5"
+    "startPlacement": "beta5",
+    "endPlacement": "beta5",
+    "isStartPlacement": true,
+    "gridPlacement": "beta5"
    },
    "gridMode": "diamond",
    "contentHashVersion": 2,
@@ -1814,113 +1814,113 @@
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Λ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Λ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Λ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Λ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "71aDCvCrKlFEgeSGo728Dz",
@@ -2419,7 +2419,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-gamma11",
     "motions": {
      "blue": {
@@ -2492,10 +2492,10 @@
      }
     },
     "letter": "γ",
-    "startPosition": "gamma11",
-    "endPosition": "gamma11",
-    "isStartPosition": true,
-    "gridPosition": "gamma11"
+    "startPlacement": "gamma11",
+    "endPlacement": "gamma11",
+    "isStartPlacement": true,
+    "gridPlacement": "gamma11"
    },
    "gridMode": "diamond",
    "contentHashVersion": 2,
@@ -2535,113 +2535,113 @@
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Δ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "M",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "V",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Δ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "M",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "V",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Δ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "M",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "V",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Δ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "M",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "V",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "5I6D3dNW8MsJByhejxGh23",
@@ -3141,7 +3141,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-gamma11",
     "motions": {
      "blue": {
@@ -3214,10 +3214,10 @@
      }
     },
     "letter": "γ",
-    "startPosition": "gamma11",
-    "endPosition": "gamma11",
-    "isStartPosition": true,
-    "gridPosition": "gamma11"
+    "startPlacement": "gamma11",
+    "endPlacement": "gamma11",
+    "isStartPlacement": true,
+    "gridPlacement": "gamma11"
    },
    "gridMode": "diamond",
    "contentHashVersion": 2,
@@ -3835,113 +3835,113 @@
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha1",
-     "endPosition": "beta3"
+     "startPlacement": "alpha1",
+     "endPlacement": "beta3"
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "beta3",
-     "endPosition": "alpha5"
+     "startPlacement": "beta3",
+     "endPlacement": "alpha5"
     },
     {
      "letter": "Φ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha5",
-     "endPosition": "alpha1"
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha1"
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha1",
-     "endPosition": "alpha3"
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha3"
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha3",
-     "endPosition": "beta5"
+     "startPlacement": "alpha3",
+     "endPlacement": "beta5"
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "beta5",
-     "endPosition": "alpha7"
+     "startPlacement": "beta5",
+     "endPlacement": "alpha7"
     },
     {
      "letter": "Φ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha7",
-     "endPosition": "alpha3"
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha3"
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha3",
-     "endPosition": "alpha5"
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5"
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha5",
-     "endPosition": "beta7"
+     "startPlacement": "alpha5",
+     "endPlacement": "beta7"
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "beta7",
-     "endPosition": "alpha1"
+     "startPlacement": "beta7",
+     "endPlacement": "alpha1"
     },
     {
      "letter": "Φ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha1",
-     "endPosition": "alpha5"
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha5"
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha5",
-     "endPosition": "alpha7"
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha7"
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha7",
-     "endPosition": "beta1"
+     "startPlacement": "alpha7",
+     "endPlacement": "beta1"
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "beta1",
-     "endPosition": "alpha3"
+     "startPlacement": "beta1",
+     "endPlacement": "alpha3"
     },
     {
      "letter": "Φ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha3",
-     "endPosition": "alpha7"
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha7"
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": "alpha7",
-     "endPosition": "alpha1"
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha1"
     }
    ],
    "bluePathHash": "0ZDTvcA5tRjh6LJ0SbLtwG",
@@ -3955,13 +3955,13 @@
      "catDogMode": false
     }
    },
-   "startPosition": {
-    "isStartPosition": true,
+   "startPlacement": {
+    "isStartPlacement": true,
     "id": "start-1778019026921",
-    "gridPosition": "alpha1",
+    "gridPlacement": "alpha1",
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
     "motions": {
      "blue": {
       "motionType": "static",
@@ -4048,7 +4048,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -4082,85 +4082,85 @@
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "3rHKr6k4TXevYPjbxCBzqO",
@@ -4555,7 +4555,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -4628,10 +4628,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "contentHashVersion": 2,
    "contentHash": "85ed7fa0d7edf5176121967578cc4c892b192411610418a5bd6e079d217c46d1"
@@ -4643,7 +4643,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -4677,141 +4677,141 @@
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Δ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "U",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "S",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "T",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Σ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "N",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Δ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "U",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "S",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "T",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Σ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "N",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "1jArNEEus2WL18XxYMedOO",
@@ -5414,7 +5414,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -5487,10 +5487,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "contentHashVersion": 2,
    "contentHash": "6254e234306b6624f763b4475b2bee1b44dfe8663a9279ad900de405f2339c92"
@@ -5502,7 +5502,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -5536,113 +5536,113 @@
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "J",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "J",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "J",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "J",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "6SDAqU6wmYcGbmJa2gRj8C",
@@ -6141,7 +6141,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -6214,10 +6214,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "contentHashVersion": 2,
    "contentHash": "c4355eb26497aa5228d6621450334c8ceeabb48872f32af07a10bd52aa27289b"
@@ -6229,7 +6229,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -6263,57 +6263,57 @@
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Φ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Φ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "B",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Φ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Φ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "0yROFezs0CW25eP3Zo5xLo",
@@ -6604,7 +6604,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -6677,10 +6677,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "contentHashVersion": 2,
    "contentHash": "5d8dbddd52eca00178cc3e4c349b273116e745c7c7a337ea7ce70f25c55f3f2c"
@@ -6692,7 +6692,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -6726,57 +6726,57 @@
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "6Jasr1gIA3zPFzlBki7Rfo",
@@ -7067,7 +7067,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -7140,10 +7140,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "contentHashVersion": 2,
    "contentHash": "1bf54c8e85ee2747ada5179d3979ce92722297df4db7338ae0557d32b400fe56"
@@ -7155,7 +7155,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -7189,113 +7189,113 @@
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "3zdW9Pd18KubIkTPNhlsdU",
@@ -7794,7 +7794,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -7867,10 +7867,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "contentHashVersion": 2,
    "contentHash": "89490e844f108897c49d87a1b2d26dae44f921e0ba0e404859f741865ab9d4c7"
@@ -7882,7 +7882,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -7916,113 +7916,113 @@
      "letter": "D",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "U",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "D",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "U",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "D",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "U",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "D",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "U",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "5daCSzGO6h8jOzfZX2HfWX",
@@ -8521,7 +8521,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-beta5",
     "motions": {
      "blue": {
@@ -8594,10 +8594,10 @@
      }
     },
     "letter": "β",
-    "startPosition": "beta5",
-    "endPosition": "beta5",
-    "isStartPosition": true,
-    "gridPosition": "beta5"
+    "startPlacement": "beta5",
+    "endPlacement": "beta5",
+    "isStartPlacement": true,
+    "gridPlacement": "beta5"
    },
    "contentHashVersion": 2,
    "contentHash": "3f15593efa00df630dffd68c9fbef5f3e3d9e7167dade30832e331f9d58e1d5e"
@@ -8609,7 +8609,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -8643,113 +8643,113 @@
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "J",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "H",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "J",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "H",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "J",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "H",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "J",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "H",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "6C8Fk9vs1XEY94C4oGPAFV",
@@ -9248,7 +9248,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-beta5",
     "motions": {
      "blue": {
@@ -9321,10 +9321,10 @@
      }
     },
     "letter": "β",
-    "startPosition": "beta5",
-    "endPosition": "beta5",
-    "isStartPosition": true,
-    "gridPosition": "beta5"
+    "startPlacement": "beta5",
+    "endPlacement": "beta5",
+    "isStartPlacement": true,
+    "gridPlacement": "beta5"
    },
    "contentHashVersion": 2,
    "contentHash": "1f5fc1baad5413a87654ac6c94005a7dc7bbd8afb369acca9977aa15c5ec1885"
@@ -9336,7 +9336,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -9372,225 +9372,225 @@
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Σ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "H",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "D",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Σ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "H",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "D",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Σ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "H",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "D",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Σ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "H",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "D",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "C",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "0xVzehJopRAcaBuWtmYWXB",
@@ -10505,7 +10505,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-beta5",
     "motions": {
      "blue": {
@@ -10578,10 +10578,10 @@
      }
     },
     "letter": "β",
-    "startPosition": "beta5",
-    "endPosition": "beta5",
-    "isStartPosition": true,
-    "gridPosition": "beta5"
+    "startPlacement": "beta5",
+    "endPlacement": "beta5",
+    "isStartPlacement": true,
+    "gridPlacement": "beta5"
    },
    "contentHashVersion": 2,
    "contentHash": "821dc92d764608cc1d4e52d8ab635f95a02e482cf1472e1a308e616dbf962f51"
@@ -10593,7 +10593,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -10627,57 +10627,57 @@
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "G",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "G",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "65uG5okf1Nb8nE0z9UhlcX",
@@ -10968,7 +10968,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-beta7",
     "motions": {
      "blue": {
@@ -11041,10 +11041,10 @@
      }
     },
     "letter": "β",
-    "startPosition": "beta7",
-    "endPosition": "beta7",
-    "isStartPosition": true,
-    "gridPosition": "beta7"
+    "startPlacement": "beta7",
+    "endPlacement": "beta7",
+    "isStartPlacement": true,
+    "gridPlacement": "beta7"
    },
    "contentHashVersion": 2,
    "contentHash": "09a2bee2173198aa9296dfe61a93c6a87bb163fcf0ccd689df30c86c9014ff8e"
@@ -11056,7 +11056,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -11090,113 +11090,113 @@
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "O",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Δ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "R",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "O",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Δ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "R",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "3eOcHSO0pgodxyauwlF0hZ",
@@ -11695,7 +11695,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-beta5",
     "motions": {
      "blue": {
@@ -11768,10 +11768,10 @@
      }
     },
     "letter": "β",
-    "startPosition": "beta5",
-    "endPosition": "beta5",
-    "isStartPosition": true,
-    "gridPosition": "beta5"
+    "startPlacement": "beta5",
+    "endPlacement": "beta5",
+    "isStartPlacement": true,
+    "gridPlacement": "beta5"
    },
    "contentHashVersion": 2,
    "contentHash": "68d103164ae729f0a64da4538c6edbce1c4e9e7eb7ca4b0d9cf2bbd18ecd623f"
@@ -11783,7 +11783,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -11817,113 +11817,113 @@
      "letter": "G",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "O",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "G",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "O",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "G",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "O",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "G",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "O",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Z",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "1aoMP6SCOekri5m50g2XUz",
@@ -12422,7 +12422,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-beta5",
     "motions": {
      "blue": {
@@ -12495,10 +12495,10 @@
      }
     },
     "letter": "β",
-    "startPosition": "beta5",
-    "endPosition": "beta5",
-    "isStartPosition": true,
-    "gridPosition": "beta5"
+    "startPlacement": "beta5",
+    "endPlacement": "beta5",
+    "isStartPlacement": true,
+    "gridPlacement": "beta5"
    },
    "contentHashVersion": 2,
    "contentHash": "68272d96357ab96ad0bb159b073e2fc9ee67f672b7955fa6bfc9c52898569779"
@@ -12510,7 +12510,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -12544,29 +12544,29 @@
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "1oi0NBwJpLtgJvNcv31a6v",
@@ -12753,7 +12753,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-beta5",
     "motions": {
      "blue": {
@@ -12826,10 +12826,10 @@
      }
     },
     "letter": "β",
-    "startPosition": "beta5",
-    "endPosition": "beta5",
-    "isStartPosition": true,
-    "gridPosition": "beta5"
+    "startPlacement": "beta5",
+    "endPlacement": "beta5",
+    "isStartPlacement": true,
+    "gridPlacement": "beta5"
    },
    "contentHashVersion": 2,
    "contentHash": "ff66a95a6076f249d0731de464439ff76fab9ef28cf9ea911cee6ba6d7c97f5a"
@@ -12841,7 +12841,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -12875,113 +12875,113 @@
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "E",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "1m4AdlJOR4pLaS51PPyObd",
@@ -13480,7 +13480,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-beta5",
     "motions": {
      "blue": {
@@ -13553,10 +13553,10 @@
      }
     },
     "letter": "β",
-    "startPosition": "beta5",
-    "endPosition": "beta5",
-    "isStartPosition": true,
-    "gridPosition": "beta5"
+    "startPlacement": "beta5",
+    "endPlacement": "beta5",
+    "isStartPlacement": true,
+    "gridPlacement": "beta5"
    },
    "contentHashVersion": 2,
    "contentHash": "23a135b73f990db5695f01722b3682484b1c59741bdc8859bedcbad4107d0888"
@@ -13568,7 +13568,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -13602,57 +13602,57 @@
      "letter": "J",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "D",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Φ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "J",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ψ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "D",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Φ-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "3z4fKvPhAlGp0gI21rnsp6",
@@ -13943,7 +13943,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -14016,10 +14016,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "contentHashVersion": 2,
    "contentHash": "58b25291c7cf2352848ba2ad78387528979034e5281c3a903db95ecd1a6c811f"
@@ -14031,7 +14031,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -14065,113 +14065,113 @@
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "K",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "I",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Θ",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "6TGU6TEAYYR3rMMpmSsgK0",
@@ -14670,7 +14670,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -14743,10 +14743,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "contentHashVersion": 2,
    "contentHash": "5cca7a327fbade264d16ac2e9c65f02d0bf4cd738b73b761f28180e157428ff7"
@@ -14758,7 +14758,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -14792,57 +14792,57 @@
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "F",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "A",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "5co31gOJJSq80mc0GMKA7E",
@@ -15133,7 +15133,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -15206,10 +15206,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "contentHashVersion": 2,
    "contentHash": "0e4038d6d0d7c9e44e01ac65e1622bff4a7370ea02f122fa4cfc9a62fdf885d7"
@@ -15221,7 +15221,7 @@
    "creatorId": "PBp3GSBO6igCKPwJyLZNmVEmamI3",
    "creatorName": "Austen",
    "forkCount": 0,
-   "startingPositionGroup": "center",
+   "startingPlacementGroup": "center",
    "tags": [
     "flow",
     "practice"
@@ -15256,57 +15256,57 @@
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "V",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "L",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "V",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "6AtTwXOXfX6NZ7X2FcLoDR",
@@ -15597,7 +15597,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -15670,10 +15670,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "contentHashVersion": 2,
    "contentHash": "03aea7a2cd2e841fa4d7ad0747fe128ca858a63d28460d0dfc7ca569d2d10cf2"
@@ -15714,113 +15714,113 @@
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω-",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Y",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "Ω",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     },
     {
      "letter": "X",
      "blueReversal": false,
      "redReversal": false,
-     "startPosition": null,
-     "endPosition": null
+     "startPlacement": null,
+     "endPlacement": null
     }
    ],
    "redSoloHash": "0o1nnO3m8LB6WWH1bcTStE",
@@ -16336,7 +16336,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -16409,10 +16409,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "gridMode": "diamond",
    "contentHashVersion": 2,
@@ -16466,7 +16466,7 @@
     "_seconds": 1777326296,
     "_nanoseconds": 58000000
    },
-   "startPosition": {
+   "startPlacement": {
     "id": "derived-start-alpha1",
     "motions": {
      "blue": {
@@ -16539,10 +16539,10 @@
      }
     },
     "letter": "α",
-    "startPosition": "alpha1",
-    "endPosition": "alpha1",
-    "isStartPosition": true,
-    "gridPosition": "alpha1"
+    "startPlacement": "alpha1",
+    "endPlacement": "alpha1",
+    "isStartPlacement": true,
+    "gridPlacement": "alpha1"
    },
    "gridMode": "diamond",
    "contentHashVersion": 2,
@@ -16552,8 +16552,8 @@
      "isStep": true,
      "id": "4954af9a-0312-4fdc-bff5-63fdd9150eff",
      "letter": "Ω-",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -16636,8 +16636,8 @@
      "isStep": true,
      "id": "b03afb02-4af5-468c-9b35-48e40692e1e6",
      "letter": "Y",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -16720,8 +16720,8 @@
      "isStep": true,
      "id": "543b9d6b-065d-47d0-bc59-83ac1b1b6cb1",
      "letter": "Ω",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "float",
@@ -16804,8 +16804,8 @@
      "isStep": true,
      "id": "dfe70649-dcd0-4af2-ae4b-55017e49c6c1",
      "letter": "X",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -16886,8 +16886,8 @@
      "isStep": true,
      "id": "409f1bea-71c1-462e-a389-36746ea164ec",
      "letter": "Ω-",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -16968,8 +16968,8 @@
      "isStep": true,
      "id": "4a693f0c-efae-42b2-ad0b-d79732ab21de",
      "letter": "Y",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -17050,8 +17050,8 @@
      "isStep": true,
      "id": "89c6da98-f386-4cd5-81d5-82e9e7ff467f",
      "letter": "Ω",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -17132,8 +17132,8 @@
      "isStep": true,
      "id": "da58f5a4-a0d2-4b7c-8743-8f0a96d0f656",
      "letter": "X",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -17214,8 +17214,8 @@
      "isStep": true,
      "id": "022ad1f7-63c3-483d-bad9-5ca32aef8640",
      "letter": "Ω-",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -17296,8 +17296,8 @@
      "isStep": true,
      "id": "bff5dd17-eb50-4e3f-bd40-636697b41e1d",
      "letter": "Y",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -17378,8 +17378,8 @@
      "isStep": true,
      "id": "86fd5679-b26b-47ef-b192-5c4596176da7",
      "letter": "Ω",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -17460,8 +17460,8 @@
      "isStep": true,
      "id": "5797b2f5-fdbe-45d3-8550-a74c5cbfebdf",
      "letter": "X",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -17542,8 +17542,8 @@
      "isStep": true,
      "id": "387b0127-d013-4f27-920e-f3b16d3e1867",
      "letter": "Ω-",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -17624,8 +17624,8 @@
      "isStep": true,
      "id": "e874e2c1-ea44-4596-bd7c-d4f472eb9a6a",
      "letter": "Y",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -17706,8 +17706,8 @@
      "isStep": true,
      "id": "a83e0c3f-8387-4560-8fb6-871efe54c462",
      "letter": "Ω",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -17788,8 +17788,8 @@
      "isStep": true,
      "id": "414b3d5f-5da6-468a-be35-18a7125cf6a9",
      "letter": "X",
-     "startPosition": null,
-     "endPosition": null,
+     "startPlacement": null,
+     "endPlacement": null,
      "motions": {
       "blue": {
        "motionType": "anti",

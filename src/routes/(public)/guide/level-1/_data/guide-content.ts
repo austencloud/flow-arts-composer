@@ -11,14 +11,14 @@
  */
 import type { GuideBlock } from "./guide-content-blocks";
 import { theGridContent } from "./content/the-grid.content";
-import { handPositionsContent } from "./content/hand-positions.content";
+import { handPlacementsContent } from "./content/hand-placements.content";
 import { handMotionsContent } from "./content/hand-motions.content";
 import { hmType1Content } from "./content/hm-type1.content";
 import { hmGammaContent } from "./content/hm-gamma.content";
 import { hmType2Content } from "./content/hm-type2.content";
 import { hmType34Content } from "./content/hm-type34.content";
 import { hmType56Content } from "./content/hm-type56.content";
-import { staffPositionsContent } from "./content/staff-positions.content";
+import { staffPlacementsContent } from "./content/staff-placements.content";
 import { staffMotionsContent } from "./content/staff-motions.content";
 import { negativeSpaceContent } from "./content/negative-space.content";
 import { baseLettersContent } from "./content/base-letters.content";
@@ -44,16 +44,16 @@ import { propReversalLoopsContent } from "./content/prop-reversal-loops.content"
 import { fullReversalLoopsContent } from "./content/full-reversal-loops.content";
 
 export const GUIDE_CONTENT: Record<string, GuideBlock[]> = {
-  // ── 1.0 Positions / Motions ──
+  // ── 1.0 Placements / Motions ──
   "the-grid": theGridContent,
-  "hand-positions": handPositionsContent,
+  "hand-placements": handPlacementsContent,
   "hand-motions": handMotionsContent,
   "hm-type1": hmType1Content,
   "hm-gamma": hmGammaContent,
   "hm-type2": hmType2Content,
   "hm-type34": hmType34Content,
   "hm-type56": hmType56Content,
-  "staff-positions": staffPositionsContent,
+  "staff-placements": staffPlacementsContent,
   "staff-motions": staffMotionsContent,
   "negative-space": negativeSpaceContent,
   // ── 1.1 Letters (codex / codex-2 stay sheet-only - see header) ──

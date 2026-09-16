@@ -80,8 +80,8 @@ export function stepWithViewToStepData({ step, view }: StepWithView): StepData {
   return createStepData({
     id: step.id,
     letter: (step.letter ?? undefined) as StepData["letter"],
-    startPosition: step.startPosition ?? undefined,
-    endPosition: step.endPosition ?? undefined,
+    startPlacement: step.startPlacement ?? undefined,
+    endPlacement: step.endPlacement ?? undefined,
     stepNumber: step.stepNumber,
     duration: step.duration,
     ...(step.gridMode !== undefined && { gridMode: step.gridMode as StepData["gridMode"] }),

@@ -245,20 +245,20 @@ export async function extractCompleteMetadata(
 export async function debugSequenceMetadata(sequenceName: string): Promise<{
   metadata: Record<string, unknown>[];
   author: string;
-  startPosition: string;
+  startPlacement: string;
   level: string;
   steps: Array<{ letter: string; leftMotion: string; rightMotion: string }>;
 }> {
   const metadata = await extractSequenceMetadata(sequenceName);
 
   const firstEntry = metadata[0] ?? {};
-  const startPositionEntries = metadata.filter(
+  const startPlacementEntries = metadata.filter(
     (step: Record<string, unknown>) => step["sequence_start_position"]
   );
 
   const author = String(firstEntry["author"] ?? "MISSING");
-  const startPosition = String(
-    startPositionEntries[0]?.["sequence_start_position"] ?? "MISSING"
+  const startPlacement = String(
+    startPlacementEntries[0]?.["sequence_start_position"] ?? "MISSING"
   );
   const level = String(firstEntry["level"] ?? "MISSING");
 
@@ -282,7 +282,7 @@ export async function debugSequenceMetadata(sequenceName: string): Promise<{
     };
   });
 
-  return { metadata, author, startPosition, level, steps };
+  return { metadata, author, startPlacement, level, steps };
 }
 
 // Extend Window interface for debug function

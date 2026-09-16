@@ -89,7 +89,7 @@
       {#await import("$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte") then mod}
         <mod.default
           steps={sequence.steps}
-          startPosition={sequence.startPosition}
+          startPlacement={sequence.startPlacement}
           selectedStepNumber={currentStepNumber}
           practiceStepNumber={settings.animated ? currentStepNumber : null}
           isSideBySideLayout={false}

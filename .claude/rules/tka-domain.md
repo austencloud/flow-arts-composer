@@ -15,7 +15,7 @@ treating this file as a knowledge base.
   separate feasibility interrogation. Use `constraintPreset: "smooth"` unless
   the user specifies another constraint.
 - Explain pictographs in plain language for the user's level, but retain the
-  verified TKA terms for positions, orientations, motion types, turns, and grid
+  verified TKA terms for placements, orientations, motion types, turns, and grid
   modes.
 - Correct a material terminology error briefly when it changes the answer.
 - Use “step” for a sequence entry in TKA-facing UI and documentation. Reserve
@@ -28,3 +28,13 @@ treating this file as a knowledge base.
 
 If a static statement here ever conflicts with MCP data, MCP wins and this file
 should be corrected.
+
+## Terminology contract
+
+Three spatial ideas, three words. Do not blur them.
+
+| Word | Meaning |
+|---|---|
+| location | One hand's grid point (N, E, S, W, NE...) |
+| placement | The two-hand relationship (alpha, beta, gamma, zeta, eta) |
+| position | Coordinates only: x/y, rotation, scroll, seek, CSS |

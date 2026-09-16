@@ -1,6 +1,6 @@
 /**
  * READ-ONLY broad audit of the sequence corpus for accumulated cruft, beyond the
- * already-fixed start-position + timestamp issues. Scans the user's library and
+ * already-fixed start-placement + timestamp issues. Scans the user's library and
  * the public mirror; reports counts + samples per category. No writes.
  *
  *   npx tsx scripts/diagnostics/audit-sequence-cruft.ts
@@ -56,7 +56,7 @@ async function auditCollection(
     dupContentHash: new Bucket(),   // same contentHash on >1 doc
     softDeleted: new Bucket(),      // isDeleted:true lingering
     noGridMode: new Bucket(),       // gridMode missing
-    badStartLetter: new Bucket(),   // startPosition.letter not α/β/γ
+    badStartLetter: new Bucket(),   // startPlacement.letter not α/β/γ
     sentinelTs: new Bucket(),       // serverTimestamp-sentinel timestamps
     noOwner: new Bucket(),          // public: ownerId missing
     orphanMirror: new Bucket(),     // public(Austen): source doc gone
@@ -113,7 +113,7 @@ async function auditCollection(
 
     // Misc fields
     if (!data["gridMode"]) B.noGridMode.hit(tag);
-    const sp = data["startPosition"] as AnyRec | undefined;
+    const sp = data["startPlacement"] as AnyRec | undefined;
     if (sp?.["motions"] && sp["letter"] !== undefined && !POSITION_LETTERS.has(String(sp["letter"]))) {
       B.badStartLetter.hit(`${tag} (letter ${JSON.stringify(sp["letter"])})`);
     }
@@ -149,7 +149,7 @@ async function auditCollection(
     ["emptyWord", "empty / blank word"],
     ["noContentHash", "missing contentHash"],
     ["dupContentHash", "duplicate contentHash (dupes)"],
-    ["badStartLetter", "start-position letter not α/β/γ"],
+    ["badStartLetter", "start-placement letter not α/β/γ"],
     ["sentinelTs", "serverTimestamp-sentinel timestamps"],
     ["softDeleted", "soft-deleted (isDeleted) lingering"],
     ["noGridMode", "missing gridMode"],

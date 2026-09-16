@@ -5,12 +5,12 @@ import {
   type ComponentSpec,
   type PropLOOPSpec,
 } from "../loop-spec.js";
-import { LOCATION_MAP_CLOCKWISE } from "../position-maps/circular-position-maps.js";
+import { LOCATION_MAP_CLOCKWISE } from "../placement-maps/circular-placement-maps.js";
 import {
   DEFAULT_FLIPPED_AXIS,
   DEFAULT_MIRRORED_AXIS,
   reflectLocation,
-} from "../position-maps/strict-loop-position-maps.js";
+} from "../placement-maps/strict-loop-placement-maps.js";
 
 export interface SoloLOOPDetectionResult {
   readonly isLoop: boolean;

@@ -58,7 +58,7 @@ export function getSequenceDisplayName(sequence: SequenceData): string {
 //      Legacy raw `steps` blobs carry it as `stepNumber === 0`
 //      (public-sequences-loader filters exactly that). Modern compositional
 //      sequences have no such entry at all: sequence-hydrator derives
-//      `startPosition` FROM steps[0], which is a real content beat. Both shapes
+//      `startPlacement` FROM steps[0], which is a real content beat. Both shapes
 //      are live in the corpus, so we drop stepNumber 0 when present and treat
 //      its absence as normal.
 //   2. Intentional blank — `isBlank`, honored elsewhere (deck-composer skips
@@ -75,7 +75,7 @@ export interface WordDerivationStatus {
   readonly word: string;
   /** True when every content beat produced a token. The persistence gate. */
   readonly complete: boolean;
-  /** Content beats considered — excludes the start-position entry. */
+  /** Content beats considered — excludes the start-placement entry. */
   readonly stepCount: number;
   /** Resolved tokens. Equals stepCount only when complete and nothing is blank. */
   readonly tokenCount: number;
@@ -166,7 +166,7 @@ export function deriveWordStatusFromSteps(
  * EVERY pairing is a content beat. Pairings are extracted 1:1 from steps
  * (sequence-decomposer.extractStepPairings) and carry no stepNumber, so a start
  * entry could only ever be guessed at — and the modern write path never produces
- * one, because ensureComposition derives `startPosition` as its own field from
+ * one, because ensureComposition derives `startPlacement` as its own field from
  * steps[0], which is itself a content beat.
  *
  * So a leading null letter is NOT treated as a start entry. Guessing would

@@ -178,6 +178,6 @@ export function compositionToGridState(composition: Composition): GridStateSnaps
     gridRows: rows,
     gridCols: cols,
     bpm: 120, // Composition doesn't store BPM; default
-    skipStartPosition: true,
+    skipStartPlacement: true,
   };
 }

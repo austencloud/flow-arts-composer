@@ -72,7 +72,7 @@ export const Letter = {
   PsiDash: "Ψ-",
   LambdaDash: "Λ-",
 
-  // Type 6 — Static (hold a position)
+  // Type 6 — Static (hold a placement)
   Alpha: "α",
   Beta: "β",
   Gamma: "γ",

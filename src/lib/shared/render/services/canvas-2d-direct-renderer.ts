@@ -19,7 +19,7 @@ import {
   drawDirectionDot,
   drawElementalGlyph,
   drawPropElementalGlyph,
-  drawPositionGlyph,
+  drawPlacementGlyph,
   drawSoloMotionGlyph,
   drawReversalIndicators,
 } from "./canvas-2d-glyph-renderer";
@@ -289,8 +289,8 @@ export class Canvas2DDirectRenderer implements IDirectRenderer {
         visibility.showRightMotion ?? true,
         visibility.handPathMode ?? false
       );
-    } else if (visibility.showPositions) {
-      await drawPositionGlyph(ctx, preparedPictograph, size, isDarkMode);
+    } else if (visibility.showPlacements) {
+      await drawPlacementGlyph(ctx, preparedPictograph, size, isDarkMode);
     }
 
     // 12. Draw reversal indicators

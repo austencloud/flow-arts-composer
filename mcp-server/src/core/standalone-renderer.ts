@@ -81,14 +81,14 @@ const VTG_GLYPH_WIDTH = 201.24;
 const VTG_GLYPH_HEIGHT = 133.6;
 const VTG_OFFSET_PERCENTAGE = 0.04;
 
-const POSITION_GLYPH_Y = 50;
-const POSITION_SCALE_FACTOR = 0.75;
-const POSITION_SPACING = 25;
-const POSITION_ARROW_WIDTH = 88.9;
-const POSITION_ARROW_HEIGHT = 34.8;
+const PLACEMENT_GLYPH_Y = 50;
+const PLACEMENT_SCALE_FACTOR = 0.75;
+const PLACEMENT_SPACING = 25;
+const PLACEMENT_ARROW_WIDTH = 88.9;
+const PLACEMENT_ARROW_HEIGHT = 34.8;
 
-// Position letter dimensions (from actual SVG viewBoxes)
-const POSITION_LETTER_DIMENSIONS: Record<
+// Placement letter dimensions (from actual SVG viewBoxes)
+const PLACEMENT_LETTER_DIMENSIONS: Record<
   string,
   { width: number; height: number; yOffset: number }
 > = {
@@ -274,8 +274,8 @@ export interface MotionInput {
 
 export interface PictographInput {
   letter: string;
-  startPosition?: string;
-  endPosition?: string;
+  startPlacement?: string;
+  endPlacement?: string;
   leftMotion: MotionInput;
   rightMotion: MotionInput;
   gridMode?: string;
@@ -293,9 +293,9 @@ export interface RenderVisibilityOptions {
   showElemental?: boolean;
   /** Prop timing-and-direction element: top-right slot, dashed spin ring. */
   showPropTnD?: boolean;
-  showPositions?: boolean;
+  showPlacements?: boolean;
   showReversals?: boolean;
-  /** Start-position legend: L/R swatches in the bottom-centre band. */
+  /** Start-placement legend: L/R swatches in the bottom-centre band. */
   showHandColorKey?: boolean;
   showGrid?: boolean;
   showNonRadialPoints?: boolean;
@@ -461,7 +461,7 @@ export class StandaloneRenderer {
       showTND: showTND = false,
       showElemental = false,
       showPropTnD = false,
-      showPositions = false,
+      showPlacements = false,
       showReversals = false,
       showHandColorKey = false,
       showGrid = true,
@@ -555,26 +555,26 @@ export class StandaloneRenderer {
         svgParts.push(`<g class="svg-arrow svg-arrow-red">${rightArrow}</g>`);
     }
 
-    // 5. Position glyph (top center)
-    if (showPositions && input.startPosition && input.endPosition) {
-      const positionSvg = this.renderPositionGlyph(
-        input.startPosition,
-        input.endPosition,
+    // 5. Placement glyph (top center)
+    if (showPlacements && input.startPlacement && input.endPlacement) {
+      const placementSvg = this.renderPlacementGlyph(
+        input.startPlacement,
+        input.endPlacement,
         darkMode,
         themeable
       );
-      if (positionSvg)
+      if (placementSvg)
         svgParts.push(
-          `<g class="svg-glyph svg-glyph-position">${positionSvg}</g>`
+          `<g class="svg-glyph svg-glyph-placement">${placementSvg}</g>`
         );
     }
 
     // 6. Elemental glyph (top right) - only for Type1 letters. When the prop
     //    glyph owns the corner, the hand element steps one slot to the left.
-    if (showElemental && input.letter && input.startPosition) {
+    if (showElemental && input.letter && input.startPlacement) {
       const elementalSvg = this.renderElementalGlyph(
         input.letter,
-        input.startPosition,
+        input.startPlacement,
         darkMode,
         themeable,
         showPropTnD ? ELEMENTAL_GLYPH_WIDTH + PROP_TND_RING.radius / 2 : 0
@@ -614,10 +614,10 @@ export class StandaloneRenderer {
     }
 
     // 8. TnD glyph (bottom right)
-    if (showTND && input.letter && input.startPosition) {
+    if (showTND && input.letter && input.startPlacement) {
       const vtgSvg = this.renderVTGGlyph(
         input.letter,
-        input.startPosition,
+        input.startPlacement,
         darkMode,
         themeable
       );
@@ -640,7 +640,7 @@ export class StandaloneRenderer {
         );
     }
 
-    // 10. Start-position hand colour key (bottom centre)
+    // 10. Start-placement hand colour key (bottom centre)
     if (showHandColorKey) {
       const keySvg = this.renderHandColorKey(
         showLeftMotion && !!input.leftMotion,
@@ -1058,7 +1058,7 @@ ${svgParts.join("\n")}
     const adjustmentInput: PictographAdjustmentInput = {
       letter: pictograph.letter,
       gridMode,
-      endPosition: pictograph.endPosition,
+      endPlacement: pictograph.endPlacement,
       leftMotion: {
         letter: pictograph.letter,
         motionType: pictograph.leftMotion.motionType,
@@ -1454,11 +1454,11 @@ ${turnNumbersSvg}
 
   private renderVTGGlyph(
     letter: string,
-    startPosition: string,
+    startPlacement: string,
     darkMode: boolean,
     themeable: boolean = false
   ): string {
-    const vtgMode = this.calculateVTGMode(letter, startPosition);
+    const vtgMode = this.calculateVTGMode(letter, startPlacement);
     if (!vtgMode) return "";
 
     const vtgPath = join(
@@ -1520,7 +1520,7 @@ ${turnNumbersSvg}
    */
   private renderElementalGlyph(
     letter: string,
-    startPosition: string,
+    startPlacement: string,
     darkMode: boolean,
     themeable: boolean = false,
     xShift: number = 0
@@ -1535,7 +1535,7 @@ ${turnNumbersSvg}
     }
 
     // Calculate elemental type from VTG mode
-    const vtgMode = this.calculateVTGMode(letter, startPosition);
+    const vtgMode = this.calculateVTGMode(letter, startPlacement);
     if (!vtgMode) return "";
 
     const elementalType = VTG_TO_ELEMENTAL[vtgMode];
@@ -1689,14 +1689,14 @@ ${turnNumbersSvg}
 </g>`;
   }
 
-  private renderPositionGlyph(
-    startPosition: string,
-    endPosition: string,
+  private renderPlacementGlyph(
+    startPlacement: string,
+    endPlacement: string,
     darkMode: boolean,
     themeable: boolean = false
   ): string {
-    const startGroup = this.extractPositionGroup(startPosition);
-    const endGroup = this.extractPositionGroup(endPosition);
+    const startGroup = this.extractPlacementGroup(startPlacement);
+    const endGroup = this.extractPlacementGroup(endPlacement);
 
     if (!startGroup || !endGroup) return "";
 
@@ -1728,7 +1728,7 @@ ${turnNumbersSvg}
       !existsSync(endPath) ||
       !existsSync(arrowPath)
     ) {
-      console.error("[Renderer] Position glyph files not found");
+      console.error("[Renderer] Placement glyph files not found");
       return "";
     }
 
@@ -1767,7 +1767,7 @@ ${turnNumbersSvg}
           );
           content = content.replace(/class="st1"/gi, `fill="${fillColor}"`);
         } else {
-          // Position letters (α, β, γ) - add fill to paths without one
+          // Placement letters (α, β, γ) - add fill to paths without one
           content = content.replace(
             /<path(?![^>]*fill)/g,
             `<path fill="${fillColor}"`
@@ -1792,19 +1792,19 @@ ${turnNumbersSvg}
       const LETTER_HEIGHT = 100;
 
       // Calculate dimensions
-      const scaledLetterWidth = LETTER_WIDTH * POSITION_SCALE_FACTOR;
-      const scaledLetterHeight = LETTER_HEIGHT * POSITION_SCALE_FACTOR;
-      const scaledArrowWidth = POSITION_ARROW_WIDTH * POSITION_SCALE_FACTOR;
-      const scaledArrowHeight = POSITION_ARROW_HEIGHT * POSITION_SCALE_FACTOR;
+      const scaledLetterWidth = LETTER_WIDTH * PLACEMENT_SCALE_FACTOR;
+      const scaledLetterHeight = LETTER_HEIGHT * PLACEMENT_SCALE_FACTOR;
+      const scaledArrowWidth = PLACEMENT_ARROW_WIDTH * PLACEMENT_SCALE_FACTOR;
+      const scaledArrowHeight = PLACEMENT_ARROW_HEIGHT * PLACEMENT_SCALE_FACTOR;
 
-      // Calculate positions (matching browser's PositionGlyph.svelte exactly)
+      // Calculate positions (matching browser's PlacementGlyph.svelte exactly)
       const centerLine = scaledLetterHeight / 2;
       const startX = 0;
       const startY = centerLine - scaledLetterHeight / 2;
       const arrowX =
-        scaledLetterWidth + POSITION_SPACING * POSITION_SCALE_FACTOR;
+        scaledLetterWidth + PLACEMENT_SPACING * PLACEMENT_SCALE_FACTOR;
       const arrowY = centerLine - scaledArrowHeight / 2;
-      const endX = scaledLetterWidth + scaledArrowWidth + POSITION_SPACING;
+      const endX = scaledLetterWidth + scaledArrowWidth + PLACEMENT_SPACING;
       const endY = centerLine - scaledLetterHeight / 2;
 
       // Total width for centering (browser uses: scaledLetterWidth + scaledArrowWidth + scaledLetterWidth + SPACING)
@@ -1812,11 +1812,11 @@ ${turnNumbersSvg}
         scaledLetterWidth +
         scaledArrowWidth +
         scaledLetterWidth +
-        POSITION_SPACING;
+        PLACEMENT_SPACING;
       const groupX = VIEWBOX_SIZE / 2 - totalWidth / 2;
 
       // Use the actual viewBox from each SVG file, preserving aspect ratio with preserveAspectRatio="xMidYMid meet"
-      return `<g transform="translate(${groupX}, ${POSITION_GLYPH_Y})">
+      return `<g transform="translate(${groupX}, ${PLACEMENT_GLYPH_Y})">
   <svg x="${startX}" y="${startY}" width="${scaledLetterWidth}" height="${scaledLetterHeight}" viewBox="${start.viewBox}" preserveAspectRatio="xMidYMid meet">
     ${start.content}
   </svg>
@@ -1828,7 +1828,7 @@ ${turnNumbersSvg}
   </svg>
 </g>`;
     } catch (error) {
-      console.error("[Renderer] Failed to render position glyph:", error);
+      console.error("[Renderer] Failed to render placement glyph:", error);
       return "";
     }
   }
@@ -1881,7 +1881,7 @@ ${turnNumbersSvg}
   }
 
   /**
-   * Start-position hand colour key. Geometry comes from the shared
+   * Start-placement hand colour key. Geometry comes from the shared
    * calculateHandColorKeyLayout so this matches PictographRenderer exactly.
    */
   private renderHandColorKey(
@@ -1930,7 +1930,7 @@ ${turnNumbersSvg}
 
   private calculateVTGMode(
     letter: string,
-    startPosition: string
+    startPlacement: string
   ): VTGMode | null {
     const letterUpper = letter.toUpperCase();
     if (letterUpper.length !== 1 || letterUpper < "A" || letterUpper > "V") {
@@ -1941,13 +1941,13 @@ ${turnNumbersSvg}
     if (!modeOrFunction) return null;
 
     if (typeof modeOrFunction === "function") {
-      return modeOrFunction(startPosition);
+      return modeOrFunction(startPlacement);
     }
     return modeOrFunction;
   }
 
-  private extractPositionGroup(position: string): string | null {
-    const match = position.match(/[a-z]+/i);
+  private extractPlacementGroup(placement: string): string | null {
+    const match = placement.match(/[a-z]+/i);
     return match ? match[0].toLowerCase() : null;
   }
 

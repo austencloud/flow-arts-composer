@@ -43,11 +43,11 @@ vi.mock("$lib/shared/render/services/pictograph-cloud-cache", () => ({
 }));
 
 vi.mock(
-  "$lib/shared/pictograph/shared/services/start-position-deriver",
+  "$lib/shared/pictograph/shared/services/start-placement-deriver",
   () => ({
-    startPositionDeriver: {
-      getOrDeriveStartPosition: (sequence: { startPosition?: unknown }) =>
-        sequence.startPosition ?? null,
+    startPlacementDeriver: {
+      getOrDeriveStartPlacement: (sequence: { startPlacement?: unknown }) =>
+        sequence.startPlacement ?? null,
     },
   })
 );
@@ -68,7 +68,7 @@ const sequence = {
     { letter: "A", motions: {} },
     { letter: "B", motions: {} },
   ],
-  startPosition: { letter: "alpha", motions: {} },
+  startPlacement: { letter: "alpha", motions: {} },
 } as unknown as SequenceData;
 
 describe("warmSequenceCells", () => {

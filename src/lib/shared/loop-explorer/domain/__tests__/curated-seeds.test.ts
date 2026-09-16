@@ -30,9 +30,9 @@ describe("curated LOOP seed hydration", () => {
     );
 
     for (const sequence of hydrated) {
-      expect(sequence.startPosition).toEqual(
+      expect(sequence.startPlacement).toEqual(
         expect.objectContaining({
-          isStartPosition: true,
+          isStartPlacement: true,
           motions: expect.objectContaining({
             left: expect.any(Object),
             right: expect.any(Object),
@@ -42,8 +42,8 @@ describe("curated LOOP seed hydration", () => {
       expect(sequence.steps.length).toBeGreaterThan(0);
 
       for (const step of sequence.steps) {
-        expect(step.startPosition).not.toBeNull();
-        expect(step.endPosition).not.toBeNull();
+        expect(step.startPlacement).not.toBeNull();
+        expect(step.endPlacement).not.toBeNull();
         expect(step.motions.left.hand).toBe("left");
         expect(step.motions.right.hand).toBe("right");
         expect(step.motions.left.isVisible).toBe(true);
@@ -57,8 +57,8 @@ describe("curated LOOP seed hydration", () => {
     const again = await getCuratedSeed(LOOPType.ROTATED, "quartered");
 
     expect(first).toBe(again);
-    expect(first?.startPosition).not.toBe("gamma3");
-    expect(typeof first?.startPosition).toBe("object");
+    expect(first?.startPlacement).not.toBe("gamma3");
+    expect(typeof first?.startPlacement).toBe("object");
     expect(first?.steps[0]?.motions.left).toEqual(
       expect.objectContaining({ motionType: expect.any(String) })
     );

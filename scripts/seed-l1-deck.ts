@@ -186,8 +186,8 @@ function loadDiamondDataframe(): PictographData[] {
 
     pictographs.push({
       letter: row.letter,
-      startPosition: row.startPosition,
-      endPosition: row.endPosition,
+      startPlacement: row.startPlacement,
+      endPlacement: row.endPlacement,
       timing: row.timing,
       direction: row.direction,
       leftMotion: {
@@ -221,9 +221,9 @@ function buildAdjacencyMap(
 ): Map<string, PictographData[]> {
   const adj = new Map<string, PictographData[]>();
   for (const p of pictographs) {
-    const list = adj.get(p.startPosition) ?? [];
+    const list = adj.get(p.startPlacement) ?? [];
     list.push(p);
-    adj.set(p.startPosition, list);
+    adj.set(p.startPlacement, list);
   }
   return adj;
 }
@@ -235,8 +235,8 @@ function edgeToStep(edge: PictographData, stepNumber: number): SequenceStep {
   return {
     letter: edge.letter,
     variation: 0,
-    startPosition: edge.startPosition,
-    endPosition: edge.endPosition,
+    startPlacement: edge.startPlacement,
+    endPlacement: edge.endPlacement,
     leftMotion: { ...edge.leftMotion },
     rightMotion: { ...edge.rightMotion },
     stepNumber: stepNumber,
@@ -245,13 +245,13 @@ function edgeToStep(edge: PictographData, stepNumber: number): SequenceStep {
   };
 }
 
-/** Build a start-position SequenceStep from the first edge */
-function buildStartPositionStep(edge: PictographData): SequenceStep {
+/** Build a start-placement SequenceStep from the first edge */
+function buildStartPlacementStep(edge: PictographData): SequenceStep {
   return {
     letter: "α", // placeholder — will be overridden by position group
     variation: 0,
-    startPosition: edge.startPosition,
-    endPosition: edge.startPosition,
+    startPlacement: edge.startPlacement,
+    endPlacement: edge.startPlacement,
     leftMotion: {
       hand: "left",
       motionType: "static",
@@ -322,8 +322,8 @@ function fixPositionNames(
     if (match) {
       return {
         ...step,
-        startPosition: match.startPosition,
-        endPosition: match.endPosition,
+        startPlacement: match.startPlacement,
+        endPlacement: match.endPlacement,
         letter: match.letter, // Also fix letter from CSV (more authoritative)
       };
     }
@@ -438,7 +438,7 @@ interface DeckSequence {
   familyId: string;
   startPos: string;
   steps: SequenceStep[];
-  startPositionStep: SequenceStep;
+  startPlacementStep: SequenceStep;
 }
 
 function enumerateAndExecute(
@@ -450,11 +450,11 @@ function enumerateAndExecute(
   const edges = adj.get(startPos) ?? [];
 
   for (const b1 of edges) {
-    const edges2 = adj.get(b1.endPosition) ?? [];
+    const edges2 = adj.get(b1.endPlacement) ?? [];
     for (const b2 of edges2) {
       // Check if seed end position is the CW 90° rotation of start.
       // Only CW — including CCW would double the deck with mirrored variants.
-      if (b2.endPosition !== ROTATE_POS_90_CW[startPos]) continue;
+      if (b2.endPlacement !== ROTATE_POS_90_CW[startPos]) continue;
 
       // Rotation continuity: rotation directions must be compatible between
       // beats AND across the quarter boundary (b2 → b1 of the next quarter).
@@ -487,8 +487,8 @@ function enumerateAndExecute(
       )
         continue;
 
-      // Build the 3-step input: [startPosition, beat1, beat2]
-      const startStep = buildStartPositionStep(b1);
+      // Build the 3-step input: [startPlacement, beat1, beat2]
+      const startStep = buildStartPlacementStep(b1);
       const beat1Step = edgeToStep(b1, 1);
       const beat2Step = edgeToStep(b2, 2);
       const seedWord = `${b1.letter}${b2.letter}`;
@@ -546,7 +546,7 @@ function enumerateAndExecute(
         familyId,
         startPos,
         steps: actualSteps,
-        startPositionStep: result.steps[0],
+        startPlacementStep: result.steps[0],
       });
     }
   }
@@ -622,8 +622,8 @@ function buildFirestoreStep(step: SequenceStep, stepNumber: number) {
     isStep: true,
     stepNumber,
     letter: step.letter,
-    startPosition: step.startPosition,
-    endPosition: step.endPosition,
+    startPlacement: step.startPlacement,
+    endPlacement: step.endPlacement,
     gridMode: "diamond",
     duration: 1.0,
     leftReversal: false,
@@ -637,11 +637,11 @@ function buildFirestoreStep(step: SequenceStep, stepNumber: number) {
 }
 
 /** Build the Firestore-ready start position data */
-function buildFirestoreStartPosition(step: SequenceStep) {
+function buildFirestoreStartPlacement(step: SequenceStep) {
   return {
-    isStartPosition: true,
+    isStartPlacement: true,
     id: randomUUID(),
-    gridPosition: step.startPosition,
+    gridPlacement: step.startPlacement,
     gridMode: "diamond",
     motions: {
       left: buildFirestoreMotion(step.leftMotion, "left"),
@@ -767,13 +767,13 @@ async function writeToFirestore(
         tags: ["l1-deck", family.id],
         thumbnails: [],
         steps: firestoreSteps,
-        startPosition: buildFirestoreStartPosition(seq.startPositionStep),
+        startPlacement: buildFirestoreStartPlacement(seq.startPlacementStep),
         metadata: {
           deckId: DECK_ID,
           familyId: family.id,
           familyLabel: family.label,
           handPathId: seq.handPathId,
-          startPosition: seq.startPos,
+          startPlacement: seq.startPos,
           seed: seq.word,
           letter1: seq.letter1,
           letter2: seq.letter2,

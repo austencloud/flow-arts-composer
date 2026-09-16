@@ -1,4 +1,4 @@
-export type { GridPosition, GridMode, NineSquareGrid } from "./data/grid.js";
+export type { GridPlacement, GridMode, NineSquareGrid } from "./data/grid.js";
 export type {
 	QFTPositionNumber,
 	QFTPosition,
@@ -30,7 +30,7 @@ export { NINE_SQUARE_GLOSSARY } from "./data/glossary.js";
 export { NINE_SQUARE_DOCUMENTS } from "./data/documents.js";
 export { NINE_SQUARE_EXTERNAL_LINKS } from "./data/external-links.js";
 
-export { getGridPosition, listGridPositions } from "./reference/grid-lookup.js";
+export { getGridPlacement, listGridPlacements } from "./reference/grid-lookup.js";
 export { parseQFTFormula, describeQFTFormula } from "./reference/qft-lookup.js";
 export { getGridTransition, getTransitionsFrom } from "./reference/transition-lookup.js";
 export { searchNineSquare } from "./reference/search.js";

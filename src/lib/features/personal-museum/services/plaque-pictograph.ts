@@ -31,7 +31,7 @@ export async function renderFirstStepBitmap(
       showTKA: true,
       showTnD: false,
       showElemental: false,
-      showPositions: false,
+      showPlacements: false,
       showReversals: false,
       showNonRadialPoints: false,
       darkMode: false,

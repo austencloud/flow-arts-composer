@@ -45,8 +45,8 @@ function makeSeq(left: Motion[], right: Motion[], isCircular: boolean): Sequence
     rightReversal: false,
     isBlank: false,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       [HandSide.LEFT]: b as never,
       [HandSide.RIGHT]: right[i] as never,

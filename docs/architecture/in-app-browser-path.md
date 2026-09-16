@@ -417,7 +417,7 @@ Every workstream imports `getInAppBrowserDetector` from `src/lib/shared/auth/get
 
 **Preserve:** `?forceIAB=true` at `:14`. It is the test hook for all of this. The banner and escape sheet must both be reachable through it.
 
-**Verify:** load any app route with `?forceIAB=true`, confirm no blocking dialog, confirm the banner, confirm construct still reaches a start-position pick with the banner up.
+**Verify:** load any app route with `?forceIAB=true`, confirm no blocking dialog, confirm the banner, confirm construct still reaches a start-placement pick with the banner up.
 
 ### WS-AUTH: sign-in inside the webview
 

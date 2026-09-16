@@ -10,12 +10,12 @@
  * arrows. The render pipeline enforces these fields with two guards that fail
  * SILENTLY — PictographPreparer.calculateProps early-returns without
  * propPlacementData, and ArrowLifecycleManager.loadArrowAssets throws and is
- * swallowed upstream. Most visible on the start-position cell, because steps
+ * swallowed upstream. Most visible on the start-placement cell, because steps
  * are rebuilt through createMotionData (which defaults the fields) while a
- * stored startPosition is passed through verbatim.
+ * stored startPlacement is passed through verbatim.
  *
- * Not the same defect as repair-broken-start-positions.cjs, which rebuilds a
- * startPosition whose canonical `motions.left` / `motions.right` are missing
+ * Not the same defect as repair-broken-start-placements.cjs, which rebuilds a
+ * startPlacement whose canonical `motions.left` / `motions.right` are missing
  * entirely. Historical blue/red keys are still accepted at the repair boundary.
  * one handles motions that are present but placement-less. Run both; they are
  * disjoint.
@@ -122,7 +122,7 @@ async function processDoc(doc, stats) {
   const update = {};
   const touched = [];
 
-  for (const field of ["startPosition", "startingPosition"]) {
+  for (const field of ["startPlacement", "startingPlacement"]) {
     const repaired = repairStepShape(data[field]);
     if (repaired) {
       update[field] = repaired;

@@ -10,7 +10,7 @@ variant of PictographToLetterGame:
    across the challenge's full questionCount; survival mode ramps across a
    rolling 20-question window, then holds at paceEndSeconds). The bar is a
    plain rAF loop recomputing `remaining` from a performance.now() delta each
-   frame (same drift-correction technique as the positions SpeedRounds
+   frame (same drift-correction technique as the placements SpeedRounds
    reference) — never decrement-by-tick, so a dropped frame can't slow the
    clock down. Cancelled on answer, on timeout, on unmount, and reactively
    whenever the session phase stops being "playing" (survival completing

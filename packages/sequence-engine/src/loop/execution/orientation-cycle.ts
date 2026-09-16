@@ -18,11 +18,11 @@ export interface OrientationCycleAnalysis {
 export interface OrientationCycleClosure {
   steps: SequenceStep[];
   /**
-   * Minimum number of completed position-pattern repetitions required solely
+   * Minimum number of completed placement-pattern repetitions required solely
    * for orientation closure.
    */
   orientationCycleCount: OrientationCycleCount;
-  /** Number of completed position-pattern repetitions emitted. */
+  /** Number of completed placement-pattern repetitions emitted. */
   patternRepetitions: number;
   /** Final output step count divided by the original seed step count. */
   expansionMultiplier: number;
@@ -30,7 +30,7 @@ export interface OrientationCycleClosure {
 
 export interface OrientationCycleOptions {
   /**
-   * Original seed size. Defaults to the number of non-start-position steps,
+   * Original seed size. Defaults to the number of non-start-placement steps,
    * which is appropriate when analyzing an unexpanded sequence.
    */
   seedStepCount?: number;
@@ -41,7 +41,7 @@ export interface OrientationCycleOptions {
    */
   minimumExpansionMultiplier?: number;
   /**
-   * Explicit start orientations for callers whose start position is stored
+   * Explicit start orientations for callers whose start placement is stored
    * separately from the sequence steps.
    */
   startOrientations?: {
@@ -51,7 +51,7 @@ export interface OrientationCycleOptions {
 }
 
 /**
- * Find the smallest number of complete position-pattern repetitions that
+ * Find the smallest number of complete placement-pattern repetitions that
  * returns both props to their starting orientations.
  *
  * The orientation wheel has eight states, so a deterministic pattern must
@@ -108,17 +108,17 @@ export function analyzeOrientationCycle(
 
   throw new Error(
     `Orientation did not close after ${MAX_ORIENTATION_CYCLE_REPETITIONS} ` +
-      `position-pattern repetitions (left ${startOrientations.left} -> ${left}, ` +
+      `placement-pattern repetitions (left ${startOrientations.left} -> ${left}, ` +
       `right ${startOrientations.right} -> ${right})`
   );
 }
 
 /**
- * Repeat a completed position pattern until both prop orientations close.
+ * Repeat a completed placement pattern until both prop orientations close.
  *
  * LOOP classification ignores orientation, but performance does not. A
- * position pattern may return home while one or both props still point
- * elsewhere. Repeating the complete pattern preserves its positional LOOP
+ * placement pattern may return home while one or both props still point
+ * elsewhere. Repeating the complete pattern preserves its placement-domain LOOP
  * identity while advancing the propagated orientation state.
  */
 export function closeOrientationCycle(
@@ -150,10 +150,10 @@ export function closeOrientationCycle(
 
   const first = pattern[0]!;
   const last = pattern[pattern.length - 1]!;
-  if (last.endPosition !== first.startPosition) {
+  if (last.endPlacement !== first.startPlacement) {
     throw new Error(
-      `Cannot close orientation on an open position pattern ` +
-        `(${first.startPosition} -> ${last.endPosition})`
+      `Cannot close orientation on an open placement pattern ` +
+        `(${first.startPlacement} -> ${last.endPlacement})`
     );
   }
 
@@ -174,7 +174,7 @@ export function closeOrientationCycle(
 
   if (patternRepetitions > MAX_ORIENTATION_CYCLE_REPETITIONS) {
     throw new Error(
-      `Orientation closure requires ${patternRepetitions} position-pattern ` +
+      `Orientation closure requires ${patternRepetitions} placement-pattern ` +
         `repetitions, above the supported maximum of ` +
         `${MAX_ORIENTATION_CYCLE_REPETITIONS}`
     );
@@ -193,8 +193,8 @@ export function closeOrientationCycle(
         ...sourceStep,
         id: `step-${nextStepNumber}`,
         stepNumber: nextStepNumber,
-        startPosition:
-          previousStep.endPosition as SequenceStep["startPosition"],
+        startPlacement:
+          previousStep.endPlacement as SequenceStep["startPlacement"],
         motions: {
           left: { ...sourceStep.motions.left },
           right: { ...sourceStep.motions.right },

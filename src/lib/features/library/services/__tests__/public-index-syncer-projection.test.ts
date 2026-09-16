@@ -119,8 +119,8 @@ function makeStep(index: number, letter: string | null): StepData {
     rightReversal: false,
     isBlank: false,
     letter: letter as StepData["letter"],
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: motionAt(
         CYCLE[index % 4] as GridLocation,
@@ -277,7 +277,7 @@ describe("syncToPublicIndex — first publication", () => {
     expect(written["leftSoloProp"]).toBeTruthy();
     expect(written["rightSoloProp"]).toBeTruthy();
     expect(written["stepPairings"]).toHaveLength(4);
-    expect(written["startPosition"]).toBeTruthy();
+    expect(written["startPlacement"]).toBeTruthy();
     const retained = revisionWrite();
     expect(retained).not.toBeNull();
     expect(retained!.path).toMatch(/^sequenceRevisions\/v1_[a-f0-9]{64}$/);

@@ -139,7 +139,7 @@
     if (!sequence) return;
 
     const pictographs = [
-      sequence.startPosition ?? sequence.startingPosition ?? null,
+      sequence.startPlacement ?? sequence.startingPlacement ?? null,
       ...sequence.steps,
     ].filter((pictograph): pictograph is PictographData => pictograph !== null);
     const settings = getSettings();

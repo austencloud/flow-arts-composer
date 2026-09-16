@@ -44,7 +44,7 @@ export interface Offline3DExportOptions {
   /** Target vertical resolution: 720, 1080, 2160, or 4320 */
   resolution: number;
   loopCount: number;
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   includeEndHold: boolean;
   /**
    * "standard": one render per output frame at native resolution.

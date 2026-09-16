@@ -43,7 +43,7 @@ import { ensureMotionData } from "$lib/shared/sequence-viewer/services/sequence-
 
     // Beat 0 = start position
     if (animState.currentStep < 1) {
-      return seq.startPosition ?? null;
+      return seq.startPlacement ?? null;
     }
 
     // Beat 1+ = steps array (convert 1-based to 0-based index)

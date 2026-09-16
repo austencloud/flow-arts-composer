@@ -34,7 +34,7 @@
         name: "The Kinetic Alphabet",
         alternateName: "TKA",
         description:
-          "A pictographic notation system for flow arts choreography. Every pair of grid positions is given a letter, so a sequence of movement can be written down, read back, and searched as a word.",
+          "A pictographic notation system for flow arts choreography. Every pair of grid placements is given a letter, so a sequence of movement can be written down, read back, and searched as a word.",
         disambiguatingDescription:
           "Created by Austen Cloud in 2022. The Kinetic Alphabet is its own system and is not built on, derived from, or an extension of the other flow arts notations documented on this site. The Shape Matrix, CAPs, the Vulcan Tech Gospel, QFT Notation and the rest are separate works by other authors, archived and credited at /history.",
         dateCreated: "2022",
@@ -72,7 +72,7 @@
     {
       label: "Guide",
       title: "Learn the notation",
-      copy: "Start with the grid, hand positions, motions, letters, and words.",
+      copy: "Start with the grid, hand placements, motions, letters, and words.",
       href: "/guide",
     },
     {
@@ -139,9 +139,9 @@
       </a>
     </div>
 
-    <div class="position-shell" aria-labelledby="position-heading">
-      <span class="proof-label">Start with position</span>
-      <h2 id="position-heading">The relationship between the hands</h2>
+    <div class="placement-shell" aria-labelledby="placement-heading">
+      <span class="proof-label">Start with placement</span>
+      <h2 id="placement-heading">The relationship between the hands</h2>
       <p>
         Alpha places the hands opposite each other. Beta puts both hands at the
         same point. Gamma makes a right angle.
@@ -311,7 +311,7 @@
   }
 
   .hero-body,
-  .position-shell p,
+  .placement-shell p,
   .reading-copy p,
   .pathways-heading p,
   .creator-copy p,
@@ -334,7 +334,7 @@
     width: fit-content;
   }
 
-  .position-shell {
+  .placement-shell {
     min-width: 0;
     padding: 1.4rem;
     border: 1px solid var(--about-stroke);
@@ -342,7 +342,7 @@
     background: var(--about-surface);
   }
 
-  .position-shell h2 {
+  .placement-shell h2 {
     max-width: 18ch;
     margin: 0.5rem 0 0.7rem;
     font-family: var(
@@ -357,12 +357,12 @@
     line-height: 1.08;
   }
 
-  .position-shell p {
+  .placement-shell p {
     max-width: 46ch;
     margin: 0;
   }
 
-  .position-shell :global(.position-grid) {
+  .placement-shell :global(.position-grid) {
     width: 100%;
     margin: 1.5rem 0 0;
   }
@@ -534,7 +534,7 @@
       padding: 4rem clamp(1rem, 2.5cqw, 3rem);
     }
 
-    .position-shell {
+    .placement-shell {
       padding: clamp(1.5rem, 2.5cqw, 2.5rem);
     }
 
@@ -623,13 +623,13 @@
   }
 
   @media (min-width: 1680px) {
-    .position-shell :global(.position-grid) {
+    .placement-shell :global(.position-grid) {
       width: 100%;
       margin: 2rem 0 0;
       gap: 1.5rem;
     }
 
-    .position-shell :global(.position-image-container) {
+    .placement-shell :global(.position-image-container) {
       max-width: 12rem;
     }
   }

@@ -7,28 +7,28 @@ import { BASE_STEP_SIZE, getLayout } from "@tka/render-composition";
 
 export function validateLayout(
   stepCount: number,
-  includeStartPosition: boolean
+  includeStartPlacement: boolean
 ): boolean {
   if (stepCount < 0) return false;
   if (stepCount > 1000) return false;
-  if (typeof includeStartPosition !== "boolean") return false;
+  if (typeof includeStartPlacement !== "boolean") return false;
   return true;
 }
 
 export function calculateLayout(
   stepCount: number,
-  includeStartPosition: boolean,
-  startPositionLayout: "row" | "column" = "row"
+  includeStartPlacement: boolean,
+  startPlacementLayout: "row" | "column" = "row"
 ): [number, number] {
-  if (!validateLayout(stepCount, includeStartPosition)) {
+  if (!validateLayout(stepCount, includeStartPlacement)) {
     throw new Error(
-      `Invalid layout parameters: stepCount=${stepCount}, includeStartPosition=${includeStartPosition}`
+      `Invalid layout parameters: stepCount=${stepCount}, includeStartPlacement=${includeStartPlacement}`
     );
   }
 
   return getLayout(
     stepCount,
-    includeStartPosition ? startPositionLayout : "none"
+    includeStartPlacement ? startPlacementLayout : "none"
   );
 }
 
@@ -57,11 +57,11 @@ export function getBaseBeatSize(): number {
 
 export function calculateImageArea(
   stepCount: number,
-  includeStartPosition: boolean,
+  includeStartPlacement: boolean,
   additionalHeight: number,
   stepScale: number = 1
 ): number {
-  const layout = calculateLayout(stepCount, includeStartPosition);
+  const layout = calculateLayout(stepCount, includeStartPlacement);
   const [width, height] = calculateImageDimensions(
     layout,
     additionalHeight,
@@ -72,13 +72,13 @@ export function calculateImageArea(
 
 export function getLayoutEfficiency(
   stepCount: number,
-  includeStartPosition: boolean
+  includeStartPlacement: boolean
 ): number {
   if (stepCount === 0) return 1.0;
 
-  const [columns, rows] = calculateLayout(stepCount, includeStartPosition);
+  const [columns, rows] = calculateLayout(stepCount, includeStartPlacement);
   const totalCells = columns * rows;
-  const usedCells = includeStartPosition ? stepCount + 1 : stepCount;
+  const usedCells = includeStartPlacement ? stepCount + 1 : stepCount;
 
   return usedCells / totalCells;
 }
@@ -86,7 +86,7 @@ export function getLayoutEfficiency(
 export function getLayoutsInRange(
   minSteps: number,
   maxSteps: number,
-  includeStartPosition: boolean
+  includeStartPlacement: boolean
 ): Array<{
   stepCount: number;
   layout: [number, number];
@@ -95,9 +95,9 @@ export function getLayoutsInRange(
   const results = [];
 
   for (let stepCount = minSteps; stepCount <= maxSteps; stepCount++) {
-    if (validateLayout(stepCount, includeStartPosition)) {
-      const layout = calculateLayout(stepCount, includeStartPosition);
-      const efficiency = getLayoutEfficiency(stepCount, includeStartPosition);
+    if (validateLayout(stepCount, includeStartPlacement)) {
+      const layout = calculateLayout(stepCount, includeStartPlacement);
+      const efficiency = getLayoutEfficiency(stepCount, includeStartPlacement);
       results.push({ stepCount, layout, efficiency });
     }
   }
@@ -107,9 +107,9 @@ export function getLayoutsInRange(
 
 export function calculateGalleryAspectRatio(
   stepCount: number,
-  startPositionLayout: "row" | "column" = "row"
+  startPlacementLayout: "row" | "column" = "row"
 ): number {
-  const [columns, rows] = calculateLayout(stepCount, true, startPositionLayout);
+  const [columns, rows] = calculateLayout(stepCount, true, startPlacementLayout);
   const additionalHeightFraction = 10 / 21;
   return columns / (rows + additionalHeightFraction);
 }
@@ -117,20 +117,20 @@ export function calculateGalleryAspectRatio(
 export function calculateThumbnailAspectRatio(
   stepCount: number,
   options: {
-    includeStartPosition?: boolean;
+    includeStartPlacement?: boolean;
     hasHeader?: boolean;
     hasFooter?: boolean;
   } = {}
 ): number {
   const {
-    includeStartPosition = true,
+    includeStartPlacement = true,
     hasHeader = true,
     hasFooter = true,
   } = options;
 
   const [columns, rows] = calculateLayout(
     stepCount,
-    includeStartPosition,
+    includeStartPlacement,
     "column"
   );
 

@@ -51,14 +51,14 @@
   let companionOpen = $state(false);
   let clickedPropType = $state<"hand" | "staff" | PropType>("hand");
   let clickedKey = $state<string | null>(null);
-  let clickedShowPositionGlyph = $state(false);
+  let clickedShowPlacementGlyph = $state(false);
 
   async function handleSequenceClick(payload: GuideSequenceClick) {
     activeStep.begin(payload.key ?? "");
     selection.select(payload.key ?? "");
     clickedPropType = payload.propType ?? "hand";
     const isHand = String(clickedPropType).toLowerCase() === "hand";
-    clickedShowPositionGlyph = payload.showPositionGlyph ?? isHand;
+    clickedShowPlacementGlyph = payload.showPlacementGlyph ?? isHand;
     clickedKey = payload.key ?? null;
     const seq = stripToSequence(payload.strip, { word: payload.word });
     clicked = (await ensureMotionData(seq)) ?? seq;
@@ -84,7 +84,7 @@
         stripKey={clickedKey}
         {pageTitle}
         {levelLabel}
-        showPositionGlyph={clickedShowPositionGlyph}
+        showPlacementGlyph={clickedShowPlacementGlyph}
         isCodexMode={false}
         isMobile={true}
         onStep={(s: number) => activeStep.report(s)}

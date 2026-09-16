@@ -273,7 +273,7 @@
   }
 
   function handleToggleLoop() {
-    gridState.toggleSkipStartPosition();
+    gridState.toggleSkipStartPlacement();
   }
 
   // Stagger controls helpers
@@ -443,7 +443,7 @@
           gridCols={gridState.gridCols}
           currentStep={gridState.currentStep}
           isPlaying={gridState.isPlaying}
-          skipStartPosition={gridState.skipStartPosition}
+          skipStartPlacement={gridState.skipStartPlacement}
           selectedCellId={gridState.selectedCellId}
           occupiedPositions={gridState.occupiedPositions}
           stateGridBounds={gridState.gridBounds}
@@ -458,7 +458,7 @@
               currentStep={gridState.currentStep}
               totalSteps={gridState.totalSteps}
               bpm={gridState.bpm}
-              skipStartPosition={gridState.skipStartPosition}
+              skipStartPlacement={gridState.skipStartPlacement}
               onPlayPause={handlePlayPause}
               onStop={handleStop}
               onStepHalfBack={handleStepHalfBack}

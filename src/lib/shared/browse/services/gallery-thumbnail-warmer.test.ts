@@ -146,7 +146,7 @@ describe("startGalleryWarm", () => {
     expect(inputs).toHaveLength(2);
     for (const input of inputs) {
       expect(input.variant).toBe("gallery");
-      expect(input.startPositionLayout).toBe("row");
+      expect(input.startPlacementLayout).toBe("row");
       expect(input.leftPropType).toBe(PropType.STAFF);
       expect((input.visibility as { showMandala: boolean }).showMandala).toBe(true);
     }

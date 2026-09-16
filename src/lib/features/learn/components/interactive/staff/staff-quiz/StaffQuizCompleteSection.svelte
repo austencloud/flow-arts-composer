@@ -44,9 +44,9 @@ StaffQuizCompleteSection - Score display and completion actions
   <div class="score-breakdown">
     <h4>Topics Covered</h4>
     <div class="topic-badges">
-      <span class="topic-badge position">
+      <span class="topic-badge placement">
         <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
-        Positions
+        Placements
       </span>
       <span class="topic-badge thumb">
         <i class="fa-solid fa-hand-point-up" aria-hidden="true"></i>
@@ -171,7 +171,7 @@ StaffQuizCompleteSection - Score display and completion actions
     font-weight: 600;
   }
 
-  .topic-badge.position {
+  .topic-badge.placement {
     background: color-mix(in srgb, var(--semantic-error) 15%, transparent);
     color: var(--semantic-error);
   }

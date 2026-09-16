@@ -14,7 +14,7 @@ export interface ILOOPExecutor {
   /**
    * Execute the LOOP transformation on a partial sequence
    *
-   * @param sequence - The partial sequence to complete (must include start position at index 0)
+   * @param sequence - The partial sequence to complete (must include start placement at index 0)
    * @param period - Whether to use halved (180°) or quartered (90°) transformation
    *                    Note: Some executors only support halved and will ignore this parameter
    * @returns The complete circular sequence with all steps

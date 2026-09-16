@@ -68,8 +68,8 @@
     const pictographData: PictographData = {
       id: stepData.id,
       letter: stepData.letter ?? null,
-      startPosition: stepData.startPosition,
-      endPosition: stepData.endPosition,
+      startPlacement: stepData.startPlacement,
+      endPlacement: stepData.endPlacement,
       motions: stepData.motions as PictographData["motions"],
     };
 

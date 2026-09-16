@@ -159,7 +159,7 @@ page or section edge red to announce that one action is dangerous.
 Color may encode identity inside an icon, glyph, thumbnail, plot, or artifact.
 It may not be glued to a container as a thin edge strip.
 
-The start-position pictograph carries the hand colour key as part of the
+The start-placement pictograph carries the hand colour key as part of the
 pictograph itself, not as a viewer decoration. Two swatch-and-letter pairs
 (`L`, `R`) sit centred in the bottom band of the 950-unit viewBox, the one slot
 no other glyph uses, in the same Georgia bold as the step number. Geometry
@@ -171,7 +171,7 @@ The key is on by default and is the `Hand key` chip in the export panel's
 Pictograph row (`handColorKey` in the visibility manager, `showHandColorKey`
 in the render and export options); locked deck cards always keep it.
 Live card cells pass `animateVisibility`, so every in-cell overlay (both grid
-layers, non-radial points, TKA, TnD, Positions, hand key) stays mounted and
+layers, non-radial points, TKA, TnD, Placements, hand key) stays mounted and
 fades through its opacity transition when toggled; exports omit the flag and
 still hard-unmount hidden overlays.
 

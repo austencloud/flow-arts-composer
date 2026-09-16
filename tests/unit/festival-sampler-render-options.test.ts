@@ -23,7 +23,7 @@ describe("festival sampler render options", () => {
       const sequence = await resolveFestivalSamplerCardSequence(card);
       const options = buildFestivalSamplerRenderOptions(card, sequence);
 
-      expect(options.startPositionLayout).toBe("column");
+      expect(options.startPlacementLayout).toBe("column");
       expect(options.totalGridColumns).toBe(3);
       expect(options.showMandala).toBe(true);
       expect(options.showQRCode).toBe(true);

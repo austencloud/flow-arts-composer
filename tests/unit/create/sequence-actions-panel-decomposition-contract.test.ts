@@ -19,6 +19,6 @@ describe("SequenceActionsPanel ownership", () => {
     );
     expect(source).not.toContain("extensionFlowCoordinator.appendBridge");
     expect(source).not.toContain("extensionFlowCoordinator.applyLoop");
-    expect(source).not.toContain("activeSequenceState.shiftStartPosition");
+    expect(source).not.toContain("activeSequenceState.shiftStartPlacement");
   });
 });

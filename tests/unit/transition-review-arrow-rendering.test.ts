@@ -50,7 +50,7 @@ describe("sequence-viewer transition review arrows", () => {
 
   it("prepares both canonical arrows for every review pictograph", async () => {
     const pictographs = [
-      TRANSITION_REVIEW_SEQUENCE.startPosition,
+      TRANSITION_REVIEW_SEQUENCE.startPlacement,
       ...TRANSITION_REVIEW_SEQUENCE.steps,
     ];
 

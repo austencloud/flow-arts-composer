@@ -67,8 +67,8 @@ interface CsvMotion {
 
 interface CsvRow {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   left: CsvMotion;
@@ -78,7 +78,7 @@ interface CsvRow {
 /**
  * Load the canonical diamond dataframe. Column order matches
  * DiamondPictographDataframe.csv:
- *   letter, startPosition, endPosition, timing, direction,
+ *   letter, startPlacement, endPlacement, timing, direction,
  *   blueMotionType, blueRotationDirection, blueStartLocation, blueEndLocation,
  *   redMotionType,  redRotationDirection,  redStartLocation,  redEndLocation
  * The CSV is master truth and is never reordered or edited.
@@ -92,8 +92,8 @@ function loadCsv(): CsvRow[] {
     if (!v[0]) continue;
     rows.push({
       letter: v[0],
-      startPosition: v[1],
-      endPosition: v[2],
+      startPlacement: v[1],
+      endPlacement: v[2],
       timing: v[3],
       direction: v[4],
       left: {
@@ -538,8 +538,8 @@ function findRow(rows: CsvRow[], b: BeatRef): CsvRow {
   const matches = rows.filter(
     (r) =>
       r.letter === b.letter &&
-      r.startPosition === b.startPos &&
-      r.endPosition === b.endPos &&
+      r.startPlacement === b.startPos &&
+      r.endPlacement === b.endPos &&
       (b.leftDir === undefined || r.left.rotationDirection === b.leftDir)
   );
   if (matches.length === 0) {
@@ -562,8 +562,8 @@ interface BuiltMotion extends CsvMotion {
 
 interface BuiltBeat {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   left: BuiltMotion;
   right: BuiltMotion;
 }
@@ -600,8 +600,8 @@ function chainOrientations(rows: CsvRow[]): BuiltBeat[] {
     rightOri = rightEnd;
     return {
       letter: r.letter,
-      startPosition: r.startPosition,
-      endPosition: r.endPosition,
+      startPlacement: r.startPlacement,
+      endPlacement: r.endPlacement,
       left: { ...r.left, startOrientation: leftStart, endOrientation: leftEnd },
       right: {
         ...r.right,
@@ -702,8 +702,8 @@ function buildFirestoreStep(beat: BuiltBeat, stepNumber: number) {
     isStep: true,
     stepNumber,
     letter: beat.letter,
-    startPosition: beat.startPosition,
-    endPosition: beat.endPosition,
+    startPlacement: beat.startPlacement,
+    endPlacement: beat.endPlacement,
     gridMode: "diamond",
     duration: 1.0,
     leftReversal: false,
@@ -720,7 +720,7 @@ function buildFirestoreStep(beat: BuiltBeat, stepNumber: number) {
  * The start position is a static pose at the walk's startPos, using beat-1's
  * start hand locations so the opening pose matches the walk's first beat.
  */
-function buildFirestoreStartPosition(seq: TnDSequence) {
+function buildFirestoreStartPlacement(seq: TnDSequence) {
   const first = seq.beats[0];
   const staticMotion = (loc: string, hand: "left" | "right") =>
     buildFirestoreMotion(
@@ -735,9 +735,9 @@ function buildFirestoreStartPosition(seq: TnDSequence) {
       hand
     );
   return {
-    isStartPosition: true,
+    isStartPlacement: true,
     id: randomUUID(),
-    gridPosition: first.startPosition,
+    gridPlacement: first.startPlacement,
     gridMode: "diamond",
     motions: {
       left: staticMotion(first.left.startLocation, "left"),
@@ -808,13 +808,13 @@ async function writeToFirestore(sequences: TnDSequence[]): Promise<void> {
       tags: ["tnd-deck", seq.familyId],
       thumbnails: [],
       steps: firestoreSteps,
-      startPosition: buildFirestoreStartPosition(seq),
+      startPlacement: buildFirestoreStartPlacement(seq),
       metadata: {
         deckId: DECK_ID,
         familyId: seq.familyId,
         familyLabel: seq.vtg,
         handPathId: seq.handPathId,
-        startPosition: seq.startPos,
+        startPlacement: seq.startPos,
         seed: seq.seed.join(""),
         vtgCategory: seq.vtg,
       },
@@ -944,7 +944,7 @@ export {
   loadCsv,
   buildTnDSequence,
   buildFirestoreStep,
-  buildFirestoreStartPosition,
+  buildFirestoreStartPlacement,
   TND_MOTIONS,
   DECK_ID,
 };

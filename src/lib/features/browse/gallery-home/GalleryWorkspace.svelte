@@ -16,7 +16,7 @@
   import GalleryLevelEditor from "./value-editors/GalleryLevelEditor.svelte";
   import GalleryLoopEditor from "./value-editors/GalleryLoopEditor.svelte";
   import GalleryMaxTurnEditor from "./value-editors/GalleryMaxTurnEditor.svelte";
-  import GalleryPositionEditor from "./value-editors/GalleryPositionEditor.svelte";
+  import GalleryPlacementEditor from "./value-editors/GalleryPlacementEditor.svelte";
   import GalleryPerformanceEditor from "./value-editors/GalleryPerformanceEditor.svelte";
   import type { GalleryWorkspaceProps } from "./gallery-workspace-types";
 
@@ -135,8 +135,8 @@
       {onPickValue}
       {valueHead}
     />
-  {:else if section === "position"}
-    <GalleryPositionEditor
+  {:else if section === "placement"}
+    <GalleryPlacementEditor
       {catalog}
       {stackHint}
       {isValueApplied}

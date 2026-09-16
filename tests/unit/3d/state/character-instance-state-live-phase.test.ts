@@ -22,7 +22,7 @@ describe("CharacterInstanceState — live phase mapping", () => {
       { id: "p1", positionX: 0 },
       makeStandaloneDeps()
     );
-    expect(FALG.startPosition).toBeTruthy();
+    expect(FALG.startPlacement).toBeTruthy();
     state.loadSequence(FALG);
     expect(state.motionStepOffset).toBe(1);
 
@@ -42,7 +42,7 @@ describe("CharacterInstanceState — live phase mapping", () => {
     );
     // A start pose is derived from the first step whenever one exists, so
     // only an empty sequence has nothing at index 0.
-    const empty = { ...FALG, startPosition: undefined, steps: [] };
+    const empty = { ...FALG, startPlacement: undefined, steps: [] };
     state.loadSequence(empty as unknown as SequenceData);
     expect(state.motionStepOffset).toBe(0);
   });

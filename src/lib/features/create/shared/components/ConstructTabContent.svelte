@@ -1,10 +1,10 @@
 <!--
   ConstructTabContent.svelte
 
-  Pure UI component that displays StartPositionPicker or OptionPicker
+  Pure UI component that displays StartPlacementPicker or OptionPicker
   based on the current sequence state. Receives all state and handlers as props.
 
-  Flow: Start Position Picker → Option Viewer
+  Flow: Start Placement Picker → Option Viewer
 
   Uses instant content swap - the workspace expansion is the "hero" animation.
 -->
@@ -12,74 +12,74 @@
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import OptionPicker from "$lib/features/create/construct/option-picker/components/OptionPicker.svelte";
-  import StartPositionPicker from "$lib/features/create/construct/start-position-picker/components/StartPositionPicker.svelte";
+  import StartPlacementPicker from "$lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte";
   import Crossfade from "$lib/shared/components/Crossfade.svelte";
   import { DURATION } from "$lib/shared/transitions/transitions";
-  import type { SimplifiedStartPositionState } from "$lib/shared/create/state/start-position-state.svelte";
+  import type { SimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
   import ConstructTutorialGuide from "../../construct/tutorial/components/ConstructTutorialGuide.svelte";
   import ConstructGuideEntry from "../../construct/tutorial/components/ConstructGuideEntry.svelte";
-  import type { StartPositionPath } from "../../construct/services/construct-analytics";
+  import type { StartPlacementPath } from "../../construct/services/construct-analytics";
   import { getCreateModuleContext } from "../context/create-module-context";
 
   const { constructTutorialState, panelState } = getCreateModuleContext();
   // Props
   let {
-    shouldShowStartPositionPicker,
-    startPositionState,
+    shouldShowStartPlacementPicker,
+    startPlacementState,
     onOptionSelected,
     currentSequence = [],
     currentGridMode = GridMode.DIAMOND,
-    initialStartPosition = null,
+    initialStartPlacement = null,
     lockStartGridMode = false,
-    startPositionValidationMessage = null,
-    onStartPositionNavigateToAdvanced,
-    onStartPositionNavigateToDefault,
+    startPlacementValidationMessage = null,
+    onStartPlacementNavigateToAdvanced,
+    onStartPlacementNavigateToDefault,
     isSideBySideLayout = () => false,
     onOpenFilters = () => {},
     onCloseFilters = () => {},
     isContinuousOnly = false,
     isFilterPanelOpen = false,
     onToggleContinuous = () => {},
-    onStartPositionSubmitted = () => {},
+    onStartPlacementSubmitted = () => {},
   } = $props<{
-    shouldShowStartPositionPicker: boolean;
-    startPositionState?: SimplifiedStartPositionState | null;
+    shouldShowStartPlacementPicker: boolean;
+    startPlacementState?: SimplifiedStartPlacementState | null;
     onOptionSelected: (option: PictographData) => Promise<void>;
     currentSequence?: PictographData[];
     currentGridMode?: GridMode;
-    initialStartPosition?: PictographData | null;
+    initialStartPlacement?: PictographData | null;
     lockStartGridMode?: boolean;
-    startPositionValidationMessage?: string | null;
-    onStartPositionNavigateToAdvanced?: () => void;
-    onStartPositionNavigateToDefault?: () => void;
+    startPlacementValidationMessage?: string | null;
+    onStartPlacementNavigateToAdvanced?: () => void;
+    onStartPlacementNavigateToDefault?: () => void;
     isSideBySideLayout?: () => boolean;
     onOpenFilters?: () => void;
     onCloseFilters?: () => void;
     isContinuousOnly?: boolean;
     isFilterPanelOpen?: boolean;
     onToggleContinuous?: (value: boolean) => void;
-    onStartPositionSubmitted?: (
-      position: PictographData,
-      path: StartPositionPath
+    onStartPlacementSubmitted?: (
+      placement: PictographData,
+      path: StartPlacementPath
     ) => void;
   }>();
 </script>
 
-{#snippet startPositionHeading()}
+{#snippet startPlacementHeading()}
   <ConstructGuideEntry />
 {/snippet}
 
 <div
   class="construct-tab-content"
   data-testid="construct-tab-content"
-  data-picker-mode={shouldShowStartPositionPicker
-    ? "start-position"
+  data-picker-mode={shouldShowStartPlacementPicker
+    ? "start-placement"
     : "options"}
 >
   <ConstructTutorialGuide />
   <div class="content-container" inert={!!panelState.workspacePlayback}>
     <div class="construct-scroll-area transparent-scroll">
-      <!-- Start position → option picker is one continuous construct flow, so
+      <!-- Start placement → option picker is one continuous construct flow, so
            it transitions in place rather than cutting (crossfade-primitive.md).
            SWAP, not overlap: these two pickers share no chrome — a true
            crossfade superimposes the letter-type tabs, the α/β/γ cards and the
@@ -88,22 +88,22 @@
            coherent picture on screen at every instant. -->
       <div class="picker-wrapper">
         <Crossfade
-          key={shouldShowStartPositionPicker ? "start-position" : "options"}
+          key={shouldShowStartPlacementPicker ? "start-placement" : "options"}
           duration={DURATION.normal}
           mode="swap"
           fill
         >
-          {#if shouldShowStartPositionPicker}
-            <StartPositionPicker
-              {startPositionState}
-              {initialStartPosition}
+          {#if shouldShowStartPlacementPicker}
+            <StartPlacementPicker
+              {startPlacementState}
+              {initialStartPlacement}
               lockedGridMode={lockStartGridMode ? currentGridMode : undefined}
-              validationMessage={startPositionValidationMessage}
-              onNavigateToAdvanced={onStartPositionNavigateToAdvanced}
-              onNavigateToDefault={onStartPositionNavigateToDefault}
+              validationMessage={startPlacementValidationMessage}
+              onNavigateToAdvanced={onStartPlacementNavigateToAdvanced}
+              onNavigateToDefault={onStartPlacementNavigateToDefault}
               {isSideBySideLayout}
-              onPositionSubmitted={onStartPositionSubmitted}
-              heading={startPositionHeading}
+              onPlacementSubmitted={onStartPlacementSubmitted}
+              heading={startPlacementHeading}
               suppressHeading={constructTutorialState.isActive}
             />
           {:else}

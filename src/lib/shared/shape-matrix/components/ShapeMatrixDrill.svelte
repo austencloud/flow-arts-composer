@@ -1334,7 +1334,7 @@
             error={railLoadError}
             props={{
               sequence: railRealization.seq,
-              includeStartPosition: false,
+              includeStartPlacement: false,
               currentStep: visibleStep,
               bpm: animationState.bpm,
               density: "compact",

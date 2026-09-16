@@ -185,8 +185,8 @@ export class MockPersistenceService implements IPersistenceService {
 
   saveCurrentSequenceState(state: {
     currentSequence: SequenceData | null;
-    selectedStartPosition: PictographData | null;
-    hasStartPosition: boolean;
+    selectedStartPlacement: PictographData | null;
+    hasStartPlacement: boolean;
     activeBuildSection?: string;
   }): Promise<void> {
     this.currentSequenceState = state;
@@ -194,14 +194,14 @@ export class MockPersistenceService implements IPersistenceService {
 
   loadCurrentSequenceState(): Promise<{
     currentSequence: SequenceData | null;
-    selectedStartPosition: PictographData | null;
-    hasStartPosition: boolean;
+    selectedStartPlacement: PictographData | null;
+    hasStartPlacement: boolean;
     activeBuildSection?: string;
   } | null> {
     return this.currentSequenceState as {
       currentSequence: SequenceData | null;
-      selectedStartPosition: PictographData | null;
-      hasStartPosition: boolean;
+      selectedStartPlacement: PictographData | null;
+      hasStartPlacement: boolean;
       activeBuildSection?: string;
     } | null;
   }

@@ -297,7 +297,7 @@ Variation support:
     const seq = displayedSequence;
     try {
       const layout =
-        getImageCompositionManager().getStartPositionLayoutForStepCount(
+        getImageCompositionManager().getStartPlacementLayoutForStepCount(
           galleryStepCount(seq)
         );
       const source = seq.steps?.length
@@ -330,7 +330,7 @@ Variation support:
     }
     try {
       const layout =
-        getImageCompositionManager().getStartPositionLayoutForStepCount(
+        getImageCompositionManager().getStartPlacementLayoutForStepCount(
           galleryStepCount(seq)
         );
       morphRegions = computeSheetRegionMap(seq, layout);

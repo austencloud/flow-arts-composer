@@ -96,7 +96,7 @@ export const actionHelpContent: ActionHelpItem[] = [
     color: "#f43f5e",
     shortDesc: "Rewind the sequence backwards",
     fullDesc:
-      "Like rewinding a video! Takes the end position as your new start, then plays every step backwards. Turns flip direction (clockwise becomes counter-clockwise). Note: This will change the letters or word of your sequence!",
+      "Like rewinding a video! Takes the end placement as your new start, then plays every step backwards. Turns flip direction (clockwise becomes counter-clockwise). Note: This will change the letters or word of your sequence!",
     category: "transform",
   },
 
@@ -140,7 +140,7 @@ export const actionHelpContent: ActionHelpItem[] = [
     color: "#22c55e",
     shortDesc: "Complete to start",
     fullDesc:
-      "Extends your sequence back to its starting position using a LOOP pattern. When the last step's position matches the first step's position group, you can choose from different LOOP types (like Mirrored, Swapped, or Rotated) to loop your sequence.",
+      "Extends your sequence back to its starting placement using a LOOP pattern. When the last step's placement matches the first step's placement group, you can choose from different LOOP types (like Mirrored, Swapped, or Rotated) to loop your sequence.",
     category: "tool",
   },
   {

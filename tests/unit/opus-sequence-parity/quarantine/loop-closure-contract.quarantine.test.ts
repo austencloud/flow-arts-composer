@@ -16,7 +16,7 @@
  *
  * Expected failures as of the audit (base c4be1619):
  *
- *   1. app MIRRORED_SWAPPED_INVERTED — derived steps' endPosition
+ *   1. app MIRRORED_SWAPPED_INVERTED — derived steps' endPlacement
  *      contradicts their own hand locations; LOOP never returns home.
  *   2. app MIRRORED_ROTATED_INVERTED_SWAPPED — same defect class.
  *   3. engine quartered ROTATED_INVERTED — LOOP never returns home.
@@ -89,7 +89,7 @@ function sweep(
             loopType: String(loopType),
             period: String(period),
             seed: entry.label,
-            detail: `ends at ${outcome.steps[outcome.steps.length - 1]!.endPosition}, seed starts at ${entry.steps[0]!.startPosition}`,
+            detail: `ends at ${outcome.steps[outcome.steps.length - 1]!.endPlacement}, seed starts at ${entry.steps[0]!.startPlacement}`,
           });
         }
       }
@@ -148,8 +148,8 @@ describe.runIf(ENABLED)("QUARANTINED: the two paths must agree", () => {
         mismatches.push(`${entry.label} — engine threw: ${engine.message}`);
         continue;
       }
-      const appEnd = appSteps[appSteps.length - 1]!.endPosition;
-      const engineEnd = engine.steps[engine.steps.length - 1]!.endPosition;
+      const appEnd = appSteps[appSteps.length - 1]!.endPlacement;
+      const engineEnd = engine.steps[engine.steps.length - 1]!.endPlacement;
       if (appEnd !== engineEnd) {
         mismatches.push(`${entry.label} — app ends ${appEnd}, engine ends ${engineEnd}`);
       }

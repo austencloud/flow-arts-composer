@@ -6,10 +6,10 @@ import {
 } from "../src/core/standalone-renderer.js";
 
 // Real start position: alpha1, both hands static and pointing in.
-const START_POSITION: PictographInput = {
+const START_PLACEMENT: PictographInput = {
   letter: "α",
-  startPosition: "alpha1",
-  endPosition: "alpha1",
+  startPlacement: "alpha1",
+  endPlacement: "alpha1",
   gridMode: "diamond",
   leftMotion: {
     motionType: "static",
@@ -38,14 +38,14 @@ function keyGroup(svg: string): string | null {
 
 describe("standalone renderer hand colour key", () => {
   it("omits the key unless the caller marks a start position", async () => {
-    const svg = await getStandaloneRenderer().renderToSvg(START_POSITION, {
+    const svg = await getStandaloneRenderer().renderToSvg(START_PLACEMENT, {
       showTKA: false,
     });
     expect(keyGroup(svg)).toBeNull();
   });
 
   it("bakes both swatches into the start position with the shared geometry", async () => {
-    const svg = await getStandaloneRenderer().renderToSvg(START_POSITION, {
+    const svg = await getStandaloneRenderer().renderToSvg(START_PLACEMENT, {
       showTKA: false,
       showHandColorKey: true,
       primaryPropColors: { left: "#00ffaa", right: "#ff8800" },
@@ -67,7 +67,7 @@ describe("standalone renderer hand colour key", () => {
   });
 
   it("drops a hidden hand and recentres the remaining pair", async () => {
-    const svg = await getStandaloneRenderer().renderToSvg(START_POSITION, {
+    const svg = await getStandaloneRenderer().renderToSvg(START_PLACEMENT, {
       showTKA: false,
       showHandColorKey: true,
       showLeftMotion: false,

@@ -95,7 +95,7 @@
     levelLabel = "Level 1",
     isCodexMode = false,
     isMobile = false,
-    showPositionGlyph = false,
+    showPlacementGlyph = false,
   }: {
     sequence: SequenceData | null;
     onClose: () => void;
@@ -122,9 +122,9 @@
      *  of the desktop right-panel layout. Owned by GuideReader (single source
      *  of truth for the 720px cutoff - see reader-mobile.md notes there). */
     isMobile?: boolean;
-    /** Show the α/β/γ start→end position indicator on the animator for the
+    /** Show the α/β/γ start→end placement indicator on the animator for the
      *  clicked strip (guide hand-path exploration; resolved by GuideReader). */
-    showPositionGlyph?: boolean;
+    showPlacementGlyph?: boolean;
   } = $props();
 
   // Mobile sheet: compact (animator + slim bar) vs expanded (overflow region
@@ -313,7 +313,7 @@
           class:is-start={stepNumber === 0}
           onclick={() => handleTruncateAt(stepNumber)}
           aria-label={stepNumber === 0
-            ? "Start position"
+            ? "Start placement"
             : `Step ${stepNumber}: tap to rebuild from here`}
         >
           <PictographContainer
@@ -512,7 +512,7 @@
         externalBpm={bpm}
         leftPropType={propType}
         rightPropType={propType}
-        {showPositionGlyph}
+        {showPlacementGlyph}
         onStepChange={onStep}
       />
     {/key}

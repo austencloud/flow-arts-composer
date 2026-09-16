@@ -1,6 +1,6 @@
 /**
  * Beat Removal Handler
- * Handles beat removal logic including clearing entire sequence when start position is removed.
+ * Handles beat removal logic including clearing entire sequence when start placement is removed.
  */
 
 import type { ICreateModuleState } from "../../types/create-module-types";
@@ -16,16 +16,16 @@ export function removeStep(
   stepIndex: number,
   createModuleState: ICreateModuleState
 ): void {
-  // Special case: a negative index means the start position, and removing it
+  // Special case: a negative index means the start placement, and removing it
   // clears the entire sequence (steps can't exist without one). Keyed on the
   // passed index, NOT the current selection — a caller deleting step N while
-  // the start position happens to be selected must remove step N, not wipe
+  // the start placement happens to be selected must remove step N, not wipe
   // the sequence.
   if (stepIndex < 0) {
-    logger.log("Removing start position - clearing entire sequence");
+    logger.log("Removing start placement - clearing entire sequence");
 
     createModuleState.pushUndoSnapshot(UndoOperationType.CLEAR_SEQUENCE, {
-      description: "Clear sequence (removed start position)",
+      description: "Clear sequence (removed start placement)",
     });
 
     void createModuleState.sequenceState.clearSequenceCompletely();
@@ -59,8 +59,8 @@ export function removeStep(
         // Select the previous beat (array index stepIndex-1 has stepNumber stepIndex)
         createModuleState.sequenceState.selectStep(stepIndex);
       } else {
-        // If removing beat 0 (first beat after start), select start position
-        createModuleState.sequenceState.selectStartPositionForEditing();
+        // If removing beat 0 (first beat after start), select start placement
+        createModuleState.sequenceState.selectStartPlacementForEditing();
       }
     }
   );

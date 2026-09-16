@@ -26,7 +26,7 @@ import type {
   PictographData,
   MotionData,
 } from "../types.js";
-import { REFLECTION_LOCATION_MAPS } from "../../../loop/position-maps/strict-loop-position-maps.js";
+import { REFLECTION_LOCATION_MAPS } from "../../../loop/placement-maps/strict-loop-placement-maps.js";
 import {
   IDENTITY_LOCATION_MAP,
   ROTATE_180_LOCATION_MAP,

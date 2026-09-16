@@ -31,7 +31,7 @@
   let showNonRadialPoints = $state(vm.getNonRadialVisibility());
   let showTnD = $state(vm.getGlyphVisibility("tndGlyph"));
   let showElemental = $state(vm.getGlyphVisibility("elementalGlyph"));
-  let showPositions = $state(vm.getGlyphVisibility("positionsGlyph"));
+  let showPlacements = $state(vm.getGlyphVisibility("placementsGlyph"));
   let handPointVisibility = $state<"all" | "active" | "none">(vm.getHandPointVisibility());
   let darkMode = $state(animationVisibilityManager.isDarkMode());
 
@@ -42,7 +42,7 @@
     showNonRadialPoints = vm.getNonRadialVisibility();
     showTnD = vm.getGlyphVisibility("tndGlyph");
     showElemental = vm.getGlyphVisibility("elementalGlyph");
-    showPositions = vm.getGlyphVisibility("positionsGlyph");
+    showPlacements = vm.getGlyphVisibility("placementsGlyph");
     handPointVisibility = vm.getHandPointVisibility();
   }
 
@@ -82,7 +82,7 @@
   {showNonRadialPoints}
   {showTnD}
   {showElemental}
-  {showPositions}
+  {showPlacements}
   {handPointVisibility}
   {activeLocations}
   {darkMode}

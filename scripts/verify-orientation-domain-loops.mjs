@@ -37,12 +37,12 @@ function section(t) {
 }
 
 const {
-  VERTICAL_MIRROR_POSITION_MAP,
-  HORIZONTAL_MIRROR_POSITION_MAP,
-  SWAPPED_POSITION_MAP,
-} = await import(`${D}/loop/position-maps/strict-loop-position-maps.js`);
-const { HALF_POSITION_MAP, QUARTER_POSITION_MAP_CW } = await import(
-  `${D}/loop/position-maps/circular-position-maps.js`
+  VERTICAL_MIRROR_PLACEMENT_MAP,
+  HORIZONTAL_MIRROR_PLACEMENT_MAP,
+  SWAPPED_PLACEMENT_MAP,
+} = await import(`${D}/loop/placement-maps/strict-loop-placement-maps.js`);
+const { HALF_PLACEMENT_MAP, QUARTER_PLACEMENT_MAP_CW } = await import(
+  `${D}/loop/placement-maps/circular-placement-maps.js`
 );
 const { applyOverlayInversion } = await import(
   `${D}/loop/execution/overlay-inversion.js`
@@ -72,9 +72,9 @@ section(
   "A. Position-transform fixed points (exhaustive over all mapped positions)"
 );
 
-const swapCore = coreFixed(SWAPPED_POSITION_MAP);
+const swapCore = coreFixed(SWAPPED_PLACEMENT_MAP);
 console.log(
-  `  SWAP  core fixed: [${swapCore}]   (stubs: [${stubFixed(SWAPPED_POSITION_MAP)}])`
+  `  SWAP  core fixed: [${swapCore}]   (stubs: [${stubFixed(SWAPPED_PLACEMENT_MAP)}])`
 );
 check(
   "SWAP core fixed = all 8 beta only",
@@ -92,7 +92,7 @@ check(
 );
 check("SWAP fixes NO alpha/gamma", !swapCore.some((p) => fam(p) !== "beta"));
 
-const mirCore = coreFixed(VERTICAL_MIRROR_POSITION_MAP);
+const mirCore = coreFixed(VERTICAL_MIRROR_PLACEMENT_MAP);
 console.log(`  MIRROR core fixed: [${mirCore}]`);
 check(
   "MIRROR core fixed = alpha1/5, beta1/5",
@@ -100,7 +100,7 @@ check(
   `got [${mirCore}]`
 );
 
-const flipCore = coreFixed(HORIZONTAL_MIRROR_POSITION_MAP);
+const flipCore = coreFixed(HORIZONTAL_MIRROR_PLACEMENT_MAP);
 console.log(`  FLIP core fixed: [${flipCore}]`);
 check(
   "FLIP core fixed = alpha3/7, beta3/7",
@@ -108,31 +108,31 @@ check(
   `got [${flipCore}]`
 );
 
-const rotCore = coreFixed(HALF_POSITION_MAP);
+const rotCore = coreFixed(HALF_PLACEMENT_MAP);
 console.log(`  ROTATE-180 core fixed: [${rotCore}]`);
 check(
   "ROTATE-180 fixes NO L1-L4 (alpha/beta/gamma) position",
   rotCore.length === 0,
   `got [${rotCore}]`
 );
-const rotQ = coreFixed(QUARTER_POSITION_MAP_CW);
+const rotQ = coreFixed(QUARTER_PLACEMENT_MAP_CW);
 check("ROTATE-90 fixes NO L1-L4 position", rotQ.length === 0, `got [${rotQ}]`);
 
 // Swap moves the specific beats seen live (alpha7->alpha3, gamma9->gamma3, alpha5->alpha1)
 check(
   "SWAP alpha7 -> alpha3 (matches live DLDL)",
-  SWAPPED_POSITION_MAP.alpha7 === "alpha3",
-  `got ${SWAPPED_POSITION_MAP.alpha7}`
+  SWAPPED_PLACEMENT_MAP.alpha7 === "alpha3",
+  `got ${SWAPPED_PLACEMENT_MAP.alpha7}`
 );
 check(
   "SWAP gamma9 -> gamma3 (matches live ΘZΘZ)",
-  SWAPPED_POSITION_MAP.gamma9 === "gamma3",
-  `got ${SWAPPED_POSITION_MAP.gamma9}`
+  SWAPPED_PLACEMENT_MAP.gamma9 === "gamma3",
+  `got ${SWAPPED_PLACEMENT_MAP.gamma9}`
 );
 check(
   "SWAP alpha5 -> alpha1 (matches live Ψ… )",
-  SWAPPED_POSITION_MAP.alpha5 === "alpha1",
-  `got ${SWAPPED_POSITION_MAP.alpha5}`
+  SWAPPED_PLACEMENT_MAP.alpha5 === "alpha1",
+  `got ${SWAPPED_PLACEMENT_MAP.alpha5}`
 );
 
 // ---------------------------------------------------------------------------
@@ -144,8 +144,8 @@ section(
 const mk = (letter, sp, ep, b, r) => ({
   id: letter,
   letter,
-  startPosition: sp,
-  endPosition: ep,
+  startPlacement: sp,
+  endPlacement: ep,
   stepNumber: 0,
   duration: 1,
   motions: {
@@ -247,8 +247,8 @@ for (const seq of seqs) {
       const a = seq[i],
         b = out[i];
       const moved =
-        a.startPosition !== b.startPosition ||
-        a.endPosition !== b.endPosition ||
+        a.startPlacement !== b.startPlacement ||
+        a.endPlacement !== b.endPlacement ||
         a.motions.left.startLocation !== b.motions.left.startLocation ||
         a.motions.left.endLocation !== b.motions.left.endLocation ||
         a.motions.right.startLocation !== b.motions.right.startLocation ||
@@ -277,7 +277,7 @@ async function tryExec() {
   const { executeSymmetricSpec } = await import(
     `${D}/loop/execution/spec-executor.js`
   );
-  const posOf = (s) => `${s.startPosition}->${s.endPosition}`;
+  const posOf = (s) => `${s.startPlacement}->${s.endPlacement}`;
   const swapPin = (label, seed, expectPinned) => {
     seed.forEach((s, i) => {
       s.stepNumber = i;

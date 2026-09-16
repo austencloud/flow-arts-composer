@@ -172,7 +172,7 @@
       }
 
       realPictograph = picto;
-      status = `Found: ${selectedLetter} from ${picto.startPosition} to ${picto.endPosition}`;
+      status = `Found: ${selectedLetter} from ${picto.startPlacement} to ${picto.endPlacement}`;
 
       return picto;
     } catch (err) {
@@ -426,8 +426,8 @@
           const pictograph: PictographData = {
             id: `${sequence.id}-beat-${stepIdx}`,
             letter: beat.letter as Letter,
-            startPosition: beat.startPosition,
-            endPosition: beat.endPosition,
+            startPlacement: beat.startPlacement,
+            endPlacement: beat.endPlacement,
             gridMode: sequence.gridMode || GridMode.DIAMOND,
             motions: motionsWithPropType || {}
           };
@@ -576,8 +576,8 @@
       <div class="pictograph-info">
         <strong>Pictograph Data:</strong>
         Letter: {realPictograph.letter} |
-        Start: {realPictograph.startPosition} |
-        End: {realPictograph.endPosition} |
+        Start: {realPictograph.startPlacement} |
+        End: {realPictograph.endPlacement} |
         Blue: {realPictograph.motions?.left?.motionType} ({realPictograph.motions?.left?.turns} turns) |
         Red: {realPictograph.motions?.right?.motionType} ({realPictograph.motions?.right?.turns} turns)
       </div>
@@ -699,7 +699,7 @@
             </div>
           </div>
           <div class="bulk-info">
-            {result.pictograph.startPosition} → {result.pictograph.endPosition}
+            {result.pictograph.startPlacement} → {result.pictograph.endPlacement}
           </div>
         </div>
       {/each}

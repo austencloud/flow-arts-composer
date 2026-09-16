@@ -5,13 +5,13 @@
  * QFT formulas, transitions, glossary terms, and contributors.
  */
 
-import type { GridPosition } from "../data/grid.js";
+import type { GridPlacement } from "../data/grid.js";
 import type { QFTFormula } from "../data/qft-notation.js";
 import type { GridTransition } from "../data/transitions.js";
 import type { FlowArtsGlossaryEntry } from "@flow-arts/core";
 
 export type NineSquareSearchResultType =
-	| "grid-position"
+	| "grid-placement"
 	| "qft-formula"
 	| "transition"
 	| "glossary";
@@ -26,7 +26,7 @@ export interface NineSquareSearchResult {
 	/** Short description or definition */
 	summary: string;
 	/** The underlying data object */
-	data: GridPosition | QFTFormula | GridTransition | FlowArtsGlossaryEntry;
+	data: GridPlacement | QFTFormula | GridTransition | FlowArtsGlossaryEntry;
 }
 
 export function searchNineSquare(query: string): NineSquareSearchResult[] {

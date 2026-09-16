@@ -1,7 +1,7 @@
 /*
  * Math-foundations triad palette — single source of truth for the
  * indigo/pink/teal thesis/antithesis/synthesis colors shared by
- * HeroSection, PositionGroupsSection, LetterTriadSection, and
+ * HeroSection, PlacementGroupsSection, LetterTriadSection, and
  * MotionTypesSection. Previously these hexes were duplicated as
  * literals across all four components.
  *

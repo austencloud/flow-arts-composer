@@ -94,17 +94,17 @@ export class OrientationPropagator implements IOrientationPropagator {
       return result;
     }
 
-    const startPosition = result.steps[0];
-    if (!startPosition) {
+    const startPlacement = result.steps[0];
+    if (!startPlacement) {
       return result;
     }
 
     let updatedSteps = [...result.steps];
 
-    const leftStartOrientation = (startPosition.motions.left.endOrientation || "in") as Orientation;
+    const leftStartOrientation = (startPlacement.motions.left.endOrientation || "in") as Orientation;
     updatedSteps = this.propagateForColor(updatedSteps, "left", leftStartOrientation);
 
-    const rightStartOrientation = (startPosition.motions.right.endOrientation || "in") as Orientation;
+    const rightStartOrientation = (startPlacement.motions.right.endOrientation || "in") as Orientation;
     updatedSteps = this.propagateForColor(updatedSteps, "right", rightStartOrientation);
 
     return {

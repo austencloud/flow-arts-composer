@@ -28,7 +28,7 @@
   import { generateEvenBeatTimestamps } from "$lib/shared/video-collaboration/utils/step-map-utils";
   import { formatTime } from "$lib/shared/sequence-viewer/utils/format-time";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import TKAWordGlyph from "$lib/shared/choreo-card/components/TKAWordGlyph.svelte";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
@@ -39,7 +39,7 @@
     saveStepMapDraft,
   } from "./step-map-draft";
   import { mirrorBeat } from "$lib/shared/create/services/step-transforms";
-  import { mirrorStartPosition } from "$lib/shared/create/services/start-position-transforms";
+  import { mirrorStartPlacement } from "$lib/shared/create/services/start-placement-transforms";
   import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
@@ -50,7 +50,7 @@
     /** Every move, in order. Its length is the move count. */
     steps: readonly StepData[];
     /** The opening pose. The first mark is the performer settling into it. */
-    startPosition?: StartPositionData | null;
+    startPlacement?: StartPlacementData | null;
     initialStepMap?: StepMap;
     /**
      * Identifies this (sequence, video) pairing so an unfinished run survives
@@ -67,7 +67,7 @@
     videoUrl,
     videoDuration,
     steps,
-    startPosition = null,
+    startPlacement = null,
     initialStepMap,
     draftKey,
     bpm,
@@ -217,10 +217,10 @@
    * Mark 0 is the opening pose. Mark i is the landing of its move, so the face
    * shows the move that is happening right now, and you tap when it finishes.
    */
-  function faceFor(index: number): StepData | StartPositionData | null {
+  function faceFor(index: number): StepData | StartPlacementData | null {
     const showMirrored = mirrored && mirroredSteps !== null;
     const source = showMirrored ? mirroredSteps! : steps;
-    if (index <= 0) return showMirrored ? mirroredStart : startPosition;
+    if (index <= 0) return showMirrored ? mirroredStart : startPlacement;
     return source[moveNumberFor(index) - 1] ?? null;
   }
 
@@ -329,7 +329,7 @@
    */
   let mirrored = $state(false);
   let mirroredSteps = $state<StepData[] | null>(null);
-  let mirroredStart = $state<StartPositionData | null>(null);
+  let mirroredStart = $state<StartPlacementData | null>(null);
 
   async function toggleMirror(): Promise<void> {
     mirrored = !mirrored;
@@ -344,7 +344,7 @@
         )
       )
     );
-    mirroredStart = startPosition ? mirrorStartPosition(startPosition) : null;
+    mirroredStart = startPlacement ? mirrorStartPlacement(startPlacement) : null;
   }
 
   function startMarking(): void {

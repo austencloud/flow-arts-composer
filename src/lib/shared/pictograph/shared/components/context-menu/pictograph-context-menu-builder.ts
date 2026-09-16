@@ -71,9 +71,9 @@ function buildGlyphChildren(vm: VisibilityStateManager): ContextMenuItem[] {
     {
       id: "toggle-positions-glyph",
       label: "Positions",
-      checked: vm.getRawGlyphVisibility("positionsGlyph"),
+      checked: vm.getRawGlyphVisibility("placementsGlyph"),
       keepOpen: true,
-      action: () => vm.setGlyphVisibility("positionsGlyph", !vm.getRawGlyphVisibility("positionsGlyph")),
+      action: () => vm.setGlyphVisibility("placementsGlyph", !vm.getRawGlyphVisibility("placementsGlyph")),
     },
   ];
 }

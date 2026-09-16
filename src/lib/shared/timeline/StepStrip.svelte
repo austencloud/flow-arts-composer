@@ -24,7 +24,7 @@
   let {
     cells = null,
     sequence = null,
-    includeStartPosition = true,
+    includeStartPlacement = true,
     currentStep,
     bpm,
     cellSize = 72,
@@ -51,7 +51,7 @@
     sequence?: SequenceData | null;
     /** Keep the sequence's static start pose in the rail. Continuously playing
      *  surfaces can omit it so every visible cell represents a performed beat. */
-    includeStartPosition?: boolean;
+    includeStartPlacement?: boolean;
     /** Float: integer = step number, fraction = progress within step. */
     currentStep: number;
     bpm: number;
@@ -102,7 +102,7 @@
   const renderBuffer = $derived(density === "compact" ? 1 : BUFFER);
   const resolvedCells = $derived(cells ?? buildNotationCells(sequence));
   const requestedDisplayedCells = $derived(
-    includeStartPosition
+    includeStartPlacement
       ? resolvedCells
       : resolvedCells.filter((cell) => !cell.isStart)
   );
@@ -147,7 +147,7 @@
     staggerCellUpdates ? stagedDisplayedCells : requestedDisplayedCells
   );
   const displayedStep = $derived(
-    Math.max(0, (currentStep ?? 0) - (includeStartPosition ? 0 : 1))
+    Math.max(0, (currentStep ?? 0) - (includeStartPlacement ? 0 : 1))
   );
   const heroScale = $derived(
     presentation === "strip" ? 1 : density === "compact" ? 1.15 : 1.32

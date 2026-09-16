@@ -17,7 +17,7 @@ const render = {
   fps: 60,
   resolution: 1080,
   quality: "standard",
-  includeStartPosition: true,
+  includeStartPlacement: true,
   includeEndHold: true,
 } as const;
 

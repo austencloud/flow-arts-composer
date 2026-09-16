@@ -3,7 +3,7 @@ import type { SoloPropData } from "../domain/models/solo-prop-data";
 import type { StepPairingData } from "../domain/models/step-pairing-data";
 import type { SoloPropStepData } from "../domain/models/solo-prop-step-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -169,8 +169,8 @@ export function deriveSteps(
     const stepData: StepData = {
       id: crypto.randomUUID(),
       letter: pairing.letter,
-      startPosition: pairing.startPosition,
-      endPosition: pairing.endPosition,
+      startPlacement: pairing.startPlacement,
+      endPlacement: pairing.endPlacement,
       motions: { left: leftMotion, right: rightMotion },
       gridMode,
       stepNumber: i + 1,
@@ -184,10 +184,10 @@ export function deriveSteps(
   });
 }
 
-export function deriveStartPosition(
+export function deriveStartPlacement(
   leftSoloProp: SoloPropData,
   rightSoloProp: SoloPropData
-): StartPositionData {
+): StartPlacementData {
   const gridMode = deriveStepGridMode(
     leftSoloProp.startLocation,
     leftSoloProp.startLocation,
@@ -227,9 +227,9 @@ export function deriveStartPosition(
 
   return {
     id: crypto.randomUUID(),
-    isStartPosition: true,
+    isStartPlacement: true,
     motions: { left: leftMotion, right: rightMotion },
     gridMode,
-    gridPosition: null,
+    gridPlacement: null,
   };
 }

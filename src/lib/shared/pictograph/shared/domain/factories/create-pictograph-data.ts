@@ -9,10 +9,10 @@ export function createPictographData(
     motions: data.motions || {},
     // Only include optional properties if they are not undefined
     ...(data.letter !== undefined && { letter: data.letter }),
-    ...(data.startPosition !== undefined && {
-      startPosition: data.startPosition,
+    ...(data.startPlacement !== undefined && {
+      startPlacement: data.startPlacement,
     }),
-    ...(data.endPosition !== undefined && { endPosition: data.endPosition }),
+    ...(data.endPlacement !== undefined && { endPlacement: data.endPlacement }),
     ...(data.category !== undefined && { category: data.category }),
   };
 }

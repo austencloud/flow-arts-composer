@@ -32,7 +32,7 @@ describe("prepareScanViewerPayload", () => {
     ]);
     expect(prepared?.sequence.id).toBe("B2ZM");
     expect(prepared?.sequence.steps).toHaveLength(10);
-    expect(prepared?.sequence.startPosition).toBeTruthy();
+    expect(prepared?.sequence.startPlacement).toBeTruthy();
     expect(prepared?.propConfig).toEqual({
       leftPropType: PropType.STAFF,
       rightPropType: PropType.STAFF,

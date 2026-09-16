@@ -5,7 +5,7 @@
   Toolbar strip (prop picker + turns picker) above two panes, like the real
   Create tab: the REAL WorkspaceGrid (start position in its own column, steps
   flowing beside it — the canonical workspace layout) beside the REAL
-  StartPositionPicker / OptionPicker. Building ends in a PLAY phase: the right
+  StartPlacementPicker / OptionPicker. Building ends in a PLAY phase: the right
   pane swaps to the real AnimationPlayer and the workspace highlights the
   currently-playing step via the canonical selection mechanism.
 
@@ -30,11 +30,11 @@
 <script lang="ts">
   import { onMount, onDestroy } from "svelte";
   import { MediaQuery } from "svelte/reactivity";
-  import { createSimplifiedStartPositionState } from "$lib/shared/create/state/start-position-state.svelte";
+  import { createSimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifier";
@@ -105,7 +105,7 @@
 
   // Isolated demo state — start position + picked steps. The full sequence and
   // display word are derived from these two, so the UI stays in lockstep.
-  let startPosition = $state<PictographData | null>(null);
+  let startPlacement = $state<PictographData | null>(null);
   let gridMode = $state<GridMode>(GridMode.DIAMOND);
   let steps = $state<PictographData[]>([]);
   let playing = $state(false);
@@ -143,10 +143,10 @@
       : new MediaQuery("(max-width: 74.99rem)");
   const isCompactDemo = $derived(compactDemoQuery?.current ?? false);
 
-  // The real start-position picker drives its own state object; we subscribe to
+  // The real start-placement picker drives its own state object; we subscribe to
   // the user's pick and lift it into our local demo state (source "sync" changes
   // — e.g. our own clear on reset — are ignored, exactly like the tutorial step).
-  const startPositionState = createSimplifiedStartPositionState();
+  const startPlacementState = createSimplifiedStartPlacementState();
   let unsubscribe: (() => void) | null = null;
 
   // Attract act wiring (spec §Attract loop / §Takeover).
@@ -157,12 +157,12 @@
   let io: IntersectionObserver | null = null;
 
   onMount(() => {
-    unsubscribe = startPositionState.onSelectedPositionChange(
+    unsubscribe = startPlacementState.onSelectedPlacementChange(
       (position, source) => {
         if (source === "user" && position) {
           recordHistory();
-          startPosition = position;
-          gridMode = startPositionState.currentGridMode;
+          startPlacement = position;
+          gridMode = startPlacementState.currentGridMode;
           steps = [];
           playing = false;
           editingStepNumber = null;
@@ -237,7 +237,7 @@
 
   // Full sequence fed to the option picker: start position + every picked step.
   const currentSequence = $derived<PictographData[]>(
-    startPosition ? [startPosition, ...steps] : []
+    startPlacement ? [startPlacement, ...steps] : []
   );
   const pickerSequence = $derived<PictographData[]>(
     isContinuous && editingStepNumber
@@ -248,7 +248,7 @@
   // Three phases, derived straight from state. Hitting the 8-step cap plays
   // automatically; before that, the Play button flips `playing`.
   const phase = $derived<"pick-start" | "add-step" | "play">(
-    !startPosition
+    !startPlacement
       ? "pick-start"
       : !isContinuous && (playing || steps.length >= MAX_STEPS)
         ? "play"
@@ -297,11 +297,11 @@
   const workspaceScrollState = createScrollState();
 
   const startStepData = $derived<StepData | null>(
-    startPosition
+    startPlacement
       ? {
           ...pictographDataToStepData(
-            startPosition,
-            startPosition.id ?? "demo-start"
+            startPlacement,
+            startPlacement.id ?? "demo-start"
           ),
           stepNumber: 0,
         }
@@ -324,7 +324,7 @@
           name: displayWord,
           word: rawWord,
           steps: stepData,
-          startPosition: startStepData as unknown as StartPositionData,
+          startPlacement: startStepData as unknown as StartPlacementData,
           thumbnails: [],
           gridMode,
         })
@@ -382,7 +382,7 @@
   // the header note on staying out of the shared create singleton). Sharing the
   // glyph is what keeps the two from ever drawing a different undo arrow.
   type BuildSnapshot = {
-    startPosition: PictographData | null;
+    startPlacement: PictographData | null;
     steps: PictographData[];
   };
 
@@ -402,7 +402,7 @@
   }
 
   function snapshot(): BuildSnapshot {
-    return { startPosition, steps: [...steps] };
+    return { startPlacement, steps: [...steps] };
   }
 
   /** Call BEFORE a mutation: a fresh action invalidates the redo branch. */
@@ -417,19 +417,19 @@
   }
 
   function applySnapshot(target: BuildSnapshot) {
-    startPosition = target.startPosition;
+    startPlacement = target.startPlacement;
     steps = [...target.steps];
     playing = false;
     playingStepNumber = null;
     editingStepNumber = null;
-    if (!isContinuous || !target.startPosition || target.steps.length === 0) {
+    if (!isContinuous || !target.startPlacement || target.steps.length === 0) {
       dropPlayerRefs();
     }
     compactPane = "build";
     // Put the restored pick back in the picker. setSelectedPosition notifies
     // with source "sync", which our listener ignores, so this cannot recurse
     // into the selection branch that wipes the steps we just restored.
-    startPositionState.setSelectedPosition(target.startPosition);
+    startPlacementState.setSelectedPosition(target.startPlacement);
   }
 
   function undo() {
@@ -514,12 +514,12 @@
   function reset() {
     recordHistory();
     steps = [];
-    startPosition = null;
+    startPlacement = null;
     playing = false;
     playingStepNumber = null;
     editingStepNumber = null;
     dropPlayerRefs();
-    startPositionState.clearSelectedPosition();
+    startPlacementState.clearSelectedPlacement();
     compactPane = "build";
   }
 </script>
@@ -688,7 +688,7 @@
               {#if isGuidedBuild}
                 <StepGrid
                   steps={stepData}
-                  startPosition={startStepData}
+                  startPlacement={startStepData}
                   selectedStepNumber={isContinuous
                     ? (editingStepNumber ?? playingStepNumber)
                     : phase === "play"
@@ -711,7 +711,7 @@
               {:else}
                 <WorkspaceGrid
                   steps={stepData}
-                  startPosition={startStepData}
+                  startPlacement={startStepData}
                   {gridLayout}
                   displayState={workspaceDisplayState}
                   scrollState={workspaceScrollState}
@@ -910,9 +910,9 @@
         <!-- PICKER / PLAYER: the real primitives; phase swap lives HERE only. -->
         <div class="picker-pane">
           {#if phase === "pick-start"}
-            {#await import("$lib/features/create/construct/start-position-picker/components/StartPositionPicker.svelte") then mod}
+            {#await import("$lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte") then mod}
               <mod.default
-                {startPositionState}
+                {startPlacementState}
                 embedded
                 leftPropTypeOverride={demoProp}
                 rightPropTypeOverride={demoProp}

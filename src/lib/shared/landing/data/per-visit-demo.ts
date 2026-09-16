@@ -37,8 +37,8 @@ export async function generatePerVisitDemo(
   if (!options?.random) {
     const viaWorker = await rollInWorker({
       ...(options?.propType ? { propType: options.propType } : {}),
-      ...(options?.startPosition
-        ? { startPosition: options.startPosition }
+      ...(options?.startPlacement
+        ? { startPlacement: options.startPlacement }
         : {}),
     });
     if (viaWorker.status === "ok") return viaWorker.sequence;

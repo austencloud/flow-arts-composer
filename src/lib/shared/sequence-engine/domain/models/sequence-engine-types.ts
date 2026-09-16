@@ -10,7 +10,7 @@
  * Position groups for letter transitions.
  * Letters can only follow other letters if their position groups match.
  */
-export type PositionGroup = "alpha" | "beta" | "gamma";
+export type PlacementGroup = "alpha" | "beta" | "gamma";
 
 /**
  * Motion types for hand movements.
@@ -75,10 +75,10 @@ export type LetterType = 1 | 2 | 3 | 4 | 5 | 6;
 /**
  * Information about a letter's position transitions.
  */
-export interface LetterPositionInfo {
+export interface LetterPlacementInfo {
   letter: string;
-  startPositionGroup: PositionGroup;
-  endPositionGroup: PositionGroup;
+  startPlacementGroup: PlacementGroup;
+  endPlacementGroup: PlacementGroup;
   category?: LetterCategory;
 }
 
@@ -86,8 +86,8 @@ export interface LetterPositionInfo {
  * Raw letter mapping data from letter-mappings.json.
  */
 export interface LetterMappingData {
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: string;
   rightMotion: string;
 }
@@ -122,9 +122,9 @@ export interface SequenceStep {
   /** The letter representing this motion */
   letter: string;
   /** Starting position (e.g., "alpha1", "beta3") */
-  startPosition: string;
+  startPlacement: string;
   /** Ending position */
-  endPosition: string;
+  endPlacement: string;
   /** Blue hand/prop motion data */
   leftMotion: MotionData;
   /** Red hand/prop motion data */

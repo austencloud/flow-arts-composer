@@ -45,7 +45,7 @@ describe("buildCardVisibilityMenuItems", () => {
     composition.setAddWord(false);
     composition.setAddDifficultyLevel(true);
     composition.setShowLoopGlyph(false);
-    composition.setIncludeStartPosition(true);
+    composition.setIncludeStartPlacement(true);
     composition.setShowQRCode(false);
     composition.setShowMandala(true);
 
@@ -56,7 +56,7 @@ describe("buildCardVisibilityMenuItems", () => {
       "card-vis-word-header": false,
       "card-vis-level": true,
       "card-vis-loop-glyph": false,
-      "card-vis-start-position": true,
+      "card-vis-start-placement": true,
       "card-vis-qr-code": false,
       "card-vis-mandala": true,
       "card-vis-dark-mode": true,
@@ -69,7 +69,7 @@ describe("buildCardVisibilityMenuItems", () => {
       ["card-vis-word-header", () => composition.addWord],
       ["card-vis-level", () => composition.addDifficultyLevel],
       ["card-vis-loop-glyph", () => composition.showLoopGlyph],
-      ["card-vis-start-position", () => composition.includeStartPosition],
+      ["card-vis-start-placement", () => composition.includeStartPlacement],
       ["card-vis-qr-code", () => composition.showQRCode],
       ["card-vis-mandala", () => composition.showMandala],
     ];

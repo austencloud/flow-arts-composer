@@ -1,4 +1,4 @@
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
@@ -182,12 +182,12 @@ export function resolveCurrentStepData(
   sequence: SequenceData | null,
   currentStep: number,
   showPreviousBeat: boolean
-): StartPositionData | StepData | null {
+): StartPlacementData | StepData | null {
   if (!sequence) return null;
   if (showPreviousBeat) {
     const previousIndex = Math.round(currentStep) - 2;
-    if (previousIndex < 0 && sequence.startPosition) {
-      return sequence.startPosition;
+    if (previousIndex < 0 && sequence.startPlacement) {
+      return sequence.startPlacement;
     }
     if (sequence.steps?.length > 0) {
       return (
@@ -197,8 +197,8 @@ export function resolveCurrentStepData(
       );
     }
   }
-  if (currentStep < 1 && sequence.startPosition) {
-    return sequence.startPosition;
+  if (currentStep < 1 && sequence.startPlacement) {
+    return sequence.startPlacement;
   }
   if (sequence.steps?.length > 0) {
     const index = Math.max(0, Math.floor(currentStep) - 1);

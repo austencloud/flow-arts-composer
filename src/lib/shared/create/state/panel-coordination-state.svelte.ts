@@ -35,7 +35,7 @@ import type {
 } from "$lib/shared/mandala/domain/mandala-types";
 import type {
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { createPersistenceHelper } from "$lib/shared/state/utils/persistent-state";
 import {
@@ -101,39 +101,39 @@ const saveToLibraryPanelPersistence = createPersistenceHelper({
 });
 
 /**
- * Start/End position options - passed to the start/end options sheet
+ * Start/End placement options - passed to the start/end options sheet
  *
- * Uses a blocklist approach for start positions:
- * - Empty blockedStartPositions = any position allowed
- * - Positions in the array are excluded from random selection
+ * Uses a blocklist approach for start placements:
+ * - Empty blockedStartPlacements = any placement allowed
+ * - Placements in the array are excluded from random selection
  */
 export interface StartEndOptions {
   /**
-   * Blocked start positions - these positions will NOT be used.
-   * Empty array means all positions are allowed ("Any").
+   * Blocked start placements - these placements will NOT be used.
+   * Empty array means all placements are allowed ("Any").
    */
-  blockedStartPositions: GridPosition[];
+  blockedStartPlacements: GridPlacement[];
   /**
-   * @deprecated Use blockedStartPositions instead.
-   * Single start position constraint (legacy - for exact position match).
+   * @deprecated Use blockedStartPlacements instead.
+   * Single start placement constraint (legacy - for exact placement match).
    */
-  startPosition: PictographData | null;
+  startPlacement: PictographData | null;
   /**
-   * @deprecated Use endPositions. Kept so older persisted sessions and the
+   * @deprecated Use endPlacements. Kept so older persisted sessions and the
    * legacy single-select callers still resolve to a goal.
    */
-  endPosition: PictographData | null;
+  endPlacement: PictographData | null;
   /**
-   * Allowed end positions — the sequence must end at one of them. Empty means
-   * unconstrained ("Any"), the same way an empty blockedStartPositions means
+   * Allowed end placements — the sequence must end at one of them. Empty means
+   * unconstrained ("Any"), the same way an empty blockedStartPlacements means
    * every start is allowed.
    *
    * Multi-select because the engine's goal has always been a `Set<string>`
-   * (see SequenceBuilder.requiredEndPositions); a single target was an
+   * (see SequenceBuilder.requiredEndPlacements); a single target was an
    * artifact of the option surface, and a wider set is strictly more feasible
    * than one hard target.
    */
-  endPositions: GridPosition[];
+  endPlacements: GridPlacement[];
   mustContainLetters: Letter[];
   mustNotContainLetters: Letter[];
   /**

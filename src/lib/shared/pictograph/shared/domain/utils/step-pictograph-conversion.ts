@@ -37,8 +37,8 @@ export function extractCorePictographData(
   return createPictographData({
     id: enhancedData.id,
     letter: enhancedData.letter ?? null,
-    startPosition: enhancedData.startPosition ?? null,
-    endPosition: enhancedData.endPosition ?? null,
+    startPlacement: enhancedData.startPlacement ?? null,
+    endPlacement: enhancedData.endPlacement ?? null,
     motions: enhancedData.motions,
     // Explicitly exclude beat context properties
   });
@@ -107,8 +107,8 @@ export function createStandalonePictographData(
   return createPictographData({
     id: data.id ?? "",
     letter: data.letter ?? null,
-    startPosition: data.startPosition ?? null,
-    endPosition: data.endPosition ?? null,
+    startPlacement: data.startPlacement ?? null,
+    endPlacement: data.endPlacement ?? null,
     motions: data.motions ?? {},
   });
 }

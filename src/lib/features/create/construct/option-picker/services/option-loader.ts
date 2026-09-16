@@ -8,13 +8,13 @@
 import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { PositionAnalyzer } from "./position-analyzer";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import type { PlacementAnalyzer } from "./placement-analyzer";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 
 export class OptionLoader {
   constructor(
     private motionQueryHandler: IMotionQueryHandler,
-    private positionAnalyzer: PositionAnalyzer
+    private placementAnalyzer: PlacementAnalyzer
   ) {}
 
   /**
@@ -30,9 +30,9 @@ export class OptionLoader {
     }
 
     const lastStep = sequence[sequence.length - 1]!;
-    const endPosition = this.positionAnalyzer.getEndPosition(lastStep);
+    const endPlacement = this.placementAnalyzer.getEndPlacement(lastStep);
 
-    if (!endPosition || typeof endPosition !== "string") {
+    if (!endPlacement || typeof endPlacement !== "string") {
       return [];
     }
 
@@ -46,25 +46,25 @@ export class OptionLoader {
       );
 
     // Filter options based on sequence context
-    // The next beat's start position should match the current beat's end position
+    // The next beat's start placement should match the current beat's end placement
     const filteredOptions = allOptions.filter((option) => {
       if (!option.motions.left || !option.motions.right) {
         return false;
       }
 
-      // Calculate the start position of this option
-      const optionStartPosition =
-        getGridPositionFromLocations(
+      // Calculate the start placement of this option
+      const optionStartPlacement =
+        getGridPlacementFromLocations(
           option.motions.left.startLocation,
           option.motions.right.startLocation
         );
 
-      const optionStartPositionStr = optionStartPosition
+      const optionStartPlacementStr = optionStartPlacement
         .toString()
         .toLowerCase();
-      const targetEndPosition = endPosition.toLowerCase();
+      const targetEndPlacement = endPlacement.toLowerCase();
 
-      return optionStartPositionStr === targetEndPosition;
+      return optionStartPlacementStr === targetEndPlacement;
     });
 
     return filteredOptions;
@@ -72,9 +72,9 @@ export class OptionLoader {
 }
 
 import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
-import { positionAnalyzer } from "./position-analyzer";
+import { placementAnalyzer } from "./placement-analyzer";
 
 export const optionLoader = new OptionLoader(
   motionQueryHandler,
-  positionAnalyzer
+  placementAnalyzer
 );

@@ -77,7 +77,7 @@
       "Drawing Right Hand Path",
       "Sequence Complete!",
       "Draw Hand Path",
-      "Choose your start position!",
+      "Choose your start placement!",
       "Choose the left-hand starting location",
       "Configure sequence parameters",
       "Select your first step!",

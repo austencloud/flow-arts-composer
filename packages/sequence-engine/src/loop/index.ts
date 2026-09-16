@@ -50,21 +50,21 @@ export {
 
 // Validator
 export {
-  isLOOPValidForPositionPair,
+  isLOOPValidForPlacementPair,
   isLOOPValidForSpec,
-  getLOOPOptionsForPositionPair,
-  getExpectedEndPosition,
-  getValidEndPositionsForLoop,
+  getLOOPOptionsForPlacementPair,
+  getExpectedEndPlacement,
+  getValidEndPlacementsForLoop,
   findBridgeLettersForLoop,
   HALVED_LOOPS,
   QUARTERED_LOOPS,
 } from "./validation/LOOPValidator.js";
 
-// Position maps - circular (rotation-based)
+// Placement maps - circular (rotation-based)
 export {
-  HALF_POSITION_MAP,
-  QUARTER_POSITION_MAP_CW,
-  QUARTER_POSITION_MAP_CCW,
+  HALF_PLACEMENT_MAP,
+  QUARTER_PLACEMENT_MAP_CW,
+  QUARTER_PLACEMENT_MAP_CCW,
   LOCATION_MAP_EIGHTH_CW,
   LOCATION_MAP_CLOCKWISE,
   LOCATION_MAP_COUNTER_CLOCKWISE,
@@ -73,14 +73,14 @@ export {
   HAND_ROTATION_DIRECTION_MAP,
   getHandRotationDirection,
   getLocationMapForHandRotation,
-  getPositionZone,
-  getPositionGroup,
+  getPlacementZone,
+  getPlacementGroup,
   analyzeZoneCoverage,
-  type PositionZone,
+  type PlacementZone,
   type ZoneCoverageAnalysis,
-} from "./position-maps/circular-position-maps.js";
+} from "./placement-maps/circular-placement-maps.js";
 
-// Position maps - strict (mirror/swap/invert transformations)
+// Placement maps - strict (mirror/swap/invert transformations)
 export {
   REFLECTION_AXES,
   DEFAULT_MIRRORED_AXIS,
@@ -91,11 +91,11 @@ export {
   isReflectionAxis,
   reflectLocation,
   type ReflectionAxis,
-  VERTICAL_MIRROR_POSITION_MAP,
+  VERTICAL_MIRROR_PLACEMENT_MAP,
   VERTICAL_MIRROR_LOCATION_MAP,
-  HORIZONTAL_MIRROR_POSITION_MAP,
+  HORIZONTAL_MIRROR_PLACEMENT_MAP,
   HORIZONTAL_MIRROR_LOCATION_MAP,
-  SWAPPED_POSITION_MAP,
+  SWAPPED_PLACEMENT_MAP,
   INVERTED_LETTER_MAP,
   ALPHA_BETA_COUNTERPART_LETTER_MAP,
   COMPOUND_LETTER_MAP,
@@ -115,7 +115,7 @@ export {
   MIRRORED_INVERTED_VALIDATION_SET,
   ROTATED_SWAPPED_QUARTERED_VALIDATION_SET,
   ROTATED_SWAPPED_HALVED_VALIDATION_SET,
-} from "./position-maps/strict-loop-position-maps.js";
+} from "./placement-maps/strict-loop-placement-maps.js";
 
 // Detection (analyzes sequence steps to identify LOOP patterns)
 export {
@@ -206,25 +206,25 @@ export {
   loopExecutorSelector,
 } from "./execution/LOOPExecutorSelector.js";
 
-// Grid position deriver
+// Grid placement deriver
 export {
-  GridPositionDeriver,
-  gridPositionDeriver,
-} from "../core/positions/GridPositionDeriver.js";
+  GridPlacementDeriver,
+  gridPlacementDeriver,
+} from "../core/placements/GridPlacementDeriver.js";
 
 // Letter lookup
 export { findLetterByMotions } from "./LetterLookup.js";
 
-// Targeting (end position selection for LOOP generation)
+// Targeting (end placement selection for LOOP generation)
 export {
-  RotatedEndPositionSelector,
-  rotatedEndPositionSelector,
-} from "./targeting/RotatedEndPositionSelector.js";
+  RotatedEndPlacementSelector,
+  rotatedEndPlacementSelector,
+} from "./targeting/RotatedEndPlacementSelector.js";
 export {
-  LOOPEndPositionSelector,
-  loopEndPositionSelector,
-  determineEndPositionForSpec,
-} from "./targeting/LOOPEndPositionSelector.js";
+  LOOPEndPlacementSelector,
+  loopEndPlacementSelector,
+  determineEndPlacementForSpec,
+} from "./targeting/LOOPEndPlacementSelector.js";
 export {
   PartialSequenceGenerator,
   partialSequenceGenerator,

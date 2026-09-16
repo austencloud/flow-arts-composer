@@ -15,12 +15,12 @@
     showGrid: boolean;
     showTKA: boolean;
     showWord: boolean;
-    includeStartPosition: boolean;
+    includeStartPlacement: boolean;
     onHandPointsChange: (visible: boolean) => void;
     onShowGridChange: (visible: boolean) => void;
     onShowTKAChange: (visible: boolean) => void;
     onShowWordChange: (visible: boolean) => void;
-    onIncludeStartPositionChange: (visible: boolean) => void;
+    onIncludeStartPlacementChange: (visible: boolean) => void;
   }
 
   let {
@@ -28,12 +28,12 @@
     showGrid,
     showTKA,
     showWord,
-    includeStartPosition,
+    includeStartPlacement,
     onHandPointsChange,
     onShowGridChange,
     onShowTKAChange,
     onShowWordChange,
-    onIncludeStartPositionChange,
+    onIncludeStartPlacementChange,
   }: Props = $props();
 
   let hapticService: HapticFeedback;
@@ -62,9 +62,9 @@
     onShowWordChange(!showWord);
   }
 
-  function handleIncludeStartPositionClick() {
+  function handleIncludeStartPlacementClick() {
     hapticService?.trigger("selection");
-    onIncludeStartPositionChange(!includeStartPosition);
+    onIncludeStartPlacementChange(!includeStartPlacement);
   }
 </script>
 
@@ -100,8 +100,8 @@
 
     <ChipToggle
       label="Start Pos"
-      active={includeStartPosition}
-      onclick={handleIncludeStartPositionClick}
+      active={includeStartPlacement}
+      onclick={handleIncludeStartPlacementClick}
     />
   </div>
 </div>

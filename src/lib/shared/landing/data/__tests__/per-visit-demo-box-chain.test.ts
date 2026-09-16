@@ -30,9 +30,9 @@ describe("per-visit demo chained to a box start position", () => {
     const seed = JSON.parse(JSON.stringify(await generatePerVisitDemo()));
     expect(seed.id).not.toBe(FALLBACK_DEMO.id);
 
-    const boxed = applyBoxMode(seed, "box") as { startPosition?: unknown };
+    const boxed = applyBoxMode(seed, "box") as { startPlacement?: unknown };
     const chained = await generatePerVisitDemo({
-      startPosition: boxed.startPosition as never,
+      startPlacement: boxed.startPlacement as never,
     });
 
     // The fixture is what the unguarded path served. A generated word here is

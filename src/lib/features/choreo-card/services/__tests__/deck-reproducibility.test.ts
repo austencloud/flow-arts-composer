@@ -11,7 +11,7 @@ function pool() {
       sourceCatalogId: "c",
       stepCount: step,
       word: `alpha${i}_S${step}`,
-      startPosition: `alpha${i}`,
+      startPlacement: `alpha${i}`,
     }));
   return new Map([
     [8, mk(40, 8)],

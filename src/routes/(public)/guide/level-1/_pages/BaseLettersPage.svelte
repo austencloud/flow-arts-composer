@@ -27,7 +27,7 @@
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
   import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
-  import PositionGlyph from "$lib/shared/pictograph/shared/components/PositionGlyph.svelte";
+  import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
   import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import {
     MotionType,
@@ -35,8 +35,8 @@
     Orientation,
     RotationDirection,
   } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridMode, GridLocation, GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { GridMode, GridLocation, GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -123,8 +123,8 @@
       id: `bl-${c.name}${stepNumber === null ? "" : `-${stepNumber}`}`,
       letter: c.letter,
       gridMode: GridMode.DIAMOND,
-      startPosition: getGridPositionFromLocations(c.left.from, c.right.from),
-      endPosition: getGridPositionFromLocations(c.left.to, c.right.to),
+      startPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
+      endPlacement: getGridPlacementFromLocations(c.left.to, c.right.to),
       motions: {
         left: hand(HandSide.LEFT, c.left),
         right: hand(HandSide.RIGHT, c.right),
@@ -144,8 +144,8 @@
       letter: null,
       gridMode: GridMode.DIAMOND,
       stepNumber: 0,
-      startPosition: getGridPositionFromLocations(c.left.from, c.right.from),
-      endPosition: getGridPositionFromLocations(c.left.from, c.right.from),
+      startPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
+      endPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
       motions: {
         left: staticHand(HandSide.LEFT, c.left.from),
         right: staticHand(HandSide.RIGHT, c.right.from),
@@ -181,12 +181,12 @@
   const COL_LABELS = ["Pro", "Anti", "Hybrid"];
   const COL_Y = { abc: 207, ghi: 536 };
 
-  // ── Margin labels: real TKA PositionGlyph over the italic mode name ─────────
+  // ── Margin labels: real TKA PlacementGlyph over the italic mode name ─────────
   const MARGIN_CX = 106;
-  type Margin = { pos: { start: GridPosition; end: GridPosition }; t: string; mode: string; glyphY: number; modeY: number };
+  type Margin = { pos: { start: GridPlacement; end: GridPlacement }; t: string; mode: string; glyphY: number; modeY: number };
   const MARGINS: Margin[] = [
-    { pos: { start: GridPosition.ALPHA1, end: GridPosition.ALPHA1 }, t: "α→α", mode: "Split-Same", glyphY: 258.1, modeY: 279.3 },
-    { pos: { start: GridPosition.BETA1, end: GridPosition.BETA1 }, t: "β→β", mode: "Tog-Same", glyphY: 589.6, modeY: 610.8 },
+    { pos: { start: GridPlacement.ALPHA1, end: GridPlacement.ALPHA1 }, t: "α→α", mode: "Split-Same", glyphY: 258.1, modeY: 279.3 },
+    { pos: { start: GridPlacement.BETA1, end: GridPlacement.BETA1 }, t: "β→β", mode: "Tog-Same", glyphY: 589.6, modeY: 610.8 },
   ];
 
   // ── Text at proof coords, grouped into paragraphs ───────────────────────────
@@ -288,7 +288,7 @@
           rightPropTypeOverride={PropType.STAFF}
           showGrid={true}
           showTKA={true}
-          showPositions={false}
+          showPlacements={false}
           showReversals={false}
           showTnD={false}
           showElemental={false}
@@ -315,11 +315,11 @@
     {/each}
   {/each}
 
-  <!-- Margin labels: real TKA PositionGlyph over the italic handpath mode. -->
+  <!-- Margin labels: real TKA PlacementGlyph over the italic handpath mode. -->
   {#each MARGINS as m (m.t)}
     <span class="margin glyph" style="left:{(MARGIN_CX - 40) * S}px; top:{m.glyphY * S}px; width:{80 * S}px">
       <svg class="pos-glyph" viewBox="360 50 230 75" role="img" aria-label={m.t} style="height:{20 * S}px">
-        <PositionGlyph startPosition={m.pos.start} endPosition={m.pos.end} />
+        <PlacementGlyph startPlacement={m.pos.start} endPlacement={m.pos.end} />
       </svg>
     </span>
     <span class="margin i" style="left:{(MARGIN_CX - 50) * S}px; top:{m.modeY * S}px; width:{100 * S}px; font-size:{16.8 * S}px">{m.mode}</span>

@@ -1,15 +1,15 @@
-<!-- StartTile.svelte - Reusable start position tile for all grid modes -->
+<!-- StartTile.svelte - Reusable start placement tile for all grid modes -->
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import StepCell from "./StepCell.svelte";
 
   let {
-    startPosition,
+    startPlacement,
     shouldAnimate = false,
     isSelected = false,
     isPracticeStep = false,
@@ -25,7 +25,7 @@
     rightColorOverride = undefined,
     onContentReady = undefined,
   } = $props<{
-    startPosition: StartPositionData | StepData;
+    startPlacement: StartPlacementData | StepData;
     shouldAnimate?: boolean;
     isSelected?: boolean;
     isPracticeStep?: boolean;
@@ -66,17 +66,17 @@
 <div
   class="start-tile"
   class:has-pictograph={true}
-  title="Start Position"
+  title="Start Placement"
   role="button"
   tabindex="0"
   onclick={handleStartClick}
   onkeydown={handleKeydown}
-  aria-label="Start Position"
+  aria-label="Start Placement"
 >
   <StepCell
-    step={startPosition}
+    step={startPlacement}
     index={-1}
-    transitionKey="start-position"
+    transitionKey="start-placement"
     {shouldAnimate}
     {isSelected}
     {isPracticeStep}

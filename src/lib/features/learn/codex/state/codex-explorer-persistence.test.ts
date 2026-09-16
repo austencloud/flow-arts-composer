@@ -15,7 +15,7 @@ describe("codex explorer persistence", () => {
       showGlyph: false,
       showGrid: true,
       showTKA: false,
-      showPositions: true,
+      showPlacements: true,
       showReversals: false,
       showNonRadialPoints: true,
     },

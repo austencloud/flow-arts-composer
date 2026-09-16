@@ -25,8 +25,8 @@ interface LetterMappingsJson {
   letters: Record<
     string,
     {
-      startPosition: string;
-      endPosition: string;
+      startPlacement: string;
+      endPlacement: string;
       leftMotion: string;
       rightMotion: string;
     }
@@ -116,8 +116,8 @@ export class CodexLetterMappingRepo {
       const letters: Record<string, CodexLetterMapping> = {};
       for (const [letter, mapping] of Object.entries(data.letters)) {
         letters[letter] = createLetterMapping({
-          startPosition: mapping.startPosition,
-          endPosition: mapping.endPosition,
+          startPlacement: mapping.startPlacement,
+          endPlacement: mapping.endPlacement,
           leftMotionType: this.mapMotionString(mapping.leftMotion),
           rightMotionType: this.mapMotionString(mapping.rightMotion),
         });

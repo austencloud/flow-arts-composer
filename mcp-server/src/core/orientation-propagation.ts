@@ -13,7 +13,7 @@ import type { HandSide } from "@tka/tka-types";
  * Propagate orientations for one performer hand through all steps.
  * Each step's start orientation = previous step's end orientation.
  *
- * @param steps - The sequence steps (including start position at index 0)
+ * @param steps - The sequence steps (including start placement at index 0)
  * @param hand - Which performer hand to propagate
  * @param initialOrientation - The starting orientation (from step 0's end orientation)
  * @returns Updated steps with correct orientations
@@ -26,7 +26,7 @@ export function propagateOrientationsForHand(
   const updatedSteps = [...steps];
   let previousEndOrientation = initialOrientation;
 
-  // Start from step 1 (skip the start position at step 0)
+  // Start from step 1 (skip the start placement at step 0)
   for (let i = 1; i < updatedSteps.length; i++) {
     const step = updatedSteps[i];
     if (!step) continue;
@@ -65,7 +65,7 @@ export function propagateOrientationsForHand(
 
 /**
  * Recalculate all prop orientations through the entire sequence.
- * Uses the start position (step 0) orientations as the baseline.
+ * Uses the start placement (step 0) orientations as the baseline.
  *
  * @param result - The sequence result to fix orientations on
  * @returns Updated sequence result with corrected orientations
@@ -75,21 +75,21 @@ export function recalculateAllOrientations(result: SequenceResult): SequenceResu
     return result;
   }
 
-  // Get the start position (step 0)
-  const startPosition = result.steps[0];
-  if (!startPosition) {
+  // Get the start placement (step 0)
+  const startPlacement = result.steps[0];
+  if (!startPlacement) {
     return result;
   }
 
   let updatedSteps = [...result.steps];
 
   // Recalculate orientations for the left prop.
-  // Start with the end orientation of the start position
-  const leftStartOrientation = (startPosition.leftMotion.endOrientation || "in") as McpOrientation;
+  // Start with the end orientation of the start placement
+  const leftStartOrientation = (startPlacement.leftMotion.endOrientation || "in") as McpOrientation;
   updatedSteps = propagateOrientationsForHand(updatedSteps, "left", leftStartOrientation);
 
   // Recalculate orientations for the right prop.
-  const rightStartOrientation = (startPosition.rightMotion.endOrientation || "in") as McpOrientation;
+  const rightStartOrientation = (startPlacement.rightMotion.endOrientation || "in") as McpOrientation;
   updatedSteps = propagateOrientationsForHand(updatedSteps, "right", rightStartOrientation);
 
   return {
@@ -99,7 +99,7 @@ export function recalculateAllOrientations(result: SequenceResult): SequenceResu
 }
 
 /**
- * Recalculate orientations with explicit overrides for the start position.
+ * Recalculate orientations with explicit overrides for the start placement.
  * Updates step 0's orientations and re-propagates through the entire sequence.
  */
 export function recalculateOrientationsWithOverrides(
@@ -113,7 +113,7 @@ export function recalculateOrientationsWithOverrides(
   const sp = updatedSteps[0];
   if (!sp) return updatedSteps;
 
-  // Override step 0 (start position) orientations
+  // Override step 0 (start placement) orientations
   if (leftStartOrientation) {
     const leftOri = leftStartOrientation as McpOrientation;
     updatedSteps[0] = {

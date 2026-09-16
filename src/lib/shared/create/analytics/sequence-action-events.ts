@@ -12,7 +12,7 @@ export interface SequenceActionEventProperties {
   targetHand: SequenceActionTargetHand;
   createMode: string;
   stepCount: number;
-  hasStartPosition: boolean;
+  hasStartPlacement: boolean;
 }
 
 function eventProperties(props: SequenceActionEventProperties) {
@@ -22,7 +22,7 @@ function eventProperties(props: SequenceActionEventProperties) {
     target_hand: props.targetHand,
     create_mode: props.createMode,
     step_count: props.stepCount,
-    has_start_position: props.hasStartPosition,
+    has_start_position: props.hasStartPlacement,
   };
 }
 

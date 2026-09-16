@@ -10,7 +10,7 @@
 // MotionWithView inputs. The other enums are structurally identical app-side.
 import type { MotionType } from "@tka/tka-types";
 import type { RotationDirection, Orientation, HandPath, SkewDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { GridPositionGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 
 /**
@@ -88,10 +88,10 @@ export interface LocationDelta {
  */
 export interface StepSignature {
   /** Position group at start (alpha, beta, gamma, etc.) */
-  readonly startPositionGroup: GridPositionGroup;
+  readonly startPlacementGroup: GridPlacementGroup;
 
   /** Position group at end */
-  readonly endPositionGroup: GridPositionGroup;
+  readonly endPlacementGroup: GridPlacementGroup;
 
   /** Blue hand motion signature */
   readonly left: MotionSignature;
@@ -177,7 +177,7 @@ export interface StepComparisonResult {
 }
 
 export interface StepComparisonBreakdown {
-  readonly positionGroupMatch: boolean;
+  readonly placementGroupMatch: boolean;
   readonly leftSimilarity: number;
   readonly rightSimilarity: number;
   readonly handAngleMatch: boolean;

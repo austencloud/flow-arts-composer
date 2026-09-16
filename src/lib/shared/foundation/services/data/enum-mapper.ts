@@ -1,6 +1,6 @@
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "../../../pictograph/grid/domain/enums/grid-enums";
 import {
   MotionType,
@@ -102,22 +102,22 @@ export function mapRotationDirection(rotationDirection: string): RotationDirecti
   }
 }
 
-export function convertToGridPosition(
+export function convertToGridPlacement(
   positionString: string | null | undefined
-): GridPosition | null {
+): GridPlacement | null {
   if (!positionString) return null;
 
   const lowerPosition = positionString.toLowerCase().trim();
-  const gridPositionValues = Object.values(GridPosition);
+  const gridPlacementValues = Object.values(GridPlacement);
 
-  for (const position of gridPositionValues) {
+  for (const position of gridPlacementValues) {
     if (position.toLowerCase() === lowerPosition) {
-      return position as GridPosition;
+      return position as GridPlacement;
     }
   }
 
   console.warn(
-    `⚠️ convertToGridPosition: unknown position "${positionString}", returning null`
+    `⚠️ convertToGridPlacement: unknown position "${positionString}", returning null`
   );
   return null;
 }

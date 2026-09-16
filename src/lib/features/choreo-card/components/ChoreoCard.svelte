@@ -23,9 +23,9 @@
     showGrid?: boolean;
     showTKA?: boolean;
     showWord?: boolean;
-    includeStartPosition?: boolean;
+    includeStartPlacement?: boolean;
     /** "row" = start position as top row, "column" = start position as left column */
-    startPositionLayout?: "row" | "column";
+    startPlacementLayout?: "row" | "column";
     /** Render as hand path card: HAND props, float arrows, no TKA/reversals */
     handPathMode?: boolean;
     /** Use 5:7 playing card layout for physical card export (different from printMode) */
@@ -64,8 +64,8 @@
     showGrid = true,
     showTKA = true,
     showWord = true,
-    includeStartPosition = true,
-    startPositionLayout = "row",
+    includeStartPlacement = true,
+    startPlacementLayout = "row",
     handPathMode = false,
     cardMode = false,
     lightMode: lightModeProp,
@@ -176,8 +176,8 @@
         variant="wordcard"
         addWord={showWord}
         addDifficultyLevel={true}
-        {includeStartPosition}
-        {startPositionLayout}
+        {includeStartPlacement}
+        {startPlacementLayout}
         {showNotes}
         {showLoopGlyph}
         visibility={visibilitySettings}

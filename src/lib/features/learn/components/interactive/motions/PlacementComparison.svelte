@@ -15,16 +15,16 @@
   import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { reducedMotion } from "$lib/shared/transitions/motion";
   import {
-    POSITION_KINDS,
-    POSITION_LETTERS,
-    positionExample,
-    positionPairPreview,
-    transformPosition,
-  } from "../positions/hand-position-lesson";
+    PLACEMENT_KINDS,
+    PLACEMENT_LETTERS,
+    placementExample,
+    placementPairPreview,
+    transformPlacement,
+  } from "../placements/hand-placement-lesson";
 
   let gridMode = $state(GridMode.DIAMOND);
   let pairs = $state(
-    POSITION_KINDS.map((kind) => positionExample(kind, GridMode.DIAMOND))
+    PLACEMENT_KINDS.map((kind) => placementExample(kind, GridMode.DIAMOND))
   );
   let announcement = $state("");
   let betaSwapped = $state(false);
@@ -48,9 +48,9 @@
     gamma: "A right angle apart",
   };
   const examples = $derived(
-    POSITION_KINDS.map((kind, index) => ({
+    PLACEMENT_KINDS.map((kind, index) => ({
       kind,
-      data: { ...positionPairPreview(pairs[index]!, gridMode), betaSwapped },
+      data: { ...placementPairPreview(pairs[index]!, gridMode), betaSwapped },
     }))
   );
 
@@ -67,7 +67,7 @@
     const previous = examples.map((example) => example.data);
     gridRotationStart = gridRotation;
     pairs = pairs.map((pair) =>
-      transformPosition(
+      transformPlacement(
         pair.left,
         pair.right,
         action === "flip" ? "mirror" : action,
@@ -113,9 +113,9 @@
 </script>
 
 <div class="placement-comparison">
-  <div class="position-examples" role="group" aria-label="Placement examples">
+  <div class="placement-examples" role="group" aria-label="Placement examples">
     {#each examples as example, index (example.kind)}
-      <section class="position-example" aria-label={`${example.kind} position`}>
+      <section class="placement-example" aria-label={`${example.kind} placement`}>
         <div class="pictograph">
           <PictographContainer
             leftColorOverride={DEFAULT_VIEWER_CUSTOM_COLORS.left}
@@ -138,7 +138,7 @@
             showArrow={false}
             showTnD={false}
             showElemental={false}
-            showPositions={false}
+            showPlacements={false}
             showReversals={false}
             showNonRadialPoints={false}
             stepNumberOverride={false}
@@ -146,10 +146,10 @@
             rightPropTypeOverride={PropType.HAND}
           />
         </div>
-        <div class="position-caption">
+        <div class="placement-caption">
           <h2>
             <TKAWordGlyph
-              word={POSITION_LETTERS[example.kind]}
+              word={PLACEMENT_LETTERS[example.kind]}
               height={36}
               darkMode
             /><span
@@ -164,7 +164,7 @@
   <div
     class="transform-bar"
     role="group"
-    aria-label="Transform all three positions"
+    aria-label="Transform all three placements"
   >
     <SequenceTransformActions
       toolbar
@@ -172,7 +172,7 @@
       hasSelection={false}
       isTransforming={false}
       showEditInConstructor={false}
-      actionSubject="all positions"
+      actionSubject="all placements"
       rotationDegrees={45}
       onMirror={() => transform("mirror")}
       onFlip={() => transform("flip")}
@@ -192,12 +192,12 @@
   .placement-comparison {
     width: 100%;
   }
-  .position-examples {
+  .placement-examples {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: clamp(1rem, 3cqw, 3rem);
   }
-  .position-example {
+  .placement-example {
     min-width: 0;
     display: grid;
     justify-items: center;
@@ -212,7 +212,7 @@
     overflow: hidden;
     background: var(--theme-panel-bg);
   }
-  .position-caption {
+  .placement-caption {
     text-align: center;
   }
   h2 {
@@ -252,11 +252,11 @@
     clip-path: inset(50%);
   }
   @container examples (max-width: 650px) {
-    .position-examples {
+    .placement-examples {
       grid-template-columns: 1fr;
       gap: 1rem;
     }
-    .position-example {
+    .placement-example {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       align-items: center;
       gap: 1rem;
@@ -274,7 +274,7 @@
   }
 
   @container examples (max-height: 360px) and (min-width: 651px) {
-    .position-example {
+    .placement-example {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       align-items: center;
       gap: 0.75rem;

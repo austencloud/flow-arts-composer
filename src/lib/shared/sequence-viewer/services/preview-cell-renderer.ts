@@ -73,7 +73,7 @@ export interface PreviewCellRenderOptions {
   showPropTnD?: boolean;
 
   /** Show start/end position letters (alpha/beta/gamma labels) */
-  showPositions?: boolean;
+  showPlacements?: boolean;
   /** L/R colour key on the start cell. Default: true. */
   showHandColorKey?: boolean;
 

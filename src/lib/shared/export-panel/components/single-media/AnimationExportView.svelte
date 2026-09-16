@@ -29,8 +29,8 @@
     const sequenceData = context.state.sequenceData;
     const currentStep = context.state.currentStep;
     if (!sequenceData) return null;
-    if (currentStep < 1 && sequenceData.startPosition) {
-      return sequenceData.startPosition;
+    if (currentStep < 1 && sequenceData.startPlacement) {
+      return sequenceData.startPlacement;
     }
     if (sequenceData.steps?.length > 0) {
       const stepNumber = Math.ceil(currentStep - 1);

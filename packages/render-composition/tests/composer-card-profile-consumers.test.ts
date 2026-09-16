@@ -31,8 +31,8 @@ describe("Composer card export profile consumers", () => {
     );
 
     expect(source).toContain("getLayout");
-    expect(source).not.toContain("LAYOUT_WITH_START_POSITION");
-    expect(source).not.toContain("LAYOUT_WITHOUT_START_POSITION");
+    expect(source).not.toContain("LAYOUT_WITH_START_PLACEMENT");
+    expect(source).not.toContain("LAYOUT_WITHOUT_START_PLACEMENT");
   });
 
   it("keeps the app step labels on the shared renderer", () => {

@@ -128,7 +128,7 @@ export function createSensors(): { sense: () => GhostWorld } {
         .map((el) => el.dataset.ghostId ?? "")
         .filter(Boolean),
       viewerOpen: !!document.querySelector(stateSel("viewer-open")),
-      pickerOpen: available.option > 0 || available["start-position"] > 0,
+      pickerOpen: available.option > 0 || available["start-placement"] > 0,
       reachableModules: navModules
         .map((el) => el.getAttribute(NAV_MODULE_ID_ATTR) ?? "")
         .filter((id) => id && MODULE_IDS.has(id) && !isDeniedModule(id)),

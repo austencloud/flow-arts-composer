@@ -140,7 +140,7 @@ Apply rotations to previous beat's end locations:
   - newRedEndLoc = LOCATION_MAP_CLOCKWISE[EAST] = SOUTH
 
 Derive position from locations:
-  - gridPositionDeriver.derivePositionFromLocations(NORTH, SOUTH)
+  - gridPlacementDeriver.derivePositionFromLocations(NORTH, SOUTH)
   - Looking up (NORTH, SOUTH) in POSITIONS_MAP
   - Result: ALPHA5
 
@@ -170,8 +170,8 @@ For Red Motion:
 ```typescript
 Beat 2:
   beatNumber: 2
-  startPosition: ALPHA3 (from Beat 1's end)
-  endPosition: ALPHA5 (calculated)
+  startPlacement: ALPHA3 (from Beat 1's end)
+  endPlacement: ALPHA5 (calculated)
   letter: "A" (copied from matching beat)
   motions: {
     blue: { WEST → NORTH, PRO, CW, turns: 1 }

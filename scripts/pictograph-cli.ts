@@ -99,8 +99,8 @@ async function loadPictographData(
     if (r[0] === letter) {
       // If positions specified, filter by them
       if (startPos && endPos) {
-        const rowStartPos = r[headers.indexOf("startPosition")];
-        const rowEndPos = r[headers.indexOf("endPosition")];
+        const rowStartPos = r[headers.indexOf("startPlacement")];
+        const rowEndPos = r[headers.indexOf("endPlacement")];
         if (rowStartPos === startPos && rowEndPos === endPos) {
           row = r;
           break;
@@ -200,10 +200,10 @@ async function renderPictograph(
     themeMode?: "light" | "dark";
   } = {}
 ): Promise<string> {
-  const positionLabel = options.startPos
+  const placementLabel = options.startPos
     ? ` (${options.startPos}→${options.endPos})`
     : "";
-  console.log(`\n🎨 Rendering pictograph ${letter}${positionLabel}...`);
+  console.log(`\n🎨 Rendering pictograph ${letter}${placementLabel}...`);
 
   const pictographData = await loadPictographData(
     letter,
@@ -270,7 +270,7 @@ async function renderPictograph(
       showTKA: true,
       showTND: false,
       showElemental: false,
-      showPositions: false,
+      showPlacements: false,
       showReversals: false,
       showNonRadialPoints: false,
       darkMode: isDarkMode,

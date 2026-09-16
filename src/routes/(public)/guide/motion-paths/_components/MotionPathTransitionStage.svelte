@@ -320,7 +320,7 @@
       onExternalPlayingChange={onplayingchange}
       {...callbacks}
       showControls={false}
-      showPositionGlyph
+      showPlacementGlyph
       beatIndicators={false}
       disableContextMenu
       playbackAllowed={active === source || waiting === source || fading}

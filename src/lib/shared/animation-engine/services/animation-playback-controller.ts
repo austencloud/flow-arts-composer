@@ -57,7 +57,7 @@ export class AnimationPlaybackController {
 
   // End position hold duration for freeform (non-looping) sequences
   // Adds a 1-step pause at the end position so the user can see the final state
-  private endPositionHoldDuration: number = 0;
+  private endPlacementHoldDuration: number = 0;
 
   // Loop completion callback (used by tempo practice training)
   private loopCompleteCallback: (() => void) | null = null;
@@ -149,10 +149,10 @@ export class AnimationPlaybackController {
 
     // Store total duration for duration-aware playback (includes start position)
     // For freeform sequences, add 1-step end position hold so the user can see the final state
-    this.endPositionHoldDuration = this._isSeamlesslyLoopable ? 0 : 1;
+    this.endPlacementHoldDuration = this._isSeamlesslyLoopable ? 0 : 1;
     this.totalDuration =
-      this.animationEngine.getTotalDurationWithStartPosition() +
-      this.endPositionHoldDuration;
+      this.animationEngine.getTotalDurationWithStartPlacement() +
+      this.endPlacementHoldDuration;
     this.timePosition = 0;
     this.isFirstLoop = true;
 
@@ -196,10 +196,10 @@ export class AnimationPlaybackController {
     this.state.setSequenceMetadata(metadata.word, metadata.author);
 
     // Update total duration (includes start position + end hold for freeform sequences)
-    this.endPositionHoldDuration = this._isSeamlesslyLoopable ? 0 : 1;
+    this.endPlacementHoldDuration = this._isSeamlesslyLoopable ? 0 : 1;
     this.totalDuration =
-      this.animationEngine.getTotalDurationWithStartPosition() +
-      this.endPositionHoldDuration;
+      this.animationEngine.getTotalDurationWithStartPlacement() +
+      this.endPlacementHoldDuration;
 
     // Clamp time position to new duration range
     this.timePosition = Math.min(currentTimePos, this.totalDuration);
@@ -261,8 +261,8 @@ export class AnimationPlaybackController {
     if (this.sequenceData) {
       this.animationEngine.initializeWithDomainData(this.sequenceData);
       this.totalDuration =
-        this.animationEngine.getTotalDurationWithStartPosition() +
-        this.endPositionHoldDuration;
+        this.animationEngine.getTotalDurationWithStartPlacement() +
+        this.endPlacementHoldDuration;
     }
 
     // Update prop states
@@ -717,8 +717,8 @@ export class AnimationPlaybackController {
         // Dropping it creates a tiny cadence hitch at every boundary even when
         // the requestAnimationFrame clock itself never stops.
         const boundaryOverrun = newTimePosition - this.totalDuration;
-        const fallbackStartPositionDuration =
-          this.animationEngine.getStartPositionDuration();
+        const fallbackStartPlacementDuration =
+          this.animationEngine.getStartPlacementDuration();
 
         // Mark that we've completed the first loop
         this.isFirstLoop = false;
@@ -735,14 +735,14 @@ export class AnimationPlaybackController {
           // looping behavior. Circular sequences skip the repeated start hold;
           // freeform sequences show it again.
           this.timePosition = this._isSeamlesslyLoopable
-            ? fallbackStartPositionDuration
+            ? fallbackStartPlacementDuration
             : 0;
 
           if (this.sequenceData) {
             this.animationEngine.initializeWithDomainData(this.sequenceData);
             this.totalDuration =
-              this.animationEngine.getTotalDurationWithStartPosition() +
-              this.endPositionHoldDuration;
+              this.animationEngine.getTotalDurationWithStartPlacement() +
+              this.endPlacementHoldDuration;
           }
         }
       } else {
@@ -793,12 +793,12 @@ export class AnimationPlaybackController {
     this.state.setSequenceMetadata(metadata.word, metadata.author);
     this.state.setSequenceData(handoff.sequence);
 
-    this.endPositionHoldDuration = this._isSeamlesslyLoopable ? 0 : 1;
+    this.endPlacementHoldDuration = this._isSeamlesslyLoopable ? 0 : 1;
     this.totalDuration =
-      this.animationEngine.getTotalDurationWithStartPosition() +
-      this.endPositionHoldDuration;
+      this.animationEngine.getTotalDurationWithStartPlacement() +
+      this.endPlacementHoldDuration;
 
-    const firstMotionTime = this.animationEngine.getStartPositionDuration();
+    const firstMotionTime = this.animationEngine.getStartPlacementDuration();
     this.timePosition = Math.min(
       firstMotionTime + Math.max(0, boundaryOverrun),
       this.totalDuration

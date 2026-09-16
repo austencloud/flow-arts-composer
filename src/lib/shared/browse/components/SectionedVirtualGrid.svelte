@@ -284,7 +284,7 @@
     const maxSteps = getSectionedGridRowMaxSteps(it.sequences);
     const aspect = calculateGalleryAspectRatio(
       maxSteps,
-      compositionManager.startPositionLayout
+      compositionManager.startPlacementLayout
     );
     return cardWidth / aspect + ROW_SPACING;
   }
@@ -433,7 +433,7 @@
       createSectionedGridMeasurementSignature(
         flat.items,
         engine.columnCount,
-        compositionManager.startPositionLayout
+        compositionManager.startPlacementLayout
       )
     );
 
@@ -510,7 +510,7 @@
     const measurementSignature = createSectionedGridMeasurementSignature(
       flat.items,
       engine.columnCount,
-      compositionManager.startPositionLayout
+      compositionManager.startPlacementLayout
     );
     const sc = scrollElement;
     untrack(() => {

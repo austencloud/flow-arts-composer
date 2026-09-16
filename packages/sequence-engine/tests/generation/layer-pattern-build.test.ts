@@ -40,8 +40,8 @@ function loadVariations(csvPath: string): PictographData[] {
     if (c.length < 13 || !c[0]) continue;
     out.push({
       letter: c[0],
-      startPosition: c[1]!,
-      endPosition: c[2]!,
+      startPlacement: c[1]!,
+      endPlacement: c[2]!,
       timing: c[3]!,
       direction: c[4]!,
       leftMotion: {
@@ -72,7 +72,7 @@ class CsvVariationProvider implements IVariationProvider {
 
   constructor(private readonly data: PictographData[]) {
     for (const p of data) {
-      const key = `${p.letter}:${p.startPosition}`;
+      const key = `${p.letter}:${p.startPlacement}`;
       const bucket = this.index.get(key);
       if (bucket) bucket.push(p);
       else this.index.set(key, [p]);

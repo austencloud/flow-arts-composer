@@ -13,7 +13,7 @@
 
 import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { turnValuesForLevel } from "$lib/shared/create/services/level-turn-values";
-import { getInvertedLetter } from "../../circular/domain/constants/strict-loop-position-maps";
+import { getInvertedLetter } from "../../circular/domain/constants/strict-loop-placement-maps";
 import type {
   RotationDirections,
   TurnAllocation,

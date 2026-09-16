@@ -5,7 +5,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 
 /**
  * Guards the construct race that produced "Something went wrong adding that
- * step": picking a start position flips the UI to the option picker while
+ * step": picking a start placement flips the UI to the option picker while
  * createSequence() is still in flight, so an early tap sees a null sequence.
  */
 describe("sequence creation race", () => {
@@ -40,7 +40,7 @@ describe("sequence creation race", () => {
   it("whenCurrentSequenceReady resolves the sequence created after the tap", async () => {
     const { state, release } = gatedState();
 
-    // The user picks a start position — creation starts but has not settled.
+    // The user picks a start placement — creation starts but has not settled.
     const creation = state.createSequence({ name: "Test", length: 0 });
 
     // The option picker is already up, and the user taps. This is the exact

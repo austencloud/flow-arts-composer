@@ -261,10 +261,10 @@ export function renderCoverFront(
       const hydrated = hydrateCached(seq);
       const stepCount = hydrated.steps?.length ?? 8;
       const options: PrintRenderOptions = {
-        includeStartPosition: true,
+        includeStartPlacement: true,
         // Same policy as the print preview: 8/12-count cards put the start
         // position in the left column.
-        startPositionLayout: getCatalogLayoutPolicy(stepCount),
+        startPlacementLayout: getCatalogLayoutPolicy(stepCount),
         showMandala: true,
         tndElement: frameElement(card),
         leftPropType: propType,
@@ -317,7 +317,7 @@ export function renderCoverBack(
     try {
       const hydrated = hydrateCached(seq);
       const canvas = await getPrintCardRenderer().renderBack(hydrated, {
-        includeStartPosition: true,
+        includeStartPlacement: true,
         theme: SHOP_BACK_THEME,
         leftPropType: propType,
         rightPropType: propType,

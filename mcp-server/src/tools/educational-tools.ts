@@ -2,7 +2,8 @@
  * Educational Tools
  *
  * Tools for learning about TKA: get_alphabet_info, get_letter_explanation,
- * get_term_definition, compare_letters, list_letters_by_type, get_position_info
+ * get_term_definition, compare_letters, list_letters_by_type, get_placement_info
+ * (get_position_info kept as a deprecated alias for get_placement_info)
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -15,7 +16,7 @@ import {
 } from "../shared/server-context.js";
 import {
   resolveTermAlias,
-  POSITION_DEFINITIONS,
+  PLACEMENT_DEFINITIONS,
   listDomainTopics,
   findDomainTopic,
 } from "@tka/domain";
@@ -40,11 +41,11 @@ export function registerEducationalTools(server: McpServer): void {
               type: "text" as const,
               text: `TKA Quick Reference:
 - Grid: 8 points (N,E,S,W + NE,SE,SW,NW) + center (Level 4)
-- Positions: Alpha=opposite, Beta=same, Gamma=right-angle, Zeta=obtuse, Eta=acute, Tau=one-center, Terra=both-center
+- Placements: Alpha=opposite, Beta=same, Gamma=right-angle, Zeta=obtuse, Eta=acute, Tau=one-center, Terra=both-center
 - Hand paths: Static=stay, Shift=arc to adjacent, Dash=straight to opposite(180°), Hash=straight to/from center (L4, "half-dash")
 - Prop rotations: Pro=with hand path (0 turns=isolation, preserves center-relative orientation), Anti=against, Float=holds absolute spatial angle
 - Types: 1=Dual-Shift(A-V), 2=Shift(W-Ω), 3=Cross-Shift(W--Ω-), 4=Dash(base Φ,Ψ,Λ; registered L4 extension τ-), 5=Dual-Dash(Φ-,Ψ-,Λ-), 6=Static(α,β,γ)
-- Skewed positions (zeta/eta) are their own L5 positions. A-L and M-V are Type 1 letters for the 4-point grid (alpha/beta and gamma respectively); how Type 1 letters apply to zeta/eta transitions is a separate, unresolved question — don't assume either group "handles" skewed transitions. Type 4 in skewed uses Phi(diverge)/Psi(converge), Lambda can't be skewed
+- Skewed placements (zeta/eta) are their own L5 placements. A-L and M-V are Type 1 letters for the 4-point grid (alpha/beta and gamma respectively); how Type 1 letters apply to zeta/eta transitions is a separate, unresolved question — don't assume either group "handles" skewed transitions. Type 4 in skewed uses Phi(diverge)/Psi(converge), Lambda can't be skewed
 - "[Letter] dash" = Type 3 with "-" suffix (e.g. "Σ dash" = Σ-)
 - Orientations: in, out, clock, counter + Level 6 interradial: clockIn, clockOut, counterIn, counterOut
 - VTG (Vulcan Tech Gospel): Split-Same, Tog-Same, Split-Opp, Tog-Opp
@@ -59,9 +60,9 @@ export function registerEducationalTools(server: McpServer): void {
 ## Overview
 
 TKA is a notation system for flow arts, built for double staves. Each staff has two visible ends -- a thumb reference and a pinky reference -- that never change with proper technique. This dual-end landmark system is the foundation of TKA's orientation framework. Other static props (fans, clubs, buugeng) work but staves are canonical. Each "pictograph" represents one step of motion showing:
-- Left and right props at specific grid positions (canonically blue and red)
+- Left and right props at specific grid locations (canonically blue and red)
 - Motion arrows showing how each hand moves
-- Start and end positions
+- Start and end placements
 
 ## The Grid System
 
@@ -76,7 +77,7 @@ Pictographs use a grid with up to 9 points:
 - **Centric**: At least one hand at center (Level 4)
 - **Skewed**: One cardinal + one intercardinal (Level 5)
 
-## Hand Positions
+## Hand Placements
 
 - **Alpha (α)**: Hands at opposite points (180°)
 - **Beta (β)**: Hands at the same point (0°)
@@ -123,7 +124,7 @@ All levels 1-7 work on a single plane at a time (any of the three). Level 8 (ato
 
 ## Conjoined Grids (Level 7)
 
-Two grids sharing a junction point, each showing one hand's motion. Expands the spatial canvas while staying in 2D. Creates new position combinations that can't exist on a single grid, including patterns with two center points. Uses existing position terminology (alpha, beta, gamma) to express the new spatial relationships across paired grids.
+Two grids sharing a junction point, each showing one hand's motion. Expands the spatial canvas while staying in 2D. Creates new placement combinations that can't exist on a single grid, including patterns with two center points. Uses existing placement terminology (alpha, beta, gamma) to express the new spatial relationships across paired grids.
 
 ## The 6 Letter Types
 
@@ -176,7 +177,7 @@ Three types of directional changes, indicated by colored dots on the left edge o
 ## LOOPs (Circular Sequences)
 
 Sequences that return home through transformations:
-- **Rotated**: Positions continue rotating same direction (180° or 90° slices)
+- **Rotated**: Placements continue rotating same direction (180° or 90° slices)
 - **Reflection**: Reflect across N-S, E-W, NE-SW, or NW-SE
 - **Mirrored**: Familiar name for N-S reflection
 - **Flipped**: Familiar name for E-W reflection
@@ -190,21 +191,21 @@ reflection is its own inverse: S→R(S), then R(S)→S. Do not require S to lie 
 the axis unless an already-closed block is being wrapped by an absolute outer
 reflection.
 
-## Letters on the 8-Point Grid (Skewed Positions)
+## Letters on the 8-Point Grid (Skewed Placements)
 
-Skewed positions (Zeta at 135°, Eta at 45°) are asymmetric like gamma. This affects which letters apply:
+Skewed placements (Zeta at 135°, Eta at 45°) are asymmetric like gamma. This affects which letters apply:
 
-**Type 1 (Dual-Shift):** A-L and M-V are defined by 4-point-grid positions (alpha/beta and gamma respectively). How Type 1 letters apply to zeta/eta transitions is a separate question this system prompt does NOT answer. Do not assume "all skewed Type 1 uses M-V, not A-L" — that earlier claim was wrong. If asked, defer to the Skewed pictograph dataframe or Austen directly rather than guessing.
+**Type 1 (Dual-Shift):** A-L and M-V are defined by 4-point-grid placements (alpha/beta and gamma respectively). How Type 1 letters apply to zeta/eta transitions is a separate question this system prompt does NOT answer. Do not assume "all skewed Type 1 uses M-V, not A-L" — that earlier claim was wrong. If asked, defer to the Skewed pictograph dataframe or Austen directly rather than guessing.
 
 **Type 4 (Dash):** Phi = diverging (Eta→Zeta, angle increases). Psi = converging (Zeta→Eta, angle decreases). Lambda cannot be skewed because gamma (90°) requires both hands on the same grid.
 
-**Position halves:** Gamma, Zeta, and Eta each have two internal halves based on which hand is directionally ahead. In gamma, opposite-direction shifts swap halves while staying in gamma. In Zeta/Eta, opposite-direction shifts leave the position entirely (Zeta becomes Eta and vice versa), so the halves are more isolated.
+**Placement halves:** Gamma, Zeta, and Eta each have two internal halves based on which hand is directionally ahead. In gamma, opposite-direction shifts swap halves while staying in gamma. In Zeta/Eta, opposite-direction shifts leave the placement entirely (Zeta becomes Eta and vice versa), so the halves are more isolated.
 
 **Notation:** In written sequences, curly braces delimit skewed territory: A{MP}G means A in standard, MP in skewed, G back to standard.
 
 ## Variations
 
-Each letter has multiple variations based on starting/ending positions, rotation directions, and grid locations.
+Each letter has multiple variations based on starting/ending placements, rotation directions, and grid locations.
 Use \`list_letter_variations\` to see all variations for a specific letter.`;
 
       return {
@@ -265,7 +266,7 @@ Use \`list_letter_variations\` to see all variations for a specific letter.`;
           content: [
             {
               type: "text" as const,
-              text: `${letter}: Type ${typeNum} (${fullTypeInfo?.name || "?"}) | Left hand: ${varData.leftMotion.motionType} | Right hand: ${varData.rightMotion.motionType} | ${variations.length} variations | Var ${variation}: ${varData.startPosition}→${varData.endPosition}`,
+              text: `${letter}: Type ${typeNum} (${fullTypeInfo?.name || "?"}) | Left hand: ${varData.leftMotion.motionType} | Right hand: ${varData.rightMotion.motionType} | ${variations.length} variations | Var ${variation}: ${varData.startPlacement}→${varData.endPlacement}`,
             },
           ],
         };
@@ -299,15 +300,15 @@ ${fullTypeInfo?.characteristics ? "**Characteristics:**\n" + fullTypeInfo.charac
 - **Right hand:** ${describeMotion(varData.rightMotion)}
 
 ## Variation ${variation} Details
-- **Start position:** ${varData.startPosition}
-- **End position:** ${varData.endPosition}
+- **Start placement:** ${varData.startPlacement}
+- **End placement:** ${varData.endPlacement}
 - **Left-hand motion:** ${varData.leftMotion.startLocation} → ${varData.leftMotion.endLocation}
 - **Right-hand motion:** ${varData.rightMotion.startLocation} → ${varData.rightMotion.endLocation}
 
 ## All Variations (${variations.length} total)
 ${variations
   .slice(0, 5)
-  .map((v, i) => `[${i}] ${v.startPosition} → ${v.endPosition}`)
+  .map((v, i) => `[${i}] ${v.startPlacement} → ${v.endPlacement}`)
   .join(
     "\n"
   )}${variations.length > 5 ? `\n... and ${variations.length - 5} more` : ""}
@@ -527,19 +528,19 @@ ${entry.examples.map((e) => `- ${e}`).join("\n")}
         );
       }
 
-      // Compare position patterns
-      const startPos1 = rep1.startPosition.replace(/\d+/g, "");
-      const endPos1 = rep1.endPosition.replace(/\d+/g, "");
-      const startPos2 = rep2.startPosition.replace(/\d+/g, "");
-      const endPos2 = rep2.endPosition.replace(/\d+/g, "");
+      // Compare placement patterns
+      const startPos1 = rep1.startPlacement.replace(/\d+/g, "");
+      const endPos1 = rep1.endPlacement.replace(/\d+/g, "");
+      const startPos2 = rep2.startPlacement.replace(/\d+/g, "");
+      const endPos2 = rep2.endPlacement.replace(/\d+/g, "");
       const pattern1 = `${startPos1}→${endPos1}`;
       const pattern2 = `${startPos2}→${endPos2}`;
 
       if (pattern1 === pattern2) {
-        similarities.push(`Same position pattern: ${pattern1}`);
+        similarities.push(`Same placement pattern: ${pattern1}`);
       } else {
         differences.push(
-          `Position pattern differs: ${letter1} is ${pattern1}, ${letter2} is ${pattern2}`
+          `Placement pattern differs: ${letter1} is ${pattern1}, ${letter2} is ${pattern2}`
         );
       }
 
@@ -570,7 +571,7 @@ ${entry.examples.map((e) => `- ${e}`).join("\n")}
         );
       }
 
-      // Check compound pair (opposite position transitions)
+      // Check compound pair (opposite placement transitions)
       if (
         startPos1 === endPos2 &&
         endPos1 === startPos2 &&
@@ -589,7 +590,7 @@ ${entry.examples.map((e) => `- ${e}`).join("\n")}
 | Type | ${typeNum1} (${letterTypes[typeNum1]?.name || "?"}) | ${typeNum2} (${letterTypes[typeNum2]?.name || "?"}) |
 | Left-hand motion | ${describeRotation(rep1.leftMotion)} ${rep1.leftMotion.motionType} | ${describeRotation(rep2.leftMotion)} ${rep2.leftMotion.motionType} |
 | Right-hand motion | ${describeRotation(rep1.rightMotion)} ${rep1.rightMotion.motionType} | ${describeRotation(rep2.rightMotion)} ${rep2.rightMotion.motionType} |
-| Position pattern | ${pattern1} | ${pattern2} |
+| Placement pattern | ${pattern1} | ${pattern2} |
 | Variations | ${var1.length} | ${var2.length} |
 
 ## Similarities
@@ -687,139 +688,85 @@ ${typeInfo.extendedLetters?.length ? `\n**Registered higher-level extensions (no
     }
   );
 
-  // Tool: get_position_info
-  server.tool(
-    "get_position_info",
-    "Get detailed information about a TKA position (alpha, beta, gamma, zeta, eta, tau, terra) including grid configuration and examples.",
-    {
-      position: z
-        .string()
-        .describe("Position name (alpha, beta, gamma, zeta, eta, tau, terra)"),
-    },
-    async ({ position }) => {
-      const normalizedPos = position.toLowerCase().trim();
+  async function getPlacementInfoOutput(placementInput: string) {
+    const normalizedPlacement = placementInput.toLowerCase().trim();
 
-      const posInfo =
-        POSITION_DEFINITIONS[
-          normalizedPos as keyof typeof POSITION_DEFINITIONS
-        ];
+    const placementInfo =
+      PLACEMENT_DEFINITIONS[
+        normalizedPlacement as keyof typeof PLACEMENT_DEFINITIONS
+      ];
 
-      if (!posInfo) {
-        const availablePositions = Object.keys(POSITION_DEFINITIONS).join(", ");
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Position "${position}" not recognized. Available positions: ${availablePositions}`,
-            },
-          ],
-        };
-      }
-
-      const allPictographs = ensureDataLoaded();
-      const startCount = allPictographs.filter((p) =>
-        p.startPosition.toLowerCase().startsWith(normalizedPos)
-      ).length;
-      const endCount = allPictographs.filter((p) =>
-        p.endPosition.toLowerCase().startsWith(normalizedPos)
-      ).length;
-
-      const output = `# ${posInfo.name}
-
-**Angle:** ${posInfo.angle} between hands
-
-**Description:** ${posInfo.description}
-
-**Grid Configuration:** ${posInfo.gridDescription}
-
-**Examples:**
-${posInfo.examples.map((e) => `- ${e}`).join("\n")}
-
-**Introduced:** Level ${posInfo.level}
-
-**Usage in Pictographs:**
-- Used as starting position: ${startCount} pictographs
-- Used as ending position: ${endCount} pictographs
-
-**Related:** ${Object.keys(POSITION_DEFINITIONS)
-        .filter((p) => p !== normalizedPos)
-        .join(", ")}`;
-
-      return {
-        content: [{ type: "text" as const, text: output }],
-      };
-    }
-  );
-
-  // Tool: get_domain_topic
-  server.tool(
-    "get_domain_topic",
-    "Get deep-dive content on a TKA domain topic. Returns extended reference material on topics like base rotation, orientation algebra, combinatorial space, hand path modifiers, the level system, VTG, compound letters, LOOPs vs CAPs, and more. Use 'list: true' to see all available topics.",
-    {
-      topic: z
-        .string()
-        .optional()
-        .describe(
-          "Topic key or natural language query (e.g., 'base-rotation', 'how does orientation algebra work', 'caps vs loops')"
-        ),
-      list: z
-        .boolean()
-        .optional()
-        .default(false)
-        .describe(
-          "If true, returns list of all available topics instead of content"
-        ),
-    },
-    async ({ topic, list = false }) => {
-      if (list) {
-        const topics = listDomainTopics();
-        const listing = topics
-          .map((t) => `- **${t.key}**: ${t.title}`)
-          .join("\n");
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `# Available Domain Topics (${topics.length})\n\n${listing}\n\nUse \`get_domain_topic\` with any topic key or natural language query to get the full content.`,
-            },
-          ],
-        };
-      }
-
-      if (!topic) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: "Please provide a topic key or query. Use `list: true` to see available topics.",
-            },
-          ],
-          isError: true,
-        };
-      }
-
-      const result = findDomainTopic(topic);
-
-      if (!result) {
-        const topics = listDomainTopics();
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Topic "${topic}" not found.\n\nAvailable topics:\n${topics.map((t) => `- ${t.key}: ${t.title}`).join("\n")}`,
-            },
-          ],
-        };
-      }
-
+    if (!placementInfo) {
+      const availablePlacements = Object.keys(PLACEMENT_DEFINITIONS).join(", ");
       return {
         content: [
           {
             type: "text" as const,
-            text: `# ${result.title}\n\n${result.content}`,
+            text: `Placement "${placementInput}" not recognized. Available placements: ${availablePlacements}`,
           },
         ],
       };
+    }
+
+    const allPictographs = ensureDataLoaded();
+    const startCount = allPictographs.filter((p) =>
+      p.startPlacement.toLowerCase().startsWith(normalizedPlacement)
+    ).length;
+    const endCount = allPictographs.filter((p) =>
+      p.endPlacement.toLowerCase().startsWith(normalizedPlacement)
+    ).length;
+
+    const output = `# ${placementInfo.name}
+
+**Angle:** ${placementInfo.angle} between hands
+
+**Description:** ${placementInfo.description}
+
+**Grid Configuration:** ${placementInfo.gridDescription}
+
+**Examples:**
+${placementInfo.examples.map((e) => `- ${e}`).join("\n")}
+
+**Introduced:** Level ${placementInfo.level}
+
+**Usage in Pictographs:**
+- Used as starting placement: ${startCount} pictographs
+- Used as ending placement: ${endCount} pictographs
+
+**Related:** ${Object.keys(PLACEMENT_DEFINITIONS)
+      .filter((p) => p !== normalizedPlacement)
+      .join(", ")}`;
+
+    return {
+      content: [{ type: "text" as const, text: output }],
+    };
+  }
+
+  // Tool: get_placement_info
+  server.tool(
+    "get_placement_info",
+    "Get detailed information about a TKA placement (alpha, beta, gamma, zeta, eta, tau, terra) including grid configuration and examples. 'Placement' is the current term; older TKA material and this tool's deprecated alias (get_position_info) call it 'position'. VTG's term for the same idea is 'placement'.",
+    {
+      placement: z
+        .string()
+        .describe("Placement name (alpha, beta, gamma, zeta, eta, tau, terra)"),
+    },
+    async ({ placement }) => {
+      return getPlacementInfoOutput(placement);
+    }
+  );
+
+  // Tool: get_position_info (deprecated alias)
+  server.tool(
+    "get_position_info",
+    "Deprecated. Use get_placement_info instead. 'Position' is the older TKA term for what this system now calls a placement. Kept for backward compatibility only.",
+    {
+      position: z
+        .string()
+        .describe("Placement name (alpha, beta, gamma, zeta, eta, tau, terra)"),
+    },
+    async ({ position }) => {
+      return getPlacementInfoOutput(position);
     }
   );
 }

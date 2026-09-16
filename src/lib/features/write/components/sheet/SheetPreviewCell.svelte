@@ -87,7 +87,7 @@
       showNonRadialPoints={SHEET_CELL_VISIBILITY.showNonRadialPoints}
       showTnD={SHEET_CELL_VISIBILITY.showTnD}
       showElemental={SHEET_CELL_VISIBILITY.showElemental}
-      showPositions={SHEET_CELL_VISIBILITY.showPositions}
+      showPlacements={SHEET_CELL_VISIBILITY.showPlacements}
       stepNumberOverride={layout.showStepNumbers}
       {showHandPoints}
     />

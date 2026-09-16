@@ -9,7 +9,7 @@
   - 3 vertices at 120-degree intervals
   - 6 orientations at 60-degree intervals (subset of existing Orientation enum)
   - No opposite points, so no dashes. Only shifts and statics.
-  - Positions: beta (same vertex) and gamma (different vertices) only.
+  - Placements: beta (same vertex) and gamma (different vertices) only.
   - Available letter types: 1 (Dual-Shift), 2 (Shift), 6 (Static)
 -->
 <script lang="ts">
@@ -19,7 +19,7 @@
   import { getTriGridLocations } from "./domain/trigrid-coordinates";
   import TriGridPictograph from "./components/TriGridPictograph.svelte";
   import TriGridControls from "./components/TriGridControls.svelte";
-  import TriGridPositionInfo from "./components/TriGridPositionInfo.svelte";
+  import TriGridPlacementInfo from "./components/TriGridPlacementInfo.svelte";
 
   // Lab state
   let mode = $state<TriGridMode>("upright");
@@ -38,7 +38,7 @@
     rightLocation = locs[1]!;
   }
 
-  function handlePositionChange(left, right) {
+  function handlePlacementChange(left, right) {
     leftLocation = left;
     rightLocation = right;
   }
@@ -72,14 +72,14 @@
         {motionType}
         {showGrid}
         onModeChange={handleModeChange}
-        onPositionChange={handlePositionChange}
+        onPlacementChange={handlePlacementChange}
         onLeftOrientationChange={(o) => { leftOrientation = o; }}
         onRightOrientationChange={(o) => { rightOrientation = o; }}
         onMotionTypeChange={(t) => { motionType = t; }}
         onToggleGrid={() => { showGrid = !showGrid; }}
       />
 
-      <TriGridPositionInfo
+      <TriGridPlacementInfo
         {leftLocation}
         {rightLocation}
         {mode}

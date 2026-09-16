@@ -97,7 +97,7 @@ Drop the "Service" suffix in favor of names that describe what the class actuall
 | `FilterPersistenceService`          | `FilterPersister`                 |
 | `LayoutDetectionService`            | `LayoutDetector`                  |
 | `PictographPreparerService`         | `PictographPreparer`              |
-| `StartPositionService`              | `StartPositionManager`            |
+| `StartPlacementService`              | `StartPlacementManager`            |
 | `TurnControlService`                | `TurnController`                  |
 | `LOOPDetectionService`              | `LOOPDetector`                    |
 | `BeatConverterService`              | `BeatConverter`                   |

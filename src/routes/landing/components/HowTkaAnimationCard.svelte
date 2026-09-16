@@ -13,9 +13,9 @@
   import type { Component } from "svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
-  import type { StartPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+  import type { StartPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
   import { createAnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
-  import { startPositionDeriver as startPositionDeriverInstance } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+  import { startPlacementDeriver as startPlacementDeriverInstance } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
   import {
     animationSettings,
     TrackingMode,
@@ -45,7 +45,7 @@
   // 60 BPM and never inherits — or overwrites — the user's saved playback prefs.
   const animationState = createAnimationPanelState({ ephemeral: true });
   let playbackController: AnimationPlaybackController | null = null;
-  let startPositionDeriver: StartPositionDeriver | null = null;
+  let startPlacementDeriver: StartPlacementDeriver | null = null;
   let animationReady = $state(false);
   let animationError = $state(false);
   // Dynamically imported - null until the card scrolls into view
@@ -74,15 +74,15 @@
     };
     return {
       ...seq,
-      startPosition: seq.startPosition ? apply(seq.startPosition) : undefined,
+      startPlacement: seq.startPlacement ? apply(seq.startPlacement) : undefined,
       steps: seq.steps?.map((s: any) => apply(s)) ?? [],
     };
   }
 
   // Derived values for AnimatorCanvas
-  let derivedStartPosition = $derived.by(() => {
-    if (!animationState.sequenceData || !startPositionDeriver) return null;
-    return startPositionDeriver.getOrDeriveStartPosition(
+  let derivedStartPlacement = $derived.by(() => {
+    if (!animationState.sequenceData || !startPlacementDeriver) return null;
+    return startPlacementDeriver.getOrDeriveStartPlacement(
       animationState.sequenceData
     );
   });
@@ -90,7 +90,7 @@
   let currentLetter = $derived.by(() => {
     if (!animationState.sequenceData) return null;
     const step = animationState.currentStep;
-    if (step < 1) return derivedStartPosition?.letter || null;
+    if (step < 1) return derivedStartPlacement?.letter || null;
     if (animationState.sequenceData.steps?.length > 0) {
       const idx = Math.max(
         0,
@@ -107,7 +107,7 @@
   let currentStepData = $derived.by(() => {
     if (!animationState.sequenceData) return null;
     const step = animationState.currentStep;
-    if (step < 1) return derivedStartPosition || null;
+    if (step < 1) return derivedStartPlacement || null;
     if (animationState.sequenceData.steps?.length > 0) {
       const idx = Math.max(
         0,
@@ -203,7 +203,7 @@
       // Pass the ephemeral manager so prop interpolation reads ARC from THIS
       // scope, not the global singleton (matches PlayWithItInner's wiring).
       playbackController = createAnimationPlaybackController(visibilityManager);
-      startPositionDeriver = startPositionDeriverInstance;
+      startPlacementDeriver = startPlacementDeriverInstance;
 
       const prepared = applyPropType(sequence);
 

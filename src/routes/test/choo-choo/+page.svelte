@@ -118,8 +118,8 @@
     if (!animationState.sequenceData) return null;
     const currentStep = animationState.currentStep;
 
-    if (currentStep === 0 && animationState.sequenceData.startPosition) {
-      return animationState.sequenceData.startPosition;
+    if (currentStep === 0 && animationState.sequenceData.startPlacement) {
+      return animationState.sequenceData.startPlacement;
     }
 
     if (animationState.sequenceData.steps?.length) {

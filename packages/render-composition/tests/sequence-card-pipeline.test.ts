@@ -67,7 +67,7 @@ describe("sequence card pipeline geometry", () => {
         showWord: true,
         showDifficulty: true,
         showFooter: true,
-        startPositionLayout: "column",
+        startPlacementLayout: "column",
       })
     ).toMatchObject({
       width: 300,
@@ -84,7 +84,7 @@ describe("sequence card pipeline geometry", () => {
         showWord: false,
         showDifficulty: false,
         showFooter: true,
-        startPositionLayout: "row",
+        startPlacementLayout: "row",
       })
     ).toMatchObject({
       width: 500,
@@ -104,7 +104,7 @@ describe("sequence card pipeline geometry", () => {
         showWord: true,
         showDifficulty: false,
         showFooter: false,
-        startPositionLayout: "row",
+        startPlacementLayout: "row",
       })
     ).toMatchObject({
       width: 200,
@@ -131,7 +131,7 @@ describe("Composer export profile", () => {
       showFooter: false,
       showMandala: true,
       showReversals: true,
-      startPositionLayout: "row",
+      startPlacementLayout: "row",
       level: 1,
     });
   });
@@ -145,7 +145,7 @@ describe("sequence card mandala placement", () => {
       showWord: true,
       showDifficulty: false,
       showFooter: false,
-      startPositionLayout: "row",
+      startPlacementLayout: "row",
     });
 
     expect(
@@ -155,7 +155,7 @@ describe("sequence card mandala placement", () => {
           layout: "grid",
           cellSize: 300,
           showMandala: true,
-          startPositionLayout: "row",
+          startPlacementLayout: "row",
         },
         new Set(["0,0", "0,1", "1,1", "0,2", "1,2"])
       )
@@ -190,7 +190,7 @@ describe("sequence card mandala placement", () => {
           layout: "strip",
           cellSize: 300,
           showMandala: true,
-          startPositionLayout: "row",
+          startPlacementLayout: "row",
         },
         occupied
       )
@@ -202,7 +202,7 @@ describe("sequence card mandala placement", () => {
           layout: "grid",
           cellSize: 300,
           showMandala: false,
-          startPositionLayout: "column",
+          startPlacementLayout: "column",
         },
         occupied
       )

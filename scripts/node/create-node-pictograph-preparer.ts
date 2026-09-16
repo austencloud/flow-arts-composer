@@ -16,7 +16,7 @@ import { ArrowPathResolver } from "../../src/lib/shared/pictograph/arrow/renderi
 import { ArrowSvgParser } from "../../src/lib/shared/pictograph/arrow/rendering/services/implementations/ArrowSvgParser";
 import { ArrowSvgColorTransformer } from "../../src/lib/shared/pictograph/arrow/rendering/services/implementations/ArrowSvgColorTransformer";
 import { GridModeDeriver } from "../../src/lib/shared/pictograph/grid/services/implementations/GridModeDeriver";
-import { GridPositionDeriver } from "../../src/lib/shared/pictograph/grid/services/implementations/GridPositionDeriver";
+import { GridPlacementDeriver } from "../../src/lib/shared/pictograph/grid/services/implementations/GridPlacementDeriver";
 import { BetaDetector } from "../../src/lib/shared/pictograph/prop/services/beta-detector";
 import { OrientationCalculator } from "../../src/lib/shared/pictograph/prop/services/implementations/OrientationCalculator";
 import { PropPlacer } from "../../src/lib/shared/pictograph/prop/services/prop-placer";
@@ -69,7 +69,7 @@ const SVG_CONFIG: ISvgConfig = {
 export function createNodePictographPreparer() {
   // === Layer 1: Leaf services with no dependencies ===
   const gridModeDeriver = new GridModeDeriver();
-  const gridPositionDeriver = new GridPositionDeriver();
+  const gridPlacementDeriver = new GridPlacementDeriver();
   const betaDetector = new BetaDetector();
   const orientationCalculator = new OrientationCalculator();
 
@@ -166,7 +166,7 @@ export function createNodePictographPreparer() {
   const arrowCoordinateTransformer = new ArrowCoordinateTransformer();
   // arrowQuadrantCalculator is created earlier (before QuadrantIndexCalculator)
   const arrowGridCoordinator = new ArrowGridCoordinator(
-    gridPositionDeriver,
+    gridPlacementDeriver,
     orientationCalculator
   );
 

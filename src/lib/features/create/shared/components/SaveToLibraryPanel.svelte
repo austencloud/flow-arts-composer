@@ -39,7 +39,7 @@
   // the saved thumbnail (LibrarySaveService.generateAndUploadThumbnail) and this
   // preview now read every card toggle from the same composition settings +
   // app-settings prop type, so prop / QR / mandala / footer all agree with the
-  // saved PNG instead of drifting (they used to share only includeStartPosition).
+  // saved PNG instead of drifting (they used to share only includeStartPlacement).
   const compositionManager = getImageCompositionManager();
 
   interface Props {
@@ -206,7 +206,7 @@
               showWord={s.isSolo ? false : compositionManager.addWord}
               showStepNumbers={compositionManager.addStepNumbers}
               showDifficultyLevel={compositionManager.addDifficultyLevel}
-              includeStartPosition={compositionManager.includeStartPosition}
+              includeStartPlacement={compositionManager.includeStartPlacement}
               showNotes={resolvedCardFooter.show}
               customNotesText={resolvedCardFooter.text}
               showLoopGlyph={compositionManager.showLoopGlyph}

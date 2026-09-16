@@ -323,7 +323,7 @@ describe("LOOP executor parity — quartered (period 4)", () => {
 
 describe("LOOP executor parity — self-coherence of each path", () => {
   /**
-   * A step whose stored `endPosition` contradicts its own hands' end
+   * A step whose stored `endPlacement` contradicts its own hands' end
    * locations is wrong regardless of which implementation is canonical.
    * Exactly two app LOOP types produce such steps; the engine produces none.
    */

@@ -242,7 +242,7 @@ describe("a card that returns mid-render", () => {
     catDogModeEnabled: false,
     lightMode: false,
     variant: "gallery",
-    startPositionLayout: "row",
+    startPlacementLayout: "row",
     visibility: { showQRCode: false, showMandala: true },
   });
 

@@ -131,9 +131,9 @@ export interface TransitionCallbacks {
 }
 
 /**
- * Describes the rotation relationship between two positions in the same group.
- * - 'exact': Same position (0° rotation)
- * - 'quarter': 90° rotation (positions are 2 steps apart in alpha/beta, 4 in gamma)
- * - 'half': 180° rotation (positions are opposite, e.g., alpha1 ↔ alpha5)
+ * Describes the rotation relationship between two placements in the same group.
+ * - 'exact': Same placement (0° rotation)
+ * - 'quarter': 90° rotation (placements are 2 steps apart in alpha/beta, 4 in gamma)
+ * - 'half': 180° rotation (placements are opposite, e.g., alpha1 ↔ alpha5)
  */
 export type RotationRelation = "exact" | "quarter" | "half";

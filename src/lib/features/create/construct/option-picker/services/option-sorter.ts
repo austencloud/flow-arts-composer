@@ -7,12 +7,12 @@
 
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { SortMethod } from "../domain/option-picker-types";
-import type { PositionAnalyzer } from "./position-analyzer";
+import type { PlacementAnalyzer } from "./placement-analyzer";
 import { hasReversals } from "./reversal-checker";
 
 export class OptionSorter {
   constructor(
-    private positionAnalyzer: PositionAnalyzer
+    private placementAnalyzer: PlacementAnalyzer
   ) {}
 
   /**
@@ -33,11 +33,11 @@ export class OptionSorter {
           return aLetter.localeCompare(bLetter);
         });
 
-      case "endPosition":
+      case "endPlacement":
         return sorted.sort((a, b) => {
-          const aPos = this.positionAnalyzer.getEndPosition(a) ?? "";
-          const bPos = this.positionAnalyzer.getEndPosition(b) ?? "";
-          return aPos.localeCompare(bPos);
+          const aPlacement = this.placementAnalyzer.getEndPlacement(a) ?? "";
+          const bPlacement = this.placementAnalyzer.getEndPlacement(b) ?? "";
+          return aPlacement.localeCompare(bPlacement);
         });
 
       case "reversals":
@@ -59,6 +59,6 @@ export class OptionSorter {
   }
 }
 
-import { positionAnalyzer } from "./position-analyzer";
+import { placementAnalyzer } from "./placement-analyzer";
 
-export const optionSorter = new OptionSorter(positionAnalyzer);
+export const optionSorter = new OptionSorter(placementAnalyzer);

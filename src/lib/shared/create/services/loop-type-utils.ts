@@ -58,8 +58,8 @@ export function parseLoopComponents(
  * combinations. REWOUND remains temporal and standalone. Every subset of
  * {MIRRORED, ROTATED, SWAPPED, INVERTED} is implemented; ROTATED_SWAPPED_INVERTED (the
  * former sole gap) is valid per MCP compositional LOOP theory: ROTATE is
- * inner, SWAP/INVERT compose as outer, and all beta positions are swap
- * fixed points (inversion is position-free).
+ * inner, SWAP/INVERT compose as outer, and all beta placements are swap
+ * fixed points (inversion is placement-free).
  */
 const IMPLEMENTED_COMBOS: ReadonlyArray<
   readonly [ReadonlySet<LOOPComponent>, LOOPType]

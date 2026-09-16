@@ -16,7 +16,7 @@ import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   MotionType,
@@ -32,7 +32,7 @@ import type { RotationStyle } from "./vtg-lab-types";
 
 // Shortcuts
 const L = GridLocation;
-const P = GridPosition;
+const P = GridPlacement;
 const M = MotionType;
 const R = RotationDirection;
 
@@ -52,7 +52,7 @@ export interface ChainDef {
   mnemonic?: string;
   /** Rotation style for UI badges */
   rotationStyle: RotationStyle;
-  /** Letters in the cycle - 1 for same-position, 2 for compounds (alternating) */
+  /** Letters in the cycle - 1 for same-placement, 2 for compounds (alternating) */
   letters: [Letter] | [Letter, Letter];
   /** Left hand motion properties (constant across all 4 beats) */
   left: { motion: MotionType; rotation: RotationDirection };
@@ -65,10 +65,10 @@ export interface ChainDef {
 }
 
 /**
- * Map (left location, right location) → GridPosition.
+ * Map (left location, right location) → GridPlacement.
  * Derived from the Diamond mode grid geometry.
  */
-const LOCATION_TO_POSITION: Record<string, GridPosition> = {
+const LOCATION_TO_PLACEMENT: Record<string, GridPlacement> = {
   // Alpha - hands at opposite points
   [`${L.SOUTH},${L.NORTH}`]: P.ALPHA1,
   [`${L.WEST},${L.EAST}`]: P.ALPHA3,
@@ -91,14 +91,14 @@ const LOCATION_TO_POSITION: Record<string, GridPosition> = {
   [`${L.NORTH},${L.WEST}`]: P.GAMMA15,
 };
 
-function positionAt(
+function placementAt(
   leftLoc: GridLocation,
   rightLoc: GridLocation
-): GridPosition {
+): GridPlacement {
   const key = `${leftLoc},${rightLoc}`;
-  const pos = LOCATION_TO_POSITION[key];
+  const pos = LOCATION_TO_PLACEMENT[key];
   if (!pos)
-    throw new Error(`No position for left=${leftLoc}, right=${rightLoc}`);
+    throw new Error(`No placement for left=${leftLoc}, right=${rightLoc}`);
   return pos;
 }
 
@@ -362,8 +362,8 @@ export function expandChain(
     const rightStart = chain.rightPath[i]!;
     const rightEnd = chain.rightPath[i + 1]!;
 
-    const startPos = positionAt(leftStart, rightStart);
-    const endPos = positionAt(leftEnd, rightEnd);
+    const startPos = placementAt(leftStart, rightStart);
+    const endPos = placementAt(leftEnd, rightEnd);
 
     const leftMotion = createMotionData({
       motionType: chain.left.motion,
@@ -398,8 +398,8 @@ export function expandChain(
     return {
       id: `vtg-${chain.label}-beat${i + 1}`,
       letter,
-      startPosition: startPos,
-      endPosition: endPos,
+      startPlacement: startPos,
+      endPlacement: endPos,
       gridMode: GridMode.DIAMOND,
       motions: {
         [HandSide.LEFT]: leftMotion,

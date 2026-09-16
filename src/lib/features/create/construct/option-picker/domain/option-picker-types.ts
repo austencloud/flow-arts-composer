@@ -5,7 +5,7 @@ import type { PictographData } from "$lib/shared/pictograph/shared/domain/models
 // not render an empty/no-results state until a load has actually resolved.
 export type OptionPickerState = "idle" | "loading" | "ready" | "error";
 
-export type SortMethod = "type" | "endPosition" | "reversals";
+export type SortMethod = "type" | "endPlacement" | "reversals";
 
 export type TypeFilter = {
   type1: boolean; // Dual-Shift (A-V)
@@ -16,8 +16,8 @@ export type TypeFilter = {
   type6: boolean; // Static (α, β, γ)
 };
 
-// Type for end position filter
-export type EndPositionFilter = {
+// Type for end placement filter
+export type EndPlacementFilter = {
   alpha: boolean;
   beta: boolean;
   gamma: boolean;

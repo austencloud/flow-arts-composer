@@ -5,7 +5,7 @@ import type { Sharer } from "../../src/lib/shared/share/services/sharer";
 const staticShareMocks = vi.hoisted(() => ({
   compositionSettings: {
     darkMode: false,
-    includeStartPosition: true,
+    includeStartPlacement: true,
     addStepNumbers: true,
     addWord: true,
     addUserInfo: true,

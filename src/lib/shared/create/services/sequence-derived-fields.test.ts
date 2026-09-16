@@ -11,7 +11,7 @@ import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
@@ -48,39 +48,39 @@ describe("reconcileStepDerived", () => {
       { start: GridLocation.NORTHWEST, end: GridLocation.NORTHEAST },
       { start: GridLocation.SOUTHWEST, end: GridLocation.SOUTHEAST },
       {
-        startPosition: GridPosition.ALPHA2,
-        endPosition: GridPosition.ALPHA4,
+        startPlacement: GridPlacement.ALPHA2,
+        endPlacement: GridPlacement.ALPHA4,
         letter: "M" as StepData["letter"],
       }
     );
 
     const fixed = reconcileStepDerived(stale);
 
-    expect(fixed.startPosition).toBe(GridPosition.GAMMA14);
-    expect(fixed.endPosition).toBe(GridPosition.GAMMA4);
+    expect(fixed.startPlacement).toBe(GridPlacement.GAMMA14);
+    expect(fixed.endPlacement).toBe(GridPlacement.GAMMA4);
     expect(fixed.gridMode).toBe(GridMode.BOX);
     // letter is Layer 2 (async) — reconcileStepDerived leaves it untouched here
     expect(fixed.letter).toBe("M");
   });
 
-  it("derives DIAMOND + correct position for a cardinal pair", () => {
+  it("derives DIAMOND + correct placement for a cardinal pair", () => {
     const s = step(
       { start: GridLocation.SOUTH, end: GridLocation.NORTH },
       { start: GridLocation.NORTH, end: GridLocation.SOUTH }
     );
     const fixed = reconcileStepDerived(s);
     expect(fixed.gridMode).toBe(GridMode.DIAMOND);
-    expect(fixed.startPosition).toBe(GridPosition.ALPHA1);
+    expect(fixed.startPlacement).toBe(GridPlacement.ALPHA1);
   });
 
-  it("derives SKEWED + zeta position for a mixed cardinal/intercardinal pair", () => {
+  it("derives SKEWED + zeta placement for a mixed cardinal/intercardinal pair", () => {
     const s = step(
       { start: GridLocation.SOUTHWEST, end: GridLocation.NORTH },
       { start: GridLocation.NORTH, end: GridLocation.SOUTHWEST }
     );
     const fixed = reconcileStepDerived(s);
     expect(fixed.gridMode).toBe(GridMode.SKEWED);
-    expect(fixed.startPosition).toBe(GridPosition.ZETA1);
+    expect(fixed.startPlacement).toBe(GridPlacement.ZETA1);
   });
 
   it("stamps the derived gridMode onto both motions", () => {
@@ -110,16 +110,16 @@ describe("reconcileStepDerived", () => {
     );
     const once = reconcileStepDerived(s);
     const twice = reconcileStepDerived(once);
-    expect(twice.startPosition).toBe(once.startPosition);
-    expect(twice.endPosition).toBe(once.endPosition);
+    expect(twice.startPlacement).toBe(once.startPlacement);
+    expect(twice.endPlacement).toBe(once.endPlacement);
     expect(twice.gridMode).toBe(once.gridMode);
   });
 
-  it("keeps prior positions and does not throw on a corrupt location", () => {
+  it("keeps prior placements and does not throw on a corrupt location", () => {
     const s = step(
       { start: GridLocation.SOUTH, end: GridLocation.NORTH },
       { start: GridLocation.NORTH, end: GridLocation.SOUTH },
-      { startPosition: GridPosition.ALPHA1 }
+      { startPlacement: GridPlacement.ALPHA1 }
     );
     // Corrupt blue start location → not a valid pair key
     const corrupt: StepData = {
@@ -134,7 +134,7 @@ describe("reconcileStepDerived", () => {
     };
     expect(() => reconcileStepDerived(corrupt)).not.toThrow();
     const fixed = reconcileStepDerived(corrupt);
-    expect(fixed.startPosition).toBe(GridPosition.ALPHA1); // prior kept
+    expect(fixed.startPlacement).toBe(GridPlacement.ALPHA1); // prior kept
   });
 
   it("returns blank/incomplete steps unchanged", () => {
@@ -152,7 +152,7 @@ describe("normalizeSequenceDerived", () => {
     const boxStep = step(
       { start: GridLocation.NORTHWEST, end: GridLocation.NORTHEAST },
       { start: GridLocation.SOUTHWEST, end: GridLocation.SOUTHEAST },
-      { startPosition: GridPosition.ALPHA2, stepNumber: 1 }
+      { startPlacement: GridPlacement.ALPHA2, stepNumber: 1 }
     );
     const seq = {
       id: "s1",
@@ -166,7 +166,7 @@ describe("normalizeSequenceDerived", () => {
 
     const fixed = normalizeSequenceDerived(seq);
 
-    expect(fixed.steps[0]!.startPosition).toBe(GridPosition.GAMMA14);
+    expect(fixed.steps[0]!.startPlacement).toBe(GridPlacement.GAMMA14);
     expect(fixed.steps[0]!.gridMode).toBe(GridMode.BOX);
     expect(fixed.gridMode).toBe(GridMode.BOX); // sequence-level healed too
   });
@@ -189,7 +189,7 @@ describe("normalizeSequenceDerived", () => {
 
     const once = normalizeSequenceDerived(seq);
     const twice = normalizeSequenceDerived(once);
-    expect(twice.steps[0]!.startPosition).toBe(once.steps[0]!.startPosition);
+    expect(twice.steps[0]!.startPlacement).toBe(once.steps[0]!.startPlacement);
     expect(twice.gridMode).toBe(once.gridMode);
   });
 });
@@ -197,7 +197,7 @@ describe("normalizeSequenceDerived", () => {
 describe("rotateSequenceGeometry", () => {
   function alphaSeq(): SequenceData {
     const sp = {
-      isStartPosition: true,
+      isStartPlacement: true,
       id: "sp",
       motions: {
         [HandSide.LEFT]: createMotionData({
@@ -232,16 +232,16 @@ describe("rotateSequenceGeometry", () => {
       name: "t",
       word: "",
       steps: [step1],
-      startPosition: sp,
+      startPlacement: sp,
       gridMode: GridMode.DIAMOND,
       difficulty: 1,
       metadata: {},
     } as unknown as SequenceData;
   }
 
-  it("rotates a diamond alpha seed +1 (CW 45°) into box, reconciling positions+gridMode", () => {
+  it("rotates a diamond alpha seed +1 (CW 45°) into box, reconciling placements+gridMode", () => {
     const out = rotateSequenceGeometry(alphaSeq(), 1);
-    const sp = out.startPosition!;
+    const sp = out.startPlacement!;
     expect(sp.motions[HandSide.LEFT]!.startLocation).toBe(GridLocation.NORTHEAST); // N → NE
     expect(sp.motions[HandSide.RIGHT]!.startLocation).toBe(GridLocation.SOUTHWEST); // S → SW
     expect(sp.gridMode).toBe(GridMode.BOX);

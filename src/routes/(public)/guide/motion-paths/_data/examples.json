@@ -4,8 +4,8 @@
     "steps": [
       {
         "letter": "α",
-        "startPosition": "alpha7",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha7",
         "timing": "none",
         "direction": "none",
         "leftMotion": {
@@ -31,8 +31,8 @@
       },
       {
         "letter": "A",
-        "startPosition": "alpha7",
-        "endPosition": "alpha5",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha5",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -58,8 +58,8 @@
       },
       {
         "letter": "A",
-        "startPosition": "alpha5",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha5",
+        "endPlacement": "alpha3",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -85,8 +85,8 @@
       },
       {
         "letter": "A",
-        "startPosition": "alpha3",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha1",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -112,8 +112,8 @@
       },
       {
         "letter": "A",
-        "startPosition": "alpha1",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha7",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -138,8 +138,8 @@
         "stepNumber": 4
       }
     ],
-    "startPosition": "alpha7",
-    "endPosition": "alpha7",
+    "startPlacement": "alpha7",
+    "endPlacement": "alpha7",
     "stepCount": 4,
     "constraintReport": {
       "score": 1,
@@ -165,8 +165,8 @@
     "steps": [
       {
         "letter": "α",
-        "startPosition": "alpha7",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha7",
         "timing": "none",
         "direction": "none",
         "leftMotion": {
@@ -192,8 +192,8 @@
       },
       {
         "letter": "B",
-        "startPosition": "alpha7",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha1",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -219,8 +219,8 @@
       },
       {
         "letter": "B",
-        "startPosition": "alpha1",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha3",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -246,8 +246,8 @@
       },
       {
         "letter": "B",
-        "startPosition": "alpha3",
-        "endPosition": "alpha5",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha5",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -273,8 +273,8 @@
       },
       {
         "letter": "B",
-        "startPosition": "alpha5",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha5",
+        "endPlacement": "alpha7",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -299,8 +299,8 @@
         "stepNumber": 4
       }
     ],
-    "startPosition": "alpha7",
-    "endPosition": "alpha7",
+    "startPlacement": "alpha7",
+    "endPlacement": "alpha7",
     "stepCount": 4,
     "constraintReport": {
       "score": 1,
@@ -326,8 +326,8 @@
     "steps": [
       {
         "letter": "α",
-        "startPosition": "alpha7",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha7",
         "timing": "none",
         "direction": "none",
         "leftMotion": {
@@ -353,8 +353,8 @@
       },
       {
         "letter": "C",
-        "startPosition": "alpha7",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha1",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -380,8 +380,8 @@
       },
       {
         "letter": "C",
-        "startPosition": "alpha1",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha3",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -407,8 +407,8 @@
       },
       {
         "letter": "C",
-        "startPosition": "alpha3",
-        "endPosition": "alpha5",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha5",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -434,8 +434,8 @@
       },
       {
         "letter": "C",
-        "startPosition": "alpha5",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha5",
+        "endPlacement": "alpha7",
         "timing": "split",
         "direction": "same",
         "leftMotion": {
@@ -460,8 +460,8 @@
         "stepNumber": 4
       }
     ],
-    "startPosition": "alpha7",
-    "endPosition": "alpha7",
+    "startPlacement": "alpha7",
+    "endPlacement": "alpha7",
     "stepCount": 4,
     "constraintReport": {
       "score": 1,

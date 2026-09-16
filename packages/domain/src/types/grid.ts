@@ -4,7 +4,7 @@ export interface GridModeDefinition {
   name: string;
   description: string;
   points: string[];
-  positions: string[];
+  placements: string[];
   keyFact: string;
   level?: number;
 }

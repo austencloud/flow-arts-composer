@@ -10,7 +10,7 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { normalizeLetter } from "$lib/shared/foundation/domain/models/letter";
 import { getSequenceMotionProfile } from "$lib/shared/foundation/services/sequence-motion-profile";
 import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
@@ -28,11 +28,11 @@ export async function deriveLettersForSequence(
       ...sequence,
       word: "",
       steps: sequence.steps.map((step) => ({ ...step, letter: null })),
-      ...(sequence.startPosition && {
-        startPosition: { ...sequence.startPosition, letter: null },
+      ...(sequence.startPlacement && {
+        startPlacement: { ...sequence.startPlacement, letter: null },
       }),
-      ...(sequence.startingPosition && {
-        startingPosition: { ...sequence.startingPosition, letter: null },
+      ...(sequence.startingPlacement && {
+        startingPlacement: { ...sequence.startingPlacement, letter: null },
       }),
     };
   }
@@ -43,23 +43,23 @@ export async function deriveLettersForSequence(
   )) as StepData[];
 
   // Derive letter for start position if it exists
-  let updatedStartPosition: StartPositionData | null | undefined =
-    sequence.startPosition;
-  let updatedStartingPositionStep: StartPositionData | undefined =
-    sequence.startingPosition;
+  let updatedStartPlacement: StartPlacementData | null | undefined =
+    sequence.startPlacement;
+  let updatedStartingPlacementStep: StartPlacementData | undefined =
+    sequence.startingPlacement;
 
-  if (sequence.startPosition) {
-    // Cast is safe - we pass StartPositionData so we get StartPositionData back
-    updatedStartPosition = (await deriveLetterForBeat(
-      sequence.startPosition
-    )) as StartPositionData;
+  if (sequence.startPlacement) {
+    // Cast is safe - we pass StartPlacementData so we get StartPlacementData back
+    updatedStartPlacement = (await deriveLetterForBeat(
+      sequence.startPlacement
+    )) as StartPlacementData;
   }
 
-  if (sequence.startingPosition) {
-    // Cast is safe - we pass StartPositionData so we get StartPositionData back
-    updatedStartingPositionStep = (await deriveLetterForBeat(
-      sequence.startingPosition
-    )) as StartPositionData;
+  if (sequence.startingPlacement) {
+    // Cast is safe - we pass StartPlacementData so we get StartPlacementData back
+    updatedStartingPlacementStep = (await deriveLetterForBeat(
+      sequence.startingPlacement
+    )) as StartPlacementData;
   }
 
   // Build the word from the letters. Steps without a derived letter contribute
@@ -85,19 +85,19 @@ export async function deriveLettersForSequence(
     ...sequence,
     steps: stepsWithLetters,
     word,
-    ...(updatedStartPosition !== undefined &&
-      updatedStartPosition !== null && {
-        startPosition: updatedStartPosition,
+    ...(updatedStartPlacement !== undefined &&
+      updatedStartPlacement !== null && {
+        startPlacement: updatedStartPlacement,
       }),
-    ...(updatedStartingPositionStep !== undefined && {
-      startingPosition: updatedStartingPositionStep,
+    ...(updatedStartingPlacementStep !== undefined && {
+      startingPlacement: updatedStartingPlacementStep,
     }),
   };
 }
 
 async function deriveLetterForBeat(
-  beat: StepData | StartPositionData
-): Promise<StepData | StartPositionData> {
+  beat: StepData | StartPlacementData
+): Promise<StepData | StartPlacementData> {
   // Already lettered — but historical data may carry a legacy spelling
   // (e.g. "Γ" for "γ", written by the legacy import/repair scripts).
   // Normalize to canon instead of passing the alias downstream, where it

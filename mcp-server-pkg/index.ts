@@ -12,7 +12,7 @@
  * - Sequence Constraints: parse_constraints, analyze_word_feasibility
  * - LOOP Sequences: validate_loop_options, generate_loop_sequence, generate_loop_image
  * - Data Queries: list_available_letters, list_letter_variations, get_pictograph_data, search_pictographs
- * - Educational: get_alphabet_info, get_letter_explanation, get_term_definition, compare_letters, list_letters_by_type, get_position_info
+ * - Educational: get_alphabet_info, get_letter_explanation, get_term_definition, compare_letters, list_letters_by_type, get_placement_info
  * - User Presets: list_user_presets, save_user_preset, delete_user_preset, get_user_preset, generate_with_preset, seed_default_presets
  * - Preferences: set_preferences, get_preferences, reset_preferences
  * - Utilities: generate_random_word

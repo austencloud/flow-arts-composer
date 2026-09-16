@@ -208,7 +208,7 @@
           showTKA: false,
           showTnD: false,
           showElemental: false,
-          showPositions: false,
+          showPlacements: false,
           showReversals: false,
           showNonRadialPoints: true,
           darkMode: true,

@@ -6,7 +6,7 @@ import {
   isMotion,
   isStep,
   GridLocation,
-  GridPosition,
+  GridPlacement,
   Letter,
   MotionType,
   Orientation,
@@ -95,8 +95,8 @@ describe("isStep", () => {
     const s = createStep({
       id: "step-1-A",
       letter: Letter.A,
-      startPosition: GridPosition.alpha1,
-      endPosition: GridPosition.alpha3,
+      startPlacement: GridPlacement.alpha1,
+      endPlacement: GridPlacement.alpha3,
       motions: { left: makeBlue(), right: makeRed() },
       stepNumber: 1,
       duration: 1,
@@ -104,8 +104,8 @@ describe("isStep", () => {
     expect(isStep(s)).toBe(true);
   });
 
-  it("accepts a start-position Step (letter null, stepNumber 0)", () => {
-    const s = createStartStep(GridPosition.beta1);
+  it("accepts a start-placement Step (letter null, stepNumber 0)", () => {
+    const s = createStartStep(GridPlacement.beta1);
     expect(isStep(s)).toBe(true);
   });
 
@@ -113,8 +113,8 @@ describe("isStep", () => {
     const s = createStep({
       id: "step-1-A",
       letter: Letter.A,
-      startPosition: GridPosition.alpha1,
-      endPosition: GridPosition.alpha3,
+      startPlacement: GridPlacement.alpha1,
+      endPlacement: GridPlacement.alpha3,
       motions: { left: makeBlue(), right: makeRed() },
       stepNumber: 1,
       duration: 1,
@@ -135,8 +135,8 @@ describe("isStep", () => {
     const candidate = {
       id: "",
       letter: "A",
-      startPosition: "alpha1",
-      endPosition: "alpha3",
+      startPlacement: "alpha1",
+      endPlacement: "alpha3",
       motions: { left: makeBlue(), right: makeRed() },
       stepNumber: 1,
       duration: 1,
@@ -148,8 +148,8 @@ describe("isStep", () => {
     const candidate = {
       id: "x",
       letter: "A",
-      startPosition: "alpha1",
-      endPosition: "alpha3",
+      startPlacement: "alpha1",
+      endPlacement: "alpha3",
       motions: { left: makeBlue(), right: makeRed() },
       stepNumber: -1,
       duration: 1,
@@ -161,8 +161,8 @@ describe("isStep", () => {
     const candidate = {
       id: "x",
       letter: "A",
-      startPosition: "alpha1",
-      endPosition: "alpha3",
+      startPlacement: "alpha1",
+      endPlacement: "alpha3",
       motions: { left: makeBlue(), right: makeRed() },
       stepNumber: 1,
       duration: 1,
@@ -175,8 +175,8 @@ describe("isStep", () => {
     const candidate = {
       id: "x",
       letter: "A",
-      startPosition: "alpha1",
-      endPosition: "alpha3",
+      startPlacement: "alpha1",
+      endPlacement: "alpha3",
       motions: { left: makeBlue(), right: { hand: "right" } },
       stepNumber: 1,
       duration: 1,
@@ -184,12 +184,12 @@ describe("isStep", () => {
     expect(isStep(candidate)).toBe(false);
   });
 
-  it("accepts a Step with startPosition = null (partial)", () => {
+  it("accepts a Step with startPlacement = null (partial)", () => {
     const candidate = {
       id: "x",
       letter: "A",
-      startPosition: null,
-      endPosition: "alpha3",
+      startPlacement: null,
+      endPlacement: "alpha3",
       motions: { left: makeBlue(), right: makeRed() },
       stepNumber: 1,
       duration: 1,

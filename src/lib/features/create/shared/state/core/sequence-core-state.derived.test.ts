@@ -6,7 +6,7 @@ import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
@@ -16,8 +16,8 @@ describe("setCurrentSequence reconciles derived fields", () => {
 
     const staleStep = createStepData({
       stepNumber: 1,
-      startPosition: GridPosition.ALPHA2, // STALE
-      endPosition: GridPosition.ALPHA4, // STALE
+      startPlacement: GridPlacement.ALPHA2, // STALE
+      endPlacement: GridPlacement.ALPHA4, // STALE
       motions: {
         [HandSide.LEFT]: createMotionData({
           hand: HandSide.LEFT,
@@ -49,7 +49,7 @@ describe("setCurrentSequence reconciles derived fields", () => {
     // stored value was DIAMOND; seeing BOX proves the step was reconciled
     // (nw/sw intercardinal → box) and the stored value was NOT trusted.
     // (core.currentSequence is a $derived getter that does not recompute outside
-    // a reactive root, so per-step positions are asserted in the unit tests for
+    // a reactive root, so per-step placements are asserted in the unit tests for
     // reconcileStepDerived / normalizeSequenceDerived.)
     expect(core.gridMode).toBe(GridMode.BOX);
   });

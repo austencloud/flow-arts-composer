@@ -4,8 +4,8 @@
  * Partition the letter steps into `period` equal blocks; on odd blocks flip
  * motionType pro<->anti and rotationDirection cw<->ccw. Dash and static
  * motions keep their motionType, but any active prop rotation still flips.
- * Hand locations are never touched, so positions and closure are preserved.
- * The orientation chain is recomputed forward from the start position.
+ * Hand locations are never touched, so placements and closure are preserved.
+ * The orientation chain is recomputed forward from the start placement.
  * Letters are NOT re-derived here — callers (SequenceBuilder) own letter
  * lookup, per the canonical law in
  * docs/superpowers/plans/2026-07-12-compositional-loop-p1-p2.md.
@@ -54,7 +54,7 @@ export function applyOverlayInversion(
   sequence: SequenceStep[],
   period: number
 ): SequenceStep[] {
-  const letterCount = sequence.length - 1; // index 0 = start position
+  const letterCount = sequence.length - 1; // index 0 = start placement
   if (letterCount <= 0) return sequence;
   if (letterCount % period !== 0) {
     throw new Error(

@@ -136,7 +136,7 @@
         showDifficultyLevel={false}
         showNotes={false}
         showLoopGlyph={false}
-        includeStartPosition={true}
+        includeStartPlacement={true}
         darkMode={true}
       />
     </div>

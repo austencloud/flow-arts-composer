@@ -50,7 +50,7 @@ const WORKSPACE_EDITORS = [
   `${DIR}/value-editors/GalleryLevelEditor.svelte`,
   `${DIR}/value-editors/GalleryLoopEditor.svelte`,
   `${DIR}/value-editors/GalleryMaxTurnEditor.svelte`,
-  `${DIR}/value-editors/GalleryPositionEditor.svelte`,
+  `${DIR}/value-editors/GalleryPlacementEditor.svelte`,
 ];
 const TILE = `${DIR}/CategoryTile.svelte`;
 

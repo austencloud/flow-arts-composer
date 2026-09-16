@@ -15,7 +15,7 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
   import SequencePickerModal from "$lib/shared/components/sequence-picker/SequencePickerModal.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
   import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { getSequenceRepository } from "$lib/shared/create/get-sequence-repository";
@@ -36,7 +36,7 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
   import { InfiniteSequenceGenerator } from "$lib/features/landing/services/infinite-sequence-generator";
   import { SpinnerMetricsRepository } from "$lib/features/landing/services/spinner-metrics-repository";
   import { orientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
-  import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+  import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
   import { createEndlessPlayback, type EndlessPlaybackState } from "$lib/shared/animation-engine/state/endless-playback-state.svelte";
   import type { SourceMode } from "$lib/shared/animation-engine/domain/chaining-types";
 
@@ -145,7 +145,7 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
 
   // Derived values from factory
   let currentLetter = $derived((playback?.currentLetter ?? null) as Letter | null);
-  let currentStepData = $derived((playback?.currentStepData ?? null) as StepData | StartPositionData | null);
+  let currentStepData = $derived((playback?.currentStepData ?? null) as StepData | StartPlacementData | null);
   let gridMode = $derived((playback?.gridMode ?? null) as GridMode | null);
 
   $effect(() => {
@@ -189,7 +189,7 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
         browseLoader,
         generationOrchestrator,
         sequenceTransformer,
-        startPositionDeriver
+        startPlacementDeriver
       );
 
       const metricsRepo = new SpinnerMetricsRepository();

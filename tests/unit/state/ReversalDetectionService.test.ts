@@ -26,8 +26,8 @@ describe("ReversalDetector", () => {
     rightReversal: false,
     isBlank: blank,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       [HandSide.LEFT]: leftDir
         ? ({ rotationDirection: leftDir } as any)

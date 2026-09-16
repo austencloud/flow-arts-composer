@@ -2,12 +2,12 @@
  * Sequence Normalization Service
  *
  * Handles normalization of sequence data for consistent consumption by UI components.
- * Always returns StartPositionData (never StepData) for start positions.
+ * Always returns StartPlacementData (never StepData) for start positions.
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 
 export interface NormalizedSequenceData {
   /**
@@ -16,38 +16,38 @@ export interface NormalizedSequenceData {
   steps: readonly StepData[];
 
   /**
-   * Start position (always StartPositionData, never StepData)
+   * Start position (always StartPlacementData, never StepData)
    */
-  startPosition: StartPositionData | null;
+  startPlacement: StartPlacementData | null;
 }
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 
 /**
  * Normalize sequence data by separating start position from steps array.
  *
  * Handles three storage patterns:
- * 1. startPosition field (modern, uses StartPositionData)
- * 2. startingPosition field (legacy, may need conversion)
+ * 1. startPlacement field (modern, uses StartPlacementData)
+ * 2. startingPlacement field (legacy, may need conversion)
  * 3. Mixed in steps array (oldest, stepNumber: 0)
  *
- * Always returns StartPositionData, converting legacy StepData if needed.
+ * Always returns StartPlacementData, converting legacy StepData if needed.
  */
-export function separateStepsFromStartPosition(
+export function separateStepsFromStartPlacement(
   sequence: SequenceData
 ): NormalizedSequenceData {
-  // Pattern 1: Modern approach - separate startPosition field (already StartPositionData)
-  if (sequence.startPosition) {
+  // Pattern 1: Modern approach - separate startPlacement field (already StartPlacementData)
+  if (sequence.startPlacement) {
     return {
       steps: sequence.steps || [],
-      startPosition: sequence.startPosition,
+      startPlacement: sequence.startPlacement,
     };
   }
 
-  // Pattern 2: Legacy approach - startingPosition field (may need conversion)
-  if (sequence.startingPosition) {
+  // Pattern 2: Legacy approach - startingPlacement field (may need conversion)
+  if (sequence.startingPlacement) {
     return {
       steps: sequence.steps || [],
-      startPosition: sequence.startingPosition,
+      startPlacement: sequence.startingPlacement,
     };
   }
 
@@ -62,25 +62,25 @@ export function separateStepsFromStartPosition(
   // Filter out start position from steps array (keep only actual steps)
   const steps = allSteps.filter((step) => step.stepNumber !== 0);
 
-  // Convert legacy StepData to StartPositionData if found
-  const startPosition: StartPositionData | null = legacyStartPos
-    ? convertStepToStartPosition(legacyStartPos)
+  // Convert legacy StepData to StartPlacementData if found
+  const startPlacement: StartPlacementData | null = legacyStartPos
+    ? convertStepToStartPlacement(legacyStartPos)
     : null;
 
   return {
     steps,
-    startPosition,
+    startPlacement,
   };
 }
 
 /**
- * Convert legacy StepData (stepNumber: 0) to proper StartPositionData
+ * Convert legacy StepData (stepNumber: 0) to proper StartPlacementData
  */
-function convertStepToStartPosition(step: StepData): StartPositionData {
-  return createStartPositionData({
+function convertStepToStartPlacement(step: StepData): StartPlacementData {
+  return createStartPlacementData({
     id: step.id || `start-${Date.now()}`,
     letter: step.letter ?? null,
-    gridPosition: step.endPosition ?? step.startPosition ?? null,
+    gridPlacement: step.endPlacement ?? step.startPlacement ?? null,
     motions: step.motions,
   });
 }

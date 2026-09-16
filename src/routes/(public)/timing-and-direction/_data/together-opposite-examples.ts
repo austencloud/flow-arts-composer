@@ -91,7 +91,7 @@ export function selectTogetherOppositeExamples(
     const gridMode = pictograph.gridMode ?? GridMode.DIAMOND;
     examples.set(letter, {
       id: pictograph.id,
-      label: `${letter} · ${pictograph.startPosition ?? "variant"} · ${gridMode}`,
+      label: `${letter} · ${pictograph.startPlacement ?? "variant"} · ${gridMode}`,
       gridMode,
       pictograph,
       ...playback,

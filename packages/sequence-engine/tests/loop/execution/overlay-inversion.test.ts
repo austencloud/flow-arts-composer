@@ -8,7 +8,7 @@ import type { SequenceStep } from "../../../src/core/types/sequence-engine-types
 // with the fields the executors touch (motions, positions, stepNumber, letter).
 // Copied verbatim from canonical-stage-order.test.ts — tests independently readable.
 function step(n: number, letter: string, sp: string, ep: string, left: any, right: any): SequenceStep {
-  return { stepNumber: n, letter, startPosition: sp, endPosition: ep, motions: { left, right } } as unknown as SequenceStep;
+  return { stepNumber: n, letter, startPlacement: sp, endPlacement: ep, motions: { left, right } } as unknown as SequenceStep;
 }
 const m = (
   motionType: string,
@@ -23,8 +23,8 @@ const m = (
 
 // Deviation from the plan's literal seed: the plan's makeSeed() ends at
 // gamma5 (left e, right s), which is NOT a valid halved-rotation pair for
-// gamma13 (HALF_POSITION_MAP maps gamma13 -> gamma9, left e / right n —
-// see packages/sequence-engine/src/loop/position-maps/circular-position-maps.ts).
+// gamma13 (HALF_PLACEMENT_MAP maps gamma13 -> gamma9, left e / right n —
+// see packages/sequence-engine/src/loop/placement-maps/circular-placement-maps.ts).
 // canonical-stage-order.test.ts's copy never exercises ROTATED so it never
 // hit this gate; this file's tests do (ROTATED period 2), so StrictRotatedExecutor's
 // validateSequence throws on the plan's literal seed. Fixing the seed (per plan
@@ -60,8 +60,8 @@ describe("overlay inversion", () => {
     const blockSize = (base.length - 1) / 4;
     for (let i = 1; i < base.length; i++) {
       // positions identical everywhere
-      expect(overlaid[i]!.startPosition).toBe(base[i]!.startPosition);
-      expect(overlaid[i]!.endPosition).toBe(base[i]!.endPosition);
+      expect(overlaid[i]!.startPlacement).toBe(base[i]!.startPlacement);
+      expect(overlaid[i]!.endPlacement).toBe(base[i]!.endPlacement);
       const odd = Math.floor((i - 1) / blockSize) % 2 === 1;
       const b = base[i]!.motions.left.motionType;
       const o = overlaid[i]!.motions.left.motionType;

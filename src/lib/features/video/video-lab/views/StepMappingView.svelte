@@ -72,7 +72,7 @@
       {videoUrl}
       {videoDuration}
       steps={sequence.steps}
-      startPosition={sequence.startPosition ?? sequence.startingPosition}
+      startPlacement={sequence.startPlacement ?? sequence.startingPlacement}
       bpm={defaultBpm}
       initialStepMap={existingStepMap ?? undefined}
       {draftKey}

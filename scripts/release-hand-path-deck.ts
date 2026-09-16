@@ -252,7 +252,7 @@ async function main(): Promise<void> {
       !sequence.exists ||
       decoded?.sequenceKind !== "hand-path" ||
       decoded.steps.length !== 4 ||
-      !decoded.startPosition
+      !decoded.startPlacement
     ) {
       throw new Error(
         `Saved sequence / QR read-back failed for ${card.sequenceId}.`

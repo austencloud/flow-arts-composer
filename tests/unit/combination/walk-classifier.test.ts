@@ -358,8 +358,8 @@ describe("walk classifier — unlabelable results", () => {
       id: "unresolvable",
       stepNumber: 1,
       letter: null,
-      startPosition: GGGG_CW.steps[0]!.startPosition,
-      endPosition: GGGG_CW.steps[0]!.startPosition,
+      startPlacement: GGGG_CW.steps[0]!.startPlacement,
+      endPlacement: GGGG_CW.steps[0]!.startPlacement,
       motions: {
         [HandSide.LEFT]: stuck(HandSide.LEFT),
         [HandSide.RIGHT]: stuck(HandSide.RIGHT),

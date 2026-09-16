@@ -17,15 +17,15 @@ import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-typ
  * which system adornments to show). SheetFrame ignores them - the sheet uses its
  * own print flags. Every field is optional and defaults to FlowFrame's prior
  * hardcoded behavior (HAND props, TKA glyph on, every other layer off), so
- * existing pages (hand-positions) are unchanged.
+ * existing pages (hand-placements) are unchanged.
  */
 export type PictographRender = {
   /** Prop family. HAND (default) for position/motion pages, STAFF for letter/word/LOOP pages. */
   propType?: PropType;
   /** Bottom-left TKA letter glyph. Default true (letter/word pages want it; letterless positions show nothing). */
   showTKA?: boolean;
-  /** Top-centre start→end PositionGlyph. Default false. */
-  showPositions?: boolean;
+  /** Top-centre start→end PlacementGlyph. Default false. */
+  showPlacements?: boolean;
   /** Bottom-right elemental glyph, derived from the motions. Default false. */
   showElemental?: boolean;
   /** Prop-reversal dots (leftReversal/rightReversal). Default false; the LOOP/reversal pages set it true. */

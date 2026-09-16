@@ -106,7 +106,7 @@ function buildLayerQualifiers(
 }
 
 export function serializeGrid(context: SerializationContext): string {
-  const { cells, bpm, skipStartPosition, gridRows, gridCols } = context;
+  const { cells, bpm, skipStartPlacement, gridRows, gridCols } = context;
 
   const enabled = cells
     .filter((c) => c.layers.length > 0)
@@ -149,7 +149,7 @@ export function serializeGrid(context: SerializationContext): string {
   lines.push("Composition Template");
   lines.push("====================");
   lines.push(
-    `${enabled.length}/${gridRows * gridCols} cells | ${gridRows}×${gridCols} grid | BPM ${bpm} | ${skipStartPosition ? "Skip start" : "Show start"}`
+    `${enabled.length}/${gridRows * gridCols} cells | ${gridRows}×${gridCols} grid | BPM ${bpm} | ${skipStartPlacement ? "Skip start" : "Show start"}`
   );
 
   // SEQUENCES section

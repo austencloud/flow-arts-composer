@@ -8,8 +8,8 @@ import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograp
 import type { LetterCategory } from "$lib/shared/learn/domain/codex-types";
 
 export interface CodexLetterMapping {
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotionType: MotionType;
   rightMotionType: MotionType;
 }
@@ -32,8 +32,8 @@ export function createLetterMapping(
   data: Partial<CodexLetterMapping>
 ): CodexLetterMapping {
   return {
-    startPosition: data.startPosition ?? "",
-    endPosition: data.endPosition ?? "",
+    startPlacement: data.startPlacement ?? "",
+    endPlacement: data.endPlacement ?? "",
     leftMotionType: data.leftMotionType ?? MotionType.STATIC,
     rightMotionType: data.rightMotionType ?? MotionType.STATIC,
   };

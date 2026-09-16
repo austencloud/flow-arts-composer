@@ -11,7 +11,7 @@ import type { StepData } from "../../../src/lib/shared/foundation/domain/models/
 import { Letter } from "../../../src/lib/shared/foundation/domain/models/letter";
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "../../../src/lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   HandSide,
@@ -49,8 +49,8 @@ describe("SwappedInvertedLOOPExecutor", () => {
           stepNumber: 0,
           duration: 1.0,
           letter: Letter.β,
-          startPosition: GridPosition.BETA5,
-          endPosition: GridPosition.BETA5,
+          startPlacement: GridPlacement.BETA5,
+          endPlacement: GridPlacement.BETA5,
           motions: {
             [HandSide.LEFT]: {
               motionType: MotionType.STATIC,
@@ -83,8 +83,8 @@ describe("SwappedInvertedLOOPExecutor", () => {
           stepNumber: 1,
           duration: 1.0,
           letter: Letter.D,
-          startPosition: GridPosition.BETA5,
-          endPosition: GridPosition.ALPHA3,
+          startPlacement: GridPlacement.BETA5,
+          endPlacement: GridPlacement.ALPHA3,
           motions: {
             [HandSide.LEFT]: {
               motionType: MotionType.PRO,
@@ -117,8 +117,8 @@ describe("SwappedInvertedLOOPExecutor", () => {
           stepNumber: 2,
           duration: 1.0,
           letter: Letter.J,
-          startPosition: GridPosition.ALPHA3,
-          endPosition: GridPosition.BETA5,
+          startPlacement: GridPlacement.ALPHA3,
+          endPlacement: GridPlacement.BETA5,
           motions: {
             [HandSide.LEFT]: {
               motionType: MotionType.PRO,
@@ -159,7 +159,7 @@ describe("SwappedInvertedLOOPExecutor", () => {
 
       // Grid position should be SWAPPED: alpha3 → alpha7
       // (alpha3 = blue:west, red:east → alpha7 = blue:east, red:west)
-      expect(beat3!.endPosition).toBe(GridPosition.ALPHA7);
+      expect(beat3!.endPlacement).toBe(GridPlacement.ALPHA7);
 
       // Motion locations should be swapped pattern with inversion:
       // Blue does what Red did (s→e), Red does what Blue did (s→w)
@@ -187,7 +187,7 @@ describe("SwappedInvertedLOOPExecutor", () => {
       expect(beat4).toBeDefined();
 
       // Should return to start position beta5
-      expect(beat4!.endPosition).toBe(GridPosition.BETA5);
+      expect(beat4!.endPlacement).toBe(GridPlacement.BETA5);
 
       // Blue should continue from where Blue ended (east → south)
       // Red should continue from where Red ended (west → south)
@@ -219,8 +219,8 @@ describe("SwappedInvertedLOOPExecutor", () => {
           stepNumber: 0,
           duration: 1.0,
           letter: Letter.β,
-          startPosition: GridPosition.BETA5,
-          endPosition: GridPosition.BETA5,
+          startPlacement: GridPlacement.BETA5,
+          endPlacement: GridPlacement.BETA5,
           motions: {
             [HandSide.LEFT]: {
               motionType: MotionType.STATIC,
@@ -252,8 +252,8 @@ describe("SwappedInvertedLOOPExecutor", () => {
           stepNumber: 1,
           duration: 1.0,
           letter: Letter.D,
-          startPosition: GridPosition.BETA5,
-          endPosition: GridPosition.ALPHA3, // Ends at alpha3, not beta5
+          startPlacement: GridPlacement.BETA5,
+          endPlacement: GridPlacement.ALPHA3, // Ends at alpha3, not beta5
           motions: {
             [HandSide.LEFT]: {
               motionType: MotionType.PRO,
@@ -284,7 +284,7 @@ describe("SwappedInvertedLOOPExecutor", () => {
 
       expect(() => {
         executor.executeLOOP([...invalidSequence], Period.HALVED);
-      }).toThrow(/Invalid position pair for swapped-inverted LOOP/);
+      }).toThrow(/Invalid placement pair for swapped-inverted LOOP/);
     });
 
     // --- Regression guard: validation set is SWAPPED, not INVERTED ---
@@ -323,8 +323,8 @@ describe("SwappedInvertedLOOPExecutor", () => {
       stepNumber: 0,
       duration: 1.0,
       letter: Letter.ALPHA,
-      startPosition: GridPosition.ALPHA1,
-      endPosition: GridPosition.ALPHA1,
+      startPlacement: GridPlacement.ALPHA1,
+      endPlacement: GridPlacement.ALPHA1,
       motions: {
         [HandSide.LEFT]: staticMotion(HandSide.LEFT, GridLocation.SOUTH),
         [HandSide.RIGHT]: staticMotion(HandSide.RIGHT, GridLocation.NORTH),
@@ -345,8 +345,8 @@ describe("SwappedInvertedLOOPExecutor", () => {
           stepNumber: 1,
           duration: 1.0,
           letter: Letter.PHI_DASH,
-          startPosition: GridPosition.ALPHA1,
-          endPosition: GridPosition.ALPHA5,
+          startPlacement: GridPlacement.ALPHA1,
+          endPlacement: GridPlacement.ALPHA5,
           motions: {
             [HandSide.LEFT]: dashMotion(
               HandSide.LEFT,
@@ -368,7 +368,7 @@ describe("SwappedInvertedLOOPExecutor", () => {
       const result = executor.executeLOOP([...partial], Period.HALVED);
       expect(result.length).toBe(3);
       // Generated second half swaps positions, returning to the start (alpha1)
-      expect(result[result.length - 1]!.endPosition).toBe(GridPosition.ALPHA1);
+      expect(result[result.length - 1]!.endPlacement).toBe(GridPlacement.ALPHA1);
     });
 
     it("rejects a start===end partial when swap(start) ≠ start (no longer INVERTED)", () => {
@@ -386,7 +386,7 @@ describe("SwappedInvertedLOOPExecutor", () => {
 
       expect(() =>
         executor.executeLOOP([...partial], Period.HALVED)
-      ).toThrow(/Invalid position pair for swapped-inverted LOOP/);
+      ).toThrow(/Invalid placement pair for swapped-inverted LOOP/);
     });
   });
 });

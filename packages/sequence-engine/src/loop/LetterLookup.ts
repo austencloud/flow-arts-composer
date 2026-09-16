@@ -23,8 +23,8 @@ interface MotionData {
 
 interface PictographData {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotion: MotionData;

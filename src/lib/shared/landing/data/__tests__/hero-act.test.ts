@@ -30,17 +30,17 @@ import {
   PASSES_PER_SEQUENCE,
 } from "../hero-act.svelte";
 
-/** Minimal fixture — hero-act.ts only ever reads `.id` and `.startPosition`. */
+/** Minimal fixture — hero-act.ts only ever reads `.id` and `.startPlacement`. */
 function fakeSequence(id: string, startPos: string): SequenceData {
   return {
     id,
     name: id,
     word: id,
     steps: [],
-    startPosition: {
-      isStartPosition: true,
+    startPlacement: {
+      isStartPlacement: true,
       id: `${id}-start`,
-      startPosition: startPos,
+      startPlacement: startPos,
       motions: {},
     },
     thumbnails: [],
@@ -116,7 +116,7 @@ beforeEach(() => {
   callCount = 0;
   mocks.generatePerVisitDemo.mockReset();
   mocks.generatePerVisitDemo.mockImplementation(
-    async (_options?: { propType?: PropType; startPosition?: unknown }) => {
+    async (_options?: { propType?: PropType; startPlacement?: unknown }) => {
       callCount += 1;
       return fakeSequence(`gen-${callCount}`, `pos-${callCount}`);
     }
@@ -167,7 +167,7 @@ describe("createHeroAct", () => {
     expect(mocks.generatePerVisitDemo).toHaveBeenCalledTimes(1);
     expect(mocks.generatePerVisitDemo.mock.calls[0]?.[0]).toEqual({
       propType: PropType.FAN,
-      startPosition: expect.objectContaining({ startPosition: "baked-pos" }),
+      startPlacement: expect.objectContaining({ startPlacement: "baked-pos" }),
     });
     expect(act.sequence?.id).toBe("baked");
   });
@@ -224,7 +224,7 @@ describe("createHeroAct", () => {
     expect(mocks.generatePerVisitDemo).toHaveBeenCalledTimes(2);
     expect(mocks.generatePerVisitDemo.mock.calls[1]?.[0]).toEqual({
       propType: PropType.BUUGENG,
-      startPosition: expect.objectContaining({ startPosition: "pos-1" }),
+      startPlacement: expect.objectContaining({ startPlacement: "pos-1" }),
     });
   });
 
@@ -292,7 +292,7 @@ describe("createHeroAct", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("chains each generated sequence's startPosition to the immediately-preceding sequence's start position", async () => {
+  it("chains each generated sequence's startPlacement to the immediately-preceding sequence's start position", async () => {
     const act = createStaffFirstAct();
     act.start();
     await flush();
@@ -305,9 +305,9 @@ describe("createHeroAct", () => {
         PropType.FAN
     );
     expect(fanCall?.[0]).toMatchObject({
-      startPosition: expect.objectContaining({ startPosition: "pos-1" }),
+      startPlacement: expect.objectContaining({ startPlacement: "pos-1" }),
     });
-    const fanStartPosition = act.sequence?.startPosition;
+    const fanStartPlacement = act.sequence?.startPlacement;
 
     await act.advanceNow(); // FAN -> CLUB
     await flush();
@@ -316,7 +316,7 @@ describe("createHeroAct", () => {
         (options as { propType?: PropType } | undefined)?.propType ===
         PropType.CLUB
     );
-    expect(clubCall?.[0]).toMatchObject({ startPosition: fanStartPosition });
+    expect(clubCall?.[0]).toMatchObject({ startPlacement: fanStartPlacement });
   });
 
   it("advanceNow reuses an already-prepared next sequence instead of generating a duplicate", async () => {

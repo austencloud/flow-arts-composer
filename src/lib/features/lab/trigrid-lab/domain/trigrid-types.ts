@@ -3,7 +3,7 @@
  *
  * Type definitions for the 3-point equilateral triangle grid experiment.
  * The trigrid uses 6 orientations at 60-degree intervals (a subset of the
- * existing Orientation enum) and supports only beta/gamma positions.
+ * existing Orientation enum) and supports only beta/gamma placements.
  */
 
 import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -38,8 +38,8 @@ export interface Point {
   y: number;
 }
 
-/** Position classification on the trigrid */
-export interface TriGridPositionInfo {
+/** Placement classification on the trigrid */
+export interface TriGridPlacementInfo {
   /** beta = same vertex, gamma = different vertices (120 degrees apart) */
   group: "beta" | "gamma";
   /** 1-indexed variant within group */

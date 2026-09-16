@@ -14,7 +14,7 @@ function caveLoop(repetitions: number): SequenceData {
     name: "Effect preview",
     word: fixture.word.repeat(repetitions),
     steps: Array.from({ length: repetitions }, () => fixture.steps).flat(),
-    startPosition: fixture.startPosition ?? undefined,
+    startPlacement: fixture.startPlacement ?? undefined,
     thumbnails: [],
     isFavorite: false,
     isCircular: true,
@@ -43,7 +43,7 @@ describe("effect preview LOOP policy", () => {
       ...sequence,
       steps: [
         ...sequence.steps.slice(0, -1),
-        { ...last, endPosition: "alpha1" },
+        { ...last, endPlacement: "alpha1" },
       ],
     };
 

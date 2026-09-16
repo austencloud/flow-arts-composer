@@ -105,7 +105,7 @@ export interface SimilarityReport {
   /** Component similarity scores */
   readonly wordSimilarity: number;
   readonly motionSimilarity: number;
-  readonly positionSimilarity: number;
+  readonly placementSimilarity: number;
   readonly structuralSimilarity: number;
 
   /** Per-beat similarity scores */
@@ -157,9 +157,9 @@ export interface SimilarityBreakdown {
   readonly motionTypeMatches: number;
   readonly motionTypeMismatches: number;
 
-  /** Position pattern analysis */
-  readonly positionGroupMatches: number;
-  readonly positionGroupMismatches: number;
+  /** Placement pattern analysis */
+  readonly placementGroupMatches: number;
+  readonly placementGroupMismatches: number;
 
   /** Individual beat analysis */
   readonly perfectBeatMatches: number;
@@ -192,7 +192,7 @@ export interface SimilarityOptions {
   readonly motionWeight?: number;
 
   /** Weight for position similarity component (default: 0.25) */
-  readonly positionWeight?: number;
+  readonly placementWeight?: number;
 
   /** Weight for structural similarity component (default: 0.2) */
   readonly structuralWeight?: number;

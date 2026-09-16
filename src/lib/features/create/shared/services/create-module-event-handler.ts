@@ -122,7 +122,7 @@ export class CreateModuleEventHandler {
       performance.mark("event-service-start");
       this.ensureInitialized();
 
-      // Get current sequence from component state. Selecting a start position
+      // Get current sequence from component state. Selecting a start placement
       // flips the UI to the option picker before the sequence finishes being
       // created, so a fast tap can land while this is still null — wait for the
       // in-flight creation rather than failing the tap.

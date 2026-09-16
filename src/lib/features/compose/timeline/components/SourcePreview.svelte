@@ -22,9 +22,9 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { StartPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
-  import { startPositionDeriver as startPositionDeriverSingleton } from "$lib/shared/pictograph/shared/services/start-position-deriver";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
+  import { startPlacementDeriver as startPlacementDeriverSingleton } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
   interface Props {
@@ -40,7 +40,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
   let animationOrchestrator = $state<SequenceAnimationOrchestrator | null>(
     null
   );
-  let startPositionDeriver = $state<StartPositionDeriver | null>(null);
+  let startPlacementDeriver = $state<StartPlacementDeriver | null>(null);
   let initialized = $state(false);
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -68,13 +68,13 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
   );
 
   // Check if we're at start position (before beat 1)
-  const isAtStartPosition = $derived(currentStep < 1);
+  const isAtStartPlacement = $derived(currentStep < 1);
 
-  // Get the derived start position data (handles missing startPosition field)
-  const derivedStartPosition = $derived.by(() => {
-    if (!sequence || !startPositionDeriver) return null;
+  // Get the derived start position data (handles missing startPlacement field)
+  const derivedStartPlacement = $derived.by(() => {
+    if (!sequence || !startPlacementDeriver) return null;
     try {
-      return startPositionDeriver.getOrDeriveStartPosition(sequence);
+      return startPlacementDeriver.getOrDeriveStartPlacement(sequence);
     } catch (err) {
       console.warn("SourcePreview: Failed to derive start position:", err);
       return null;
@@ -86,8 +86,8 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
     if (!sequence) return null;
 
     // At start position - return start position letter
-    if (isAtStartPosition && derivedStartPosition) {
-      return (derivedStartPosition as any).letter || null;
+    if (isAtStartPlacement && derivedStartPlacement) {
+      return (derivedStartPlacement as any).letter || null;
     }
 
     // At motion beat - beat N uses steps[N-1]
@@ -108,8 +108,8 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
     if (!sequence) return null;
 
     // At start position - return derived start position data
-    if (isAtStartPosition && derivedStartPosition) {
-      return derivedStartPosition;
+    if (isAtStartPlacement && derivedStartPlacement) {
+      return derivedStartPlacement;
     }
 
     // At motion beat - beat N uses steps[N-1]
@@ -130,7 +130,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
     try {
       loading = true;
       animationOrchestrator = getSequenceAnimationOrchestrator();
-      startPositionDeriver = startPositionDeriverSingleton;
+      startPlacementDeriver = startPlacementDeriverSingleton;
       initialized = true;
       loading = false;
     } catch (err) {
@@ -316,7 +316,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
 
       <!-- Step indicator overlay -->
       <div class="step-indicator">
-        {#if isAtStartPosition}
+        {#if isAtStartPlacement}
           Start
         {:else}
           Beat {Math.floor(currentStep)} / {totalSteps}

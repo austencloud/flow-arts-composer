@@ -40,8 +40,8 @@ export interface RuleGroup {
 }
 
 const CATEGORY_LABELS: Partial<Record<string, string>> = {
-  [BrowseFilterType.STARTING_POSITION]: "Start",
-  [BrowseFilterType.END_POSITION]: "End",
+  [BrowseFilterType.STARTING_PLACEMENT]: "Start",
+  [BrowseFilterType.END_PLACEMENT]: "End",
   [BrowseFilterType.DIFFICULTY]: "Level",
   [BrowseFilterType.LENGTH]: "Length",
   [BrowseFilterType.STARTING_LETTER]: "Letters",

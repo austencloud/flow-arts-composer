@@ -11,7 +11,7 @@
  * renderer so the downloaded card preserves the preview's geometry.
  *
  * The grid-shape formulas here mirror `renderAllCells` and
- * `calculateGridPosition` exactly, so a best-fit layout and the cells rendered
+ * `calculateGridPlacement` exactly, so a best-fit layout and the cells rendered
  * into it never disagree. The header/footer-fraction math mirrors the layout
  * state factory's `previewAspectRatio`, so both size the card by one formula.
  */
@@ -56,7 +56,7 @@ export interface BestFitInput {
    * Whether the returned grid includes the Start lane. Auto still scores the
    * full card when this is false so hiding Start cannot repack every beat.
    */
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   /** Raw container width in px (NOT the aspect-fitted contained width). */
   containerWidth: number;
   /** Raw container height in px. */
@@ -79,7 +79,7 @@ function clamp(value: number, min: number, max: number): number {
 
 /**
  * Grid dimensions for a candidate step-column count. Mirrors the exact
- * convention in `calculateGridPosition` / `renderAllCells`:
+ * convention in `calculateGridPlacement` / `renderAllCells`:
  *  - no start:  cols = sc,     rows = ceil(steps / sc)
  *  - row:       cols = sc,     rows = 1 + ceil(steps / sc)     (start owns row 1)
  *  - column:    cols = sc + 1, rows = 1 + ceil((steps - firstRow) / sc)
@@ -88,11 +88,11 @@ function clamp(value: number, min: number, max: number): number {
 function gridShape(
   stepCount: number,
   stepCols: number,
-  includeStartPosition: boolean,
+  includeStartPlacement: boolean,
   placement: StartPlacement
 ): { cols: number; rows: number } {
   const sc = Math.max(1, stepCols);
-  if (!includeStartPosition || placement === "none") {
+  if (!includeStartPlacement || placement === "none") {
     return { cols: sc, rows: Math.max(1, Math.ceil(stepCount / sc)) };
   }
   if (placement === "row") {
@@ -121,13 +121,13 @@ function stepTrailingEmpties(
   cols: number,
   rows: number,
   stepCount: number,
-  includeStartPosition: boolean,
+  includeStartPlacement: boolean,
   placement: StartPlacement
 ): number {
   const stepCols =
-    includeStartPosition && placement === "column" ? cols - 1 : cols;
+    includeStartPlacement && placement === "column" ? cols - 1 : cols;
   const stepRows =
-    includeStartPosition && placement === "row" ? rows - 1 : rows;
+    includeStartPlacement && placement === "row" ? rows - 1 : rows;
   return stepCols * stepRows - stepCount;
 }
 
@@ -209,7 +209,7 @@ export function pickBestFitLayout(input: BestFitInput): FitLayout | null {
   const {
     stepCount,
     stepDurations,
-    includeStartPosition,
+    includeStartPlacement,
     containerWidth,
     containerHeight,
     showHeader,
@@ -343,7 +343,7 @@ export function pickBestFitLayout(input: BestFitInput): FitLayout | null {
   }
 
   if (!best) return null;
-  if (!includeStartPosition) {
+  if (!includeStartPlacement) {
     return {
       cols: best.stepCols,
       rows: best.stepRows,

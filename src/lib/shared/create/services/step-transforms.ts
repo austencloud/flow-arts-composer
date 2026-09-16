@@ -2,15 +2,15 @@
  * Beat Transforms
  *
  * Pure functions that transform StepData objects.
- * Composes motion transforms with position updates.
+ * Composes motion transforms with placement updates.
  *
  * Supports targetHand parameter to transform only specific hand(s):
  * - "left": Only transform left-hand motion
  * - "right": Only transform right-hand motion
  * - "both": Transform both motions (default, original behavior)
  *
- * For single-hand transforms, positions are recomputed from both hands via
- * reconcileStepDerived (a position is a function of BOTH locations). Letters are
+ * For single-hand transforms, placements are recomputed from both hands via
+ * reconcileStepDerived (a placement is a function of BOTH locations). Letters are
  * reconciled asynchronously by the calling sequence-transform operation.
  */
 
@@ -21,13 +21,13 @@ import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { reconcileStepDerived } from "$lib/shared/create/services/sequence-derived-fields";
 import {
-  VERTICAL_MIRROR_POSITION_MAP,
-  HORIZONTAL_MIRROR_POSITION_MAP,
-  SWAPPED_POSITION_MAP,
-} from "$lib/shared/create/domain/strict-loop-position-maps";
+  VERTICAL_MIRROR_PLACEMENT_MAP,
+  HORIZONTAL_MIRROR_PLACEMENT_MAP,
+  SWAPPED_PLACEMENT_MAP,
+} from "$lib/shared/create/domain/strict-loop-placement-maps";
 import {
   mirrorMotion,
   flipMotion,
@@ -51,7 +51,7 @@ function shouldTransformHand(hand: HandSide, targetHand: TargetHand): boolean {
 
 /**
  * Mirror a beat across the vertical axis (E ↔ W).
- * For single-hand transforms, keeps existing positions/letter for smooth animation.
+ * For single-hand transforms, keeps existing placements/letter for smooth animation.
  * @param targetHand - Which hand(s) to transform. Defaults to "both".
  */
 export async function mirrorBeat(
@@ -76,21 +76,21 @@ export async function mirrorBeat(
     mirroredMotions[HandSide.RIGHT] = mirrorMotion(rightMotion);
   }
 
-  // For "both" mode, use fast path with position maps (no lookup needed)
+  // For "both" mode, use fast path with placement maps (no lookup needed)
   if (targetHand === "both") {
     return createStepData({
       ...step,
-      startPosition: step.startPosition
-        ? VERTICAL_MIRROR_POSITION_MAP[step.startPosition]
+      startPlacement: step.startPlacement
+        ? VERTICAL_MIRROR_PLACEMENT_MAP[step.startPlacement]
         : null,
-      endPosition: step.endPosition
-        ? VERTICAL_MIRROR_POSITION_MAP[step.endPosition]
+      endPlacement: step.endPlacement
+        ? VERTICAL_MIRROR_PLACEMENT_MAP[step.endPlacement]
         : null,
       motions: mirroredMotions,
     });
   }
 
-  // Single-hand: positions depend on BOTH locations, so recompute them from the
+  // Single-hand: placements depend on BOTH locations, so recompute them from the
   // mutated motions. Letter is reconciled asynchronously by the caller.
   return reconcileStepDerived(
     createStepData({
@@ -102,7 +102,7 @@ export async function mirrorBeat(
 
 /**
  * Flip a beat across the horizontal axis (N ↔ S).
- * For single-hand transforms, keeps existing positions/letter for smooth animation.
+ * For single-hand transforms, keeps existing placements/letter for smooth animation.
  * @param targetHand - Which hand(s) to transform. Defaults to "both".
  */
 export async function flipBeat(
@@ -123,21 +123,21 @@ export async function flipBeat(
     flippedMotions[HandSide.RIGHT] = flipMotion(rightMotion);
   }
 
-  // For "both" mode, use fast path with position maps (no lookup needed)
+  // For "both" mode, use fast path with placement maps (no lookup needed)
   if (targetHand === "both") {
     return createStepData({
       ...step,
-      startPosition: step.startPosition
-        ? HORIZONTAL_MIRROR_POSITION_MAP[step.startPosition]
+      startPlacement: step.startPlacement
+        ? HORIZONTAL_MIRROR_PLACEMENT_MAP[step.startPlacement]
         : null,
-      endPosition: step.endPosition
-        ? HORIZONTAL_MIRROR_POSITION_MAP[step.endPosition]
+      endPlacement: step.endPlacement
+        ? HORIZONTAL_MIRROR_PLACEMENT_MAP[step.endPlacement]
         : null,
       motions: flippedMotions,
     });
   }
 
-  // Single-hand: recompute positions from the mutated motions (letter is async).
+  // Single-hand: recompute placements from the mutated motions (letter is async).
   return reconcileStepDerived(
     createStepData({
       ...step,
@@ -148,8 +148,8 @@ export async function flipBeat(
 
 /**
  * Rotate a beat by 45° steps.
- * For both-hand transforms, derives new positions from rotated locations.
- * For single-hand transforms, keeps existing positions/letter for smooth animation.
+ * For both-hand transforms, derives new placements from rotated locations.
+ * For single-hand transforms, keeps existing placements/letter for smooth animation.
  * @param targetHand - Which hand(s) to transform. Defaults to "both".
  */
 export async function rotateBeat(
@@ -163,7 +163,7 @@ export async function rotateBeat(
 
   const currentGridMode =
     step.motions[HandSide.LEFT]?.gridMode ?? GridMode.DIAMOND;
-  // Note: newGridMode is calculated but not used - positions are derived from motion locations
+  // Note: newGridMode is calculated but not used - placements are derived from motion locations
   void getToggledGridMode(currentGridMode, rotationAmount);
 
   const rotatedMotions = { ...step.motions };
@@ -179,19 +179,19 @@ export async function rotateBeat(
   const leftMotion = rotatedMotions[HandSide.LEFT];
   const rightMotion = rotatedMotions[HandSide.RIGHT];
 
-  // For "both" mode, derive positions from rotated locations (no letter lookup needed)
+  // For "both" mode, derive placements from rotated locations (no letter lookup needed)
   if (targetHand === "both") {
-    let rotatedStartPosition = step.startPosition ?? null;
-    let rotatedEndPosition = step.endPosition ?? null;
+    let rotatedStartPlacement = step.startPlacement ?? null;
+    let rotatedEndPlacement = step.endPlacement ?? null;
 
     // Invisible placeholder = hand not really there (both-required Step
-    // shape): keep the stale-position behavior the old absent-hand path had.
+    // shape): keep the stale-placement behavior the old absent-hand path had.
     if (isVisibleMotion(leftMotion) && isVisibleMotion(rightMotion)) {
-      rotatedStartPosition = getGridPositionFromLocations(
+      rotatedStartPlacement = getGridPlacementFromLocations(
         leftMotion.startLocation,
         rightMotion.startLocation
       );
-      rotatedEndPosition = getGridPositionFromLocations(
+      rotatedEndPlacement = getGridPlacementFromLocations(
         leftMotion.endLocation,
         rightMotion.endLocation
       );
@@ -199,13 +199,13 @@ export async function rotateBeat(
 
     return createStepData({
       ...step,
-      startPosition: rotatedStartPosition,
-      endPosition: rotatedEndPosition,
+      startPlacement: rotatedStartPlacement,
+      endPlacement: rotatedEndPlacement,
       motions: rotatedMotions,
     });
   }
 
-  // Single-hand: recompute positions from the rotated motions (letter is async).
+  // Single-hand: recompute placements from the rotated motions (letter is async).
   return reconcileStepDerived(
     createStepData({
       ...step,
@@ -233,11 +233,11 @@ export function handSwapBeat(step: StepData): StepData {
 
   return createStepData({
     ...step,
-    startPosition: step.startPosition
-      ? SWAPPED_POSITION_MAP[step.startPosition]
+    startPlacement: step.startPlacement
+      ? SWAPPED_PLACEMENT_MAP[step.startPlacement]
       : null,
-    endPosition: step.endPosition
-      ? SWAPPED_POSITION_MAP[step.endPosition]
+    endPlacement: step.endPlacement
+      ? SWAPPED_PLACEMENT_MAP[step.endPlacement]
       : null,
     motions: swappedMotions,
     leftReversal: step.rightReversal,
@@ -309,8 +309,8 @@ export async function invertBeat(
 
 /**
  * Rewind a beat (swap start/end, flip rotation).
- * For both-hand transforms, swaps positions and looks up correct letter.
- * For single-hand transforms, keeps existing positions/letter for smooth animation.
+ * For both-hand transforms, swaps placements and looks up correct letter.
+ * For single-hand transforms, keeps existing placements/letter for smooth animation.
  * @param targetHand - Which hand(s) to transform. Defaults to "both".
  */
 export async function rewindBeat(
@@ -334,7 +334,7 @@ export async function rewindBeat(
     rewindMotions[HandSide.RIGHT] = rewindMotion(stepRight);
   }
 
-  // For single-hand mode, keep existing positions and letter for instant animation
+  // For single-hand mode, keep existing placements and letter for instant animation
   if (targetHand !== "both") {
     return createStepData({
       ...step,
@@ -369,8 +369,8 @@ export async function rewindBeat(
   return createStepData({
     ...step,
     stepNumber: newStepNumber,
-    startPosition: step.endPosition ?? null,
-    endPosition: step.startPosition ?? null,
+    startPlacement: step.endPlacement ?? null,
+    endPlacement: step.startPlacement ?? null,
     motions: rewindMotions,
     letter: correctLetter,
     // Clear reversal flags - they must be recalculated based on the new sequence order

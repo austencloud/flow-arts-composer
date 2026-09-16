@@ -10,7 +10,7 @@
  * build `period` passes unconditionally. A pass beyond the natural period-2
  * close is only meaningful when orientation DRIFTS between passes (half-turn
  * seeds, per-hand turn total ≡ 1 or 3 mod 4). For a zero-turn seed the loop
- * already closes in position AND orientation at period 2, so the extra passes
+ * already closes in location AND orientation at period 2, so the extra passes
  * come out byte-for-byte identical — a redundant literal repeat.
  *
  * Concrete failure this fixes (2026-07-10): a `YΦΔYΦΔYΦΔYΦΔ` (12-step) deck
@@ -39,7 +39,7 @@
 import type { Step } from "../../core/types/sequence-engine-types.js";
 
 export interface MinimalLoopResult {
-  /** The reduced steps (start-position step at index 0, then the minimal loop). */
+  /** The reduced steps (start-placement step at index 0, then the minimal loop). */
   steps: Step[];
   /** Original letter-step count. */
   originalLength: number;
@@ -52,7 +52,7 @@ export interface MinimalLoopResult {
 /**
  * Reduce a sequence to its shortest literally-repeating closing loop.
  *
- * @param steps Full step array; index 0 is the start-position step
+ * @param steps Full step array; index 0 is the start-placement step
  *   (`stepNumber === 0`), the rest are letter steps.
  * @returns The reduced steps and a report. Idempotent — a sequence that is
  *   already minimal is returned unchanged (a new array, same content).
@@ -112,7 +112,7 @@ function isLiteralRepeat(steps: readonly Step[], period: number): boolean {
 
 /**
  * True when the first `period` steps form a seamless loop on their own:
- * the loop returns to its start POSITION and start ORIENTATION after `period`
+ * the loop returns to its start LOCATION and start ORIENTATION after `period`
  * steps. (For a literal repeat this is implied, but we verify rather than
  * assume — a sequence could be periodic without the whole thing being a valid
  * seamless loop, and we must never emit a broken shorter loop.)
@@ -121,8 +121,8 @@ function prefixClosesSeamlessly(steps: readonly Step[], period: number): boolean
   const first = steps[0]!;
   const last = steps[period - 1]!;
 
-  if (first.startPosition == null || last.endPosition == null) return false;
-  if (first.startPosition !== last.endPosition) return false;
+  if (first.startPlacement == null || last.endPlacement == null) return false;
+  if (first.startPlacement !== last.endPlacement) return false;
 
   for (const hand of ["left", "right"] as const) {
     const startOri = first.motions[hand]?.startOrientation;

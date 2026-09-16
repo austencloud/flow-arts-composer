@@ -15,7 +15,7 @@ describe("TutorialPrompt", () => {
     await expect
       .element(
         page.getByText(
-          "Choose a start position, add one pictograph, then play the sequence.",
+          "Choose a start placement, add one pictograph, then play the sequence.",
           { exact: true }
         )
       )

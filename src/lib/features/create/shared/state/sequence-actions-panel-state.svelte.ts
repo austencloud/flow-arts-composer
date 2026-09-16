@@ -337,7 +337,7 @@ export function createSequenceActionsPanelState(
         return getDirectionDrillSubtitle(directionRoute);
       if (subView !== "extend") return "";
       if (!this.extendDirectlyLoopable)
-        return "Select a pictograph to reach a loopable position";
+        return "Select a pictograph to reach a loopable placement";
       if (extensionAnalysis?.extensionType === "half_rotation")
         return "180° rotation patterns";
       if (extensionAnalysis?.extensionType === "quarter_rotation")

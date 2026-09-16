@@ -22,7 +22,7 @@ function sequence(): SequenceData {
     name: "Test",
     word: "AB",
     steps: [{}, {}],
-    startPosition: {},
+    startPlacement: {},
   } as SequenceData;
 }
 
@@ -35,7 +35,7 @@ function state(): SequenceTransformActionState {
     invertSequence: vi.fn().mockResolvedValue(undefined),
     rewindSequence: vi.fn().mockResolvedValue(undefined),
     rotateSequence: vi.fn().mockResolvedValue(undefined),
-    shiftStartPosition: vi.fn().mockResolvedValue(undefined),
+    shiftStartPlacement: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -88,7 +88,7 @@ describe("createSequenceTransformActionDispatcher", () => {
       targetHand: "both",
       createMode: "construct",
       stepCount: 2,
-      hasStartPosition: true,
+      hasStartPlacement: true,
     });
     expect(analytics.result).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -182,6 +182,6 @@ describe("createSequenceTransformActionDispatcher", () => {
     expect(pushUndoSnapshot).toHaveBeenCalledWith(
       UndoOperationType.SHIFT_START
     );
-    expect(activeState?.shiftStartPosition).toHaveBeenCalledWith(2);
+    expect(activeState?.shiftStartPlacement).toHaveBeenCalledWith(2);
   });
 });

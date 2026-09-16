@@ -120,7 +120,7 @@ something Level 3 introduces, not something the lower levels happen not to use.
 
 ### The signature comes from the turns, not the letters
 
-This is the useful part. Nothing about the letters, the positions, or the hand
+This is the useful part. Nothing about the letters, the placements, or the hand
 paths moves a prop between radial and nonradial. Only the turn values do:
 
 - **Whole turns never change layer.** A whole turn either preserves the
@@ -184,11 +184,11 @@ Each quarter turn = 1 step. Direction rule:
 
 ### Float Orientation
 
-Float holds absolute spatial angle. As the hand arcs, the center-relative orientation changes by an amount determined by arc length and direction. For a standard single-segment shift: a CW arc shifts orientation one position CW in the radial cycle; a CCW arc shifts one position CCW. Float only changes orientation for CW/CCW hand paths; a dash/static hand path with float would preserve orientation (but float doesn't apply to those).
+Float holds absolute spatial angle. As the hand arcs, the center-relative orientation changes by an amount determined by arc length and direction. For a standard single-segment shift: a CW arc shifts orientation one placement CW in the radial cycle; a CCW arc shifts one placement CCW. Float only changes orientation for CW/CCW hand paths; a dash/static hand path with float would preserve orientation (but float doesn't apply to those).
 
 ### Orientation and LOOP Closure
 
-These parity rules set a LOOP's **orientation period** (see LOOP System → Type vs Length). Over one position period, sum each hand's reversals: anti/dash/hash bases + odd whole turns each flip orientation (in↔out / clock↔counter); half-turns step 90°, quarters 45°. If the net per-hand delta is the identity, the LOOP closes at its position period. Otherwise it repeats until the orientation wheel returns home, multiplying length by that orientation period. Position-moving LOOPs (rotated/mirrored/flipped/swapped) usually close orientation trivially; the multiplier appears when the motion/turn content drifts. Inverted LOOPs (and the narrow case of a Swapped LOOP whose entire seed stays in beta) are the pure form — positions pinned, so the orientation cycle IS the LOOP.`,
+These parity rules set a LOOP's **orientation period** (see LOOP System → Type vs Length). Over one placement period, sum each hand's reversals: anti/dash/hash bases + odd whole turns each flip orientation (in↔out / clock↔counter); half-turns step 90°, quarters 45°. If the net per-hand delta is the identity, the LOOP closes at its placement period. Otherwise it repeats until the orientation wheel returns home, multiplying length by that orientation period. Placement-moving LOOPs (rotated/mirrored/flipped/swapped) usually close orientation trivially; the multiplier appears when the motion/turn content drifts. Inverted LOOPs (and the narrow case of a Swapped LOOP whose entire seed stays in beta) are the pure form — placements pinned, so the orientation cycle IS the LOOP.`,
     },
 
     "combinatorial-space": {
@@ -322,12 +322,12 @@ Skews support all three shift motion types (pro, anti, float). Theoretically unb
 
 | Level | Concept | What it adds | Arc |
 |-------|---------|-------------|-----|
-| 1 | Foundation | 0 turns, alpha + beta + gamma positions | Foundation |
+| 1 | Foundation | 0 turns, alpha + beta + gamma placements | Foundation |
 | 2 | Whole turns | 0-3 whole turns | Foundation |
 | 3 | Half turns + float | Halves, float motion type | Foundation |
 | 4 | Interradial orientations | 8 orientations, quarter turns, completes orientation freedom | Angular precision |
 | 5 | Skewed grid | 8-point grid, zeta + eta (cross-grid asymmetry), skew+ and skew- | Grid mixing |
-| 6 | Centric | Center point, hash hand path, tau/terra positions, completes single-grid 2D | New grid point |
+| 6 | Centric | Center point, hash hand path, tau/terra placements, completes single-grid 2D | New grid point |
 | 7 | Conjoined grids | Dual grids sharing a junction point, extended dashes | Canvas expansion |
 | 8 | Atomics | Multi-plane / 3D (wall, wheel, overhead) | New dimension |
 | 9 | Rubik's cube | Skewed across intersecting planes | 3D COMPLETE |
@@ -336,7 +336,7 @@ Levels 4 and 6 traded places with the February 2026 order, which ran centric at 
 
 ### Why This Order
 
-**All three base positions from L1:**
+**All three base placements from L1:**
 - Alpha (180°, symmetric), beta (0°, symmetric), and gamma (90°, asymmetric) are all present at Level 1 with 0 turns
 - Learners encounter asymmetry (leader/follower) immediately -- it is foundational, not advanced
 - L5's skewed grid adds cross-grid asymmetry (zeta, eta) where one hand is on diamond and the other on box, not asymmetry in general
@@ -371,29 +371,29 @@ Levels 4 and 6 traded places with the February 2026 order, which ran centric at 
 
 > **Audit note (Feb 2026):** This section was drafted during a long exploratory conversation. Core conclusions validated by Austen, but details/framing may contain errors.
 
-The 8-point grid introduces skewed positions (Zeta, Eta) where one hand operates on the diamond grid and the other on the box grid.
+The 8-point grid introduces skewed placements (Zeta, Eta) where one hand operates on the diamond grid and the other on the box grid.
 
-### The Two Halves of Asymmetric Positions
+### The Two Halves of Asymmetric Placements
 
-Every asymmetric position has two halves, determined by which hand is directionally ahead of the other.
+Every asymmetric placement has two halves, determined by which hand is directionally ahead of the other.
 
 **Gamma** has gamma1-8 (one half) and gamma9-16 (the other half). Same-direction shifts stay within the same half. Opposite-direction shifts cross between halves (while remaining in gamma).
 
 This is why gamma compound letters (MP, NQ, OR) are structurally analogous to alpha/beta compounds (DJ, EK, FL). DJ oscillates between beta and alpha. MP oscillates between gamma's two halves.
 
-**Zeta** and **Eta** each have two halves, but their halves are more isolated. Opposite-direction shifts leave the position entirely (Eta becomes Zeta, Zeta becomes Eta).
+**Zeta** and **Eta** each have two halves, but their halves are more isolated. Opposite-direction shifts leave the placement entirely (Eta becomes Zeta, Zeta becomes Eta).
 
 ### The Skewed World as Distinct Territory
 
-You **enter** skewed territory from standard positions (via Type 2 or Type 3 letters), **exist** within it, and **exit** back.
+You **enter** skewed territory from standard placements (via Type 2 or Type 3 letters), **exist** within it, and **exit** back.
 
 **Notation:** Curly braces in written sequences: A{MP}G. Individual pictographs use the 8-point grid visual.
 
 ### Transition Rules
 
 When both hands shift one step, angular separation either stays the same or changes by 180 degrees:
-- **Same direction** -> angle unchanged (stay in same position type)
-- **Opposite direction** -> angle changes by 180 degrees (swap to paired position)
+- **Same direction** -> angle unchanged (stay in same placement type)
+- **Opposite direction** -> angle changes by 180 degrees (swap to paired placement)
 
 | Diamond grid | Skewed grid |
 |-------------|-------------|
@@ -406,15 +406,15 @@ When both hands shift one step, angular separation either stays the same or chan
 
 **Correction (2026-04-18):** A previous version of this topic claimed "all skewed Type 1 transitions use M-V, not A-L." That was wrong.
 
-A-L and M-V are defined by diamond-grid position, not by skewed behavior:
-- **A-L** are Type 1 letters on alpha/beta (the symmetric diamond-grid positions)
-- **M-V** are Type 1 letters on gamma (the asymmetric diamond-grid position)
+A-L and M-V are defined by diamond-grid placement, not by skewed behavior:
+- **A-L** are Type 1 letters on alpha/beta (the symmetric diamond-grid placements)
+- **M-V** are Type 1 letters on gamma (the asymmetric diamond-grid placement)
 
-How zeta/eta transitions are actually assigned to letters is a **separate question** that this topic does not resolve. Don't conflate the two. Ask Austen or reference the Skewed pictograph dataframe directly before making claims about skewed-position letter assignments.
+How zeta/eta transitions are actually assigned to letters is a **separate question** that this topic does not resolve. Don't conflate the two. Ask Austen or reference the Skewed pictograph dataframe directly before making claims about skewed-placement letter assignments.
 
 ### Type 4 (Dash + Static): Phi and Psi
 
-Lambda requires gamma (90 degrees), impossible in skewed positions. Skewed Type 4 uses Phi (diverging, angle increases) and Psi (converging, angle decreases).
+Lambda requires gamma (90 degrees), impossible in skewed placements. Skewed Type 4 uses Phi (diverging, angle increases) and Psi (converging, angle decreases).
 
 ### Type 5 (Dual-Dash)
 
@@ -425,23 +425,23 @@ Phi- and Psi- extend the same way. Lambda- cannot be skewed.
 | Context | Behavior | Why |
 |---------|----------|-----|
 | Type 4/5 diverge/converge | Phi (diverging) / Psi (converging); Lambda cannot be skewed | Gamma (90°) requires both hands on same grid |
-| Position symmetry | Zeta and Eta are asymmetric | One hand directionally ahead of the other |
-| Transition structure | Zeta↔Eta via opposite-direction shift (like Alpha↔Beta) | Same shift geometry, different position family |
+| Placement symmetry | Zeta and Eta are asymmetric | One hand directionally ahead of the other |
+| Transition structure | Zeta↔Eta via opposite-direction shift (like Alpha↔Beta) | Same shift geometry, different placement family |
 
 Note: Type 1 letter assignment for zeta/eta transitions is intentionally omitted from this summary. Determining whether a given skewed transition uses an A-L letter, an M-V letter, or a new letter entirely is a distinct question from defining what A-L and M-V mean on the 4-point diamond grid. Refer to the Skewed pictograph dataframe or Austen directly for the ground truth on skewed letter assignment.`,
     },
 
-    "position-symmetry": {
-      title: "Position Symmetry and Gamma Skewing",
-      content: `## Position Symmetry (Critical for Letter Assignment)
+    "placement-symmetry": {
+      title: "Placement Symmetry and Gamma Skewing",
+      content: `## Placement Symmetry (Critical for Letter Assignment)
 
-Whether a position is **symmetric** or **asymmetric** determines which letters apply to it.
+Whether a placement is **symmetric** or **asymmetric** determines which letters apply to it.
 
-**Symmetric positions:** You can swap which hand is which (via rotation or mirror) and get an equivalent configuration. Alpha (180 degrees) and Beta (0 degrees) are symmetric.
+**Symmetric placements:** You can swap which hand is which (via rotation or mirror) and get an equivalent configuration. Alpha (180 degrees) and Beta (0 degrees) are symmetric.
 
-**Asymmetric positions:** One hand is directionally "ahead" of the other. Swapping hands produces a distinct configuration. Gamma (90 degrees), Zeta (135 degrees), and Eta (45 degrees) are all asymmetric.
+**Asymmetric placements:** One hand is directionally "ahead" of the other. Swapping hands produces a distinct configuration. Gamma (90 degrees), Zeta (135 degrees), and Eta (45 degrees) are all asymmetric.
 
-| Position | Angle | Symmetric? | Why |
+| Placement | Angle | Symmetric? | Why |
 |----------|-------|------------|-----|
 | Alpha | 180 degrees | Yes | Rotate 180 degrees and it's identical |
 | Beta | 0 degrees | Yes | Both hands at same point, fully interchangeable |
@@ -449,20 +449,20 @@ Whether a position is **symmetric** or **asymmetric** determines which letters a
 | Zeta | 135 degrees | No | Same asymmetry as gamma |
 | Eta | 45 degrees | No | Same asymmetry as gamma |
 
-**Why this matters:** In asymmetric positions, when both hands shift the same direction, one hand "leads" and one "follows." This creates a leader/follower distinction that requires additional letter differentiation.
+**Why this matters:** In asymmetric placements, when both hands shift the same direction, one hand "leads" and one "follows." This creates a leader/follower distinction that requires additional letter differentiation.
 
-**Important:** Leader/follower only applies to **same-direction** movement. When hands go **opposite directions** in an asymmetric position, they diverge/converge symmetrically -- no leader, no follower.
+**Important:** Leader/follower only applies to **same-direction** movement. When hands go **opposite directions** in an asymmetric placement, they diverge/converge symmetrically -- no leader, no follower.
 
 ### Gamma Cannot Be Skewed
 
-On the 8-point grid, skewed positions require one hand on a cardinal point and one on an intercardinal point. The possible angular separations are always odd multiples of 45 degrees: either 45 degrees (Eta) or 135 degrees (Zeta). You **cannot** get 90 degrees with one hand on each grid. Gamma (90 degrees) only occurs when both hands are on the **same** grid (both cardinal or both intercardinal).`,
+On the 8-point grid, skewed placements require one hand on a cardinal point and one on an intercardinal point. The possible angular separations are always odd multiples of 45 degrees: either 45 degrees (Eta) or 135 degrees (Zeta). You **cannot** get 90 degrees with one hand on each grid. Gamma (90 degrees) only occurs when both hands are on the **same** grid (both cardinal or both intercardinal).`,
     },
 
     loops: {
       title: "LOOP System and Compositional Theory",
       content: `## LOOP System
 
-A **LOOP** is a sequence that returns to its starting position (circular) and follows a structured transformation pattern between its halves/quarters. The LOOP type is determined by step data (positions, motion types, hand identity), not by the word or letters.
+A **LOOP** is a sequence that returns to its starting placement (circular) and follows a structured transformation pattern between its halves/quarters. The LOOP type is determined by step data (placements, motion types, hand identity), not by the word or letters.
 
 ### LOOP Types
 
@@ -477,7 +477,7 @@ A **LOOP** is a sequence that returns to its starting position (circular) and fo
 
 | Component | What it does |
 |-----------|-------------|
-| **Rotated** | Positions continue rotating same direction (180 or 90 degree slices) |
+| **Rotated** | Placements continue rotating same direction (180 or 90 degree slices) |
 | **Reflection** | Reflects locations across one of four axes. Legacy **Mirrored** means N-S; legacy **Flipped** means E-W |
 | **Swapped** | Left/right hand roles swap |
 | **Inverted** | Pro<->Anti motion types swap |
@@ -502,18 +502,18 @@ Cross-grid examples:
 - Box Gamma: Blue at SE and Red at SW reflects across E-W to Blue at NE and Red at NW.
 - Diamond Gamma: Blue at E and Red at S reflects across NE-SW to Blue at N and Red at W.
 
-### Transformation Domains: Position vs Orientation
+### Transformation Domains: Placement vs Orientation
 
-A component is **orientation-domain** only if it is the identity on position space — it never moves any step's grid position. By the fixed-point sets, exactly ONE qualifies:
+A component is **orientation-domain** only if it is the identity on placement space — it never moves any step's grid placement. By the fixed-point sets, exactly ONE qualifies:
 
-- **Inverted** — position-identity at ALL positions. \`applyOverlayInversion\` flips motionType (pro↔anti) and rotationDirection and leaves hand locations untouched on every step, so an Inverted LOOP repeats its positions identically each pass; only the prop's orientation cycles. The unique **pure orientation-domain** transform (verified: inverted seeds through gamma/alpha still pin).
-- **Rotated / Reflection / Swapped** are all **position-moving**, each the identity only on a subset:
+- **Inverted** — placement-identity at ALL placements. \`applyOverlayInversion\` flips motionType (pro↔anti) and rotationDirection and leaves hand locations untouched on every step, so an Inverted LOOP repeats its placements identically each pass; only the prop's orientation cycles. The unique **pure orientation-domain** transform (verified: inverted seeds through gamma/alpha still pin).
+- **Rotated / Reflection / Swapped** are all **placement-moving**, each the identity only on a subset:
   - Rotated — no L1–L5 fixed point (always the inner layer).
   - Reflection — fixed points depend on the selected axis.
-  - Swapped — fixed at beta (+terra1); it reflects via hand identity (\`SWAPPED_POSITION_MAP\`: alpha7↔alpha3, gamma9↔gamma3), so it MOVES any non-beta step.
+  - Swapped — fixed at beta (+terra1); it reflects via hand identity (\`SWAPPED_PLACEMENT_MAP\`: alpha7↔alpha3, gamma9↔gamma3), so it MOVES any non-beta step.
 - **Rewound** — temporal (second half reversed), neither space.
 
-A LOOP is positionally PINNED (a "pure orientation LOOP", where the prop's orientation sweep IS the content) only when its transform is the identity on EVERY step it touches: **always for Inverted**, and for Swapped ONLY when the entire seed stays within beta (e.g. \`GIGI\`, beta1↔beta7). A beta-STARTED swap loop that wanders to alpha/gamma is NOT pinned — swap moves those steps (\`DLDL\`: a beta1→alpha7 step becomes beta1→alpha3 in the second pass). Pinning is per-step, not per-start-position.
+A LOOP is positionally PINNED (a "pure orientation LOOP", where the prop's orientation sweep IS the content) only when its transform is the identity on EVERY step it touches: **always for Inverted**, and for Swapped ONLY when the entire seed stays within beta (e.g. \`GIGI\`, beta1↔beta7). A beta-STARTED swap loop that wanders to alpha/gamma is NOT pinned — swap moves those steps (\`DLDL\`: a beta1→alpha7 step becomes beta1→alpha3 in the second pass). Pinning is per-step, not per-start-placement.
 
 ---
 
@@ -522,7 +522,7 @@ A LOOP is positionally PINNED (a "pure orientation LOOP", where the prop's orien
 ### Turn Independence
 
 The LOOP algebra operates on a reduced space of:
-- **Grid positions** (where hands are)
+- **Grid placements** (where hands are)
 - **Motion types** (pro / anti / static / dash / float)
 - **Hand identity** (blue / red)
 
@@ -536,14 +536,14 @@ Performed Sequence = LOOP Skeleton + Turn Assignment
 
 Turn/orientation independence applies to the **type label**, not the **realized length**. A LOOP has TWO periods:
 
-- **Position period** — passes for the grid positions to return to start (set by the position-domain transform: 2 for halved, 4 for quartered).
+- **Placement period** — passes for the grid placements to return to start (set by the placement-domain transform: 2 for halved, 4 for quartered).
 - **Orientation period** — passes for both props' orientations to return to start.
 
-Realized length = seed × **LCM(position period, orientation period)**.
+Realized length = seed × **LCM(placement period, orientation period)**.
 
-The orientation period is driven by per-pass orientation reversals, NOT just turns. Each **anti / dash / hash** motion reverses orientation at its base (even at 0 turns); odd whole turns reverse; half-turns step 90°; quarters 45°. If a hand accumulates a net non-identity orientation delta over one position period, the LOOP must run extra passes until the orientation wheel closes.
+The orientation period is driven by per-pass orientation reversals, NOT just turns. Each **anti / dash / hash** motion reverses orientation at its base (even at 0 turns); odd whole turns reverse; half-turns step 90°; quarters 45°. If a hand accumulates a net non-identity orientation delta over one placement period, the LOOP must run extra passes until the orientation wheel closes.
 
-This is why one LOOP type renders at two lengths (mirrored+swapped as 4 OR 8): the position skeleton is identical, but the orientation period — a function of the motion/turn content the type label ignores — differs. A zero-turn seed does NOT guarantee the short form: a seed full of anti/dash motions drifts in orientation with no turns at all.
+This is why one LOOP type renders at two lengths (mirrored+swapped as 4 OR 8): the placement skeleton is identical, but the orientation period — a function of the motion/turn content the type label ignores — differs. A zero-turn seed does NOT guarantee the short form: a seed full of anti/dash motions drifts in orientation with no turns at all.
 
 ### Compositional Notation
 
@@ -554,7 +554,7 @@ Instead of flat component bags like {MIRRORED, SWAPPED, INVERTED}, express LOOPs
 
 Example: \`SWAPPED + MIRRORED/INVERTED\`
 1. Take a SWAPPED inner pattern (seed doubled via hand-role swap)
-2. Apply MIRRORED and INVERTED simultaneously (mirror positions + flip pro/anti)
+2. Apply MIRRORED and INVERTED simultaneously (mirror placements + flip pro/anti)
 
 The flat label {MIRRORED, SWAPPED, INVERTED} doesn't tell you which transformation came first. The compositional notation preserves construction order.
 
@@ -571,7 +571,7 @@ A fixed-point requirement applies only to a narrower construction: an already-cl
 1. **Grid mode and reflection axis are independent.** Never infer an axis from Diamond, Box, or Skewed mode.
 2. **Direct reflection closes by involution.** S→R(S), followed by its reflected copy, returns to S.
 3. **Order and construction matter.** Direct, simultaneous, sequential, and literal wrapped-block constructions are not interchangeable.
-4. **Inverted is position-free.** It adds no positional seam constraint.
+4. **Inverted is placement-free.** It adds no positional seam constraint.
 5. **Flat detection loses information.** The same net geometry can have different construction histories, and one sequence may satisfy several flat component descriptions. Store the reflection axis in the LOOPSpec instead of relabeling diagonal reflection as a rotated legacy mirror.`,
     },
 
@@ -583,7 +583,7 @@ LOOPs use composable transformations that operate on TKA words:
 
 | Transformation | What it does |
 |---------------|-------------|
-| **Rotated** | Positions continue rotating same direction (180 or 90 degree slices) |
+| **Rotated** | Placements continue rotating same direction (180 or 90 degree slices) |
 | **Reflection** | Reflects across N-S, E-W, NE-SW, or NW-SE. Legacy Mirrored means N-S; legacy Flipped means E-W |
 | **Swapped** | Left/right hand roles swap |
 | **Inverted** | Pro<->Anti motion types swap |
@@ -638,7 +638,7 @@ Special modulus cases:
 - **Rosettes**: ρ1 = ρ2 (the classic inspin/antispin flowers, e.g. 1 4 ; 1 1 and 1 -6 ; 1 1)
 - **Cycloids**: hand and prop tip move at equal ground-frame speeds — ρ2/ρ1 = |θ1/(θ1+θ2)|. Not all are feasible: with a stretched arm, ρ2 only takes discrete wrap values (1/5, 1/4, 1/3, 2/5, 1/2, 3/5, 2/3, 3/4, 4/5, 1 — from two-hands-one-finger down to no wrap)
 
-Feasibility rules (poi): inspin needs |θ2| > |θ1|/2. The antispin rule's inequality is garbled in the surviving page render, but his exclusion list (1 -1, 1 -2, 2 -2 through 2 -4, 3 -3 through 3 -5, 4 -4, 4 -5, 5 -5 excluded; 1 -3, 2 -5 feasible) reconstructs it as |θ1| < |θ2|/2. He defined "feasible" strictly: possible from ANY starting position. Danny_ (Brighton) pushed back with edge cases — 1 -2 possible but unstable, cycloids "close enough" — and noted his own alternative notation referencing prop rotation against the ground rather than the arm.
+Feasibility rules (poi): inspin needs |θ2| > |θ1|/2. The antispin rule's inequality is garbled in the surviving page render, but his exclusion list (1 -1, 1 -2, 2 -2 through 2 -4, 3 -3 through 3 -5, 4 -4, 4 -5, 5 -5 excluded; 1 -3, 2 -5 feasible) reconstructs it as |θ1| < |θ2|/2. He defined "feasible" strictly: possible from ANY starting placement. Danny_ (Brighton) pushed back with edge cases — 1 -2 possible but unstable, cycloids "close enough" — and noted his own alternative notation referencing prop rotation against the ground rather than the arm.
 
 The famous **Yuta CAP** (the proto-C-CAP): 1 0 ; 1 3/4 ; 1/2 assembled with -1 4 ; 1 3/4 ; 1/2 — an extension half-cycle joined to an antispin fragment.
 
@@ -716,7 +716,7 @@ VTG is ground-referenced. The "downbeat" (south / bottom of circle) anchors all 
 
 ### VTG Classification: Fixed vs Orientation-Dependent
 
-Letters staying in the same position have fixed VTG timing:
+Letters staying in the same placement have fixed VTG timing:
 - **A, B, C** (alpha to alpha): always **split-same**
 - **G, H, I** (beta to beta): always **tog-same**
 
@@ -729,7 +729,7 @@ Compound letters vary by variation:
 | Aspect | VTG | TKA |
 |--------|-----|-----|
 | Reference point | Ground (south/downbeat) | Center of grid |
-| Position names | tog = together, split = apart | Alpha = opposite, beta = same |
+| Placement names | tog = together, split = apart | Alpha = opposite, beta = same |
 | Classification | Fixed per pattern | Varies by orientation |
 
 ### Teaching Order
@@ -855,7 +855,7 @@ Same-direction elements are invariant -- they look and feel the same regardless 
 - **Sun** (quarter-same): both hands at 90 degrees, both arcing same way. Gamma on diamond or box -- still constant.
 
 Opposite-direction elements permute with grid mode:
-- **Air** and **Fire** (tog-opp, split-opp): In diamond mode, DJ/EK/FL compounds can be Air or Fire depending on variation. In box mode, they reclassify as **Moon** because the diagonal alpha positions create an opening/closing quality.
+- **Air** and **Fire** (tog-opp, split-opp): In diamond mode, DJ/EK/FL compounds can be Air or Fire depending on variation. In box mode, they reclassify as **Moon** because the diagonal alpha placements create an opening/closing quality.
 - **Moon** (quarter-opp): In diamond mode, MP/NQ/OR compounds are Moon. In box mode, they reclassify as **Air or Fire** -- the same ambiguous pair that DJ/EK/FL occupy in diamond mode.
 
 ### The Invariance Rule
@@ -890,7 +890,7 @@ Three stable elements. Three that permute with grid rotation. The same-direction
 | **Anti** | Rotates against the arc direction | Standard palette: 0, 1, 2, 3, ... |
 | **Float** | Holds absolute spatial angle | N/A |
 
-Pro and anti are defined relative to the arc ("with" and "against"). They are NOT absolute CW/CCW -- the same pro motion at different grid positions rotates different absolute directions.
+Pro and anti are defined relative to the arc ("with" and "against"). They are NOT absolute CW/CCW -- the same pro motion at different grid placements rotates different absolute directions.
 
 **Float** is absence of prop rotation in absolute spatial terms. The center-relative orientation CHANGES because the hand traces a curve. Float has no turn count -- it is a single binary state. No "degrees of float." In VTG hand:prop notation, Float is the exceptional **1:0** ratio (one hand cycle, zero prop rotations); it is not numeric -0.5 turns.
 
@@ -933,14 +933,14 @@ Skews support all three shift motion types (pro, anti, float). Theoretically unb
 
 ### The Result
 
-Under the constraints Level 1 (0 turns), Diamond grid, Continuous rotation, Quartered Rotated LOOP, and starting from one of three canonical positions (alpha1, beta5, gamma11), there are exactly **64 valid 8-step sequences per starting position** -- 192 total.
+Under the constraints Level 1 (0 turns), Diamond grid, Continuous rotation, Quartered Rotated LOOP, and starting from one of three canonical placements (alpha1, beta5, gamma11), there are exactly **64 valid 8-step sequences per starting placement** -- 192 total.
 
 This is remarkable because:
 - Alpha has 13 available first-step letters
 - Beta has 13 available first-step letters
 - Gamma has 21 available first-step letters
 
-Despite wildly different letter pools, the LOOP constraint produces **identical counts**. The three position families are combinatorially isomorphic.
+Despite wildly different letter pools, the LOOP constraint produces **identical counts**. The three placement families are combinatorially isomorphic.
 
 ### How Quartered Rotation Constrains
 
@@ -950,9 +950,9 @@ A quartered rotated LOOP divides 8 steps into 4 quarters of 2 steps each:
 - **Q3 (steps 5-6):** Q1 rotated 180°
 - **Q4 (steps 7-8):** Q1 rotated 270°
 
-90° rotation preserves the letter -- only grid positions and hand locations change. So the 8-step word is the 2-step seed repeated 4 times: seed AB becomes ABABABAB.
+90° rotation preserves the letter -- only grid placements and hand locations change. So the 8-step word is the 2-step seed repeated 4 times: seed AB becomes ABABABAB.
 
-For the LOOP to close, the seed's end position must equal rotatePos90(start). This is the key constraint that limits the space from billions of unconstrained paths down to 64.
+For the LOOP to close, the seed's end placement must equal rotatePos90(start). This is the key constraint that limits the space from billions of unconstrained paths down to 64.
 
 ### The 10 Hand-Path Families
 
@@ -973,9 +973,9 @@ The 64 sequences decompose into 10 families based on the type pairing of step 1 
 
 Total: 8 + 4 + 4 + 8 + 8 + 8 + 8 + 8 + 4 + 4 = **64**
 
-### Why the Count is Position-Invariant
+### Why the Count is Placement-Invariant
 
-Each position family (alpha, beta, gamma) contains structurally isomorphic letter sets:
+Each placement family (alpha, beta, gamma) contains structurally isomorphic letter sets:
 
 | Role | Alpha1 | Beta5 | Gamma11 |
 |------|--------|-------|---------|
@@ -999,17 +999,17 @@ The STUV anomaly (quarter-same having 4 letters instead of 3) and the larger Typ
 
 This result demonstrates a deep structural property: **the STUV anomaly and gamma's asymmetric letter pools do not propagate into LOOP-level combinatorics.** The quartered rotation constraint acts as a symmetry equalizer.
 
-Groups of 3 vs 4 in the alphabet? Irrelevant at the LOOP level. Different position types with different letter counts? The LOOP sees through to the underlying motion-type algebra, which is isomorphic across all three.
+Groups of 3 vs 4 in the alphabet? Irrelevant at the LOOP level. Different placement types with different letter counts? The LOOP sees through to the underlying motion-type algebra, which is isomorphic across all three.
 
 64 = the number of distinct ways to pair two consecutive motion configurations on a 4-point grid such that 90° rotation closes the loop. This number is a property of the grid geometry and the motion-type system, not of the specific letters.
 
 ### Practical Application: The First Deck
 
-These 192 sequences (64 × 3 starting positions) form the complete **Level 1 Quartered Rotated LOOP Deck** -- the most accessible set of 8-step circular sequences in TKA. Every sequence:
+These 192 sequences (64 × 3 starting placements) form the complete **Level 1 Quartered Rotated LOOP Deck** -- the most accessible set of 8-step circular sequences in TKA. Every sequence:
 - Uses 0 turns (Level 1)
 - Maintains continuous rotation (no reversals)
 - Has 4-fold rotational symmetry
-- Loops back to its starting position
+- Loops back to its starting placement
 - Is fully determined by a 2-step seed`,
     },
 
@@ -1021,7 +1021,7 @@ These 192 sequences (64 × 3 starting positions) form the complete **Level 1 Qua
 
 A foundational principle of TKA: **a pictograph represents the same letter under three transformations:**
 
-1. **Rotation** -- Spin the pictograph card. The letter is defined by relationships between hands, not absolute positions.
+1. **Rotation** -- Spin the pictograph card. The letter is defined by relationships between hands, not absolute placements.
 2. **Reflection** -- Mirror the pictograph. Spatial relationships are preserved.
 3. **Color swap** -- Swap red and blue (swap which hand is which). If the two hands have equivalent roles, this produces the same letter.
 
@@ -1029,13 +1029,13 @@ This principle drove the entire letter enumeration. A "unique letter" is an equi
 
 ### Why It Works (Most of the Time)
 
-For **symmetric positions** (alpha: hands opposite, beta: hands together), color swap always produces an equivalent arrangement. If both hands are at opposite points and you swap which hand is where, you get the same spatial relationship. The letter is unchanged.
+For **symmetric placements** (alpha: hands opposite, beta: hands together), color swap always produces an equivalent arrangement. If both hands are at opposite points and you swap which hand is where, you get the same spatial relationship. The letter is unchanged.
 
-For **opposite-direction movement** in any position, color swap produces the mirror image, which is already covered by the reflection invariance.
+For **opposite-direction movement** in any placement, color swap produces the mirror image, which is already covered by the reflection invariance.
 
 ### Where It Breaks
 
-**Same-direction movement in asymmetric positions** (gamma, zeta, eta). When hands are 90 degrees apart and both move the same way, one hand leads and the other follows. Swapping colors swaps who leads. For pure motion types (both pro or both anti), the resulting movement is geometrically equivalent. But for **hybrid** motion types (one pro, one anti), swapping colors changes which motion type leads, producing a genuinely different movement.
+**Same-direction movement in asymmetric placements** (gamma, zeta, eta). When hands are 90 degrees apart and both move the same way, one hand leads and the other follows. Swapping colors swaps who leads. For pure motion types (both pro or both anti), the resulting movement is geometrically equivalent. But for **hybrid** motion types (one pro, one anti), swapping colors changes which motion type leads, producing a genuinely different movement.
 
 This is why the quarter-same group (S, T, U, V) has 4 letters instead of 3. See the "stuv-anomaly" topic for the full explanation.
 
@@ -1099,11 +1099,11 @@ In the codebase, rotational relationship is derived at render time by comparing 
 
 Lambda (Λ), Lambda-Dash (Λ-), and gamma (γ) use **opening/closing** instead of same/opp. This is not an additional modifier alongside rotational relationship — it **replaces** it for these letters.
 
-The reason: gamma's right-angle position is geometrically asymmetric in a way alpha and beta are not. The same-direction vs opposite-direction distinction collapses here; rotation direction combined with the asymmetric geometry produces variants that cannot be captured by same/opp.
+The reason: gamma's right-angle placement is geometrically asymmetric in a way alpha and beta are not. The same-direction vs opposite-direction distinction collapses here; rotation direction combined with the asymmetric geometry produces variants that cannot be captured by same/opp.
 
-**Opening** means: if the rotating hand's trajectory were extrapolated into a subsequent pro-shift, the motion would resolve toward an **alpha** position (hands at opposite grid points — spatially "open").
+**Opening** means: if the rotating hand's trajectory were extrapolated into a subsequent pro-shift, the motion would resolve toward an **alpha** placement (hands at opposite grid points — spatially "open").
 
-**Closing** means: extrapolating the trajectory would resolve toward a **beta** position (hands at the same point — spatially "closed").
+**Closing** means: extrapolating the trajectory would resolve toward a **beta** placement (hands at the same point — spatially "closed").
 
 Opening/closing is **per-hand**. Each rotating prop gets its own op/cl designation. A Λ- with both hands rotating can be:
 - Both opening: \`Λ-(1,1,op,op)\`

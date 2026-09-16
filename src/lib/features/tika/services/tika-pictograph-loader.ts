@@ -24,8 +24,8 @@ export interface MotionData {
 }
 export interface PictographData {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotion: MotionData;
@@ -35,8 +35,8 @@ export interface PictographDataWithMode extends PictographData {
   gridMode: "diamond" | "box";
 }
 export interface LetterPositionMapping {
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   startGroup: string;
   endGroup: string;
 }
@@ -164,8 +164,12 @@ export class TikaPictographLoader {
 
         pictographs.push({
           letter: row["letter"] ?? "",
-          startPosition: row["startPosition"] ?? "",
-          endPosition: row["endPosition"] ?? "",
+          // Accept the pre-rename header spelling too, matching the browser
+          // CSV parsers' fallback — this file reads dataframe CSVs straight
+          // off disk with no cache layer, but a hand-edited or older fixture
+          // file could still carry the old header.
+          startPlacement: row["startPlacement"] ?? row["startPosition"] ?? "",
+          endPlacement: row["endPlacement"] ?? row["endPosition"] ?? "",
           timing: row["timing"] ?? "",
           direction: row["direction"] ?? "",
           gridMode,
@@ -215,12 +219,12 @@ export class TikaPictographLoader {
       const data = JSON.parse(fs.readFileSync(mappingsPath, "utf-8"));
 
       for (const [letter, mapping] of Object.entries(data.letters)) {
-        const m = mapping as { startPosition: string; endPosition: string };
+        const m = mapping as { startPlacement: string; endPlacement: string };
         this.letterPositionMappings[letter] = {
-          startPosition: m.startPosition,
-          endPosition: m.endPosition,
-          startGroup: this.extractPositionGroup(m.startPosition),
-          endGroup: this.extractPositionGroup(m.endPosition),
+          startPlacement: m.startPlacement,
+          endPlacement: m.endPlacement,
+          startGroup: this.extractPlacementGroup(m.startPlacement),
+          endGroup: this.extractPlacementGroup(m.endPlacement),
         };
       }
 
@@ -243,7 +247,7 @@ export class TikaPictographLoader {
     }
   }
 
-  private extractPositionGroup(position: string): string {
+  private extractPlacementGroup(position: string): string {
     if (position.startsWith("alpha")) return "alpha";
     if (position.startsWith("beta")) return "beta";
     if (position.startsWith("gamma")) return "gamma";

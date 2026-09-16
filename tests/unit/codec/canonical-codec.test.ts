@@ -68,13 +68,13 @@ describe("sequence round-trip (single format)", () => {
       id: "x", name: "", word: "", steps: [
         { stepNumber: 0, duration: 1, leftReversal: false, rightReversal: false, isBlank: false,
           motions: { left: staticMotion(GridLocation.NORTH), right: staticMotion(GridLocation.SOUTH) },
-          id: "s0", letter: null, startPosition: null, endPosition: null },
+          id: "s0", letter: null, startPlacement: null, endPlacement: null },
         { stepNumber: 1, duration: 1, leftReversal: false, rightReversal: false, isBlank: false,
           motions: {
             left: motion({ startLocation: GridLocation.NORTH, endLocation: GridLocation.EAST, rotationDirection: RotationDirection.CLOCKWISE, turns: 0 }),
             right:  motion({ startLocation: GridLocation.SOUTH, endLocation: GridLocation.WEST, rotationDirection: RotationDirection.CLOCKWISE, turns: 0 }),
           },
-          id: "s1", letter: null, startPosition: null, endPosition: null },
+          id: "s1", letter: null, startPlacement: null, endPlacement: null },
       ],
       thumbnails: [], isFavorite: false, isCircular: false, tags: [], metadata: {}, sequenceLength: 1,
     } as never;
@@ -82,7 +82,7 @@ describe("sequence round-trip (single format)", () => {
     const encoded = encodeSequence(original);
     expect(encoded).not.toMatch(/^v[123]\|/);
     const decoded = decodeSequence(encoded);
-    // start beat -> startPosition; the lone step lands at steps[0] (stepNumber 1).
+    // start beat -> startPlacement; the lone step lands at steps[0] (stepNumber 1).
     expect(decoded.steps[0]!.motions.left!.motionType).toBe(MotionType.PRO);
     expect(decoded.steps[0]!.motions.left!.propType).toBe(PropType.STAFF);
   });

@@ -67,7 +67,7 @@ export type GuideSequenceClick = {
    *  this strip. Defaults (when omitted) to on for hand renders - the early
    *  hand-path chapters - and off for staff/letter/word strips. Set explicitly
    *  to force it for a given example. */
-  showPositionGlyph?: boolean;
+  showPlacementGlyph?: boolean;
 };
 
 /** The reader registers a handler; pages call it to open the animation companion. */

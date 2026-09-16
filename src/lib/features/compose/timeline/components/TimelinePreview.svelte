@@ -21,8 +21,8 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { SequenceAnimationOrchestrator } from "$lib/shared/animation-engine/services/sequence-animation-orchestrator";
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
-  import type { StartPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
-  import { startPositionDeriver as startPositionDeriverSingleton } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+  import type { StartPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
+  import { startPlacementDeriver as startPlacementDeriverSingleton } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 
   interface Props {
     /** Current playhead position in seconds */
@@ -57,7 +57,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
   let animationOrchestrator = $state<SequenceAnimationOrchestrator | null>(
     null
   );
-  let startPositionDeriver = $state<StartPositionDeriver | null>(null);
+  let startPlacementDeriver = $state<StartPlacementDeriver | null>(null);
   let initialized = $state(false);
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -124,14 +124,14 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
   });
 
   // Check if we're at start position (before beat 1)
-  const isAtStartPosition = $derived(clipStepPosition < 1);
+  const isAtStartPlacement = $derived(clipStepPosition < 1);
 
-  // Derive start position using the StartPositionDeriver service
-  // This handles sequences that don't have an explicit startPosition field
-  const derivedStartPosition = $derived.by(() => {
-    if (!activeClip?.sequence || !startPositionDeriver) return null;
+  // Derive start position using the StartPlacementDeriver service
+  // This handles sequences that don't have an explicit startPlacement field
+  const derivedStartPlacement = $derived.by(() => {
+    if (!activeClip?.sequence || !startPlacementDeriver) return null;
     try {
-      return startPositionDeriver.getOrDeriveStartPosition(activeClip.sequence);
+      return startPlacementDeriver.getOrDeriveStartPlacement(activeClip.sequence);
     } catch (err) {
       console.warn("TimelinePreview: Failed to derive start position:", err);
       return null;
@@ -146,8 +146,8 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
     const seq = activeClip.sequence;
 
     // At start position - return start position letter from derived start position
-    if (isAtStartPosition && derivedStartPosition) {
-      return (derivedStartPosition as any).letter || null;
+    if (isAtStartPlacement && derivedStartPlacement) {
+      return (derivedStartPlacement as any).letter || null;
     }
 
     // At motion beat - beat N uses steps[N-1]
@@ -171,8 +171,8 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
     const seq = activeClip.sequence;
 
     // At start position - return derived start position data
-    if (isAtStartPosition && derivedStartPosition) {
-      return derivedStartPosition as any;
+    if (isAtStartPlacement && derivedStartPlacement) {
+      return derivedStartPlacement as any;
     }
 
     // At motion beat - beat N uses steps[N-1]
@@ -196,7 +196,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
 
       // Get services from ITI container
       animationOrchestrator = getSequenceAnimationOrchestrator();
-      startPositionDeriver = startPositionDeriverSingleton;
+      startPlacementDeriver = startPlacementDeriverSingleton;
       initialized = true;
       loading = false;
     } catch (err) {
@@ -334,7 +334,7 @@ import { getSequenceAnimationOrchestrator } from "$lib/shared/animation-engine/g
 
       <!-- Beat indicator overlay -->
       <div class="beat-indicator">
-        {#if isAtStartPosition}
+        {#if isAtStartPlacement}
           Start
         {:else}
           Beat {Math.floor(clipStepPosition)} / {activeClip.sequence.steps

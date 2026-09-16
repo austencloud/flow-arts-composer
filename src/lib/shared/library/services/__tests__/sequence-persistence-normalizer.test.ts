@@ -81,8 +81,8 @@ function makeStep(index: number, letter: string | null): StepData {
     // `letter: null` models a beat whose lookup never resolved. The cast lets a
     // fixture spell arbitrary glyph strings without importing the Letter union.
     letter: letter as StepData["letter"],
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: motionAt(leftFrom, leftTo, HandSide.LEFT),
       right: motionAt(rightFrom, rightTo, HandSide.RIGHT),
@@ -91,7 +91,7 @@ function makeStep(index: number, letter: string | null): StepData {
 }
 
 /**
- * The legacy start-position entry: `stepNumber === 0`, letterless by design.
+ * The legacy start-placement entry: `stepNumber === 0`, letterless by design.
  * Static at the first content beat's start locations (blue NORTH, red SOUTH
  * under the CYCLE fixture), which is how legacy raw-`steps` blobs stored it.
  * The normalizer strips it before anything counts, composes, or hashes.
@@ -105,8 +105,8 @@ function makeStartEntry(): StepData {
     rightReversal: false,
     isBlank: false,
     letter: null as StepData["letter"],
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: motionAt(GridLocation.NORTH, GridLocation.NORTH, HandSide.LEFT),
       right: motionAt(GridLocation.SOUTH, GridLocation.SOUTH, HandSide.RIGHT),
@@ -187,7 +187,7 @@ describe("normalizeSequenceForPersistence — composition-only source", () => {
     expect(result.ownerData.rightSoloHash).toBeTruthy();
     // The start cell survives — it is not derivable from the compositional
     // fields, so losing it is what emptied start cells in the 2026-06 corpus.
-    expect(result.ownerData.startPosition).toBeTruthy();
+    expect(result.ownerData.startPlacement).toBeTruthy();
 
     expect(result.contentHashVersion).toBe(CONTENT_HASH_VERSION);
     expect(result.contentHashVersion).toBe(HASH_VERSION_V3);
@@ -253,8 +253,8 @@ describe("normalizeSequenceForPersistence — composition-only source", () => {
 
     expect("syncStatus" in result.ownerData).toBe(false);
     expect("pendingSyncMetadata" in result.ownerData).toBe(false);
-    expect("startingPosition" in result.ownerData).toBe(false);
-    expect("startingPositionGroup" in result.ownerData).toBe(false);
+    expect("startingPlacement" in result.ownerData).toBe(false);
+    expect("startingPlacementGroup" in result.ownerData).toBe(false);
   });
 
   it("leaves no undefined values anywhere in the payload", async () => {
@@ -528,9 +528,9 @@ describe("normalizeSequenceForPersistence — legacy stepNumber-0 start entries"
     expect(
       result.ownerData.stepPairings?.every((pairing) => pairing.letter !== null)
     ).toBe(true);
-    // The start cell is not lost: composition derives `startPosition` from the
+    // The start cell is not lost: composition derives `startPlacement` from the
     // first content beat, whose start locations the entry duplicated.
-    expect(result.ownerData.startPosition).toBeTruthy();
+    expect(result.ownerData.startPlacement).toBeTruthy();
   });
 
   it("gives a legacy-shape document the same identity as its modern twin", async () => {

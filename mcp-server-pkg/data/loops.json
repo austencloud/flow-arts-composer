@@ -1,8 +1,8 @@
 {
-  "definition": "Sequences where words repeat to trace complementary patterns. The word must end on a variation of its start position, eventually returning to the exact starting position (home).",
+  "definition": "Sequences where words repeat to trace complementary patterns. The word must end on a variation of its start placement, eventually returning to the exact starting placement (home).",
   "baseComponents": {
     "rotated": {
-      "description": "Positions rotate around the grid to return home",
+      "description": "Placements rotate around the grid to return home",
       "keyInsight": "Rotated means COMPLETING the full rotation, not just reaching a rotated midpoint. The second half must CONTINUE rotating in the same direction to return home.",
       "variants": {
         "halved": {
@@ -18,14 +18,14 @@
       }
     },
     "mirrored": {
-      "description": "Positions mirror vertically to return home",
+      "description": "Placements mirror vertically to return home",
       "axis": "Vertical axis through center",
-      "effect": "Left-right positions swap across the vertical midline"
+      "effect": "Left-right placements swap across the vertical midline"
     },
     "flipped": {
-      "description": "Positions mirror horizontally to return home",
+      "description": "Placements mirror horizontally to return home",
       "axis": "Horizontal axis through center",
-      "effect": "Top-bottom positions swap across the horizontal midline",
+      "effect": "Top-bottom placements swap across the horizontal midline",
       "note": "Same concept as mirrored but along perpendicular axis"
     },
     "swapped": {
@@ -96,8 +96,8 @@
     }
   },
   "constructionPrinciples": {
-    "wordEndingRequirement": "Word must end on variation of start position to enable seamless repetition",
-    "homeReturn": "Return to exact starting position and orientation through calculated repetitions with transformations",
+    "wordEndingRequirement": "Word must end on variation of start placement to enable seamless repetition",
+    "homeReturn": "Return to exact starting placement and orientation through calculated repetitions with transformations",
     "patternCompletion": "Trace geometric or symmetric patterns in space for visual and kinesthetic satisfaction"
   },
   "freeform": {
@@ -110,7 +110,7 @@
         ["rewound", "inverted"],
         ["mirrored", "swapped", "inverted"]
       ],
-      "note": "NOT rotated - although positions at beat 2 are 180 degrees from start, the return happens via rewinding/mirroring, not continued rotation."
+      "note": "NOT rotated - although placements at beat 2 are 180 degrees from start, the return happens via rewinding/mirroring, not continued rotation."
     }
   },
   "applications": {

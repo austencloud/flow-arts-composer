@@ -534,7 +534,7 @@
     backImageUrl={inspectedBackImageUrl}
     leftPropType={inspectedPair.renderMeta?.options.leftPropType}
     rightPropType={inspectedPair.renderMeta?.options.rightPropType}
-    includeStartPosition={true}
+    includeStartPlacement={true}
     onClose={closeInspector}
   />
 {/if}

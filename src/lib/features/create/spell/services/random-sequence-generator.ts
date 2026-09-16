@@ -8,7 +8,7 @@
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type {
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -16,13 +16,13 @@ import type { PictographData } from "$lib/shared/pictograph/shared/domain/models
 import type { VariationConstraints } from "../domain/models/spell-models";
 import type { RandomSequenceGenerationOptions } from "./types";
 import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import type { StartPositionValidator } from "./start-position-validator";
+import type { StartPlacementValidator } from "./start-placement-validator";
 import type { OrientationContinuityValidator } from "./orientation-continuity-validator";
 import type { SequenceExtender } from "../../shared/services/sequence-extender";
 import type { stepConverter as StepConverterSingleton } from "$lib/features/create/generate/shared/services/step-converter";
 type StepConverter = typeof StepConverterSingleton;
 import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
-import type { LOOPEndPositionResolver } from "./loop-end-position-resolver";
+import type { LOOPEndPlacementResolver } from "./loop-end-placement-resolver";
 import { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import { DifficultyLevel } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import type {
@@ -41,7 +41,7 @@ interface RandomWalkState {
   steps: StepData[];
   pictographs: PictographData[];
   letterIndex: number;
-  startPositionPictograph: PictographData;
+  startPlacementPictograph: PictographData;
   /** Track previous steps for constraint scoring (reversals, continuity) */
   previousConstraintSteps: ConstraintStep[];
   /** Valid candidate options at each step index (for backtracking) */
@@ -53,12 +53,12 @@ interface RandomWalkState {
 export class RandomSequenceGenerator {
   constructor(
     private letterQueryHandler: ILetterQueryHandler,
-    private startPositionValidator: StartPositionValidator,
+    private startPlacementValidator: StartPlacementValidator,
     private orientationContinuityValidator: OrientationContinuityValidator,
     private sequenceExtender: SequenceExtender,
     private stepConverter: StepConverter,
     private reversalDetector: ReversalDetector,
-    private loopEndPositionResolver: LOOPEndPositionResolver
+    private loopEndPlacementResolver: LOOPEndPlacementResolver
   ) {}
 
   async generateRandomSequence(
@@ -101,10 +101,10 @@ export class RandomSequenceGenerator {
           return sequence;
         }
       } catch (error) {
-        // If there are no valid start positions, retrying won't help
+        // If there are no valid start placements, retrying won't help
         if (
           error instanceof Error &&
-          error.message.includes("No valid start positions")
+          error.message.includes("No valid start placements")
         ) {
           console.error(
             `[RandomSequenceGenerator] Cannot generate sequence: ${error.message}`
@@ -176,28 +176,28 @@ export class RandomSequenceGenerator {
     if (!firstLetterVariation) return null;
 
     // Step 2: Get where that variation starts (e.g., "alpha3")
-    const requiredStartPosition = firstLetterVariation.startPosition;
+    const requiredStartPlacement = firstLetterVariation.startPlacement;
 
-    // Step 3: Validate that a Type 6 static letter exists at that position
-    // (The start position will be derived, not stored as a beat)
-    const validStartPositions = allPictographs.filter((p) => {
+    // Step 3: Validate that a Type 6 static letter exists at that placement
+    // (The start placement will be derived, not stored as a beat)
+    const validStartPlacements = allPictographs.filter((p) => {
       return (
-        this.startPositionValidator.isValidStartPosition(p) &&
-        p.startPosition === requiredStartPosition &&
-        p.endPosition === requiredStartPosition
+        this.startPlacementValidator.isValidStartPlacement(p) &&
+        p.startPlacement === requiredStartPlacement &&
+        p.endPlacement === requiredStartPlacement
       );
     });
 
-    if (validStartPositions.length === 0) {
+    if (validStartPlacements.length === 0) {
       console.warn(
-        `[RandomSequenceGenerator] No Type 6 static letter found at position ${requiredStartPosition} for letter ${firstLetter}`
+        `[RandomSequenceGenerator] No Type 6 static letter found at placement ${requiredStartPlacement} for letter ${firstLetter}`
       );
       return null;
     }
 
-    // Pick a random start position (Type 6 static letter)
-    const startPositionPictograph = this.pickRandom(validStartPositions);
-    if (!startPositionPictograph) return null;
+    // Pick a random start placement (Type 6 static letter)
+    const startPlacementPictograph = this.pickRandom(validStartPlacements);
+    if (!startPlacementPictograph) return null;
 
     // Step 4: Convert first letter variation to beat 1
     const firstLetterStep = this.stepConverter.convertToStep(
@@ -210,52 +210,52 @@ export class RandomSequenceGenerator {
     const firstConstraintStep =
       this.pictographToConstraintStep(firstLetterVariation);
 
-    // Compute valid LOOP end positions if a non-REWOUND LOOP type is selected
-    let validEndPositions: GridPosition[] = [];
+    // Compute valid LOOP end placements if a non-REWOUND LOOP type is selected
+    let validEndPlacements: GridPlacement[] = [];
     if (
       constraints?.requiresCircular &&
       constraints?.loopType &&
       constraints.loopType !== LOOPType.STRICT_REWOUND
     ) {
-      const startPos = startPositionPictograph.startPosition as GridPosition;
-      validEndPositions = this.loopEndPositionResolver.getValidEndPositions(
+      const startPos = startPlacementPictograph.startPlacement as GridPlacement;
+      validEndPlacements = this.loopEndPlacementResolver.getValidEndPlacements(
         startPos,
         constraints.loopType
       );
     }
 
-    // For single-letter words with LOOP constraint, filter first letter by end position
-    if (letters.length === 1 && validEndPositions.length > 0) {
-      const endPosMatches = validEndPositions.includes(
-        firstLetterVariation.endPosition as GridPosition
+    // For single-letter words with LOOP constraint, filter first letter by end placement
+    if (letters.length === 1 && validEndPlacements.length > 0) {
+      const endPosMatches = validEndPlacements.includes(
+        firstLetterVariation.endPlacement as GridPlacement
       );
       if (!endPosMatches) {
-        // First letter doesn't end at a valid LOOP position - abort this attempt
+        // First letter doesn't end at a valid LOOP placement - abort this attempt
         return null;
       }
     }
 
-    // Initialize walk state with first letter and start position
+    // Initialize walk state with first letter and start placement
     const state: RandomWalkState = {
       steps: [firstLetterStep],
       pictographs: [firstLetterVariation],
       letterIndex: 1, // Start from second letter (index 1) since first is already placed
-      startPositionPictograph,
+      startPlacementPictograph,
       previousConstraintSteps: [firstConstraintStep],
       candidatesPerStep: [], // Index 0 = first letter (not tracked for backtracking)
       chosenIndicesPerStep: [],
     };
 
-    // Walk through remaining letters with LOOP-aware end position constraint
+    // Walk through remaining letters with LOOP-aware end placement constraint
     while (state.letterIndex < letters.length) {
       if (signal?.aborted) {
         return null;
       }
 
       const isLastLetter = state.letterIndex === letters.length - 1;
-      const endPositionFilter =
-        isLastLetter && validEndPositions.length > 0
-          ? validEndPositions
+      const endPlacementFilter =
+        isLastLetter && validEndPlacements.length > 0
+          ? validEndPlacements
           : undefined;
 
       const success = this.walkNextLetter(
@@ -265,12 +265,12 @@ export class RandomSequenceGenerator {
         allPictographs,
         constraints,
         constraintSet,
-        endPositionFilter,
+        endPlacementFilter,
         level,
         turnIntensity
       );
 
-      if (!success && isLastLetter && validEndPositions.length > 0) {
+      if (!success && isLastLetter && validEndPlacements.length > 0) {
         // Last letter failed with LOOP constraint - try backtracking
         const backtrackSuccess = this.backtrackAndRetry(
           letters,
@@ -279,7 +279,7 @@ export class RandomSequenceGenerator {
           allPictographs,
           constraints,
           constraintSet,
-          validEndPositions,
+          validEndPlacements,
           3, // max backtrack depth
           level,
           turnIntensity
@@ -294,11 +294,11 @@ export class RandomSequenceGenerator {
       state.letterIndex++;
     }
 
-    // Build final sequence with proper start position for orientation propagation
+    // Build final sequence with proper start placement for orientation propagation
     const sequence = this.buildSequence(
       state.steps,
       gridMode,
-      state.startPositionPictograph,
+      state.startPlacementPictograph,
       letterSources
     );
 
@@ -322,7 +322,7 @@ export class RandomSequenceGenerator {
     allPictographs: PictographData[],
     constraints?: VariationConstraints,
     constraintSet?: ConstraintSet,
-    requiredEndPositions?: GridPosition[],
+    requiredEndPlacements?: GridPlacement[],
     level?: DifficultyLevel,
     turnIntensity?: number
   ): boolean {
@@ -335,15 +335,15 @@ export class RandomSequenceGenerator {
     // Get all variations for this letter
     const variations = allPictographs.filter((p) => p.letter === letter);
 
-    // Filter by position continuity, constraints, and level
-    const lastEndPosition = lastPictograph.endPosition;
+    // Filter by placement continuity, constraints, and level
+    const lastEndPlacement = lastPictograph.endPlacement;
 
     let validOptions = variations.filter((pictograph) => {
-      // Check position continuity: next beat must start where last beat ended
-      const nextStartPosition = pictograph.startPosition;
+      // Check placement continuity: next beat must start where last beat ended
+      const nextStartPlacement = pictograph.startPlacement;
 
-      if (lastEndPosition !== nextStartPosition) {
-        return false; // Position break - invalid transition
+      if (lastEndPlacement !== nextStartPlacement) {
+        return false; // Placement break - invalid transition
       }
 
       // Apply constraints
@@ -359,10 +359,10 @@ export class RandomSequenceGenerator {
       return true;
     });
 
-    // Apply LOOP end position filter for the last letter
-    if (requiredEndPositions && requiredEndPositions.length > 0) {
+    // Apply LOOP end placement filter for the last letter
+    if (requiredEndPlacements && requiredEndPlacements.length > 0) {
       validOptions = validOptions.filter((p) =>
-        requiredEndPositions.includes(p.endPosition as GridPosition)
+        requiredEndPlacements.includes(p.endPlacement as GridPlacement)
       );
     }
 
@@ -407,14 +407,14 @@ export class RandomSequenceGenerator {
   /**
    * Backtrack up to `maxDepth` steps and re-walk forward, trying different
    * variation choices at each depth to find a path where the last letter
-   * ends at a valid LOOP position.
+   * ends at a valid LOOP placement.
    *
    * At each depth d (1..maxDepth):
    *   1. Pop d steps from state (steps, pictographs, constraintSteps, candidates, chosen)
    *   2. For each previously-unchosen alternative at the new last popped step, try:
    *      a. Re-place that step with the alternative
    *      b. Re-walk forward from there through remaining letters
-   *      c. If the last letter succeeds with the end position constraint, return true
+   *      c. If the last letter succeeds with the end placement constraint, return true
    *   3. If all alternatives exhausted at this depth, try next depth
    *
    * Returns true if a valid path was found (state is updated in place).
@@ -428,7 +428,7 @@ export class RandomSequenceGenerator {
     allPictographs: PictographData[],
     constraints: VariationConstraints | undefined,
     constraintSet: ConstraintSet | undefined,
-    validEndPositions: GridPosition[],
+    validEndPlacements: GridPlacement[],
     maxDepth: number,
     level?: DifficultyLevel,
     turnIntensity?: number
@@ -522,8 +522,8 @@ export class RandomSequenceGenerator {
         while (state.letterIndex < letters.length) {
           const isLastLetter = state.letterIndex === letters.length - 1;
           const endFilter =
-            isLastLetter && validEndPositions.length > 0
-              ? validEndPositions
+            isLastLetter && validEndPlacements.length > 0
+              ? validEndPlacements
               : undefined;
 
           const walked = this.walkNextLetter(
@@ -706,8 +706,8 @@ export class RandomSequenceGenerator {
       rightMotionType: rightMotion?.motionType ?? "static",
       leftPropRotation: leftMotion?.rotationDirection ?? "cw",
       rightPropRotation: rightMotion?.rotationDirection ?? "cw",
-      startPosition: pictograph.startPosition ?? "",
-      endPosition: pictograph.endPosition ?? "",
+      startPlacement: pictograph.startPlacement ?? "",
+      endPlacement: pictograph.endPlacement ?? "",
       // Location data for hand path constraint
       leftStartLocation: leftMotion?.startLocation ?? "",
       leftEndLocation: leftMotion?.endLocation ?? "",
@@ -727,8 +727,8 @@ export class RandomSequenceGenerator {
 
     return {
       letter: pictograph.letter ?? "",
-      startPosition: pictograph.startPosition ?? "",
-      endPosition: pictograph.endPosition ?? "",
+      startPlacement: pictograph.startPlacement ?? "",
+      endPlacement: pictograph.endPlacement ?? "",
       timing: "", // PictographData doesn't have timing - only available on compound letters
       direction: "", // PictographData doesn't have direction - only available on compound letters
       leftMotion: {
@@ -760,8 +760,8 @@ export class RandomSequenceGenerator {
   ): ConstraintPictographData {
     return {
       letter: step.letter,
-      startPosition: step.startPosition,
-      endPosition: step.endPosition,
+      startPlacement: step.startPlacement,
+      endPlacement: step.endPlacement,
       timing: "",
       direction: "",
       leftMotion: {
@@ -887,7 +887,7 @@ export class RandomSequenceGenerator {
   private buildSequence(
     steps: StepData[],
     gridMode: GridMode,
-    startPositionPictograph: PictographData,
+    startPlacementPictograph: PictographData,
     letterSources?: Array<{
       letter: Letter;
       isOriginal: boolean;
@@ -900,20 +900,20 @@ export class RandomSequenceGenerator {
       .filter((letter) => letter)
       .join("");
 
-    // Convert the start position pictograph to StartPositionData
-    const startPosition = this.stepConverter.convertToStartPosition(
-      startPositionPictograph,
+    // Convert the start placement pictograph to StartPlacementData
+    const startPlacement = this.stepConverter.convertToStartPlacement(
+      startPlacementPictograph,
       gridMode
     );
 
-    // Create the initial sequence with start position
+    // Create the initial sequence with start placement
     let sequence = createSequenceData({
       steps,
       name: word,
       word: word,
       gridMode,
       isCircular: false,
-      startPosition,
+      startPlacement,
       metadata: {
         generatedAt: new Date().toISOString(),
         generationMethod: "random-walk",
@@ -927,7 +927,7 @@ export class RandomSequenceGenerator {
     });
 
     // Recalculate all orientations using proper propagation
-    // This uses the start position's end orientations as the baseline
+    // This uses the start placement's end orientations as the baseline
     // and calculates each step's end orientation based on motion type
     sequence = recalculateAllOrientations(sequence);
 
@@ -1033,19 +1033,19 @@ export class RandomSequenceGenerator {
 // DIRECT SINGLETON EXPORT
 // ============================================================================
 import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import { startPositionValidator } from "./start-position-validator";
+import { startPlacementValidator } from "./start-placement-validator";
 import * as orientationContinuityValidator from "./orientation-continuity-validator";
 import { sequenceExtender } from "$lib/features/create/shared/services/sequence-extender";
 import { stepConverter } from "$lib/features/create/generate/shared/services/step-converter";
 import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import * as loopEndPositionResolver from "./loop-end-position-resolver";
+import * as loopEndPlacementResolver from "./loop-end-placement-resolver";
 
 export const randomSequenceGenerator = new RandomSequenceGenerator(
   letterQueryHandler,
-  startPositionValidator,
+  startPlacementValidator,
   orientationContinuityValidator,
   sequenceExtender,
   stepConverter,
   reversalDetector,
-  loopEndPositionResolver
+  loopEndPlacementResolver
 );

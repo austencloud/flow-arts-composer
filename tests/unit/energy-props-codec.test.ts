@@ -46,9 +46,9 @@ function withProp(source: SequenceData, propType: PropType): SequenceData {
 
   return {
     ...source,
-    startPosition: source.startPosition
-      ? repaint(source.startPosition)
-      : source.startPosition,
+    startPlacement: source.startPlacement
+      ? repaint(source.startPlacement)
+      : source.startPlacement,
     steps: source.steps.map(repaint),
   } as SequenceData;
 }
@@ -107,8 +107,8 @@ describe("current codec round trip", () => {
     );
     const decoded = decodeSequence(encodeSequence(source));
 
-    expect(decoded.startPosition?.motions.left?.propType).toBe(prop);
-    expect(decoded.startPosition?.motions.right?.propType).toBe(prop);
+    expect(decoded.startPlacement?.motions.left?.propType).toBe(prop);
+    expect(decoded.startPlacement?.motions.right?.propType).toBe(prop);
     expect(decoded.steps[0]?.motions.left.propType).toBe(prop);
     expect(decoded.steps[0]?.motions.right.propType).toBe(prop);
   });
@@ -119,10 +119,10 @@ describe("current codec round trip", () => {
     // ever appear in the same payload, so this is where a swapped or shared
     // code would show up.
     const source = await decodeSequenceFromQR(PRODUCTION_FLAT_QR);
-    const start = source.startPosition!;
+    const start = source.startPlacement!;
     const mixed = {
       ...source,
-      startPosition: {
+      startPlacement: {
         ...start,
         motions: {
           ...start.motions,
@@ -133,10 +133,10 @@ describe("current codec round trip", () => {
     } as SequenceData;
 
     const decoded = decodeSequence(encodeSequence(mixed));
-    expect(decoded.startPosition?.motions.left?.propType).toBe(
+    expect(decoded.startPlacement?.motions.left?.propType).toBe(
       PropType.ENERGY_SABER
     );
-    expect(decoded.startPosition?.motions.right?.propType).toBe(
+    expect(decoded.startPlacement?.motions.right?.propType).toBe(
       PropType.ENERGY_STAFF
     );
     expect(decoded.steps[0]?.motions.left.propType).toBe(PropType.ENERGY_SABER);
@@ -159,8 +159,8 @@ describe("legacy codec round trip", () => {
     expect(detectLegacySequenceFormat(encoded)).toBe(format);
 
     const decoded = decodeLegacySequence(encoded);
-    expect(decoded.startPosition?.motions.left?.propType).toBe(prop);
-    expect(decoded.startPosition?.motions.right?.propType).toBe(prop);
+    expect(decoded.startPlacement?.motions.left?.propType).toBe(prop);
+    expect(decoded.startPlacement?.motions.right?.propType).toBe(prop);
     // Re-encoding is stable, so an old link keeps its exact bytes.
     expect(encodeLegacySequence(decoded, format)).toBe(encoded);
   });
@@ -173,10 +173,10 @@ describe("legacy codec round trip", () => {
       );
       const viaLegacy = decodeLegacySequence(encodeLegacySequence(source, 3));
       const viaCurrent = decodeSequence(encodeSequence(source));
-      expect(viaLegacy.startPosition?.motions.left?.propType).toBe(
-        viaCurrent.startPosition?.motions.left?.propType
+      expect(viaLegacy.startPlacement?.motions.left?.propType).toBe(
+        viaCurrent.startPlacement?.motions.left?.propType
       );
-      expect(viaLegacy.startPosition?.motions.left?.propType).toBe(prop);
+      expect(viaLegacy.startPlacement?.motions.left?.propType).toBe(prop);
     }
   });
 });

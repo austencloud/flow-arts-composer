@@ -63,8 +63,8 @@ interface MotionLike {
 }
 
 interface StepLike {
-  startPosition?: string;
-  endPosition?: string;
+  startPlacement?: string;
+  endPlacement?: string;
   motions?: Record<string, MotionLike | undefined>;
   plane?: string;
 }
@@ -99,8 +99,8 @@ export function detectLevelFeatures(sequence: SequenceData): LevelFeatureReport 
 function scanStep(step: StepLike, note: (level: number, feature: string) => void): void {
   if (step.plane) note(8, `step.plane:${step.plane}`);
 
-  if (step.startPosition) scanPosition(step.startPosition, note);
-  if (step.endPosition) scanPosition(step.endPosition, note);
+  if (step.startPlacement) scanPosition(step.startPlacement, note);
+  if (step.endPlacement) scanPosition(step.endPlacement, note);
 
   const motions = step.motions ?? {};
   for (const color of Object.keys(motions)) {

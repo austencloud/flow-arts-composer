@@ -181,7 +181,7 @@
         shortLabel: "Letters",
       },
       {
-        value: "start-position",
+        value: "start-placement",
         label: "Pick a start position",
         shortLabel: "Position",
       },

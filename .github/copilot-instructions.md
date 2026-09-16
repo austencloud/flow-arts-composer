@@ -324,7 +324,7 @@ border: 1.5px solid var(--theme-stroke, rgba(255, 255, 255, 0.1));
 **Current test files in `tests/unit/`:**
 
 - `DimensionCalculationService.test.ts` - Export dimension math
-- `GridPositionDeriver.test.ts` - Grid position calculations
+- `GridPlacementDeriver.test.ts` - Grid position calculations
 - `ReversalDetectionService.test.ts` - Prop reversal detection
 - `DataTransformer.test.ts` - Pictograph data transforms
 

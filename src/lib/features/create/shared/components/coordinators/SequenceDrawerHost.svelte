@@ -175,8 +175,8 @@ import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orche
   const currentLetter = $derived.by(() => {
     if (!animationPanelState.sequenceData) return null;
     const currentStep = animationPanelState.currentStep;
-    if (currentStep < 1 && animationPanelState.sequenceData.startPosition) {
-      return animationPanelState.sequenceData.startPosition.letter || null;
+    if (currentStep < 1 && animationPanelState.sequenceData.startPlacement) {
+      return animationPanelState.sequenceData.startPlacement.letter || null;
     }
     if (animationPanelState.sequenceData.steps?.length > 0) {
       const stepNumber = Math.ceil(currentStep - 1);
@@ -196,8 +196,8 @@ import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orche
   const currentStepData = $derived.by(() => {
     if (!animationPanelState.sequenceData) return null;
     const currentStep = animationPanelState.currentStep;
-    if (currentStep < 1 && animationPanelState.sequenceData.startPosition) {
-      return animationPanelState.sequenceData.startPosition;
+    if (currentStep < 1 && animationPanelState.sequenceData.startPlacement) {
+      return animationPanelState.sequenceData.startPlacement;
     }
     if (animationPanelState.sequenceData.steps?.length > 0) {
       const stepNumber = Math.ceil(currentStep - 1);
@@ -321,7 +321,7 @@ import { getExportOrchestrator } from "$lib/shared/export-panel/get-export-orche
   function getSequenceHash(seq: SequenceData | null): string | null {
     if (!seq) return null;
     const durations = seq.steps?.map(b => b.duration ?? 1).join(',') || '';
-    const sp = seq.startPosition;
+    const sp = seq.startPlacement;
     const spPrint = `${motionPrint(sp?.motions?.left)}-${motionPrint(sp?.motions?.right)}`;
     const last = seq.steps?.[seq.steps.length - 1];
     const lastPrint = `${motionPrint(last?.motions?.left)}-${motionPrint(last?.motions?.right)}`;

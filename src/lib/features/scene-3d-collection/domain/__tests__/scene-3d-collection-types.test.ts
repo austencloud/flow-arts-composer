@@ -244,7 +244,7 @@ describe("Scene3DFilmSchema", () => {
       fps: 60,
       resolution: 1080,
       quality: "standard" as const,
-      includeStartPosition: true,
+      includeStartPlacement: true,
       includeEndHold: true,
     },
     autoSaved: true,

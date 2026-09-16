@@ -19,21 +19,21 @@ import {
   Orientation,
   RotationDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { GridLocation, GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridLocation, GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
 function step(
   stepNumber: number,
-  startPosition: GridPosition | null,
-  endPosition: GridPosition | null,
+  startPlacement: GridPlacement | null,
+  endPlacement: GridPlacement | null,
   left: Partial<Parameters<typeof createMotionData>[0]>,
   right: Partial<Parameters<typeof createMotionData>[0]>,
 ): StepData {
   return {
     id: `step-${stepNumber}`,
     stepNumber,
-    startPosition,
-    endPosition,
+    startPlacement,
+    endPlacement,
     duration: 1,
     leftReversal: false,
     rightReversal: false,
@@ -58,22 +58,22 @@ const RED_STATIC = {
 /** Start position + the 3-beat YΦΔ seed (gamma13 → gamma5), all zero turns. */
 function zeroTurnMirrorSeed(): StepData[] {
   return [
-    step(0, GridPosition.GAMMA13, GridPosition.GAMMA13,
+    step(0, GridPlacement.GAMMA13, GridPlacement.GAMMA13,
       { motionType: MotionType.STATIC, turns: 0, rotationDirection: RotationDirection.NO_ROTATION,
         startLocation: GridLocation.WEST, endLocation: GridLocation.WEST,
         startOrientation: Orientation.IN, endOrientation: Orientation.IN },
       RED_STATIC),
-    step(1, GridPosition.GAMMA13, GridPosition.BETA5,
+    step(1, GridPlacement.GAMMA13, GridPlacement.BETA5,
       { motionType: MotionType.PRO, turns: 0, rotationDirection: RotationDirection.COUNTER_CLOCKWISE,
         startLocation: GridLocation.WEST, endLocation: GridLocation.SOUTH,
         startOrientation: Orientation.IN, endOrientation: Orientation.IN },
       RED_STATIC),
-    step(2, GridPosition.BETA5, GridPosition.ALPHA5,
+    step(2, GridPlacement.BETA5, GridPlacement.ALPHA5,
       { motionType: MotionType.DASH, turns: 0, rotationDirection: RotationDirection.NO_ROTATION,
         startLocation: GridLocation.SOUTH, endLocation: GridLocation.NORTH,
         startOrientation: Orientation.IN, endOrientation: Orientation.OUT },
       RED_STATIC),
-    step(3, GridPosition.ALPHA5, GridPosition.GAMMA5,
+    step(3, GridPlacement.ALPHA5, GridPlacement.GAMMA5,
       { motionType: MotionType.ANTI, turns: 0, rotationDirection: RotationDirection.COUNTER_CLOCKWISE,
         startLocation: GridLocation.NORTH, endLocation: GridLocation.EAST,
         startOrientation: Orientation.OUT, endOrientation: Orientation.IN },
@@ -90,8 +90,8 @@ describe("StrictMirroredLOOPExecutor quartered guard", () => {
     expect(letters).toHaveLength(6);
 
     // And it genuinely closes: last beat returns to the start position.
-    expect(out[0]!.startPosition).toBe(GridPosition.GAMMA13);
-    expect(letters[letters.length - 1]!.endPosition).toBe(GridPosition.GAMMA13);
+    expect(out[0]!.startPlacement).toBe(GridPlacement.GAMMA13);
+    expect(letters[letters.length - 1]!.endPlacement).toBe(GridPlacement.GAMMA13);
   });
 
   it("still produces a full period-2 mirror when halved is requested", () => {

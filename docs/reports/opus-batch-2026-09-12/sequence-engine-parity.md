@@ -34,7 +34,7 @@ with that scope.
 Four findings, in descending order of how much they should change the plan:
 
 - **D1 (app defect).** `mirrored_swapped_inverted` and
-  `mirrored_rotated_inverted_swapped` produce steps whose stored `endPosition`
+  `mirrored_rotated_inverted_swapped` produce steps whose stored `endPlacement`
   contradicts their own hands' end locations, so the LOOP never returns to its
   start position. This is wrong under *any* LOOP algebra — it is not a
   disagreement with the engine. The engine gets these right.
@@ -69,7 +69,7 @@ Several of their load-bearing statements no longer describe the tree.
 | "`MotionData` is defined twice", "two parallel sequence-step type systems" | Already unified. `StepData extends Step` from `@tka/tka-types`, with a compile-time `Assert` proving it (`src/lib/shared/foundation/domain/models/step-data.ts`). Engine `SequenceStep`/`MotionData` are deprecated aliases for `Step`/`Motion`. |
 | "app-side `Strict*` executors are a straight copy of the engine's" | No longer true. The engine replaced per-type executor classes with a compositional `LOOPSpec` + `FusedExecutor` pipeline (`loop-spec.ts`, `spec-executor.ts`). The two sides now use *different algorithms*, not drifted copies. |
 | "MCP vendored copies in `mcp-server/`, `mcp-server-pkg/`, `deployment/functions/broadcast/`" | No vendored `loop-executor` remains anywhere, and `deployment/` no longer exists in the tree, so Phases 4 and 5 are effectively done **for LOOP execution**. But `mcp-server-pkg/vendor/sequence-engine/` is still tracked (6 files) and still imported — `OrientationPropagator`, `TransitionGraph`, `SequenceEngineTypes`, `ISequenceDataProvider`. Phase 4.B's "delete the entire vendor dir" is therefore not done. |
-| position maps duplicated app-side | Already collapsed: `src/lib/features/create/generate/circular/domain/constants/strict-loop-position-maps.ts` is a 28-line pure re-export of the engine's. |
+| position maps duplicated app-side | Already collapsed: `src/lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps.ts` is a 28-line pure re-export of the engine's. |
 
 What is *not* unified, and is the real Phase 3 surface:
 
@@ -119,7 +119,7 @@ dated from the repository.
 - **Fixtures.** Seeds are real rows from `static/data/pictographs/{Diamond,Box}PictographDataframe.csv`
   — the same canonical dataframes the engine's own integration tests and the
   app's variation provider read. Nothing is synthesised. Chains are formed only
-  where one row's `endPosition` equals the next row's `startPosition`.
+  where one row's `endPlacement` equals the next row's `startPlacement`.
   `blue → left`, `red → right`, matching `@tka/tka-types`' `HandSide` contract
   and `packages/sequence-engine/tests/integration/loop-grid-mode-start.test.ts`.
 - **Determinism.** Chain enumeration is CSV-ordered and breadth-first across
@@ -133,7 +133,7 @@ dated from the repository.
   gate, not a transform difference — that is reported separately (§5.5).
 - **Non-circular expectations.** Divergences are never scored by "the engine is
   right". Each side is independently checked against
-  `checkStepCoherence` (a step's `endPosition` must equal the grid position of
+  `checkStepCoherence` (a step's `endPlacement` must equal the grid position of
   its own two hands' end locations; positions and hand locations must chain)
   and `positionCloses`. Those are implementation-independent, so they identify
   *which* side is wrong.
@@ -143,7 +143,7 @@ computed over this projection and nothing else
 (`tests/unit/opus-sequence-parity/harness/parity-diff.ts`):
 
 - **Compared, and a difference counts as divergence:** output length, and per
-  step `startPosition`, `endPosition`, `stepNumber`, plus for each of
+  step `startPlacement`, `endPlacement`, `stepNumber`, plus for each of
   `motions.left` and `motions.right` — `motionType`, `startLocation`,
   `endLocation`, `rotationDirection`, `turns`, `startOrientation`,
   `endOrientation`, `prefloatMotionType`, `prefloatRotationDirection`.
@@ -248,7 +248,7 @@ ENGINE [2] α   alpha3→alpha3  L:w→w  R:e→e
 
 Both hands are static with zero turns, so the derived pass cannot move
 anything; the app nonetheless labels the result `alpha7`. Hands at `w`/`e`
-**are** `alpha3` — `getGridPositionFromLocations("w","e") === "alpha3"` — so the
+**are** `alpha3` — `getGridPlacementFromLocations("w","e") === "alpha3"` — so the
 app's step contradicts itself, and the LOOP never returns home.
 
 **Root cause.** `mirrored-swapped-inverted-loop-executor.ts:245`
@@ -302,7 +302,7 @@ period as `ROTATED` with no mirror/flip, so it **skips the separate
 `StrictRotatedExecutor` stage** and lets `FusedExecutor` rotate implicitly.
 `FusedExecutor.execute` alternates transform and copy passes, and
 `createCopiedStep` takes its start locations from the previous step but reuses
-the **source** step's `endLocation` and `endPosition`. That is sound only when
+the **source** step's `endLocation` and `endPlacement`. That is sound only when
 the preceding pass returned to the seed's start position — true for
 mirror/flip/swap/invert, false once rotation is absorbed into the same group.
 

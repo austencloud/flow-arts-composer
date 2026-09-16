@@ -20,7 +20,7 @@
  * `(requested − (−90)) / 45` compass steps, where a key without an `o` token
  * requests SpiroAnim's default view for its ratio. 8stp has no orientation axis and is
  * never rotated. The rotation itself goes through the canonical
- * position ↔ hand-location owner (`grid-position-deriver`), so a 45° step that
+ * position ↔ hand-location owner (`grid-placement-deriver`), so a 45° step that
  * lands on intercardinal points produces the real box-grid position names.
  */
 
@@ -30,11 +30,11 @@ import {
   type SpiroAnimOrientation,
 } from "./cell-key";
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
-  getGridLocationsFromPosition,
-  getGridPositionFromLocations,
-} from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  getGridLocationsFromPlacement,
+  getGridPlacementFromLocations,
+} from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 
 /** The orientation the whole transcription corpus was captured at. */
 export const TRANSCRIPTION_BASELINE_ORIENTATION: SpiroAnimOrientation = -90;
@@ -93,7 +93,7 @@ export function rotatePositionName(position: string, steps: number): string | nu
   let left: GridLocation;
   let right: GridLocation;
   try {
-    [left, right] = getGridLocationsFromPosition(position as GridPosition);
+    [left, right] = getGridLocationsFromPlacement(position as GridPlacement);
   } catch {
     return null;
   }
@@ -101,7 +101,7 @@ export function rotatePositionName(position: string, steps: number): string | nu
   const rotatedRight = rotateLocation(right, steps);
   if (!rotatedLeft || !rotatedRight) return null;
   try {
-    return getGridPositionFromLocations(rotatedLeft, rotatedRight);
+    return getGridPlacementFromLocations(rotatedLeft, rotatedRight);
   } catch {
     return null;
   }

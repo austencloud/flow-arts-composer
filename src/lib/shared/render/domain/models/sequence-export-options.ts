@@ -4,9 +4,9 @@ import type { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
 import type { MandalaPathShape } from "$lib/shared/mandala/domain/mandala-types";
 
 export interface SequenceExportOptions {
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   /** "row" = start position as top row, "column" = start position as left column */
-  startPositionLayout?: "row" | "column";
+  startPlacementLayout?: "row" | "column";
   addStepNumbers: boolean;
   addReversalSymbols: boolean;
   /** @deprecated Footer visibility is now derived from individual flags. */
@@ -70,7 +70,7 @@ export interface SequenceExportOptions {
     showElemental?: boolean;
     /** Prop timing-and-direction element (top-right, dashed ring). Default: false. */
     showPropTnD?: boolean;
-    showPositions?: boolean;
+    showPlacements?: boolean;
     /** L/R colour key on the start cell. Default: true. */
     showHandColorKey?: boolean;
     showReversals?: boolean;
@@ -179,7 +179,7 @@ export interface LayoutData {
   columns: number;
   rows: number;
   stepSize: number;
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   additionalHeightTop: number;
   additionalHeightBottom: number;
 }

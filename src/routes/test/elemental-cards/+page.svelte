@@ -74,8 +74,8 @@
       const seq = sequences[0]!;
       const options: PrintRenderOptions = {
         showMandala: true,
-        includeStartPosition: true,
-        startPositionLayout: "row",
+        includeStartPlacement: true,
+        startPlacementLayout: "row",
         tndElement: el,
         notes: el.name,
         iconPath: el.iconPath,

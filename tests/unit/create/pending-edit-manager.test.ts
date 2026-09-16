@@ -29,7 +29,7 @@ describe("Remix into an already mounted Create workspace", () => {
     let pending: SequenceData | null = null;
     const setCurrentSequence = vi.fn();
     const syncPickerStateWithSequence = vi.fn();
-    const setShowStartPositionPicker = vi.fn();
+    const setShowStartPlacementPicker = vi.fn();
     const loadFromPendingEdit = vi.fn(
       async (apply: (sequence: SequenceData) => void) => {
         if (!pending) return { loaded: false };
@@ -49,7 +49,7 @@ describe("Remix into an already mounted Create workspace", () => {
         ({
           sequenceState: { setCurrentSequence },
           syncPickerStateWithSequence,
-          setShowStartPositionPicker,
+          setShowStartPlacementPicker,
         }) as unknown as ConstructTabState,
       isServicesInitialized: () => true,
     });
@@ -71,7 +71,7 @@ describe("Remix into an already mounted Create workspace", () => {
 
     expect(loadFromPendingEdit).toHaveBeenCalledTimes(2);
     expect(syncPickerStateWithSequence).toHaveBeenCalledTimes(2);
-    expect(setShowStartPositionPicker).toHaveBeenLastCalledWith(false);
+    expect(setShowStartPlacementPicker).toHaveBeenLastCalledWith(false);
     viewerState.isOpen = true;
     flushSync();
     viewerState.isOpen = false;

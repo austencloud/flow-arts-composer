@@ -49,24 +49,24 @@
 
   /**
    * Get the Greek letter (α, β, γ) for the start position phase.
-   * Uses the sequence prop which has startingPositionGroup preserved.
+   * Uses the sequence prop which has startingPlacementGroup preserved.
    */
-  function getStartPositionLetter(): Letter | null {
-    // Use sequence prop - it has startingPositionGroup preserved
+  function getStartPlacementLetter(): Letter | null {
+    // Use sequence prop - it has startingPlacementGroup preserved
     // (animationState.sequenceData loses this field during processing)
     const seq = sequence;
     if (!seq) return null;
 
-    // 1. Derive from startingPositionGroup (most reliable)
-    if (seq.startingPositionGroup) {
-      const group = seq.startingPositionGroup.toLowerCase();
+    // 1. Derive from startingPlacementGroup (most reliable)
+    if (seq.startingPlacementGroup) {
+      const group = seq.startingPlacementGroup.toLowerCase();
       if (group === "alpha") return Letter.ALPHA;
       if (group === "beta") return Letter.BETA;
       if (group === "gamma") return Letter.GAMMA;
     }
 
-    // 2. Check if startPosition.letter is already a valid Greek letter
-    const spLetter = seq.startPosition?.letter;
+    // 2. Check if startPlacement.letter is already a valid Greek letter
+    const spLetter = seq.startPlacement?.letter;
     if (
       spLetter === Letter.ALPHA ||
       spLetter === Letter.BETA ||
@@ -75,10 +75,10 @@
       return spLetter;
     }
 
-    // 3. Derive from first beat's startPosition field (GridPosition like "alpha1")
+    // 3. Derive from first beat's startPlacement field (GridPlacement like "alpha1")
     const firstStep = seq.steps?.[0];
     if (firstStep) {
-      const startPos = firstStep.startPosition || (firstStep as any).startPos;
+      const startPos = firstStep.startPlacement || (firstStep as any).startPos;
       if (startPos && typeof startPos === "string") {
         const posLower = startPos.toLowerCase();
         if (posLower.startsWith("alpha")) return Letter.ALPHA;
@@ -92,14 +92,14 @@
 
   /**
    * Greek letter (α, β, γ) for the FINAL held position — mirror of
-   * getStartPositionLetter for the end-hold phase. At the End the hand isn't
+   * getStartPlacementLetter for the end-hold phase. At the End the hand isn't
    * mid-letter; it holds the last step's end position, so the glyph should read
    * that position, not the previous step's letter.
    */
-  function getEndPositionLetter(): Letter | null {
+  function getEndPlacementLetter(): Letter | null {
     const steps = sequence?.steps;
     const lastStep = steps?.[steps.length - 1];
-    const endPos = lastStep?.endPosition || (lastStep as any)?.endPos;
+    const endPos = lastStep?.endPlacement || (lastStep as any)?.endPos;
     if (endPos && typeof endPos === "string") {
       const posLower = endPos.toLowerCase();
       if (posLower.startsWith("alpha")) return Letter.ALPHA;
@@ -131,7 +131,7 @@
     disassemblyTarget = null,
     onDisassemblyTargetChange = undefined,
     showWordHeader = false,
-    showPositionGlyph = false,
+    showPlacementGlyph = false,
     onStepChange = undefined,
     onSeekRef = undefined,
     scrubbable = false,
@@ -212,7 +212,7 @@
      * canvas. Educational overlay the guide turns on for hand-path exploration;
      * off by default so gallery/Arena embeds are unaffected.
      */
-    showPositionGlyph?: boolean;
+    showPlacementGlyph?: boolean;
     /**
      * Maximize the canvas: fill the whole container instead of reserving
      * vertical overhead for a header + progress pill. Minimal chrome hides both
@@ -248,8 +248,8 @@
      */
     singlePlay?: boolean;
     /**
-     * Show the canvas's Start/End text overlay (GlyphOverlay's isAtStartPosition/
-     * isAtEndPosition indicator). On by default (unchanged for every existing
+     * Show the canvas's Start/End text overlay (GlyphOverlay's isAtStartPlacement/
+     * isAtEndPlacement indicator). On by default (unchanged for every existing
      * caller); the guide showcase turns it off — the on-screen strip already
      * labels "Start"/steps, so the canvas overlay is redundant there.
      */
@@ -481,7 +481,7 @@
   // Derived state for canvas
   // Letters are a PROP-only glyph — a hand pictograph never shows one (a hand has
   // no thumb/pinky reference to letter). When this player renders hands, suppress
-  // the letter overlay entirely (start-position Greek letter + per-step letter).
+  // the letter overlay entirely (start-placement Greek letter + per-step letter).
   // Prop/staff renders (gallery, Arena) pass a non-hand type → unchanged.
   const isHandRender = $derived(
     (leftPropType ?? "").toLowerCase() === "hand" ||
@@ -495,7 +495,7 @@
 
     // At start position phase (before beat 1) - show Greek letter (α, β, γ)
     if (currentStep < 1) {
-      return getStartPositionLetter();
+      return getStartPlacementLetter();
     }
 
     // At the end-hold (freeform sequences pause on the final position before
@@ -503,7 +503,7 @@
     // letter. Loopable sequences wrap before reaching here so this stays inert.
     const stepCount = animationState.sequenceData.steps?.length ?? 0;
     if (stepCount > 0 && currentStep >= stepCount + 0.99) {
-      return getEndPositionLetter();
+      return getEndPlacementLetter();
     }
 
     if (animationState.sequenceData.steps?.length > 0) {
@@ -523,8 +523,8 @@
     if (!animationState.sequenceData) return null;
     const currentStep = animationState.currentStep;
 
-    if (currentStep < 1 && animationState.sequenceData.startPosition) {
-      return animationState.sequenceData.startPosition;
+    if (currentStep < 1 && animationState.sequenceData.startPlacement) {
+      return animationState.sequenceData.startPlacement;
     }
 
     if (animationState.sequenceData.steps?.length > 0) {
@@ -803,7 +803,7 @@
   }
 
   // Single-play "ended" check: past the final beat's motion (mirrors the
-  // currentLetter/getEndPositionLetter end-hold check above).
+  // currentLetter/getEndPlacementLetter end-hold check above).
   function isAtEnd(): boolean {
     const stepCount = animationState.sequenceData?.steps?.length ?? 0;
     return stepCount > 0 && animationState.currentStep >= stepCount + 0.99;
@@ -942,7 +942,7 @@
         {leftPropType}
         {rightPropType}
         {primaryPropColors}
-        positionGlyphVisible={showPositionGlyph}
+        placementGlyphVisible={showPlacementGlyph}
         {propElementalType}
         {glyphFrame}
         tapToToggle={minimal && interactive}

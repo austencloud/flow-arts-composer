@@ -85,9 +85,9 @@
     }
 
     const hasStep = sequence.steps && sequence.steps.length > 0;
-    const hasStartPosition =
-      sequence.startingPosition || sequence.startPosition;
-    const result = hasStep || hasStartPosition;
+    const hasStartPlacement =
+      sequence.startingPlacement || sequence.startPlacement;
+    const result = hasStep || hasStartPlacement;
 
     return result;
   });

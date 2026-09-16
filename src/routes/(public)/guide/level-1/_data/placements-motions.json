@@ -1,0 +1,3592 @@
+{
+  "pictographs": {
+    "pos-alpha1": {
+      "id": "pos-alpha1",
+      "letter": "α",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-alpha2": {
+      "id": "pos-alpha2",
+      "letter": "α",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-alpha3": {
+      "id": "pos-alpha3",
+      "letter": "α",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-alpha4": {
+      "id": "pos-alpha4",
+      "letter": "α",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-beta1": {
+      "id": "pos-beta1",
+      "letter": "β",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-beta2": {
+      "id": "pos-beta2",
+      "letter": "β",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-beta3": {
+      "id": "pos-beta3",
+      "letter": "β",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-beta4": {
+      "id": "pos-beta4",
+      "letter": "β",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-gamma1": {
+      "id": "pos-gamma1",
+      "letter": "γ",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-gamma2": {
+      "id": "pos-gamma2",
+      "letter": "γ",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-gamma3": {
+      "id": "pos-gamma3",
+      "letter": "γ",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "pos-gamma4": {
+      "id": "pos-gamma4",
+      "letter": "γ",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "hand",
+          "gridMode": "diamond",
+          "propPlacementData": {
+            "positionX": 0,
+            "positionY": 0,
+            "rotationAngle": 0
+          }
+        }
+      }
+    },
+    "A-0": {
+      "id": "A-0",
+      "letter": "A",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "A-1": {
+      "id": "A-1",
+      "letter": "A",
+      "startPlacement": "alpha5",
+      "endPlacement": "alpha7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "A-2": {
+      "id": "A-2",
+      "letter": "A",
+      "startPlacement": "alpha7",
+      "endPlacement": "alpha1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "A-3": {
+      "id": "A-3",
+      "letter": "A",
+      "startPlacement": "alpha1",
+      "endPlacement": "alpha3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "B-0": {
+      "id": "B-0",
+      "letter": "B",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "B-1": {
+      "id": "B-1",
+      "letter": "B",
+      "startPlacement": "alpha5",
+      "endPlacement": "alpha7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "B-2": {
+      "id": "B-2",
+      "letter": "B",
+      "startPlacement": "alpha7",
+      "endPlacement": "alpha1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "B-3": {
+      "id": "B-3",
+      "letter": "B",
+      "startPlacement": "alpha1",
+      "endPlacement": "alpha3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "C-0": {
+      "id": "C-0",
+      "letter": "C",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "C-1": {
+      "id": "C-1",
+      "letter": "C",
+      "startPlacement": "alpha5",
+      "endPlacement": "alpha7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "C-2": {
+      "id": "C-2",
+      "letter": "C",
+      "startPlacement": "alpha7",
+      "endPlacement": "alpha1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "C-3": {
+      "id": "C-3",
+      "letter": "C",
+      "startPlacement": "alpha1",
+      "endPlacement": "alpha3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "G-0": {
+      "id": "G-0",
+      "letter": "G",
+      "startPlacement": "beta3",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "G-1": {
+      "id": "G-1",
+      "letter": "G",
+      "startPlacement": "beta5",
+      "endPlacement": "beta7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "G-2": {
+      "id": "G-2",
+      "letter": "G",
+      "startPlacement": "beta7",
+      "endPlacement": "beta1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "G-3": {
+      "id": "G-3",
+      "letter": "G",
+      "startPlacement": "beta1",
+      "endPlacement": "beta3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "H-0": {
+      "id": "H-0",
+      "letter": "H",
+      "startPlacement": "beta3",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "H-1": {
+      "id": "H-1",
+      "letter": "H",
+      "startPlacement": "beta5",
+      "endPlacement": "beta7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "H-2": {
+      "id": "H-2",
+      "letter": "H",
+      "startPlacement": "beta7",
+      "endPlacement": "beta1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "H-3": {
+      "id": "H-3",
+      "letter": "H",
+      "startPlacement": "beta1",
+      "endPlacement": "beta3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "I-0": {
+      "id": "I-0",
+      "letter": "I",
+      "startPlacement": "beta3",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "I-1": {
+      "id": "I-1",
+      "letter": "I",
+      "startPlacement": "beta5",
+      "endPlacement": "beta7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "I-2": {
+      "id": "I-2",
+      "letter": "I",
+      "startPlacement": "beta7",
+      "endPlacement": "beta1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "w",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "I-3": {
+      "id": "I-3",
+      "letter": "I",
+      "startPlacement": "beta1",
+      "endPlacement": "beta3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "D-0": {
+      "id": "D-0",
+      "letter": "D",
+      "startPlacement": "beta3",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "E-0": {
+      "id": "E-0",
+      "letter": "E",
+      "startPlacement": "beta3",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "F-0": {
+      "id": "F-0",
+      "letter": "F",
+      "startPlacement": "beta3",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "J-0": {
+      "id": "J-0",
+      "letter": "J",
+      "startPlacement": "alpha3",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startLocation": "w",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "K-0": {
+      "id": "K-0",
+      "letter": "K",
+      "startPlacement": "alpha3",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "cw",
+          "startLocation": "w",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "L-0": {
+      "id": "L-0",
+      "letter": "L",
+      "startPlacement": "alpha3",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "cw",
+          "startLocation": "w",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "M-0": {
+      "id": "M-0",
+      "letter": "M",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startLocation": "n",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "N-0": {
+      "id": "N-0",
+      "letter": "N",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "cw",
+          "startLocation": "n",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "O-0": {
+      "id": "O-0",
+      "letter": "O",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "cw",
+          "startLocation": "n",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "P-0": {
+      "id": "P-0",
+      "letter": "P",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "ccw",
+          "startLocation": "s",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Q-0": {
+      "id": "Q-0",
+      "letter": "Q",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "cw",
+          "startLocation": "s",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "R-0": {
+      "id": "R-0",
+      "letter": "R",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "cw",
+          "startLocation": "s",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "S-0": {
+      "id": "S-0",
+      "letter": "S",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "T-0": {
+      "id": "T-0",
+      "letter": "T",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "n",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "U-0": {
+      "id": "U-0",
+      "letter": "U",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "V-0": {
+      "id": "V-0",
+      "letter": "V",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "s",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "W-0": {
+      "id": "W-0",
+      "letter": "W",
+      "startPlacement": "gamma3",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "X-0": {
+      "id": "X-0",
+      "letter": "X",
+      "startPlacement": "gamma3",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Y-0": {
+      "id": "Y-0",
+      "letter": "Y",
+      "startPlacement": "gamma11",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Z-0": {
+      "id": "Z-0",
+      "letter": "Z",
+      "startPlacement": "gamma11",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Σ-0": {
+      "id": "Σ-0",
+      "letter": "Σ",
+      "startPlacement": "alpha3",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Δ-0": {
+      "id": "Δ-0",
+      "letter": "Δ",
+      "startPlacement": "alpha3",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Θ-0": {
+      "id": "Θ-0",
+      "letter": "Θ",
+      "startPlacement": "beta3",
+      "endPlacement": "gamma5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Ω-0": {
+      "id": "Ω-0",
+      "letter": "Ω",
+      "startPlacement": "beta3",
+      "endPlacement": "gamma5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "W--0": {
+      "id": "W--0",
+      "letter": "W-",
+      "startPlacement": "gamma11",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "X--0": {
+      "id": "X--0",
+      "letter": "X-",
+      "startPlacement": "gamma11",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Y--0": {
+      "id": "Y--0",
+      "letter": "Y-",
+      "startPlacement": "gamma3",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Z--0": {
+      "id": "Z--0",
+      "letter": "Z-",
+      "startPlacement": "gamma3",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Σ--0": {
+      "id": "Σ--0",
+      "letter": "Σ-",
+      "startPlacement": "beta3",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Δ--0": {
+      "id": "Δ--0",
+      "letter": "Δ-",
+      "startPlacement": "beta3",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Θ--0": {
+      "id": "Θ--0",
+      "letter": "Θ-",
+      "startPlacement": "alpha3",
+      "endPlacement": "gamma5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "pro",
+          "rotationDirection": "cw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Ω--0": {
+      "id": "Ω--0",
+      "letter": "Ω-",
+      "startPlacement": "alpha3",
+      "endPlacement": "gamma5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "anti",
+          "rotationDirection": "ccw",
+          "startLocation": "e",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Φ-0": {
+      "id": "Φ-0",
+      "letter": "Φ",
+      "startPlacement": "beta3",
+      "endPlacement": "alpha7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Ψ-0": {
+      "id": "Ψ-0",
+      "letter": "Ψ",
+      "startPlacement": "alpha3",
+      "endPlacement": "beta7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Λ-0": {
+      "id": "Λ-0",
+      "letter": "Λ",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma15",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Φ--0": {
+      "id": "Φ--0",
+      "letter": "Φ-",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Ψ--0": {
+      "id": "Ψ--0",
+      "letter": "Ψ-",
+      "startPlacement": "beta3",
+      "endPlacement": "beta7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Λ--0": {
+      "id": "Λ--0",
+      "letter": "Λ-",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "α-0": {
+      "id": "α-0",
+      "letter": "α",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "β-0": {
+      "id": "β-0",
+      "letter": "β",
+      "startPlacement": "beta3",
+      "endPlacement": "beta3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "γ-0": {
+      "id": "γ-0",
+      "letter": "γ",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma11",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Φ-1": {
+      "id": "Φ-1",
+      "letter": "Φ",
+      "startPlacement": "beta1",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Φ-2": {
+      "id": "Φ-2",
+      "letter": "Φ",
+      "startPlacement": "beta7",
+      "endPlacement": "alpha3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Φ-3": {
+      "id": "Φ-3",
+      "letter": "Φ",
+      "startPlacement": "beta5",
+      "endPlacement": "alpha1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Ψ-1": {
+      "id": "Ψ-1",
+      "letter": "Ψ",
+      "startPlacement": "alpha1",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Ψ-2": {
+      "id": "Ψ-2",
+      "letter": "Ψ",
+      "startPlacement": "alpha7",
+      "endPlacement": "beta3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Ψ-3": {
+      "id": "Ψ-3",
+      "letter": "Ψ",
+      "startPlacement": "alpha5",
+      "endPlacement": "beta1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Λ-1": {
+      "id": "Λ-1",
+      "letter": "Λ",
+      "startPlacement": "gamma9",
+      "endPlacement": "gamma1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Λ-2": {
+      "id": "Λ-2",
+      "letter": "Λ",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "Λ-3": {
+      "id": "Λ-3",
+      "letter": "Λ",
+      "startPlacement": "gamma5",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "dash",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 1,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "α-1": {
+      "id": "α-1",
+      "letter": "α",
+      "startPlacement": "alpha5",
+      "endPlacement": "alpha5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "α-2": {
+      "id": "α-2",
+      "letter": "α",
+      "startPlacement": "alpha1",
+      "endPlacement": "alpha1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "α-3": {
+      "id": "α-3",
+      "letter": "α",
+      "startPlacement": "alpha7",
+      "endPlacement": "alpha7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "β-1": {
+      "id": "β-1",
+      "letter": "β",
+      "startPlacement": "beta5",
+      "endPlacement": "beta5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "β-2": {
+      "id": "β-2",
+      "letter": "β",
+      "startPlacement": "beta1",
+      "endPlacement": "beta1",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "β-3": {
+      "id": "β-3",
+      "letter": "β",
+      "startPlacement": "beta7",
+      "endPlacement": "beta7",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "γ-1": {
+      "id": "γ-1",
+      "letter": "γ",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma3",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "n",
+          "endLocation": "n",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "n",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "γ-2": {
+      "id": "γ-2",
+      "letter": "γ",
+      "startPlacement": "gamma13",
+      "endPlacement": "gamma13",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "w",
+          "endLocation": "w",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "w",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    },
+    "γ-3": {
+      "id": "γ-3",
+      "letter": "γ",
+      "startPlacement": "gamma5",
+      "endPlacement": "gamma5",
+      "gridMode": "diamond",
+      "motions": {
+        "left": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "e",
+          "endLocation": "e",
+          "hand": "left",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "e",
+          "gridMode": "diamond"
+        },
+        "right": {
+          "motionType": "static",
+          "rotationDirection": "noRotation",
+          "startLocation": "s",
+          "endLocation": "s",
+          "hand": "right",
+          "turns": 0,
+          "startOrientation": "in",
+          "endOrientation": "in",
+          "isVisible": true,
+          "propType": "staff",
+          "arrowLocation": "s",
+          "gridMode": "diamond"
+        }
+      }
+    }
+  },
+  "sequences": {}
+}

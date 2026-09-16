@@ -1,6 +1,6 @@
 /**
  * READ-ONLY. Proves whether the live hydrate() path reconstructs a valid
- * startPosition for the docs that lack the persisted field — isolating the
+ * startPlacement for the docs that lack the persisted field — isolating the
  * empty-start bug to cache/persistence vs. derivation logic. Also dumps the
  * puppyflower's timestamps to explain "deleted but comes back".
  */
@@ -31,12 +31,12 @@ async function main(): Promise<void> {
     const raw = snap.data() as SequenceData | undefined;
     if (!raw) { console.log(`\n[${id}] MISSING`); continue; }
     console.log(`\n[${id}] word="${(raw as AnyRec)["word"]}"`);
-    console.log(`  raw.startPosition:      ${startPosSummary((raw as AnyRec)["startPosition"] as AnyRec)}`);
+    console.log(`  raw.startPlacement:      ${startPosSummary((raw as AnyRec)["startPlacement"] as AnyRec)}`);
     let hydrated: SequenceData;
     try {
       hydrated = hydrate({ ...(raw as object), id } as SequenceData);
       console.log(`  hydrated.steps:         ${hydrated.steps?.length ?? 0}`);
-      console.log(`  hydrated.startPosition: ${startPosSummary((hydrated as AnyRec)["startPosition"] as AnyRec)}`);
+      console.log(`  hydrated.startPlacement: ${startPosSummary((hydrated as AnyRec)["startPlacement"] as AnyRec)}`);
     } catch (e) {
       console.log(`  hydrate threw: ${e instanceof Error ? e.message : String(e)}`);
     }

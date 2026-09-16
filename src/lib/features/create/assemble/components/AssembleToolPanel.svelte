@@ -96,7 +96,7 @@
   // Numpad building: while keyboard mode is on, route numpad input through the
   // shared dispatcher. Mounting is scoped to the active Assemble tab (the
   // {#key activeToolPanel} in CreationToolPanelSlot unmounts this on tab switch),
-  // so the window listener never leaks into other Create tabs. Position adds go
+  // so the window listener never leaks into other Create tabs. Location adds go
   // through checkStepCap so the numpad respects the tier cap like mouse clicks.
   $effect(() => {
     if (!builderState.keyboardMode) return;
@@ -112,7 +112,7 @@
   // The setGridMode/setShowCenter calls MUST be untracked. They read builder state
   // (steps, currentPosition, showCenter) and end in notifyDocumentChange(), which
   // reads AND writes sequenceState.currentSequence with a fresh object every call.
-  // Left tracked, this effect invalidates itself the moment a start position exists,
+  // Left tracked, this effect invalidates itself the moment a start location exists,
   // which is exactly what the first grid click creates -> effect_update_depth_exceeded.
   let settingsState: SettingsState | null = null;
   $effect.pre(() => {

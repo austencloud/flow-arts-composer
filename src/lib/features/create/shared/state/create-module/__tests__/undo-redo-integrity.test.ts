@@ -19,7 +19,7 @@ import { removeStep } from "../../../services/step-operations/step-removal-handl
 import { createSequenceState } from "../../sequence-state-orchestrator.svelte";
 import { createSequence } from "$lib/shared/create/services/sequence-domain-manager";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import {
@@ -31,13 +31,13 @@ import {
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
 /**
  * Canonical alpha1 -> alpha3 shift: left hand south to west, right hand north
- * to east. Both hands are visible, so the sequence takes the real start-position
+ * to east. Both hands are visible, so the sequence takes the real start-placement
  * and reversal paths through setCurrentSequence instead of the derivation
  * failure branch.
  */
@@ -71,12 +71,12 @@ function staticMotion(hand: HandSide, at: GridLocation) {
   });
 }
 
-function alpha1StartPosition() {
-  return createStartPositionData({
+function alpha1StartPlacement() {
+  return createStartPlacementData({
     id: "start-alpha1",
-    startPosition: GridPosition.ALPHA1,
-    endPosition: GridPosition.ALPHA1,
-    gridPosition: GridPosition.ALPHA1,
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.ALPHA1,
+    gridPlacement: GridPlacement.ALPHA1,
     motions: {
       [HandSide.LEFT]: staticMotion(HandSide.LEFT, GridLocation.SOUTH),
       [HandSide.RIGHT]: staticMotion(HandSide.RIGHT, GridLocation.NORTH),
@@ -88,8 +88,8 @@ function canonicalStep(stepNumber: number) {
   return createStepData({
     id: `step-${stepNumber}`,
     stepNumber,
-    startPosition: GridPosition.ALPHA1,
-    endPosition: GridPosition.ALPHA3,
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.ALPHA3,
     motions: {
       [HandSide.LEFT]: shiftMotion(
         HandSide.LEFT,
@@ -106,7 +106,7 @@ function canonicalStep(stepNumber: number) {
 }
 
 function makeSequence(word: string, stepCount: number): SequenceData {
-  const startPosition = alpha1StartPosition();
+  const startPlacement = alpha1StartPlacement();
   return {
     ...createSequence({ name: word, word, length: 0 }),
     // A stable id across edits: the orchestrator treats a changed id as loading
@@ -117,8 +117,8 @@ function makeSequence(word: string, stepCount: number): SequenceData {
     steps: Array.from({ length: stepCount }, (_, index) =>
       canonicalStep(index + 1)
     ),
-    startPosition,
-    startingPosition: startPosition,
+    startPlacement,
+    startingPlacement: startPlacement,
   } as unknown as SequenceData;
 }
 
@@ -158,7 +158,7 @@ function createWorkspace(initial: SequenceData | null = null) {
       current = makeSequence("AB", stepIndex);
       done();
     },
-    selectStartPositionForEditing: vi.fn(),
+    selectStartPlacementForEditing: vi.fn(),
   };
 }
 
@@ -373,7 +373,7 @@ describe("Create history: clearing animation cannot outlive the state it clears"
   }
 
   /**
-   * A canonical fixture reaches the real start-position and reversal paths, so
+   * A canonical fixture reaches the real start-placement and reversal paths, so
    * these traces must run without a single recoverable-error log. A fixture
    * that fell back to the derivation failure branch would still satisfy the
    * assertions below while exercising a path the app never takes.
@@ -407,8 +407,8 @@ describe("Create history: clearing animation cannot outlive the state it clears"
         setActiveSectionInternal: async () => {},
       });
 
-      controller.pushUndoSnapshot(UndoOperationType.SELECT_START_POSITION, {
-        description: "Select start position",
+      controller.pushUndoSnapshot(UndoOperationType.SELECT_START_PLACEMENT, {
+        description: "Select start placement",
       });
       await vi.advanceTimersByTimeAsync(0);
       sequenceState.setCurrentSequence(makeSequence("A", 1));
@@ -436,7 +436,7 @@ describe("Create history: clearing animation cannot outlive the state it clears"
       sequenceState.setCurrentSequence(makeSequence("A", 1));
 
       const clearing = sequenceState.clearSequenceCompletely();
-      // The user picks a new start position before the animation finishes.
+      // The user picks a new start placement before the animation finishes.
       sequenceState.setCurrentSequence(makeSequence("B", 1));
 
       await vi.advanceTimersByTimeAsync(1000);

@@ -19,7 +19,7 @@ import {
   RotationDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -121,8 +121,8 @@ const cellStep = (c: CellDef, key: string, stepNumber: number | null = null): St
     id: `${key}${stepNumber === null ? "" : `-${stepNumber}`}`,
     letter: c.letter,
     gridMode: GridMode.DIAMOND,
-    startPosition: getGridPositionFromLocations(c.left.from, c.right.from),
-    endPosition: getGridPositionFromLocations(c.left.to, c.right.to),
+    startPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
+    endPlacement: getGridPlacementFromLocations(c.left.to, c.right.to),
     stepNumber,
     motions: {
       left: hand(HandSide.LEFT, c.left),
@@ -136,8 +136,8 @@ const startFor = (c: CellDef): StepData =>
     letter: null,
     gridMode: GridMode.DIAMOND,
     stepNumber: 0,
-    startPosition: getGridPositionFromLocations(c.left.from, c.right.from),
-    endPosition: getGridPositionFromLocations(c.left.from, c.right.from),
+    startPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
+    endPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
     motions: {
       left: staticHand(HandSide.LEFT, c.left.from),
       right: staticHand(HandSide.RIGHT, c.right.from),

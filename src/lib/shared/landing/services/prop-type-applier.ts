@@ -7,14 +7,14 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 export function applyToSequence(sequence: SequenceData, propType: PropType): SequenceData {
   return {
     ...sequence,
-    startPosition: sequence.startPosition
-      ? applyToStartPosition(sequence.startPosition, propType)
+    startPlacement: sequence.startPlacement
+      ? applyToStartPlacement(sequence.startPlacement, propType)
       : undefined,
     steps: sequence.steps?.map((step) => applyToBeat(step, propType)) ?? [],
   };
@@ -32,10 +32,10 @@ function applyToBeat(beat: StepData, propType: PropType): StepData {
   };
 }
 
-function applyToStartPosition(
-  startPos: StartPositionData,
+function applyToStartPlacement(
+  startPos: StartPlacementData,
   propType: PropType
-): StartPositionData {
+): StartPlacementData {
   if (!startPos.motions) return startPos;
 
   return {

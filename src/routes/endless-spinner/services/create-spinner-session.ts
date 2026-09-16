@@ -14,7 +14,7 @@ import { EndlessSpinnerOrchestrator } from "$lib/features/landing/services/endle
 import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
 import { getGenerationOrchestrator } from "$lib/features/create/generate/shared/get-generation-orchestrator";
 import { sequenceTransformer } from "$lib/shared/create/services/sequence-transformer";
-import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 import { InfiniteSequenceGenerator } from "$lib/features/landing/services/infinite-sequence-generator";
 import { SpinnerMetricsRepository } from "$lib/features/landing/services/spinner-metrics-repository";
 import { orientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
@@ -37,7 +37,7 @@ export function createSpinnerSession(scope: AnimationScope): SpinnerSession {
     getBrowseLoader(),
     getGenerationOrchestrator(),
     sequenceTransformer,
-    startPositionDeriver
+    startPlacementDeriver
   );
 
   const metricsRepository = new SpinnerMetricsRepository();

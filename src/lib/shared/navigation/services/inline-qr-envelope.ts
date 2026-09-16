@@ -55,7 +55,7 @@ export function hasReadableQrEnvelope(payload: string): boolean {
  * Whether a URL-encoded share blob's own delimiters are intact.
  *
  * `d1:` bodies are base64url and can never contain a `%`; `raw:` bodies are the
- * flat encoding and always carry at least the header/start-position pipe.
+ * flat encoding and always carry at least the header/start-placement pipe.
  */
 export function hasReadableUrlEnvelope(candidate: string): boolean {
   if (candidate.startsWith("d1:")) return !candidate.includes("%");

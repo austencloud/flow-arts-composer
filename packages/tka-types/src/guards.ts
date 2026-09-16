@@ -14,7 +14,7 @@ import type { Step, Motion } from "./index.js";
 import { MotionType } from "./motion-type.js";
 import { RotationDirection } from "./rotation-direction.js";
 import { Orientation } from "./orientation.js";
-import { GridLocation, GridMode, GridPosition } from "./grid.js";
+import { GridLocation, GridMode, GridPlacement } from "./grid.js";
 import { Plane } from "./plane.js";
 import { HandSide } from "./hand-side.js";
 
@@ -25,7 +25,7 @@ const ROTATION_DIRECTION_VALUES = new Set<string>(
 const ORIENTATION_VALUES = new Set<string>(Object.values(Orientation));
 const GRID_LOCATION_VALUES = new Set<string>(Object.values(GridLocation));
 const GRID_MODE_VALUES = new Set<string>(Object.values(GridMode));
-const GRID_POSITION_VALUES = new Set<string>(Object.values(GridPosition));
+const GRID_PLACEMENT_VALUES = new Set<string>(Object.values(GridPlacement));
 const PLANE_VALUES = new Set<string>(Object.values(Plane));
 const HAND_SIDE_VALUES = new Set<string>(Object.values(HandSide));
 
@@ -89,14 +89,14 @@ export function isStep(value: unknown): value is Step {
       return false;
   }
   if (
-    value.startPosition !== null &&
-    !isEnumMember(value.startPosition, GRID_POSITION_VALUES)
+    value.startPlacement !== null &&
+    !isEnumMember(value.startPlacement, GRID_PLACEMENT_VALUES)
   ) {
     return false;
   }
   if (
-    value.endPosition !== null &&
-    !isEnumMember(value.endPosition, GRID_POSITION_VALUES)
+    value.endPlacement !== null &&
+    !isEnumMember(value.endPlacement, GRID_PLACEMENT_VALUES)
   ) {
     return false;
   }

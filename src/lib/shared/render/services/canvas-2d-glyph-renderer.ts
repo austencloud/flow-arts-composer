@@ -21,7 +21,7 @@ import { calculateTurnPositions } from "../../pictograph/tka-glyph/utils/turn-po
 import { deriveTnDFromPictograph } from "../../pictograph/shared/domain/utils/tnd-deriver";
 import { calculateReversalPositions, calculateHandColorKeyLayout, HAND_COLOR_KEY } from "../core";
 import type { TurnsTupleGenerator } from "../../pictograph/arrow/positioning/placement/services/turns-tuple-generator";
-import type { GridPosition } from "../../pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "../../pictograph/grid/domain/enums/grid-enums";
 import type { MotionData } from "../../pictograph/shared/domain/models/motion-data";
 import { HandSide, getElementImagePath } from "../../pictograph/shared/domain/enums/pictograph-enums";
 import {
@@ -469,7 +469,7 @@ export async function drawPropElementalGlyph(
   }
 }
 
-export async function drawPositionGlyph(
+export async function drawPlacementGlyph(
   ctx: CanvasRenderingContext2D,
   pictograph: PictographData,
   size: number,
@@ -479,18 +479,18 @@ export async function drawPositionGlyph(
     return;
   }
 
-  const startPosition = pictograph.startPosition;
-  const endPosition = pictograph.endPosition;
-  if (!startPosition || !endPosition) return;
+  const startPlacement = pictograph.startPlacement;
+  const endPlacement = pictograph.endPlacement;
+  if (!startPlacement || !endPlacement) return;
 
-  const extractGroup = (pos: GridPosition | string): string | null => {
+  const extractGroup = (pos: GridPlacement | string): string | null => {
     const posStr = String(pos);
     const match = posStr.match(/[a-z]+/i);
     return match ? match[0].toLowerCase() : null;
   };
 
-  const startGroup = extractGroup(startPosition);
-  const endGroup = extractGroup(endPosition);
+  const startGroup = extractGroup(startPlacement);
+  const endGroup = extractGroup(endPlacement);
   if (!startGroup || !endGroup) return;
 
   const scale = size / VIEWBOX_SIZE;

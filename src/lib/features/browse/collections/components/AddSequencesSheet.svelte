@@ -164,7 +164,7 @@ compensation), so the detail view behind this sheet updates on its own.
     | "level"
     | "length"
     | "letter"
-    | "position"
+    | "placement"
     | "gridmode"
     | "author"
     | "performance"
@@ -175,7 +175,7 @@ compensation), so the detail view behind this sheet updates on its own.
     [BrowseFilterType.DIFFICULTY]: "level",
     [BrowseFilterType.LENGTH]: "length",
     [BrowseFilterType.STARTING_LETTER]: "letter",
-    [BrowseFilterType.STARTING_POSITION]: "position",
+    [BrowseFilterType.STARTING_PLACEMENT]: "placement",
     [BrowseFilterType.GRID_MODE]: "gridmode",
     [BrowseFilterType.OWNER]: "author",
     [BrowseFilterType.PERFORMANCE_AVAILABILITY]: "performance",

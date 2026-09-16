@@ -250,7 +250,7 @@
           videoUrl={VIDEO_URL}
           videoDuration={VIDEO_DURATION}
           steps={sequence.steps}
-          startPosition={sequence.startPosition ?? sequence.startingPosition}
+          startPlacement={sequence.startPlacement ?? sequence.startingPlacement}
           bpm={120}
           draftKey={`slice:${sequence.id}`}
           onSave={handleSave}

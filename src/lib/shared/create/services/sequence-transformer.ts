@@ -6,7 +6,7 @@
  * transforms directly (or via the `sequenceTransformer` bundle for DI).
  *
  * For single-hand transforms (left or right), these functions pass the required
- * services to derive new positions and look up correct letters.
+ * services to derive new placements and look up correct letters.
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -21,7 +21,7 @@ import {
   handSwapSequence,
   invertSequence as invertSequenceTransform,
   rewindSequence as rewindSequenceTransform,
-  shiftStartPosition as shiftStartPositionTransform,
+  shiftStartPlacement as shiftStartPlacementTransform,
   deriveSequenceLetters as deriveSequenceLettersTransform,
 } from "$lib/shared/create/services/sequence-transforms";
 
@@ -82,7 +82,7 @@ export async function rewindSequence(
   sequence: SequenceData,
   targetHand: TargetHand = "both"
 ): Promise<SequenceData> {
-  // First, apply the rewind transformation (reverses beat order, swaps start/end positions)
+  // First, apply the rewind transformation (reverses beat order, swaps start/end placements)
   const rewoundSequence = await rewindSequenceTransform(
     sequence,
     motionQueryHandler,
@@ -95,11 +95,11 @@ export async function rewindSequence(
   return reversalDetector.processReversals(rewoundSequence);
 }
 
-export function shiftStartPosition(
+export function shiftStartPlacement(
   sequence: SequenceData,
   targetStepNumber: number
 ): SequenceData {
-  return shiftStartPositionTransform(sequence, targetStepNumber);
+  return shiftStartPlacementTransform(sequence, targetStepNumber);
 }
 
 export async function deriveSequenceLetters(
@@ -123,7 +123,7 @@ export const sequenceTransformer = {
   rotateSequence,
   invertSequence,
   rewindSequence,
-  shiftStartPosition,
+  shiftStartPlacement,
   deriveSequenceLetters,
 };
 

@@ -23,15 +23,15 @@
  * - Inverted Mirroring → 16 letters (8 × 2, with flipped motion types and letters)
  *
  * IMPORTANT: Supports both halved and quartered slice sizes
- * IMPORTANT: End position for generation must match the rotation requirement
+ * IMPORTANT: End placement for generation must match the rotation requirement
  * IMPORTANT: After rotation, sequence returns to home, which is valid for inverted mirror
  */
 
 import { Period } from "../domain/models/circular-models";
 import type { ILOOPExecutor } from "./ILOOPExecutor";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { VERTICAL_MIRROR_POSITION_MAP } from "../domain/constants/strict-loop-position-maps";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { VERTICAL_MIRROR_PLACEMENT_MAP } from "../domain/constants/strict-loop-placement-maps";
 
 export class MirroredRotatedInvertedLOOPExecutor implements ILOOPExecutor {
   constructor(
@@ -42,20 +42,20 @@ export class MirroredRotatedInvertedLOOPExecutor implements ILOOPExecutor {
   /**
    * Execute the mirrored-rotated-inverted LOOP by composing rotation + inverted mirroring
    *
-   * @param sequence - The partial sequence to complete (must include start position at index 0)
+   * @param sequence - The partial sequence to complete (must include start placement at index 0)
    * @param period - The slice size for rotation (halved or quartered)
    * @returns The complete circular sequence with all steps
    */
   executeLOOP(sequence: StepData[], period: Period): StepData[] {
     // Validate: composed mirrored+rotated only works when start is on the vertical axis.
     // After rotation returns to home, the mirrored-inverted executor requires
-    // end == vertical_mirror(start), which only holds when the position is self-mirroring.
-    const startPos = sequence[0]?.startPosition;
+    // end == vertical_mirror(start), which only holds when the placement is self-mirroring.
+    const startPos = sequence[0]?.startPlacement;
     if (startPos) {
-      const mirroredPos = VERTICAL_MIRROR_POSITION_MAP[startPos as GridPosition];
+      const mirroredPos = VERTICAL_MIRROR_PLACEMENT_MAP[startPos as GridPlacement];
       if (mirroredPos && mirroredPos !== startPos) {
         throw new Error(
-          `Mirrored-rotated-inverted LOOP requires a start position on the vertical axis. ` +
+          `Mirrored-rotated-inverted LOOP requires a start placement on the vertical axis. ` +
           `Got ${startPos} which mirrors to ${mirroredPos}.`
         );
       }
@@ -64,7 +64,7 @@ export class MirroredRotatedInvertedLOOPExecutor implements ILOOPExecutor {
     // Step 1: Apply ROTATED with user-selected slice size
     // HALVED: doubles the sequence (e.g., 4 steps → 8 steps)
     // QUARTERED: quadruples the sequence (e.g., 2 steps → 8 steps)
-    // Returns to home position in both cases
+    // Returns to home placement in both cases
     const rotatedSequence = this.strictRotatedExecutor.executeLOOP(
       sequence,
       period

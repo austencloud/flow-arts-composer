@@ -10,7 +10,7 @@ import {
   logConstructImmediateUndo,
   logConstructLetterTypeGroupSelected,
   logConstructOptionApplied,
-  logConstructStartPositionCompleted,
+  logConstructStartPlacementCompleted,
   resetConstructAnalyticsForTests,
 } from "$lib/features/create/construct/services/construct-analytics";
 
@@ -21,7 +21,7 @@ describe("Construct privacy-safe analytics", () => {
   });
 
   it("records action metadata without sequence content", () => {
-    logConstructStartPositionCompleted({
+    logConstructStartPlacementCompleted({
       path: "build",
       gridMode: "diamond",
     });

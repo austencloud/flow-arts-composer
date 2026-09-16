@@ -73,7 +73,7 @@ describe("invitation preconditions", () => {
    * This case previously asserted the opposite, and the assertion was wrong
    * rather than the code. `pickerOpen` reads as "a chooser is up, do not
    * interrupt", but the sensor defines it as
-   * `available.option > 0 || available["start-position"] > 0` — which is true
+   * `available.option > 0 || available["start-placement"] > 0` — which is true
    * for the whole time the construct screen is displayed. Gating invitations on
    * it meant the family could never fire on the busiest screen in the app, and
    * a 400-decision session simulation produced exactly one invitation.

@@ -36,8 +36,8 @@ describe("createAssembleHistoryTransition", () => {
       startPoses: { left: { location: "n", orientation: "in" } },
       leftSteps: [
         {
-          startPosition: "n",
-          endPosition: "e",
+          startPlacement: "n",
+          endPlacement: "e",
           rotationDirection: "cw",
           turnCount: 1,
           startOrientation: "in",

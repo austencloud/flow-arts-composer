@@ -27,7 +27,7 @@
     RotationDirection,
   } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -111,8 +111,8 @@
       id: `${r.key}-${i + 1}`,
       letter: LETTERS[i]!,
       gridMode: GridMode.DIAMOND,
-      startPosition: getGridPositionFromLocations(BLUE_LEGS[i]!.from, RED_LEGS[i]!.from),
-      endPosition: getGridPositionFromLocations(BLUE_LEGS[i]!.to, RED_LEGS[i]!.to),
+      startPlacement: getGridPlacementFromLocations(BLUE_LEGS[i]!.from, RED_LEGS[i]!.from),
+      endPlacement: getGridPlacementFromLocations(BLUE_LEGS[i]!.to, RED_LEGS[i]!.to),
       stepNumber: i + 1,
       motions: {
         left: hand(HandSide.LEFT, BLUE_LEGS[i]!, oriAt(r.leftOri, i)),
@@ -126,8 +126,8 @@
       letter: Letter.ALPHA,
       gridMode: GridMode.DIAMOND,
       stepNumber: 0,
-      startPosition: getGridPositionFromLocations(SO_, N),
-      endPosition: getGridPositionFromLocations(SO_, N),
+      startPlacement: getGridPlacementFromLocations(SO_, N),
+      endPlacement: getGridPlacementFromLocations(SO_, N),
       motions: {
         left: stat(HandSide.LEFT, SO_, r.leftOri),
         right: stat(HandSide.RIGHT, N, r.rightOri),
@@ -234,7 +234,7 @@
   const PICTO_FLAGS = {
     showGrid: true,
     showTKA: true,
-    showPositions: false,
+    showPlacements: false,
     showReversals: false,
     showTnD: false,
     showElemental: false,

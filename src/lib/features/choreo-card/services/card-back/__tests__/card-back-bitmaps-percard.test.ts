@@ -11,7 +11,7 @@
  * `rasterizeLoopIconByKind` (constant sibling); that's mocked here to a fake
  * bitmap so the row composition runs without a real mount.
  *
- * The start-position pictograph is unchanged (renders via the injected
+ * The start-placement pictograph is unchanged (renders via the injected
  * `renderPicto`); its tests are kept as-is.
  *
  * The real visual/parity check happens in the browser harness (P1.7,
@@ -36,7 +36,7 @@ import {
   rasterizeReversalGlyph,
   rasterizeStepCount,
   rasterizeLoopRow,
-  rasterizeStartPosPictograph,
+  rasterizeStartPlacementPictograph,
   CARD_RENDER_WIDTH,
   __setRenderPictoFnForTest,
   type LoopRowCol,
@@ -256,7 +256,7 @@ describe("card-back-bitmaps-percard rasterizers (canvas-native)", () => {
     });
   });
 
-  describe("rasterizeStartPosPictograph", () => {
+  describe("rasterizeStartPlacementPictograph", () => {
     const pictographData = { letter: "A", motions: {} };
     let renderPictoCalls: RenderPictoCall[];
 
@@ -269,31 +269,31 @@ describe("card-back-bitmaps-percard rasterizers (canvas-native)", () => {
     });
 
     it("renders the pictograph via the Canvas2D pipeline", async () => {
-      await rasterizeStartPosPictograph(pictographData, true);
+      await rasterizeStartPlacementPictograph(pictographData, true);
       expect(renderPictoCalls).toHaveLength(1);
       expect(renderPictoCalls[0]!.pictograph).toBe(pictographData);
     });
 
     it("renders at the 1.3× zoomed start-pos size", async () => {
-      await rasterizeStartPosPictograph(pictographData, false, {
+      await rasterizeStartPlacementPictograph(pictographData, false, {
         containerWidth: 1529, cqi: 15.29, textMutedColor: "rgba(0,0,0,0.55)", textColor: "#111",
       });
       const box = Math.round(12 * 15.29);
       expect(renderPictoCalls[0]!.options.size).toBe(Math.round(box * 1.3));
     });
 
-    it("passes the StartPositionPictograph visibility flags", async () => {
-      await rasterizeStartPosPictograph(pictographData, true);
+    it("passes the StartPlacementPictograph visibility flags", async () => {
+      await rasterizeStartPlacementPictograph(pictographData, true);
       const v = renderPictoCalls[0]!.options.visibility;
       expect(v.darkMode).toBe(true);
       expect(v.handPointVisibility).toBe("all");
       expect(v.showTKA).toBe(false);
       expect(v.showReversals).toBe(false);
-      expect(v.showPositions).toBe(false);
+      expect(v.showPlacements).toBe(false);
     });
 
     it("returns an ImageBitmap", async () => {
-      const bmp = await rasterizeStartPosPictograph(pictographData, false);
+      const bmp = await rasterizeStartPlacementPictograph(pictographData, false);
       expect(bmp).toBeTruthy();
     });
   });

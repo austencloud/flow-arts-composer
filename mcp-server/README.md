@@ -25,8 +25,8 @@ Search for pictographs matching criteria.
 
 ```
 Input: {
-  startPosition?: "alpha3",
-  endPosition?: "alpha5",
+  startPlacement?: "alpha3",
+  endPlacement?: "alpha5",
   motionType?: "pro" | "anti" | "static" | "dash",
   startLocation?: "n" | "e" | "s" | "w" | "ne" | "se" | "sw" | "nw",
   endLocation?: string,

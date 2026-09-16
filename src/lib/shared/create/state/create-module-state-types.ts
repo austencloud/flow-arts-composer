@@ -33,7 +33,7 @@ export interface SequenceStateMinimal {
     onComplete?: () => void
   ): void;
   selectStep(stepIndex: number): void;
-  selectStartPositionForEditing(): void;
+  selectStartPlacementForEditing(): void;
   mirrorSequence(targetHand?: TargetHand): Promise<void>;
   flipSequence(targetHand?: TargetHand): Promise<void>;
   swapHands(): Promise<void>;
@@ -44,7 +44,7 @@ export interface SequenceStateMinimal {
     targetHand?: TargetHand,
     rotationSteps?: number
   ): Promise<void>;
-  shiftStartPosition(stepNumber: number): Promise<void>;
+  shiftStartPlacement(stepNumber: number): Promise<void>;
 }
 
 /**
@@ -74,10 +74,10 @@ export interface CreateModuleState {
  * Covers: clearSequenceWorkflow
  */
 export interface ConstructTabState {
-  setShowStartPositionPicker(show: boolean): void;
-  setSelectedStartPosition(position: PictographData | null): void;
-  readonly startPositionStateService: {
-    clearSelectedPosition(): void;
+  setShowStartPlacementPicker(show: boolean): void;
+  setSelectedStartPlacement(placement: PictographData | null): void;
+  readonly startPlacementStateService: {
+    clearSelectedPlacement(): void;
   };
   clearError(): void;
 }

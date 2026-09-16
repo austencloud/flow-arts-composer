@@ -107,7 +107,7 @@ export function createSceneVideoExport(viewer: Viewer3DState) {
         0
       );
       const holdUnits =
-        (videoOptions.includeStartPosition ? 1 : 0) +
+        (videoOptions.includeStartPlacement ? 1 : 0) +
         (videoOptions.includeEndHold ? 1 : 0);
       const cameraKeyframes = film
         ? CameraKeyframeBuffer.fromKeyframes(film.keyframes)
@@ -127,7 +127,7 @@ export function createSceneVideoExport(viewer: Viewer3DState) {
           fps: videoOptions.fps,
           loopCount: videoOptions.loopCount,
           resolution: videoOptions.resolution,
-          includeStartPosition: videoOptions.includeStartPosition,
+          includeStartPlacement: videoOptions.includeStartPlacement,
           includeEndHold: videoOptions.includeEndHold,
           quality: videoOptions.quality,
         },

@@ -3,7 +3,7 @@
  *
  * Extracted from ArrowAdjustmentCalculator.lookupPropGeometryAdjustment so the
  * inspect-panel editor and the rendering pipeline build identical keys.
- * Returns null when the scenario can't form a full key (missing motion or endPosition).
+ * Returns null when the scenario can't form a full key (missing motion or endPlacement).
  */
 import { deriveGridMode as _deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -36,9 +36,9 @@ export function derivePropGeometryKey(
     _deriveGridMode(leftMotion, rightMotion)
   );
 
-  const endPosition = pictographData.endPosition;
-  if (!endPosition) return null;
-  const positionType = endPosition.replace(/\d+$/, "");
+  const endPlacement = pictographData.endPlacement;
+  if (!endPlacement) return null;
+  const positionType = endPlacement.replace(/\d+$/, "");
 
   const hand =
     normalizeLegacyHandSide(arrowHand ?? motionData.hand) ?? HandSide.LEFT;

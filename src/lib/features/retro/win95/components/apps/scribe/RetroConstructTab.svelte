@@ -31,20 +31,20 @@
   /* State                                                               */
 
   let phase = $state<"start" | "build">("start");
-  let startPosition = $state<string | null>(null);
+  let startPlacement = $state<string | null>(null);
   let beats = $state<Beat[]>([]);
   let selectedStepIndex = $state(-1);
 
   /* Start positions (Alpha / Beta / Gamma)                              */
 
-  const startPositions = [
+  const startPlacements = [
     { id: "alpha", label: "Alpha", description: "Hands opposite" },
     { id: "beta", label: "Beta", description: "Hands together" },
     { id: "gamma", label: "Gamma", description: "Hands at right angle" },
   ];
 
-  function selectStartPosition(posId: string) {
-    startPosition = posId;
+  function selectStartPlacement(posId: string) {
+    startPlacement = posId;
     phase = "build";
     onstatuschange?.(`Beats: 0 | Start: ${posId.charAt(0).toUpperCase() + posId.slice(1)}`);
   }
@@ -63,7 +63,7 @@
   const availableOptions = $derived.by(() => {
     const lastLetter = beats.length > 0
       ? beats[beats.length - 1]!.letter
-      : (startPosition === "beta" ? "B" : startPosition === "gamma" ? "G" : "A");
+      : (startPlacement === "beta" ? "B" : startPlacement === "gamma" ? "G" : "A");
 
     const seed = lastLetter.charCodeAt(0);
     const options: string[] = [];
@@ -106,7 +106,7 @@
     beats = [];
     selectedStepIndex = -1;
     phase = "start";
-    startPosition = null;
+    startPlacement = null;
     onstatuschange?.("Beats: 0 | Cleared");
   }
 
@@ -124,11 +124,11 @@
       <fieldset class="start-fieldset">
         <legend>Choose Start Position</legend>
         <div class="start-grid">
-          {#each startPositions as pos (pos.id)}
+          {#each startPlacements as pos (pos.id)}
             <button
               class="start-tile"
               type="button"
-              onclick={() => selectStartPosition(pos.id)}
+              onclick={() => selectStartPlacement(pos.id)}
               aria-label={`Start with ${pos.label}`}
             >
               <RetroPictograph
@@ -171,7 +171,7 @@
         <!-- Start position tile -->
         <div class="beat-cell start-cell">
           <RetroPictograph
-            data={createMockPictographData(startPosition === "beta" ? "B" : startPosition === "gamma" ? "G" : "A")}
+            data={createMockPictographData(startPlacement === "beta" ? "B" : startPlacement === "gamma" ? "G" : "A")}
             size={36}
           />
           <span class="beat-number">0</span>

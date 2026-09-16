@@ -46,8 +46,8 @@ export async function composeCardImage(
   const stepCount = sequence.steps?.length ?? 0;
   const layout = calculateLayout(
     stepCount,
-    options.includeStartPosition ?? false,
-    options.startPositionLayout ?? "row"
+    options.includeStartPlacement ?? false,
+    options.startPlacementLayout ?? "row"
   );
   const [columns, rows] = layout;
   const baseBeatSize = options.stepSize || 120;

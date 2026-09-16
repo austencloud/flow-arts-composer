@@ -51,7 +51,7 @@ function defaultInput(id: string): ThumbnailRenderInput {
     catDogModeEnabled: false,
     lightMode: false,
     variant: "gallery",
-    startPositionLayout: "row",
+    startPlacementLayout: "row",
     // What buildGalleryVisibility() produces for a signed-in default-settings
     // grid card: QR off (grid cards never allow QR), mandala on.
     visibility: { showQRCode: false, showMandala: true },
@@ -179,7 +179,7 @@ describe("shared thumbnail tier coverage", () => {
       ],
       [
         "start position as left column (per-length layout pick)",
-        { startPositionLayout: "column" },
+        { startPlacementLayout: "column" },
       ],
       [
         "grid dots hidden",
@@ -207,7 +207,7 @@ describe("shared thumbnail tier coverage", () => {
       ],
       ["word hidden", { addWord: false }],
       ["step numbers hidden", { addStepNumbers: false }],
-      ["start position excluded", { includeStartPosition: false }],
+      ["start position excluded", { includeStartPlacement: false }],
       ["difficulty badge hidden", { addDifficultyLevel: false }],
       ["notes footer text", { customNotesText: "🔥 FireDrums 2026 🔥" }],
       ["LOOP glyph strip hidden", { showLoopGlyph: false }],

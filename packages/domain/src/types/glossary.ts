@@ -1,5 +1,5 @@
 export type GlossaryCategory =
-  | "position"
+  | "placement"
   | "general"
   | "rotation"
   | "motion"

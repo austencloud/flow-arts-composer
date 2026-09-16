@@ -13,8 +13,8 @@ const mk = (step: number | null): StepData =>
     id: `b${step}`,
     letter: null,
     gridMode: GridMode.DIAMOND,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: createMotionData({
         motionType: MotionType.PRO,
@@ -41,8 +41,8 @@ describe("stripToSequence", () => {
     const seq = stripToSequence([mk(0), mk(1), mk(2)], { word: "α→γ" });
     expect(seq.steps).toHaveLength(2);
     expect(seq.steps.map((s) => s.stepNumber)).toEqual([1, 2]);
-    expect(seq.startPosition).toBeTruthy();
-    expect((seq.startPosition as { isStartPosition?: boolean }).isStartPosition).toBe(true);
+    expect(seq.startPlacement).toBeTruthy();
+    expect((seq.startPlacement as { isStartPlacement?: boolean }).isStartPlacement).toBe(true);
     expect(seq.word).toBe("α→γ");
     expect(seq.gridMode).toBe(GridMode.DIAMOND);
   });
@@ -50,6 +50,6 @@ describe("stripToSequence", () => {
   it("handles a strip with no explicit start box (all steps)", () => {
     const seq = stripToSequence([mk(1), mk(2)]);
     expect(seq.steps).toHaveLength(2);
-    expect(seq.startPosition).toBeUndefined();
+    expect(seq.startPlacement).toBeUndefined();
   });
 });

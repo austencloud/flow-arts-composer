@@ -10,12 +10,12 @@
  * - Letters are inverted (A↔B, D↔E, etc.)
  * - Motion types are flipped (PRO↔ANTI)
  * - Prop rotation directions are flipped (CW↔CCW)
- * - Grid positions are SWAPPED (blue↔red), since inversion does not move
- *   positions. The position closure is therefore the swap requirement.
+ * - Grid placements are SWAPPED (blue↔red), since inversion does not move
+ *   placements. The placement closure is therefore the swap requirement.
  *
  * IMPORTANT: Slice size is ALWAYS halved (no quartering)
- * IMPORTANT: End position must be the SWAP of the start position
- *   (end === SWAPPED_POSITION_MAP[start]). This matches the canonical
+ * IMPORTANT: End placement must be the SWAP of the start placement
+ *   (end === SWAPPED_PLACEMENT_MAP[start]). This matches the canonical
  *   LOOPValidator (SWAPPED / SWAPPED_INVERTED both gate on
  *   SWAPPED_LOOP_VALIDATION_SET) and the UI's loop-validator.
  */
@@ -34,10 +34,10 @@ import {
 } from "$lib/shared/pictograph/prop/services/orientation-calculator";
 import {
   SWAPPED_LOOP_VALIDATION_SET,
-  SWAPPED_POSITION_MAP,
+  SWAPPED_PLACEMENT_MAP,
   getInvertedLetter,
-} from "../domain/constants/strict-loop-position-maps";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+} from "../domain/constants/strict-loop-placement-maps";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { Period } from "../domain/models/circular-models";
 
 export class SwappedInvertedLOOPExecutor {
@@ -46,7 +46,7 @@ export class SwappedInvertedLOOPExecutor {
   /**
    * Execute the swapped-inverted LOOP
    *
-   * @param sequence - The partial sequence to complete (must include start position at index 0)
+   * @param sequence - The partial sequence to complete (must include start placement at index 0)
    * @param period - Ignored (swapped-inverted LOOP always uses halved)
    * @returns The complete circular sequence with all steps
    */
@@ -54,10 +54,10 @@ export class SwappedInvertedLOOPExecutor {
     // Validate the sequence
     this._validateSequence(sequence);
 
-    // Remove start position (index 0) for processing
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    // Remove start placement (index 0) for processing
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     // Calculate how many steps to generate (always doubles for halved)
@@ -84,40 +84,40 @@ export class SwappedInvertedLOOPExecutor {
       lastStep = nextStep;
     }
 
-    // Re-insert start position at the beginning
-    sequence.unshift(startPosition);
+    // Re-insert start placement at the beginning
+    sequence.unshift(startPlacement);
 
     return sequence;
   }
 
   /**
    * Validate that the sequence can perform a swapped-inverted LOOP
-   * Requirement: end_position === SWAPPED(start_position). Inversion flips
-   * letters/motion-types/rotation but does not move positions, so the position
+   * Requirement: end_placement === SWAPPED(start_placement). Inversion flips
+   * letters/motion-types/rotation but does not move placements, so the placement
    * closure is identical to a pure SWAPPED LOOP.
    */
   private _validateSequence(sequence: StepData[]): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     // Check if the (start, end) pair is valid for swapped-inverted
-    // (end must be the SWAP of start — inversion does not move positions)
+    // (end must be the SWAP of start — inversion does not move placements)
     const key = `${startPos},${endPos}`;
 
     if (!SWAPPED_LOOP_VALIDATION_SET.has(key)) {
-      const expectedEnd = SWAPPED_POSITION_MAP[startPos as GridPosition];
+      const expectedEnd = SWAPPED_PLACEMENT_MAP[startPos as GridPlacement];
       throw new Error(
-        `Invalid position pair for swapped-inverted LOOP: ${startPos} → ${endPos}. ` +
+        `Invalid placement pair for swapped-inverted LOOP: ${startPos} → ${endPos}. ` +
           `For a swapped-inverted LOOP from ${startPos}, the sequence must end at ${expectedEnd}.`
       );
     }
@@ -147,11 +147,11 @@ export class SwappedInvertedLOOPExecutor {
     //      Red gets attributes from Blue's matching step (SWAP)
     //      Then motion types and rotations are flipped (INVERTED)
 
-    // SWAP: Grid positions must be swapped (blue↔red positions)
+    // SWAP: Grid placements must be swapped (blue↔red placements)
     // e.g., alpha3 (blue=west, red=east) → alpha7 (blue=east, red=west)
-    const matchingEndPos = previousMatchingStep.endPosition;
-    const swappedEndPosition = matchingEndPos
-      ? (SWAPPED_POSITION_MAP[matchingEndPos] ?? matchingEndPos)
+    const matchingEndPos = previousMatchingStep.endPlacement;
+    const swappedEndPlacement = matchingEndPos
+      ? (SWAPPED_PLACEMENT_MAP[matchingEndPos] ?? matchingEndPos)
       : null;
 
     const newStep: StepData = {
@@ -159,8 +159,8 @@ export class SwappedInvertedLOOPExecutor {
       id: `step-${stepNumber}`,
       stepNumber,
       letter: invertedLetter, // INVERTED
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: swappedEndPosition, // SWAPPED grid position
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: swappedEndPlacement, // SWAPPED grid placement
       motions: {
         // SWAP: Blue does what Red did, with inverted transformation
         [HandSide.LEFT]: this._createSwappedInvertedMotion(

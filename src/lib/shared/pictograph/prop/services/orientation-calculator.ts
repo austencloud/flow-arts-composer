@@ -21,7 +21,7 @@ import {
   type MotionData,
 } from "../../shared/domain/models/motion-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { GridLocation } from "../../grid/domain/enums/grid-enums";
 import { PropType } from "../domain/enums/prop-type";
 
@@ -60,7 +60,7 @@ export function calculateEndOrientation(
  */
 export function updateStartOrientations(
   nextStep: StepData,
-  lastStep: StepData | StartPositionData
+  lastStep: StepData | StartPlacementData
 ): StepData {
   if (nextStep.isBlank || ("isBlank" in lastStep && lastStep.isBlank)) {
     throw new Error("Both steps must have motion data (not be blank)");

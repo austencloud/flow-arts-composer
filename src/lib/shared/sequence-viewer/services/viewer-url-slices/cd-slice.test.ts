@@ -120,13 +120,13 @@ describe("cd slice", () => {
       "addWord",
       "addStepNumbers",
       "addDifficultyLevel",
-      "includeStartPosition",
+      "includeStartPlacement",
       "showLoopGlyph",
       "showNotes",
       "customNotesText",
       "showQRCode",
       "showMandala",
-      "startPositionLayout",
+      "startPlacementLayout",
     ] as const) {
       expect(live[field]).toEqual(DEFAULT_IMAGE_COMPOSITION_SETTINGS[field]);
     }
@@ -169,9 +169,9 @@ describe("cd slice", () => {
 
   it("captures the viewed length's start layout and info-cell override", async () => {
     const store = await loadManager();
-    store.setStartPositionLayoutForStepCount(STEPS, "column");
+    store.setStartPlacementLayoutForStepCount(STEPS, "column");
     store.setInfoCellChoiceForStepCount(STEPS, "mandala");
-    store.setStartPositionLayoutForStepCount(16, "column");
+    store.setStartPlacementLayoutForStepCount(16, "column");
 
     expect(captureCdSlice(store, STEPS)).toEqual({
       rest: { startLayout: "column", infoCell: "mandala" },
@@ -208,7 +208,7 @@ describe("cd slice", () => {
     sender.setShowNotes(true);
     sender.setCustomNotesText("Jam night");
     sender.setCustomName("Austen");
-    sender.setStartPositionLayout("column");
+    sender.setStartPlacementLayout("column");
     sender.setColumnCountForStepCount(STEPS, 4);
     sender.setInfoCellChoiceForStepCount(STEPS, "none");
     const payload = captureCdSlice(sender, STEPS)!;
@@ -255,7 +255,7 @@ describe("cd slice", () => {
     // Otherwise the recipient's own numeric choice would leak into a borrowed view.
     const recipient = await loadManager();
     recipient.setColumnCountForStepCount(STEPS, 4);
-    recipient.setStartPositionLayoutForStepCount(STEPS, "column");
+    recipient.setStartPlacementLayoutForStepCount(STEPS, "column");
 
     const seeded = seedFromCdSlice(
       { rest: { settings: { showMandala: false } } },
@@ -264,7 +264,7 @@ describe("cd slice", () => {
     );
 
     expect(seeded.columnCountOverrides[String(STEPS)]).toBeNull();
-    expect(seeded.startPositionLayoutOverrides[String(STEPS)]).toBeUndefined();
+    expect(seeded.startPlacementLayoutOverrides[String(STEPS)]).toBeUndefined();
   });
 
   it("suspend -> apply -> tweak -> restore -> resume writes zero times", async () => {
@@ -372,13 +372,13 @@ describe("cd slice", () => {
           "addWord",
           "addStepNumbers",
           "addDifficultyLevel",
-          "includeStartPosition",
+          "includeStartPlacement",
           "showLoopGlyph",
           "showNotes",
           "customNotesText",
           "showQRCode",
           "showMandala",
-          "startPositionLayout",
+          "startPlacementLayout",
         ].sort()
       );
       // Auto columns stay absent -- the seed writes them as an explicit null.

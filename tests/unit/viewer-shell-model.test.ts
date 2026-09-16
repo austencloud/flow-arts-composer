@@ -69,7 +69,7 @@ describe("viewer shell model", () => {
         fps: 60,
         loopCount: 3,
         resolution: 2160,
-        includeStartPosition: true,
+        includeStartPlacement: true,
         includeEndHold: false,
         renderMode: "3d",
         playbackMode: "continuous",
@@ -93,7 +93,7 @@ describe("viewer shell model", () => {
       buildCardExportAnalyticsConfig({
         stepCount: 16,
         darkMode: true,
-        includeStartPosition: false,
+        includeStartPlacement: false,
         handPath: true,
         leftPropType: PropType.STAFF,
         rightPropType: PropType.STAFF,

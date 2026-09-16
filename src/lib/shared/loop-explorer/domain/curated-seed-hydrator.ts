@@ -6,7 +6,7 @@ import {
   type SequenceData,
 } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
-  convertToGridPosition,
+  convertToGridPlacement,
   mapLocation,
   mapMotionType,
   mapOrientation,
@@ -19,7 +19,7 @@ import {
   createMotionData,
   type MotionData,
 } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 import type { LoopSlice } from "./legality";
 
 export interface CuratedMotionWire {
@@ -37,8 +37,8 @@ export interface CuratedMotionWire {
 
 export interface CuratedStepWire {
   readonly letter: string;
-  readonly startPosition: string;
-  readonly endPosition: string;
+  readonly startPlacement: string;
+  readonly endPlacement: string;
   readonly stepNumber: number;
   readonly leftMotion: CuratedMotionWire;
   readonly rightMotion: CuratedMotionWire;
@@ -50,7 +50,7 @@ export interface CuratedStepWire {
 
 export interface CuratedSequenceWire {
   readonly word: string;
-  readonly startPosition: string;
+  readonly startPlacement: string;
   readonly steps: readonly CuratedStepWire[];
 }
 
@@ -119,18 +119,18 @@ export function hydrateCuratedSequence(
   const id = `curated-${loopType}-${slice}-${sequenceIndex}`;
   const steps = wire.steps.map((step, stepIndex) => {
     const letter = normalizeLetter(step.letter);
-    const startPosition = convertToGridPosition(step.startPosition);
-    const endPosition = convertToGridPosition(step.endPosition);
+    const startPlacement = convertToGridPlacement(step.startPlacement);
+    const endPlacement = convertToGridPlacement(step.endPlacement);
 
-    if (!letter || !startPosition || !endPosition) {
+    if (!letter || !startPlacement || !endPlacement) {
       throw new Error(`seed step ${stepIndex + 1} has invalid notation data`);
     }
 
     return createStepData({
       id: `${id}-step-${stepIndex + 1}`,
       letter,
-      startPosition,
-      endPosition,
+      startPlacement,
+      endPlacement,
       stepNumber: step.stepNumber,
       duration: 1,
       motions: {
@@ -149,14 +149,14 @@ export function hydrateCuratedSequence(
   const firstStep = steps[0];
   if (!firstStep) throw new Error("seed has no hydrated steps");
 
-  const startPosition = startPositionDeriver.deriveFromFirstStep(firstStep);
-  const declaredStartPosition = convertToGridPosition(wire.startPosition);
+  const startPlacement = startPlacementDeriver.deriveFromFirstStep(firstStep);
+  const declaredStartPlacement = convertToGridPlacement(wire.startPlacement);
   if (
-    !declaredStartPosition ||
-    startPosition.gridPosition !== declaredStartPosition
+    !declaredStartPlacement ||
+    startPlacement.gridPlacement !== declaredStartPlacement
   ) {
     throw new Error(
-      `declared start ${wire.startPosition} disagrees with first-step motions`
+      `declared start ${wire.startPlacement} disagrees with first-step motions`
     );
   }
 
@@ -166,7 +166,7 @@ export function hydrateCuratedSequence(
     name: wire.word,
     word: wire.word,
     steps,
-    startPosition,
+    startPlacement,
     thumbnails: [],
     isFavorite: false,
     isCircular: true,

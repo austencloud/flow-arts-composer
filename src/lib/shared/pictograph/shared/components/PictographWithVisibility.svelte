@@ -52,7 +52,7 @@ Handles the forceShowAll logic for showing all glyphs in settings panel.
     showTKA={visibilityOverride}
     showTnD={visibilityOverride}
     showElemental={visibilityOverride}
-    showPositions={visibilityOverride}
+    showPlacements={visibilityOverride}
     showReversals={visibilityOverride}
     showNonRadialPoints={visibilityOverride}
     {onToggleTKA}

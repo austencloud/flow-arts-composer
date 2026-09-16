@@ -20,7 +20,7 @@ import type { IVariationProvider } from "../../src/generation/data/IVariationPro
 import type { PictographData, MotionData } from "../../src/generation/constraints/types.js";
 import { setLetterTransitionGraph } from "../../src/core/transition-graph/LetterTransitionGraph.js";
 import type { ITransitionGraph } from "../../src/core/transition-graph/ITransitionGraph.js";
-import type { PositionGroup, LetterPositionInfo } from "../../src/core/types/sequence-engine-types.js";
+import type { PlacementGroup, LetterPlacementInfo } from "../../src/core/types/sequence-engine-types.js";
 
 // Mock setup: at every position the builder has BOTH a dash-letter and a
 // shift-letter option available, so the soft preference has real room to
@@ -41,8 +41,8 @@ function makeMotion(overrides: Partial<MotionData> = {}): MotionData {
 
 function makePictograph(overrides: Partial<PictographData> & { letter: string }): PictographData {
   return {
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     timing: "together",
     direction: "together",
     leftMotion: makeMotion({ hand: "left" }),
@@ -60,15 +60,15 @@ function makePictograph(overrides: Partial<PictographData> & { letter: string })
 const MOCK_PICTOGRAPHS: PictographData[] = [
   makePictograph({
     letter: "α",
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
     rightMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
   }),
   makePictograph({
     letter: "α",
-    startPosition: "beta3",
-    endPosition: "beta3",
+    startPlacement: "beta3",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
     rightMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
   }),
@@ -76,8 +76,8 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // A: alpha1 → beta3, pro shift
   makePictograph({
     letter: "A",
-    startPosition: "alpha1",
-    endPosition: "beta3",
+    startPlacement: "alpha1",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ motionType: "pro", startLocation: "n", endLocation: "e" }),
     rightMotion: makeMotion({ motionType: "pro", startLocation: "s", endLocation: "w" }),
   }),
@@ -85,8 +85,8 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // B: beta3 → alpha1, pro shift
   makePictograph({
     letter: "B",
-    startPosition: "beta3",
-    endPosition: "alpha1",
+    startPlacement: "beta3",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ motionType: "pro", startLocation: "e", endLocation: "n" }),
     rightMotion: makeMotion({ motionType: "pro", startLocation: "w", endLocation: "s" }),
   }),
@@ -94,8 +94,8 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // X: alpha1 → beta3, dash (both hands)
   makePictograph({
     letter: "X",
-    startPosition: "alpha1",
-    endPosition: "beta3",
+    startPlacement: "alpha1",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ motionType: "dash", rotationDirection: "noRotation", startLocation: "n", endLocation: "e" }),
     rightMotion: makeMotion({ motionType: "dash", rotationDirection: "noRotation", startLocation: "s", endLocation: "w" }),
   }),
@@ -103,8 +103,8 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // Y: beta3 → alpha1, dash (both hands)
   makePictograph({
     letter: "Y",
-    startPosition: "beta3",
-    endPosition: "alpha1",
+    startPlacement: "beta3",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ motionType: "dash", rotationDirection: "noRotation", startLocation: "e", endLocation: "n" }),
     rightMotion: makeMotion({ motionType: "dash", rotationDirection: "noRotation", startLocation: "w", endLocation: "s" }),
   }),
@@ -113,7 +113,7 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
 class MockVariationProvider implements IVariationProvider {
   getVariations(letter: string, position: string, _gridMode: string): PictographData[] {
     return MOCK_PICTOGRAPHS.filter(
-      (p) => p.letter === letter && p.startPosition === position,
+      (p) => p.letter === letter && p.startPlacement === position,
     );
   }
 
@@ -122,7 +122,7 @@ class MockVariationProvider implements IVariationProvider {
   }
 }
 
-const LETTER_POSITIONS: Record<string, { start: PositionGroup; end: PositionGroup }> = {
+const LETTER_POSITIONS: Record<string, { start: PlacementGroup; end: PlacementGroup }> = {
   A: { start: "alpha", end: "beta" },
   B: { start: "beta", end: "alpha" },
   X: { start: "alpha", end: "beta" },
@@ -148,33 +148,33 @@ class MockTransitionGraph implements ITransitionGraph {
       .map(([l]) => l);
   }
 
-  getLettersStartingAt(positionGroup: PositionGroup): string[] {
+  getLettersStartingAt(placementGroup: PlacementGroup): string[] {
     return Object.entries(LETTER_POSITIONS)
-      .filter(([_, pos]) => pos.start === positionGroup)
+      .filter(([_, pos]) => pos.start === placementGroup)
       .map(([l]) => l);
   }
 
-  getLettersEndingAt(positionGroup: PositionGroup): string[] {
+  getLettersEndingAt(placementGroup: PlacementGroup): string[] {
     return Object.entries(LETTER_POSITIONS)
-      .filter(([_, pos]) => pos.end === positionGroup)
+      .filter(([_, pos]) => pos.end === placementGroup)
       .map(([l]) => l);
   }
 
-  getLetterPositionInfo(letter: string): LetterPositionInfo | null {
+  getLetterPlacementInfo(letter: string): LetterPlacementInfo | null {
     const pos = LETTER_POSITIONS[letter];
     if (!pos) return null;
     return {
       letter,
-      startPositionGroup: pos.start,
-      endPositionGroup: pos.end,
+      startPlacementGroup: pos.start,
+      endPlacementGroup: pos.end,
     };
   }
 
-  getStartPositionGroup(letter: string): PositionGroup | null {
+  getStartPlacementGroup(letter: string): PlacementGroup | null {
     return LETTER_POSITIONS[letter]?.start ?? null;
   }
 
-  getEndPositionGroup(letter: string): PositionGroup | null {
+  getEndPlacementGroup(letter: string): PlacementGroup | null {
     return LETTER_POSITIONS[letter]?.end ?? null;
   }
 

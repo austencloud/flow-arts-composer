@@ -21,7 +21,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { calculateEndOrientation } from "@tka/sequence-engine/core";
 import { Plane, type Plane as PlaneValue } from "@tka/tka-types";
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { calculateHandpathDirection } from "$lib/shared/pictograph/arrow/positioning/calculation/services/handpath-direction-calculator";
 import {
   lookupLetter,
@@ -30,7 +30,7 @@ import {
 
 type QstCollectionKey = "breaks" | "advanced" | "beyond";
 type QstPosition = "top" | "left" | "front" | "right" | "bottom" | "back";
-type QstPositionPair = readonly [QstPosition, QstPosition];
+type QstPlacementPair = readonly [QstPosition, QstPosition];
 
 interface QstPatternDefinition {
   readonly caption: string;
@@ -62,8 +62,8 @@ interface TranslatedMotion {
 interface TranslatedStep {
   readonly stepNumber: number;
   readonly letter: string;
-  readonly startPosition: string;
-  readonly endPosition: string;
+  readonly startPlacement: string;
+  readonly endPlacement: string;
   readonly duration: 1;
   readonly motions: {
     readonly left: TranslatedMotion;
@@ -290,9 +290,9 @@ async function main(): Promise<void> {
         concept: "qst";
         reference: string;
       }) => unknown;
-    const analyzeQstPositionPairs = analyzer.analyzeQstPositionPairs as (
+    const analyzeQstPlacementPairs = analyzer.analyzeQstPlacementPairs as (
       animation: unknown
-    ) => readonly QstPositionPair[];
+    ) => readonly QstPlacementPair[];
     const edges = parseCsvEdges(readFileSync(CSV_PATH, "utf8"));
 
     const sequences = patterns.map((pattern) => {
@@ -303,7 +303,7 @@ async function main(): Promise<void> {
       if (!animation)
         throw new Error(`SpiroAnim could not build ${pattern.reference}`);
 
-      const pairs = analyzeQstPositionPairs(animation);
+      const pairs = analyzeQstPlacementPairs(animation);
       if (pairs.length < 2)
         throw new Error(`${pattern.reference} has no content steps`);
 
@@ -314,17 +314,17 @@ async function main(): Promise<void> {
           const next = pairs[index + 1]!;
           const left = translateMotion(current[0], next[0], "left");
           const right = translateMotion(current[1], next[1], "right");
-          const startPosition = getGridPositionFromLocations(
+          const startPlacement = getGridPlacementFromLocations(
             left.startLocation,
             right.startLocation
           );
-          const endPosition = getGridPositionFromLocations(
+          const endPlacement = getGridPlacementFromLocations(
             left.endLocation,
             right.endLocation
           );
           const letter = lookupLetter(edges, {
-            startPosition,
-            endPosition,
+            startPlacement,
+            endPlacement,
             left,
             right,
           });
@@ -337,8 +337,8 @@ async function main(): Promise<void> {
           return {
             stepNumber: index + 1,
             letter,
-            startPosition,
-            endPosition,
+            startPlacement,
+            endPlacement,
             duration: 1,
             motions: { left, right },
           };
@@ -379,9 +379,9 @@ async function main(): Promise<void> {
           },
         },
         gridMode: "diamond",
-        startPosition: {
+        startPlacement: {
           letter: null,
-          gridPosition: firstStep.startPosition,
+          gridPlacement: firstStep.startPlacement,
           motions: {
             left: {
               hand: "left",

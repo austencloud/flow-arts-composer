@@ -2,7 +2,7 @@
  * Example-pool adapter - turns a page's curated pool JSON (verbatim MCP
  * generate_sequence step data) into playable PictographData[] strips using the
  * SAME canonical primitives the hand-authored guide content uses
- * (createMotionData, getGridPositionFromLocations, bakeReversals). One faithful
+ * (createMotionData, getGridPlacementFromLocations, bakeReversals). One faithful
  * path, so a pooled example renders byte-for-byte like an authored one.
  *
  * `buildPools()` is the factory: it's a pure function over ANY page's pool
@@ -33,12 +33,12 @@ import {
 import {
   GridMode,
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
-  getGridPositionFromLocations,
-  getGridLocationsFromPosition,
-} from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  getGridPlacementFromLocations,
+  getGridLocationsFromPlacement,
+} from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -107,17 +107,17 @@ const ORI: Record<string, Orientation> = {
 // (β/α/γ) are Letter values too (BETA/ALPHA/GAMMA), so one gate covers steps and
 // start boxes alike.
 const LETTER_VALUES = new Set<string>(Object.values(Letter));
-const POSITION_VALUES = new Set<string>(Object.values(GridPosition));
+const POSITION_VALUES = new Set<string>(Object.values(GridPlacement));
 
 function toLetter(s: string): Letter {
   if (!LETTER_VALUES.has(s))
     throw new Error(`pool-adapter: unmapped letter "${s}"`);
   return s as Letter;
 }
-function toPosition(s: string): GridPosition {
+function toPosition(s: string): GridPlacement {
   if (!POSITION_VALUES.has(s))
     throw new Error(`pool-adapter: unknown position "${s}"`);
-  return s as GridPosition;
+  return s as GridPlacement;
 }
 function req<T>(v: T | undefined, msg: string): T {
   if (v === undefined) throw new Error(`pool-adapter: ${msg}`);
@@ -137,7 +137,7 @@ function resolveGridMode(raw: string | undefined): GridMode {
 }
 
 /**
- * Init-time invariant. The canonical inverse (getGridLocationsFromPosition) is
+ * Init-time invariant. The canonical inverse (getGridLocationsFromPlacement) is
  * what the adapter uses to turn a position NAME back into a (left, right) location
  * pair - the deriver is the canon, so we reuse its inverse rather than
  * hand-author a table. This assertion enumerates EVERY GridLocation pair through
@@ -147,13 +147,13 @@ function resolveGridMode(raw: string | undefined): GridMode {
  * it). Throws at module load if the canon ever drifts.
  */
 function assertPositionInverseIsUnique(): void {
-  const producedBy = new Map<GridPosition, string>();
+  const producedBy = new Map<GridPlacement, string>();
   const locations = Object.values(GridLocation);
   for (const left of locations) {
     for (const right of locations) {
-      let pos: GridPosition;
+      let pos: GridPlacement;
       try {
-        pos = getGridPositionFromLocations(
+        pos = getGridPlacementFromLocations(
           left as GridLocation,
           right as GridLocation
         );
@@ -171,8 +171,8 @@ function assertPositionInverseIsUnique(): void {
     }
   }
   for (const [pos, key] of producedBy) {
-    const [b, r] = getGridLocationsFromPosition(pos);
-    if (getGridPositionFromLocations(b, r) !== pos) {
+    const [b, r] = getGridLocationsFromPlacement(pos);
+    if (getGridPlacementFromLocations(b, r) !== pos) {
       throw new Error(`pool-adapter: inverse round-trip failed for ${pos}`);
     }
     if (`${b},${r}` !== key) {
@@ -188,7 +188,7 @@ function locationsOf(posName: string): {
   left: GridLocation;
   right: GridLocation;
 } {
-  const [left, right] = getGridLocationsFromPosition(toPosition(posName));
+  const [left, right] = getGridLocationsFromPlacement(toPosition(posName));
   return { left, right };
 }
 
@@ -259,8 +259,8 @@ export function entryToStrip(
     letter: toLetter(s0.letter),
     gridMode,
     stepNumber: 0,
-    startPosition: getGridPositionFromLocations(startLoc.left, startLoc.right),
-    endPosition: getGridPositionFromLocations(startLoc.left, startLoc.right),
+    startPlacement: getGridPlacementFromLocations(startLoc.left, startLoc.right),
+    endPlacement: getGridPlacementFromLocations(startLoc.left, startLoc.right),
     motions: {
       left: handMotion(
         HandSide.LEFT,
@@ -290,8 +290,8 @@ export function entryToStrip(
         letter: toLetter(s.letter),
         gridMode,
         stepNumber: s.step,
-        startPosition: getGridPositionFromLocations(from.left, from.right),
-        endPosition: getGridPositionFromLocations(to.left, to.right),
+        startPlacement: getGridPlacementFromLocations(from.left, from.right),
+        endPlacement: getGridPlacementFromLocations(to.left, to.right),
         motions: {
           left: handMotion(
             HandSide.LEFT,

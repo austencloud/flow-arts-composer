@@ -13,7 +13,7 @@
 
 import {
   GridMode,
-  type GridPosition,
+  type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
@@ -21,12 +21,12 @@ import {
   DifficultyLevel,
   PropContinuity,
 } from "$lib/shared/foundation/domain/models/generation/generate-models";
-import { getAllPositions } from "$lib/features/create/generate/shared/domain/start-position-presets";
+import { getAllPlacements } from "$lib/features/create/generate/shared/domain/start-placement-presets";
 import {
   LOOPType,
   Period,
 } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { VERTICAL_MIRROR_POSITION_MAP } from "$lib/features/create/generate/circular/domain/constants/strict-loop-position-maps";
+import { VERTICAL_MIRROR_PLACEMENT_MAP } from "$lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps";
 import type { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
 import type { OrientationCycleExtender } from "$lib/features/create/generate/circular/services/orientation-cycle-extender";
 import type {
@@ -40,9 +40,9 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 /**
  * LOOP types that compose rotation + mirroring.
  * After rotation returns to home, mirroring needs vertical_mirror(start) == start
- * for the sequence to close. This is only true for positions on the N-S axis
- * (alpha1, alpha5, beta1, beta5 in diamond mode). All gamma positions fail
- * because mirroring always maps them to a different gamma position.
+ * for the sequence to close. This is only true for placements on the N-S axis
+ * (alpha1, alpha5, beta1, beta5 in diamond mode). All gamma placements fail
+ * because mirroring always maps them to a different gamma placement.
  */
 const REQUIRES_AXIS_SYMMETRIC_START = new Set<LOOPType>([
   LOOPType.MIRRORED_ROTATED,
@@ -50,11 +50,11 @@ const REQUIRES_AXIS_SYMMETRIC_START = new Set<LOOPType>([
 ]);
 
 /**
- * Check if a position is on the vertical axis (self-mirroring).
- * vertical_mirror(pos) == pos for these positions.
+ * Check if a placement is on the vertical axis (self-mirroring).
+ * vertical_mirror(placement) == placement for these placements.
  */
-function isAxisSymmetric(position: GridPosition): boolean {
-  return VERTICAL_MIRROR_POSITION_MAP[position] === position;
+function isAxisSymmetric(placement: GridPlacement): boolean {
+  return VERTICAL_MIRROR_PLACEMENT_MAP[placement] === placement;
 }
 
 /**
@@ -110,8 +110,8 @@ export class InfiniteSequenceGenerator {
     endState: EndState
   ): Promise<GeneratedSequenceInfo | null> {
     // LOOPs are self-contained (end = start), so to chain continuously,
-    // constrain the NEXT loop to start at the PREVIOUS loop's end position.
-    return this.generateLOOP(endState.position ?? undefined);
+    // constrain the NEXT loop to start at the PREVIOUS loop's end placement.
+    return this.generateLOOP(endState.placement ?? undefined);
   }
 
   async generateInitial(): Promise<GeneratedSequenceInfo | null> {
@@ -120,35 +120,35 @@ export class InfiniteSequenceGenerator {
 
   /**
    * Generate a LOOP sequence with the current settings rotation.
-   * @param targetStartPosition - If provided, block all other positions to force this start.
+   * @param targetStartPlacement - If provided, block all other placements to force this start.
    */
   private async generateLOOP(
-    targetStartPosition?: GridPosition
+    targetStartPlacement?: GridPlacement
   ): Promise<GeneratedSequenceInfo | null> {
     let settings = this.getNextSettings();
 
-    // Composed mirrored+rotated LOOPs only work with axis-symmetric positions.
-    // If chaining forces us to a non-axis position, skip to the next LOOP type.
+    // Composed mirrored+rotated LOOPs only work with axis-symmetric placements.
+    // If chaining forces us to a non-axis placement, skip to the next LOOP type.
     if (REQUIRES_AXIS_SYMMETRIC_START.has(settings.loopType)) {
-      if (targetStartPosition && !isAxisSymmetric(targetStartPosition)) {
+      if (targetStartPlacement && !isAxisSymmetric(targetStartPlacement)) {
         // Advance past this incompatible LOOP type
         settings = this.getNextSettings();
       }
     }
 
-    // Build blocked positions list
-    const allPositions = getAllPositions(GridMode.DIAMOND);
-    let blockedStartPositions: GridPosition[] | undefined;
+    // Build blocked placements list
+    const allPlacements = getAllPlacements(GridMode.DIAMOND);
+    let blockedStartPlacements: GridPlacement[] | undefined;
 
-    if (targetStartPosition) {
-      // Force the target position
-      blockedStartPositions = allPositions.filter(
-        (p) => p !== targetStartPosition
+    if (targetStartPlacement) {
+      // Force the target placement
+      blockedStartPlacements = allPlacements.filter(
+        (p) => p !== targetStartPlacement
       );
     } else if (REQUIRES_AXIS_SYMMETRIC_START.has(settings.loopType)) {
-      // No target position, but LOOP type needs axis-symmetric start.
-      // Block all non-axis positions (all gamma, plus alpha3/7, beta3/7).
-      blockedStartPositions = allPositions.filter((p) => !isAxisSymmetric(p));
+      // No target placement, but LOOP type needs axis-symmetric start.
+      // Block all non-axis placements (all gamma, plus alpha3/7, beta3/7).
+      blockedStartPlacements = allPlacements.filter((p) => !isAxisSymmetric(p));
     }
 
     try {
@@ -162,7 +162,7 @@ export class InfiniteSequenceGenerator {
         turnIntensity: settings.turnIntensity,
         loopType: settings.loopType,
         period: settings.period,
-        ...(blockedStartPositions && { blockedStartPositions }),
+        ...(blockedStartPlacements && { blockedStartPlacements }),
       });
 
       // Extend sequence if orientations don't return to start after one pass.
@@ -189,18 +189,18 @@ export class InfiniteSequenceGenerator {
         error
       );
 
-      // Try a simpler LOOP type on failure, preserving the position constraint
-      return this.generateFallbackLOOP(settings, targetStartPosition);
+      // Try a simpler LOOP type on failure, preserving the placement constraint
+      return this.generateFallbackLOOP(settings, targetStartPlacement);
     }
   }
 
   /**
    * Fallback generation with simpler settings if the primary generation fails.
-   * Preserves the target start position constraint to maintain chain continuity.
+   * Preserves the target start placement constraint to maintain chain continuity.
    */
   private async generateFallbackLOOP(
     originalSettings: GenerationSettings,
-    targetStartPosition?: GridPosition
+    targetStartPlacement?: GridPlacement
   ): Promise<GeneratedSequenceInfo | null> {
     const fallbackSettings: GenerationSettings = {
       loopType: LOOPType.ROTATED,
@@ -211,9 +211,9 @@ export class InfiniteSequenceGenerator {
       totalSteps: 16,
     };
 
-    const blockedStartPositions = targetStartPosition
-      ? getAllPositions(GridMode.DIAMOND).filter(
-          (p) => p !== targetStartPosition
+    const blockedStartPlacements = targetStartPlacement
+      ? getAllPlacements(GridMode.DIAMOND).filter(
+          (p) => p !== targetStartPlacement
         )
       : undefined;
 
@@ -228,7 +228,7 @@ export class InfiniteSequenceGenerator {
         turnIntensity: fallbackSettings.turnIntensity,
         loopType: fallbackSettings.loopType,
         period: fallbackSettings.period,
-        ...(blockedStartPositions && { blockedStartPositions }),
+        ...(blockedStartPlacements && { blockedStartPlacements }),
       });
 
       const extended = this.cycleExtender.extendIfNeeded(sequence);

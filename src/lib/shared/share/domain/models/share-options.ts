@@ -10,7 +10,7 @@ export interface ShareOptions {
   format: "PNG" | "JPEG" | "WebP";
   quality: number; // 0-1 for JPEG/WebP
 
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   addStepNumbers: boolean;
   addUserInfo: boolean;
   addWord: boolean;
@@ -42,7 +42,7 @@ export const SHARE_PRESETS: Record<string, SharePreset> = {
     options: {
       format: "JPEG",
       quality: 0.9,
-      includeStartPosition: true,
+      includeStartPlacement: true,
       addStepNumbers: true,
       addUserInfo: false, // Keep clean for social
       addWord: true,
@@ -61,7 +61,7 @@ export const SHARE_PRESETS: Record<string, SharePreset> = {
     options: {
       format: "PNG",
       quality: 1.0,
-      includeStartPosition: true,
+      includeStartPlacement: true,
       addStepNumbers: true,
       addUserInfo: true,
       addWord: true,
@@ -80,7 +80,7 @@ export const SHARE_PRESETS: Record<string, SharePreset> = {
     options: {
       format: "WebP",
       quality: 0.85,
-      includeStartPosition: true,
+      includeStartPlacement: true,
       addStepNumbers: true,
       addUserInfo: true,
       addWord: true,
@@ -105,7 +105,7 @@ export const DEFAULT_SHARE_OPTIONS: ShareOptions = {
   darkMode: false, // Light mode by default
 
   // User-configurable content options
-  includeStartPosition: true,
+  includeStartPlacement: true,
   addStepNumbers: true,
   addUserInfo: false,
   addWord: true,

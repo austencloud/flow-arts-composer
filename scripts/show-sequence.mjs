@@ -94,7 +94,7 @@ function contentHashOf(raw) {
   const canonical = JSON.stringify({
     word: raw.word || "",
     gridMode: raw.gridMode || "diamond",
-    startPosition: raw.startPosition || raw.startingPosition || null,
+    startPlacement: raw.startPlacement || raw.startingPlacement || null,
     steps: raw.steps || [],
   });
   return crypto.createHash("sha256").update(canonical).digest("hex").slice(0, 32);
@@ -229,7 +229,7 @@ async function run() {
     };
     const sourceData = {
       steps: hydrated.steps || [],
-      startPosition: hydrated.startPosition || null,
+      startPlacement: hydrated.startPlacement || null,
     };
     code = await createShortcode(
       db,

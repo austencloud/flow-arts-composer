@@ -14,7 +14,7 @@ Supporting data for the `$deck` skill. Not loaded into every conversation.
 | `--dry-run` | No | Count only, no writes |
 | `--out <path>` | No | Save to JSON file |
 | `--seed-firestore` | No | Write to Firestore |
-| `--startPositions` | No | Comma-separated override |
+| `--startPlacements` | No | Comma-separated override |
 
 ## Halved-Only LOOP Types
 
@@ -37,7 +37,7 @@ decks/{deckId}
   └── level: number
 
 decks/{deckId}/sequences/{seqId}
-  ├── word, name, steps[], startPosition
+  ├── word, name, steps[], startPlacement
   ├── gridMode, isCircular, loopType
   ├── level, sequenceLength
   └── metadata: { seedWord, handPathFamily }

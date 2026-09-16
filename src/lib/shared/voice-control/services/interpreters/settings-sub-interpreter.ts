@@ -22,8 +22,8 @@ const SETTING_ALIASES: Record<string, string> = {
   "tnd": "tndGlyph",
   "elemental glyph": "elementalGlyph",
   "elemental": "elementalGlyph",
-  "positions glyph": "positionsGlyph",
-  "positions": "positionsGlyph",
+  "positions glyph": "placementsGlyph",
+  "positions": "placementsGlyph",
   "reversal indicators": "reversalIndicators",
   reversals: "reversalIndicators",
 

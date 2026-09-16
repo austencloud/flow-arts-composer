@@ -31,8 +31,8 @@ export function createStepData(data: CreateStepDataInput = {}): StepData {
     // Canonical Step properties
     id: data.id ?? crypto.randomUUID(),
     letter: data.letter ?? null,
-    startPosition: data.startPosition ?? null,
-    endPosition: data.endPosition ?? null,
+    startPlacement: data.startPlacement ?? null,
+    endPlacement: data.endPlacement ?? null,
     motions,
 
     // Beat context properties

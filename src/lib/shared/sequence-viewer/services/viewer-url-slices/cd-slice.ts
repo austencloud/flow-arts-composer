@@ -43,8 +43,8 @@
  *      RECIPIENT's own boot migration.
  *
  * ENCODED (flat): addWord, addStepNumbers, addDifficultyLevel,
- * includeStartPosition, customName, showLoopGlyph, showNotes, customNotesText,
- * showQRCode, showMandala, startPositionLayout — plus, for the viewed sequence
+ * includeStartPlacement, customName, showLoopGlyph, showNotes, customNotesText,
+ * showQRCode, showMandala, startPlacementLayout — plus, for the viewed sequence
  * length only, `cols` (headline param), `startLayout` and `infoCell`.
  *
  * EXCLUDED, with reasons:
@@ -63,7 +63,7 @@
  * - `columnCountOverrides` as a map: per-length and identity-gated. Only the
  *   viewed sequence's length is meaningful in a link that carries that
  *   sequence, so it rides the single `cols` headline param instead.
- * - `startPositionLayoutOverrides` / `infoCellChoiceOverrides` as maps: same
+ * - `startPlacementLayoutOverrides` / `infoCellChoiceOverrides` as maps: same
  *   per-length argument, encoded as `startLayout` / `infoCell` for the viewed
  *   length only. `infoCell` is encoded ONLY when an explicit override exists;
  *   the derived value would duplicate showQRCode/showMandala.
@@ -78,14 +78,14 @@ const ENCODED_FIELDS = [
   "addWord",
   "addStepNumbers",
   "addDifficultyLevel",
-  "includeStartPosition",
+  "includeStartPlacement",
   "customName",
   "showLoopGlyph",
   "showNotes",
   "customNotesText",
   "showQRCode",
   "showMandala",
-  "startPositionLayout",
+  "startPlacementLayout",
 ] as const satisfies readonly (keyof ImageCompositionSettings)[];
 
 type EncodedField = (typeof ENCODED_FIELDS)[number];
@@ -143,7 +143,7 @@ export function captureCdSlice(
 
   const rest: NonNullable<CdSlicePayload["rest"]> = {};
   if (Object.keys(settings).length > 0) rest.settings = settings;
-  const startLayout = live.startPositionLayoutOverrides?.[key];
+  const startLayout = live.startPlacementLayoutOverrides?.[key];
   if (startLayout) rest.startLayout = startLayout;
   const infoCell = live.infoCellChoiceOverrides?.[key];
   if (infoCell) rest.infoCell = infoCell;
@@ -164,16 +164,16 @@ export function seedFromCdSlice(
   current: ImageCompositionSettings
 ): ImageCompositionSettings {
   const key = String(stepCount);
-  const startPositionLayoutOverrides = {
-    ...(current.startPositionLayoutOverrides ?? {}),
+  const startPlacementLayoutOverrides = {
+    ...(current.startPlacementLayoutOverrides ?? {}),
   };
   const infoCellChoiceOverrides = {
     ...(current.infoCellChoiceOverrides ?? {}),
   };
 
   const startLayout = payload.rest?.startLayout;
-  if (startLayout) startPositionLayoutOverrides[key] = startLayout;
-  else delete startPositionLayoutOverrides[key];
+  if (startLayout) startPlacementLayoutOverrides[key] = startLayout;
+  else delete startPlacementLayoutOverrides[key];
 
   const infoCell = payload.rest?.infoCell;
   if (infoCell) infoCellChoiceOverrides[key] = infoCell;
@@ -196,7 +196,7 @@ export function seedFromCdSlice(
       ...(current.columnCountOverrides ?? {}),
       [key]: payload.cols ?? null,
     },
-    startPositionLayoutOverrides,
+    startPlacementLayoutOverrides,
     infoCellChoiceOverrides,
     // Derived alias, never encoded — kept consistent the way createSettings does.
     addUserInfo: showNotes,

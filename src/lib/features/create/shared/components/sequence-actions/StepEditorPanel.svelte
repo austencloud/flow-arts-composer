@@ -13,7 +13,7 @@
   import PropPlacementGrid from "$lib/shared/pictograph/grid/components/PropPlacementGrid.svelte";
   import type { PlacementMotionMove } from "$lib/shared/pictograph/grid/state/prop-placement-motion.svelte";
   import type { PropPlacementChange } from "$lib/shared/pictograph/grid/domain/prop-placement";
-  import StartPositionEditMode from "./StartPositionEditMode.svelte";
+  import StartPlacementEditMode from "./StartPlacementEditMode.svelte";
   import DurationControl from "./DurationControl.svelte";
   import PictographInspectModal from "./PictographInspectModal.svelte";
   import ArrowAdjustmentPanel from "./ArrowAdjustmentPanel.svelte";
@@ -104,7 +104,7 @@
   const isShortWideEditor = $derived(
     editorWidth > 0 && editorHeight > 0 && editorHeight <= 520
   );
-  const startPositionHitTargetRadius = $derived(
+  const startPlacementHitTargetRadius = $derived(
     isShortWideEditor ? 160 : isSideBySideLayout ? 75 : 85
   );
 
@@ -147,7 +147,7 @@
   const hasSelection = $derived(
     displayedStepNumber !== null && displayedStepData !== null
   );
-  const isStartPositionSelected = $derived(displayedStepNumber === 0);
+  const isStartPlacementSelected = $derived(displayedStepNumber === 0);
   const startLeftMotion = $derived(displayedStepData?.motions?.[HandSide.LEFT]);
   const startRightMotion = $derived(
     displayedStepData?.motions?.[HandSide.RIGHT]
@@ -180,12 +180,12 @@
       startRightMotion?.propType ??
       PropType.STAFF
   );
-  const canAimStartPosition = $derived(
-    isStartPositionSelected &&
+  const canAimStartPlacement = $derived(
+    isStartPlacementSelected &&
       startLeftLocation !== null &&
       startRightLocation !== null
   );
-  const startPositionUsesCenter = $derived(
+  const startPlacementUsesCenter = $derived(
     startLeftLocation === GridLocation.CENTER ||
       startRightLocation === GridLocation.CENTER
   );
@@ -198,7 +198,7 @@
   const stepLabel = $derived.by(() => {
     if (displayedStepNumber === null) return "";
     return displayedStepNumber === 0
-      ? "Start Position"
+      ? "Start Placement"
       : `Step ${displayedStepNumber}`;
   });
 
@@ -206,7 +206,7 @@
   // This helps users understand cascade impact when editing turns on mobile
   const cascadeCount = $derived.by(() => {
     if (displayedStepNumber === null || !sequence?.steps) return 0;
-    // Start position affects all steps, regular steps affect subsequent ones
+    // Start placement affects all steps, regular steps affect subsequent ones
     if (displayedStepNumber === 0) {
       return sequence.steps.length;
     }
@@ -240,13 +240,13 @@
     // 1. We have cascade steps (cascadeCount > 0)
     // 2. The sequence version changed (turns/orientations updated)
     // 3. This isn't the initial load (lastSequenceVersion !== 0)
-    // 4. Panel is open and we're not on start position
+    // 4. Panel is open and we're not on start placement
     if (
       cascadeCount > 0 &&
       sequenceVersion !== lastSequenceVersion &&
       lastSequenceVersion !== 0 &&
       isOpen &&
-      !isStartPositionSelected
+      !isStartPlacementSelected
     ) {
       showCascadePulse = true;
       const timeout = setTimeout(() => {
@@ -281,9 +281,9 @@
   );
 
   // Beta swap state — both hands end at same location. Invisible placeholder =
-  // hand not really there (both-required Step shape): not a beta position.
-  const isBetaPosition = $derived.by(() => {
-    if (!displayedStepData || isStartPositionSelected) return false;
+  // hand not really there (both-required Step shape): not a beta placement.
+  const isBetaPlacement = $derived.by(() => {
+    if (!displayedStepData || isStartPlacementSelected) return false;
     const left = displayedStepData.motions?.[HandSide.LEFT];
     const right = displayedStepData.motions?.[HandSide.RIGHT];
     return !!(
@@ -299,8 +299,8 @@
     if (event.key.toLowerCase() !== "b") return;
     if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey)
       return;
-    if (!isOpen || !hasSelection || isStartPositionSelected) return;
-    if (!isBetaPosition) return;
+    if (!isOpen || !hasSelection || isStartPlacementSelected) return;
+    if (!isBetaPlacement) return;
     if (hasArrowSelected) return;
     const target = event.target as HTMLElement;
     if (
@@ -355,11 +355,11 @@
   }
 
   function handleMoveProp(color: HandSide) {
-    if (isRepositioning || startPositionUsesCenter) return;
+    if (isRepositioning || startPlacementUsesCenter) return;
     placementGrid?.moveProp(color);
   }
 
-  async function rotateStartPositionLocation(
+  async function rotateStartPlacementLocation(
     color: HandSide,
     direction: "clockwise" | "counterclockwise",
     rotationSteps: number,
@@ -367,9 +367,9 @@
     animateFromLocation: GridLocation | null = null
   ) {
     if (
-      !isStartPositionSelected ||
+      !isStartPlacementSelected ||
       isRepositioning ||
-      startPositionUsesCenter ||
+      startPlacementUsesCenter ||
       rotationSteps < 1
     ) {
       return;
@@ -390,7 +390,7 @@
       );
 
       const updatedLocation =
-        activeSequenceState.selectedStartPosition?.motions?.[color]
+        activeSequenceState.selectedStartPlacement?.motions?.[color]
           ?.startLocation;
       if (updatedLocation !== targetLocation) {
         placementResetEpoch += 1;
@@ -431,7 +431,7 @@
       currentLocation,
       directionStep
     ) as GridLocation;
-    await rotateStartPositionLocation(
+    await rotateStartPlacementLocation(
       color,
       direction,
       2,
@@ -442,7 +442,7 @@
 
   async function handlePlacementComplete(leftLocation, rightLocation) {
     if (
-      !isStartPositionSelected ||
+      !isStartPlacementSelected ||
       isRepositioning ||
       startLeftLocation === null ||
       startRightLocation === null
@@ -477,7 +477,7 @@
     }
 
     const direction = rotationSteps > 0 ? "clockwise" : "counterclockwise";
-    await rotateStartPositionLocation(
+    await rotateStartPlacementLocation(
       targetColor,
       direction,
       Math.abs(rotationSteps),
@@ -502,12 +502,12 @@
       <h2>Step Editor</h2>
       <span class="subtitle">
         {stepLabel}
-        {#if cascadeCount > 0 && !isStartPositionSelected}
+        {#if cascadeCount > 0 && !isStartPlacementSelected}
           <span class="cascade-indicator" class:pulse={showCascadePulse}>
             → +{cascadeCount} step{cascadeCount === 1 ? "" : "s"}
           </span>
         {/if}
-        {#if isBetaPosition && isBetaSwapped}
+        {#if isBetaPlacement && isBetaSwapped}
           <button
             class="beta-swap-badge active"
             onclick={() => onBetaSwapToggle?.()}
@@ -518,7 +518,7 @@
             aria-label="Beta offset swapped, press B to toggle"
             aria-pressed="true">β⇄</button
           >
-        {:else if isBetaPosition}
+        {:else if isBetaPlacement}
           <button
             class="beta-swap-badge"
             onclick={() => onBetaSwapToggle?.()}
@@ -555,10 +555,10 @@
           <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
         </button>
       {/if}
-      <!-- No delete button on the start position: with only a start position
+      <!-- No delete button on the start placement: with only a start placement
            the user can already edit it in place, and "deleting" it means
            clearing the whole sequence — that lives on the Clear button. -->
-      {#if onDelete && hasSelection && !isStartPositionSelected}
+      {#if onDelete && hasSelection && !isStartPlacementSelected}
         <button
           class="icon-btn delete"
           onclick={() => onDelete()}
@@ -598,9 +598,9 @@
           }
         }}
       >
-        <div class="pictograph-container" class:aiming={canAimStartPosition}>
-          {#if canAimStartPosition && startLeftLocation && startRightLocation}
-            <div class="start-position-aim" data-swipe-block>
+        <div class="pictograph-container" class:aiming={canAimStartPlacement}>
+          {#if canAimStartPlacement && startLeftLocation && startRightLocation}
+            <div class="start-placement-aim" data-swipe-block>
               <PropPlacementGrid
                 bind:this={placementGrid}
                 gridMode={startGridMode}
@@ -616,12 +616,12 @@
                 previewPictographData={displayedStepData}
                 resetEpoch={placementResetEpoch}
                 motionMove={placementMotionMove}
-                showCenter={startPositionUsesCenter}
+                showCenter={startPlacementUsesCenter}
                 editAfterCompletion
                 disabled={isRepositioning}
                 showUndo={false}
                 renderTray={false}
-                hitTargetRadius={startPositionHitTargetRadius}
+                hitTargetRadius={startPlacementHitTargetRadius}
                 onChange={handlePlacementChange}
                 onPlacementComplete={handlePlacementComplete}
                 {onOrientationChange}
@@ -642,21 +642,21 @@
     <div
       class="controls-section"
       class:mobile={!isSideBySideLayout}
-      class:duration-only={hasSelection && !isStartPositionSelected}
+      class:duration-only={hasSelection && !isStartPlacementSelected}
     >
       {#if !hasSelection}
         <div class="no-selection">
           <i class="fas fa-hand-pointer" aria-hidden="true"></i>
           <p>Select a step to edit</p>
         </div>
-      {:else if isStartPositionSelected}
-        <StartPositionEditMode
-          startPositionData={displayedStepData}
+      {:else if isStartPlacementSelected}
+        <StartPlacementEditMode
+          startPlacementData={displayedStepData}
           stacked={!isSideBySideLayout}
           compact={!isSideBySideLayout || isShortWideEditor}
           focused={isShortWideEditor}
           {activeMoveHand}
-          repositionDisabled={startPositionUsesCenter}
+          repositionDisabled={startPlacementUsesCenter}
           {isRepositioning}
           {onOrientationChange}
           onLocationRotate={handleLocationRotate}
@@ -965,7 +965,7 @@
     border-radius: 0;
   }
 
-  .start-position-aim {
+  .start-placement-aim {
     width: 100%;
     height: 100%;
     min-height: 0;
@@ -994,7 +994,7 @@
   }
 
   /* Duration already owns its spacing. Removing the second padded frame gives
-     the pictograph that space without changing the start-position editor. */
+     the pictograph that space without changing the start-placement editor. */
   .controls-section.mobile.duration-only {
     padding: 0;
     overflow: visible;

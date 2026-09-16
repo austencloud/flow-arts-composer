@@ -125,8 +125,8 @@ function convertToEngineStep(step, index) {
   const right = step.motions?.right || step.motions?.red || {};
   return {
     letter: step.letter,
-    startPosition: step.startPosition,
-    endPosition: step.endPosition,
+    startPlacement: step.startPlacement,
+    endPlacement: step.endPlacement,
     // The detector reads `motions.{left,right}` while transform comparators use
     // flat `leftMotion`/`rightMotion`. Emit both current shapes.
     motions: { left, right },
@@ -164,8 +164,8 @@ function detectLoop(raw) {
     } = require("../packages/sequence-engine/dist/loop/detection/LOOPDetector.js");
 
     const steps = raw.steps || [];
-    const startPos = raw.startPosition || raw.startingPosition;
-    const startGridPos = startPos?.startPosition || startPos?.gridPosition;
+    const startPos = raw.startPlacement || raw.startingPlacement;
+    const startGridPos = startPos?.startPlacement || startPos?.gridPlacement;
 
     // Build engine-format steps with start position as step 0
     const startLeft = {
@@ -186,8 +186,8 @@ function detectLoop(raw) {
     const engineSteps = [
       {
         letter: startPos?.letter || "β",
-        startPosition: startGridPos || "beta1",
-        endPosition: startPos?.endPosition || startGridPos || "beta1",
+        startPlacement: startGridPos || "beta1",
+        endPlacement: startPos?.endPlacement || startGridPos || "beta1",
         motions: { left: startLeft, right: startRight },
         leftMotion: {
           motionType: "static",
@@ -251,17 +251,17 @@ async function readInput() {
 // ---------------------------------------------------------------------------
 
 /**
- * Build a complete startPosition object. Two input shapes are tolerated:
+ * Build a complete startPlacement object. Two input shapes are tolerated:
  *
  *   1. Rich object (from the app or a prior export): has current
  *      .motions.left/right or legacy .motions.blue/red. Normalize it here.
  *   2. Bare string or stub (from MCP generate_sequence, which returns
- *      startPosition as a grid-position string like "beta5"): synthesize a
- *      static startPosition object from the first step's start-side motion
+ *      startPlacement as a grid-placement string like "beta5"): synthesize a
+ *      static startPlacement object from the first step's start-side motion
  *      data. Without this, the Firestore doc ends up with undefined
  *      motions, and the thumbnail renderer draws an empty Start cell.
  */
-function buildStartPositionObject(startPosInput, steps, sequenceId) {
+function buildStartPlacementObject(startPosInput, steps, sequenceId) {
   if (
     startPosInput &&
     typeof startPosInput === "object" &&
@@ -269,17 +269,17 @@ function buildStartPositionObject(startPosInput, steps, sequenceId) {
     (startPosInput.motions?.right || startPosInput.motions?.red)
   ) {
     const gridPos =
-      startPosInput.gridPosition ||
-      startPosInput.startPosition ||
-      steps?.[0]?.startPosition ||
+      startPosInput.gridPlacement ||
+      startPosInput.startPlacement ||
+      steps?.[0]?.startPlacement ||
       null;
     return {
-      isStartPosition: true,
+      isStartPlacement: true,
       id: startPosInput.id || `start-${sequenceId}`,
-      gridPosition: gridPos,
+      gridPlacement: gridPos,
       letter: startPosInput.letter,
-      startPosition: startPosInput.startPosition || gridPos,
-      endPosition: startPosInput.endPosition || gridPos,
+      startPlacement: startPosInput.startPlacement || gridPos,
+      endPlacement: startPosInput.endPlacement || gridPos,
       motions: {
         left: startPosInput.motions.left || startPosInput.motions.blue,
         right: startPosInput.motions.right || startPosInput.motions.red,
@@ -294,7 +294,7 @@ function buildStartPositionObject(startPosInput, steps, sequenceId) {
 
   const gridPos =
     (typeof startPosInput === "string" ? startPosInput : null) ||
-    firstStep.startPosition ||
+    firstStep.startPlacement ||
     null;
 
   const letter =
@@ -309,12 +309,12 @@ function buildStartPositionObject(startPosInput, steps, sequenceId) {
       : null;
 
   return {
-    isStartPosition: true,
+    isStartPlacement: true,
     id: `start-${sequenceId}`,
-    gridPosition: gridPos,
+    gridPlacement: gridPos,
     letter,
-    startPosition: gridPos,
-    endPosition: gridPos,
+    startPlacement: gridPos,
+    endPlacement: gridPos,
     motions: {
       left: {
         hand: "left",
@@ -345,7 +345,7 @@ function buildStartPositionObject(startPosInput, steps, sequenceId) {
 /**
  * Build the Firestore library document from raw sequence JSON.
  *
- * @param raw Raw sequence JSON ({word, gridMode, startPosition, steps})
+ * @param raw Raw sequence JSON ({word, gridMode, startPlacement, steps})
  * @param fieldValue Object with a serverTimestamp() factory (e.g. admin.firestore.FieldValue)
  * @param loopInfo Result of detectLoop(raw), or null
  * @param opts { visibility, notes, forceCircular, forceLoopType, demo }
@@ -375,16 +375,16 @@ function buildFirestoreDoc(raw, fieldValue, loopInfo, opts = {}) {
 
   // Use CLI override > LOOP detector > manual end-matches-start check
   const steps = raw.steps || [];
-  const startPos = raw.startPosition || raw.startingPosition;
-  const startPosObject = buildStartPositionObject(startPos, steps, sequenceId);
+  const startPos = raw.startPlacement || raw.startingPlacement;
+  const startPosObject = buildStartPlacementObject(startPos, steps, sequenceId);
   const startGridPos =
-    startPosObject?.gridPosition ||
+    startPosObject?.gridPlacement ||
     (typeof startPos === "string" ? startPos : null) ||
-    startPos?.startPosition ||
-    startPos?.gridPosition;
+    startPos?.startPlacement ||
+    startPos?.gridPlacement;
   const lastStep = steps[steps.length - 1];
   const manualCircular =
-    lastStep && startGridPos ? lastStep.endPosition === startGridPos : false;
+    lastStep && startGridPos ? lastStep.endPlacement === startGridPos : false;
   const isCircular =
     optForceCircular != null
       ? optForceCircular
@@ -393,11 +393,11 @@ function buildFirestoreDoc(raw, fieldValue, loopInfo, opts = {}) {
         : manualCircular;
 
   // Determine starting position group (alpha, beta, gamma)
-  let startingPositionGroup = null;
+  let startingPlacementGroup = null;
   if (startGridPos) {
-    if (startGridPos.startsWith("alpha")) startingPositionGroup = "alpha";
-    else if (startGridPos.startsWith("beta")) startingPositionGroup = "beta";
-    else if (startGridPos.startsWith("gamma")) startingPositionGroup = "gamma";
+    if (startGridPos.startsWith("alpha")) startingPlacementGroup = "alpha";
+    else if (startGridPos.startsWith("beta")) startingPlacementGroup = "beta";
+    else if (startGridPos.startsWith("gamma")) startingPlacementGroup = "gamma";
   }
 
   const doc = {
@@ -407,13 +407,13 @@ function buildFirestoreDoc(raw, fieldValue, loopInfo, opts = {}) {
     steps: steps.map((step, i) => ({
       stepNumber: step.stepNumber ?? i + 1,
       letter: step.letter,
-      startPosition: step.startPosition,
-      endPosition: step.endPosition,
+      startPlacement: step.startPlacement,
+      endPlacement: step.endPlacement,
       duration: step.duration ?? 1,
       motions: step.motions,
     })),
-    startPosition: startPosObject,
-    startingPositionGroup,
+    startPlacement: startPosObject,
+    startingPlacementGroup,
     gridMode: raw.gridMode || "diamond",
     sequenceLength: steps.length,
     thumbnails: [],

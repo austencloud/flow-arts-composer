@@ -27,7 +27,7 @@ export const OR_STACKING_TYPES: ReadonlySet<BrowseFilterType> = new Set([
   BrowseFilterType.DIFFICULTY,
   BrowseFilterType.LENGTH,
   BrowseFilterType.STARTING_LETTER,
-  BrowseFilterType.STARTING_POSITION,
+  BrowseFilterType.STARTING_PLACEMENT,
   BrowseFilterType.GRID_MODE,
   BrowseFilterType.OWNER,
   BrowseFilterType.PERFORMANCE_AVAILABILITY,

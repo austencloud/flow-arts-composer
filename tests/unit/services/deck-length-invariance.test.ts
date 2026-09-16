@@ -19,7 +19,7 @@ function loadCsv(name: string) {
     .map((l) => l.split(","))
     .filter((c) => c.length >= 13 && c[5])
     .map((c) => ({
-      letter: c[0], startPosition: c[1], endPosition: c[2], timing: "together", direction: "together",
+      letter: c[0], startPlacement: c[1], endPlacement: c[2], timing: "together", direction: "together",
       leftMotion: { color: "blue", motionType: c[5], rotationDirection: c[6], startLocation: c[7], endLocation: c[8], startOrientation: "in", endOrientation: "in", turns: 0 },
       rightMotion: { color: "red", motionType: c[9], rotationDirection: c[10], startLocation: c[11], endLocation: c[12], startOrientation: "in", endOrientation: "in", turns: 0 },
     }));
@@ -33,7 +33,7 @@ function makeProvider() {
     const rows = loadCsv(grid === "box" ? "BoxPictographDataframe.csv" : "DiamondPictographDataframe.csv");
     cache.set(grid, rows);
     const m = new Map<string, ReturnType<typeof loadCsv>>();
-    for (const r of rows) { const k = `${r.letter}:${r.startPosition}`; (m.get(k) ?? m.set(k, []).get(k))!.push(r); }
+    for (const r of rows) { const k = `${r.letter}:${r.startPlacement}`; (m.get(k) ?? m.set(k, []).get(k))!.push(r); }
     idx.set(grid, m);
   };
   return {

@@ -285,7 +285,7 @@ console.log(`VTG canonical fingerprints: ${VTG_CANONICAL.size}`);
 (async function main() {
   // Import position maps + LOOP executor
   const circularMaps =
-    await import("../packages/sequence-engine/dist/loop/position-maps/circular-position-maps.js");
+    await import("../packages/sequence-engine/dist/loop/placement-maps/circular-placement-maps.js");
   const { HALVED_LOOPS } = circularMaps;
 
   const { loopExecutorSelector } =
@@ -341,8 +341,8 @@ console.log(`VTG canonical fingerprints: ${VTG_CANONICAL.size}`);
     return {
       id: `beat-${beatIndex}`,
       letter: edge.letter,
-      startPosition: edge.startPos,
-      endPosition: edge.endPos,
+      startPlacement: edge.startPos,
+      endPlacement: edge.endPos,
       beatIndex,
       stepNumber: beatIndex,
       duration: 1,
@@ -409,8 +409,8 @@ console.log(`VTG canonical fingerprints: ${VTG_CANONICAL.size}`);
         : seed.startPos.startsWith("beta")
           ? "β"
           : "γ",
-      startPosition: seed.startPos,
-      endPosition: seed.startPos,
+      startPlacement: seed.startPos,
+      endPlacement: seed.startPos,
       beatIndex: 0,
       stepNumber: 0,
       duration: 1,
@@ -701,7 +701,7 @@ console.log(`VTG canonical fingerprints: ${VTG_CANONICAL.size}`);
       canonicalHandPaths: canonicals.map((c) => ({
         fingerprint: c.fingerprint,
         fullWord: c.representative.fullWord,
-        startPosition: c.representative.seed.startPos,
+        startPlacement: c.representative.seed.startPos,
         handPathFamily: c.representative.handPathFamily,
         isVTG: c.isVTG,
         turnAssignment: c.turnAssignment,
@@ -807,8 +807,8 @@ console.log(`VTG canonical fingerprints: ${VTG_CANONICAL.size}`);
       const firestoreSteps = stepsWithTurns.map((step, i) => ({
         beat: i,
         letter: step.letter,
-        startPosition: step.startPosition,
-        endPosition: step.endPosition,
+        startPlacement: step.startPlacement,
+        endPlacement: step.endPlacement,
         leftReversal: false,
         rightReversal: false,
         motions: {
@@ -841,10 +841,10 @@ console.log(`VTG canonical fingerprints: ${VTG_CANONICAL.size}`);
         },
       }));
 
-      const startPosition = {
-        isStartPosition: true,
+      const startPlacement = {
+        isStartPlacement: true,
         id: `start-${seqId}`,
-        gridPosition: sp.startPosition,
+        gridPlacement: sp.startPlacement,
         gridMode: GRID_MODE,
         motions: {
           left: {
@@ -892,7 +892,7 @@ console.log(`VTG canonical fingerprints: ${VTG_CANONICAL.size}`);
         tags: canon.isVTG ? ["vtg-overlap"] : [],
         thumbnails: [],
         steps: firestoreSteps,
-        startPosition,
+        startPlacement,
         metadata: {
           deckId: DECK_ID,
           canonicalFingerprint: canon.fingerprint,

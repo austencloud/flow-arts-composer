@@ -21,7 +21,7 @@
   } from "../../state/create-tutorial-state.svelte";
 
   // Step components (will be created in Tasks 4-8)
-  import PickStartPositionStep from "./steps/PickStartPositionStep.svelte";
+  import PickStartPlacementStep from "./steps/PickStartPlacementStep.svelte";
   import AddStepTutorialStep from "./steps/AddStepTutorialStep.svelte";
   import PlaySequenceStep from "./steps/PlaySequenceStep.svelte";
   import ReadyStep from "./steps/ReadyStep.svelte";
@@ -261,7 +261,7 @@
        convention (CreateTutorialWizard / GeneratePanelTour / StepEditorTour). -->
   <div class="step-container" aria-live="polite">
     {#if createTutorialState.currentStep === "pick-start"}
-      <PickStartPositionStep onAdvance={handleAdvance} />
+      <PickStartPlacementStep onAdvance={handleAdvance} />
     {:else if createTutorialState.currentStep === "add-step"}
       <AddStepTutorialStep onAdvance={handleAdvance} />
     {:else if createTutorialState.currentStep === "play-sequence"}

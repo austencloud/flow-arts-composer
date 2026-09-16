@@ -13,8 +13,8 @@ import { resolve } from "path";
 
 interface CSVRow {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotionType: string;
@@ -110,8 +110,8 @@ export function getSampleLetters(): Letter[] {
  */
 export interface CSVLetterData {
   letter: Letter;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: {
     type: string;
     rotation: string;
@@ -129,8 +129,8 @@ export interface CSVLetterData {
 export function convertCSVRowToLetterData(row: CSVRow): CSVLetterData {
   return {
     letter: row.letter as Letter,
-    startPosition: row.startPosition,
-    endPosition: row.endPosition,
+    startPlacement: row.startPlacement,
+    endPlacement: row.endPlacement,
     leftMotion: {
       type: row.leftMotionType,
       rotation: row.leftRotationDirection,

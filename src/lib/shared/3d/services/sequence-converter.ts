@@ -5,7 +5,7 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import {
   isVisibleMotion,
   type MotionData,
@@ -47,9 +47,9 @@ export function motionDataToConfig3D(
   };
 }
 
-/** Extract motion configs from a StepData or StartPositionData object */
+/** Extract motion configs from a StepData or StartPlacementData object */
 export function stepDataToConfigs(
-  step: StepData | StartPositionData,
+  step: StepData | StartPlacementData,
   plane: Plane = Plane.WALL,
   modeConfig?: PlaneModeConfig
 ): StepMotionConfigs {
@@ -57,7 +57,7 @@ export function stepDataToConfigs(
   const rightMotion = step.motions?.[HandSide.RIGHT];
 
   const stepNumber =
-    "isStartPosition" in step && step.isStartPosition
+    "isStartPlacement" in step && step.isStartPlacement
       ? 0
       : ((step as StepData).stepNumber ?? 0);
 
@@ -84,9 +84,9 @@ export function stepDataToConfigs(
   };
 }
 
-/** Derive a static start position config from a motion step's starting angles. */
+/** Derive a static start placement config from a motion step's starting angles. */
 function deriveStartConfigFromStep(
-  step: StepData | StartPositionData,
+  step: StepData | StartPlacementData,
   plane: Plane,
   modeConfig?: PlaneModeConfig
 ): StepMotionConfigs {
@@ -127,7 +127,7 @@ function deriveStartConfigFromStep(
 
 /**
  * Convert an entire sequence to an array of step motion configs.
- * Filters out step 0 (start position).
+ * Filters out step 0 (start placement).
  */
 export function sequenceToMotionConfigs(
   sequence: SequenceData,
@@ -144,14 +144,14 @@ export function sequenceToMotionConfigs(
     .sort((a, b) => a.stepNumber - b.stepNumber);
 }
 
-/** Get start position configs from sequence */
-export function getStartPositionConfigs(
+/** Get start placement configs from sequence */
+export function getStartPlacementConfigs(
   sequence: SequenceData,
   plane: Plane = Plane.WALL,
   modeConfig?: PlaneModeConfig
 ): StepMotionConfigs | null {
-  if (sequence.startPosition) {
-    return stepDataToConfigs(sequence.startPosition, plane, modeConfig);
+  if (sequence.startPlacement) {
+    return stepDataToConfigs(sequence.startPlacement, plane, modeConfig);
   }
 
   const step0 = sequence.steps?.find((step) => step.stepNumber === 0);
@@ -159,8 +159,8 @@ export function getStartPositionConfigs(
     return stepDataToConfigs(step0, plane, modeConfig);
   }
 
-  if (sequence.startingPosition) {
-    return stepDataToConfigs(sequence.startingPosition, plane, modeConfig);
+  if (sequence.startingPlacement) {
+    return stepDataToConfigs(sequence.startingPlacement, plane, modeConfig);
   }
 
   const firstStep = sequence.steps?.find((step) => step.stepNumber !== 0);

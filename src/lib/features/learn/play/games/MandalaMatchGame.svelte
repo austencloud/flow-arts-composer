@@ -85,7 +85,7 @@
      centers rather than stretching to fill the column (which left giant white
      voids inside each card). The height/width ratio is MEASURED from the first
      rendered card (the wordcard renders to its natural image aspect — with no
-     start-position row it's landscape, not poker portrait), so byHeight stops
+     start-placement row it's landscape, not poker portrait), so byHeight stops
      under-sizing the cards. Ratio-from-measurement converges: it's a constant
      of the card content, not of the chosen width. */
   const cardCount = $derived(constraints.optionCount ?? 4);
@@ -298,7 +298,7 @@
             <ChoreoCard
               sequence={option.content as SequenceData}
               showQRCodes={false}
-              includeStartPosition={false}
+              includeStartPlacement={false}
               showWord={false}
               showNotes={false}
               showLoopGlyph={false}

@@ -13,7 +13,7 @@
 import type { SourcedClaim } from "@flow-arts/core";
 
 /** A named position within the 9-square grid */
-export interface GridPosition {
+export interface GridPlacement {
 	/** Unique identifier for this position */
 	id: string;
 	/** Display name */
@@ -37,7 +37,7 @@ export type GridMode = "diamond" | "box";
 /** The complete 9-square grid definition */
 export interface NineSquareGrid {
 	/** All positions in the grid */
-	positions: GridPosition[];
+	positions: GridPlacement[];
 	/** Available grid modes */
 	modes: GridMode[];
 	/** How diamond and box modes relate via soft transitions */
@@ -49,7 +49,7 @@ export interface NineSquareGrid {
 }
 
 // TODO: Populate grid positions from Charlie Cushing's 9-Square Theory video series
-export const NINE_SQUARE_POSITIONS: GridPosition[] = [];
+export const NINE_SQUARE_POSITIONS: GridPlacement[] = [];
 
 // TODO: Populate with full grid definition including mode descriptions
 export const NINE_SQUARE_GRID: NineSquareGrid = {

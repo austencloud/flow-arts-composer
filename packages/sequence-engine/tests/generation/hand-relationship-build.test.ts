@@ -138,7 +138,7 @@ function noDashUnisonLoop(gridMode: "box" | "diamond"): BuildOptions {
       motionFamily: { exclude: ["dash"] },
       handRelationship: { map: "identity", inverted: false },
     },
-    blockedStartPositions:
+    blockedStartPlacements:
       gridMode === "box"
         ? [
             "alpha4",
@@ -196,8 +196,8 @@ describe("quartered unison LOOP without dashes (feedback 1IGhusmP)", () => {
         expectRelationship(result.sequence, { map: "identity" });
         const first = result.sequence[0]!;
         const last = result.sequence.at(-1)!;
-        expect(options.blockedStartPositions).not.toContain(
-          first.startPosition
+        expect(options.blockedStartPlacements).not.toContain(
+          first.startPlacement
         );
         for (const hand of ["left", "right"] as const) {
           expect(first.motions[hand].startOrientation).toBe("in");
@@ -280,7 +280,7 @@ describe("SequenceBuilder with a hand relationship", () => {
       });
       expectRelationship(result.sequence, MIRRORED);
       expect(["alpha3", "alpha7", "beta1", "beta5"]).toContain(
-        String(result.sequence[0]!.startPosition)
+        String(result.sequence[0]!.startPlacement)
       );
     }
   });
@@ -294,7 +294,7 @@ describe("SequenceBuilder with a hand relationship", () => {
     });
     expectRelationship(result.sequence, MIRRORED);
     expect(["gamma2", "gamma6", "gamma12", "gamma16"]).toContain(
-      String(result.sequence[0]!.startPosition)
+      String(result.sequence[0]!.startPlacement)
     );
   });
 

@@ -36,7 +36,7 @@
     onOpenSettings: (canvasId: string) => void;
   } = $props();
 
-  const gridPositions = [
+  const gridPlacements = [
     {
       index: 0 as const,
       label: "Top-Left",
@@ -72,7 +72,7 @@
   <CanvasControls canvasId="grid" {onOpenSettings} />
 
   <div class="grid-canvas">
-    {#each gridPositions as pos}
+    {#each gridPlacements as pos}
       {@const sequence = gridSequences[pos.index]}
       {@const rotation = gridRotationOffsets[pos.index]}
 

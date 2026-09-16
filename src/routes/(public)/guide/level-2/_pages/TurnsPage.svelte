@@ -187,7 +187,7 @@
     stepNumberOverride: false,
     showGrid: true,
     showTKA: false,
-    showPositions: false,
+    showPlacements: false,
     showReversals: false,
     showTnD: false,
     showElemental: false,

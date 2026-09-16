@@ -68,8 +68,8 @@ export function buildParityPictograph(
   return {
     id,
     letter: step.letter as Letter,
-    startPosition: step.startPosition,
-    endPosition: step.endPosition,
+    startPlacement: step.startPlacement,
+    endPlacement: step.endPlacement,
     gridMode: seq.gridMode || GridMode.DIAMOND,
     motions,
     // Step-level render extras — v1 dropped these (blind spots #2).

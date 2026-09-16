@@ -122,7 +122,7 @@ export function createViewerShellInteractionState(
       fps: options.fps,
       loopCount: options.loopCount,
       resolution: options.resolution,
-      includeStartPosition: options.includeStartPosition,
+      includeStartPlacement: options.includeStartPlacement,
       includeEndHold: options.includeEndHold,
       renderMode: ctx.renderMode,
       playbackMode: ctx.playbackMode,
@@ -136,7 +136,7 @@ export function createViewerShellInteractionState(
     return buildCardExportAnalyticsConfig({
       stepCount: ctx.effectiveSequence?.steps?.length ?? 0,
       darkMode: ctx.exportOptions.imageDarkMode,
-      includeStartPosition: ctx.splitPaneImageComposition.showStartPos,
+      includeStartPlacement: ctx.splitPaneImageComposition.showStartPos,
       handPath: ctx.splitPaneImageComposition.handPathMode ?? false,
       leftPropType: ctx.leftPropType,
       rightPropType: ctx.rightPropType,

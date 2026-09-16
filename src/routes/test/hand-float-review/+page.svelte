@@ -151,8 +151,8 @@
       data: {
         id: `hfr-${movingColor}-${SHORT[from]}-${SHORT[to]}`,
         letter: null,
-        startPosition: null,
-        endPosition: null,
+        startPlacement: null,
+        endPlacement: null,
         gridMode,
         motions:
           movingColor === HandSide.LEFT
@@ -304,7 +304,7 @@
                 rightPropTypeOverride={PropType.HAND}
                 showGrid={true}
                 showTKA={false}
-                showPositions={false}
+                showPlacements={false}
                 showElemental={false}
                 showReversals={false}
                 showTnD={false}

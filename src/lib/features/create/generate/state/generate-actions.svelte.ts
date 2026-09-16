@@ -444,7 +444,7 @@ export function createGenerationActionsState(
 
       // If LOOP is requested, apply it post-hoc via the bridge-aware extender.
       // This path can add a single bridge letter to make the sequence land at
-      // a LOOP-compatible end position when the word itself doesn't.
+      // a LOOP-compatible end placement when the word itself doesn't.
       if (isLoop && !constrainHands) {
         generatedSequence = await applySpellLoopExtension(
           generatedSequence,
@@ -564,12 +564,12 @@ export function createGenerationActionsState(
 
   /**
    * Apply LOOP extension to a spell-generated sequence.
-   * 1. Try direct extension (sequence already ends at LOOP-compatible position)
+   * 1. Try direct extension (sequence already ends at LOOP-compatible placement)
    * 2. If not, find bridge letters and auto-insert the first viable option
    * 3. Update letterSources and spell metadata accordingly
    *
    * Required for word-based LOOP because the engine's buildByWord can't
-   * auto-append bridge letters to reach LOOP-compatible end positions -
+   * auto-append bridge letters to reach LOOP-compatible end placements -
    * the word's letters are fixed.
    */
   async function applySpellLoopExtension(
@@ -583,7 +583,7 @@ export function createGenerationActionsState(
     }>
   ): Promise<SequenceData> {
     try {
-      // Path A: Try direct extension (sequence already ends at LOOP-compatible position)
+      // Path A: Try direct extension (sequence already ends at LOOP-compatible placement)
       const analysis = sequenceExtender.analyzeSequence(sequence);
       if (analysis.canExtend) {
         try {

@@ -26,8 +26,8 @@ describe("SequenceEncoder.verifyRoundTrip", () => {
           rightReversal: false,
           isBlank: false,
           letter: null,
-          startPosition: null,
-          endPosition: null,
+          startPlacement: null,
+          endPlacement: null,
           motions: {
             left: createMotionData({
               hand: HandSide.LEFT,

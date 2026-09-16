@@ -13,14 +13,14 @@ import {
   DEFAULT_MIRRORED_AXIS,
   isReflectionAxis,
   type ReflectionAxis,
-} from "./position-maps/strict-loop-position-maps.js";
+} from "./placement-maps/strict-loop-placement-maps.js";
 
 
 /**
  * The space in which a LOOP component operates.
  *
- * - `location`: grid positions transform between passes (classic LOOPs)
- * - `orientation`: orientations transform between passes (positions stay pinned)
+ * - `location`: grid locations transform between passes (classic LOOPs)
+ * - `orientation`: orientations transform between passes (locations stay pinned)
  * - `both`: detected in both spaces simultaneously
  */
 export type LOOPDomain = "location" | "orientation" | "both";
@@ -35,7 +35,7 @@ export type LOOPDomain = "location" | "orientation" | "both";
  */
 export enum LOOPComponent {
   // --- User-facing transformation primitives ---
-  ROTATED = "rotated", // 180° or 90° position rotation
+  ROTATED = "rotated", // 180° or 90° location rotation
   MIRRORED = "mirrored", // Reflection; legacy default is the north-south axis
   FLIPPED = "flipped", // Reflection; legacy default is the east-west axis
   SWAPPED = "swapped", // Left/right hand exchange

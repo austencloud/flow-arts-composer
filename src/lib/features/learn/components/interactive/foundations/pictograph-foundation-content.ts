@@ -1,4 +1,4 @@
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import {
   createSequenceData,
@@ -50,7 +50,7 @@ function buildHandSequence(
     name,
     word: "",
     gridMode: GridMode.DIAMOND,
-    startPosition: createStartPositionData({
+    startPlacement: createStartPlacementData({
       id: `${id}-start`,
       motions: { left: leftStart, right },
     }),

@@ -49,7 +49,7 @@
     onEditPairing,
   }: {
     side: FuseSide;
-    // Big desktop only: render the complete choreo card — start position plus
+    // Big desktop only: render the complete choreo card — start placement plus
     // the solo-colored mandala — instead of the lean steps-only view. Gated by
     // FuseLayout on cell size so the extra cells never shrink the pictographs.
     full?: boolean;
@@ -430,7 +430,7 @@
           showNonRadialPoints={false}
           showTnD={false}
           showElemental={false}
-          showPositions={false}
+          showPlacements={false}
           showHandPoints={true}
           visibleHand={side}
           darkMode={true}
@@ -630,8 +630,8 @@
         sequence={nextSequence}
         browseViewMode={viewMode}
         columnCount={stepColumns}
-        startPositionLayoutOverride={startLayout}
-        includeStartPosition={full}
+        startPlacementLayoutOverride={startLayout}
+        includeStartPlacement={full}
         showMandala={full}
         showWord={false}
         showStepNumbers={true}

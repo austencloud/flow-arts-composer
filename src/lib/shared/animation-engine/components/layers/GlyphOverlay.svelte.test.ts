@@ -16,7 +16,7 @@ describe("GlyphOverlay step labels", () => {
   it("shows Start while step numbers are on", async () => {
     const screen = render(GlyphOverlay, {
       stepNumbersVisible: true,
-      isAtStartPosition: true,
+      isAtStartPlacement: true,
     });
     await expect.element(screen.getByText("Start")).toBeInTheDocument();
   });
@@ -24,7 +24,7 @@ describe("GlyphOverlay step labels", () => {
   it("hides Start when step numbers are off", async () => {
     const screen = render(GlyphOverlay, {
       stepNumbersVisible: false,
-      isAtStartPosition: true,
+      isAtStartPlacement: true,
     });
     await vi.waitFor(() =>
       expect(screen.container.querySelector(".beat-number-group")).toBeNull()
@@ -35,7 +35,7 @@ describe("GlyphOverlay step labels", () => {
   it("hides End when step numbers are off", async () => {
     const screen = render(GlyphOverlay, {
       stepNumbersVisible: false,
-      isAtEndPosition: true,
+      isAtEndPlacement: true,
     });
     await vi.waitFor(() =>
       expect(screen.container.querySelector(".beat-number-group")).toBeNull()

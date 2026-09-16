@@ -1,6 +1,6 @@
 <script lang="ts">
   // Throwaway harness to reproduce + measure the ChoreoCard "instant layout
-  // snap" when toggling Show-start-position (and column count). Renders the REAL
+  // snap" when toggling Show-start-placement (and column count). Renders the REAL
   // ChoreoCard in a fixed centered pane (interactive contain sizing, NOT
   // forceContain) so the same relayoutCells + container-resize path the download
   // card uses runs here. A DevTools probe (window.__snap) samples the
@@ -112,9 +112,9 @@
     {#if seq}
       <ChoreoCard
         sequence={seq}
-        includeStartPosition={includeStart}
+        includeStartPlacement={includeStart}
         columnCount={cols}
-        startPositionLayoutOverride={startLayout}
+        startPlacementLayoutOverride={startLayout}
         showQRCode={true}
         showWord={true}
         forceContain={false}

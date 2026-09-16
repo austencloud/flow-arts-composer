@@ -13,7 +13,7 @@ function baseGrid(
     columns: 2,
     totalColumns: 3,
     rows: 2,
-    hasStartPosition: true,
+    hasStartPlacement: true,
     timelineRowSizes: [],
     stepIdentities: ["a", "b", "c", "d"],
     ...overrides,
@@ -62,7 +62,7 @@ describe("computeGridLayoutSignature", () => {
     });
 
     it("fires when the start tile appears or leaves", () => {
-      expect(changed({ hasStartPosition: false })).toBe(true);
+      expect(changed({ hasStartPlacement: false })).toBe(true);
     });
 
     it("fires on a timeline reflow that keeps the row count", () => {

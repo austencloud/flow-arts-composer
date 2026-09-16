@@ -8,7 +8,7 @@ describe("DimensionCalculationService", () => {
   beforeEach(() => {
     // Create base options matching desktop defaults
     baseOptions = {
-      includeStartPosition: true,
+      includeStartPlacement: true,
       addStepNumbers: true,
       addReversalSymbols: true,
       addUserInfo: true,

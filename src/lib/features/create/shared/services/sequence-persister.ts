@@ -15,7 +15,7 @@ import {
   loadCurrentSequenceState,
   clearCurrentSequenceState,
 } from "$lib/shared/persistence/services/dexie-persistence-service";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ActiveCreateModule } from "$lib/shared/foundation/ui/ui-types";
 import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
@@ -49,8 +49,8 @@ export class SequencePersister {
 
   async saveCurrentState(state: {
     currentSequence: SequenceData | null;
-    selectedStartPosition: StartPositionData | null;
-    hasStartPosition: boolean;
+    selectedStartPlacement: StartPlacementData | null;
+    hasStartPlacement: boolean;
     activeBuildSection: ActiveCreateModule;
   }): Promise<void> {
     try {
@@ -77,8 +77,8 @@ export class SequencePersister {
 
   async loadCurrentState(mode?: string): Promise<{
     currentSequence: SequenceData | null;
-    selectedStartPosition: StartPositionData | null;
-    hasStartPosition: boolean;
+    selectedStartPlacement: StartPlacementData | null;
+    hasStartPlacement: boolean;
     activeBuildSection: ActiveCreateModule;
   } | null> {
     try {
@@ -94,8 +94,8 @@ export class SequencePersister {
 
         return {
           currentSequence: state.currentSequence,
-          selectedStartPosition: state.selectedStartPosition,
-          hasStartPosition: state.hasStartPosition,
+          selectedStartPlacement: state.selectedStartPlacement,
+          hasStartPlacement: state.hasStartPlacement,
           activeBuildSection,
         };
       }

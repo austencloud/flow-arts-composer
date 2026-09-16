@@ -499,7 +499,7 @@ export class LayerCompositor {
         showTnD: options.showTnD,
         showElemental: options.showElemental,
         showPropTnD: options.showPropTnD,
-        showPositions: options.showPositions,
+        showPlacements: options.showPlacements,
         handPathMode: options.handPathMode,
       },
     });

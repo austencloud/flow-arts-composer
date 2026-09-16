@@ -6,8 +6,8 @@ import {
 } from "./sequence-codec";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { createPlaceholderMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -226,7 +226,7 @@ function encodeMotion(
 }
 
 function encodeBeat(
-  beat: StepData | StartPositionData,
+  beat: StepData | StartPlacementData,
   floatWireFormat: FloatWireFormat = "token"
 ): string {
   const motions = beat.motions ?? { left: undefined, right: undefined };
@@ -474,27 +474,27 @@ function encodeSequenceWithFloatFormat(
   sequence: SequenceData,
   floatWireFormat: FloatWireFormat
 ): string {
-  let startPositionStep: StepData | StartPositionData;
+  let startPlacementStep: StepData | StartPlacementData;
   let actualSteps: readonly StepData[];
 
-  if (sequence.startPosition) {
-    startPositionStep = sequence.startPosition;
+  if (sequence.startPlacement) {
+    startPlacementStep = sequence.startPlacement;
     actualSteps = sequence.steps;
-  } else if (sequence.startingPosition) {
-    startPositionStep = sequence.startingPosition;
+  } else if (sequence.startingPlacement) {
+    startPlacementStep = sequence.startingPlacement;
     actualSteps = sequence.steps;
   } else {
     const step0 = sequence.steps.find((b) => b.stepNumber === 0);
     if (step0) {
-      startPositionStep = step0;
+      startPlacementStep = step0;
       actualSteps = sequence.steps.filter((b) => b.stepNumber !== 0);
     } else {
-      startPositionStep = createStartPositionData({ id: crypto.randomUUID() });
+      startPlacementStep = createStartPlacementData({ id: crypto.randomUUID() });
       actualSteps = sequence.steps;
     }
   }
 
-  const spMotions = startPositionStep.motions ?? {
+  const spMotions = startPlacementStep.motions ?? {
     left: undefined,
     right: undefined,
   };
@@ -512,11 +512,11 @@ function encodeSequenceWithFloatFormat(
     ] ?? PROP_TYPE_ENCODE[PropType.STAFF];
 
   const header = `${leftSeed}${rightSeed}${leftPropCode}${rightPropCode}${sequence.sequenceKind === "hand-path" ? "H" : ""}`;
-  const encodedStartPosition = encodeBeat(startPositionStep, floatWireFormat);
+  const encodedStartPlacement = encodeBeat(startPlacementStep, floatWireFormat);
   const encodedSteps = actualSteps.map((step) =>
     encodeBeat(step, floatWireFormat)
   );
-  return `${header}|${encodedStartPosition}|${encodedSteps.join("|")}`;
+  return `${header}|${encodedStartPlacement}|${encodedSteps.join("|")}`;
 }
 
 export function encodeSequence(sequence: SequenceData): string {
@@ -595,18 +595,18 @@ export function decodeSequence(encoded: string): SequenceData {
       },
       id: crypto.randomUUID(),
       letter: null,
-      startPosition: null,
-      endPosition: null,
+      startPlacement: null,
+      endPlacement: null,
     };
   };
 
   const startBeat = decodeChained(beatEncodings[0]!, 0);
-  const startPosition = createStartPositionData({
+  const startPlacement = createStartPlacementData({
     id: startBeat.id || crypto.randomUUID(),
     letter: startBeat.letter,
-    gridPosition: startBeat.startPosition,
-    startPosition: startBeat.startPosition,
-    endPosition: startBeat.endPosition,
+    gridPlacement: startBeat.startPlacement,
+    startPlacement: startBeat.startPlacement,
+    endPlacement: startBeat.endPlacement,
     motions: startBeat.motions,
   });
 
@@ -621,8 +621,8 @@ export function decodeSequence(encoded: string): SequenceData {
     ...(header[4] === "H" && { sequenceKind: "hand-path" as const }),
     word: "",
     steps,
-    startingPosition: startPosition,
-    startPosition,
+    startingPlacement: startPlacement,
+    startPlacement,
     thumbnails: [],
     isFavorite: false,
     isCircular: false,

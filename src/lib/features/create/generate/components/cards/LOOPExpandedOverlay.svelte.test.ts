@@ -59,7 +59,7 @@ describe("LOOPExpandedOverlay live single selection", () => {
 
     await page
       .getByRole("button", {
-        name: /Rotated - Halved or quartered position rotation - not selected/,
+        name: /Rotated - Halved or quartered placement rotation - not selected/,
       })
       .click();
 
@@ -95,7 +95,7 @@ describe("LOOPExpandedOverlay live single selection", () => {
 
     await page
       .getByRole("button", {
-        name: /Rotated - Halved or quartered position rotation - not selected/,
+        name: /Rotated - Halved or quartered placement rotation - not selected/,
       })
       .click();
 
@@ -135,7 +135,7 @@ describe("LOOPExpandedOverlay live single selection", () => {
 
     await page
       .getByRole("button", {
-        name: /Rotated - Halved or quartered position rotation - not selected/,
+        name: /Rotated - Halved or quartered placement rotation - not selected/,
       })
       .click();
 

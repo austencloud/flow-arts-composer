@@ -7,17 +7,17 @@ type FakeStep = { letter: string; start: string; end: string };
 function seq(
   id: string,
   steps: FakeStep[],
-  opts: { startPosition?: unknown; isCircular?: boolean } = {}
+  opts: { startPlacement?: unknown; isCircular?: boolean } = {}
 ): SequenceData {
   return {
     id,
-    startPosition: opts.startPosition,
+    startPlacement: opts.startPlacement,
     isCircular: opts.isCircular ?? false,
     steps: steps.map((s, i) => ({
       stepNumber: i + 1,
       letter: s.letter,
-      startPosition: s.start,
-      endPosition: s.end,
+      startPlacement: s.start,
+      endPlacement: s.end,
       motions: {
         [HandSide.LEFT]: { startOrientation: "in", endOrientation: "in" },
         [HandSide.RIGHT]: { startOrientation: "in", endOrientation: "in" },
@@ -45,14 +45,14 @@ describe("buildActSequence", () => {
   });
 
   it("uses row 0's start position", () => {
-    const sp = { gridPosition: "alpha1", isStartPosition: true };
+    const sp = { gridPlacement: "alpha1", isStartPlacement: true };
     const a = seq("a", [{ letter: "A", start: "alpha1", end: "beta3" }], {
-      startPosition: sp,
+      startPlacement: sp,
     });
     const b = seq("b", [{ letter: "C", start: "beta3", end: "alpha1" }], {
-      startPosition: { gridPosition: "beta3", isStartPosition: true },
+      startPlacement: { gridPlacement: "beta3", isStartPlacement: true },
     });
-    expect(buildActSequence([a, b], "Act")!.startPosition).toStrictEqual(sp);
+    expect(buildActSequence([a, b], "Act")!.startPlacement).toStrictEqual(sp);
   });
 
   it("isCircular true when the act's last end returns to the first start", () => {

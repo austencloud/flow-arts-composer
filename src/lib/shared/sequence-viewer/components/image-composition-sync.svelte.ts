@@ -16,7 +16,7 @@ export function createImageCompositionSync() {
 
   // Local reactive state mirroring the composition manager
   let imgShowWord = $state(imageComposition.addWord);
-  let imgShowStartPos = $state(imageComposition.includeStartPosition);
+  let imgShowStartPos = $state(imageComposition.includeStartPlacement);
   let imgShowStepNumbers = $state(imageComposition.addStepNumbers);
   let imgShowDifficulty = $state(imageComposition.addDifficultyLevel);
   let imgShowNotes = $state(imageComposition.showNotes);
@@ -30,7 +30,7 @@ export function createImageCompositionSync() {
   function syncFromManager() {
     imgShowWord = imageComposition.addWord;
     imgShowStepNumbers = imageComposition.addStepNumbers;
-    imgShowStartPos = imageComposition.includeStartPosition;
+    imgShowStartPos = imageComposition.includeStartPlacement;
     imgShowDifficulty = imageComposition.addDifficultyLevel;
     imgShowNotes = imageComposition.showNotes;
     imgCustomNotesText = imageComposition.customNotesText;

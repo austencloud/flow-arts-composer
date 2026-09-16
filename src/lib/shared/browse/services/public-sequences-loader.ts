@@ -613,11 +613,11 @@ export class PublicSequencesLoader {
         (data.steps as SequenceData["steps"]) ??
         (data.beats as SequenceData["steps"]) ??
         [],
-      startPosition: data.startPosition as SequenceData["startPosition"],
-      startingPosition:
-        data.startingPosition as SequenceData["startingPosition"],
-      startingPositionGroup:
-        data.startingPositionGroup as SequenceData["startingPositionGroup"],
+      startPlacement: data.startPlacement as SequenceData["startPlacement"],
+      startingPlacement:
+        data.startingPlacement as SequenceData["startingPlacement"],
+      startingPlacementGroup:
+        data.startingPlacementGroup as SequenceData["startingPlacementGroup"],
       thumbnails: (data.thumbnails as readonly string[]) ?? [],
       sequenceLength: data.sequenceLength as number | undefined,
       author: data.author as string | undefined,
@@ -656,9 +656,9 @@ export class PublicSequencesLoader {
       // Normalize: ensure step 0 (start position) is separated from the steps
       // array. Gallery sequences from Firebase may store it inline, which causes
       // the animation orchestrator to count an extra beat and shift all indices.
-      return this.normalizeStartPosition(hydrated);
+      return this.normalizeStartPlacement(hydrated);
     } catch {
-      return this.normalizeStartPosition(seq);
+      return this.normalizeStartPlacement(seq);
     }
   }
 
@@ -667,7 +667,7 @@ export class PublicSequencesLoader {
    * Firestore data may use the legacy format where beat 0 sits alongside
    * motion beats, which throws off the animation orchestrator's indexing.
    */
-  private normalizeStartPosition(seq: SequenceData): SequenceData {
+  private normalizeStartPlacement(seq: SequenceData): SequenceData {
     if (!seq.steps?.length) return seq;
 
     const hasStep0 = seq.steps.some((s) => s.stepNumber === 0);
@@ -675,17 +675,17 @@ export class PublicSequencesLoader {
 
     const steps = seq.steps.filter((s) => s.stepNumber !== 0);
 
-    // If no startPosition is set, derive it from the step 0 entry
-    if (!seq.startPosition && !seq.startingPosition) {
+    // If no startPlacement is set, derive it from the step 0 entry
+    if (!seq.startPlacement && !seq.startingPlacement) {
       const step0 = seq.steps.find((s) => s.stepNumber === 0)!;
       return {
         ...seq,
         steps,
-        startPosition: {
-          isStartPosition: true,
+        startPlacement: {
+          isStartPlacement: true,
           id: step0.id || `start-${seq.id}`,
           letter: step0.letter ?? null,
-          endPosition: step0.endPosition ?? step0.startPosition ?? null,
+          endPlacement: step0.endPlacement ?? step0.startPlacement ?? null,
           motions: step0.motions,
         },
       };

@@ -23,7 +23,7 @@ const first = variations.find(
 )!;
 const second = variations.find(
   (row) =>
-    row.startPosition === first.endPosition &&
+    row.startPlacement === first.endPlacement &&
     row.leftMotion.motionType === "pro" &&
     row.rightMotion.motionType === "pro"
 )!;
@@ -36,8 +36,8 @@ function seed(floated: readonly Hand[]): SequenceStep[] {
         stepNumber: index + 1,
         duration: 1,
         letter: row.letter,
-        startPosition: row.startPosition,
-        endPosition: row.endPosition,
+        startPlacement: row.startPlacement,
+        endPlacement: row.endPlacement,
         motions: Object.fromEntries(
           (["left", "right"] as const).map((hand) => {
             const motion = hand === "left" ? row.leftMotion : row.rightMotion;
@@ -56,7 +56,7 @@ function seed(floated: readonly Hand[]): SequenceStep[] {
     ...steps[0]!,
     id: "start",
     stepNumber: 0,
-    endPosition: first.startPosition,
+    endPlacement: first.startPlacement,
     motions: Object.fromEntries(
       (["left", "right"] as const).map((hand) => {
         const motion = steps[0]!.motions[hand];

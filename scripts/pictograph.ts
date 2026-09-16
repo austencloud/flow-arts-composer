@@ -123,7 +123,7 @@ async function renderPictograph(letter: string): Promise<string> {
     showTKA: true,
     showTND: false,
     showElemental: false,
-    showPositions: false,
+    showPlacements: false,
     showReversals: false,
     showNonRadialPoints: false,
     darkMode: false,

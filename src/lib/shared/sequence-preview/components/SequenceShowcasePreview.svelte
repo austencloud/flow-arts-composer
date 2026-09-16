@@ -369,7 +369,7 @@
         debugName="sequence showcase step carousel"
         props={{
           sequence,
-          includeStartPosition: !alwaysLive,
+          includeStartPlacement: !alwaysLive,
           leftPropType:
             railLeftPropType ??
             leftPropType ??

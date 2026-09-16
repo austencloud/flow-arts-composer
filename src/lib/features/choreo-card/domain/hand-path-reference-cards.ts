@@ -1,4 +1,4 @@
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import {
   createSequenceData,
@@ -9,7 +9,7 @@ import {
   GridLocation,
   GridMode,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
   HandSide,
@@ -69,7 +69,7 @@ function buildModeSequence(
   letters: readonly (Letter | null)[]
 ): SequenceData {
   const first = moves[0]!;
-  const startPosition = getGridPositionFromLocations(first[0], first[2]);
+  const startPlacement = getGridPlacementFromLocations(first[0], first[2]);
   const startLeft = handMotion(HandSide.LEFT, first[0], first[0]);
   const startRight = handMotion(HandSide.RIGHT, first[2], first[2]);
 
@@ -85,11 +85,11 @@ function buildModeSequence(
     word: "",
     gridMode: GridMode.DIAMOND,
     isCircular: true,
-    startPosition: createStartPositionData({
+    startPlacement: createStartPlacementData({
       id: `hand-path-reference-${id}-start`,
-      startPosition,
-      endPosition: startPosition,
-      gridPosition: startPosition,
+      startPlacement,
+      endPlacement: startPlacement,
+      gridPlacement: startPlacement,
       motions: { left: startLeft, right: startRight },
     }),
     steps: moves.slice(1).map((move, index) =>
@@ -97,8 +97,8 @@ function buildModeSequence(
         id: `hand-path-reference-${id}-${index + 1}`,
         letter: letters[index] ?? null,
         gridMode: GridMode.DIAMOND,
-        startPosition: getGridPositionFromLocations(move[0], move[2]),
-        endPosition: getGridPositionFromLocations(move[1], move[3]),
+        startPlacement: getGridPlacementFromLocations(move[0], move[2]),
+        endPlacement: getGridPlacementFromLocations(move[1], move[3]),
         stepNumber: index + 1,
         motions: {
           left: handMotion(HandSide.LEFT, move[0], move[1]),
@@ -129,7 +129,7 @@ function card(
 
 /**
  * The raw five-row waypoint tables behind the six reference cards: row 0 is
- * the start position, rows 1-4 are the beats. Exported so labs that transform
+ * the start placement, rows 1-4 are the beats. Exported so labs that transform
  * hand paths (rotate, mirror, flip, phase) start from the same geometry the
  * cards, learn lessons, and printed decks use.
  */

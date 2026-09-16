@@ -12,7 +12,7 @@ import { describe, it, expect } from "vitest";
 
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -67,7 +67,7 @@ function handMotion(
 function twoHandSequence(
   left: readonly GridLocation[],
   right: readonly GridLocation[],
-  options: { withStartPosition?: boolean } = {}
+  options: { withStartPlacement?: boolean } = {}
 ) {
   const beatCount = left.length - 1;
   const steps: StepData[] = [];
@@ -97,9 +97,9 @@ function twoHandSequence(
     word: "TEST",
     gridMode: GridMode.DIAMOND,
     steps,
-    ...(options.withStartPosition
+    ...(options.withStartPlacement
       ? {
-          startPosition: createStartPositionData({
+          startPlacement: createStartPlacementData({
             motions: {
               [HandSide.LEFT]: handMotion(
                 HandSide.LEFT,
@@ -160,7 +160,7 @@ describe("sequenceToTraceRound", () => {
 
     const round = expectOk(
       sequenceToTraceRound(
-        twoHandSequence(leftWalk, rightWalk, { withStartPosition: true })
+        twoHandSequence(leftWalk, rightWalk, { withStartPlacement: true })
       )
     );
 
@@ -285,7 +285,7 @@ describe("sequenceToTraceRound", () => {
         ],
         // The start position disagrees with beat 1: blue is parked at west but
         // beat 1 wants it to leave from north.
-        startPosition: createStartPositionData({
+        startPlacement: createStartPlacementData({
           motions: {
             [HandSide.LEFT]: handMotion(
               HandSide.LEFT,

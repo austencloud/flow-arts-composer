@@ -131,7 +131,7 @@ describe("createConstructAttractAct", () => {
     expect(ghostHarness.events[0]).toContain("option-card");
     expect(
       ghostHarness.waitFor.mock.calls.some(([selector]) =>
-        selector.includes("start-position-picker")
+        selector.includes("start-placement-picker")
       )
     ).toBe(false);
   });
@@ -158,7 +158,7 @@ describe("createConstructAttractAct", () => {
 
     ghostHarness.waitFor.mockImplementation(async (selector: string) => {
       ghostHarness.events.push(`wait:${selector}`);
-      if (selector.includes("start-position-picker")) return [target("start")];
+      if (selector.includes("start-placement-picker")) return [target("start")];
       if (selector.includes("option-card")) return [target("option")];
       return [target("control")];
     });

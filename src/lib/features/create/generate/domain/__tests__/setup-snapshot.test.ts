@@ -28,9 +28,9 @@ const baseConfig = (): UIGenerationConfig =>
 
 const baseStartEnd = (): StartEndOptions =>
   ({
-    blockedStartPositions: ["alpha1", "beta3"],
-    startPosition: null,
-    endPosition: null,
+    blockedStartPlacements: ["alpha1", "beta3"],
+    startPlacement: null,
+    endPlacement: null,
     mustContainLetters: ["A", "B"],
     mustNotContainLetters: [],
     leftStartOrientation: "in",
@@ -72,7 +72,7 @@ describe("setupSnapshotsEqual", () => {
   it("compares reordered set-semantics arrays as equal", () => {
     const shuffled = {
       ...baseStartEnd(),
-      blockedStartPositions: ["beta3", "alpha1"],
+      blockedStartPlacements: ["beta3", "alpha1"],
       mustContainLetters: ["B", "A"],
     } as unknown as StartEndOptions;
     expect(setupSnapshotsEqual(snap(baseConfig(), shuffled), snap())).toBe(

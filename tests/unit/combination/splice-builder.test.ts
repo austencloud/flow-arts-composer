@@ -3,7 +3,7 @@
  *
  * The payoff this suite exists to prove: a spliced walk over TWO DIFFERENT
  * cards has a valid orientation chain end to end. The search only guarantees
- * positions; `buildResult` re-derives orientations from the walk's own start
+ * placements; `buildResult` re-derives orientations from the walk's own start
  * hold, and `validateSequence` (the create module's orientation-continuity
  * validator) is the independent check that it worked.
  *
@@ -84,29 +84,29 @@ describe("splice builder", () => {
     expect(result.gridMode).toBe(GGGG_CW.gridMode);
 
     // The canonical deriver's start hold — same one the sequence-hydrator
-    // builds. Its id is derived from the position (deterministic), and it
+    // builds. Its id is derived from the placement (deterministic), and it
     // carries the α/β/Γ static letter a hand-rolled hold would have dropped.
-    expect(result.startPosition).toBeDefined();
-    expect(result.startPosition!.gridPosition).toBe(
-      GGGG_CW.steps[0]!.startPosition
+    expect(result.startPlacement).toBeDefined();
+    expect(result.startPlacement!.gridPlacement).toBe(
+      GGGG_CW.steps[0]!.startPlacement
     );
-    expect(result.startPosition!.id).toBe("derived-start-beta1");
-    expect(result.startPosition!.letter).toBe("β");
+    expect(result.startPlacement!.id).toBe("derived-start-beta1");
+    expect(result.startPlacement!.letter).toBe("β");
 
     // MEASURED, not asserted: this splice really does close in orientation as
-    // well as position, so it earns the app's seamless-loop flag. See the
+    // well as placement, so it earns the app's seamless-loop flag. See the
     // period test for the case where it would not.
     expect(result.isCircular).toBe(true);
     expect(result.period).toBe(1);
 
-    // Positional closure: every seam meets, including the wrap.
+    // Placement closure: every seam meets, including the wrap.
     for (let i = 1; i < result.steps.length; i++) {
-      expect(result.steps[i]!.startPosition).toBe(
-        result.steps[i - 1]!.endPosition
+      expect(result.steps[i]!.startPlacement).toBe(
+        result.steps[i - 1]!.endPlacement
       );
     }
-    expect(result.steps.at(-1)!.endPosition).toBe(
-      result.steps[0]!.startPosition
+    expect(result.steps.at(-1)!.endPlacement).toBe(
+      result.steps[0]!.startPlacement
     );
 
     // THE PAYOFF. Step 1 is checked against the rebuilt start hold, every other
@@ -186,7 +186,7 @@ describe("splice builder", () => {
   });
 
   it("closes its orientation chain in one pass for GGGG + HHHH", async () => {
-    // OBSERVED, not required. Positional closure is guaranteed; orientation
+    // OBSERVED, not required. Placement closure is guaranteed; orientation
     // closure is a property of the material, and a walk that does NOT return to
     // its start orientation is simply a period > 1 loop.
     //
@@ -199,7 +199,7 @@ describe("splice builder", () => {
     // orientation pass ever stopped running, or started forcing closure, the
     // chain below would no longer read as computed values.
     const result = await buildResult(gThenH(), GGGG_CW);
-    const hold = result.startPosition!;
+    const hold = result.startPlacement!;
     expect(result.period).toBe(1);
 
     for (const hand of HANDS) {
@@ -225,7 +225,7 @@ describe("splice builder", () => {
 
   it("reports a period-2 loop honestly instead of calling it circular", async () => {
     // Three G steps then one H step: beta1 -> beta3 -> beta5 -> beta7 -> beta1.
-    // The walk closes POSITIONALLY — deliberately, so that `isCircular: false`
+    // The walk closes AT THE PLACEMENT LEVEL — deliberately, so that `isCircular: false`
     // isolates the orientation failure and nothing else. Pro at 0 turns
     // preserves orientation and anti flips it, so an ODD number of anti steps
     // (one, here) leaves the props inverted at the wrap. Playing it twice
@@ -252,14 +252,14 @@ describe("splice builder", () => {
 
     expect(result.steps).toHaveLength(4);
 
-    // Position closure holds, including the wrap — this walk is a closed loop.
+    // Placement closure holds, including the wrap — this walk is a closed loop.
     for (let i = 1; i < result.steps.length; i++) {
-      expect(result.steps[i]!.startPosition).toBe(
-        result.steps[i - 1]!.endPosition
+      expect(result.steps[i]!.startPlacement).toBe(
+        result.steps[i - 1]!.endPlacement
       );
     }
-    expect(result.steps.at(-1)!.endPosition).toBe(
-      result.steps[0]!.startPosition
+    expect(result.steps.at(-1)!.endPlacement).toBe(
+      result.steps[0]!.startPlacement
     );
 
     // Only the ORIENTATION chain fails to close in one pass.
@@ -267,7 +267,7 @@ describe("splice builder", () => {
     expect(result.isCircular).toBe(false);
     // Closure was NOT forced: the last step really does end `out` against a
     // hold that started `in`.
-    expect(result.startPosition!.motions.left!.endOrientation).toBe("in");
+    expect(result.startPlacement!.motions.left!.endOrientation).toBe("in");
     expect(result.steps.at(-1)!.motions.left.endOrientation).toBe("out");
   });
 
@@ -292,8 +292,8 @@ describe("splice builder", () => {
       id: "unresolvable",
       stepNumber: 1,
       letter: null,
-      startPosition: GGGG_CW.steps[0]!.startPosition,
-      endPosition: GGGG_CW.steps[0]!.startPosition,
+      startPlacement: GGGG_CW.steps[0]!.startPlacement,
+      endPlacement: GGGG_CW.steps[0]!.startPlacement,
       motions: {
         [HandSide.LEFT]: stuck(HandSide.LEFT),
         [HandSide.RIGHT]: stuck(HandSide.RIGHT),
@@ -323,13 +323,13 @@ describe("splice builder", () => {
   it("refuses to build a sequence from an empty walk", async () => {
     // The search never emits one (a recorded walk has at least two steps), so
     // an empty block list is a caller bug. A stepless "sequence" would be a
-    // silently useless object with no start position and no word.
+    // silently useless object with no start placement and no word.
     await expect(buildResult([], GGGG_CW)).rejects.toThrow(/no steps/);
   });
 
   it("every searched combination of GGGG + HHHH is orientation-valid", async () => {
     // The end-to-end claim: the real builder now runs inside the pipeline, so
-    // the search's results are not merely position-continuous walks — they are
+    // the search's results are not merely placement-continuous walks — they are
     // performable sequences.
     // 200 results, not a default page: the classifier ranks period-1 above
     // period-2, so a small page is all period-1 by construction and the
@@ -344,23 +344,23 @@ describe("splice builder", () => {
 
     for (const result of report.results) {
       const seq = result.sequence;
-      expect(seq.startPosition, result.canonicalHash).toBeDefined();
+      expect(seq.startPlacement, result.canonicalHash).toBeDefined();
       expect(
         validateSequence(seq).map((e) => e.message),
         result.canonicalHash
       ).toEqual([]);
 
-      // Positional closure survives the post-processing pass.
+      // Placement closure survives the post-processing pass.
       for (let i = 1; i < seq.steps.length; i++) {
-        expect(seq.steps[i]!.startPosition, result.canonicalHash).toBe(
-          seq.steps[i - 1]!.endPosition
+        expect(seq.steps[i]!.startPlacement, result.canonicalHash).toBe(
+          seq.steps[i - 1]!.endPlacement
         );
       }
-      expect(seq.steps.at(-1)!.endPosition, result.canonicalHash).toBe(
-        seq.steps[0]!.startPosition
+      expect(seq.steps.at(-1)!.endPlacement, result.canonicalHash).toBe(
+        seq.steps[0]!.startPlacement
       );
-      expect(seq.startPosition!.gridPosition, result.canonicalHash).toBe(
-        seq.steps[0]!.startPosition
+      expect(seq.startPlacement!.gridPlacement, result.canonicalHash).toBe(
+        seq.steps[0]!.startPlacement
       );
 
       // Every result carries a word for every step — this material is all real
@@ -369,7 +369,7 @@ describe("splice builder", () => {
       expect(seq.word.length, result.canonicalHash).toBe(seq.steps.length);
 
       // isCircular and period are two views of the same measurement, because a
-      // combination closes positionally by construction: the seamless-loop flag
+      // combination closes at the placement level by construction: the seamless-loop flag
       // holds EXACTLY when the orientation chain also closes in one pass.
       expect(seq.period, result.canonicalHash).toBeDefined();
       expect(seq.isCircular, result.canonicalHash).toBe(seq.period === 1);

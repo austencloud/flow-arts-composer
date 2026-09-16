@@ -40,7 +40,7 @@
   {#if sequence}
     <StepGrid
       steps={sequence.steps}
-      startPosition={sequence.startPosition}
+      startPlacement={sequence.startPlacement}
       practiceStepNumber={currentStepIndex + 1}
       onStepClick={handleStepClick}
       onStartClick={handleStartClick}

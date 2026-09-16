@@ -64,7 +64,7 @@ function resolveGridMode(
 /**
  * Where this hand begins, using the same priority order the sequence
  * decomposer uses (`shared/foundation/services/sequence-decomposer.ts`):
- * startPosition, then its legacy alias startingPosition, then the first step's
+ * startPlacement, then its legacy alias startingPlacement, then the first step's
  * own motion.
  *
  * Unlike the decomposer we do NOT fall back to a hard NORTH default. The
@@ -77,11 +77,11 @@ function resolveStartLocation(
   firstMotion: MotionData,
   hand: TraceHand
 ): GridLocation {
-  const startPositionMotions =
-    sequence.startPosition?.motions ?? sequence.startingPosition?.motions;
+  const startPlacementMotions =
+    sequence.startPlacement?.motions ?? sequence.startingPlacement?.motions;
 
   return (
-    startPositionMotions?.[hand]?.startLocation ?? firstMotion.startLocation
+    startPlacementMotions?.[hand]?.startLocation ?? firstMotion.startLocation
   );
 }
 

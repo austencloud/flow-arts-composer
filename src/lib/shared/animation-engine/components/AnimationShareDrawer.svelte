@@ -36,7 +36,7 @@
   import { animationShortcutRegistrar } from "../services/animation-shortcut-registrar";
 
   // Types
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -183,7 +183,7 @@
     gridVisible?: boolean;
     gridMode?: GridMode | null | undefined;
     letter?: Letter | null;
-    stepData?: StartPositionData | StepData | null;
+    stepData?: StartPlacementData | StepData | null;
     sequenceData?: SequenceData | null;
     isExporting?: boolean;
     exportProgress?: VideoExportProgress | null;

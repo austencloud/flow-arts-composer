@@ -3,7 +3,7 @@
  */
 
 import type { GridTopology, PointRef } from "../domain/models/grid-topology";
-import type { PositionPair } from "./types";
+import type { PlacementPair } from "./types";
 import { HAND_POINT_LOCATIONS } from "../domain/constants/grid-mode-offsets";
 
 export function enumerateHandPoints(topology: GridTopology): PointRef[] {
@@ -21,9 +21,9 @@ export function enumerateHandPoints(topology: GridTopology): PointRef[] {
   return points;
 }
 
-export function enumeratePositionPairs(topology: GridTopology): PositionPair[] {
+export function enumeratePlacementPairs(topology: GridTopology): PlacementPair[] {
   const handPoints = enumerateHandPoints(topology);
-  const pairs: PositionPair[] = [];
+  const pairs: PlacementPair[] = [];
 
   for (const left of handPoints) {
     for (const right of handPoints) {

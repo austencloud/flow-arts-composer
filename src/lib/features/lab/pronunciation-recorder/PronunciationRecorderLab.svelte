@@ -20,7 +20,7 @@
 
     // The letter list comes from the pool, not from the `Letter` enum. The enum
     // carries 54 entries; 47 of them are letters a word can hold, and the other
-    // seven are position names. Planning cells for a position name would put a
+    // seven are placement names. Planning cells for a placement name would put a
     // label on screen that is not a TKA word.
     //
     // Coverage starts empty. Resuming from a previous sitting reads session.json

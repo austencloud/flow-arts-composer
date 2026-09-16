@@ -18,8 +18,8 @@ export interface MotionData {
 
 export interface PictographData {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotion: MotionData;
@@ -31,10 +31,10 @@ export interface PictographData {
  * Includes the current sequence state and candidate variation.
  */
 export interface ConstraintContext {
-  /** Index of the current step being evaluated (0-based, excluding start position) */
+  /** Index of the current step being evaluated (0-based, excluding start placement) */
   stepIndex: number;
 
-  /** Total number of steps in the sequence (excluding start position) */
+  /** Total number of steps in the sequence (excluding start placement) */
   totalSteps: number;
 
   /** Previously selected variations in the sequence */
@@ -152,8 +152,8 @@ export interface SearchState {
   /** Per-step scores for reporting */
   stepScores: VariationScore[];
 
-  /** Current end position (for position continuity) */
-  currentEndPosition: string;
+  /** Current end placement (for placement continuity) */
+  currentEndPlacement: string;
 
   /** Indices of steps that are bridge letters (not user-requested letters) */
   bridgeStepIndices?: Set<number>;

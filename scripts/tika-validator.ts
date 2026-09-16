@@ -28,8 +28,8 @@ const STRICT_WORD_COUNT = 30 // Ideal for beginners
 const JSON_DUMP_PATTERNS = [
 	/\{[\s\S]*"contextData"/,
 	/\{[\s\S]*"variation":\s*\d/,
-	/\{[\s\S]*"startPosition":/,
-	/\{[\s\S]*"endPosition":/,
+	/\{[\s\S]*"startPlacement":/,
+	/\{[\s\S]*"endPlacement":/,
 	/\{[\s\S]*"leftMotion":/,
 	/\{[\s\S]*"rightMotion":/,
 	/\{[\s\S]*"blueMotion":/,

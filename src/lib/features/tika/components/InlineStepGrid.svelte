@@ -214,7 +214,7 @@
         </div>
         <div class="step-letter">{step.letter}</div>
         <div class="step-positions">
-          {step.startPosition} → {step.endPosition}
+          {step.startPlacement} → {step.endPlacement}
         </div>
       </div>
     {/each}

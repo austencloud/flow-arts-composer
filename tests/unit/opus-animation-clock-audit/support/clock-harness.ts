@@ -62,14 +62,14 @@ function loadFixtures(): Record<string, FixtureSample[]> {
 
 function toSequence(sample: FixtureSample, id: string): SequenceData {
   const steps = normalizeLegacySteps(sample.steps) as unknown as StepData[];
-  const startPosition = steps.find((step) => step.stepNumber === 0) ?? null;
+  const startPlacement = steps.find((step) => step.stepNumber === 0) ?? null;
   return {
     id,
     name: sample.seedWord,
     word: sample.derivedWord,
     author: "loop-audit",
     steps,
-    startPosition,
+    startPlacement,
     isCircular: true,
     thumbnails: [],
   } as unknown as SequenceData;

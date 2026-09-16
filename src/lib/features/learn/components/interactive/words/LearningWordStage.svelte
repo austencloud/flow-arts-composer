@@ -90,7 +90,7 @@
           chrome="minimal"
           fill
           showWordHeader={false}
-          showPositionGlyph
+          showPlacementGlyph
           scrubbable
           beatIndicators={false}
           hideTkaGlyph
@@ -118,7 +118,7 @@
           showWord={false}
           showStepNumbers
           showDifficultyLevel={false}
-          includeStartPosition
+          includeStartPlacement
           showNotes={false}
           showLoopGlyph={false}
           showQRCode={false}

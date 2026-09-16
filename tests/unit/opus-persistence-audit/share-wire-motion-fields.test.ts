@@ -38,7 +38,7 @@ import {
   encodeSequence,
   verifySequenceRoundTrip,
 } from "$lib/shared/navigation/services/sequence-encoder";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import {
   ensureComposition,
   hydrate,
@@ -57,7 +57,7 @@ import {
 } from "./fixtures";
 
 const startCell = () =>
-  createStartPositionData({
+  createStartPlacementData({
     id: "start",
     motions: {
       left: motionAt(GridLocation.NORTH, GridLocation.NORTH, HandSide.LEFT),
@@ -72,7 +72,7 @@ function authoredSequence(): SequenceData {
       makeStep(0, "A", { plane: "wheel", skewSteps: 2, skewDir: "+" }),
       makeStep(1, "B"),
     ],
-    { startPosition: startCell() }
+    { startPlacement: startCell() }
   );
 }
 

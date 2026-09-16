@@ -132,10 +132,10 @@
   );
 
   // Position label
-  const positionLabel = $derived.by(() => {
+  const placementLabel = $derived.by(() => {
     if (!pictographData) return "";
-    const start = pictographData.startPosition || "?";
-    const end = pictographData.endPosition || "?";
+    const start = pictographData.startPlacement || "?";
+    const end = pictographData.endPlacement || "?";
     return `${start} → ${end}`;
   });
 
@@ -211,7 +211,7 @@
       <header class="panel-header">
         <div class="header-info">
           <h2>{pictographData.letter}</h2>
-          <span class="subtitle">{positionLabel}</span>
+          <span class="subtitle">{placementLabel}</span>
         </div>
 
         <!-- Arrow adjustment panel when arrow selected -->

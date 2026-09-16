@@ -23,10 +23,10 @@
     showGrid: boolean;
     showTKA: boolean;
     showWord: boolean;
-    includeStartPosition: boolean;
+    includeStartPlacement: boolean;
   }
 
-  let { sequences, showGrid, showTKA, showWord, includeStartPosition }: Props =
+  let { sequences, showGrid, showTKA, showWord, includeStartPlacement }: Props =
     $props();
 
   let hapticService: HapticFeedback;
@@ -86,9 +86,9 @@
         stepSize: COMPOSER_CARD_EXPORT_PROFILE_V1.cellSize,
         format: "PNG" as const,
         quality: 1.0,
-        includeStartPosition,
-        startPositionLayout:
-          COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+        includeStartPlacement,
+        startPlacementLayout:
+          COMPOSER_CARD_EXPORT_PROFILE_V1.startPlacementLayout,
         addStepNumbers: COMPOSER_CARD_EXPORT_PROFILE_V1.showStepNumbers,
         addWord: showWord && COMPOSER_CARD_EXPORT_PROFILE_V1.showWord,
         addDifficultyLevel: COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty,
@@ -108,7 +108,7 @@
           showTnD: false,
           showElemental: false,
           showPropTnD: false,
-          showPositions: false,
+          showPlacements: false,
           showHandColorKey: true,
           showMandala: COMPOSER_CARD_EXPORT_PROFILE_V1.showMandala,
         },

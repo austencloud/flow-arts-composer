@@ -20,8 +20,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0-0|0.5-0.5|0.5-0|0-0.5|0-0|0.5-0.5|0.5-0|0",
           "turnPatternId": "trade-then-accent"
         },
@@ -37,8 +37,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -53,8 +53,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OVXΔ"
         },
         {
@@ -69,8 +69,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/MVNU"
         },
         {
@@ -86,8 +86,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "tndTurn",
@@ -102,8 +102,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -119,8 +119,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -136,8 +136,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         }
@@ -159,8 +159,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-1|1-0|0-0|0-1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -176,8 +176,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -192,8 +192,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AJEΦ-",
           "turnPattern": "0.5|0.5-0.5|0.5-0.5|0-0|0.5",
           "turnPatternId": "dense-handoff"
@@ -210,8 +210,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OT",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -229,8 +229,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "tndTurn",
@@ -245,8 +245,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -262,8 +262,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredInverted8",
@@ -277,8 +277,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         }
       ]
     },
@@ -298,8 +298,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirrored8",
@@ -313,8 +313,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -329,8 +329,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΣTW",
           "turnPattern": "0.5|0.5-0|0-0.5|0-0|0.5",
           "turnPatternId": "accent-then-trade"
@@ -347,8 +347,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/QT",
           "turnPattern": "1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
@@ -366,8 +366,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "tndTurn",
@@ -382,8 +382,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -399,8 +399,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
         },
@@ -416,8 +416,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         }
       ]
     },
@@ -437,8 +437,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0.5-0|0-0.5|0.5-0|0-0.5|0.5-0|0-0.5|0.5-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -454,8 +454,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "0|0-1|1-0|0-0|0-0|0-1|1-0|0-0|0",
           "turnPatternId": "offbeat-together"
@@ -472,8 +472,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EJΦK"
         },
         {
@@ -488,8 +488,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/RT",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -507,8 +507,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -523,8 +523,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -538,8 +538,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredInverted8",
@@ -553,8 +553,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         }
@@ -576,8 +576,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -591,8 +591,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|0-0|0-0|1-1|1-1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
@@ -609,8 +609,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/KΣ-XC",
           "turnPattern": "1|0-0|1-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
@@ -627,8 +627,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/SOTR",
           "turnPattern": "0.5|0-0|0-0|0.5-0.5|0.5",
           "turnPatternId": "bookended-trade"
@@ -646,8 +646,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -662,8 +662,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -677,8 +677,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredInverted8",
@@ -692,8 +692,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         }
@@ -715,8 +715,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-1|1-1|0-0|1-1|1-1|1-1|0-0|1",
           "turnPatternId": "dense-handoff"
         },
@@ -732,8 +732,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -748,8 +748,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AKIΦ"
         },
         {
@@ -764,8 +764,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΔMX",
           "turnPattern": "0.5|0.5-0.5|0.5-0|0-0|0",
           "turnPatternId": "together-block"
@@ -783,8 +783,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -799,8 +799,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -816,8 +816,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -833,8 +833,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         }
       ]
     },
@@ -854,8 +854,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirrored8",
@@ -869,8 +869,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|0-0|1-1|0-0|1-1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -887,8 +887,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΔTX"
         },
         {
@@ -903,8 +903,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΣTX",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
@@ -922,8 +922,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -938,8 +938,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -955,8 +955,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0-0.5|0-0|0.5-0|0.5",
           "turnPatternId": "split-blocks"
         },
@@ -972,8 +972,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         }
       ]
     },
@@ -993,8 +993,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -1008,8 +1008,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "0.5|0-0|0-0|0.5-0.5|0.5-0.5|0-0|0-0|0.5-0.5|0.5",
           "turnPatternId": "bookended-trade"
@@ -1026,8 +1026,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΣVX"
         },
         {
@@ -1042,8 +1042,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΩ-SW-"
         },
         {
@@ -1059,8 +1059,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -1077,8 +1077,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -1094,8 +1094,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredInverted8",
@@ -1109,8 +1109,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
         }
@@ -1132,8 +1132,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-0|0-0|0-1|0-0|1-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
         },
@@ -1149,8 +1149,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|0-0|1-1|1-0|0-1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
@@ -1167,8 +1167,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/KDCΦ-"
         },
         {
@@ -1183,8 +1183,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΔUZ",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
@@ -1202,8 +1202,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -1218,8 +1218,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -1233,8 +1233,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredInverted8",
@@ -1248,8 +1248,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "0.5|0-0|0-0|0.5-0.5|0.5",
           "turnPatternId": "bookended-trade"
         }
@@ -1271,8 +1271,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-1|1-0|0-0|0-1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -1288,8 +1288,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -1304,8 +1304,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/MΛWΔ"
         },
         {
@@ -1320,8 +1320,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/XΣΛS",
           "turnPattern": "0.5|0.5-0.5|0.5-0|0-0|0",
           "turnPatternId": "together-block"
@@ -1339,8 +1339,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -1357,8 +1357,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -1372,8 +1372,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredInverted8",
@@ -1387,8 +1387,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         }
@@ -1410,8 +1410,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -1425,8 +1425,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "0.5|0.5-0|0-0.5|0.5-0|0-0.5|0.5-0|0-0.5|0.5-0|0",
           "turnPatternId": "together-pulse"
@@ -1443,8 +1443,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AΣSW",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -1461,8 +1461,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/ΦAΦ-L",
           "turnPattern": "1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
@@ -1480,8 +1480,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -1498,8 +1498,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -1513,8 +1513,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredInverted8",
@@ -1528,8 +1528,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         }
       ]
     },
@@ -1549,8 +1549,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-0|0-1|1-0|0-1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -1566,8 +1566,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "1|0-0|1-1|0-0|1-1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -1584,8 +1584,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΔUW",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
@@ -1602,8 +1602,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/MVNU"
         },
         {
@@ -1619,8 +1619,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "tndTurn",
@@ -1635,8 +1635,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -1650,8 +1650,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredInverted8",
@@ -1665,8 +1665,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "0.5|0-0|0-0|0.5-0.5|0.5",
           "turnPatternId": "bookended-trade"
         }
@@ -1688,8 +1688,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirrored8",
@@ -1703,8 +1703,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "0.5|0-0|0.5-0.5|0.5-0|0-0.5|0-0|0.5-0.5|0.5-0|0",
           "turnPatternId": "trade-then-accent"
@@ -1721,8 +1721,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/IΩPY-",
           "turnPattern": "1|1-0|0-1|0-0|1",
           "turnPatternId": "accent-then-trade"
@@ -1739,8 +1739,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OT"
         },
         {
@@ -1756,8 +1756,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "tndTurn",
@@ -1772,8 +1772,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -1789,8 +1789,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
         },
@@ -1806,8 +1806,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         }
       ]
     },
@@ -1827,8 +1827,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-0|0-1|0-0|1-1|1-0|0-1|0-0|1",
           "turnPatternId": "accent-then-trade"
         },
@@ -1844,8 +1844,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -1860,8 +1860,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OVXΔ"
         },
         {
@@ -1876,8 +1876,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/RT"
         },
         {
@@ -1893,8 +1893,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -1911,8 +1911,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -1926,8 +1926,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -1943,8 +1943,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "0.5|0.5-0|0-0.5|0.5-0|0",
           "turnPatternId": "together-pulse"
         }
@@ -1966,8 +1966,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-1|0-0|1-0|1-1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -1983,8 +1983,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -1999,8 +1999,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AΔSX"
         },
         {
@@ -2015,8 +2015,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/SOTR"
         },
         {
@@ -2032,8 +2032,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -2050,8 +2050,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -2067,8 +2067,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "0|0-0.5|0.5-0|0-0|0",
           "turnPatternId": "offbeat-together"
         },
@@ -2084,8 +2084,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         }
       ]
     },
@@ -2105,8 +2105,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirrored8",
@@ -2120,8 +2120,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "1|0-0|0-0|1-1|1-1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
@@ -2138,8 +2138,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΣTW"
         },
         {
@@ -2154,8 +2154,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/VPUQ"
         },
         {
@@ -2171,8 +2171,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -2189,8 +2189,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -2204,8 +2204,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0-0|0-0|0.5-0|0",
           "turnPatternId": "spaced-handoff"
         },
@@ -2221,8 +2221,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         }
@@ -2244,8 +2244,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-1|0-0|1-0|1-1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -2261,8 +2261,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -2277,8 +2277,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/FΦ-BJ",
           "turnPattern": "1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
@@ -2295,8 +2295,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΔMX"
         },
         {
@@ -2312,8 +2312,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -2330,8 +2330,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -2345,8 +2345,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "0.5|0-0.5|0-0|0.5-0|0.5",
           "turnPatternId": "split-blocks"
         },
@@ -2362,8 +2362,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         }
       ]
     },
@@ -2383,8 +2383,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-0|0-0|0-1|0-0|1-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
         },
@@ -2400,8 +2400,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "1|0-0|1-1|1-0|0-1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
@@ -2418,8 +2418,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/KΣ-XC",
           "turnPattern": "0.5|0-0|0.5-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
@@ -2436,8 +2436,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΣTX"
         },
         {
@@ -2453,8 +2453,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -2469,8 +2469,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -2484,8 +2484,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredInverted8",
@@ -2499,8 +2499,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         }
@@ -2522,8 +2522,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0-0|0.5-0.5|0.5-0|0-0.5|0-0|0.5-0.5|0.5-0|0",
           "turnPatternId": "trade-then-accent"
         },
@@ -2539,8 +2539,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "0|0-1|1-0|0-0|0-0|0-1|1-0|0-0|0",
           "turnPatternId": "offbeat-together"
@@ -2557,8 +2557,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AJEΦ-"
         },
         {
@@ -2573,8 +2573,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΔUZ",
           "turnPattern": "0|0-1|1-0|0-0|0",
           "turnPatternId": "offbeat-together"
@@ -2592,8 +2592,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -2608,8 +2608,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -2623,8 +2623,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
         },
@@ -2640,8 +2640,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         }
       ]
     },
@@ -2661,8 +2661,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -2676,8 +2676,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "0.5|0-0|0.5-0.5|0.5-0|0-0.5|0-0|0.5-0.5|0.5-0|0",
           "turnPatternId": "trade-then-accent"
@@ -2694,8 +2694,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΔTX",
           "turnPattern": "1|1-1|1-1|0-0|1",
           "turnPatternId": "dense-handoff"
@@ -2712,8 +2712,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/W-Θ-",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -2731,8 +2731,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -2747,8 +2747,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -2764,8 +2764,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredInverted8",
@@ -2779,8 +2779,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         }
       ]
     },
@@ -2800,8 +2800,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirrored8",
@@ -2815,8 +2815,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "0|0-1|1-0|0-0|0-0|0-1|1-0|0-0|0",
           "turnPatternId": "offbeat-together"
@@ -2833,8 +2833,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EJΦK"
         },
         {
@@ -2849,8 +2849,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/XΣΛS",
           "turnPattern": "0.5|0-0|0.5-0.5|0-0|0.5",
           "turnPatternId": "alternating-hands"
@@ -2868,8 +2868,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "tndTurn",
@@ -2884,8 +2884,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -2899,8 +2899,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "0|0-1|1-0|0-0|0",
           "turnPatternId": "offbeat-together"
         },
@@ -2916,8 +2916,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         }
@@ -2939,8 +2939,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|0-0|1-0|0-1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
         },
@@ -2956,8 +2956,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "1|0-0|1-1|0-0|1-1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -2974,8 +2974,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/KDCΦ-"
         },
         {
@@ -2990,8 +2990,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/ΦAΦ-L"
         },
         {
@@ -3007,8 +3007,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -3025,8 +3025,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -3040,8 +3040,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredInverted8",
@@ -3055,8 +3055,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0-0|0.5-0.5|0-0|0.5",
           "turnPatternId": "alternating-hands"
         }
@@ -3078,8 +3078,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -3093,8 +3093,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|1-1|1-0|0-0|0-1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
@@ -3111,8 +3111,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AKIΦ"
         },
         {
@@ -3127,8 +3127,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OT"
         },
         {
@@ -3144,8 +3144,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -3162,8 +3162,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -3179,8 +3179,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredInverted8",
@@ -3194,8 +3194,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "0.5|0.5-0.5|0.5-0|0-0|0",
           "turnPatternId": "together-block"
         }
@@ -3217,8 +3217,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-1|1-0|0-1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
         },
@@ -3234,8 +3234,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -3250,8 +3250,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AΣSW"
         },
         {
@@ -3266,8 +3266,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/QT"
         },
         {
@@ -3283,8 +3283,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -3299,8 +3299,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -3316,8 +3316,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "0.5|0.5-0.5|0.5-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -3333,8 +3333,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         }
@@ -3356,8 +3356,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-1|1-0|1-1|1-1|0-1|1-0|1-1|1",
           "turnPatternId": "cross-accent"
         },
@@ -3373,8 +3373,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -3389,8 +3389,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΣVX",
           "turnPattern": "1|1-0|0-1|0-0|1",
           "turnPatternId": "accent-then-trade"
@@ -3407,8 +3407,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/RT"
         },
         {
@@ -3424,8 +3424,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -3440,8 +3440,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -3455,8 +3455,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0.5-0.5|0.5-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -3472,8 +3472,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         }
@@ -3495,8 +3495,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -3510,8 +3510,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "1|1-1|1-0|0-0|0-1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
@@ -3528,8 +3528,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/IΩPY-",
           "turnPattern": "0.5|0.5-0|0-0.5|0.5-0|0",
           "turnPatternId": "together-pulse"
@@ -3546,8 +3546,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/SOTR"
         },
         {
@@ -3563,8 +3563,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -3579,8 +3579,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -3596,8 +3596,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredInverted8",
@@ -3611,8 +3611,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         }
@@ -3634,8 +3634,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-1|1-0|1-1|1-1|0-1|1-0|1-1|1",
           "turnPatternId": "cross-accent"
         },
@@ -3651,8 +3651,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -3667,8 +3667,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/MΛWΔ"
         },
         {
@@ -3683,8 +3683,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΔMX",
           "turnPattern": "0.5|0-0.5|0-0|0.5-0|0.5",
           "turnPatternId": "split-blocks"
@@ -3702,8 +3702,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -3718,8 +3718,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -3733,8 +3733,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         },
@@ -3750,8 +3750,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         }
@@ -3773,8 +3773,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|0-0|1-0|0-1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
         },
@@ -3790,8 +3790,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "1|0-0|1-1|1-0|0-1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
@@ -3808,8 +3808,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AΔSX",
           "turnPattern": "0.5|0-0|0.5-0.5|0-0|0.5",
           "turnPatternId": "alternating-hands"
@@ -3826,8 +3826,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΣTX"
         },
         {
@@ -3843,8 +3843,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -3859,8 +3859,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -3876,8 +3876,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredInverted8",
@@ -3891,8 +3891,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         }
       ]
     },
@@ -3912,8 +3912,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -3927,8 +3927,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|1-1|1-0|0-0|0-1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
@@ -3945,8 +3945,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΔUW",
           "turnPattern": "0.5|0.5-0.5|0.5-0.5|0-0|0.5",
           "turnPatternId": "dense-handoff"
@@ -3963,8 +3963,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΩ-SW-"
         },
         {
@@ -3980,8 +3980,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -3996,8 +3996,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -4013,8 +4013,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
         },
@@ -4030,8 +4030,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         }
       ]
     },
@@ -4051,8 +4051,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirrored8",
@@ -4066,8 +4066,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -4082,8 +4082,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/FΦ-BJ",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -4100,8 +4100,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΔUZ",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
@@ -4119,8 +4119,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -4135,8 +4135,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -4150,8 +4150,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "0.5|0-0|0.5-0.5|0-0|0.5",
           "turnPatternId": "alternating-hands"
         },
@@ -4167,8 +4167,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         }
@@ -4190,8 +4190,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirrored8",
@@ -4205,8 +4205,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|0-0|0-0|1-1|1-1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
@@ -4223,8 +4223,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OVXΔ",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
@@ -4241,8 +4241,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/XΣΛS",
           "turnPattern": "0.5|0-0|0.5-0.5|0-0|0.5",
           "turnPatternId": "alternating-hands"
@@ -4260,8 +4260,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "tndTurn",
@@ -4276,8 +4276,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -4293,8 +4293,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredInverted8",
@@ -4308,8 +4308,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         }
       ]
     },
@@ -4329,8 +4329,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "0.5|0.5-0|0-0.5|0-0|0.5-0.5|0.5-0|0-0.5|0-0|0.5",
           "turnPatternId": "accent-then-trade"
         },
@@ -4346,8 +4346,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -4362,8 +4362,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AJEΦ-"
         },
         {
@@ -4378,8 +4378,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/ΦAΦ-L",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
@@ -4397,8 +4397,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -4415,8 +4415,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -4430,8 +4430,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredInverted8",
@@ -4445,8 +4445,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         }
@@ -4468,8 +4468,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirrored8",
@@ -4483,8 +4483,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "0.5|0-0|0.5-0.5|0.5-0|0-0.5|0-0|0.5-0.5|0.5-0|0",
           "turnPatternId": "trade-then-accent"
@@ -4501,8 +4501,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΣTW",
           "turnPattern": "1|0-0|1-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
@@ -4519,8 +4519,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/MVNU"
         },
         {
@@ -4536,8 +4536,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "tndTurn",
@@ -4552,8 +4552,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -4567,8 +4567,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
         },
@@ -4584,8 +4584,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         }
@@ -4607,8 +4607,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirrored8",
@@ -4622,8 +4622,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "1|0-0|1-1|0-0|1-1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -4640,8 +4640,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EJΦK",
           "turnPattern": "1|1-0|0-1|0-0|1",
           "turnPatternId": "accent-then-trade"
@@ -4658,8 +4658,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OT",
           "turnPattern": "1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
@@ -4677,8 +4677,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -4693,8 +4693,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -4708,8 +4708,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0.5-0.5|0.5-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -4725,8 +4725,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         }
       ]
     },
@@ -4746,8 +4746,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -4761,8 +4761,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "0.5|0-0.5|0-0|0.5-0|0.5-0.5|0-0.5|0-0|0.5-0|0.5",
           "turnPatternId": "split-blocks"
@@ -4779,8 +4779,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/KΣ-XC"
         },
         {
@@ -4795,8 +4795,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/QT",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -4814,8 +4814,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -4830,8 +4830,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -4847,8 +4847,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredInverted8",
@@ -4862,8 +4862,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
         }
@@ -4885,8 +4885,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-0|0-0|0-1|0-0|1-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
         },
@@ -4902,8 +4902,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "0.5|0-0|0-0|0.5-0.5|0.5-0.5|0-0|0-0|0.5-0.5|0.5",
           "turnPatternId": "bookended-trade"
@@ -4920,8 +4920,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AKIΦ",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -4938,8 +4938,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/SOTR"
         },
         {
@@ -4955,8 +4955,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -4971,8 +4971,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -4988,8 +4988,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredInverted8",
@@ -5003,8 +5003,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         }
       ]
     },
@@ -5024,8 +5024,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|1-1|0-0|1-1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -5041,8 +5041,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|0-1|0-0|1-0|1-1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
@@ -5059,8 +5059,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΔTX",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
@@ -5077,8 +5077,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/VPUQ"
         },
         {
@@ -5094,8 +5094,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -5110,8 +5110,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -5125,8 +5125,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredInverted8",
@@ -5140,8 +5140,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0.5-0|0-0.5|0.5-0|0",
           "turnPatternId": "together-pulse"
         }
@@ -5163,8 +5163,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "0.5|0.5-0.5|0.5-0.5|0-0|0.5-0.5|0.5-0.5|0.5-0.5|0-0|0.5",
           "turnPatternId": "dense-handoff"
         },
@@ -5180,8 +5180,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -5196,8 +5196,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΣVX"
         },
         {
@@ -5212,8 +5212,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΔMX",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
@@ -5231,8 +5231,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -5247,8 +5247,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -5262,8 +5262,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -5279,8 +5279,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         }
@@ -5302,8 +5302,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "0.5|0.5-0.5|0.5-0|0-0|0-0.5|0.5-0.5|0.5-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -5319,8 +5319,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -5335,8 +5335,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/KDCΦ-",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
@@ -5353,8 +5353,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΣTX"
         },
         {
@@ -5370,8 +5370,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -5386,8 +5386,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -5403,8 +5403,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredInverted8",
@@ -5418,8 +5418,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         }
@@ -5441,8 +5441,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirrored8",
@@ -5456,8 +5456,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -5472,8 +5472,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/MΛWΔ",
           "turnPattern": "0.5|0-0|0-0|0.5-0.5|0.5",
           "turnPatternId": "bookended-trade"
@@ -5490,8 +5490,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΔUZ",
           "turnPattern": "0|0-1|1-0|0-0|0",
           "turnPatternId": "offbeat-together"
@@ -5509,8 +5509,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -5527,8 +5527,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -5544,8 +5544,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredInverted8",
@@ -5559,8 +5559,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         }
       ]
     },
@@ -5580,8 +5580,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -5595,8 +5595,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|0-1|0-0|1-0|1-1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
@@ -5613,8 +5613,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AΣSW",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -5631,8 +5631,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/W-Θ-"
         },
         {
@@ -5648,8 +5648,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -5666,8 +5666,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -5681,8 +5681,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "0.5|0-0|0.5-0.5|0-0|0.5",
           "turnPatternId": "alternating-hands"
         },
@@ -5698,8 +5698,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         }
       ]
     },
@@ -5719,8 +5719,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "0|0-0.5|0.5-0|0-0|0-0|0-0.5|0.5-0|0-0|0",
           "turnPatternId": "offbeat-together"
         },
@@ -5736,8 +5736,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -5752,8 +5752,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΔUW"
         },
         {
@@ -5768,8 +5768,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/XΣΛS",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
@@ -5787,8 +5787,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -5805,8 +5805,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -5822,8 +5822,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredInverted8",
@@ -5837,8 +5837,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         }
       ]
     },
@@ -5858,8 +5858,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirrored8",
@@ -5873,8 +5873,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -5889,8 +5889,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/IΩPY-"
         },
         {
@@ -5905,8 +5905,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/ΦAΦ-L"
         },
         {
@@ -5922,8 +5922,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -5940,8 +5940,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -5957,8 +5957,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -5974,8 +5974,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0.5-0|0-0.5|0.5-0|0",
           "turnPatternId": "together-pulse"
         }
@@ -5997,8 +5997,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -6012,8 +6012,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -6028,8 +6028,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OVXΔ"
         },
         {
@@ -6044,8 +6044,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OT",
           "turnPattern": "0.5|0-0.5|0-0|0.5-0|0.5",
           "turnPatternId": "split-blocks"
@@ -6063,8 +6063,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -6081,8 +6081,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -6096,8 +6096,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -6113,8 +6113,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         }
@@ -6136,8 +6136,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "0.5|0-0|0.5-0|0-0|0-0.5|0-0|0.5-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
         },
@@ -6153,8 +6153,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -6169,8 +6169,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AΔSX",
           "turnPattern": "1|1-0|0-1|0-0|1",
           "turnPatternId": "accent-then-trade"
@@ -6187,8 +6187,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/QT"
         },
         {
@@ -6204,8 +6204,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -6222,8 +6222,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -6239,8 +6239,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredInverted8",
@@ -6254,8 +6254,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         }
       ]
     },
@@ -6275,8 +6275,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|1-1|0-0|1-1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -6292,8 +6292,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -6308,8 +6308,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΣTW"
         },
         {
@@ -6324,8 +6324,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/RT",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
@@ -6343,8 +6343,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -6359,8 +6359,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -6374,8 +6374,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0-0.5|0-0|0.5-0|0.5",
           "turnPatternId": "split-blocks"
         },
@@ -6391,8 +6391,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         }
@@ -6414,8 +6414,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "0.5|0-0|0.5-0.5|0-0|0.5-0.5|0-0|0.5-0.5|0-0|0.5",
           "turnPatternId": "alternating-hands"
         },
@@ -6431,8 +6431,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|0-0|0-0|1-1|1-1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
@@ -6449,8 +6449,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/FΦ-BJ"
         },
         {
@@ -6465,8 +6465,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/SOTR",
           "turnPattern": "0|0-1|1-0|0-0|0",
           "turnPatternId": "offbeat-together"
@@ -6484,8 +6484,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -6502,8 +6502,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -6517,8 +6517,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredInverted8",
@@ -6532,8 +6532,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         }
       ]
     },
@@ -6553,8 +6553,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-0|0-0|0-1|0-0|1-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
         },
@@ -6570,8 +6570,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "0.5|0.5-0.5|0.5-0|0-0|0-0.5|0.5-0.5|0.5-0|0-0|0",
           "turnPatternId": "together-block"
@@ -6588,8 +6588,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/KΣ-XC"
         },
         {
@@ -6604,8 +6604,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/VPUQ",
           "turnPattern": "1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
@@ -6623,8 +6623,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -6641,8 +6641,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -6656,8 +6656,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredInverted8",
@@ -6671,8 +6671,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         }
       ]
     },
@@ -6692,8 +6692,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-1|0-0|1-0|1-1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -6709,8 +6709,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -6725,8 +6725,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AJEΦ-"
         },
         {
@@ -6741,8 +6741,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΣTX",
           "turnPattern": "0.5|0-0|0.5-0.5|0.5-0|0",
           "turnPatternId": "trade-then-accent"
@@ -6760,8 +6760,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -6776,8 +6776,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -6791,8 +6791,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -6808,8 +6808,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         }
@@ -6831,8 +6831,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-1|1-0|1-1|1-1|0-1|1-0|1-1|1",
           "turnPatternId": "cross-accent"
         },
@@ -6848,8 +6848,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -6864,8 +6864,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΔTX",
           "turnPattern": "0.5|0.5-0|0-0.5|0.5-0|0",
           "turnPatternId": "together-pulse"
@@ -6882,8 +6882,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΩ-SW-",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
@@ -6901,8 +6901,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -6917,8 +6917,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -6932,8 +6932,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         },
@@ -6949,8 +6949,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         }
       ]
     },
@@ -6970,8 +6970,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirrored8",
@@ -6985,8 +6985,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -7001,8 +7001,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EJΦK",
           "turnPattern": "0.5|0-0.5|0.5-0|0.5-0.5|0.5",
           "turnPatternId": "cross-accent"
@@ -7019,8 +7019,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΔUZ",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
@@ -7038,8 +7038,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -7056,8 +7056,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -7071,8 +7071,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-1|1-0|0",
           "turnPatternId": "trade-then-accent"
         },
@@ -7088,8 +7088,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         }
       ]
     },
@@ -7109,8 +7109,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirrored8",
@@ -7124,8 +7124,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -7140,8 +7140,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/KDCΦ-",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
@@ -7158,8 +7158,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/W-Θ-",
           "turnPattern": "0.5|0-0.5|0-0|0.5-0|0.5",
           "turnPatternId": "split-blocks"
@@ -7177,8 +7177,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -7195,8 +7195,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -7210,8 +7210,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredInverted8",
@@ -7225,8 +7225,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         }
@@ -7248,8 +7248,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -7263,8 +7263,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
         },
         {
@@ -7279,8 +7279,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AKIΦ",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
@@ -7297,8 +7297,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/ΦAΦ-L",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
@@ -7316,8 +7316,8 @@
           "vtgFamily": "Split-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "tndTurn",
@@ -7332,8 +7332,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -7347,8 +7347,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -7364,8 +7364,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "0.5|0-0.5|0-0|0.5-0|0.5",
           "turnPatternId": "split-blocks"
         }
@@ -7387,8 +7387,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirrored8",
@@ -7402,8 +7402,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "1|0-0|0-0|1-1|1-1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
@@ -7420,8 +7420,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AΣSW",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
@@ -7438,8 +7438,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/MVNU"
         },
         {
@@ -7455,8 +7455,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -7471,8 +7471,8 @@
           "vtgFamily": "Quarter-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirroredSwapped8",
@@ -7486,8 +7486,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -7503,8 +7503,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "0.5|0-0.5|0-0|0.5-0|0.5",
           "turnPatternId": "split-blocks"
         }
@@ -7526,8 +7526,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0-0|0.5-0|0-0|0-0.5|0-0|0.5-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
         },
@@ -7543,8 +7543,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|0-0|1-1|0-0|1-1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
@@ -7561,8 +7561,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΣVX"
         },
         {
@@ -7577,8 +7577,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OT",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
@@ -7596,8 +7596,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -7612,8 +7612,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -7627,8 +7627,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         },
@@ -7644,8 +7644,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         }
       ]
     },
@@ -7665,8 +7665,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|1-1|0-0|1-1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -7682,8 +7682,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "0.5|0-0|0-0|0.5-0.5|0.5-0.5|0-0|0-0|0.5-0.5|0.5",
           "turnPatternId": "bookended-trade"
@@ -7700,8 +7700,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/IΩPY-",
           "turnPattern": "1|1-0|0-1|0-0|1",
           "turnPatternId": "accent-then-trade"
@@ -7718,8 +7718,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/QT"
         },
         {
@@ -7735,8 +7735,8 @@
           "vtgFamily": "Tog-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "tndTurn",
@@ -7751,8 +7751,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -7766,8 +7766,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -7783,8 +7783,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         }
       ]
     },
@@ -7804,8 +7804,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-1|1-1|0-0|1-1|1-1|1-1|0-0|1",
           "turnPatternId": "dense-handoff"
         },
@@ -7821,8 +7821,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "1|0-0|0-0|1-0|0-1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
@@ -7839,8 +7839,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/MΛWΔ"
         },
         {
@@ -7855,8 +7855,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/SOTR",
           "turnPattern": "0.5|0-0|0.5-0.5|0.5-0|0",
           "turnPatternId": "trade-then-accent"
@@ -7874,8 +7874,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -7890,8 +7890,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -7905,8 +7905,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-0|0-1|1-0|0",
           "turnPatternId": "together-pulse"
         },
@@ -7922,8 +7922,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         }
       ]
     },
@@ -7943,8 +7943,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "1|0-0|0-0|1-1|1-1|0-0|0-0|1-1|1",
           "turnPatternId": "bookended-trade"
         },
@@ -7960,8 +7960,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-"
         },
         {
@@ -7976,8 +7976,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/AΔSX",
           "turnPattern": "1|0-0|1-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
@@ -7994,8 +7994,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/VPUQ",
           "turnPattern": "1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
@@ -8013,8 +8013,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "tndTurn",
@@ -8029,8 +8029,8 @@
           "vtgFamily": "Tog-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirroredSwapped8",
@@ -8044,8 +8044,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredInverted8",
@@ -8059,8 +8059,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "turnPattern": "0.5|0-0|0-0|0.5-0.5|0.5",
           "turnPatternId": "bookended-trade"
         }
@@ -8082,8 +8082,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         },
         {
           "slot": "mirrored8",
@@ -8097,8 +8097,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII",
           "turnPattern": "0.5|0-0|0-0|0.5-0|0-0.5|0-0|0-0|0.5-0|0",
           "turnPatternId": "spaced-handoff"
@@ -8115,8 +8115,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/CΔUW",
           "turnPattern": "1|0-0|1-0|0-0|0",
           "turnPatternId": "adjacent-handoff"
@@ -8133,8 +8133,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΔMX"
         },
         {
@@ -8150,8 +8150,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -8168,8 +8168,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -8183,8 +8183,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "turnPattern": "1|0-0|1-1|0-0|1",
           "turnPatternId": "alternating-hands"
         },
@@ -8200,8 +8200,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "beta5",
-          "endPosition": "beta5"
+          "startPlacement": "beta5",
+          "endPlacement": "beta5"
         }
       ]
     },
@@ -8221,8 +8221,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         },
         {
           "slot": "mirrored8",
@@ -8236,8 +8236,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": null,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/EΦ-JΨ-DΦ-KΨ-",
           "turnPattern": "1|0-0|0-0|1-0|0-1|0-0|0-0|1-0|0",
           "turnPatternId": "spaced-handoff"
@@ -8254,8 +8254,8 @@
           "sequenceLength": 16,
           "gridMode": "diamond",
           "period": 4,
-          "startPosition": "beta5",
-          "endPosition": "beta5",
+          "startPlacement": "beta5",
+          "endPlacement": "beta5",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/FΦ-BJ",
           "turnPattern": "0.5|0-0|0-0|0.5-0|0",
           "turnPatternId": "spaced-handoff"
@@ -8272,8 +8272,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1",
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1",
           "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/BΣTX"
         },
         {
@@ -8289,8 +8289,8 @@
           "vtgFamily": "Quarter-Same",
           "ratio": "3:1",
           "turnIntensity": 1,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|0-1|0-0|1-0|1",
           "turnPatternId": "split-blocks"
         },
@@ -8307,8 +8307,8 @@
           "vtgFamily": "Split-Opp",
           "ratio": "1:1",
           "turnIntensity": 0,
-          "startPosition": "alpha1",
-          "endPosition": "alpha1"
+          "startPlacement": "alpha1",
+          "endPlacement": "alpha1"
         },
         {
           "slot": "mirroredSwapped8",
@@ -8322,8 +8322,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11",
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11",
           "turnPattern": "1|1-1|1-0|0-0|0",
           "turnPatternId": "together-block"
         },
@@ -8339,8 +8339,8 @@
           "sequenceLength": 8,
           "gridMode": "diamond",
           "period": 2,
-          "startPosition": "gamma11",
-          "endPosition": "gamma11"
+          "startPlacement": "gamma11",
+          "endPlacement": "gamma11"
         }
       ]
     }
@@ -8361,8 +8361,8 @@
         "sequenceLength": 16,
         "gridMode": "diamond",
         "period": 2,
-        "startPosition": "alpha1",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha1",
         "turnPattern": "0.5|0-0|0.5-0.5|0.5-0|0-0.5|0-0|0.5-0.5|0.5-0|0",
         "turnPatternId": "trade-then-accent"
       },
@@ -8378,8 +8378,8 @@
         "sequenceLength": 8,
         "gridMode": "diamond",
         "period": null,
-        "startPosition": "beta5",
-        "endPosition": "beta5",
+        "startPlacement": "beta5",
+        "endPlacement": "beta5",
         "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/DJII"
       },
       {
@@ -8394,8 +8394,8 @@
         "sequenceLength": 16,
         "gridMode": "diamond",
         "period": 4,
-        "startPosition": "gamma11",
-        "endPosition": "gamma11",
+        "startPlacement": "gamma11",
+        "endPlacement": "gamma11",
         "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/OVXΔ"
       },
       {
@@ -8410,8 +8410,8 @@
         "sequenceLength": 8,
         "gridMode": "diamond",
         "period": 2,
-        "startPosition": "gamma11",
-        "endPosition": "gamma11",
+        "startPlacement": "gamma11",
+        "endPlacement": "gamma11",
         "sourceRef": "users/PBp3GSBO6igCKPwJyLZNmVEmamI3/sequences/MVNU"
       },
       {
@@ -8427,8 +8427,8 @@
         "vtgFamily": "Split-Same",
         "ratio": "1:1",
         "turnIntensity": 0,
-        "startPosition": "alpha1",
-        "endPosition": "alpha1"
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha1"
       },
       {
         "slot": "tndTurn",
@@ -8443,8 +8443,8 @@
         "vtgFamily": "Split-Opp",
         "ratio": "3:1",
         "turnIntensity": 1,
-        "startPosition": "alpha1",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha1",
         "turnPattern": "1|0-0|1-1|0-0|1",
         "turnPatternId": "alternating-hands"
       },
@@ -8460,8 +8460,8 @@
         "sequenceLength": 8,
         "gridMode": "diamond",
         "period": 2,
-        "startPosition": "alpha1",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha1",
         "turnPattern": "1|0-1|0-0|1-0|1",
         "turnPatternId": "split-blocks"
       },
@@ -8477,8 +8477,8 @@
         "sequenceLength": 8,
         "gridMode": "diamond",
         "period": 2,
-        "startPosition": "alpha1",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha1",
         "turnPattern": "1|0-1|0-0|1-0|1",
         "turnPatternId": "split-blocks"
       }

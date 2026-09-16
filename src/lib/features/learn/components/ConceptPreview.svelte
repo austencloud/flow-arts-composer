@@ -6,12 +6,12 @@
 
   // Still previews reuse the Guide and lesson artwork without starting players.
   const guideArt: Record<string, string> = {
-    "hand-positions": "hand-positions/α1.png",
+    "hand-placements": "hand-placements/α1.png",
     "hand-motions-intro": "hand-motions/shift_north.png",
     "rotation-direction": "double-staff-codex/B.webp",
     "dual-shifts-alpha-beta": "double-staff-codex/G.webp",
-    "gamma-motion": "hand-positions/Γ1.png",
-    "staff-positions": "staff-positions/alpha_in_out.png",
+    "gamma-motion": "hand-placements/Γ1.png",
+    "staff-placements": "staff-placements/alpha_in_out.png",
     "letter-codex-intro": "double-staff-codex/A.webp",
   };
   const artwork = $derived(guideArt[conceptId]);

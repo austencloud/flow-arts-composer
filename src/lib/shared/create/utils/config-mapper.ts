@@ -135,7 +135,7 @@ export interface UIGenerationConfig {
  *
  * @param uiConfig - The UI generation configuration
  * @param propType - The prop type to use (defaults to FAN)
- * @param startEndOptions - Optional start/end position constraints
+ * @param startEndOptions - Optional start/end placement constraints
  */
 export function uiConfigToGenerationOptions(
   uiConfig: UIGenerationConfig,
@@ -199,10 +199,10 @@ export function uiConfigToGenerationOptions(
     matchHandTurns: uiConfig.matchHandTurns ?? false,
 
     // Include start/end options if provided
-    blockedStartPositions: startEndOptions?.blockedStartPositions ?? undefined,
-    startPosition: startEndOptions?.startPosition ?? undefined,
-    endPosition: startEndOptions?.endPosition ?? undefined,
-    endPositions: startEndOptions?.endPositions ?? undefined,
+    blockedStartPlacements: startEndOptions?.blockedStartPlacements ?? undefined,
+    startPlacement: startEndOptions?.startPlacement ?? undefined,
+    endPlacement: startEndOptions?.endPlacement ?? undefined,
+    endPlacements: startEndOptions?.endPlacements ?? undefined,
     mustContainLetters: startEndOptions?.mustContainLetters ?? undefined,
     mustNotContainLetters: startEndOptions?.mustNotContainLetters ?? undefined,
 

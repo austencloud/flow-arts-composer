@@ -1,11 +1,11 @@
-import type { GridMode, GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridMode, GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
-/** A group of positions sharing the same grid mode */
-export interface PositionSection {
+/** A group of placements sharing the same grid mode */
+export interface PlacementSection {
   label: string;
   gridMode: GridMode;
-  positions: GridPosition[];
+  placements: GridPlacement[];
 }
 
 /** Orientation option shown in a picker chip */
@@ -17,7 +17,7 @@ export interface OrientationOption {
 }
 
 /** Filter group for the nav chips */
-export type PositionGroup = "all" | "tau-diamond" | "tau-box" | "terra";
+export type PlacementGroup = "all" | "tau-diamond" | "tau-box" | "terra";
 
 /** Per-card orientation state: each card independently tracks blue + red */
 export interface CardOrientations {

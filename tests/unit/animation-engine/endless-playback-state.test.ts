@@ -36,8 +36,8 @@ vi.mock("$lib/shared/animation-engine/services/animator-loader", () => ({
 vi.mock("$lib/shared/landing/services/prop-type-applier", () => ({
   applyToSequence: vi.fn((seq: unknown) => seq),
 }));
-vi.mock("$lib/shared/pictograph/grid/services/grid-position-deriver", () => ({
-  getGridPositionFromLocations: vi.fn(),
+vi.mock("$lib/shared/pictograph/grid/services/grid-placement-deriver", () => ({
+  getGridPlacementFromLocations: vi.fn(),
 }));
 vi.mock("$lib/shared/browse/get-claude-code-copier", () => ({
   getClaudeCodeCopier: vi.fn(() => ({
@@ -45,9 +45,9 @@ vi.mock("$lib/shared/browse/get-claude-code-copier", () => ({
   })),
 }));
 vi.mock(
-  "$lib/shared/pictograph/shared/services/start-position-deriver",
+  "$lib/shared/pictograph/shared/services/start-placement-deriver",
   () => ({
-    startPositionDeriver: { getOrDeriveStartPosition: vi.fn(() => null) },
+    startPlacementDeriver: { getOrDeriveStartPlacement: vi.fn(() => null) },
   })
 );
 

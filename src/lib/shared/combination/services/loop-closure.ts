@@ -1,13 +1,13 @@
 /**
  * Stage 3 — Closure. The stage the 2026-08-04 engine never had.
  *
- * Hand it a candidate unit's realized `(startPosition, endPosition)` and it
+ * Hand it a candidate unit's realized `(startPlacement, endPlacement)` and it
  * answers with every way that pair becomes a LOOP. A unit admitting none is
  * freeform and is DROPPED, not demoted — that ruling is the whole reason for
  * the redesign.
  *
  * **The app answers, not this file.** Admissibility for a named LOOP type is
- * `isLOOPValidForPositionPair` from
+ * `isLOOPValidForPlacementPair` from
  * `packages/sequence-engine/src/loop/validation/LOOPValidator.ts`, and the
  * number of passes a closure needs is the app's own
  * `getLOOPSpecExpansionMultiplier` over `loopSpecFromLegacy`. A local
@@ -16,7 +16,7 @@
  * is deliberately not imported here.
  *
  * **Both periods, for every unit that can tell them apart.** `HALVED_LOOPS` is
- * built from a 180-degree position map and `QUARTERED_LOOPS` from the 90-degree
+ * built from a 180-degree placement map and `QUARTERED_LOOPS` from the 90-degree
  * CW/CCW maps, and the validator picks the set by period. Asking only at the
  * default halved period hides every quartered LOOP — which is A+G's entire
  * 16-count bucket, i.e. every mixed-crossing combination this feature exists to
@@ -43,14 +43,14 @@ import {
   LOOP_TYPE_LABELS,
   Period,
   getLOOPSpecExpansionMultiplier,
-  isLOOPValidForPositionPair,
+  isLOOPValidForPlacementPair,
   loopSpecFromLegacy,
-  QUARTER_POSITION_MAP_CW,
-  QUARTER_POSITION_MAP_CCW,
-  VERTICAL_MIRROR_POSITION_MAP,
+  QUARTER_PLACEMENT_MAP_CW,
+  QUARTER_PLACEMENT_MAP_CCW,
+  VERTICAL_MIRROR_PLACEMENT_MAP,
 } from "@tka/sequence-engine/loop";
 
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 import type {
   AdmissibleClosure,
@@ -67,7 +67,7 @@ import type {
 export interface ClosureOptions {
   /**
    * Count `rewound` as a closure. OFF by default, and the reason is not taste:
-   * `isLOOPValidForPositionPair` returns `true` for REWOUND at EVERY position
+   * `isLOOPValidForPlacementPair` returns `true` for REWOUND at EVERY placement
    * pair, because any sequence can be played backwards. It therefore carries no
    * admissibility information at all — with it on, no walk is ever freeform and
    * the discard rule that this whole stage exists to enforce becomes vacuous.
@@ -99,9 +99,9 @@ export interface ClosureOptions {
    * Count a reflection across a DIAGONAL axis (NE-SW, NW-SE). ON by default.
    *
    * TKA canon has four reflection axes; the engine ships all four location maps
-   * but only builds position-pair validation sets for north-south (MIRRORED) and
+   * but only builds placement-pair validation sets for north-south (MIRRORED) and
    * east-west (FLIPPED). The diagonal answer is composed here from the engine's
-   * OWN position maps — a vertical mirror after a quarter rotation IS the
+   * OWN placement maps — a vertical mirror after a quarter rotation IS the
    * diagonal reflection — so no new geometry is introduced. Turning it off costs
    * A+G's 8/10/12 buckets 12/50/54 words respectively, all of them mixed
    * crossings.
@@ -161,7 +161,7 @@ function labelFor(loopType: LOOPType, period: Period): string {
 }
 
 /**
- * The two diagonal reflections, expressed as a composite of position maps the
+ * The two diagonal reflections, expressed as a composite of placement maps the
  * engine already exports: a vertical mirror after a quarter turn IS a reflection
  * about a diagonal.
  *
@@ -180,18 +180,18 @@ const DIAGONAL_REFLECTIONS: readonly {
     axis: "northeast-southwest",
     label: "Mirrored (NE-SW)",
     map: (start) =>
-      VERTICAL_MIRROR_POSITION_MAP[QUARTER_POSITION_MAP_CCW[start] ?? ""],
+      VERTICAL_MIRROR_PLACEMENT_MAP[QUARTER_PLACEMENT_MAP_CCW[start] ?? ""],
   },
   {
     axis: "northwest-southeast",
     label: "Mirrored (NW-SE)",
     map: (start) =>
-      VERTICAL_MIRROR_POSITION_MAP[QUARTER_POSITION_MAP_CW[start] ?? ""],
+      VERTICAL_MIRROR_PLACEMENT_MAP[QUARTER_PLACEMENT_MAP_CW[start] ?? ""],
   },
 ];
 
 /**
- * Every admissible closure for a realized position pair, in a stable order:
+ * Every admissible closure for a realized placement pair, in a stable order:
  * plain first, then the LOOP catalogue in the app's own order, then the
  * diagonal reflections.
  *
@@ -200,14 +200,14 @@ const DIAGONAL_REFLECTIONS: readonly {
  * drop those.
  */
 export function admissibleClosures(
-  startPosition: GridPosition | string,
-  endPosition: GridPosition | string,
+  startPlacement: GridPlacement | string,
+  endPlacement: GridPlacement | string,
   options: ClosureOptions = {}
 ): readonly AdmissibleClosure[] {
   const opts = { ...DEFAULTS, ...options };
-  const start = String(startPosition);
-  const end = String(endPosition);
-  const positionPair = `${start},${end}`;
+  const start = String(startPlacement);
+  const end = String(endPlacement);
+  const placementPair = `${start},${end}`;
   const closures: AdmissibleClosure[] = [];
 
   // The unit already closes. No transform is needed and none is asserted: one
@@ -234,7 +234,7 @@ export function admissibleClosures(
         : [Period.HALVED];
 
     for (const period of periods) {
-      if (!isLOOPValidForPositionPair(facts.loopType, positionPair, period)) {
+      if (!isLOOPValidForPlacementPair(facts.loopType, placementPair, period)) {
         continue;
       }
 
@@ -276,9 +276,9 @@ export function admissibleClosures(
  * definition of the freeform output the redesign exists to stop emitting.
  */
 export function isFreeformPair(
-  startPosition: GridPosition | string,
-  endPosition: GridPosition | string,
+  startPlacement: GridPlacement | string,
+  endPlacement: GridPlacement | string,
   options: ClosureOptions = {}
 ): boolean {
-  return admissibleClosures(startPosition, endPosition, options).length === 0;
+  return admissibleClosures(startPlacement, endPlacement, options).length === 0;
 }

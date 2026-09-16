@@ -31,7 +31,7 @@ export class ExtensionFlowCoordinator {
 
       // Direct path when there is anything to click: a transform-based LOOP,
       // or the orientation repeat (which needs no bridge — the sequence is
-      // already back at its start position).
+      // already back at its start placement).
       if (
         analysis.canExtend &&
         (analysis.availableLOOPOptions.length > 0 || analysis.orientationRepeat)
@@ -64,7 +64,7 @@ export class ExtensionFlowCoordinator {
         analysis,
         circularizationOptions,
         directUnavailableReason:
-          "Position groups don't match for direct extension",
+          "Placement groups don't match for direct extension",
         errorMessage: null,
       };
     } catch (error) {
@@ -155,7 +155,7 @@ export class ExtensionFlowCoordinator {
 
   /**
    * Repeat the sequence verbatim until the props return to their start
-   * orientation. No transform is applied — the position already closed, and
+   * orientation. No transform is applied — the placement already closed, and
    * only orientation is still open.
    */
   applyOrientationRepeat(sequence: SequenceData): ExtensionApplyResult {

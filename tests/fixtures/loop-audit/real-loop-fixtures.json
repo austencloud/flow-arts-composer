@@ -9,8 +9,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma1",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -38,8 +38,8 @@
     {
      "id": "step-1-Y-",
      "letter": "Y-",
-     "startPosition": "gamma1",
-     "endPosition": "beta5",
+     "startPlacement": "gamma1",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -69,8 +69,8 @@
     {
      "id": "step-2-E",
      "letter": "E",
-     "startPosition": "beta5",
-     "endPosition": "alpha3",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -100,8 +100,8 @@
     {
      "id": "step-3-C",
      "letter": "C",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -131,8 +131,8 @@
     {
      "id": "step-4-Δ",
      "letter": "Δ",
-     "startPosition": "alpha5",
-     "endPosition": "gamma5",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -162,8 +162,8 @@
     {
      "id": "step-1-Y-",
      "letter": "Y-",
-     "startPosition": "gamma5",
-     "endPosition": "beta1",
+     "startPlacement": "gamma5",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -193,8 +193,8 @@
     {
      "id": "step-2-E",
      "letter": "E",
-     "startPosition": "beta1",
-     "endPosition": "alpha7",
+     "startPlacement": "beta1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -224,8 +224,8 @@
     {
      "id": "step-3-C",
      "letter": "C",
-     "startPosition": "alpha7",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -255,8 +255,8 @@
     {
      "id": "step-4-Δ",
      "letter": "Δ",
-     "startPosition": "alpha1",
-     "endPosition": "gamma1",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -294,8 +294,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma9",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -323,8 +323,8 @@
     {
      "id": "step-1-Λ",
      "letter": "Λ",
-     "startPosition": "gamma9",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -354,8 +354,8 @@
     {
      "id": "step-2-W-",
      "letter": "W-",
-     "startPosition": "gamma1",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma1",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -385,8 +385,8 @@
     {
      "id": "step-3-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta3",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -416,8 +416,8 @@
     {
      "id": "step-4-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta3",
-     "endPosition": "gamma13",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -447,8 +447,8 @@
     {
      "id": "step-1-Λ",
      "letter": "Λ",
-     "startPosition": "gamma13",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -478,8 +478,8 @@
     {
      "id": "step-2-W-",
      "letter": "W-",
-     "startPosition": "gamma5",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma5",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -509,8 +509,8 @@
     {
      "id": "step-3-L",
      "letter": "L",
-     "startPosition": "alpha1",
-     "endPosition": "beta7",
+     "startPlacement": "alpha1",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -540,8 +540,8 @@
     {
      "id": "step-4-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta7",
-     "endPosition": "gamma9",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -579,8 +579,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma15",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -608,8 +608,8 @@
     {
      "id": "step-1-W-",
      "letter": "W-",
-     "startPosition": "gamma15",
-     "endPosition": "alpha3",
+     "startPlacement": "gamma15",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -639,8 +639,8 @@
     {
      "id": "step-2-J",
      "letter": "J",
-     "startPosition": "alpha3",
-     "endPosition": "beta1",
+     "startPlacement": "alpha3",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -670,8 +670,8 @@
     {
      "id": "step-3-I",
      "letter": "I",
-     "startPosition": "beta1",
-     "endPosition": "beta3",
+     "startPlacement": "beta1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -701,8 +701,8 @@
     {
      "id": "step-4-Ω",
      "letter": "Ω",
-     "startPosition": "beta3",
-     "endPosition": "gamma11",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -732,8 +732,8 @@
     {
      "id": "step-1-W-",
      "letter": "W-",
-     "startPosition": "gamma11",
-     "endPosition": "alpha7",
+     "startPlacement": "gamma11",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -763,8 +763,8 @@
     {
      "id": "step-2-J",
      "letter": "J",
-     "startPosition": "alpha7",
-     "endPosition": "beta5",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -794,8 +794,8 @@
     {
      "id": "step-3-I",
      "letter": "I",
-     "startPosition": "beta5",
-     "endPosition": "beta7",
+     "startPlacement": "beta5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -825,8 +825,8 @@
     {
      "id": "step-4-Ω",
      "letter": "Ω",
-     "startPosition": "beta7",
-     "endPosition": "gamma15",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -866,8 +866,8 @@
     {
      "id": "step-0-α",
      "letter": "α",
-     "startPosition": "alpha5",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -895,8 +895,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta3",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -926,8 +926,8 @@
     {
      "id": "step-2-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta3",
-     "endPosition": "gamma7",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -957,8 +957,8 @@
     {
      "id": "step-3-Y",
      "letter": "Y",
-     "startPosition": "gamma7",
-     "endPosition": "beta7",
+     "startPlacement": "gamma7",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -988,8 +988,8 @@
     {
      "id": "step-4-F",
      "letter": "F",
-     "startPosition": "beta7",
-     "endPosition": "alpha5",
+     "startPlacement": "beta7",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1019,8 +1019,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta7",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1050,8 +1050,8 @@
     {
      "id": "step-2-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta7",
-     "endPosition": "gamma11",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1081,8 +1081,8 @@
     {
      "id": "step-3-Y",
      "letter": "Y",
-     "startPosition": "gamma11",
-     "endPosition": "beta3",
+     "startPlacement": "gamma11",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -1112,8 +1112,8 @@
     {
      "id": "step-4-F",
      "letter": "F",
-     "startPosition": "beta3",
-     "endPosition": "alpha5",
+     "startPlacement": "beta3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1151,8 +1151,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta7",
-     "endPosition": "beta7",
+     "startPlacement": "beta7",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -1180,8 +1180,8 @@
     {
      "id": "step-1-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta7",
-     "endPosition": "gamma3",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -1211,8 +1211,8 @@
     {
      "id": "step-2-W-",
      "letter": "W-",
-     "startPosition": "gamma3",
-     "endPosition": "alpha7",
+     "startPlacement": "gamma3",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -1242,8 +1242,8 @@
     {
      "id": "step-3-C",
      "letter": "C",
-     "startPosition": "alpha7",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1273,8 +1273,8 @@
     {
      "id": "step-4-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta3",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -1304,8 +1304,8 @@
     {
      "id": "step-1-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta3",
-     "endPosition": "gamma15",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -1335,8 +1335,8 @@
     {
      "id": "step-2-W-",
      "letter": "W-",
-     "startPosition": "gamma15",
-     "endPosition": "alpha3",
+     "startPlacement": "gamma15",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -1366,8 +1366,8 @@
     {
      "id": "step-3-C",
      "letter": "C",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1397,8 +1397,8 @@
     {
      "id": "step-4-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta7",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -1436,8 +1436,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma15",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -1465,8 +1465,8 @@
     {
      "id": "step-1-T",
      "letter": "T",
-     "startPosition": "gamma15",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1496,8 +1496,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma13",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1527,8 +1527,8 @@
     {
      "id": "step-3-T",
      "letter": "T",
-     "startPosition": "gamma15",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1558,8 +1558,8 @@
     {
      "id": "step-4-M",
      "letter": "M",
-     "startPosition": "gamma13",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -1589,8 +1589,8 @@
     {
      "id": "step-1-T",
      "letter": "T",
-     "startPosition": "gamma3",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1620,8 +1620,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma5",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1651,8 +1651,8 @@
     {
      "id": "step-3-T",
      "letter": "T",
-     "startPosition": "gamma3",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1682,8 +1682,8 @@
     {
      "id": "step-4-M",
      "letter": "M",
-     "startPosition": "gamma5",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -1723,8 +1723,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma13",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -1752,8 +1752,8 @@
     {
      "id": "step-1-T",
      "letter": "T",
-     "startPosition": "gamma13",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1783,8 +1783,8 @@
     {
      "id": "step-2-Z-",
      "letter": "Z-",
-     "startPosition": "gamma15",
-     "endPosition": "beta3",
+     "startPlacement": "gamma15",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1814,8 +1814,8 @@
     {
      "id": "step-3-F",
      "letter": "F",
-     "startPosition": "beta3",
-     "endPosition": "alpha5",
+     "startPlacement": "beta3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1845,8 +1845,8 @@
     {
      "id": "step-4-Ω-",
      "letter": "Ω-",
-     "startPosition": "alpha5",
-     "endPosition": "gamma1",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1876,8 +1876,8 @@
     {
      "id": "step-1-T",
      "letter": "T",
-     "startPosition": "gamma1",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1907,8 +1907,8 @@
     {
      "id": "step-2-Z-",
      "letter": "Z-",
-     "startPosition": "gamma7",
-     "endPosition": "beta3",
+     "startPlacement": "gamma7",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1938,8 +1938,8 @@
     {
      "id": "step-3-F",
      "letter": "F",
-     "startPosition": "beta3",
-     "endPosition": "alpha1",
+     "startPlacement": "beta3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -1969,8 +1969,8 @@
     {
      "id": "step-4-Ω-",
      "letter": "Ω-",
-     "startPosition": "alpha1",
-     "endPosition": "gamma13",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -2008,8 +2008,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta7",
-     "endPosition": "beta7",
+     "startPlacement": "beta7",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -2037,8 +2037,8 @@
     {
      "id": "step-1-Θ",
      "letter": "Θ",
-     "startPosition": "beta7",
-     "endPosition": "gamma15",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -2068,8 +2068,8 @@
     {
      "id": "step-2-Y",
      "letter": "Y",
-     "startPosition": "gamma15",
-     "endPosition": "beta1",
+     "startPlacement": "gamma15",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -2099,8 +2099,8 @@
     {
      "id": "step-3-Ψ-",
      "letter": "Ψ-",
-     "startPosition": "beta1",
-     "endPosition": "beta5",
+     "startPlacement": "beta1",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -2130,8 +2130,8 @@
     {
      "id": "step-4-I",
      "letter": "I",
-     "startPosition": "beta5",
-     "endPosition": "beta7",
+     "startPlacement": "beta5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -2161,8 +2161,8 @@
     {
      "id": "step-1-Θ",
      "letter": "Θ",
-     "startPosition": "beta7",
-     "endPosition": "gamma7",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -2192,8 +2192,8 @@
     {
      "id": "step-2-Y",
      "letter": "Y",
-     "startPosition": "gamma7",
-     "endPosition": "beta5",
+     "startPlacement": "gamma7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -2223,8 +2223,8 @@
     {
      "id": "step-3-Ψ-",
      "letter": "Ψ-",
-     "startPosition": "beta5",
-     "endPosition": "beta1",
+     "startPlacement": "beta5",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -2254,8 +2254,8 @@
     {
      "id": "step-4-I",
      "letter": "I",
-     "startPosition": "beta1",
-     "endPosition": "beta7",
+     "startPlacement": "beta1",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -2293,8 +2293,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta7",
-     "endPosition": "beta7",
+     "startPlacement": "beta7",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -2322,8 +2322,8 @@
     {
      "id": "step-1-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta7",
-     "endPosition": "gamma3",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -2353,8 +2353,8 @@
     {
      "id": "step-2-R",
      "letter": "R",
-     "startPosition": "gamma3",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -2384,8 +2384,8 @@
     {
      "id": "step-3-X-",
      "letter": "X-",
-     "startPosition": "gamma9",
-     "endPosition": "alpha3",
+     "startPlacement": "gamma9",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -2415,8 +2415,8 @@
     {
      "id": "step-4-Ψ",
      "letter": "Ψ",
-     "startPosition": "alpha3",
-     "endPosition": "beta7",
+     "startPlacement": "alpha3",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -2446,8 +2446,8 @@
     {
      "id": "step-1-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta7",
-     "endPosition": "gamma11",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -2477,8 +2477,8 @@
     {
      "id": "step-2-R",
      "letter": "R",
-     "startPosition": "gamma11",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -2508,8 +2508,8 @@
     {
      "id": "step-3-X-",
      "letter": "X-",
-     "startPosition": "gamma5",
-     "endPosition": "alpha3",
+     "startPlacement": "gamma5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -2539,8 +2539,8 @@
     {
      "id": "step-4-Ψ",
      "letter": "Ψ",
-     "startPosition": "alpha3",
-     "endPosition": "beta7",
+     "startPlacement": "alpha3",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -2580,8 +2580,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma15",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -2609,8 +2609,8 @@
     {
      "id": "step-1-U",
      "letter": "U",
-     "startPosition": "gamma15",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -2640,8 +2640,8 @@
     {
      "id": "step-2-W-",
      "letter": "W-",
-     "startPosition": "gamma13",
-     "endPosition": "alpha7",
+     "startPlacement": "gamma13",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -2671,8 +2671,8 @@
     {
      "id": "step-3-C",
      "letter": "C",
-     "startPosition": "alpha7",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -2702,8 +2702,8 @@
     {
      "id": "step-4-Ω-",
      "letter": "Ω-",
-     "startPosition": "alpha5",
-     "endPosition": "gamma1",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -2733,8 +2733,8 @@
     {
      "id": "step-1-U",
      "letter": "U",
-     "startPosition": "gamma1",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -2764,8 +2764,8 @@
     {
      "id": "step-2-W-",
      "letter": "W-",
-     "startPosition": "gamma7",
-     "endPosition": "alpha3",
+     "startPlacement": "gamma7",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -2795,8 +2795,8 @@
     {
      "id": "step-3-C",
      "letter": "C",
-     "startPosition": "alpha3",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -2826,8 +2826,8 @@
     {
      "id": "step-4-Ω-",
      "letter": "Ω-",
-     "startPosition": "alpha1",
-     "endPosition": "gamma15",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -2865,8 +2865,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma5",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -2894,8 +2894,8 @@
     {
      "id": "step-1-R",
      "letter": "R",
-     "startPosition": "gamma5",
-     "endPosition": "gamma11",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -2925,8 +2925,8 @@
     {
      "id": "step-2-M",
      "letter": "M",
-     "startPosition": "gamma11",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -2956,8 +2956,8 @@
     {
      "id": "step-3-R",
      "letter": "R",
-     "startPosition": "gamma1",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -2987,8 +2987,8 @@
     {
      "id": "step-4-Λ-",
      "letter": "Λ-",
-     "startPosition": "gamma15",
-     "endPosition": "gamma11",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -3018,8 +3018,8 @@
     {
      "id": "step-1-R",
      "letter": "R",
-     "startPosition": "gamma11",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -3049,8 +3049,8 @@
     {
      "id": "step-2-M",
      "letter": "M",
-     "startPosition": "gamma5",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -3080,8 +3080,8 @@
     {
      "id": "step-3-R",
      "letter": "R",
-     "startPosition": "gamma15",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -3111,8 +3111,8 @@
     {
      "id": "step-4-Λ-",
      "letter": "Λ-",
-     "startPosition": "gamma1",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -3150,8 +3150,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma13",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -3179,8 +3179,8 @@
     {
      "id": "step-1-R",
      "letter": "R",
-     "startPosition": "gamma13",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -3210,8 +3210,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma7",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -3241,8 +3241,8 @@
     {
      "id": "step-3-X-",
      "letter": "X-",
-     "startPosition": "gamma1",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma1",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -3272,8 +3272,8 @@
     {
      "id": "step-4-Ω-",
      "letter": "Ω-",
-     "startPosition": "alpha5",
-     "endPosition": "gamma7",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -3303,8 +3303,8 @@
     {
      "id": "step-1-R",
      "letter": "R",
-     "startPosition": "gamma7",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -3334,8 +3334,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma13",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -3365,8 +3365,8 @@
     {
      "id": "step-3-X-",
      "letter": "X-",
-     "startPosition": "gamma15",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma15",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -3396,8 +3396,8 @@
     {
      "id": "step-4-Ω-",
      "letter": "Ω-",
-     "startPosition": "alpha1",
-     "endPosition": "gamma13",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -3437,8 +3437,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma9",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -3466,8 +3466,8 @@
     {
      "id": "step-1-W",
      "letter": "W",
-     "startPosition": "gamma9",
-     "endPosition": "alpha7",
+     "startPlacement": "gamma9",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -3497,8 +3497,8 @@
     {
      "id": "step-2-L",
      "letter": "L",
-     "startPosition": "alpha7",
-     "endPosition": "beta1",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -3528,8 +3528,8 @@
     {
      "id": "step-3-G",
      "letter": "G",
-     "startPosition": "beta1",
-     "endPosition": "beta3",
+     "startPlacement": "beta1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -3559,8 +3559,8 @@
     {
      "id": "step-4-Θ",
      "letter": "Θ",
-     "startPosition": "beta3",
-     "endPosition": "gamma9",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -3590,8 +3590,8 @@
     {
      "id": "step-1-W",
      "letter": "X",
-     "startPosition": "gamma9",
-     "endPosition": "alpha7",
+     "startPlacement": "gamma9",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -3621,8 +3621,8 @@
     {
      "id": "step-2-L",
      "letter": "L",
-     "startPosition": "alpha7",
-     "endPosition": "beta1",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -3652,8 +3652,8 @@
     {
      "id": "step-3-G",
      "letter": "H",
-     "startPosition": "beta1",
-     "endPosition": "beta3",
+     "startPlacement": "beta1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -3683,8 +3683,8 @@
     {
      "id": "step-4-Θ",
      "letter": "Ω",
-     "startPosition": "beta3",
-     "endPosition": "gamma9",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -3722,8 +3722,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma15",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -3751,8 +3751,8 @@
     {
      "id": "step-1-Y-",
      "letter": "Y-",
-     "startPosition": "gamma15",
-     "endPosition": "beta5",
+     "startPlacement": "gamma15",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -3782,8 +3782,8 @@
     {
      "id": "step-2-D",
      "letter": "D",
-     "startPosition": "beta5",
-     "endPosition": "alpha7",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -3813,8 +3813,8 @@
     {
      "id": "step-3-L",
      "letter": "L",
-     "startPosition": "alpha7",
-     "endPosition": "beta5",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -3844,8 +3844,8 @@
     {
      "id": "step-4-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta5",
-     "endPosition": "gamma15",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -3875,8 +3875,8 @@
     {
      "id": "step-1-Y-",
      "letter": "Z-",
-     "startPosition": "gamma15",
-     "endPosition": "beta5",
+     "startPlacement": "gamma15",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -3906,8 +3906,8 @@
     {
      "id": "step-2-D",
      "letter": "E",
-     "startPosition": "beta5",
-     "endPosition": "alpha7",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -3937,8 +3937,8 @@
     {
      "id": "step-3-L",
      "letter": "L",
-     "startPosition": "alpha7",
-     "endPosition": "beta5",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -3968,8 +3968,8 @@
     {
      "id": "step-4-Δ-",
      "letter": "Σ-",
-     "startPosition": "beta5",
-     "endPosition": "gamma15",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -4007,8 +4007,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma5",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -4036,8 +4036,8 @@
     {
      "id": "step-1-V",
      "letter": "V",
-     "startPosition": "gamma5",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -4067,8 +4067,8 @@
     {
      "id": "step-2-W-",
      "letter": "W-",
-     "startPosition": "gamma7",
-     "endPosition": "alpha3",
+     "startPlacement": "gamma7",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -4098,8 +4098,8 @@
     {
      "id": "step-3-A",
      "letter": "A",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -4129,8 +4129,8 @@
     {
      "id": "step-4-Σ",
      "letter": "Σ",
-     "startPosition": "alpha5",
-     "endPosition": "gamma5",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -4160,8 +4160,8 @@
     {
      "id": "step-1-V",
      "letter": "U",
-     "startPosition": "gamma5",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4191,8 +4191,8 @@
     {
      "id": "step-2-W-",
      "letter": "X-",
-     "startPosition": "gamma7",
-     "endPosition": "alpha3",
+     "startPlacement": "gamma7",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4222,8 +4222,8 @@
     {
      "id": "step-3-A",
      "letter": "B",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4253,8 +4253,8 @@
     {
      "id": "step-4-Σ",
      "letter": "Δ",
-     "startPosition": "alpha5",
-     "endPosition": "gamma5",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4294,8 +4294,8 @@
     {
      "id": "step-0-α",
      "letter": "α",
-     "startPosition": "alpha5",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -4323,8 +4323,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta3",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4354,8 +4354,8 @@
     {
      "id": "step-2-F",
      "letter": "F",
-     "startPosition": "beta3",
-     "endPosition": "alpha1",
+     "startPlacement": "beta3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4385,8 +4385,8 @@
     {
      "id": "step-3-Σ",
      "letter": "Σ",
-     "startPosition": "alpha1",
-     "endPosition": "gamma9",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -4416,8 +4416,8 @@
     {
      "id": "step-4-X",
      "letter": "X",
-     "startPosition": "gamma9",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma9",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4447,8 +4447,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha1",
-     "endPosition": "beta3",
+     "startPlacement": "alpha1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4478,8 +4478,8 @@
     {
      "id": "step-2-F",
      "letter": "F",
-     "startPosition": "beta3",
-     "endPosition": "alpha5",
+     "startPlacement": "beta3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4509,8 +4509,8 @@
     {
      "id": "step-3-Σ",
      "letter": "Δ",
-     "startPosition": "alpha5",
-     "endPosition": "gamma3",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -4540,8 +4540,8 @@
     {
      "id": "step-4-X",
      "letter": "W",
-     "startPosition": "gamma3",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -4579,8 +4579,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta3",
-     "endPosition": "beta3",
+     "startPlacement": "beta3",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -4608,8 +4608,8 @@
     {
      "id": "step-1-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta3",
-     "endPosition": "gamma1",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -4639,8 +4639,8 @@
     {
      "id": "step-2-S",
      "letter": "S",
-     "startPosition": "gamma1",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -4670,8 +4670,8 @@
     {
      "id": "step-3-U",
      "letter": "U",
-     "startPosition": "gamma3",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -4701,8 +4701,8 @@
     {
      "id": "step-4-Z-",
      "letter": "Z-",
-     "startPosition": "gamma1",
-     "endPosition": "beta3",
+     "startPlacement": "gamma1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -4732,8 +4732,8 @@
     {
      "id": "step-1-Σ-",
      "letter": "Δ-",
-     "startPosition": "beta3",
-     "endPosition": "gamma15",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4763,8 +4763,8 @@
     {
      "id": "step-2-S",
      "letter": "T",
-     "startPosition": "gamma15",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4794,8 +4794,8 @@
     {
      "id": "step-3-U",
      "letter": "V",
-     "startPosition": "gamma9",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -4825,8 +4825,8 @@
     {
      "id": "step-4-Z-",
      "letter": "Y-",
-     "startPosition": "gamma15",
-     "endPosition": "beta3",
+     "startPlacement": "gamma15",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -4864,8 +4864,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta7",
-     "endPosition": "beta7",
+     "startPlacement": "beta7",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -4893,8 +4893,8 @@
     {
      "id": "step-1-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta7",
-     "endPosition": "gamma3",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -4924,8 +4924,8 @@
     {
      "id": "step-2-T",
      "letter": "T",
-     "startPosition": "gamma3",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4955,8 +4955,8 @@
     {
      "id": "step-3-R",
      "letter": "R",
-     "startPosition": "gamma5",
-     "endPosition": "gamma11",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -4986,8 +4986,8 @@
     {
      "id": "step-4-Y-",
      "letter": "Y-",
-     "startPosition": "gamma11",
-     "endPosition": "beta7",
+     "startPlacement": "gamma11",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5017,8 +5017,8 @@
     {
      "id": "step-1-Σ-",
      "letter": "Δ-",
-     "startPosition": "beta7",
-     "endPosition": "gamma9",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -5048,8 +5048,8 @@
     {
      "id": "step-2-T",
      "letter": "S",
-     "startPosition": "gamma9",
-     "endPosition": "gamma11",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5079,8 +5079,8 @@
     {
      "id": "step-3-R",
      "letter": "R",
-     "startPosition": "gamma11",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5110,8 +5110,8 @@
     {
      "id": "step-4-Y-",
      "letter": "Z-",
-     "startPosition": "gamma5",
-     "endPosition": "beta7",
+     "startPlacement": "gamma5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -5151,8 +5151,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma1",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -5180,8 +5180,8 @@
     {
      "id": "step-1-R",
      "letter": "R",
-     "startPosition": "gamma1",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5211,8 +5211,8 @@
     {
      "id": "step-2-Λ",
      "letter": "Λ",
-     "startPosition": "gamma15",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -5242,8 +5242,8 @@
     {
      "id": "step-3-N",
      "letter": "N",
-     "startPosition": "gamma3",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5273,8 +5273,8 @@
     {
      "id": "step-4-Λ",
      "letter": "Λ",
-     "startPosition": "gamma13",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -5304,8 +5304,8 @@
     {
      "id": "step-1-R",
      "letter": "R",
-     "startPosition": "gamma5",
-     "endPosition": "gamma11",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5335,8 +5335,8 @@
     {
      "id": "step-2-Λ",
      "letter": "Λ",
-     "startPosition": "gamma11",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -5366,8 +5366,8 @@
     {
      "id": "step-3-N",
      "letter": "M",
-     "startPosition": "gamma7",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5397,8 +5397,8 @@
     {
      "id": "step-4-Λ",
      "letter": "Λ",
-     "startPosition": "gamma9",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -5436,8 +5436,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma15",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -5465,8 +5465,8 @@
     {
      "id": "step-1-U",
      "letter": "U",
-     "startPosition": "gamma15",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5496,8 +5496,8 @@
     {
      "id": "step-2-P",
      "letter": "P",
-     "startPosition": "gamma9",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5527,8 +5527,8 @@
     {
      "id": "step-3-O",
      "letter": "O",
-     "startPosition": "gamma3",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5558,8 +5558,8 @@
     {
      "id": "step-4-V",
      "letter": "V",
-     "startPosition": "gamma13",
-     "endPosition": "gamma11",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5589,8 +5589,8 @@
     {
      "id": "step-1-U",
      "letter": "V",
-     "startPosition": "gamma11",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5620,8 +5620,8 @@
     {
      "id": "step-2-P",
      "letter": "Q",
-     "startPosition": "gamma13",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5651,8 +5651,8 @@
     {
      "id": "step-3-O",
      "letter": "O",
-     "startPosition": "gamma7",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5682,8 +5682,8 @@
     {
      "id": "step-4-V",
      "letter": "U",
-     "startPosition": "gamma9",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5721,8 +5721,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma3",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -5750,8 +5750,8 @@
     {
      "id": "step-1-T",
      "letter": "T",
-     "startPosition": "gamma3",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5781,8 +5781,8 @@
     {
      "id": "step-2-Y-",
      "letter": "Y-",
-     "startPosition": "gamma1",
-     "endPosition": "beta5",
+     "startPlacement": "gamma1",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5812,8 +5812,8 @@
     {
      "id": "step-3-Θ",
      "letter": "Θ",
-     "startPosition": "beta5",
-     "endPosition": "gamma5",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5843,8 +5843,8 @@
     {
      "id": "step-4-U",
      "letter": "U",
-     "startPosition": "gamma5",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5874,8 +5874,8 @@
     {
      "id": "step-1-T",
      "letter": "S",
-     "startPosition": "gamma7",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -5905,8 +5905,8 @@
     {
      "id": "step-2-Y-",
      "letter": "Z-",
-     "startPosition": "gamma5",
-     "endPosition": "beta1",
+     "startPlacement": "gamma5",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5936,8 +5936,8 @@
     {
      "id": "step-3-Θ",
      "letter": "Ω",
-     "startPosition": "beta1",
-     "endPosition": "gamma1",
+     "startPlacement": "beta1",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -5967,8 +5967,8 @@
     {
      "id": "step-4-U",
      "letter": "V",
-     "startPosition": "gamma1",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6008,8 +6008,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta5",
-     "endPosition": "beta5",
+     "startPlacement": "beta5",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -6037,8 +6037,8 @@
     {
      "id": "step-1-I",
      "letter": "I",
-     "startPosition": "beta5",
-     "endPosition": "beta7",
+     "startPlacement": "beta5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6068,8 +6068,8 @@
     {
      "id": "step-2-I",
      "letter": "I",
-     "startPosition": "beta7",
-     "endPosition": "beta1",
+     "startPlacement": "beta7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6099,8 +6099,8 @@
     {
      "id": "step-3-F",
      "letter": "F",
-     "startPosition": "beta1",
-     "endPosition": "alpha7",
+     "startPlacement": "beta1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6130,8 +6130,8 @@
     {
      "id": "step-4-L",
      "letter": "L",
-     "startPosition": "alpha7",
-     "endPosition": "beta5",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6161,8 +6161,8 @@
     {
      "id": "step-1-I",
      "letter": "I",
-     "startPosition": "beta5",
-     "endPosition": "beta3",
+     "startPlacement": "beta5",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6192,8 +6192,8 @@
     {
      "id": "step-2-I",
      "letter": "I",
-     "startPosition": "beta3",
-     "endPosition": "beta1",
+     "startPlacement": "beta3",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6223,8 +6223,8 @@
     {
      "id": "step-3-F",
      "letter": "F",
-     "startPosition": "beta1",
-     "endPosition": "alpha7",
+     "startPlacement": "beta1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6254,8 +6254,8 @@
     {
      "id": "step-4-L",
      "letter": "L",
-     "startPosition": "alpha7",
-     "endPosition": "beta5",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6293,8 +6293,8 @@
     {
      "id": "step-0-α",
      "letter": "α",
-     "startPosition": "alpha5",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -6322,8 +6322,8 @@
     {
      "id": "step-1-Θ-",
      "letter": "Θ-",
-     "startPosition": "alpha5",
-     "endPosition": "gamma9",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6353,8 +6353,8 @@
     {
      "id": "step-2-T",
      "letter": "T",
-     "startPosition": "gamma9",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6384,8 +6384,8 @@
     {
      "id": "step-3-V",
      "letter": "V",
-     "startPosition": "gamma15",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6415,8 +6415,8 @@
     {
      "id": "step-4-X-",
      "letter": "X-",
-     "startPosition": "gamma13",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma13",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6446,8 +6446,8 @@
     {
      "id": "step-1-Θ-",
      "letter": "Θ-",
-     "startPosition": "alpha1",
-     "endPosition": "gamma15",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -6477,8 +6477,8 @@
     {
      "id": "step-2-T",
      "letter": "T",
-     "startPosition": "gamma15",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6508,8 +6508,8 @@
     {
      "id": "step-3-V",
      "letter": "V",
-     "startPosition": "gamma9",
-     "endPosition": "gamma11",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6539,8 +6539,8 @@
     {
      "id": "step-4-X-",
      "letter": "X-",
-     "startPosition": "gamma11",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma11",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -6578,8 +6578,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta7",
-     "endPosition": "beta7",
+     "startPlacement": "beta7",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -6607,8 +6607,8 @@
     {
      "id": "step-1-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta7",
-     "endPosition": "gamma9",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -6638,8 +6638,8 @@
     {
      "id": "step-2-R",
      "letter": "R",
-     "startPosition": "gamma9",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6669,8 +6669,8 @@
     {
      "id": "step-3-X-",
      "letter": "X-",
-     "startPosition": "gamma3",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -6700,8 +6700,8 @@
     {
      "id": "step-4-J",
      "letter": "J",
-     "startPosition": "alpha1",
-     "endPosition": "beta3",
+     "startPlacement": "alpha1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6731,8 +6731,8 @@
     {
      "id": "step-1-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta3",
-     "endPosition": "gamma15",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6762,8 +6762,8 @@
     {
      "id": "step-2-R",
      "letter": "R",
-     "startPosition": "gamma15",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6793,8 +6793,8 @@
     {
      "id": "step-3-X-",
      "letter": "X-",
-     "startPosition": "gamma1",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma1",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6824,8 +6824,8 @@
     {
      "id": "step-4-J",
      "letter": "J",
-     "startPosition": "alpha5",
-     "endPosition": "beta7",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6865,8 +6865,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma7",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -6894,8 +6894,8 @@
     {
      "id": "step-1-O",
      "letter": "O",
-     "startPosition": "gamma7",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -6925,8 +6925,8 @@
     {
      "id": "step-2-Q",
      "letter": "Q",
-     "startPosition": "gamma9",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -6956,8 +6956,8 @@
     {
      "id": "step-3-Z",
      "letter": "Z",
-     "startPosition": "gamma3",
-     "endPosition": "beta1",
+     "startPlacement": "gamma3",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -6987,8 +6987,8 @@
     {
      "id": "step-4-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta1",
-     "endPosition": "gamma11",
+     "startPlacement": "beta1",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -7018,8 +7018,8 @@
     {
      "id": "step-1-O",
      "letter": "O",
-     "startPosition": "gamma11",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -7049,8 +7049,8 @@
     {
      "id": "step-2-Q",
      "letter": "P",
-     "startPosition": "gamma1",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7080,8 +7080,8 @@
     {
      "id": "step-3-Z",
      "letter": "Y",
-     "startPosition": "gamma15",
-     "endPosition": "beta1",
+     "startPlacement": "gamma15",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -7111,8 +7111,8 @@
     {
      "id": "step-4-Δ-",
      "letter": "Σ-",
-     "startPosition": "beta1",
-     "endPosition": "gamma7",
+     "startPlacement": "beta1",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -7150,8 +7150,8 @@
     {
      "id": "step-0-α",
      "letter": "α",
-     "startPosition": "alpha1",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -7179,8 +7179,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha1",
-     "endPosition": "beta7",
+     "startPlacement": "alpha1",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -7210,8 +7210,8 @@
     {
      "id": "step-2-I",
      "letter": "I",
-     "startPosition": "beta7",
-     "endPosition": "beta5",
+     "startPlacement": "beta7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7241,8 +7241,8 @@
     {
      "id": "step-3-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta5",
-     "endPosition": "gamma1",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -7272,8 +7272,8 @@
     {
      "id": "step-4-W",
      "letter": "W",
-     "startPosition": "gamma1",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma1",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7303,8 +7303,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha1",
-     "endPosition": "beta3",
+     "startPlacement": "alpha1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7334,8 +7334,8 @@
     {
      "id": "step-2-I",
      "letter": "I",
-     "startPosition": "beta3",
-     "endPosition": "beta5",
+     "startPlacement": "beta3",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -7365,8 +7365,8 @@
     {
      "id": "step-3-Δ-",
      "letter": "Σ-",
-     "startPosition": "beta5",
-     "endPosition": "gamma9",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7396,8 +7396,8 @@
     {
      "id": "step-4-W",
      "letter": "X",
-     "startPosition": "gamma9",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma9",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -7435,8 +7435,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma3",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -7464,8 +7464,8 @@
     {
      "id": "step-1-Λ",
      "letter": "Λ",
-     "startPosition": "gamma3",
-     "endPosition": "gamma11",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -7495,8 +7495,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma11",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -7526,8 +7526,8 @@
     {
      "id": "step-3-N",
      "letter": "N",
-     "startPosition": "gamma13",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -7557,8 +7557,8 @@
     {
      "id": "step-4-Λ",
      "letter": "Λ",
-     "startPosition": "gamma3",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -7588,8 +7588,8 @@
     {
      "id": "step-1-Λ",
      "letter": "Λ",
-     "startPosition": "gamma15",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -7619,8 +7619,8 @@
     {
      "id": "step-2-V",
      "letter": "U",
-     "startPosition": "gamma7",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7650,8 +7650,8 @@
     {
      "id": "step-3-N",
      "letter": "M",
-     "startPosition": "gamma5",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7681,8 +7681,8 @@
     {
      "id": "step-4-Λ",
      "letter": "Λ",
-     "startPosition": "gamma15",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -7722,8 +7722,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta5",
-     "endPosition": "beta5",
+     "startPlacement": "beta5",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -7751,8 +7751,8 @@
     {
      "id": "step-1-D",
      "letter": "D",
-     "startPosition": "beta5",
-     "endPosition": "alpha3",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7782,8 +7782,8 @@
     {
      "id": "step-2-A",
      "letter": "A",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7813,8 +7813,8 @@
     {
      "id": "step-3-C",
      "letter": "C",
-     "startPosition": "alpha5",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7844,8 +7844,8 @@
     {
      "id": "step-4-L",
      "letter": "L",
-     "startPosition": "alpha7",
-     "endPosition": "beta1",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7875,8 +7875,8 @@
     {
      "id": "step-1-D",
      "letter": "D",
-     "startPosition": "beta1",
-     "endPosition": "alpha3",
+     "startPlacement": "beta1",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7906,8 +7906,8 @@
     {
      "id": "step-2-A",
      "letter": "A",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -7937,8 +7937,8 @@
     {
      "id": "step-3-C",
      "letter": "C",
-     "startPosition": "alpha5",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -7968,8 +7968,8 @@
     {
      "id": "step-4-L",
      "letter": "L",
-     "startPosition": "alpha7",
-     "endPosition": "beta5",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -8007,8 +8007,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma13",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -8036,8 +8036,8 @@
     {
      "id": "step-1-Λ",
      "letter": "Λ",
-     "startPosition": "gamma13",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -8067,8 +8067,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma1",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -8098,8 +8098,8 @@
     {
      "id": "step-3-W",
      "letter": "W",
-     "startPosition": "gamma7",
-     "endPosition": "alpha7",
+     "startPlacement": "gamma7",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -8129,8 +8129,8 @@
     {
      "id": "step-4-Δ",
      "letter": "Δ",
-     "startPosition": "alpha7",
-     "endPosition": "gamma9",
+     "startPlacement": "alpha7",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -8160,8 +8160,8 @@
     {
      "id": "step-1-Λ",
      "letter": "Λ",
-     "startPosition": "gamma9",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -8191,8 +8191,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma1",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -8222,8 +8222,8 @@
     {
      "id": "step-3-W",
      "letter": "W",
-     "startPosition": "gamma7",
-     "endPosition": "beta5",
+     "startPlacement": "gamma7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -8253,8 +8253,8 @@
     {
      "id": "step-4-Δ",
      "letter": "Δ",
-     "startPosition": "beta5",
-     "endPosition": "gamma13",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -8292,8 +8292,8 @@
     {
      "id": "step-0-α",
      "letter": "α",
-     "startPosition": "alpha1",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -8321,8 +8321,8 @@
     {
      "id": "step-1-J",
      "letter": "J",
-     "startPosition": "alpha1",
-     "endPosition": "beta3",
+     "startPlacement": "alpha1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -8352,8 +8352,8 @@
     {
      "id": "step-2-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta3",
-     "endPosition": "gamma15",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -8383,8 +8383,8 @@
     {
      "id": "step-3-U",
      "letter": "U",
-     "startPosition": "gamma15",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -8414,8 +8414,8 @@
     {
      "id": "step-4-X-",
      "letter": "X-",
-     "startPosition": "gamma9",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma9",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -8445,8 +8445,8 @@
     {
      "id": "step-1-J",
      "letter": "J",
-     "startPosition": "alpha5",
-     "endPosition": "beta3",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -8476,8 +8476,8 @@
     {
      "id": "step-2-Δ-",
      "letter": "Δ-",
-     "startPosition": "beta3",
-     "endPosition": "gamma1",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -8507,8 +8507,8 @@
     {
      "id": "step-3-U",
      "letter": "U",
-     "startPosition": "gamma1",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -8538,8 +8538,8 @@
     {
      "id": "step-4-X-",
      "letter": "X-",
-     "startPosition": "gamma3",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -8579,8 +8579,8 @@
     {
      "id": "step-0-α",
      "letter": "α",
-     "startPosition": "alpha5",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -8608,8 +8608,8 @@
     {
      "id": "step-1-Ω-",
      "letter": "Ω-",
-     "startPosition": "alpha5",
-     "endPosition": "gamma7",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -8639,8 +8639,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma7",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -8670,8 +8670,8 @@
     {
      "id": "step-3-T",
      "letter": "T",
-     "startPosition": "gamma1",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -8701,8 +8701,8 @@
     {
      "id": "step-4-X-",
      "letter": "X-",
-     "startPosition": "gamma3",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -8732,8 +8732,8 @@
     {
      "id": "step-1-Ω-",
      "letter": "Ω-",
-     "startPosition": "alpha1",
-     "endPosition": "gamma3",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -8763,8 +8763,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma3",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -8794,8 +8794,8 @@
     {
      "id": "step-3-T",
      "letter": "T",
-     "startPosition": "gamma5",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -8825,8 +8825,8 @@
     {
      "id": "step-4-X-",
      "letter": "X-",
-     "startPosition": "gamma7",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma7",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -8856,8 +8856,8 @@
     {
      "id": "step-1-Ω-",
      "letter": "Ω-",
-     "startPosition": "alpha5",
-     "endPosition": "gamma11",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -8887,8 +8887,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma11",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -8918,8 +8918,8 @@
     {
      "id": "step-3-T",
      "letter": "T",
-     "startPosition": "gamma9",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -8949,8 +8949,8 @@
     {
      "id": "step-4-X-",
      "letter": "X-",
-     "startPosition": "gamma15",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma15",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -8980,8 +8980,8 @@
     {
      "id": "step-1-Ω-",
      "letter": "Ω-",
-     "startPosition": "alpha1",
-     "endPosition": "gamma15",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -9011,8 +9011,8 @@
     {
      "id": "step-2-V",
      "letter": "V",
-     "startPosition": "gamma15",
-     "endPosition": "gamma13",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma13",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9042,8 +9042,8 @@
     {
      "id": "step-3-T",
      "letter": "T",
-     "startPosition": "gamma13",
-     "endPosition": "gamma11",
+     "startPlacement": "gamma13",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -9073,8 +9073,8 @@
     {
      "id": "step-4-X-",
      "letter": "X-",
-     "startPosition": "gamma11",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma11",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -9112,8 +9112,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta1",
-     "endPosition": "beta1",
+     "startPlacement": "beta1",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -9141,8 +9141,8 @@
     {
      "id": "step-1-I",
      "letter": "I",
-     "startPosition": "beta1",
-     "endPosition": "beta7",
+     "startPlacement": "beta1",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9172,8 +9172,8 @@
     {
      "id": "step-2-Θ",
      "letter": "Θ",
-     "startPosition": "beta7",
-     "endPosition": "gamma7",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9203,8 +9203,8 @@
     {
      "id": "step-3-Y",
      "letter": "Y",
-     "startPosition": "gamma7",
-     "endPosition": "beta7",
+     "startPlacement": "gamma7",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9234,8 +9234,8 @@
     {
      "id": "step-4-I",
      "letter": "I",
-     "startPosition": "beta7",
-     "endPosition": "beta5",
+     "startPlacement": "beta7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -9265,8 +9265,8 @@
     {
      "id": "step-1-I",
      "letter": "I",
-     "startPosition": "beta5",
-     "endPosition": "beta3",
+     "startPlacement": "beta5",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9296,8 +9296,8 @@
     {
      "id": "step-2-Θ",
      "letter": "Θ",
-     "startPosition": "beta3",
-     "endPosition": "gamma3",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9327,8 +9327,8 @@
     {
      "id": "step-3-Y",
      "letter": "Y",
-     "startPosition": "gamma3",
-     "endPosition": "beta3",
+     "startPlacement": "gamma3",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9358,8 +9358,8 @@
     {
      "id": "step-4-I",
      "letter": "I",
-     "startPosition": "beta3",
-     "endPosition": "beta1",
+     "startPlacement": "beta3",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -9389,8 +9389,8 @@
     {
      "id": "step-1-I",
      "letter": "I",
-     "startPosition": "beta1",
-     "endPosition": "beta3",
+     "startPlacement": "beta1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9420,8 +9420,8 @@
     {
      "id": "step-2-Θ",
      "letter": "Θ",
-     "startPosition": "beta3",
-     "endPosition": "gamma11",
+     "startPlacement": "beta3",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9451,8 +9451,8 @@
     {
      "id": "step-3-Y",
      "letter": "Y",
-     "startPosition": "gamma11",
-     "endPosition": "beta3",
+     "startPlacement": "gamma11",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9482,8 +9482,8 @@
     {
      "id": "step-4-I",
      "letter": "I",
-     "startPosition": "beta3",
-     "endPosition": "beta5",
+     "startPlacement": "beta3",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -9513,8 +9513,8 @@
     {
      "id": "step-1-I",
      "letter": "I",
-     "startPosition": "beta5",
-     "endPosition": "beta7",
+     "startPlacement": "beta5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9544,8 +9544,8 @@
     {
      "id": "step-2-Θ",
      "letter": "Θ",
-     "startPosition": "beta7",
-     "endPosition": "gamma15",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9575,8 +9575,8 @@
     {
      "id": "step-3-Y",
      "letter": "Y",
-     "startPosition": "gamma15",
-     "endPosition": "beta7",
+     "startPlacement": "gamma15",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9606,8 +9606,8 @@
     {
      "id": "step-4-I",
      "letter": "I",
-     "startPosition": "beta7",
-     "endPosition": "beta1",
+     "startPlacement": "beta7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -9645,8 +9645,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta5",
-     "endPosition": "beta5",
+     "startPlacement": "beta5",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -9674,8 +9674,8 @@
     {
      "id": "step-1-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta5",
-     "endPosition": "gamma3",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -9705,8 +9705,8 @@
     {
      "id": "step-2-Z-",
      "letter": "Z-",
-     "startPosition": "gamma3",
-     "endPosition": "beta5",
+     "startPlacement": "gamma3",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -9736,8 +9736,8 @@
     {
      "id": "step-3-I",
      "letter": "I",
-     "startPosition": "beta5",
-     "endPosition": "beta7",
+     "startPlacement": "beta5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -9767,8 +9767,8 @@
     {
      "id": "step-4-G",
      "letter": "G",
-     "startPosition": "beta7",
-     "endPosition": "beta1",
+     "startPlacement": "beta7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9798,8 +9798,8 @@
     {
      "id": "step-1-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta1",
-     "endPosition": "gamma7",
+     "startPlacement": "beta1",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -9829,8 +9829,8 @@
     {
      "id": "step-2-Z-",
      "letter": "Z-",
-     "startPosition": "gamma7",
-     "endPosition": "beta1",
+     "startPlacement": "gamma7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -9860,8 +9860,8 @@
     {
      "id": "step-3-I",
      "letter": "I",
-     "startPosition": "beta1",
-     "endPosition": "beta3",
+     "startPlacement": "beta1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -9891,8 +9891,8 @@
     {
      "id": "step-4-G",
      "letter": "G",
-     "startPosition": "beta3",
-     "endPosition": "beta5",
+     "startPlacement": "beta3",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -9922,8 +9922,8 @@
     {
      "id": "step-1-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta5",
-     "endPosition": "gamma15",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -9953,8 +9953,8 @@
     {
      "id": "step-2-Z-",
      "letter": "Z-",
-     "startPosition": "gamma15",
-     "endPosition": "beta5",
+     "startPlacement": "gamma15",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -9984,8 +9984,8 @@
     {
      "id": "step-3-I",
      "letter": "I",
-     "startPosition": "beta5",
-     "endPosition": "beta3",
+     "startPlacement": "beta5",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10015,8 +10015,8 @@
     {
      "id": "step-4-G",
      "letter": "G",
-     "startPosition": "beta3",
-     "endPosition": "beta1",
+     "startPlacement": "beta3",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10046,8 +10046,8 @@
     {
      "id": "step-1-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta1",
-     "endPosition": "gamma11",
+     "startPlacement": "beta1",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -10077,8 +10077,8 @@
     {
      "id": "step-2-Z-",
      "letter": "Z-",
-     "startPosition": "gamma11",
-     "endPosition": "beta1",
+     "startPlacement": "gamma11",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -10108,8 +10108,8 @@
     {
      "id": "step-3-I",
      "letter": "I",
-     "startPosition": "beta1",
-     "endPosition": "beta7",
+     "startPlacement": "beta1",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10139,8 +10139,8 @@
     {
      "id": "step-4-G",
      "letter": "G",
-     "startPosition": "beta7",
-     "endPosition": "beta5",
+     "startPlacement": "beta7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10180,8 +10180,8 @@
     {
      "id": "step-0-α",
      "letter": "α",
-     "startPosition": "alpha5",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -10209,8 +10209,8 @@
     {
      "id": "step-1-A",
      "letter": "A",
-     "startPosition": "alpha5",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10240,8 +10240,8 @@
     {
      "id": "step-2-C",
      "letter": "C",
-     "startPosition": "alpha7",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10271,8 +10271,8 @@
     {
      "id": "step-3-B",
      "letter": "B",
-     "startPosition": "alpha1",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10302,8 +10302,8 @@
     {
      "id": "step-4-C",
      "letter": "C",
-     "startPosition": "alpha7",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10333,8 +10333,8 @@
     {
      "id": "step-1-A",
      "letter": "A",
-     "startPosition": "alpha1",
-     "endPosition": "alpha3",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10364,8 +10364,8 @@
     {
      "id": "step-2-C",
      "letter": "C",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10395,8 +10395,8 @@
     {
      "id": "step-3-B",
      "letter": "B",
-     "startPosition": "alpha5",
-     "endPosition": "alpha3",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10426,8 +10426,8 @@
     {
      "id": "step-4-C",
      "letter": "C",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10457,8 +10457,8 @@
     {
      "id": "step-1-A",
      "letter": "B",
-     "startPosition": "alpha5",
-     "endPosition": "alpha3",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10488,8 +10488,8 @@
     {
      "id": "step-2-C",
      "letter": "C",
-     "startPosition": "alpha3",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10519,8 +10519,8 @@
     {
      "id": "step-3-B",
      "letter": "A",
-     "startPosition": "alpha1",
-     "endPosition": "alpha3",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10550,8 +10550,8 @@
     {
      "id": "step-4-C",
      "letter": "C",
-     "startPosition": "alpha3",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10581,8 +10581,8 @@
     {
      "id": "step-1-A",
      "letter": "B",
-     "startPosition": "alpha1",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10612,8 +10612,8 @@
     {
      "id": "step-2-C",
      "letter": "C",
-     "startPosition": "alpha7",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10643,8 +10643,8 @@
     {
      "id": "step-3-B",
      "letter": "A",
-     "startPosition": "alpha5",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10674,8 +10674,8 @@
     {
      "id": "step-4-C",
      "letter": "C",
-     "startPosition": "alpha7",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10713,8 +10713,8 @@
     {
      "id": "step-0-α",
      "letter": "α",
-     "startPosition": "alpha1",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -10742,8 +10742,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha1",
-     "endPosition": "beta7",
+     "startPlacement": "alpha1",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10773,8 +10773,8 @@
     {
      "id": "step-2-E",
      "letter": "E",
-     "startPosition": "beta7",
-     "endPosition": "alpha5",
+     "startPlacement": "beta7",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10804,8 +10804,8 @@
     {
      "id": "step-3-A",
      "letter": "A",
-     "startPosition": "alpha5",
-     "endPosition": "alpha3",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10835,8 +10835,8 @@
     {
      "id": "step-4-A",
      "letter": "A",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10866,8 +10866,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta3",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10897,8 +10897,8 @@
     {
      "id": "step-2-E",
      "letter": "E",
-     "startPosition": "beta3",
-     "endPosition": "alpha1",
+     "startPlacement": "beta3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -10928,8 +10928,8 @@
     {
      "id": "step-3-A",
      "letter": "A",
-     "startPosition": "alpha1",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10959,8 +10959,8 @@
     {
      "id": "step-4-A",
      "letter": "A",
-     "startPosition": "alpha7",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -10990,8 +10990,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha1",
-     "endPosition": "beta3",
+     "startPlacement": "alpha1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11021,8 +11021,8 @@
     {
      "id": "step-2-E",
      "letter": "D",
-     "startPosition": "beta3",
-     "endPosition": "alpha5",
+     "startPlacement": "beta3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -11052,8 +11052,8 @@
     {
      "id": "step-3-A",
      "letter": "B",
-     "startPosition": "alpha5",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11083,8 +11083,8 @@
     {
      "id": "step-4-A",
      "letter": "B",
-     "startPosition": "alpha7",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11114,8 +11114,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta7",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11145,8 +11145,8 @@
     {
      "id": "step-2-E",
      "letter": "D",
-     "startPosition": "beta7",
-     "endPosition": "alpha1",
+     "startPlacement": "beta7",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -11176,8 +11176,8 @@
     {
      "id": "step-3-A",
      "letter": "B",
-     "startPosition": "alpha1",
-     "endPosition": "alpha3",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11207,8 +11207,8 @@
     {
      "id": "step-4-A",
      "letter": "B",
-     "startPosition": "alpha3",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11246,8 +11246,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta1",
-     "endPosition": "beta1",
+     "startPlacement": "beta1",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11275,8 +11275,8 @@
     {
      "id": "step-1-D",
      "letter": "D",
-     "startPosition": "beta1",
-     "endPosition": "alpha3",
+     "startPlacement": "beta1",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -11306,8 +11306,8 @@
     {
      "id": "step-2-L",
      "letter": "L",
-     "startPosition": "alpha3",
-     "endPosition": "beta5",
+     "startPlacement": "alpha3",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -11337,8 +11337,8 @@
     {
      "id": "step-3-Ω",
      "letter": "Ω",
-     "startPosition": "beta5",
-     "endPosition": "gamma11",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11368,8 +11368,8 @@
     {
      "id": "step-4-Z",
      "letter": "Z",
-     "startPosition": "gamma11",
-     "endPosition": "beta5",
+     "startPlacement": "gamma11",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11399,8 +11399,8 @@
     {
      "id": "step-1-D",
      "letter": "D",
-     "startPosition": "beta5",
-     "endPosition": "alpha7",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -11430,8 +11430,8 @@
     {
      "id": "step-2-L",
      "letter": "L",
-     "startPosition": "alpha7",
-     "endPosition": "beta1",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -11461,8 +11461,8 @@
     {
      "id": "step-3-Ω",
      "letter": "Ω",
-     "startPosition": "beta1",
-     "endPosition": "gamma15",
+     "startPlacement": "beta1",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11492,8 +11492,8 @@
     {
      "id": "step-4-Z",
      "letter": "Z",
-     "startPosition": "gamma15",
-     "endPosition": "beta1",
+     "startPlacement": "gamma15",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11523,8 +11523,8 @@
     {
      "id": "step-1-D",
      "letter": "E",
-     "startPosition": "beta1",
-     "endPosition": "alpha7",
+     "startPlacement": "beta1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11554,8 +11554,8 @@
     {
      "id": "step-2-L",
      "letter": "L",
-     "startPosition": "alpha7",
-     "endPosition": "beta5",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11585,8 +11585,8 @@
     {
      "id": "step-3-Ω",
      "letter": "Θ",
-     "startPosition": "beta5",
-     "endPosition": "gamma7",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11616,8 +11616,8 @@
     {
      "id": "step-4-Z",
      "letter": "Y",
-     "startPosition": "gamma7",
-     "endPosition": "beta5",
+     "startPlacement": "gamma7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11647,8 +11647,8 @@
     {
      "id": "step-1-D",
      "letter": "E",
-     "startPosition": "beta5",
-     "endPosition": "alpha3",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11678,8 +11678,8 @@
     {
      "id": "step-2-L",
      "letter": "L",
-     "startPosition": "alpha3",
-     "endPosition": "beta1",
+     "startPlacement": "alpha3",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11709,8 +11709,8 @@
     {
      "id": "step-3-Ω",
      "letter": "Θ",
-     "startPosition": "beta1",
-     "endPosition": "gamma3",
+     "startPlacement": "beta1",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11740,8 +11740,8 @@
     {
      "id": "step-4-Z",
      "letter": "Y",
-     "startPosition": "gamma3",
-     "endPosition": "beta1",
+     "startPlacement": "gamma3",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11781,8 +11781,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta7",
-     "endPosition": "beta7",
+     "startPlacement": "beta7",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11810,8 +11810,8 @@
     {
      "id": "step-1-F",
      "letter": "F",
-     "startPosition": "beta7",
-     "endPosition": "alpha1",
+     "startPlacement": "beta7",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -11841,8 +11841,8 @@
     {
      "id": "step-2-Σ",
      "letter": "Σ",
-     "startPosition": "alpha1",
-     "endPosition": "gamma11",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -11872,8 +11872,8 @@
     {
      "id": "step-3-Q",
      "letter": "Q",
-     "startPosition": "gamma11",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11903,8 +11903,8 @@
     {
      "id": "step-4-Y-",
      "letter": "Y-",
-     "startPosition": "gamma5",
-     "endPosition": "beta7",
+     "startPlacement": "gamma5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -11934,8 +11934,8 @@
     {
      "id": "step-1-F",
      "letter": "F",
-     "startPosition": "beta7",
-     "endPosition": "alpha1",
+     "startPlacement": "beta7",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -11965,8 +11965,8 @@
     {
      "id": "step-2-Σ",
      "letter": "Δ",
-     "startPosition": "alpha1",
-     "endPosition": "gamma9",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -11996,8 +11996,8 @@
     {
      "id": "step-3-Q",
      "letter": "P",
-     "startPosition": "gamma9",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12027,8 +12027,8 @@
     {
      "id": "step-4-Y-",
      "letter": "Z-",
-     "startPosition": "gamma3",
-     "endPosition": "beta7",
+     "startPlacement": "gamma3",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -12066,8 +12066,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma3",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -12095,8 +12095,8 @@
     {
      "id": "step-1-V",
      "letter": "V",
-     "startPosition": "gamma3",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -12126,8 +12126,8 @@
     {
      "id": "step-2-Z-",
      "letter": "Z-",
-     "startPosition": "gamma1",
-     "endPosition": "beta5",
+     "startPlacement": "gamma1",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -12157,8 +12157,8 @@
     {
      "id": "step-3-Θ",
      "letter": "Θ",
-     "startPosition": "beta5",
-     "endPosition": "gamma11",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -12188,8 +12188,8 @@
     {
      "id": "step-4-Λ",
      "letter": "Λ",
-     "startPosition": "gamma11",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma11",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -12219,8 +12219,8 @@
     {
      "id": "step-1-V",
      "letter": "U",
-     "startPosition": "gamma3",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -12250,8 +12250,8 @@
     {
      "id": "step-2-Z-",
      "letter": "Y-",
-     "startPosition": "gamma5",
-     "endPosition": "beta7",
+     "startPlacement": "gamma5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -12281,8 +12281,8 @@
     {
      "id": "step-3-Θ",
      "letter": "Ω",
-     "startPosition": "beta7",
-     "endPosition": "gamma15",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -12312,8 +12312,8 @@
     {
      "id": "step-4-Λ",
      "letter": "Λ",
-     "startPosition": "gamma15",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -12351,8 +12351,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma15",
-     "endPosition": "gamma15",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -12380,8 +12380,8 @@
     {
      "id": "step-1-O",
      "letter": "O",
-     "startPosition": "gamma15",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12411,8 +12411,8 @@
     {
      "id": "step-2-W-",
      "letter": "W-",
-     "startPosition": "gamma5",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma5",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12442,8 +12442,8 @@
     {
      "id": "step-3-C",
      "letter": "C",
-     "startPosition": "alpha1",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12473,8 +12473,8 @@
     {
      "id": "step-4-Σ",
      "letter": "Σ",
-     "startPosition": "alpha7",
-     "endPosition": "gamma15",
+     "startPlacement": "alpha7",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12504,8 +12504,8 @@
     {
      "id": "step-1-O",
      "letter": "O",
-     "startPosition": "gamma15",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma15",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12535,8 +12535,8 @@
     {
      "id": "step-2-W-",
      "letter": "X-",
-     "startPosition": "gamma5",
-     "endPosition": "alpha3",
+     "startPlacement": "gamma5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -12566,8 +12566,8 @@
     {
      "id": "step-3-C",
      "letter": "C",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12597,8 +12597,8 @@
     {
      "id": "step-4-Σ",
      "letter": "Δ",
-     "startPosition": "alpha5",
-     "endPosition": "gamma15",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma15",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -12638,8 +12638,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta5",
-     "endPosition": "beta5",
+     "startPlacement": "beta5",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -12667,8 +12667,8 @@
     {
      "id": "step-1-F",
      "letter": "F",
-     "startPosition": "beta5",
-     "endPosition": "alpha3",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12698,8 +12698,8 @@
     {
      "id": "step-2-A",
      "letter": "A",
-     "startPosition": "alpha3",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12729,8 +12729,8 @@
     {
      "id": "step-3-B",
      "letter": "B",
-     "startPosition": "alpha5",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -12760,8 +12760,8 @@
     {
      "id": "step-4-J",
      "letter": "J",
-     "startPosition": "alpha7",
-     "endPosition": "beta1",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12791,8 +12791,8 @@
     {
      "id": "step-1-F",
      "letter": "F",
-     "startPosition": "beta1",
-     "endPosition": "alpha7",
+     "startPlacement": "beta1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12822,8 +12822,8 @@
     {
      "id": "step-2-A",
      "letter": "A",
-     "startPosition": "alpha7",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12853,8 +12853,8 @@
     {
      "id": "step-3-B",
      "letter": "B",
-     "startPosition": "alpha1",
-     "endPosition": "alpha3",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -12884,8 +12884,8 @@
     {
      "id": "step-4-J",
      "letter": "J",
-     "startPosition": "alpha3",
-     "endPosition": "beta5",
+     "startPlacement": "alpha3",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12915,8 +12915,8 @@
     {
      "id": "step-1-F",
      "letter": "F",
-     "startPosition": "beta5",
-     "endPosition": "alpha3",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -12946,8 +12946,8 @@
     {
      "id": "step-2-A",
      "letter": "B",
-     "startPosition": "alpha3",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha3",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -12977,8 +12977,8 @@
     {
      "id": "step-3-B",
      "letter": "A",
-     "startPosition": "alpha1",
-     "endPosition": "alpha7",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13008,8 +13008,8 @@
     {
      "id": "step-4-J",
      "letter": "K",
-     "startPosition": "alpha7",
-     "endPosition": "beta1",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13039,8 +13039,8 @@
     {
      "id": "step-1-F",
      "letter": "F",
-     "startPosition": "beta1",
-     "endPosition": "alpha7",
+     "startPlacement": "beta1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13070,8 +13070,8 @@
     {
      "id": "step-2-A",
      "letter": "B",
-     "startPosition": "alpha7",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha7",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13101,8 +13101,8 @@
     {
      "id": "step-3-B",
      "letter": "A",
-     "startPosition": "alpha5",
-     "endPosition": "alpha3",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13132,8 +13132,8 @@
     {
      "id": "step-4-J",
      "letter": "K",
-     "startPosition": "alpha3",
-     "endPosition": "beta5",
+     "startPlacement": "alpha3",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13171,8 +13171,8 @@
     {
      "id": "step-0-β",
      "letter": "β",
-     "startPosition": "beta5",
-     "endPosition": "beta5",
+     "startPlacement": "beta5",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -13200,8 +13200,8 @@
     {
      "id": "step-1-F",
      "letter": "F",
-     "startPosition": "beta5",
-     "endPosition": "alpha3",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13231,8 +13231,8 @@
     {
      "id": "step-2-Σ",
      "letter": "Σ",
-     "startPosition": "alpha3",
-     "endPosition": "gamma1",
+     "startPlacement": "alpha3",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -13262,8 +13262,8 @@
     {
      "id": "step-3-V",
      "letter": "V",
-     "startPosition": "gamma1",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13293,8 +13293,8 @@
     {
      "id": "step-4-Z-",
      "letter": "Z-",
-     "startPosition": "gamma7",
-     "endPosition": "beta1",
+     "startPlacement": "gamma7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -13324,8 +13324,8 @@
     {
      "id": "step-1-F",
      "letter": "F",
-     "startPosition": "beta1",
-     "endPosition": "alpha7",
+     "startPlacement": "beta1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13355,8 +13355,8 @@
     {
      "id": "step-2-Σ",
      "letter": "Σ",
-     "startPosition": "alpha7",
-     "endPosition": "gamma5",
+     "startPlacement": "alpha7",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -13386,8 +13386,8 @@
     {
      "id": "step-3-V",
      "letter": "V",
-     "startPosition": "gamma5",
-     "endPosition": "gamma3",
+     "startPlacement": "gamma5",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13417,8 +13417,8 @@
     {
      "id": "step-4-Z-",
      "letter": "Z-",
-     "startPosition": "gamma3",
-     "endPosition": "beta5",
+     "startPlacement": "gamma3",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -13448,8 +13448,8 @@
     {
      "id": "step-1-F",
      "letter": "F",
-     "startPosition": "beta5",
-     "endPosition": "alpha3",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13479,8 +13479,8 @@
     {
      "id": "step-2-Σ",
      "letter": "Δ",
-     "startPosition": "alpha3",
-     "endPosition": "gamma3",
+     "startPlacement": "alpha3",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13510,8 +13510,8 @@
     {
      "id": "step-3-V",
      "letter": "U",
-     "startPosition": "gamma3",
-     "endPosition": "gamma5",
+     "startPlacement": "gamma3",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13541,8 +13541,8 @@
     {
      "id": "step-4-Z-",
      "letter": "Y-",
-     "startPosition": "gamma5",
-     "endPosition": "beta1",
+     "startPlacement": "gamma5",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13572,8 +13572,8 @@
     {
      "id": "step-1-F",
      "letter": "F",
-     "startPosition": "beta1",
-     "endPosition": "alpha7",
+     "startPlacement": "beta1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13603,8 +13603,8 @@
     {
      "id": "step-2-Σ",
      "letter": "Δ",
-     "startPosition": "alpha7",
-     "endPosition": "gamma7",
+     "startPlacement": "alpha7",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13634,8 +13634,8 @@
     {
      "id": "step-3-V",
      "letter": "U",
-     "startPosition": "gamma7",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13665,8 +13665,8 @@
     {
      "id": "step-4-Z-",
      "letter": "Y-",
-     "startPosition": "gamma1",
-     "endPosition": "beta5",
+     "startPlacement": "gamma1",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13704,8 +13704,8 @@
     {
      "id": "step-0-α",
      "letter": "α",
-     "startPosition": "alpha5",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -13733,8 +13733,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta7",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13764,8 +13764,8 @@
     {
      "id": "step-2-I",
      "letter": "I",
-     "startPosition": "beta7",
-     "endPosition": "beta5",
+     "startPlacement": "beta7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13795,8 +13795,8 @@
     {
      "id": "step-3-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta5",
-     "endPosition": "gamma1",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13826,8 +13826,8 @@
     {
      "id": "step-4-W",
      "letter": "W",
-     "startPosition": "gamma1",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma1",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13857,8 +13857,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha1",
-     "endPosition": "beta3",
+     "startPlacement": "alpha1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -13888,8 +13888,8 @@
     {
      "id": "step-2-I",
      "letter": "I",
-     "startPosition": "beta3",
-     "endPosition": "beta1",
+     "startPlacement": "beta3",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13919,8 +13919,8 @@
     {
      "id": "step-3-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta1",
-     "endPosition": "gamma5",
+     "startPlacement": "beta1",
+     "endPlacement": "gamma5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13950,8 +13950,8 @@
     {
      "id": "step-4-W",
      "letter": "W",
-     "startPosition": "gamma5",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma5",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -13981,8 +13981,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta7",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -14012,8 +14012,8 @@
     {
      "id": "step-2-I",
      "letter": "I",
-     "startPosition": "beta7",
-     "endPosition": "beta1",
+     "startPlacement": "beta7",
+     "endPlacement": "beta1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -14043,8 +14043,8 @@
     {
      "id": "step-3-Σ-",
      "letter": "Δ-",
-     "startPosition": "beta1",
-     "endPosition": "gamma7",
+     "startPlacement": "beta1",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -14074,8 +14074,8 @@
     {
      "id": "step-4-W",
      "letter": "X",
-     "startPosition": "gamma7",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma7",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14105,8 +14105,8 @@
     {
      "id": "step-1-L",
      "letter": "L",
-     "startPosition": "alpha1",
-     "endPosition": "beta3",
+     "startPlacement": "alpha1",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -14136,8 +14136,8 @@
     {
      "id": "step-2-I",
      "letter": "I",
-     "startPosition": "beta3",
-     "endPosition": "beta5",
+     "startPlacement": "beta3",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -14167,8 +14167,8 @@
     {
      "id": "step-3-Σ-",
      "letter": "Δ-",
-     "startPosition": "beta5",
-     "endPosition": "gamma3",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma3",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -14198,8 +14198,8 @@
     {
      "id": "step-4-W",
      "letter": "X",
-     "startPosition": "gamma3",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14239,8 +14239,8 @@
     {
      "id": "step-0-α",
      "letter": "α",
-     "startPosition": "alpha5",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14268,8 +14268,8 @@
     {
      "id": "step-1-K",
      "letter": "K",
-     "startPosition": "alpha5",
-     "endPosition": "beta7",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -14299,8 +14299,8 @@
     {
      "id": "step-2-Σ-",
      "letter": "Σ-",
-     "startPosition": "beta7",
-     "endPosition": "gamma11",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -14330,8 +14330,8 @@
     {
      "id": "step-3-X",
      "letter": "X",
-     "startPosition": "gamma11",
-     "endPosition": "alpha1",
+     "startPlacement": "gamma11",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14361,8 +14361,8 @@
     {
      "id": "step-4-Φ-",
      "letter": "Φ-",
-     "startPosition": "alpha1",
-     "endPosition": "alpha5",
+     "startPlacement": "alpha1",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -14392,8 +14392,8 @@
     {
      "id": "step-4-Φ-",
      "letter": "Φ-",
-     "startPosition": "alpha5",
-     "endPosition": "alpha1",
+     "startPlacement": "alpha5",
+     "endPlacement": "alpha1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -14423,8 +14423,8 @@
     {
      "id": "step-3-X",
      "letter": "X",
-     "startPosition": "alpha1",
-     "endPosition": "gamma11",
+     "startPlacement": "alpha1",
+     "endPlacement": "gamma11",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14454,8 +14454,8 @@
     {
      "id": "step-2-Σ-",
      "letter": "Σ-",
-     "startPosition": "gamma11",
-     "endPosition": "beta7",
+     "startPlacement": "gamma11",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -14485,8 +14485,8 @@
     {
      "id": "step-1-K",
      "letter": "K",
-     "startPosition": "beta7",
-     "endPosition": "alpha5",
+     "startPlacement": "beta7",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -14524,8 +14524,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma9",
-     "endPosition": "gamma9",
+     "startPlacement": "gamma9",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14553,8 +14553,8 @@
     {
      "id": "step-1-Z-",
      "letter": "Z-",
-     "startPosition": "gamma9",
-     "endPosition": "beta7",
+     "startPlacement": "gamma9",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -14584,8 +14584,8 @@
     {
      "id": "step-2-Ω",
      "letter": "Ω",
-     "startPosition": "beta7",
-     "endPosition": "gamma1",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14615,8 +14615,8 @@
     {
      "id": "step-3-W-",
      "letter": "W-",
-     "startPosition": "gamma1",
-     "endPosition": "alpha5",
+     "startPlacement": "gamma1",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -14646,8 +14646,8 @@
     {
      "id": "step-4-L",
      "letter": "L",
-     "startPosition": "alpha5",
-     "endPosition": "beta3",
+     "startPlacement": "alpha5",
+     "endPlacement": "beta3",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -14677,8 +14677,8 @@
     {
      "id": "step-4-L",
      "letter": "L",
-     "startPosition": "beta3",
-     "endPosition": "alpha5",
+     "startPlacement": "beta3",
+     "endPlacement": "alpha5",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -14708,8 +14708,8 @@
     {
      "id": "step-3-W-",
      "letter": "W-",
-     "startPosition": "alpha5",
-     "endPosition": "gamma1",
+     "startPlacement": "alpha5",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -14739,8 +14739,8 @@
     {
      "id": "step-2-Ω",
      "letter": "Ω",
-     "startPosition": "gamma1",
-     "endPosition": "beta7",
+     "startPlacement": "gamma1",
+     "endPlacement": "beta7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14770,8 +14770,8 @@
     {
      "id": "step-1-Z-",
      "letter": "Z-",
-     "startPosition": "beta7",
-     "endPosition": "gamma9",
+     "startPlacement": "beta7",
+     "endPlacement": "gamma9",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -14809,8 +14809,8 @@
     {
      "id": "step-0-γ",
      "letter": "γ",
-     "startPosition": "gamma7",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14838,8 +14838,8 @@
     {
      "id": "step-1-U",
      "letter": "U",
-     "startPosition": "gamma7",
-     "endPosition": "gamma1",
+     "startPlacement": "gamma7",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "anti",
@@ -14869,8 +14869,8 @@
     {
      "id": "step-2-W-",
      "letter": "W-",
-     "startPosition": "gamma1",
-     "endPosition": "alpha7",
+     "startPlacement": "gamma1",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -14900,8 +14900,8 @@
     {
      "id": "step-3-J",
      "letter": "J",
-     "startPosition": "alpha7",
-     "endPosition": "beta5",
+     "startPlacement": "alpha7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -14931,8 +14931,8 @@
     {
      "id": "step-4-Ω",
      "letter": "Ω",
-     "startPosition": "beta5",
-     "endPosition": "gamma7",
+     "startPlacement": "beta5",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14962,8 +14962,8 @@
     {
      "id": "step-4-Ω",
      "letter": "Ω",
-     "startPosition": "gamma7",
-     "endPosition": "beta5",
+     "startPlacement": "gamma7",
+     "endPlacement": "beta5",
      "motions": {
       "blue": {
        "motionType": "static",
@@ -14993,8 +14993,8 @@
     {
      "id": "step-3-J",
      "letter": "J",
-     "startPosition": "beta5",
-     "endPosition": "alpha7",
+     "startPlacement": "beta5",
+     "endPlacement": "alpha7",
      "motions": {
       "blue": {
        "motionType": "pro",
@@ -15024,8 +15024,8 @@
     {
      "id": "step-2-W-",
      "letter": "W-",
-     "startPosition": "alpha7",
-     "endPosition": "gamma1",
+     "startPlacement": "alpha7",
+     "endPlacement": "gamma1",
      "motions": {
       "blue": {
        "motionType": "dash",
@@ -15055,8 +15055,8 @@
     {
      "id": "step-1-U",
      "letter": "U",
-     "startPosition": "gamma1",
-     "endPosition": "gamma7",
+     "startPlacement": "gamma1",
+     "endPlacement": "gamma7",
      "motions": {
       "blue": {
        "motionType": "anti",

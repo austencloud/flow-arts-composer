@@ -36,7 +36,7 @@ describe("SimilarityCalculator — the panel's data source", () => {
 
     expect(inUnitRange(report.wordSimilarity)).toBe(true);
     expect(inUnitRange(report.motionSimilarity)).toBe(true);
-    expect(inUnitRange(report.positionSimilarity)).toBe(true);
+    expect(inUnitRange(report.placementSimilarity)).toBe(true);
     expect(inUnitRange(report.structuralSimilarity)).toBe(true);
 
     expect(report.breakdown).toBeDefined();
@@ -58,7 +58,7 @@ describe("SimilarityCalculator — the panel's data source", () => {
     expect(report.overallScore).toBe(1);
     expect(report.wordSimilarity).toBe(1);
     expect(report.motionSimilarity).toBe(1);
-    expect(report.positionSimilarity).toBe(1);
+    expect(report.placementSimilarity).toBe(1);
     expect(report.structuralSimilarity).toBe(1);
     expect(report.breakdown.wordMatch).toBe(true);
     expect(report.breakdown.beatMismatches).toBe(0);
@@ -73,7 +73,7 @@ describe("SimilarityCalculator — the panel's data source", () => {
     const wordOnly = calculator.computeSimilarity(GGGG_CW, HHHH_CCW, {
       wordWeight: 1,
       motionWeight: 0,
-      positionWeight: 0,
+      placementWeight: 0,
       structuralWeight: 0,
     });
 
@@ -93,7 +93,7 @@ describe("SimilarityCalculator — the panel's data source", () => {
       {
         wordWeight: 1,
         motionWeight: 1,
-        positionWeight: 1,
+        placementWeight: 1,
         structuralWeight: 1,
       }
     );
@@ -101,7 +101,7 @@ describe("SimilarityCalculator — the panel's data source", () => {
     const rawSum =
       report.wordSimilarity +
       report.motionSimilarity +
-      report.positionSimilarity +
+      report.placementSimilarity +
       report.structuralSimilarity;
 
     expect(report.overallScore).toBeCloseTo(rawSum, 10);

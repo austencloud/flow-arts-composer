@@ -40,7 +40,7 @@ import { buildSeed, loadPictographRows } from "./harness/canonical-fixtures";
 
 function seedFor(letter: string, from: string, to: string) {
   const row = loadPictographRows("diamond").find(
-    (r) => r.letter === letter && r.startPosition === from && r.endPosition === to
+    (r) => r.letter === letter && r.startPlacement === from && r.endPlacement === to
   );
   if (!row) throw new Error(`No canonical diamond row ${letter} ${from}→${to}`);
   return buildSeed([row], "diamond");
@@ -103,7 +103,7 @@ describe("blast radius — the engine's public executeLOOP adapter", () => {
     expect(result.success).toBe(false);
     expect(result.steps).toEqual([]);
     expect(result.error).toContain(
-      "Cannot close orientation on an open position pattern"
+      "Cannot close orientation on an open placement pattern"
     );
   });
 
@@ -117,7 +117,7 @@ describe("blast radius — the engine's public executeLOOP adapter", () => {
     );
     expect(result.success).toBe(false);
     expect(result.error).toContain(
-      "Cannot close orientation on an open position pattern"
+      "Cannot close orientation on an open placement pattern"
     );
   });
 

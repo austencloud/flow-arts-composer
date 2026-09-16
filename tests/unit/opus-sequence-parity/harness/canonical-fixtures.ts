@@ -5,8 +5,8 @@
  * (`static/data/pictographs/*.csv`) — the same files the engine's own
  * integration tests and the app's variation provider read. Nothing here
  * invents a motion pair: a seed step is always a real CSV row, and chains are
- * only formed where one row's `endPosition` equals the next row's
- * `startPosition`.
+ * only formed where one row's `endPlacement` equals the next row's
+ * `startPlacement`.
  *
  * Orientations are propagated with the app's canonical orientation calculator
  * so that BOTH execution paths receive byte-identical input. (The engine's
@@ -35,7 +35,7 @@ import {
 import {
   GridLocation,
   GridMode,
-  type GridPosition,
+  type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import {
@@ -51,8 +51,8 @@ export type CsvGridMode = "diamond" | "box";
 
 export interface PictographRow {
   readonly letter: string;
-  readonly startPosition: string;
-  readonly endPosition: string;
+  readonly startPlacement: string;
+  readonly endPlacement: string;
   readonly left: RawMotion;
   readonly right: RawMotion;
 }
@@ -87,8 +87,8 @@ export function loadPictographRows(gridMode: CsvGridMode): PictographRow[] {
 
   const cols = {
     letter: idx("letter"),
-    startPosition: idx("startPosition"),
-    endPosition: idx("endPosition"),
+    startPlacement: idx("startPlacement"),
+    endPlacement: idx("endPlacement"),
     blueMotionType: idx("blueMotionType"),
     blueRotationDirection: idx("blueRotationDirection"),
     blueStartLocation: idx("blueStartLocation"),
@@ -106,8 +106,8 @@ export function loadPictographRows(gridMode: CsvGridMode): PictographRow[] {
     .map(
       (c): PictographRow => ({
         letter: c[cols.letter]!,
-        startPosition: c[cols.startPosition]!,
-        endPosition: c[cols.endPosition]!,
+        startPlacement: c[cols.startPlacement]!,
+        endPlacement: c[cols.endPlacement]!,
         left: {
           motionType: c[cols.blueMotionType]!,
           rotationDirection: c[cols.blueRotationDirection]!,
@@ -143,9 +143,9 @@ export function buildChains(
   const rows = loadPictographRows(gridMode);
   const byStart = new Map<string, PictographRow[]>();
   for (const row of rows) {
-    const bucket = byStart.get(row.startPosition);
+    const bucket = byStart.get(row.startPlacement);
     if (bucket) bucket.push(row);
-    else byStart.set(row.startPosition, [row]);
+    else byStart.set(row.startPlacement, [row]);
   }
 
   const out: PictographRow[][] = [];
@@ -159,7 +159,7 @@ export function buildChains(
       return;
     }
     const last = prefix[prefix.length - 1]!;
-    for (const next of byStart.get(last.endPosition) ?? []) {
+    for (const next of byStart.get(last.endPlacement) ?? []) {
       if (fromRoot.length >= perRoot) return;
       prefix.push(next);
       walk(prefix, fromRoot);
@@ -247,8 +247,8 @@ function startStep(
     stepNumber: 0,
     duration: 1,
     letter: null,
-    startPosition: first.startPosition as GridPosition,
-    endPosition: first.startPosition as GridPosition,
+    startPlacement: first.startPlacement as GridPlacement,
+    endPlacement: first.startPlacement as GridPlacement,
     gridMode,
     motions: {
       left: staticAt(first.left.startLocation, HandSide.LEFT, startOrientations.left),
@@ -276,7 +276,7 @@ export interface SeedOptions {
 
 /**
  * Materialize a canonical chain into a seed the executors accept:
- * `[startPositionStep, ...steps]`, orientations propagated forward.
+ * `[startPlacementStep, ...steps]`, orientations propagated forward.
  */
 export function buildSeed(
   chain: PictographRow[],
@@ -298,8 +298,8 @@ export function buildSeed(
       stepNumber: i + 1,
       duration: 1,
       letter: row.letter as Letter,
-      startPosition: row.startPosition as GridPosition,
-      endPosition: row.endPosition as GridPosition,
+      startPlacement: row.startPlacement as GridPlacement,
+      endPlacement: row.endPlacement as GridPlacement,
       gridMode: mode,
       motions: {
         left: motionFrom(row.left, HandSide.LEFT, turns.left, mode),
@@ -336,5 +336,5 @@ export function describeSeed(seed: StepData[]): string {
     .join("");
   const first = seed[0]!;
   const last = seed[seed.length - 1]!;
-  return `${word} ${first.startPosition}→${last.endPosition}`;
+  return `${word} ${first.startPlacement}→${last.endPlacement}`;
 }

@@ -7,7 +7,7 @@
  * Domain: Create module - Service types
  */
 
-import type { StartPositionManager } from "$lib/shared/create/services/start-position-manager";
+import type { StartPlacementManager } from "$lib/shared/create/services/start-placement-manager";
 import type { StepOperator } from "$lib/features/create/shared/services/step-operator";
 import type { CreateModuleOrchestrator } from "$lib/features/create/shared/services/create-module-orchestrator";
 import type { NavigationSyncer } from "../services/navigation-syncer";
@@ -22,7 +22,7 @@ import type { Sharer } from "../../../../shared/share/services/sharer";
 export interface CreateModuleOrchestrators {
   sequenceService: SequenceRepository;
   SequencePersister: SequencePersister;
-  StartPositionManager: StartPositionManager;
+  StartPlacementManager: StartPlacementManager;
   CreateModuleOrchestrator: CreateModuleOrchestrator;
   layoutService: ResponsiveLayoutManager;
   NavigationSyncer: NavigationSyncer;

@@ -3,7 +3,7 @@ import { browser } from '$app/environment';
 import { CreateModuleInitializer } from './services/create-module-initializer';
 import { getSequenceRepository } from '$lib/shared/create/get-sequence-repository';
 import { getSequencePersister } from './get-sequence-persister';
-import { getStartPositionManager } from '$lib/features/create/construct/start-position-picker/get-start-position-manager';
+import { getStartPlacementManager } from '$lib/features/create/construct/start-placement-picker/get-start-placement-manager';
 import { getCreateModuleOrchestrator } from './get-create-module-orchestrator';
 import { getResponsiveLayoutManager } from './get-responsive-layout-manager';
 import { getNavigationSyncer } from './get-navigation-syncer';
@@ -25,7 +25,7 @@ export function getCreateModuleInitializer(): CreateModuleInitializer {
 	return instance ??= new CreateModuleInitializer(
 		getSequenceRepository(),
 		getSequencePersister(),
-		getStartPositionManager(),
+		getStartPlacementManager(),
 		getCreateModuleOrchestrator(),
 		getResponsiveLayoutManager(),
 		getNavigationSyncer(),

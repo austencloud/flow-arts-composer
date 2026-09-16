@@ -9,7 +9,7 @@ export type {
   VariationConstraints,
   CircularizationOption,
   SpellResult,
-  LetterPositionInfo,
+  LetterPlacementInfo,
   LetterCategory,
   SpellGenerationOptions,
   LetterAlias,

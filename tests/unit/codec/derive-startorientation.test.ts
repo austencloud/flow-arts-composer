@@ -35,8 +35,8 @@ function step(stepNumber: number, left: unknown, right: unknown) {
     motions: { left, right },
     id: `s${stepNumber}`,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
   };
 }
 
@@ -59,7 +59,7 @@ describe("startOrientation chains from the seed, not stored per-motion", () => {
   // A 2-step sequence with a physically consistent chain (each startOri == the
   // previous endOri, per hand). In the canonical format neither start nor end
   // orientation is stored per motion — the decoder chains startOri from the
-  // start-position seed and derives every endOri. Round-tripping must reproduce
+  // start-placement seed and derives every endOri. Round-tripping must reproduce
   // every orientation.
   function buildConsistent() {
     // start position: both hands static, in/in (the seed)
@@ -126,7 +126,7 @@ describe("startOrientation chains from the seed, not stored per-motion", () => {
 
     const derived = decodeSequence(encoded);
 
-    // start position (stepNumber 0) -> startPosition, not in steps[]
+    // start position (stepNumber 0) -> startPlacement, not in steps[]
     for (const c of ["left", "right"] as const) {
       const o = (
         original as never as {
@@ -138,7 +138,7 @@ describe("startOrientation chains from the seed, not stored per-motion", () => {
           }[];
         }
       ).steps[0].motions[c];
-      const d = derived.startPosition!.motions[c];
+      const d = derived.startPlacement!.motions[c];
       expect(d!.startOrientation, `startPos ${c} startOri`).toBe(
         o.startOrientation
       );
@@ -212,7 +212,7 @@ describe("startOrientation chains from the seed, not stored per-motion", () => {
     ]);
     const derived = decodeSequence(encodeSequence(original));
 
-    expect(derived.startPosition!.motions.left!.startOrientation).toBe(
+    expect(derived.startPlacement!.motions.left!.startOrientation).toBe(
       Orientation.COUNTER
     );
     expect(derived.steps[0]!.motions.left!.startOrientation).toBe(

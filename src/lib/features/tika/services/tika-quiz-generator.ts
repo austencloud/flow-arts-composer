@@ -7,7 +7,7 @@
 
 import {
   TYPE_DEFINITIONS,
-  POSITION_DEFINITIONS,
+  PLACEMENT_DEFINITIONS,
   MOTION_TYPE_DEFINITIONS,
   LETTER_TYPES,
   LETTER_TO_TYPE,
@@ -40,24 +40,24 @@ export interface QuizResult {
   inlineQuiz: InlineQuiz;
 }
 
-interface PositionQuestion {
+interface PlacementQuestion {
   question: string;
-  correctPosition: "alpha" | "beta" | "gamma";
+  correctPlacement: "alpha" | "beta" | "gamma";
   correctFeedback: string;
   incorrectFeedback: string;
   difficulty: QuizDifficulty;
-  /** If true, show the Type 6 letter for this position as a pictograph stimulus */
+  /** If true, show the Type 6 letter for this placement as a pictograph stimulus */
   showPictograph?: boolean;
 }
 
-// Type 6 (Static) letters - pure position, no motion arrows.
+// Type 6 (Static) letters - pure placement, no motion arrows.
 // Each has multiple variations at different grid locations.
-const ALPHA_STIMULUS = "α"; // static at alpha positions (4 variations)
-const BETA_STIMULUS = "β"; // static at beta positions (4 variations)
-const GAMMA_STIMULUS = "γ"; // static at gamma positions (8 variations)
+const ALPHA_STIMULUS = "α"; // static at alpha placements (4 variations)
+const BETA_STIMULUS = "β"; // static at beta placements (4 variations)
+const GAMMA_STIMULUS = "γ"; // static at gamma placements (8 variations)
 
-/** Map position → Type 6 letter + variation count for stimulus rendering */
-const POSITION_STIMULUS: Record<
+/** Map placement → Type 6 letter + variation count for stimulus rendering */
+const PLACEMENT_STIMULUS: Record<
   string,
   { letter: string; variationCount: number }
 > = {
@@ -66,10 +66,10 @@ const POSITION_STIMULUS: Record<
   gamma: { letter: GAMMA_STIMULUS, variationCount: 8 },
 };
 
-const POSITION_QUESTION_POOL: PositionQuestion[] = [
+const PLACEMENT_QUESTION_POOL: PlacementQuestion[] = [
   {
-    question: "What position is this?",
-    correctPosition: "alpha",
+    question: "What placement is this?",
+    correctPlacement: "alpha",
     correctFeedback: "Alpha (α) - hands at opposite grid points.",
     incorrectFeedback:
       "The hands are at opposite points on the grid. That's alpha (α).",
@@ -77,8 +77,8 @@ const POSITION_QUESTION_POOL: PositionQuestion[] = [
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "beta",
+    question: "What placement is this?",
+    correctPlacement: "beta",
     correctFeedback: "Beta (β) - both hands at the same grid point.",
     incorrectFeedback:
       "Both hands are at the same grid point. That's beta (β).",
@@ -86,8 +86,8 @@ const POSITION_QUESTION_POOL: PositionQuestion[] = [
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "gamma",
+    question: "What placement is this?",
+    correctPlacement: "gamma",
     correctFeedback:
       "Gamma (γ) - hands at adjacent points, forming a right angle.",
     incorrectFeedback:
@@ -96,90 +96,90 @@ const POSITION_QUESTION_POOL: PositionQuestion[] = [
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "alpha",
+    question: "What placement is this?",
+    correctPlacement: "alpha",
     correctFeedback: "Alpha - opposite points.",
     incorrectFeedback: "Hands at opposite grid points = alpha.",
     difficulty: "medium",
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "beta",
+    question: "What placement is this?",
+    correctPlacement: "beta",
     correctFeedback: "Beta - same point.",
     incorrectFeedback: "Hands at the same grid point = beta.",
     difficulty: "medium",
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "gamma",
+    question: "What placement is this?",
+    correctPlacement: "gamma",
     correctFeedback: "Gamma - right angle.",
     incorrectFeedback: "Hands at a right angle = gamma.",
     difficulty: "medium",
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "alpha",
+    question: "What placement is this?",
+    correctPlacement: "alpha",
     correctFeedback: "Alpha - opposite points.",
     incorrectFeedback: "Hands at opposite points = alpha.",
     difficulty: "medium",
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "beta",
+    question: "What placement is this?",
+    correctPlacement: "beta",
     correctFeedback: "Beta - same point.",
     incorrectFeedback: "Hands at the same point = beta.",
     difficulty: "medium",
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "gamma",
+    question: "What placement is this?",
+    correctPlacement: "gamma",
     correctFeedback: "Gamma - right angle.",
     incorrectFeedback: "Hands at a right angle = gamma.",
     difficulty: "medium",
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "alpha",
+    question: "What placement is this?",
+    correctPlacement: "alpha",
     correctFeedback: "Alpha. VTG calls this 'split'.",
     incorrectFeedback: "Hands at opposite points = alpha (VTG 'split').",
     difficulty: "hard",
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "beta",
+    question: "What placement is this?",
+    correctPlacement: "beta",
     correctFeedback: "Beta. VTG calls this 'together'.",
     incorrectFeedback: "Hands at the same point = beta (VTG 'together').",
     difficulty: "hard",
     showPictograph: true,
   },
   {
-    question: "What position is this?",
-    correctPosition: "gamma",
+    question: "What placement is this?",
+    correctPlacement: "gamma",
     correctFeedback:
-      "Gamma. The asymmetric position - leader/follower matters here.",
+      "Gamma. The asymmetric placement - leader/follower matters here.",
     incorrectFeedback:
-      "Hands at a right angle = gamma. It's the only asymmetric position.",
+      "Hands at a right angle = gamma. It's the only asymmetric placement.",
     difficulty: "hard",
     showPictograph: true,
   },
   {
-    question: "VTG calls this 'together' or 'tog'. What TKA position is it?",
-    correctPosition: "beta",
+    question: "VTG calls this 'together' or 'tog'. What TKA placement is it?",
+    correctPlacement: "beta",
     correctFeedback: "VTG 'together' = TKA beta. Hands at the same point.",
     incorrectFeedback:
       "VTG 'together' maps to beta - both hands at the same grid point.",
     difficulty: "hard",
   },
   {
-    question: "VTG calls this 'split'. What TKA position is it?",
-    correctPosition: "alpha",
+    question: "VTG calls this 'split'. What TKA placement is it?",
+    correctPlacement: "alpha",
     correctFeedback: "VTG 'split' = TKA alpha. Hands at opposite points.",
     incorrectFeedback:
       "VTG 'split' maps to alpha - hands at opposite grid points.",
@@ -187,11 +187,11 @@ const POSITION_QUESTION_POOL: PositionQuestion[] = [
   },
   {
     question:
-      "Which position is asymmetric - swapping hands produces a different configuration?",
-    correctPosition: "gamma",
+      "Which placement is asymmetric - swapping hands produces a different configuration?",
+    correctPlacement: "gamma",
     correctFeedback: "Gamma is asymmetric. One hand leads, the other follows.",
     incorrectFeedback:
-      "Gamma is the asymmetric position - the leader/follower distinction matters.",
+      "Gamma is the asymmetric placement - the leader/follower distinction matters.",
     difficulty: "hard",
   },
 ];
@@ -314,11 +314,11 @@ export class TikaQuizGenerator {
   ): QuizResult {
     const normalizedTopic = topic.toLowerCase().trim();
 
-    // Category: "positions" / "position" → quiz on a random foundation position
-    if (/^positions?$/.test(normalizedTopic)) {
+    // Category: "placements" / "placement" (or the older "positions") → quiz on a random foundation placement
+    if (/^(positions?|placements?)$/.test(normalizedTopic)) {
       const positions = ["alpha", "beta", "gamma"] as const;
       const position = positions[Math.floor(Math.random() * positions.length)]!;
-      return this.generatePositionQuiz(position, quizType, difficulty);
+      return this.generatePlacementQuiz(position, quizType, difficulty);
     }
 
     // Category: "motions" / "motion" / "motion types" → quiz on a random motion
@@ -341,11 +341,11 @@ export class TikaQuizGenerator {
     }
 
     if (
-      POSITION_DEFINITIONS[
-        normalizedTopic as keyof typeof POSITION_DEFINITIONS
+      PLACEMENT_DEFINITIONS[
+        normalizedTopic as keyof typeof PLACEMENT_DEFINITIONS
       ]
     ) {
-      return this.generatePositionQuiz(normalizedTopic, quizType, difficulty);
+      return this.generatePlacementQuiz(normalizedTopic, quizType, difficulty);
     }
 
     if (MOTION_TYPE_DEFINITIONS[normalizedTopic]) {
@@ -637,58 +637,58 @@ export class TikaQuizGenerator {
     };
   }
 
-  private generatePositionQuiz(
+  private generatePlacementQuiz(
     position: string,
     _quizType: string,
     difficulty: QuizDifficulty
   ): QuizResult {
-    const primary = this.generateSinglePositionQuiz(position, difficulty);
-    const followUps = this.generatePositionQuizBatch(difficulty, 4, position);
+    const primary = this.generateSinglePlacementQuiz(position, difficulty);
+    const followUps = this.generatePlacementQuizBatch(difficulty, 4, position);
     primary.inlineQuiz.followUpQuizzes = followUps;
 
     return primary;
   }
 
-  private generatePositionQuizBatch(
+  private generatePlacementQuizBatch(
     difficulty: QuizDifficulty,
     count: number,
-    excludeFirstPosition?: string
+    excludeFirstPlacement?: string
   ): InlineQuiz[] {
     const positions = ["alpha", "beta", "gamma"] as const;
     const quizzes: InlineQuiz[] = [];
-    let lastPosition = excludeFirstPosition;
+    let lastPosition = excludeFirstPlacement;
 
     for (let i = 0; i < count; i++) {
       const available = positions.filter((p) => p !== lastPosition);
       const picked = available[Math.floor(Math.random() * available.length)]!;
       lastPosition = picked;
 
-      const result = this.generateSinglePositionQuiz(picked, difficulty);
+      const result = this.generateSinglePlacementQuiz(picked, difficulty);
       quizzes.push(result.inlineQuiz);
     }
 
     return quizzes;
   }
 
-  private generateSinglePositionQuiz(
+  private generateSinglePlacementQuiz(
     position: string,
     difficulty: QuizDifficulty
   ): QuizResult {
     const quizId = this.generateQuizId();
 
-    let pool = POSITION_QUESTION_POOL.filter(
-      (q) => q.correctPosition === position && q.difficulty === difficulty
+    let pool = PLACEMENT_QUESTION_POOL.filter(
+      (q) => q.correctPlacement === position && q.difficulty === difficulty
     );
     if (pool.length === 0) {
-      pool = POSITION_QUESTION_POOL.filter(
-        (q) => q.correctPosition === position
+      pool = PLACEMENT_QUESTION_POOL.filter(
+        (q) => q.correctPlacement === position
       );
     }
     if (pool.length === 0) {
-      pool = POSITION_QUESTION_POOL.filter((q) => q.difficulty === difficulty);
+      pool = PLACEMENT_QUESTION_POOL.filter((q) => q.difficulty === difficulty);
     }
     if (pool.length === 0) {
-      pool = POSITION_QUESTION_POOL;
+      pool = PLACEMENT_QUESTION_POOL;
     }
 
     const selected = pool[Math.floor(Math.random() * pool.length)]!;
@@ -697,7 +697,7 @@ export class TikaQuizGenerator {
       | { letter: string; variation?: number; propType?: string }
       | undefined;
     if (selected.showPictograph) {
-      const stimulus = POSITION_STIMULUS[selected.correctPosition];
+      const stimulus = PLACEMENT_STIMULUS[selected.correctPlacement];
       if (stimulus) {
         stimulusPictograph = {
           letter: stimulus.letter,
@@ -718,25 +718,25 @@ export class TikaQuizGenerator {
         id: "opt-alpha",
         type: "text" as const,
         text: labels.alpha,
-        correct: selected.correctPosition === "alpha",
+        correct: selected.correctPlacement === "alpha",
       },
       {
         id: "opt-beta",
         type: "text" as const,
         text: labels.beta,
-        correct: selected.correctPosition === "beta",
+        correct: selected.correctPlacement === "beta",
       },
       {
         id: "opt-gamma",
         type: "text" as const,
         text: labels.gamma,
-        correct: selected.correctPosition === "gamma",
+        correct: selected.correctPlacement === "gamma",
       },
     ]);
 
     const positionDef =
-      POSITION_DEFINITIONS[
-        selected.correctPosition as keyof typeof POSITION_DEFINITIONS
+      PLACEMENT_DEFINITIONS[
+        selected.correctPlacement as keyof typeof PLACEMENT_DEFINITIONS
       ];
 
     return {
@@ -753,7 +753,7 @@ export class TikaQuizGenerator {
         incorrectFeedback: selected.incorrectFeedback,
         explanation: positionDef?.description || "",
         difficulty,
-        topic: `position-${selected.correctPosition}`,
+        topic: `position-${selected.correctPlacement}`,
       },
     };
   }

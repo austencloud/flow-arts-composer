@@ -29,7 +29,7 @@ export interface PictographVisibilityOptions {
   showElemental?: boolean;
   /** Prop timing-and-direction element (top-right, dashed ring). Default: false. */
   showPropTnD?: boolean;
-  showPositions?: boolean;
+  showPlacements?: boolean;
   /** L/R colour key on start positions. Default: true. */
   showHandColorKey?: boolean;
   showReversals?: boolean;
@@ -132,7 +132,7 @@ export async function renderPictographToSVG(
       componentProps.showTnD = visibilityOptions.showTnD;
       componentProps.showElemental = visibilityOptions.showElemental;
       componentProps.showPropTnD = visibilityOptions.showPropTnD;
-      componentProps.showPositions = visibilityOptions.showPositions;
+      componentProps.showPlacements = visibilityOptions.showPlacements;
       componentProps.showReversals = visibilityOptions.showReversals;
       componentProps.showNonRadialPoints =
         visibilityOptions.showNonRadialPoints;

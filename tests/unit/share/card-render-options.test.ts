@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Controlled stand-ins for the two singleton managers the builder reads.
 const ic = {
-  includeStartPosition: true,
+  includeStartPlacement: true,
   addStepNumbers: true,
   addWord: true,
   addDifficultyLevel: true,
@@ -15,7 +15,7 @@ const ic = {
   _layout: "row" as "row" | "column",
   _choice: "qr" as "qr" | "mandala" | "none",
   getColumnCountForStepCount: () => ic._cols,
-  getStartPositionLayoutForStepCount: () => ic._layout,
+  getStartPlacementLayoutForStepCount: () => ic._layout,
   getInfoCellChoiceForStepCount: () => ic._choice,
 };
 const vm = { getGridVisibility: () => true };
@@ -56,7 +56,7 @@ describe("buildCardRenderOptions", () => {
     ic._choice = "qr";
     ic.showQRCode = true;
     ic.showMandala = true;
-    ic.includeStartPosition = true;
+    ic.includeStartPlacement = true;
     ic.addDifficultyLevel = true;
     ic.showLoopGlyph = true;
     ic.showNotes = false;
@@ -134,12 +134,12 @@ describe("buildCardRenderOptions", () => {
 
   it("converts manual STEP columns according to the chosen start placement", () => {
     ic._cols = 4;
-    ic.includeStartPosition = true;
+    ic.includeStartPlacement = true;
     ic._layout = "row";
     expect(buildCardRenderOptions(seq, { darkMode: false }).columnCount).toBe(4);
     ic._layout = "column";
     expect(buildCardRenderOptions(seq, { darkMode: false }).columnCount).toBe(5);
-    ic.includeStartPosition = false;
+    ic.includeStartPlacement = false;
     expect(buildCardRenderOptions(seq, { darkMode: false }).columnCount).toBe(4);
   });
 
@@ -159,7 +159,7 @@ describe("buildCardRenderOptions", () => {
       },
     });
     expect(options.columnCount).toBe(2);
-    expect(options.startPositionLayout).toBe("row");
+    expect(options.startPlacementLayout).toBe("row");
   });
 
   it("ignores a stale Auto result from a different sequence length", () => {
@@ -178,7 +178,7 @@ describe("buildCardRenderOptions", () => {
       },
     });
     expect(options.columnCount).toBeUndefined();
-    expect(options.startPositionLayout).toBe("row");
+    expect(options.startPlacementLayout).toBe("row");
   });
 
   it("reuses the measured Auto shape for mixed-duration cards", () => {
@@ -200,7 +200,7 @@ describe("buildCardRenderOptions", () => {
       },
     });
     expect(options.columnCount).toBe(4);
-    expect(options.startPositionLayout).toBe("column");
+    expect(options.startPlacementLayout).toBe("column");
   });
 
   it("forces QR off for a one-count card even when the global QR toggle is on", () => {

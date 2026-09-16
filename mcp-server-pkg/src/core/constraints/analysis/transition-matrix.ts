@@ -20,7 +20,7 @@ import { getLetterTransitionGraph } from "../../letter-transition-graph.js";
  * Stored per from→to letter pair.
  */
 export interface TransitionFeasibility {
-  /** Number of valid variation combinations (position matches) */
+  /** Number of valid variation combinations (placement matches) */
   validCount: number;
   /** Can this transition avoid hand path reversals? */
   canAvoidHandReversal: boolean;

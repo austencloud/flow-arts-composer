@@ -8,7 +8,7 @@
   batch value palette), the frame persists.
 
   Shows only when there's something to edit turns for — a single regular beat, or
-  a multi-selection. Start-position / no-selection have no turn pair and are
+  a multi-selection. Start-placement / no-selection have no turn pair and are
   handled by the top zone (StepEditorPanel).
 -->
 <script lang="ts">
@@ -48,7 +48,7 @@
     selectionMode: "single" | "multi";
     stacked?: boolean;
     compact?: boolean;
-    // Single-select: the displayed regular step (null when none / start position)
+    // Single-select: the displayed regular step (null when none / start placement)
     stepData: StepData | null;
     onTurnsChange: (color: HandSide, delta: number) => void;
     onRotationChange: (
@@ -170,7 +170,7 @@
   }
 
   // Show the turn pair only when there's turns to edit: a single regular beat or
-  // a live multi-selection. Start position / no selection show nothing here.
+  // a live multi-selection. Start placement / no selection show nothing here.
   const showPair = $derived(
     selectionMode === "multi" ? batchSteps.length > 0 : stepData != null
   );

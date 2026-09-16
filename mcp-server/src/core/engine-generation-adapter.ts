@@ -107,12 +107,12 @@ export interface EngineGenerationParams {
   handPathMode?: "smooth" | "mixed" | "choppy";
   /** Motion family filter */
   motionTypeFilter?: "no-dash" | "prefer-dash";
-  /** Force start position */
-  startPosition?: string;
-  /** Force end position (last step must end here) */
-  endPosition?: string;
-  /** Start positions to exclude from random start pool */
-  blockedStartPositions?: string[];
+  /** Force start placement */
+  startPlacement?: string;
+  /** Force end placement (last step must end here) */
+  endPlacement?: string;
+  /** Start placements to exclude from random start pool */
+  blockedStartPlacements?: string[];
   /** Letters that must NOT appear in the sequence */
   mustNotContainLetters?: string[];
   /** Letters that MUST appear at least once */
@@ -143,7 +143,7 @@ export interface EngineGenerationResult {
  * Generate a sequence through the shared engine's SequenceBuilder.
  *
  * Handles length-based generation, LOOP extension, the 3-axis constraint
- * system, and start position targeting — everything the legacy builder can't do.
+ * system, and start placement targeting — everything the legacy builder can't do.
  */
 export function generateViaEngine(
   params: EngineGenerationParams,
@@ -187,11 +187,11 @@ function assembleBuildOptions(params: EngineGenerationParams): BuildOptions {
     gridMode: params.gridMode,
     level: params.level,
     propType: params.propType,
-    startPosition: params.startPosition,
-    endPosition: params.endPosition,
+    startPlacement: params.startPlacement,
+    endPlacement: params.endPlacement,
     maxTurnIntensity: params.turnIntensity,
     beamWidth: params.beamWidth,
-    blockedStartPositions: params.blockedStartPositions,
+    blockedStartPlacements: params.blockedStartPlacements,
     mustNotContainLetters: params.mustNotContainLetters,
     mustContainLetters: params.mustContainLetters,
     leftStartOrientation: params.leftStartOrientation,
@@ -344,8 +344,8 @@ export function convertToSequenceResult(
   const steps: SequenceStep[] = buildResult.sequence.map((step, i) => ({
     letter: (step.letter ?? "") as string,
     variation: 0,
-    startPosition: (step.startPosition ?? "") as string,
-    endPosition: (step.endPosition ?? "") as string,
+    startPlacement: (step.startPlacement ?? "") as string,
+    endPlacement: (step.endPlacement ?? "") as string,
     leftMotion: {
       ...step.motions.left,
       hand: "left",
@@ -358,7 +358,7 @@ export function convertToSequenceResult(
     isBridge: step.isBridge ?? false,
   }));
 
-  // Derive word from non-bridge, non-start-position letters
+  // Derive word from non-bridge, non-start-placement letters
   const word = steps
     .slice(1)
     .filter((s) => !s.isBridge)
@@ -370,8 +370,8 @@ export function convertToSequenceResult(
   return {
     word: params.word?.toUpperCase() ?? word,
     steps,
-    startPosition: steps[0]?.startPosition ?? "",
-    endPosition: lastStep?.endPosition ?? "",
+    startPlacement: steps[0]?.startPlacement ?? "",
+    endPlacement: lastStep?.endPlacement ?? "",
     isValid: true,
     bridgeStepIndices: buildResult.bridgeStepIndices,
   };

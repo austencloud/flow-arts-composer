@@ -13,7 +13,7 @@
  * - Letters stay the same
  *
  * IMPORTANT: Slice size is ALWAYS halved (no quartering)
- * IMPORTANT: End position must be vertical mirror of start position
+ * IMPORTANT: End placement must be vertical mirror of start placement
  */
 
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
@@ -23,7 +23,7 @@ import {
   MotionType,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type {
-  GridPosition,
+  GridPlacement,
   GridLocation,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
@@ -31,11 +31,11 @@ import {
   updateEndOrientations,
 } from "$lib/shared/pictograph/prop/services/orientation-calculator";
 import {
-  VERTICAL_MIRROR_POSITION_MAP,
+  VERTICAL_MIRROR_PLACEMENT_MAP,
   VERTICAL_MIRROR_LOCATION_MAP,
-  SWAPPED_POSITION_MAP,
+  SWAPPED_PLACEMENT_MAP,
   MIRRORED_SWAPPED_VALIDATION_SET,
-} from "../domain/constants/strict-loop-position-maps";
+} from "../domain/constants/strict-loop-placement-maps";
 import type { Period } from "../domain/models/circular-models";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
@@ -45,7 +45,7 @@ export class MirroredSwappedLOOPExecutor {
   /**
    * Execute the mirrored-swapped LOOP
    *
-   * @param sequence - The partial sequence to complete (must include start position at index 0)
+   * @param sequence - The partial sequence to complete (must include start placement at index 0)
    * @param period - Ignored (mirrored-swapped LOOP always uses halved)
    * @returns The complete circular sequence with all steps
    */
@@ -53,10 +53,10 @@ export class MirroredSwappedLOOPExecutor {
     // Validate the sequence
     this._validateSequence(sequence);
 
-    // Remove start position (index 0) for processing
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    // Remove start placement (index 0) for processing
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     // Calculate how many steps to generate (always doubles for halved)
@@ -83,28 +83,28 @@ export class MirroredSwappedLOOPExecutor {
       lastStep = nextStep;
     }
 
-    // Re-insert start position at the beginning
-    sequence.unshift(startPosition);
+    // Re-insert start placement at the beginning
+    sequence.unshift(startPlacement);
 
     return sequence;
   }
 
   /**
    * Validate that the sequence can perform a mirrored-swapped LOOP
-   * Requirement: end_position must be vertical mirror of start_position
+   * Requirement: end_placement must be vertical mirror of start_placement
    */
   private _validateSequence(sequence: StepData[]): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     // Check if the (start, end) pair is valid for mirrored-swapped
@@ -112,8 +112,8 @@ export class MirroredSwappedLOOPExecutor {
 
     if (!MIRRORED_SWAPPED_VALIDATION_SET.has(key)) {
       throw new Error(
-        `Invalid position pair for mirrored-swapped LOOP: ${startPos} → ${endPos}. ` +
-          `For a mirrored-swapped LOOP, the end position must be the vertical mirror of start position.`
+        `Invalid placement pair for mirrored-swapped LOOP: ${startPos} → ${endPos}. ` +
+          `For a mirrored-swapped LOOP, the end placement must be the vertical mirror of start placement.`
       );
     }
   }
@@ -134,10 +134,10 @@ export class MirroredSwappedLOOPExecutor {
       finalIntendedLength
     );
 
-    // Get the mirrored AND swapped end position
-    // For mirrored+swapped LOOP, we need to apply both transformations to the grid position
-    const mirroredSwappedEndPosition =
-      this._getMirroredSwappedPosition(previousMatchingStep);
+    // Get the mirrored AND swapped end placement
+    // For mirrored+swapped LOOP, we need to apply both transformations to the grid placement
+    const mirroredSwappedEndPlacement =
+      this._getMirroredSwappedPlacement(previousMatchingStep);
 
     // Create the new step with swapped and mirrored attributes
     // KEY: Continuity is NORMAL (same color continues from where it was)
@@ -148,8 +148,8 @@ export class MirroredSwappedLOOPExecutor {
       id: `step-${stepNumber}`,
       stepNumber,
       letter: previousMatchingStep.letter ?? null, // Same letter
-      startPosition: previousStep.endPosition ?? null, // NORMAL continuity (not swapped)
-      endPosition: mirroredSwappedEndPosition,
+      startPlacement: previousStep.endPlacement ?? null, // NORMAL continuity (not swapped)
+      endPlacement: mirroredSwappedEndPlacement,
       motions: {
         // SWAP: Blue does what Red did, but with mirrored transformation
         [HandSide.LEFT]: this._createMirroredSwappedMotion(
@@ -223,26 +223,26 @@ export class MirroredSwappedLOOPExecutor {
   }
 
   /**
-   * Get the mirrored AND swapped position
-   * For mirrored+swapped LOOP, the end position must reflect both transformations:
-   * 1. First mirror the position (east↔west)
-   * 2. Then swap the colors (blue↔red positions)
+   * Get the mirrored AND swapped placement
+   * For mirrored+swapped LOOP, the end placement must reflect both transformations:
+   * 1. First mirror the placement (east↔west)
+   * 2. Then swap the colors (blue↔red placements)
    */
-  private _getMirroredSwappedPosition(
+  private _getMirroredSwappedPlacement(
     previousMatchingStep: StepData
-  ): GridPosition | null {
-    const endPos = previousMatchingStep.endPosition;
+  ): GridPlacement | null {
+    const endPos = previousMatchingStep.endPlacement;
 
     if (!endPos) {
-      throw new Error("Previous matching step must have an end position");
+      throw new Error("Previous matching step must have an end placement");
     }
 
-    // First mirror, then swap (same order as LOOPEndPositionSelector)
-    const mirroredPosition =
-      VERTICAL_MIRROR_POSITION_MAP[endPos as GridPosition];
-    const mirroredSwappedPosition = SWAPPED_POSITION_MAP[mirroredPosition];
+    // First mirror, then swap (same order as LOOPEndPlacementSelector)
+    const mirroredPlacement =
+      VERTICAL_MIRROR_PLACEMENT_MAP[endPos as GridPlacement];
+    const mirroredSwappedPlacement = SWAPPED_PLACEMENT_MAP[mirroredPlacement];
 
-    return mirroredSwappedPosition;
+    return mirroredSwappedPlacement;
   }
 
   /**

@@ -9,7 +9,7 @@
     Top-right:    Reversal glyph (fixed box) + label
     Top-center:   Brand text
     Center:       Mandala + designation pills
-    Bottom-left:  Label + start position pictograph
+    Bottom-left:  Label + start placement pictograph
     Bottom-right: Label + step count
     Bottom-center: URL
 
@@ -24,7 +24,7 @@
   import { deriveCardBackData } from "./card-back-data";
   import { getCardBackThemeVisuals } from "./card-back-theme-visuals";
   import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
-  import StartPositionPictograph from "./StartPositionPictograph.svelte";
+  import StartPlacementPictograph from "./StartPlacementPictograph.svelte";
   import { ensureStepPlacement } from "$lib/shared/pictograph/shared/services/motion-placement";
   import TurnPatternGlyph from "./TurnPatternGlyph.svelte";
   import ReversalPatternGlyph from "./ReversalPatternGlyph.svelte";
@@ -92,12 +92,12 @@
   const d = $derived(deriveCardBackData(sequence));
 
   /**
-   * The bottom-left start position, with its render-required placement data
+   * The bottom-left start placement, with its render-required placement data
    * guaranteed present.
    *
    * `MotionData.propPlacementData` is non-optional in the type and absent in
    * practice: a sequence read straight out of the catalog (or any stored blob)
-   * carries a `startPosition` serialized before those fields existed, and
+   * carries a `startPlacement` serialized before those fields existed, and
    * PictographPreparer.calculateProps early-returns on a missing one. The cell
    * then draws its grid with no props on it, and the only trace is a console
    * warning naming this exact backfill. The print path never showed the bug
@@ -109,8 +109,8 @@
    * where the data reaches a renderer, and motion-placement.ts exists because
    * this backfill drifted once already by living in two hydrators.
    */
-  const startPosition = $derived(
-    sequence.startPosition ? ensureStepPlacement(sequence.startPosition) : undefined
+  const startPlacement = $derived(
+    sequence.startPlacement ? ensureStepPlacement(sequence.startPlacement) : undefined
   );
   const loopDisplay = $derived.by(() => resolveLoopDisplay(sequence));
 
@@ -279,10 +279,10 @@
       </div>
     {/if}
 
-    <!-- BOTTOM-LEFT: start position pictograph -->
+    <!-- BOTTOM-LEFT: start placement pictograph -->
     <div class="corner bottom-left">
-      {#if startPosition}
-        <StartPositionPictograph pictographData={startPosition} darkMode={isDarkTheme} />
+      {#if startPlacement}
+        <StartPlacementPictograph pictographData={startPlacement} darkMode={isDarkTheme} />
       {/if}
     </div>
 
@@ -691,13 +691,13 @@
 
   /* ═══════ CHILD COMPONENT OVERRIDES ═══════ */
 
-  .bottom-left :global(.start-pos-picto) {
+  .bottom-left :global(.start-placement-picto) {
     width: 12cqi !important;
     height: 12cqi !important;
     filter: drop-shadow(0 0.5cqi 1.5cqi rgba(0, 0, 0, 0.12));
   }
 
-  .bottom-left :global(.start-pos-picto svg) {
+  .bottom-left :global(.start-placement-picto svg) {
     width: 100% !important;
     height: 100% !important;
   }

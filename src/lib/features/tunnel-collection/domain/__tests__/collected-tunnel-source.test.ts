@@ -34,13 +34,13 @@ const steps = [
 ] as unknown as StepData[];
 
 // Collected steps come off a live viewer sequence, so the first one carries the
-// two start locations needed to rebuild the start-position cell.
+// two start locations needed to rebuild the start-placement cell.
 const hydratedSteps = [
   {
     stepNumber: 1,
     letter: "P",
-    startPosition: "gamma13",
-    endPosition: "gamma7",
+    startPlacement: "gamma13",
+    endPlacement: "gamma7",
     motions: {
       [HandSide.LEFT]: createMotionData({
         motionType: MotionType.PRO,
@@ -110,13 +110,13 @@ describe("collectedTunnelSequence", () => {
 
   // A CollectedTunnel has no field for the start position, so reopening one
   // used to drop the start cell: the strip began at step 1 with a hole where
-  // the start-position pictograph belongs.
-  it("rebuilds the start-position pictograph the record never stored", () => {
+  // the start-placement pictograph belongs.
+  it("rebuilds the start-placement pictograph the record never stored", () => {
     const sequence = collectedTunnelSequence(
       savedTunnel(undefined, { steps: hydratedSteps })
     );
 
-    const start = sequence.startPosition;
+    const start = sequence.startPlacement;
     expect(start).toBeDefined();
     // Static props at the first step's start locations, not the first step's
     // own motion — and labelled by position, never by the step's letter.
@@ -134,7 +134,7 @@ describe("collectedTunnelSequence", () => {
 
   it("leaves the start position off when the first step cannot derive one", () => {
     expect(
-      collectedTunnelSequence(savedTunnel()).startPosition
+      collectedTunnelSequence(savedTunnel()).startPlacement
     ).toBeUndefined();
   });
 });
@@ -207,9 +207,9 @@ describe("collectedTunnelComposition", () => {
     expect(performerTwo.sequence.steps).not.toEqual(
       performerTwo.performerSequence.steps
     );
-    expect(performerTwo.sequence.startPosition).toBeDefined();
-    expect(performerTwo.sequence.startPosition).not.toEqual(
-      performerTwo.performerSequence.startPosition
+    expect(performerTwo.sequence.startPlacement).toBeDefined();
+    expect(performerTwo.sequence.startPlacement).not.toEqual(
+      performerTwo.performerSequence.startPlacement
     );
   });
 
@@ -258,11 +258,11 @@ describe("collectedTunnelViewerSequence", () => {
     );
 
     expect(sequence.id).toBe("tunnel-42");
-    expect(sequence.startPosition?.motions?.[HandSide.LEFT]).toMatchObject({
+    expect(sequence.startPlacement?.motions?.[HandSide.LEFT]).toMatchObject({
       startLocation: GridLocation.WEST,
       endLocation: GridLocation.WEST,
     });
-    expect(sequence.startPosition?.motions?.[HandSide.RIGHT]).toMatchObject({
+    expect(sequence.startPlacement?.motions?.[HandSide.RIGHT]).toMatchObject({
       startLocation: GridLocation.SOUTH,
       endLocation: GridLocation.SOUTH,
     });

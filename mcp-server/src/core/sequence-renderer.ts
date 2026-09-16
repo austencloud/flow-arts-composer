@@ -93,7 +93,7 @@ export interface SequenceRenderOptions {
     cover?: "bare" | "covered";
   } | null;
   /** App export uses a dedicated start row; legacy column cards can opt in. */
-  startPositionLayout?: "row" | "column";
+  startPlacementLayout?: "row" | "column";
   /** App export omits the footer; callers may retain it explicitly. */
   showFooter?: boolean;
   /** Fill reserved info cells with the sequence's prop-tip trajectory. */
@@ -184,7 +184,7 @@ export async function renderSequenceToImage(
     showLeftMotion: true,
     showRightMotion: true,
     showTND: false,
-    showPositions: false,
+    showPlacements: false,
     showReversals: opts.showReversals ?? false,
     showNonRadialPoints: false,
     leftPropType: opts.leftPropType,
@@ -204,7 +204,7 @@ export async function renderSequenceToImage(
       showDifficulty,
       showFooter: opts.showFooter ?? false,
       showReversals: opts.showReversals ?? false,
-      startPositionLayout: opts.startPositionLayout ?? "row",
+      startPlacementLayout: opts.startPlacementLayout ?? "row",
       showLoopGlyph:
         opts.showLoopGlyph !== false && !!opts.loopComponents?.length,
       showQRCode: !!opts.qrUrl && opts.showQRCode !== false,
@@ -226,8 +226,8 @@ export async function renderSequenceToImage(
       const turns = resolveRenderedTurns(step, opts.turnAllocation);
       const pictograph: PictographInput = {
         letter: step.letter,
-        startPosition: step.startPosition,
-        endPosition: step.endPosition,
+        startPlacement: step.startPlacement,
+        endPlacement: step.endPlacement,
         leftMotion: {
           ...step.leftMotion,
           rotationDirection: step.leftMotion.rotationDirection || "no_rotation",

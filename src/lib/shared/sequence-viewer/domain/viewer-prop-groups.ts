@@ -1,6 +1,6 @@
 import type { AnimationPanelState } from "$lib/shared/animation-engine/state/animation-panel-state.svelte";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { FanAppearance } from "$lib/shared/pictograph/prop/domain/fan-appearance";
@@ -11,7 +11,7 @@ export interface ViewerPlaybackState {
   currentStep: number;
   isPlaying: boolean;
   currentLetter: Letter | null;
-  currentStepData: StartPositionData | StepData | null;
+  currentStepData: StartPlacementData | StepData | null;
   highlightedStepIndex: number | null;
   /** Live AnimationPlaybackController handle, once the orchestrator has wired
    *  one. Optional — standalone hosts (e.g. the tunnel collection's detail

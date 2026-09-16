@@ -35,7 +35,7 @@ import { calculateEndOrientation } from "@tka/render-core";
 import { Orientation } from "../../enums.js";
 
 /**
- * Type 6 static letters - valid for starting positions.
+ * Type 6 static letters - valid for starting placements.
  */
 const TYPE_6_LETTERS = ["α", "β", "γ"];
 
@@ -68,7 +68,7 @@ export interface ConstrainedSequenceResult {
   /** Whether a valid sequence was found */
   success: boolean;
 
-  /** The sequence steps (including start position) */
+  /** The sequence steps (including start placement) */
   steps: PictographData[];
 
   /** Variation indices for each step */
@@ -77,11 +77,11 @@ export interface ConstrainedSequenceResult {
   /** The original word */
   word: string;
 
-  /** Start position name */
-  startPosition: string;
+  /** Start placement name */
+  startPlacement: string;
 
-  /** End position name */
-  endPosition: string;
+  /** End placement name */
+  endPlacement: string;
 
   /** Constraint satisfaction report */
   constraintReport: ConstraintReport;
@@ -128,8 +128,8 @@ export function buildConstrainedSequence(
       steps: [],
       variationIndices: [],
       word: "",
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       constraintReport: {
         score: 0,
         satisfied: false,
@@ -149,8 +149,8 @@ export function buildConstrainedSequence(
       steps: [],
       variationIndices: [],
       word,
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       constraintReport: {
         score: 0,
         satisfied: false,
@@ -170,8 +170,8 @@ export function buildConstrainedSequence(
       steps: [],
       variationIndices: [],
       word,
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       constraintReport: {
         score: 0,
         satisfied: false,
@@ -200,14 +200,14 @@ export function buildConstrainedSequence(
   for (const scored of firstLetterScores.slice(0, config.beamWidth)) {
     if (!scored.hardConstraintsSatisfied) continue;
 
-    // Find a valid start position for this variation
-    const startPictograph = findStartPosition(
+    // Find a valid start placement for this variation
+    const startPictograph = findStartPlacement(
       allPictographs,
-      scored.variation.startPosition
+      scored.variation.startPlacement
     );
 
     if (startPictograph) {
-      // Create initial state with start position + first letter
+      // Create initial state with start placement + first letter
       const initialState = createInitialState(
         startPictograph.variation,
         startPictograph.index
@@ -224,8 +224,8 @@ export function buildConstrainedSequence(
       steps: [],
       variationIndices: [],
       word,
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       constraintReport: {
         score: 0,
         satisfied: false,
@@ -246,10 +246,10 @@ export function buildConstrainedSequence(
     const nextBeam: SearchState[] = [];
 
     for (const state of beam) {
-      // Find variations that match the current end position
+      // Find variations that match the current end placement
       let validVariations = allPictographs.filter(
         (p) =>
-          p.letter === letter && p.startPosition === state.currentEndPosition
+          p.letter === letter && p.startPlacement === state.currentEndPlacement
       );
 
       if (validVariations.length === 0) {
@@ -281,7 +281,7 @@ export function buildConstrainedSequence(
         if (useMultiLetterBridge) {
           // Multi-letter bridge: add each bridge letter sequentially
           // NOTE: This code path should never be reached in practice.
-          // TKA's position groups (alpha, beta, gamma) are all directly connected
+          // TKA's placement groups (alpha, beta, gamma) are all directly connected
           // via Type 2 letters (W, X, Y, Z, Σ, Δ, Θ, Ω). A single bridge letter
           // can always reach any target group. Multi-letter bridges would only
           // be needed if we added letter types that break this connectivity.
@@ -300,11 +300,11 @@ export function buildConstrainedSequence(
               break;
             }
 
-            // Find variations of this bridge letter at current position
+            // Find variations of this bridge letter at current placement
             const bridgeVariations = allPictographs.filter(
               (p) =>
                 p.letter === bridgeLetter &&
-                p.startPosition === currentState.currentEndPosition
+                p.startPlacement === currentState.currentEndPlacement
             );
 
             if (bridgeVariations.length === 0) {
@@ -344,11 +344,11 @@ export function buildConstrainedSequence(
             continue;
           }
 
-          // Now find target letter variations from final bridge's end position
+          // Now find target letter variations from final bridge's end placement
           validVariations = allPictographs.filter(
             (p) =>
               p.letter === letter &&
-              p.startPosition === currentState.currentEndPosition
+              p.startPlacement === currentState.currentEndPlacement
           );
 
           if (validVariations.length === 0) {
@@ -381,7 +381,7 @@ export function buildConstrainedSequence(
           }
         } else {
           // Single-letter bridge: try ALL bridge options, not just the "best" one
-          // The "best" bridge by constraint score may not have a variation at current position
+          // The "best" bridge by constraint score may not have a variation at current placement
           const scoredBridges = scoreBridgeOptions(
             bridgeOptions,
             constraintSet,
@@ -394,15 +394,15 @@ export function buildConstrainedSequence(
           for (const bridgeOption of scoredBridges) {
             if (!bridgeOption) continue;
 
-            // Find variations of this bridge letter that start at current position
+            // Find variations of this bridge letter that start at current placement
             const bridgeVariations = allPictographs.filter(
               (p) =>
                 p.letter === bridgeOption.letter &&
-                p.startPosition === state.currentEndPosition
+                p.startPlacement === state.currentEndPlacement
             );
 
             if (bridgeVariations.length === 0) {
-              // This bridge doesn't have a variation at current position - try next bridge
+              // This bridge doesn't have a variation at current placement - try next bridge
               continue;
             }
 
@@ -431,11 +431,11 @@ export function buildConstrainedSequence(
             );
             statesBrowsed++;
 
-            // Now find target letter variations from bridge's end position
+            // Now find target letter variations from bridge's end placement
             const targetVariations = allPictographs.filter(
               (p) =>
                 p.letter === letter &&
-                p.startPosition === stateWithBridge.currentEndPosition
+                p.startPlacement === stateWithBridge.currentEndPlacement
             );
 
             if (targetVariations.length === 0) {
@@ -511,14 +511,14 @@ export function buildConstrainedSequence(
         steps: [],
         variationIndices: [],
         word,
-        startPosition: "",
-        endPosition: "",
+        startPlacement: "",
+        endPlacement: "",
         constraintReport: {
           score: 0,
           satisfied: false,
           details: [],
         },
-        error: `No valid path found after letter "${letter}" (position ${i + 1})`,
+        error: `No valid path found after letter "${letter}" (placement ${i + 1})`,
         statesBrowsed,
       };
     }
@@ -544,8 +544,8 @@ export function buildConstrainedSequence(
       steps: [],
       variationIndices: [],
       word,
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       constraintReport: {
         score: 0,
         satisfied: false,
@@ -559,22 +559,22 @@ export function buildConstrainedSequence(
   return buildResult(bestState, word, constraintSet, statesBrowsed, false);
 }
 
-function findStartPosition(
+function findStartPlacement(
   allPictographs: PictographData[],
-  position: string
+  placement: string
 ): { variation: PictographData; index: number } | null {
   const validStarts = allPictographs.filter(
     (p) =>
       TYPE_6_LETTERS.includes(p.letter) &&
-      p.startPosition === position &&
-      p.endPosition === position
+      p.startPlacement === placement &&
+      p.endPlacement === placement
   );
 
   if (validStarts.length === 0) {
     return null;
   }
 
-  // Pick a random start position (could also score these)
+  // Pick a random start placement (could also score these)
   const index = Math.floor(Math.random() * validStarts.length);
   const variation = validStarts[index];
   if (!variation) return null;
@@ -590,17 +590,17 @@ function propagateOrientations(steps: PictographData[]): PictographData[] {
 
   const result: PictographData[] = [];
 
-  // Get initial orientations from start position (step 0)
-  const startPosition = steps[0];
-  if (!startPosition) return steps;
+  // Get initial orientations from start placement (step 0)
+  const startPlacement = steps[0];
+  if (!startPlacement) return steps;
 
-  let leftOrientation = (startPosition.leftMotion.endOrientation ||
+  let leftOrientation = (startPlacement.leftMotion.endOrientation ||
     "in") as Orientation;
-  let rightOrientation = (startPosition.rightMotion.endOrientation ||
+  let rightOrientation = (startPlacement.rightMotion.endOrientation ||
     "in") as Orientation;
 
-  // Keep start position as-is
-  result.push(startPosition);
+  // Keep start placement as-is
+  result.push(startPlacement);
 
   // Propagate through remaining steps
   for (let i = 1; i < steps.length; i++) {
@@ -673,8 +673,8 @@ function buildResult(
     steps: stepsWithOrientations,
     variationIndices: state.stepScores.map((s) => s.variationIndex),
     word,
-    startPosition: stepsWithOrientations[0]?.startPosition || "",
-    endPosition: state.currentEndPosition,
+    startPlacement: stepsWithOrientations[0]?.startPlacement || "",
+    endPlacement: state.currentEndPlacement,
     constraintReport: report,
     statesBrowsed,
     error: isPartial ? "Partial result (minimum score not met)" : undefined,

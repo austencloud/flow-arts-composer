@@ -119,8 +119,8 @@ describe("canonical concept lesson composition", () => {
     const motions = readSource(
       "src/lib/features/learn/components/interactive/motions/MotionsConceptExperience.svelte"
     );
-    const positions = readSource(
-      "src/lib/features/learn/components/interactive/positions/PositionsConceptExperience.svelte"
+    const placementsSrc = readSource(
+      "src/lib/features/learn/components/interactive/placements/PlacementsConceptExperience.svelte"
     );
     const handPlayer = readSource(
       "src/lib/features/learn/components/interactive/foundations/HandMotionPlayer.svelte"
@@ -145,7 +145,7 @@ describe("canonical concept lesson composition", () => {
     );
 
     expect(stage).toContain("PictographContainer");
-    expect(stage).toContain("startPositionDeriver");
+    expect(stage).toContain("startPlacementDeriver");
     expect(stage).toContain("PropType.STAFF");
     expect(motions).toContain("HandMotionPlayer");
     expect(motions).toContain("HAND_PATH_STEPS");
@@ -171,21 +171,21 @@ describe("canonical concept lesson composition", () => {
     expect(motions).not.toContain('class="axis-join"');
     expect(motions).not.toContain("letterQueryHandler");
     expect(motions).not.toContain("LessonPictographStage");
-    expect(positions).toContain('onComplete?.("hand-motions-intro")');
-    expect(positions).toContain("PropPlacementGrid");
-    expect(positions).toContain("PictographContainer");
-    expect(positions).toContain("leftPropType={PropType.HAND}");
-    expect(positions).toContain("rightPropType={PropType.HAND}");
-    // The readout and every example name the position. The canonical
+    expect(placementsSrc).toContain('onComplete?.("hand-motions-intro")');
+    expect(placementsSrc).toContain("PropPlacementGrid");
+    expect(placementsSrc).toContain("PictographContainer");
+    expect(placementsSrc).toContain("leftPropType={PropType.HAND}");
+    expect(placementsSrc).toContain("rightPropType={PropType.HAND}");
+    // The readout and every example name the placement. The canonical
     // pictograph already draws the glyph, so a second decorative one beside it
     // would print the same fact twice.
-    expect(positions).toContain(
-      'built ? POSITION_TYPE_INFO[built].label : "Your position"'
+    expect(placementsSrc).toContain(
+      'built ? PLACEMENT_TYPE_INFO[built].label : "Your placement"'
     );
-    expect(positions).toContain("POSITION_TYPE_INFO[example.kind].label");
-    expect(positions).not.toContain("TKAWordGlyph");
-    expect(positions).not.toContain("focusPhase");
-    expect(positions).not.toContain("Try it");
+    expect(placementsSrc).toContain("PLACEMENT_TYPE_INFO[example.kind].label");
+    expect(placementsSrc).not.toContain("TKAWordGlyph");
+    expect(placementsSrc).not.toContain("focusPhase");
+    expect(placementsSrc).not.toContain("Try it");
     expect(handPlayer).toContain("InlineAnimationPlayer");
     // The player took a `neutralMarkers` prop in b7c50b7ea1 so the timing and
     // direction lessons can show unlabeled motion points. Hands stay the
@@ -210,9 +210,9 @@ describe("canonical concept lesson composition", () => {
     expect(timingBoard).toContain("ChoreoCard");
     expect(timingBoard).toContain("handPathMode");
     expect(timingBoard).toContain("showWord={false}");
-    expect(timingBoard).toContain("includeStartPosition");
-    expect(timingBoard).not.toContain("includeStartPosition={false}");
-    expect(timingBoard).not.toContain("startPositionLayoutOverride");
+    expect(timingBoard).toContain("includeStartPlacement");
+    expect(timingBoard).not.toContain("includeStartPlacement={false}");
+    expect(timingBoard).not.toContain("startPlacementLayoutOverride");
     expect(timingBoard).not.toContain("clickableStart");
     expect(timingBoard).toContain("customTitleText={mode.element.name}");
     expect(timingBoard).toContain("customNotesText={definitionFor(mode)}");

@@ -16,8 +16,8 @@ TKA (The Kinetic Alphabet) is a notation system for encoding flow arts movements
 **Purpose:** Before TKA, flow artists could only share movements through video. TKA provides a written language - you can write down a sequence, share it, and another spinner can read and perform it.
 
 **How it works:** Each "letter" represents one step of motion, encoding:
-- Where the hands start (position)
-- Where the hands end (position)
+- Where the hands start (placement)
+- Where the hands end (placement)
 - How each hand moves (motion type: shift, dash, or static)
 - How each prop rotates
 
@@ -31,14 +31,14 @@ A pictograph is the visual representation of one TKA letter - one step of motion
 
 **Components:**
 - **Grid:** The reference frame (diamond or box orientation)
-- **Props:** Two colored shapes (blue and red) showing hand positions
+- **Props:** Two colored shapes (blue and red) showing hand placements
 - **Arrows:** Show the path each hand takes (if moving)
 - **Letter glyph:** The TKA letter name (e.g., "A", "Σ-")
 
 **Reading a pictograph:**
-1. Find the starting positions (where props begin)
+1. Find the starting placements (where props begin)
 2. Follow the arrows to see the motion path
-3. Note the ending positions (where props end up)
+3. Note the ending placements (where props end up)
 4. The letter type tells you the motion pattern`,
 
   "what is a sequence": `## What is a Sequence?
@@ -47,18 +47,18 @@ A sequence is a series of TKA letters performed in order - like a word made of l
 
 **Properties:**
 - Each letter is one beat
-- Letters connect: the end position of one letter is the start position of the next
-- A valid sequence has matching positions between consecutive letters
+- Letters connect: the end placement of one letter is the start placement of the next
+- A valid sequence has matching placements between consecutive letters
 
 **Special sequences:**
-- **LOOP:** A circular sequence where the last letter's end position matches the first letter's start position
+- **LOOP:** A circular sequence where the last letter's end placement matches the first letter's start placement
 - **Infinite LOOP:** A LOOP that can repeat indefinitely`,
 
   "what is a loop": `## What is a LOOP?
 
-A LOOP is a circular sequence - the end position returns to the start position.
+A LOOP is a circular sequence - the end placement returns to the start placement.
 
-**Definition:** A sequence where the last letter's ending position equals the first letter's starting position.
+**Definition:** A sequence where the last letter's ending placement equals the first letter's starting placement.
 
 **Why it matters:** LOOPs can be repeated infinitely. Non-LOOP sequences would require a transition to restart.
 
@@ -85,7 +85,7 @@ Hash is a hand path where the hand moves in a straight line to or from the cente
 - Same straight-line geometry as dash
 - At 0 turns: no rotation, no direction (1 state)
 - At 1+ turns: CW or CCW (2 states per turn count)
-- Creates tau positions (one hand at center, one at perimeter)`,
+- Creates tau placements (one hand at center, one at perimeter)`,
 
   "what are compound letters": `## What are Compound Letters?
 
@@ -110,9 +110,9 @@ A word in TKA is a sequence of letters that spells out a choreographic phrase. E
 
 **Key properties:**
 - Words can be any length (1 letter = 1 beat, 6 letters = 6 beats, etc.)
-- Letters must chain: the end position of one letter must match the start position of the next
+- Letters must chain: the end placement of one letter must match the start placement of the next
 - Invalid transitions require "bridge" letters to connect
-- If a word loops back to its starting position, it's a LOOP`,
+- If a word loops back to its starting placement, it's a LOOP`,
 
   "what prop": `## What Prop Should I Use for TKA?
 

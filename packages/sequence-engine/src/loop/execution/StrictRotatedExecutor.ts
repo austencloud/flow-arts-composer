@@ -15,17 +15,17 @@ import {
   HALVED_LOOPS,
   QUARTERED_LOOPS,
   translateHandPath,
-} from "../position-maps/circular-position-maps.js";
-import { gridPositionDeriver } from "../../core/positions/GridPositionDeriver.js";
+} from "../placement-maps/circular-placement-maps.js";
+import { gridPlacementDeriver } from "../../core/placements/GridPlacementDeriver.js";
 import { updateStepOrientations } from "./orientation-helpers.js";
 
 export class StrictRotatedExecutor implements ILOOPExecutor {
   executeLOOP(sequence: SequenceStep[], period: Period): SequenceStep[] {
     this.validateSequence(sequence, period);
 
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     const sequenceLength = sequence.length;
@@ -56,22 +56,22 @@ export class StrictRotatedExecutor implements ILOOPExecutor {
       nextStepNumber++;
     }
 
-    sequence.unshift(startPosition);
+    sequence.unshift(startPlacement);
     return sequence;
   }
 
   private validateSequence(sequence: SequenceStep[], period: Period): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     const key = `${startPos},${endPos}`;
@@ -80,7 +80,7 @@ export class StrictRotatedExecutor implements ILOOPExecutor {
 
     if (!validationSet.has(key)) {
       throw new Error(
-        `Invalid position pair for ${period} LOOP: ${startPos} -> ${endPos}. ` +
+        `Invalid placement pair for ${period} LOOP: ${startPos} -> ${endPos}. ` +
           `This pair cannot complete a ${period} rotation.`
       );
     }
@@ -126,7 +126,7 @@ export class StrictRotatedExecutor implements ILOOPExecutor {
       previousStep.motions.right.endLocation
     );
 
-    const newEndPosition = gridPositionDeriver.getGridPositionFromLocations(
+    const newEndPlacement = gridPlacementDeriver.getGridPlacementFromLocations(
       newLeftEndLoc,
       newRightEndLoc
     );
@@ -134,8 +134,8 @@ export class StrictRotatedExecutor implements ILOOPExecutor {
     return {
       ...matchingStep,
       stepNumber,
-      startPosition: previousStep.endPosition as SequenceStep["startPosition"],
-      endPosition: newEndPosition as SequenceStep["endPosition"],
+      startPlacement: previousStep.endPlacement as SequenceStep["startPlacement"],
+      endPlacement: newEndPlacement as SequenceStep["endPlacement"],
       motions: {
         left: {
           ...matchingStep.motions.left,

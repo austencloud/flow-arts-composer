@@ -139,7 +139,7 @@
 
       {#if draft}
         <div class="motion-identity">
-          <strong>{draft.startPosition} → {draft.endPosition}</strong>
+          <strong>{draft.startPlacement} → {draft.endPlacement}</strong>
         </div>
       {/if}
 

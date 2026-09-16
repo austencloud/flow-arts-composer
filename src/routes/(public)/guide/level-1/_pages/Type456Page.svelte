@@ -4,7 +4,7 @@
    * the proof PDF ("1.0 - Type 5 and 6" artboard, which actually leads with Type 4)
    * in the CURRENT renderer's language. Same recipe as Type3CrossShiftsPage: proof-
    * placed strips of real PictographContainers, every adornment system-owned (dash
-   * arrows, Start/count StepNumber, per-box PositionGlyph or TKA letter glyph),
+   * arrows, Start/count StepNumber, per-box PlacementGlyph or TKA letter glyph),
    * grouped centred paragraphs.
    *
    * ONE physical page, THREE titled sections (three calligraphic .guide-title
@@ -15,7 +15,7 @@
    *   - dash hand  → DASH (opposite cardinals; straight dash arrow through centre).
    *   - still hand → STATIC (no arrow).
    *   - Count numbers → StepData.stepNumber (0 → "Start", 1..n) via StepNumber.
-   *   - Positions (Type 4/5) → startPosition/endPosition → top-centre PositionGlyph.
+   *   - Positions (Type 4/5) → startPlacement/endPlacement → top-centre PlacementGlyph.
    *   - Letter (Type 6)     → showTKA → the bottom-left α/β/γ glyph (the teaching
    *                           point IS the static letter; matches the artboard).
    *   - No elemental        → the proof shows no mode badge, so showElemental off.
@@ -32,7 +32,7 @@
    *   - Type 5 γ→γ needs Λ- (LAMBDA_DASH_ZERO_TURNS_MAP): blue S→N→EAST, red E→W→SOUTH
    *     (letter null would wrongly place blue WEST). Verified box-by-box vs the map.
    *   - Type 6 α/β/γ → the canonical Type-6 static letters (showTKA glyph).
-   * The position glyph derives from startPosition/endPosition (NOT the letter), so a
+   * The position glyph derives from startPlacement/endPlacement (NOT the letter), so a
    * pedagogical α→α labelled Ψ- still shows the correct α→α glyph.
    *
    * Facelift: lowercase γ (proof used Γ); keyword tints - Dash/Dual-Dash green
@@ -53,7 +53,7 @@
     GridMode,
     GridLocation,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { describePictograph } from "$lib/shared/pictograph/shared/domain/utils/pictograph-description";
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -105,7 +105,7 @@
   // Positions only derive for cardinal pairs.
   const gp = (a: GridLocation, b: GridLocation) => {
     try {
-      return getGridPositionFromLocations(a, b);
+      return getGridPlacementFromLocations(a, b);
     } catch {
       return null;
     }
@@ -123,8 +123,8 @@
       id,
       letter,
       gridMode: GridMode.DIAMOND,
-      startPosition: gp(m[0], m[2]),
-      endPosition: gp(m[1], m[3]),
+      startPlacement: gp(m[0], m[2]),
+      endPlacement: gp(m[1], m[3]),
       motions: {
         left: motion(HandSide.LEFT, m[0], m[1]),
         right: motion(HandSide.RIGHT, m[2], m[3]),
@@ -405,7 +405,7 @@
             rightPropTypeOverride={PropType.HAND}
             showGrid={true}
             showTKA={s.tka}
-            showPositions={!s.tka && cell.step > 0}
+            showPlacements={!s.tka && cell.step > 0}
             showElemental={false}
             showReversals={false}
             showTnD={false}

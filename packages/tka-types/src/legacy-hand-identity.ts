@@ -18,6 +18,54 @@ function moveLegacyField(
   delete target[legacyKey];
 }
 
+/**
+ * The two-hand "position" (alpha/beta/gamma) field renames: `startPosition`,
+ * `endPosition`, `gridPosition`, `isStartPosition` -> `startPlacement`,
+ * `endPlacement`, `gridPlacement`, `isStartPlacement`. Applied wherever a
+ * pictograph-shaped record (Step, Pictograph, StartPlacement, StepPairing)
+ * may still carry the pre-rename keys from documents written before the
+ * placement rename shipped. Canonical keys win when both are present,
+ * matching `moveLegacyField`.
+ */
+const LEGACY_PLACEMENT_FIELD_PAIRS: ReadonlyArray<
+  readonly [canonicalKey: string, legacyKey: string]
+> = [
+  ["startPlacement", "startPosition"],
+  ["endPlacement", "endPosition"],
+  ["gridPlacement", "gridPosition"],
+  ["isStartPlacement", "isStartPosition"],
+];
+
+function moveLegacyPlacementFields(
+  target: UnknownRecord,
+  source: UnknownRecord
+): void {
+  for (const [canonicalKey, legacyKey] of LEGACY_PLACEMENT_FIELD_PAIRS) {
+    moveLegacyField(target, source, canonicalKey, legacyKey);
+  }
+}
+
+/**
+ * Renames a legacy `startPosition`/`startingPosition`-style key that holds a
+ * STEP-shaped object (whole pictograph record, e.g. `SequenceData`'s start
+ * cell) to its "placement" counterpart, recursively normalizing the moved
+ * value itself via `normalizeLegacyStep`. Canonical key wins when both are
+ * present.
+ */
+function moveLegacyStepLikeField(
+  target: UnknownRecord,
+  source: UnknownRecord,
+  canonicalKey: string,
+  legacyKey: string
+): void {
+  const winner =
+    source[canonicalKey] !== undefined ? source[canonicalKey] : source[legacyKey];
+  delete target[legacyKey];
+  if (winner !== undefined) {
+    target[canonicalKey] = normalizeLegacyStep(winner);
+  }
+}
+
 export function normalizeLegacyHandSide(
   value: unknown
 ): HandSideValue | undefined {
@@ -85,6 +133,8 @@ export function normalizeLegacyStep<T>(value: T): T {
   delete normalized.blueReversal;
   delete normalized.redReversal;
 
+  moveLegacyPlacementFields(normalized, value);
+
   return normalized as T;
 }
 
@@ -92,13 +142,31 @@ export function normalizeLegacySteps<T>(values: readonly T[]): T[] {
   return values.map(normalizeLegacyStep);
 }
 
-/** Converts legacy reversal aliases on a compositional step pairing. */
+/**
+ * Converts legacy position-family keys on a pictograph-shaped record that
+ * is not step- or sequence-shaped (a bare `PictographData`/render-layer
+ * record). Steps and start-placement objects should go through
+ * `normalizeLegacyStep` instead, which also covers this.
+ */
+export function normalizeLegacyPictograph<T>(value: T): T {
+  if (!isRecord(value)) return value;
+
+  const normalized: UnknownRecord = { ...value };
+  if (value.motions !== undefined) {
+    normalized.motions = normalizeLegacyMotionRecord(value.motions);
+  }
+  moveLegacyPlacementFields(normalized, value);
+  return normalized as T;
+}
+
+/** Converts legacy reversal and position-family aliases on a step pairing. */
 export function normalizeLegacyStepPairing<T>(value: T): T {
   if (!isRecord(value)) return value;
 
   const normalized: UnknownRecord = { ...value };
   moveLegacyField(normalized, value, "leftReversal", "blueReversal");
   moveLegacyField(normalized, value, "rightReversal", "redReversal");
+  moveLegacyPlacementFields(normalized, value);
   return normalized as T;
 }
 
@@ -157,12 +225,21 @@ export function normalizeLegacySequence<T>(value: T): T {
   if (Array.isArray(value.steps)) {
     normalized.steps = normalizeLegacySteps(value.steps);
   }
-  if (value.startPosition !== undefined) {
-    normalized.startPosition = normalizeLegacyStep(value.startPosition);
-  }
-  if (value.startingPosition !== undefined) {
-    normalized.startingPosition = normalizeLegacyStep(value.startingPosition);
-  }
+  // `startPosition`/`startingPosition` are the pre-rename keys still present
+  // on documents written before the placement rename shipped; `startPlacement`/
+  // `startingPlacement` are canonical and win when both are present.
+  moveLegacyStepLikeField(
+    normalized,
+    value,
+    "startPlacement",
+    "startPosition"
+  );
+  moveLegacyStepLikeField(
+    normalized,
+    value,
+    "startingPlacement",
+    "startingPosition"
+  );
   if (Array.isArray(value.stepPairings)) {
     normalized.stepPairings = value.stepPairings.map(
       normalizeLegacyStepPairing

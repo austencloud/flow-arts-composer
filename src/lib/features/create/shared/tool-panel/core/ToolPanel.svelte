@@ -149,28 +149,28 @@
     return createModuleState.sequenceState.getCurrentSequenceData();
   });
 
-  // Determine if we should show start position picker based on Construct tab's own state
-  const shouldShowStartPositionPicker = $derived.by(() => {
+  // Determine if we should show start placement picker based on Construct tab's own state
+  const shouldShowStartPlacementPicker = $derived.by(() => {
     if (!isPersistenceFullyInitialized) return null;
     if (createModuleState.activeSection !== "construct") return null;
     if (!constructTabState.isInitialized) return null;
 
     const constructTabPickerState =
-      constructTabState.shouldShowStartPositionPicker();
+      constructTabState.shouldShowStartPlacementPicker();
     if (constructTabPickerState === null) return null;
 
     return constructTabPickerState;
   });
 
   const isPickerStateLoading = $derived(
-    shouldShowStartPositionPicker === null ||
+    shouldShowStartPlacementPicker === null ||
       constructTabState.isPickerStateLoading
   );
 
 
   // Keep picker state in sync with Construct tab's own sequence state
-  // This ensures the StartPositionPicker shows when sequence is empty
-  // and OptionViewer shows when sequence has a start position
+  // This ensures the StartPlacementPicker shows when sequence is empty
+  // and OptionViewer shows when sequence has a start placement
   $effect(() => {
     // Only sync when construct tab is active and initialized
     if (
@@ -181,7 +181,7 @@
       // Access construct tab's own sequence state to track changes
       const sequenceLength =
         constructTabState.sequenceState.getCurrentSequenceData().length;
-      const hasStart = constructTabState.sequenceState.hasStartPosition;
+      const hasStart = constructTabState.sequenceState.hasStartPlacement;
 
       // Sync picker state to match construct tab's sequence state
       constructTabState.syncPickerStateWithSequence();
@@ -244,13 +244,13 @@
               </div>
             {:else}
               <ConstructTabContent
-                shouldShowStartPositionPicker={shouldShowStartPositionPicker ===
+                shouldShowStartPlacementPicker={shouldShowStartPlacementPicker ===
                   true}
-                startPositionState={constructTabState.startPositionStateService}
+                startPlacementState={constructTabState.startPlacementStateService}
                 currentSequence={currentSequenceData}
                 {onOptionSelected}
-                onStartPositionNavigateToAdvanced={handleNavigateToAdvanced}
-                onStartPositionNavigateToDefault={handleNavigateToDefault}
+                onStartPlacementNavigateToAdvanced={handleNavigateToAdvanced}
+                onStartPlacementNavigateToDefault={handleNavigateToDefault}
                 {isSideBySideLayout}
                 {onOpenFilters}
                 {onCloseFilters}

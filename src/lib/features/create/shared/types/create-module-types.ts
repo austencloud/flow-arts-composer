@@ -7,9 +7,9 @@
 
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
-import type { SimplifiedStartPositionState } from "$lib/shared/create/state/start-position-state.svelte";
+import type { SimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
 import type { createCreateModuleState } from "../state/create-module-state.svelte";
 import type { SequenceState } from "../state/sequence-state-orchestrator.svelte";
 
@@ -18,7 +18,7 @@ import type { SequenceState } from "../state/sequence-state-orchestrator.svelte"
  * We keep it flexible with an index signature for legacy accessors.
  */
 export type ICreateModuleState = ReturnType<typeof createCreateModuleState> & {
-  setShowStartPositionPickerCallback?: (callback: () => void) => void;
+  setShowStartPlacementPickerCallback?: (callback: () => void) => void;
   setSyncPickerStateCallback?: (callback: () => void) => void;
   [key: string]: unknown;
 };
@@ -41,8 +41,8 @@ export interface IConstructTabState {
 
   // Picker state
   readonly canSelectOptions: boolean;
-  readonly showStartPositionPicker: boolean | null;
-  readonly shouldShowStartPositionPicker: () => boolean | null;
+  readonly showStartPlacementPicker: boolean | null;
+  readonly shouldShowStartPlacementPicker: () => boolean | null;
   readonly isPickerStateLoading: boolean;
 
   // Initialization state
@@ -53,27 +53,27 @@ export interface IConstructTabState {
   readonly sequenceState: SequenceState | null;
 
   // Selection state
-  readonly selectedStartPosition: StartPositionData | null;
+  readonly selectedStartPlacement: StartPlacementData | null;
 
   readonly isContinuousOnly: boolean;
 
   // Services
-  readonly startPositionStateService: SimplifiedStartPositionState;
+  readonly startPlacementStateService: SimplifiedStartPlacementState;
 
   // State mutations
   setLoading: (loading: boolean) => void;
   setTransitioning: (transitioning: boolean) => void;
   setError: (errorMessage: string | null) => void;
   clearError: () => void;
-  setShowStartPositionPicker: (show: boolean | null) => void;
-  setSelectedStartPosition: (position: StartPositionData | null) => void;
+  setShowStartPlacementPicker: (show: boolean | null) => void;
+  setSelectedStartPlacement: (placement: StartPlacementData | null) => void;
   setContinuousOnly: (continuous: boolean) => void;
   clearSequenceCompletely: () => Promise<void>;
   restorePickerStateAfterUndo: () => void;
   syncPickerStateWithSequence: () => void;
 
   // Event handlers
-  handleStartPositionSelected: (
+  handleStartPlacementSelected: (
     pictographData: PictographData | null,
     source?: "user" | "sync"
   ) => void;

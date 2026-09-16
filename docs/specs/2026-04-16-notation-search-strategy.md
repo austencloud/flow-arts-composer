@@ -29,7 +29,7 @@ This document specifies the dual-mode search strategy for TKA sequences. It dist
 
 ### Position Continuity Logic
 Standard Mode uses the `LetterDomainService` to determine valid transitions.
-*   `canFollow(prev, next)`: `prev.endPosition.normalized === next.startPosition.normalized`.
+*   `canFollow(prev, next)`: `prev.endPlacement.normalized === next.startPlacement.normalized`.
 *   Normalization maps specific positions (e.g., `alpha1`, `alpha3`) to their root groups (`alpha`).
 
 ### Bridge Letter Detection (Future Phase)

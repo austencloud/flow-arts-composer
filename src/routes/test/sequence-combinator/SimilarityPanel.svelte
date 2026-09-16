@@ -76,7 +76,7 @@
   }[] = [
     { key: "word", label: "Word", read: (r) => r.wordSimilarity },
     { key: "motion", label: "Motion", read: (r) => r.motionSimilarity },
-    { key: "position", label: "Position", read: (r) => r.positionSimilarity },
+    { key: "placement", label: "Placement", read: (r) => r.placementSimilarity },
     {
       key: "structural",
       label: "Structural",

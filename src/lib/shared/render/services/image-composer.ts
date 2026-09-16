@@ -1,10 +1,10 @@
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { PictographData } from "../../pictograph/shared/domain/models/pictograph-data";
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import type { PictographVisibilityOptions } from "../utils/pictograph-to-svg";
-import { createStartPositionFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
 // These 5 imports are loaded dynamically at usage sites to avoid pulling
 // Svelte stores and $app/environment into the composition worker bundle.
 // See: getVisibilitySettings(), renderPictographDirect(), storePictographBlob()
@@ -175,7 +175,7 @@ export class ImageComposer {
       overrides?.showTKA !== undefined &&
       overrides.showTnD !== undefined &&
       overrides.showElemental !== undefined &&
-      overrides.showPositions !== undefined &&
+      overrides.showPlacements !== undefined &&
       overrides.showReversals !== undefined &&
       overrides.showNonRadialPoints !== undefined
     ) {
@@ -201,7 +201,7 @@ export class ImageComposer {
         showTnD: overrides.showTnD,
         showElemental: overrides.showElemental,
         showPropTnD: overrides.showPropTnD,
-        showPositions: overrides.showPositions,
+        showPlacements: overrides.showPlacements,
         showHandColorKey: overrides.showHandColorKey,
         showReversals: overrides.showReversals,
         showNonRadialPoints: overrides.showNonRadialPoints,
@@ -240,7 +240,7 @@ export class ImageComposer {
       showTnD: visibilityManager.getGlyphVisibility("tndGlyph"),
       showElemental: visibilityManager.getGlyphVisibility("elementalGlyph"),
       showPropTnD: visibilityManager.getGlyphVisibility("propTndGlyph"),
-      showPositions: visibilityManager.getGlyphVisibility("positionsGlyph"),
+      showPlacements: visibilityManager.getGlyphVisibility("placementsGlyph"),
       showHandColorKey: visibilityManager.getGlyphVisibility("handColorKey"),
       showReversals: visibilityManager.getGlyphVisibility("reversalIndicators"),
       showNonRadialPoints: visibilityManager.getNonRadialVisibility(),
@@ -260,7 +260,7 @@ export class ImageComposer {
         showTnD: overrides.showTnD ?? globalSettings.showTnD,
         showElemental: overrides.showElemental ?? globalSettings.showElemental,
         showPropTnD: overrides.showPropTnD ?? globalSettings.showPropTnD,
-        showPositions: overrides.showPositions ?? globalSettings.showPositions,
+        showPlacements: overrides.showPlacements ?? globalSettings.showPlacements,
         showHandColorKey:
           overrides.showHandColorKey ?? globalSettings.showHandColorKey,
         showReversals: overrides.showReversals ?? globalSettings.showReversals,
@@ -335,14 +335,14 @@ export class ImageComposer {
 
     paintCardFrontBackground(ctx, layout, options);
 
-    let derivedStartPosition: StartPositionData | null = null;
+    let derivedStartPlacement: StartPlacementData | null = null;
     const firstStep = sequence.steps[0];
-    if (options.includeStartPosition && !sequence.startPosition && firstStep) {
-      derivedStartPosition = createStartPositionFromBeatStart(firstStep);
+    if (options.includeStartPlacement && !sequence.startPlacement && firstStep) {
+      derivedStartPlacement = createStartPlacementFromBeatStart(firstStep);
     }
-    const effectiveStartPosition = sequence.startPosition ?? derivedStartPosition;
-    const hasStartPosition = options.includeStartPosition && effectiveStartPosition;
-    const totalItems = sequence.steps.length + (hasStartPosition ? 1 : 0);
+    const effectiveStartPlacement = sequence.startPlacement ?? derivedStartPlacement;
+    const hasStartPlacement = options.includeStartPlacement && effectiveStartPlacement;
+    const totalItems = sequence.steps.length + (hasStartPlacement ? 1 : 0);
     let renderedCount = 0;
 
     onProgress?.({ current: 0, total: totalItems, stage: "rendering" });
@@ -355,19 +355,19 @@ export class ImageComposer {
     const effectiveLeftPropType = options.leftPropTypeOverride ?? options.propTypeOverride;
     const effectiveRightPropType = options.rightPropTypeOverride ?? options.propTypeOverride;
 
-    if (hasStartPosition && effectiveStartPosition) {
+    if (hasStartPlacement && effectiveStartPlacement) {
       const startStepNumber = options.addStepNumbers ? 0 : undefined;
-      const startPositionData = hasPropOverride
+      const startPlacementData = hasPropOverride
         ? this.applyPropTypeOverride(
-            effectiveStartPosition,
+            effectiveStartPlacement,
             options.propTypeOverride,
             options.leftPropTypeOverride,
             options.rightPropTypeOverride
           )
-        : effectiveStartPosition;
+        : effectiveStartPlacement;
       await this.renderPictographAt(
         ctx,
-        startPositionData,
+        startPlacementData,
         0,
         0,
         stepSize,
@@ -823,17 +823,17 @@ export class ImageComposer {
       );
       if (paths.left.length === 0 && paths.right.length === 0) return;
 
-      const layoutMode = options.startPositionLayout ?? "row";
+      const layoutMode = options.startPlacementLayout ?? "row";
       const { placements } = getMandalaPlacements({
         stepCount: sequence.steps?.length ?? 0,
         cols: columns,
         rows,
-        includeStartPosition: options.includeStartPosition ?? false,
+        includeStartPlacement: options.includeStartPlacement ?? false,
         showQRCode: options.visibilityOverrides?.showQRCode ?? false,
         leftVisible: options.leftVisible ?? true,
         rightVisible: options.rightVisible ?? true,
         mandalaEnabled: true,
-        startPositionLayout: layoutMode,
+        startPlacementLayout: layoutMode,
       });
 
       if (placements.length === 0) return;
@@ -883,7 +883,7 @@ export class ImageComposer {
   }
 
   private applyPropTypeOverride<
-    T extends StepData | PictographData | StartPositionData,
+    T extends StepData | PictographData | StartPlacementData,
   >(
     data: T,
     propType?: PropType,

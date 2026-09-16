@@ -1,7 +1,7 @@
 {
   "createdAt": "2026-07-16",
   "page": "permutations",
-  "note": "Pilot pool candidates for the permutations page (Mirrored/Rotated/Swapped slots). Regenerated 2026-07-16 after the original generating session lost its step data (context-only, never persisted). Step data below is captured verbatim from MCP generate_sequence responses; prose is verified against THESE instances step-by-step. Loop-closure lesson: the engine's random start draw can pick position pairs invalid for the requested loopType and error out. When that happens, probe validate_loop_options and force startPosition/endPosition.",
+  "note": "Pilot pool candidates for the permutations page (Mirrored/Rotated/Swapped slots). Regenerated 2026-07-16 after the original generating session lost its step data (context-only, never persisted). Step data below is captured verbatim from MCP generate_sequence responses; prose is verified against THESE instances step-by-step. Loop-closure lesson: the engine's random start draw can pick position pairs invalid for the requested loopType and error out. When that happens, probe validate_loop_options and force startPlacement/endPlacement.",
   "generationDefaults": {
     "constraintPreset": "smooth",
     "level": 1,
@@ -645,8 +645,8 @@
           "loopType": "rotated",
           "period": "halved",
           "generationOverrides": {
-            "startPosition": "alpha7",
-            "endPosition": "alpha3"
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha3"
           },
           "prose": "This 4-letter word repeats rotated 180°. The left hand circles counter-clockwise the whole way through (it never changes direction) while the right hand answers clockwise on every other step and rests between.",
           "proseNote": "Colors and directions swapped vs the first draft: this instance runs BLUE ccw on all 8 steps; red moves cw on odd steps only.",
@@ -1281,8 +1281,8 @@
           "word": "ΔZΩX",
           "loopType": "swapped",
           "generationOverrides": {
-            "startPosition": "alpha7",
-            "endPosition": "alpha3"
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha3"
           },
           "prose": "In ΔZΩX, only one hand moves at a time. The second repetition trades parts: every motion the left hand played, the right hand takes, and the resting hand answers. Each motion is an anti-spin.",
           "verified": [
@@ -1440,8 +1440,8 @@
           "word": "UYFΘ-",
           "loopType": "swapped",
           "generationOverrides": {
-            "startPosition": "gamma11",
-            "endPosition": "gamma5"
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma5"
           },
           "prose": "UYFΘ- keeps both hands moving. At the halfway point they trade parts: the left hand picks up exactly what the right played on step one, and the right takes the left's.",
           "verified": [

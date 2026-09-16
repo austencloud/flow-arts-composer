@@ -6,8 +6,8 @@ import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/mot
  */
 export interface ExportableSequenceData {
   word: string;
-  startingPosition?: StepData;
-  startPosition?: StepData;
+  startingPlacement?: StepData;
+  startPlacement?: StepData;
   steps?: readonly StepData[];
 }
 
@@ -16,16 +16,16 @@ export interface ExportableSequenceData {
  */
 export interface CondensedSequenceData {
   word: string;
-  startPosition?: CondensedStartPosition;
+  startPlacement?: CondensedStartPlacement;
   steps: CondensedStepData[];
 }
 
 /**
- * Condensed start position data
+ * Condensed start placement data
  */
-export interface CondensedStartPosition {
+export interface CondensedStartPlacement {
   letter: string;
-  gridPosition?: string;
+  gridPlacement?: string;
   motions: {
     left: CondensedStartMotion;
     right: CondensedStartMotion;
@@ -46,7 +46,7 @@ export interface CondensedStartMotion {
 export interface CondensedStepData {
   letter: string;
   stepNumber: number;
-  gridPosition?: string;
+  gridPlacement?: string;
   duration: number;
   leftReversal: boolean;
   rightReversal: boolean;
@@ -89,16 +89,16 @@ export function createCondensedSequence(
     steps: [],
   };
 
-  // Include start position FIRST if it exists
-  if (sequenceData.startingPosition ?? sequenceData.startPosition) {
+  // Include start placement FIRST if it exists
+  if (sequenceData.startingPlacement ?? sequenceData.startPlacement) {
     const startPos =
-      sequenceData.startingPosition ?? sequenceData.startPosition;
+      sequenceData.startingPlacement ?? sequenceData.startPlacement;
     if (startPos) {
-      condensed.startPosition = extractStartPosition(startPos);
+      condensed.startPlacement = extractStartPlacement(startPos);
     }
   }
 
-  // Process each beat AFTER start position
+  // Process each beat AFTER start placement
   if (sequenceData.steps) {
     condensed.steps = sequenceData.steps.map((step) => extractStepData(step));
   }
@@ -107,15 +107,15 @@ export function createCondensedSequence(
 }
 
 
-function extractStartPosition(startPos: StepData): CondensedStartPosition {
+function extractStartPlacement(startPos: StepData): CondensedStartPlacement {
   const letter = startPos.letter ?? "";
-  const gridPosition = startPos.startPosition ?? undefined;
+  const gridPlacement = startPos.startPlacement ?? undefined;
   const leftMotion = startPos.motions.left;
   const rightMotion = startPos.motions.right;
 
   return {
     letter,
-    gridPosition,
+    gridPlacement,
     motions: {
       left: extractStartMotion(leftMotion),
       right: extractStartMotion(rightMotion),
@@ -141,14 +141,14 @@ function extractStartMotion(
 
 function extractStepData(beat: StepData): CondensedStepData {
   const letter = beat.letter ?? "";
-  const gridPosition = beat.startPosition ?? undefined;
+  const gridPlacement = beat.startPlacement ?? undefined;
   const leftMotion = beat.motions.left;
   const rightMotion = beat.motions.right;
 
   return {
     letter,
     stepNumber: beat.stepNumber,
-    gridPosition,
+    gridPlacement,
     duration: beat.duration,
     leftReversal: beat.leftReversal,
     rightReversal: beat.rightReversal,

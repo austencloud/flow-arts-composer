@@ -35,7 +35,7 @@ const ESSENTIAL_DIRS = [
 ];
 
 // Root-level glyph SVGs fetched directly from static/images (glyph-cache,
-// PositionGlyph, canvas-2d-glyph-renderer). The *arrows-sprite.svg files that
+// PlacementGlyph, canvas-2d-glyph-renderer). The *arrows-sprite.svg files that
 // live alongside them are build-time source metadata — never fetched at
 // runtime — so they are deliberately NOT listed here.
 const ESSENTIAL_ROOT_FILES = [

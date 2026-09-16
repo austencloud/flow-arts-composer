@@ -21,8 +21,8 @@ interface PictographMotionPositionInput {
   gridMode: GridMode;
   leftPropType: string;
   rightPropType: string;
-  startPositions: PropPositions;
-  endPositions: PropPositions;
+  startPlacements: PropPositions;
+  endPlacements: PropPositions;
 }
 
 const PICTOGRAPH_SIZE = 950;
@@ -76,8 +76,8 @@ export function calculatePictographMotionPositions({
   gridMode,
   leftPropType,
   rightPropType,
-  startPositions,
-  endPositions,
+  startPlacements,
+  endPlacements,
 }: PictographMotionPositionInput): PropPositions {
   const clampedProgress = clampProgress(progress);
   const interpolation = interpolatePropAngles(step, clampedProgress);
@@ -91,8 +91,8 @@ export function calculatePictographMotionPositions({
     const currentState = interpolation[`${hand}Angles`];
     const startState = startInterpolation[`${hand}Angles`];
     const endState = endInterpolation[`${hand}Angles`];
-    const preparedStart = startPositions[hand];
-    const preparedEnd = endPositions[hand];
+    const preparedStart = startPlacements[hand];
+    const preparedEnd = endPlacements[hand];
 
     if (
       !isVisibleMotion(motion) ||
@@ -117,7 +117,7 @@ export function calculatePictographMotionPositions({
     const baseCurrent = calculateBasePosition(currentState, gridRadius);
     const baseStart = calculateBasePosition(startState, gridRadius);
     const baseEnd = calculateBasePosition(endState, gridRadius);
-    const startPosition = preparedStart ?? {
+    const startPlacement = preparedStart ?? {
       ...baseStart,
       rotation: startState.staffRotationAngle * RADIANS_TO_DEGREES,
     };
@@ -133,7 +133,7 @@ export function calculatePictographMotionPositions({
       (endpoints.startStaffAngle + endpoints.staffRotationDelta) *
       RADIANS_TO_DEGREES;
     const correctedStartRotation = nearestEquivalentAngle(
-      startPosition.rotation,
+      startPlacement.rotation,
       unwrappedStartRotation
     );
     const correctedEndRotation = nearestEquivalentAngle(
@@ -145,14 +145,14 @@ export function calculatePictographMotionPositions({
       x:
         baseCurrent.x +
         lerp(
-          startPosition.x - baseStart.x,
+          startPlacement.x - baseStart.x,
           preparedEnd.x - baseEnd.x,
           clampedProgress
         ),
       y:
         baseCurrent.y +
         lerp(
-          startPosition.y - baseStart.y,
+          startPlacement.y - baseStart.y,
           preparedEnd.y - baseEnd.y,
           clampedProgress
         ),

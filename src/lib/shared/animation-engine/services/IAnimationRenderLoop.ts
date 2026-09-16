@@ -40,7 +40,7 @@ import type {
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type {
   EffectType,
   TipEffectMap,
@@ -124,7 +124,7 @@ export interface RenderPropsState {
  * Parameters for a single render frame
  */
 export interface RenderFrameParams {
-  stepData: StartPositionData | StepData | null;
+  stepData: StartPlacementData | StepData | null;
   currentStep: number;
   trailSettings: TrailSettings;
   gridVisible: boolean;

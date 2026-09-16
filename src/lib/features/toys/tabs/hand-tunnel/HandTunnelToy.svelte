@@ -271,7 +271,7 @@
   );
   const layerCount = $derived(Math.max(0, performers.length - 1));
 
-  function positionLabel(index: number): string {
+  function placementLabel(index: number): string {
     const cycle = cycles[index];
     if (!cycle) return "";
     if (!onBeat) return "moving";
@@ -280,7 +280,7 @@
   }
 
   const readout = $derived(
-    performers.map((p, i) => `${p.label} ${positionLabel(i)}`).join("  ·  ")
+    performers.map((p, i) => `${p.label} ${placementLabel(i)}`).join("  ·  ")
   );
 </script>
 
@@ -375,7 +375,7 @@
           leftColor={tunnelPropColor(2 * i, layerCount).hex}
           rightColor={tunnelPropColor(2 * i + 1, layerCount).hex}
           selected={performer.id === selectedId}
-          positionLabel={positionLabel(i)}
+          placementLabel={placementLabel(i)}
           canRemove={performers.length > 1}
           onSelect={() => toggleSelect(performer.id)}
           onChange={(patch) => updateSegment(performer.id, patch)}

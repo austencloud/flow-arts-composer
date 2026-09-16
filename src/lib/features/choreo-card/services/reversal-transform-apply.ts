@@ -82,8 +82,8 @@ export function transformSequence(
 
     const mutable = step as unknown as {
       motions?: { left?: MutableMotion; right?: MutableMotion };
-      startPosition?: string | null;
-      endPosition?: string | null;
+      startPlacement?: string | null;
+      endPlacement?: string | null;
       letter?: string | null;
       leftReversal?: boolean;
       rightReversal?: boolean;
@@ -97,13 +97,13 @@ export function transformSequence(
     mutable.leftReversal = leftToggle;
     mutable.rightReversal = rightToggle;
 
-    // Re-derive the letter from the CSV. Match is on positions + motionType +
+    // Re-derive the letter from the CSV. Match is on placements + motionType +
     // locations only (NOT rotationDirection) — consistent with the reference.
     // Invisible placeholder = hand not really there (both-required Step shape).
     if (isVisibleMotion(left) && isVisibleMotion(right)) {
       const letter = lookupLetter(edges, {
-        startPosition: String(mutable.startPosition ?? ""),
-        endPosition: String(mutable.endPosition ?? ""),
+        startPlacement: String(mutable.startPlacement ?? ""),
+        endPlacement: String(mutable.endPlacement ?? ""),
         left: {
           motionType: String(left.motionType ?? ""),
           startLocation: String(left.startLocation ?? ""),
@@ -121,7 +121,7 @@ export function transformSequence(
     return step;
   });
 
-  // Recompute the orientation chain from the start position baseline. The flip
+  // Recompute the orientation chain from the start placement baseline. The flip
   // changed motionType/rotationDirection, so end orientations cascade.
   const withSteps = updateSequenceData(clone, { steps: transformedSteps });
   const reoriented = recalculateAllOrientations(withSteps);
@@ -231,8 +231,8 @@ export function applyReversalMatrix(
   const transformedSteps = steps.map((step, stepIndex) => {
     const mutable = step as unknown as {
       motions?: { left?: MutableMotion; right?: MutableMotion };
-      startPosition?: string | null;
-      endPosition?: string | null;
+      startPlacement?: string | null;
+      endPlacement?: string | null;
       letter?: string | null;
       leftReversal?: boolean;
       rightReversal?: boolean;
@@ -248,8 +248,8 @@ export function applyReversalMatrix(
 
     if (left && right) {
       const letter = lookupLetter(edges, {
-        startPosition: String(mutable.startPosition ?? ""),
-        endPosition: String(mutable.endPosition ?? ""),
+        startPlacement: String(mutable.startPlacement ?? ""),
+        endPlacement: String(mutable.endPlacement ?? ""),
         left: {
           motionType: String(left.motionType ?? ""),
           startLocation: String(left.startLocation ?? ""),

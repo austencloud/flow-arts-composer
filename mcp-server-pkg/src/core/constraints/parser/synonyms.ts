@@ -98,7 +98,7 @@ export const SYNONYMS: Record<string, string[]> = {
     "rotation reversal",
   ],
 
-  // Positions
+  // Placements
   alpha: ["opposite", "split", "across"],
   beta: ["together", "same", "tog"],
   gamma: ["right-angle", "perpendicular", "l-shape"],

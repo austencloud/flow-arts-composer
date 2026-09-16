@@ -3,8 +3,8 @@
  * Customize card says about itself.
  *
  * The card used to run its own default detection and its own (much shorter)
- * summary, so several live constraints — style values, end position, most
- * custom position sets, the legacy exact start position, persisted letter
+ * summary, so several live constraints — style values, end placement, most
+ * custom placement sets, the legacy exact start placement, persisted letter
  * constraints — collapsed to the bare word "Custom" or were missed entirely.
  * Both questions are answered here from one pass, and `isDefault` is derived
  * from `facts.length` so the badge can never drift away from what's displayed.
@@ -18,16 +18,16 @@
 
 import {
   GridMode,
-  type GridPosition,
+  type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
 import {
   detectPresetFromBlocked,
-  getAllowedPositions,
-  StartPositionPreset,
-} from "../../shared/domain/start-position-presets";
+  getAllowedPlacements,
+  StartPlacementPreset,
+} from "../../shared/domain/start-placement-presets";
 import {
   DEFAULT_GENERATION_STYLE,
   type GenerationMotionTypeFilter,
@@ -100,10 +100,10 @@ export interface CustomizeSummary {
 /** How many rows the collapsed card can show before it starts counting. */
 export const MAX_SUMMARY_ROWS = 3;
 
-/** Shared position precedence — matches PositionSection's display rule. */
-function positionLabel(position: PictographData | null | undefined): string {
-  if (!position) return "?";
-  return position.startPosition || position.letter || "?";
+/** Shared placement precedence — matches PlacementSection's display rule. */
+function placementLabel(placement: PictographData | null | undefined): string {
+  if (!placement) return "?";
+  return placement.startPlacement || placement.letter || "?";
 }
 
 function dashKey(filter: DashFilter): "no-dash" | "mixed" | "prefer-dash" {
@@ -114,7 +114,7 @@ function dashKey(filter: DashFilter): "no-dash" | "mixed" | "prefer-dash" {
  * Build the full fact list for a Customize state.
  *
  * Fact order follows the expanded overlay top to bottom: style, hand
- * relationship, start/end positions, orientation, letter constraints.
+ * relationship, start/end placements, orientation, letter constraints.
  */
 export function buildCustomizeSummary(
   input: CustomizeSummaryInput,
@@ -152,16 +152,16 @@ export function buildCustomizeSummary(
   if (options) {
     const gridMode = input.gridMode ?? GridMode.DIAMOND;
 
-    // ─── Allowed start positions ───
-    const blocked: GridPosition[] = options.blockedStartPositions ?? [];
+    // ─── Allowed start placements ───
+    const blocked: GridPlacement[] = options.blockedStartPlacements ?? [];
     if (blocked.length > 0) {
       const preset = detectPresetFromBlocked(blocked, gridMode);
-      if (preset === StartPositionPreset.CLASSIC) {
+      if (preset === StartPlacementPreset.CLASSIC) {
         push("Classic 3");
       } else {
-        const allowed = getAllowedPositions(blocked, gridMode);
+        const allowed = getAllowedPlacements(blocked, gridMode);
         // A restricted set is a real constraint at every size — reporting only
-        // the single-position case is what let "4 of 16 allowed" read as
+        // the single-placement case is what let "4 of 16 allowed" read as
         // "Custom" with nothing behind it.
         push(
           allowed.length === 1
@@ -171,24 +171,24 @@ export function buildCustomizeSummary(
       }
     }
 
-    // ─── Legacy exact start position ───
+    // ─── Legacy exact start placement ───
     // Deprecated but still persisted, and generate-actions still feeds it to
     // the engine. A card that ignores it can call a constrained state Default.
-    if (options.startPosition) {
-      push(`Start: ${positionLabel(options.startPosition)}`);
+    if (options.startPlacement) {
+      push(`Start: ${placementLabel(options.startPlacement)}`);
     }
 
-    // ─── End positions ───
+    // ─── End placements ───
     // Multi-select, so the card names one or counts many, the same way the
-    // start-position facts do. The legacy single endPosition is still read for
+    // start-placement facts do. The legacy single endPlacement is still read for
     // any caller that has not migrated.
-    const ends = options.endPositions ?? [];
+    const ends = options.endPlacements ?? [];
     if (ends.length === 1) {
       push(`End: ${ends[0]}`);
     } else if (ends.length > 1) {
-      push(`End: ${ends.length} positions`);
-    } else if (options.endPosition) {
-      push(`End: ${positionLabel(options.endPosition)}`);
+      push(`End: ${ends.length} placements`);
+    } else if (options.endPlacement) {
+      push(`End: ${placementLabel(options.endPlacement)}`);
     }
 
     // ─── Start orientation ───

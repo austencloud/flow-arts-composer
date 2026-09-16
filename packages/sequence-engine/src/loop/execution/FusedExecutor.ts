@@ -2,9 +2,9 @@ import type {
   SequenceStep,
   MotionData,
 } from "../../core/types/sequence-engine-types.js";
-import { getInvertedLetter } from "../position-maps/strict-loop-position-maps.js";
-import { translateHandPath } from "../position-maps/circular-position-maps.js";
-import { gridPositionDeriver } from "../../core/positions/GridPositionDeriver.js";
+import { getInvertedLetter } from "../placement-maps/strict-loop-placement-maps.js";
+import { translateHandPath } from "../placement-maps/circular-placement-maps.js";
+import { gridPlacementDeriver } from "../../core/placements/GridPlacementDeriver.js";
 import { updateStepOrientations } from "./orientation-helpers.js";
 
 export interface FusedTransformFlags {
@@ -28,8 +28,8 @@ export class FusedExecutor {
   }
 
   execute(sequence: SequenceStep[], period: number): SequenceStep[] {
-    const startPosition = sequence.shift();
-    if (!startPosition) throw new Error("Sequence must have a start position");
+    const startPlacement = sequence.shift();
+    if (!startPlacement) throw new Error("Sequence must have a start placement");
 
     const partialLength = sequence.length;
     const stepsToGenerate = partialLength * (period - 1);
@@ -53,7 +53,7 @@ export class FusedExecutor {
       lastStep = finalStep;
     }
 
-    sequence.unshift(startPosition);
+    sequence.unshift(startPlacement);
     return sequence;
   }
 
@@ -78,7 +78,7 @@ export class FusedExecutor {
       previousStep.motions.right
     );
 
-    const endPosition = gridPositionDeriver.getGridPositionFromLocations(
+    const endPlacement = gridPlacementDeriver.getGridPlacementFromLocations(
       leftMotion.endLocation,
       rightMotion.endLocation
     );
@@ -91,8 +91,8 @@ export class FusedExecutor {
       ...sourceStep,
       stepNumber,
       letter,
-      startPosition: previousStep.endPosition as SequenceStep["startPosition"],
-      endPosition: endPosition as SequenceStep["endPosition"],
+      startPlacement: previousStep.endPlacement as SequenceStep["startPlacement"],
+      endPlacement: endPlacement as SequenceStep["endPlacement"],
       motions: { left: leftMotion, right: rightMotion },
     };
   }
@@ -156,8 +156,8 @@ export class FusedExecutor {
     return {
       ...sourceStep,
       stepNumber,
-      startPosition: previousStep.endPosition as SequenceStep["startPosition"],
-      endPosition: sourceStep.endPosition as SequenceStep["endPosition"],
+      startPlacement: previousStep.endPlacement as SequenceStep["startPlacement"],
+      endPlacement: sourceStep.endPlacement as SequenceStep["endPlacement"],
       motions: {
         left: {
           ...sourceStep.motions.left,

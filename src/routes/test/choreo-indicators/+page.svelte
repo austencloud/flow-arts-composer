@@ -73,7 +73,7 @@
             cardSize="poker"
             theme="rainbow"
             isLoading={false}
-            includeStartPosition={true}
+            includeStartPlacement={true}
             footers={[cardFooter]}
             qrUrls={[cardQrUrl]}
             deckMode={true}

@@ -19,8 +19,8 @@
  *   shapes; merging would force a `label` onto consumers that don't carry one.
  */
 
-/** Family classification for a hands position: opposite (alpha), same (beta), or right-angle (gamma). */
-export type PositionType = "alpha" | "beta" | "gamma";
+/** Family classification for a hands placement: opposite (alpha), same (beta), or right-angle (gamma). */
+export type PlacementType = "alpha" | "beta" | "gamma";
 
 /**
  * VTG (Velocity-Timing-Direction) mode.

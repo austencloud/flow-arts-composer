@@ -47,7 +47,7 @@ export function registerDataTools(server: McpServer): void {
 
       const variationList = toShow
         .map((v, i) => {
-          return `[${i}] ${v.startPosition} → ${v.endPosition}
+          return `[${i}] ${v.startPlacement} → ${v.endPlacement}
    Left hand: ${v.leftMotion.startLocation}→${v.leftMotion.endLocation} (${v.leftMotion.motionType}, ${v.leftMotion.rotationDirection})
    Right hand: ${v.rightMotion.startLocation}→${v.rightMotion.endLocation} (${v.rightMotion.motionType}, ${v.rightMotion.rotationDirection})`;
         })
@@ -125,13 +125,25 @@ export function registerDataTools(server: McpServer): void {
   // Tool: search_pictographs
   server.tool(
     "search_pictographs",
-    "Search for pictographs matching specific criteria. Filter by position, motion type, or location.",
+    "Search for pictographs matching specific criteria. Filter by placement, motion type, or location.",
     {
+      startPlacement: z
+        .string()
+        .optional()
+        .describe("Filter by start placement (e.g., alpha1, alpha3, beta1)"),
+      endPlacement: z.string().optional().describe("Filter by end placement"),
       startPosition: z
         .string()
         .optional()
-        .describe("Filter by start position (e.g., alpha1, alpha3, beta1)"),
-      endPosition: z.string().optional().describe("Filter by end position"),
+        .describe(
+          "Deprecated alias for startPlacement. 'Position' is the older TKA term; use startPlacement."
+        ),
+      endPosition: z
+        .string()
+        .optional()
+        .describe(
+          "Deprecated alias for endPlacement. 'Position' is the older TKA term; use endPlacement."
+        ),
       motionType: z
         .enum(["pro", "anti", "static", "dash"])
         .optional()
@@ -153,6 +165,8 @@ export function registerDataTools(server: McpServer): void {
         .describe("Max results to return"),
     },
     async ({
+      startPlacement,
+      endPlacement,
       startPosition,
       endPosition,
       motionType,
@@ -160,18 +174,22 @@ export function registerDataTools(server: McpServer): void {
       endLocation,
       limit = 10,
     }) => {
+      // Deprecated aliases: startPosition/endPosition map onto the current names.
+      startPlacement = startPlacement ?? startPosition;
+      endPlacement = endPlacement ?? endPosition;
+
       const allPictographs = ensureDataLoaded();
       let results = [...allPictographs];
 
-      if (startPosition) {
+      if (startPlacement) {
         results = results.filter(
-          (p) => p.startPosition.toLowerCase() === startPosition.toLowerCase()
+          (p) => p.startPlacement.toLowerCase() === startPlacement.toLowerCase()
         );
       }
 
-      if (endPosition) {
+      if (endPlacement) {
         results = results.filter(
-          (p) => p.endPosition.toLowerCase() === endPosition.toLowerCase()
+          (p) => p.endPlacement.toLowerCase() === endPlacement.toLowerCase()
         );
       }
 
@@ -214,7 +232,7 @@ export function registerDataTools(server: McpServer): void {
 
       const resultList = limited
         .map((p) => {
-          return `${p.letter}: ${p.startPosition}→${p.endPosition} | Left hand: ${p.leftMotion.startLocation}→${p.leftMotion.endLocation} (${p.leftMotion.motionType}) | Right hand: ${p.rightMotion.startLocation}→${p.rightMotion.endLocation} (${p.rightMotion.motionType})`;
+          return `${p.letter}: ${p.startPlacement}→${p.endPlacement} | Left hand: ${p.leftMotion.startLocation}→${p.leftMotion.endLocation} (${p.leftMotion.motionType}) | Right hand: ${p.rightMotion.startLocation}→${p.rightMotion.endLocation} (${p.rightMotion.motionType})`;
         })
         .join("\n");
 

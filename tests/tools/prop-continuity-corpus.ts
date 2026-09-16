@@ -18,7 +18,7 @@
  */
 
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -28,7 +28,7 @@ import {
   loadCsv,
   buildTnDSequence,
   buildFirestoreStep,
-  buildFirestoreStartPosition,
+  buildFirestoreStartPlacement,
   TND_MOTIONS,
 } from "../../scripts/seed-tnd-deck";
 
@@ -45,7 +45,7 @@ export interface CorpusEntry {
 function toSequenceData(
   id: string,
   word: string,
-  startPosition: ReturnType<typeof buildFirestoreStartPosition>,
+  startPlacement: ReturnType<typeof buildFirestoreStartPlacement>,
   steps: ReturnType<typeof buildFirestoreStep>[]
 ): SequenceData {
   return createSequenceData({
@@ -61,11 +61,11 @@ function toSequenceData(
         },
       } as never)
     ),
-    startPosition: createStartPositionData({
-      ...startPosition,
+    startPlacement: createStartPlacementData({
+      ...startPlacement,
       motions: {
-        left: createMotionData(startPosition.motions.left as never),
-        right: createMotionData(startPosition.motions.right as never),
+        left: createMotionData(startPlacement.motions.left as never),
+        right: createMotionData(startPlacement.motions.right as never),
       },
     } as never),
     isCircular: true,
@@ -89,7 +89,7 @@ export function coreTnDCorpus(): CorpusEntry[] {
         sequence: toSequenceData(
           built.seqId,
           built.word,
-          buildFirestoreStartPosition(built),
+          buildFirestoreStartPlacement(built),
           steps
         ),
       };

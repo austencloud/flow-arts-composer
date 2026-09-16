@@ -15,7 +15,7 @@ import {
   deriveCloudCellHash,
 } from "$lib/shared/render/services/cloud-cell-key";
 import * as pictographCloudCache from "$lib/shared/render/services/pictograph-cloud-cache";
-import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 import { detectMixedDurations } from "$lib/shared/choreo-card/services/step-durations";
 import { getSequenceMotionVisibility } from "$lib/shared/foundation/services/sequence-motion-profile";
 
@@ -182,7 +182,7 @@ export function getCanonicalSequenceCells(
     data: PictographData;
     options: PreviewCellRenderOptions;
   }[] = [];
-  const start = startPositionDeriver.getOrDeriveStartPosition(sequence);
+  const start = startPlacementDeriver.getOrDeriveStartPlacement(sequence);
   if (start)
     entries.push({ cell: "start", data: start, options: renderOptions });
   // Mixed-duration cards render held beats as WIDE cells with

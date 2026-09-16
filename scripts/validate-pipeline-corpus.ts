@@ -91,7 +91,7 @@ function motionForHand(
     : (motions["right"] ?? motions["red"]);
 }
 
-function deriveGridPosition(
+function deriveGridPlacement(
   motions: Record<string, Record<string, unknown>> | undefined,
   locKey: "startLocation" | "endLocation"
 ): string {
@@ -132,7 +132,7 @@ function convertToRawSequence(data: Record<string, unknown>): RawStepData[] {
         isCircular: (data["isCircular"] as boolean) ?? false,
       });
 
-      const startPos = (data["startPosition"] || data["startingPosition"]) as
+      const startPos = (data["startPlacement"] || data["startingPlacement"]) as
         | Record<string, unknown>
         | undefined;
       if (startPos) {
@@ -140,13 +140,13 @@ function convertToRawSequence(data: Record<string, unknown>): RawStepData[] {
           | Record<string, Record<string, unknown>>
           | undefined;
         const gridPos =
-          deriveGridPosition(sMotions, "endLocation") ||
-          (startPos["gridPosition"] as string) ||
-          (data["startingPositionGroup"] as string) ||
+          deriveGridPlacement(sMotions, "endLocation") ||
+          (startPos["gridPlacement"] as string) ||
+          (data["startingPlacementGroup"] as string) ||
           "";
         result.push({
           beat: 0,
-          sequenceStartPosition: gridPos,
+          sequenceStartPlacement: gridPos,
           endPos: gridPos,
           letter: (startPos["letter"] as string) || undefined,
           leftAttributes: convertMotionAttrs(motionForHand(sMotions, "left")),
@@ -163,8 +163,8 @@ function convertToRawSequence(data: Record<string, unknown>): RawStepData[] {
         result.push({
           beat: beatNum,
           letter: (step["letter"] as string) || undefined,
-          startPos: deriveGridPosition(motions, "startLocation") || undefined,
-          endPos: deriveGridPosition(motions, "endLocation") || undefined,
+          startPos: deriveGridPlacement(motions, "startLocation") || undefined,
+          endPos: deriveGridPlacement(motions, "endLocation") || undefined,
           leftAttributes: convertMotionAttrs(motionForHand(motions, "left")),
           rightAttributes: convertMotionAttrs(motionForHand(motions, "right")),
         });
@@ -181,7 +181,7 @@ function convertToRawSequence(data: Record<string, unknown>): RawStepData[] {
     isCircular: (data["isCircular"] as boolean) ?? false,
   });
 
-  const startPos = (data["startPosition"] || data["startingPosition"]) as
+  const startPos = (data["startPlacement"] || data["startingPlacement"]) as
     | Record<string, unknown>
     | undefined;
   if (startPos) {
@@ -189,13 +189,13 @@ function convertToRawSequence(data: Record<string, unknown>): RawStepData[] {
       | Record<string, Record<string, unknown>>
       | undefined;
     const gridPos =
-      deriveGridPosition(motions, "endLocation") ||
-      (startPos["gridPosition"] as string) ||
-      (startPos["startPosition"] as string) ||
+      deriveGridPlacement(motions, "endLocation") ||
+      (startPos["gridPlacement"] as string) ||
+      (startPos["startPlacement"] as string) ||
       "";
     result.push({
       beat: 0,
-      sequenceStartPosition: gridPos,
+      sequenceStartPlacement: gridPos,
       endPos: gridPos,
       letter: (startPos["letter"] as string) || undefined,
       leftAttributes: convertMotionAttrs(motionForHand(motions, "left")),
@@ -221,12 +221,12 @@ function convertToRawSequence(data: Record<string, unknown>): RawStepData[] {
       beat: stepNumber,
       letter: (step["letter"] as string) || undefined,
       startPos:
-        (step["startPosition"] as string) ||
-        deriveGridPosition(motions, "startLocation") ||
+        (step["startPlacement"] as string) ||
+        deriveGridPlacement(motions, "startLocation") ||
         undefined,
       endPos:
-        (step["endPosition"] as string) ||
-        deriveGridPosition(motions, "endLocation") ||
+        (step["endPlacement"] as string) ||
+        deriveGridPlacement(motions, "endLocation") ||
         undefined,
       leftAttributes: convertMotionAttrs(motionForHand(motions, "left")),
       rightAttributes: convertMotionAttrs(motionForHand(motions, "right")),

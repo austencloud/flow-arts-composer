@@ -67,7 +67,7 @@ Edit `edge-cases.json`. Each entry needs:
 
 - `id` — unique, kebab-case
 - `kind` — `"word"` or `"start"`
-- `word` or `startPosition` — the input
+- `word` or `startPlacement` — the input
 - `options` — engine-generation options (constraintPreset, loopType, etc.)
 - `description` — one sentence on what this edge guards against
 

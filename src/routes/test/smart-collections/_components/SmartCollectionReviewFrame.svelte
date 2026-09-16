@@ -27,7 +27,7 @@
     "start-level": "level",
     "start-length": "length",
     "start-letter": "letter",
-    "start-position": "position",
+    "start-placement": "position",
     "start-gridmode": "gridmode",
     "start-loop": "loop",
     "start-author": "author",

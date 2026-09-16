@@ -146,7 +146,7 @@
           imageComposition.showStepNumbers}
         showDifficultyLevel={studioCard?.options?.addDifficultyLevel ??
           imageComposition.showDifficulty}
-        includeStartPosition={studioCard?.options?.includeStartPosition ??
+        includeStartPlacement={studioCard?.options?.includeStartPlacement ??
           imageComposition.showStartPos}
         showNotes={studioCard
           ? (studioCard.options?.showNotes ?? false)
@@ -171,8 +171,8 @@
             ? null
             : (studioCard.options?.columnCount ?? null)
           : imageComposition.columnCount}
-        startPositionLayoutOverride={studioCard && !studioCard.automatic
-          ? studioCard.options?.startPositionLayout
+        startPlacementLayoutOverride={studioCard && !studioCard.automatic
+          ? studioCard.options?.startPlacementLayout
           : undefined}
         forceContain={studioCard ? true : imageComposition.forceContain}
         fitWidth={!!studioCard ||

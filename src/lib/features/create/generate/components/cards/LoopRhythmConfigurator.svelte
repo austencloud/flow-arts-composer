@@ -123,12 +123,12 @@
     />
     <div class="configurator-caption" aria-live="polite">
       <span class="configurator-caption-sizer" aria-hidden="true">
-        Positions rotate 90° at every quarter.
+        Placements rotate 90° at every quarter.
       </span>
       <span class="configurator-caption-live">
         {props.rhythm.rotationInterval === 4
-          ? "Positions rotate 90° at every quarter."
-          : "Positions rotate 180° at halfway."}
+          ? "Placements rotate 90° at every quarter."
+          : "Placements rotate 180° at halfway."}
       </span>
     </div>
   </div>
@@ -186,7 +186,7 @@
 
     <div class="configurator-caption">
       <span class="configurator-caption-sizer" aria-hidden="true">
-        Same hand positions — props flip spin direction for the second half.
+        Same hand placements — props flip spin direction for the second half.
       </span>
       <span class="configurator-caption-live">{props.inversionCaption}</span>
     </div>

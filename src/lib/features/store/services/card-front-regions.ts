@@ -129,12 +129,12 @@ export function computeFrontRegions(stepCount: number): Record<string, Rect> {
     stepCount,
     cols,
     rows,
-    includeStartPosition: true,
+    includeStartPlacement: true,
     showQRCode: true,
     leftVisible: true,
     rightVisible: true,
     mandalaEnabled: true,
-    startPositionLayout: policy,
+    startPlacementLayout: policy,
   });
 
   // Mandala bounding box (placements are 1-based).

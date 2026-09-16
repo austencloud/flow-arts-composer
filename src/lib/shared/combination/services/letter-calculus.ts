@@ -1,12 +1,12 @@
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { GridPositionGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { positionGroup, seamEndOf, seamOf } from "./position-groups";
+import type { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { placementGroup, seamEndOf, seamOf } from "./placement-groups";
 
 export interface LetterEdge {
   readonly letter: Letter;
-  readonly from: GridPositionGroup;
-  readonly to: GridPositionGroup;
+  readonly from: GridPlacementGroup;
+  readonly to: GridPlacementGroup;
 }
 
 export interface IngredientEdges {
@@ -80,7 +80,7 @@ export interface EnumerateResult {
   readonly searchComplete: boolean;
 }
 
-/** Family edges of a concrete sequence's steps (skips steps missing positions). */
+/** Family edges of a concrete sequence's steps (skips steps missing placements). */
 export function edgesFromSequence(seq: SequenceData): LetterEdge[] {
   const edges: LetterEdge[] = [];
   for (const step of seq.steps) {
@@ -88,8 +88,8 @@ export function edgesFromSequence(seq: SequenceData): LetterEdge[] {
     const startSeam = seamOf(step);
     const endSeam = seamEndOf(step);
     if (!startSeam || !endSeam) continue;
-    const from = positionGroup(startSeam);
-    const to = positionGroup(endSeam);
+    const from = placementGroup(startSeam);
+    const to = placementGroup(endSeam);
     if (!from || !to) continue;
     edges.push({ letter: step.letter, from, to });
   }
@@ -245,13 +245,13 @@ export function ingredientDisplayNames(
 
 interface EdgeDef {
   readonly letter: Letter;
-  readonly to: GridPositionGroup;
+  readonly to: GridPlacementGroup;
   /** Ingredient INDICES that offer this exact (letter, from, to) edge. */
   readonly owners: ReadonlySet<number>;
 }
 
 /**
- * Enumerate primitive (aperiodic) closed walks in the position-family graph
+ * Enumerate primitive (aperiodic) closed walks in the placement-family graph
  * whose edges are drawn from the ingredients, returning the SHORTEST
  * candidates first (iterative deepening — N1): every closure of length 1 is
  * collected and sorted before length 2 is even attempted, and so on up to
@@ -270,14 +270,14 @@ interface EdgeDef {
  * behaves like "the depth-`maxLength` budget," not "8x more work."
  *
  * Word-level sieve only: necessary, not sufficient — Layer 1 (seam-graph
- * search) decides realizability against concrete card material (position
+ * search) decides realizability against concrete card material (placement
  * INSTANCES: alpha3 vs alpha5).
  *
- * API-fitness note: position FAMILY is invariant under every spatial/color
+ * API-fitness note: placement FAMILY is invariant under every spatial/color
  * variant a hybrid card could apply. Verified against
- * `circular-position-maps.ts`'s `HALF_POSITION_MAP` (180°) and
- * `QUARTER_POSITION_MAP_CW`/`_CCW` (90°) — every entry maps a position to
- * another position in the SAME family (alpha->alpha, beta->beta, each gamma
+ * `circular-placement-maps.ts`'s `HALF_PLACEMENT_MAP` (180°) and
+ * `QUARTER_PLACEMENT_MAP_CW`/`_CCW` (90°) — every entry maps a placement to
+ * another placement in the SAME family (alpha->alpha, beta->beta, each gamma
  * half to itself, etc.); there are zero cross-family maps in that file, and
  * mirroring/color-swap don't touch family membership either. So this sieve
  * correctly prefilters at the WORD level (which letter sequences could ever
@@ -285,9 +285,9 @@ interface EdgeDef {
  * mirror, color swap) is Layer 1's job, not this one's.
  *
  * Prior art (never-hand-roll accounting): sequence-engine's
- * `LetterPositionInfo` (sequence-engine-types.ts) and the spell tab's
+ * `LetterPlacementInfo` (sequence-engine-types.ts) and the spell tab's
  * `LetterTransitionGraph` (features/create/spell/services/letter-transition-graph.ts)
- * walk letters over position groups, but both are limited to alpha/beta/gamma
+ * walk letters over placement groups, but both are limited to alpha/beta/gamma
  * and are generation-bound (no ingredient attribution, no closed-walk
  * enumeration over a chosen edge multiset). Layer 0 needs all 7 families +
  * per-ingredient provenance, hence a new module. Consolidation deliberately
@@ -322,8 +322,8 @@ export function enumerateHybridWords(
     string,
     {
       letter: Letter;
-      from: GridPositionGroup;
-      to: GridPositionGroup;
+      from: GridPlacementGroup;
+      to: GridPlacementGroup;
       owners: Set<number>;
     }
   >();
@@ -341,7 +341,7 @@ export function enumerateHybridWords(
         });
     }
   });
-  const edgesByFrom = new Map<GridPositionGroup, EdgeDef[]>();
+  const edgesByFrom = new Map<GridPlacementGroup, EdgeDef[]>();
   for (const def of edgeMap.values()) {
     const bucket = edgesByFrom.get(def.from);
     if (bucket) bucket.push(def);
@@ -409,8 +409,8 @@ export function enumerateHybridWords(
     let levelBudgetExceeded = false;
 
     const walk = (
-      start: GridPositionGroup,
-      current: GridPositionGroup,
+      start: GridPlacementGroup,
+      current: GridPlacementGroup,
       depth: number
     ): void => {
       if (levelBudgetExceeded) return;

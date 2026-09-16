@@ -17,7 +17,7 @@ import {
 } from "@tka/tka-types";
 import {
   GridMode,
-  GridPositionGroup,
+  GridPlacementGroup,
 } from "../../pictograph/grid/domain/enums/grid-enums";
 import { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import type { MotionDataSchema } from "../../pictograph/shared/domain/schemas/pictograph-schemas";
@@ -70,10 +70,10 @@ const SequenceDataObjectSchema = z.object({
   word: z.string().default(""),
   steps: z.array(StepDataSchema).default([]),
 
-  // Optional positioning data
-  startingPosition: StepDataSchema.optional(),
-  startingPositionGroup: z.nativeEnum(GridPositionGroup).optional(),
-  startPosition: StepDataSchema.optional(),
+  // Optional placement data
+  startingPlacement: StepDataSchema.optional(),
+  startingPlacementGroup: z.nativeEnum(GridPlacementGroup).optional(),
+  startPlacement: StepDataSchema.optional(),
 
   // Metadata and display
   thumbnails: z.array(z.string().url()).default([]),

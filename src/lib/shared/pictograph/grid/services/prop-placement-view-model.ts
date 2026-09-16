@@ -177,8 +177,8 @@ export function buildPlacementPictographData(
     ...(input.previewPictographData ?? {}),
     id: input.previewPictographData?.id ?? "shared-prop-placement-grid",
     letter: input.previewPictographData?.letter ?? null,
-    startPosition: input.previewPictographData?.startPosition ?? null,
-    endPosition: input.previewPictographData?.endPosition ?? null,
+    startPlacement: input.previewPictographData?.startPlacement ?? null,
+    endPlacement: input.previewPictographData?.endPlacement ?? null,
     gridMode: input.gridMode,
     betaSwapped: input.betaSwapped,
     motions,
@@ -250,7 +250,7 @@ export function buildPlacementTransformTransition(
 
 /**
  * Builds the pair of pictographs that let PictographContainer animate a start
- * position location change in place: the moving prop travels a pro-zero-turns
+ * placement location change in place: the moving prop travels a pro-zero-turns
  * arc around the grid center while the partner's beta offset resolves via the
  * prepared-endpoint correction lerp in calculatePictographMotionPositions.
  */
@@ -309,8 +309,8 @@ export function buildPlacementTransition(
     ...(base ?? {}),
     id: base?.id ?? "shared-prop-placement-grid",
     letter: base?.letter ?? null,
-    startPosition: base?.startPosition ?? null,
-    endPosition: base?.endPosition ?? null,
+    startPlacement: base?.startPlacement ?? null,
+    endPlacement: base?.endPlacement ?? null,
     gridMode: input.gridMode,
     betaSwapped: input.betaSwapped,
     motions: {

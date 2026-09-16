@@ -52,7 +52,7 @@ export interface DeckProductionStateDependencies {
   queryGalleryDeckFromSpec: typeof import("../../../services/gallery-deck-source").queryGalleryDeckFromSpec;
   resolveGalleryCards: typeof import("../../../services/gallery-deck-source").resolveGalleryCards;
   generateSequence(options: GenerationOptions): Promise<SequenceData>;
-  getStartPositionVariations(
+  getStartPlacementVariations(
     gridMode: GridMode,
     leftOrientation: Orientation,
     rightOrientation: Orientation
@@ -76,9 +76,9 @@ export function createDeckProductionState(
       sliceTypes: deck.selectedSliceTypes,
       loopTypes: deck.selectedLoopTypes,
       levels: deck.selectedLevels,
-      startPositionIds:
-        deck.selectedStartPositionIds.size > 0
-          ? deck.selectedStartPositionIds
+      startPlacementIds:
+        deck.selectedStartPlacementIds.size > 0
+          ? deck.selectedStartPlacementIds
           : undefined,
     };
     pool = buildSequencePool(catalogs, filter);
@@ -294,16 +294,16 @@ export function createDeckProductionState(
         : deck.dashStyle === "high"
           ? "prefer-dash"
           : null;
-    const startPositions =
-      deck.selectedStartPositionIds.size > 0
+    const startPlacements =
+      deck.selectedStartPlacementIds.size > 0
         ? deps
-            .getStartPositionVariations(
+            .getStartPlacementVariations(
               gridMode,
               deck.startOriLeft as Orientation,
               deck.startOriRight as Orientation
             )
             .filter((position) =>
-              deck.selectedStartPositionIds.has(String(position.startPosition))
+              deck.selectedStartPlacementIds.has(String(position.startPlacement))
             )
         : [];
 
@@ -342,9 +342,9 @@ export function createDeckProductionState(
       while (sequences.length < target && attempts < maxAttempts) {
         attempts++;
         if (generation !== deck.drawGeneration) return false;
-        if (startPositions.length) {
-          options.startPosition =
-            startPositions[Math.floor(Math.random() * startPositions.length)];
+        if (startPlacements.length) {
+          options.startPlacement =
+            startPlacements[Math.floor(Math.random() * startPlacements.length)];
         }
         let sequence: SequenceData;
         try {

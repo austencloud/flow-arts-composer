@@ -2,7 +2,7 @@
  * Construct Tab State - Sub-tab State
  *
  * Manages state specific to the Construct sub-tab functionality.
- * Handles start position selection, option picking, and construct-specific UI state.
+ * Handles start placement selection, option picking, and construct-specific UI state.
  *
  * ✅ All construct-specific runes ($state, $derived, $effect) live here
  * ✅ Pure reactive wrappers - no business logic
@@ -12,12 +12,12 @@
 
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 
-import { createSimplifiedStartPositionState } from "$lib/shared/create/state/start-position-state.svelte";
+import { createSimplifiedStartPlacementState } from "$lib/shared/create/state/start-placement-state.svelte";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 const debug = createComponentLogger("ConstructTabState");
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import type { CreateModuleOrchestrator } from "$lib/features/create/shared/services/create-module-orchestrator";
 import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
 import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
@@ -36,7 +36,7 @@ import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
 import type { IFilterPersister } from "../../construct/option-picker/services/filter-persister";
 import { ensureGuestIdentity } from "$lib/shared/auth/services/guest-identity";
 import { invalidateLoopDisplayCache } from "$lib/shared/create/services/loop-certificate";
-import { updateSequenceStartPosition } from "../../construct/start-position-picker/services/update-sequence-start-position";
+import { updateSequenceStartPlacement } from "../../construct/start-placement-picker/services/update-sequence-start-placement";
 import { createOptionInteractionHintState } from "../../construct/option-picker/state/option-interaction-hint-state.svelte";
 import {
   hasSeenOptionInteractionHint,
@@ -80,8 +80,8 @@ export function createConstructTabState(
   // Create HMR backup for critical state - temporarily disabled to debug effect_orphan error
   const hmrBackup = {
     initialValue: {
-      showStartPositionPicker: null as boolean | null,
-      selectedStartPosition: null as PictographData | null,
+      showStartPlacementPicker: null as boolean | null,
+      selectedStartPlacement: null as PictographData | null,
       isInitialized: false,
     },
   };
@@ -91,11 +91,11 @@ export function createConstructTabState(
   let isLoading = $state(false);
   let error = $state<string | null>(null);
   let isTransitioning = $state(false);
-  let showStartPositionPicker = $state<boolean | null>(
-    hmrBackup.initialValue.showStartPositionPicker
+  let showStartPlacementPicker = $state<boolean | null>(
+    hmrBackup.initialValue.showStartPlacementPicker
   );
-  let selectedStartPosition = $state<PictographData | null>(
-    hmrBackup.initialValue.selectedStartPosition
+  let selectedStartPlacement = $state<PictographData | null>(
+    hmrBackup.initialValue.selectedStartPlacement
   );
   let isInitialized = $state(hmrBackup.initialValue.isInitialized);
   // Filter persistence service - resolved lazily to avoid circular dependency issues
@@ -148,53 +148,53 @@ export function createConstructTabState(
     : null;
 
   // Sub-states (construct-specific)
-  // Start position state service using proper simplified state
-  const startPositionStateService = createSimplifiedStartPositionState();
+  // Start placement state service using proper simplified state
+  const startPlacementStateService = createSimplifiedStartPlacementState();
   const optionInteractionHintState = createOptionInteractionHintState({
     hasSeen: hasSeenOptionInteractionHint,
     markSeen: markOptionInteractionHintSeen,
   });
-  let unsubscribeStartPositionListener: (() => void) | null = null;
+  let unsubscribeStartPlacementListener: (() => void) | null = null;
 
   // Creation failed, so there is no sequence to add steps to. Send the user back
-  // to the start position picker instead of stranding them on an option picker
+  // to the start placement picker instead of stranding them on an option picker
   // whose taps can only fail.
-  function failStartPositionSelection() {
-    setError("Could not start that sequence. Pick a start position again.");
-    setSelectedStartPosition(null);
-    sequenceState?.setSelectedStartPosition(null);
-    startPositionStateService.clearSelectedPosition();
-    setShowStartPositionPicker(true);
+  function failStartPlacementSelection() {
+    setError("Could not start that sequence. Pick a start placement again.");
+    setSelectedStartPlacement(null);
+    sequenceState?.setSelectedStartPlacement(null);
+    startPlacementStateService.clearSelectedPlacement();
+    setShowStartPlacementPicker(true);
   }
 
-  // Event handler function for start position selection (reactive listener compatible)
-  function handleStartPositionSelected(
+  // Event handler function for start placement selection (reactive listener compatible)
+  function handleStartPlacementSelected(
     pictographData: PictographData | null,
     source: "user" | "sync" = "user"
   ) {
     if (!pictographData) {
-      setSelectedStartPosition(null);
+      setSelectedStartPlacement(null);
       if (sequenceState) {
-        sequenceState.setSelectedStartPosition(null);
+        sequenceState.setSelectedStartPlacement(null);
       }
       if (source === "user") {
-        setShowStartPositionPicker(true);
+        setShowStartPlacementPicker(true);
       }
       return;
     }
 
     const currentSequence = sequenceState?.currentSequence ?? null;
     const currentStart =
-      currentSequence?.startingPosition ?? currentSequence?.startPosition;
-    const startPositionData = createStartPositionData({
+      currentSequence?.startingPlacement ?? currentSequence?.startPlacement;
+    const startPlacementData = createStartPlacementData({
       ...pictographData,
       id: currentStart?.id ?? `start-${Date.now()}`,
     });
 
     if (source !== "user" || !sequenceState) {
-      setShowStartPositionPicker(false);
-      setSelectedStartPosition(startPositionData);
-      sequenceState?.setSelectedStartPosition(startPositionData);
+      setShowStartPlacementPicker(false);
+      setSelectedStartPlacement(startPlacementData);
+      sequenceState?.setSelectedStartPlacement(startPlacementData);
       return;
     }
 
@@ -202,49 +202,49 @@ export function createConstructTabState(
     // work persists and survives refresh. Non-blocking: never delays the UI.
     void ensureGuestIdentity();
 
-    // Get the current grid mode from the start position picker to ensure
+    // Get the current grid mode from the start placement picker to ensure
     // the sequence is created with the correct grid mode (Diamond or Box)
-    const currentGridMode = startPositionStateService.currentGridMode;
+    const currentGridMode = startPlacementStateService.currentGridMode;
 
     if (currentSequence) {
-      const update = updateSequenceStartPosition(
+      const update = updateSequenceStartPlacement(
         currentSequence,
-        startPositionData,
+        startPlacementData,
         currentGridMode
       );
 
       if (!update.ok) {
         setError(
           update.reason === "grid-mismatch"
-            ? "This sequence uses a different grid. Keep its current grid to edit the start position."
-            : "This pose does not connect to step 1. Move the props to the position where step 1 begins."
+            ? "This sequence uses a different grid. Keep its current grid to edit the start placement."
+            : "This pose does not connect to step 1. Move the props to the placement where step 1 begins."
         );
-        setShowStartPositionPicker(true);
+        setShowStartPlacementPicker(true);
         return;
       }
 
       undoController?.pushUndoSnapshot(UndoOperationType.UPDATE_BEAT, {
         stepNumber: 0,
         stepIndex: 0,
-        description: "Update start position",
+        description: "Update start placement",
       });
 
       sequenceState.setCurrentSequence(update.sequence);
       sequenceState.clearSelection();
-      setSelectedStartPosition(startPositionData);
-      setShowStartPositionPicker(false);
+      setSelectedStartPlacement(startPlacementData);
+      setShowStartPlacementPicker(false);
       clearError();
       invalidateLoopDisplayCache();
       return;
     }
 
-    undoController?.pushUndoSnapshot(UndoOperationType.SELECT_START_POSITION, {
-      description: "Select start position",
+    undoController?.pushUndoSnapshot(UndoOperationType.SELECT_START_PLACEMENT, {
+      description: "Select start placement",
     });
 
-    setShowStartPositionPicker(false);
-    setSelectedStartPosition(pictographData);
-    sequenceState.setSelectedStartPosition(startPositionData);
+    setShowStartPlacementPicker(false);
+    setSelectedStartPlacement(pictographData);
+    sequenceState.setSelectedStartPlacement(startPlacementData);
 
     sequenceState
       .createSequence({
@@ -253,7 +253,7 @@ export function createConstructTabState(
       })
       .then((newSequence) => {
         if (newSequence) {
-          // IMPORTANT: Set the gridMode on the sequence to match the start position picker
+          // IMPORTANT: Set the gridMode on the sequence to match the start placement picker
           // This ensures the option picker loads options for the correct grid mode after undo
           const sequenceWithGridMode = {
             ...newSequence,
@@ -261,21 +261,21 @@ export function createConstructTabState(
           };
           sequenceState.setCurrentSequence(sequenceWithGridMode);
           try {
-            sequenceState.setStartPosition(startPositionData);
+            sequenceState.setStartPlacement(startPlacementData);
           } catch (error) {
             console.error(
-              "? ConstructTabState: Error setting start position:",
+              "? ConstructTabState: Error setting start placement:",
               error
             );
           }
         } else {
           console.error("? ConstructTabState: Failed to create new sequence");
-          failStartPositionSelection();
+          failStartPlacementSelection();
         }
       })
       .catch((error: unknown) => {
         console.error("? ConstructTabState: Error creating sequence:", error);
-        failStartPositionSelection();
+        failStartPlacementSelection();
       });
   }
   // ============================================================================
@@ -283,38 +283,38 @@ export function createConstructTabState(
   // ============================================================================
 
   const hasError = $derived(error !== null);
-  const canSelectOptions = $derived(selectedStartPosition !== null);
+  const canSelectOptions = $derived(selectedStartPlacement !== null);
 
-  const shouldShowStartPositionPicker = $derived(() => {
+  const shouldShowStartPlacementPicker = $derived(() => {
     // Don't return any state until initialization is complete
     if (!isInitialized) return null;
 
-    // SAFEGUARD: If Constructor has NO sequence data (no steps and no start position),
-    // ALWAYS show the Start Position Picker, regardless of what showStartPositionPicker says.
+    // SAFEGUARD: If Constructor has NO sequence data (no steps and no start placement),
+    // ALWAYS show the Start Placement Picker, regardless of what showStartPlacementPicker says.
     // This prevents the bug where Option Viewer shows "No options available" when
     // there's nothing to show options for.
     if (sequenceState) {
       const currentSeqData = sequenceState.getCurrentSequenceData();
-      const hasStartPos = sequenceState.hasStartPosition;
+      const hasStartPos = sequenceState.hasStartPlacement;
 
       // Also check currentSequence.steps directly as a backup
       // getCurrentSequenceData() can return empty in some edge cases
       const currentSeq = sequenceState.currentSequence;
       const directBeatsLength = currentSeq?.steps?.length ?? 0;
 
-      // Has data if we have start position OR steps (from either source)
+      // Has data if we have start placement OR steps (from either source)
       const hasNoData =
         !hasStartPos && currentSeqData.length === 0 && directBeatsLength === 0;
 
       if (hasNoData) {
-        return true; // Force Start Position Picker when there's no data
+        return true; // Force Start Placement Picker when there's no data
       }
     }
 
-    return showStartPositionPicker;
+    return showStartPlacementPicker;
   });
   const isPickerStateLoading = $derived(
-    !isInitialized || showStartPositionPicker === null
+    !isInitialized || showStartPlacementPicker === null
   ); // Loading state detection like main navigation
 
   // ============================================================================
@@ -325,15 +325,15 @@ export function createConstructTabState(
   // The sync logic is now handled in the initializeConstructTab function
   // This is necessary because factory functions called after async operations lose Svelte context
 
-  // Load start positions when construct tab is initialized - using onMount to prevent infinite loops
-  let startPositionsLoaded = $state(false);
+  // Load start placements when construct tab is initialized - using onMount to prevent infinite loops
+  let startPlacementsLoaded = $state(false);
   let coordinationSetup = $state(false);
 
   // Initialize construct tab - called from component onMount
   async function initializeConstructTab() {
-    if (!startPositionsLoaded) {
-      // Start positions are loaded automatically on state creation
-      startPositionsLoaded = true;
+    if (!startPlacementsLoaded) {
+      // Start placements are loaded automatically on state creation
+      startPlacementsLoaded = true;
     }
 
     if (!coordinationSetup) {
@@ -342,20 +342,20 @@ export function createConstructTabState(
     }
 
     if (
-      !unsubscribeStartPositionListener &&
-      startPositionStateService.onSelectedPositionChange
+      !unsubscribeStartPlacementListener &&
+      startPlacementStateService.onSelectedPlacementChange
     ) {
-      unsubscribeStartPositionListener =
-        startPositionStateService.onSelectedPositionChange(
-          (position: PictographData | null, source) => {
-            handleStartPositionSelected(position, source);
+      unsubscribeStartPlacementListener =
+        startPlacementStateService.onSelectedPlacementChange(
+          (placement: PictographData | null, source) => {
+            handleStartPlacementSelected(placement, source);
           }
         );
     }
 
     // Register callbacks with local undo controller for undo functionality
-    undoController?.setShowStartPositionPickerCallback(() => {
-      setShowStartPositionPicker(true);
+    undoController?.setShowStartPlacementPickerCallback(() => {
+      setShowStartPlacementPicker(true);
     });
 
     // Register sync picker state callback for smart picker detection after undo
@@ -368,12 +368,12 @@ export function createConstructTabState(
       localStorage.getItem("tka-pending-edit-sequence") !== null;
 
     // CRITICAL FIX: Set a default state and mark initialized BEFORE async operations.
-    // This allows the UI to render immediately with the start position picker shown,
+    // This allows the UI to render immediately with the start placement picker shown,
     // rather than showing a loading spinner while waiting for persistence.
     // The persisted state will update this after loading if needed.
     if (!hasPendingEdit) {
-      // Default: show start position picker (safe default for new sequences)
-      setShowStartPositionPicker(true);
+      // Default: show start placement picker (safe default for new sequences)
+      setShowStartPlacementPicker(true);
     }
     // Mark as initialized EARLY so UI can render while we load persisted state
     isInitialized = true;
@@ -384,7 +384,7 @@ export function createConstructTabState(
       if (sequenceState) {
         await sequenceState.initializeWithPersistence();
       }
-      // Don't set showStartPositionPicker here - let the pending edit effect handle it
+      // Don't set showStartPlacementPicker here - let the pending edit effect handle it
     } else if (SequencePersister && sequenceState) {
       try {
         await sequenceState.initializeWithPersistence();
@@ -396,76 +396,76 @@ export function createConstructTabState(
           await SequencePersister.loadCurrentState("construct");
         debug.log("init: savedState =", savedState);
         debug.log(
-          "init: savedState?.hasStartPosition =",
-          savedState?.hasStartPosition
+          "init: savedState?.hasStartPlacement =",
+          savedState?.hasStartPlacement
         );
         debug.log(
-          "init: sequenceState.hasStartPosition =",
-          sequenceState.hasStartPosition
+          "init: sequenceState.hasStartPlacement =",
+          sequenceState.hasStartPlacement
         );
         debug.log(
           "init: sequenceState.getCurrentSequenceData() =",
           sequenceState.getCurrentSequenceData()
         );
 
-        if (savedState?.hasStartPosition) {
+        if (savedState?.hasStartPlacement) {
           debug.log(
-            "Persisted state has start position, setting showStartPositionPicker = false"
+            "Persisted state has start placement, setting showStartPlacementPicker = false"
           );
-          setShowStartPositionPicker(false);
-          setSelectedStartPosition(savedState.selectedStartPosition);
-          if (savedState.selectedStartPosition) {
-            startPositionStateService.setSelectedPosition(
-              savedState.selectedStartPosition
+          setShowStartPlacementPicker(false);
+          setSelectedStartPlacement(savedState.selectedStartPlacement);
+          if (savedState.selectedStartPlacement) {
+            startPlacementStateService.setSelectedPlacement(
+              savedState.selectedStartPlacement
             );
           }
         } else {
           // No saved state - we already set the default above, just clear any stale state
           debug.log(
-            "No persisted start position, keeping showStartPositionPicker = true"
+            "No persisted start placement, keeping showStartPlacementPicker = true"
           );
-          startPositionStateService.clearSelectedPosition();
+          startPlacementStateService.clearSelectedPlacement();
         }
       } catch (error) {
         console.error(
           "❌ ConstructTabState: Failed to restore persisted state:",
           error
         );
-        // On error, default is already set to show start position picker
-        startPositionStateService.clearSelectedPosition();
+        // On error, default is already set to show start placement picker
+        startPlacementStateService.clearSelectedPlacement();
       }
     } else {
       // No persistence service - we already set the default above
       debug.log(
-        "No persistence service, keeping showStartPositionPicker = true"
+        "No persistence service, keeping showStartPlacementPicker = true"
       );
-      startPositionStateService.clearSelectedPosition();
+      startPlacementStateService.clearSelectedPlacement();
     }
 
-    // Sync picker state with construct tab's own sequence state's hasStartPosition
+    // Sync picker state with construct tab's own sequence state's hasStartPlacement
     // This logic was moved from $effect to avoid effect_orphan error
     // IMPORTANT: Uses construct tab's own sequence state, not the shared state
     if (sequenceState) {
       debug.log(
-        "sync: sequenceState.hasStartPosition =",
-        sequenceState.hasStartPosition
+        "sync: sequenceState.hasStartPlacement =",
+        sequenceState.hasStartPlacement
       );
-      debug.log("sync: showStartPositionPicker =", showStartPositionPicker);
-      if (sequenceState.hasStartPosition && showStartPositionPicker === true) {
-        debug.log("sync: Sequence has start position, hiding picker");
-        setShowStartPositionPicker(false);
+      debug.log("sync: showStartPlacementPicker =", showStartPlacementPicker);
+      if (sequenceState.hasStartPlacement && showStartPlacementPicker === true) {
+        debug.log("sync: Sequence has start placement, hiding picker");
+        setShowStartPlacementPicker(false);
       } else if (
-        !sequenceState.hasStartPosition &&
-        showStartPositionPicker === false
+        !sequenceState.hasStartPlacement &&
+        showStartPlacementPicker === false
       ) {
-        debug.log("sync: Sequence has NO start position, showing picker");
-        setShowStartPositionPicker(true);
+        debug.log("sync: Sequence has NO start placement, showing picker");
+        setShowStartPlacementPicker(true);
       }
     }
 
     debug.log(
-      "init complete: showStartPositionPicker =",
-      showStartPositionPicker
+      "init complete: showStartPlacementPicker =",
+      showStartPlacementPicker
     );
   }
 
@@ -489,12 +489,12 @@ export function createConstructTabState(
     error = null;
   }
 
-  function setShowStartPositionPicker(show: boolean | null) {
-    showStartPositionPicker = show;
+  function setShowStartPlacementPicker(show: boolean | null) {
+    showStartPlacementPicker = show;
   }
 
-  function setSelectedStartPosition(position: PictographData | null) {
-    selectedStartPosition = position;
+  function setSelectedStartPlacement(placement: PictographData | null) {
+    selectedStartPlacement = placement;
   }
 
   function setContinuousOnly(continuous: boolean) {
@@ -516,9 +516,9 @@ export function createConstructTabState(
   async function clearSequenceCompletely() {
     try {
       // Start UI transition and sequence clearing simultaneously for smooth UX
-      setShowStartPositionPicker(true);
-      setSelectedStartPosition(null);
-      startPositionStateService.clearSelectedPosition();
+      setShowStartPlacementPicker(true);
+      setSelectedStartPlacement(null);
+      startPlacementStateService.clearSelectedPlacement();
       clearError();
 
       // TODO: Navigation logic needs to be updated after state refactoring
@@ -556,15 +556,15 @@ export function createConstructTabState(
   }
 
   /**
-   * Restore picker state after undo - shows option picker instead of start position picker
+   * Restore picker state after undo - shows option picker instead of start placement picker
    * Called when undoing a clear sequence operation
    */
   function restorePickerStateAfterUndo() {
-    setShowStartPositionPicker(false);
+    setShowStartPlacementPicker(false);
   }
 
   /**
-   * Sync picker state with sequence state's hasStartPosition and grid mode
+   * Sync picker state with sequence state's hasStartPlacement and grid mode
    * This replaces the $effect that was causing effect_orphan error
    * Call this method whenever sequence state changes that might affect picker visibility
    *
@@ -577,25 +577,25 @@ export function createConstructTabState(
     // This is critical - construct tab manages its own sequence independently
     if (!sequenceState) return;
 
-    // When sequence state has a start position, hide the start position picker
-    if (sequenceState.hasStartPosition && showStartPositionPicker === true) {
-      setShowStartPositionPicker(false);
+    // When sequence state has a start placement, hide the start placement picker
+    if (sequenceState.hasStartPlacement && showStartPlacementPicker === true) {
+      setShowStartPlacementPicker(false);
     }
 
-    // When sequence state loses start position, show the start position picker
-    if (!sequenceState.hasStartPosition && showStartPositionPicker === false) {
-      setShowStartPositionPicker(true);
+    // When sequence state loses start placement, show the start placement picker
+    if (!sequenceState.hasStartPlacement && showStartPlacementPicker === false) {
+      setShowStartPlacementPicker(true);
     }
 
     // Sync grid mode from the current sequence
     const currentSequence = sequenceState.currentSequence;
     if (currentSequence?.gridMode) {
       const sequenceGridMode = currentSequence.gridMode;
-      const currentPickerGridMode = startPositionStateService.currentGridMode;
+      const currentPickerGridMode = startPlacementStateService.currentGridMode;
 
       if (sequenceGridMode !== currentPickerGridMode) {
-        // Update the start position state's grid mode to match the sequence
-        startPositionStateService.loadPositions(sequenceGridMode);
+        // Update the start placement state's grid mode to match the sequence
+        startPlacementStateService.loadPlacements(sequenceGridMode);
       }
     }
   }
@@ -608,10 +608,10 @@ export function createConstructTabState(
   function syncGridModeFromSequence(sequenceGridMode: GridMode | undefined) {
     if (!sequenceGridMode) return;
 
-    const currentPickerGridMode = startPositionStateService.currentGridMode;
+    const currentPickerGridMode = startPlacementStateService.currentGridMode;
     if (sequenceGridMode !== currentPickerGridMode) {
-      // Use synchronous setter to avoid UI flicker from async loadPositions
-      startPositionStateService.setGridMode(sequenceGridMode);
+      // Use synchronous setter to avoid UI flicker from async loadPlacements
+      startPlacementStateService.setGridMode(sequenceGridMode);
     }
   }
 
@@ -644,11 +644,11 @@ export function createConstructTabState(
     get canSelectOptions() {
       return canSelectOptions;
     },
-    get showStartPositionPicker() {
-      return showStartPositionPicker;
+    get showStartPlacementPicker() {
+      return showStartPlacementPicker;
     },
-    get shouldShowStartPositionPicker() {
-      return shouldShowStartPositionPicker;
+    get shouldShowStartPlacementPicker() {
+      return shouldShowStartPlacementPicker;
     },
     get isPickerStateLoading() {
       return isPickerStateLoading;
@@ -660,8 +660,8 @@ export function createConstructTabState(
     get isPersistenceInitialized() {
       return isInitialized;
     },
-    get selectedStartPosition() {
-      return selectedStartPosition;
+    get selectedStartPlacement() {
+      return selectedStartPlacement;
     },
     get isContinuousOnly() {
       return isContinuousOnly;
@@ -672,8 +672,8 @@ export function createConstructTabState(
     },
 
     // Sub-states
-    get startPositionStateService() {
-      return startPositionStateService;
+    get startPlacementStateService() {
+      return startPlacementStateService;
     },
     get optionInteractionHintState() {
       return optionInteractionHintState;
@@ -710,8 +710,8 @@ export function createConstructTabState(
     setTransitioning,
     setError,
     clearError,
-    setShowStartPositionPicker,
-    setSelectedStartPosition,
+    setShowStartPlacementPicker,
+    setSelectedStartPlacement,
     setContinuousOnly,
     clearSequenceCompletely,
     restorePickerStateAfterUndo,
@@ -719,7 +719,7 @@ export function createConstructTabState(
     syncGridModeFromSequence,
 
     // Event handlers
-    handleStartPositionSelected,
+    handleStartPlacementSelected,
 
     // Initialization
     initializeConstructTab,

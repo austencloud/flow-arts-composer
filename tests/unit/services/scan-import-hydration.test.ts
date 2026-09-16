@@ -53,8 +53,8 @@ function makeStep(
     rightReversal: false,
     isBlank: false,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: createMotionData({ ...left, hand: HandSide.LEFT }),
       right: createMotionData({ ...right, hand: HandSide.RIGHT }),
@@ -137,12 +137,12 @@ function buildSourceSequence(): SequenceData {
     word: "AB",
     name: "AB",
     steps: [step1, step2],
-    startPosition: {
+    startPlacement: {
       id: startPos.id,
       letter: startPos.letter,
-      gridPosition: startPos.startPosition,
-      startPosition: startPos.startPosition,
-      endPosition: startPos.endPosition,
+      gridPlacement: startPos.startPlacement,
+      startPlacement: startPos.startPlacement,
+      endPlacement: startPos.endPlacement,
       motions: startPos.motions,
     },
   });

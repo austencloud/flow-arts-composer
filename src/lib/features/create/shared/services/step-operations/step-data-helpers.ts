@@ -7,8 +7,8 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { ICreateModuleState } from "../../types/create-module-types";
 
-/** Beat 0 = start position, steps 1+ are in the sequence */
-export const START_POSITION_BEAT_NUMBER = 0;
+/** Beat 0 = start placement, steps 1+ are in the sequence */
+export const START_PLACEMENT_BEAT_NUMBER = 0;
 
 /**
  * Get step data from the live sequence state
@@ -18,9 +18,9 @@ export function getStepDataFromState(
   stepNumber: number,
   createModuleState: ICreateModuleState
 ): StepData | null | undefined {
-  if (stepNumber === START_POSITION_BEAT_NUMBER) {
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
     return createModuleState.sequenceState
-      .selectedStartPosition as unknown as StepData | null;
+      .selectedStartPlacement as unknown as StepData | null;
   }
 
   const arrayIndex = stepNumber - 1;

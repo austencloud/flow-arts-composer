@@ -1,27 +1,27 @@
 /**
  * Type Guards for Pictograph Data
  *
- * Utilities to distinguish between StepData and StartPositionData at runtime.
+ * Utilities to distinguish between StepData and StartPlacementData at runtime.
  * These enable TypeScript to narrow union types and enforce type safety.
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 
 /**
  * Union type for all pictograph-based data structures
  */
-export type StepOrStartPosition = StepData | StartPositionData;
+export type StepOrStartPlacement = StepData | StartPlacementData;
 
 /**
- * Type guard: Check if data is StartPositionData
+ * Type guard: Check if data is StartPlacementData
  *
- * Checks for the presence of isStartPosition discriminator OR stepNumber === 0 (legacy)
+ * Checks for the presence of isStartPlacement discriminator OR stepNumber === 0 (legacy)
  */
-export function isStartPosition(
-  data: PictographData | StepData | StartPositionData | unknown
-): data is StartPositionData {
+export function isStartPlacement(
+  data: PictographData | StepData | StartPlacementData | unknown
+): data is StartPlacementData {
   if (!data || typeof data !== "object") {
     return false;
   }
@@ -29,7 +29,7 @@ export function isStartPosition(
   const obj = data as Record<string, unknown>;
 
   // Primary check: Type discriminator field
-  if (obj.isStartPosition === true) {
+  if (obj.isStartPlacement === true) {
     return true;
   }
 
@@ -49,7 +49,7 @@ export function isStartPosition(
  * are identified structurally by stepNumber).
  */
 export function isStep(
-  data: PictographData | StepData | StartPositionData | unknown
+  data: PictographData | StepData | StartPlacementData | unknown
 ): data is StepData {
   if (!data || typeof data !== "object") {
     return false;
@@ -69,25 +69,25 @@ export function isStep(
 }
 
 /**
- * Type guard: Check if data is either a beat or start position
+ * Type guard: Check if data is either a beat or start placement
  *
  * Useful for validating that data is one of our known types
  */
-export function isStepOrStartPosition(
+export function isStepOrStartPlacement(
   data: unknown
-): data is StepOrStartPosition {
-  return isStartPosition(data) || isStep(data);
+): data is StepOrStartPlacement {
+  return isStartPlacement(data) || isStep(data);
 }
 
 /**
- * Assertion: Throw if data is not StartPositionData
+ * Assertion: Throw if data is not StartPlacementData
  */
-export function assertIsStartPosition(
+export function assertIsStartPlacement(
   data: unknown
-): asserts data is StartPositionData {
-  if (!isStartPosition(data)) {
+): asserts data is StartPlacementData {
+  if (!isStartPlacement(data)) {
     throw new Error(
-      `Expected StartPositionData but got ${typeof data}. Data: ${JSON.stringify(data)}`
+      `Expected StartPlacementData but got ${typeof data}. Data: ${JSON.stringify(data)}`
     );
   }
 }

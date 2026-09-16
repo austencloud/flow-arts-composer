@@ -1,7 +1,7 @@
 export interface CsvEdge {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotionType: string;
@@ -16,8 +16,8 @@ export interface CsvEdge {
 }
 
 export interface StepMotionQuery {
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   left: { motionType: string; startLocation: string; endLocation: string };
   right: { motionType: string; startLocation: string; endLocation: string };
 }
@@ -55,8 +55,8 @@ export function lookupLetter(
 ): string | null {
   const match = edges.find(
     (e) =>
-      e.startPosition === q.startPosition &&
-      e.endPosition === q.endPosition &&
+      e.startPlacement === q.startPlacement &&
+      e.endPlacement === q.endPlacement &&
       e.leftMotionType === q.left.motionType &&
       e.leftStartLocation === q.left.startLocation &&
       e.leftEndLocation === q.left.endLocation &&

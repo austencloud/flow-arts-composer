@@ -97,7 +97,7 @@
   let currentStepData = $derived.by(() => {
     const seq = animationState.sequenceData;
     if (!seq?.steps?.length) return null;
-    if (animationState.currentStep < 1 && seq.startPosition) return seq.startPosition;
+    if (animationState.currentStep < 1 && seq.startPlacement) return seq.startPlacement;
     const idx = Math.min(
       Math.max(0, Math.floor(animationState.currentStep) - 1),
       seq.steps.length - 1,
@@ -242,12 +242,12 @@
     const stepDurations = steps.map((s) => s.duration ?? 1);
     const totalDurationUnits =
       stepDurations.reduce((sum, d) => sum + d, 0) || animationState.totalSteps;
-    const startPositionDuration = 1; // includeAnimationStartPosition: true
-    const endPositionHoldDuration = 1; // includeEndHold: true
+    const startPlacementDuration = 1; // includeAnimationStartPlacement: true
+    const endPlacementHoldDuration = 1; // includeEndHold: true
     const loopCount = 1;
     const motionLoopUnits = totalDurationUnits * loopCount;
     const totalDurationWithHolds =
-      startPositionDuration + motionLoopUnits + endPositionHoldDuration;
+      startPlacementDuration + motionLoopUnits + endPlacementHoldDuration;
     const secondsPerBeatUnit = 1.0 / animationState.speed;
     const totalTimelineSeconds = totalDurationWithHolds * secondsPerBeatUnit;
     const totalFrames = Math.ceil(totalTimelineSeconds * fps);
@@ -259,7 +259,7 @@
       cumulative += d;
     }
 
-    const motionStart = startPositionDuration;
+    const motionStart = startPlacementDuration;
     const motionEnd = motionStart + motionLoopUnits;
 
     // Reset the live trail accumulator + overlay buffers so the live pass starts
@@ -281,9 +281,9 @@
       const virtualTimeMs = (i / fps) * 1000;
 
       let playbackPosition: number;
-      if (startPositionDuration > 0 && timeProgress < motionStart) {
-        playbackPosition = timeProgress / startPositionDuration;
-      } else if (endPositionHoldDuration > 0 && timeProgress >= motionEnd) {
+      if (startPlacementDuration > 0 && timeProgress < motionStart) {
+        playbackPosition = timeProgress / startPlacementDuration;
+      } else if (endPlacementHoldDuration > 0 && timeProgress >= motionEnd) {
         playbackPosition = steps.length + 1;
       } else {
         const motionTime = timeProgress - motionStart;
@@ -365,7 +365,7 @@
               fps: cfg.fps,
               loopCount: 1,
               effectOverrides: { trails: true },
-              includeAnimationStartPosition: true,
+              includeAnimationStartPlacement: true,
               includeEndHold: true,
             },
           );

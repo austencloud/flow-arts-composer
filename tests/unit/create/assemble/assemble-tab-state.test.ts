@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAssembleTabState } from "$lib/features/create/shared/state/assemble-tab-state.svelte";
 import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
 import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -53,7 +53,7 @@ function makeBlueSequence(): SequenceData {
     endOrientation: left.startOrientation,
     turns: 0,
   });
-  const startPosition = createStartPositionData({
+  const startPlacement = createStartPlacementData({
     id: "assemble-start",
     gridMode: GridMode.DIAMOND,
     motions: { [HandSide.LEFT]: startBlue },
@@ -71,8 +71,8 @@ function makeBlueSequence(): SequenceData {
         duration: 2,
       }),
     ],
-    startPosition,
-    startingPosition: startPosition,
+    startPlacement,
+    startingPlacement: startPlacement,
     thumbnails: [],
     gridMode: GridMode.DIAMOND,
     isFavorite: false,
@@ -119,7 +119,7 @@ describe("Assemble tab document synchronization", () => {
 
     sequenceState.setCurrentSequence(initial);
     expect(tabState.assembleBuilderState.leftSteps).toHaveLength(1);
-    expect(tabState.assembleBuilderState.leftSteps[0]?.endPosition).toBe(
+    expect(tabState.assembleBuilderState.leftSteps[0]?.endPlacement).toBe(
       GridLocation.EAST
     );
 
@@ -135,7 +135,7 @@ describe("Assemble tab document synchronization", () => {
     };
     sequenceState.setCurrentSequence({ ...initial, steps: [editedStep] });
 
-    expect(tabState.assembleBuilderState.leftSteps[0]?.endPosition).toBe(
+    expect(tabState.assembleBuilderState.leftSteps[0]?.endPlacement).toBe(
       GridLocation.SOUTH
     );
     await Promise.resolve();
@@ -151,7 +151,7 @@ describe("Assemble tab document synchronization", () => {
     expect(sequenceState.animationState.historyTransition).toEqual(
       expect.objectContaining({ direction: "undo", kind: "content" })
     );
-    expect(tabState.assembleBuilderState.leftSteps[0]?.endPosition).toBe(
+    expect(tabState.assembleBuilderState.leftSteps[0]?.endPlacement).toBe(
       GridLocation.EAST
     );
 
@@ -160,7 +160,7 @@ describe("Assemble tab document synchronization", () => {
     expect(sequenceState.animationState.historyTransition).toEqual(
       expect.objectContaining({ direction: "redo", kind: "content" })
     );
-    expect(tabState.assembleBuilderState.leftSteps[0]?.endPosition).toBe(
+    expect(tabState.assembleBuilderState.leftSteps[0]?.endPlacement).toBe(
       GridLocation.SOUTH
     );
 
@@ -239,8 +239,8 @@ describe("Assemble tab document synchronization", () => {
       initialize: vi.fn(async () => undefined),
       loadCurrentState: vi.fn(async () => ({
         currentSequence: saved,
-        selectedStartPosition: saved.startPosition ?? null,
-        hasStartPosition: true,
+        selectedStartPlacement: saved.startPlacement ?? null,
+        hasStartPlacement: true,
         activeBuildSection: "assemble" as const,
       })),
       saveCurrentState: vi.fn(async () => undefined),
@@ -253,7 +253,7 @@ describe("Assemble tab document synchronization", () => {
     expect(tabState.sequenceState?.currentSequence?.id).toBe(saved.id);
     expect(tabState.sequenceState?.currentSequence?.steps).toHaveLength(1);
     expect(tabState.assembleBuilderState.leftSteps).toHaveLength(1);
-    expect(tabState.assembleBuilderState.leftSteps[0]?.endPosition).toBe(
+    expect(tabState.assembleBuilderState.leftSteps[0]?.endPlacement).toBe(
       GridLocation.EAST
     );
   });

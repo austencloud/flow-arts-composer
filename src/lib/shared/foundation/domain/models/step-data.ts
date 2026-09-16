@@ -14,11 +14,11 @@
  * partial motions; StepData stays structurally assignable to PictographData.
  *
  * NOTE: StepData represents actual steps in a sequence (stepNumber >= 1).
- * For start positions, use StartPositionData instead.
+ * For start placements, use StartPlacementData instead.
  */
 import type { Step } from "@tka/tka-types";
 import type { Letter } from "./letter";
-import type { GridPosition, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 
 export interface StepMotions {
@@ -30,8 +30,8 @@ export interface StepData extends Step {
   // Structurally identical to the canonical fields; re-declared with the
   // app-local imports so consumers keep their existing import graph.
   readonly letter: Letter | null;
-  readonly startPosition: GridPosition | null;
-  readonly endPosition: GridPosition | null;
+  readonly startPlacement: GridPlacement | null;
+  readonly endPlacement: GridPlacement | null;
   readonly gridMode?: GridMode;
   readonly motions: StepMotions;
 

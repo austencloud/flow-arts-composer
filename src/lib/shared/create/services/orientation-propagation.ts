@@ -61,19 +61,19 @@ export function propagateOrientationsForHand(
 
 /**
  * Recalculate all prop orientations through the entire sequence.
- * Uses the start position orientations as the baseline.
+ * Uses the start placement orientations as the baseline.
  */
 export function recalculateAllOrientations(
   sequence: SequenceData
 ): SequenceData {
-  if (sequence.steps.length === 0 || !sequence.startPosition) {
+  if (sequence.steps.length === 0 || !sequence.startPlacement) {
     return sequence;
   }
 
-  const startPosition = sequence.startPosition;
+  const startPlacement = sequence.startPlacement;
   let updatedSteps = [...sequence.steps];
-  const leftStartMotion = startPosition.motions[HandSide.LEFT];
-  const rightStartMotion = startPosition.motions[HandSide.RIGHT];
+  const leftStartMotion = startPlacement.motions[HandSide.LEFT];
+  const rightStartMotion = startPlacement.motions[HandSide.RIGHT];
 
   // Recalculate orientations for the left prop
   if (leftStartMotion) {

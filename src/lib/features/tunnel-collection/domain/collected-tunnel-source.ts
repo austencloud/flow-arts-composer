@@ -2,7 +2,7 @@ import {
   createSequenceData,
   type SequenceData,
 } from "$lib/shared/foundation/domain/models/sequence-data";
-import { deriveStartPositionFromSteps } from "$lib/shared/foundation/services/sequence-hydrator";
+import { deriveStartPlacementFromSteps } from "$lib/shared/foundation/services/sequence-hydrator";
 import {
   createIndependentTunnelPerformer,
   createTunnelComposition,
@@ -33,12 +33,12 @@ import type { CollectedTunnel } from "./tunnel-collection-types";
  *  gridMode is recovered off the steps so the right grid renders.
  *
  *  A CollectedTunnel has never had a field for the start position, so the
- *  start-position pictograph has to be rebuilt from the first step the same way
+ *  start-placement pictograph has to be rebuilt from the first step the same way
  *  the hydrator rebuilds it for any stored sequence. Without this a reopened
  *  tunnel's step strip begins at step 1 with the start cell simply missing. */
 export function collectedTunnelSequence(tunnel: CollectedTunnel): SequenceData {
   const steps = [...tunnel.steps];
-  const startPosition = deriveStartPositionFromSteps(steps);
+  const startPlacement = deriveStartPlacementFromSteps(steps);
 
   return createSequenceData({
     id: tunnel.id,
@@ -46,7 +46,7 @@ export function collectedTunnelSequence(tunnel: CollectedTunnel): SequenceData {
     word: tunnel.name,
     steps,
     gridMode: steps.find((step) => step.gridMode)?.gridMode,
-    ...(startPosition ? { startPosition } : {}),
+    ...(startPlacement ? { startPlacement } : {}),
   });
 }
 

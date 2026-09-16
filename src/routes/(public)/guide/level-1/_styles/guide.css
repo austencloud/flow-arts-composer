@@ -54,7 +54,7 @@
 
 /* Guide sheets are always WHITE, even though the app shell runs under :root.dark.
    The pictograph position glyph (α/β/γ start→end indicator) is a dark SVG that
-   PositionGlyph.svelte lightens for dark backgrounds via a :root.dark invert
+   PlacementGlyph.svelte lightens for dark backgrounds via a :root.dark invert
    filter - which fires here and washes the glyph out to faint grey on the white
    page. Cancel it on guide pages so the glyph keeps its native dark ink. */
 .guide-page .position-glyph {
@@ -448,7 +448,7 @@
   box-shadow: 0 0 0 3px oklch(0.65 0.18 270);
 }
 
-.guide-sequence-player .beat-cell.start-position {
+.guide-sequence-player .beat-cell.start-placement {
   opacity: 0.7;
 }
 

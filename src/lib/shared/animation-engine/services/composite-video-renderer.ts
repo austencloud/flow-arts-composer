@@ -17,11 +17,11 @@ export interface CompositeDimensions {
 export interface CompositeLayoutOptions {
   orientation: "horizontal" | "vertical";
   gridStepSize: number; // Size of each beat cell in pixels
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   showStepNumbers: boolean;
 }
 
-export interface StepGridPosition {
+export interface StepGridPlacement {
   col: number; // Column index (0-based)
   row: number; // Row index (0-based)
   x: number; // Pixel X coordinate
@@ -60,7 +60,7 @@ export class CompositeVideoRenderer {
     // Use LayoutCalculator to get exact same [columns, rows] as ImageComposer
     const [cols, rows] = calculateLayout(
       stepCount,
-      options.includeStartPosition
+      options.includeStartPlacement
     );
     this.gridLayout = [cols, rows];
 
@@ -109,7 +109,7 @@ export class CompositeVideoRenderer {
     const renderOptions = {
       stepSize: this.options.gridStepSize,
       addStepNumbers: this.options.showStepNumbers,
-      includeStartPosition: this.options.includeStartPosition,
+      includeStartPlacement: this.options.includeStartPlacement,
       // Disable header (word/difficulty) and footer (user info) to get grid-only output
       addWord: false,
       addDifficultyLevel: false,
@@ -185,7 +185,7 @@ export class CompositeVideoRenderer {
       );
 
       // Draw beat highlight on grid pane
-      const stepPos = this.getStepGridPosition(currentStep);
+      const stepPos = this.getStepGridPlacement(currentStep);
       this.drawStepHighlight(ctx, stepPos, halfWidth, 0);
     } else {
       // Vertical layout: [animation] / [grid]
@@ -212,12 +212,12 @@ export class CompositeVideoRenderer {
       );
 
       // Draw beat highlight on grid pane
-      const stepPos = this.getStepGridPosition(currentStep);
+      const stepPos = this.getStepGridPlacement(currentStep);
       this.drawStepHighlight(ctx, stepPos, 0, halfHeight);
     }
   }
 
-  getStepGridPosition(stepIndex: number): StepGridPosition {
+  getStepGridPlacement(stepIndex: number): StepGridPlacement {
     if (!this.sequence || !this.options || !this.gridDimensions || !this.gridLayout) {
       throw new Error("CompositeVideoRenderer not initialized");
     }
@@ -228,7 +228,7 @@ export class CompositeVideoRenderer {
     const [cols] = this.gridLayout;
 
     // Account for start position offset if included
-    const offset = this.options.includeStartPosition ? 1 : 0;
+    const offset = this.options.includeStartPlacement ? 1 : 0;
     const adjustedStepIndex = stepIndex + offset;
 
     // Calculate column and row
@@ -293,7 +293,7 @@ export class CompositeVideoRenderer {
    */
   private drawStepHighlight(
     ctx: CanvasRenderingContext2D,
-    stepPos: StepGridPosition,
+    stepPos: StepGridPlacement,
     offsetX: number,
     offsetY: number
   ): void {

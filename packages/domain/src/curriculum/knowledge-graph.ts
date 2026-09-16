@@ -12,7 +12,7 @@ import type { KnowledgeConcept, MajorLevel } from "../types/curriculum.js";
 export const KNOWLEDGE_GRAPH: KnowledgeConcept[] = [
   // ═══════════════════════════════════════════════════════════════════
   // LEVEL 1: Foundation
-  // All 47 letters at turn-zero. Positions, motions, orientations, props.
+  // All 47 letters at turn-zero. Placements, motions, orientations, props.
   // ═══════════════════════════════════════════════════════════════════
 
   {
@@ -28,9 +28,9 @@ export const KNOWLEDGE_GRAPH: KnowledgeConcept[] = [
     id: "1.2",
     level: 1,
     subLevel: 2,
-    name: "Positions",
+    name: "Placements",
     prerequisites: ["1.1"],
-    terms: ["alpha", "beta", "gamma", "position", "opposite", "same point", "right angle", "α", "β", "γ"],
+    terms: ["alpha", "beta", "gamma", "placement", "opposite", "same point", "right angle", "α", "β", "γ"],
     description: "How the two hands relate to each other on the grid",
   },
   {
@@ -157,10 +157,10 @@ export const KNOWLEDGE_GRAPH: KnowledgeConcept[] = [
     id: "3.4",
     level: 3,
     subLevel: 4,
-    name: "Expanded Position Variations",
+    name: "Expanded Placement Variations",
     prerequisites: ["3.3"],
-    terms: ["position variation", "non-radial position", "expanded variation"],
-    description: "How half turns and float expand position possibilities",
+    terms: ["placement variation", "non-radial placement", "expanded variation"],
+    description: "How half turns and float expand placement possibilities",
   },
 
   // ═══════════════════════════════════════════════════════════════════
@@ -214,10 +214,10 @@ export const KNOWLEDGE_GRAPH: KnowledgeConcept[] = [
     id: "5.2",
     level: 5,
     subLevel: 2,
-    name: "Zeta and Eta Positions",
+    name: "Zeta and Eta Placements",
     prerequisites: ["5.1"],
     terms: ["zeta", "eta", "ζ", "η", "obtuse", "acute"],
-    description: "New positions from mixing grid systems: obtuse (zeta) and acute (eta)",
+    description: "New placements from mixing grid systems: obtuse (zeta) and acute (eta)",
   },
   {
     id: "5.3",
@@ -235,12 +235,12 @@ export const KNOWLEDGE_GRAPH: KnowledgeConcept[] = [
     name: "Skew Transitions",
     prerequisites: ["5.3"],
     terms: ["maintain skew", "resolve skew", "double skew", "dual skew"],
-    description: "Entering, maintaining, and exiting skewed positions",
+    description: "Entering, maintaining, and exiting skewed placements",
   },
 
   // ═══════════════════════════════════════════════════════════════════
   // LEVEL 6: Centric Grid (completes the single grid)
-  // Center grid point. Hash motion. Tau/terra positions.
+  // Center grid point. Hash motion. Tau/terra placements.
   // ═══════════════════════════════════════════════════════════════════
 
   {
@@ -265,10 +265,10 @@ export const KNOWLEDGE_GRAPH: KnowledgeConcept[] = [
     id: "6.3",
     level: 6,
     subLevel: 3,
-    name: "Tau and Terra Positions",
+    name: "Tau and Terra Placements",
     prerequisites: ["6.2"],
-    terms: ["tau", "terra", "τ", "center position"],
-    description: "New positions involving the center point",
+    terms: ["tau", "terra", "τ", "center placement"],
+    description: "New placements involving the center point",
   },
   {
     id: "6.4",
@@ -307,10 +307,10 @@ export const KNOWLEDGE_GRAPH: KnowledgeConcept[] = [
     id: "7.3",
     level: 7,
     subLevel: 3,
-    name: "Inter-Grid Positions",
+    name: "Inter-Grid Placements",
     prerequisites: ["7.2"],
-    terms: ["inter-grid position", "cross-grid position"],
-    description: "New position combinations from having two grids",
+    terms: ["inter-grid placement", "cross-grid placement"],
+    description: "New placement combinations from having two grids",
   },
 
   // ═══════════════════════════════════════════════════════════════════
@@ -355,9 +355,9 @@ export const KNOWLEDGE_GRAPH: KnowledgeConcept[] = [
     id: "9.2",
     level: 9,
     subLevel: 2,
-    name: "3D Skewed Positions",
+    name: "3D Skewed Placements",
     prerequisites: ["9.1"],
     terms: ["3D skew", "rubiks cube", "cross-plane skew"],
-    description: "Skewed positions across intersecting planes, completing 3D mastery",
+    description: "Skewed placements across intersecting planes, completing 3D mastery",
   },
 ];

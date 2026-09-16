@@ -369,7 +369,7 @@ export function registerCreateShortcuts(
           if (selectedStepIndex > 0) {
             sequenceState.selectStep(selectedStepIndex);
           } else {
-            sequenceState.selectStartPositionForEditing();
+            sequenceState.selectStartPlacementForEditing();
           }
         }
       );
@@ -426,7 +426,7 @@ export function registerCreateShortcuts(
           if (selectedStepIndex > 0) {
             sequenceState.selectStep(selectedStepIndex);
           } else {
-            sequenceState.selectStartPositionForEditing();
+            sequenceState.selectStartPlacementForEditing();
           }
         }
       );

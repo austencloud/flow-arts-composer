@@ -56,7 +56,7 @@ export interface SequenceSignature {
 interface LocalStepSignature {
   readonly left: LocalMotionSignature;
   readonly right: LocalMotionSignature;
-  readonly positionGroup: string;
+  readonly placementGroup: string;
 }
 
 /**
@@ -451,7 +451,7 @@ export class SequenceEquivalenceDetector {
     return {
       left: this.convertMotionSignature(internal.left),
       right: this.convertMotionSignature(internal.right),
-      positionGroup: internal.startPositionGroup,
+      placementGroup: internal.startPlacementGroup,
     };
   }
 

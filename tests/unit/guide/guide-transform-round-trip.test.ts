@@ -51,7 +51,7 @@ import { handSwapSequence } from "../../../src/lib/shared/create/services/sequen
 import { rotateSequenceGeometry } from "../../../src/lib/shared/create/services/sequence-derived-fields";
 import type { SequenceData } from "../../../src/lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "../../../src/lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "../../../src/lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "../../../src/lib/shared/foundation/domain/models/start-placement-data";
 
 function makeMotion(
   hand: "left" | "right",
@@ -72,17 +72,17 @@ function makeMotion(
   };
 }
 
-function makeStartPosition(): StartPositionData {
+function makeStartPlacement(): StartPlacementData {
   return {
     id: "start",
     letter: null,
-    isStartPosition: true,
+    isStartPlacement: true,
     gridMode: "diamond",
     motions: {
       left: makeMotion("left", "n", "n"),
       right: makeMotion("right", "s", "s"),
     },
-  } as unknown as StartPositionData;
+  } as unknown as StartPlacementData;
 }
 
 function makeStep(stepNumber: number): StepData {
@@ -90,8 +90,8 @@ function makeStep(stepNumber: number): StepData {
     id: `s-${stepNumber}`,
     letter: "A" as unknown as StepData["letter"],
     gridMode: "diamond" as unknown as StepData["gridMode"],
-    startPosition: "alpha1" as unknown as StepData["startPosition"],
-    endPosition: "alpha3" as unknown as StepData["endPosition"],
+    startPlacement: "alpha1" as unknown as StepData["startPlacement"],
+    endPlacement: "alpha3" as unknown as StepData["endPlacement"],
     stepNumber,
     duration: 1,
     leftReversal: false,
@@ -110,7 +110,7 @@ function makeSequence(): SequenceData {
     name: "t",
     word: "AB",
     steps: [makeStep(1)],
-    startPosition: makeStartPosition(),
+    startPlacement: makeStartPlacement(),
     gridMode: "diamond",
     difficulty: 1,
     metadata: {},

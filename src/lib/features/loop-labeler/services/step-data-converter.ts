@@ -1,9 +1,9 @@
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
   GridMode,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
@@ -60,15 +60,15 @@ export function parseLocation(value: string | undefined): GridLocation {
   return locationMap[str] ?? GridLocation.NORTH;
 }
 
-export function parseGridPosition(value: string | undefined): GridPosition | null {
+export function parseGridPlacement(value: string | undefined): GridPlacement | null {
   if (!value) return null;
   const str = String(value).toLowerCase();
   const enumKey = str.toUpperCase();
-  const positionValue = GridPosition[enumKey as keyof typeof GridPosition];
+  const positionValue = GridPlacement[enumKey as keyof typeof GridPlacement];
   if (positionValue) return positionValue;
-  for (const key in GridPosition) {
-    if (GridPosition[key as keyof typeof GridPosition] === str) {
-      return str as GridPosition;
+  for (const key in GridPlacement) {
+    if (GridPlacement[key as keyof typeof GridPlacement] === str) {
+      return str as GridPlacement;
     }
   }
   return null;
@@ -122,30 +122,30 @@ export function convertRawToBeats(
   gridMode: GridMode
 ): {
   steps: StepData[];
-  startPosition:
-    | (StartPositionData & { stepNumber: number; isBlank: boolean })
+  startPlacement:
+    | (StartPlacementData & { stepNumber: number; isBlank: boolean })
     | null;
 } {
   if (!rawSequence || rawSequence.length === 0) {
-    return { steps: [], startPosition: null };
+    return { steps: [], startPlacement: null };
   }
 
   // JSON structure:
-  // - Element 0: Metadata (word, author, level, etc.) - no sequenceStartPosition, no blue/red attributes
-  // - Element 1: Start position with beat=0, sequenceStartPosition, blue/red attributes
+  // - Element 0: Metadata (word, author, level, etc.) - no sequenceStartPlacement, no blue/red attributes
+  // - Element 1: Start position with beat=0, sequenceStartPlacement, blue/red attributes
   // - Element 2+: Actual steps with beat>=1
 
-  // Find the start position element (has sequenceStartPosition AND beat === 0)
+  // Find the start position element (has sequenceStartPlacement AND beat === 0)
   const startPosElement = rawSequence.find(
-    (el) => "sequenceStartPosition" in el && el.beat === 0
+    (el) => "sequenceStartPlacement" in el && el.beat === 0
   );
 
   // Parse start position if found
   // NOTE: We add stepNumber: 0 and isBlank: false so StepGrid/StepCell
   // properly recognize and render this as the start position with "Start" label
-  // Using type assertion because StartPositionData doesn't include these runtime fields
-  let startPosition:
-    | (StartPositionData & {
+  // Using type assertion because StartPlacementData doesn't include these runtime fields
+  let startPlacement:
+    | (StartPlacementData & {
         stepNumber: number;
         isBlank: boolean;
       })
@@ -154,19 +154,19 @@ export function convertRawToBeats(
   if (startPosElement) {
     const leftAttrs = startPosElement.leftAttributes;
     const rightAttrs = startPosElement.rightAttributes;
-    const gridPosition = parseGridPosition(
-      startPosElement.sequenceStartPosition
+    const gridPlacement = parseGridPlacement(
+      startPosElement.sequenceStartPlacement
     );
 
-    startPosition = {
+    startPlacement = {
       id: `start-${sequenceName}`,
-      isStartPosition: true as const,
+      isStartPlacement: true as const,
       stepNumber: 0, // Required for StepCell to identify as start position
       isBlank: false, // Required for StepGrid to show start position
       letter: (startPosElement.letter as Letter | null) ?? null,
-      gridPosition,
-      startPosition: gridPosition,
-      endPosition: null,
+      gridPlacement,
+      startPlacement: gridPlacement,
+      endPlacement: null,
       motions: {
         [HandSide.LEFT]: leftAttrs
           ? createMotionData({
@@ -226,10 +226,10 @@ export function convertRawToBeats(
     return {
       id: `step-${sequenceName}-${index + 1}`,
       letter: (step.letter as Letter) ?? null,
-      startPosition:
-        parseGridPosition(step.startPos) ||
-        parseGridPosition(step.sequenceStartPosition),
-      endPosition: parseGridPosition(step.endPos),
+      startPlacement:
+        parseGridPlacement(step.startPos) ||
+        parseGridPlacement(step.sequenceStartPlacement),
+      endPlacement: parseGridPlacement(step.endPos),
       motions: {
         [HandSide.LEFT]: leftAttrs
           ? createMotionData({
@@ -279,7 +279,7 @@ export function convertRawToBeats(
     } as StepData;
   });
 
-  return { steps, startPosition };
+  return { steps, startPlacement };
 }
 
 export function getAuthoritativeGridMode(seq: SequenceEntry): GridMode {

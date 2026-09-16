@@ -13,7 +13,7 @@ describe("hand-path reference cards", () => {
       HAND_PATH_REFERENCE_CARDS.every(
         (referenceCard) =>
           referenceCard.sequence.steps.length === 4 &&
-          referenceCard.sequence.startPosition != null
+          referenceCard.sequence.startPlacement != null
       )
     ).toBe(true);
   });

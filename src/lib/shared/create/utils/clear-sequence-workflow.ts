@@ -68,9 +68,9 @@ export async function executeClearSequenceWorkflow(
 
     // Clear Construct tab state if we're in the Construct tab
     if (activeTab === "construct" && constructTabState) {
-      constructTabState.setShowStartPositionPicker(true);
-      constructTabState.setSelectedStartPosition(null);
-      constructTabState.startPositionStateService.clearSelectedPosition();
+      constructTabState.setShowStartPlacementPicker(true);
+      constructTabState.setSelectedStartPlacement(null);
+      constructTabState.startPlacementStateService.clearSelectedPlacement();
       constructTabState.clearError();
     }
 

@@ -13,7 +13,7 @@ import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictog
 import {
   VERTICAL_MIRROR_LOCATION_MAP,
   HORIZONTAL_MIRROR_LOCATION_MAP,
-} from "$lib/shared/create/domain/strict-loop-position-maps";
+} from "$lib/shared/create/domain/strict-loop-placement-maps";
 import {
   reverseRotationDirection,
   invertMotionType,

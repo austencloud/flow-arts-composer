@@ -93,7 +93,7 @@ describe("unison inverted hands inside an inverted expand LOOP (feedback NzFty7B
           handPathContinuity: "maximize",
           handRelationship: UNISON_INVERTED,
         },
-        blockedStartPositions: BLOCKED_GAMMA,
+        blockedStartPlacements: BLOCKED_GAMMA,
         loop: {
           type: LOOPType.INVERTED,
           period: Period.HALVED,
@@ -109,7 +109,7 @@ describe("unison inverted hands inside an inverted expand LOOP (feedback NzFty7B
       expect(result.sequence).toHaveLength(9);
       expect(isSequenceCircular(result.sequence)).toBe(true);
 
-      const start = String(result.sequence[0]!.startPosition);
+      const start = String(result.sequence[0]!.startPlacement);
       expect(BLOCKED_GAMMA).not.toContain(start);
       expect(start.startsWith("beta")).toBe(true);
 

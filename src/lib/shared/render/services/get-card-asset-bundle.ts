@@ -29,8 +29,8 @@ export function getCardAssetBundle(
     const composer = getImageComposer();
     const warmOptions: Partial<SequenceExportOptions> = {
       deckCard: { contentWidth: WARM_W, contentHeight: WARM_H },
-      includeStartPosition: true,
-      startPositionLayout: "row",
+      includeStartPlacement: true,
+      startPlacementLayout: "row",
       addStepNumbers: true,
       addWord: true, // exercises the word/glyph path too
       stepSize: 300,
@@ -47,7 +47,7 @@ export function getCardAssetBundle(
         showTnD: false,
         showElemental: false,
         showPropTnD: false,
-        showPositions: false,
+        showPlacements: false,
         showHandColorKey: true,
         showReversals: true,
         showNonRadialPoints: false,

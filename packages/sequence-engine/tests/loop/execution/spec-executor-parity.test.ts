@@ -56,8 +56,8 @@ function makeStep(
     stepNumber,
     duration: 1,
     letter,
-    startPosition: startPos,
-    endPosition: endPos,
+    startPlacement: startPos,
+    endPlacement: endPos,
     motions: {
       left: makeMotion({
         startLocation: "n",
@@ -79,7 +79,7 @@ function makeStep(
 // those constraints.
 
 /**
- * ROTATED (halved): start→end must be in HALF_POSITION_MAP.
+ * ROTATED (halved): start→end must be in HALF_PLACEMENT_MAP.
  * alpha1 (left=s, right=n) → alpha5 (left=n, right=s).
  * Both hands travel CW 90: left s→e→n, right n→w→s (conceptually).
  * Minimal 2-step partial: step 1 goes alpha1→alpha5.
@@ -96,7 +96,7 @@ function makeRotatedSequence(): SequenceStep[] {
 }
 
 /**
- * MIRRORED: start→end in VERTICAL_MIRROR_POSITION_MAP.
+ * MIRRORED: start→end in VERTICAL_MIRROR_PLACEMENT_MAP.
  * alpha1 mirrors to alpha1, so alpha1→alpha1 is valid (self-mirroring position).
  * Minimal: step 1 goes alpha1→alpha1.
  */
@@ -112,7 +112,7 @@ function makeMirroredSequence(): SequenceStep[] {
 }
 
 /**
- * FLIPPED: start→end in HORIZONTAL_MIRROR_POSITION_MAP.
+ * FLIPPED: start→end in HORIZONTAL_MIRROR_PLACEMENT_MAP.
  * alpha3 (left=w, right=e) flips to alpha3 (self-flipping horizontal axis).
  */
 function makeFlippedSequence(): SequenceStep[] {
@@ -127,8 +127,8 @@ function makeFlippedSequence(): SequenceStep[] {
 }
 
 /**
- * SWAPPED: start→end in SWAPPED_POSITION_MAP.
- * alpha1→alpha5 is valid (SWAPPED_POSITION_MAP[alpha1] = alpha5).
+ * SWAPPED: start→end in SWAPPED_PLACEMENT_MAP.
+ * alpha1→alpha5 is valid (SWAPPED_PLACEMENT_MAP[alpha1] = alpha5).
  */
 function makeSwappedSequence(): SequenceStep[] {
   return [
@@ -208,7 +208,7 @@ function makeMirroredInvertedSequence(): SequenceStep[] {
 
 /**
  * ROTATED_SWAPPED: validates against HALVED_LOOPS.
- * alpha1→alpha5 is in HALF_POSITION_MAP.
+ * alpha1→alpha5 is in HALF_PLACEMENT_MAP.
  */
 function makeRotatedSwappedSequence(): SequenceStep[] {
   return [
@@ -241,7 +241,7 @@ function makeRotatedInvertedSequence(): SequenceStep[] {
  * MIRRORED_ROTATED: chains ROTATED → MIRRORED.
  * Requires start position on vertical axis (self-mirroring).
  * alpha1 is on the vertical axis (mirrors to itself).
- * For ROTATED halved validation: alpha1→alpha5 is in HALF_POSITION_MAP.
+ * For ROTATED halved validation: alpha1→alpha5 is in HALF_PLACEMENT_MAP.
  */
 function makeMirroredRotatedSequence(): SequenceStep[] {
   return [
@@ -368,7 +368,7 @@ const MAPPED_TYPES: LOOPType[] = [
 
 /**
  * Compare two SequenceStep arrays field-by-field for the fields that matter
- * to LOOP correctness: length, endPosition, and per-hand endLocation +
+ * to LOOP correctness: length, endPlacement, and per-hand endLocation +
  * rotationDirection + motionType.
  *
  * Returns a human-readable diff string if mismatches are found, or null if
@@ -387,8 +387,8 @@ function structuralDiff(
     const s = spec[i]!;
     const prefix = `step[${i}]`;
 
-    if (l.endPosition !== s.endPosition) {
-      diffs.push(`${prefix}.endPosition: legacy="${l.endPosition}" spec="${s.endPosition}"`);
+    if (l.endPlacement !== s.endPlacement) {
+      diffs.push(`${prefix}.endPlacement: legacy="${l.endPlacement}" spec="${s.endPlacement}"`);
     }
     for (const hand of ["left", "right"] as const) {
       const lm = l.motions[hand];

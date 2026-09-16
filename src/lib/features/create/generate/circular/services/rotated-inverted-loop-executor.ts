@@ -13,20 +13,20 @@
  * - **Colors are NOT swapped** (Blue stays Blue, Red stays Red)
  *
  * IMPORTANT: Supports both quartered and halved slice sizes
- * IMPORTANT: End position is calculated from rotated locations
+ * IMPORTANT: End placement is calculated from rotated locations
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import {
   MotionType,
   HandSide,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import {
@@ -39,7 +39,7 @@ import {
   getLocationMapForHandRotation,
   HALVED_LOOPS,
   QUARTERED_LOOPS,
-} from "../domain/constants/circular-position-maps";
+} from "../domain/constants/circular-placement-maps";
 import { Period } from "../domain/models/circular-models";
 
 export class RotatedInvertedLOOPExecutor {
@@ -50,7 +50,7 @@ export class RotatedInvertedLOOPExecutor {
   /**
    * Execute the rotated-inverted LOOP
    *
-   * @param sequence - The partial sequence to complete (must include start position at index 0)
+   * @param sequence - The partial sequence to complete (must include start placement at index 0)
    * @param period - Slice size for the LOOP (quartered or halved)
    * @returns The complete circular sequence with all steps
    */
@@ -58,10 +58,10 @@ export class RotatedInvertedLOOPExecutor {
     // Validate the sequence
     this._validateSequence(sequence, period);
 
-    // Remove start position (index 0) for processing
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    // Remove start placement (index 0) for processing
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     // Calculate how many steps to generate based on slice size
@@ -98,8 +98,8 @@ export class RotatedInvertedLOOPExecutor {
       nextStepNumber++;
     }
 
-    // Re-insert start position at the beginning
-    sequence.unshift(startPosition);
+    // Re-insert start placement at the beginning
+    sequence.unshift(startPlacement);
 
     return sequence;
   }
@@ -110,15 +110,15 @@ export class RotatedInvertedLOOPExecutor {
   private _validateSequence(sequence: StepData[], period: Period): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     // Check if the (start, end) pair is valid for the requested slice size
@@ -128,8 +128,8 @@ export class RotatedInvertedLOOPExecutor {
 
     if (!validationSet.has(key)) {
       throw new Error(
-        `Invalid position pair for rotated-inverted ${period} LOOP: ${startPos} → ${endPos}. ` +
-          `The end position must match the ${period} rotation requirement.`
+        `Invalid placement pair for rotated-inverted ${period} LOOP: ${startPos} → ${endPos}. ` +
+          `The end placement must match the ${period} rotation requirement.`
       );
     }
   }
@@ -166,8 +166,8 @@ export class RotatedInvertedLOOPExecutor {
       previousMatchingStep.letter as string
     ) as Letter;
 
-    // Calculate the rotated end position
-    const rotatedEndPosition = this._getRotatedEndPosition(
+    // Calculate the rotated end placement
+    const rotatedEndPlacement = this._getRotatedEndPlacement(
       previousStep,
       previousMatchingStep
     );
@@ -182,8 +182,8 @@ export class RotatedInvertedLOOPExecutor {
       id: `step-${stepNumber}`,
       stepNumber,
       letter: invertedLetter, // INVERTED: Flip letter
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: rotatedEndPosition,
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: rotatedEndPlacement,
       motions: {
         [HandSide.LEFT]: this._createRotatedInvertedMotion(
           HandSide.LEFT,
@@ -280,12 +280,12 @@ export class RotatedInvertedLOOPExecutor {
   }
 
   /**
-   * Get the rotated end position by rotating both colors' locations
+   * Get the rotated end placement by rotating both colors' locations
    */
-  private _getRotatedEndPosition(
+  private _getRotatedEndPlacement(
     previousStep: StepData,
     previousMatchingStep: StepData
-  ): GridPosition | null {
+  ): GridPlacement | null {
     // Get hand rotation directions from the matching step (same color)
     const leftHandRotDir = getHandRotationDirection(
       previousMatchingStep.motions[HandSide.LEFT]!
@@ -313,14 +313,14 @@ export class RotatedInvertedLOOPExecutor {
         previousStep.motions[HandSide.RIGHT]!.endLocation as GridLocation
       ];
 
-    // Derive position from both locations
-    const newEndPosition =
-      getGridPositionFromLocations(
+    // Derive placement from both locations
+    const newEndPlacement =
+      getGridPlacementFromLocations(
         newLeftEndLoc,
         newRightEndLoc
       );
 
-    return newEndPosition;
+    return newEndPlacement;
   }
 
   /**

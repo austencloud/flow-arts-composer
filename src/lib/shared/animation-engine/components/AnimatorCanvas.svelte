@@ -25,7 +25,7 @@ Last audit: 2025-12-27
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
   import type { TrailSettings } from "../domain/types/trail-types";
@@ -109,7 +109,7 @@ Last audit: 2025-12-27
     previewDarkMode = null,
     hideTkaGlyph = false,
     hideStepNumbers = false,
-    positionGlyphVisible = false,
+    placementGlyphVisible = false,
     propElementalType = null,
     glyphFrame = "pictograph",
     hidePathLines = false,
@@ -175,7 +175,7 @@ Last audit: 2025-12-27
     gridMode?: GridMode | null;
     backgroundAlpha?: number;
     letter?: Letter | null;
-    stepData?: StartPositionData | StepData | null;
+    stepData?: StartPlacementData | StepData | null;
     sequenceData?: SequenceData | null;
     currentStep?: number;
     isPlaying?: boolean;
@@ -193,7 +193,7 @@ Last audit: 2025-12-27
     hideStepNumbers?: boolean;
     /** Show the α/β/γ start→end position indicator centered at the top. Educational
      *  overlay for the guide's hand-path exploration; off by default everywhere else. */
-    positionGlyphVisible?: boolean;
+    placementGlyphVisible?: boolean;
     /** Optional prop timing/direction relationship shown opposite the hand element. */
     propElementalType?: ElementalType | null;
     /** Coordinate frame for pictograph annotations. Stage embeds may use the
@@ -307,7 +307,7 @@ Last audit: 2025-12-27
      *  Defaults to [] so existing consumers are unaffected. */
     extraContextMenuItems?: ContextMenuEntry[];
     /** Show the canvas's Start/End text overlay (GlyphOverlay's
-     *  isAtStartPosition/isAtEndPosition indicator). On by default everywhere;
+     *  isAtStartPlacement/isAtEndPlacement indicator). On by default everywhere;
      *  the guide showcase turns it off (the on-screen strip already labels
      *  Start/steps, so the canvas overlay is redundant there). */
     beatIndicators?: boolean;
@@ -762,8 +762,8 @@ Last audit: 2025-12-27
       const idx = steps.indexOf(stepData as (typeof steps)[number]);
       if (idx >= 0) return idx + 1;
       if (
-        sequenceData?.startPosition &&
-        stepData === sequenceData.startPosition
+        sequenceData?.startPlacement &&
+        stepData === sequenceData.startPlacement
       )
         return null;
     }
@@ -880,7 +880,7 @@ Last audit: 2025-12-27
       {virtualTime}
       {hideTkaGlyph}
       {hideStepNumbers}
-      {positionGlyphVisible}
+      {placementGlyphVisible}
       {darkModeEnabled}
       {effectiveTkaGlyphVisible}
       elementalGlyphVisible={effectiveElementalGlyphVisible}

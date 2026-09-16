@@ -58,7 +58,7 @@ export const TABLE_NAMES = {
 export const TABLE_INDEXES = {
   [TABLE_NAMES.SEQUENCES]:
     "++id, name, word, author, dateAdded, level, isFavorite, difficultyLevel, *tags",
-  [TABLE_NAMES.PICTOGRAPHS]: "++id, letter, startPosition, endPosition",
+  [TABLE_NAMES.PICTOGRAPHS]: "++id, letter, startPlacement, endPlacement",
   [TABLE_NAMES.USER_WORK]:
     "++id, type, tabId, [type+tabId], userId, lastModified",
   [TABLE_NAMES.USER_PROJECTS]:

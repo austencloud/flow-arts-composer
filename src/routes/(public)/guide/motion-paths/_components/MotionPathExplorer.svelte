@@ -330,7 +330,7 @@
             {#if displayedSequence}
               <StepStrip
                 sequence={displayedSequence}
-                includeStartPosition={false}
+                includeStartPlacement={false}
                 currentStep={explorer.liveStep}
                 bpm={48}
                 density="compact"

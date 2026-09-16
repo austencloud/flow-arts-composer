@@ -27,7 +27,7 @@ import {
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 
 function injectRealCsvData() {
   const root = resolve(__dirname, "../../..");
@@ -55,8 +55,8 @@ function makeStep(
     rightReversal: false,
     isBlank: false,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: createMotionData({ ...left, hand: HandSide.LEFT }),
       right: createMotionData({ ...right, hand: HandSide.RIGHT }),
@@ -117,20 +117,20 @@ function buildDiamondSequence(): SequenceData {
     word: "",
     name: "",
     steps: [step1],
-    startPosition: {
+    startPlacement: {
       id: start.id,
       letter: start.letter,
-      gridPosition: start.startPosition,
-      startPosition: start.startPosition,
-      endPosition: start.endPosition,
+      gridPlacement: start.startPlacement,
+      startPlacement: start.startPlacement,
+      endPlacement: start.endPlacement,
       motions: start.motions,
     },
-    startingPosition: {
+    startingPlacement: {
       id: start.id,
       letter: start.letter,
-      gridPosition: start.startPosition,
-      startPosition: start.startPosition,
-      endPosition: start.endPosition,
+      gridPlacement: start.startPlacement,
+      startPlacement: start.startPlacement,
+      endPlacement: start.endPlacement,
       motions: start.motions,
     },
   });
@@ -166,7 +166,7 @@ describe("hydrateSequence — encode/decode round-trip", () => {
 
     expect(decoded.word).toBe("");
     expect(decoded.steps[0]?.letter).toBeNull();
-    expect(decoded.steps[0]?.startPosition).toBeNull();
+    expect(decoded.steps[0]?.startPlacement).toBeNull();
 
     const hydrated = await hydrateSequence(decoded, {
       loopDetector,
@@ -175,8 +175,8 @@ describe("hydrateSequence — encode/decode round-trip", () => {
     // The position deriver runs against the decoded beat geometry and
     // restores per-beat start/end grid positions (e.g. alpha5 -> alpha7).
     // This is the load-bearing enrichment that scanned-link refresh depends on.
-    expect(hydrated.steps[0]?.startPosition).toBeTruthy();
-    expect(hydrated.steps[0]?.endPosition).toBeTruthy();
+    expect(hydrated.steps[0]?.startPlacement).toBeTruthy();
+    expect(hydrated.steps[0]?.endPlacement).toBeTruthy();
 
     expect(hydrated.gridMode).toBe("diamond");
 
@@ -195,13 +195,13 @@ describe("hydrateSequence — encode/decode round-trip", () => {
     const { encoded } = encodeSequenceWithCompression(original);
     const decoded = decodeSequenceWithCompression(encoded);
 
-    expect(decoded.startPosition).toBeTruthy();
-    expect(isVisibleMotion(decoded.startPosition?.motions.left)).toBe(false);
-    expect(isVisibleMotion(decoded.startPosition?.motions.right)).toBe(false);
+    expect(decoded.startPlacement).toBeTruthy();
+    expect(isVisibleMotion(decoded.startPlacement?.motions.left)).toBe(false);
+    expect(isVisibleMotion(decoded.startPlacement?.motions.right)).toBe(false);
 
     const hydrated = await hydrateSequence(decoded, { loopDetector });
     const firstStep = hydrated.steps[0]!;
-    const start = hydrated.startPosition!;
+    const start = hydrated.startPlacement!;
 
     expect(isVisibleMotion(start.motions.left)).toBe(true);
     expect(isVisibleMotion(start.motions.right)).toBe(true);
@@ -221,7 +221,7 @@ describe("hydrateSequence — encode/decode round-trip", () => {
     );
     expect(start.motions.left?.propPlacementData).toBeTruthy();
     expect(start.motions.right?.propPlacementData).toBeTruthy();
-    expect(hydrated.startingPosition).toEqual(start);
+    expect(hydrated.startingPlacement).toEqual(start);
   });
 
   it("keeps solo choreography unlettered when a stale beat carries a letter", async () => {
@@ -257,7 +257,7 @@ describe("hydrateSequence — encode/decode round-trip", () => {
       name: "Shared Sequence",
       displayName: "Shared Sequence",
       steps: [soloStep],
-      startPosition: createStartPositionData({
+      startPlacement: createStartPlacementData({
         motions: {
           left: createMotionData({
             motionType: MotionType.STATIC,
@@ -294,8 +294,8 @@ describe("hydrateSequence — encode/decode round-trip", () => {
     expect(hydrated.name).toBe("Shared Sequence");
     expect(hydrated.displayName).toBe("Shared Sequence");
     expect(isVisibleMotion(hydrated.steps[0]?.motions.right)).toBe(false);
-    expect(isVisibleMotion(hydrated.startPosition?.motions.left)).toBe(true);
-    expect(isVisibleMotion(hydrated.startPosition?.motions.right)).toBe(false);
+    expect(isVisibleMotion(hydrated.startPlacement?.motions.left)).toBe(true);
+    expect(isVisibleMotion(hydrated.startPlacement?.motions.right)).toBe(false);
   });
 
   it("preserves fractional turns (0.5) through encode → decode", () => {

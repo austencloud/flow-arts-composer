@@ -10,8 +10,8 @@ function step(
 ): StepLike {
   return {
     letter: "A",
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: { motionType: "pro", startLocation: leftStart, endLocation: leftEnd },
       right: { motionType: "pro", startLocation: rightStart, endLocation: rightEnd },

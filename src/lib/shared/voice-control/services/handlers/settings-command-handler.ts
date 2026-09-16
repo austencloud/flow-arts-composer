@@ -47,7 +47,7 @@ const SETTING_ROUTES: Record<string, SettingRoute> = {
   nonRadialPoints: { owner: "pictVis", property: "nonRadialPoints", displayName: "non-radial points" },
   tndGlyph: { owner: "pictVis", property: "tndGlyph", displayName: "TnD glyph" },
   elementalGlyph: { owner: "pictVis", property: "elementalGlyph", displayName: "elemental glyph" },
-  positionsGlyph: { owner: "pictVis", property: "positionsGlyph", displayName: "positions glyph" },
+  placementsGlyph: { owner: "pictVis", property: "placementsGlyph", displayName: "positions glyph" },
 
   // App settings
   musicianMode: { owner: "appSettings", property: "musicianMode", displayName: "musician mode" },

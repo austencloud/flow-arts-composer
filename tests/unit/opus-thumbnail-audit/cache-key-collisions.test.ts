@@ -124,7 +124,7 @@ describe("thumbnail cache key vs. rendered image", () => {
     expect(hash({ variant: "wordcard" })).not.toBe(baseline);
     expect(hash({ sequenceId: "public-2" })).not.toBe(baseline);
     expect(hash({ visibility: { showQRCode: true } })).not.toBe(baseline);
-    expect(hash({ startPositionLayout: "column" })).not.toBe(baseline);
+    expect(hash({ startPlacementLayout: "column" })).not.toBe(baseline);
     expect(
       hash({ primaryPropColors: { left: "#0ff", right: "#f0f" } })
     ).not.toBe(baseline);

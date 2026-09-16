@@ -31,7 +31,7 @@ import {
   type SequenceData,
 } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 
 type PathShape = "arc" | "linear" | "concave";
@@ -144,8 +144,8 @@ function staticBlue(): MotionData {
 }
 
 export function buildYutaCapSequence(): SequenceData {
-  const startPosition: StartPositionData = {
-    isStartPosition: true as const,
+  const startPlacement: StartPlacementData = {
+    isStartPlacement: true as const,
     id: "caps-yuta-start",
     gridMode: GridMode.DIAMOND,
     motions: {
@@ -171,8 +171,8 @@ export function buildYutaCapSequence(): SequenceData {
     rightReversal: false,
     isBlank: false,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     gridMode: GridMode.DIAMOND,
     motions: {
       left: staticBlue(),
@@ -194,7 +194,7 @@ export function buildYutaCapSequence(): SequenceData {
     name: "Yuta CAP",
     word: "yuta-cap",
     steps,
-    startPosition,
+    startPlacement,
     gridMode: GridMode.DIAMOND,
   });
 }

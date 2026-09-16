@@ -48,7 +48,7 @@ export interface CardFrontLayout {
   startColumn: number;
   startRow: number;
   stepsPerRow: number;
-  hasStartPosition: boolean;
+  hasStartPlacement: boolean;
 }
 
 /**
@@ -67,21 +67,21 @@ export function computeCardFrontLayout(
   let rows: number;
   if (options.columnCount != null && options.columnCount > 0) {
     columns = options.columnCount;
-    const includesStart = options.includeStartPosition ?? false;
-    const startPositionLayout = options.startPositionLayout ?? "row";
-    if (includesStart && startPositionLayout === "row") {
+    const includesStart = options.includeStartPlacement ?? false;
+    const startPlacementLayout = options.startPlacementLayout ?? "row";
+    if (includesStart && startPlacementLayout === "row") {
       rows = 1 + Math.ceil(stepCount / columns);
     } else {
       const startColumns =
-        includesStart && startPositionLayout === "column" ? 1 : 0;
+        includesStart && startPlacementLayout === "column" ? 1 : 0;
       const stepsPerRowLocal = Math.max(1, columns - startColumns);
       rows = Math.max(1, Math.ceil(stepCount / stepsPerRowLocal));
     }
   } else {
     [columns, rows] = calculateLayout(
       stepCount,
-      options.includeStartPosition ?? false,
-      options.startPositionLayout ?? "row"
+      options.includeStartPlacement ?? false,
+      options.startPlacementLayout ?? "row"
     );
   }
 
@@ -126,18 +126,18 @@ export function computeCardFrontLayout(
   } = surface;
   const isDarkMode = visibility.darkMode ?? false;
 
-  const layoutMode = options.startPositionLayout ?? "row";
-  const useColumnMode = layoutMode === "column" && options.includeStartPosition;
-  const startRow = !useColumnMode && options.includeStartPosition ? 1 : 0;
+  const layoutMode = options.startPlacementLayout ?? "row";
+  const useColumnMode = layoutMode === "column" && options.includeStartPlacement;
+  const startRow = !useColumnMode && options.includeStartPlacement ? 1 : 0;
   const startColumn = useColumnMode ? 1 : 0;
   const stepsPerRow = columns - startColumn;
 
-  // hasStartPosition mirrors composeSequenceImage: a start position exists when
-  // includeStartPosition is set AND there is an effective start position
+  // hasStartPlacement mirrors composeSequenceImage: a start position exists when
+  // includeStartPlacement is set AND there is an effective start position
   // (explicit on the sequence, or derivable from the first step).
-  const hasStartPosition = !!(
-    options.includeStartPosition &&
-    (sequence.startPosition || (sequence.steps[0] ? true : false))
+  const hasStartPlacement = !!(
+    options.includeStartPlacement &&
+    (sequence.startPlacement || (sequence.steps[0] ? true : false))
   );
 
   return {
@@ -155,7 +155,7 @@ export function computeCardFrontLayout(
     startColumn,
     startRow,
     stepsPerRow,
-    hasStartPosition,
+    hasStartPlacement,
   };
 }
 
@@ -244,7 +244,7 @@ export function buildCellLayerOptions(
     rightBuugengFlipped: visibility.rightBuugengFlipped,
     showLeftMotion: visibility.showLeftMotion,
     showRightMotion: visibility.showRightMotion,
-    showPositions: visibility.showPositions ?? false,
+    showPlacements: visibility.showPlacements ?? false,
     showHandColorKey: visibility.showHandColorKey ?? true,
     showPropTnD: visibility.showPropTnD ?? false,
     handPathMode: visibility.handPathMode ?? false,

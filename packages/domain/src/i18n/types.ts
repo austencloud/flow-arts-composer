@@ -1,5 +1,5 @@
 export interface DomainGlossary {
-  // Positions
+  // Placements
   alpha: string;
   beta: string;
   gamma: string;

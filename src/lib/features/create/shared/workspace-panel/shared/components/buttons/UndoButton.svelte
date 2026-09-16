@@ -34,7 +34,7 @@
     [UndoOperationType.ADD_BEAT]: "Add Step",
     [UndoOperationType.REMOVE_BEATS]: "Remove Steps",
     [UndoOperationType.CLEAR_SEQUENCE]: "Clear Sequence",
-    [UndoOperationType.SELECT_START_POSITION]: "Select Start Position",
+    [UndoOperationType.SELECT_START_PLACEMENT]: "Select Start Placement",
     [UndoOperationType.UPDATE_BEAT]: "Update Step",
     [UndoOperationType.INSERT_BEAT]: "Insert Step",
     [UndoOperationType.BATCH_EDIT]: "Batch Edit",

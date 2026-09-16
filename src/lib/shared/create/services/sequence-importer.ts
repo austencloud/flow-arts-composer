@@ -56,7 +56,7 @@ export function convertPngMetadata(
     `PNG steps for sequence ${id}`
   );
 
-  // Filter out start position entries (marked with sequence_start_position)
+  // Filter out start placement entries (marked with sequence_start_position)
   const actualSteps = validatedSteps.filter(
     (step) => !step.sequence_start_position
   );

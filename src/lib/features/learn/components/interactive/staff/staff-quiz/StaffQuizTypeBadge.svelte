@@ -9,13 +9,13 @@ StaffQuizTypeBadge - Question type indicator badge
 
 <div
   class="question-type-badge"
-  class:position={type === "position"}
+  class:placement={type === "placement"}
   class:thumb={type === "thumb"}
   class:rotation={type === "rotation"}
 >
-  {#if type === "position"}
+  {#if type === "placement"}
     <i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
-    <span>Position</span>
+    <span>Placement</span>
   {:else if type === "thumb"}
     <i class="fa-solid fa-hand-point-up" aria-hidden="true"></i>
     <span>Thumb</span>
@@ -37,7 +37,7 @@ StaffQuizTypeBadge - Question type indicator badge
     font-weight: 600;
   }
 
-  .question-type-badge.position {
+  .question-type-badge.placement {
     background: color-mix(in srgb, var(--semantic-error) 15%, transparent);
     color: var(--semantic-error);
   }

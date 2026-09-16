@@ -33,8 +33,8 @@ export function resolveFusePictographMotionFrame(
     (frame.currentStepIndex - 1 + stepCount) % stepCount;
   const motionStartData =
     frame.currentStepIndex === 0
-      ? (sequence.startPosition ??
-        sequence.startingPosition ??
+      ? (sequence.startPlacement ??
+        sequence.startingPlacement ??
         steps[previousStepIndex])
       : steps[previousStepIndex];
 

@@ -177,11 +177,11 @@ describe("buildPerformerSequence", () => {
     expect(seq.steps[0]?.id).toContain("zed");
   });
 
-  it("derives the start position from the first waypoints", () => {
+  it("derives the start placement from the first waypoints", () => {
     const seq = buildPerformerSequence(performer("a", { tnd: "to" }));
-    expect(seq.startPosition?.motions.left?.startLocation).toBe(S);
-    expect(seq.startPosition?.motions.right?.startLocation).toBe(S);
-    expect(seq.steps[0]?.startPosition).toBe("beta5");
+    expect(seq.startPlacement?.motions.left?.startLocation).toBe(S);
+    expect(seq.startPlacement?.motions.right?.startLocation).toBe(S);
+    expect(seq.steps[0]?.startPlacement).toBe("beta5");
   });
 });
 

@@ -10,7 +10,7 @@ import { tool, jsonSchema, generateText, stepCountIs, type LanguageModel } from 
 import {
   deriveUserOverlay,
   getTypeComparison,
-  getPositionComparison,
+  getPlacementComparison,
   getMotionTypeComparison,
   getRotationExplanation,
   getGridModeExplanation,
@@ -144,7 +144,7 @@ async function executeTool(
       return filterTypeList(toolExecutor.listLettersByType(args.type as number));
 
     case "compare_positions":
-      return getPositionComparison(args.position1 as string, args.position2 as string);
+      return getPlacementComparison(args.position1 as string, args.position2 as string);
 
     case "compare_types":
       return getTypeComparison(args.type1 as number, args.type2 as number);
@@ -390,7 +390,7 @@ function buildTools(container: TikaServerContainer) {
         },
         required: ["position1", "position2"],
       }),
-      execute: async ({ position1, position2 }) => getPositionComparison(position1, position2),
+      execute: async ({ position1, position2 }) => getPlacementComparison(position1, position2),
     }),
 
     compare_types: tool({
@@ -743,7 +743,7 @@ function buildTools(container: TikaServerContainer) {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Regex to detect JSON objects leaked into response text */
-const JSON_LEAK_PATTERN = /\{[\s\S]*?"(?:type|explanation|contextData|inlinePictograph|startPosition|endPosition|leftMotion|rightMotion|blueMotion|redMotion)"[\s\S]*?\}/;
+const JSON_LEAK_PATTERN = /\{[\s\S]*?"(?:type|explanation|contextData|inlinePictograph|startPlacement|endPlacement|leftMotion|rightMotion|blueMotion|redMotion)"[\s\S]*?\}/;
 
 function countInlineContent(steps: Array<{ toolResults: Array<{ output: unknown }> }>): number {
   let count = 0;

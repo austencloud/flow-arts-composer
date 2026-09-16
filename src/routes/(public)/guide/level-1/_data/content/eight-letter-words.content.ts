@@ -7,7 +7,7 @@ import {
   RotationDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { GridMode, GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -142,8 +142,8 @@ const stepData = (q: SeqDef, i: number): StepData => {
     id: `${q.key}-${i + 1}`,
     letter: s.letter,
     gridMode: GridMode.DIAMOND,
-    startPosition: getGridPositionFromLocations(s.left.from, s.right.from),
-    endPosition: getGridPositionFromLocations(s.left.to, s.right.to),
+    startPlacement: getGridPlacementFromLocations(s.left.from, s.right.from),
+    endPlacement: getGridPlacementFromLocations(s.left.to, s.right.to),
     stepNumber: i + 1,
     motions: {
       left: handMotion(HandSide.LEFT, s.left),
@@ -157,8 +157,8 @@ const startBox = (q: SeqDef): StepData =>
     letter: q.startLetter,
     gridMode: GridMode.DIAMOND,
     stepNumber: 0,
-    startPosition: getGridPositionFromLocations(q.startLeft, q.startRight),
-    endPosition: getGridPositionFromLocations(q.startLeft, q.startRight),
+    startPlacement: getGridPlacementFromLocations(q.startLeft, q.startRight),
+    endPlacement: getGridPlacementFromLocations(q.startLeft, q.startRight),
     motions: {
       left: handMotion(HandSide.LEFT, sh(q.startLeft)),
       right: handMotion(HandSide.RIGHT, sh(q.startRight)),

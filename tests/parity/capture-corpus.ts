@@ -129,7 +129,7 @@ interface EdgeCaseEntry {
   id: string;
   kind: string;
   word?: string;
-  startPosition?: string;
+  startPlacement?: string;
   options: Record<string, unknown>;
   description: string;
 }
@@ -152,7 +152,7 @@ async function captureEdge(
       id: entry.id,
       kind: entry.kind,
       word: entry.word,
-      startPosition: entry.startPosition,
+      startPlacement: entry.startPlacement,
       options: entry.options,
       description: entry.description,
     };

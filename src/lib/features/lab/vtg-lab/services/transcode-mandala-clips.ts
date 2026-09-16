@@ -2,7 +2,7 @@
  * Repair the pre-baked Mandala Rosetta loop clips by dropping their spurious
  * first frame, then re-muxing as a fragmented MP4 for the seamless-loop player.
  *
- * Why: each baked clip's frame 0 is the sequence's static START-POSITION snapshot
+ * Why: each baked clip's frame 0 is the sequence's static START-PLACEMENT snapshot
  * (club at its home/north orientation), which sits OFF the continuous mandala
  * curve — frames 1..N-1 are the real motion and already wrap cleanly (frame N-1 →
  * frame 1). At every MSE loop seam the player presents that off-curve frame 0 for
@@ -30,7 +30,7 @@ export interface RepairOptions {
   fps?: number;
   /** Output bitrate override; defaults to the source's measured bitrate (×1.1). */
   bitrate?: number;
-  /** How many leading frames to drop (default 1 — the start-position snapshot). */
+  /** How many leading frames to drop (default 1 — the start-placement snapshot). */
   dropLeading?: number;
 }
 

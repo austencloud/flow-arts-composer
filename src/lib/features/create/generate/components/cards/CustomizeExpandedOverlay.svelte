@@ -1,14 +1,14 @@
 <!--
 CustomizeExpandedOverlay.svelte - Customize panel, one decision at a time.
 
-A SettingsDrillPanel over Style, Start Position, End Position, and Hand
+A SettingsDrillPanel over Style, Start Placement, End Placement, and Hand
 Relationship.
 The root list shows each one's current value; choosing a row
 gives that setting the whole panel. Single column at every size — see
 SettingsDrillPanel's header for why the two-pane variant was removed.
 
-Replaced an accordion that put start position and end position on the same
-screen (end position nested INSIDE start position) and, because the expanded
+Replaced an accordion that put start placement and end placement on the same
+screen (end placement nested INSIDE start placement) and, because the expanded
 section flex-shrank below its content against its own `overflow: hidden`,
 clipped 415px of that content instead of scrolling.
 Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
@@ -24,15 +24,15 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   } from "$lib/shared/create/state/customize-overlay-hmr";
   import {
     GridMode,
-    type GridPosition,
+    type GridPlacement,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import {
     detectPresetFromBlocked,
-    getAllowedPositions,
-    getAllPositions,
-    getBlockedPositionsForPreset,
-    StartPositionPreset,
-  } from "../../shared/domain/start-position-presets";
+    getAllowedPlacements,
+    getAllPlacements,
+    getBlockedPlacementsForPreset,
+    StartPlacementPreset,
+  } from "../../shared/domain/start-placement-presets";
   import GenerationStylePanel from "$lib/shared/create/components/GenerationStylePanel.svelte";
   import HandRelationshipPanel from "./HandRelationshipPanel.svelte";
   import {
@@ -42,7 +42,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   import SettingsDrillPanel, {
     type SettingsDrillItem,
   } from "$lib/shared/ui/components/settings-drill/SettingsDrillPanel.svelte";
-  import MultiSelectPositionPicker from "$lib/shared/components/position-picker/MultiSelectPositionPicker.svelte";
+  import MultiSelectPlacementPicker from "$lib/shared/components/placement-picker/MultiSelectPlacementPicker.svelte";
   import PropOrientationControl from "../../../shared/components/sequence-actions/PropOrientationControl.svelte";
   import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import { buildStartEndOptions } from "./customize-start-end-options";
@@ -149,15 +149,15 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   );
   let localMatchHandTurns = $state<boolean>(untrack(() => matchHandTurns));
 
-  // ─── Local state for start positions (instant UI feedback) ───
-  let localBlockedPositions = $state<GridPosition[]>(
-    untrack(() => startEndOptions)?.blockedStartPositions ?? []
+  // ─── Local state for start placements (instant UI feedback) ───
+  let localBlockedPlacements = $state<GridPlacement[]>(
+    untrack(() => startEndOptions)?.blockedStartPlacements ?? []
   );
-  // Allowed end positions. Empty = "Any", exactly like an empty
-  // blockedStartPositions means every start is allowed — the two pickers now
+  // Allowed end placements. Empty = "Any", exactly like an empty
+  // blockedStartPlacements means every start is allowed — the two pickers now
   // read the same way.
-  let localEndPositions = $state<GridPosition[]>(
-    untrack(() => startEndOptions)?.endPositions ?? []
+  let localEndPlacements = $state<GridPlacement[]>(
+    untrack(() => startEndOptions)?.endPlacements ?? []
   );
 
   // ─── Local state for start orientation (blue + red, default In/In) ───
@@ -177,22 +177,22 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 
   // Current preset (All / Classic 3 / Custom) derived from the blocked list.
   const currentPreset = $derived(
-    detectPresetFromBlocked(localBlockedPositions, gridMode)
+    detectPresetFromBlocked(localBlockedPlacements, gridMode)
   );
 
-  // How many positions are enabled (for the row summary).
+  // How many placements are enabled (for the row summary).
   const enabledCount = $derived(
-    getAllowedPositions(localBlockedPositions, gridMode).length
+    getAllowedPlacements(localBlockedPlacements, gridMode).length
   );
 
   // Classic 3 remains a useful shortcut, but Custom is a state, not an action.
   // The shared picker owns All and Choose one for both start and end screens.
-  const startPositionPresets = $derived([
+  const startPlacementPresets = $derived([
     {
       id: "classic",
       label: "Classic 3",
-      blockedPositions: getBlockedPositionsForPreset(
-        StartPositionPreset.CLASSIC,
+      blockedPlacements: getBlockedPlacementsForPreset(
+        StartPlacementPreset.CLASSIC,
         gridMode
       ),
     },
@@ -200,36 +200,36 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 
   const startPosDisplay = $derived.by(() => {
     if (!startEndOptions) return "Any";
-    if (currentPreset === StartPositionPreset.ANY) return "Any";
-    if (currentPreset === StartPositionPreset.CLASSIC) return "Classic 3";
+    if (currentPreset === StartPlacementPreset.ANY) return "Any";
+    if (currentPreset === StartPlacementPreset.CLASSIC) return "Classic 3";
     return enabledCount === 1 ? "1 pos" : `${enabledCount} pos`;
   });
 
   const endPosDisplay = $derived.by(() => {
-    const n = localEndPositions.length;
+    const n = localEndPlacements.length;
     if (n === 0) return "Any";
-    if (n === 1) return String(localEndPositions[0]);
-    return `${n} positions`;
+    if (n === 1) return String(localEndPlacements[0]);
+    return `${n} placements`;
   });
 
-  // The shared picker speaks blocklist; end positions are an allowlist. Invert
+  // The shared picker speaks blocklist; end placements are an allowlist. Invert
   // at this seam so the primitive is reused unchanged (never-hand-roll) and
-  // both position screens look and behave identically: all cells bright = no
+  // both placement screens look and behave identically: all cells bright = no
   // constraint, dim some = constrain to whatever stays bright.
-  const endBlockedPositions = $derived(
-    localEndPositions.length === 0
+  const endBlockedPlacements = $derived(
+    localEndPlacements.length === 0
       ? []
-      : getAllPositions(gridMode).filter((p) => !localEndPositions.includes(p))
+      : getAllPlacements(gridMode).filter((p) => !localEndPlacements.includes(p))
   );
 
-  function handleEndBlockedChange(blocked: GridPosition[]) {
+  function handleEndBlockedChange(blocked: GridPlacement[]) {
     if (!startEndOptions || !onStartEndChange) return;
     hapticService?.trigger("selection");
-    const allowed = getAllowedPositions(blocked, gridMode);
+    const allowed = getAllowedPlacements(blocked, gridMode);
     // Everything enabled is the "Any" state, not a 16-way constraint. Storing
     // it as [] keeps the engine unconstrained and the row honest.
-    localEndPositions =
-      allowed.length === getAllPositions(gridMode).length ? [] : allowed;
+    localEndPlacements =
+      allowed.length === getAllPlacements(gridMode).length ? [] : allowed;
     emitStartEndChange();
   }
 
@@ -253,9 +253,9 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   // The three rows. Start orientation used to be a fourth, which asked the user
   // to set where the props start in one place and which way they point in
   // another — the same decision, split in two. It now lives under Start
-  // Position, where the picker is already drawing the props it describes.
+  // Placement, where the picker is already drawing the props it describes.
   //
-  // End Position stays present and locked when LOOP owns it — dropping the row
+  // End Placement stays present and locked when LOOP owns it — dropping the row
   // would change the list length and move the row below it, and leave a user
   // who saw the setting once with no explanation.
   //
@@ -263,10 +263,10 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   // the public Composer demo does not offer it.
   const drillItems = $derived<SettingsDrillItem[]>([
     { id: "style", label: "Style", value: styleSummary },
-    { id: "startPos", label: "Start Position", value: startPosDisplay },
+    { id: "startPos", label: "Start Placement", value: startPosDisplay },
     {
       id: "endPos",
-      label: "End Position",
+      label: "End Placement",
       value: endPosDisplay,
       disabled: !isFreeformMode,
       disabledReason: "Set by LOOP",
@@ -309,8 +309,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     localHandRelationshipInverted =
       GENERATE_DEFAULT_CONFIG.handRelationshipInverted;
     localMatchHandTurns = GENERATE_DEFAULT_CONFIG.matchHandTurns;
-    localBlockedPositions = [];
-    localEndPositions = [];
+    localBlockedPlacements = [];
+    localEndPlacements = [];
     localLeftOri = Orientation.IN;
     localRightOri = Orientation.IN;
   }
@@ -324,24 +324,24 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     if (!startEndOptions || !onStartEndChange) return;
     onStartEndChange(
       buildStartEndOptions(startEndOptions, {
-        blockedStartPositions: localBlockedPositions,
-        endPositions: localEndPositions,
+        blockedStartPlacements: localBlockedPlacements,
+        endPlacements: localEndPlacements,
         leftStartOrientation: localLeftOri,
         rightStartOrientation: localRightOri,
       })
     );
   }
 
-  // ─── Start Position handlers ───
-  function applyBlockedPositions(blocked: GridPosition[]) {
+  // ─── Start Placement handlers ───
+  function applyBlockedPlacements(blocked: GridPlacement[]) {
     if (!startEndOptions || !onStartEndChange) return;
-    localBlockedPositions = blocked;
+    localBlockedPlacements = blocked;
     emitStartEndChange();
   }
 
   // Manual multi-select toggles from the shared grid primitive.
-  function handleBlockedChange(blocked: GridPosition[]) {
-    applyBlockedPositions(blocked);
+  function handleBlockedChange(blocked: GridPlacement[]) {
+    applyBlockedPlacements(blocked);
   }
 
   // Start orientation per prop. Feeds the engine's left/rightStartOrientation
@@ -420,12 +420,12 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
           </div>
         {:else if id === "startPos"}
           <div class="drill-fill grid-fill">
-            <MultiSelectPositionPicker
-              blockedPositions={localBlockedPositions}
+            <MultiSelectPlacementPicker
+              blockedPlacements={localBlockedPlacements}
               onBlockedChange={handleBlockedChange}
               leftStartOrientation={localLeftOri}
               rightStartOrientation={localRightOri}
-              presets={startPositionPresets}
+              presets={startPlacementPresets}
               {gridMode}
             />
             <!-- Under the picker, not on a screen of its own: the props above
@@ -454,8 +454,8 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
           </div>
         {:else if id === "endPos"}
           <div class="drill-fill grid-fill">
-            <MultiSelectPositionPicker
-              blockedPositions={endBlockedPositions}
+            <MultiSelectPlacementPicker
+              blockedPlacements={endBlockedPlacements}
               onBlockedChange={handleEndBlockedChange}
               leftStartOrientation={localLeftOri}
               rightStartOrientation={localRightOri}
@@ -493,7 +493,7 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
 <ConfirmDialog
   bind:isOpen={resetConfirmOpen}
   title="Reset all settings?"
-  message="Style, hand relationship, start positions, level, length and LOOP settings all go back to their defaults. This can't be undone."
+  message="Style, hand relationship, start placements, level, length and LOOP settings all go back to their defaults. This can't be undone."
   confirmText="Reset"
   cancelText="Keep"
   variant="danger"
@@ -573,15 +573,15 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
   }
 
   /* The reserve is whatever the picker puts ABOVE its grid, so the square grid
-     plus that chrome still fits the wrapper's height. MultiSelectPositionPicker
-     has a quick-action toolbar and one-line status row; PositionPickerGrid has
+     plus that chrome still fits the wrapper's height. MultiSelectPlacementPicker
+     has a quick-action toolbar and one-line status row; PlacementPickerGrid has
      a full-height "Any" button. Under-reserving here cost a 16px scroll on a
      375px phone. */
   .grid-fill {
     --grid-reserve: 7rem;
   }
 
-  .grid-fill :global(.position-picker-grid) {
+  .grid-fill :global(.placement-picker-grid) {
     --grid-reserve: 5.25rem;
   }
 
@@ -596,13 +596,13 @@ Spec: docs/superpowers/specs/2026-08-02-customize-panel-drilldown-design.md
     margin-inline: auto;
   }
 
-  .grid-fill :global(.position-picker-grid),
+  .grid-fill :global(.placement-picker-grid),
   .grid-fill :global(.multi-select-grid) {
     flex: 0 0 auto;
     min-height: 0;
   }
 
-  /* Sits under the position grid, which already claimed the width it wants.
+  /* Sits under the placement grid, which already claimed the width it wants.
      The top margin is what separates "where the props start" from "which way
      they point" now that both live on one screen. */
   .ori-block {

@@ -43,7 +43,7 @@
   const displayedStepNumber = $derived(
     performerState ? performerState.currentStepIndex : null
   );
-  const isStartPosition = $derived(
+  const isStartPlacement = $derived(
     performerState !== null && performerState.currentStepIndex === 0
   );
 
@@ -78,7 +78,7 @@
   <svg class="step-overlay" viewBox="0 0 950 950" preserveAspectRatio="xMinYMin meet">
     <StepNumber
       stepNumber={displayedStepNumber}
-      {isStartPosition}
+      {isStartPlacement}
       darkMode={true}
     />
   </svg>

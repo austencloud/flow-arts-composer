@@ -8,7 +8,7 @@
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import { createTutorialState } from "../../../state/create-tutorial-state.svelte";
   import { pictographDataToStepData } from "$lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import {
@@ -44,13 +44,13 @@
   }
 
   // Convert tutorial data to StepGrid-compatible format
-  const startPositionStep = $derived.by(() => {
-    const startPicto = createTutorialState.startPosition;
+  const startPlacementStep = $derived.by(() => {
+    const startPicto = createTutorialState.startPlacement;
     if (!startPicto) return null;
 
-    const sp: StartPositionData = {
+    const sp: StartPlacementData = {
       ...startPicto,
-      isStartPosition: true as const,
+      isStartPlacement: true as const,
     };
 
     return {
@@ -128,7 +128,7 @@
       <div class="grid-area">
         {#if beatSteps.length > 0}
           {#await import("$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte") then mod}
-            <mod.default steps={beatSteps} startPosition={startPositionStep} />
+            <mod.default steps={beatSteps} startPlacement={startPlacementStep} />
           {/await}
         {/if}
 

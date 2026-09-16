@@ -9,8 +9,8 @@ import {
 // The props start half a rotation apart and spin the same way: split-same.
 const LETTER_A: PictographInput = {
   letter: "A",
-  startPosition: "alpha1",
-  endPosition: "alpha3",
+  startPlacement: "alpha1",
+  endPlacement: "alpha3",
   gridMode: "diamond",
   leftMotion: {
     motionType: "pro",
@@ -32,10 +32,10 @@ const LETTER_A: PictographInput = {
   },
 } as PictographInput;
 
-const START_POSITION: PictographInput = {
+const START_PLACEMENT: PictographInput = {
   letter: "α",
-  startPosition: "alpha1",
-  endPosition: "alpha1",
+  startPlacement: "alpha1",
+  endPlacement: "alpha1",
   gridMode: "diamond",
   leftMotion: {
     motionType: "static",
@@ -74,8 +74,8 @@ describe("prop timing-and-direction element", () => {
   it("gives a static start position no element", () => {
     expect(
       derivePropElementalType(
-        START_POSITION.leftMotion,
-        START_POSITION.rightMotion
+        START_PLACEMENT.leftMotion,
+        START_PLACEMENT.rightMotion
       )
     ).toBeNull();
   });
@@ -116,7 +116,7 @@ describe("standalone renderer prop TnD glyph", () => {
   });
 
   it("draws nothing for a start position even when requested", async () => {
-    const svg = await getStandaloneRenderer().renderToSvg(START_POSITION, {
+    const svg = await getStandaloneRenderer().renderToSvg(START_PLACEMENT, {
       showTKA: false,
       showPropTnD: true,
     });

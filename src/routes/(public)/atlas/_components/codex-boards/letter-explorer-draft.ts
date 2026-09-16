@@ -4,7 +4,7 @@ import {
 } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import { pictographDataToStepData } from "$lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion";
-import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 import { generateShareURL } from "$lib/shared/navigation/services/sequence-encoder";
 
 export function buildLetterDraftSequence(
@@ -19,7 +19,7 @@ export function buildLetterDraftSequence(
     stepSource,
     `letter-explorer-${pictograph.id}`
   );
-  const startPosition = startPositionDeriver.deriveFromFirstStep(step);
+  const startPlacement = startPlacementDeriver.deriveFromFirstStep(step);
   const gridMode = step.motions.left.gridMode;
 
   return createSequenceData({
@@ -27,8 +27,8 @@ export function buildLetterDraftSequence(
     name: `${letter} draft`,
     word: letter,
     steps: [step],
-    startPosition,
-    startingPosition: startPosition,
+    startPlacement,
+    startingPlacement: startPlacement,
     gridMode,
     sequenceLength: 1,
     tags: ["letter-explorer-draft"],

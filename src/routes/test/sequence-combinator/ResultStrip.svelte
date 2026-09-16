@@ -127,7 +127,7 @@
         class:block-start={cell.blockStart}
         role="listitem"
         title="{cell.sourceId} · {cell.step.letter ?? '?'} {cell.step
-          .startPosition}>{cell.step.endPosition}"
+          .startPlacement}>{cell.step.endPlacement}"
       >
         <div class="picto">
           <PictographContainer pictographData={cell.step} />

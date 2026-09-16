@@ -1,7 +1,7 @@
 <script lang="ts">
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SequenceMandala from "$lib/shared/mandala/components/SequenceMandala.svelte";
-  import { createStartPositionFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+  import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { FuseSide } from "../state/fuse-shuffle-pool.svelte";
@@ -47,11 +47,11 @@
   // especially in the large Fuse cards.
   const safeCellSize = $derived(Math.max(1, cellSize));
   const mandalaSize = $derived(Math.max(1, Math.round(safeCellSize * 0.78)));
-  const startPosition = $derived(
-    sequence.startPosition ??
-      sequence.startingPosition ??
+  const startPlacement = $derived(
+    sequence.startPlacement ??
+      sequence.startingPlacement ??
       (sequence.steps[0]
-        ? createStartPositionFromBeatStart(sequence.steps[0])
+        ? createStartPlacementFromBeatStart(sequence.steps[0])
         : null)
   );
 
@@ -76,7 +76,7 @@
     showNonRadialPoints={false}
     showTnD={false}
     showElemental={false}
-    showPositions={false}
+    showPlacements={false}
     showHandPoints={true}
     visibleHand={side}
     darkMode={true}
@@ -96,10 +96,10 @@
   style:--live-grid-gap={`${FUSE_LIVE_GRID_GAP}px`}
   aria-label="{side === 'left' ? 'Left' : 'Right'} one-hand LOOP notation"
 >
-  {#if includeStart && startPosition}
+  {#if includeStart && startPlacement}
     <div class="live-cell start-cell" style="grid-column:1;grid-row:1;">
       <PictographContainer
-        pictographData={startPosition}
+        pictographData={startPlacement}
         disableTransitions={true}
         disableContentTransitions={true}
         showGrid={true}
@@ -108,7 +108,7 @@
         showNonRadialPoints={false}
         showTnD={false}
         showElemental={false}
-        showPositions={false}
+        showPlacements={false}
         showHandPoints={true}
         visibleHand={side}
         darkMode={true}

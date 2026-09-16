@@ -1,4 +1,4 @@
-letter,startPosition,endPosition,timing,direction,blueMotionType,blueRotationDirection,blueSkewDir,blueHandPath,blueSkewSteps,blueStartLocation,blueEndLocation,redMotionType,redRotationDirection,redSkewDir,redHandPath,redSkewSteps,redStartLocation,redEndLocation,category
+letter,startPlacement,endPlacement,timing,direction,blueMotionType,blueRotationDirection,blueSkewDir,blueHandPath,blueSkewSteps,blueStartLocation,blueEndLocation,redMotionType,redRotationDirection,redSkewDir,redHandPath,redSkewSteps,redStartLocation,redEndLocation,category
 A,alpha3,alpha6,split,same,pro,cw,+,cw,1,w,ne,pro,cw,+,cw,1,e,sw,2
 A,alpha3,gamma4,split,same,pro,cw,+,cw,1,w,ne,pro,cw,-,cw,1,e,se,2
 A,alpha3,zeta5,split,same,pro,cw,+,cw,1,w,ne,pro,cw,,cw,0,e,s,1

@@ -21,9 +21,9 @@ const mirL = (l) => (ri(l) < 0 ? l : RING[(8 - ri(l)) % 8]);
 function parse(file) {
 	const rows = [];
 	for (const line of readFileSync(`${DIR}/${file}`, "utf8").trim().split(/\r?\n/).slice(1)) {
-		const [letter, startPosition, endPosition, , , bT, bR, bS, bE, rT, rR, rS, rE] = line.split(",");
-		if (!letter || !startPosition) continue;
-		rows.push({ letter, startPosition, endPosition, bT, bR, bS, bE, rT, rR, rS, rE });
+		const [letter, startPlacement, endPlacement, , , bT, bR, bS, bE, rT, rR, rS, rE] = line.split(",");
+		if (!letter || !startPlacement) continue;
+		rows.push({ letter, startPlacement, endPlacement, bT, bR, bS, bE, rT, rR, rS, rE });
 	}
 	return rows;
 }
@@ -32,13 +32,13 @@ export const diamond = parse("DiamondPictographDataframe.csv");
 export const box = parse("BoxPictographDataframe.csv");
 
 export const posPair = new Map();
-for (const r of diamond) if (!posPair.has(r.startPosition)) posPair.set(r.startPosition, [r.bS, r.rS]);
-for (const r of diamond) if (!posPair.has(r.endPosition)) posPair.set(r.endPosition, [r.bE, r.rE]);
+for (const r of diamond) if (!posPair.has(r.startPlacement)) posPair.set(r.startPlacement, [r.bS, r.rS]);
+for (const r of diamond) if (!posPair.has(r.endPlacement)) posPair.set(r.endPlacement, [r.bE, r.rE]);
 
 const out = new Map();
 for (const r of diamond) {
-	if (!out.has(r.startPosition)) out.set(r.startPosition, []);
-	out.get(r.startPosition).push(r);
+	if (!out.has(r.startPlacement)) out.set(r.startPlacement, []);
+	out.get(r.startPlacement).push(r);
 }
 
 export const tuple = (r) => [r.bT, r.bR, r.bS, r.bE, r.rT, r.rR, r.rS, r.rE].join("|");
@@ -48,7 +48,7 @@ for (const r of diamond) if (!byTuple.has(tuple(r))) byTuple.set(tuple(r), r);
 // ---------------------------------------------------------------- closure group
 
 // D4 x colour-swap acting on a position pair. Verified 2026-08-05 to agree with
-// the app's isLOOPValidForPositionPair; the shipping engine must call that, not this.
+// the app's isLOOPValidForPlacementPair; the shipping engine must call that, not this.
 export const OPS = [];
 for (let k = 0; k < 4; k++)
 	for (const refl of [false, true])
@@ -93,7 +93,7 @@ export function countPair({ lettersA, lettersB, maxLen = 6, maxConnectors = 2 })
 				const k = kind(e.letter);
 				if (k === "C" && conn >= maxConnectors) continue;
 				walk.push(e);
-				dfs(e.endPosition, conn + (k === "C" ? 1 : 0), uA || k === "A", uB || k === "B");
+				dfs(e.endPlacement, conn + (k === "C" ? 1 : 0), uA || k === "A", uB || k === "B");
 				walk.pop();
 			}
 		})(startPos, 0, false, false);
@@ -159,7 +159,7 @@ export const worldOf = (p) => (p ?? "?").replace(/[0-9]+$/, "");
 export const letterWorlds = new Map();
 for (const r of [...diamond, ...box]) {
 	if (!letterWorlds.has(r.letter)) letterWorlds.set(r.letter, new Set());
-	letterWorlds.get(r.letter).add(`${worldOf(r.startPosition)}>${worldOf(r.endPosition)}`);
+	letterWorlds.get(r.letter).add(`${worldOf(r.startPlacement)}>${worldOf(r.endPlacement)}`);
 }
 
 /**

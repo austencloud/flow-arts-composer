@@ -10,7 +10,7 @@ import type { TikaPictographLoader } from "./tika-pictograph-loader";
 import type { TikaSequenceValidator } from "./tika-sequence-validator";
 import {
   TYPE_DEFINITIONS,
-  POSITION_DEFINITIONS,
+  PLACEMENT_DEFINITIONS,
   MOTION_TYPE_DEFINITIONS,
   LETTER_TO_TYPE,
   LETTER_TYPES,
@@ -26,8 +26,8 @@ import type {
 export interface PictographExample {
   letter: string;
   variation: number;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion?: string;
   rightMotion?: string;
 }
@@ -48,8 +48,8 @@ export interface LetterExplanationResult {
     letter: string;
     letterType: number;
     typeName: string;
-    startPosition: string;
-    endPosition: string;
+    startPlacement: string;
+    endPlacement: string;
     leftMotion: {
       motionType: string;
       startLoc: string;
@@ -182,7 +182,7 @@ export class TikaToolExecutor {
       fullTypeInfo?.name || typeInfo?.name
     }) letter. Left hand ${varData.leftMotion.motionType}${leftRot}, right hand ${
       varData.rightMotion.motionType
-    }${rightRot}. Moves from ${varData.startPosition} to ${varData.endPosition}.`;
+    }${rightRot}. Moves from ${varData.startPlacement} to ${varData.endPlacement}.`;
 
     return {
       explanation,
@@ -197,8 +197,8 @@ export class TikaToolExecutor {
         letter,
         letterType: typeNum || 1,
         typeName: fullTypeInfo?.name || typeInfo?.name || "Unknown",
-        startPosition: varData.startPosition,
-        endPosition: varData.endPosition,
+        startPlacement: varData.startPlacement,
+        endPlacement: varData.endPlacement,
         leftMotion: {
           motionType: varData.leftMotion.motionType,
           startLoc: varData.leftMotion.startLocation,
@@ -415,8 +415,8 @@ ${entry.examples.map((e) => `- ${e}`).join("\n")}
 
   showPositionExamples(position: string): PositionExamplesResult | string {
     const positionDef =
-      POSITION_DEFINITIONS[
-        position.toLowerCase() as keyof typeof POSITION_DEFINITIONS
+      PLACEMENT_DEFINITIONS[
+        position.toLowerCase() as keyof typeof PLACEMENT_DEFINITIONS
       ];
     if (!positionDef) {
       return `Position "${position}" not recognized. Valid positions: alpha, beta, gamma, zeta, eta`;
@@ -497,7 +497,7 @@ In TKA, **position** describes where your two hands are relative to each other o
           items: diamond.map((ex) => ({
             letter: ex.letter,
             variation: ex.variation,
-            label: ex.startPosition,
+            label: ex.startPlacement,
           })),
           layout: "row" as const,
           gridMode: "diamond" as const,
@@ -509,7 +509,7 @@ In TKA, **position** describes where your two hands are relative to each other o
           items: box.map((ex) => ({
             letter: ex.letter,
             variation: ex.variation,
-            label: ex.startPosition,
+            label: ex.startPlacement,
           })),
           layout: "row" as const,
           gridMode: "box" as const,
@@ -614,8 +614,8 @@ In TKA, **position** describes where your two hands are relative to each other o
         letter: step.letter,
         variation: step.variation,
         label: step.stepNumber === 0 ? "Start" : `Step ${step.stepNumber}`,
-        startPosition: step.startPosition,
-        endPosition: step.endPosition,
+        startPlacement: step.startPlacement,
+        endPlacement: step.endPlacement,
       }));
 
       const normalizedWord = letters.join("");
@@ -658,12 +658,12 @@ In TKA, **position** describes where your two hands are relative to each other o
       .map((v, i) => ({
         letter: staticLetter,
         variation: i,
-        startPosition: v.startPosition,
-        endPosition: v.endPosition,
+        startPlacement: v.startPlacement,
+        endPlacement: v.endPlacement,
       }))
       .sort((a, b) => {
-        const numA = parseInt(a.startPosition.replace(/\D/g, "")) || 0;
-        const numB = parseInt(b.startPosition.replace(/\D/g, "")) || 0;
+        const numA = parseInt(a.startPlacement.replace(/\D/g, "")) || 0;
+        const numB = parseInt(b.startPlacement.replace(/\D/g, "")) || 0;
         return numA - numB;
       });
 
@@ -675,12 +675,12 @@ In TKA, **position** describes where your two hands are relative to each other o
       .map((v, i) => ({
         letter: staticLetter,
         variation: i,
-        startPosition: v.startPosition,
-        endPosition: v.endPosition,
+        startPlacement: v.startPlacement,
+        endPlacement: v.endPlacement,
       }))
       .sort((a, b) => {
-        const numA = parseInt(a.startPosition.replace(/\D/g, "")) || 0;
-        const numB = parseInt(b.startPosition.replace(/\D/g, "")) || 0;
+        const numA = parseInt(a.startPlacement.replace(/\D/g, "")) || 0;
+        const numB = parseInt(b.startPlacement.replace(/\D/g, "")) || 0;
         return numA - numB;
       });
 
@@ -722,8 +722,8 @@ In TKA, **position** describes where your two hands are relative to each other o
       examples.push({
         letter: match.letter,
         variation: 0,
-        startPosition: match.startPosition,
-        endPosition: match.endPosition,
+        startPlacement: match.startPlacement,
+        endPlacement: match.endPlacement,
         leftMotion: match.leftMotion.motionType,
         rightMotion: match.rightMotion.motionType,
       });
@@ -735,7 +735,7 @@ In TKA, **position** describes where your two hands are relative to each other o
 
   private isPositionTerm(term: string): boolean {
     const normalized = term.toLowerCase().trim();
-    return Object.keys(POSITION_DEFINITIONS).includes(normalized);
+    return Object.keys(PLACEMENT_DEFINITIONS).includes(normalized);
   }
 
   private isMotionTerm(term: string): boolean {

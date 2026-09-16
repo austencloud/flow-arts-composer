@@ -45,10 +45,10 @@ function getCWOrder(start: GridLocation): GridLocation[] {
 /**
  * Determine the shift direction of a single hand motion.
  *
- * Returns "cw" if the hand moves to the next CW position,
- * "ccw" if it moves to the previous (CCW) position,
+ * Returns "cw" if the hand moves to the next CW location,
+ * "ccw" if it moves to the previous (CCW) location,
  * or null if the motion is not a shift (dash/static) or is ambiguous
- * (opposite-position movement like N->S which is 2 steps in either direction).
+ * (opposite-location movement like N->S which is 2 steps in either direction).
  */
 function deriveShiftDirection(motion: Motion): ShiftDirection {
   // Dashes and statics don't shift
@@ -82,7 +82,7 @@ function deriveShiftDirection(motion: Motion): ShiftDirection {
   // 1 step backward = CCW (which is len-1 steps forward)
   if (cwStep === len - 1) return "ccw";
 
-  // 2 steps = opposite position (ambiguous) or any other distance
+  // 2 steps = opposite location (ambiguous) or any other distance
   return null;
 }
 

@@ -116,8 +116,8 @@ export const GREEK_LETTER_DISPLAY: Record<string, string> = {
 };
 
 /**
- * Letters that can serve as "bridge" letters to transition between position groups
- * These are letters that start in one position group and end in another
+ * Letters that can serve as "bridge" letters to transition between placement groups
+ * These are letters that start in one placement group and end in another
  */
 export const BRIDGE_LETTER_CANDIDATES = {
   // From alpha to beta

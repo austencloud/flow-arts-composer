@@ -285,7 +285,7 @@ describe("tunnel creator draft", () => {
           loopEnabled: true,
           loopType: "mirrored",
         },
-        startEndOptions: { endPositions: ["alpha1", "beta3"] },
+        startEndOptions: { endPlacements: ["alpha1", "beta3"] },
       },
     };
     const library = {

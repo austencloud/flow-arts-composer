@@ -12,8 +12,8 @@ const SEQ: SequenceData = {
 } as unknown as SequenceData;
 
 const BASE_OPTS: PrintRenderOptions = {
-  includeStartPosition: true,
-  startPositionLayout: "row",
+  includeStartPlacement: true,
+  startPlacementLayout: "row",
 };
 
 describe("buildFrontComposeOptions", () => {
@@ -89,11 +89,11 @@ describe("buildFrontComposeOptions", () => {
   it("threads a resolved total-grid column count into the composer", () => {
     const { composeOptions } = buildFrontComposeOptions(SEQ, {
       ...BASE_OPTS,
-      startPositionLayout: "column",
+      startPlacementLayout: "column",
       totalGridColumns: 3,
     });
 
-    expect(composeOptions.startPositionLayout).toBe("column");
+    expect(composeOptions.startPlacementLayout).toBe("column");
     expect(composeOptions.columnCount).toBe(3);
   });
 

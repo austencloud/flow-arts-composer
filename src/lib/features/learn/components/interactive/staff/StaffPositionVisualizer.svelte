@@ -10,14 +10,14 @@ Demonstrates Alpha, Beta, Gamma positions with thumb orientations (in, out, mixe
     GRID_POINTS,
     LEFT_STAFF_COLOR,
     RIGHT_STAFF_COLOR,
-    getPositionType,
+    getPlacementType,
     getStaffEndpoints,
     type HandPosition,
     type ThumbOrientation,
-    type PositionType,
+    type PlacementType,
     type RotationType,
   } from "../../../domain/constants/staff-visualizer-data";
-  import StaffPositionBadge from "./staff-visualizer/StaffPositionBadge.svelte";
+  import StaffPlacementBadge from "./staff-visualizer/StaffPlacementBadge.svelte";
   import StaffLegend from "./staff-visualizer/StaffLegend.svelte";
   import StaffRotationIndicator from "./staff-visualizer/StaffRotationIndicator.svelte";
   import StaffElement from "./staff-visualizer/StaffElement.svelte";
@@ -30,7 +30,7 @@ Demonstrates Alpha, Beta, Gamma positions with thumb orientations (in, out, mixe
     leftThumbOrientation = $bindable<ThumbOrientation>("in"),
     rightThumbOrientation = $bindable<ThumbOrientation>("in"),
     showLabels = true,
-    highlightType = null as PositionType | null,
+    highlightType = null as PlacementType | null,
     showRotationPath = false,
     rotationType = "none" as RotationType,
     animating = false,
@@ -42,7 +42,7 @@ Demonstrates Alpha, Beta, Gamma positions with thumb orientations (in, out, mixe
     leftThumbOrientation?: ThumbOrientation;
     rightThumbOrientation?: ThumbOrientation;
     showLabels?: boolean;
-    highlightType?: PositionType | null;
+    highlightType?: PlacementType | null;
     showRotationPath?: boolean;
     rotationType?: RotationType;
     animating?: boolean;
@@ -57,8 +57,8 @@ Demonstrates Alpha, Beta, Gamma positions with thumb orientations (in, out, mixe
 
   const hapticService = getHapticFeedback();
 
-  const currentPositionType = $derived(
-    getPositionType(leftPosition, rightPosition)
+  const currentPlacementType = $derived(
+    getPlacementType(leftPosition, rightPosition)
   );
   const leftStaff = $derived(
     getStaffEndpoints(leftPosition, leftThumbOrientation)
@@ -74,9 +74,9 @@ Demonstrates Alpha, Beta, Gamma positions with thumb orientations (in, out, mixe
 </script>
 
 <div class="staff-visualizer" class:interactive class:animating>
-  <!-- Position type badge -->
-  {#if highlightType || currentPositionType}
-    <StaffPositionBadge type={highlightType || currentPositionType} />
+  <!-- Placement type badge -->
+  {#if highlightType || currentPlacementType}
+    <StaffPlacementBadge type={highlightType || currentPlacementType} />
   {/if}
 
   <!-- Grid SVG -->

@@ -5,7 +5,7 @@
  * prove:
  *
  *   - `candidateWords` is the Layer 0 preview — pure letter calculus over
- *     position FAMILIES. Synchronous, milliseconds, and only ever NECESSARY:
+ *     placement FAMILIES. Synchronous, milliseconds, and only ever NECESSARY:
  *     a word listed here spells a closed loop in the family graph, which does
  *     not mean concrete card material can realize it (alpha3 and alpha5 are
  *     both "alpha" to this layer, and only one of them may be where the card

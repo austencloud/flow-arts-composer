@@ -12,7 +12,7 @@ I've successfully implemented the **Strict Rotated LOOP (Continuous Assembly Pat
 - `SliceSize` enum (HALVED, QUARTERED)
 - Supporting interfaces and type definitions
 
-### 2. **Position Mapping Constants** (`circular-position-maps.ts`)
+### 2. **Position Mapping Constants** (`circular-placement-maps.ts`)
 
 - `HALF_POSITION_MAP`: Maps each position to its 180° opposite
   - Example: `ALPHA1` (S,N) → `ALPHA5` (N,S)
@@ -30,9 +30,9 @@ I've successfully implemented the **Strict Rotated LOOP (Continuous Assembly Pat
 - `HAND_ROTATION_DIRECTION_MAP`: Maps (start, end) tuples to rotation type
 - Helper functions to determine rotation direction
 
-### 4. **RotatedEndPositionSelector Service**
+### 4. **RotatedEndPlacementSelector Service**
 
-- `determineRotatedEndPosition()`: Given a start position and slice size, returns the required end position
+- `determineRotatedEndPlacement()`: Given a start position and slice size, returns the required end position
   - For HALVED: Returns opposite position (180°)
   - For QUARTERED: Randomly chooses between CW or CCW 90° rotation
 - `isValidRotatedPair()`: Validates if a (start, end) pair is valid for the slice size
@@ -67,10 +67,10 @@ Implements the complete LOOP execution algorithm:
   - For HALVED at beat N: Use beat (N - N/2)
   - For QUARTERED at beat N: Use beat (N - N/4)
 
-- **`_calculateNewEndPosition()`**: Rotates positions for the new beat
+- **`_calculateNewEndPlacement()`**: Rotates positions for the new beat
   1. Determines each hand's rotation direction (CW, CCW, DASH, or STATIC)
   2. Applies appropriate location map to each hand
-  3. Uses GridPositionDeriver to map (blue_loc, red_loc) → GridPosition
+  3. Uses GridPlacementDeriver to map (blue_loc, red_loc) → GridPlacement
 
 - **`_createTransformedMotion()`**: Creates rotated motion data
   - Preserves motion type, turns, rotation direction
@@ -110,7 +110,7 @@ Wait, that's wrong. Let me recalculate based on the actual implementation:
    - Determine rotation: S→SW is clockwise, N→NE is clockwise
    - Rotate Blue SW using CW map: SW → NW
    - Rotate Red NE using CW map: NE → SE
-   - New position from (NW, SE): Derive using GridPositionDeriver
+   - New position from (NW, SE): Derive using GridPlacementDeriver
    - Create Beat 2 with rotated locations
 4. Update orientations using OrientationCalculator
 5. Re-insert start position at beginning
@@ -147,7 +147,7 @@ Beat 1: ALPHA1 (S,N) → ALPHA3 (W,E)
 
 ### 2. **Proper Integration**
 
-- Uses existing `GridPositionDeriver` for position mapping
+- Uses existing `GridPlacementDeriver` for position mapping
 - Uses existing `OrientationCalculator` for orientation updates
 - Follows established service patterns with dependency injection
 - Maintains type safety with TypeScript
@@ -217,9 +217,9 @@ The test suite cannot run due to circular dependency injection issues:
 
 **Solution**: This is a known issue in the codebase and doesn't reflect on the LOOP implementation. The LOOP logic is self-contained and uses only:
 
-- Grid enums (GridPosition, GridLocation)
+- Grid enums (GridPlacement, GridLocation)
 - Motion enums (MotionColor, MotionType, etc.)
-- GridPositionDeriver (standalone service)
+- GridPlacementDeriver (standalone service)
 - OrientationCalculator (standalone service)
 
 ## Manual Verification Strategy
@@ -257,7 +257,7 @@ To manually verify this implementation works:
 
    ```typescript
    // In types.ts
-   IRotatedEndPositionSelector: Symbol.for("IRotatedEndPositionSelector"),
+   IRotatedEndPlacementSelector: Symbol.for("IRotatedEndPlacementSelector"),
    IStrictRotatedLOOPExecutor: Symbol.for("IStrictRotatedLOOPExecutor"),
    ```
 
@@ -265,8 +265,8 @@ To manually verify this implementation works:
 
    ```typescript
    // In appropriate module
-   bind<RotatedEndPositionSelector>(TYPES.IRotatedEndPositionSelector)
-     .to(RotatedEndPositionSelector)
+   bind<RotatedEndPlacementSelector>(TYPES.IRotatedEndPlacementSelector)
+     .to(RotatedEndPlacementSelector)
      .inSingletonScope();
    bind<StrictRotatedLOOPExecutor>(TYPES.IStrictRotatedLOOPExecutor)
      .to(StrictRotatedLOOPExecutor)
@@ -275,7 +275,7 @@ To manually verify this implementation works:
 
 3. **Integrate into SequenceGenerationService**:
    - Add logic to detect when user wants circular generation
-   - Call RotatedEndPositionSelector to determine required end position
+   - Call RotatedEndPlacementSelector to determine required end position
    - Generate first section with that end position
    - Call StrictRotatedLOOPExecutor to complete the circle
 
@@ -315,4 +315,4 @@ The implementation successfully:
 - ✅ Maintains motion attributes
 - ✅ Creates circular sequences (end returns to start)
 - ✅ Handles both halved and quartered slice sizes
-- ✅ Integrates with existing services (GridPositionDeriver, OrientationCalculator)
+- ✅ Integrates with existing services (GridPlacementDeriver, OrientationCalculator)

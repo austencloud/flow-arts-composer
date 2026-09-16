@@ -12,13 +12,13 @@ import type {
   StepComparisonResult,
   MotionSignature,
 } from "../domain/models/signatures";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   GridLocation,
-  GridPositionGroup,
+  GridPlacementGroup,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getPositionGroup } from "$lib/shared/foundation/domain/models/generation/circular-position-maps";
+import { getPlacementGroup } from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
 
 /**
  * Scoring weights for beat similarity calculation.
@@ -26,7 +26,7 @@ import { getPositionGroup } from "$lib/shared/foundation/domain/models/generatio
 const SCORING_WEIGHTS = {
   leftMotion: 0.35,
   rightMotion: 0.35,
-  positionGroup: 0.2,
+  placementGroup: 0.2,
   handAngle: 0.1,
 } as const;
 
@@ -63,8 +63,8 @@ export class StepSignatureGenerator {
     const rightSignature =
       this.motionSignatureGenerator.generateSignature(rightMotion);
 
-    const startPositionGroup = this.derivePositionGroup(step.startPosition);
-    const endPositionGroup = this.derivePositionGroup(step.endPosition);
+    const startPlacementGroup = this.derivePlacementGroup(step.startPlacement);
+    const endPlacementGroup = this.derivePlacementGroup(step.endPlacement);
 
     const startHandAngle = this.calculateHandAngle(
       leftMotion.startLocation,
@@ -78,15 +78,15 @@ export class StepSignatureGenerator {
     const hash = this.generateHash(
       leftSignature,
       rightSignature,
-      startPositionGroup,
-      endPositionGroup,
+      startPlacementGroup,
+      endPlacementGroup,
       startHandAngle,
       endHandAngle
     );
 
     return {
-      startPositionGroup,
-      endPositionGroup,
+      startPlacementGroup,
+      endPlacementGroup,
       left: leftSignature,
       right: rightSignature,
       startHandAngle,
@@ -102,8 +102,8 @@ export class StepSignatureGenerator {
     }
 
     return (
-      a.startPositionGroup === b.startPositionGroup &&
-      a.endPositionGroup === b.endPositionGroup &&
+      a.startPlacementGroup === b.startPlacementGroup &&
+      a.endPlacementGroup === b.endPlacementGroup &&
       this.motionSignatureGenerator.signaturesMatch(a.left, b.left) &&
       this.motionSignatureGenerator.signaturesMatch(a.right, b.right) &&
       a.startHandAngle === b.startHandAngle &&
@@ -121,9 +121,9 @@ export class StepSignatureGenerator {
       b.right
     );
 
-    const positionGroupMatch =
-      a.startPositionGroup === b.startPositionGroup &&
-      a.endPositionGroup === b.endPositionGroup;
+    const placementGroupMatch =
+      a.startPlacementGroup === b.startPlacementGroup &&
+      a.endPlacementGroup === b.endPlacementGroup;
 
     const handAngleMatch =
       a.startHandAngle === b.startHandAngle &&
@@ -132,20 +132,20 @@ export class StepSignatureGenerator {
     let score = 0;
     score += SCORING_WEIGHTS.leftMotion * leftComparison.similarity;
     score += SCORING_WEIGHTS.rightMotion * rightComparison.similarity;
-    score += SCORING_WEIGHTS.positionGroup * (positionGroupMatch ? 1 : 0);
+    score += SCORING_WEIGHTS.placementGroup * (placementGroupMatch ? 1 : 0);
     score += SCORING_WEIGHTS.handAngle * (handAngleMatch ? 1 : 0);
 
     const isExactMatch =
       leftComparison.isExactMatch &&
       rightComparison.isExactMatch &&
-      positionGroupMatch &&
+      placementGroupMatch &&
       handAngleMatch;
 
     return {
       isExactMatch,
       similarity: Math.min(1, Math.max(0, score)),
       breakdown: {
-        positionGroupMatch,
+        placementGroupMatch,
         leftSimilarity: leftComparison.similarity,
         rightSimilarity: rightComparison.similarity,
         handAngleMatch,
@@ -158,25 +158,25 @@ export class StepSignatureGenerator {
   }
 
   /**
-   * Derive position group from a GridPosition.
+   * Derive position group from a GridPlacement.
    * Falls back to ALPHA if position is not provided.
    */
-  private derivePositionGroup(
-    position: GridPosition | null | undefined
-  ): GridPositionGroup {
+  private derivePlacementGroup(
+    position: GridPlacement | null | undefined
+  ): GridPlacementGroup {
     if (!position) {
-      return GridPositionGroup.ALPHA;
+      return GridPlacementGroup.ALPHA;
     }
 
     try {
-      return getPositionGroup(position);
+      return getPlacementGroup(position);
     } catch (error) {
       // If position doesn't match expected format, try parsing the prefix.
-      if (position.startsWith("alpha")) return GridPositionGroup.ALPHA;
-      if (position.startsWith("beta")) return GridPositionGroup.BETA;
-      if (position.startsWith("gamma")) return GridPositionGroup.GAMMA;
-      if (position.startsWith("zeta")) return GridPositionGroup.ZETA;
-      if (position.startsWith("eta")) return GridPositionGroup.ETA;
+      if (position.startsWith("alpha")) return GridPlacementGroup.ALPHA;
+      if (position.startsWith("beta")) return GridPlacementGroup.BETA;
+      if (position.startsWith("gamma")) return GridPlacementGroup.GAMMA;
+      if (position.startsWith("zeta")) return GridPlacementGroup.ZETA;
+      if (position.startsWith("eta")) return GridPlacementGroup.ETA;
       // Nothing matched — the position data is corrupt. Surface it instead of
       // silently treating every bad value as ALPHA, which would produce wrong
       // signatures (and wrong comparison results) with no trace.
@@ -184,7 +184,7 @@ export class StepSignatureGenerator {
         `[StepSignatureGenerator] Unrecognized position "${position}"; falling back to ALPHA. Comparison results may be inaccurate.`,
         error
       );
-      return GridPositionGroup.ALPHA;
+      return GridPlacementGroup.ALPHA;
     }
   }
 
@@ -221,8 +221,8 @@ export class StepSignatureGenerator {
   private generateHash(
     left: MotionSignature,
     right: MotionSignature,
-    startPosGroup: GridPositionGroup,
-    endPosGroup: GridPositionGroup,
+    startPosGroup: GridPlacementGroup,
+    endPosGroup: GridPlacementGroup,
     startAngle: number,
     endAngle: number
   ): string {

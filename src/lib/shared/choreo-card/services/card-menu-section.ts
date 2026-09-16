@@ -8,7 +8,7 @@
  * choreo-card-context-menu.ts (admin image actions) — both absorbed here.
  *
  * Entries appear only when their dep is provided, so each surface gets exactly
- * the actions it wires. Seam note: the three-tier start-position layout
+ * the actions it wires. Seam note: the three-tier start-placement layout
  * feature (feedback 3IPLlE7L) adds its tier submenu to these deps later.
  */
 

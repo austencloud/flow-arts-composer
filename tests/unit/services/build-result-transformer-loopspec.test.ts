@@ -16,10 +16,10 @@ import type { LOOPSpecWire } from "@tka/sequence-engine/loop";
 
 // Minimal engine-shaped step/motion helpers — mirrors the pattern used in the
 // engine's own spec-executor/overlay-inversion tests (Tasks 2-3 of this plan).
-// The transformer only reads: letter, startPosition, endPosition, and
+// The transformer only reads: letter, startPlacement, endPlacement, and
 // motions.{blue,red}.{motionType,rotationDirection,startLocation,endLocation,
 // startOrientation,endOrientation,turns} — see convertToSequenceData/mapStep/
-// mapStartPosition in build-result-transformer.ts.
+// mapStartPlacement in build-result-transformer.ts.
 function motion(motionType: string, rotationDirection: string, startLocation: string, endLocation: string) {
   return {
     motionType,
@@ -41,7 +41,7 @@ function step(
   left: ReturnType<typeof motion>,
   right: ReturnType<typeof motion>
 ): SequenceStep {
-  return { stepNumber: n, letter, startPosition: sp, endPosition: ep, motions: { left, right } } as unknown as SequenceStep;
+  return { stepNumber: n, letter, startPlacement: sp, endPlacement: ep, motions: { left, right } } as unknown as SequenceStep;
 }
 
 function makeSequence(): SequenceStep[] {

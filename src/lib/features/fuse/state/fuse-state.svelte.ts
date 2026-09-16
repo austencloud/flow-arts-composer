@@ -48,7 +48,7 @@ import {
   mirrorSequence,
   rewindSequence,
   rotateSequence,
-  shiftStartPosition,
+  shiftStartPlacement,
 } from "$lib/shared/create/services/sequence-transformer";
 import { soloPropToSequence } from "$lib/shared/foundation/services/solo-prop-sequence-adapter";
 import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-loopability-checker";
@@ -1648,7 +1648,7 @@ export function createFuseState({
           transformed = await invertSequence(transformed, side);
           break;
         case "first-step":
-          transformed = shiftStartPosition(transformed, adjustment.step);
+          transformed = shiftStartPlacement(transformed, adjustment.step);
           break;
         case "reset":
           break;
@@ -1750,12 +1750,12 @@ export function createFuseState({
     const follower: FuseSide = driver === "left" ? "right" : "left";
     const transformed = await applyDriverRule(driverSequence, nextRule, driver);
 
-    // Only the driver hand was transformed, so `transformed`'s start position and
+    // Only the driver hand was transformed, so `transformed`'s start placement and
     // its other-hand (follower) motions still hold the original source's
     // untouched follower hand. Reassign the transformed driver motions into the
-    // follower slot on every step, and drop the start position so extraction
+    // follower slot on every step, and drop the start placement so extraction
     // reads the path start from the reassigned first step (not the stale source
-    // follower hand that would otherwise sit in startPosition.motions[follower]).
+    // follower hand that would otherwise sit in startPlacement.motions[follower]).
     const reassigned = updateSequenceData(transformed, {
       steps: transformed.steps.map((step) => {
         const driverMotion = step.motions[driver];
@@ -1772,8 +1772,8 @@ export function createFuseState({
           },
         };
       }),
-      startPosition: undefined,
-      startingPosition: undefined,
+      startPlacement: undefined,
+      startingPlacement: undefined,
     });
 
     return follower === "left"

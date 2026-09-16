@@ -1,6 +1,6 @@
 <!--
   GridConceptExperience coordinates the Grid lesson's state. The visual frame
-  is shared with Hand Positions so continuing the curriculum feels like the
+  is shared with Hand Placements so continuing the curriculum feels like the
   same lesson advancing, with the grid carried into its next job.
 -->
 <script lang="ts">
@@ -55,7 +55,7 @@
     if (isFinalAction) {
       hapticService?.trigger("success");
       experienceState.reset();
-      onComplete?.("hand-positions");
+      onComplete?.("hand-placements");
       return;
     }
     if (experienceState.handleNextPhase()) return;
@@ -111,7 +111,7 @@
       {#snippet controls()}
         <div class="control-focus-anchor">
           <LessonStageControls
-            label={isFinalAction ? "Continue to Hand Positions" : "Next"}
+            label={isFinalAction ? "Continue to Hand Placements" : "Next"}
             currentStep={experienceState.step + 1}
             totalSteps={experienceState.totalSteps}
             onAction={handleNext}
@@ -136,9 +136,9 @@
     height: 100%;
     display: grid;
     place-items: center;
-    /* Hand Positions inherits this exact stage. Let the lesson frame own the
+    /* Hand Placements inherits this exact stage. Let the lesson frame own the
        size so the completed grid does not jump from a legacy 400px cap to the
-       larger hand-position artifact during the concept handoff. */
+       larger hand-placement artifact during the concept handoff. */
     --grid-merge-max-width: 100%;
   }
 

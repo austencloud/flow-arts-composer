@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CreateModuleContext } from "$lib/features/create/shared/context/create-module-context";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import ButtonPanel from "./ButtonPanel.svelte";
 
 vi.mock("$lib/shared/mobile/share-action.svelte", () => ({
@@ -67,7 +67,7 @@ const sequence = createSequenceData({
 });
 const startOnlySequence = createSequenceData({
   id: "toolbar-teaching-banner",
-  startPosition: createStartPositionData({ id: "toolbar-start" }),
+  startPlacement: createStartPlacementData({ id: "toolbar-start" }),
   steps: [],
 });
 

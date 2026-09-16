@@ -167,9 +167,9 @@ async function handleRender(msg: RenderRequest): Promise<void> {
 
     const overlay: SceneOverlay = {
       stepIndex: frame.stepIndex,
-      isStartPosition: frame.isStartPosition,
+      isStartPlacement: frame.isStartPlacement,
       letterGlyphs: assets.letterGlyphs,
-      startPositionGlyph: assets.startPositionGlyph,
+      startPlacementGlyph: assets.startPlacementGlyph,
     };
 
     renderScene(
@@ -192,7 +192,7 @@ async function handleRender(msg: RenderRequest): Promise<void> {
         frame.left, frame.right,
         assets.leftPropViewBox, assets.rightPropViewBox,
         i, dt,
-        frame.stepIndex, frame.isStartPosition,
+        frame.stepIndex, frame.isStartPlacement,
         {
           left: assets.leftPropImage,
           right: assets.rightPropImage,

@@ -85,7 +85,7 @@ export interface VideoExportAnalyticsInput {
   fps: number;
   loopCount: number;
   resolution: string | number;
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   includeEndHold: boolean;
   renderMode: string;
   playbackMode: string;
@@ -100,7 +100,7 @@ export function buildVideoExportAnalyticsConfig(
     fps: input.fps,
     loop_count: input.loopCount,
     resolution: String(input.resolution),
-    include_start_position: input.includeStartPosition,
+    include_start_position: input.includeStartPlacement,
     include_end_hold: input.includeEndHold,
     render_mode: input.renderMode,
     playback_mode: input.playbackMode,
@@ -111,7 +111,7 @@ export function buildVideoExportAnalyticsConfig(
 export interface CardExportAnalyticsInput {
   stepCount: number;
   darkMode: boolean;
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   handPath: boolean;
   leftPropType: PropType | undefined;
   rightPropType: PropType | undefined;
@@ -123,7 +123,7 @@ export function buildCardExportAnalyticsConfig(
   return {
     step_count: input.stepCount,
     dark_mode: input.darkMode,
-    include_start_position: input.includeStartPosition,
+    include_start_position: input.includeStartPlacement,
     hand_path: input.handPath,
     ...scanPropProperties(input.leftPropType, input.rightPropType),
   };

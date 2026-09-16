@@ -8,7 +8,7 @@ import {
 } from "$lib/shared/combination/domain/base-sequence-registry";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import { getAllLetterVariants } from "../../helpers/real-pictograph-loader";
-import { positionGroup } from "$lib/shared/combination/services/position-groups";
+import { placementGroup } from "$lib/shared/combination/services/placement-groups";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 describe("base-sequence registry", () => {
@@ -109,8 +109,8 @@ describe("base-sequence registry", () => {
         ).toBeGreaterThan(0);
 
         const families = variants.map((v) => ({
-          from: v.startPosition ? positionGroup(v.startPosition) : null,
-          to: v.endPosition ? positionGroup(v.endPosition) : null,
+          from: v.startPlacement ? placementGroup(v.startPlacement) : null,
+          to: v.endPlacement ? placementGroup(v.endPlacement) : null,
         }));
 
         const hasMatch = families.some(

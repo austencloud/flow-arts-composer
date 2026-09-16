@@ -28,7 +28,7 @@
     }
 
     if (showFocusSocket && focusedGap) {
-      return `Word ${displayWord}. Marked gap from ${focusedGap.from}, ending ${focusedGap.fromEndPositionGroup}, to ${focusedGap.to}, starting ${focusedGap.toStartPositionGroup}. Choose a bridge that starts ${focusedGap.fromEndPositionGroup} and ends ${focusedGap.toStartPositionGroup}.`;
+      return `Word ${displayWord}. Marked gap from ${focusedGap.from}, ending ${focusedGap.fromEndPlacementGroup}, to ${focusedGap.to}, starting ${focusedGap.toStartPlacementGroup}. Choose a bridge that starts ${focusedGap.fromEndPlacementGroup} and ends ${focusedGap.toStartPlacementGroup}.`;
     }
 
     return `Word ${displayWord}. Bridge status hidden.`;

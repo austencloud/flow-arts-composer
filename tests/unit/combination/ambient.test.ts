@@ -41,7 +41,7 @@ import { findCombinations } from "$lib/shared/combination/services/sequence-comb
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 
@@ -65,8 +65,8 @@ beforeAll(async () => {
 /** Ψ alpha5>beta1 and Φ beta5>alpha5 — the two-way pinch. */
 const bothWays: AmbientOptionProvider = {
   async optionsAt(seam: SeamState) {
-    if (seam === PSI_STEP.startPosition) return [PSI_STEP];
-    if (seam === PHI_STEP.startPosition) return [PHI_STEP];
+    if (seam === PSI_STEP.startPlacement) return [PSI_STEP];
+    if (seam === PHI_STEP.startPlacement) return [PHI_STEP];
     return [];
   },
 };
@@ -74,7 +74,7 @@ const bothWays: AmbientOptionProvider = {
 /** Ψ alpha5>beta1 only — a one-way door out of the alpha world. */
 const psiOnly: AmbientOptionProvider = {
   async optionsAt(seam: SeamState) {
-    return seam === PSI_STEP.startPosition ? [PSI_STEP] : [];
+    return seam === PSI_STEP.startPlacement ? [PSI_STEP] : [];
   },
 };
 
@@ -95,7 +95,7 @@ const throwing: AmbientOptionProvider = {
 // --- Malformed / mislabelled material -------------------------------------
 
 /**
- * Ψ with a LIE for an end position: its motions land the hands at beta1, but it
+ * Ψ with a LIE for an end placement: its motions land the hands at beta1, but it
  * claims beta5. Splicing on the claim would join it to material whose props are
  * a quarter turn away — a sequence that closes on paper and teleports in the
  * hands.
@@ -103,7 +103,7 @@ const throwing: AmbientOptionProvider = {
 const PSI_MISLABELLED_END: StepData = createStepData({
   ...PSI_STEP,
   id: "psi-mislabelled-end",
-  endPosition: GridPosition.BETA5,
+  endPlacement: GridPlacement.BETA5,
 });
 
 /**
@@ -139,7 +139,7 @@ const F_LABELLED_PSI: StepData = createStepData({
  */
 const chainable: AmbientOptionProvider = {
   async optionsAt(seam: SeamState) {
-    return PHI_PSI_LOOP.steps.filter((step) => step.startPosition === seam);
+    return PHI_PSI_LOOP.steps.filter((step) => step.startPlacement === seam);
   },
 };
 
@@ -264,12 +264,12 @@ describe("ambient base material — the ΦΨ pinch", () => {
     expect(flagship!.cardAShare + flagship!.cardBShare).toBeCloseTo(1, 10);
     expect(flagship!.cardAShare).toBeCloseTo(4 / 6, 10);
 
-    // Positional continuity, wrap included, exactly as for a card-only walk.
+    // Placement continuity, wrap included, exactly as for a card-only walk.
     const steps = flagship!.sequence.steps;
     for (let i = 1; i < steps.length; i++) {
-      expect(steps[i]!.startPosition).toBe(steps[i - 1]!.endPosition);
+      expect(steps[i]!.startPlacement).toBe(steps[i - 1]!.endPlacement);
     }
-    expect(steps[0]!.startPosition).toBe(steps.at(-1)!.endPosition);
+    expect(steps[0]!.startPlacement).toBe(steps.at(-1)!.endPlacement);
   }, 120_000);
 
   it("keeps proving impossibility when the ambient pool is empty", async () => {
@@ -447,8 +447,8 @@ describe("ambient base material — the ΦΨ pinch", () => {
       ...options,
       ambientProvider: {
         async optionsAt(seam: SeamState) {
-          if (seam === PSI_STEP.startPosition) return [PSI_STEP, PSI_ONE_TURN];
-          if (seam === PHI_STEP.startPosition) return [PHI_STEP];
+          if (seam === PSI_STEP.startPlacement) return [PSI_STEP, PSI_ONE_TURN];
+          if (seam === PHI_STEP.startPlacement) return [PHI_STEP];
           return [];
         },
       },
@@ -463,8 +463,8 @@ describe("ambient base material — the ΦΨ pinch", () => {
       ...options,
       ambientProvider: {
         async optionsAt(seam: SeamState) {
-          if (seam === PSI_STEP.startPosition) return [PSI_STEP, PSI_STEP];
-          if (seam === PHI_STEP.startPosition) return [PHI_STEP, PHI_STEP];
+          if (seam === PSI_STEP.startPlacement) return [PSI_STEP, PSI_STEP];
+          if (seam === PHI_STEP.startPlacement) return [PHI_STEP, PHI_STEP];
           return [];
         },
       },
@@ -474,15 +474,15 @@ describe("ambient base material — the ΦΨ pinch", () => {
     );
   }, 180_000);
 
-  it("rejects a bridge step whose position labels contradict its own motions", async () => {
+  it("rejects a bridge step whose placement labels contradict its own motions", async () => {
     // The mislabelled Ψ claims to end at beta5; its hands land at beta1. Accept
     // it and the walk splices card material onto props that are not there.
     const report = await findCombinations(AAAA_CCW, HHHH_CCW, {
       allowAmbient: true,
       ambientProvider: {
         async optionsAt(seam: SeamState) {
-          if (seam === PSI_STEP.startPosition) return [PSI_MISLABELLED_END];
-          if (seam === PHI_STEP.startPosition) return [PHI_STEP];
+          if (seam === PSI_STEP.startPlacement) return [PSI_MISLABELLED_END];
+          if (seam === PHI_STEP.startPlacement) return [PHI_STEP];
           return [];
         },
       },
@@ -505,8 +505,8 @@ describe("ambient base material — the ΦΨ pinch", () => {
       allowAmbient: true,
       ambientProvider: {
         async optionsAt(seam: SeamState) {
-          if (seam === PSI_STEP.startPosition) return [PSI_STEP];
-          if (seam === F_LABELLED_PSI.startPosition) return [F_LABELLED_PSI];
+          if (seam === PSI_STEP.startPlacement) return [PSI_STEP];
+          if (seam === F_LABELLED_PSI.startPlacement) return [F_LABELLED_PSI];
           return [];
         },
       },

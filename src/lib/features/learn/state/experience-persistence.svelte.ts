@@ -95,7 +95,7 @@ function saveAllStates(states: AllExperiencesState): void {
  * Get a persistence helper for a specific learning experience.
  * Uses simple synchronous load/save - no reactive effects.
  *
- * @param conceptId - Unique identifier for the concept (e.g., "grid", "positions")
+ * @param conceptId - Unique identifier for the concept (e.g., "grid", "placements")
  */
 export function getExperiencePersistence(conceptId: string) {
 	/**

@@ -312,7 +312,7 @@ const REPLACEMENTS = [
   ['Beats', 'Steps'],
 
   // Specific codebase patterns
-  ['startingPositionBeat', 'startingPosition'],
+  ['startingPlacementBeat', 'startingPlacement'],
   ['addBeatToSequence', 'addStepToSequence'],
   ['removeBeatFromSequence', 'removeStepFromSequence'],
   ['updateBeatInSequence', 'updateStepInSequence'],
@@ -516,7 +516,7 @@ const REPLACEMENTS = [
   ['updateVisibilityFromBeat', 'updateVisibilityFromStep'],
   ['displayedBeatData', 'displayedStepData'],
   ['getBeatDataFromState', 'getStepDataFromState'],
-  ['startPositionBeat', 'startPositionStep'],
+  ['startPlacementBeat', 'startPlacementStep'],
   ['BeatPairGroups', 'StepPairGroups'],
 
   // More codebase patterns
@@ -588,7 +588,7 @@ const REPLACEMENTS = [
 
   // Update patterns
   ['updatedBeats', 'updatedSteps'],
-  ['separateBeatsFromStartPosition', 'separateStepsFromStartPosition'],
+  ['separateBeatsFromStartPlacement', 'separateStepsFromStartPlacement'],
 
   // Generation patterns
   ['BeatGenerationOptions', 'StepGenerationOptions'],
@@ -631,8 +631,8 @@ const REPLACEMENTS = [
   ['beatToCheck', 'stepToCheck'],
 
   // Starting position
-  ['startingPositionBeat', 'startingPositionStep'],
-  ['updatedStartingPositionBeat', 'updatedStartingPositionStep'],
+  ['startingPlacementBeat', 'startingPlacementStep'],
+  ['updatedStartingPlacementBeat', 'updatedStartingPlacementStep'],
 
 
   // Interface patterns
@@ -702,8 +702,8 @@ const REPLACEMENTS = [
   ['formatSectionBeats', 'formatSectionSteps'],
   ['dataWithBeatContext', 'dataWithStepContext'],
   ['currentBeatProgress', 'currentStepProgress'],
-  ['createStartPositionFromBeatEnd', 'createStartPositionFromStepEnd'],
-  ['existingStartPositionBeat', 'existingStartPositionStep'],
+  ['createStartPlacementFromBeatEnd', 'createStartPlacementFromStepEnd'],
+  ['existingStartPlacementBeat', 'existingStartPlacementStep'],
   ['pendingShiftBeatNumber', 'pendingShiftStepNumber'],
   ['clipBeatPosition', 'clipStepPosition'],
   ['toPublicBeatPairs', 'toPublicStepPairs'],
@@ -780,7 +780,7 @@ const REPLACEMENTS = [
   ['onRemoveBeatPairDesignation', 'onRemoveStepPairDesignation'],
   ['beatTrackingFrameId', 'stepTrackingFrameId'],
   ['beatsGenerated', 'stepsGenerated'],
-  ['beatEndPosition', 'stepEndPosition'],
+  ['beatEndPlacement', 'stepEndPlacement'],
   ['beatCalculationService', 'stepCalculationService'],
   ['animationEndBeat', 'animationEndStep'],
   ['animateToBeat', 'animateToStep'],
@@ -897,8 +897,8 @@ const REPLACEMENTS = [
   ['dataWithStepContext', 'dataWithStepContext'],
 
   // Grid position
-  ['BeatGridPosition', 'StepGridPosition'],
-  ['beatGridPosition', 'stepGridPosition'],
+  ['BeatGridPlacement', 'StepGridPlacement'],
+  ['beatGridPlacement', 'stepGridPlacement'],
 
   // Selected
   ['BeatSelected', 'StepSelected'],

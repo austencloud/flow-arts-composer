@@ -19,8 +19,8 @@
  *
  *   1. Diamond mode only. The oracle never loads BoxPictographDataframe.csv.
  *   2. The closure test is a REIMPLEMENTATION of the app's rule (a local
- *      D4 x colour-swap group over position pairs). Verified 2026-08-05 to
- *      agree with `isLOOPValidForPositionPair`
+ *      D4 x colour-swap group over placement pairs). Verified 2026-08-05 to
+ *      agree with `isLOOPValidForPlacementPair`
  *      (`packages/sequence-engine/src/loop/validation/LOOPValidator.ts`) —
  *      but the real engine must call the app's validator, not this.
  *   3. Counts are sensitive to the equivalence relation the oracle quotients
@@ -30,7 +30,7 @@
  *      and reported 512 for A+G where the correct figure is 256 — a number
  *      that looks plausible is not evidence it came from the right relation.
  *   4. 45 degrees (skew) is excluded entirely — the shipped skewed dataframe
- *      has no rows that start FROM a skewed position, so skew faces cannot
+ *      has no rows that start FROM a skewed placement, so skew faces cannot
  *      be resolved.
  *   5. Turns are ignored; everything below is 0-turn.
  *   6. Standard box for every fingerprint below, unless noted otherwise:

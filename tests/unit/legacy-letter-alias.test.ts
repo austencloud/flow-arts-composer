@@ -2,7 +2,7 @@
  * Legacy letter alias normalization.
  *
  * The legacy import/repair scripts (import-sequence.cjs,
- * repair-broken-start-positions.cjs) wrote the gamma start-position letter as
+ * repair-broken-start-placements.cjs) wrote the gamma start-placement letter as
  * uppercase "Γ" (U+0393), copying the legacy desktop convention. The app's
  * canonical alphabet (letter.ts, @tka/tka-types) uses lowercase "γ" (U+03B3).
  * A scanned sequence carrying the legacy letter crashed the /q scan page:
@@ -56,8 +56,8 @@ function makeStaticStep(letter: string | null): StepData {
     rightReversal: false,
     isBlank: false,
     letter: letter as StepData["letter"],
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: createMotionData({ ...motion, hand: HandSide.LEFT }),
       right: createMotionData({
@@ -109,24 +109,24 @@ describe("getLetterImagePath with legacy alias", () => {
 });
 
 describe("deriveLettersForSequence with legacy alias", () => {
-  it("normalizes an already-set legacy start-position letter to canon", async () => {
+  it("normalizes an already-set legacy start-placement letter to canon", async () => {
     const start = makeStaticStep(LEGACY_GAMMA);
     const sequence = createSequenceData({
       word: "",
       name: "",
       steps: [],
-      startPosition: {
+      startPlacement: {
         id: start.id,
         letter: start.letter,
-        gridPosition: start.startPosition,
-        startPosition: start.startPosition,
-        endPosition: start.endPosition,
+        gridPlacement: start.startPlacement,
+        startPlacement: start.startPlacement,
+        endPlacement: start.endPlacement,
         motions: start.motions,
       },
     });
 
     const derived = await deriveLettersForSequence(sequence);
-    expect(derived.startPosition?.letter).toBe(Letter.GAMMA);
+    expect(derived.startPlacement?.letter).toBe(Letter.GAMMA);
   });
 
   it("normalizes legacy letters on steps too", async () => {

@@ -44,12 +44,12 @@ function baseInputs(): ChoreoCardRenderKeyInputs {
     showReversals: true,
     showTnD: false,
     showElemental: false,
-    showPositions: false,
+    showPlacements: false,
     showGrid: true,
     showLeftMotion: true,
     showRightMotion: true,
-    includeStartPosition: true,
-    startPositionLayout: "row",
+    includeStartPlacement: true,
+    startPlacementLayout: "row",
     effectiveColumns: 4,
     darkMode: false,
   };
@@ -102,7 +102,7 @@ describe("buildChoreoCardRenderKeys — overlay vs structural routing", () => {
       { showReversals: false },
       { showTnD: true },
       { showElemental: true },
-      { showPositions: true },
+      { showPlacements: true },
       { showStepNumbers: false },
     ];
     for (const patch of overlayOnly) {
@@ -174,7 +174,7 @@ describe("buildChoreoCardRenderKeys — overlay vs structural routing", () => {
       showReversals: false,
       showTnD: true,
       showElemental: true,
-      showPositions: true,
+      showPlacements: true,
       showStepNumbers: false,
     });
     expect(allOverlaysFlipped.structuralKey).toBe(base.structuralKey);

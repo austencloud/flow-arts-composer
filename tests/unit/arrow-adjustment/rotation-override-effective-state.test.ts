@@ -9,7 +9,7 @@ import { TurnsTupleGenerator } from "$lib/shared/pictograph/arrow/positioning/pl
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -48,8 +48,8 @@ function createThetaDashPictograph(): PictographData {
     id: "56def412-1c85-4baa-b9c8-3247a93e1f60",
     letter: Letter.THETA_DASH,
     gridMode: GridMode.DIAMOND,
-    startPosition: GridPosition.ALPHA5,
-    endPosition: GridPosition.GAMMA7,
+    startPlacement: GridPlacement.ALPHA5,
+    endPlacement: GridPlacement.GAMMA7,
     motions: {
       left: createMotionData({
         hand: HandSide.LEFT,

@@ -4,9 +4,9 @@
  * Detects when a sequence is in an extendable state and generates extension
  * steps using the LOOP executor infrastructure.
  *
- * Analyzes position relationships between start and end to determine:
+ * Analyzes placement relationships between start and end to determine:
  * - Whether the sequence can be extended with a LOOP pattern
- * - Which LOOP types are available for the current position pair
+ * - Which LOOP types are available for the current placement pair
  * - What extension steps to generate
  *
  * The app version has deeper integration with bridge-finding, pictograph queries,
@@ -21,9 +21,9 @@ import { LOOPType, Period, type LOOPOption, type LOOPValidationResult } from "..
 import {
   HALVED_LOOPS,
   QUARTERED_LOOPS,
-} from "../position-maps/circular-position-maps.js";
+} from "../placement-maps/circular-placement-maps.js";
 import {
-  getLOOPOptionsForPositionPair,
+  getLOOPOptionsForPlacementPair,
 } from "../validation/LOOPValidator.js";
 import { loopExecutorSelector, type LOOPExecutorSelector } from "../execution/LOOPExecutorSelector.js";
 import { closeOrientationCycle } from "../execution/orientation-cycle.js";
@@ -44,8 +44,8 @@ export type ExtensionType =
 export interface ExtensionAnalysis {
   canExtend: boolean;
   extensionType: ExtensionType;
-  startPosition: string | null;
-  currentEndPosition: string | null;
+  startPlacement: string | null;
+  currentEndPlacement: string | null;
   availableLOOPOptions: LOOPOption[];
   unavailableLOOPOptions: Array<LOOPOption & { reason?: string }>;
   description: string;
@@ -65,41 +65,41 @@ export class SequenceExtender {
 
   /**
    * Analyze a sequence to determine if it can be extended with LOOP patterns.
-   * @param steps - Full step array (step 0 = start position, rest = steps)
+   * @param steps - Full step array (step 0 = start placement, rest = steps)
    * @returns Analysis of extension possibilities
    */
   analyzeSequence(steps: SequenceStep[]): ExtensionAnalysis {
-    const startPosition = getStartPosition(steps);
-    if (!startPosition) {
+    const startPlacement = getStartPlacement(steps);
+    if (!startPlacement) {
       return {
         canExtend: false,
         extensionType: "not_extendable",
-        startPosition: null,
-        currentEndPosition: null,
+        startPlacement: null,
+        currentEndPlacement: null,
         availableLOOPOptions: [],
         unavailableLOOPOptions: [],
-        description: "No start position defined",
+        description: "No start placement defined",
       };
     }
 
-    const currentEndPosition = getCurrentEndPosition(steps);
-    if (!currentEndPosition) {
+    const currentEndPlacement = getCurrentEndPlacement(steps);
+    if (!currentEndPlacement) {
       return {
         canExtend: false,
         extensionType: "not_extendable",
-        startPosition,
-        currentEndPosition: null,
+        startPlacement,
+        currentEndPlacement: null,
         availableLOOPOptions: [],
         unavailableLOOPOptions: [],
         description: "No steps in sequence",
       };
     }
 
-    // Check position relationships
-    const positionPair = `${startPosition},${currentEndPosition}`;
-    const isHalvedValid = HALVED_LOOPS.has(positionPair);
-    const isQuarteredValid = QUARTERED_LOOPS.has(positionPair);
-    const isAlreadyComplete = currentEndPosition === startPosition;
+    // Check placement relationships
+    const placementPair = `${startPlacement},${currentEndPlacement}`;
+    const isHalvedValid = HALVED_LOOPS.has(placementPair);
+    const isQuarteredValid = QUARTERED_LOOPS.has(placementPair);
+    const isAlreadyComplete = currentEndPlacement === startPlacement;
 
     let extensionType: ExtensionType = "not_extendable";
     let period = Period.HALVED;
@@ -113,10 +113,10 @@ export class SequenceExtender {
       period = Period.QUARTERED;
     }
 
-    // Get LOOP options filtered by validity for this position pair
-    const { available, unavailable } = getLOOPOptionsForPositionPair(
-      startPosition,
-      currentEndPosition,
+    // Get LOOP options filtered by validity for this placement pair
+    const { available, unavailable } = getLOOPOptionsForPlacementPair(
+      startPlacement,
+      currentEndPlacement,
       period
     );
 
@@ -126,11 +126,11 @@ export class SequenceExtender {
       return {
         canExtend: false,
         extensionType: "not_extendable",
-        startPosition,
-        currentEndPosition,
+        startPlacement,
+        currentEndPlacement,
         availableLOOPOptions: [],
         unavailableLOOPOptions: unavailable,
-        description: "No extension patterns available for this position pair",
+        description: "No extension patterns available for this placement pair",
       };
     }
 
@@ -146,8 +146,8 @@ export class SequenceExtender {
     return {
       canExtend: true,
       extensionType,
-      startPosition,
-      currentEndPosition,
+      startPlacement,
+      currentEndPlacement,
       availableLOOPOptions: available,
       unavailableLOOPOptions: unavailable,
       description,
@@ -156,7 +156,7 @@ export class SequenceExtender {
 
   /**
    * Generate extension steps for a sequence using a LOOP executor.
-   * @param steps - Full step array (step 0 = start position, rest = steps)
+   * @param steps - Full step array (step 0 = start placement, rest = steps)
    * @param options - LOOP type and period for extension
    * @returns New steps to append after the original sequence
    */
@@ -206,15 +206,15 @@ export class SequenceExtender {
 }
 
 
-function getStartPosition(steps: SequenceStep[]): string | null {
+function getStartPlacement(steps: SequenceStep[]): string | null {
   const startStep = steps.find((step) => step.stepNumber === 0);
-  return startStep?.startPosition ?? null;
+  return startStep?.startPlacement ?? null;
 }
 
-function getCurrentEndPosition(steps: SequenceStep[]): string | null {
+function getCurrentEndPlacement(steps: SequenceStep[]): string | null {
   const letterSteps = steps.filter((step) => step.stepNumber > 0);
   if (letterSteps.length === 0) return null;
-  return letterSteps[letterSteps.length - 1]!.endPosition;
+  return letterSteps[letterSteps.length - 1]!.endPlacement;
 }
 
 

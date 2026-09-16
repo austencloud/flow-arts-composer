@@ -2,7 +2,7 @@
  * Trigrid Lab Color Constants
  *
  * Semantic hand colors (blue/red) and their UI tints, hoisted here so the
- * controls and position-info components share one source of truth instead of
+ * controls and placement-info components share one source of truth instead of
  * scattering identical hex literals across two stylesheets.
  *
  * Blue = blue-hand prop, Red = red-hand prop. These are domain-semantic data

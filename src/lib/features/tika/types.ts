@@ -42,8 +42,8 @@ export interface LetterContext {
   letter: string;
   type: number;
   typeName: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: MotionData;
   rightMotion: MotionData;
 }
@@ -113,8 +113,8 @@ export interface PositionExamplesContext {
   examples: Array<{
     letter: string;
     variation: number;
-    startPosition: string;
-    endPosition: string;
+    startPlacement: string;
+    endPlacement: string;
   }>;
 }
 
@@ -256,8 +256,8 @@ export interface StepGridItem {
   letter: string;
   variation: number;
   label: string; // "Start" | "Step 1" | "Step 2"...
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
 }
 
 /**

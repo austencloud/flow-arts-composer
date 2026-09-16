@@ -16,13 +16,13 @@ export interface BuilderPose {
 
 export function createBuilderStep(
   startPose: BuilderPose,
-  endPosition: GridLocation,
+  endPlacement: GridLocation,
   rotationDirection: RotationDirection,
   turnCount: number
 ): BuilderStep {
   const geometry = deriveBuilderMotionGeometry(
     startPose.location,
-    endPosition,
+    endPlacement,
     startPose.orientation,
     rotationDirection,
     turnCount
@@ -34,14 +34,14 @@ export function createBuilderStep(
   const endOrientation = calculateBuilderEndOrientation(
     startPose.orientation,
     startPose.location,
-    endPosition,
+    endPlacement,
     rotationDirection,
     effectiveTurns
   );
 
   return {
-    startPosition: startPose.location,
-    endPosition,
+    startPlacement: startPose.location,
+    endPlacement,
     rotationDirection,
     turnCount: effectiveTurns,
     startOrientation: startPose.orientation,
@@ -60,13 +60,13 @@ export function reflowBuilderPath(
   for (const step of steps) {
     const next = createBuilderStep(
       cursor,
-      step.endPosition,
+      step.endPlacement,
       step.rotationDirection,
       step.turnCount
     );
     reflowed.push(next);
     cursor = {
-      location: next.endPosition,
+      location: next.endPlacement,
       orientation: next.endOrientation,
     };
   }
@@ -94,7 +94,7 @@ export function replaceBuilderStepDestination(
 ): BuilderStep[] {
   if (index < 0 || index >= steps.length) return [...steps];
   const replaced = steps.map((step, candidateIndex) =>
-    candidateIndex === index ? { ...step, endPosition: destination } : step
+    candidateIndex === index ? { ...step, endPlacement: destination } : step
   );
   return reflowBuilderPath(replaced, startPose);
 }

@@ -134,8 +134,8 @@
       const pictographData: PictographData = {
         id: stepData.id,
         letter: stepData.letter,
-        startPosition: stepData.startPosition,
-        endPosition: stepData.endPosition,
+        startPlacement: stepData.startPlacement,
+        endPlacement: stepData.endPlacement,
         motions: stepData.motions,
       };
 
@@ -327,8 +327,8 @@
     const pictographData: PictographData = pictographDataState ?? {
       id: stepData.id,
       letter: stepData.letter,
-      startPosition: stepData.startPosition,
-      endPosition: stepData.endPosition,
+      startPlacement: stepData.startPlacement,
+      endPlacement: stepData.endPlacement,
       motions: stepData.motions,
     };
     selectedArrowState.selectArrow(motion, hand, pictographData);

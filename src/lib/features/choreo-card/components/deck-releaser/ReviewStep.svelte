@@ -379,7 +379,7 @@
       {cardProfile}
       {tndElements}
       isLoading={false}
-      includeStartPosition={true}
+      includeStartPlacement={true}
       deckMode={true}
       deckNumber={refNumber}
       includeInsertCard={includeHowToRead}
@@ -403,7 +403,7 @@
     frontImageUrl={inspectedFrontImageUrl}
     {leftPropType}
     {rightPropType}
-    includeStartPosition={true}
+    includeStartPlacement={true}
     onContextMenu={onContextMenu
       ? (x, y, _rerender) => {
           onContextMenu(

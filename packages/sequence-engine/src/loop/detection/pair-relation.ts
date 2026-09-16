@@ -3,7 +3,7 @@
  * recover transformation components from a step pair.
  *
  * Domain grounding (Flow Arts Knowledge MCP, "LOOP System and Compositional
- * Theory"): the LOOP algebra operates on a reduced space of grid positions
+ * Theory"): the LOOP algebra operates on a reduced space of grid locations
  * (where hands are), motion types (pro/anti/static/dash/float), and hand
  * identity (left/right). Letters, turns, and orientations do NOT determine the
  * LOOP classification. Per transform:
@@ -25,14 +25,14 @@
  * CORRESPONDENCE. One signal per question:
  *
  *   hand correspondence  ← which hand owns each location path
- *   position component   ← the location map that aligns the paths
+ *   location component   ← the location map that aligns the paths
  *   inverted             ← motionType flip along the matched correspondence
  */
 
 import {
   REFLECTION_LOCATION_MAPS,
   type ReflectionAxis,
-} from "../position-maps/strict-loop-position-maps.js";
+} from "../placement-maps/strict-loop-placement-maps.js";
 
 const ROTATE_180: Record<string, string> = {
   n: "s", s: "n", e: "w", w: "e",

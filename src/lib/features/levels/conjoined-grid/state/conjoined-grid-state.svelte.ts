@@ -3,7 +3,7 @@
  *
  * Manages reactive state for the unified conjoined grid tab across two modes:
  * - Browse: navigate real pictograph data, filter by junction overlaps
- * - Explore: auto-cycle through position pair combinations, click-to-place
+ * - Explore: auto-cycle through placement pair combinations, click-to-place
  *
  * Follows the factory + context pattern: DI services come in as arguments,
  * pure domain services (detectOverlaps, mapToTopology, enumerator) are called directly.
@@ -17,12 +17,12 @@ import type { PreparedPictographData } from "$lib/shared/pictograph/shared/domai
 // matches the real handler signature without a call-site cast.
 import type { GridMode as PictographGridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { PrepareOptions } from "$lib/shared/pictograph/shared/services/types";
-import type { PositionPair } from "$lib/shared/multi-grid/services/types";
+import type { PlacementPair } from "$lib/shared/multi-grid/services/types";
 import type { ConjoinedGridMode, PropPlacement, JunctionOverlap } from "$lib/shared/conjoined-grid/domain/types";
 import { TOPOLOGY_PRESETS, type TopologyPreset } from "$lib/shared/multi-grid/domain/constants/topology-presets";
 import { detectOverlaps } from "../services/junction-overlap-detector";
 import { mapToTopology } from "../services/pictograph-topology-mapper";
-import { enumeratePositionPairs } from "$lib/shared/multi-grid/services/topology-position-enumerator";
+import { enumeratePlacementPairs } from "$lib/shared/multi-grid/services/topology-position-enumerator";
 
 // Dependency contract - only the methods we actually call
 
@@ -61,7 +61,7 @@ export interface ConjoinedGridState {
   goToPrevOverlap(): void;
 
   // Explore
-  readonly allPairs: PositionPair[];
+  readonly allPairs: PlacementPair[];
   readonly currentPairIndex: number;
   readonly isPlaying: boolean;
   readonly playbackSpeed: number;
@@ -198,8 +198,8 @@ export function createConjoinedGridState(deps: ConjoinedGridDeps): ConjoinedGrid
   let manualLeftRef = $state<PointRef | null>(null);
   let manualRightRef = $state<PointRef | null>(null);
 
-  // All (blue, red) position pair combinations for the current topology
-  const allPairs: PositionPair[] = $derived(enumeratePositionPairs(topology));
+  // All (blue, red) placement pair combinations for the current topology
+  const allPairs: PlacementPair[] = $derived(enumeratePlacementPairs(topology));
 
   function play(): void {
     if (allPairs.length === 0) return;

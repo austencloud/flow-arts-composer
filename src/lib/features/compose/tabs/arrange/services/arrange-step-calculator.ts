@@ -15,12 +15,12 @@ function lcm(a: number, b: number): number {
   return (a * b) / gcd(a, b);
 }
 
-export function calculateCellBeats(cell: GridCell, skipStartPosition: boolean): number {
+export function calculateCellBeats(cell: GridCell, skipStartPlacement: boolean): number {
   if (cell.layers.length === 0) return 0;
 
   const stepCounts = cell.layers.map((layer) => {
     const stepCount = layer.sequence.steps?.length || 1;
-    return skipStartPosition ? stepCount : stepCount + 1;
+    return skipStartPlacement ? stepCount : stepCount + 1;
   });
 
   const firstCount = stepCounts[0];
@@ -30,7 +30,7 @@ export function calculateCellBeats(cell: GridCell, skipStartPosition: boolean): 
 
 export function calculateTotalBeats(
   cells: GridCell[],
-  skipStartPosition: boolean,
+  skipStartPlacement: boolean,
   rows: number,
   cols: number
 ): number {
@@ -40,7 +40,7 @@ export function calculateTotalBeats(
   if (visibleWithLayers.length === 0) return 0;
 
   const stepCounts = visibleWithLayers.map((cell) =>
-    calculateCellBeats(cell, skipStartPosition)
+    calculateCellBeats(cell, skipStartPlacement)
   );
   const firstCount = stepCounts[0];
   if (firstCount === undefined) return 0;

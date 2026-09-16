@@ -5,8 +5,8 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import type { ICreateModuleState } from "../../types/create-module-types";
 import {
   createMotionData,
@@ -18,7 +18,7 @@ import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/or
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
 import {
   getStepDataFromState,
-  START_POSITION_BEAT_NUMBER,
+  START_PLACEMENT_BEAT_NUMBER,
 } from "./step-data-helpers";
 import {
   withLoopCertificateCleared,
@@ -75,32 +75,32 @@ export function updateStepOrientation(
     },
   };
 
-  // Get current sequence and start position for propagation calculation
+  // Get current sequence and start placement for propagation calculation
   const currentSequence: SequenceData | null =
     createModuleState.sequenceState.currentSequence;
-  const startPosition: StartPositionData | null = createModuleState.sequenceState
-    .selectedStartPosition ?? null;
+  const startPlacement: StartPlacementData | null = createModuleState.sequenceState
+    .selectedStartPlacement ?? null;
 
-  // For start position (beat 0), we can update even without a sequence
+  // For start placement (beat 0), we can update even without a sequence
   // For regular steps, we need a sequence to update
-  if (!currentSequence && stepNumber !== START_POSITION_BEAT_NUMBER) {
+  if (!currentSequence && stepNumber !== START_PLACEMENT_BEAT_NUMBER) {
     logger.warn("Cannot update beat orientation - no current sequence");
     return;
   }
 
-  // Handle start position update when no sequence exists yet
-  if (stepNumber === START_POSITION_BEAT_NUMBER && !currentSequence) {
-    const updatedStartPosition = startPosition
-      ? createStartPositionData({
-          ...startPosition,
+  // Handle start placement update when no sequence exists yet
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER && !currentSequence) {
+    const updatedStartPlacement = startPlacement
+      ? createStartPlacementData({
+          ...startPlacement,
           motions: updatedStepData.motions,
         })
       : null;
 
-    if (updatedStartPosition) {
-      createModuleState.sequenceState.setSelectedStartPosition(updatedStartPosition);
+    if (updatedStartPlacement) {
+      createModuleState.sequenceState.setSelectedStartPlacement(updatedStartPlacement);
       logger.log(
-        `Updated start position ${color} orientation to ${orientation} (no sequence yet)`
+        `Updated start placement ${color} orientation to ${orientation} (no sequence yet)`
       );
     }
     return;
@@ -111,38 +111,38 @@ export function updateStepOrientation(
 
   // Build the updated sequence with the beat update + propagated orientations
   let updatedSequence: SequenceData = sequence;
-  let updatedStartPosition: StartPositionData | null = startPosition;
+  let updatedStartPlacement: StartPlacementData | null = startPlacement;
 
-  if (stepNumber === START_POSITION_BEAT_NUMBER) {
-    // Create updated start position data with new orientation
-    updatedStartPosition = startPosition
-      ? createStartPositionData({
-          ...startPosition,
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+    // Create updated start placement data with new orientation
+    updatedStartPlacement = startPlacement
+      ? createStartPlacementData({
+          ...startPlacement,
           motions: updatedStepData.motions,
         })
       : null;
     logger.log(
-      `Updated start position ${color} orientation to ${orientation}, endOrientation to ${newEndOrientation}`
+      `Updated start placement ${color} orientation to ${orientation}, endOrientation to ${newEndOrientation}`
     );
 
     const propagatedSteps = calculatePropagatedSteps(
       stepNumber,
       color,
       sequence,
-      updatedStartPosition
+      updatedStartPlacement
     );
 
     updatedSequence = {
       ...sequence,
       steps: propagatedSteps,
-      // Include updated start position in the sequence so it propagates to selection state
-      startPosition: updatedStartPosition ?? undefined,
-      startingPosition: updatedStartPosition ?? undefined,
+      // Include updated start placement in the sequence so it propagates to selection state
+      startPlacement: updatedStartPlacement ?? undefined,
+      startingPlacement: updatedStartPlacement ?? undefined,
     };
 
-    // CRITICAL: Also update selectedStartPosition so the UI reflects the change
-    if (updatedStartPosition) {
-      createModuleState.sequenceState.setSelectedStartPosition(updatedStartPosition);
+    // CRITICAL: Also update selectedStartPlacement so the UI reflects the change
+    if (updatedStartPlacement) {
+      createModuleState.sequenceState.setSelectedStartPlacement(updatedStartPlacement);
     }
   } else {
     const arrayIndex = stepNumber - 1;
@@ -157,7 +157,7 @@ export function updateStepOrientation(
       stepNumber,
       color,
       { ...sequence, steps: updatedSteps },
-      startPosition
+      startPlacement
     );
 
     updatedSequence = {
@@ -181,7 +181,7 @@ export function calculatePropagatedSteps(
   startingStepNumber: number,
   color: string,
   currentSequence: SequenceData,
-  startPosition: StartPositionData | null
+  startPlacement: StartPlacementData | null
 ): StepData[] {
   if (!currentSequence?.steps || currentSequence.steps.length === 0) {
     logger.log("No sequence steps to propagate through");
@@ -191,10 +191,10 @@ export function calculatePropagatedSteps(
   // Get the starting beat's endOrientation
   let previousEndOrientation: MotionData["endOrientation"] | undefined;
 
-  if (startingStepNumber === START_POSITION_BEAT_NUMBER) {
-    if (startPosition?.motions) {
+  if (startingStepNumber === START_PLACEMENT_BEAT_NUMBER) {
+    if (startPlacement?.motions) {
       const motion: MotionData | undefined =
-        startPosition.motions[color as HandSide];
+        startPlacement.motions[color as HandSide];
       if (motion) {
         previousEndOrientation = motion.endOrientation;
       }
@@ -222,7 +222,7 @@ export function calculatePropagatedSteps(
   // Propagate through subsequent steps
   const updatedSteps: StepData[] = [...currentSequence.steps];
   const propagationStartIndex =
-    startingStepNumber === START_POSITION_BEAT_NUMBER ? 0 : startingStepNumber;
+    startingStepNumber === START_PLACEMENT_BEAT_NUMBER ? 0 : startingStepNumber;
 
   logger.log(
     `🔄 Propagating ${color} orientations starting from beat ${startingStepNumber} (endOrientation: ${previousEndOrientation})`

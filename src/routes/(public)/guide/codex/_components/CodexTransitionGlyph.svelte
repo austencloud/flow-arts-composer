@@ -1,8 +1,8 @@
 <script lang="ts">
   /**
-   * Canonical position-transition glyph for codex box/cell headers - renders
+   * Canonical placement-transition glyph for codex box/cell headers - renders
    * "α→β" (or a single "γ") using the SAME letter + arrow SVG assets the
-   * pictograph PositionGlyph uses (images/letters_trimmed/Type6 + arrow.svg),
+   * pictograph PlacementGlyph uses (images/letters_trimmed/Type6 + arrow.svg),
    * instead of typing the Greek letters as text. Matches the original printed
    * guide, where these headers are the system's glyphs, not font glyphs.
    */

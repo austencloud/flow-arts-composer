@@ -66,7 +66,7 @@ function rotatePhase(unit: CandidateUnit): readonly StepData[] {
 describe("the equivalence relation", () => {
   it("is blind to which step a closed unit is entered at", () => {
     const plain = units.find(
-      (unit) => unit.startPosition === unit.endPosition && unit.steps.length > 1
+      (unit) => unit.startPlacement === unit.endPlacement && unit.steps.length > 1
     );
     expect(plain).toBeDefined();
     expect(canonicalizer.canonicalKey(rotatePhase(plain!))).toBe(
@@ -131,8 +131,8 @@ describe("the equivalence relation", () => {
       ...unit,
       steps: face!,
       word: faceWord,
-      startPosition: face![0]!.startPosition!,
-      endPosition: face![face!.length - 1]!.endPosition!,
+      startPlacement: face![0]!.startPlacement!,
+      endPlacement: face![face!.length - 1]!.endPlacement!,
     };
     expect(dedupeUnits([unit, faceUnit], canonicalizer)).toHaveLength(1);
   });

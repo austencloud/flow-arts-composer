@@ -1,6 +1,6 @@
 <!--
 Type1LetterVisualizer - Displays a Type 1 (Dual-Shift) letter using the Pictograph component
-Shows letters A-V with their start/end positions and prospin/antispin motions
+Shows letters A-V with their start/end placements and prospin/antispin motions
 -->
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -8,7 +8,7 @@ Shows letters A-V with their start/end positions and prospin/antispin motions
   import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
   import {
     GridMode,
-    GridPositionGroup,
+    GridPlacementGroup,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { MotionType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
@@ -70,15 +70,15 @@ Shows letters A-V with their start/end positions and prospin/antispin motions
     [MotionType.FLOAT]: "var(--semantic-success)", // Emerald for float
   };
 
-  // Position group colors - domain-specific visualization colors, no global theme equivalent
-  const POSITION_COLORS: Record<GridPositionGroup, string> = {
-    [GridPositionGroup.ALPHA]: "#FF6B6B", // Red/coral for opposite
-    [GridPositionGroup.BETA]: "#4ECDC4", // Teal for same
-    [GridPositionGroup.GAMMA]: "#FFE66D", // Yellow for right angle
-    [GridPositionGroup.ZETA]: "#9B59B6", // Purple for zeta
-    [GridPositionGroup.ETA]: "#3498DB", // Blue for eta
-    [GridPositionGroup.TAU]: "#06b6d4", // Cyan for tau
-    [GridPositionGroup.TERRA]: "#fbbf24", // Amber/gold for terra
+  // Placement group colors - domain-specific visualization colors, no global theme equivalent
+  const PLACEMENT_COLORS: Record<GridPlacementGroup, string> = {
+    [GridPlacementGroup.ALPHA]: "#FF6B6B", // Red/coral for opposite
+    [GridPlacementGroup.BETA]: "#4ECDC4", // Teal for same
+    [GridPlacementGroup.GAMMA]: "#FFE66D", // Yellow for right angle
+    [GridPlacementGroup.ZETA]: "#9B59B6", // Purple for zeta
+    [GridPlacementGroup.ETA]: "#3498DB", // Blue for eta
+    [GridPlacementGroup.TAU]: "#06b6d4", // Cyan for tau
+    [GridPlacementGroup.TERRA]: "#fbbf24", // Amber/gold for terra
   };
 
   // Hand colors
@@ -103,14 +103,14 @@ Shows letters A-V with their start/end positions and prospin/antispin motions
     }
   }
 
-  // Get position group label
-  function getPositionLabel(group: GridPositionGroup): string {
+  // Get placement group label
+  function getPlacementLabel(group: GridPlacementGroup): string {
     switch (group) {
-      case GridPositionGroup.ALPHA:
+      case GridPlacementGroup.ALPHA:
         return "Alpha (Opposite)";
-      case GridPositionGroup.BETA:
+      case GridPlacementGroup.BETA:
         return "Beta (Same)";
-      case GridPositionGroup.GAMMA:
+      case GridPlacementGroup.GAMMA:
         return "Gamma (Right Angle)";
       default:
         return group;
@@ -137,15 +137,15 @@ Shows letters A-V with their start/end positions and prospin/antispin motions
 <div class="type1-visualizer size-{size}">
   <!-- Letter display header -->
   {#if letterData}
-    {@const startGroup = letterData.startPositionGroup as GridPositionGroup}
-    {@const endGroup = letterData.endPositionGroup as GridPositionGroup}
+    {@const startGroup = letterData.startPlacementGroup as GridPlacementGroup}
+    {@const endGroup = letterData.endPlacementGroup as GridPlacementGroup}
     <div class="letter-header">
       <span class="letter-name" style="font-size: {currentSize.fontSize}">
         {letterData.letter}
       </span>
       <span
-        class="position-transition"
-        style="color: {POSITION_COLORS[startGroup]}"
+        class="placement-transition"
+        style="color: {PLACEMENT_COLORS[startGroup]}"
       >
         {startGroup} → {endGroup}
       </span>
@@ -260,7 +260,7 @@ Shows letters A-V with their start/end positions and prospin/antispin motions
     line-height: 1;
   }
 
-  .position-transition {
+  .placement-transition {
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;

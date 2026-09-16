@@ -108,7 +108,7 @@ describe("viewer orchestrator model", () => {
 
   it("resolves the visible step without mutating sequence data", () => {
     const seq = sequence({
-      startPosition: { letter: "α" },
+      startPlacement: { letter: "α" },
     } as Partial<SequenceData>);
     expect(resolveCurrentStepData(seq, 0, false)?.letter).toBe("α");
     expect(resolveCurrentStepData(seq, 1, false)?.letter).toBe("A");

@@ -208,7 +208,7 @@
             videoUrl={mappingVideo.videoUrl}
             videoDuration={mappingVideo.duration}
             steps={sequence.steps}
-            startPosition={sequence.startPosition ?? sequence.startingPosition}
+            startPlacement={sequence.startPlacement ?? sequence.startingPlacement}
             initialStepMap={mappingVideo.beatMap}
             {bpm}
             onSave={saveMappedVideo}

@@ -31,7 +31,7 @@ export interface RasterizeOptions {
    * Number of animation frames to wait AFTER `document.fonts.ready` before
    * snapshotting. Defaults to 1 (the original behavior). Components that mount
    * a child which itself kicks off async work in an `$effect` (e.g.
-   * StartPositionPictograph → PictographRenderer, which loads grid/prop/arrow
+   * StartPlacementPictograph → PictographRenderer, which loads grid/prop/arrow
    * SVGs after its prep `$effect` resolves) need more frames so the downstream
    * markup is in the DOM before the screenshot. Each extra frame also lets any
    * pending microtask-resolved `$state` (resolved-from-cache prepares) flush.
@@ -58,7 +58,7 @@ export interface RasterizeOptions {
   /**
    * CSS custom properties to set on the container, inherited by the mounted
    * component. The live card sets `--card-text` / `--card-text-muted` on `.back`;
-   * components mounted bare (ReversalPatternGlyph empty dots, StartPositionPictograph
+   * components mounted bare (ReversalPatternGlyph empty dots, StartPlacementPictograph
    * border) otherwise fall back to a near-white value and vanish on the white proof
    * background. Pass the proof theme's muted/text colors here.
    */

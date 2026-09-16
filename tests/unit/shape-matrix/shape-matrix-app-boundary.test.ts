@@ -78,7 +78,7 @@ describe("Shape Matrix app boundary", () => {
     expect(drillSource).toContain(
       'import("$lib/shared/timeline/StepStrip.svelte")'
     );
-    expect(drillSource).toContain("includeStartPosition: false");
+    expect(drillSource).toContain("includeStartPlacement: false");
     expect(drillSource).toContain("currentStep: visibleStep");
     expect(drillSource).toContain("propElementalType: railPropElementalType");
     expect(drillSource).toContain(

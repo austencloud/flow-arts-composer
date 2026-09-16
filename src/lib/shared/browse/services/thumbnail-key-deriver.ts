@@ -63,8 +63,8 @@ export interface ThumbnailRenderInput {
   // Composition overrides (undefined = use variant defaults)
   addWord?: boolean;
   addStepNumbers?: boolean;
-  includeStartPosition?: boolean;
-  startPositionLayout?: "row" | "column";
+  includeStartPlacement?: boolean;
+  startPlacementLayout?: "row" | "column";
   addDifficultyLevel?: boolean;
   addUserInfo?: boolean;
   showNotes?: boolean;
@@ -100,7 +100,7 @@ export interface ThumbnailCacheKey {
 export interface CompositionDefaults {
   addWord: boolean;
   addStepNumbers: boolean;
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   addDifficultyLevel: boolean;
   addUserInfo: boolean;
   showNotes: boolean;
@@ -109,7 +109,7 @@ export interface CompositionDefaults {
 const GALLERY_DEFAULTS: CompositionDefaults = {
   addWord: true,
   addStepNumbers: true,
-  includeStartPosition: true,
+  includeStartPlacement: true,
   addDifficultyLevel: true,
   addUserInfo: false,
   showNotes: true,
@@ -151,7 +151,7 @@ export function deriveKey(input: ThumbnailRenderInput): ThumbnailCacheKey {
           mode,
           variant: input.variant,
           loop: input.loopType ?? null,
-          spl: input.startPositionLayout ?? "row",
+          spl: input.startPlacementLayout ?? "row",
           // QR is part of the shareable class now (deterministic short code), so
           // it must discriminate the key — QR-on and QR-off are distinct images.
           qr: input.visibility?.showQRCode ?? false,
@@ -217,14 +217,14 @@ function checkInputUsesDefaults(
   )
     return false;
   if (
-    input.includeStartPosition !== undefined &&
-    input.includeStartPosition !== defaults.includeStartPosition
+    input.includeStartPlacement !== undefined &&
+    input.includeStartPlacement !== defaults.includeStartPlacement
   )
     return false;
-  // startPositionLayout: "row" is the default, "column" is non-default
+  // startPlacementLayout: "row" is the default, "column" is non-default
   if (
-    input.startPositionLayout !== undefined &&
-    input.startPositionLayout !== "row"
+    input.startPlacementLayout !== undefined &&
+    input.startPlacementLayout !== "row"
   )
     return false;
   if (
@@ -354,8 +354,11 @@ function buildFullHashInput(input: ThumbnailRenderInput): object {
     variant: input.variant,
     addWord: input.addWord,
     addStepNumbers: input.addStepNumbers,
-    includeStartPosition: input.includeStartPosition,
-    startPositionLayout: input.startPositionLayout ?? "row",
+    // Preimage property names are a persistence protocol: existing cache keys
+    // were minted under the older "position" labels, so these two keys keep
+    // their spelling while the values come from the placement inputs.
+    includeStartPosition: input.includeStartPlacement,
+    startPositionLayout: input.startPlacementLayout ?? "row",
     addDifficultyLevel: input.addDifficultyLevel,
     addUserInfo: input.addUserInfo,
     showNotes: input.showNotes,

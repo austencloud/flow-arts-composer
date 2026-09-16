@@ -1,7 +1,7 @@
 /**
  * Deciding when the option picker's first measurement is trustworthy.
  *
- * Choosing a start position expands the workspace, and StandardWorkspaceLayout
+ * Choosing a start placement expands the workspace, and StandardWorkspaceLayout
  * eases its grid columns over 450ms to do it. The picker mounts before that
  * ease has run a frame, so measuring immediately reports the panel at its
  * PRE-expansion width — wide enough to commit to the 8-column desktop grid

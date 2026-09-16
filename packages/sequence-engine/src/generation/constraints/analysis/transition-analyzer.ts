@@ -137,7 +137,7 @@ export function analyzeTransition(
       if (!to) continue;
 
       // Check if positions match (end of from = start of to)
-      if (from.endPosition !== to.startPosition) {
+      if (from.endPlacement !== to.startPlacement) {
         continue;
       }
 

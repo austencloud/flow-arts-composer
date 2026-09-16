@@ -25,7 +25,7 @@
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
   import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
-  import PositionGlyph from "$lib/shared/pictograph/shared/components/PositionGlyph.svelte";
+  import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
   import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import {
     MotionType,
@@ -33,8 +33,8 @@
     Orientation,
     RotationDirection,
   } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridMode, GridLocation, GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { GridMode, GridLocation, GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
   import { LETTER_TYPE_COLORS } from "$lib/shared/pictograph/shared/domain/constants/pictograph-constants";
@@ -87,7 +87,7 @@
   type Hand = { from: GridLocation; to: GridLocation; dash: boolean };
   const mv = (from: GridLocation, to: GridLocation): Hand => ({ from, to, dash: true });
   const st = (loc: GridLocation): Hand => ({ from: loc, to: loc, dash: false });
-  type CellDef = { letter: Letter; name: string; left: Hand; right: Hand; label?: { start: GridPosition; end: GridPosition; t: string } };
+  type CellDef = { letter: Letter; name: string; left: Hand; right: Hand; label?: { start: GridPlacement; end: GridPlacement; t: string } };
 
   type Section = {
     key: string;
@@ -99,7 +99,7 @@
     cells: CellDef[];
     names: string[];
   };
-  const gp = (s: GridPosition, e: GridPosition, t: string) => ({ start: s, end: e, t });
+  const gp = (s: GridPlacement, e: GridPlacement, t: string) => ({ start: s, end: e, t });
   const SECTIONS: Section[] = [
     {
       key: "t4",
@@ -109,9 +109,9 @@
       nameY: 181,
       labels: true,
       cells: [
-        { letter: Letter.PHI, name: "Φ", left: st(W), right: mv(W, E), label: gp(GridPosition.BETA1, GridPosition.ALPHA1, "β→α") },
-        { letter: Letter.PSI, name: "Ψ", left: st(SO_), right: mv(N, SO_), label: gp(GridPosition.ALPHA1, GridPosition.BETA1, "α→β") },
-        { letter: Letter.LAMBDA, name: "Λ", left: st(SO_), right: mv(W, E), label: gp(GridPosition.GAMMA1, GridPosition.GAMMA1, "γ→γ") },
+        { letter: Letter.PHI, name: "Φ", left: st(W), right: mv(W, E), label: gp(GridPlacement.BETA1, GridPlacement.ALPHA1, "β→α") },
+        { letter: Letter.PSI, name: "Ψ", left: st(SO_), right: mv(N, SO_), label: gp(GridPlacement.ALPHA1, GridPlacement.BETA1, "α→β") },
+        { letter: Letter.LAMBDA, name: "Λ", left: st(SO_), right: mv(W, E), label: gp(GridPlacement.GAMMA1, GridPlacement.GAMMA1, "γ→γ") },
       ],
       names: ["Phi", "Psi", "Lambda"],
     },
@@ -123,9 +123,9 @@
       nameY: 462,
       labels: true,
       cells: [
-        { letter: Letter.PHI_DASH, name: "Φ-", left: mv(W, E), right: mv(E, W), label: gp(GridPosition.ALPHA1, GridPosition.ALPHA1, "α→α") },
-        { letter: Letter.PSI_DASH, name: "Ψ-", left: mv(N, SO_), right: mv(N, SO_), label: gp(GridPosition.BETA1, GridPosition.BETA1, "β→β") },
-        { letter: Letter.LAMBDA_DASH, name: "Λ-", left: mv(N, SO_), right: mv(W, E), label: gp(GridPosition.GAMMA1, GridPosition.GAMMA1, "γ→γ") },
+        { letter: Letter.PHI_DASH, name: "Φ-", left: mv(W, E), right: mv(E, W), label: gp(GridPlacement.ALPHA1, GridPlacement.ALPHA1, "α→α") },
+        { letter: Letter.PSI_DASH, name: "Ψ-", left: mv(N, SO_), right: mv(N, SO_), label: gp(GridPlacement.BETA1, GridPlacement.BETA1, "β→β") },
+        { letter: Letter.LAMBDA_DASH, name: "Λ-", left: mv(N, SO_), right: mv(W, E), label: gp(GridPlacement.GAMMA1, GridPlacement.GAMMA1, "γ→γ") },
       ],
       names: ["Phi Dash", "Psi Dash", "Lam Dash"],
     },
@@ -152,8 +152,8 @@
       id,
       letter: c.letter,
       gridMode: GridMode.DIAMOND,
-      startPosition: getGridPositionFromLocations(c.left.from, c.right.from),
-      endPosition: getGridPositionFromLocations(c.left.to, c.right.to),
+      startPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
+      endPlacement: getGridPlacementFromLocations(c.left.to, c.right.to),
       stepNumber,
       motions: {
         left: hand(HandSide.LEFT, c.left),
@@ -167,8 +167,8 @@
       letter: null,
       gridMode: GridMode.DIAMOND,
       stepNumber: 0,
-      startPosition: getGridPositionFromLocations(c.left.from, c.right.from),
-      endPosition: getGridPositionFromLocations(c.left.from, c.right.from),
+      startPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
+      endPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
       motions: {
         left: stat(HandSide.LEFT, c.left.from),
         right: stat(HandSide.RIGHT, c.right.from),
@@ -247,7 +247,7 @@
   const PICTO_FLAGS = {
     showGrid: true,
     showTKA: true,
-    showPositions: false,
+    showPlacements: false,
     showReversals: false,
     showTnD: false,
     showElemental: false,
@@ -270,7 +270,7 @@
         {#if c.label}
           <span class="cell-label glyph" style="left:{(GRID_X + ci * CELL + CELL / 2 - 30) * S}px; top:{(sec.y - 17) * S}px; width:{60 * S}px">
             <svg class="pos-glyph" viewBox="360 50 230 75" role="img" aria-label={c.label.t} style="height:{14 * S}px">
-              <PositionGlyph startPosition={c.label.start} endPosition={c.label.end} />
+              <PlacementGlyph startPlacement={c.label.start} endPlacement={c.label.end} />
             </svg>
           </span>
         {/if}

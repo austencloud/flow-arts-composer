@@ -12,10 +12,10 @@ const GREEK_SEQ = {
   word: "Θ-Φ",
   isCircular: true,
   gridMode: "diamond",
-  startPosition: null,
+  startPlacement: null,
   steps: [
-    { stepNumber: 1, letter: "Θ-", startPosition: "gamma9", endPosition: "gamma7", motions: {} },
-    { stepNumber: 2, letter: "Φ", startPosition: "gamma7", endPosition: "gamma3", motions: {} },
+    { stepNumber: 1, letter: "Θ-", startPlacement: "gamma9", endPlacement: "gamma7", motions: {} },
+    { stepNumber: 2, letter: "Φ", startPlacement: "gamma7", endPlacement: "gamma3", motions: {} },
   ],
 } as unknown as SequenceData;
 

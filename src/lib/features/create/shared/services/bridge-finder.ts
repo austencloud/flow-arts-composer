@@ -1,13 +1,13 @@
 /**
  * Bridge Finder Implementation
  *
- * Finds bridge letters that can connect a sequence to a loopable position.
+ * Finds bridge letters that can connect a sequence to a loopable placement.
  * Analyzes pictograph candidates and determines available LOOP patterns.
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type {
-  GridPosition} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  GridPlacement} from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   GridMode,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -16,7 +16,7 @@ import type { OrientationAlignment } from "./orientation-alignment-calculator";
 
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
-import type { PositionAnalyzer } from "../../construct/option-picker/services/position-analyzer";
+import type { PlacementAnalyzer } from "../../construct/option-picker/services/placement-analyzer";
 import type { LOOPValidator } from "./loop-validator";
 import type { SequenceAnalyzer } from "./sequence-analyzer";
 type OrientationAlignmentCalculator = {
@@ -31,13 +31,13 @@ import {
 import {
   HALVED_LOOPS,
   QUARTERED_LOOPS,
-} from "$lib/shared/foundation/domain/models/generation/circular-position-maps";
+} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
 import type { LOOPOption } from "./loop-validator";
 
 export class BridgeFinder {
   constructor(
     private letterQueryHandler: ILetterQueryHandler,
-    private positionAnalyzer: PositionAnalyzer,
+    private placementAnalyzer: PlacementAnalyzer,
     private loopValidator: LOOPValidator,
     private sequenceAnalyzer: SequenceAnalyzer,
     private orientationCalculator: OrientationAlignmentCalculator
@@ -49,16 +49,16 @@ export class BridgeFinder {
   async getCircularizationOptions(
     sequence: SequenceData
   ): Promise<CircularizationOption[]> {
-    const startPosition = this.sequenceAnalyzer.getStartPosition(sequence);
-    const endPosition = this.sequenceAnalyzer.getCurrentEndPosition(sequence);
+    const startPlacement = this.sequenceAnalyzer.getStartPlacement(sequence);
+    const endPlacement = this.sequenceAnalyzer.getCurrentEndPlacement(sequence);
 
-    if (!startPosition || !endPosition) {
+    if (!startPlacement || !endPlacement) {
       return [];
     }
 
-    // Get position groups
-    const startGroup = this.positionAnalyzer.getEndPositionGroup(startPosition);
-    const endGroup = this.positionAnalyzer.getEndPositionGroup(endPosition);
+    // Get placement groups
+    const startGroup = this.placementAnalyzer.getEndPlacementGroup(startPlacement);
+    const endGroup = this.placementAnalyzer.getEndPlacementGroup(endPlacement);
 
     // If already in same group, no bridge needed (use regular extension)
     if (!startGroup || !endGroup || startGroup === endGroup) {
@@ -72,12 +72,12 @@ export class BridgeFinder {
       await this.letterQueryHandler.getAllPictographVariations(gridMode);
 
     // Find pictographs that:
-    // 1. Start at the sequence's current end position
-    // 2. End at a position in the start group
+    // 1. Start at the sequence's current end placement
+    // 2. End at a placement in the start group
     const bridgeCandidates = allPictographs.filter((p) => {
-      if (p.startPosition !== endPosition) return false;
-      const pEndGroup = this.positionAnalyzer.getEndPositionGroup(
-        p.endPosition as GridPosition
+      if (p.startPlacement !== endPlacement) return false;
+      const pEndGroup = this.placementAnalyzer.getEndPlacementGroup(
+        p.endPlacement as GridPlacement
       );
       return pEndGroup === startGroup;
     });
@@ -86,34 +86,34 @@ export class BridgeFinder {
       return [];
     }
 
-    // Group candidates by letter and ending position
-    const uniqueBridges = this.groupByLetterAndPosition(bridgeCandidates);
+    // Group candidates by letter and ending placement
+    const uniqueBridges = this.groupByLetterAndPlacement(bridgeCandidates);
 
     // For each unique bridge, analyze available LOOPs
     return this.analyzeBridgeCandidates(
       sequence,
       uniqueBridges,
-      startPosition,
-      endPosition,
+      startPlacement,
+      endPlacement,
       /* excludeRewound */ true
     );
   }
 
   /**
-   * Get all extension options that would bring the sequence to a loopable position.
+   * Get all extension options that would bring the sequence to a loopable placement.
    */
   async getAllExtensionOptions(
     sequence: SequenceData
   ): Promise<CircularizationOption[]> {
-    const startPosition = this.sequenceAnalyzer.getStartPosition(sequence);
-    const endPosition = this.sequenceAnalyzer.getCurrentEndPosition(sequence);
+    const startPlacement = this.sequenceAnalyzer.getStartPlacement(sequence);
+    const endPlacement = this.sequenceAnalyzer.getCurrentEndPlacement(sequence);
 
-    if (!startPosition || !endPosition) {
+    if (!startPlacement || !endPlacement) {
       return [];
     }
 
-    // Extract the position GROUP from start position (alpha, beta, gamma)
-    const startGroup = this.positionAnalyzer.getEndPositionGroup(startPosition);
+    // Extract the placement GROUP from start placement (alpha, beta, gamma)
+    const startGroup = this.placementAnalyzer.getEndPlacementGroup(startPlacement);
     if (!startGroup) {
       return [];
     }
@@ -125,12 +125,12 @@ export class BridgeFinder {
       await this.letterQueryHandler.getAllPictographVariations(gridMode);
 
     // Find pictographs that:
-    // 1. Start at the sequence's current end position
-    // 2. End in the SAME position group as the sequence start (for loopability)
+    // 1. Start at the sequence's current end placement
+    // 2. End in the SAME placement group as the sequence start (for loopability)
     const extensionCandidates = allPictographs.filter((p) => {
-      if (p.startPosition !== endPosition) return false;
-      const endGroup = this.positionAnalyzer.getEndPositionGroup(
-        p.endPosition as GridPosition
+      if (p.startPlacement !== endPlacement) return false;
+      const endGroup = this.placementAnalyzer.getEndPlacementGroup(
+        p.endPlacement as GridPlacement
       );
       return endGroup === startGroup;
     });
@@ -139,39 +139,39 @@ export class BridgeFinder {
       return [];
     }
 
-    // Group candidates by letter and ending position
-    const uniqueExtensions = this.groupByLetterAndPosition(extensionCandidates);
+    // Group candidates by letter and ending placement
+    const uniqueExtensions = this.groupByLetterAndPlacement(extensionCandidates);
 
     // For each unique extension, analyze available LOOPs (include REWOUND)
     return this.analyzeBridgeCandidates(
       sequence,
       uniqueExtensions,
-      startPosition,
-      endPosition,
+      startPlacement,
+      endPlacement,
       /* excludeRewound */ false
     );
   }
 
   /**
-   * Group pictograph candidates by letter and ending position to avoid duplicates.
+   * Group pictograph candidates by letter and ending placement to avoid duplicates.
    */
-  private groupByLetterAndPosition(
+  private groupByLetterAndPlacement(
     candidates: PictographData[]
   ): Map<
     string,
-    { letter: Letter; endPosition: string; pictographData: PictographData }
+    { letter: Letter; endPlacement: string; pictographData: PictographData }
   > {
     const uniqueMap = new Map<
       string,
-      { letter: Letter; endPosition: string; pictographData: PictographData }
+      { letter: Letter; endPlacement: string; pictographData: PictographData }
     >();
 
     for (const variation of candidates) {
-      const key = `${variation.letter}|${variation.endPosition}`;
+      const key = `${variation.letter}|${variation.endPlacement}`;
       if (!uniqueMap.has(key)) {
         uniqueMap.set(key, {
           letter: variation.letter as Letter,
-          endPosition: variation.endPosition || "",
+          endPlacement: variation.endPlacement || "",
           pictographData: variation,
         });
       }
@@ -181,20 +181,20 @@ export class BridgeFinder {
   }
 
   /**
-   * Analyze available LOOPs for a position pair (inline version of SequenceExtender.analyzeSequence).
+   * Analyze available LOOPs for a placement pair (inline version of SequenceExtender.analyzeSequence).
    * Avoids circular dependency by using loopValidator directly.
    */
   private getAvailableLOOPs(
-    startPosition: GridPosition,
-    newEndPosition: GridPosition
+    startPlacement: GridPlacement,
+    newEndPlacement: GridPlacement
   ): {
     available: LOOPOption[];
     period: Period;
   } {
-    const positionPair = `${startPosition},${newEndPosition}`;
-    const isHalvedValid = HALVED_LOOPS.has(positionPair);
-    const isQuarteredValid = QUARTERED_LOOPS.has(positionPair);
-    const isAlreadyComplete = newEndPosition === startPosition;
+    const placementPair = `${startPlacement},${newEndPlacement}`;
+    const isHalvedValid = HALVED_LOOPS.has(placementPair);
+    const isQuarteredValid = QUARTERED_LOOPS.has(placementPair);
+    const isAlreadyComplete = newEndPlacement === startPlacement;
 
     let period = Period.HALVED;
     if (isQuarteredValid) {
@@ -202,13 +202,13 @@ export class BridgeFinder {
     }
 
     // Get LOOP options from validator
-    const { available } = this.loopValidator.getLOOPOptionsForPositionPair(
-      startPosition,
-      newEndPosition,
+    const { available } = this.loopValidator.getLOOPOptionsForPlacementPair(
+      startPlacement,
+      newEndPlacement,
       period
     );
 
-    // If it's already complete or has valid LOOP position, return available options
+    // If it's already complete or has valid LOOP placement, return available options
     if (isAlreadyComplete || isHalvedValid || isQuarteredValid) {
       return { available, period };
     }
@@ -223,19 +223,19 @@ export class BridgeFinder {
     sequence: SequenceData,
     uniqueBridges: Map<
       string,
-      { letter: Letter; endPosition: string; pictographData: PictographData }
+      { letter: Letter; endPlacement: string; pictographData: PictographData }
     >,
-    startPosition: GridPosition,
-    _currentEndPosition: GridPosition,
+    startPlacement: GridPlacement,
+    _currentEndPlacement: GridPlacement,
     excludeRewound: boolean
   ): CircularizationOption[] {
     const options: CircularizationOption[] = [];
 
     for (const [_, bridge] of uniqueBridges) {
-      // Get available LOOPs for the new position pair (start → bridge end)
+      // Get available LOOPs for the new placement pair (start → bridge end)
       const { available } = this.getAvailableLOOPs(
-        startPosition,
-        bridge.endPosition as GridPosition
+        startPlacement,
+        bridge.endPlacement as GridPlacement
       );
 
       let availableLOOPs = available;
@@ -248,9 +248,9 @@ export class BridgeFinder {
 
       if (availableLOOPs.length > 0) {
         // Calculate rotation relationship and orientation alignment
-        const rotationRelation = this.positionAnalyzer.getRotationRelation(
-          startPosition,
-          bridge.endPosition as GridPosition
+        const rotationRelation = this.placementAnalyzer.getRotationRelation(
+          startPlacement,
+          bridge.endPlacement as GridPlacement
         );
 
         const currentLength = sequence.steps?.length || 0;
@@ -276,11 +276,11 @@ export class BridgeFinder {
 
         options.push({
           bridgeLetters: [bridge.letter],
-          endPosition: bridge.endPosition,
+          endPlacement: bridge.endPlacement,
           availableLOOPs: availableLOOPs,
           description: excludeRewound
-            ? `Add "${bridge.letter}" to end at ${bridge.endPosition}`
-            : `Add "${bridge.letter}" → ${bridge.endPosition}`,
+            ? `Add "${bridge.letter}" to end at ${bridge.endPlacement}`
+            : `Add "${bridge.letter}" → ${bridge.endPlacement}`,
           pictographData: bridge.pictographData,
           rotationRelation: rotationRelation || undefined,
           orientationAlignment,
@@ -298,7 +298,7 @@ export class BridgeFinder {
 // DIRECT SINGLETON EXPORT
 // ============================================================================
 import { letterQueryHandler } from "$lib/shared/pictograph/tka-glyph/services/letter-query-handler";
-import { positionAnalyzer } from "$lib/features/create/construct/option-picker/services/position-analyzer";
+import { placementAnalyzer } from "$lib/features/create/construct/option-picker/services/placement-analyzer";
 import { loopValidator } from "./loop-validator";
 import { sequenceAnalyzer } from "./sequence-analyzer";
 import * as orientationAlignmentCalculatorModule from "./orientation-alignment-calculator";
@@ -309,7 +309,7 @@ const orientationAlignmentCalculator: OrientationAlignmentCalculator = {
 
 export const bridgeFinder = new BridgeFinder(
   letterQueryHandler,
-  positionAnalyzer,
+  placementAnalyzer,
   loopValidator,
   sequenceAnalyzer,
   orientationAlignmentCalculator

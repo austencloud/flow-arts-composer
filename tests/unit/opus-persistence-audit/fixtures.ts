@@ -100,8 +100,8 @@ export function makeStep(
     rightReversal: false,
     isBlank: false,
     letter: letter as StepData["letter"],
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: motionAt(leftFrom, leftTo, HandSide.LEFT, extraLeft),
       right: motionAt(rightFrom, rightTo, HandSide.RIGHT, extraRight),
@@ -112,7 +112,7 @@ export function makeStep(
 /**
  * The legacy inline start entry: `stepNumber: 0`, letterless, both props held
  * static at their opening locations. Modern writes keep this in its own
- * `startPosition` field; pre-compositional documents kept it inside `steps`.
+ * `startPlacement` field; pre-compositional documents kept it inside `steps`.
  */
 export function makeLegacyStartEntry(): StepData {
   return {
@@ -123,8 +123,8 @@ export function makeLegacyStartEntry(): StepData {
     rightReversal: false,
     isBlank: false,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: motionAt(GridLocation.NORTH, GridLocation.NORTH, HandSide.LEFT),
       right: motionAt(GridLocation.SOUTH, GridLocation.SOUTH, HandSide.RIGHT),
@@ -156,7 +156,7 @@ interface RawSeq {
 
 export interface CorpusSequence {
   readonly label: string;
-  /** Content beats only, with the inline start entry lifted to `startPosition`. */
+  /** Content beats only, with the inline start entry lifted to `startPlacement`. */
   readonly sequence: SequenceData;
   /** The same document with the start entry still inside `steps`. */
   readonly legacyShape: SequenceData;
@@ -207,12 +207,12 @@ export function realCorpusSequences(): CorpusSequence[] {
         ...common,
         steps: content,
         ...(startEntry && {
-          startPosition: {
+          startPlacement: {
             id: startEntry.id,
-            isStartPosition: true,
+            isStartPlacement: true,
             motions: startEntry.motions,
             gridMode: startEntry.gridMode,
-            gridPosition: startEntry.startPosition,
+            gridPlacement: startEntry.startPlacement,
           } as never,
         }),
       }),

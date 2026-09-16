@@ -9,26 +9,26 @@
  */
 
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-// import type { StartPositionManager } from "../../tool-panel/construct/start-position-picker/services/contracts";
-// IStartPositionSelectionService removed - using unified service
+// import type { StartPlacementManager } from "../../tool-panel/construct/start-placement-picker/services/contracts";
+// IStartPlacementSelectionService removed - using unified service
 import { constructTabEventService } from "./create-module-event-handler";
 
 export class CreateModuleOrchestrator {
   private currentTab: string = "construct"; // Default tab
   private tabStates: Map<string, unknown> = new Map();
 
-  constructor() {} // Start position selection now handled by unified service // private readonly StartPositionManager: StartPositionManager // @inject(TYPES.StartPositionManager)
+  constructor() {} // Start placement selection now handled by unified service // private readonly StartPlacementManager: StartPlacementManager // @inject(TYPES.StartPlacementManager)
 
   /**
-   * Orchestrates the complete start position selection workflow
+   * Orchestrates the complete start placement selection workflow
    */
-  selectStartPosition(_position: PictographData): void {
+  selectStartPlacement(_placement: PictographData): void {
     try {
       // Business logic: Convert PictographData to StepData for the service
-      // await this.StartPositionManager.setStartPosition(stepData);
+      // await this.StartPlacementManager.setStartPlacement(stepData);
     } catch (error) {
       console.error(
-        "❌ CreateModuleOrchestrator: Error selecting start position:",
+        "❌ CreateModuleOrchestrator: Error selecting start placement:",
         error
       );
       throw error; // Re-throw to let caller handle UI error states

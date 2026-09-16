@@ -1,6 +1,6 @@
 <!--
 WordBuildingQuiz - Coordinator for word formation quiz
-Questions about letter sequences, motion types, position transitions, and LOOPs
+Questions about letter sequences, motion types, placement transitions, and LOOPs
 -->
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";

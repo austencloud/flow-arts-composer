@@ -52,8 +52,8 @@ export interface VideoExportOrchestratorOptions {
   compositeMode?: "none" | "horizontal" | "vertical";
   gridStepSize?: number;
   showStepNumbers?: boolean;
-  includeStartPosition?: boolean;
-  includeAnimationStartPosition?: boolean;
+  includeStartPlacement?: boolean;
+  includeAnimationStartPlacement?: boolean;
   includeEndHold?: boolean;
   /**
    * An image held at the very start of the clip, before the animation. This

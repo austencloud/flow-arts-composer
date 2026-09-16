@@ -18,7 +18,7 @@ function motionProps(
   if (!sequence) return {};
   let leftPropType: unknown;
   let rightPropType: unknown;
-  const pictographs = [sequence.startPosition, ...(sequence.steps ?? [])];
+  const pictographs = [sequence.startPlacement, ...(sequence.steps ?? [])];
   for (const pictograph of pictographs) {
     leftPropType ??= pictograph?.motions?.left?.propType;
     rightPropType ??= pictograph?.motions?.right?.propType;

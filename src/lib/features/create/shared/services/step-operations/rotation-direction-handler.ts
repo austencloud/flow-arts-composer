@@ -11,8 +11,8 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import type { ICreateModuleState } from "../../types/create-module-types";
 import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
 import { deriveGridMode as _deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
@@ -32,7 +32,7 @@ import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/or
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
 import {
   getStepDataFromState,
-  START_POSITION_BEAT_NUMBER,
+  START_PLACEMENT_BEAT_NUMBER,
   updateSequenceWord,
 } from "./step-data-helpers";
 import { calculatePropagatedSteps } from "./orientation-handler";
@@ -123,11 +123,11 @@ export function updateRotationDirection(
     },
   };
 
-  // Get current sequence and start position for propagation calculation
+  // Get current sequence and start placement for propagation calculation
   const currentSequence: SequenceData | null =
     createModuleState.sequenceState.currentSequence;
-  const startPosition: StartPositionData | null = createModuleState.sequenceState
-    .selectedStartPosition ?? null;
+  const startPlacement: StartPlacementData | null = createModuleState.sequenceState
+    .selectedStartPlacement ?? null;
 
   if (!currentSequence) {
     logger.warn("Cannot update rotation direction - no current sequence");
@@ -136,25 +136,25 @@ export function updateRotationDirection(
 
   // Build the updated sequence with the beat update + propagated orientations
   let updatedSequence = currentSequence;
-  let updatedStartPosition: StartPositionData | null = startPosition;
+  let updatedStartPlacement: StartPlacementData | null = startPlacement;
 
-  if (stepNumber === START_POSITION_BEAT_NUMBER) {
-    // Create updated start position with new motions
-    updatedStartPosition = startPosition
-      ? createStartPositionData({
-          ...startPosition,
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+    // Create updated start placement with new motions
+    updatedStartPlacement = startPlacement
+      ? createStartPlacementData({
+          ...startPlacement,
           motions: updatedStepData.motions,
         })
       : null;
     logger.log(
-      `Updated start position ${color}: rotation=${newRotationDirection}, motionType=${newMotionType}, endOri=${newEndOrientation}`
+      `Updated start placement ${color}: rotation=${newRotationDirection}, motionType=${newMotionType}, endOri=${newEndOrientation}`
     );
 
     const propagatedSteps = calculatePropagatedSteps(
       stepNumber,
       color,
       currentSequence,
-      updatedStartPosition
+      updatedStartPlacement
     );
 
     updatedSequence = {
@@ -162,8 +162,8 @@ export function updateRotationDirection(
       steps: propagatedSteps,
     };
 
-    // Update start position first
-    createModuleState.sequenceState.setStartPosition(updatedStartPosition);
+    // Update start placement first
+    createModuleState.sequenceState.setStartPlacement(updatedStartPlacement);
   } else {
     const arrayIndex = stepNumber - 1;
     const updatedSteps = [...currentSequence.steps];
@@ -177,7 +177,7 @@ export function updateRotationDirection(
       stepNumber,
       color,
       { ...currentSequence, steps: updatedSteps },
-      startPosition
+      startPlacement
     );
 
     updatedSequence = {
@@ -190,8 +190,8 @@ export function updateRotationDirection(
   // The PRO ↔ ANTI flip may change the pictograph's letter
   if (motionQueryHandler) {
     const stepToCheck =
-      stepNumber === START_POSITION_BEAT_NUMBER
-        ? updatedStartPosition
+      stepNumber === START_PLACEMENT_BEAT_NUMBER
+        ? updatedStartPlacement
         : updatedSequence.steps[stepNumber - 1];
 
     if (stepToCheck) {
@@ -225,7 +225,7 @@ export function updateRotationDirection(
  */
 async function recalculateLetterAsync(
   stepNumber: number,
-  stepToCheck: StepData | StartPositionData,
+  stepToCheck: StepData | StartPlacementData,
   createModuleState: ICreateModuleState,
   motionQueryHandler: IMotionQueryHandler
 ): Promise<void> {
@@ -250,12 +250,12 @@ async function recalculateLetterAsync(
       );
 
       // Update the beat with the new letter
-      if (stepNumber === START_POSITION_BEAT_NUMBER) {
-        const updatedStart = createStartPositionData({
+      if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+        const updatedStart = createStartPlacementData({
           ...stepToCheck,
           letter: newLetter as Letter,
         });
-        createModuleState.sequenceState.setStartPosition(updatedStart);
+        createModuleState.sequenceState.setStartPlacement(updatedStart);
       } else {
         const arrayIndex = stepNumber - 1;
         const currentSeq = createModuleState.sequenceState.currentSequence;
@@ -332,13 +332,13 @@ export async function recalculateLetterForBeat(
           `Letter changed: "${stepData.letter}" → "${newLetter}" for beat ${stepNumber}`
         );
 
-        if (stepNumber === START_POSITION_BEAT_NUMBER) {
-          // Use createStartPositionData for start positions
-          const updatedStartPosition = createStartPositionData({
+        if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+          // Use createStartPlacementData for start placements
+          const updatedStartPlacement = createStartPlacementData({
             ...stepData,
             letter: newLetter,
           });
-          createModuleState.sequenceState.setStartPosition(updatedStartPosition);
+          createModuleState.sequenceState.setStartPlacement(updatedStartPlacement);
         } else {
           // Use StepData for regular steps
           const updatedStepData: StepData = {

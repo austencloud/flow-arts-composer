@@ -9,7 +9,7 @@
  * the crop rects are exactly where the composer painted. This module reuses
  * the composer's own layout math (computeCardFrontLayout, extracted verbatim
  * from ImageComposer) rather than re-deriving it, so the rects are right by
- * construction for any step count and start-position layout.
+ * construction for any step count and start-placement layout.
  *
  * Everything here is pure geometry: no DOM, no canvas, unit-testable.
  */
@@ -53,7 +53,7 @@ const GALLERY_LAYOUT_OPTIONS: Partial<SequenceExportOptions> = {
   stepSize: 240,
   addWord: true,
   addStepNumbers: true,
-  includeStartPosition: true,
+  includeStartPlacement: true,
   addDifficultyLevel: true,
   addUserInfo: false,
   showNotes: true,
@@ -62,17 +62,17 @@ const GALLERY_LAYOUT_OPTIONS: Partial<SequenceExportOptions> = {
 /**
  * Compute the region map for a gallery-variant thumbnail of `sequence`.
  *
- * `startPositionLayout` is the card's EFFECTIVE layout (the per-step-count
+ * `startPlacementLayout` is the card's EFFECTIVE layout (the per-step-count
  * "Top Row" / "Left Column" resolution PropAwareThumbnail already performs) —
  * pass that resolved value, not the raw user setting.
  */
 export function computeSheetRegionMap(
   sequence: SequenceData,
-  startPositionLayout: "row" | "column"
+  startPlacementLayout: "row" | "column"
 ): SheetRegionMap {
   const options: Partial<SequenceExportOptions> = {
     ...GALLERY_LAYOUT_OPTIONS,
-    startPositionLayout,
+    startPlacementLayout,
     loopType: sequence.loopType ?? undefined,
   };
 
@@ -92,7 +92,7 @@ export function computeSheetRegionMap(
     startColumn,
     startRow,
     stepsPerRow,
-    hasStartPosition,
+    hasStartPlacement,
   } = layout;
 
   const frac = (px: number, total: number) => px / total;
@@ -125,7 +125,7 @@ export function computeSheetRegionMap(
     },
     // The composer draws the start position at grid cell (0, 0) in both
     // layout modes; startRow/startColumn shift the STEPS away from it.
-    start: hasStartPosition ? cellRegion(0, 0) : null,
+    start: hasStartPlacement ? cellRegion(0, 0) : null,
     steps,
     canvasAspect: canvasWidth / canvasHeight,
   };

@@ -9,7 +9,7 @@ describe("ConstructTutorialGuide", () => {
     render(ConstructTutorialGuideHarness);
 
     await expect
-      .element(page.getByText("Choose a start position", { exact: true }))
+      .element(page.getByText("Choose a start placement", { exact: true }))
       .toBeInTheDocument();
     await expect
       .element(page.getByText("Construct guide · Step 1 of 3", { exact: true }))
@@ -18,7 +18,7 @@ describe("ConstructTutorialGuide", () => {
 
     await page.getByRole("button", { name: "Dismiss Construct guide" }).click();
     expect(
-      page.getByText("Choose a start position", { exact: true }).elements()
+      page.getByText("Choose a start placement", { exact: true }).elements()
     ).toHaveLength(0);
   });
 
@@ -29,7 +29,7 @@ describe("ConstructTutorialGuide", () => {
       .element(page.getByText("Construct guide · Step 2 of 3", { exact: true }))
       .toBeInTheDocument();
     await expect
-      .element(page.getByText("Start position: α1", { exact: true }))
+      .element(page.getByText("Start placement: α1", { exact: true }))
       .toBeInTheDocument();
     await expect
       .element(

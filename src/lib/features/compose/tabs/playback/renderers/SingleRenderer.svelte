@@ -200,9 +200,9 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
     if (
       currentStep === 0 &&
       !animationState.isPlaying &&
-      animationState.sequenceData.startPosition
+      animationState.sequenceData.startPlacement
     ) {
-      return animationState.sequenceData.startPosition;
+      return animationState.sequenceData.startPlacement;
     }
 
     // For steps, use direct indexing with clamping

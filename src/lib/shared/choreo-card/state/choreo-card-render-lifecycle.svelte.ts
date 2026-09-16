@@ -29,13 +29,13 @@ export interface ChoreoCardRenderLifecycleDeps {
   readonly showTnD: boolean;
   readonly showElemental: boolean;
   readonly showPropTnD: boolean;
-  readonly showPositions: boolean;
+  readonly showPlacements: boolean;
   readonly showHandColorKey: boolean;
   readonly showGrid: boolean;
   readonly showLeftMotion: boolean;
   readonly showRightMotion: boolean;
-  readonly includeStartPosition: boolean;
-  readonly startPositionLayout: "row" | "column";
+  readonly includeStartPlacement: boolean;
+  readonly startPlacementLayout: "row" | "column";
   readonly effectiveColumns: number;
   readonly columnCount: number | null;
   readonly darkMode: boolean;
@@ -87,13 +87,13 @@ export function createChoreoCardRenderLifecycle(
       showTnD: deps.showTnD,
       showElemental: deps.showElemental,
       showPropTnD: deps.showPropTnD,
-      showPositions: deps.showPositions,
+      showPlacements: deps.showPlacements,
       showHandColorKey: deps.showHandColorKey,
       showGrid: deps.showGrid,
       showLeftMotion: deps.showLeftMotion,
       showRightMotion: deps.showRightMotion,
-      includeStartPosition: deps.includeStartPosition,
-      startPositionLayout: deps.startPositionLayout,
+      includeStartPlacement: deps.includeStartPlacement,
+      startPlacementLayout: deps.startPlacementLayout,
       effectiveColumns: deps.effectiveColumns,
       darkMode: deps.darkMode,
     });
@@ -118,7 +118,7 @@ export function createChoreoCardRenderLifecycle(
     const hasDurations = untrack(() => model.hasMixedDurations);
     const durationKey =
       deps.sequence.steps.map((step) => step.duration ?? 1).join(",") ?? "";
-    const gridStableKey = `${deps.sequence.steps.length}-${durationKey}-cols:${deps.effectiveColumns}-isp:${deps.includeStartPosition}`;
+    const gridStableKey = `${deps.sequence.steps.length}-${durationKey}-cols:${deps.effectiveColumns}-isp:${deps.includeStartPlacement}`;
     const darkModeChanged =
       untrack(() => crossfader.activeDarkMode) !== deps.darkMode;
     const changeType = crossfader.classifyChange(

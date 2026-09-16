@@ -18,14 +18,14 @@ export interface GetMandalaPlacementsArgs {
 	stepCount: number;
 	cols: number;
 	rows: number;
-	includeStartPosition: boolean;
+	includeStartPlacement: boolean;
 	showQRCode: boolean;
 	leftVisible: boolean;
 	rightVisible: boolean;
 	mandalaEnabled: boolean;
 	/** Where the info cells live. "column" → mandalas stack vertically in col 1.
 	 *  "row" → mandalas lay out horizontally across the top row. */
-	startPositionLayout?: "row" | "column";
+	startPlacementLayout?: "row" | "column";
 }
 
 export interface GetMandalaPlacementsResult {
@@ -40,20 +40,20 @@ export function getMandalaPlacements(args: GetMandalaPlacementsArgs): GetMandala
 		stepCount,
 		cols,
 		rows,
-		includeStartPosition,
+		includeStartPlacement,
 		showQRCode,
 		leftVisible,
 		rightVisible,
 		mandalaEnabled,
-		startPositionLayout = "row",
+		startPlacementLayout = "row",
 	} = args;
 
 	if (!mandalaEnabled) return EMPTY;
-	if (!includeStartPosition) return EMPTY;
+	if (!includeStartPlacement) return EMPTY;
 	if (!leftVisible && !rightVisible) return EMPTY;
 	if (stepCount < 4) return EMPTY;
 
-	if (startPositionLayout === "row") {
+	if (startPlacementLayout === "row") {
 		// Info cells live in row 1 between start (col 1) and QR (col `cols`).
 		if (cols < 2) return EMPTY;
 		const leftCol = 2;

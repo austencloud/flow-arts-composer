@@ -78,7 +78,7 @@
     chrome="minimal"
     fill
     showWordHeader={false}
-    showPositionGlyph={false}
+    showPlacementGlyph={false}
     scrubbable={interactive}
     beatIndicators={false}
     hideTkaGlyph

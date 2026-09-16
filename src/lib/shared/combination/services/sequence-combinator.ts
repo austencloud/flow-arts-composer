@@ -1,7 +1,7 @@
 /**
  * Layer 1 — the seam-graph closed-walk search.
  *
- * A **seam** is the total position between two steps (`GridPosition`, e.g.
+ * A **seam** is the total placement between two steps (`GridPlacement`, e.g.
  * "beta5"). Every card is a cyclic list of steps, and every step is an edge
  * from one seam to another. A COMBINATION of two cards is a closed walk in the
  * union of those edge sets that uses at least one step from each card — nothing
@@ -72,10 +72,10 @@ import {
   type WalkSource,
 } from "../domain/types";
 import {
-  positionLabelsMatchLocations,
+  placementLabelsMatchLocations,
   seamEndOf,
   seamOf,
-} from "./position-groups";
+} from "./placement-groups";
 import { buildTwinSource, buildVariants } from "./variant-generator";
 import {
   classifyAndRank,
@@ -189,8 +189,8 @@ function createWarner(): (
  * **Every option is re-validated.** A provider is a collaborator, not an
  * authority. A step is kept only when it carries a letter belonging to an
  * ambient-eligible roster base, has both seams, actually STARTS at the seam it
- * was asked about, and carries position labels its own motion locations agree
- * with. The last two are the load-bearing ones: either would break positional
+ * was asked about, and carries placement labels its own motion locations agree
+ * with. The last two are the load-bearing ones: either would break placement
  * continuity, which is the single invariant everything downstream assumes.
  *
  * **A provider that fails does not get to shrink the answer silently.** A throw
@@ -264,11 +264,11 @@ async function buildAmbientPool(
         const from = seamOf(step);
         const to = seamEndOf(step);
         if (!from || !to || from !== seam) continue;
-        if (!positionLabelsMatchLocations(step)) {
+        if (!placementLabelsMatchLocations(step)) {
           warn(
             "labels",
             `ambient step ${letter} at ${from} is labelled ${from}>${to} but ` +
-              "its motion locations derive different positions; rejected " +
+              "its motion locations derive different placements; rejected " +
               "(a mislabelled seam splices into an unperformable sequence)"
           );
           continue;
@@ -637,7 +637,7 @@ export async function findCombinations(
     sources.map((source, index) => [source.id, sourceSteps[index]!.length])
   );
 
-  // Seam -> every (source, step) that STARTS there. Steps with no position
+  // Seam -> every (source, step) that STARTS there. Steps with no placement
   // never enter the map, so a null seam can never be walked through.
   const entries = new Map<SeamState, SeamEntry[]>();
   sourceSteps.forEach((steps, sourceIndex) => {

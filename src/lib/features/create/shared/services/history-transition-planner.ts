@@ -41,7 +41,7 @@ export interface HistoryTransitionPlan {
   readonly removedStepIdentities: ReadonlySet<string>;
   readonly movedStepIdentities: ReadonlySet<string>;
   readonly changedStepIdentities: ReadonlySet<string>;
-  readonly startPositionChanged: boolean;
+  readonly startPlacementChanged: boolean;
   readonly gridModeChanged: boolean;
   readonly wordChanged: boolean;
   readonly circularityChanged: boolean;
@@ -148,9 +148,9 @@ export function createHistoryTransitionPlan({
   ).length;
   const fromCount = fromSteps.length;
   const toCount = toSteps.length;
-  const startPositionChanged = !sameValue(
-    sequenceStartPosition(fromSequence),
-    sequenceStartPosition(toSequence)
+  const startPlacementChanged = !sameValue(
+    sequenceStartPlacement(fromSequence),
+    sequenceStartPlacement(toSequence)
   );
   const gridModeChanged = fromSequence?.gridMode !== toSequence?.gridMode;
   const wordChanged =
@@ -168,7 +168,7 @@ export function createHistoryTransitionPlan({
   const hasReorder = movedStepIdentities.size > 0;
   const hasContentChange =
     changedStepIdentities.size > 0 ||
-    startPositionChanged ||
+    startPlacementChanged ||
     gridModeChanged ||
     wordChanged ||
     circularityChanged ||
@@ -190,7 +190,7 @@ export function createHistoryTransitionPlan({
     removedStepIdentities,
     movedStepIdentities,
     changedStepIdentities,
-    startPositionChanged,
+    startPlacementChanged,
     gridModeChanged,
     wordChanged,
     circularityChanged,
@@ -223,8 +223,8 @@ function legacyStepFingerprint(step: StepData): string {
   });
 }
 
-function sequenceStartPosition(sequence: SequenceData | null): unknown {
-  return sequence?.startingPosition ?? sequence?.startPosition ?? null;
+function sequenceStartPlacement(sequence: SequenceData | null): unknown {
+  return sequence?.startingPlacement ?? sequence?.startPlacement ?? null;
 }
 
 function loopPresentation(sequence: SequenceData | null): unknown {
@@ -292,8 +292,8 @@ function getStepVisualChanges(
   if (from.duration !== to.duration) changes.add("duration");
   if (
     from.gridMode !== to.gridMode ||
-    !sameValue(from.startPosition, to.startPosition) ||
-    !sameValue(from.endPosition, to.endPosition)
+    !sameValue(from.startPlacement, to.startPlacement) ||
+    !sameValue(from.endPlacement, to.endPlacement)
   ) {
     changes.add("grid");
   }

@@ -7,7 +7,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ICreateModuleState } from "../../types/create-module-types";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import { getStepDataFromState, START_POSITION_BEAT_NUMBER } from "./step-data-helpers";
+import { getStepDataFromState, START_PLACEMENT_BEAT_NUMBER } from "./step-data-helpers";
 import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
 const logger = createComponentLogger("PathShapeHandler");
@@ -23,8 +23,8 @@ export function setPathShape(
   shape: PathShapeValue,
   createModuleState: ICreateModuleState
 ): void {
-  if (stepNumber === START_POSITION_BEAT_NUMBER) {
-    logger.warn("Cannot set path shape on start position");
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+    logger.warn("Cannot set path shape on start placement");
     return;
   }
 
@@ -78,7 +78,7 @@ export function clearPathShape(
   color: HandSide,
   createModuleState: ICreateModuleState
 ): void {
-  if (stepNumber === START_POSITION_BEAT_NUMBER) return;
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER) return;
 
   const stepData = getStepDataFromState(stepNumber, createModuleState);
   if (!stepData?.motions) return;

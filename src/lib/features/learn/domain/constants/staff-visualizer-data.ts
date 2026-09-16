@@ -4,8 +4,8 @@
 
 export type HandPosition = "N" | "E" | "S" | "W";
 export type ThumbOrientation = "in" | "out";
-export { type PositionType } from "./shared-types";
-import type { PositionType } from "./shared-types";
+export { type PlacementType } from "./shared-types";
+import type { PlacementType } from "./shared-types";
 export type RotationType = "prospin" | "antispin" | "none";
 
 export interface GridPoint {
@@ -28,7 +28,7 @@ export const OPPOSITE_PAIRS: Record<string, string> = {
   W: "E",
 };
 
-export const POSITION_COLORS: Record<PositionType, string> = {
+export const PLACEMENT_COLORS: Record<PlacementType, string> = {
   alpha: "#FF6B6B",
   beta: "#4ECDC4",
   gamma: "#FFE66D",
@@ -51,10 +51,10 @@ export function areAdjacent(p1: string, p2: string): boolean {
   return diff === 1 || diff === 3;
 }
 
-export function getPositionType(
+export function getPlacementType(
   leftPosition: HandPosition,
   rightPosition: HandPosition
-): PositionType {
+): PlacementType {
   if (leftPosition === rightPosition) return "beta";
   if (OPPOSITE_PAIRS[leftPosition] === rightPosition) return "alpha";
   if (areAdjacent(leftPosition, rightPosition)) return "gamma";

@@ -1,8 +1,8 @@
 /**
  * Hand Path Motion Calculator
  *
- * Calculates motion types and properties based on grid position movements.
- * Used for tap-based hand path construction where users select positions
+ * Calculates motion types and properties based on grid location movements.
+ * Used for tap-based hand path construction where users select locations
  * and the system determines the motion type (STATIC, DASH, or SHIFT).
  */
 
@@ -46,9 +46,9 @@ const skewedClockwise = [
 ];
 
 /**
- * Get all valid positions for a grid mode
+ * Get all valid locations for a grid mode
  */
-export function getActivePositions(gridMode: GridMode): GridLocation[] {
+export function getActiveLocations(gridMode: GridMode): GridLocation[] {
   if (gridMode === GridMode.DIAMOND) {
     return [...diamondClockwise];
   } else if (gridMode === GridMode.BOX) {
@@ -68,7 +68,7 @@ export function calculateMotionType(
   to: GridLocation,
   gridMode: GridMode
 ): HandMotionType {
-  // Same position = static
+  // Same location = static
   if (from === to) {
     return HandMotionType.STATIC;
   }
@@ -81,18 +81,18 @@ export function calculateMotionType(
     return HandMotionType.HASH_IN;
   }
 
-  const positions = getActivePositions(gridMode);
+  const locations = getActiveLocations(gridMode);
 
-  // Validate that both positions are in the active set
-  if (!positions.includes(from) || !positions.includes(to)) {
+  // Validate that both locations are in the active set
+  if (!locations.includes(from) || !locations.includes(to)) {
     throw new Error(
-      `Invalid positions for ${gridMode} mode: from=${from}, to=${to}`
+      `Invalid locations for ${gridMode} mode: from=${from}, to=${to}`
     );
   }
 
-  const fromIndex = positions.indexOf(from);
-  const toIndex = positions.indexOf(to);
-  const count = positions.length; // 4 for diamond/box, 8 for skewed
+  const fromIndex = locations.indexOf(from);
+  const toIndex = locations.indexOf(to);
+  const count = locations.length; // 4 for diamond/box, 8 for skewed
 
   // Check if adjacent (1 step clockwise or counter-clockwise)
   const isAdjacentCW = (fromIndex + 1) % count === toIndex;
@@ -102,7 +102,7 @@ export function calculateMotionType(
     return HandMotionType.SHIFT;
   }
 
-  // Opposite position (halfway around the ring)
+  // Opposite location (halfway around the ring)
   const isOpposite = (fromIndex + count / 2) % count === toIndex;
   if (isOpposite) {
     return HandMotionType.DASH;
@@ -113,7 +113,7 @@ export function calculateMotionType(
     return HandMotionType.SHIFT;
   }
 
-  throw new Error(`Unexpected position relationship: from=${from}, to=${to}`);
+  throw new Error(`Unexpected location relationship: from=${from}, to=${to}`);
 }
 
 /**
@@ -132,10 +132,10 @@ export function calculateRotationDirection(
     return null;
   }
 
-  const positions = getActivePositions(gridMode);
-  const fromIndex = positions.indexOf(from);
-  const toIndex = positions.indexOf(to);
-  const count = positions.length;
+  const locations = getActiveLocations(gridMode);
+  const fromIndex = locations.indexOf(from);
+  const toIndex = locations.indexOf(to);
+  const count = locations.length;
 
   const clockwiseDistance = (toIndex - fromIndex + count) % count;
   const isClockwise = clockwiseDistance < count / 2;
@@ -170,12 +170,12 @@ export function calculateHandPath(
 }
 
 /**
- * Check if a position is valid for the given grid mode
+ * Check if a location is valid for the given grid mode
  */
-export function isPositionEnabled(
-  position: GridLocation,
+export function isLocationEnabled(
+  location: GridLocation,
   gridMode: GridMode
 ): boolean {
-  const activePositions = getActivePositions(gridMode);
-  return activePositions.includes(position);
+  const activeLocations = getActiveLocations(gridMode);
+  return activeLocations.includes(location);
 }

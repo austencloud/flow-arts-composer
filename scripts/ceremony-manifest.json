@@ -232,7 +232,7 @@
       },
       {
         "file": "src/lib/features/create/shared/components/CreateModule.svelte",
-        "importPath": "$lib/features/create/construct/start-position-picker/components/OrientationPickerDrawer.svelte"
+        "importPath": "$lib/features/create/construct/start-placement-picker/components/OrientationPickerDrawer.svelte"
       },
       {
         "file": "src/lib/features/create/shared/components/CreateModule.svelte",
@@ -675,8 +675,8 @@
         "importPath": "$lib/features/create/construct/option-picker/components/OptionPicker.svelte"
       },
       {
-        "file": "src/lib/shared/onboarding/components/create-tutorial/steps/PickStartPositionStep.svelte",
-        "importPath": "$lib/features/create/construct/start-position-picker/components/StartPositionPicker.svelte"
+        "file": "src/lib/shared/onboarding/components/create-tutorial/steps/PickStartPlacementStep.svelte",
+        "importPath": "$lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte"
       },
       {
         "file": "src/lib/shared/onboarding/components/create-tutorial/steps/ReadyStep.svelte",
@@ -2613,12 +2613,12 @@
         "getter": "getCreateModuleStateRefLazy"
       },
       {
-        "file": "src/lib/shared/create/state/start-position-state.svelte.ts",
+        "file": "src/lib/shared/create/state/start-placement-state.svelte.ts",
         "variable": "settings",
         "getter": "getSettingsServiceSync"
       },
       {
-        "file": "src/lib/shared/create/state/start-position-state.svelte.ts",
+        "file": "src/lib/shared/create/state/start-placement-state.svelte.ts",
         "variable": "settings",
         "getter": "getSettingsServiceSync"
       },
@@ -4328,7 +4328,7 @@
         "getter": "getHapticFeedback"
       },
       {
-        "file": "src/lib/features/create/construct/start-position-picker/components/PositionGroupGrid.svelte",
+        "file": "src/lib/features/create/construct/start-placement-picker/components/PlacementGroupGrid.svelte",
         "variable": "hapticService",
         "getter": "getHapticFeedback"
       },
@@ -4978,9 +4978,9 @@
         "getter": "getTriGridCalculator"
       },
       {
-        "file": "src/lib/features/lab/trigrid-lab/components/TriGridPositionInfo.svelte",
+        "file": "src/lib/features/lab/trigrid-lab/components/TriGridPlacementInfo.svelte",
         "variable": "resolver",
-        "getter": "getTriGridPositionResolver"
+        "getter": "getTriGridPlacementResolver"
       },
       {
         "file": "src/lib/features/lab/vtg-lab/components/ModeExplorer.svelte",
@@ -5123,27 +5123,27 @@
         "getter": "getHapticFeedback"
       },
       {
-        "file": "src/lib/features/learn/components/interactive/positions/PlacementGrid.svelte",
+        "file": "src/lib/features/learn/components/interactive/placements/PlacementGrid.svelte",
         "variable": "coords",
         "getter": "getGuideCoords"
       },
       {
-        "file": "src/lib/features/learn/components/interactive/positions/PlacementGrid.svelte",
+        "file": "src/lib/features/learn/components/interactive/placements/PlacementGrid.svelte",
         "variable": "coords",
         "getter": "getGuideCoords"
       },
       {
-        "file": "src/lib/features/learn/components/interactive/positions/PositionsConceptExperience.svelte",
+        "file": "src/lib/features/learn/components/interactive/placements/PlacementsConceptExperience.svelte",
         "variable": "hapticService",
         "getter": "getHapticFeedback"
       },
       {
-        "file": "src/lib/features/learn/components/interactive/positions/SpeedRounds.svelte",
+        "file": "src/lib/features/learn/components/interactive/placements/SpeedRounds.svelte",
         "variable": "hapticService",
         "getter": "getHapticFeedback"
       },
       {
-        "file": "src/lib/features/learn/components/interactive/positions/SpeedRounds.svelte",
+        "file": "src/lib/features/learn/components/interactive/placements/SpeedRounds.svelte",
         "variable": "pool",
         "getter": "getPool"
       },
@@ -7253,7 +7253,7 @@
         "getter": "getSequenceRepository"
       },
       {
-        "file": "src/lib/features/create/spell/get-start-position-validator.ts",
+        "file": "src/lib/features/create/spell/get-start-placement-validator.ts",
         "getter": "getLetterTransitionGraph"
       },
       {
@@ -7557,8 +7557,8 @@
         "getter": "getPeerConnectionManager"
       },
       {
-        "file": "src/lib/features/create/construct/start-position-picker/components/AdvancedStartPositionPicker.svelte",
-        "getter": "getPositionGroups"
+        "file": "src/lib/features/create/construct/start-placement-picker/components/AdvancedStartPlacementPicker.svelte",
+        "getter": "getPlacementGroups"
       },
       {
         "file": "src/lib/features/create/generate/components/modals/LOOPPresetsSection.svelte",
@@ -10171,9 +10171,9 @@
         ]
       },
       {
-        "relativePath": "src/lib/features/create/generate/circular/services/loop-end-position-selector.ts",
-        "filename": "loop-end-position-selector.ts",
-        "kebabFilename": "loop-end-position-selector.ts",
+        "relativePath": "src/lib/features/create/generate/circular/services/loop-end-placement-selector.ts",
+        "filename": "loop-end-placement-selector.ts",
+        "kebabFilename": "loop-end-placement-selector.ts",
         "inImplementations": false,
         "inContracts": false,
         "isGetter": false,
@@ -10184,8 +10184,8 @@
         "consumerCount": 1,
         "consumers": [
           {
-            "file": "src/lib/features/create/generate/circular/get-loop-end-position-selector.ts",
-            "importPath": "./services/loop-end-position-selector",
+            "file": "src/lib/features/create/generate/circular/get-loop-end-placement-selector.ts",
+            "importPath": "./services/loop-end-placement-selector",
             "line": 1
           }
         ]
@@ -10567,9 +10567,9 @@
         ]
       },
       {
-        "relativePath": "src/lib/features/create/generate/circular/services/rotated-end-position-selector.ts",
-        "filename": "rotated-end-position-selector.ts",
-        "kebabFilename": "rotated-end-position-selector.ts",
+        "relativePath": "src/lib/features/create/generate/circular/services/rotated-end-placement-selector.ts",
+        "filename": "rotated-end-placement-selector.ts",
+        "kebabFilename": "rotated-end-placement-selector.ts",
         "inImplementations": false,
         "inContracts": false,
         "isGetter": false,
@@ -10580,8 +10580,8 @@
         "consumerCount": 1,
         "consumers": [
           {
-            "file": "src/lib/features/create/generate/circular/services/loop-end-position-selector.ts",
-            "importPath": "./rotated-end-position-selector",
+            "file": "src/lib/features/create/generate/circular/services/loop-end-placement-selector.ts",
+            "importPath": "./rotated-end-placement-selector",
             "line": 10
           }
         ]
@@ -11103,12 +11103,12 @@
             "line": 234
           },
           {
-            "file": "src/lib/features/create/generate/shared/services/start-position-selector.ts",
+            "file": "src/lib/features/create/generate/shared/services/start-placement-selector.ts",
             "importPath": "./pictograph-filter",
             "line": 18
           },
           {
-            "file": "src/lib/features/create/generate/shared/services/start-position-selector.ts",
+            "file": "src/lib/features/create/generate/shared/services/start-placement-selector.ts",
             "importPath": "./pictograph-filter",
             "line": 82
           }
@@ -11155,15 +11155,15 @@
         ]
       },
       {
-        "relativePath": "src/lib/features/create/generate/shared/services/start-position-selector.ts",
-        "filename": "start-position-selector.ts",
-        "kebabFilename": "start-position-selector.ts",
+        "relativePath": "src/lib/features/create/generate/shared/services/start-placement-selector.ts",
+        "filename": "start-placement-selector.ts",
+        "kebabFilename": "start-placement-selector.ts",
         "inImplementations": false,
         "inContracts": false,
         "isGetter": false,
         "classification": {
           "classification": "stateful",
-          "className": "StartPositionSelector",
+          "className": "StartPlacementSelector",
           "reason": "Has real instance state",
           "implementsClauses": [],
           "ctorParamCount": 3,
@@ -11174,8 +11174,8 @@
         "consumerCount": 1,
         "consumers": [
           {
-            "file": "src/lib/features/create/generate/shared/get-start-position-selector.ts",
-            "importPath": "./services/start-position-selector",
+            "file": "src/lib/features/create/generate/shared/get-start-placement-selector.ts",
+            "importPath": "./services/start-placement-selector",
             "line": 2
           }
         ]
@@ -11199,12 +11199,12 @@
             "line": 2
           },
           {
-            "file": "src/lib/features/create/generate/shared/services/start-position-selector.ts",
+            "file": "src/lib/features/create/generate/shared/services/start-placement-selector.ts",
             "importPath": "$lib/features/create/generate/shared/services/step-converter",
             "line": 17
           },
           {
-            "file": "src/lib/features/create/generate/shared/services/start-position-selector.ts",
+            "file": "src/lib/features/create/generate/shared/services/start-placement-selector.ts",
             "importPath": "./step-converter",
             "line": 83
           },
@@ -13580,12 +13580,12 @@
             "line": 16
           },
           {
-            "file": "src/lib/features/create/spell/services/start-position-validator.ts",
+            "file": "src/lib/features/create/spell/services/start-placement-validator.ts",
             "importPath": "./letter-transition-graph",
             "line": 8
           },
           {
-            "file": "src/lib/features/create/spell/services/start-position-validator.ts",
+            "file": "src/lib/features/create/spell/services/start-placement-validator.ts",
             "importPath": "./letter-transition-graph",
             "line": 104
           },
@@ -13637,9 +13637,9 @@
         ]
       },
       {
-        "relativePath": "src/lib/features/create/spell/services/loop-end-position-resolver.ts",
-        "filename": "loop-end-position-resolver.ts",
-        "kebabFilename": "loop-end-position-resolver.ts",
+        "relativePath": "src/lib/features/create/spell/services/loop-end-placement-resolver.ts",
+        "filename": "loop-end-placement-resolver.ts",
+        "kebabFilename": "loop-end-placement-resolver.ts",
         "inImplementations": false,
         "inContracts": false,
         "isGetter": false,
@@ -13651,17 +13651,17 @@
         "consumers": [
           {
             "file": "src/lib/features/create/spell/get-random-sequence-generator.ts",
-            "importPath": "./services/loop-end-position-resolver",
+            "importPath": "./services/loop-end-placement-resolver",
             "line": 4
           },
           {
             "file": "src/lib/features/create/spell/services/random-sequence-generator.ts",
-            "importPath": "./loop-end-position-resolver",
+            "importPath": "./loop-end-placement-resolver",
             "line": 22
           },
           {
             "file": "src/lib/features/create/spell/services/random-sequence-generator.ts",
-            "importPath": "./loop-end-position-resolver",
+            "importPath": "./loop-end-placement-resolver",
             "line": 974
           }
         ]
@@ -13788,15 +13788,15 @@
         ]
       },
       {
-        "relativePath": "src/lib/features/create/spell/services/start-position-validator.ts",
-        "filename": "start-position-validator.ts",
-        "kebabFilename": "start-position-validator.ts",
+        "relativePath": "src/lib/features/create/spell/services/start-placement-validator.ts",
+        "filename": "start-placement-validator.ts",
+        "kebabFilename": "start-placement-validator.ts",
         "inImplementations": false,
         "inContracts": false,
         "isGetter": false,
         "classification": {
           "classification": "stateful",
-          "className": "StartPositionValidator",
+          "className": "StartPlacementValidator",
           "reason": "Has real instance state",
           "implementsClauses": [],
           "ctorParamCount": 2,
@@ -13807,28 +13807,28 @@
         "consumerCount": 5,
         "consumers": [
           {
-            "file": "src/lib/features/create/spell/get-start-position-validator.ts",
-            "importPath": "./services/start-position-validator",
+            "file": "src/lib/features/create/spell/get-start-placement-validator.ts",
+            "importPath": "./services/start-placement-validator",
             "line": 2
           },
           {
             "file": "src/lib/features/create/spell/services/random-sequence-generator.ts",
-            "importPath": "./start-position-validator",
+            "importPath": "./start-placement-validator",
             "line": 16
           },
           {
             "file": "src/lib/features/create/spell/services/random-sequence-generator.ts",
-            "importPath": "./start-position-validator",
+            "importPath": "./start-placement-validator",
             "line": 969
           },
           {
             "file": "src/lib/features/create/spell/services/word-sequence-generator.ts",
-            "importPath": "./start-position-validator",
+            "importPath": "./start-placement-validator",
             "line": 19
           },
           {
             "file": "src/lib/features/create/spell/services/word-sequence-generator.ts",
-            "importPath": "./start-position-validator",
+            "importPath": "./start-placement-validator",
             "line": 783
           }
         ]
@@ -20216,7 +20216,7 @@
             "timePosition",
             "totalDuration",
             "isFirstLoop",
-            "endPositionHoldDuration",
+            "endPlacementHoldDuration",
             "loopCompleteCallback",
             "isSeamlesslyLoopable"
           ],
@@ -23094,7 +23094,7 @@
             "initialized",
             "currentStepIndex",
             "currentStepProgress",
-            "atStartPosition"
+            "atStartPlacement"
           ],
           "methodCount": 29
         },
@@ -27449,15 +27449,15 @@
         ]
       },
       {
-        "relativePath": "src/lib/shared/create/services/StartPositionManager.ts",
-        "filename": "StartPositionManager.ts",
-        "kebabFilename": "start-position-manager.ts",
+        "relativePath": "src/lib/shared/create/services/StartPlacementManager.ts",
+        "filename": "StartPlacementManager.ts",
+        "kebabFilename": "start-placement-manager.ts",
         "inImplementations": false,
         "inContracts": false,
         "isGetter": false,
         "classification": {
           "classification": "stateless",
-          "className": "StartPositionManager",
+          "className": "StartPlacementManager",
           "reason": "Zero constructor params, zero instance fields",
           "implementsClauses": [],
           "methodCount": 7
@@ -27465,48 +27465,48 @@
         "consumerCount": 9,
         "consumers": [
           {
-            "file": "src/lib/features/create/construct/start-position-picker/get-start-position-manager.ts",
-            "importPath": "$lib/shared/create/services/StartPositionManager",
+            "file": "src/lib/features/create/construct/start-placement-picker/get-start-placement-manager.ts",
+            "importPath": "$lib/shared/create/services/StartPlacementManager",
             "line": 2
           },
           {
             "file": "src/lib/features/create/shared/orchestration/types.ts",
-            "importPath": "$lib/shared/create/services/StartPositionManager",
+            "importPath": "$lib/shared/create/services/StartPlacementManager",
             "line": 10
           },
           {
             "file": "src/lib/features/create/shared/services/create-module-initializer.ts",
-            "importPath": "$lib/shared/create/services/StartPositionManager",
+            "importPath": "$lib/shared/create/services/StartPlacementManager",
             "line": 19
           },
           {
             "file": "src/lib/features/create/shared/services/create-module-initializer.ts",
-            "importPath": "$lib/shared/create/services/StartPositionManager",
+            "importPath": "$lib/shared/create/services/StartPlacementManager",
             "line": 323
           },
           {
             "file": "src/lib/features/create/shared/types/create-module-services.ts",
-            "importPath": "$lib/shared/create/services/StartPositionManager",
+            "importPath": "$lib/shared/create/services/StartPlacementManager",
             "line": 10
           },
           {
-            "file": "src/lib/shared/create/state/start-position-state.svelte.ts",
-            "importPath": "$lib/shared/create/services/StartPositionManager",
+            "file": "src/lib/shared/create/state/start-placement-state.svelte.ts",
+            "importPath": "$lib/shared/create/services/StartPlacementManager",
             "line": 13
           },
           {
             "file": "src/lib/features/create/generate/components/cards/CustomizeExpandedOverlay.svelte",
-            "importPath": "$lib/shared/create/services/StartPositionManager",
+            "importPath": "$lib/shared/create/services/StartPlacementManager",
             "line": 62
           },
           {
-            "file": "src/lib/shared/components/position-picker/MultiSelectPositionPicker.svelte",
-            "importPath": "$lib/shared/create/services/StartPositionManager",
+            "file": "src/lib/shared/components/placement-picker/MultiSelectPositionPicker.svelte",
+            "importPath": "$lib/shared/create/services/StartPlacementManager",
             "line": 22
           },
           {
-            "file": "src/lib/shared/components/position-picker/PositionPickerGrid.svelte",
-            "importPath": "$lib/shared/create/services/StartPositionManager",
+            "file": "src/lib/shared/components/placement-picker/PositionPickerGrid.svelte",
+            "importPath": "$lib/shared/create/services/StartPlacementManager",
             "line": 15
           }
         ]
@@ -27635,7 +27635,7 @@
             "line": 18
           },
           {
-            "file": "src/lib/shared/create/services/start-position-transforms.ts",
+            "file": "src/lib/shared/create/services/start-placement-transforms.ts",
             "importPath": "$lib/shared/create/services/motion-transforms",
             "line": 30
           },
@@ -27900,7 +27900,7 @@
             "line": 49
           },
           {
-            "file": "src/lib/shared/create/services/start-position-transforms.ts",
+            "file": "src/lib/shared/create/services/start-placement-transforms.ts",
             "importPath": "$lib/shared/create/services/rotation-helpers",
             "line": 31
           },
@@ -28095,9 +28095,9 @@
         ]
       },
       {
-        "relativePath": "src/lib/shared/create/services/start-position-transforms.ts",
-        "filename": "start-position-transforms.ts",
-        "kebabFilename": "start-position-transforms.ts",
+        "relativePath": "src/lib/shared/create/services/start-placement-transforms.ts",
+        "filename": "start-placement-transforms.ts",
+        "kebabFilename": "start-placement-transforms.ts",
         "inImplementations": false,
         "inContracts": false,
         "isGetter": false,
@@ -28109,7 +28109,7 @@
         "consumers": [
           {
             "file": "src/lib/shared/create/services/sequence-transforms.ts",
-            "importPath": "$lib/shared/create/services/start-position-transforms",
+            "importPath": "$lib/shared/create/services/start-placement-transforms",
             "line": 47
           }
         ]
@@ -30570,12 +30570,12 @@
             "line": 8
           },
           {
-            "file": "src/lib/features/create/spell/services/start-position-validator.ts",
+            "file": "src/lib/features/create/spell/services/start-placement-validator.ts",
             "importPath": "$lib/shared/foundation/domain/models/Letter",
             "line": 10
           },
           {
-            "file": "src/lib/features/create/spell/services/start-position-validator.ts",
+            "file": "src/lib/features/create/spell/services/start-placement-validator.ts",
             "importPath": "$lib/shared/foundation/domain/models/Letter",
             "line": 13
           },
@@ -30715,7 +30715,7 @@
             "line": 16
           },
           {
-            "file": "src/lib/shared/components/position-picker/start-position-utils.ts",
+            "file": "src/lib/shared/components/placement-picker/start-placement-utils.ts",
             "importPath": "$lib/shared/foundation/domain/models/Letter",
             "line": 12
           },
@@ -30745,12 +30745,12 @@
             "line": 10
           },
           {
-            "file": "src/lib/shared/create/services/start-position-transforms.ts",
+            "file": "src/lib/shared/create/services/start-placement-transforms.ts",
             "importPath": "$lib/shared/foundation/domain/models/Letter",
             "line": 33
           },
           {
-            "file": "src/lib/shared/create/services/StartPositionManager.ts",
+            "file": "src/lib/shared/create/services/StartPlacementManager.ts",
             "importPath": "$lib/shared/foundation/domain/models/Letter",
             "line": 8
           },
@@ -30805,7 +30805,7 @@
             "line": 3
           },
           {
-            "file": "src/lib/shared/pictograph/shared/services/start-position-deriver.ts",
+            "file": "src/lib/shared/pictograph/shared/services/start-placement-deriver.ts",
             "importPath": "$lib/shared/foundation/domain/models/Letter",
             "line": 12
           },
@@ -30940,7 +30940,7 @@
             "line": 5
           },
           {
-            "file": "src/lib/features/learn/components/interactive/positions/PositionVisualizer.svelte",
+            "file": "src/lib/features/learn/components/interactive/placements/PositionVisualizer.svelte",
             "importPath": "$lib/shared/foundation/domain/models/Letter",
             "line": 19
           },
@@ -31010,7 +31010,7 @@
             "line": 14
           },
           {
-            "file": "src/lib/shared/pictograph/shared/components/PositionGlyph.svelte",
+            "file": "src/lib/shared/pictograph/shared/components/PlacementGlyph.svelte",
             "importPath": "../../../foundation/domain/models/Letter",
             "line": 11
           },
@@ -31097,7 +31097,7 @@
             "line": 9
           },
           {
-            "file": "src/lib/features/create/spell/services/start-position-validator.ts",
+            "file": "src/lib/features/create/spell/services/start-placement-validator.ts",
             "importPath": "$lib/shared/foundation/domain/models/LetterType",
             "line": 14
           },
@@ -32406,7 +32406,7 @@
             "line": 8
           },
           {
-            "file": "src/lib/shared/pictograph/shared/services/start-position-deriver.ts",
+            "file": "src/lib/shared/pictograph/shared/services/start-placement-deriver.ts",
             "importPath": "$lib/shared/foundation/domain/models/SequenceData",
             "line": 4
           },
@@ -33652,9 +33652,9 @@
         ]
       },
       {
-        "relativePath": "src/lib/shared/foundation/domain/models/StartPositionData.ts",
-        "filename": "StartPositionData.ts",
-        "kebabFilename": "start-position-data.ts",
+        "relativePath": "src/lib/shared/foundation/domain/models/StartPlacementData.ts",
+        "filename": "StartPlacementData.ts",
+        "kebabFilename": "start-placement-data.ts",
         "inImplementations": false,
         "inContracts": false,
         "isGetter": false,
@@ -33663,387 +33663,387 @@
         "consumers": [
           {
             "file": "src/lib/features/browse/sequences/display/services/browse-metadata-extractor.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 9
           },
           {
             "file": "src/lib/features/choreo-card/services/start-ori-register.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 20
           },
           {
             "file": "src/lib/features/choreo-card/services/__tests__/start-ori-register.test.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 9
           },
           {
             "file": "src/lib/features/create/generate/shared/services/pictograph-filter.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 7
           },
           {
-            "file": "src/lib/features/create/generate/shared/services/start-position-selector.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "file": "src/lib/features/create/generate/shared/services/start-placement-selector.ts",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 16
           },
           {
             "file": "src/lib/features/create/generate/shared/services/step-converter.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 7
           },
           {
             "file": "src/lib/features/create/shared/domain/type-guards/pictograph-type-guards.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 9
           },
           {
             "file": "src/lib/features/create/shared/services/sequence-json-exporter.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 3
           },
           {
             "file": "src/lib/features/create/shared/services/sequence-persister.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 18
           },
           {
             "file": "src/lib/features/create/shared/services/sequence-transfer-handler.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 4
           },
           {
             "file": "src/lib/features/create/shared/services/step-operations/orientation-handler.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 8
           },
           {
             "file": "src/lib/features/create/shared/services/step-operations/rotation-direction-handler.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 14
           },
           {
             "file": "src/lib/features/create/shared/services/step-operations/turns-handler.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 8
           },
           {
             "file": "src/lib/features/create/shared/state/operations/sequence-transform-operations.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 17
           },
           {
             "file": "src/lib/features/create/shared/state/persistence/sequence-persistence-coordinator.svelte.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 12
           },
           {
             "file": "src/lib/features/create/shared/state/selection/sequence-selection-state.svelte.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 19
           },
           {
             "file": "src/lib/features/create/shared/state/sequence-state-orchestrator.svelte.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 22
           },
           {
             "file": "src/lib/features/create/shared/types/create-module-types.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 10
           },
           {
             "file": "src/lib/features/create/shared/utils/sequence-comparison.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 10
           },
           {
             "file": "src/lib/features/create/shared/workspace-panel/shared/services/workbench.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 14
           },
           {
             "file": "src/lib/features/landing/services/broadcast-sequence-converter.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 11
           },
           {
             "file": "src/lib/features/landing/services/endless-spinner-orchestrator.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 12
           },
           {
             "file": "src/lib/features/library/services/sequence-content-hasher.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 14
           },
           {
             "file": "src/lib/features/loop-labeler/services/step-data-converter.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 2
           },
           {
             "file": "src/lib/shared/3d/services/sequence-converter.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 8
           },
           {
             "file": "src/lib/shared/animation-engine/services/animation-engine.svelte.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 19
           },
           {
             "file": "src/lib/shared/animation-engine/services/frame-builder-service.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 2
           },
           {
             "file": "src/lib/shared/animation-engine/services/IAnimationRenderLoop.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 22
           },
           {
             "file": "src/lib/shared/animation-engine/services/managers/playback-sync.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 36
           },
           {
             "file": "src/lib/shared/animation-engine/services/sequence-normalizer.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 10
           },
           {
             "file": "src/lib/shared/animation-engine/state/endless-playback-state.svelte.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 19
           },
           {
-            "file": "src/lib/shared/create/factories/createStartPositionData.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "file": "src/lib/shared/create/factories/createStartPlacementData.ts",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 7
           },
           {
             "file": "src/lib/shared/create/services/BuildResultTransformer.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 26
           },
           {
             "file": "src/lib/shared/create/services/OrientationCycleDetector.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 13
           },
           {
             "file": "src/lib/shared/create/services/sequence-transforms.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 14
           },
           {
-            "file": "src/lib/shared/create/services/start-position-transforms.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "file": "src/lib/shared/create/services/start-placement-transforms.ts",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 13
           },
           {
-            "file": "src/lib/shared/foundation/domain/factories/createStartPositionData.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "file": "src/lib/shared/foundation/domain/factories/createStartPlacementData.ts",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 7
           },
           {
             "file": "src/lib/shared/foundation/domain/models/SequenceData.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 16
           },
           {
             "file": "src/lib/shared/foundation/services/step-deriver.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 6
           },
           {
             "file": "src/lib/shared/landing/services/prop-type-applier.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 10
           },
           {
             "file": "src/lib/shared/library/services/sequence-content-hasher.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 14
           },
           {
             "file": "src/lib/shared/navigation/services/letter-deriver.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 13
           },
           {
             "file": "src/lib/shared/navigation/services/position-deriver.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 12
           },
           {
             "file": "src/lib/shared/navigation/services/sequence-encoder.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 4
           },
           {
             "file": "src/lib/shared/persistence/services/dexie-persistence-service.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 3
           },
           {
             "file": "src/lib/shared/pictograph/prop/services/orientation-calculator.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 24
           },
           {
-            "file": "src/lib/shared/pictograph/shared/services/start-position-deriver.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "file": "src/lib/shared/pictograph/shared/services/start-placement-deriver.ts",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 3
           },
           {
             "file": "src/lib/shared/render/services/image-composer.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 2
           },
           {
             "file": "src/lib/shared/sequence-viewer/domain/viewer-prop-groups.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 3
           },
           {
             "file": "src/lib/shared/sequence-viewer/services/sequence-viewer.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 3
           },
           {
             "file": "src/lib/shared/settings/components/tabs/visibility/example-data.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 22
           },
           {
             "file": "src/routes/(public)/guide/level-1/_components/guide-motion-configs.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 25
           },
           {
             "file": "src/routes/test/choo-choo/choo-choo-generator.ts",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 16
           },
           {
             "file": "src/lib/features/compose/timeline/components/SourcePreview.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 27
           },
           {
             "file": "src/lib/features/create/shared/components/sequence-actions/StepGridSection.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 10
           },
           {
             "file": "src/lib/features/create/shared/workspace-panel/sequence-display/components/StartTile.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 5
           },
           {
             "file": "src/lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 9
           },
           {
             "file": "src/lib/features/create/shared/workspace-panel/sequence-display/components/WorkspaceGrid.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 5
           },
           {
             "file": "src/lib/features/lab/effects-lab/components/EffectsLabPlaybackHost.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 19
           },
           {
             "file": "src/lib/features/loop-labeler/components/LOOPLabelerModule.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 25
           },
           {
             "file": "src/lib/features/loop-labeler/components/panels/SequencePreviewPanel.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 6
           },
           {
             "file": "src/lib/shared/animation-engine/components/AnimationShareDrawer.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 36
           },
           {
             "file": "src/lib/shared/animation-engine/components/AnimatorCanvas.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 28
           },
           {
             "file": "src/lib/shared/animation-engine/components/canvas/AnimationCanvas.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 17
           },
           {
             "file": "src/lib/shared/animation-engine/components/CanvasSurface.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 39
           },
           {
             "file": "src/lib/shared/animation-engine/components/DisassembleCanvasView.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 13
           },
           {
             "file": "src/lib/shared/animation-engine/components/DisassembleTransition.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 19
           },
           {
             "file": "src/lib/shared/animation-engine/components/GlyphRenderer.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 31
           },
           {
             "file": "src/lib/shared/animation-engine/components/SplitCanvasView.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 43
           },
           {
             "file": "src/lib/shared/interactive-canvas/InteractiveCanvas.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 18
           },
           {
             "file": "src/lib/shared/onboarding/components/create-tutorial/steps/PlaySequenceStep.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 21
           },
           {
             "file": "src/lib/shared/onboarding/components/create-tutorial/steps/ReadyStep.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 11
           },
           {
             "file": "src/lib/shared/sequence-review/components/SequencePreviewPanel.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 10
           },
           {
             "file": "src/lib/shared/sequence-viewer/components/SequenceViewerOrchestrator.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 13
           },
           {
             "file": "src/routes/admin/generate-thumbnails/+page.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 12
           },
           {
             "file": "src/routes/landing/components/HowTkaWorksSection.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 26
           },
           {
             "file": "src/routes/landing/components/PlayWithItInner.svelte",
-            "importPath": "$lib/shared/foundation/domain/models/StartPositionData",
+            "importPath": "$lib/shared/foundation/domain/models/StartPlacementData",
             "line": 16
           }
         ]
@@ -34619,7 +34619,7 @@
             "line": 14
           },
           {
-            "file": "src/lib/shared/create/services/StartPositionManager.ts",
+            "file": "src/lib/shared/create/services/StartPlacementManager.ts",
             "importPath": "$lib/shared/foundation/domain/models/StepData",
             "line": 6
           },
@@ -34709,7 +34709,7 @@
             "line": 9
           },
           {
-            "file": "src/lib/shared/pictograph/shared/services/start-position-deriver.ts",
+            "file": "src/lib/shared/pictograph/shared/services/start-placement-deriver.ts",
             "importPath": "$lib/shared/foundation/domain/models/StepData",
             "line": 2
           },
@@ -34854,7 +34854,7 @@
             "line": 8
           },
           {
-            "file": "src/lib/features/create/shared/components/sequence-actions/StartPositionEditMode.svelte",
+            "file": "src/lib/features/create/shared/components/sequence-actions/StartPlacementEditMode.svelte",
             "importPath": "$lib/shared/foundation/domain/models/StepData",
             "line": 8
           },
@@ -35962,7 +35962,7 @@
             "line": 8
           },
           {
-            "file": "src/lib/features/create/generate/shared/services/start-position-selector.ts",
+            "file": "src/lib/features/create/generate/shared/services/start-placement-selector.ts",
             "importPath": "$lib/shared/foundation/services/data/data-contracts",
             "line": 15
           },
@@ -36002,7 +36002,7 @@
             "line": 15
           },
           {
-            "file": "src/lib/features/create/spell/services/start-position-validator.ts",
+            "file": "src/lib/features/create/spell/services/start-placement-validator.ts",
             "importPath": "$lib/shared/foundation/services/data/data-contracts",
             "line": 9
           },
@@ -39546,7 +39546,7 @@
             "line": 1
           },
           {
-            "file": "src/lib/shared/components/position-picker/start-position-utils.ts",
+            "file": "src/lib/shared/components/placement-picker/start-placement-utils.ts",
             "importPath": "$lib/shared/pictograph/prop/domain/enums/PropType",
             "line": 19
           },
@@ -39556,7 +39556,7 @@
             "line": 16
           },
           {
-            "file": "src/lib/shared/create/services/StartPositionManager.ts",
+            "file": "src/lib/shared/create/services/StartPlacementManager.ts",
             "importPath": "$lib/shared/pictograph/prop/domain/enums/PropType",
             "line": 15
           },
@@ -39946,12 +39946,12 @@
             "line": 10
           },
           {
-            "file": "src/lib/features/learn/components/interactive/positions/PlacementGrid.svelte",
+            "file": "src/lib/features/learn/components/interactive/placements/PlacementGrid.svelte",
             "importPath": "$lib/shared/pictograph/prop/domain/enums/PropType",
             "line": 19
           },
           {
-            "file": "src/lib/features/learn/components/interactive/positions/PositionVisualizer.svelte",
+            "file": "src/lib/features/learn/components/interactive/placements/PositionVisualizer.svelte",
             "importPath": "$lib/shared/pictograph/prop/domain/enums/PropType",
             "line": 18
           },
@@ -40995,7 +40995,7 @@
             "line": 8
           },
           {
-            "file": "src/lib/shared/components/position-picker/start-position-utils.ts",
+            "file": "src/lib/shared/components/placement-picker/start-placement-utils.ts",
             "importPath": "$lib/shared/pictograph/shared/domain/models/MotionData",
             "line": 20
           },
@@ -41045,12 +41045,12 @@
             "line": 21
           },
           {
-            "file": "src/lib/shared/create/services/start-position-transforms.ts",
+            "file": "src/lib/shared/create/services/start-placement-transforms.ts",
             "importPath": "$lib/shared/pictograph/shared/domain/models/MotionData",
             "line": 17
           },
           {
-            "file": "src/lib/shared/create/services/StartPositionManager.ts",
+            "file": "src/lib/shared/create/services/StartPlacementManager.ts",
             "importPath": "$lib/shared/pictograph/shared/domain/models/MotionData",
             "line": 17
           },
@@ -41300,7 +41300,7 @@
             "line": 2
           },
           {
-            "file": "src/lib/shared/pictograph/shared/services/start-position-deriver.ts",
+            "file": "src/lib/shared/pictograph/shared/services/start-placement-deriver.ts",
             "importPath": "$lib/shared/pictograph/shared/domain/models/MotionData",
             "line": 5
           },
@@ -41375,12 +41375,12 @@
             "line": 24
           },
           {
-            "file": "src/lib/features/learn/components/interactive/positions/PlacementGrid.svelte",
+            "file": "src/lib/features/learn/components/interactive/placements/PlacementGrid.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/MotionData",
             "line": 12
           },
           {
-            "file": "src/lib/features/learn/components/interactive/positions/PositionVisualizer.svelte",
+            "file": "src/lib/features/learn/components/interactive/placements/PositionVisualizer.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/MotionData",
             "line": 7
           },
@@ -41685,7 +41685,7 @@
             "line": 12
           },
           {
-            "file": "src/lib/features/create/spell/services/start-position-validator.ts",
+            "file": "src/lib/features/create/spell/services/start-placement-validator.ts",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 11
           },
@@ -41795,7 +41795,7 @@
             "line": 62
           },
           {
-            "file": "src/lib/shared/components/position-picker/start-position-utils.ts",
+            "file": "src/lib/shared/components/placement-picker/start-placement-utils.ts",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 6
           },
@@ -41810,7 +41810,7 @@
             "line": 8
           },
           {
-            "file": "src/lib/shared/create/services/StartPositionManager.ts",
+            "file": "src/lib/shared/create/services/StartPlacementManager.ts",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 7
           },
@@ -41830,7 +41830,7 @@
             "line": 8
           },
           {
-            "file": "src/lib/shared/create/state/start-position-state.svelte.ts",
+            "file": "src/lib/shared/create/state/start-placement-state.svelte.ts",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 10
           },
@@ -41840,7 +41840,7 @@
             "line": 24
           },
           {
-            "file": "src/lib/shared/foundation/domain/models/StartPositionData.ts",
+            "file": "src/lib/shared/foundation/domain/models/StartPlacementData.ts",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 14
           },
@@ -42140,7 +42140,7 @@
             "line": 5
           },
           {
-            "file": "src/lib/features/choreo-card/components/card-back/StartPositionPictograph.svelte",
+            "file": "src/lib/features/choreo-card/components/card-back/StartPlacementPictograph.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 13
           },
@@ -42190,22 +42190,22 @@
             "line": 15
           },
           {
-            "file": "src/lib/features/create/construct/start-position-picker/components/AdvancedStartPositionPicker.svelte",
+            "file": "src/lib/features/create/construct/start-placement-picker/components/AdvancedStartPlacementPicker.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 4
           },
           {
-            "file": "src/lib/features/create/construct/start-position-picker/components/PictographGrid.svelte",
+            "file": "src/lib/features/create/construct/start-placement-picker/components/PictographGrid.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 5
           },
           {
-            "file": "src/lib/features/create/construct/start-position-picker/components/PositionGroupGrid.svelte",
+            "file": "src/lib/features/create/construct/start-placement-picker/components/PlacementGroupGrid.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 5
           },
           {
-            "file": "src/lib/features/create/construct/start-position-picker/components/StartPositionPicker.svelte",
+            "file": "src/lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 9
           },
@@ -42325,12 +42325,12 @@
             "line": 15
           },
           {
-            "file": "src/lib/features/learn/components/interactive/positions/PlacementGrid.svelte",
+            "file": "src/lib/features/learn/components/interactive/placements/PlacementGrid.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 20
           },
           {
-            "file": "src/lib/features/learn/components/interactive/positions/PositionVisualizer.svelte",
+            "file": "src/lib/features/learn/components/interactive/placements/PositionVisualizer.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 20
           },
@@ -42430,17 +42430,17 @@
             "line": 18
           },
           {
-            "file": "src/lib/shared/components/position-picker/MultiSelectPositionPicker.svelte",
+            "file": "src/lib/shared/components/placement-picker/MultiSelectPositionPicker.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 12
           },
           {
-            "file": "src/lib/shared/components/position-picker/PositionPickerGrid.svelte",
+            "file": "src/lib/shared/components/placement-picker/PositionPickerGrid.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 8
           },
           {
-            "file": "src/lib/shared/components/position-picker/PositionSection.svelte",
+            "file": "src/lib/shared/components/placement-picker/PositionSection.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PictographData",
             "line": 7
           },
@@ -42607,7 +42607,7 @@
             "line": 1
           },
           {
-            "file": "src/lib/features/choreo-card/components/card-back/StartPositionPictograph.svelte",
+            "file": "src/lib/features/choreo-card/components/card-back/StartPlacementPictograph.svelte",
             "importPath": "$lib/shared/pictograph/shared/domain/models/PreparedPictographData",
             "line": 14
           },
@@ -42756,7 +42756,7 @@
         "consumerCount": 4,
         "consumers": [
           {
-            "file": "src/lib/features/create/generate/shared/services/start-position-selector.ts",
+            "file": "src/lib/features/create/generate/shared/services/start-placement-selector.ts",
             "importPath": "$lib/shared/pictograph/arrow/orchestration/services/arrow-positioning-orchestrator",
             "line": 10
           },
@@ -44402,9 +44402,9 @@
         ]
       },
       {
-        "relativePath": "src/lib/shared/pictograph/grid/services/grid-position-deriver.ts",
-        "filename": "grid-position-deriver.ts",
-        "kebabFilename": "grid-position-deriver.ts",
+        "relativePath": "src/lib/shared/pictograph/grid/services/grid-placement-deriver.ts",
+        "filename": "grid-placement-deriver.ts",
+        "kebabFilename": "grid-placement-deriver.ts",
         "inImplementations": false,
         "inContracts": false,
         "isGetter": false,
@@ -44416,102 +44416,102 @@
         "consumers": [
           {
             "file": "src/lib/features/choreo-card/services/start-ori-register.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 22
           },
           {
             "file": "src/lib/features/create/construct/option-picker/services/option-loader.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 12
           },
           {
             "file": "src/lib/features/create/construct/option-picker/services/position-analyzer.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 12
           },
           {
             "file": "src/lib/features/create/generate/circular/services/rotated-inverted-loop-executor.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 22
           },
           {
             "file": "src/lib/features/create/generate/circular/services/rotated-swapped-loop-executor.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 23
           },
           {
             "file": "src/lib/features/create/generate/circular/services/strict-rotated-loop-executor.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 17
           },
           {
             "file": "src/lib/features/create/generate/circular/services/strict-swapped-loop-executor.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 23
           },
           {
             "file": "src/lib/features/landing/services/endless-spinner-orchestrator.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 17
           },
           {
             "file": "src/lib/shared/animation-engine/services/sequence-chaining-orchestrator.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 20
           },
           {
             "file": "src/lib/shared/create/domain/detect-rotation-period.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 4
           },
           {
             "file": "src/lib/shared/create/services/LOOPDetector.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 37
           },
           {
             "file": "src/lib/shared/create/services/sequence-derived-fields.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 17
           },
           {
-            "file": "src/lib/shared/create/services/start-position-transforms.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "file": "src/lib/shared/create/services/start-placement-transforms.ts",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 19
           },
           {
-            "file": "src/lib/shared/create/services/StartPositionManager.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "file": "src/lib/shared/create/services/StartPlacementManager.ts",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 18
           },
           {
             "file": "src/lib/shared/create/services/step-transforms.derived.test.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 14
           },
           {
             "file": "src/lib/shared/create/services/step-transforms.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 23
           },
           {
             "file": "src/lib/shared/navigation/services/position-deriver.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 13
           },
           {
             "file": "src/lib/shared/pictograph/prop/services/beta-detector.ts",
-            "importPath": "../../grid/services/grid-position-deriver",
+            "importPath": "../../grid/services/grid-placement-deriver",
             "line": 8
           },
           {
-            "file": "src/lib/shared/pictograph/shared/services/start-position-deriver.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "file": "src/lib/shared/pictograph/shared/services/start-placement-deriver.ts",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 1
           },
           {
             "file": "src/lib/shared/qr/services/compositional-utils.ts",
-            "importPath": "$lib/shared/pictograph/grid/services/grid-position-deriver",
+            "importPath": "$lib/shared/pictograph/grid/services/grid-placement-deriver",
             "line": 13
           }
         ]
@@ -44709,7 +44709,7 @@
             "line": 14
           },
           {
-            "file": "src/lib/shared/create/services/start-position-transforms.ts",
+            "file": "src/lib/shared/create/services/start-placement-transforms.ts",
             "importPath": "$lib/shared/pictograph/prop/services/orientation-calculator",
             "line": 18
           },
@@ -45145,7 +45145,7 @@
             "line": 74
           },
           {
-            "file": "src/lib/features/choreo-card/components/card-back/StartPositionPictograph.svelte",
+            "file": "src/lib/features/choreo-card/components/card-back/StartPlacementPictograph.svelte",
             "importPath": "$lib/shared/pictograph/shared/services/pictograph-preparer",
             "line": 15
           },
@@ -45290,15 +45290,15 @@
         ]
       },
       {
-        "relativePath": "src/lib/shared/pictograph/shared/services/start-position-deriver.ts",
-        "filename": "start-position-deriver.ts",
-        "kebabFilename": "start-position-deriver.ts",
+        "relativePath": "src/lib/shared/pictograph/shared/services/start-placement-deriver.ts",
+        "filename": "start-placement-deriver.ts",
+        "kebabFilename": "start-placement-deriver.ts",
         "inImplementations": false,
         "inContracts": false,
         "isGetter": false,
         "classification": {
           "classification": "stateless",
-          "className": "StartPositionDeriver",
+          "className": "StartPlacementDeriver",
           "reason": "Zero constructor params, zero instance fields",
           "implementsClauses": [],
           "methodCount": 3
@@ -45307,102 +45307,102 @@
         "consumers": [
           {
             "file": "src/lib/features/create/shared/state/sequence-state-orchestrator.svelte.ts",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 29
           },
           {
             "file": "src/lib/features/gallery-generator/services/gallery-renderer.ts",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 14
           },
           {
             "file": "src/lib/features/landing/services/endless-spinner-orchestrator.ts",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 16
           },
           {
             "file": "src/lib/shared/animation-engine/state/endless-playback-state.svelte.ts",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 15
           },
           {
             "file": "src/lib/shared/browse/getThumbnailRenderer.ts",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 4
           },
           {
             "file": "src/lib/shared/browse/services/ThumbnailRenderer.ts",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 16
           },
           {
             "file": "src/lib/features/compose/timeline/components/SourcePreview.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 25
           },
           {
             "file": "src/lib/features/compose/timeline/components/SourcePreview.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 26
           },
           {
             "file": "src/lib/features/compose/timeline/components/TimelinePreview.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 24
           },
           {
             "file": "src/lib/features/compose/timeline/components/TimelinePreview.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 25
           },
           {
             "file": "src/lib/features/create/spell/components/SpellPanel.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 21
           },
           {
             "file": "src/lib/features/gallery-generator/components/GalleryGenerator.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 15
           },
           {
             "file": "src/lib/features/lab/effects-lab/components/EffectsLabPlaybackHost.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 39
           },
           {
             "file": "src/routes/endless-spinner/+page.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 14
           },
           {
             "file": "src/routes/landing/components/HowTkaAnimationCard.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 17
           },
           {
             "file": "src/routes/landing/components/HowTkaAnimationCard.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 19
           },
           {
             "file": "src/routes/landing/components/HowTkaWorksSection.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 30
           },
           {
             "file": "src/routes/landing/components/LandingAnimationDemo.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 14
           },
           {
             "file": "src/routes/landing/components/PlayWithItInner.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 21
           },
           {
             "file": "src/routes/test/disassemble/+page.svelte",
-            "importPath": "$lib/shared/pictograph/shared/services/start-position-deriver",
+            "importPath": "$lib/shared/pictograph/shared/services/start-placement-deriver",
             "line": 11
           }
         ]
@@ -45543,12 +45543,12 @@
             "line": 5
           },
           {
-            "file": "src/lib/features/create/generate/shared/get-start-position-selector.ts",
+            "file": "src/lib/features/create/generate/shared/get-start-placement-selector.ts",
             "importPath": "$lib/shared/pictograph/tka-glyph/services/letter-query-handler",
             "line": 3
           },
           {
-            "file": "src/lib/features/create/generate/shared/services/start-position-selector.ts",
+            "file": "src/lib/features/create/generate/shared/services/start-placement-selector.ts",
             "importPath": "$lib/shared/pictograph/tka-glyph/services/letter-query-handler",
             "line": 81
           },
@@ -45588,7 +45588,7 @@
             "line": 5
           },
           {
-            "file": "src/lib/features/create/spell/get-start-position-validator.ts",
+            "file": "src/lib/features/create/spell/get-start-placement-validator.ts",
             "importPath": "$lib/shared/pictograph/tka-glyph/services/letter-query-handler",
             "line": 4
           },
@@ -45608,7 +45608,7 @@
             "line": 21
           },
           {
-            "file": "src/lib/features/create/spell/services/start-position-validator.ts",
+            "file": "src/lib/features/create/spell/services/start-placement-validator.ts",
             "importPath": "$lib/shared/pictograph/tka-glyph/services/letter-query-handler",
             "line": 105
           },
@@ -54089,8 +54089,8 @@
               "type": "PublicSequencesLoader"
             },
             {
-              "name": "startPositionDeriver",
-              "type": "StartPositionDeriver"
+              "name": "startPlacementDeriver",
+              "type": "StartPlacementDeriver"
             }
           ],
           "methodCount": 3
@@ -55387,7 +55387,7 @@
         "consumerCount": 1,
         "consumers": [
           {
-            "file": "src/lib/features/lab/trigrid-lab/get-tri-grid-position-resolver.ts",
+            "file": "src/lib/features/lab/trigrid-lab/get-tri-grid-placement-resolver.ts",
             "importPath": "./services/trigrid-position-resolver",
             "line": 2
           }
@@ -60817,17 +60817,17 @@
             "line": 14
           },
           {
-            "file": "src/lib/features/create/construct/start-position-picker/components/PictographGrid.svelte",
+            "file": "src/lib/features/create/construct/start-placement-picker/components/PictographGrid.svelte",
             "importPath": "$lib/shared/application/services/haptic-feedback",
             "line": 4
           },
           {
-            "file": "src/lib/features/create/construct/start-position-picker/components/PositionGroupGrid.svelte",
+            "file": "src/lib/features/create/construct/start-placement-picker/components/PlacementGroupGrid.svelte",
             "importPath": "$lib/shared/application/services/haptic-feedback",
             "line": 4
           },
           {
-            "file": "src/lib/features/create/construct/start-position-picker/components/StartPositionPicker.svelte",
+            "file": "src/lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte",
             "importPath": "$lib/shared/application/services/haptic-feedback",
             "line": 10
           },
@@ -61057,7 +61057,7 @@
             "line": 7
           },
           {
-            "file": "src/lib/features/learn/components/interactive/positions/PositionsConceptExperience.svelte",
+            "file": "src/lib/features/learn/components/interactive/placements/PlacementsConceptExperience.svelte",
             "importPath": "$lib/shared/application/services/haptic-feedback",
             "line": 13
           },
@@ -61292,12 +61292,12 @@
             "line": 9
           },
           {
-            "file": "src/lib/shared/components/position-picker/MultiSelectPositionPicker.svelte",
+            "file": "src/lib/shared/components/placement-picker/MultiSelectPositionPicker.svelte",
             "importPath": "$lib/shared/application/services/haptic-feedback",
             "line": 13
           },
           {
-            "file": "src/lib/shared/components/position-picker/PositionPickerGrid.svelte",
+            "file": "src/lib/shared/components/placement-picker/PositionPickerGrid.svelte",
             "importPath": "$lib/shared/application/services/haptic-feedback",
             "line": 9
           },

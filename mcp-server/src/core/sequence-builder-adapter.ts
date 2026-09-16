@@ -38,8 +38,8 @@ interface MotionData {
 export interface SequenceStep {
   letter: string;
   variation?: number;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: MotionData;
   rightMotion: MotionData;
   /** Step index in the sequence (matches stepNumber for MCP adapter) */
@@ -54,8 +54,8 @@ export interface SequenceStep {
 export interface SequenceResult {
   word: string;
   steps: SequenceStep[];
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   isValid: boolean;
   error?: string;
   bridges?: BridgeInfo[];
@@ -166,40 +166,40 @@ function attemptSequenceBuild(
 
   const firstLetter = letters[0];
   if (!firstLetter) {
-    return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: "No first letter" };
+    return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: "No first letter" };
   }
 
   const firstLetterVariations = allPictographs.filter((p) => p.letter === firstLetter);
   if (firstLetterVariations.length === 0) {
-    return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: `No variations found for letter "${firstLetter}"` };
+    return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: `No variations found for letter "${firstLetter}"` };
   }
 
   const firstVariation = pickRandom(firstLetterVariations);
   if (!firstVariation) {
-    return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: "Failed to pick first variation" };
+    return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: "Failed to pick first variation" };
   }
 
   const firstVariationIndex = firstLetterVariations.indexOf(firstVariation);
-  const startPosition = firstVariation.startPosition;
+  const startPlacement = firstVariation.startPlacement;
 
-  const validStartPositions = allPictographs.filter(
-    (p) => TYPE_6_LETTERS.includes(p.letter) && p.startPosition === startPosition && p.endPosition === startPosition,
+  const validStartPlacements = allPictographs.filter(
+    (p) => TYPE_6_LETTERS.includes(p.letter) && p.startPlacement === startPlacement && p.endPlacement === startPlacement,
   );
 
-  if (validStartPositions.length === 0) {
-    return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: `No Type 6 static letter found at position ${startPosition}` };
+  if (validStartPlacements.length === 0) {
+    return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: `No Type 6 static letter found at placement ${startPlacement}` };
   }
 
-  const startPictograph = pickRandom(validStartPositions);
+  const startPictograph = pickRandom(validStartPlacements);
   if (!startPictograph) {
-    return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: "Failed to pick start position" };
+    return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: "Failed to pick start placement" };
   }
 
   steps.push(makeStep({
     letter: startPictograph.letter,
     variation: 0,
-    startPosition: startPictograph.startPosition,
-    endPosition: startPictograph.endPosition,
+    startPlacement: startPictograph.startPlacement,
+    endPlacement: startPictograph.endPlacement,
     leftMotion: startPictograph.leftMotion,
     rightMotion: startPictograph.rightMotion,
     stepNumber: 0,
@@ -208,31 +208,31 @@ function attemptSequenceBuild(
   steps.push(makeStep({
     letter: firstVariation.letter,
     variation: firstVariationIndex,
-    startPosition: firstVariation.startPosition,
-    endPosition: firstVariation.endPosition,
+    startPlacement: firstVariation.startPlacement,
+    endPlacement: firstVariation.endPlacement,
     leftMotion: firstVariation.leftMotion,
     rightMotion: firstVariation.rightMotion,
     stepNumber: 1,
     isBridge: false,
   }));
 
-  let currentEndPosition = firstVariation.endPosition;
+  let currentEndPlacement = firstVariation.endPlacement;
 
   for (let i = 1; i < letters.length; i++) {
     const letter = letters[i];
     if (!letter) continue;
 
     const variations = allPictographs.filter(
-      (p) => p.letter === letter && p.startPosition === currentEndPosition,
+      (p) => p.letter === letter && p.startPlacement === currentEndPlacement,
     );
 
     if (variations.length === 0) {
-      return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: `No valid continuation for letter "${letter}" from position ${currentEndPosition}` };
+      return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: `No valid continuation for letter "${letter}" from placement ${currentEndPlacement}` };
     }
 
     const chosenVariation = pickRandom(variations);
     if (!chosenVariation) {
-      return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: `Failed to pick variation for letter "${letter}"` };
+      return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: `Failed to pick variation for letter "${letter}"` };
     }
 
     const allLetterVariations = allPictographs.filter((p) => p.letter === letter);
@@ -241,18 +241,18 @@ function attemptSequenceBuild(
     steps.push(makeStep({
       letter: chosenVariation.letter,
       variation: variationIndex >= 0 ? variationIndex : 0,
-      startPosition: chosenVariation.startPosition,
-      endPosition: chosenVariation.endPosition,
+      startPlacement: chosenVariation.startPlacement,
+      endPlacement: chosenVariation.endPlacement,
       leftMotion: chosenVariation.leftMotion,
       rightMotion: chosenVariation.rightMotion,
       stepNumber: i + 1,
       isBridge: bridgeIndices?.has(i) ?? false,
     }));
 
-    currentEndPosition = chosenVariation.endPosition;
+    currentEndPlacement = chosenVariation.endPlacement;
   }
 
-  return { word, steps, startPosition, endPosition: currentEndPosition, isValid: true };
+  return { word, steps, startPlacement, endPlacement: currentEndPlacement, isValid: true };
 }
 
 /**
@@ -267,7 +267,7 @@ export function buildSequenceFromLetters(
   skipBridges: boolean = false,
 ): SequenceResult {
   if (letters.length === 0) {
-    return { word: "", steps: [], startPosition: "", endPosition: "", isValid: false, error: "No letters provided" };
+    return { word: "", steps: [], startPlacement: "", endPlacement: "", isValid: false, error: "No letters provided" };
   }
 
   let expandedLetters: string[];
@@ -295,8 +295,8 @@ export function buildSequenceFromLetters(
   return {
     word: letters.join(""),
     steps: [],
-    startPosition: "",
-    endPosition: "",
+    startPlacement: "",
+    endPlacement: "",
     isValid: false,
     error: `Failed to generate valid sequence after ${maxAttempts} attempts`,
     bridges,
@@ -310,7 +310,7 @@ export function buildSequenceFromLetters(
 function attemptSequenceBuildWithEndConstraint(
   letters: string[],
   allPictographs: PictographData[],
-  targetEndPositions: Set<string>,
+  targetEndPlacements: Set<string>,
   originalWord?: string,
   bridgeIndices?: Set<number>,
 ): SequenceResult {
@@ -319,30 +319,30 @@ function attemptSequenceBuildWithEndConstraint(
   if (letters.length === 1) {
     const letter = letters[0]!;
     const validVariations = allPictographs.filter(
-      (p) => p.letter === letter && targetEndPositions.has(p.endPosition),
+      (p) => p.letter === letter && targetEndPlacements.has(p.endPlacement),
     );
     if (validVariations.length === 0) {
-      return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: `No variation of "${letter}" ends at target positions` };
+      return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: `No variation of "${letter}" ends at target placements` };
     }
     const chosen = pickRandom(validVariations)!;
-    const startPosition = chosen.startPosition;
-    const validStartPositions = allPictographs.filter(
-      (p) => TYPE_6_LETTERS.includes(p.letter) && p.startPosition === startPosition && p.endPosition === startPosition,
+    const startPlacement = chosen.startPlacement;
+    const validStartPlacements = allPictographs.filter(
+      (p) => TYPE_6_LETTERS.includes(p.letter) && p.startPlacement === startPlacement && p.endPlacement === startPlacement,
     );
-    if (validStartPositions.length === 0) {
-      return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: `No Type 6 static letter found at position ${startPosition}` };
+    if (validStartPlacements.length === 0) {
+      return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: `No Type 6 static letter found at placement ${startPlacement}` };
     }
-    const startPictograph = pickRandom(validStartPositions)!;
+    const startPictograph = pickRandom(validStartPlacements)!;
     const allLetterVariations = allPictographs.filter((p) => p.letter === letter);
     const variationIndex = allLetterVariations.indexOf(chosen);
     return {
       word,
       steps: [
-        makeStep({ letter: startPictograph.letter, variation: 0, startPosition: startPictograph.startPosition, endPosition: startPictograph.endPosition, leftMotion: startPictograph.leftMotion, rightMotion: startPictograph.rightMotion, stepNumber: 0 }),
-        makeStep({ letter: chosen.letter, variation: variationIndex >= 0 ? variationIndex : 0, startPosition: chosen.startPosition, endPosition: chosen.endPosition, leftMotion: chosen.leftMotion, rightMotion: chosen.rightMotion, stepNumber: 1, isBridge: false }),
+        makeStep({ letter: startPictograph.letter, variation: 0, startPlacement: startPictograph.startPlacement, endPlacement: startPictograph.endPlacement, leftMotion: startPictograph.leftMotion, rightMotion: startPictograph.rightMotion, stepNumber: 0 }),
+        makeStep({ letter: chosen.letter, variation: variationIndex >= 0 ? variationIndex : 0, startPlacement: chosen.startPlacement, endPlacement: chosen.endPlacement, leftMotion: chosen.leftMotion, rightMotion: chosen.rightMotion, stepNumber: 1, isBridge: false }),
       ],
-      startPosition,
-      endPosition: chosen.endPosition,
+      startPlacement,
+      endPlacement: chosen.endPlacement,
       isValid: true,
     };
   }
@@ -351,33 +351,33 @@ function attemptSequenceBuildWithEndConstraint(
   const firstLetter = letters[0]!;
   const firstLetterVariations = allPictographs.filter((p) => p.letter === firstLetter);
   if (firstLetterVariations.length === 0) {
-    return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: `No variations found for letter "${firstLetter}"` };
+    return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: `No variations found for letter "${firstLetter}"` };
   }
 
   const firstVariation = pickRandom(firstLetterVariations)!;
   const firstVariationIndex = firstLetterVariations.indexOf(firstVariation);
-  const startPosition = firstVariation.startPosition;
+  const startPlacement = firstVariation.startPlacement;
 
-  const validStartPositions = allPictographs.filter(
-    (p) => TYPE_6_LETTERS.includes(p.letter) && p.startPosition === startPosition && p.endPosition === startPosition,
+  const validStartPlacements = allPictographs.filter(
+    (p) => TYPE_6_LETTERS.includes(p.letter) && p.startPlacement === startPlacement && p.endPlacement === startPlacement,
   );
-  if (validStartPositions.length === 0) {
-    return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: `No Type 6 static letter found at position ${startPosition}` };
+  if (validStartPlacements.length === 0) {
+    return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: `No Type 6 static letter found at placement ${startPlacement}` };
   }
 
-  const startPictograph = pickRandom(validStartPositions)!;
-  steps.push(makeStep({ letter: startPictograph.letter, variation: 0, startPosition: startPictograph.startPosition, endPosition: startPictograph.endPosition, leftMotion: startPictograph.leftMotion, rightMotion: startPictograph.rightMotion, stepNumber: 0 }));
-  steps.push(makeStep({ letter: firstVariation.letter, variation: firstVariationIndex, startPosition: firstVariation.startPosition, endPosition: firstVariation.endPosition, leftMotion: firstVariation.leftMotion, rightMotion: firstVariation.rightMotion, stepNumber: 1, isBridge: false }));
+  const startPictograph = pickRandom(validStartPlacements)!;
+  steps.push(makeStep({ letter: startPictograph.letter, variation: 0, startPlacement: startPictograph.startPlacement, endPlacement: startPictograph.endPlacement, leftMotion: startPictograph.leftMotion, rightMotion: startPictograph.rightMotion, stepNumber: 0 }));
+  steps.push(makeStep({ letter: firstVariation.letter, variation: firstVariationIndex, startPlacement: firstVariation.startPlacement, endPlacement: firstVariation.endPlacement, leftMotion: firstVariation.leftMotion, rightMotion: firstVariation.rightMotion, stepNumber: 1, isBridge: false }));
 
-  let currentEndPosition = firstVariation.endPosition;
+  let currentEndPlacement = firstVariation.endPlacement;
 
   for (let i = 1; i < letters.length - 1; i++) {
     const letter = letters[i]!;
     const variations = allPictographs.filter(
-      (p) => p.letter === letter && p.startPosition === currentEndPosition,
+      (p) => p.letter === letter && p.startPlacement === currentEndPlacement,
     );
     if (variations.length === 0) {
-      return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: `No valid continuation for letter "${letter}" from position ${currentEndPosition}` };
+      return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: `No valid continuation for letter "${letter}" from placement ${currentEndPlacement}` };
     }
     const chosenVariation = pickRandom(variations)!;
     const allLetterVariations = allPictographs.filter((p) => p.letter === letter);
@@ -385,22 +385,22 @@ function attemptSequenceBuildWithEndConstraint(
     steps.push(makeStep({
       letter: chosenVariation.letter,
       variation: variationIndex >= 0 ? variationIndex : 0,
-      startPosition: chosenVariation.startPosition,
-      endPosition: chosenVariation.endPosition,
+      startPlacement: chosenVariation.startPlacement,
+      endPlacement: chosenVariation.endPlacement,
       leftMotion: chosenVariation.leftMotion,
       rightMotion: chosenVariation.rightMotion,
       stepNumber: i + 1,
       isBridge: bridgeIndices?.has(i) ?? false,
     }));
-    currentEndPosition = chosenVariation.endPosition;
+    currentEndPlacement = chosenVariation.endPlacement;
   }
 
   const lastLetter = letters[letters.length - 1]!;
   const lastLetterValidVariations = allPictographs.filter(
-    (p) => p.letter === lastLetter && p.startPosition === currentEndPosition && targetEndPositions.has(p.endPosition),
+    (p) => p.letter === lastLetter && p.startPlacement === currentEndPlacement && targetEndPlacements.has(p.endPlacement),
   );
   if (lastLetterValidVariations.length === 0) {
-    return { word, steps: [], startPosition: "", endPosition: "", isValid: false, error: `No variation of "${lastLetter}" from ${currentEndPosition} ends at target positions` };
+    return { word, steps: [], startPlacement: "", endPlacement: "", isValid: false, error: `No variation of "${lastLetter}" from ${currentEndPlacement} ends at target placements` };
   }
 
   const lastVariation = pickRandom(lastLetterValidVariations)!;
@@ -409,31 +409,31 @@ function attemptSequenceBuildWithEndConstraint(
   steps.push(makeStep({
     letter: lastVariation.letter,
     variation: lastVariationIndex >= 0 ? lastVariationIndex : 0,
-    startPosition: lastVariation.startPosition,
-    endPosition: lastVariation.endPosition,
+    startPlacement: lastVariation.startPlacement,
+    endPlacement: lastVariation.endPlacement,
     leftMotion: lastVariation.leftMotion,
     rightMotion: lastVariation.rightMotion,
     stepNumber: letters.length,
     isBridge: bridgeIndices?.has(letters.length - 1) ?? false,
   }));
 
-  return { word, steps, startPosition, endPosition: lastVariation.endPosition, isValid: true };
+  return { word, steps, startPlacement, endPlacement: lastVariation.endPlacement, isValid: true };
 }
 
 export function buildSequenceWithEndConstraint(
   letters: string[],
   allPictographs: PictographData[],
-  targetEndPositions: string[],
+  targetEndPlacements: string[],
   maxAttempts: number = 500,
 ): SequenceResult {
   if (letters.length === 0) {
-    return { word: "", steps: [], startPosition: "", endPosition: "", isValid: false, error: "No letters provided" };
+    return { word: "", steps: [], startPlacement: "", endPlacement: "", isValid: false, error: "No letters provided" };
   }
-  if (targetEndPositions.length === 0) {
-    return { word: letters.join(""), steps: [], startPosition: "", endPosition: "", isValid: false, error: "No target end positions specified" };
+  if (targetEndPlacements.length === 0) {
+    return { word: letters.join(""), steps: [], startPlacement: "", endPlacement: "", isValid: false, error: "No target end placements specified" };
   }
 
-  const targetSet = new Set(targetEndPositions);
+  const targetSet = new Set(targetEndPlacements);
   const { expanded: expandedLetters, bridges, bridgeIndices } = expandLettersWithBridges(letters);
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -448,10 +448,10 @@ export function buildSequenceWithEndConstraint(
   return {
     word: letters.join(""),
     steps: [],
-    startPosition: "",
-    endPosition: "",
+    startPlacement: "",
+    endPlacement: "",
     isValid: false,
-    error: `Failed to generate sequence ending at target positions (${targetEndPositions.join(", ")}) after ${maxAttempts} attempts`,
+    error: `Failed to generate sequence ending at target placements (${targetEndPlacements.join(", ")}) after ${maxAttempts} attempts`,
     bridges,
   };
 }
@@ -466,16 +466,16 @@ export interface LoopConstraint {
   noBridges?: boolean;
 }
 
-function extractPositionGroup(position: string): string {
-  const match = position.match(/^([a-z]+)\d+$/);
+function extractPlacementGroup(placement: string): string {
+  const match = placement.match(/^([a-z]+)\d+$/);
   return match?.[1] || "";
 }
 
-function computeValidEndPositionsForRotatedLoop(
-  startPosition: string,
+function computeValidEndPlacementsForRotatedLoop(
+  startPlacement: string,
   period: "halved" | "quartered",
 ): string[] {
-  const match = startPosition.match(/^([a-z]+)(\d+)$/);
+  const match = startPlacement.match(/^([a-z]+)(\d+)$/);
   if (!match) return [];
 
   const [, group, numStr] = match;
@@ -492,21 +492,21 @@ function computeValidEndPositionsForRotatedLoop(
   }
 
   const normalizedNum = num - baseOffset;
-  const validEndPositions: string[] = [];
+  const validEndPlacements: string[] = [];
 
   if (period === "halved") {
     const halfRotated = ((normalizedNum - 1 + 4) % groupSize) + 1 + baseOffset;
-    validEndPositions.push(`${group}${halfRotated}`);
+    validEndPlacements.push(`${group}${halfRotated}`);
   } else {
     const cwRotated = ((normalizedNum - 1 + 2) % groupSize) + 1 + baseOffset;
     const ccwRotated = ((normalizedNum - 1 + 6) % groupSize) + 1 + baseOffset;
-    validEndPositions.push(`${group}${cwRotated}`);
+    validEndPlacements.push(`${group}${cwRotated}`);
     if (cwRotated !== ccwRotated) {
-      validEndPositions.push(`${group}${ccwRotated}`);
+      validEndPlacements.push(`${group}${ccwRotated}`);
     }
   }
 
-  return validEndPositions;
+  return validEndPlacements;
 }
 
 export function buildSequenceForLoop(
@@ -520,27 +520,27 @@ export function buildSequenceForLoop(
   }
 
   if (letters.length === 0) {
-    return { word: "", steps: [], startPosition: "", endPosition: "", isValid: false, error: "No letters provided" };
+    return { word: "", steps: [], startPlacement: "", endPlacement: "", isValid: false, error: "No letters provided" };
   }
 
-  let lastEndPosition = "";
-  let lastValidEndPositions: string[] = [];
+  let lastEndPlacement = "";
+  let lastValidEndPlacements: string[] = [];
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const baseResult = buildSequenceFromLetters(letters, allPictographs, 1, undefined, loopConstraint.noBridges);
     if (!baseResult.isValid) continue;
 
-    const startPosition = baseResult.startPosition;
-    const endPosition = baseResult.endPosition;
-    const validEndPositions = computeValidEndPositionsForRotatedLoop(startPosition, loopConstraint.period);
+    const startPlacement = baseResult.startPlacement;
+    const endPlacement = baseResult.endPlacement;
+    const validEndPlacements = computeValidEndPlacementsForRotatedLoop(startPlacement, loopConstraint.period);
 
-    lastEndPosition = endPosition;
-    lastValidEndPositions = validEndPositions;
+    lastEndPlacement = endPlacement;
+    lastValidEndPlacements = validEndPlacements;
 
-    if (validEndPositions.includes(endPosition)) {
-      const actualFirstStepStart = baseResult.steps[0]?.startPosition;
-      const actualLastStepEnd = baseResult.steps[baseResult.steps.length - 1]?.endPosition;
-      if (actualFirstStepStart !== startPosition || actualLastStepEnd !== endPosition) {
+    if (validEndPlacements.includes(endPlacement)) {
+      const actualFirstStepStart = baseResult.steps[0]?.startPlacement;
+      const actualLastStepEnd = baseResult.steps[baseResult.steps.length - 1]?.endPlacement;
+      if (actualFirstStepStart !== startPlacement || actualLastStepEnd !== endPlacement) {
         continue;
       }
       return baseResult;
@@ -551,26 +551,26 @@ export function buildSequenceForLoop(
     return {
       word: letters.join(""),
       steps: [],
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       isValid: false,
-      error: `After ${maxAttempts} attempts, sequence ends at ${lastEndPosition} but needs ${lastValidEndPositions.join(" or ")} for LOOP`,
+      error: `After ${maxAttempts} attempts, sequence ends at ${lastEndPlacement} but needs ${lastValidEndPlacements.join(" or ")} for LOOP`,
     };
   }
 
-  // Fallback: try with end-position constraint
+  // Fallback: try with end-placement constraint
   const lastResult = buildSequenceFromLetters(letters, allPictographs, 1);
   if (lastResult.isValid) {
-    const validEnds = computeValidEndPositionsForRotatedLoop(lastResult.startPosition, loopConstraint.period);
+    const validEnds = computeValidEndPlacementsForRotatedLoop(lastResult.startPlacement, loopConstraint.period);
     if (validEnds.length > 0) {
-      // Try to add bridge letters to reach a valid end position
-      const bridgeCandidates: Array<{ letter: PictographData; targetPosition: string }> = [];
+      // Try to add bridge letters to reach a valid end placement
+      const bridgeCandidates: Array<{ letter: PictographData; targetPlacement: string }> = [];
       for (const targetPos of validEnds) {
         const bridges = allPictographs.filter(
-          (p) => p.startPosition === lastResult.endPosition && p.endPosition === targetPos,
+          (p) => p.startPlacement === lastResult.endPlacement && p.endPlacement === targetPos,
         );
         for (const bridge of bridges) {
-          bridgeCandidates.push({ letter: bridge, targetPosition: targetPos });
+          bridgeCandidates.push({ letter: bridge, targetPlacement: targetPos });
         }
       }
 
@@ -584,8 +584,8 @@ export function buildSequenceForLoop(
         steps.push(makeStep({
           letter: bridgeLetter.letter,
           variation: bridgeIndex >= 0 ? bridgeIndex : 0,
-          startPosition: bridgeLetter.startPosition,
-          endPosition: bridgeLetter.endPosition,
+          startPlacement: bridgeLetter.startPlacement,
+          endPlacement: bridgeLetter.endPlacement,
           leftMotion: bridgeLetter.leftMotion,
           rightMotion: bridgeLetter.rightMotion,
           stepNumber: steps.length,
@@ -595,8 +595,8 @@ export function buildSequenceForLoop(
         const result: SequenceResult = {
           word: lastResult.word + bridgeLetter.letter,
           steps,
-          startPosition: lastResult.startPosition,
-          endPosition: bridgeLetter.endPosition,
+          startPlacement: lastResult.startPlacement,
+          endPlacement: bridgeLetter.endPlacement,
           isValid: true,
           bridges: [
             ...(lastResult.bridges || []),
@@ -619,8 +619,8 @@ export function buildSequenceForLoop(
   return {
     word: letters.join(""),
     steps: [],
-    startPosition: "",
-    endPosition: "",
+    startPlacement: "",
+    endPlacement: "",
     isValid: false,
     error: `Could not build any LOOP-compatible sequence for ${letters.join("")}`,
   };
@@ -773,8 +773,8 @@ export function mcpStepsToEngineSteps(steps: SequenceStep[]): any[] {
   return steps.map((s, i) => ({
     id: `mcp-${i}`,
     letter: s.letter || null,
-    startPosition: s.startPosition || null,
-    endPosition: s.endPosition || null,
+    startPlacement: s.startPlacement || null,
+    endPlacement: s.endPlacement || null,
     motions: { left: s.leftMotion, right: s.rightMotion },
     stepNumber: s.stepNumber ?? i,
     duration: s.duration ?? 1,
@@ -787,8 +787,8 @@ export function mcpStepsToEngineSteps(steps: SequenceStep[]): any[] {
 export function engineStepsToMcpSteps(steps: any[]): SequenceStep[] {
   return steps.map((s: any, i: number) => ({
     letter: String(s.letter ?? ""),
-    startPosition: String(s.startPosition ?? ""),
-    endPosition: String(s.endPosition ?? ""),
+    startPlacement: String(s.startPlacement ?? ""),
+    endPlacement: String(s.endPlacement ?? ""),
     leftMotion: (s.motions?.left ?? s.leftMotion) as SequenceStep["leftMotion"],
     rightMotion: (s.motions?.right ?? s.rightMotion) as SequenceStep["rightMotion"],
     stepNumber: s.stepNumber ?? i,

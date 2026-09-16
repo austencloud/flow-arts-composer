@@ -29,8 +29,8 @@
   import ModalFooter from "$lib/shared/foundation/ui/modal/ModalFooter.svelte";
   import TransformPanel from "./TransformPanel.svelte";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import OrientationCycler from "$lib/features/create/construct/start-position-picker/components/OrientationCycler.svelte";
-  import { startPositionManager } from "$lib/shared/create/services/start-position-manager";
+  import OrientationCycler from "$lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte";
+  import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
   import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -200,7 +200,7 @@
   // ── modals ───────────────────────────────────────────────────────────────
   let showLoop = $state(false);
   let showTransform = $state(false);
-  let showPosOri = $state(false);
+  let showPlacementOri = $state(false);
   let showProp = $state(false);
 
   // Deck prop. Shows the effective prop (chosen, else the global default).
@@ -210,41 +210,41 @@
       .replace(/\b\w/g, (m) => m.toUpperCase())
   );
 
-  // ── start position + orientation (ported from the unified-generation prototype)
-  // Positions follow the deck's active grid mode (set in Transform). Selection is
-  // stored as GridPosition strings; empty ⇒ any. Orientation is per-hand and
+  // ── start placement + orientation (ported from the unified-generation prototype)
+  // Placements follow the deck's active grid mode (set in Transform). Selection is
+  // stored as GridPlacement strings; empty ⇒ any. Orientation is per-hand and
   // baked into every generated card's beat 0 via left/rightStartOrientation.
-  let posShowAll = $state(false);
-  const posGridMode = $derived(
+  let placementShowAll = $state(false);
+  const placementGridMode = $derived(
     ([...rs.selectedGridModes][0] ?? "diamond") as GridMode
   );
-  const posList = $derived<PictographData[]>(
-    posShowAll
-      ? startPositionManager.getAllStartPositionVariations(
-          posGridMode,
+  const placementList = $derived<PictographData[]>(
+    placementShowAll
+      ? startPlacementManager.getAllStartPlacementVariations(
+          placementGridMode,
           rs.startOriLeft as Orientation,
           rs.startOriRight as Orientation
         )
-      : startPositionManager.getDefaultStartPositions(
-          posGridMode,
+      : startPlacementManager.getDefaultStartPlacements(
+          placementGridMode,
           rs.startOriLeft as Orientation,
           rs.startOriRight as Orientation
         )
   );
-  function togglePos(pos: string) {
-    const next = new Set(rs.selectedStartPositionIds);
-    if (next.has(pos)) next.delete(pos);
-    else next.add(pos);
-    rs.selectedStartPositionIds = next;
+  function togglePlacement(placement: string) {
+    const next = new Set(rs.selectedStartPlacementIds);
+    if (next.has(placement)) next.delete(placement);
+    else next.add(placement);
+    rs.selectedStartPlacementIds = next;
     rs.persist();
   }
-  function clearPos() {
-    rs.selectedStartPositionIds = new Set();
+  function clearPlacement() {
+    rs.selectedStartPlacementIds = new Set();
     rs.persist();
   }
-  function allPos() {
-    rs.selectedStartPositionIds = new Set(
-      posList.map((p) => String(p.startPosition))
+  function allPlacements() {
+    rs.selectedStartPlacementIds = new Set(
+      placementList.map((p) => String(p.startPlacement))
     );
     rs.persist();
   }
@@ -255,8 +255,8 @@
     counter: "Counter",
   };
   const oriLabel = (o: string) => ORI_SHORT[o] ?? o;
-  const posSummary = $derived(
-    `${rs.selectedStartPositionIds.size === 0 ? "Any" : `${rs.selectedStartPositionIds.size} pos`} · ${oriLabel(rs.startOriLeft)}/${oriLabel(rs.startOriRight)}`
+  const placementSummary = $derived(
+    `${rs.selectedStartPlacementIds.size === 0 ? "Any" : `${rs.selectedStartPlacementIds.size} placements`} · ${oriLabel(rs.startOriLeft)}/${oriLabel(rs.startOriRight)}`
   );
 
   // ── actions ────────────────────────────────────────────────────────────────
@@ -464,11 +464,11 @@
     <div class="tile">
       <BaseCard
         title="Start · Ori"
-        currentValue={posSummary}
+        currentValue={placementSummary}
         color={POS_COLOR}
         shadowColor={POS_SHADOW}
         gridColumnSpan={2}
-        onClick={() => (showPosOri = true)}
+        onClick={() => (showPlacementOri = true)}
       />
     </div>
     <div class="tile">
@@ -528,7 +528,7 @@
       </div>
       <div class="recipe-row">
         <dt>Start · Ori</dt>
-        <dd>{posSummary}</dd>
+        <dd>{placementSummary}</dd>
       </div>
       <div class="recipe-row">
         <dt>Transform</dt>
@@ -637,49 +637,49 @@
 </BaseModal>
 
 <BaseModal
-  bind:open={showPosOri}
+  bind:open={showPlacementOri}
   size="xl"
   animation="pop"
-  class="deck-picker-modal position-picker-modal"
-  labelledBy="deck-position-picker-title"
-  onclose={() => (showPosOri = false)}
+  class="deck-picker-modal placement-picker-modal"
+  labelledBy="deck-placement-picker-title"
+  onclose={() => (showPlacementOri = false)}
 >
   {#snippet header()}
     <ModalHeader
-      id="deck-position-picker-title"
-      title="Start Position & Orientation"
+      id="deck-placement-picker-title"
+      title="Start Placement & Orientation"
       icon="fa-location-crosshairs"
-      onClose={() => (showPosOri = false)}
+      onClose={() => (showPlacementOri = false)}
     />
   {/snippet}
-  <div class="picker-body position-picker-body">
-    <div class="pos-controls">
-      <button class="pc-btn" onclick={allPos}>All</button>
-      <button class="pc-btn" onclick={clearPos}>Clear</button>
+  <div class="picker-body placement-picker-body">
+    <div class="placement-controls">
+      <button class="pc-btn" onclick={allPlacements}>All</button>
+      <button class="pc-btn" onclick={clearPlacement}>Clear</button>
       <button
         class="pc-btn pc-scope"
-        class:active={posShowAll}
-        onclick={() => (posShowAll = !posShowAll)}
+        class:active={placementShowAll}
+        onclick={() => (placementShowAll = !placementShowAll)}
       >
-        {posShowAll ? "Simple (3)" : "All Variations"}
+        {placementShowAll ? "Simple (3)" : "All Variations"}
       </button>
     </div>
-    <div class="pos-grid" class:all={posShowAll}>
-      {#each posList as p (p.id)}
-        {@const sel = rs.selectedStartPositionIds.has(String(p.startPosition))}
+    <div class="placement-grid" class:all={placementShowAll}>
+      {#each placementList as p (p.id)}
+        {@const sel = rs.selectedStartPlacementIds.has(String(p.startPlacement))}
         <button
-          class="pos-cell"
+          class="placement-cell"
           class:on={sel}
           aria-pressed={sel}
-          aria-label={`Start position ${String(p.startPosition)}${sel ? " (selected)" : ""}`}
-          onclick={() => togglePos(String(p.startPosition))}
+          aria-label={`Start placement ${String(p.startPlacement)}${sel ? " (selected)" : ""}`}
+          onclick={() => togglePlacement(String(p.startPlacement))}
         >
           <PictographContainer pictographData={p} />
-          {#if sel}<span class="pos-check">✓</span>{/if}
+          {#if sel}<span class="placement-check">✓</span>{/if}
         </button>
       {/each}
     </div>
-    <div class="pos-ori-row">
+    <div class="placement-ori-row">
       <OrientationCycler
         orientation={rs.startOriLeft as Orientation}
         onOrientationChange={(o: Orientation) => {
@@ -697,14 +697,14 @@
         color="red"
       />
     </div>
-    <p class="pos-hint">
-      No selection = any start position. Orientation applies to every card in
+    <p class="placement-hint">
+      No selection = any start placement. Orientation applies to every card in
       the deck.
     </p>
   </div>
   {#snippet footer()}
     <ModalFooter align="stretch">
-      <button type="button" class="primary" onclick={() => (showPosOri = false)}
+      <button type="button" class="primary" onclick={() => (showPlacementOri = false)}
         >Done</button
       >
     </ModalFooter>
@@ -826,7 +826,7 @@
     width: min(880px, 94vw);
     height: min(840px, 90dvh);
   }
-  :global(dialog.base-modal.position-picker-modal[data-size="xl"]) {
+  :global(dialog.base-modal.placement-picker-modal[data-size="xl"]) {
     height: min(740px, 90dvh);
   }
   .loop-host {
@@ -848,7 +848,7 @@
     min-height: 0;
     padding: 1rem;
   }
-  .position-picker-body {
+  .placement-picker-body {
     display: flex;
     flex-direction: column;
     min-height: 100%;
@@ -865,7 +865,7 @@
     border: 0;
   }
 
-  .pos-controls {
+  .placement-controls {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -892,15 +892,15 @@
     background: color-mix(in srgb, var(--theme-accent) 35%, transparent);
     border-color: var(--theme-accent);
   }
-  .pos-grid {
+  .placement-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
   }
-  .pos-grid.all {
+  .placement-grid.all {
     grid-template-columns: repeat(4, 1fr);
   }
-  .pos-cell {
+  .placement-cell {
     position: relative;
     aspect-ratio: 1;
     padding: 6px;
@@ -913,27 +913,27 @@
       background var(--transition-fast),
       transform var(--transition-spring);
   }
-  .pos-cell:hover {
+  .placement-cell:hover {
     background: var(--theme-card-hover-bg);
     transform: translateY(-1px);
   }
-  .pos-cell.on {
-    border-color: var(--pos-active-accent, #14b8a6);
+  .placement-cell.on {
+    border-color: var(--placement-active-accent, #14b8a6);
     background: color-mix(
       in srgb,
-      var(--pos-active-accent, #14b8a6) 18%,
+      var(--placement-active-accent, #14b8a6) 18%,
       transparent
     );
   }
   /* Scope to the pictograph wrapper + its SVG only — NOT every descendant.
      `:global(*) { width/height: 100% }` blows up the prop groups inside the SVG. */
-  .pos-cell :global(.pictograph),
-  .pos-cell :global(.pictograph svg) {
+  .placement-cell :global(.pictograph),
+  .placement-cell :global(.pictograph svg) {
     width: 100%;
     height: 100%;
     display: block;
   }
-  .pos-check {
+  .placement-check {
     position: absolute;
     top: 4px;
     right: 6px;
@@ -942,20 +942,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--pos-active-accent, #14b8a6);
+    background: var(--placement-active-accent, #14b8a6);
     color: var(--theme-text-on-accent, #042f2a);
     font-size: 13px;
     font-weight: 900;
     border-radius: 50%;
     box-shadow: 0 2px 6px var(--theme-shadow, rgba(0, 0, 0, 0.4));
   }
-  .pos-ori-row {
+  .placement-ori-row {
     display: flex;
     gap: 16px;
     justify-content: center;
     margin-top: 16px;
   }
-  .pos-hint {
+  .placement-hint {
     margin: 12px 2px 0;
     font-size: 12px;
     color: var(--theme-text-dim, rgba(255, 255, 255, 0.5));

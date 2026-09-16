@@ -10,20 +10,20 @@ import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/mot
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
 import type { GenerationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
 import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
-import type { StartPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import type { StartPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import type {
   EndState,
-  PositionGroup,
+  PlacementGroup,
   SpinnerStats,
 } from "$lib/shared/landing/domain/types";
 import {
   GridMode,
-  GridPosition,
+  GridPlacement,
   GridLocation,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
@@ -61,10 +61,10 @@ function validateMotionData(sequence: SequenceData, label: string): string[] {
   const warnings: string[] = [];
   const seqGridMode = sequence.gridMode ?? GridMode.DIAMOND;
 
-  // Check start position
-  if (sequence.startPosition?.motions) {
-    const left = sequence.startPosition.motions[HandSide.LEFT];
-    const right = sequence.startPosition.motions[HandSide.RIGHT];
+  // Check start placement
+  if (sequence.startPlacement?.motions) {
+    const left = sequence.startPlacement.motions[HandSide.LEFT];
+    const right = sequence.startPlacement.motions[HandSide.RIGHT];
 
     if (left) {
       if (left.gridMode !== seqGridMode) {
@@ -136,10 +136,10 @@ function validateMotionData(sequence: SequenceData, label: string): string[] {
 }
 
 /**
- * Get the Greek letter for a position group.
- * Start positions use lowercase Greek letters: α (alpha), β (beta), γ (gamma)
+ * Get the Greek letter for a placement group.
+ * Start placements use lowercase Greek letters: α (alpha), β (beta), γ (gamma)
  */
-function getLetterForPositionGroup(group: PositionGroup | null): Letter | null {
+function getLetterForPlacementGroup(group: PlacementGroup | null): Letter | null {
   switch (group) {
     case "alpha":
       return Letter.ALPHA; // "α"
@@ -165,62 +165,62 @@ interface RotatableMatch {
  * Create a key for indexing sequences by their start state.
  */
 function createStartStateKey(
-  position: GridPosition | string | null,
+  placement: GridPlacement | string | null,
   leftOrientation: Orientation | null,
   rightOrientation: Orientation | null
 ): string {
-  return `${position ?? "null"}_${leftOrientation ?? "null"}_${rightOrientation ?? "null"}`;
+  return `${placement ?? "null"}_${leftOrientation ?? "null"}_${rightOrientation ?? "null"}`;
 }
 
 /**
- * Extract position group from a grid position string.
+ * Extract placement group from a grid placement string.
  */
-function getPositionGroup(
-  position: GridPosition | string | null
-): PositionGroup | null {
-  if (!position) return null;
-  const posStr = position.toString().toLowerCase();
-  if (posStr.startsWith("alpha")) return "alpha";
-  if (posStr.startsWith("beta")) return "beta";
-  if (posStr.startsWith("gamma")) return "gamma";
+function getPlacementGroup(
+  placement: GridPlacement | string | null
+): PlacementGroup | null {
+  if (!placement) return null;
+  const placementStr = placement.toString().toLowerCase();
+  if (placementStr.startsWith("alpha")) return "alpha";
+  if (placementStr.startsWith("beta")) return "beta";
+  if (placementStr.startsWith("gamma")) return "gamma";
   return null;
 }
 
 /**
- * Extract the position number from a GridPosition.
+ * Extract the placement number from a GridPlacement.
  * e.g., ALPHA3 → 3, GAMMA11 → 11
  */
-function getPositionNumber(
-  position: GridPosition | string | null
+function getPlacementNumber(
+  placement: GridPlacement | string | null
 ): number | null {
-  if (!position) return null;
-  const match = position.toString().match(/\d+$/);
+  if (!placement) return null;
+  const match = placement.toString().match(/\d+$/);
   return match ? parseInt(match[0], 10) : null;
 }
 
 /**
- * Calculate rotation steps needed to transform from one position to another.
- * Positions within each group are numbered 1-8 (or 1-16 for gamma).
+ * Calculate rotation steps needed to transform from one placement to another.
+ * Placements within each group are numbered 1-8 (or 1-16 for gamma).
  * Each rotation step is 45°.
  * Returns the number of 45° clockwise steps (can be negative for CCW).
  */
 function calculateRotationSteps(
-  fromPosition: GridPosition | string | null,
-  toPosition: GridPosition | string | null
+  fromPlacement: GridPlacement | string | null,
+  toPlacement: GridPlacement | string | null
 ): number | null {
-  const fromGroup = getPositionGroup(fromPosition);
-  const toGroup = getPositionGroup(toPosition);
+  const fromGroup = getPlacementGroup(fromPlacement);
+  const toGroup = getPlacementGroup(toPlacement);
 
-  // Can only rotate within the same position group
+  // Can only rotate within the same placement group
   if (!fromGroup || !toGroup || fromGroup !== toGroup) return null;
 
-  const fromNum = getPositionNumber(fromPosition);
-  const toNum = getPositionNumber(toPosition);
+  const fromNum = getPlacementNumber(fromPlacement);
+  const toNum = getPlacementNumber(toPlacement);
 
   if (fromNum === null || toNum === null) return null;
 
-  // Determine the cycle length based on position group
-  // Alpha/Beta have positions 1-8, Gamma has 1-8 and 9-16 (two separate cycles)
+  // Determine the cycle length based on placement group
+  // Alpha/Beta have placements 1-8, Gamma has 1-8 and 9-16 (two separate cycles)
   const cycleLength = 8;
   if (fromGroup === "gamma") {
     // Gamma 1-8 and Gamma 9-16 are separate cycles
@@ -229,14 +229,14 @@ function calculateRotationSteps(
     if (fromCycle !== toCycle) return null; // Can't rotate between gamma cycles
   }
 
-  // Normalize positions to 0-7 range for the cycle
+  // Normalize placements to 0-7 range for the cycle
   const normalizedFrom = (fromNum - 1) % cycleLength;
   const normalizedTo = (toNum - 1) % cycleLength;
 
   // Calculate the difference
   let diff = normalizedTo - normalizedFrom;
 
-  // Normalize to shortest rotation (-3 to +4 for 8-position cycle)
+  // Normalize to shortest rotation (-3 to +4 for 8-placement cycle)
   if (diff > cycleLength / 2) diff -= cycleLength;
   if (diff < -cycleLength / 2) diff += cycleLength;
 
@@ -244,58 +244,58 @@ function calculateRotationSteps(
 }
 
 /**
- * Get a random position from a position group for bridge generation.
+ * Get a random placement from a placement group for bridge generation.
  */
-function getRandomPositionInGroup(
-  group: PositionGroup,
+function getRandomPlacementInGroup(
+  group: PlacementGroup,
   gridMode: GridMode
-): GridPosition {
-  const positions: Record<PositionGroup, GridPosition[]> = {
+): GridPlacement {
+  const placements: Record<PlacementGroup, GridPlacement[]> = {
     alpha:
       gridMode === GridMode.DIAMOND
         ? [
-            GridPosition.ALPHA1,
-            GridPosition.ALPHA3,
-            GridPosition.ALPHA5,
-            GridPosition.ALPHA7,
+            GridPlacement.ALPHA1,
+            GridPlacement.ALPHA3,
+            GridPlacement.ALPHA5,
+            GridPlacement.ALPHA7,
           ]
         : [
-            GridPosition.ALPHA2,
-            GridPosition.ALPHA4,
-            GridPosition.ALPHA6,
-            GridPosition.ALPHA8,
+            GridPlacement.ALPHA2,
+            GridPlacement.ALPHA4,
+            GridPlacement.ALPHA6,
+            GridPlacement.ALPHA8,
           ],
     beta:
       gridMode === GridMode.DIAMOND
         ? [
-            GridPosition.BETA1,
-            GridPosition.BETA3,
-            GridPosition.BETA5,
-            GridPosition.BETA7,
+            GridPlacement.BETA1,
+            GridPlacement.BETA3,
+            GridPlacement.BETA5,
+            GridPlacement.BETA7,
           ]
         : [
-            GridPosition.BETA2,
-            GridPosition.BETA4,
-            GridPosition.BETA6,
-            GridPosition.BETA8,
+            GridPlacement.BETA2,
+            GridPlacement.BETA4,
+            GridPlacement.BETA6,
+            GridPlacement.BETA8,
           ],
     gamma:
       gridMode === GridMode.DIAMOND
         ? [
-            GridPosition.GAMMA1,
-            GridPosition.GAMMA5,
-            GridPosition.GAMMA9,
-            GridPosition.GAMMA13,
+            GridPlacement.GAMMA1,
+            GridPlacement.GAMMA5,
+            GridPlacement.GAMMA9,
+            GridPlacement.GAMMA13,
           ]
         : [
-            GridPosition.GAMMA3,
-            GridPosition.GAMMA7,
-            GridPosition.GAMMA11,
-            GridPosition.GAMMA15,
+            GridPlacement.GAMMA3,
+            GridPlacement.GAMMA7,
+            GridPlacement.GAMMA11,
+            GridPlacement.GAMMA15,
           ],
   };
 
-  const options = positions[group];
+  const options = placements[group];
   return options[Math.floor(Math.random() * options.length)]!;
 }
 
@@ -308,28 +308,28 @@ function pickRandom<T>(items: T[]): T | null {
 }
 
 /**
- * Get the next position group in the cycle (for bridge variety).
+ * Get the next placement group in the cycle (for bridge variety).
  */
-function _getNextPositionGroup(current: PositionGroup | null): PositionGroup {
-  const cycle: PositionGroup[] = ["alpha", "beta", "gamma"];
+function _getNextPlacementGroup(current: PlacementGroup | null): PlacementGroup {
+  const cycle: PlacementGroup[] = ["alpha", "beta", "gamma"];
   if (!current) return pickRandom(cycle)!;
   const currentIndex = cycle.indexOf(current);
   return cycle[(currentIndex + 1) % cycle.length]!;
 }
 
 /**
- * Get the gamma cycle (low or high) for a gamma position.
+ * Get the gamma cycle (low or high) for a gamma placement.
  * GAMMA1-8 are "low" cycle, GAMMA9-16 are "high" cycle.
- * Returns null for non-gamma positions.
+ * Returns null for non-gamma placements.
  */
 function getGammaCycle(
-  position: GridPosition | string | null
+  placement: GridPlacement | string | null
 ): "low" | "high" | null {
-  if (!position) return null;
-  const group = getPositionGroup(position);
+  if (!placement) return null;
+  const group = getPlacementGroup(placement);
   if (group !== "gamma") return null;
 
-  const num = getPositionNumber(position);
+  const num = getPlacementNumber(placement);
   if (num === null) return null;
 
   return num <= 8 ? "low" : "high";
@@ -361,7 +361,7 @@ export class EndlessSpinnerOrchestrator {
     private readonly browseLoader: PublicSequencesLoader,
     private readonly generationOrchestrator: GenerationOrchestrator,
     private readonly sequenceTransformer: SequenceTransformer,
-    private readonly startPositionDeriver: StartPositionDeriver
+    private readonly startPlacementDeriver: StartPlacementDeriver
   ) {}
 
   async initialize(): Promise<void> {
@@ -410,17 +410,17 @@ export class EndlessSpinnerOrchestrator {
       );
       if (!fullSequence?.steps || fullSequence.steps.length === 0) continue;
 
-      // Get or derive start position
+      // Get or derive start placement
       const startPos =
-        this.startPositionDeriver.getOrDeriveStartPosition(fullSequence);
+        this.startPlacementDeriver.getOrDeriveStartPlacement(fullSequence);
       if (!startPos) continue;
 
       // Extract start state
-      const position = startPos.gridPosition ?? startPos.startPosition ?? null;
+      const placement = startPos.gridPlacement ?? startPos.startPlacement ?? null;
       const leftOri = startPos.motions?.left?.startOrientation ?? null;
       const rightOri = startPos.motions?.right?.startOrientation ?? null;
 
-      const key = createStartStateKey(position, leftOri, rightOri);
+      const key = createStartStateKey(placement, leftOri, rightOri);
 
       // Add to index
       if (!this.sequenceIndex.has(key)) {
@@ -435,15 +435,15 @@ export class EndlessSpinnerOrchestrator {
       return null;
     }
 
-    // Strategy 1: Enhanced algorithm - scan ALL sequences for any beat that passes through target position
+    // Strategy 1: Enhanced algorithm - scan ALL sequences for any beat that passes through target placement
     const transformed = await this.findAndTransformAnySequence(endState);
     if (transformed) {
       this.stats.rotatedMatches++;
       return this.recordAndReturn(transformed);
     }
 
-    // Strategy 2: Fallback to old approach - find sequence starting in same position group
-    const targetGroup = getPositionGroup(endState.position);
+    // Strategy 2: Fallback to old approach - find sequence starting in same placement group
+    const targetGroup = getPlacementGroup(endState.placement);
     if (targetGroup) {
       const transformedSequence = await this.findAndTransformSequence(
         endState,
@@ -466,9 +466,9 @@ export class EndlessSpinnerOrchestrator {
   }
 
   /**
-   * Derive the grid position from a beat's end state using motion end locations.
+   * Derive the grid placement from a beat's end state using motion end locations.
    */
-  private deriveBeatEndPosition(beat: StepData): GridPosition | null {
+  private deriveBeatEndPlacement(beat: StepData): GridPlacement | null {
     const leftMotion = beat.motions?.[HandSide.LEFT];
     const rightMotion = beat.motions?.[HandSide.RIGHT];
 
@@ -480,7 +480,7 @@ export class EndlessSpinnerOrchestrator {
       rightMotion.endLocation
     ) {
       try {
-        return getGridPositionFromLocations(
+        return getGridPlacementFromLocations(
           leftMotion.endLocation,
           rightMotion.endLocation
         );
@@ -492,16 +492,16 @@ export class EndlessSpinnerOrchestrator {
   }
 
   /**
-   * Enhanced algorithm: Find ANY circular sequence that passes through the target position group
+   * Enhanced algorithm: Find ANY circular sequence that passes through the target placement group
    * at any beat, then apply transforms to make it match exactly.
    */
   private async findAndTransformAnySequence(
     endState: EndState
   ): Promise<SequenceData | null> {
-    const targetGroup = getPositionGroup(endState.position);
+    const targetGroup = getPlacementGroup(endState.placement);
     if (!targetGroup) return null;
 
-    const targetGammaCycle = getGammaCycle(endState.position);
+    const targetGammaCycle = getGammaCycle(endState.placement);
 
     // Shuffle sequences for variety
     const shuffled = [...this.circularSequences].sort(
@@ -529,7 +529,7 @@ export class EndlessSpinnerOrchestrator {
       );
       if (!fullSequence?.steps?.length || !fullSequence.isCircular) continue;
 
-      // Scan each beat for a position match
+      // Scan each beat for a placement match
       for (
         let stepIndex = 0;
         stepIndex < fullSequence.steps.length;
@@ -538,15 +538,15 @@ export class EndlessSpinnerOrchestrator {
         const beat = fullSequence.steps[stepIndex];
         if (!beat) continue;
 
-        const stepEndPosition = this.deriveBeatEndPosition(beat);
-        const beatGroup = getPositionGroup(stepEndPosition);
+        const stepEndPlacement = this.deriveBeatEndPlacement(beat);
+        const beatGroup = getPlacementGroup(stepEndPlacement);
 
-        // Check if beat is in target position group
+        // Check if beat is in target placement group
         if (beatGroup !== targetGroup) continue;
 
         // For gamma, also check cycle compatibility
         if (targetGroup === "gamma") {
-          const beatCycle = getGammaCycle(stepEndPosition);
+          const beatCycle = getGammaCycle(stepEndPlacement);
           if (beatCycle !== targetGammaCycle) continue;
         }
 
@@ -555,7 +555,7 @@ export class EndlessSpinnerOrchestrator {
         const result = await this.applyTransformPipeline(
           fullSequence,
           stepIndex,
-          stepEndPosition!,
+          stepEndPlacement!,
           endState
         );
 
@@ -571,43 +571,43 @@ export class EndlessSpinnerOrchestrator {
   /**
    * Apply the three-step transform pipeline:
    * 1. First-beat rotation - make the beat after the matched beat become beat 1
-   * 2. Position rotation - rotate all positions to match exact variant
+   * 2. Placement rotation - rotate all placements to match exact variant
    * 3. Orientation adjustment - modify start orientations and cascade through sequence
    */
   private async applyTransformPipeline(
     sequence: SequenceData,
     stepIndex: number,
-    stepEndPosition: GridPosition,
+    stepEndPlacement: GridPlacement,
     targetEndState: EndState
   ): Promise<SequenceData | null> {
     try {
       // Step 1: First-beat rotation - make the beat AFTER this one become beat 1
-      // (stepIndex is 0-based, shiftStartPosition expects 1-based beat number)
+      // (stepIndex is 0-based, shiftStartPlacement expects 1-based beat number)
       // The next beat (stepIndex + 2) becomes the new beat 1
       const targetStepNumber = stepIndex + 2;
-      const rotated = this.sequenceTransformer.shiftStartPosition(
+      const rotated = this.sequenceTransformer.shiftStartPlacement(
         sequence,
         targetStepNumber
       );
 
-      // Step 2: Position rotation - match exact variant
+      // Step 2: Placement rotation - match exact variant
       const rotationSteps = calculateRotationSteps(
-        stepEndPosition,
-        targetEndState.position
+        stepEndPlacement,
+        targetEndState.placement
       );
-      let positionMatched = rotated;
+      let placementMatched = rotated;
 
       if (rotationSteps !== null && rotationSteps !== 0) {
-        positionMatched = await this.sequenceTransformer.rotateSequence(
+        placementMatched = await this.sequenceTransformer.rotateSequence(
           rotated,
           rotationSteps,
           "both"
         );
       }
 
-      // Step 3: Orientation adjustment - modify start position orientations to match target
-      let finalSequence = positionMatched;
-      const startPos = positionMatched.startPosition;
+      // Step 3: Orientation adjustment - modify start placement orientations to match target
+      let finalSequence = placementMatched;
+      const startPos = placementMatched.startPlacement;
 
       if (
         startPos &&
@@ -624,10 +624,10 @@ export class EndlessSpinnerOrchestrator {
           currentLeftOri !== targetEndState.leftOrientation ||
           currentRightOri !== targetEndState.rightOrientation
         ) {
-          // Modify start position to have target orientations
+          // Modify start placement to have target orientations
           const startLeftMotion = startPos.motions?.[HandSide.LEFT];
           const startRightMotion = startPos.motions?.[HandSide.RIGHT];
-          const adjustedStartPos: StartPositionData = {
+          const adjustedStartPos: StartPlacementData = {
             ...startPos,
             motions: {
               [HandSide.LEFT]: startLeftMotion
@@ -648,8 +648,8 @@ export class EndlessSpinnerOrchestrator {
           };
 
           finalSequence = {
-            ...positionMatched,
-            startPosition: adjustedStartPos,
+            ...placementMatched,
+            startPlacement: adjustedStartPos,
           };
         }
       }
@@ -668,10 +668,10 @@ export class EndlessSpinnerOrchestrator {
         sequenceGridMode
       );
 
-      // Step 6: Update start position letter to match new position
-      const result = this.updateStartPositionLetter(
+      // Step 6: Update start placement letter to match new placement
+      const result = this.updateStartPlacementLetter(
         gridCorrected,
-        targetEndState.position
+        targetEndState.placement
       );
 
       // Step 7: Validate the final result (logs warnings if issues found)
@@ -694,8 +694,8 @@ export class EndlessSpinnerOrchestrator {
    * field may be stale (e.g., published before gridMode was tracked).
    */
   private deriveSequenceGridMode(sequence: SequenceData): GridMode {
-    // Try start position first, then first step
-    const candidates = [sequence.startPosition, ...(sequence.steps ?? [])];
+    // Try start placement first, then first step
+    const candidates = [sequence.startPlacement, ...(sequence.steps ?? [])];
 
     for (const candidate of candidates) {
       if (!candidate) continue;
@@ -768,12 +768,12 @@ export class EndlessSpinnerOrchestrator {
       });
     }
 
-    // Update grid mode on start position and its motions if present
-    if (updatedSequence.startPosition) {
-      const sp = updatedSequence.startPosition;
+    // Update grid mode on start placement and its motions if present
+    if (updatedSequence.startPlacement) {
+      const sp = updatedSequence.startPlacement;
       const leftMotion = sp.motions?.[HandSide.LEFT];
       const rightMotion = sp.motions?.[HandSide.RIGHT];
-      updatedSequence.startPosition = {
+      updatedSequence.startPlacement = {
         ...sp,
         gridMode,
         motions: {
@@ -790,46 +790,46 @@ export class EndlessSpinnerOrchestrator {
   }
 
   /**
-   * Update the start position's letter to match the target grid position.
+   * Update the start placement's letter to match the target grid placement.
    * This ensures the pictograph glyph displays the correct Greek letter (α, β, γ).
    */
-  private updateStartPositionLetter(
+  private updateStartPlacementLetter(
     sequence: SequenceData,
-    targetPosition: GridPosition | null
+    targetPlacement: GridPlacement | null
   ): SequenceData {
-    if (!sequence.startPosition || !targetPosition) {
+    if (!sequence.startPlacement || !targetPlacement) {
       return sequence;
     }
 
-    const targetGroup = getPositionGroup(targetPosition);
-    const newLetter = getLetterForPositionGroup(targetGroup);
+    const targetGroup = getPlacementGroup(targetPlacement);
+    const newLetter = getLetterForPlacementGroup(targetGroup);
 
     if (!newLetter) {
       return sequence;
     }
 
-    // Update the letter on the start position
-    const updatedStartPosition: StartPositionData = {
-      ...sequence.startPosition,
+    // Update the letter on the start placement
+    const updatedStartPlacement: StartPlacementData = {
+      ...sequence.startPlacement,
       letter: newLetter,
     };
 
     return {
       ...sequence,
-      startPosition: updatedStartPosition,
+      startPlacement: updatedStartPlacement,
     };
   }
 
   /**
-   * Find a sequence in the target position group and transform it to match the exact end state.
+   * Find a sequence in the target placement group and transform it to match the exact end state.
    */
   private async findAndTransformSequence(
     endState: EndState,
-    targetGroup: PositionGroup
+    targetGroup: PlacementGroup
   ): Promise<SequenceData | null> {
-    // Get sequences in the same position group
+    // Get sequences in the same placement group
     const candidatesInGroup = this.circularSequences.filter((_seq) => {
-      // We need to check the sequence's start position group
+      // We need to check the sequence's start placement group
       // Since we only have metadata, we'll load a few candidates
       return true; // We'll filter after loading
     });
@@ -855,27 +855,27 @@ export class EndlessSpinnerOrchestrator {
       );
       if (!fullSequence?.steps?.length) continue;
 
-      // Get the sequence's start position
+      // Get the sequence's start placement
       const startPos =
-        this.startPositionDeriver.getOrDeriveStartPosition(fullSequence);
+        this.startPlacementDeriver.getOrDeriveStartPlacement(fullSequence);
       if (!startPos) continue;
 
-      // Prefer the canonical start-position field, with the inherited
-      // pictograph position and first beat as legacy fallbacks.
-      const sequenceStartPosition: string | null =
-        startPos.gridPosition ??
-        startPos.startPosition ??
-        fullSequence.steps?.[0]?.startPosition ??
+      // Prefer the canonical start-placement field, with the inherited
+      // pictograph placement and first beat as legacy fallbacks.
+      const sequenceStartPlacement: string | null =
+        startPos.gridPlacement ??
+        startPos.startPlacement ??
+        fullSequence.steps?.[0]?.startPlacement ??
         null;
 
-      // Check if it's in the same position group
-      const sequenceGroup = getPositionGroup(sequenceStartPosition);
+      // Check if it's in the same placement group
+      const sequenceGroup = getPlacementGroup(sequenceStartPlacement);
       if (sequenceGroup !== targetGroup) continue;
 
       // Calculate rotation needed to transform this sequence's start to our target
       const rotationSteps = calculateRotationSteps(
-        sequenceStartPosition,
-        endState.position
+        sequenceStartPlacement,
+        endState.placement
       );
 
       if (rotationSteps === null) {
@@ -933,7 +933,7 @@ export class EndlessSpinnerOrchestrator {
     endState: EndState
   ): Promise<SequenceData | null> {
     const key = createStartStateKey(
-      endState.position,
+      endState.placement,
       endState.leftOrientation,
       endState.rightOrientation
     );
@@ -975,12 +975,12 @@ export class EndlessSpinnerOrchestrator {
         if (!beat) continue;
 
         // Check if this beat's END state matches our target
-        const beatEndPos = beat.endPosition;
+        const beatEndPos = beat.endPlacement;
         const leftEndOri = beat.motions?.left?.endOrientation ?? null;
         const rightEndOri = beat.motions?.right?.endOrientation ?? null;
 
         if (
-          beatEndPos === endState.position &&
+          beatEndPos === endState.placement &&
           leftEndOri === endState.leftOrientation &&
           rightEndOri === endState.rightOrientation
         ) {
@@ -1009,20 +1009,20 @@ export class EndlessSpinnerOrchestrator {
 
   async generateBridgeSequence(
     fromEndState: EndState,
-    toPositionGroup: PositionGroup
+    toPlacementGroup: PlacementGroup
   ): Promise<SequenceData | null> {
     try {
       // Get the grid mode from a random existing sequence, or default to diamond
       const sampleSequence = this.circularSequences[0];
       const gridMode = sampleSequence?.gridMode ?? GridMode.DIAMOND;
 
-      // Create start position data from end state
-      const startPositionData =
-        this.createStartPositionFromEndState(fromEndState);
+      // Create start placement data from end state
+      const startPlacementData =
+        this.createStartPlacementFromEndState(fromEndState);
 
-      // Get a random target position in the target group
-      const targetPosition = getRandomPositionInGroup(
-        toPositionGroup,
+      // Get a random target placement in the target group
+      const targetPlacement = getRandomPlacementInGroup(
+        toPlacementGroup,
         gridMode
       );
 
@@ -1035,14 +1035,14 @@ export class EndlessSpinnerOrchestrator {
         difficulty: DifficultyLevel.BEGINNER,
         propContinuity: PropContinuity.CONTINUOUS,
         turnIntensity: 1,
-        startPosition: startPositionData as PictographData,
-        // The generation orchestrator only reads `endPosition.startPosition`
-        // (coerced to a string grid-position constraint). Build a structurally
+        startPlacement: startPlacementData as PictographData,
+        // The generation orchestrator only reads `endPlacement.startPlacement`
+        // (coerced to a string grid-placement constraint). Build a structurally
         // honest PictographData carrying just that constraint rather than
         // casting a partial stub through `unknown`.
-        endPosition: {
+        endPlacement: {
           id: `spinner-end-${Date.now()}`,
-          startPosition: targetPosition,
+          startPlacement: targetPlacement,
           motions: {},
         } satisfies PictographData,
       });
@@ -1055,12 +1055,12 @@ export class EndlessSpinnerOrchestrator {
   }
 
   /**
-   * Create a PictographData-like object from an end state for use as start position.
+   * Create a PictographData-like object from an end state for use as start placement.
    */
-  private createStartPositionFromEndState(endState: EndState): unknown {
+  private createStartPlacementFromEndState(endState: EndState): unknown {
     return {
       id: `spinner-start-${Date.now()}`,
-      startPosition: endState.position,
+      startPlacement: endState.placement,
       motions: {
         left: endState.leftOrientation
           ? { startOrientation: endState.leftOrientation }

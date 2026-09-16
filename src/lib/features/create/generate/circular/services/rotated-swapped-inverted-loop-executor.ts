@@ -24,9 +24,9 @@
  *
  * IMPORTANT: Slice size is ALWAYS halved (no quartering) — matches the other
  * *_INVERTED three-component combos, since the sequence must return to start.
- * IMPORTANT: End position must RETURN TO START POSITION (inverted effect;
- * all beta positions are swap fixed points and rotation is inner, so the
- * outer swap+invert composition still resolves to the start position)
+ * IMPORTANT: End placement must RETURN TO START PLACEMENT (inverted effect;
+ * all beta placements are swap fixed points and rotation is inner, so the
+ * outer swap+invert composition still resolves to the start placement)
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -37,10 +37,10 @@ import {
   HandSide,
   RotationDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import type {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 import {
@@ -51,8 +51,8 @@ import type { LOOPParameterProvider } from "$lib/features/create/generate/shared
 import {
   getHandRotationDirection,
   getLocationMapForHandRotation,
-} from "../domain/constants/circular-position-maps";
-import { INVERTED_LOOP_VALIDATION_SET } from "../domain/constants/strict-loop-position-maps";
+} from "../domain/constants/circular-placement-maps";
+import { INVERTED_LOOP_VALIDATION_SET } from "../domain/constants/strict-loop-placement-maps";
 import type { Period } from "../domain/models/circular-models";
 import type { ILOOPExecutor } from "./ILOOPExecutor";
 
@@ -62,7 +62,7 @@ export class RotatedSwappedInvertedLOOPExecutor implements ILOOPExecutor {
   /**
    * Execute the rotated-swapped-inverted LOOP
    *
-   * @param sequence - The partial sequence to complete (must include start position at index 0)
+   * @param sequence - The partial sequence to complete (must include start placement at index 0)
    * @param _period - Ignored (rotated-swapped-inverted LOOP always uses halved)
    * @returns The complete circular sequence with all steps
    */
@@ -70,10 +70,10 @@ export class RotatedSwappedInvertedLOOPExecutor implements ILOOPExecutor {
     // Validate the sequence
     this._validateSequence(sequence);
 
-    // Remove start position (index 0) for processing
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    // Remove start placement (index 0) for processing
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     // Calculate how many steps to generate (always doubles for halved)
@@ -100,36 +100,36 @@ export class RotatedSwappedInvertedLOOPExecutor implements ILOOPExecutor {
       nextStepNumber++;
     }
 
-    // Re-insert start position at the beginning
-    sequence.unshift(startPosition);
+    // Re-insert start placement at the beginning
+    sequence.unshift(startPlacement);
 
     return sequence;
   }
 
   /**
    * Validate that the sequence can perform a rotated-swapped-inverted LOOP
-   * Requirement: end_position must equal start_position (inverted returns to start)
+   * Requirement: end_placement must equal start_placement (inverted returns to start)
    */
   private _validateSequence(sequence: StepData[]): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     const key = `${startPos},${endPos}`;
 
     if (!INVERTED_LOOP_VALIDATION_SET.has(key)) {
       throw new Error(
-        `Invalid position pair for rotated-swapped-inverted LOOP: ${startPos} → ${endPos}. ` +
-          `For a rotated-swapped-inverted LOOP, the end position must return to the start position (${startPos}).`
+        `Invalid placement pair for rotated-swapped-inverted LOOP: ${startPos} → ${endPos}. ` +
+          `For a rotated-swapped-inverted LOOP, the end placement must return to the start placement (${startPos}).`
       );
     }
   }
@@ -156,7 +156,7 @@ export class RotatedSwappedInvertedLOOPExecutor implements ILOOPExecutor {
       previousMatchingStep.letter as string
     ) as Letter;
 
-    const rotatedEndPosition = this._getRotatedEndPosition(
+    const rotatedEndPlacement = this._getRotatedEndPlacement(
       previousStep,
       previousMatchingStep
     );
@@ -171,8 +171,8 @@ export class RotatedSwappedInvertedLOOPExecutor implements ILOOPExecutor {
       id: `step-${stepNumber}`,
       stepNumber,
       letter: invertedLetter,
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: rotatedEndPosition,
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: rotatedEndPlacement,
       motions: {
         [HandSide.LEFT]: this._createRotatedSwappedInvertedMotion(
           HandSide.LEFT,
@@ -230,14 +230,14 @@ export class RotatedSwappedInvertedLOOPExecutor implements ILOOPExecutor {
   }
 
   /**
-   * Get the rotated end position by rotating both colors' locations, using
+   * Get the rotated end placement by rotating both colors' locations, using
    * the SWAPPED handpath (Blue rotates by Red's handpath and vice versa) —
    * same swap-then-rotate composition as rotated-swapped-loop-executor.
    */
-  private _getRotatedEndPosition(
+  private _getRotatedEndPlacement(
     previousStep: StepData,
     previousMatchingStep: StepData
-  ): GridPosition | null {
+  ): GridPlacement | null {
     const leftHandRotDir = getHandRotationDirection(
       previousMatchingStep.motions[HandSide.RIGHT]!
         .startLocation as GridLocation,
@@ -262,7 +262,7 @@ export class RotatedSwappedInvertedLOOPExecutor implements ILOOPExecutor {
         previousStep.motions[HandSide.RIGHT]!.endLocation as GridLocation
       ];
 
-    return getGridPositionFromLocations(newLeftEndLoc, newRightEndLoc);
+    return getGridPlacementFromLocations(newLeftEndLoc, newRightEndLoc);
   }
 
   /**

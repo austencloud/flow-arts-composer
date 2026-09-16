@@ -11,7 +11,7 @@
     clampDisplayedBeatNumber,
     displayedBeatNumber,
   } from "$lib/shared/animation-engine/services/step-calculator";
-  import { createStartPositionFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+  import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
 
   let {
     sequence,
@@ -66,10 +66,10 @@
   const stepData = $derived.by(() => {
     if (beatNumber < 1) {
       return (
-        sequence.startPosition ??
-        sequence.startingPosition ??
+        sequence.startPlacement ??
+        sequence.startingPlacement ??
         (sequence.steps[0]
-          ? createStartPositionFromBeatStart(sequence.steps[0])
+          ? createStartPlacementFromBeatStart(sequence.steps[0])
           : null)
       );
     }

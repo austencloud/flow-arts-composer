@@ -222,7 +222,7 @@
     // rather than blanking the stage.
     const stepData =
       index === null
-        ? (active.sequence.startPosition ?? active.sequence.steps?.[0] ?? null)
+        ? (active.sequence.startPlacement ?? active.sequence.steps?.[0] ?? null)
         : (active.sequence.steps?.[index] ?? null);
     return { step, stepData };
   });
@@ -381,7 +381,7 @@
             fillHeight={true}
             anchor="center"
             orientation={railRight ? "vertical" : "horizontal"}
-            includeStartPosition={true}
+            includeStartPlacement={true}
             loop={true}
             stepPulse={false}
           />

@@ -3,7 +3,7 @@
  *
  * Temporal transformation that plays the sequence backwards.
  * Appends reversed steps to double the sequence length.
- * Works on ANY sequence regardless of position relationships.
+ * Works on ANY sequence regardless of placement relationships.
  */
 
 import type { ILOOPExecutor } from "./ILOOPExecutor.js";
@@ -17,13 +17,13 @@ export class RewoundExecutor implements ILOOPExecutor {
   executeLOOP(sequence: SequenceStep[], _period: Period): SequenceStep[] {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     const originalSteps = [...sequence];
@@ -51,7 +51,7 @@ export class RewoundExecutor implements ILOOPExecutor {
     }
 
     const allSteps = [...originalSteps, ...reversedSteps];
-    allSteps.unshift(startPosition);
+    allSteps.unshift(startPlacement);
 
     return allSteps;
   }
@@ -64,8 +64,8 @@ export class RewoundExecutor implements ILOOPExecutor {
     return {
       ...sourceStep,
       stepNumber: newStepNumber,
-      startPosition: previousStep.endPosition,
-      endPosition: sourceStep.startPosition,
+      startPlacement: previousStep.endPlacement,
+      endPlacement: sourceStep.startPlacement,
       motions: {
         left: this.createRewoundMotion(
           sourceStep.motions.left,

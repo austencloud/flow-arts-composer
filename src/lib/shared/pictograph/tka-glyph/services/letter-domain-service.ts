@@ -2,8 +2,8 @@ import letterMappings from "../../../../../data/learn/letter-mappings.json";
 export type TKALetter = keyof typeof letterMappings.letters;
 
 export interface LetterPositionData {
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: string;
   rightMotion: string;
 }
@@ -42,7 +42,7 @@ function normalizeGroup(pos: string): string {
 
 /**
  * Determine if a letter can follow another letter based on position continuity.
- * Logic: prev.endPosition group must match next.startPosition group.
+ * Logic: prev.endPlacement group must match next.startPlacement group.
  * Groups are normalized (e.g., alpha1 -> alpha).
  */
 export function canFollow(prevChar: string, nextChar: string): boolean {
@@ -51,8 +51,8 @@ export function canFollow(prevChar: string, nextChar: string): boolean {
 
   if (!prev || !next) return true; // Fail-safe to allowed
 
-  const prevEndGroup = normalizeGroup(prev.endPosition);
-  const nextStartGroup = normalizeGroup(next.startPosition);
+  const prevEndGroup = normalizeGroup(prev.endPlacement);
+  const nextStartGroup = normalizeGroup(next.startPlacement);
 
   return prevEndGroup === nextStartGroup;
 }

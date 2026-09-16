@@ -1,6 +1,6 @@
 import type { AppSettings } from "../../settings/domain/app-settings";
 import type { CompleteBrowseState } from "$lib/shared/browse/domain/models/browse-models";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { TabId } from "../../navigation/domain/types";
 import {
   createSequenceData,
@@ -11,7 +11,11 @@ import { db } from "../database/tka-database";
 import { UserWorkType } from "../domain/enums/user-work-type";
 import type { UserProject } from "../domain/models/user-project";
 import type { UserWorkData } from "../domain/models/user-work-data";
-import { normalizeLegacyStep } from "@tka/tka-types";
+import {
+  normalizeLegacyPictograph,
+  normalizeLegacySequence,
+  normalizeLegacyStep,
+} from "@tka/tka-types";
 
 export async function initialize(): Promise<void> {
   try {
@@ -38,7 +42,9 @@ export async function saveSequence(sequence: SequenceData): Promise<void> {
 export async function loadSequence(id: string): Promise<SequenceData | null> {
   try {
     const sequence = await db.sequences.get(id);
-    return sequence ?? null;
+    // IndexedDB rows can still carry pre-rename keys (blue/red,
+    // startPosition/startingPosition) from before either rename shipped.
+    return sequence ? normalizeLegacySequence(sequence) : null;
   } catch (error) {
     console.error("❌ Failed to load sequence:", error);
     return null;
@@ -71,7 +77,7 @@ export async function getAllSequences(filter?: {
       }
     }
 
-    return await query.toArray();
+    return (await query.toArray()).map(normalizeLegacySequence);
   } catch (error) {
     console.error("❌ Failed to get sequences:", error);
     return [];
@@ -106,7 +112,7 @@ export async function loadAllSequences(): Promise<SequenceData[]> {
 export async function searchSequences(query: string): Promise<SequenceData[]> {
   try {
     const searchTerm = query.toLowerCase();
-    return await db.sequences
+    const results = await db.sequences
       .filter(
         (seq) =>
           seq.name.toLowerCase().includes(searchTerm) ||
@@ -114,6 +120,7 @@ export async function searchSequences(query: string): Promise<SequenceData[]> {
           (seq.author?.toLowerCase().includes(searchTerm) ?? false)
       )
       .toArray();
+    return results.map(normalizeLegacySequence);
   } catch (error) {
     console.error("❌ Failed to search sequences:", error);
     return [];
@@ -136,7 +143,9 @@ export async function loadPictograph(
 ): Promise<PictographData | null> {
   try {
     const pictograph = await db.pictographs.get(id);
-    return pictograph ?? null;
+    // IndexedDB rows can still carry a pre-rename startPosition/endPosition
+    // key from before the placement rename shipped.
+    return pictograph ? normalizeLegacyPictograph(pictograph) : null;
   } catch (error) {
     console.error("❌ Failed to load pictograph:", error);
     return null;
@@ -147,7 +156,8 @@ export async function getPictographsByLetter(
   letter: string
 ): Promise<PictographData[]> {
   try {
-    return await db.pictographs.where("letter").equals(letter).toArray();
+    const rows = await db.pictographs.where("letter").equals(letter).toArray();
+    return rows.map(normalizeLegacyPictograph);
   } catch (error) {
     console.error("❌ Failed to get pictographs by letter:", error);
     return [];
@@ -156,7 +166,8 @@ export async function getPictographsByLetter(
 
 export async function getAllPictographs(): Promise<PictographData[]> {
   try {
-    return await db.pictographs.toArray();
+    const rows = await db.pictographs.toArray();
+    return rows.map(normalizeLegacyPictograph);
   } catch (error) {
     console.error("❌ Failed to get all pictographs:", error);
     return [];
@@ -380,8 +391,8 @@ function getSequenceStateKey(mode: string): string {
 
 export function saveCurrentSequenceState(state: {
   currentSequence: SequenceData | null;
-  selectedStartPosition: StartPositionData | null;
-  hasStartPosition: boolean;
+  selectedStartPlacement: StartPlacementData | null;
+  hasStartPlacement: boolean;
   activeBuildSection?: string;
 }): Promise<void> {
   try {
@@ -390,8 +401,8 @@ export function saveCurrentSequenceState(state: {
 
     const stateData = {
       currentSequence: state.currentSequence,
-      selectedStartPosition: state.selectedStartPosition,
-      hasStartPosition: state.hasStartPosition,
+      selectedStartPlacement: state.selectedStartPlacement,
+      hasStartPlacement: state.hasStartPlacement,
       activeBuildSection: mode,
       timestamp: Date.now(),
     };
@@ -406,8 +417,8 @@ export function saveCurrentSequenceState(state: {
 
 export async function loadCurrentSequenceState(mode?: string): Promise<{
   currentSequence: SequenceData | null;
-  selectedStartPosition: StartPositionData | null;
-  hasStartPosition: boolean;
+  selectedStartPlacement: StartPlacementData | null;
+  hasStartPlacement: boolean;
   activeBuildSection?: string;
 } | null> {
   try {
@@ -440,10 +451,10 @@ export async function loadCurrentSequenceState(mode?: string): Promise<{
       currentSequence: parsed.currentSequence
         ? createSequenceData(parsed.currentSequence)
         : null,
-      selectedStartPosition: parsed.selectedStartPosition
-        ? normalizeLegacyStep(parsed.selectedStartPosition)
+      selectedStartPlacement: parsed.selectedStartPlacement
+        ? normalizeLegacyStep(parsed.selectedStartPlacement)
         : null,
-      hasStartPosition: parsed.hasStartPosition,
+      hasStartPlacement: parsed.hasStartPlacement,
       activeBuildSection: parsed.activeBuildSection ?? targetMode,
     };
   } catch (error) {
@@ -454,8 +465,8 @@ export async function loadCurrentSequenceState(mode?: string): Promise<{
 
 function isValidSequenceState(obj: unknown): obj is {
   currentSequence: SequenceData | null;
-  selectedStartPosition: StartPositionData | null;
-  hasStartPosition: boolean;
+  selectedStartPlacement: StartPlacementData | null;
+  hasStartPlacement: boolean;
   activeBuildSection?: string;
   timestamp?: number;
 } {
@@ -466,9 +477,9 @@ function isValidSequenceState(obj: unknown): obj is {
   return (
     (state["currentSequence"] === null ||
       typeof state["currentSequence"] === "object") &&
-    (state["selectedStartPosition"] === null ||
-      typeof state["selectedStartPosition"] === "object") &&
-    typeof state["hasStartPosition"] === "boolean"
+    (state["selectedStartPlacement"] === null ||
+      typeof state["selectedStartPlacement"] === "object") &&
+    typeof state["hasStartPlacement"] === "boolean"
   );
 }
 

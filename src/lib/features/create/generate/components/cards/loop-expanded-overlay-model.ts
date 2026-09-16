@@ -189,8 +189,8 @@ function describeWordMath(
 function describeInversion(rhythm: LoopRhythmValue): string {
   if (rhythm.inversionMode === "overlay") {
     return effectiveInversionInterval(rhythm) === 4
-      ? "Same hand positions — props flip spin direction every quarter."
-      : "Same hand positions — props flip spin direction for the second half.";
+      ? "Same hand placements — props flip spin direction every quarter."
+      : "Same hand placements — props flip spin direction for the second half.";
   }
   // Added length always inverts at halfway: inverting twice restores the
   // original motions, so a quarter rhythm would only repeat the loop.

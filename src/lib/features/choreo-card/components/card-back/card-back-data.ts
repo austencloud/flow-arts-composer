@@ -27,14 +27,14 @@ import { calculateDifficultyLevel } from "$lib/shared/browse/services/sequence-d
 // Each field is a set of string values; the card renders present
 // values as lit pills and absent values as grayed-out pills.
 export interface SequenceAnatomy {
-  positions: Set<string>;       // "alpha" | "beta" | "gamma"
+  placements: Set<string>;      // "alpha" | "beta" | "gamma"
   motions: Set<string>;         // "shift" | "dash" | "static"
   rotations: Set<string>;       // "cw" | "ccw" | "none"
   orientations: Set<string>;    // "in" | "out" | "clock" | "counter"
   turns: Set<string>;           // "0" | "0.5" | "1" | "1.5" | "2" | "2.5" | "3"
 }
 
-export interface StartPositionInfo {
+export interface StartPlacementInfo {
   group: string | null;
   leftLocation: string | null;
   rightLocation: string | null;
@@ -72,16 +72,16 @@ export interface CardBackData {
   sliceName: string | null;
   sliceDetail: string | null;
   isRotated: boolean;
-  /** Starting position info: group, hand locations, and grid mode */
-  startPosition: StartPositionInfo | null;
+  /** Starting placement info: group, hand locations, and grid mode */
+  startPlacement: StartPlacementInfo | null;
   /** TnD turn ratio derived from sequence motions, e.g. "3:1" */
   tndRatio: string | null;
   /** Period-compressed turn pattern entries for the barter glyph */
   turnGlyphEntries: TurnGlyphEntry[];
   /** Compact turn label, e.g. "0T", "1T", "½T", "FL", or "0-1T" for mixed */
   turnLabel: string;
-  /** Start position descriptor, e.g. "DIAMOND · γ" or "BOX · α" */
-  startPositionLabel: string | null;
+  /** Start placement descriptor, e.g. "DIAMOND · γ" or "BOX · α" */
+  startPlacementLabel: string | null;
   /** Reversal pattern sequence string for the barter glyph */
   reversalSequence: string;
   /** Reversal pattern period (columns to display) */
@@ -142,26 +142,26 @@ function deriveLevelReason(level: number, anatomy: SequenceAnatomy): string {
 
 // Extract the anatomy by scanning every step's motion data
 function deriveAnatomy(sequence: SequenceData): SequenceAnatomy {
-  const positions = new Set<string>();
+  const placements = new Set<string>();
   const motions = new Set<string>();
   const rotations = new Set<string>();
   const orientations = new Set<string>();
   const turns = new Set<string>();
 
-  // Helper to classify position strings like "alpha1", "beta5", "gamma13"
-  function addPosition(pos: string | null | undefined) {
-    if (!pos) return;
-    if (pos.startsWith("alpha")) positions.add("alpha");
-    else if (pos.startsWith("beta")) positions.add("beta");
-    else if (pos.startsWith("gamma")) positions.add("gamma");
+  // Helper to classify placement strings like "alpha1", "beta5", "gamma13"
+  function addPlacement(placement: string | null | undefined) {
+    if (!placement) return;
+    if (placement.startsWith("alpha")) placements.add("alpha");
+    else if (placement.startsWith("beta")) placements.add("beta");
+    else if (placement.startsWith("gamma")) placements.add("gamma");
   }
 
-  // Include start position
-  if (sequence.startPosition) {
-    const sp = sequence.startPosition;
-    addPosition(sp.gridPosition as string | undefined);
+  // Include start placement
+  if (sequence.startPlacement) {
+    const sp = sequence.startPlacement;
+    addPlacement(sp.gridPlacement as string | undefined);
 
-    // Orientations from start position motions (invisible placeholder = hand
+    // Orientations from start placement motions (invisible placeholder = hand
     // not really there under the both-required Step shape)
     for (const motion of Object.values(sp.motions ?? {})) {
       if (!isVisibleMotion(motion)) continue;
@@ -170,8 +170,8 @@ function deriveAnatomy(sequence: SequenceData): SequenceAnatomy {
   }
 
   for (const step of sequence.steps ?? []) {
-    addPosition(step.startPosition as string | undefined);
-    addPosition(step.endPosition as string | undefined);
+    addPlacement(step.startPlacement as string | undefined);
+    addPlacement(step.endPlacement as string | undefined);
 
     for (const motion of Object.values(step.motions ?? {})) {
       if (!isVisibleMotion(motion)) continue;
@@ -203,7 +203,7 @@ function deriveAnatomy(sequence: SequenceData): SequenceAnatomy {
     }
   }
 
-  return { positions, motions, rotations, orientations, turns };
+  return { placements, motions, rotations, orientations, turns };
 }
 
 function addOrientation(o: string | null | undefined, set: Set<string>) {
@@ -215,52 +215,52 @@ function addOrientation(o: string | null | undefined, set: Set<string>) {
 }
 
 /**
- * Derive the starting position group from any available source:
- * explicit field, start position grid position, or first step.
+ * Derive the starting placement group from any available source:
+ * explicit field, start placement's grid placement, or first step.
  */
-const POSITION_GROUPS = ["alpha", "beta", "gamma", "zeta", "eta", "tau", "terra"];
+const PLACEMENT_GROUPS = ["alpha", "beta", "gamma", "zeta", "eta", "tau", "terra"];
 
-function extractGroup(positionString: string | null | undefined): string | null {
-  if (!positionString) return null;
-  const pos = String(positionString);
-  for (const group of POSITION_GROUPS) {
-    if (pos.startsWith(group)) return group;
+function extractGroup(placementString: string | null | undefined): string | null {
+  if (!placementString) return null;
+  const placement = String(placementString);
+  for (const group of PLACEMENT_GROUPS) {
+    if (placement.startsWith(group)) return group;
   }
   return null;
 }
 
 /**
- * Derive the starting position group from any available source:
- * explicit field, start position data, or first step.
+ * Derive the starting placement group from any available source:
+ * explicit field, start placement data, or first step.
  */
-function _deriveStartPositionGroup(sequence: SequenceData): string | null {
+function _deriveStartPlacementGroup(sequence: SequenceData): string | null {
 
   // Explicit field (most reliable when present)
-  if (sequence.startingPositionGroup) return sequence.startingPositionGroup;
+  if (sequence.startingPlacementGroup) return sequence.startingPlacementGroup;
 
-  // From StartPositionData - try gridPosition, endPosition, startPosition
-  const sp = sequence.startPosition ?? sequence.startingPosition;
+  // From StartPlacementData - try gridPlacement, endPlacement, startPlacement
+  const sp = sequence.startPlacement ?? sequence.startingPlacement;
   if (sp) {
-    const fromGrid = extractGroup(sp.gridPosition as string | undefined);
+    const fromGrid = extractGroup(sp.gridPlacement as string | undefined);
     if (fromGrid) return fromGrid;
-    const fromEnd = extractGroup(sp.endPosition as string | undefined);
+    const fromEnd = extractGroup(sp.endPlacement as string | undefined);
     if (fromEnd) return fromEnd;
-    const fromStart = extractGroup(sp.startPosition as string | undefined);
+    const fromStart = extractGroup(sp.startPlacement as string | undefined);
     if (fromStart) return fromStart;
   }
 
-  // From first step's startPosition or endPosition
+  // From first step's startPlacement or endPlacement
   const first = sequence.steps?.[0];
   if (first) {
-    const fromStepStart = extractGroup(first.startPosition as string | undefined);
+    const fromStepStart = extractGroup(first.startPlacement as string | undefined);
     if (fromStepStart) return fromStepStart;
-    const fromStepEnd = extractGroup(first.endPosition as string | undefined);
+    const fromStepEnd = extractGroup(first.endPlacement as string | undefined);
     if (fromStepEnd) return fromStepEnd;
   }
 
   // Derive from first step's motion start locations.
-  // The start locations of step 1's motions = the end locations of the start position.
-  // From two hand locations we can determine the position group:
+  // The start locations of step 1's motions = the end locations of the start placement.
+  // From two hand locations we can determine the placement group:
   //   Alpha: hands opposite (S-N, E-W, NE-SW, etc.)
   //   Beta:  hands same location (S-S, N-N, etc.)
   //   Gamma: hands at right angles (S-E, S-W, N-E, N-W, etc.)
@@ -274,7 +274,7 @@ function _deriveStartPositionGroup(sequence: SequenceData): string | null {
   return null;
 }
 
-/** Determine position group from two hand compass locations */
+/** Determine placement group from two hand compass locations */
 function deriveGroupFromLocations(left: string, right: string): string {
   if (left === right) return "beta";
 
@@ -304,10 +304,10 @@ function deriveGridMode(left: string | null, right: string | null): "box" | "dia
   return "mixed";
 }
 
-export function deriveStartPositionInfo(locations: {
+export function deriveStartPlacementInfo(locations: {
   leftLocation: string | null;
   rightLocation: string | null;
-}): StartPositionInfo {
+}): StartPlacementInfo {
   const { leftLocation, rightLocation } = locations;
 
   const group =
@@ -324,16 +324,16 @@ export function deriveStartPositionInfo(locations: {
 }
 
 /**
- * Derive full starting position info from a sequence, including
+ * Derive full starting placement info from a sequence, including
  * hand locations and grid mode for the mini-grid display.
  */
-function deriveStartPosition(sequence: SequenceData): StartPositionInfo | null {
-  const explicitGroup = sequence.startingPositionGroup ?? null;
+function deriveStartPlacement(sequence: SequenceData): StartPlacementInfo | null {
+  const explicitGroup = sequence.startingPlacementGroup ?? null;
 
   let leftLocation: string | null = null;
   let rightLocation: string | null = null;
 
-  const sp = sequence.startPosition ?? sequence.startingPosition;
+  const sp = sequence.startPlacement ?? sequence.startingPlacement;
   if (sp?.motions) {
     leftLocation = sp.motions.left?.endLocation ?? null;
     rightLocation = sp.motions.right?.endLocation ?? null;
@@ -347,7 +347,7 @@ function deriveStartPosition(sequence: SequenceData): StartPositionInfo | null {
 
   if (!leftLocation && !rightLocation && !explicitGroup) return null;
 
-  const info = deriveStartPositionInfo({ leftLocation, rightLocation });
+  const info = deriveStartPlacementInfo({ leftLocation, rightLocation });
 
   if (explicitGroup) {
     return { ...info, group: explicitGroup };
@@ -469,9 +469,9 @@ export function deriveCardBackData(
   );
   const tndDesignation = !handPathFamily && tndRatio ? `TnD ${tndRatio}` : null;
 
-  const startPosInfo = deriveStartPosition(sequence);
+  const startPlacementInfo = deriveStartPlacement(sequence);
   const turnLabel = deriveTurnLabel(turnGlyphEntries);
-  const startPositionLabel = deriveStartPositionLabel(startPosInfo);
+  const startPlacementLabel = deriveStartPlacementLabel(startPlacementInfo);
 
   return {
     word: simplifyRepeatedWord(sequence.word ?? sequence.name ?? ""),
@@ -493,11 +493,11 @@ export function deriveCardBackData(
     isRotated: sequence.loopType
       ? ROTATED_LOOP_TYPES.has(sequence.loopType)
       : false,
-    startPosition: startPosInfo,
+    startPlacement: startPlacementInfo,
     tndRatio,
     turnGlyphEntries,
     turnLabel,
-    startPositionLabel,
+    startPlacementLabel,
     reversalSequence,
     reversalPeriod,
     reversalLabel,
@@ -534,7 +534,7 @@ function abbreviateReversalLabel(label: string): string {
   return REVERSAL_SHORT_LABELS[label] ?? label;
 }
 
-function deriveStartPositionLabel(info: StartPositionInfo | null): string | null {
+function deriveStartPlacementLabel(info: StartPlacementInfo | null): string | null {
   if (!info) return null;
   if (info.gridMode === "diamond") return "diamond";
   if (info.gridMode === "box") return "box";

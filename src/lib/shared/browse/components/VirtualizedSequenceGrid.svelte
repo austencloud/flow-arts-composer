@@ -189,7 +189,7 @@
 
     const aspectRatio = calculateGalleryAspectRatio(
       maxSteps,
-      compositionManager.startPositionLayout
+      compositionManager.startPlacementLayout
     );
     return cardWidth / aspectRatio;
   }
@@ -400,7 +400,7 @@
   $effect(() => {
     const count = rowCount;
     const _cols = columnCount;
-    const _layout = compositionManager.startPositionLayout;
+    const _layout = compositionManager.startPlacementLayout;
 
     untrack(() => {
       if (scrollElement) {

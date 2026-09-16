@@ -18,8 +18,8 @@
  *
  * Known generator-contract exclusions (detector is data-faithful; the emitted
  * loop does not carry the labeled transform — see the audit handoff addendum):
- *   - mirrored_swapped_inverted: LOOPEndPositionSelector seams it at
- *     startPosition, but the correct seam is SWAP(VMIRROR(start)); the emitted
+ *   - mirrored_swapped_inverted: LOOPEndPlacementSelector seams it at
+ *     startPlacement, but the correct seam is SWAP(VMIRROR(start)); the emitted
  *     loop is not an absolute mirror+swap+invert (sample 0 actually reads as
  *     flipped+inverted+swapped — the composite the wrong seam produces).
  *   - rotated_swapped samples 1-2: dash/static-heavy seeds make the

@@ -7,11 +7,11 @@
 <script lang="ts">
   import StepGrid from "../../workspace-panel/sequence-display/components/StepGrid.svelte";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 
   interface Props {
     steps: readonly StepData[];
-    startPosition: StepData | StartPositionData | null;
+    startPlacement: StepData | StartPlacementData | null;
     selectedStepNumber: number | null;
     isShiftMode: boolean;
     /** When true, grid takes all available space (flex: 1) instead of fixed 40% */
@@ -24,7 +24,7 @@
 
   const {
     steps,
-    startPosition,
+    startPlacement,
     selectedStepNumber,
     isShiftMode,
     mobileMode = false,
@@ -48,7 +48,7 @@
   {/if}
   <StepGrid
     {steps}
-    {startPosition}
+    {startPlacement}
     {selectedStepNumber}
     {onStepClick}
     {onStartClick}

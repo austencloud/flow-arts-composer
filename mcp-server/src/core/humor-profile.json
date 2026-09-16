@@ -1274,12 +1274,12 @@
     {
       "word": "ALPHA",
       "selected": {
-        "text": "(n.) A position where hands are opposite; wolves optional",
+        "text": "(n.) A placement where hands are opposite; wolves optional",
         "lens": "DICTIONARY"
       },
       "rejected": [
         {
-          "text": "First letter; also: a TKA position, not a personality",
+          "text": "First letter; also: a TKA placement, not a personality",
           "lens": "DOMAIN"
         },
         {
@@ -1295,7 +1295,7 @@
     {
       "word": "BETA",
       "selected": {
-        "text": "(n.) A position where hands are together; not an insult",
+        "text": "(n.) A placement where hands are together; not an insult",
         "lens": "DICTIONARY"
       },
       "rejected": [
@@ -1308,7 +1308,7 @@
           "lens": "SELF_DEPRECATING"
         },
         {
-          "text": "The follower; in TKA, just a position",
+          "text": "The follower; in TKA, just a placement",
           "lens": "DOMAIN"
         }
       ]

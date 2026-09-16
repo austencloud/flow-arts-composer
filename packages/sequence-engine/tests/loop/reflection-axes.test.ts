@@ -3,14 +3,14 @@ import type {
   MotionData,
   SequenceStep,
 } from "../../src/core/types/sequence-engine-types.js";
-import { gridPositionDeriver } from "../../src/core/positions/GridPositionDeriver.js";
+import { gridPlacementDeriver } from "../../src/core/placements/GridPlacementDeriver.js";
 import {
   DEFAULT_FLIPPED_AXIS,
   DEFAULT_MIRRORED_AXIS,
   REFLECTION_AXES,
   REFLECTION_LOCATION_MAPS,
   reflectLocation,
-} from "../../src/loop/position-maps/strict-loop-position-maps.js";
+} from "../../src/loop/placement-maps/strict-loop-placement-maps.js";
 import {
   LOOPComponent,
   getReflectionAxis,
@@ -19,7 +19,7 @@ import {
   loopSpecToWire,
   symmetricSpec,
 } from "../../src/loop/loop-spec.js";
-import { determineEndPositionForSpec } from "../../src/loop/targeting/LOOPEndPositionSelector.js";
+import { determineEndPlacementForSpec } from "../../src/loop/targeting/LOOPEndPlacementSelector.js";
 import { loopDetectorClass } from "../../src/loop/detection/LOOPDetector.js";
 import { uniformHalvedRelation } from "../../src/loop/detection/pair-relation.js";
 
@@ -146,22 +146,22 @@ describe("reflection axes in LOOPSpec", () => {
 
 describe("cross-grid reflection seam targeting", () => {
   it("applies an east-west reflection to a Box Gamma hand pair", () => {
-    const start = gridPositionDeriver.getGridPositionFromLocations("se", "sw");
-    const expected = gridPositionDeriver.getGridPositionFromLocations(
+    const start = gridPlacementDeriver.getGridPlacementFromLocations("se", "sw");
+    const expected = gridPlacementDeriver.getGridPlacementFromLocations(
       "ne",
       "nw"
     );
     const spec = reflectionSpec("east-west");
 
-    expect(determineEndPositionForSpec(spec, start)).toBe(expected);
+    expect(determineEndPlacementForSpec(spec, start)).toBe(expected);
   });
 
   it("applies a northeast-southwest reflection to a Diamond Gamma hand pair", () => {
-    const start = gridPositionDeriver.getGridPositionFromLocations("e", "s");
-    const expected = gridPositionDeriver.getGridPositionFromLocations("n", "w");
+    const start = gridPlacementDeriver.getGridPlacementFromLocations("e", "s");
+    const expected = gridPlacementDeriver.getGridPlacementFromLocations("n", "w");
     const spec = reflectionSpec("northeast-southwest");
 
-    expect(determineEndPositionForSpec(spec, start)).toBe(expected);
+    expect(determineEndPlacementForSpec(spec, start)).toBe(expected);
   });
 });
 
@@ -249,19 +249,19 @@ function directReflectionSequence(
     | "northeast-southwest"
     | "northwest-southeast"
 ): SequenceStep[] {
-  const startPosition = gridPositionDeriver.getGridPositionFromLocations(
+  const startPlacement = gridPlacementDeriver.getGridPlacementFromLocations(
     start[0],
     start[1]
   );
-  const reflectedPosition = gridPositionDeriver.getGridPositionFromLocations(
+  const reflectedPosition = gridPlacementDeriver.getGridPlacementFromLocations(
     reflected[0],
     reflected[1]
   );
 
   return [
-    step(0, startPosition, startPosition, start, start),
-    step(1, startPosition, reflectedPosition, start, reflected),
-    step(2, reflectedPosition, startPosition, reflected, [
+    step(0, startPlacement, startPlacement, start, start),
+    step(1, startPlacement, reflectedPosition, start, reflected),
+    step(2, reflectedPosition, startPlacement, reflected, [
       reflectLocation(reflected[0], axis)!,
       reflectLocation(reflected[1], axis)!,
     ]),
@@ -270,8 +270,8 @@ function directReflectionSequence(
 
 function step(
   stepNumber: number,
-  startPosition: string,
-  endPosition: string,
+  startPlacement: string,
+  endPlacement: string,
   start: readonly [string, string],
   end: readonly [string, string]
 ): SequenceStep {
@@ -280,8 +280,8 @@ function step(
     stepNumber,
     duration: 1,
     letter: null,
-    startPosition,
-    endPosition,
+    startPlacement,
+    endPlacement,
     motions: {
       left: motion(start[0], end[0]),
       right: motion(start[1], end[1]),

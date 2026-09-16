@@ -48,7 +48,7 @@ export interface LabGoalFamily {
   /** How the family's repeat divides the circle. */
   readonly typeCombo: "Quartered" | "Halved";
   /** The start position every goal in the family opens from. */
-  readonly startPosition: string;
+  readonly startPlacement: string;
   readonly goals: readonly LabGoal[];
 }
 
@@ -84,7 +84,7 @@ interface FamilySeed {
   readonly id: LabGoalFamilyId;
   readonly label: string;
   readonly typeCombo: "Quartered" | "Halved";
-  readonly startPosition: string;
+  readonly startPlacement: string;
 }
 
 const FAMILY_SEEDS: readonly FamilySeed[] = [
@@ -92,37 +92,37 @@ const FAMILY_SEEDS: readonly FamilySeed[] = [
     id: "split-same",
     label: "Split-Same",
     typeCombo: "Quartered",
-    startPosition: "alpha1",
+    startPlacement: "alpha1",
   },
   {
     id: "tog-same",
     label: "Tog-Same",
     typeCombo: "Quartered",
-    startPosition: "beta5",
+    startPlacement: "beta5",
   },
   {
     id: "quarter-same",
     label: "Quarter-Same",
     typeCombo: "Quartered",
-    startPosition: "gamma11",
+    startPlacement: "gamma11",
   },
   {
     id: "split-opp",
     label: "Split-Opp",
     typeCombo: "Halved",
-    startPosition: "alpha1",
+    startPlacement: "alpha1",
   },
   {
     id: "tog-opp",
     label: "Tog-Opp",
     typeCombo: "Halved",
-    startPosition: "beta5",
+    startPlacement: "beta5",
   },
   {
     id: "quarter-opp",
     label: "Quarter-Opp",
     typeCombo: "Halved",
-    startPosition: "gamma11",
+    startPlacement: "gamma11",
   },
 ];
 

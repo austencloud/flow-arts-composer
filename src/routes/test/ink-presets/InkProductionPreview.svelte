@@ -126,8 +126,8 @@
     if (!sequence?.steps.length) return null;
     if (animationState.currentStep < 1) {
       return (
-        sequence.startPosition ??
-        sequence.startingPosition ??
+        sequence.startPlacement ??
+        sequence.startingPlacement ??
         sequence.steps[0] ??
         null
       );

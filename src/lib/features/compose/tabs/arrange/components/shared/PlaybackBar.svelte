@@ -16,7 +16,7 @@
     currentStep,
     totalSteps,
     bpm = $bindable(120),
-    skipStartPosition = true,
+    skipStartPlacement = true,
     onPlayPause,
     onStop,
     onStepHalfBack,
@@ -30,7 +30,7 @@
     currentStep: number;
     totalSteps: number;
     bpm: number;
-    skipStartPosition?: boolean;
+    skipStartPlacement?: boolean;
     onPlayPause: () => void;
     onStop: () => void;
     onStepHalfBack: () => void;
@@ -69,10 +69,10 @@
       {#if onToggleLoop}
         <button
           class="loop-btn"
-          class:active={skipStartPosition}
+          class:active={skipStartPlacement}
           onclick={onToggleLoop}
-          aria-label={skipStartPosition ? "Loop mode: seamless" : "Loop mode: with start position"}
-          title={skipStartPosition ? "Seamless loop (skips start pose)" : "Includes start pose each loop"}
+          aria-label={skipStartPlacement ? "Loop mode: seamless" : "Loop mode: with start position"}
+          title={skipStartPlacement ? "Seamless loop (skips start pose)" : "Includes start pose each loop"}
         >
           <i class="fas fa-repeat" aria-hidden="true"></i>
         </button>

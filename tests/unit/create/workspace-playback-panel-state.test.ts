@@ -180,7 +180,7 @@ describe("workspace playback", () => {
     expect(state.workspacePlaybackSourceRevision).toBeNull();
   });
 
-  it("does not enter playback with only a starting position", () => {
+  it("does not enter playback with only a starting placement", () => {
     const state = createState();
     state.startWorkspacePlayback({ ...sequence(), steps: [] }, 0);
     expect(state.workspacePlayback).toBeNull();

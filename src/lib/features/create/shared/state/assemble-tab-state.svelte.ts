@@ -30,7 +30,7 @@ import type {
 } from "$lib/features/assemble-lab/state/assemble-state.svelte";
 import {
   stepToMotion,
-  convertToStartPosition,
+  convertToStartPlacement,
   convertToPictographs,
   lookupLetter,
   sequenceToBuilderHydration,
@@ -38,7 +38,7 @@ import {
 } from "$lib/features/assemble-lab/services/builder-step-converter";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -166,7 +166,7 @@ export function createAssembleTabState(
     const leftSteps = builderState.leftSteps;
     const rightSteps = builderState.rightSteps;
     const gridMode = builderState.gridMode;
-    const startPicto = convertToStartPosition(
+    const startPicto = convertToStartPlacement(
       builderState.startPoses,
       leftSteps,
       rightSteps,
@@ -190,13 +190,13 @@ export function createAssembleTabState(
     const steps = generatedSteps.map((step, index) =>
       mergeBuilderStep(step, metadataSteps[index], index)
     );
-    const startPosition = startPicto
-      ? createStartPositionData({ ...startPicto })
+    const startPlacement = startPicto
+      ? createStartPlacementData({ ...startPicto })
       : undefined;
 
     isApplyingBuilderChange = true;
     try {
-      if (!startPosition && steps.length === 0) {
+      if (!startPlacement && steps.length === 0) {
         if (current) sequenceState.setCurrentSequence(null);
         lastSynchronizedDocument = null;
         return;
@@ -214,8 +214,8 @@ export function createAssembleTabState(
         tags: [],
       };
       const {
-        startPosition: _oldStartPosition,
-        startingPosition: _oldStartingPosition,
+        startPlacement: _oldStartPlacement,
+        startingPlacement: _oldStartingPlacement,
         ...currentWithoutStart
       } = currentDocument;
       let next: SequenceData = {
@@ -224,9 +224,9 @@ export function createAssembleTabState(
         word: "",
         sequenceLength: steps.length,
         gridMode,
-        ...(startPosition && {
-          startPosition,
-          startingPosition: startPosition,
+        ...(startPlacement && {
+          startPlacement,
+          startingPlacement: startPlacement,
         }),
       };
       next = { ...next, word: generateSequenceWord(next) };

@@ -86,22 +86,22 @@ function loadPictographData() {
   const lines = csv.trim().split("\n");
   const headers = lines[0].split(",").map((h) => h.trim());
   const letterIdx = headers.indexOf("letter");
-  const startIdx = headers.indexOf("startPosition");
-  const endIdx = headers.indexOf("endPosition");
+  const startIdx = headers.indexOf("startPlacement");
+  const endIdx = headers.indexOf("endPlacement");
 
   const entries = [];
   for (let i = 1; i < lines.length; i++) {
     const vals = lines[i].split(",").map((v) => v.trim());
     entries.push({
       letter: vals[letterIdx],
-      startPosition: vals[startIdx],
-      endPosition: vals[endIdx],
+      startPlacement: vals[startIdx],
+      endPlacement: vals[endIdx],
     });
   }
   return entries;
 }
 
-function positionToGroup(pos) {
+function placementToGroup(pos) {
   if (!pos) return null;
   if (pos.startsWith("alpha")) return "alpha";
   if (pos.startsWith("beta")) return "beta";
@@ -114,8 +114,8 @@ function buildTransitionData(pictographs) {
   const letterEndGroups = new Map();
 
   for (const p of pictographs) {
-    const sg = positionToGroup(p.startPosition);
-    const eg = positionToGroup(p.endPosition);
+    const sg = placementToGroup(p.startPlacement);
+    const eg = placementToGroup(p.endPlacement);
     if (!sg || !eg) continue;
     if (!letterStartGroups.has(p.letter)) letterStartGroups.set(p.letter, new Set());
     if (!letterEndGroups.has(p.letter)) letterEndGroups.set(p.letter, new Set());

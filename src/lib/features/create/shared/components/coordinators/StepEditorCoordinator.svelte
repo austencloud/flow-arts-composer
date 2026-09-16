@@ -79,7 +79,7 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
     // This ensures we re-evaluate when selection changes
     const _selectedStep = state.selectedStepNumber;
     const _sequence = state.currentSequence;
-    const _startPos = state.selectedStartPosition;
+    const _startPos = state.selectedStartPlacement;
     // Multi-select drives the batch editor branch below — track it too.
     const _multiMode = state.isMultiSelectMode;
     const _multiSet = state.selectedStepNumbers;
@@ -90,11 +90,11 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
   // Now this will properly update because activeSequenceState re-evaluates on selection change
   const selectedStepNumber = $derived(activeSequenceState.selectedStepNumber);
 
-  // CRITICAL: Track selectedStartPosition explicitly to ensure reactivity
-  // when orientation changes update the start position. Without this explicit
+  // CRITICAL: Track selectedStartPlacement explicitly to ensure reactivity
+  // when orientation changes update the start placement. Without this explicit
   // dependency, Svelte may not detect that selectedStepData needs to re-compute.
-  const selectedStartPosition = $derived.by(
-    () => activeSequenceState.selectedStartPosition
+  const selectedStartPlacement = $derived.by(
+    () => activeSequenceState.selectedStartPlacement
   );
 
   // Get current sequence with explicit reactive tracking
@@ -124,11 +124,11 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
   // We must compute the value here with explicit dependencies on reactive state.
   const selectedStepData = $derived.by(() => {
     // Access reactive properties to establish dependencies
-    const startPos = selectedStartPosition;
+    const startPos = selectedStartPlacement;
     const currentSeq = sequence;
     const stepNum = selectedStepNumber;
 
-    // Step 0 = start position. The factory fills any missing hand with an
+    // Step 0 = start placement. The factory fills any missing hand with an
     // invisible placeholder (both-required canonical Step shape).
     if (stepNum === 0 && startPos) {
       return createStepData({
@@ -370,10 +370,10 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
     }
     hapticService?.trigger("warning");
 
-    // Deleting the start position means clearing the whole sequence — steps
+    // Deleting the start placement means clearing the whole sequence — steps
     // can't exist without one. Route to the module-owned confirmed clear flow,
     // which pushes its own CLEAR_SEQUENCE undo snapshot and returns the user
-    // to the start-position picker.
+    // to the start-placement picker.
     if (selectedStepNumber === 0) {
       ctx.handlers.requestClearSequence();
       return;
@@ -460,11 +460,11 @@ import { getStepOperator } from "$lib/features/create/shared/get-step-operator";
     const currentSequence = activeSequenceState.currentSequence;
     if (!currentSequence) return;
 
-    // Handle start position (beat 0)
+    // Handle start placement (beat 0)
     if (selectedStepNumber === 0) {
-      activeSequenceState.setStartPosition({
+      activeSequenceState.setStartPlacement({
         ...updatedStepData,
-        isStartPosition: true as const,
+        isStartPlacement: true as const,
       });
       return;
     }

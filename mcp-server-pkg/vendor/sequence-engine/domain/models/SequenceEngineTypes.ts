@@ -7,10 +7,10 @@
  */
 
 /**
- * Position groups for letter transitions.
- * Letters can only follow other letters if their position groups match.
+ * Placement groups for letter transitions.
+ * Letters can only follow other letters if their placement groups match.
  */
-export type PositionGroup = "alpha" | "beta" | "gamma";
+export type PlacementGroup = "alpha" | "beta" | "gamma";
 
 /**
  * Motion types for hand movements.
@@ -82,12 +82,12 @@ export type LetterCategory =
 export type LetterType = 1 | 2 | 3 | 4 | 5 | 6;
 
 /**
- * Information about a letter's position transitions.
+ * Information about a letter's placement transitions.
  */
-export interface LetterPositionInfo {
+export interface LetterPlacementInfo {
   letter: string;
-  startPositionGroup: PositionGroup;
-  endPositionGroup: PositionGroup;
+  startPlacementGroup: PlacementGroup;
+  endPlacementGroup: PlacementGroup;
   category?: LetterCategory;
 }
 
@@ -95,8 +95,8 @@ export interface LetterPositionInfo {
  * Raw letter mapping data from letter-mappings.json.
  */
 export interface LetterMappingData {
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: string;
   rightMotion: string;
 }
@@ -130,10 +130,10 @@ export interface MotionData {
 export interface SequenceStep {
   /** The letter representing this motion */
   letter: string;
-  /** Starting position (e.g., "alpha1", "beta3") */
-  startPosition: string;
-  /** Ending position */
-  endPosition: string;
+  /** Starting placement (e.g., "alpha1", "beta3") */
+  startPlacement: string;
+  /** Ending placement */
+  endPlacement: string;
   /** Left-hand/prop motion data */
   leftMotion: MotionData;
   /** Right-hand/prop motion data */
@@ -148,7 +148,7 @@ export interface SequenceStep {
 export interface SequenceResult {
   /** Whether the build was successful */
   isValid: boolean;
-  /** The sequence steps (index 0 is start position) */
+  /** The sequence steps (index 0 is start placement) */
   steps: SequenceStep[];
   /** Error message if build failed */
   error?: string;

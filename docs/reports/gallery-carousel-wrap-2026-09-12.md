@@ -40,7 +40,7 @@ read-ahead carousel").
 const step = (currentStep % stepCount) + 1; // 1 .. stepCount+1, never < 1
 ```
 
-and mounted `StepStrip` with `loop={false}` while leaving `includeStartPosition`
+and mounted `StepStrip` with `loop={false}` while leaving `includeStartPlacement`
 at its default `true`.
 
 Two defects follow, and they are exactly the two reported symptoms:
@@ -75,7 +75,7 @@ The revision keeps playback time alone and solves the wrap entirely on the rail.
 `src/lib/shared/timeline/loop-cycle.ts` (new) carries `performsStartSlot`, which
 is the rule the playback controller already applies at its own boundary
 (`onAnimationUpdate`): a seamlessly loopable sequence resumes at
-`startPositionDuration`, skipping the repeated start hold because its last beat
+`startPlacementDuration`, skipping the repeated start hold because its last beat
 already ends on the start pose; a freeform sequence restarts at 0 and replays
 it, which is what makes its pose jump legible.
 
@@ -88,7 +88,7 @@ it, which is what makes its pose jump legible.
   motion, so tapping play never shows a held pose.
 
 **2. The wrap is fixed on the rail, not in the clock.** `CardHoverPreviewLayer`
-keeps `includeStartPosition` (the Start cell stays in the rail, so the card
+keeps `includeStartPlacement` (the Start cell stays in the rail, so the card
 morph keeps its `card-morph-cell-0` pair) and now passes `loop={true}`.
 StepStrip's loop offset makes the focus index monotonic across the seam, so the
 slide transition is never cut:

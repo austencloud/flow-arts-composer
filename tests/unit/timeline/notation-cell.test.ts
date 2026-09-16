@@ -19,7 +19,7 @@ describe("buildNotationCells", () => {
 
   it("emits a Start cell then one cell per beat, 1-based labels", () => {
     const s = seq({
-      startPosition: { id: "sp" } as any,
+      startPlacement: { id: "sp" } as any,
       steps: [{ letter: "A" } as any, { letter: "B" } as any],
     });
     const cells = buildNotationCells(s);
@@ -30,8 +30,8 @@ describe("buildNotationCells", () => {
     expect(cells[1].data).toBe(s.steps[0]);
   });
 
-  it("derives a start cell from the first beat when startPosition is absent", () => {
-    const s = seq({ startPosition: null, steps: [{ letter: "A", motions: {} } as any] });
+  it("derives a start cell from the first beat when startPlacement is absent", () => {
+    const s = seq({ startPlacement: null, steps: [{ letter: "A", motions: {} } as any] });
     const cells = buildNotationCells(s);
     expect(cells[0].isStart).toBe(true);
     expect(cells).toHaveLength(2); // derived start + 1 beat

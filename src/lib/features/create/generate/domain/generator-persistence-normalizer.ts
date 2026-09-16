@@ -75,11 +75,11 @@ export function normalizePersistedStartEndOptions<T>(value: T): T {
   delete normalized.blueStartOrientation;
   delete normalized.redStartOrientation;
 
-  if (value.startPosition !== undefined) {
-    normalized.startPosition = normalizeLegacyStep(value.startPosition);
+  if (value.startPlacement !== undefined) {
+    normalized.startPlacement = normalizeLegacyStep(value.startPlacement);
   }
-  if (value.endPosition !== undefined) {
-    normalized.endPosition = normalizeLegacyStep(value.endPosition);
+  if (value.endPlacement !== undefined) {
+    normalized.endPlacement = normalizeLegacyStep(value.endPlacement);
   }
 
   return normalized as T;

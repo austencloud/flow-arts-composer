@@ -50,25 +50,25 @@ function isOpposite(start: GridLocation, end: GridLocation): boolean {
 }
 
 export function deriveBuilderMotionGeometry(
-  startPosition: GridLocation,
-  endPosition: GridLocation,
+  startPlacement: GridLocation,
+  endPlacement: GridLocation,
   startOrientation: Orientation,
   rotationDirection: RotationDirection,
   turnCount: number
 ): BuilderMotionGeometry {
-  const startCenterAngle = LOCATION_ANGLES[startPosition];
-  const endCenterAngle = LOCATION_ANGLES[endPosition];
+  const startCenterAngle = LOCATION_ANGLES[startPlacement];
+  const endCenterAngle = LOCATION_ANGLES[endPlacement];
   const startStaffAngle = staffAngleForOrientation(
     startOrientation,
     startCenterAngle
   );
-  const isSamePoint = startPosition === endPosition;
+  const isSamePoint = startPlacement === endPlacement;
   const isHash =
     !isSamePoint &&
-    (startPosition === GridLocation.CENTER ||
-      endPosition === GridLocation.CENTER);
+    (startPlacement === GridLocation.CENTER ||
+      endPlacement === GridLocation.CENTER);
   const isStraightPath =
-    !isSamePoint && (isHash || isOpposite(startPosition, endPosition));
+    !isSamePoint && (isHash || isOpposite(startPlacement, endPlacement));
   const centerMovement = normalizeAngleSigned(
     endCenterAngle - startCenterAngle
   );
@@ -98,8 +98,8 @@ export function deriveBuilderMotionGeometry(
     staffRotationDelta,
     isSamePoint,
     isStraightPath,
-    startRadius: startPosition === GridLocation.CENTER ? 0 : 1,
-    endRadius: endPosition === GridLocation.CENTER ? 0 : 1,
+    startRadius: startPlacement === GridLocation.CENTER ? 0 : 1,
+    endRadius: endPlacement === GridLocation.CENTER ? 0 : 1,
   };
 }
 

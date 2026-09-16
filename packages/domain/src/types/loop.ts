@@ -35,7 +35,7 @@ export type LoopTransform =
 /** Fixed-point data for a single transform or compound. */
 export interface LoopFixedPointEntry {
   transform: string;
-  fixedPositions: string[];
+  fixedPlacements: string[];
   note?: string;
 }
 

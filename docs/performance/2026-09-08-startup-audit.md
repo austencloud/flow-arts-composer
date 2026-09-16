@@ -71,7 +71,7 @@ The shell becomes usable immediately while the splash fades. The existing
 ### 2. Create waits for more than the active Construct tab
 
 `CreateModuleInitializer.initialize()` awaits the orchestrator and then a
-`Promise.all` containing Construct, Generator, Assemble and default start-position
+`Promise.all` containing Construct, Generator, Assemble and default start-placement
 initialization. CreateModule separately awaits initializer code, restored sequence
 state, autosave session resolution and recovered session metadata.
 
@@ -283,7 +283,7 @@ production Create initializer took 8.5 ms, inactive tab initialization took unde
 resolution 34 ms. These measurements lower the priority of redesigning tab state
 initialization. The fixed start-grid wait measured 210 ms.
 
-First start-position selection produced 36 options after 890 ms on desktop and
+First start-placement selection produced 36 options after 890 ms on desktop and
 849 ms on mobile. The earlier mobile selection sample was 895 ms. Desktop spans
 showed 175 ms CSV loading, 46 ms parsing, 254 ms pictograph preparation and 281 ms
 layout settling; preparation and settling overlap. Mobile layout settling took

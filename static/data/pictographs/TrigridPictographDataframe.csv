@@ -1,4 +1,4 @@
-letter,startPosition,endPosition,timing,direction,blueMotionType,blueRotationDirection,blueStartLocation,blueEndLocation,redMotionType,redRotationDirection,redStartLocation,redEndLocation
+letter,startPlacement,endPlacement,timing,direction,blueMotionType,blueRotationDirection,blueStartLocation,blueEndLocation,redMotionType,redRotationDirection,redStartLocation,redEndLocation
 G,beta1,beta2,tog,same,pro,cw,n,se,pro,cw,n,se
 G,beta1,beta3,tog,same,pro,ccw,n,sw,pro,ccw,n,sw
 G,beta2,beta3,tog,same,pro,cw,se,sw,pro,cw,se,sw

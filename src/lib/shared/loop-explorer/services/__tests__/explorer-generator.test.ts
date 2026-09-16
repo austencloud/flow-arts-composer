@@ -18,8 +18,8 @@ function fakeSequence(length: number): SequenceData {
   const steps = Array.from({ length }, (_, i) => ({
     id: `step-${i}`,
     letter: "A",
-    startPosition: "alpha1",
-    endPosition: "alpha3",
+    startPlacement: "alpha1",
+    endPlacement: "alpha3",
     motions: {
       left: { motionType: "pro", startLocation: "n", endLocation: "e" },
       right: { motionType: "pro", startLocation: "s", endLocation: "w" },

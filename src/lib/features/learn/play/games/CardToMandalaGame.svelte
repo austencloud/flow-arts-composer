@@ -158,7 +158,7 @@
           <ChoreoCard
             sequence={currentSequence}
             showQRCodes={false}
-            includeStartPosition={false}
+            includeStartPlacement={false}
           />
         </div>
         <ScorePopAnimation

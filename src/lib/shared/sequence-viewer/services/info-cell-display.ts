@@ -4,8 +4,8 @@ export type InfoCellChoice = "qr" | "mandala" | "none";
 
 export interface InfoCellGeometryArgs {
   stepCount: number;
-  includeStartPosition: boolean;
-  startPositionLayout: "row" | "column";
+  includeStartPlacement: boolean;
+  startPlacementLayout: "row" | "column";
   /** STEP column override (pre start-column), null/undefined = auto layout table. */
   columnCount?: number | null;
 }
@@ -18,19 +18,19 @@ export interface InfoCellGeometryArgs {
  * (card-front-assembler) both render, including the 6-count column accommodation.
  */
 export function getInfoCellCount(args: InfoCellGeometryArgs): number {
-  const { stepCount, includeStartPosition, startPositionLayout, columnCount } =
+  const { stepCount, includeStartPlacement, startPlacementLayout, columnCount } =
     args;
 
   // One-count cards (single beat + start) have no spare cell; the info-cell
   // scheme is anchored to the start position.
   if (stepCount <= 1) return 0;
-  if (!includeStartPosition) return 0;
+  if (!includeStartPlacement) return 0;
 
   let cols: number;
   let rows: number;
   if (columnCount != null && columnCount > 0) {
-    cols = startPositionLayout === "column" ? columnCount + 1 : columnCount;
-    if (startPositionLayout === "row") {
+    cols = startPlacementLayout === "column" ? columnCount + 1 : columnCount;
+    if (startPlacementLayout === "row") {
       rows = 1 + Math.ceil(stepCount / cols);
     } else {
       const stepsPerRow = cols - 1;
@@ -41,18 +41,18 @@ export function getInfoCellCount(args: InfoCellGeometryArgs): number {
   } else {
     [cols, rows] = calculateLayout(
       stepCount,
-      includeStartPosition,
-      startPositionLayout
+      includeStartPlacement,
+      startPlacementLayout
     );
   }
 
   // Column-layout accommodation (mirrors choreo-card-layout-state.svelte.ts:128):
   // the 6-count column layout gains a row so QR + mandala both fit.
-  if (startPositionLayout === "column" && stepCount === 6 && rows === 2) {
+  if (startPlacementLayout === "column" && stepCount === 6 && rows === 2) {
     rows = 3;
   }
 
-  const count = startPositionLayout === "row" ? cols - 1 : rows - 1;
+  const count = startPlacementLayout === "row" ? cols - 1 : rows - 1;
   return Math.max(0, count);
 }
 

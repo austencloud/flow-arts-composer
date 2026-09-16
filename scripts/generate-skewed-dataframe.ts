@@ -42,8 +42,8 @@ type HandPath = "cw" | "ccw" | "dash" | "static";
 
 interface PictographRow {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotionType: MotionType;
@@ -68,12 +68,12 @@ interface SkewedRow extends PictographRow {
 
 // Classify which category a skewed motion belongs to
 function classifyCategory(
-  endPosition: string,
+  endPlacement: string,
   leftSkewDir: SkewDir,
   rightSkewDir: SkewDir
 ): 1 | 2 {
   const isSkewedEnd =
-    endPosition.startsWith("zeta") || endPosition.startsWith("eta");
+    endPlacement.startsWith("zeta") || endPlacement.startsWith("eta");
 
   // Category 1: Ends in a skewed position (one hand in each grid type)
   if (isSkewedEnd) return 1;
@@ -238,7 +238,7 @@ function isValidSkewedMotion(
 }
 
 // Derive end position name from hand locations
-function deriveEndPosition(left: Location, right: Location): string {
+function deriveEndPlacement(left: Location, right: Location): string {
   // Map of (blue, red) -> position
   const positionMap: Record<string, string> = {
     // Alpha positions (180°)
@@ -330,8 +330,8 @@ function parseRow(line: string, header: string[]): PictographRow | null {
 
   return {
     letter: row.letter,
-    startPosition: row.startPosition,
-    endPosition: row.endPosition,
+    startPlacement: row.startPlacement,
+    endPlacement: row.endPlacement,
     timing: row.timing,
     direction: row.direction,
     leftMotionType: row.leftMotionType as MotionType,
@@ -386,17 +386,17 @@ function generateSkewedVariants(base: PictographRow): SkewedRow[] {
       if (!leftCrosses && !rightCrosses) continue;
 
       // Derive the new end position
-      const newEndPosition = deriveEndPosition(newLeftEnd, newRightEnd);
+      const newEndPlacement = deriveEndPlacement(newLeftEnd, newRightEnd);
 
       // Skip if we get an unknown position
-      if (newEndPosition.startsWith("unknown_")) {
+      if (newEndPlacement.startsWith("unknown_")) {
         console.warn(
           `Unknown position for ${newLeftEnd},${newRightEnd} from ${base.letter}`
         );
         continue;
       }
 
-      const category = classifyCategory(newEndPosition, leftSkewDir, rightSkewDir);
+      const category = classifyCategory(newEndPlacement, leftSkewDir, rightSkewDir);
 
       // Determine if each motion actually crossed the boundary (cardinal <-> intercardinal)
       const leftActuallyCrossed = crossesBoundary(base.leftStartLocation, newLeftEnd);
@@ -461,7 +461,7 @@ function generateSkewedVariants(base: PictographRow): SkewedRow[] {
         rightEndLocation: newRightEnd,
         leftRotationDirection: leftRotationDir,
         rightRotationDirection: rightRotationDir,
-        endPosition: newEndPosition,
+        endPlacement: newEndPlacement,
         leftSkewDir,
         rightSkewDir,
         leftHandPath,
@@ -480,8 +480,8 @@ function generateSkewedVariants(base: PictographRow): SkewedRow[] {
 function toCSVLine(row: SkewedRow): string {
   return [
     row.letter,
-    row.startPosition,
-    row.endPosition,
+    row.startPlacement,
+    row.endPlacement,
     row.timing,
     row.direction,
     row.leftMotionType,
@@ -515,8 +515,8 @@ function main() {
 
   const header = [
     "letter",
-    "startPosition",
-    "endPosition",
+    "startPlacement",
+    "endPlacement",
     "timing",
     "direction",
     "blueMotionType",
@@ -567,7 +567,7 @@ function main() {
 
   // Write output
   const outputHeader =
-    "letter,startPosition,endPosition,timing,direction,blueMotionType,blueRotationDirection,blueSkewDir,blueHandPath,blueSkewSteps,blueStartLocation,blueEndLocation,redMotionType,redRotationDirection,redSkewDir,redHandPath,redSkewSteps,redStartLocation,redEndLocation,category";
+    "letter,startPlacement,endPlacement,timing,direction,blueMotionType,blueRotationDirection,blueSkewDir,blueHandPath,blueSkewSteps,blueStartLocation,blueEndLocation,redMotionType,redRotationDirection,redSkewDir,redHandPath,redSkewSteps,redStartLocation,redEndLocation,category";
   const outputLines = [outputHeader, ...uniqueVariants.map(toCSVLine)];
 
   fs.writeFileSync(outputPath, outputLines.join("\n"), "utf-8");
@@ -575,12 +575,12 @@ function main() {
 
   // Stats
   const byLetter = new Map<string, number>();
-  const byEndPosition = new Map<string, number>();
+  const byEndPlacement = new Map<string, number>();
   const byCategory = new Map<number, number>();
 
   for (const v of uniqueVariants) {
     byLetter.set(v.letter, (byLetter.get(v.letter) || 0) + 1);
-    byEndPosition.set(v.endPosition, (byEndPosition.get(v.endPosition) || 0) + 1);
+    byEndPlacement.set(v.endPlacement, (byEndPlacement.get(v.endPlacement) || 0) + 1);
     byCategory.set(v.category, (byCategory.get(v.category) || 0) + 1);
   }
 
@@ -595,7 +595,7 @@ function main() {
     .forEach(([letter, count]) => console.log(`  ${letter}: ${count}`));
 
   console.log("\nVariants by end position:");
-  [...byEndPosition.entries()]
+  [...byEndPlacement.entries()]
     .sort((a, b) => a[0].localeCompare(b[0]))
     .forEach(([pos, count]) => console.log(`  ${pos}: ${count}`));
 }

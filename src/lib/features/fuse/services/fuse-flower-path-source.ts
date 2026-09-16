@@ -1,7 +1,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { CardVariation } from "$lib/features/choreo-card/domain/models/DeckRelease";
 import { applyVariationDescriptor } from "$lib/features/choreo-card/services/deck-variation";
-import { shiftStartPosition } from "$lib/shared/create/services/sequence-transforms";
+import { shiftStartPlacement } from "$lib/shared/create/services/sequence-transforms";
 import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   HandSide,
@@ -91,7 +91,7 @@ export async function buildFuseFlowerPath(
     : 0;
   const firstBeat = locationBeat || variation.firstBeat;
   const rephased = firstBeat
-    ? shiftStartPosition(flowerSequence, firstBeat)
+    ? shiftStartPlacement(flowerSequence, firstBeat)
     : flowerSequence;
 
   if (!variation.startOrientation) return rephased;

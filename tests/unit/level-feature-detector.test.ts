@@ -74,7 +74,7 @@ describe("detectLevelFeatures", () => {
 
   it("flags tau/terra positions as L6", () => {
     const s = seq({
-      steps: [stepWith({}, { startPosition: "tau3", endPosition: "terra1" })] as unknown as SequenceData["steps"],
+      steps: [stepWith({}, { startPlacement: "tau3", endPlacement: "terra1" })] as unknown as SequenceData["steps"],
     });
     const report = detectLevelFeatures(s);
     expect(report.beyondLevel3).toBe(true);
@@ -84,7 +84,7 @@ describe("detectLevelFeatures", () => {
   it("flags zeta/eta positions as L5", () => {
     const s = seq({
       gridMode: "skewed",
-      steps: [stepWith({}, { startPosition: "zeta5", endPosition: "eta12" })] as unknown as SequenceData["steps"],
+      steps: [stepWith({}, { startPlacement: "zeta5", endPlacement: "eta12" })] as unknown as SequenceData["steps"],
     });
     const report = detectLevelFeatures(s);
     expect(report.beyondLevel3).toBe(true);

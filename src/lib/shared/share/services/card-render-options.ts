@@ -65,7 +65,7 @@ export interface CardRenderOptionsInput {
  * container the card is drawn into.
  *
  * `buildCardRenderOptions` below always emits a CONCRETE `columnCount` and
- * `startPositionLayout`, because the compositor renders to a bare canvas with
+ * `startPlacementLayout`, because the compositor renders to a bare canvas with
  * no container to measure and needs the geometry handed to it. A surface that
  * has its own container must ask this FIRST: the Post Studio slot is half a
  * 9:16 frame — wider than tall — while the Card pane that resolved those
@@ -112,15 +112,15 @@ export function buildCardRenderOptions(
     stepColumns === null && input.resolvedAutoLayout?.stepCount === stepCount
       ? input.resolvedAutoLayout
       : null;
-  const startPositionLayout =
+  const startPlacementLayout =
     automaticLayout && automaticLayout.startPlacement !== "none"
       ? automaticLayout.startPlacement
-      : ic.getStartPositionLayoutForStepCount(stepCount);
+      : ic.getStartPlacementLayoutForStepCount(stepCount);
 
   const columnCount =
     stepColumns != null
       ? stepColumns +
-        (ic.includeStartPosition && startPositionLayout === "column" ? 1 : 0)
+        (ic.includeStartPlacement && startPlacementLayout === "column" ? 1 : 0)
       : automaticLayout
         ? automaticLayout.cols
         : undefined;
@@ -133,8 +133,8 @@ export function buildCardRenderOptions(
   // so multi-cell cards keep both. oneCount already forces QR off (no spare cell).
   const effectiveInfoCell = resolveInfoCellDisplay({
     stepCount,
-    includeStartPosition: ic.includeStartPosition,
-    startPositionLayout,
+    includeStartPlacement: ic.includeStartPlacement,
+    startPlacementLayout,
     columnCount: infoCellStepColumns,
     showQRCode: oneCount ? false : ic.showQRCode,
     showMandala: ic.showMandala,
@@ -149,8 +149,8 @@ export function buildCardRenderOptions(
       leftPropTypeOverride: props.leftPropType,
       rightPropTypeOverride: props.rightPropType,
     }),
-    includeStartPosition: ic.includeStartPosition,
-    startPositionLayout,
+    includeStartPlacement: ic.includeStartPlacement,
+    startPlacementLayout,
     columnCount,
     addStepNumbers: ic.addStepNumbers,
     addWord: ic.addWord,

@@ -13,18 +13,18 @@
  * last step's END locations (see `option-loader.ts` for the app's use of the
  * same call). The engine has no sequence at this point — it has a bare seam,
  * which is precisely the pair of hand locations
- * `getGridLocationsFromPosition` already maps a `GridPosition` to. So a
+ * `getGridLocationsFromPlacement` already maps a `GridPlacement` to. So a
  * one-step PROBE is built that simply STANDS at the seam (both hands static,
  * start location = end location), and the handler answers with everything that
  * can follow it. That reuses the app's seam matching rather than
- * re-implementing a by-start-position scan over the dataframe.
+ * re-implementing a by-start-placement scan over the dataframe.
  *
  * The probe's orientations are IN/IN and are deliberately meaningless: a bare
  * seam carries no orientation history. The handler rewrites each option's start
  * orientation to continue from the probe, and the engine's splice builder
  * re-derives the whole chain's orientations from the assembled sequence's own
  * start anyway (`recalculateAllOrientations`), so nothing downstream trusts the
- * value invented here. Locations and position labels are what matter, and those
+ * value invented here. Locations and placement labels are what matter, and those
  * come from the dataframe untouched.
  *
  * **What gets filtered out, and why it is counted.** Three gates, all of which
@@ -37,12 +37,12 @@
  *      the entire dataframe as if it belonged at that seam;
  *   2. its letter must belong to a roster-confirmed ambient base
  *      (`ambientLetterSet`) — connective tissue, not a third card;
- *   3. its position labels must agree with its own motion locations
- *      (`positionLabelsMatchLocations`).
+ *   3. its placement labels must agree with its own motion locations
+ *      (`placementLabelsMatchLocations`).
  *
  * Gate 3 is the one worth watching. The engine drops mismatched material and
  * warns exactly ONCE per search, so a dataframe that ever started labelling a
- * location pair differently than `getGridPositionFromLocations` does would
+ * location pair differently than `getGridPlacementFromLocations` does would
  * quietly cost real bridges. `stats` therefore counts every rejection by
  * category, on the provider itself, where it is inspectable from a test or a
  * lab panel instead of scrolling past in a console. Pinned at zero across all
@@ -51,7 +51,7 @@
 
 import { ambientLetterSet } from "../domain/base-sequence-registry";
 import type { AmbientOptionProvider, SeamState } from "../domain/types";
-import { positionLabelsMatchLocations } from "./position-groups";
+import { placementLabelsMatchLocations } from "./placement-groups";
 
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -59,7 +59,7 @@ import type {
   GridLocation,
   GridMode,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridLocationsFromPosition } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridLocationsFromPlacement } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import {
   HandSide,
   MotionType,
@@ -91,7 +91,7 @@ export interface RuntimeAmbientStats {
    *
    * Counted apart from `seamMismatches` because it is the normal, expected
    * answer for an unreachable seam, not suspect material. Measured over all 81
-   * `GridPosition` values in diamond mode (2026-08-04): 16 seams answer with
+   * `GridPlacement` values in diamond mode (2026-08-04): 16 seams answer with
    * material, 17 name no location pair, and **48 hit this fallback** — folding
    * those into `seamMismatches` would have added 48 x 576 = 27,648 routine
    * rejections and buried the label-gate signal completely.
@@ -101,7 +101,7 @@ export interface RuntimeAmbientStats {
   readonly seamMismatches: number;
   /** Dropped: letter belongs to no roster-confirmed ambient base. */
   readonly letterRejections: number;
-  /** Dropped: position labels disagree with the step's own motion locations. */
+  /** Dropped: placement labels disagree with the step's own motion locations. */
   readonly labelMismatches: number;
   /** Handed to the engine. */
   readonly optionsKept: number;
@@ -129,7 +129,7 @@ export function snapshotAmbientStats(
  * resolves to "what can start here?".
  */
 function buildSeamProbe(seam: SeamState, gridMode: GridMode): StepData {
-  const [leftLocation, rightLocation] = getGridLocationsFromPosition(seam);
+  const [leftLocation, rightLocation] = getGridLocationsFromPlacement(seam);
   const stand = (color: HandSide, location: GridLocation) =>
     createMotionData({
       hand: color,
@@ -144,8 +144,8 @@ function buildSeamProbe(seam: SeamState, gridMode: GridMode): StepData {
 
   return createStepData({
     letter: null,
-    startPosition: seam,
-    endPosition: seam,
+    startPlacement: seam,
+    endPlacement: seam,
     gridMode,
     motions: {
       [HandSide.LEFT]: stand(HandSide.LEFT, leftLocation),
@@ -221,7 +221,7 @@ export function createRuntimeAmbientProvider(
     // `getNextOptionsForSequence` relays its ENTIRE row set when nothing
     // matched the probe (its documented "no matching options found" fallback).
     // That is the truthful answer for a seam with no continuations — a diamond
-    // sequence standing on a box-only position, say — so the right response is
+    // sequence standing on a box-only placement, say — so the right response is
     // an empty list, not a 576-row filtering pass that would reject every row
     // one at a time and bury the label-gate counter under the noise.
     if (offered.length > 0 && offered.length === (await totalRows())) {
@@ -240,7 +240,7 @@ export function createRuntimeAmbientProvider(
 
     const kept: StepData[] = [];
     for (const option of offered) {
-      if (option.startPosition !== seam) {
+      if (option.startPlacement !== seam) {
         stats.seamMismatches++;
         continue;
       }
@@ -254,7 +254,7 @@ export function createRuntimeAmbientProvider(
       }
 
       const step = createStepData({ ...option, isBlank: false });
-      if (!positionLabelsMatchLocations(step)) {
+      if (!placementLabelsMatchLocations(step)) {
         stats.labelMismatches++;
         continue;
       }

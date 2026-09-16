@@ -429,7 +429,7 @@
                 ? "Extend - locked, sign up to unlock"
                 : isExtending
                   ? "Extending sequence"
-                  : "Extend sequence back to starting position"}
+                  : "Extend sequence back to starting placement"}
           >
             {@render lockBadge()}
             <div class="btn-icon">

@@ -20,7 +20,7 @@
  */
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { TnDElement } from "$lib/features/choreo-card/domain/tnd-element";
 import type { PreparedSequenceHandoff } from "$lib/shared/animation-engine/domain/chaining-types";
 import { generatePerVisitDemo } from "$lib/shared/landing/data/per-visit-demo";
@@ -121,7 +121,7 @@ export function createHeroAct(options?: {
    */
   async function drawHeroSequence(opts: {
     propType: PropType;
-    chainStartPosition?: StartPositionData | null;
+    chainStartPlacement?: StartPlacementData | null;
   }): Promise<HeroDraw> {
     // Short-circuit so a disabled fraction (0) draws no random — keeps the
     // random call order identical to the pre-matrix act for callers that opt out.
@@ -130,7 +130,7 @@ export function createHeroAct(options?: {
         const { drawMatrixRealization } =
           await import("$lib/shared/landing/data/shape-matrix-hero-pool");
         const draw = await drawMatrixRealization({
-          chainStartPosition: opts.chainStartPosition ?? null,
+          chainStartPlacement: opts.chainStartPlacement ?? null,
           random,
         });
         if (draw) return { sequence: draw.sequence, element: draw.element };
@@ -143,8 +143,8 @@ export function createHeroAct(options?: {
       propType: opts.propType,
       // Only constrain the start when chaining — an unconstrained first draw
       // omits it entirely (matches the pre-matrix call shape).
-      ...(opts.chainStartPosition
-        ? { startPosition: opts.chainStartPosition }
+      ...(opts.chainStartPlacement
+        ? { startPlacement: opts.chainStartPlacement }
         : {}),
     });
     if (boxFraction > 0 && random() < boxFraction) {
@@ -175,14 +175,14 @@ export function createHeroAct(options?: {
     const targetProp = nextPropInCycle(fromProp);
     preparedNextProp = targetProp;
     preparedNext = null;
-    const chainedStartPosition = current.startPosition ?? null;
+    const chainedStartPlacement = current.startPlacement ?? null;
     runAtBackgroundPriority(() => {
       // A dice press between scheduling and running may have moved the act on;
       // re-check before spending anything on a draw nobody is waiting for.
       if (preparedNextProp !== targetProp) return;
       void drawHeroSequence({
         propType: targetProp,
-        chainStartPosition: chainedStartPosition,
+        chainStartPlacement: chainedStartPlacement,
       }).then((draw) => {
         // A dice press mid-generation may have already advanced past this
         // draw's target prop; only claim it if it's still the one we asked for.
@@ -206,10 +206,10 @@ export function createHeroAct(options?: {
       let prop = preparedNextProp;
       if (!draw) {
         prop = nextPropInCycle(currentProp);
-        const chainedStartPosition = current.startPosition ?? null;
+        const chainedStartPlacement = current.startPlacement ?? null;
         draw = await drawHeroSequence({
           propType: prop,
-          chainStartPosition: chainedStartPosition,
+          chainStartPlacement: chainedStartPlacement,
         });
       }
       // A manual roll is one state transaction: the incoming word must never

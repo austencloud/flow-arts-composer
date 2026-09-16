@@ -15,7 +15,7 @@
    *   - Hand motion   → the moving hand is a PRO shift (hand-path mode makes it a
    *                     FLOAT); the still hand is STATIC.
    *   - Count numbers → StepData.stepNumber (0 → "Start", 1..n) via StepNumber.
-   *   - Positions     → startPosition/endPosition → the top-centre PositionGlyph
+   *   - Positions     → startPlacement/endPlacement → the top-centre PlacementGlyph
    *                     (β→γ, γ→α, … vary per box; all derive geometrically).
    *   - No elemental  → the proof shows no mode badge (Shifts aren't a T&D), so
    *                     showElemental is off.
@@ -47,7 +47,7 @@
     GridMode,
     GridLocation,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { describePictograph } from "$lib/shared/pictograph/shared/domain/utils/pictograph-description";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -90,8 +90,8 @@
       id: `type2-${step}-${m.join("-")}`,
       letter: null,
       gridMode: GridMode.DIAMOND,
-      startPosition: getGridPositionFromLocations(m[0], m[2]),
-      endPosition: getGridPositionFromLocations(m[1], m[3]),
+      startPlacement: getGridPlacementFromLocations(m[0], m[2]),
+      endPlacement: getGridPlacementFromLocations(m[1], m[3]),
       motions: {
         left: motion(HandSide.LEFT, m[0], m[1]),
         right: motion(HandSide.RIGHT, m[2], m[3]),
@@ -293,7 +293,7 @@
                 rightPropTypeOverride={PropType.HAND}
                 showGrid={true}
                 showTKA={false}
-                showPositions={(cellStep.stepNumber ?? 0) > 0}
+                showPlacements={(cellStep.stepNumber ?? 0) > 0}
                 showElemental={false}
                 showReversals={false}
                 showTnD={false}

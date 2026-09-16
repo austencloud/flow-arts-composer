@@ -52,7 +52,7 @@ import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/mot
  *
  * IMPORTANT: Start position is derived from steps[0]
  * - steps[0].startLocation/startOrientation = the initial pose before animation begins
- * - No separate startPosition field needed
+ * - No separate startPlacement field needed
  *
  * When currentStep < 1: We're at the start position (derived from steps[0])
  * When currentStep >= 1: We're at a motion beat (beat N uses this.steps[N-1])
@@ -72,7 +72,7 @@ export class SequenceAnimationOrchestrator {
   private initialized = false;
   private currentStepIndex = 0;
   private currentStepProgress = 0; // Sub-beat progress (0.0 to 1.0)
-  private atStartPosition = true; // Track if we're at start position
+  private atStartPlacement = true; // Track if we're at start position
 
   constructor(
     private readonly animationStateService: AnimationStateManager,
@@ -102,7 +102,7 @@ export class SequenceAnimationOrchestrator {
    * Data arrives already normalized from SequenceService
    *
    * Start position is derived from steps[0].startLocation/startOrientation
-   * - No separate startPosition field needed
+   * - No separate startPlacement field needed
    * - steps: Motion steps (beat 1 = steps[0], beat 2 = steps[1], etc.)
    */
   initializeWithDomainData(sequenceData: SequenceData): boolean {
@@ -169,7 +169,7 @@ export class SequenceAnimationOrchestrator {
       // Store motion steps - beat 1 is at index 0, beat 2 at index 1, etc.
       this.steps = steps;
       this.totalSteps = this.metadata.totalSteps;
-      this.atStartPosition = true; // Start at start position
+      this.atStartPlacement = true; // Start at start position
 
       this.initializePropStates();
       this.initialized = true;
@@ -188,7 +188,7 @@ export class SequenceAnimationOrchestrator {
    * Calculate animation state for given beat using focused services
    *
    * IMPORTANT: currentStep semantics
-   * - currentStep < 1: We're at the start position (use startPosition data)
+   * - currentStep < 1: We're at the start position (use startPlacement data)
    * - currentStep >= 1: We're at a motion beat (beat N uses this.steps[N-1])
    */
   calculateState(currentStep: number): void {
@@ -198,9 +198,9 @@ export class SequenceAnimationOrchestrator {
     }
 
     // Check if we're at start position (before beat 1)
-    this.atStartPosition = currentStep < 1;
+    this.atStartPlacement = currentStep < 1;
 
-    if (this.atStartPosition) {
+    if (this.atStartPlacement) {
       // At start position - derive from first beat's starting state
       this.currentStepIndex = 0;
       this.currentStepProgress = 0;
@@ -540,8 +540,8 @@ export class SequenceAnimationOrchestrator {
    * Check if currently showing the start position (before beat 1)
    * Start position is conceptually different from steps - it's the pose held before animation begins
    */
-  isAtStartPosition(): boolean {
-    return this.atStartPosition;
+  isAtStartPlacement(): boolean {
+    return this.atStartPlacement;
   }
 
   /**
@@ -563,7 +563,7 @@ export class SequenceAnimationOrchestrator {
    * Get the duration of the start position (default: 1 beat).
    * Start position is shown as a beat before motion begins.
    */
-  getStartPositionDuration(): number {
+  getStartPlacementDuration(): number {
     return 1; // Start position always lasts 1 beat
   }
 
@@ -571,8 +571,8 @@ export class SequenceAnimationOrchestrator {
    * Get the total duration INCLUDING start position.
    * This is the proper "end time" for duration-aware playback.
    */
-  getTotalDurationWithStartPosition(): number {
-    return this.getStartPositionDuration() + this.getTotalDuration();
+  getTotalDurationWithStartPlacement(): number {
+    return this.getStartPlacementDuration() + this.getTotalDuration();
   }
 
   /**
@@ -581,10 +581,10 @@ export class SequenceAnimationOrchestrator {
    * accounting for variable beat durations.
    *
    * Timeline with start position:
-   * - Time 0 to startPositionDuration: Start position (beat 0)
-   * - Time startPositionDuration onwards: Motion beats (beat 1, 2, 3...)
+   * - Time 0 to startPlacementDuration: Start position (beat 0)
+   * - Time startPlacementDuration onwards: Motion beats (beat 1, 2, 3...)
    *
-   * @param timePosition - Position in sequence time (0 to totalDurationWithStartPosition)
+   * @param timePosition - Position in sequence time (0 to totalDurationWithStartPlacement)
    * @returns The beat number (0 for start position, 1+ for motion beats), with fractional progress
    */
   calculateStateDurationAware(timePosition: number): number {
@@ -592,11 +592,11 @@ export class SequenceAnimationOrchestrator {
       return 0;
     }
 
-    const startPosDuration = this.getStartPositionDuration();
+    const startPosDuration = this.getStartPlacementDuration();
 
-    // Time 0 to startPositionDuration = start position (beat 0)
+    // Time 0 to startPlacementDuration = start position (beat 0)
     if (timePosition < startPosDuration) {
-      this.calculateStartPositionState();
+      this.calculateStartPlacementState();
       // Return 0 with fractional progress within start position
       return timePosition / startPosDuration; // 0.0 to ~0.99
     }
@@ -621,7 +621,7 @@ export class SequenceAnimationOrchestrator {
     // Store current beat index and progress
     this.currentStepIndex = stepState.currentStepIndex;
     this.currentStepProgress = stepState.stepProgress;
-    this.atStartPosition = false;
+    this.atStartPlacement = false;
 
     // Skip steps without ANY motion data (neither hand present)
     const beatMotions = stepState.currentStepData?.motions;
@@ -697,8 +697,8 @@ export class SequenceAnimationOrchestrator {
   /**
    * Helper to calculate start position state
    */
-  private calculateStartPositionState(): void {
-    this.atStartPosition = true;
+  private calculateStartPlacementState(): void {
+    this.atStartPlacement = true;
     this.currentStepIndex = 0;
     this.currentStepProgress = 0;
 
@@ -730,7 +730,7 @@ export class SequenceAnimationOrchestrator {
    * Returns null if at start position or not initialized.
    */
   getCurrentStepBeatData(): StepData | null {
-    if (!this.initialized || this.atStartPosition) {
+    if (!this.initialized || this.atStartPlacement) {
       return null;
     }
     const index = Math.max(
@@ -745,7 +745,7 @@ export class SequenceAnimationOrchestrator {
    * Returns -1 if at start position.
    */
   getCurrentStepIndex(): number {
-    if (!this.initialized || this.atStartPosition) {
+    if (!this.initialized || this.atStartPlacement) {
       return -1;
     }
     return this.currentStepIndex;
@@ -759,7 +759,7 @@ export class SequenceAnimationOrchestrator {
    * Returns 0 if at start position.
    */
   getContinuousMusicalPosition(): number {
-    if (!this.initialized || this.atStartPosition) {
+    if (!this.initialized || this.atStartPlacement) {
       return 0;
     }
 
@@ -789,7 +789,7 @@ export class SequenceAnimationOrchestrator {
     return sequencePositionToAnimationTime(
       beat,
       this.steps,
-      this.getStartPositionDuration()
+      this.getStartPlacementDuration()
     );
   }
 
@@ -818,7 +818,7 @@ export class SequenceAnimationOrchestrator {
     this.effortTimeline = null;
     this.initialized = false;
     this.currentStepIndex = 0;
-    this.atStartPosition = true;
+    this.atStartPlacement = true;
     this.animationStateService.resetPropStates();
   }
 }

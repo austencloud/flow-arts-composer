@@ -23,7 +23,7 @@ import { createPlaybackState } from "./playback-state.svelte";
 import { calculatePropState } from "../services/prop-state-interpolator";
 import {
   sequenceToMotionConfigs,
-  getStartPositionConfigs,
+  getStartPlacementConfigs,
 } from "../services/sequence-converter";
 import type { StepMotionConfigs } from "../services/sequence-converter";
 import {
@@ -469,14 +469,14 @@ export function createCharacterInstanceState(
     beatPlaneOverrides = new Map(); // Reset per-beat overrides for new sequence
     const modeConfig = getEffectiveModeConfig(effectivePlaneMode);
 
-    // Get motion configs (beats 1+) and prepend start position (beat 0)
+    // Get motion configs (beats 1+) and prepend start placement (beat 0)
     // so the full sequence including initial orientation is available.
     const motionConfigs = sequenceToMotionConfigs(
       sequence,
       Plane.WALL,
       modeConfig
     );
-    const startConfig = getStartPositionConfigs(
+    const startConfig = getStartPlacementConfigs(
       sequence,
       Plane.WALL,
       modeConfig
@@ -484,9 +484,9 @@ export function createCharacterInstanceState(
     stepConfigs = startConfig ? [startConfig, ...motionConfigs] : motionConfigs;
     hasStartPose = startConfig !== null;
 
-    // DIAG: Dump raw start position and configs
-    if (sequence.startPosition) {
-      const sp = sequence.startPosition;
+    // DIAG: Dump raw start placement and configs
+    if (sequence.startPlacement) {
+      const sp = sequence.startPlacement;
       const _bm = sp.motions?.left;
       const _rm = sp.motions?.right;
     }
@@ -677,7 +677,7 @@ export function createCharacterInstanceState(
       Plane.WALL,
       modeConfig
     );
-    const startConfig = getStartPositionConfigs(
+    const startConfig = getStartPlacementConfigs(
       loadedSequence,
       Plane.WALL,
       modeConfig
@@ -759,7 +759,7 @@ export function createCharacterInstanceState(
       Plane.WALL,
       modeConfig
     );
-    const startConfig = getStartPositionConfigs(
+    const startConfig = getStartPlacementConfigs(
       loadedSequence,
       Plane.WALL,
       modeConfig

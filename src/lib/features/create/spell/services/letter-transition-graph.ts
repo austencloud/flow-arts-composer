@@ -6,16 +6,16 @@
  */
 
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { GridPositionGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { TransitionGraph } from "$lib/shared/sequence-engine/services/transition-graph";
 import { BrowserDataProvider } from "$lib/shared/sequence-engine/data/browser-data-provider";
 import type { ILetterQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
 
 import type {
-  LetterPositionInfo,
+  LetterPlacementInfo,
   LetterCategory,
 } from "../domain/models/spell-models";
-import type { PositionGroup } from "$lib/shared/sequence-engine/domain/models/sequence-engine-types";
+import type { PlacementGroup } from "$lib/shared/sequence-engine/domain/models/sequence-engine-types";
 
 /**
  * Browser-specific transition graph using the shared engine.
@@ -60,45 +60,45 @@ export class LetterTransitionGraph {
     return this.sharedGraph.getValidSuccessors(letter) as Letter[];
   }
 
-  getLettersStartingAt(positionGroup: GridPositionGroup): Letter[] {
+  getLettersStartingAt(placementGroup: GridPlacementGroup): Letter[] {
     if (!this.sharedGraph) return [];
-    const sharedGroup = this.toSharedPositionGroup(positionGroup);
+    const sharedGroup = this.toSharedPlacementGroup(placementGroup);
     if (!sharedGroup) return [];
     return this.sharedGraph.getLettersStartingAt(sharedGroup) as Letter[];
   }
 
-  getLettersEndingAt(positionGroup: GridPositionGroup): Letter[] {
+  getLettersEndingAt(placementGroup: GridPlacementGroup): Letter[] {
     if (!this.sharedGraph) return [];
-    const sharedGroup = this.toSharedPositionGroup(positionGroup);
+    const sharedGroup = this.toSharedPlacementGroup(placementGroup);
     if (!sharedGroup) return [];
     return this.sharedGraph.getLettersEndingAt(sharedGroup) as Letter[];
   }
 
-  getLetterPositionInfo(letter: Letter): LetterPositionInfo | null {
+  getLetterPlacementInfo(letter: Letter): LetterPlacementInfo | null {
     if (!this.sharedGraph) return null;
-    const sharedInfo = this.sharedGraph.getLetterPositionInfo(letter);
+    const sharedInfo = this.sharedGraph.getLetterPlacementInfo(letter);
     if (!sharedInfo) return null;
 
     return {
       letter: sharedInfo.letter as Letter,
-      startPositionGroup: this.toGridPositionGroup(sharedInfo.startPositionGroup),
-      endPositionGroup: this.toGridPositionGroup(sharedInfo.endPositionGroup),
+      startPlacementGroup: this.toGridPlacementGroup(sharedInfo.startPlacementGroup),
+      endPlacementGroup: this.toGridPlacementGroup(sharedInfo.endPlacementGroup),
       category: (sharedInfo.category || "dual-shift") as LetterCategory,
     };
   }
 
-  getStartPositionGroup(letter: Letter): GridPositionGroup | null {
+  getStartPlacementGroup(letter: Letter): GridPlacementGroup | null {
     if (!this.sharedGraph) return null;
-    const sharedGroup = this.sharedGraph.getStartPositionGroup(letter);
+    const sharedGroup = this.sharedGraph.getStartPlacementGroup(letter);
     if (!sharedGroup) return null;
-    return this.toGridPositionGroup(sharedGroup);
+    return this.toGridPlacementGroup(sharedGroup);
   }
 
-  getEndPositionGroup(letter: Letter): GridPositionGroup | null {
+  getEndPlacementGroup(letter: Letter): GridPlacementGroup | null {
     if (!this.sharedGraph) return null;
-    const sharedGroup = this.sharedGraph.getEndPositionGroup(letter);
+    const sharedGroup = this.sharedGraph.getEndPlacementGroup(letter);
     if (!sharedGroup) return null;
-    return this.toGridPositionGroup(sharedGroup);
+    return this.toGridPlacementGroup(sharedGroup);
   }
 
   findBridgeLetters(letterA: Letter, letterB: Letter): Letter[] {
@@ -116,15 +116,15 @@ export class LetterTransitionGraph {
   }
 
   /**
-   * Convert GridPositionGroup enum to shared PositionGroup string.
+   * Convert GridPlacementGroup enum to shared PlacementGroup string.
    */
-  private toSharedPositionGroup(group: GridPositionGroup): PositionGroup | null {
+  private toSharedPlacementGroup(group: GridPlacementGroup): PlacementGroup | null {
     switch (group) {
-      case GridPositionGroup.ALPHA:
+      case GridPlacementGroup.ALPHA:
         return "alpha";
-      case GridPositionGroup.BETA:
+      case GridPlacementGroup.BETA:
         return "beta";
-      case GridPositionGroup.GAMMA:
+      case GridPlacementGroup.GAMMA:
         return "gamma";
       default:
         return null;
@@ -132,18 +132,18 @@ export class LetterTransitionGraph {
   }
 
   /**
-   * Convert shared PositionGroup string to GridPositionGroup enum.
+   * Convert shared PlacementGroup string to GridPlacementGroup enum.
    */
-  private toGridPositionGroup(group: PositionGroup): GridPositionGroup {
+  private toGridPlacementGroup(group: PlacementGroup): GridPlacementGroup {
     switch (group) {
       case "alpha":
-        return GridPositionGroup.ALPHA;
+        return GridPlacementGroup.ALPHA;
       case "beta":
-        return GridPositionGroup.BETA;
+        return GridPlacementGroup.BETA;
       case "gamma":
-        return GridPositionGroup.GAMMA;
+        return GridPlacementGroup.GAMMA;
       default:
-        return GridPositionGroup.ALPHA;
+        return GridPlacementGroup.ALPHA;
     }
   }
 }

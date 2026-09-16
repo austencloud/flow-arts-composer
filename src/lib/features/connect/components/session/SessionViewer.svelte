@@ -337,7 +337,7 @@ import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-
 								{sequence}
 								showStepNumbers={true}
 								showDifficultyLevel={false}
-								includeStartPosition={true}
+								includeStartPlacement={true}
 								darkMode={true}
 							/>
 						</div>
@@ -357,7 +357,7 @@ import { loadByIdentifier } from "$lib/shared/sequence-viewer/services/sequence-
 									{sequence}
 									showStepNumbers={true}
 									showDifficultyLevel={false}
-									includeStartPosition={true}
+									includeStartPlacement={true}
 									darkMode={true}
 								/>
 							</div>

@@ -14,7 +14,7 @@
   import {
     GridLocation,
     GridMode,
-    GridPosition,
+    GridPlacement,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import {
     MotionType,
@@ -57,80 +57,80 @@
 
   // Position to hand location mapping (only Zeta and Eta positions for skewed mode)
   const POSITION_LOCATIONS: Partial<
-    Record<GridPosition, [GridLocation, GridLocation]>
+    Record<GridPlacement, [GridLocation, GridLocation]>
   > = {
     // Zeta positions - 135° obtuse angle
-    [GridPosition.ZETA1]: [GridLocation.SOUTHWEST, GridLocation.NORTH],
-    [GridPosition.ZETA2]: [GridLocation.WEST, GridLocation.NORTHEAST],
-    [GridPosition.ZETA3]: [GridLocation.NORTHWEST, GridLocation.EAST],
-    [GridPosition.ZETA4]: [GridLocation.NORTH, GridLocation.SOUTHEAST],
-    [GridPosition.ZETA5]: [GridLocation.NORTHEAST, GridLocation.SOUTH],
-    [GridPosition.ZETA6]: [GridLocation.EAST, GridLocation.SOUTHWEST],
-    [GridPosition.ZETA7]: [GridLocation.SOUTHEAST, GridLocation.WEST],
-    [GridPosition.ZETA8]: [GridLocation.SOUTH, GridLocation.NORTHWEST],
-    [GridPosition.ZETA9]: [GridLocation.SOUTHEAST, GridLocation.NORTH],
-    [GridPosition.ZETA10]: [GridLocation.SOUTH, GridLocation.NORTHEAST],
-    [GridPosition.ZETA11]: [GridLocation.SOUTHWEST, GridLocation.EAST],
-    [GridPosition.ZETA12]: [GridLocation.WEST, GridLocation.SOUTHEAST],
-    [GridPosition.ZETA13]: [GridLocation.NORTHWEST, GridLocation.SOUTH],
-    [GridPosition.ZETA14]: [GridLocation.NORTH, GridLocation.SOUTHWEST],
-    [GridPosition.ZETA15]: [GridLocation.NORTHEAST, GridLocation.WEST],
-    [GridPosition.ZETA16]: [GridLocation.EAST, GridLocation.NORTHWEST],
+    [GridPlacement.ZETA1]: [GridLocation.SOUTHWEST, GridLocation.NORTH],
+    [GridPlacement.ZETA2]: [GridLocation.WEST, GridLocation.NORTHEAST],
+    [GridPlacement.ZETA3]: [GridLocation.NORTHWEST, GridLocation.EAST],
+    [GridPlacement.ZETA4]: [GridLocation.NORTH, GridLocation.SOUTHEAST],
+    [GridPlacement.ZETA5]: [GridLocation.NORTHEAST, GridLocation.SOUTH],
+    [GridPlacement.ZETA6]: [GridLocation.EAST, GridLocation.SOUTHWEST],
+    [GridPlacement.ZETA7]: [GridLocation.SOUTHEAST, GridLocation.WEST],
+    [GridPlacement.ZETA8]: [GridLocation.SOUTH, GridLocation.NORTHWEST],
+    [GridPlacement.ZETA9]: [GridLocation.SOUTHEAST, GridLocation.NORTH],
+    [GridPlacement.ZETA10]: [GridLocation.SOUTH, GridLocation.NORTHEAST],
+    [GridPlacement.ZETA11]: [GridLocation.SOUTHWEST, GridLocation.EAST],
+    [GridPlacement.ZETA12]: [GridLocation.WEST, GridLocation.SOUTHEAST],
+    [GridPlacement.ZETA13]: [GridLocation.NORTHWEST, GridLocation.SOUTH],
+    [GridPlacement.ZETA14]: [GridLocation.NORTH, GridLocation.SOUTHWEST],
+    [GridPlacement.ZETA15]: [GridLocation.NORTHEAST, GridLocation.WEST],
+    [GridPlacement.ZETA16]: [GridLocation.EAST, GridLocation.NORTHWEST],
     // Eta positions - 45° acute angle
-    [GridPosition.ETA1]: [GridLocation.NORTHWEST, GridLocation.NORTH],
-    [GridPosition.ETA2]: [GridLocation.NORTH, GridLocation.NORTHEAST],
-    [GridPosition.ETA3]: [GridLocation.NORTHEAST, GridLocation.EAST],
-    [GridPosition.ETA4]: [GridLocation.EAST, GridLocation.SOUTHEAST],
-    [GridPosition.ETA5]: [GridLocation.SOUTHEAST, GridLocation.SOUTH],
-    [GridPosition.ETA6]: [GridLocation.SOUTH, GridLocation.SOUTHWEST],
-    [GridPosition.ETA7]: [GridLocation.SOUTHWEST, GridLocation.WEST],
-    [GridPosition.ETA8]: [GridLocation.WEST, GridLocation.NORTHWEST],
-    [GridPosition.ETA9]: [GridLocation.NORTHEAST, GridLocation.NORTH],
-    [GridPosition.ETA10]: [GridLocation.EAST, GridLocation.NORTHEAST],
-    [GridPosition.ETA11]: [GridLocation.SOUTHEAST, GridLocation.EAST],
-    [GridPosition.ETA12]: [GridLocation.SOUTH, GridLocation.SOUTHEAST],
-    [GridPosition.ETA13]: [GridLocation.SOUTHWEST, GridLocation.SOUTH],
-    [GridPosition.ETA14]: [GridLocation.WEST, GridLocation.SOUTHWEST],
-    [GridPosition.ETA15]: [GridLocation.NORTHWEST, GridLocation.WEST],
-    [GridPosition.ETA16]: [GridLocation.NORTH, GridLocation.NORTHWEST],
+    [GridPlacement.ETA1]: [GridLocation.NORTHWEST, GridLocation.NORTH],
+    [GridPlacement.ETA2]: [GridLocation.NORTH, GridLocation.NORTHEAST],
+    [GridPlacement.ETA3]: [GridLocation.NORTHEAST, GridLocation.EAST],
+    [GridPlacement.ETA4]: [GridLocation.EAST, GridLocation.SOUTHEAST],
+    [GridPlacement.ETA5]: [GridLocation.SOUTHEAST, GridLocation.SOUTH],
+    [GridPlacement.ETA6]: [GridLocation.SOUTH, GridLocation.SOUTHWEST],
+    [GridPlacement.ETA7]: [GridLocation.SOUTHWEST, GridLocation.WEST],
+    [GridPlacement.ETA8]: [GridLocation.WEST, GridLocation.NORTHWEST],
+    [GridPlacement.ETA9]: [GridLocation.NORTHEAST, GridLocation.NORTH],
+    [GridPlacement.ETA10]: [GridLocation.EAST, GridLocation.NORTHEAST],
+    [GridPlacement.ETA11]: [GridLocation.SOUTHEAST, GridLocation.EAST],
+    [GridPlacement.ETA12]: [GridLocation.SOUTH, GridLocation.SOUTHEAST],
+    [GridPlacement.ETA13]: [GridLocation.SOUTHWEST, GridLocation.SOUTH],
+    [GridPlacement.ETA14]: [GridLocation.WEST, GridLocation.SOUTHWEST],
+    [GridPlacement.ETA15]: [GridLocation.NORTHWEST, GridLocation.WEST],
+    [GridPlacement.ETA16]: [GridLocation.NORTH, GridLocation.NORTHWEST],
   };
 
   const ZETA_POSITIONS = [
-    GridPosition.ZETA1,
-    GridPosition.ZETA2,
-    GridPosition.ZETA3,
-    GridPosition.ZETA4,
-    GridPosition.ZETA5,
-    GridPosition.ZETA6,
-    GridPosition.ZETA7,
-    GridPosition.ZETA8,
-    GridPosition.ZETA9,
-    GridPosition.ZETA10,
-    GridPosition.ZETA11,
-    GridPosition.ZETA12,
-    GridPosition.ZETA13,
-    GridPosition.ZETA14,
-    GridPosition.ZETA15,
-    GridPosition.ZETA16,
+    GridPlacement.ZETA1,
+    GridPlacement.ZETA2,
+    GridPlacement.ZETA3,
+    GridPlacement.ZETA4,
+    GridPlacement.ZETA5,
+    GridPlacement.ZETA6,
+    GridPlacement.ZETA7,
+    GridPlacement.ZETA8,
+    GridPlacement.ZETA9,
+    GridPlacement.ZETA10,
+    GridPlacement.ZETA11,
+    GridPlacement.ZETA12,
+    GridPlacement.ZETA13,
+    GridPlacement.ZETA14,
+    GridPlacement.ZETA15,
+    GridPlacement.ZETA16,
   ];
 
   const ETA_POSITIONS = [
-    GridPosition.ETA1,
-    GridPosition.ETA2,
-    GridPosition.ETA3,
-    GridPosition.ETA4,
-    GridPosition.ETA5,
-    GridPosition.ETA6,
-    GridPosition.ETA7,
-    GridPosition.ETA8,
-    GridPosition.ETA9,
-    GridPosition.ETA10,
-    GridPosition.ETA11,
-    GridPosition.ETA12,
-    GridPosition.ETA13,
-    GridPosition.ETA14,
-    GridPosition.ETA15,
-    GridPosition.ETA16,
+    GridPlacement.ETA1,
+    GridPlacement.ETA2,
+    GridPlacement.ETA3,
+    GridPlacement.ETA4,
+    GridPlacement.ETA5,
+    GridPlacement.ETA6,
+    GridPlacement.ETA7,
+    GridPlacement.ETA8,
+    GridPlacement.ETA9,
+    GridPlacement.ETA10,
+    GridPlacement.ETA11,
+    GridPlacement.ETA12,
+    GridPlacement.ETA13,
+    GridPlacement.ETA14,
+    GridPlacement.ETA15,
+    GridPlacement.ETA16,
   ];
 
   const displayPositions = $derived.by(() => {
@@ -139,7 +139,7 @@
     return [...ZETA_POSITIONS, ...ETA_POSITIONS];
   });
 
-  function createStaticPictograph(position: GridPosition): PictographData {
+  function createStaticPictograph(position: GridPlacement): PictographData {
     const locations = POSITION_LOCATIONS[position];
     if (!locations) {
       throw new Error(`No location mapping found for position: ${position}`);
@@ -179,8 +179,8 @@
 
     return {
       id: `level4-${position}`,
-      startPosition: position,
-      endPosition: position,
+      startPlacement: position,
+      endPlacement: position,
       motions: {
         [HandSide.LEFT]: leftMotion,
         [HandSide.RIGHT]: rightMotion,
@@ -188,7 +188,7 @@
     };
   }
 
-  function formatPosition(pos: GridPosition): string {
+  function formatPosition(pos: GridPlacement): string {
     const match = pos.match(/^(zeta|eta)(\d+)$/i);
     if (match && match[1] && match[2]) {
       return `${match[1].charAt(0).toUpperCase()}${match[2]}`;

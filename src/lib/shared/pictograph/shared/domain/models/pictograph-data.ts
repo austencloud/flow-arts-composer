@@ -5,7 +5,7 @@
  * Based on modern desktop app's pictographData.py
  */
 import type { Letter } from "../../../../foundation/domain/models/letter";
-import type { GridPosition } from "../../../grid/domain/enums/grid-enums";
+import type { GridPlacement } from "../../../grid/domain/enums/grid-enums";
 import type { HandSide } from "../enums/pictograph-enums";
 import type { MotionData } from "./motion-data";
 import type { GridMode } from '../../../grid/domain/enums/grid-enums';
@@ -15,8 +15,8 @@ export interface PictographData {
 
   // Letter and position data
   readonly letter?: Letter | null;
-  readonly startPosition?: GridPosition | null;
-  readonly endPosition?: GridPosition | null;
+  readonly startPlacement?: GridPlacement | null;
+  readonly endPlacement?: GridPlacement | null;
 
   // Movement data - explicitly allow undefined values
   readonly motions: Partial<Record<HandSide, MotionData | undefined>>;

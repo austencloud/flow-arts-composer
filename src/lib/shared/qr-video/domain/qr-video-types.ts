@@ -13,7 +13,7 @@ export interface PrecomputedFrame {
   left: FramePropState | null;
   right: FramePropState | null;
   stepIndex: number;
-  isStartPosition: boolean;
+  isStartPlacement: boolean;
 }
 
 export interface VideoRenderConfig {
@@ -22,7 +22,7 @@ export interface VideoRenderConfig {
   speed: number;
   propTypes: { left: PropType; right: PropType };
   loopCount: number;
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   includeEndHold: boolean;
   baseUrl: string;
   cacheHash?: string;
@@ -36,7 +36,7 @@ export interface TransferableAssets {
   leftPropViewBox: { width: number; height: number };
   rightPropViewBox: { width: number; height: number };
   letterGlyphs: ImageBitmap[];
-  startPositionGlyph: ImageBitmap | null;
+  startPlacementGlyph: ImageBitmap | null;
 }
 
 export interface RenderRequest {
@@ -71,7 +71,7 @@ export type WorkerOutMessage = RenderProgress | RenderComplete | RenderError;
 export interface FrameTimingResult {
   playbackPosition: number;
   stepIndex: number;
-  isStartPosition: boolean;
+  isStartPlacement: boolean;
   isEndHold: boolean;
 }
 
@@ -110,7 +110,7 @@ export function calculateFrameTiming(
   frameIndex: number,
   totalFrames: number,
   totalDurationWithHolds: number,
-  startPositionDuration: number,
+  startPlacementDuration: number,
   motionLoopUnits: number,
   totalDurationUnits: number,
   cumulativeDurations: number[],
@@ -119,14 +119,14 @@ export function calculateFrameTiming(
 ): FrameTimingResult {
   const timeProgress = (frameIndex / totalFrames) * totalDurationWithHolds;
 
-  const motionStart = startPositionDuration;
+  const motionStart = startPlacementDuration;
   const motionEnd = motionStart + motionLoopUnits;
 
-  if (startPositionDuration > 0 && timeProgress < motionStart) {
+  if (startPlacementDuration > 0 && timeProgress < motionStart) {
     return {
-      playbackPosition: timeProgress / startPositionDuration,
+      playbackPosition: timeProgress / startPlacementDuration,
       stepIndex: -1,
-      isStartPosition: true,
+      isStartPlacement: true,
       isEndHold: false,
     };
   }
@@ -135,7 +135,7 @@ export function calculateFrameTiming(
     return {
       playbackPosition: stepCount + 1,
       stepIndex: stepCount - 1,
-      isStartPosition: false,
+      isStartPlacement: false,
       isEndHold: true,
     };
   }
@@ -152,7 +152,7 @@ export function calculateFrameTiming(
   return {
     playbackPosition: rawStep + 1,
     stepIndex: Math.floor(rawStep),
-    isStartPosition: false,
+    isStartPlacement: false,
     isEndHold: false,
   };
 }
@@ -166,16 +166,16 @@ export function buildTimelineParams(
   speed: number,
   fps: number,
   loopCount: number,
-  includeStartPosition: boolean,
+  includeStartPlacement: boolean,
   includeEndHold: boolean
 ) {
   const totalDurationUnits =
     stepDurations.reduce((sum, d) => sum + d, 0) || stepDurations.length;
-  const startPositionDuration = includeStartPosition ? 1 : 0;
-  const endPositionHoldDuration = includeEndHold ? 1 : 0;
+  const startPlacementDuration = includeStartPlacement ? 1 : 0;
+  const endPlacementHoldDuration = includeEndHold ? 1 : 0;
   const motionLoopUnits = totalDurationUnits * loopCount;
   const totalDurationWithHolds =
-    startPositionDuration + motionLoopUnits + endPositionHoldDuration;
+    startPlacementDuration + motionLoopUnits + endPlacementHoldDuration;
 
   const secondsPerBeatUnit = 1.0 / speed;
   const totalTimelineSeconds = totalDurationWithHolds * secondsPerBeatUnit;
@@ -190,8 +190,8 @@ export function buildTimelineParams(
 
   return {
     totalDurationUnits,
-    startPositionDuration,
-    endPositionHoldDuration,
+    startPlacementDuration,
+    endPlacementHoldDuration,
     motionLoopUnits,
     totalDurationWithHolds,
     totalFrames,

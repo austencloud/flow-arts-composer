@@ -54,7 +54,7 @@ src/lib/shared/navigation/services/implementations/SequenceEncoder.ts
 This file contains the complete encode/decode logic. The key methods:
 - `isInlineEncoded(code)` checks if a code starts with `s~`
 - `decodeFromQR(encoded)` strips the `s~` prefix, decompresses with LZString, and parses the sequence data
-- `decode(encoded)` parses the raw format: `startPosition|step1|step2|...` where each step encodes two hand motions (blue and red) as compact character strings
+- `decode(encoded)` parses the raw format: `startPlacement|step1|step2|...` where each step encodes two hand motions (blue and red) as compact character strings
 
 The compression uses `lz-string` (npm package), specifically `compressToEncodedURIComponent` / `decompressFromEncodedURIComponent`. This is a well-documented, stable algorithm. If the npm package disappears, the LZString algorithm is simple enough to reimplement from its spec.
 

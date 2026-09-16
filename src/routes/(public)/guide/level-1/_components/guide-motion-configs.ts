@@ -28,7 +28,7 @@ import {
   type SequenceData,
 } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 
@@ -390,8 +390,8 @@ export function buildGuideMotionSequence(
   const leftEnd = left?.end ?? leftStart;
   const leftMotionType = left?.motionType ?? MotionType.STATIC;
 
-  const startPosition: StartPositionData = {
-    isStartPosition: true as const,
+  const startPlacement: StartPlacementData = {
+    isStartPlacement: true as const,
     id: `guide-${config.id}-start`,
     gridMode: GridMode.DIAMOND,
     motions: {
@@ -413,8 +413,8 @@ export function buildGuideMotionSequence(
     rightReversal: false,
     isBlank: false,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     gridMode: GridMode.DIAMOND,
     motions: {
       left: makeMotion(HandSide.LEFT, leftStart, leftEnd, leftMotionType),
@@ -432,7 +432,7 @@ export function buildGuideMotionSequence(
     name: config.id,
     word: config.id,
     steps: [step],
-    startPosition,
+    startPlacement,
     gridMode: GridMode.DIAMOND,
   });
 }

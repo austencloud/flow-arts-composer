@@ -63,7 +63,7 @@ export {
   GRID_POINT_COLOR_DARK,
 } from "./constants/viewbox.js";
 
-// Glyph position constants
+// Glyph placement constants
 export {
   TKA_GLYPH,
   STEP_NUMBER,
@@ -72,7 +72,7 @@ export {
   DASH_SUFFIX,
   VTG_GLYPH,
   ELEMENTAL_GLYPH,
-  POSITION_GLYPH,
+  PLACEMENT_GLYPH,
   REVERSAL_INDICATOR,
 } from "./constants/glyph-positions.js";
 
@@ -151,7 +151,7 @@ export {
   getHandPointCoordinates,
   getNormalHandPointCoordinates,
   getLayer2PointCoordinates,
-} from "./calculations/grid-position.js";
+} from "./calculations/grid-placement.js";
 
 // Prop placement
 export {

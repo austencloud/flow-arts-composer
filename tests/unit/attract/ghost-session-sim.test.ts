@@ -174,7 +174,7 @@ describe("ghost session simulation", () => {
       const session = runSession(11, 300);
       await session.run();
       // A presenter that never gets past three steps is demonstrating a
-      // start-position picker, not a composer.
+      // start-placement picker, not a composer.
       expect(session.app.state.peakSeqLen).toBeGreaterThanOrEqual(6);
     },
     SESSION_TEST_TIMEOUT_MS

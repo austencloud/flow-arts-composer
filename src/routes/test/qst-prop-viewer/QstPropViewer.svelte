@@ -18,8 +18,8 @@
   interface QstStep {
     stepNumber: number;
     letter: string;
-    startPosition: string;
-    endPosition: string;
+    startPlacement: string;
+    endPlacement: string;
     motions: {
       left: MotionData;
       right: MotionData;

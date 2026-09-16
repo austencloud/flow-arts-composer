@@ -6,12 +6,12 @@
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
@@ -33,8 +33,8 @@ export interface SequenceMetadata {
   isCircular: boolean;
   propType: PropType;
   sequenceLength: number;
-  startingPosition: string; // Just the letter/position name (e.g., "gamma")
-  startPosition?: StartPositionData; // Full start position data with motions
+  startingPlacement: string; // Just the letter/position name (e.g., "gamma")
+  startPlacement?: StartPlacementData; // Full start position data with motions
 }
 // Constants for metadata extraction
 // Using function to avoid module-level enum reference (fixes test initialization)
@@ -47,7 +47,7 @@ const getDefaultMetadata = (): SequenceMetadata => ({
   isCircular: false,
   propType: "Staff" as PropType,
   sequenceLength: 0,
-  startingPosition: "alpha",
+  startingPlacement: "alpha",
 });
 
 const DATE_FIELD_NAMES = [
@@ -121,14 +121,14 @@ export class BrowseMetadataExtractor {
   ): SequenceMetadata {
     const sequence = rawData["sequence"];
     const steps = this.parseSteps(sequenceName, sequence);
-    const startPosition = this.parseStartPosition(sequenceName, sequence);
+    const startPlacement = this.parseStartPlacement(sequenceName, sequence);
     const gridMode = this.parseGridMode(rawData["grid_mode"]);
 
     // Calculate difficulty from actual sequence data instead of stored level
     const difficultyLevel = this.calculateDifficultyLevel(steps);
 
     const dateAdded = this.parseDateAdded(rawData);
-    const startingPosition = this.parseStartingPosition(steps);
+    const startingPlacement = this.parseStartingPlacement(steps);
 
     return {
       steps,
@@ -139,8 +139,8 @@ export class BrowseMetadataExtractor {
       isCircular: Boolean(rawData["is_circular"]),
       propType: String(rawData["prop_type"] || "Staff") as PropType,
       sequenceLength: steps.length,
-      startingPosition,
-      startPosition,
+      startingPlacement,
+      startPlacement,
     };
   }
 
@@ -155,11 +155,11 @@ export class BrowseMetadataExtractor {
 
     // Check if first element is start position (has sequence_start_position field)
     const firstElement = sequence[0] as Record<string, unknown>;
-    const hasStartPosition =
+    const hasStartPlacement =
       firstElement && "sequence_start_position" in firstElement;
 
     // Skip first element if it's a start position, otherwise parse all elements
-    const beatElements = hasStartPosition ? sequence.slice(1) : sequence;
+    const beatElements = hasStartPlacement ? sequence.slice(1) : sequence;
 
     return beatElements.map((step: unknown, index: number) => {
       const stepData = step as Record<string, unknown>;
@@ -170,10 +170,10 @@ export class BrowseMetadataExtractor {
         // PictographData properties
         id: `step-${sequenceName}-${index + 1}`,
         letter: String(stepData["letter"] || ""),
-        startPosition:
-          this.parseGridPosition(stepData["start_pos"]) ||
-          this.parseGridPosition(stepData["sequence_start_position"]),
-        endPosition: this.parseGridPosition(stepData["end_pos"]),
+        startPlacement:
+          this.parseGridPlacement(stepData["start_pos"]) ||
+          this.parseGridPlacement(stepData["sequence_start_position"]),
+        endPlacement: this.parseGridPlacement(stepData["end_pos"]),
         motions: {
           [HandSide.LEFT]: leftAttrs
             ? createMotionData({
@@ -230,12 +230,12 @@ export class BrowseMetadataExtractor {
 
   /**
    * Parse start position data from sequence array
-   * Returns StartPositionData if first element has sequence_start_position field
+   * Returns StartPlacementData if first element has sequence_start_position field
    */
-  private parseStartPosition(
+  private parseStartPlacement(
     sequenceName: string,
     sequence: unknown
-  ): StartPositionData | undefined {
+  ): StartPlacementData | undefined {
     if (!Array.isArray(sequence) || sequence.length === 0) {
       return undefined;
     }
@@ -247,17 +247,17 @@ export class BrowseMetadataExtractor {
 
     const leftAttrs = this.parseHandAttributes(firstElement, HandSide.LEFT);
     const rightAttrs = this.parseHandAttributes(firstElement, HandSide.RIGHT);
-    const gridPosition = this.parseGridPosition(
+    const gridPlacement = this.parseGridPlacement(
       firstElement["sequence_start_position"]
     );
 
     return {
       id: `start-${sequenceName}`,
-      isStartPosition: true,
+      isStartPlacement: true,
       letter: (firstElement["letter"] as Letter | null) ?? null,
-      gridPosition,
-      startPosition: gridPosition,
-      endPosition: null,
+      gridPlacement,
+      startPlacement: gridPlacement,
+      endPlacement: null,
       motions: {
         [HandSide.LEFT]: leftAttrs
           ? createMotionData({
@@ -394,25 +394,25 @@ export class BrowseMetadataExtractor {
   }
 
   /**
-   * Parse grid position from string (e.g., "gamma11" -> GridPosition.GAMMA11)
+   * Parse grid position from string (e.g., "gamma11" -> GridPlacement.GAMMA11)
    */
-  private parseGridPosition(value: unknown): GridPosition | null {
+  private parseGridPlacement(value: unknown): GridPlacement | null {
     if (!value) return null;
 
     const str = String(value).toLowerCase();
 
-    // Direct mapping - try to match the exact GridPosition enum key
+    // Direct mapping - try to match the exact GridPlacement enum key
     const enumKey = str.toUpperCase();
-    const positionValue = GridPosition[enumKey as keyof typeof GridPosition];
+    const positionValue = GridPlacement[enumKey as keyof typeof GridPlacement];
 
     if (positionValue) {
       return positionValue;
     }
 
     // Fallback: Check if the string value matches any enum value directly
-    for (const key in GridPosition) {
-      if (GridPosition[key as keyof typeof GridPosition] === str) {
-        return str as GridPosition;
+    for (const key in GridPlacement) {
+      if (GridPlacement[key as keyof typeof GridPlacement] === str) {
+        return str as GridPlacement;
       }
     }
 
@@ -496,7 +496,7 @@ export class BrowseMetadataExtractor {
   /**
    * Extract starting position from first beat
    */
-  private parseStartingPosition(steps: StepData[]): string {
+  private parseStartingPlacement(steps: StepData[]): string {
     if (steps.length > 0) {
       const firstLetter = steps[0]?.letter;
       if (firstLetter) {

@@ -6,14 +6,14 @@
  *
  * Handles:
  * - Loading full sequence data if needed (via PublicSequencesLoader)
- * - Deriving start position if missing (via StartPositionDeriver)
+ * - Deriving start position if missing (via StartPlacementDeriver)
  * - Applying prop type overrides
  * - Rendering via CompositionDispatcher (worker pool with main-thread fallback)
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { CompositionDispatcher } from "$lib/shared/render/services/composition-dispatcher";
-import type { StartPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+import type { StartPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
 import type { ILOOPDetector } from "$lib/shared/create/services/ILOOPDetector";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -70,7 +70,7 @@ const DEFAULT_QUALITY = 0.9;
 const GALLERY_DEFAULTS: CompositionDefaults = {
   addWord: true,
   addStepNumbers: true,
-  includeStartPosition: true,
+  includeStartPlacement: true,
   addDifficultyLevel: true,
   addUserInfo: false,
   showNotes: true,
@@ -84,7 +84,7 @@ const WORDCARD_DEFAULTS: CompositionDefaults = {
 export class ThumbnailRenderer {
   constructor(
     private compositionDispatcher: CompositionDispatcher,
-    private startPositionDeriver: StartPositionDeriver,
+    private startPlacementDeriver: StartPlacementDeriver,
     private browseLoader: PublicSequencesLoader | null,
     private loopDetector: ILOOPDetector,
     /** Lazy factory (QR generator is browser-only + needs the short-code
@@ -131,7 +131,7 @@ export class ThumbnailRenderer {
       : loadedSequence;
 
     // Derive start position if missing
-    const sequenceWithStartPos = this.ensureStartPosition(fullSequence);
+    const sequenceWithStartPos = this.ensureStartPlacement(fullSequence);
 
     const renderOptions = this.buildRenderOptions(input, options);
 
@@ -227,7 +227,7 @@ export class ThumbnailRenderer {
       sequence,
       input.sequenceName
     );
-    const sequenceWithStartPos = this.ensureStartPosition(loadedSequence);
+    const sequenceWithStartPos = this.ensureStartPlacement(loadedSequence);
     const generator = this.qrCodeGeneratorFactory?.();
     if (!generator) return false;
     return Boolean(
@@ -277,16 +277,16 @@ export class ThumbnailRenderer {
     return loadedSequence;
   }
 
-  private ensureStartPosition(sequence: SequenceData): SequenceData {
+  private ensureStartPlacement(sequence: SequenceData): SequenceData {
     // A start position whose hands are invisible placeholders is NOT valid —
     // it must be repaired from the first beat, same as a missing one
     // (Wave 0 straggler fix: presence check → visibility check).
-    const existingStartPos = sequence.startPosition;
-    const hasValidStartPosition =
+    const existingStartPos = sequence.startPlacement;
+    const hasValidStartPlacement =
       isVisibleMotion(existingStartPos?.motions?.left) &&
       isVisibleMotion(existingStartPos?.motions?.right);
 
-    if (hasValidStartPosition) {
+    if (hasValidStartPlacement) {
       return sequence;
     }
 
@@ -304,10 +304,10 @@ export class ThumbnailRenderer {
 
     try {
       const derivedStartPos =
-        this.startPositionDeriver.deriveFromFirstStep(firstStep);
+        this.startPlacementDeriver.deriveFromFirstStep(firstStep);
       return {
         ...sequence,
-        startPosition: derivedStartPos,
+        startPlacement: derivedStartPos,
       };
     } catch (err) {
       console.warn(
@@ -341,9 +341,9 @@ export class ThumbnailRenderer {
       quality: options?.quality ?? DEFAULT_QUALITY,
 
       // Composition settings (use input or fall back to variant defaults)
-      includeStartPosition:
-        input.includeStartPosition ?? defaults.includeStartPosition,
-      startPositionLayout: input.startPositionLayout ?? "row",
+      includeStartPlacement:
+        input.includeStartPlacement ?? defaults.includeStartPlacement,
+      startPlacementLayout: input.startPlacementLayout ?? "row",
       addStepNumbers: input.addStepNumbers ?? defaults.addStepNumbers,
       addWord: input.addWord ?? defaults.addWord,
       addDifficultyLevel:
@@ -396,7 +396,7 @@ export class ThumbnailRenderer {
         showTKA: input.visibility?.showTKA ?? true, // Default ON, user can toggle
         showTnD: false, // Never shown in thumbnails
         showElemental: false, // Never shown in thumbnails
-        showPositions: false, // Never shown in thumbnails
+        showPlacements: false, // Never shown in thumbnails
         showReversals: input.visibility?.showReversals ?? true, // Default ON, user can toggle
         showTurnNumbers: input.visibility?.showTKA ?? true, // Follows TKA setting
         darkMode: !input.lightMode,

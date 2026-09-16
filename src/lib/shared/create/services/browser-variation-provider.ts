@@ -3,7 +3,7 @@
  *
  * Implements IVariationProvider for the browser app by wrapping the existing
  * LetterQueryHandler (which handles CSV loading, parsing, and caching) and
- * adding a letter:position index on top.
+ * adding a letter:placement index on top.
  *
  * Maps from the app's rich PictographData (with rendering fields, enum types,
  * embedded placement data) to the engine's minimal PictographData (string fields,
@@ -47,7 +47,7 @@ export class BrowserVariationProvider {
 
       this.allVariationsList.push(enginePicto);
 
-      const key = `${enginePicto.letter}:${enginePicto.startPosition}`;
+      const key = `${enginePicto.letter}:${enginePicto.startPlacement}`;
       const bucket = this.index.get(key);
       if (bucket) {
         bucket.push(enginePicto);
@@ -66,10 +66,10 @@ export class BrowserVariationProvider {
 
   getVariations(
     letter: string,
-    position: string,
+    placement: string,
     _gridMode: string
   ): EnginePictographData[] {
-    return this.index.get(`${letter}:${position}`) ?? [];
+    return this.index.get(`${letter}:${placement}`) ?? [];
   }
 
   getAllVariations(_gridMode: string): EnginePictographData[] {
@@ -94,8 +94,8 @@ export class BrowserVariationProvider {
 
     return {
       letter: appPicto.letter?.toString() ?? "",
-      startPosition: appPicto.startPosition?.toString() ?? "",
-      endPosition: appPicto.endPosition?.toString() ?? "",
+      startPlacement: appPicto.startPlacement?.toString() ?? "",
+      endPlacement: appPicto.endPlacement?.toString() ?? "",
       timing: "together",
       direction: "together",
       leftMotion: this.mapMotion(leftMotion, "blue"),

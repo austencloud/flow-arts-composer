@@ -25,8 +25,8 @@ interface MotionData {
 
 interface PictographData {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotion: MotionData;
@@ -36,8 +36,8 @@ interface PictographData {
 interface SequenceStep {
   letter: string;
   variation: number;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: MotionData;
   rightMotion: MotionData;
   stepNumber: number;
@@ -46,8 +46,8 @@ interface SequenceStep {
 interface SequenceResult {
   word: string;
   steps: SequenceStep[];
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   isValid: boolean;
   error?: string;
 }
@@ -87,8 +87,8 @@ function loadDataframe(): PictographData[] {
 
       pictographs.push({
         letter: row["letter"] ?? "",
-        startPosition: row["startPosition"] ?? "",
-        endPosition: row["endPosition"] ?? "",
+        startPlacement: row["startPlacement"] ?? "",
+        endPlacement: row["endPlacement"] ?? "",
         timing: row["timing"] ?? "",
         direction: row["direction"] ?? "",
         leftMotion: {
@@ -170,8 +170,8 @@ function buildSequenceFromLetters(
     return {
       word: "",
       steps: [],
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       isValid: false,
       error: "No letters provided",
     };
@@ -187,8 +187,8 @@ function buildSequenceFromLetters(
   return {
     word: letters.join(""),
     steps: [],
-    startPosition: "",
-    endPosition: "",
+    startPlacement: "",
+    endPlacement: "",
     isValid: false,
     error: `Failed to generate valid sequence after ${maxAttempts} attempts`,
   };
@@ -203,8 +203,8 @@ function attemptSequenceBuild(letters: string[]): SequenceResult {
     return {
       word,
       steps: [],
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       isValid: false,
       error: "No first letter",
     };
@@ -218,8 +218,8 @@ function attemptSequenceBuild(letters: string[]): SequenceResult {
     return {
       word,
       steps: [],
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       isValid: false,
       error: `No variations found for letter "${firstLetter}"`,
     };
@@ -230,43 +230,43 @@ function attemptSequenceBuild(letters: string[]): SequenceResult {
     return {
       word,
       steps: [],
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       isValid: false,
       error: "Failed to pick first variation",
     };
   }
 
   const firstVariationIndex = firstLetterVariations.indexOf(firstVariation);
-  const startPosition = firstVariation.startPosition;
+  const startPlacement = firstVariation.startPlacement;
 
   // Find a valid start position (Type 6 static letter)
-  const validStartPositions = allPictographs.filter((p) => {
+  const validStartPlacements = allPictographs.filter((p) => {
     return (
       TYPE_6_LETTERS.includes(p.letter) &&
-      p.startPosition === startPosition &&
-      p.endPosition === startPosition
+      p.startPlacement === startPlacement &&
+      p.endPlacement === startPlacement
     );
   });
 
-  if (validStartPositions.length === 0) {
+  if (validStartPlacements.length === 0) {
     return {
       word,
       steps: [],
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       isValid: false,
-      error: `No Type 6 static letter found at position ${startPosition}`,
+      error: `No Type 6 static letter found at position ${startPlacement}`,
     };
   }
 
-  const startPictograph = pickRandom(validStartPositions);
+  const startPictograph = pickRandom(validStartPlacements);
   if (!startPictograph) {
     return {
       word,
       steps: [],
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       isValid: false,
       error: "Failed to pick start position",
     };
@@ -276,8 +276,8 @@ function attemptSequenceBuild(letters: string[]): SequenceResult {
   steps.push({
     letter: startPictograph.letter,
     variation: 0,
-    startPosition: startPictograph.startPosition,
-    endPosition: startPictograph.endPosition,
+    startPlacement: startPictograph.startPlacement,
+    endPlacement: startPictograph.endPlacement,
     leftMotion: startPictograph.leftMotion,
     rightMotion: startPictograph.rightMotion,
     stepNumber: 0,
@@ -287,32 +287,32 @@ function attemptSequenceBuild(letters: string[]): SequenceResult {
   steps.push({
     letter: firstVariation.letter,
     variation: firstVariationIndex,
-    startPosition: firstVariation.startPosition,
-    endPosition: firstVariation.endPosition,
+    startPlacement: firstVariation.startPlacement,
+    endPlacement: firstVariation.endPlacement,
     leftMotion: firstVariation.leftMotion,
     rightMotion: firstVariation.rightMotion,
     stepNumber: 1,
   });
 
   // Walk through remaining letters
-  let currentEndPosition = firstVariation.endPosition;
+  let currentEndPlacement = firstVariation.endPlacement;
 
   for (let i = 1; i < letters.length; i++) {
     const letter = letters[i];
     if (!letter) continue;
 
     const variations = allPictographs.filter(
-      (p) => p.letter === letter && p.startPosition === currentEndPosition
+      (p) => p.letter === letter && p.startPlacement === currentEndPlacement
     );
 
     if (variations.length === 0) {
       return {
         word,
         steps: [],
-        startPosition: "",
-        endPosition: "",
+        startPlacement: "",
+        endPlacement: "",
         isValid: false,
-        error: `No valid continuation for letter "${letter}" from position ${currentEndPosition}`,
+        error: `No valid continuation for letter "${letter}" from position ${currentEndPlacement}`,
       };
     }
 
@@ -321,8 +321,8 @@ function attemptSequenceBuild(letters: string[]): SequenceResult {
       return {
         word,
         steps: [],
-        startPosition: "",
-        endPosition: "",
+        startPlacement: "",
+        endPlacement: "",
         isValid: false,
         error: `Failed to pick variation for letter "${letter}"`,
       };
@@ -336,21 +336,21 @@ function attemptSequenceBuild(letters: string[]): SequenceResult {
     steps.push({
       letter: chosenVariation.letter,
       variation: variationIndex >= 0 ? variationIndex : 0,
-      startPosition: chosenVariation.startPosition,
-      endPosition: chosenVariation.endPosition,
+      startPlacement: chosenVariation.startPlacement,
+      endPlacement: chosenVariation.endPlacement,
       leftMotion: chosenVariation.leftMotion,
       rightMotion: chosenVariation.rightMotion,
       stepNumber: i + 1,
     });
 
-    currentEndPosition = chosenVariation.endPosition;
+    currentEndPlacement = chosenVariation.endPlacement;
   }
 
   return {
     word,
     steps,
-    startPosition: startPosition,
-    endPosition: currentEndPosition,
+    startPlacement: startPlacement,
+    endPlacement: currentEndPlacement,
     isValid: true,
   };
 }
@@ -425,8 +425,8 @@ export const POST: RequestHandler = async (event) => {
       JSON.stringify({
         word: result.word,
         steps: result.steps,
-        startPosition: result.startPosition,
-        endPosition: result.endPosition,
+        startPlacement: result.startPlacement,
+        endPlacement: result.endPlacement,
         stepCount: result.steps.length - 1, // Exclude start position
       }),
       {

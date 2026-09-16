@@ -37,9 +37,9 @@ vi.mock("$lib/shared/animation-engine/services/animator-loader", () => ({
 vi.mock("$lib/shared/landing/services/prop-type-applier", () => ({
   applyToSequence: vi.fn((seq: unknown) => seq),
 }));
-// Mock gridPositionDeriver
-vi.mock("$lib/shared/pictograph/grid/services/grid-position-deriver", () => ({
-  getGridPositionFromLocations: vi.fn(),
+// Mock gridPlacementDeriver
+vi.mock("$lib/shared/pictograph/grid/services/grid-placement-deriver", () => ({
+  getGridPlacementFromLocations: vi.fn(),
 }));
 
 import { SequenceChainingOrchestrator } from "$lib/shared/animation-engine/services/sequence-chaining-orchestrator";

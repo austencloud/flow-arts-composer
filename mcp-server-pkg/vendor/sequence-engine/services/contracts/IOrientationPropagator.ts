@@ -42,7 +42,7 @@ export interface IOrientationPropagator {
   /**
    * Propagate orientations for a single hand through all steps.
    * Each step's start orientation = previous step's end orientation.
-   * @param steps - The sequence steps (including start position at index 0)
+   * @param steps - The sequence steps (including start placement at index 0)
    * @param hand - Which hand to propagate ("left" or "right")
    * @param initialOrientation - The starting orientation (from step 0's end orientation)
    * @returns Updated steps with correct orientations
@@ -55,7 +55,7 @@ export interface IOrientationPropagator {
 
   /**
    * Recalculate all prop orientations through the entire sequence.
-   * Uses the start position (step 0) orientations as the baseline.
+   * Uses the start placement (step 0) orientations as the baseline.
    * @param result - The sequence result to fix orientations on
    * @returns Updated sequence result with corrected orientations
    */

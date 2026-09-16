@@ -1,12 +1,12 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
-import { createStartPositionFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
 
 /** One pictograph slot in a beat strip: the start position (index 0) or a beat. */
 export interface NotationCell {
   key: string;
-  data: StepData | StartPositionData;
+  data: StepData | StartPlacementData;
   label: string;
   isStart: boolean;
   /** 0 = start position, 1..N = beat number. */
@@ -24,7 +24,7 @@ export function buildNotationCells(seq: SequenceData | null | undefined): Notati
   const cells: NotationCell[] = [];
 
   const startPos =
-    seq.startPosition ?? (seq.steps[0] ? createStartPositionFromBeatStart(seq.steps[0]) : null);
+    seq.startPlacement ?? (seq.steps[0] ? createStartPlacementFromBeatStart(seq.steps[0]) : null);
   if (startPos) {
     cells.push({
       key: `start-${seq.id ?? seq.word}`,

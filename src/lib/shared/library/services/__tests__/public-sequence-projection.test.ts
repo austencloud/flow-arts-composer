@@ -78,8 +78,8 @@ function makeStep(index: number, letter: string): StepData {
     rightReversal: false,
     isBlank: false,
     letter: letter as StepData["letter"],
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: motionAt(
         CYCLE[index % 4] as GridLocation,
@@ -282,7 +282,7 @@ describe("buildPublicSequenceProjection — field coverage", () => {
     expect(projection.creatorIntent).toEqual(CREATOR_INTENT);
     // Not derivable from the compositional fields; dropping it empties the
     // start cell (the bug the 2026-06 backfill repaired).
-    expect(projection.startPosition).toBeTruthy();
+    expect(projection.startPlacement).toBeTruthy();
   });
 
   it("writes every compositional field Browse hydrates from", async () => {
@@ -393,8 +393,8 @@ describe("buildPublicSequenceProjection — field coverage", () => {
       "animatedSequencePath",
       "metadata",
       "steps",
-      "startingPosition",
-      "startingPositionGroup",
+      "startingPlacement",
+      "startingPlacementGroup",
       "syncStatus",
       "pendingSyncMetadata",
       "visibility",

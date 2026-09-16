@@ -51,7 +51,7 @@ function createHarness(
       events.push("set-sequence");
       sequenceState.currentSequence = next;
     }),
-    shiftStartPosition: vi.fn(async () => {
+    shiftStartPlacement: vi.fn(async () => {
       events.push("shift");
     }),
   };
@@ -96,13 +96,13 @@ function createHarness(
             );
             break;
           case "shift_start":
-            await sequenceState.shiftStartPosition(options.stepNumber ?? 2);
+            await sequenceState.shiftStartPlacement(options.stepNumber ?? 2);
         }
         return { status: "completed" as const };
       } catch {
         return {
           status: "failed" as const,
-          message: "Could not shift start position",
+          message: "Could not shift start placement",
         };
       }
     }),
@@ -225,20 +225,20 @@ describe("sequence actions orchestrator", () => {
       .spyOn(console, "error")
       .mockImplementation(() => {});
     const harness = createHarness();
-    harness.sequenceState.shiftStartPosition.mockRejectedValueOnce(
+    harness.sequenceState.shiftStartPlacement.mockRejectedValueOnce(
       new Error("shift failed")
     );
 
     await expect(harness.orchestrator.shiftStart(3)).resolves.toMatchObject({
       status: "failed",
-      message: "Could not shift start position",
+      message: "Could not shift start placement",
     });
     expect(harness.events).toEqual([
       "dispatch:shift_start:panel:both",
       "finish-shift",
     ]);
 
-    harness.sequenceState.shiftStartPosition.mockResolvedValueOnce(undefined);
+    harness.sequenceState.shiftStartPlacement.mockResolvedValueOnce(undefined);
     await expect(harness.orchestrator.shiftStart(2)).resolves.toMatchObject({
       status: "completed",
     });

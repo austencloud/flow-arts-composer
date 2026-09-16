@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPropPlacementMotionState } from "$lib/shared/pictograph/grid/state/prop-placement-motion.svelte";
 import { buildPlacementTransformTransition } from "$lib/shared/pictograph/grid/services/prop-placement-view-model";
-import { positionPairPreview } from "$lib/features/learn/components/interactive/positions/hand-position-lesson";
+import { placementPairPreview } from "$lib/features/learn/components/interactive/placements/hand-placement-lesson";
 import {
   GridLocation,
   GridMode,
@@ -13,11 +13,11 @@ vi.mock("$lib/shared/transitions/motion", () => ({
   reducedMotion: () => preference.reduce,
 }));
 
-const start = positionPairPreview(
+const start = placementPairPreview(
   { left: GridLocation.SOUTH, right: GridLocation.NORTH },
   GridMode.DIAMOND
 );
-const end = positionPairPreview(
+const end = placementPairPreview(
   { left: GridLocation.WEST, right: GridLocation.EAST },
   GridMode.DIAMOND
 );

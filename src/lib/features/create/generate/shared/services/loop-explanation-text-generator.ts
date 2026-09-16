@@ -21,11 +21,11 @@ const singleDescriptions: Partial<Record<LOOPComponent, string>> = {
   [LOOPComponent.FLIPPED]:
     "Flips the sequence across the horizontal axis. Top becomes Bottom and vice versa. Creates a vertical reflection of your original movement pattern.",
   [LOOPComponent.SWAPPED]:
-    "Exchanges which hand performs each movement. Your left hand does what the right was doing, and the right does what the left was doing. The spatial positions stay the same.",
+    "Exchanges which hand performs each movement. Your left hand does what the right was doing, and the right does what the left was doing. The spatial locations stay the same.",
   [LOOPComponent.INVERTED]:
     "Inverts each motion's rotation relative to its path. Pro becomes anti, and anti becomes pro. Base motion types (static, dash) remain unchanged.",
   [LOOPComponent.REWOUND]:
-    "Reverses the sequence direction. The last step becomes the first, playing backward to create a perfect loop back to the start position.",
+    "Reverses the sequence direction. The last step becomes the first, playing backward to create a perfect loop back to the start placement.",
 };
 
 /**

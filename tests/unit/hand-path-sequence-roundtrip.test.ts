@@ -31,8 +31,8 @@ describe("saved hand-path cards", () => {
         displayName: cardTitle,
         notes: sequence.notes,
       });
-      expect(scan?.startPosition?.motions.left?.startLocation).toBe(
-        sequence.startPosition?.motions.left?.startLocation
+      expect(scan?.startPlacement?.motions.left?.startLocation).toBe(
+        sequence.startPlacement?.motions.left?.startLocation
       );
       expect(
         scan?.steps.map((s) => [

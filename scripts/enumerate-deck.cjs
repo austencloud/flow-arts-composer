@@ -45,7 +45,7 @@ const gridMode = getArg("gridMode") || "diamond";
 const dryRun = hasFlag("dry-run");
 const outPath = getArg("out");
 const seedFirestore = hasFlag("seed-firestore");
-const startPositionsArg = getArg("startPositions");
+const startPlacementsArg = getArg("startPlacements");
 const reversalPattern = getArg("reversalPattern");
 const twin = hasFlag("twin");
 const curateN = parseInt(getArg("curate") || "0", 10);
@@ -251,7 +251,7 @@ for (let i = 1; i < csvLines.length; i++) {
   edges.push(edge);
 }
 
-// Build adjacency map: startPosition -> [edges]
+// Build adjacency map: startPlacement -> [edges]
 const adjacency = {};
 for (const e of edges) {
   if (!adjacency[e.startPos]) adjacency[e.startPos] = [];
@@ -271,11 +271,11 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
 
 (async function main() {
   const circularMaps =
-    await import("../packages/sequence-engine/dist/loop/position-maps/circular-position-maps.js");
+    await import("../packages/sequence-engine/dist/loop/placement-maps/circular-placement-maps.js");
   const strictMaps =
-    await import("../packages/sequence-engine/dist/loop/position-maps/strict-loop-position-maps.js");
+    await import("../packages/sequence-engine/dist/loop/placement-maps/strict-loop-placement-maps.js");
 
-  const { HALVED_LOOPS, QUARTERED_LOOPS, QUARTER_POSITION_MAP_CW } =
+  const { HALVED_LOOPS, QUARTERED_LOOPS, QUARTER_PLACEMENT_MAP_CW } =
     circularMaps;
 
   // For quartered LOOPs, CW-only validation set.
@@ -283,7 +283,7 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
   // the established L1 deck counting (CCW is the mirror of CW — same letter
   // combinations, just rotated the other way, so enumerating both double-counts).
   const QUARTERED_LOOPS_CW = new Set(
-    Object.entries(QUARTER_POSITION_MAP_CW).map(([s, e]) => `${s},${e}`)
+    Object.entries(QUARTER_PLACEMENT_MAP_CW).map(([s, e]) => `${s},${e}`)
   );
 
   const {
@@ -365,8 +365,8 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
     mirrored_swapped_inverted: ["beta1", "beta5"],
     mirrored_rotated_inverted_swapped: ["beta1", "beta5"],
   };
-  const requestedStarts = startPositionsArg
-    ? startPositionsArg.split(",").map((s) => s.trim())
+  const requestedStarts = startPlacementsArg
+    ? startPlacementsArg.split(",").map((s) => s.trim())
     : (START_OVERRIDES[loopType] ?? DEFAULT_STARTS);
 
   // Build start -> requiredEnds map from validation set.
@@ -556,7 +556,7 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
   console.log(`\nTotal raw seeds: ${totalRawSeeds}`);
 
   // ---------------------------------------------------------------------------
-  // Deduplication: one representative per (startPosition, seedWord, motionTypeSignature)
+  // Deduplication: one representative per (startPlacement, seedWord, motionTypeSignature)
   //
   // The same letter pair can be executed with different motion type allocations
   // (e.g. left=shift/right=static vs left=static/right=shift for the same letter).
@@ -581,7 +581,7 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
 
   // ---------------------------------------------------------------------------
   // Curation (--curate N): select N sequences with even coverage across
-  // (handPathFamily × startPosition) cells via deterministic round-robin —
+  // (handPathFamily × startPlacement) cells via deterministic round-robin —
   // pick depth-0 of every cell, then depth-1, etc., until N. Produces a
   // shippable ~54-card physical deck that samples the whole family's variety
   // rather than over-weighting the largest hand-path families.
@@ -776,7 +776,7 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
   }
   console.log("═".repeat(62));
 
-  // Per-start-position summary
+  // Per-start-placement summary
   console.log("");
   const colWidth =
     Math.max(...validStarts.map((s) => (posLabels[s] || s).length)) + 2;
@@ -832,7 +832,7 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
         gridMode,
         reversalPattern: reversalPattern || "continuous",
         totalSequences: deduped.length,
-        startPositions: validStarts,
+        startPlacements: validStarts,
         generatedAt: new Date().toISOString(),
       },
       families: sortedGroups.map(([family, items]) => ({
@@ -840,7 +840,7 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
         count: items.length,
         sequences: items.map((item) => ({
           seedWord: item.seedWord,
-          startPosition: item.startPos,
+          startPlacement: item.startPos,
           handPathFamily: item.handPathFamily,
           path: item.edges
             .map((e) => e.startPos)
@@ -948,10 +948,10 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
     // pure and takes these as parameters.
     const {
       VERTICAL_MIRROR_LOCATION_MAP,
-    } = require("../packages/sequence-engine/dist/loop/position-maps/strict-loop-position-maps.js");
+    } = require("../packages/sequence-engine/dist/loop/placement-maps/strict-loop-placement-maps.js");
     const {
       mirrorHandRotationDirection,
-    } = require("../packages/sequence-engine/dist/loop/position-maps/circular-position-maps.js");
+    } = require("../packages/sequence-engine/dist/loop/placement-maps/circular-placement-maps.js");
     const locToPos = twin ? buildLocationToPositionMap(edges) : null;
     const twinDeps = twin
       ? {
@@ -977,8 +977,8 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
       return {
         id: `beat-${beatIndex}`,
         letter: edge.letter,
-        startPosition: edge.startPos,
-        endPosition: edge.endPos,
+        startPlacement: edge.startPos,
+        endPlacement: edge.endPos,
         beatIndex,
         stepNumber: beatIndex,
         duration: 1,
@@ -1051,8 +1051,8 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
       return {
         beat,
         letter: step.letter,
-        startPosition: step.startPosition,
-        endPosition: step.endPosition,
+        startPlacement: step.startPlacement,
+        endPlacement: step.endPlacement,
         leftReversal: step.leftReversal ?? false,
         rightReversal: step.rightReversal ?? false,
         motions: {
@@ -1102,14 +1102,14 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
      * Returns null if no match is found (e.g. the reversal produced a
      * physically invalid combination — caller should keep the original letter).
      *
-     * @param {{ startPosition: string, endPosition: string, motions: { left: object, right: object } }} step
+     * @param {{ startPlacement: string, endPlacement: string, motions: { left: object, right: object } }} step
      * @returns {string|null}
      */
     function lookupLetterFromMotions(step) {
       const match = edges.find(
         (e) =>
-          e.startPos === step.startPosition &&
-          e.endPos === step.endPosition &&
+          e.startPos === step.startPlacement &&
+          e.endPos === step.endPlacement &&
           e.leftMotionType === step.motions.left.motionType &&
           e.leftStartLoc === step.motions.left.startLocation &&
           e.leftEndLoc === step.motions.left.endLocation &&
@@ -1144,8 +1144,8 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
         const ppStart = {
           id: "pp-start",
           letter: "x",
-          startPosition: item.startPos,
-          endPosition: item.startPos,
+          startPlacement: item.startPos,
+          endPlacement: item.startPos,
           beatIndex: 0,
           stepNumber: 0,
           duration: 1,
@@ -1244,8 +1244,8 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
           : item.startPos.startsWith("beta")
             ? "β"
             : "γ",
-        startPosition: item.startPos,
-        endPosition: item.startPos,
+        startPlacement: item.startPos,
+        endPlacement: item.startPos,
         beatIndex: 0,
         stepNumber: 0,
         duration: 1,
@@ -1400,10 +1400,10 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
 
       // The executor returns the full sequence including start position as step 0
       const sp = fullSteps[0];
-      const startPosition = {
-        isStartPosition: true,
+      const startPlacement = {
+        isStartPlacement: true,
         id: `start-${seqId}`,
-        gridPosition: sp.startPosition,
+        gridPlacement: sp.startPlacement,
         gridMode,
         motions: {
           left: {
@@ -1458,7 +1458,7 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
         tags: [],
         thumbnails: [],
         steps,
-        startPosition,
+        startPlacement,
         metadata: {
           seedWord: item.seedWord,
           handPathFamily: item.handPathFamily,
@@ -1494,12 +1494,12 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
         // Re-derive letters for the beat steps from the transformed motions.
         // Seed the miss flag from the START step too: under canonical starts its
         // transformed pair is always in the CSV, but a non-canonical
-        // --startPositions could yield a null start position, which would
+        // --startPlacements could yield a null start position, which would
         // otherwise produce a "null_WORD" doc id.
         const twinBeatSteps = twinSteps.slice(1);
-        let twinPositionMiss = twinSteps[0].startPosition === null;
+        let twinPositionMiss = twinSteps[0].startPlacement === null;
         for (const ts of twinBeatSteps) {
-          if (ts.startPosition === null || ts.endPosition === null) {
+          if (ts.startPlacement === null || ts.endPlacement === null) {
             twinPositionMiss = true;
             break;
           }
@@ -1517,7 +1517,7 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
           // Self-twin: a card equal to its own mirror-swap. Excluded by design.
           selfTwinSkipped++;
         } else {
-          const twinStartPos = twinSteps[0].startPosition;
+          const twinStartPos = twinSteps[0].startPlacement;
           const twinWord = twinBeatSteps.map((s) => s.letter).join("");
           const twinSeqId = `${twinStartPos}_${twinWord}`;
 
@@ -1528,10 +1528,10 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
           } else {
             // Build the twin start position doc in the same shape as the base.
             const tsp = twinSteps[0];
-            const twinStartPosition = {
-              isStartPosition: true,
+            const twinStartPlacement = {
+              isStartPlacement: true,
               id: `start-${twinSeqId}`,
-              gridPosition: tsp.startPosition,
+              gridPlacement: tsp.startPlacement,
               gridMode,
               motions: {
                 left: {
@@ -1582,7 +1582,7 @@ console.log(`Adjacency map: ${Object.keys(adjacency).length} positions\n`);
               tags: [],
               thumbnails: [],
               steps: twinFsSteps,
-              startPosition: twinStartPosition,
+              startPlacement: twinStartPlacement,
               metadata: {
                 seedWord: twinBeatSteps
                   .slice(0, seedLength)

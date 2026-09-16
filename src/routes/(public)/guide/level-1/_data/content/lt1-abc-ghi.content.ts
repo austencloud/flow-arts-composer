@@ -21,7 +21,7 @@ import {
   GridMode,
   GridLocation,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -158,8 +158,8 @@ const wordStep = (w: WordDef, i: number): StepData => {
     id: `${w.key}-${i + 1}`,
     letter: w.letter,
     gridMode: GridMode.DIAMOND,
-    startPosition: getGridPositionFromLocations(bl[0], rl[0]),
-    endPosition: getGridPositionFromLocations(bl[1], rl[1]),
+    startPlacement: getGridPlacementFromLocations(bl[0], rl[0]),
+    endPlacement: getGridPlacementFromLocations(bl[1], rl[1]),
     stepNumber: i + 1,
     motions: {
       left: w.leftAnti
@@ -179,14 +179,14 @@ const startBox = (block: "alpha" | "beta"): StepData =>
     letter: block === "alpha" ? Letter.ALPHA : Letter.BETA,
     gridMode: GridMode.DIAMOND,
     stepNumber: 0,
-    startPosition:
+    startPlacement:
       block === "alpha"
-        ? getGridPositionFromLocations(SO_, N)
-        : getGridPositionFromLocations(SO_, SO_),
-    endPosition:
+        ? getGridPlacementFromLocations(SO_, N)
+        : getGridPlacementFromLocations(SO_, SO_),
+    endPlacement:
       block === "alpha"
-        ? getGridPositionFromLocations(SO_, N)
-        : getGridPositionFromLocations(SO_, SO_),
+        ? getGridPlacementFromLocations(SO_, N)
+        : getGridPlacementFromLocations(SO_, SO_),
     motions: {
       left: staticHand(HandSide.LEFT, SO_),
       right: staticHand(HandSide.RIGHT, block === "alpha" ? N : SO_),

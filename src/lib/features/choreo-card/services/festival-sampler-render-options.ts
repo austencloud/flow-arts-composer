@@ -31,14 +31,14 @@ export function buildFestivalSamplerRenderOptions(
   const layout = pickBestFitLayout({
     stepCount: sequence.steps.length,
     stepDurations: sequence.steps.map((step) => step.duration ?? 1),
-    includeStartPosition: true,
+    includeStartPlacement: true,
     containerWidth: CARD_CANVAS_WIDTH - frameInset * 2,
     containerHeight: CARD_CANVAS_HEIGHT - frameInset * 2,
     showHeader: true,
     showFooter: true,
     showQRCode: true,
   });
-  const startPositionLayout =
+  const startPlacementLayout =
     layout?.startPlacement === "row" || layout?.startPlacement === "column"
       ? layout.startPlacement
       : getCatalogLayoutPolicy(sequence.steps.length);
@@ -62,8 +62,8 @@ export function buildFestivalSamplerRenderOptions(
     canvasWidth: CARD_CANVAS_WIDTH,
     canvasHeight: CARD_CANVAS_HEIGHT,
     bleedPx: CARD_BLEED,
-    includeStartPosition: true,
-    startPositionLayout,
+    includeStartPlacement: true,
+    startPlacementLayout,
     ...(layout && { totalGridColumns: layout.cols }),
     showMandala: true,
     showQRCode: true,

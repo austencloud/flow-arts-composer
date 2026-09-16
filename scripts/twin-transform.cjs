@@ -65,15 +65,15 @@ function twinStep(step, { mirrorLocationMap, mirrorRotation, locToPos }) {
     hand: "right",
   };
 
-  const startPosition =
+  const startPlacement =
     locToPos[`${left.startLocation}|${right.startLocation}`] ?? null;
-  const endPosition =
+  const endPlacement =
     locToPos[`${left.endLocation}|${right.endLocation}`] ?? null;
 
   return {
     ...step,
-    startPosition,
-    endPosition,
+    startPlacement,
+    endPlacement,
     motions: { left, right },
   };
 }
@@ -93,8 +93,8 @@ function isSelfTwin(orig, twin) {
   for (let i = 0; i < orig.length; i++) {
     const a = orig[i];
     const b = twin[i];
-    if (a.startPosition !== b.startPosition) return false;
-    if (a.endPosition !== b.endPosition) return false;
+    if (a.startPlacement !== b.startPlacement) return false;
+    if (a.endPlacement !== b.endPlacement) return false;
     for (const hand of ["left", "right"]) {
       const am = a.motions[hand];
       const bm = b.motions[hand];

@@ -38,7 +38,7 @@ export const POST: RequestHandler = async (event) => {
       state.currentSequence,
       {
         stepSize,
-        includeStartPosition: true,
+        includeStartPlacement: true,
         addStepNumbers: false,
         addWord: false,
         addUserInfo: false,

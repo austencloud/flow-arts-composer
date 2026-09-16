@@ -35,7 +35,7 @@
  *     design; the deck reversal system depends on parity with production.)
  *   - Each signal anchors independently: the prop anchor and the arc anchor
  *     may come from different prior steps.
- *   - A blank step and the start-position step (stepNumber 0) never flag and
+ *   - A blank step and the start-placement step (stepNumber 0) never flag and
  *     never anchor.
  *
  * The returned array is index-aligned with the input. Pure function.
@@ -109,7 +109,7 @@ export function deriveReversals(
   const n = steps.length;
   const loop = options.loop === true;
 
-  // Extract each hand's signals once. Blank steps and the start-position step
+  // Extract each hand's signals once. Blank steps and the start-placement step
   // are inert: they never flag and never anchor.
   const leftSignals: HandSignals[] = new Array(n);
   const rightSignals: HandSignals[] = new Array(n);

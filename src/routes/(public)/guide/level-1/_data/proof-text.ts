@@ -746,7 +746,7 @@ export const PROOF_TEXT: Record<string, ProofRun[]> = {
       "t": "Later on, static sequences gain complexity when adding prop rotations."
     }
   ],
-  "staff-positions": [
+  "staff-placements": [
     {
       "x": 51.8,
       "y": 74,

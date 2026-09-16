@@ -11,7 +11,7 @@ import { createPictographData } from "$lib/shared/pictograph/shared/domain/facto
 import { updateSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import {
   saveSequence as persistSaveSequence,
 } from "$lib/shared/persistence/services/dexie-persistence-service";
@@ -66,8 +66,8 @@ export class Workbench {
       isBlank: true,
       // Reset pictograph properties to blank state
       letter: null,
-      startPosition: null,
-      endPosition: null,
+      startPlacement: null,
+      endPlacement: null,
       motions: {},
     });
   }
@@ -105,11 +105,11 @@ export class Workbench {
   }
 
   /**
-   * Set construction start position
+   * Set construction start placement
    */
-  async setConstructionStartPosition(
+  async setConstructionStartPlacement(
     sequenceId: string,
-    startPosition: StartPositionData
+    startPlacement: StartPlacementData
   ): Promise<SequenceData> {
     try {
       const sequence = await this.sequenceService.getSequence(sequenceId);
@@ -118,16 +118,16 @@ export class Workbench {
       }
 
       const updatedSequence = updateSequenceData(sequence, {
-        startPosition: startPosition,
-        startingPosition: startPosition, // CRITICAL: Set both fields for compatibility
+        startPlacement: startPlacement,
+        startingPlacement: startPlacement, // CRITICAL: Set both fields for compatibility
       });
 
       await persistSaveSequence(updatedSequence);
       return updatedSequence;
     } catch (error) {
-      console.error("Failed to set construction start position:", error);
+      console.error("Failed to set construction start placement:", error);
       throw new Error(
-        `Failed to set start position: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to set start placement: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
   }

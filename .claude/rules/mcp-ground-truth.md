@@ -9,7 +9,7 @@ paths:
 # TKA Ground-Truth Contract
 
 Use the Flow Arts MCP server for user-facing claims about letters, VTG,
-positions, pictographs, terminology, word feasibility, transitions, or physical
+placements, pictographs, terminology, word feasibility, transitions, or physical
 execution. Use a current-turn result or a result already present in the same
 conversation; do not rely on model memory or existing UI copy.
 

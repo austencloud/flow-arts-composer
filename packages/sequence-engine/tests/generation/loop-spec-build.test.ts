@@ -52,8 +52,8 @@ function loadVariations(csvPath: string): PictographData[] {
     if (c.length < 13 || !c[0]) continue;
     out.push({
       letter: c[0],
-      startPosition: c[1]!,
-      endPosition: c[2]!,
+      startPlacement: c[1]!,
+      endPlacement: c[2]!,
       timing: c[3]!,
       direction: c[4]!,
       leftMotion: {
@@ -84,7 +84,7 @@ class CsvVariationProvider implements IVariationProvider {
 
   constructor(private readonly data: PictographData[]) {
     for (const p of data) {
-      const key = `${p.letter}:${p.startPosition}`;
+      const key = `${p.letter}:${p.startPlacement}`;
       const bucket = this.index.get(key);
       if (bucket) bucket.push(p);
       else this.index.set(key, [p]);
@@ -251,7 +251,7 @@ describe("SequenceBuilder loopSpec path", () => {
           .map((step) => step.letter)
           .join(""),
         positions: result.sequence.map(
-          (step) => `${step.startPosition}→${step.endPosition}`
+          (step) => `${step.startPlacement}→${step.endPlacement}`
         ),
         reflectionAxis: detected.reflectionAxis,
         rawFunctional,
@@ -285,7 +285,7 @@ describe("SequenceBuilder loopSpec path", () => {
   it("keeps a random start paired with its own LOOP endpoint", () => {
     const provider = new CsvVariationProvider(loadVariations(CSV_PATH));
     const beamSearch = new BeamSearch(provider, "diamond");
-    const loopPositionMap: Record<string, string[]> = {
+    const loopPlacementMap: Record<string, string[]> = {
       beta1: ["beta5"],
       beta5: ["beta1"],
     };
@@ -296,16 +296,16 @@ describe("SequenceBuilder loopSpec path", () => {
       emptyConstraintSet(),
       10,
       undefined,
-      loopPositionMap
+      loopPlacementMap
     );
-    const start = result.steps[0]?.startPosition;
-    const end = result.steps[result.steps.length - 1]?.endPosition;
+    const start = result.steps[0]?.startPlacement;
+    const end = result.steps[result.steps.length - 1]?.endPlacement;
 
     expect(result.success).toBe(true);
     expect(start).toBeDefined();
     expect(end).toBeDefined();
-    expect(Object.keys(loopPositionMap)).toContain(start);
-    expect(loopPositionMap[start!]).toContain(end);
+    expect(Object.keys(loopPlacementMap)).toContain(start);
+    expect(loopPlacementMap[start!]).toContain(end);
   });
 
   it("builds a rot:2+mir:2 loop with inv:4 overlaid — 16 steps, closed, block-inverted", () => {

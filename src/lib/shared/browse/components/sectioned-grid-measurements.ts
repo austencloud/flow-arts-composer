@@ -9,7 +9,7 @@ export interface SectionedGridMeasurementItem {
   readonly sequences?: readonly SectionedGridSequenceSizeSource[];
 }
 
-export type SectionedGridStartPositionLayout = "row" | "column";
+export type SectionedGridStartPlacementLayout = "row" | "column";
 
 /**
  * Cards with different step counts have different aspect ratios. A virtual row
@@ -35,14 +35,14 @@ export function getSectionedGridRowMaxSteps(
 export function createSectionedGridMeasurementSignature(
   items: readonly SectionedGridMeasurementItem[],
   columnCount: number,
-  startPositionLayout: SectionedGridStartPositionLayout
+  startPlacementLayout: SectionedGridStartPlacementLayout
 ): string {
   const itemTokens = items.map((item) => {
     if (item.type !== "row") return `${item.type}:${item.key}`;
     return `${item.type}:${item.key}:${getSectionedGridRowMaxSteps(item.sequences ?? [])}`;
   });
 
-  return `${columnCount}\u001e${startPositionLayout}\u001e${itemTokens.join("\u001f")}`;
+  return `${columnCount}\u001e${startPlacementLayout}\u001e${itemTokens.join("\u001f")}`;
 }
 
 /**

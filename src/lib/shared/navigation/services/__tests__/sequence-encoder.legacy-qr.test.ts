@@ -49,10 +49,10 @@ describe("legacy QR payload compatibility", () => {
       const sequence = await decodeSequenceFromQR(payload);
 
       expect(sequence.steps).toHaveLength(stepCount);
-      expect(sequence.startPosition?.motions.left?.propType).toBe(
+      expect(sequence.startPlacement?.motions.left?.propType).toBe(
         PropType.STAFF
       );
-      expect(sequence.startPosition?.motions.right?.propType).toBe(
+      expect(sequence.startPlacement?.motions.right?.propType).toBe(
         PropType.STAFF
       );
       expect(sequence.steps[0]?.motions.left.motionType).toBe(firstMotionType);
@@ -70,10 +70,10 @@ describe("legacy QR payload compatibility", () => {
 
       const decoded = decodeLegacySequence(encoded);
       expect(decoded.steps).toHaveLength(source.steps.length);
-      expect(decoded.startPosition?.motions.left?.propType).toBe(
+      expect(decoded.startPlacement?.motions.left?.propType).toBe(
         PropType.STAFF
       );
-      expect(decoded.startPosition?.motions.right?.propType).toBe(PropType.STAFF);
+      expect(decoded.startPlacement?.motions.right?.propType).toBe(PropType.STAFF);
       expect(encodeLegacySequence(decoded, format)).toBe(encoded);
     }
   );
@@ -83,7 +83,7 @@ describe("legacy QR payload compatibility", () => {
     const [, ...beats] = encodeLegacySequence(source, 1).split("|");
     const decoded = decodeLegacySequence(`17|${beats.join("|")}`);
 
-    expect(decoded.startPosition).toBeUndefined();
+    expect(decoded.startPlacement).toBeUndefined();
     expect(decoded.steps.map((step) => step.stepNumber)).toEqual(
       beats.map((_, index) => 17 + index)
     );
@@ -104,8 +104,8 @@ describe("legacy QR payload compatibility", () => {
     const sequence = await decodeSequenceFromQR(PRODUCTION_NUMERIC_FLOAT_QR);
 
     expect(sequence.steps).toHaveLength(16);
-    expect(sequence.startPosition?.motions.left?.propType).toBe(PropType.STAFF);
-    expect(sequence.startPosition?.motions.right?.propType).toBe(PropType.STAFF);
+    expect(sequence.startPlacement?.motions.left?.propType).toBe(PropType.STAFF);
+    expect(sequence.startPlacement?.motions.right?.propType).toBe(PropType.STAFF);
 
     const numericFloat = sequence.steps[0]?.motions.right;
     expect(numericFloat?.motionType).toBe(MotionType.FLOAT);

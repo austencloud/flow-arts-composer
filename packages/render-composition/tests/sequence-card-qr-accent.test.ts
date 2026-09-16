@@ -15,8 +15,8 @@ import {
   createStyledQrOptions,
 } from "../src/qr-code-style.js";
 
-const rowOptions = { layout: "grid", startPositionLayout: "row" } as const;
-const columnOptions = { layout: "grid", startPositionLayout: "column" } as const;
+const rowOptions = { layout: "grid", startPlacementLayout: "row" } as const;
+const columnOptions = { layout: "grid", startPlacementLayout: "column" } as const;
 
 describe("QR slot", () => {
   it("takes the last cell of the start row in row mode", () => {

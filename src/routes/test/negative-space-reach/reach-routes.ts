@@ -35,7 +35,7 @@
  */
 
 import { withCalculatedArrowLocations } from "$lib/features/assemble-lab/services/builder-step-converter";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import {
@@ -46,7 +46,7 @@ import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
 import {
@@ -96,8 +96,8 @@ function makeMotion(spec: MotionSpec, hand: HandSide): MotionData {
 function makeStep(
   stepNumber: number,
   letter: Letter,
-  startPosition: GridPosition,
-  endPosition: GridPosition,
+  startPlacement: GridPlacement,
+  endPlacement: GridPlacement,
   left: MotionSpec,
   right: MotionSpec
 ): StepData {
@@ -106,8 +106,8 @@ function makeStep(
       id: `reach-${letter}-${stepNumber}`,
       stepNumber,
       letter,
-      startPosition,
-      endPosition,
+      startPlacement,
+      endPlacement,
       gridMode: GridMode.DIAMOND,
       duration: 1,
       motions: {
@@ -180,8 +180,8 @@ function buildRoute(
   const reach = makeStep(
     1,
     letter,
-    GridPosition.ALPHA1,
-    GridPosition.GAMMA11,
+    GridPlacement.ALPHA1,
+    GridPlacement.GAMMA11,
     BLUE_HELD_IN,
     right
   );
@@ -191,8 +191,8 @@ function buildRoute(
   const hold = makeStep(
     2,
     Letter.GAMMA,
-    GridPosition.GAMMA11,
-    GridPosition.GAMMA11,
+    GridPlacement.GAMMA11,
+    GridPlacement.GAMMA11,
     BLUE_HELD_IN,
     RED_HELD_AT_EAST
   );
@@ -210,12 +210,12 @@ function buildRoute(
       // The reach does not return to its start, so nothing here loops. Saying
       // otherwise would make the player carry a seam that does not exist.
       isCircular: false,
-      startPosition: createStartPositionData({
+      startPlacement: createStartPlacementData({
         id: `${id}-start`,
         letter: null,
-        startPosition: GridPosition.ALPHA1,
-        endPosition: GridPosition.ALPHA1,
-        gridPosition: GridPosition.ALPHA1,
+        startPlacement: GridPlacement.ALPHA1,
+        endPlacement: GridPlacement.ALPHA1,
+        gridPlacement: GridPlacement.ALPHA1,
         motions: {
           [HandSide.LEFT]: makeMotion(BLUE_HELD_IN, HandSide.LEFT),
           [HandSide.RIGHT]: makeMotion(RED_HELD_AT_NORTH, HandSide.RIGHT),

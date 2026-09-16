@@ -39,8 +39,8 @@ function makeStep(
     rightReversal: false,
     isBlank: false,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: createMotionData({ ...left, hand: HandSide.LEFT }),
       right: createMotionData({ ...right, hand: HandSide.RIGHT }),
@@ -48,7 +48,7 @@ function makeStep(
   };
 }
 
-function makeStartPosition(
+function makeStartPlacement(
   left: Partial<Parameters<typeof createMotionData>[0]>,
   right: Partial<Parameters<typeof createMotionData>[0]>
 ): StepData {
@@ -64,12 +64,12 @@ function buildTestSequence(steps: StepData[]): SequenceData {
     name: "Test Sequence",
     steps: actualSteps,
     ...(startPos && {
-      startPosition: {
+      startPlacement: {
         id: startPos.id,
         letter: startPos.letter,
-        gridPosition: startPos.startPosition,
-        startPosition: startPos.startPosition,
-        endPosition: startPos.endPosition,
+        gridPlacement: startPos.startPlacement,
+        startPlacement: startPos.startPlacement,
+        endPlacement: startPos.endPlacement,
         motions: startPos.motions,
       },
     }),
@@ -151,7 +151,7 @@ describe("SequenceEncoder", () => {
 
     it("preserves all motion fields through uncompressed round-trip", () => {
       // Derive-only codec: per-step orientations are NOT stored. Only the
-      // start-position seed (per hand) is encoded in the header; every step's
+      // start-placement seed (per hand) is encoded in the header; every step's
       // startOrientation is the running chained orientation and its
       // endOrientation is derived via the orientation algebra. So the fixture
       // chain must be physically consistent:
@@ -186,7 +186,7 @@ describe("SequenceEncoder", () => {
       );
 
       const seq = buildTestSequence([
-        makeStartPosition(
+        makeStartPlacement(
           {
             motionType: MotionType.STATIC,
             startLocation: GridLocation.NORTH,
@@ -268,7 +268,7 @@ describe("SequenceEncoder", () => {
       );
 
       const seq = buildTestSequence([
-        makeStartPosition(
+        makeStartPlacement(
           {
             motionType: MotionType.STATIC,
             startLocation: GridLocation.NORTHEAST,
@@ -306,7 +306,7 @@ describe("SequenceEncoder", () => {
 
     it("preserves multi-step sequences", () => {
       const steps = [
-        makeStartPosition(
+        makeStartPlacement(
           {
             motionType: MotionType.STATIC,
             startLocation: GridLocation.NORTH,
@@ -426,7 +426,7 @@ describe("SequenceEncoder", () => {
       );
 
       const seq = buildTestSequence([
-        makeStartPosition(
+        makeStartPlacement(
           {
             motionType: MotionType.STATIC,
             startLocation: GridLocation.NORTH,
@@ -484,7 +484,7 @@ describe("SequenceEncoder", () => {
         );
 
         const seq = buildTestSequence([
-          makeStartPosition(
+          makeStartPlacement(
             {
               startLocation: loc,
               endLocation: loc,
@@ -508,10 +508,10 @@ describe("SequenceEncoder", () => {
       }
     });
 
-    it("preserves all orientation values as start-position seeds", () => {
-      // Derive-only codec: orientation is stored ONLY as the start-position
+    it("preserves all orientation values as start-placement seeds", () => {
+      // Derive-only codec: orientation is stored ONLY as the start-placement
       // seed in the header, not per step. To prove each of the four radial
-      // orientations round-trips, set the seed (start-position startOrientation)
+      // orientations round-trips, set the seed (start-placement startOrientation)
       // to that value and chain it through a STATIC step. STATIC with 0 turns
       // preserves orientation, so the seed flows unchanged into the step's
       // derived start AND end orientation. Asserting both === seed verifies the
@@ -545,7 +545,7 @@ describe("SequenceEncoder", () => {
         );
 
         const seq = buildTestSequence([
-          makeStartPosition(
+          makeStartPlacement(
             {
               // Seed lives here, on the start position. This is the ONLY place
               // orientation is stored in the canonical format.
@@ -572,7 +572,7 @@ describe("SequenceEncoder", () => {
         const decoded = decodeSequence(encoded);
 
         // Seed round-trips onto the decoded start position.
-        expect(decoded.startPosition!.motions.left!.startOrientation).toBe(
+        expect(decoded.startPlacement!.motions.left!.startOrientation).toBe(
           orient
         );
         // And chains (STATIC, 0 turns => preserve) into the step.
@@ -612,7 +612,7 @@ describe("SequenceEncoder", () => {
         );
 
         const seq = buildTestSequence([
-          makeStartPosition(
+          makeStartPlacement(
             {
               startLocation: GridLocation.NORTH,
               endLocation: GridLocation.NORTH,
@@ -692,7 +692,7 @@ describe("SequenceEncoder", () => {
   describe("generateSequenceRoutePath", () => {
     it("generates a path starting with /sequence/", () => {
       const seq = buildTestSequence([
-        makeStartPosition(
+        makeStartPlacement(
           {
             startLocation: GridLocation.NORTH,
             endLocation: GridLocation.NORTH,
@@ -734,7 +734,7 @@ describe("SequenceEncoder", () => {
 
     it("produces a path that round-trips through decodeSequenceWithCompression", () => {
       const seq = buildTestSequence([
-        makeStartPosition(
+        makeStartPlacement(
           {
             startLocation: GridLocation.NORTH,
             endLocation: GridLocation.NORTH,
@@ -797,7 +797,7 @@ describe("SequenceEncoder", () => {
 
     it("handles start position with no actual steps", () => {
       const seq = buildTestSequence([
-        makeStartPosition(
+        makeStartPlacement(
           {
             startLocation: GridLocation.NORTH,
             endLocation: GridLocation.NORTH,
@@ -817,12 +817,12 @@ describe("SequenceEncoder", () => {
       const decoded = decodeSequence(encoded);
 
       expect(decoded.steps).toHaveLength(0);
-      expect(decoded.startPosition).toBeDefined();
+      expect(decoded.startPlacement).toBeDefined();
     });
 
     it("compressed and uncompressed decode to identical motion data", () => {
       const seq = buildTestSequence([
-        makeStartPosition(
+        makeStartPlacement(
           {
             startLocation: GridLocation.NORTH,
             endLocation: GridLocation.NORTH,

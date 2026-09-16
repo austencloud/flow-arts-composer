@@ -44,7 +44,7 @@ Your TKA database has these tables:
 ### **pictographs** - Pictograph library
 
 - **Primary Key**: `id` (string)
-- **Indexes**: `letter`, `startPosition`, `endPosition`
+- **Indexes**: `letter`, `startPlacement`, `endPlacement`
 - **Data**: Complete `PictographData` objects
 
 ### **userWork** - Tab states and work-in-progress

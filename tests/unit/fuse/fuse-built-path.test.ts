@@ -37,7 +37,7 @@ function clockwiseDiamondLoop(): BuilderStep[] {
     );
     steps.push(step);
     pose = {
-      location: step.endPosition,
+      location: step.endPlacement,
       orientation: step.endOrientation,
     };
   }
@@ -76,7 +76,7 @@ describe("Fuse built path", () => {
     const steps = clockwiseDiamondLoop();
     const openStep = createBuilderStep(
       {
-        location: steps[2]!.endPosition,
+        location: steps[2]!.endPlacement,
         orientation: steps[2]!.endOrientation,
       },
       GridLocation.EAST,

@@ -8,7 +8,7 @@ import {
   GridMode,
   GridLocation,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -43,8 +43,8 @@ const box = (m: Move, step: number): StepData =>
     id: `type2-${step}-${m.join("-")}`,
     letter: null,
     gridMode: GridMode.DIAMOND,
-    startPosition: getGridPositionFromLocations(m[0], m[2]),
-    endPosition: getGridPositionFromLocations(m[1], m[3]),
+    startPlacement: getGridPlacementFromLocations(m[0], m[2]),
+    endPlacement: getGridPlacementFromLocations(m[1], m[3]),
     motions: {
       left: motion(HandSide.LEFT, m[0], m[1]),
       right: motion(HandSide.RIGHT, m[2], m[3]),

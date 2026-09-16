@@ -24,7 +24,7 @@ import {
   buildSequenceFromLetters,
   parseWordToLetters,
 } from "../mcp-server-pkg/src/core/sequence-builder.js";
-import { isLOOPValidForPositionPair } from "@tka/sequence-engine/loop";
+import { isLOOPValidForPlacementPair } from "@tka/sequence-engine/loop";
 
 const REPO = path.join(import.meta.dirname, "..");
 const DOC = path.join(REPO, "docs/reference/tka-valid-words.md");
@@ -82,13 +82,13 @@ for (const len of [...new Set(SLOTS.map((s) => s.letters))]) {
     const pairs = new Set<string>();
     for (let i = 0; i < ATTEMPTS; i++) {
       const r = buildSequenceFromLetters(letters, pictographs, 1, undefined, true);
-      // steps[0] is the start-position step, so a bridge-free build of an
+      // steps[0] is the start-placement step, so a bridge-free build of an
       // N-letter word has N+1 entries.
-      if (r.isValid && r.steps.length === len + 1) pairs.add(`${r.startPosition},${r.endPosition}`);
+      if (r.isValid && r.steps.length === len + 1) pairs.add(`${r.startPlacement},${r.endPlacement}`);
     }
     for (const s of SLOTS) {
       if (s.letters !== len) continue;
-      const hit = [...pairs].find((p) => isLOOPValidForPositionPair(s.loop as never, p, s.period as never));
+      const hit = [...pairs].find((p) => isLOOPValidForPlacementPair(s.loop as never, p, s.period as never));
       if (hit) results[s.key].push({ word, pair: hit });
     }
   }

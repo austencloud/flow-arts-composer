@@ -15,8 +15,8 @@
  * docs/superpowers/handoffs/2026-07-03-loop-detection-audit-handoff.md.
  *
  * What stays app-side:
- *  - the circularity gate (isSeamlesslyLoopable: position AND orientation
- *    closure — stricter than the engine's positional check, deliberately, so
+ *  - the circularity gate (isSeamlesslyLoopable: placement AND orientation
+ *    closure — stricter than the engine's placement check, deliberately, so
  *    hydration only stamps loopType on seamless loops), and
  *  - the invisible-placeholder guard (both-required Step shape: a placeholder
  *    hand must not contribute locations to detection).
@@ -42,8 +42,8 @@ interface EngineStepInput {
   stepNumber: number;
   duration: number;
   letter: string | null;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   motions: {
     left: EngineMotionInput;
     right: EngineMotionInput;
@@ -63,7 +63,7 @@ export class LOOPDetector implements ILOOPDetector {
    * detector.
    */
   detectLOOPType(sequence: SequenceData): LOOPDetectionResult {
-    // Step 1: App-level circularity gate — position AND orientation closure.
+    // Step 1: App-level circularity gate — placement AND orientation closure.
     const isCircular = this.isCircular(sequence);
 
     if (!isCircular) {
@@ -136,7 +136,7 @@ export class LOOPDetector implements ILOOPDetector {
   }
 
   /**
-   * Quick check if a sequence is circular — position AND orientation closure.
+   * Quick check if a sequence is circular — placement AND orientation closure.
    */
   isCircular(sequence: SequenceData): boolean {
     return isSeamlesslyLoopable(sequence);
@@ -154,8 +154,8 @@ export class LOOPDetector implements ILOOPDetector {
       stepNumber: i + 1,
       duration: 1,
       letter: (s.letter as string | null) ?? null,
-      startPosition: String(s.startPosition ?? ""),
-      endPosition: String(s.endPosition ?? ""),
+      startPlacement: String(s.startPlacement ?? ""),
+      endPlacement: String(s.endPlacement ?? ""),
       motions: {
         left: this.toEngineMotion(s, HandSide.LEFT),
         right: this.toEngineMotion(s, HandSide.RIGHT),
@@ -168,8 +168,8 @@ export class LOOPDetector implements ILOOPDetector {
       stepNumber: 0,
       duration: 1,
       letter: null,
-      startPosition: first?.startPosition ?? "",
-      endPosition: first?.startPosition ?? "",
+      startPlacement: first?.startPlacement ?? "",
+      endPlacement: first?.startPlacement ?? "",
       motions: {
         left: { motionType: "static", startLocation: "", endLocation: "", rotationDirection: "noRotation" },
         right: { motionType: "static", startLocation: "", endLocation: "", rotationDirection: "noRotation" },

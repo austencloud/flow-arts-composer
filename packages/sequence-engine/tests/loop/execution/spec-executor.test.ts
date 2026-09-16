@@ -54,8 +54,8 @@ function makeStep(
     stepNumber,
     duration: 1,
     letter,
-    startPosition: startPos,
-    endPosition: endPos,
+    startPlacement: startPos,
+    endPlacement: endPos,
     motions: {
       left: makeMotion({ startLocation: "n", endLocation: "e", ...leftOverrides }),
       right: makeMotion({ startLocation: "s", endLocation: "w", ...rightOverrides }),
@@ -106,7 +106,7 @@ function assertStructuralInvariants(result: SequenceStep[]) {
     const prev = result[i - 1]!;
     const curr = result[i]!;
     expect(curr.stepNumber).toBeGreaterThan(prev.stepNumber ?? -1);
-    expect(curr.startPosition).toBe(prev.endPosition);
+    expect(curr.startPlacement).toBe(prev.endPlacement);
     expect(curr.motions.left.startLocation).toBe(prev.motions.left.endLocation);
     expect(curr.motions.right.startLocation).toBe(prev.motions.right.endLocation);
   }

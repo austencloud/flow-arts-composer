@@ -6,7 +6,7 @@
   its own band, named, with its boxes flowing across the whole width. Types 1-3
   hold 8 or more letters and earn a full-width band each. Type 1 keeps A-L and
   M-V in separate flows so responsive packing cannot merge the alpha/beta and
-  gamma position lands. Types 4, 5 and 6 hold three apiece, so a full-width row
+  gamma placement lands. Types 4, 5 and 6 hold three apiece, so a full-width row
   for each would be three rows spent on nine cells - they share one row instead,
   each still named.
 -->
@@ -27,7 +27,7 @@
     flowHeader?: string;
   }
 
-  function positionLandFlows(band: CodexTypeBand): AtlasFlow[] {
+  function placementLandFlows(band: CodexTypeBand): AtlasFlow[] {
     if (band.type.n !== 1) return [{ boxes: band.boxes }];
     const gammaLand = band.boxes.slice(4);
     return [
@@ -46,7 +46,7 @@
         aria-label={band.type.word.replace(/:\s*$/, "")}
       >
         <CodexBandHead type={band.type} />
-        {#each positionLandFlows(band) as flow, index (`${band.type.n}-${index}`)}
+        {#each placementLandFlows(band) as flow, index (`${band.type.n}-${index}`)}
           <CodexFlow
             boxes={flow.boxes}
             flowHeader={flow.flowHeader}
@@ -105,10 +105,10 @@
     min-width: 0;
   }
 
-  /* A wrapped row begins with its position transition, not with another
+  /* A wrapped row begins with its placement transition, not with another
      pictograph. Give that caption a deliberate break from the rule above it so
      it reads as the next row's header. Type 1 uses two flows to preserve its
-     position lands, so it needs the same break between those flows. */
+     placement lands, so it needs the same break between those flows. */
   .band > :global(.flow + .flow) {
     margin-top: var(--settings-codex-row-caption-gap);
   }

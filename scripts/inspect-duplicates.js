@@ -115,9 +115,9 @@ async function compareDetailed(group) {
       }
     }
 
-    // Compare startPosition
-    const spA = a.startPosition || a.startingPosition;
-    const spB = b.startPosition || b.startingPosition;
+    // Compare startPlacement
+    const spA = a.startPlacement || a.startingPlacement;
+    const spB = b.startPlacement || b.startingPlacement;
     if (JSON.stringify(spA) !== JSON.stringify(spB)) {
       // Drill down
       const spKeys = new Set([...Object.keys(spA || {}), ...Object.keys(spB || {})]);

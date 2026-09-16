@@ -2,7 +2,7 @@
 //
 // Cell pictograph data comes from the same dataset the in-app guide Codex uses
 // (`guide/level-1/_data/letters.json`, keyed `"A-0"`). Transition labels
-// (α→α, Γ→β…) are DERIVED from each pictograph's start/end position so a box's
+// (α→α, Γ→β…) are DERIVED from each pictograph's start/end placement so a box's
 // header can never drift from the letters rendered inside it. Box arrangement,
 // OPEN/CLOSE tags, and Greek names are design choices matched to the reference
 // artboards (`1.1 - Base Letters - Double Staff`).
@@ -15,18 +15,18 @@ const pictographs = (
   lettersData as unknown as { pictographs: Record<string, PictographData> }
 ).pictographs;
 
-const POS_GLYPH: Record<string, string> = { alpha: "α", beta: "β", gamma: "γ" };
+const PLACEMENT_GLYPH: Record<string, string> = { alpha: "α", beta: "β", gamma: "γ" };
 
-function posBase(p: unknown): string {
+function placementBase(p: unknown): string {
   const s = String(p ?? "");
-  return POS_GLYPH[s.replace(/[0-9]/g, "")] ?? s;
+  return PLACEMENT_GLYPH[s.replace(/[0-9]/g, "")] ?? s;
 }
 
-/** "α→α" derived from the pictograph's own start/end position. */
+/** "α→α" derived from the pictograph's own start/end placement. */
 export function transitionFor(id: string): string {
   const d = pictographs[id];
-  if (!d?.startPosition || !d?.endPosition) return "";
-  return `${posBase(d.startPosition)}→${posBase(d.endPosition)}`;
+  if (!d?.startPlacement || !d?.endPlacement) return "";
+  return `${placementBase(d.startPlacement)}→${placementBase(d.endPlacement)}`;
 }
 
 /** Wrap raw letters.json motions through createMotionData so that
@@ -66,7 +66,7 @@ export type CellMode = "OPEN" | "CLOSE";
 export interface CodexCellDef {
   id: string;
   label: string;
-  name?: string; // Greek/position name shown under the letter (Sigma, Alpha…)
+  name?: string; // Greek/placement name shown under the letter (Sigma, Alpha…)
   top?: string; // per-cell transition header (Type 4/5/6)
 }
 
@@ -117,8 +117,8 @@ function cbox(cells: CodexCellDef[], full?: boolean): CodexBoxDef {
   return { full, cells: cells.map((c) => ({ ...c, top: transitionFor(c.id) })) };
 }
 
-/** Static box (Type 6): the position never changes, so each cell's header is
- *  the single position glyph ("α"), not a degenerate "α→α" transition -
+/** Static box (Type 6): the placement never changes, so each cell's header is
+ *  the single placement glyph ("α"), not a degenerate "α→α" transition -
  *  matching the original guide sheet. */
 function sbox(cells: CodexCellDef[], full?: boolean): CodexBoxDef {
   return {

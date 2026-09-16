@@ -466,7 +466,7 @@
 
   /**
    * Repeat the sequence until the props return to their start orientation.
-   * The position already closed; only orientation is still open, so no LOOP
+   * The placement already closed; only orientation is still open, so no LOOP
    * transform is involved.
    */
   function handleOrientationRepeat() {
@@ -520,8 +520,8 @@
     const transferTarget = {
       sequenceState: constructTabState.sequenceState,
       syncGridModeFromSequence: constructTabState.syncGridModeFromSequence,
-      setSelectedStartPosition: constructTabState.setSelectedStartPosition,
-      setShowStartPositionPicker: constructTabState.setShowStartPositionPicker,
+      setSelectedStartPlacement: constructTabState.setSelectedStartPlacement,
+      setShowStartPlacementPicker: constructTabState.setShowStartPlacementPicker,
       syncPickerStateWithSequence:
         constructTabState.syncPickerStateWithSequence,
     };
@@ -834,8 +834,8 @@
             >
               <StepGridSection
                 steps={sequence.steps}
-                startPosition={sequence.startPosition ||
-                  sequence.startingPosition ||
+                startPlacement={sequence.startPlacement ||
+                  sequence.startingPlacement ||
                   null}
                 {selectedStepNumber}
                 isShiftMode={isShiftStartMode}

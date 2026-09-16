@@ -10,8 +10,8 @@ function makeCandidate(leftTurns?: number | "fl", rightTurns?: number | "fl"): C
     letter: "A",
     candidate: {
       letter: "A",
-      startPosition: "alpha1",
-      endPosition: "beta3",
+      startPlacement: "alpha1",
+      endPlacement: "beta3",
       timing: "together",
       direction: "together",
       leftMotion: {

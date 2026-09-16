@@ -1,11 +1,11 @@
 {
   "word": "MW-CΔMW-CΔMW-CΔMW-CΔ",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "steps": [
     {
       "letter": "M",
-      "startPosition": "gamma3",
-      "endPosition": "gamma13",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma13",
       "stepNumber": 1,
       "leftMotion": {
         "motionType": "pro",
@@ -30,8 +30,8 @@
     },
     {
       "letter": "W-",
-      "startPosition": "gamma13",
-      "endPosition": "alpha7",
+      "startPlacement": "gamma13",
+      "endPlacement": "alpha7",
       "stepNumber": 2,
       "leftMotion": {
         "motionType": "dash",
@@ -56,8 +56,8 @@
     },
     {
       "letter": "C",
-      "startPosition": "alpha7",
-      "endPosition": "alpha1",
+      "startPlacement": "alpha7",
+      "endPlacement": "alpha1",
       "stepNumber": 3,
       "leftMotion": {
         "motionType": "anti",
@@ -82,8 +82,8 @@
     },
     {
       "letter": "Δ",
-      "startPosition": "alpha1",
-      "endPosition": "gamma1",
+      "startPlacement": "alpha1",
+      "endPlacement": "gamma1",
       "stepNumber": 4,
       "leftMotion": {
         "motionType": "anti",
@@ -108,8 +108,8 @@
     },
     {
       "letter": "M",
-      "startPosition": "gamma1",
-      "endPosition": "gamma11",
+      "startPlacement": "gamma1",
+      "endPlacement": "gamma11",
       "stepNumber": 5,
       "leftMotion": {
         "motionType": "pro",
@@ -134,8 +134,8 @@
     },
     {
       "letter": "W-",
-      "startPosition": "gamma11",
-      "endPosition": "alpha5",
+      "startPlacement": "gamma11",
+      "endPlacement": "alpha5",
       "stepNumber": 6,
       "leftMotion": {
         "motionType": "dash",
@@ -160,8 +160,8 @@
     },
     {
       "letter": "C",
-      "startPosition": "alpha5",
-      "endPosition": "alpha7",
+      "startPlacement": "alpha5",
+      "endPlacement": "alpha7",
       "stepNumber": 7,
       "leftMotion": {
         "motionType": "anti",
@@ -186,8 +186,8 @@
     },
     {
       "letter": "Δ",
-      "startPosition": "alpha7",
-      "endPosition": "gamma7",
+      "startPlacement": "alpha7",
+      "endPlacement": "gamma7",
       "stepNumber": 8,
       "leftMotion": {
         "motionType": "anti",
@@ -212,8 +212,8 @@
     },
     {
       "letter": "M",
-      "startPosition": "gamma7",
-      "endPosition": "gamma9",
+      "startPlacement": "gamma7",
+      "endPlacement": "gamma9",
       "stepNumber": 9,
       "leftMotion": {
         "motionType": "pro",
@@ -238,8 +238,8 @@
     },
     {
       "letter": "W-",
-      "startPosition": "gamma9",
-      "endPosition": "alpha3",
+      "startPlacement": "gamma9",
+      "endPlacement": "alpha3",
       "stepNumber": 10,
       "leftMotion": {
         "motionType": "dash",
@@ -264,8 +264,8 @@
     },
     {
       "letter": "C",
-      "startPosition": "alpha3",
-      "endPosition": "alpha5",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha5",
       "stepNumber": 11,
       "leftMotion": {
         "motionType": "anti",
@@ -290,8 +290,8 @@
     },
     {
       "letter": "Δ",
-      "startPosition": "alpha5",
-      "endPosition": "gamma5",
+      "startPlacement": "alpha5",
+      "endPlacement": "gamma5",
       "stepNumber": 12,
       "leftMotion": {
         "motionType": "anti",
@@ -316,8 +316,8 @@
     },
     {
       "letter": "M",
-      "startPosition": "gamma5",
-      "endPosition": "gamma15",
+      "startPlacement": "gamma5",
+      "endPlacement": "gamma15",
       "stepNumber": 13,
       "leftMotion": {
         "motionType": "pro",
@@ -342,8 +342,8 @@
     },
     {
       "letter": "W-",
-      "startPosition": "gamma15",
-      "endPosition": "alpha1",
+      "startPlacement": "gamma15",
+      "endPlacement": "alpha1",
       "stepNumber": 14,
       "leftMotion": {
         "motionType": "dash",
@@ -368,8 +368,8 @@
     },
     {
       "letter": "C",
-      "startPosition": "alpha1",
-      "endPosition": "alpha3",
+      "startPlacement": "alpha1",
+      "endPlacement": "alpha3",
       "stepNumber": 15,
       "leftMotion": {
         "motionType": "anti",
@@ -394,8 +394,8 @@
     },
     {
       "letter": "Δ",
-      "startPosition": "alpha3",
-      "endPosition": "gamma3",
+      "startPlacement": "alpha3",
+      "endPlacement": "gamma3",
       "stepNumber": 16,
       "leftMotion": {
         "motionType": "anti",

@@ -1,5 +1,5 @@
 export const CONSTRUCT_TUTORIAL_STAGES = [
-  "start-position",
+  "start-placement",
   "next-pictograph",
   "play-sequence",
 ] as const;
@@ -22,12 +22,12 @@ export interface ConstructTutorialState {
   readonly stage: ConstructTutorialStage;
   readonly currentStepNumber: number;
   readonly totalSteps: number;
-  readonly positionLabel: string | null;
+  readonly placementLabel: string | null;
   readonly addedLetter: string | null;
   start(): void;
   reset(): void;
   dismiss(): void;
-  recordStartPosition(label: string | null): boolean;
+  recordStartPlacement(label: string | null): boolean;
   recordOptionApplied(option: AppliedTutorialOption): boolean;
   recordFullPlay(): boolean;
 }
@@ -38,21 +38,21 @@ export interface ConstructTutorialState {
  */
 export function createConstructTutorialState(): ConstructTutorialState {
   let status = $state<ConstructTutorialStatus>("inactive");
-  let stage = $state<ConstructTutorialStage>("start-position");
-  let positionLabel = $state<string | null>(null);
+  let stage = $state<ConstructTutorialStage>("start-placement");
+  let placementLabel = $state<string | null>(null);
   let addedLetter = $state<string | null>(null);
 
   function start() {
     status = "active";
-    stage = "start-position";
-    positionLabel = null;
+    stage = "start-placement";
+    placementLabel = null;
     addedLetter = null;
   }
 
   function reset() {
     status = "inactive";
-    stage = "start-position";
-    positionLabel = null;
+    stage = "start-placement";
+    placementLabel = null;
     addedLetter = null;
   }
 
@@ -62,9 +62,9 @@ export function createConstructTutorialState(): ConstructTutorialState {
     }
   }
 
-  function recordStartPosition(label: string | null): boolean {
-    if (status !== "active" || stage !== "start-position") return false;
-    positionLabel = label;
+  function recordStartPlacement(label: string | null): boolean {
+    if (status !== "active" || stage !== "start-placement") return false;
+    placementLabel = label;
     stage = "next-pictograph";
     return true;
   }
@@ -101,8 +101,8 @@ export function createConstructTutorialState(): ConstructTutorialState {
     get totalSteps() {
       return CONSTRUCT_TUTORIAL_STAGES.length;
     },
-    get positionLabel() {
-      return positionLabel;
+    get placementLabel() {
+      return placementLabel;
     },
     get addedLetter() {
       return addedLetter;
@@ -110,7 +110,7 @@ export function createConstructTutorialState(): ConstructTutorialState {
     start,
     reset,
     dismiss,
-    recordStartPosition,
+    recordStartPlacement,
     recordOptionApplied,
     recordFullPlay,
   };

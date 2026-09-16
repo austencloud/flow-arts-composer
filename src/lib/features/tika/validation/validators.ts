@@ -159,6 +159,10 @@ export const noContextData: TikaValidator = {
     // Match specific internal field patterns
     const patterns = [
       /"contextData"/gi,
+      /"startPlacement"\s*:/gi,
+      /"endPlacement"\s*:/gi,
+      // Pre-rename aliases remain checked at this untrusted boundary, same
+      // as the blue/red motion aliases below.
       /"startPosition"\s*:/gi,
       /"endPosition"\s*:/gi,
       /"leftMotion"\s*:\s*\{/gi,

@@ -32,7 +32,7 @@ import type {
  * personal settings.
  */
 export interface GalleryCompositionSource {
-  getStartPositionLayoutForStepCount(stepCount: number): "row" | "column";
+  getStartPlacementLayoutForStepCount(stepCount: number): "row" | "column";
   /**
    * Per-step-count QR/Mandala/None pick for a card with a single empty info
    * cell. The gallery grid must honor this the same way the viewer ChoreoCard
@@ -56,8 +56,8 @@ export interface BuildGalleryRenderInputParams {
   // Composition overrides (undefined = variant defaults)
   addWord?: boolean;
   addStepNumbers?: boolean;
-  includeStartPosition?: boolean;
-  startPositionLayout?: "row" | "column";
+  includeStartPlacement?: boolean;
+  startPlacementLayout?: "row" | "column";
   addDifficultyLevel?: boolean;
   addUserInfo?: boolean;
   showNotes?: boolean;
@@ -118,7 +118,7 @@ export function galleryThumbnailRequestChanged(
 }
 
 /**
- * Beat count used for QR gating (>1 → a spare cell exists) and start-position
+ * Beat count used for QR gating (>1 → a spare cell exists) and start-placement
  * layout selection. Mirrors PropAwareThumbnail: steps length wins over the
  * stored sequenceLength; empty steps (Community sequences) fall through to it.
  */
@@ -198,10 +198,10 @@ export function buildGalleryVisibility(
     stepCount,
     // Grid cards render with the start position (the gallery default); geometry
     // must match so the info-cell count is correct.
-    includeStartPosition: p.includeStartPosition ?? true,
-    startPositionLayout:
-      p.startPositionLayout ??
-      compositionManager.getStartPositionLayoutForStepCount(stepCount),
+    includeStartPlacement: p.includeStartPlacement ?? true,
+    startPlacementLayout:
+      p.startPlacementLayout ??
+      compositionManager.getStartPlacementLayoutForStepCount(stepCount),
     columnCount: null, // Gallery thumbnails always render the auto layout table.
     showQRCode: qrAllowed && compositionManager.showQRCode,
     showMandala: compositionManager.showMandala,
@@ -244,8 +244,8 @@ export function buildGalleryRenderInput(
     variant = "gallery",
     addWord,
     addStepNumbers,
-    includeStartPosition,
-    startPositionLayout,
+    includeStartPlacement,
+    startPlacementLayout,
     addDifficultyLevel,
     addUserInfo,
     showNotes,
@@ -256,9 +256,9 @@ export function buildGalleryRenderInput(
   } = p;
 
   const stepCount = galleryStepCount(sequence);
-  const effectiveStartPositionLayout =
-    startPositionLayout ??
-    compositionManager.getStartPositionLayoutForStepCount(stepCount);
+  const effectiveStartPlacementLayout =
+    startPlacementLayout ??
+    compositionManager.getStartPlacementLayoutForStepCount(stepCount);
 
   const sequenceName = deriveThumbnailSequenceName(sequence);
   return {
@@ -274,8 +274,8 @@ export function buildGalleryRenderInput(
     showLoopGlyph,
     addWord,
     addStepNumbers,
-    includeStartPosition,
-    startPositionLayout: effectiveStartPositionLayout,
+    includeStartPlacement,
+    startPlacementLayout: effectiveStartPlacementLayout,
     addDifficultyLevel,
     addUserInfo,
     showNotes,
@@ -291,7 +291,7 @@ export function buildGalleryRenderInput(
  * per-combo via an explicit visibility override, not this source.
  */
 export const DEFAULT_GALLERY_COMPOSITION: GalleryCompositionSource = {
-  getStartPositionLayoutForStepCount: () => "row",
+  getStartPlacementLayoutForStepCount: () => "row",
   // QR-preferential, matching the derived default when both toggles are on. The
   // warmer passes an explicit `visibility` override so it never routes through
   // this, but the interface requires it.

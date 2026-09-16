@@ -39,7 +39,7 @@ export function buildActSequence(
     name,
     word,
     steps,
-    startPosition: rows[0]!.startPosition,
+    startPlacement: rows[0]!.startPlacement,
     isCircular: loopStatus(rows) === "loops",
   });
 }

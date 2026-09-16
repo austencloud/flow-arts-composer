@@ -2,10 +2,10 @@
  * LOOP Validator Implementation
  *
  * Validates which LOOP (Linked Orbital Offset Pattern) types are available
- * for a given position pair based on position symmetry rules.
+ * for a given placement pair based on placement symmetry rules.
  */
 
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { LOOPExecutorSelector } from "$lib/features/create/generate/circular/services/loop-executor-selector";
 import {
   LOOPType,
@@ -28,18 +28,18 @@ export interface LOOPOption {
 }
 
 /**
- * Result of validating LOOP options for a position pair
+ * Result of validating LOOP options for a placement pair
  */
 export interface LOOPValidationResult {
-  /** LOOP options that are valid for this position pair */
+  /** LOOP options that are valid for this placement pair */
   available: LOOPOption[];
-  /** LOOP options that exist but aren't valid for this position pair */
+  /** LOOP options that exist but aren't valid for this placement pair */
   unavailable: LOOPOption[];
 }
 import {
   HALVED_LOOPS,
   QUARTERED_LOOPS,
-} from "$lib/shared/foundation/domain/models/generation/circular-position-maps";
+} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
 import {
   MIRRORED_LOOP_VALIDATION_SET,
   FLIPPED_LOOP_VALIDATION_SET,
@@ -48,7 +48,7 @@ import {
   MIRRORED_SWAPPED_VALIDATION_SET,
   ROTATED_SWAPPED_NONDEGENERATE_QUARTERED_VALIDATION_SET,
   ROTATED_SWAPPED_NONDEGENERATE_HALVED_VALIDATION_SET,
-} from "$lib/features/create/generate/circular/domain/constants/strict-loop-position-maps";
+} from "$lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps";
 
 /**
  * LOOP options with icons and descriptions for UI display.
@@ -60,15 +60,15 @@ const LOOP_OPTION_CONFIG: Record<
 > = {
   [LOOPType.ROTATED]: {
     icon: "fa-rotate",
-    description: "Rotates positions around the grid",
+    description: "Rotates placements around the grid",
   },
   [LOOPType.MIRRORED]: {
     icon: "fa-reflect-horizontal",
-    description: "Mirrors positions vertically",
+    description: "Mirrors placements vertically",
   },
   [LOOPType.FLIPPED]: {
     icon: "fa-arrows-up-down",
-    description: "Mirrors positions horizontally",
+    description: "Mirrors placements horizontally",
   },
   [LOOPType.SWAPPED]: {
     icon: "fa-shuffle",
@@ -152,16 +152,16 @@ export class LOOPValidator {
   constructor(private loopExecutorSelector: LOOPExecutorSelector) {}
 
   /**
-   * Get LOOP options filtered by validity for a position pair
+   * Get LOOP options filtered by validity for a placement pair
    */
-  getLOOPOptionsForPositionPair(
-    startPosition: GridPosition,
-    endPosition: GridPosition,
+  getLOOPOptionsForPlacementPair(
+    startPlacement: GridPlacement,
+    endPlacement: GridPlacement,
     period: Period
   ): LOOPValidationResult {
     const available: LOOPOption[] = [];
     const unavailable: LOOPOption[] = [];
-    const positionPair = `${startPosition},${endPosition}`;
+    const placementPair = `${startPlacement},${endPlacement}`;
 
     for (const loopType of ALL_LOOP_TYPES) {
       if (!this.loopExecutorSelector.isSupported(loopType)) {
@@ -176,7 +176,7 @@ export class LOOPValidator {
         icon: config.icon,
       };
 
-      if (this.isLOOPValidForPositionPair(loopType, positionPair, period)) {
+      if (this.isLOOPValidForPlacementPair(loopType, placementPair, period)) {
         available.push(option);
       } else {
         unavailable.push(option);
@@ -187,11 +187,11 @@ export class LOOPValidator {
   }
 
   /**
-   * Check if a LOOP type is valid for a given position pair
+   * Check if a LOOP type is valid for a given placement pair
    */
-  isLOOPValidForPositionPair(
+  isLOOPValidForPlacementPair(
     loopType: LOOPType,
-    positionPair: string,
+    placementPair: string,
     period: Period
   ): boolean {
     // Rotated LOOPs use rotation-based validation
@@ -211,68 +211,68 @@ export class LOOPValidator {
       // Pure rotation-based LOOPs (no swap component)
       case LOOPType.ROTATED:
       case LOOPType.ROTATED_INVERTED:
-        return rotationSet.has(positionPair);
+        return rotationSet.has(placementPair);
 
       // Rotated + Swapped: end must be SWAPPED(ROTATED(start))
       case LOOPType.ROTATED_SWAPPED:
-        return rotatedSwappedSet.has(positionPair);
+        return rotatedSwappedSet.has(placementPair);
 
       // Pure mirror-based LOOPs (no rotation component)
       case LOOPType.MIRRORED:
       case LOOPType.MIRRORED_INVERTED:
-        return MIRRORED_LOOP_VALIDATION_SET.has(positionPair);
+        return MIRRORED_LOOP_VALIDATION_SET.has(placementPair);
 
       // Flipped LOOP (N ↔ S)
       case LOOPType.FLIPPED:
-        return FLIPPED_LOOP_VALIDATION_SET.has(positionPair);
+        return FLIPPED_LOOP_VALIDATION_SET.has(placementPair);
 
       // Mirrored + Swapped (uses composed validation set)
       case LOOPType.MIRRORED_SWAPPED:
-        return MIRRORED_SWAPPED_VALIDATION_SET.has(positionPair);
+        return MIRRORED_SWAPPED_VALIDATION_SET.has(placementPair);
 
       // Compound LOOPs containing ROTATED - need BOTH mirror AND rotation validation
       case LOOPType.MIRRORED_ROTATED:
       case LOOPType.MIRRORED_INVERTED_ROTATED:
         return (
-          MIRRORED_LOOP_VALIDATION_SET.has(positionPair) &&
-          rotationSet.has(positionPair)
+          MIRRORED_LOOP_VALIDATION_SET.has(placementPair) &&
+          rotationSet.has(placementPair)
         );
 
       // All Four: additionally restricted to starts fixed under both mirror
       // and swap (beta1/beta5) — elsewhere the mirror degrades to a flip
       case LOOPType.MIRRORED_ROTATED_INVERTED_SWAPPED:
         return (
-          (positionPair.startsWith("beta1,") ||
-            positionPair.startsWith("beta5,")) &&
-          MIRRORED_LOOP_VALIDATION_SET.has(positionPair) &&
-          rotationSet.has(positionPair)
+          (placementPair.startsWith("beta1,") ||
+            placementPair.startsWith("beta5,")) &&
+          MIRRORED_LOOP_VALIDATION_SET.has(placementPair) &&
+          rotationSet.has(placementPair)
         );
 
       // Swap-based LOOPs
       case LOOPType.SWAPPED:
       case LOOPType.SWAPPED_INVERTED:
-        return SWAPPED_LOOP_VALIDATION_SET.has(positionPair);
+        return SWAPPED_LOOP_VALIDATION_SET.has(placementPair);
 
-      // Invert-only LOOP (needs same start/end position)
+      // Invert-only LOOP (needs same start/end placement)
       case LOOPType.INVERTED:
-        return INVERTED_LOOP_VALIDATION_SET.has(positionPair);
+        return INVERTED_LOOP_VALIDATION_SET.has(placementPair);
 
-      // Mirrored + Swapped + Inverted: inverted dominates positionally —
+      // Mirrored + Swapped + Inverted: inverted dominates placement-wise —
       // return to start — but the start must be fixed under both mirror and
       // swap (beta1/beta5); elsewhere the mirror degrades to a flip
       case LOOPType.MIRRORED_SWAPPED_INVERTED:
         return (
-          (positionPair.startsWith("beta1,") ||
-            positionPair.startsWith("beta5,")) &&
-          INVERTED_LOOP_VALIDATION_SET.has(positionPair)
+          (placementPair.startsWith("beta1,") ||
+            placementPair.startsWith("beta5,")) &&
+          INVERTED_LOOP_VALIDATION_SET.has(placementPair)
         );
 
-      // Rotated + Swapped + Inverted: positionally identical to
-      // Rotated + Swapped (inversion is position-free) — beta starts only
+      // Rotated + Swapped + Inverted: placement-wise identical to
+      // Rotated + Swapped (inversion is placement-free) — beta starts only
       case LOOPType.ROTATED_SWAPPED_INVERTED:
-        return rotatedSwappedSet.has(positionPair);
+        return rotatedSwappedSet.has(placementPair);
 
-      // Rewound LOOP - always valid (works on any sequence regardless of positions)
+      // Rewound LOOP - always valid (works on any sequence regardless of placements)
       case LOOPType.STRICT_REWOUND:
         return true;
 
@@ -283,7 +283,7 @@ export class LOOPValidator {
   }
 
   /**
-   * Get all supported LOOP options (regardless of position validity)
+   * Get all supported LOOP options (regardless of placement validity)
    */
   getAllSupportedLOOPOptions(): LOOPOption[] {
     const options: LOOPOption[] = [];

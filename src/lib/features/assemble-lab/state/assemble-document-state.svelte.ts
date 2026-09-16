@@ -37,7 +37,7 @@ export interface AssembleDocumentState {
   readonly canChangeGridMode: boolean;
   readonly canReorderSteps: boolean;
   readonly canReplaceSelectedStep: boolean;
-  readonly candidateStartPosition: GridLocation | null;
+  readonly candidateStartPlacement: GridLocation | null;
   readonly candidateStartOrientation: Orientation;
   readonly candidateRotationDirection: RotationDirection;
   readonly candidateTurnCount: number;
@@ -110,9 +110,9 @@ export function createAssembleDocumentState(): AssembleDocumentState {
       phase !== "animating" &&
       phase !== "complete"
   );
-  const candidateStartPosition = $derived.by(() => {
+  const candidateStartPlacement = $derived.by(() => {
     if (stepEditMode === "replace" && selectedStepIndex !== null) {
-      return activeSteps[selectedStepIndex]?.startPosition ?? null;
+      return activeSteps[selectedStepIndex]?.startPlacement ?? null;
     }
     return currentPosition;
   });
@@ -146,7 +146,7 @@ export function createAssembleDocumentState(): AssembleDocumentState {
     const first = steps[0];
     return first
       ? {
-          location: first.startPosition,
+          location: first.startPlacement,
           orientation: first.startOrientation,
         }
       : null;
@@ -156,7 +156,7 @@ export function createAssembleDocumentState(): AssembleDocumentState {
     const steps = activeHand === HandSide.LEFT ? leftSteps : rightSteps;
     const last = steps[steps.length - 1];
     if (last) {
-      currentPosition = last.endPosition;
+      currentPosition = last.endPlacement;
       currentOrientation = last.endOrientation;
       phase = "building";
       return;
@@ -290,8 +290,8 @@ export function createAssembleDocumentState(): AssembleDocumentState {
     get canReplaceSelectedStep() {
       return canReplaceSelectedStep;
     },
-    get candidateStartPosition() {
-      return candidateStartPosition;
+    get candidateStartPlacement() {
+      return candidateStartPlacement;
     },
     get candidateStartOrientation() {
       return candidateStartOrientation;

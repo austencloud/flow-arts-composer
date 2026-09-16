@@ -2,7 +2,7 @@
  * SequenceData adapter for the sequence engine's orientation-cycle analysis.
  *
  * Orientation math belongs to @tka/sequence-engine. This module only reads the
- * app's separately stored start position and converts the result to app enums.
+ * app's separately stored start placement and converts the result to app enums.
  */
 
 import { analyzeOrientationCycle } from "@tka/sequence-engine/loop";
@@ -13,7 +13,7 @@ import type {
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { Step } from "@tka/tka-types";
 import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 
 export interface OrientationCycleResult {
   cycleCount: 1 | 2 | 4 | 8;
@@ -47,14 +47,14 @@ function getStartingOrientations(sequence: SequenceData): {
   left: Orientation;
   right: Orientation;
 } {
-  const startPosition = sequence.startPosition || sequence.startingPosition;
+  const startPlacement = sequence.startPlacement || sequence.startingPlacement;
 
-  if (startPosition && isStartPositionData(startPosition)) {
+  if (startPlacement && isStartPlacementData(startPlacement)) {
     return {
       left:
-        startPosition.motions?.left?.startOrientation ?? Orientation.IN,
+        startPlacement.motions?.left?.startOrientation ?? Orientation.IN,
       right:
-        startPosition.motions?.right?.startOrientation ?? Orientation.IN,
+        startPlacement.motions?.right?.startOrientation ?? Orientation.IN,
     };
   }
 
@@ -65,8 +65,8 @@ function getStartingOrientations(sequence: SequenceData): {
   };
 }
 
-function isStartPositionData(
-  data: StartPositionData | Step
-): data is StartPositionData {
-  return "isStartPosition" in data && data.isStartPosition === true;
+function isStartPlacementData(
+  data: StartPlacementData | Step
+): data is StartPlacementData {
+  return "isStartPlacement" in data && data.isStartPlacement === true;
 }

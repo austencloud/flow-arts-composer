@@ -43,7 +43,7 @@ for (const [file] of unique) {
 
 const figure = (c, aria) => `<figure class="card">
 <div class="shot ${cssName(c.file)}" role="img" aria-label="${aria}"></div>
-<figcaption><span class="w">${c.word}</span><span class="l">${c.label}</span>${c.startPosition ? `<span class="p">${c.startPosition} → ${c.endPosition}</span>` : ""}</figcaption>
+<figcaption><span class="w">${c.word}</span><span class="l">${c.label}</span>${c.startPlacement ? `<span class="p">${c.startPlacement} → ${c.endPlacement}</span>` : ""}</figcaption>
 </figure>`;
 
 // `tnd-quarter-opp-mpmp` -> `quarter-opp`, so the catalog groups by family.

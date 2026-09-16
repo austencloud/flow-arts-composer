@@ -63,8 +63,8 @@ function makeFixture(overrides?: {
   const step = (n: number, leftRev: boolean, rightRev: boolean) => ({
     id: `s${n}`,
     letter: "A",
-    startPosition: "alpha1",
-    endPosition: "alpha3",
+    startPlacement: "alpha1",
+    endPlacement: "alpha3",
     stepNumber: n,
     duration: 1,
     isBlank: false,
@@ -80,7 +80,7 @@ function makeFixture(overrides?: {
     id: "fixture",
     word: "AA",
     gridMode: "diamond",
-    startPosition: null,
+    startPlacement: null,
     steps: [
       step(1, false, false),
       step(
@@ -179,7 +179,7 @@ interface RawDoc {
   loopType?: string | null;
   isCircular?: boolean;
   gridMode?: string;
-  startPosition?: unknown;
+  startPlacement?: unknown;
   leftSoloProp?: { steps: unknown[] };
   rightSoloProp?: { steps: unknown[] };
   blueSoloProp?: { steps: unknown[] };
@@ -246,7 +246,7 @@ function motionFingerprint(doc: RawDoc): string {
   const parts: string[] = [];
   for (let i = 0; i < sp.length; i++) {
     parts.push(
-      `${sp[i].letter ?? ""}|${(sp[i] as { startPosition?: unknown }).startPosition ?? ""}|${(sp[i] as { endPosition?: unknown }).endPosition ?? ""}|L${m(leftSteps[i])}|R${m(rightSteps[i])}`
+      `${sp[i].letter ?? ""}|${(sp[i] as { startPlacement?: unknown }).startPlacement ?? ""}|${(sp[i] as { endPlacement?: unknown }).endPlacement ?? ""}|L${m(leftSteps[i])}|R${m(rightSteps[i])}`
     );
   }
   return parts.join("~");
@@ -264,7 +264,7 @@ function toSequence(doc: RawDoc): SequenceData | null {
       id: "diag",
       word: doc.word ?? "",
       gridMode: doc.gridMode,
-      startPosition: doc.startPosition,
+      startPlacement: doc.startPlacement,
       steps,
       loopType: doc.loopType ?? undefined,
     } as unknown as SequenceData;

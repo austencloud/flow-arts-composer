@@ -4,7 +4,7 @@ import { getLetterTransitionGraph } from './get-letter-transition-graph';
 import { letterQueryHandler } from '$lib/shared/pictograph/tka-glyph/services/letter-query-handler';
 import { getStepConverter } from '$lib/features/create/generate/shared/get-step-converter';
 import { getSequenceExtender } from '$lib/features/create/shared/get-sequence-extender';
-import { getStartPositionValidator } from './get-start-position-validator';
+import { getStartPlacementValidator } from './get-start-placement-validator';
 import * as orientationContinuityValidator from './services/orientation-continuity-validator';
 import { reversalDetector } from '$lib/shared/create/services/reversal-detector';
 
@@ -17,7 +17,7 @@ export function getWordSequenceGenerator(): WordSequenceGenerator {
 		letterQueryHandler,
 		getStepConverter(),
 		getSequenceExtender(),
-		getStartPositionValidator(),
+		getStartPlacementValidator(),
 		orientationContinuityValidator,
 		reversalDetector
 	);

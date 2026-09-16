@@ -1,7 +1,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 
 /**
  * SequenceTransferHandler
@@ -41,12 +41,12 @@ export async function executeTransfer(
   constructTabState: {
     sequenceState: {
       setCurrentSequence: (seq: SequenceData) => void;
-      setStartPosition: (pos: StartPositionData | null) => void;
+      setStartPlacement: (pos: StartPlacementData | null) => void;
       saveCurrentState: (tab: BuildModeId) => Promise<void>;
     };
     syncGridModeFromSequence?: (mode: GridMode | undefined) => void;
-    setSelectedStartPosition: (pos: StartPositionData | null) => void;
-    setShowStartPositionPicker: (show: boolean) => void;
+    setSelectedStartPlacement: (pos: StartPlacementData | null) => void;
+    setShowStartPlacementPicker: (show: boolean) => void;
     syncPickerStateWithSequence?: () => void;
   }
 ): Promise<void> {
@@ -62,13 +62,13 @@ export async function executeTransfer(
   // Set the sequence
   constructTabState.sequenceState.setCurrentSequence(sequenceCopy);
 
-  // Sync start position
-  const startPos: StartPositionData | undefined =
-    sequenceCopy.startPosition || sequenceCopy.startingPosition;
+  // Sync start placement
+  const startPos: StartPlacementData | undefined =
+    sequenceCopy.startPlacement || sequenceCopy.startingPlacement;
   if (startPos) {
-    constructTabState.sequenceState.setStartPosition(startPos);
-    constructTabState.setSelectedStartPosition(startPos);
-    constructTabState.setShowStartPositionPicker(false);
+    constructTabState.sequenceState.setStartPlacement(startPos);
+    constructTabState.setSelectedStartPlacement(startPos);
+    constructTabState.setShowStartPlacementPicker(false);
   }
 
   // Sync picker state

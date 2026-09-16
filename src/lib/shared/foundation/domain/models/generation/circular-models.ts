@@ -5,20 +5,20 @@
  * LOOPs are TKA's algorithmic extension patterns that transform sequences.
  */
 
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 /**
  * LOOP Type Enum
  * Defines the different types of Linked Orbital Offset Patterns
  */
 export enum LOOPType {
-  /** Rotated - rotates positions around the grid */
+  /** Rotated - rotates placements around the grid */
   ROTATED = "rotated",
 
-  /** Mirrored - mirrors positions vertically (left ↔ right) */
+  /** Mirrored - mirrors placements vertically (left ↔ right) */
   MIRRORED = "mirrored",
 
-  /** Flipped - mirrors positions horizontally (north ↔ south) */
+  /** Flipped - mirrors placements horizontally (north ↔ south) */
   FLIPPED = "flipped",
 
   /** Swapped - swaps blue and red attributes */
@@ -144,8 +144,8 @@ export interface LOOPValidationResult {
   /** Reason for invalidity (if applicable) */
   reason?: string;
 
-  /** Expected end position for the LOOP (if applicable) */
-  expectedEndPosition?: GridPosition;
+  /** Expected end placement for the LOOP (if applicable) */
+  expectedEndPlacement?: GridPlacement;
 }
 
 /**

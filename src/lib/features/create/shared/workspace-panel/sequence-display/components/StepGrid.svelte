@@ -6,7 +6,7 @@
   import type { DeviceDetector } from "$lib/shared/device/services/device-detector";
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { TimeSignatureKey } from "$lib/shared/foundation/domain/models/time-signature";
   import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -52,7 +52,7 @@
 
   let {
     steps,
-    startPosition = null,
+    startPlacement = null,
     onStepClick,
     onStartClick,
     onStepDelete,
@@ -100,7 +100,7 @@
     observeScroll = true,
   } = $props<{
     steps: ReadonlyArray<StepData> | StepData[];
-    startPosition?: StartPositionData | StepData | null;
+    startPlacement?: StartPlacementData | StepData | null;
     onStepClick?: (
       stepNumber: number,
       modifiers?: { range: boolean; toggle: boolean }
@@ -330,7 +330,7 @@
 
     const sizingWidth = Math.max(0, containerWidth - 2 * edgeReserve);
     const usable = sizingWidth - calculateTimelinePadding(containerWidth);
-    const hasStart = Boolean(startPosition && !startPosition.isBlank);
+    const hasStart = Boolean(startPlacement && !startPlacement.isBlank);
     const maxUnits = Math.floor(usable / TIMELINE_MIN_UNIT);
     const maxBeats = maxUnits - (hasStart ? 1 : 0);
 
@@ -347,11 +347,11 @@
 
   const timelineUnitSize = $derived.by(() => {
     if (!isTimelineMode) return 0;
-    const hasStart = startPosition && !startPosition.isBlank;
+    const hasStart = startPlacement && !startPlacement.isBlank;
     const actualCellCount = presentedSteps.length + (hasStart ? 1 : 0);
 
     // Find the widest row's duration to use as the sizing denominator.
-    // Add 1 for start position if present.
+    // Add 1 for start placement if present.
     let maxRowDuration = 0;
     for (const row of timelineRows) {
       maxRowDuration = Math.max(maxRowDuration, row.totalDuration);
@@ -373,7 +373,7 @@
     const widthBased = calculateTimelineUnitSize(sizingWidth, totalUnits);
 
     // Constrain by available height so all rows fit without scrolling. A
-    // start-position-only sequence has zero step rows but still renders the
+    // start-placement-only sequence has zero step rows but still renders the
     // start column one cell tall — count it as a row, or the clamp is skipped
     // and the width-based size overflows a short host (Fold portrait: a 354px
     // tile in a 293px wrapper, clipping the props and the letter).
@@ -592,7 +592,7 @@
         // Cycle extension - scroll to bottom to reveal new beats
         scrollState.scrollToBottom();
       } else {
-        // Multiple steps added at once (generation) - scroll to top to see start position
+        // Multiple steps added at once (generation) - scroll to top to see start placement
         scrollState.scrollToTop();
       }
     }
@@ -779,7 +779,7 @@
 </script>
 
 <div class="step-grid-container" bind:this={containerRef}>
-  {#if steps.length === 0 && (!startPosition || startPosition.isBlank)}
+  {#if steps.length === 0 && (!startPlacement || startPlacement.isBlank)}
     <div class="empty-grid-message">
       <span class="empty-icon">📋</span>
       <span class="empty-text">No sequence loaded</span>
@@ -788,7 +788,7 @@
     <WorkspaceGrid
       bind:this={workspaceGridRef}
       steps={presentedSteps}
-      {startPosition}
+      {startPlacement}
       {isTimelineMode}
       {gridLayout}
       standardGridCenterOffset={displayedStandardGridCenterOffset}

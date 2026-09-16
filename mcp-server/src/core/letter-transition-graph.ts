@@ -7,7 +7,7 @@
 
 import { TransitionGraph } from "@tka/sequence-engine";
 import { getNodeDataProvider } from "../adapters/NodeDataProvider.js";
-import type { PositionGroup, LetterPositionInfo } from "@tka/sequence-engine";
+import type { PlacementGroup, LetterPlacementInfo } from "@tka/sequence-engine";
 
 /**
  * Legacy wrapper class that delegates to the shared TransitionGraph.
@@ -65,16 +65,16 @@ export class LetterTransitionGraph {
     return this.engineGraph.getValidSuccessors(letter);
   }
 
-  getLetterPositionInfo(letter: string): LetterPositionInfo | null {
-    return this.engineGraph.getLetterPositionInfo(letter);
+  getLetterPlacementInfo(letter: string): LetterPlacementInfo | null {
+    return this.engineGraph.getLetterPlacementInfo(letter);
   }
 
-  getStartPositionGroup(letter: string): PositionGroup | null {
-    return this.engineGraph.getStartPositionGroup(letter);
+  getStartPlacementGroup(letter: string): PlacementGroup | null {
+    return this.engineGraph.getStartPlacementGroup(letter);
   }
 
-  getEndPositionGroup(letter: string): PositionGroup | null {
-    return this.engineGraph.getEndPositionGroup(letter);
+  getEndPlacementGroup(letter: string): PlacementGroup | null {
+    return this.engineGraph.getEndPlacementGroup(letter);
   }
 
   findBridgeLetters(letterA: string, letterB: string): string[] {
@@ -124,4 +124,4 @@ export async function ensureTransitionGraphInitialized(): Promise<LetterTransiti
 }
 
 // Re-export types for convenience
-export type { PositionGroup, LetterPositionInfo };
+export type { PlacementGroup, LetterPlacementInfo };

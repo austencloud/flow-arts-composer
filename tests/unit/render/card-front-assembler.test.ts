@@ -8,7 +8,7 @@ describe("computeCardFrontLayout", () => {
       seq,
       {
         deckCard: { contentWidth: 750, contentHeight: 1050 },
-        includeStartPosition: true,
+        includeStartPlacement: true,
         addWord: true,
       },
       { showTKA: true } as any
@@ -31,11 +31,11 @@ describe("computeCardFrontLayout", () => {
   it("offsets the grid for a column-mode start position", () => {
     const seq = {
       steps: [{ letter: "A" }, { letter: "B" }],
-      startPosition: {},
+      startPlacement: {},
     } as any;
     const layout = computeCardFrontLayout(
       seq,
-      { includeStartPosition: true, startPositionLayout: "column" },
+      { includeStartPlacement: true, startPlacementLayout: "column" },
       {} as any
     );
     expect(layout.startColumn).toBe(1);
@@ -45,13 +45,13 @@ describe("computeCardFrontLayout", () => {
   it("does not reserve a phantom column for a row-mode start", () => {
     const seq = {
       steps: Array.from({ length: 12 }, () => ({ letter: "A" })),
-      startPosition: {},
+      startPlacement: {},
     } as any;
     const layout = computeCardFrontLayout(
       seq,
       {
-        includeStartPosition: true,
-        startPositionLayout: "row",
+        includeStartPlacement: true,
+        startPlacementLayout: "row",
         columnCount: 4,
       },
       {} as any
@@ -65,13 +65,13 @@ describe("computeCardFrontLayout", () => {
   it("reserves one of the explicit columns for a column-mode start", () => {
     const seq = {
       steps: Array.from({ length: 12 }, () => ({ letter: "A" })),
-      startPosition: {},
+      startPlacement: {},
     } as any;
     const layout = computeCardFrontLayout(
       seq,
       {
-        includeStartPosition: true,
-        startPositionLayout: "column",
+        includeStartPlacement: true,
+        startPlacementLayout: "column",
         columnCount: 4,
       },
       {} as any
@@ -85,12 +85,12 @@ describe("computeCardFrontLayout", () => {
   it("geometrically centers mixed Start and QR grids on physical cards", () => {
     const sequence = {
       steps: Array.from({ length: 4 }, () => ({ letter: "A" })),
-      startPosition: {},
+      startPlacement: {},
     } as any;
     const baseOptions = {
       deckCard: { contentWidth: 678, contentHeight: 978 },
-      includeStartPosition: true,
-      startPositionLayout: "row" as const,
+      includeStartPlacement: true,
+      startPlacementLayout: "row" as const,
       columnCount: 2,
       addWord: true,
       leftLabel: "earth",
@@ -118,13 +118,13 @@ describe("computeCardFrontLayout", () => {
   it("lays eight steps out four-wide beside their dedicated start column", () => {
     const sequence = {
       steps: Array.from({ length: 8 }, () => ({ letter: "A" })),
-      startPosition: {},
+      startPlacement: {},
     } as any;
     const layout = computeCardFrontLayout(
       sequence,
       {
-        includeStartPosition: true,
-        startPositionLayout: "column",
+        includeStartPlacement: true,
+        startPlacementLayout: "column",
       },
       {} as any
     );

@@ -19,7 +19,7 @@ vi.mock("$lib/shared/qr/services/compositional-utils", () => ({
   }),
   getPeriodForTag: () => "quartered",
   computeRecipeHash: async () => "hash",
-  enrichStepsWithGridPositions: () => {},
+  enrichStepsWithGridPlacements: () => {},
 }));
 
 import { CompositionalEncoder } from "$lib/shared/qr/services/compositional-encoder";

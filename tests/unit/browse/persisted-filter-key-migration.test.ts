@@ -53,9 +53,9 @@ function seedLegacyPersistedState() {
       sortDirection: "asc",
       activeFilters: [
         [
-          "startPosition",
+          "startPlacement",
           {
-            type: "startPosition",
+            type: "startPlacement",
             value: "alpha",
             label: "Alpha",
             chipColor: "#fff",
@@ -108,14 +108,14 @@ describe("persisted filter key migration", () => {
     }
     try {
       // Bare-type key restored as an active filter.
-      expect(engine.activeFilters.has("startPosition")).toBe(true);
+      expect(engine.activeFilters.has("startPlacement")).toBe(true);
       // Legacy state had 2 stacked LOOPs and no stored connective →
       // buildInitialConnectives resolves cap_type to "all" (its meaning
       // when saved); a fresh session would default "any".
       expect(engine.connectives["cap_type"]).toBe("all");
       // removeFilter by bare type still clears the legacy-keyed entry.
-      engine.removeFilter("startPosition");
-      expect(engine.activeFilters.has("startPosition")).toBe(false);
+      engine.removeFilter("startPlacement");
+      expect(engine.activeFilters.has("startPlacement")).toBe(false);
     } finally {
       dispose();
       localStorage.removeItem(PERSIST_KEY);

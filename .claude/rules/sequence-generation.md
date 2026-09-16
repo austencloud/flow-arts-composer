@@ -48,7 +48,7 @@ drill or an ordinary sequence whose player merely resets at the end.
 - Generate 16 counts by default. Eight counts is the minimum. Four-count
   previews are forbidden unless Austen explicitly requests one.
 - Validate the result with `isEffectPreviewLoop`, which applies the length
-  floor and the canonical position-plus-orientation seam check.
+  floor and the canonical placement-plus-orientation seam check.
 - Playback moves straight from the closing beat into beat one. Do not add an
   end hold, reset pose, reload flash, or visible jump at the boundary.
 - If generation is asynchronous, render an honest loading state and a retryable

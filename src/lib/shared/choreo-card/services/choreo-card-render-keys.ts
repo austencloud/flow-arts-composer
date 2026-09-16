@@ -23,14 +23,14 @@ export interface ChoreoCardRenderKeyInputs {
   showElemental: boolean;
   /** Optional so older callers and fixtures default to OFF. */
   showPropTnD?: boolean;
-  showPositions: boolean;
+  showPlacements: boolean;
   /** Optional so older callers and fixtures default to the baked-in key. */
   showHandColorKey?: boolean;
   showGrid: boolean;
   showLeftMotion: boolean;
   showRightMotion: boolean;
-  includeStartPosition: boolean;
-  startPositionLayout: "row" | "column";
+  includeStartPlacement: boolean;
+  startPlacementLayout: "row" | "column";
   effectiveColumns: number;
   darkMode: boolean;
 }
@@ -86,22 +86,22 @@ export function buildChoreoCardRenderKeys(
   // it changes prop GEOMETRY — it belongs in the structural key, not the
   // overlay-only bucket.
   const ch = `${i.leftBuugengFlipped ? "1" : "0"}${i.rightBuugengFlipped ? "1" : "0"}`;
-  const gv = `${i.showTnD ? "1" : "0"}${i.showElemental ? "1" : "0"}${i.showPositions ? "1" : "0"}${i.showGrid ? "1" : "0"}${i.showHandColorKey === false ? "0" : "1"}${i.showPropTnD ? "1" : "0"}`;
+  const gv = `${i.showTnD ? "1" : "0"}${i.showElemental ? "1" : "0"}${i.showPlacements ? "1" : "0"}${i.showGrid ? "1" : "0"}${i.showHandColorKey === false ? "0" : "1"}${i.showPropTnD ? "1" : "0"}`;
   const paletteKey = i.primaryPropColors
     ? `-colors:${i.primaryPropColors.left}:${i.primaryPropColors.right}`
     : "";
   const viewKey = `-view:${i.handPathMode ?? false}:${i.browseViewMode?.subject ?? "props"}:${i.browseViewMode?.granularity ?? "combined"}:${i.browseViewMode?.hand ?? "left"}`;
   const imageKey = `${i.fanAppearance ? JSON.stringify(i.fanAppearance) : ""}${i.sequence?.id ?? ""}-${sequenceContentKey}-${stepCount}-${i.leftPropType}-${i.rightPropType}-${i.catDogModeEnabled}-${i.showStepNumbers}-${i.showNonRadial}-${i.handPointVis}-${i.showTKA}-${i.showReversals}-${durationKey}-mv:${i.showLeftMotion ? "1" : "0"}${i.showRightMotion ? "1" : "0"}-ch:${ch}-gv:${gv}${paletteKey}${viewKey}`;
-  // startPositionLayout (row vs column) changes where the start cell sits and
+  // startPlacementLayout (row vs column) changes where the start cell sits and
   // therefore where every step cell AND the QR cell land. It's in the CONTENT
   // (layout) key but NOT imageKey/gridStableKey/structuralKey: a pure row↔column
   // flip (autoFit re-picking placement as the container aspect changes) must
   // re-run the render effect and route to "layout-only" → relayoutCells(), or the
-  // cells keep stale positions while the live qrGridPosition moves — the QR then
+  // cells keep stale positions while the live qrGridPlacement moves — the QR then
   // overlaps an occupied step cell (the side-by-side "QR flashes over step 1" bug).
-  const layoutKey = `${i.includeStartPosition}-cols:${i.effectiveColumns}-spl:${i.startPositionLayout}`;
+  const layoutKey = `${i.includeStartPlacement}-cols:${i.effectiveColumns}-spl:${i.startPlacementLayout}`;
   const contentKey = `${imageKey}-${layoutKey}`;
-  const gridStableKey = `${stepCount}-${durationKey}-cols:${i.effectiveColumns}-isp:${i.includeStartPosition}`;
+  const gridStableKey = `${stepCount}-${durationKey}-cols:${i.effectiveColumns}-isp:${i.includeStartPlacement}`;
   // Geometry-only subset (see interface docs). Deliberately excludes every
   // overlay-visibility flag so a non-radial / glyph / grid / points toggle
   // leaves it unchanged → crossfade, not swap.

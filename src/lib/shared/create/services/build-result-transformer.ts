@@ -12,7 +12,7 @@
  * 1. Mapping each SequenceStep's string fields back to the app's enum types
  * 2. Creating full MotionData with placement data via createMotionData()
  * 3. Wrapping steps in StepData with step context
- * 4. Extracting StartPositionData from step 0
+ * 4. Extracting StartPlacementData from step 0
  * 5. Delegating metadata and reversal detection to existing services
  */
 
@@ -23,7 +23,7 @@ import type {
 } from "@tka/sequence-engine/core";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
 import type { sequenceMetadataManager as SequenceMetadataManagerSingleton } from "$lib/shared/create/services/sequence-metadata-manager";
 type SequenceMetadataManager = typeof SequenceMetadataManagerSingleton;
@@ -38,7 +38,7 @@ import {
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import {
   GridLocation,
-  type GridPosition,
+  type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { MotionData as AppMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
@@ -56,13 +56,13 @@ export class BuildResultTransformer {
   ): Promise<SequenceData> {
     const isCircular = !!result.loop;
 
-    // The engine's sequence[0] is the start position, sequence[1..n] are steps
-    const startPositionStep = result.sequence[0];
-    if (!startPositionStep) {
-      throw new Error("BuildResult has empty sequence - no start position");
+    // The engine's sequence[0] is the start placement, sequence[1..n] are steps
+    const startPlacementStep = result.sequence[0];
+    if (!startPlacementStep) {
+      throw new Error("BuildResult has empty sequence - no start placement");
     }
 
-    const startPosition = this.mapStartPosition(startPositionStep);
+    const startPlacement = this.mapStartPlacement(startPlacementStep);
     const steps = this.mapSteps(result.sequence.slice(1), options);
 
     // Calculate word from the mapped steps
@@ -100,8 +100,8 @@ export class BuildResultTransformer {
       name: word || "",
       word,
       steps,
-      startingPosition: startPosition,
-      startPosition,
+      startingPlacement: startPlacement,
+      startPlacement,
       gridMode: options.gridMode,
       difficultyLevel: options.difficulty,
       isFavorite: false,
@@ -117,7 +117,7 @@ export class BuildResultTransformer {
   }
 
   /**
-   * Map engine SequenceSteps (steps only, not start position) to app StepData[].
+   * Map engine SequenceSteps (steps only, not start placement) to app StepData[].
    */
   private mapSteps(
     engineSteps: SequenceStep[],
@@ -130,7 +130,7 @@ export class BuildResultTransformer {
    * Map a single engine SequenceStep to app StepData.
    *
    * StepData extends PictographData, so we need to build the full
-   * PictographData shape (id, letter, positions, motions map) plus
+   * PictographData shape (id, letter, placements, motions map) plus
    * the step-specific fields (stepNumber, duration, reversals, isBlank).
    */
   private mapStep(
@@ -144,8 +144,8 @@ export class BuildResultTransformer {
     return {
       id: `step-${stepNumber}-${Date.now()}`,
       letter: (step.letter || null) as Letter | null,
-      startPosition: (step.startPosition || null) as GridPosition | null,
-      endPosition: (step.endPosition || null) as GridPosition | null,
+      startPlacement: (step.startPlacement || null) as GridPlacement | null,
+      endPlacement: (step.endPlacement || null) as GridPlacement | null,
       motions: {
         [HandSide.LEFT]: leftMotion,
         [HandSide.RIGHT]: rightMotion,
@@ -160,16 +160,16 @@ export class BuildResultTransformer {
   }
 
   /**
-   * Map the engine's start position step to the app's StartPositionData.
+   * Map the engine's start placement step to the app's StartPlacementData.
    *
-   * The engine treats the start position as sequence[0] with letter = start
-   * position name, motionType = "static" for both hands. We extract position
+   * The engine treats the start placement as sequence[0] with letter = start
+   * placement name, motionType = "static" for both hands. We extract placement
    * and orientation info to build the app's rich type.
    */
-  private mapStartPosition(step: SequenceStep): StartPositionData {
-    const gridPosition = (step.endPosition || step.startPosition || null) as GridPosition | null;
+  private mapStartPlacement(step: SequenceStep): StartPlacementData {
+    const gridPlacement = (step.endPlacement || step.startPlacement || null) as GridPlacement | null;
 
-    // For start positions, motions should be static (props are held in place)
+    // For start placements, motions should be static (props are held in place)
     const leftMotion = createMotionData({
       motionType: this.toMotionType(step.motions.left.motionType),
       rotationDirection: this.toRotationDirection(step.motions.left.rotationDirection),
@@ -193,12 +193,12 @@ export class BuildResultTransformer {
     });
 
     return {
-      isStartPosition: true as const,
+      isStartPlacement: true as const,
       id: `start-${Date.now()}`,
-      gridPosition,
+      gridPlacement,
       letter: (step.letter || null) as Letter | null,
-      startPosition: gridPosition,
-      endPosition: gridPosition,
+      startPlacement: gridPlacement,
+      endPlacement: gridPlacement,
       motions: {
         [HandSide.LEFT]: leftMotion,
         [HandSide.RIGHT]: rightMotion,

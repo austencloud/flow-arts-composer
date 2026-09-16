@@ -55,11 +55,11 @@ function extractMotions(motions) {
  */
 function computeFingerprint(data) {
   const steps = data.steps || data.beats || [];
-  const sp = data.startPosition || data.startingPosition;
+  const sp = data.startPlacement || data.startingPlacement;
 
   const content = {
     gridMode: data.gridMode ?? null,
-    startPosition: sp ? { motions: extractMotions(sp.motions), gridMode: sp.gridMode ?? null } : null,
+    startPlacement: sp ? { motions: extractMotions(sp.motions), gridMode: sp.gridMode ?? null } : null,
     steps: steps.map((s) => ({
       letter: s.letter ?? null,
       leftReversal: s.leftReversal,

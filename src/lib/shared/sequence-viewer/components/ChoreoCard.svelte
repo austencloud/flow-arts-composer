@@ -30,7 +30,7 @@
     getUrlQRCodeGenerator,
   } from "$lib/shared/qr/get-qr-code-generator";
   import { resolveInfoCellDisplay } from "../services/info-cell-display";
-  import { createStartPositionFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+  import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
   import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { tryGetViewerVisibilityContext } from "../context/viewer-visibility-context";
@@ -87,7 +87,7 @@
     /** Choose Start picker: step cells render as poses (grid and props only). */
     posePicker?: boolean;
     showDifficultyLevel?: boolean;
-    includeStartPosition?: boolean;
+    includeStartPlacement?: boolean;
     showNotes?: boolean;
     showLoopGlyph?: boolean;
     showQRCode?: boolean;
@@ -133,7 +133,7 @@
     // When provided, the QR's center play badge becomes clickable (interactive
     // viewer): click switches to the 2D animation view and starts playback.
     onQrPlayClick?: () => void;
-    // When true, the start-position cell is clickable too (seeks to start, index -1)
+    // When true, the start-placement cell is clickable too (seeks to start, index -1)
     clickableStart?: boolean;
     // Layout override
     columnCount?: number | null; // Override auto-calculated column count (null = auto)
@@ -149,10 +149,10 @@
     hideSoloHeader?: boolean;
     // Right-click context menu callback
     onContextMenu?: (x: number, y: number) => void;
-    // Per-instance override for start-position layout (defaults to global user
+    // Per-instance override for start-placement layout (defaults to global user
     // setting via compositionManager). Embedded contexts (landing page,
     // marketing previews) need a fixed layout independent of viewer prefs.
-    startPositionLayoutOverride?: "row" | "column" | null;
+    startPlacementLayoutOverride?: "row" | "column" | null;
     /** Holds a resolved Auto grid while a parent workspace changes geometry. */
     autoLayoutOverride?: ResolvedAutoLayout | null;
     /** Keeps contain sizing on the viewer's transition clock. */
@@ -179,7 +179,7 @@
     showStepNumbers = true,
     posePicker = false,
     showDifficultyLevel = true,
-    includeStartPosition = true,
+    includeStartPlacement = true,
     showNotes = true,
     showLoopGlyph = true,
     showQRCode = false,
@@ -211,7 +211,7 @@
     rerenderTrigger = 0,
     hideSoloHeader = false,
     onContextMenu,
-    startPositionLayoutOverride = null,
+    startPlacementLayoutOverride = null,
     autoLayoutOverride = null,
     containSizeMotion = null,
     containMotionBox = null,
@@ -334,7 +334,7 @@
   const showTnD = $derived(displayState.showTnD);
   const showElemental = $derived(displayState.showElemental);
   const showPropTnD = $derived(displayState.showPropTnD);
-  const showPositions = $derived(displayState.showPositions);
+  const showPlacements = $derived(displayState.showPlacements);
   const showHandColorKey = $derived(displayState.showHandColorKey);
   const showGrid = $derived(displayState.showGrid);
   const showNonRadial = $derived(displayState.showNonRadial);
@@ -409,7 +409,7 @@
     const compositionColumns =
       columnCount ?? compositionManager.getColumnCountForStepCount(sc);
     const automaticLayout =
-      startPositionLayoutOverride === null &&
+      startPlacementLayoutOverride === null &&
       compositionColumns === null &&
       (forceContain || sc <= 16) &&
       containerRawWidth > 0 &&
@@ -417,7 +417,7 @@
         ? pickBestFitLayout({
             stepCount: sc,
             stepDurations: sequence.steps.map((step) => step.duration ?? 1),
-            includeStartPosition,
+            includeStartPlacement,
             containerWidth: containerRawWidth,
             containerHeight: containerRawHeight,
             showHeader,
@@ -428,15 +428,15 @@
     const spl =
       automaticLayout && automaticLayout.startPlacement !== "none"
         ? automaticLayout.startPlacement
-        : (startPositionLayoutOverride ??
-          compositionManager.getStartPositionLayoutForStepCount(sc));
+        : (startPlacementLayoutOverride ??
+          compositionManager.getStartPlacementLayoutForStepCount(sc));
     const infoCellColumns =
       compositionColumns ??
       (automaticLayout ? getStepColumnsForLayout(automaticLayout) : null);
     return resolveInfoCellDisplay({
       stepCount: sc,
-      includeStartPosition,
-      startPositionLayout: spl,
+      includeStartPlacement,
+      startPlacementLayout: spl,
       columnCount: infoCellColumns,
       showQRCode,
       showMandala,
@@ -511,7 +511,7 @@
 
   layoutState = createChoreoCardLayoutState(() => ({
     sequence,
-    includeStartPosition,
+    includeStartPlacement,
     columnCount,
     showHeader,
     showFooter,
@@ -525,7 +525,7 @@
     // that hand — otherwise it fills with both. Motion-solo/normal unchanged.
     showLeftMotion: isBrowseSoloMode ? soloHand === "left" : showLeftMotion,
     showRightMotion: isBrowseSoloMode ? soloHand === "right" : showRightMotion,
-    startPositionLayoutOverride,
+    startPlacementLayoutOverride,
     compositionVersion,
     cellWidth: sizingState.cellWidth,
     hasMixedDurations,
@@ -538,7 +538,7 @@
   // Reactive aliases for values that move to the layout state factory.
   // Keeps downstream code and the template unchanged.
   const needsScroll = $derived(layoutState.needsScroll);
-  const startPositionLayout = $derived(layoutState.startPositionLayout);
+  const startPlacementLayout = $derived(layoutState.startPlacementLayout);
   const effectiveColumns = $derived(layoutState.effectiveColumns);
   const effectiveRows = $derived(layoutState.effectiveRows);
   const mandalaLayoutOverride = $derived(layoutState.mandalaLayoutOverride);
@@ -553,7 +553,7 @@
   const wordTitleFontSize = $derived(layoutState.wordTitleFontSize);
   const footerFontSize = $derived(layoutState.footerFontSize);
   const footerMargin = $derived(layoutState.footerMargin);
-  const qrGridPosition = $derived(layoutState.qrGridPosition);
+  const qrGridPlacement = $derived(layoutState.qrGridPlacement);
   const cellWidth = $derived(sizingState.cellWidth);
   const containedWidth = $derived(sizingState.containedWidth);
   const containedHeight = $derived(sizingState.containedHeight);
@@ -568,7 +568,7 @@
       !containedHeight ||
       !cells.length ||
       !cells
-        .filter((cell) => includeStartPosition || cell.index !== -1)
+        .filter((cell) => includeStartPlacement || cell.index !== -1)
         .every((cell) => cell.isLoaded || cell.renderFailed) ||
       !qrState.settled
     )
@@ -627,9 +627,9 @@
     );
   });
 
-  // Filtered cells based on includeStartPosition.
+  // Filtered cells based on includeStartPlacement.
   const visibleCells = $derived.by(() => {
-    if (includeStartPosition) {
+    if (includeStartPlacement) {
       return cells.filter((cell) => cell.index !== -1);
     }
     const cols = effectiveColumns || 4;
@@ -642,7 +642,7 @@
       }));
   });
 
-  // When the grid structure changes (start-position toggle inserts/removes a
+  // When the grid structure changes (start-placement toggle inserts/removes a
   // row, column picker changes column count, layout row/column swap), skip the
   // flip animation so cells snap to their new positions while only the container
   // resize transition handles the visual smoothness. Without this, inserting the
@@ -692,7 +692,7 @@
       showTnD,
       showElemental,
       showPropTnD,
-      showPositions,
+      showPlacements,
       showHandColorKey,
       isSoloMode,
       handPathMode,
@@ -741,8 +741,8 @@
       rightPropType,
       browseViewMode,
       showStepNumbers,
-      includeStartPosition,
-      startPositionLayout,
+      includeStartPlacement,
+      startPlacementLayout,
       mandalaLayoutOverride,
       effectiveColumns,
       effectiveRows,
@@ -783,13 +783,13 @@
       showTnD,
       showElemental,
       showPropTnD,
-      showPositions,
+      showPlacements,
       showHandColorKey,
       showGrid,
       showLeftMotion,
       showRightMotion,
-      includeStartPosition,
-      startPositionLayout,
+      includeStartPlacement,
+      startPlacementLayout,
       effectiveColumns,
       columnCount,
       darkMode,
@@ -844,9 +844,9 @@
     if (!hand) return undefined;
     if (cellIndex === -1) {
       const startData =
-        sequence.startPosition ??
+        sequence.startPlacement ??
         (sequence.steps?.[0]
-          ? createStartPositionFromBeatStart(sequence.steps[0])
+          ? createStartPlacementFromBeatStart(sequence.steps[0])
           : undefined);
       return startData?.motions?.[hand] ?? undefined;
     }
@@ -1057,15 +1057,15 @@
         {hasMixedDurations}
         {durationRows}
         {durationColCount}
-        {startPositionLayout}
-        {includeStartPosition}
+        {startPlacementLayout}
+        {includeStartPlacement}
         {needsScroll}
         {showHighlight}
         {highlightedStepIndex}
         showQRCode={effShowQRCode}
         {qrDataUrl}
         {qrPending}
-        {qrGridPosition}
+        {qrGridPlacement}
         showMandala={effShowMandala}
         {mandalaPlacements}
         {flipDuration}

@@ -32,7 +32,7 @@ the beat grid.
 3. `bulkUpdatePropType`
    (`src/lib/features/create/shared/services/step-operations/prop-type-handler.ts`)
    stamps the new `propType` onto every motion and writes the result back
-   through `setStartPosition()` and `setCurrentSequence()`. Each write claims a
+   through `setStartPlacement()` and `setCurrentSequence()`. Each write claims a
    fresh `currentSequenceRevision`
    (`src/lib/features/create/shared/state/core/sequence-core-state.svelte.ts`).
 4. `CreationWorkspaceArea`'s effect calls
