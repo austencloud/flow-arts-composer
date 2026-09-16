@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createViewerShellShareState } from "$lib/shared/sequence-viewer/state/viewer-shell-share-state.svelte";
 
-function createShareState(onDismiss: () => void) {
+function createShareState(
+  onDismiss: () => void,
+  createSequenceSendSession: () => unknown = () => null
+) {
   return createViewerShellShareState(
     {
       getContext: () =>
@@ -13,7 +16,7 @@ function createShareState(onDismiss: () => void) {
     },
     {
       captureScanAction: () => undefined,
-      openSendSequenceSheetWithCard: () => undefined,
+      createSequenceSendSession,
       renderCardPreview: () => Promise.reject(new Error("unused")),
       sendToStickerLab: () => undefined,
     } as never
@@ -54,5 +57,50 @@ describe("viewer share file preparation", () => {
 
     share.markSessionResumed();
     expect(share.preserveSession).toBe(false);
+  });
+});
+
+describe("viewer send mode", () => {
+  const session = {
+    payload: {},
+    previewBlob: null,
+    previewPending: true,
+  };
+
+  it("morphs into send mode and closes an open share sheet", () => {
+    let sessions = 0;
+    const share = createShareState(
+      () => undefined,
+      () => {
+        sessions++;
+        return session;
+      }
+    );
+
+    share.shareScene();
+    expect(share.postSheetOpen).toBe(true);
+
+    share.sendToInbox();
+    expect(share.sendModeActive).toBe(true);
+    expect(share.sendSession).toBe(session);
+    expect(share.postSheetOpen).toBe(false);
+
+    // Re-entering while active keeps the session the person is working in.
+    share.sendToInbox();
+    expect(sessions).toBe(1);
+
+    share.exitSendMode();
+    expect(share.sendModeActive).toBe(false);
+    expect(share.sendSession).toBeNull();
+  });
+
+  it("stays a viewer when the guest gate takes over", () => {
+    const share = createShareState(
+      () => undefined,
+      () => null
+    );
+
+    share.sendToInbox();
+    expect(share.sendModeActive).toBe(false);
   });
 });

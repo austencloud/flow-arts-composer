@@ -38,6 +38,7 @@ with pre-prepared data for better performance.
   import type { PictographData } from "../domain/models/pictograph-data";
   import { isVisibleMotion } from "../domain/models/motion-data";
   import { describePictograph } from "../domain/utils/pictograph-description";
+  import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PropType } from "../../prop/domain/enums/prop-type";
   import {
@@ -74,6 +75,7 @@ with pre-prepared data for better performance.
     showTnD = undefined,
     showElemental = undefined,
     propElementalType = null,
+    showPropTnD = undefined,
     showPositions = undefined,
     showHandColorKey = undefined,
     // Preview mode for visibility settings
@@ -160,6 +162,8 @@ with pre-prepared data for better performance.
     showElemental?: boolean;
     /** Optional prop-path TnD element for the top-right sister glyph. */
     propElementalType?: ElementalType | null;
+    /** Prop-path glyph visibility; undefined follows the global Prop TnD toggle. */
+    showPropTnD?: boolean;
     showPositions?: boolean;
     /** L/R colour key on start positions; undefined follows the global toggle. */
     showHandColorKey?: boolean;
@@ -251,6 +255,7 @@ with pre-prepared data for better performance.
     nonRadialPoints: visibilityManager.getNonRadialVisibility(),
     tndGlyph: visibilityManager.getGlyphVisibility("tndGlyph"),
     elementalGlyph: visibilityManager.getGlyphVisibility("elementalGlyph"),
+    propTndGlyph: visibilityManager.getGlyphVisibility("propTndGlyph"),
     positionsGlyph: visibilityManager.getGlyphVisibility("positionsGlyph"),
     handColorKey: visibilityManager.getGlyphVisibility("handColorKey"),
     handPointVisibility: visibilityManager.getHandPointVisibility(),
@@ -277,6 +282,7 @@ with pre-prepared data for better performance.
       nonRadialPoints: visibilityManager.getNonRadialVisibility(),
       tndGlyph: visibilityManager.getGlyphVisibility("tndGlyph"),
       elementalGlyph: visibilityManager.getGlyphVisibility("elementalGlyph"),
+      propTndGlyph: visibilityManager.getGlyphVisibility("propTndGlyph"),
       positionsGlyph: visibilityManager.getGlyphVisibility("positionsGlyph"),
       handColorKey: visibilityManager.getGlyphVisibility("handColorKey"),
       handPointVisibility: visibilityManager.getHandPointVisibility(),
@@ -362,6 +368,16 @@ with pre-prepared data for better performance.
   // for external callers (export, TnD decks) that drive elemental directly.
   const effectiveShowElemental = $derived(
     showElemental !== undefined ? showElemental : syncedVisibility.tndGlyph
+  );
+
+  // The prop-path glyph has its own toggle. A caller may hand in the element
+  // (Learn stages); otherwise it is read off this pictograph's own motions,
+  // and stays derived while hidden so the live DOM can fade it.
+  const effectiveShowPropTnD = $derived(
+    showPropTnD !== undefined ? showPropTnD : syncedVisibility.propTndGlyph
+  );
+  const effectivePropElementalType = $derived(
+    propElementalType ?? derivePropElementalTypeForStep(pictographData)
   );
 
   const effectiveShowPositions = $derived(
@@ -715,7 +731,8 @@ with pre-prepared data for better performance.
         showNonRadialPoints={effectiveShowNonRadialPoints}
         showTnD={effectiveShowVTG}
         showElemental={effectiveShowElemental}
-        {propElementalType}
+        propElementalType={effectivePropElementalType}
+        showPropTnD={effectiveShowPropTnD}
         showPositions={effectiveShowPositions}
         showHandColorKey={effectiveShowHandColorKey}
         handPointVisibility={effectiveHandPointVisibility}
@@ -768,7 +785,8 @@ with pre-prepared data for better performance.
             showNonRadialPoints={effectiveShowNonRadialPoints}
             showTnD={effectiveShowVTG}
             showElemental={effectiveShowElemental}
-            {propElementalType}
+            propElementalType={effectivePropElementalType}
+            showPropTnD={effectiveShowPropTnD}
             showPositions={effectiveShowPositions}
             showHandColorKey={effectiveShowHandColorKey}
             handPointVisibility={effectiveHandPointVisibility}

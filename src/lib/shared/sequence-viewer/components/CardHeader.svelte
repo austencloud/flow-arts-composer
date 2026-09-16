@@ -4,8 +4,15 @@
   Renders the ChoreoCard header section: difficulty badge, word title,
   and LOOP icon strip. Extracted from ChoreoCard.svelte.
 -->
+<script lang="ts" module>
+  /** Header show/hide duration. ChoreoCard's preview stack transitions its
+   *  height on the same clock (see `data-header-motion` there), so the grid
+   *  keeps its size while the header folds — the two must stay equal. */
+  export const HEADER_MOTION_MS = 250;
+</script>
+
 <script lang="ts">
-  import { fade, scale, fly } from "svelte/transition";
+  import { fade, scale, slide } from "svelte/transition";
   import { cubicOut } from "svelte/easing";
   import DifficultyBadge from "$lib/shared/components/DifficultyBadge.svelte";
   import LOOPIconStrip from "$lib/shared/components/LOOPIconStrip.svelte";
@@ -94,7 +101,7 @@
     class="header-section"
     class:dark-mode={activeDarkMode}
     style="height: {scaledHeaderHeight}px;"
-    transition:fly|local={{ y: -20, duration: 250, easing: cubicOut }}
+    transition:slide|local={{ duration: HEADER_MOTION_MS, easing: cubicOut }}
   >
     {#if isBrowseSoloMode}
       <span

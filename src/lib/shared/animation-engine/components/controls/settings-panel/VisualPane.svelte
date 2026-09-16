@@ -128,6 +128,10 @@
     updateCounter;
     return visibilityManager.getVisibility("elementalGlyph");
   }
+  function getPropElementalGlyph() {
+    updateCounter;
+    return visibilityManager.getVisibility("propElementalGlyph");
+  }
   function getWordHeader() {
     updateCounter;
     return visibilityManager.getVisibility("wordHeader");
@@ -161,6 +165,11 @@
   function toggleElementalGlyph() {
     const current = visibilityManager.getVisibility("elementalGlyph");
     visibilityManager.setVisibility("elementalGlyph", !current);
+    updateCounter++;
+  }
+  function togglePropElementalGlyph() {
+    const current = visibilityManager.getVisibility("propElementalGlyph");
+    visibilityManager.setVisibility("propElementalGlyph", !current);
     updateCounter++;
   }
   function toggleWordHeader() {
@@ -252,6 +261,19 @@
       aria-pressed={getElementalGlyph()}
     >
       <span>Element</span>
+    </button>
+    <button
+      class="element-btn"
+      class:active={getPropElementalGlyph()}
+      onclick={togglePropElementalGlyph}
+      type="button"
+      title="Prop timing and direction glyph"
+      aria-label={getPropElementalGlyph()
+        ? "Hide prop TnD glyph"
+        : "Show prop TnD glyph"}
+      aria-pressed={getPropElementalGlyph()}
+    >
+      <span>Prop TnD</span>
     </button>
     <button
       class="element-btn"

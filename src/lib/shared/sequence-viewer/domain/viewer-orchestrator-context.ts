@@ -1,4 +1,5 @@
 import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
+import type { VideoOpener } from "$lib/shared/share/domain/video-opener";
 import type { getExportOptionsState } from "$lib/shared/animation-panel/state/export-options-state.svelte";
 import type {
   AnimationPanelState,
@@ -151,6 +152,11 @@ export interface OrchestratorContext {
   handleCanvasReady: (canvas: HTMLCanvasElement | null) => void;
   /** Captures the already-mounted 2D animation surface for share presentation. */
   captureAnimationPreview: () => string;
+  /**
+   * The image a shared 2D clip opens with, for the sheet's stage and as the
+   * hold baked into the render. Empty in 3D, where no opener is offered.
+   */
+  captureVideoOpener: (kind: VideoOpener) => Promise<string>;
   handleSyncToggle: () => Promise<void>;
   handleOpenInCompose: (
     preset?: "stagger" | "mirror" | "combo-export"

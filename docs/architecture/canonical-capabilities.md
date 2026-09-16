@@ -47,6 +47,7 @@ the rasterized step-0 cell for card fronts, exports and thumbnails through
 `drawHandColorKey`, and the MCP `StandaloneRenderer` draws it for
 `generate_pictograph` and the sequence image start cell, so every surface
 bakes in the same key.
+The prop timing-and-direction glyph (`propTndGlyph` visibility key, `showPropTnD` render flag, `Prop TnD` chip, default off) reuses the same element art as the hand glyph but sits in the top-right slot inside a dashed spin ring. `derivePropElementalTypeForStep` in `shape-matrix/domain/prop-relationship.ts` classifies one step's props (null for a start position, float, or unequal turn rates); `getPropGlyphRing` in `elemental-glyph-layout.ts` owns the ring geometry; `ElementalGlyph` (`variant="prop"`) draws it in the DOM, `drawPropElementalGlyph` in `canvas-2d-glyph-renderer.ts` draws it for card fronts and exports, and the MCP `StandaloneRenderer` draws it through `renderPropTnDGlyph` under the `showPropTnD` option. The 2D animation canvas draws it in `GlyphOverlay` behind the animation engine's own `propElementalGlyph` setting ("Prop TnD" in both animation display panels).
 `ChoreoCard` resolves its palette once for cells and `CardGridLayout` mandalas.
 Animation frame parameters carry the same hand pair independently of effect
 styling, and `mandala-guide-painter.ts` derives overlap from its actual path

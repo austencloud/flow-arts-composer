@@ -82,6 +82,7 @@ Usage:
     showTnD = false,
     showElemental = false,
     propElementalType = null,
+    showPropTnD = false,
     showPositions = false,
     // Hand point visibility (all = show all 8, active = only where props are)
     handPointVisibility = "all",
@@ -173,6 +174,8 @@ Usage:
     showElemental?: boolean;
     /** Optional prop-path TnD element, rendered opposite the hand-path glyph. */
     propElementalType?: ElementalType | null;
+    /** Shows the prop-path glyph (its own Card-panel chip; independent of TnD). */
+    showPropTnD?: boolean;
     showPositions?: boolean;
     /** Hand point visibility mode: "all" shows all 8 points, "active" shows only where props are, "none" hides all */
     handPointVisibility?: "all" | "active" | "none";
@@ -248,6 +251,15 @@ Usage:
 
   // Derived beat context
   const isStartPosition = $derived(stepNumber === 0);
+  const handColorKeyShown = $derived(showHandColorKey ?? isStartPosition);
+  // Keep the key mounted while hidden only where a caller drives the toggle
+  // and the pictograph is (or may be) a start position, so its fade can play.
+  const handColorKeyMounted = $derived(
+    handColorKeyShown ||
+      (animateVisibility &&
+        showHandColorKey !== undefined &&
+        (stepNumber === null || isStartPosition))
+  );
   const shouldShowBeatNumber = $derived(
     showStepNumber && stepNumber !== null && !isStartPosition && !poseOnly
   );
@@ -515,6 +527,7 @@ Usage:
           {activeLocations}
           {previewMode}
           {darkMode}
+          {animateVisibility}
           visible={showGrid}
           onLoaded={() => onGridReady?.()}
           onError={() => onGridReady?.()}
@@ -622,7 +635,7 @@ Usage:
           {/each}
         {/if}
       </g>
-      {#if gridPointsOnTop && showGrid}
+      {#if gridPointsOnTop && (showGrid || animateVisibility)}
         <GridSvg
           layer="points"
           rotationOverride={gridRotation}
@@ -631,6 +644,8 @@ Usage:
           {handPointVisibility}
           {activeLocations}
           {darkMode}
+          {animateVisibility}
+          visible={showGrid}
           onLoaded={() => onGridReady?.()}
         />
       {/if}
@@ -698,10 +713,11 @@ Usage:
       {darkMode}
     />
 
-    <!-- Reversal indicators -->
-    {#if (showHandColorKey ?? isStartPosition) && hasValidData && handColorKey.entries.length > 0}
+    <!-- Start-position hand colour key -->
+    {#if handColorKeyMounted && hasValidData && handColorKey.entries.length > 0}
       <g
         class="hand-color-key"
+        class:visible={handColorKeyShown}
         transform="translate({expandedWidth / 2}, 0)"
         aria-label="Left and right prop colors"
         font-family={HAND_COLOR_KEY.FONT_FAMILY}
@@ -760,20 +776,22 @@ Usage:
       />
     </g>
 
-    <!-- Optional prop-path relationship (top-right). The existing bottom-right
-         glyph remains the hand-path relationship. Position carries the visual
-         distinction without adding repeated labels to every pictograph. -->
+    <!-- Prop-path relationship (top-right, dashed spin ring). The bottom-right
+         glyph remains the hand-path relationship; corner and ring carry the
+         distinction without adding labels to every pictograph. Mounted whenever
+         the step has a prop element so the Card-panel chip can fade it. -->
     {#if propElementalType}
       <g opacity={glyphOpacity}>
         <ElementalGlyph
           elementalType={propElementalType}
           {hasValidData}
-          visible={(showElemental || showTnD) && !poseOnly}
+          visible={showPropTnD && !poseOnly}
           {previewMode}
           {animateVisibility}
-          onToggle={onToggleElemental ?? onToggleTnD}
           xOffset={rightGlyphOffset}
           corner="top-right"
+          variant="prop"
+          darkMode={darkMode === true}
           ariaLabel={`Prop timing and direction element: ${propElementalType}`}
         />
       </g>
@@ -846,9 +864,21 @@ Usage:
     opacity: 0;
   }
 
+  /* Hand colour key: same fade as the other glyph overlays. Hidden by
+     default; .visible drives the opacity transition. */
+  .hand-color-key {
+    opacity: 0;
+    transition: opacity var(--duration-normal, 200ms) ease;
+  }
+
+  .hand-color-key.visible {
+    opacity: 1;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .pictograph-arrows,
-    .beat-layer {
+    .beat-layer,
+    .hand-color-key {
       transition: none;
     }
   }

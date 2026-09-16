@@ -170,6 +170,21 @@ that is hidden or absent drops out of the key; the remaining pair recentres.
 The key is on by default and is the `Hand key` chip in the export panel's
 Pictograph row (`handColorKey` in the visibility manager, `showHandColorKey`
 in the render and export options); locked deck cards always keep it.
+Live card cells pass `animateVisibility`, so every in-cell overlay (both grid
+layers, non-radial points, TKA, TnD, Positions, hand key) stays mounted and
+fades through its opacity transition when toggled; exports omit the flag and
+still hard-unmount hidden overlays.
+
+A pictograph can carry two timing-and-direction relationships. The hand
+relationship is the fused element glyph in the bottom-right slot (`TnD`
+chip). The prop relationship, read from each step's spin directions and
+start bearings, is the same element icon in the top-right slot wrapped in a
+dashed spin ring (`Prop TnD` chip, `propTndGlyph`, off by default). Corner
+plus ring is the whole distinction; neither glyph carries a label. The ring
+geometry lives in `elemental-glyph-layout.ts` (`getPropGlyphRing`) so the
+live DOM, the canvas compositor and the MCP renderer draw the same mark. A
+start position, a float, and unequal turn rates have no prop element and
+draw nothing.
 
 ## 6. Controls and Selection
 

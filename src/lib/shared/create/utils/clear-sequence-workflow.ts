@@ -17,7 +17,10 @@
  */
 
 import { navigationState } from "$lib/shared/navigation/state/navigation-state.svelte";
-import type { CreateModuleState, ConstructTabState } from "$lib/shared/create/state/create-module-state-types";
+import type {
+  CreateModuleState,
+  ConstructTabState,
+} from "$lib/shared/create/state/create-module-state-types";
 import type { createPanelCoordinationState as PanelCoordinationStateType } from "$lib/shared/create/state/panel-coordination-state.svelte";
 import { UndoOperationType } from "$lib/shared/create/domain/undo-operation-types";
 
@@ -75,7 +78,8 @@ export async function executeClearSequenceWorkflow(
     // sequence state, otherwise the builder's $effect will immediately re-sync
     // its steps back into the sequence)
     if (activeTab === "assemble") {
-      const assembleBuilder = CreateModuleState.assembleTabState?.assembleBuilderState;
+      const assembleBuilder =
+        CreateModuleState.assembleTabState?.assembleBuilderState;
       if (assembleBuilder) {
         assembleBuilder.reset();
       }
@@ -88,7 +92,8 @@ export async function executeClearSequenceWorkflow(
       activeTabSequenceState.clearError();
     }
 
-    // 4. Close all sequence-related panels
+    // 4. End the quick preview and close all sequence-related panels
+    panelState.stopWorkspacePlayback();
     panelState.closeAllPanels();
   } catch (error) {
     const errorMessage =

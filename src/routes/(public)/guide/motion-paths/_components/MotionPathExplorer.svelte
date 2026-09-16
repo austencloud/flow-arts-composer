@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
-  import { fade } from "svelte/transition";
-  import { motionDuration } from "$lib/shared/transitions/motion";
+  import { onMount } from "svelte";
+  import { growFade } from "$lib/shared/transitions/motion";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { browser } from "$app/environment";
   import MotionPathTransitionStage from "./MotionPathTransitionStage.svelte";
@@ -20,6 +19,7 @@
   } from "$lib/shared/shape-matrix/domain/matrix-turn-band";
   import {
     flowerKey,
+    flowerPetals,
     type Flower,
   } from "$lib/shared/shape-matrix/domain/flower-signature";
   import { pairAtTurns } from "$lib/shared/shape-matrix/domain/flower-at-turn";
@@ -29,7 +29,10 @@
     shapeMatrixTipPoint,
     type ShapeMatrixData,
   } from "$lib/shared/shape-matrix/services/shape-matrix-flowers";
-  import type { VtgMode } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
+  import {
+    MODE_LABEL,
+    type VtgMode,
+  } from "$lib/shared/shape-matrix/services/shape-matrix-realizations";
   import StepStrip from "$lib/shared/timeline/StepStrip.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
@@ -43,32 +46,47 @@
   const matrixTipDx = shapeMatrixTipPoint(PropType.STAFF)?.dx;
   setAnimationVisibilityContext(explorer.scope.visibility);
   let pickerOpen = $state(false);
-  // The intro just taught paths, so paths are the first control here. The
-  // shape selection stays one click away and remains open once revealed.
-  let shapesOpen = $state(false);
-  let shapePickerHeading = $state<HTMLHeadingElement | null>(null);
-
-  async function revealShapes(): Promise<void> {
-    shapesOpen = true;
-    await tick();
-    shapePickerHeading?.focus();
-  }
+  // Timing and direction is the one selector that needs vocabulary the intro
+  // never taught, so it stays folded until asked for.
+  let relationshipOpen = $state(false);
+  // The first thing on screen is a real matrix shape, not a frozen example.
+  // One turn each keeps both hands drawing petals (pro 2, anti 4), and mixing
+  // pro with anti means Hybrid differs from Arc on the first click.
+  const DEFAULT_TURN: TurnValue = 1;
+  const DEFAULT_PAIR: { left: Flower; right: Flower } = {
+    left: {
+      style: "pro",
+      turns: DEFAULT_TURN,
+      ori: "in",
+      grid: "diamond",
+      petals: flowerPetals({ style: "pro", turns: DEFAULT_TURN }),
+    },
+    right: {
+      style: "anti",
+      turns: DEFAULT_TURN,
+      ori: "in",
+      grid: "diamond",
+      petals: flowerPetals({ style: "anti", turns: DEFAULT_TURN }),
+    },
+  };
   let ready = $state(false);
   let playerFailed = $state(false);
   let matrixData = $state<ShapeMatrixData | null>(null);
   let matrixPreviews = $state<Map<string, ShapeMatrixData>>(new Map());
   let matrixError = $state<string | null>(null);
-  let leftTurn = $state<TurnValue>(0);
-  let rightTurn = $state<TurnValue>(0);
+  let leftTurn = $state<TurnValue>(DEFAULT_TURN);
+  let rightTurn = $state<TurnValue>(DEFAULT_TURN);
   let labelMode = $state<MatrixLabelMode>("turns");
   let displayedSequence = $state<SequenceData | null>(null);
   let stageSeek = $state<((step: number) => void) | null>(null);
   let mounted = true;
   let matrixRequest = 0;
   const matrixFilters = $derived(matrixFiltersForTurns(leftTurn, rightTurn));
+  // The matrix always traces prop tips. Hand paths are identical across the
+  // whole grid, so a hands-traced matrix would show one shape in every cell.
   const previewMatrix = $derived(
     matrixPreviews.get(
-      `${explorer.selectedPath}:${explorer.trace}:${explorer.selectedPath === "hybrid" ? explorer.fixedPath : "arc"}`
+      `${explorer.selectedPath}:tips:${explorer.selectedPath === "hybrid" ? explorer.fixedPath : "arc"}`
     )
   );
   const rowAxis = $derived(
@@ -99,19 +117,17 @@
       const paths: MandalaPathShape[] = ["arc", "linear", "concave", "hybrid"];
       const previews = await Promise.all(
         paths.flatMap((pathShape) =>
-          (["hands", "tips"] as const).flatMap((trace) =>
-            (pathShape === "hybrid"
-              ? (["arc", "linear", "concave"] as const)
-              : (["arc"] as const)
-            ).map(async (hybridFallback) => {
-              const data = await loadShapeMatrix(PropType.STAFF, {
-                pathShape,
-                trace,
-                hybridFallback,
-              });
-              return [`${pathShape}:${trace}:${hybridFallback}`, data] as const;
-            })
-          )
+          (pathShape === "hybrid"
+            ? (["arc", "linear", "concave"] as const)
+            : (["arc"] as const)
+          ).map(async (hybridFallback) => {
+            const data = await loadShapeMatrix(PropType.STAFF, {
+              pathShape,
+              trace: "tips",
+              hybridFallback,
+            });
+            return [`${pathShape}:tips:${hybridFallback}`, data] as const;
+          })
         )
       );
       if (mounted && request === matrixRequest) {
@@ -119,6 +135,8 @@
         // Realization matching uses the original flower geometry. Changing
         // the displayed path should never select a different sequence.
         matrixData = matrixPreviews.get("arc:tips:arc")!;
+        if (!explorer.selectedPair)
+          explorer.chooseMatrixPair(DEFAULT_PAIR, buildMatrixSequence);
       }
     } catch {
       if (mounted && request === matrixRequest)
@@ -161,7 +179,103 @@
 </script>
 
 <section class="explorer" aria-label="Motion path comparison">
-  <div class="explorer-workspace" class:shapes-open={shapesOpen}>
+  <div class="explorer-workspace">
+    <section class="shape-picker" aria-labelledby="shape-picker-title">
+      <div class="source-controls">
+        <div class="picker-heading">
+          <h3 id="shape-picker-title">Shapes</h3>
+          <PanelButton onclick={() => (pickerOpen = true)}
+            >Browse sequences</PanelButton
+          >
+        </div>
+        <div class="turn-picker">
+          <TurnNotationControls
+            {leftTurn}
+            {rightTurn}
+            {labelMode}
+            onturn={chooseTurn}
+            onlabelmodechange={(value) => (labelMode = value)}
+          />
+        </div>
+      </div>
+      <div class="matrix-stage" aria-busy={!matrixData && !matrixError}>
+        {#if matrixError}
+          <div class="matrix-status error" role="alert">
+            <p>{matrixError}</p>
+            <PanelButton onclick={() => void loadMatrix()}
+              >Try again</PanelButton
+            >
+          </div>
+        {:else if !matrixData}
+          <p class="matrix-status" role="status">
+            Building the Shape Matrix…
+          </p>
+        {:else}
+          <ShapeMatrixGrid
+            data={previewMatrix}
+            {rowAxis}
+            {colAxis}
+            maxCellPx={108}
+            selectedPair={explorer.selectedPair}
+            onselect={(pair) =>
+              explorer.chooseMatrixPair(pair, buildMatrixSequence)}
+          />
+        {/if}
+      </div>
+
+      <div class="picker-feedback" aria-live="polite">
+        {#if explorer.pickerStatus === "loading"}
+          <span>Building that sequence…</span>
+        {:else if explorer.pickerError}
+          <span role="alert">{explorer.pickerError}</span>
+          <PanelButton onclick={explorer.retryMatrixSelection}
+            >Try again</PanelButton
+          >
+        {:else}
+          <span
+            >{explorer.selectedPair
+              ? "Change the motion path to compare these shapes."
+              : "Pick a cell to animate its shapes."}</span
+          >
+        {/if}
+      </div>
+
+      <div class="relationship">
+        <PanelButton
+          ariaExpanded={relationshipOpen}
+          onclick={() => (relationshipOpen = !relationshipOpen)}
+        >
+          <span class="relationship-label">
+            <span>Timing and direction</span>
+            {#if explorer.selectedMode}
+              <span class="relationship-current"
+                >{MODE_LABEL[explorer.selectedMode]}</span
+              >
+            {/if}
+          </span>
+          <i
+            class="fas fa-chevron-down relationship-chevron"
+            class:open={relationshipOpen}
+            aria-hidden="true"
+          ></i>
+        </PanelButton>
+        {#if relationshipOpen}
+          <div
+            class="relationship-picker"
+            transition:growFade={{ axis: "y", duration: DURATION.normal }}
+          >
+            <ElementChipRow
+              selected={explorer.selectedMode}
+              columns={3}
+              compact
+              onpick={(mode) =>
+                explorer.chooseHandRelationship(mode, buildMatrixSequence)}
+            />
+          </div>
+        {/if}
+      </div>
+    </section>
+
     <div class="comparison">
       <div class="motion-column">
         <div class="transport">
@@ -229,16 +343,6 @@
               />
             {/if}
           </div>
-          {#if !shapesOpen}
-            <div
-              class="reveal-shapes"
-              out:fade={{ duration: motionDuration(DURATION.fast) }}
-            >
-              <PanelButton onclick={() => void revealShapes()}
-                >Change the shapes</PanelButton
-              >
-            </div>
-          {/if}
         </div>
       </div>
 
@@ -276,90 +380,6 @@
         </div>
       </div>
     </div>
-    {#if shapesOpen}
-      <section
-        class="shape-picker"
-        aria-labelledby="shape-picker-title"
-        in:fade={{ duration: motionDuration(DURATION.normal) }}
-      >
-        <div class="source-controls">
-          <div class="picker-heading">
-            <h3
-              id="shape-picker-title"
-              tabindex="-1"
-              bind:this={shapePickerHeading}
-            >
-              Sequence
-            </h3>
-            <PanelButton onclick={() => (pickerOpen = true)}
-              >Browse sequences</PanelButton
-            >
-          </div>
-
-          <div class="relationship-picker">
-            <span class="control-label">Timing and direction</span>
-            <ElementChipRow
-              selected={explorer.selectedMode}
-              columns={3}
-              compact
-              onpick={(mode) =>
-                explorer.chooseHandRelationship(mode, buildMatrixSequence)}
-            />
-          </div>
-
-          <div class="turn-picker">
-            <TurnNotationControls
-              {leftTurn}
-              {rightTurn}
-              {labelMode}
-              onturn={chooseTurn}
-              onlabelmodechange={(value) => (labelMode = value)}
-            />
-          </div>
-        </div>
-        <div class="matrix-stage" aria-busy={!matrixData && !matrixError}>
-          {#if matrixError}
-            <div class="matrix-status error" role="alert">
-              <p>{matrixError}</p>
-              <PanelButton onclick={() => void loadMatrix()}
-                >Try again</PanelButton
-              >
-            </div>
-          {:else if !matrixData}
-            <p class="matrix-status" role="status">
-              Building the Shape Matrix…
-            </p>
-          {:else}
-            <ShapeMatrixGrid
-              data={previewMatrix}
-              {rowAxis}
-              {colAxis}
-              maxCellPx={108}
-              selectedPair={explorer.selectedPair}
-              onselect={(pair) =>
-                explorer.chooseMatrixPair(pair, buildMatrixSequence)}
-            />
-          {/if}
-        </div>
-
-        <div class="picker-feedback" aria-live="polite">
-          {#if explorer.pickerStatus === "loading"}
-            <span>Building that sequence…</span>
-          {:else if explorer.pickerError}
-            <span role="alert">{explorer.pickerError}</span>
-            <PanelButton onclick={explorer.retryMatrixSelection}
-              >Try again</PanelButton
-            >
-          {:else}
-            <span
-              >{explorer.selectedPair
-                ? "Change the motion path to compare these shapes."
-                : "Pick a cell to animate its shapes."}</span
-            >
-          {/if}
-        </div>
-      </section>
-    {/if}
   </div>
 </section>
 
@@ -505,15 +525,35 @@
   .transport {
     margin-bottom: var(--spacing-sm, 8px);
   }
-  .reveal-shapes {
-    display: flex;
-    justify-content: center;
-    margin-top: var(--spacing-md, 16px);
+  .relationship {
+    display: grid;
+    gap: var(--spacing-sm, 8px);
+    min-width: 0;
   }
-  .picker-heading h3:focus-visible {
-    outline: 2px solid var(--theme-accent);
-    outline-offset: 4px;
-    border-radius: 4px;
+  .relationship > :global(button) {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .relationship-label {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+    min-width: 0;
+    text-align: left;
+  }
+  .relationship-current {
+    color: var(--theme-text-muted);
+    font-weight: 500;
+  }
+  .relationship-chevron {
+    flex-shrink: 0;
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+  .relationship-chevron.open {
+    transform: rotate(180deg);
+  }
+  .relationship-picker {
+    min-width: 0;
   }
   .path-column :global(.path-header) {
     align-items: center;
@@ -540,6 +580,9 @@
   @container (min-width: 640px) {
     .shape-picker {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      /* The fr row absorbs the matrix height so the timing disclosure stays
+         directly under the turn controls instead of drifting to mid-column. */
+      grid-template-rows: auto minmax(0, 1fr) auto;
       column-gap: var(--spacing-lg, 24px);
     }
     .source-controls {
@@ -548,10 +591,17 @@
     }
     .matrix-stage {
       grid-column: 2;
-      grid-row: 1;
+      grid-row: 1 / span 2;
     }
     .picker-feedback {
       grid-column: 2;
+      grid-row: 3;
+    }
+    /* Sits directly under the turn controls; the matrix owns the tall rows. */
+    .relationship {
+      grid-column: 1;
+      grid-row: 2;
+      align-self: start;
     }
     .comparison {
       grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
@@ -567,16 +617,12 @@
   }
   @container (min-width: 1100px) {
     .explorer-workspace {
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    }
-    .explorer-workspace.shapes-open {
-      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.4fr) minmax(0, 1fr);
+      grid-template-columns: minmax(20rem, 1fr) minmax(0, 1.3fr) minmax(0, 1fr);
     }
     .comparison {
       display: contents;
     }
     .shape-picker {
-      order: -1;
       display: flex;
       flex-direction: column;
       gap: var(--spacing-sm, 8px);

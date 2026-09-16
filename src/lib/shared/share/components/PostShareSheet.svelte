@@ -3,6 +3,7 @@
      prevents state changes from moving the sheet. -->
 <script lang="ts">
   import { onDestroy, untrack } from "svelte";
+  import { MediaQuery } from "svelte/reactivity";
   import { growFade } from "$lib/shared/transitions/motion";
   import PanelButton from "$lib/shared/components/panel/PanelButton.svelte";
   import ShareSheetFrame from "./ShareSheetFrame.svelte";
@@ -60,6 +61,13 @@
     videoDownloadSettingsKey,
   } from "$lib/shared/share/domain/video-download-intent";
   import {
+    VIDEO_OPENER_OPTIONS,
+    openerAddsHold,
+    openerCoverOffsetMs,
+    type VideoOpener,
+    type VideoRenderRequest,
+  } from "$lib/shared/share/domain/video-opener";
+  import {
     connectMetaAccount,
     disconnectMetaAccount,
     publishToMeta,
@@ -83,8 +91,11 @@
     /** Distinguishes a user-driven scene take from background export work. */
     isRecordingScene?: boolean;
     exportProgress: number | null;
-    /** `false` means no render started, so the sheet must stop waiting. */
-    onRequestVideo?: () => void | boolean | Promise<boolean>;
+    /** `false` means no render started, so the sheet must stop waiting. The
+     * request carries the chosen opener image so the render opens on it. */
+    onRequestVideo?: (
+      request?: VideoRenderRequest
+    ) => void | boolean | Promise<boolean>;
     /** Stops the same export source that `onRequestVideo` started. */
     onCancelVideo?: () => void;
     /** Hosts retire an unrelated old video only when this share prepares video. */
@@ -105,6 +116,9 @@
     /** A host-owned current-view capture. It is only presentation: exports still
      * use the existing video callback and never mount another animation engine. */
     captureAnimationPreview?: () => string;
+    /** The image a shared clip opens with, per choice. Omitted by hosts whose
+     * render cannot open on a chosen image; the "Opens with" row is then hidden. */
+    captureVideoOpener?: (kind: VideoOpener) => Promise<string>;
     /** Cinema is meaningful only for the 3D exporter. */
     is3DExport?: boolean;
     videoSourceKey?: string;
@@ -148,6 +162,7 @@
     onRequestAccount,
     videoLabel = "Video",
     captureAnimationPreview = () => "",
+    captureVideoOpener,
     is3DExport = false,
     videoSourceKey = "",
     initialArtifact = "card",
@@ -231,7 +246,16 @@
   let pendingDownloadSettingsKey = $state<string | null>(null);
   let pendingDownloadSourceKey = $state<string | null>(null);
   let animationPreviewUrl = $state<string | null>(null);
+  /** Captured once per session and choice; "this frame" is the preview itself. */
+  let openerPreviews = $state<Partial<Record<VideoOpener, string>>>({});
+  let openerCaptureSession = 0;
+  const openerOptions = [...VIDEO_OPENER_OPTIONS];
   let videoSettingsOpen = $state(false);
+  // A tall sheet has room to show the settings without a disclosure.
+  const roomySheet = new MediaQuery("(min-height: 760px)");
+  const videoSettingsExpanded = $derived(
+    videoSettingsOpen || roomySheet.current
+  );
   const videoResolutionOptions: { value: VideoResolution; label: string }[] = [
     { value: 720, label: "720p" },
     { value: 1080, label: "1080p" },
@@ -548,6 +572,55 @@
   /** Busy means work is actually running, including bytes arriving for delivery. */
   const videoBusy = $derived(videoStatus === "rendering");
 
+  /** The opener is offered only where the host can bake it into the render. */
+  const openerEnabled = $derived(
+    !!captureVideoOpener && !is3DExport && artifact === "video"
+  );
+  const opener = $derived<VideoOpener>(
+    openerEnabled ? exportOptions.videoOpener : "first-beat"
+  );
+  const openerLabel = $derived(
+    VIDEO_OPENER_OPTIONS.find((option) => option.value === opener)?.label ??
+      "First beat"
+  );
+  /** The stage shows exactly the image the clip will open with. */
+  const openerPreviewUrl = $derived(
+    openerEnabled && opener !== "this-frame"
+      ? (openerPreviews[opener] ?? animationPreviewUrl)
+      : animationPreviewUrl
+  );
+
+  async function ensureOpenerPreview(kind: VideoOpener): Promise<void> {
+    if (!captureVideoOpener || kind === "this-frame") return;
+    if (openerPreviews[kind]) return;
+    const session = openerCaptureSession;
+    try {
+      const url = await captureVideoOpener(kind);
+      if (session !== openerCaptureSession || !url) return;
+      openerPreviews = { ...openerPreviews, [kind]: url };
+    } catch (error) {
+      console.error("[PostShareSheet] Could not capture the opener:", error);
+    }
+  }
+
+  $effect(() => {
+    if (!openerEnabled || shareRoute === "home") return;
+    const kind = opener;
+    // Reading the cache here re-runs the capture after a session reset clears it.
+    if (kind === "this-frame" || openerPreviews[kind]) return;
+    untrack(() => void ensureOpenerPreview(kind));
+  });
+
+  function openerRequest(): VideoRenderRequest | undefined {
+    if (!openerEnabled) return undefined;
+    return {
+      opener: {
+        kind: opener,
+        imageUrl: openerAddsHold(opener) ? (openerPreviewUrl ?? "") : "",
+      },
+    };
+  }
+
   /** Detect setting changes without automatically replacing an expensive render. */
   const videoSettingsKey = $derived(
     videoDownloadSettingsKey({
@@ -556,6 +629,7 @@
       repeats: exportOptions.videoLoopCount,
       quality: exportOptions.videoQuality,
       is3DExport,
+      opener: openerEnabled ? opener : undefined,
     })
   );
   let renderedVideoKey = $state<string | null>(null);
@@ -653,6 +727,8 @@
     filePreparationOpen = shareRoute === "download";
     animationPreviewUrl =
       shareRoute === "download" ? captureAnimationPreview() || null : null;
+    openerPreviews = {};
+    openerCaptureSession += 1;
     if (initialEntry === "download") shareDraft.selectArtifact(initialArtifact);
   });
 
@@ -1011,7 +1087,7 @@
     requestedVideoSourceKey = untrack(() => videoSourceKey);
     let started: void | boolean | Promise<boolean>;
     try {
-      started = onRequestVideo();
+      started = onRequestVideo(openerRequest());
     } catch {
       if (requestVersion === videoRequestVersion) videoStatus = "failed";
       return;
@@ -1293,7 +1369,9 @@
                 thumbOffsetMs:
                   postDeliveryState.draft.instagram.cover?.kind === "frame"
                     ? postDeliveryState.draft.instagram.cover.offsetMs
-                    : null,
+                    : openerEnabled
+                      ? openerCoverOffsetMs()
+                      : null,
               }
             : undefined,
       });
@@ -1728,12 +1806,15 @@
                     muted
                     playsinline
                   ></video>
-                {:else if artifact === "video" && animationPreviewUrl}
-                  <!-- This capture belongs to the viewer. The sheet only presents it. -->
+                {:else if artifact === "video" && openerPreviewUrl}
+                  <!-- This capture belongs to the viewer. The sheet only presents
+                       it, and it is the exact image the clip opens with. -->
                   <img
                     class="preview"
-                    src={animationPreviewUrl}
-                    alt="Current animation view"
+                    src={openerPreviewUrl}
+                    alt={openerEnabled
+                      ? `Video opens with ${openerLabel.toLowerCase()}`
+                      : "Current animation view"}
                   />
                 {:else if artifact === "video" && !videoBusy}
                   <div class="stage-pending stage-refused" role="status">
@@ -1759,6 +1840,24 @@
                   </div>
                 {/if}
               </div>
+
+              {#if openerEnabled && sequence && !qrDataUrl}
+                <fieldset
+                  class="opener-row"
+                  aria-label="Opens with"
+                  disabled={videoBusy}
+                >
+                  <span id="share-video-opener">Opens with</span>
+                  <SegmentedControl
+                    options={openerOptions}
+                    value={exportOptions.videoOpener}
+                    onchange={(value) => exportOptions.setVideoOpener(value)}
+                    color="accent"
+                    size="sm"
+                    ariaLabelledby="share-video-opener"
+                  />
+                </fieldset>
+              {/if}
 
               {#if artifact === "video" && (videoBusy || videoStatus === "failed" || videoStatus === "canceled")}
                 <p class="render-feedback" role="status">
@@ -1830,26 +1929,38 @@
                     aria-label="Video settings"
                     disabled={videoBusy}
                   >
-                    <PanelButton
-                      fullWidth
-                      ariaExpanded={videoSettingsOpen}
-                      onclick={() => (videoSettingsOpen = !videoSettingsOpen)}
-                    >
-                      Video settings
-                      <span class="setting-value"
-                        >{exportOptions.videoResolution}p · {exportOptions.videoFps}
-                        fps · {exportOptions.videoLoopCount}×{is3DExport
-                          ? ` · ${exportOptions.videoQuality}`
-                          : ""}</span
+                    {#if roomySheet.current}
+                      <div class="settings-heading">
+                        Video settings
+                        <span class="setting-value"
+                          >{exportOptions.videoResolution}p · {exportOptions.videoFps}
+                          fps · {exportOptions.videoLoopCount}×{is3DExport
+                            ? ` · ${exportOptions.videoQuality}`
+                            : ""}</span
+                        >
+                      </div>
+                    {:else}
+                      <PanelButton
+                        fullWidth
+                        ariaExpanded={videoSettingsOpen}
+                        onclick={() => (videoSettingsOpen = !videoSettingsOpen)}
                       >
-                      <i
-                        class={videoSettingsOpen
-                          ? "fa-solid fa-chevron-up"
-                          : "fa-solid fa-chevron-down"}
-                        aria-hidden="true"
-                      ></i>
-                    </PanelButton>
-                    {#if videoSettingsOpen}<div
+                        Video settings
+                        <span class="setting-value"
+                          >{exportOptions.videoResolution}p · {exportOptions.videoFps}
+                          fps · {exportOptions.videoLoopCount}×{is3DExport
+                            ? ` · ${exportOptions.videoQuality}`
+                            : ""}</span
+                        >
+                        <i
+                          class={videoSettingsOpen
+                            ? "fa-solid fa-chevron-up"
+                            : "fa-solid fa-chevron-down"}
+                          aria-hidden="true"
+                        ></i>
+                      </PanelButton>
+                    {/if}
+                    {#if videoSettingsExpanded}<div
                         class="compact-settings"
                         transition:growFade={{ axis: "y" }}
                       >
@@ -2199,32 +2310,89 @@
   .video-settings:disabled {
     opacity: 0.6;
   }
+  /* The thumbnail choice sits under the stage it previews. */
+  .opener-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0 0.25rem;
+    border: 0;
+    color: var(--theme-text-secondary);
+    font-size: var(--font-size-min, 0.875rem);
+  }
+  .opener-row > span {
+    flex: 0 0 auto;
+    font-weight: 600;
+  }
+  .opener-row :global(.segmented-control) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .opener-row :global(.segment) {
+    white-space: nowrap;
+  }
+  .opener-row:disabled {
+    opacity: 0.6;
+  }
   .download-title {
     font-size: var(--font-size-min, 0.875rem);
     font-weight: 650;
     text-transform: capitalize;
   }
-  .compact-settings {
-    display: grid;
-    gap: 0.625rem;
-    padding: 0.75rem 0.25rem 0;
-  }
-  .video-setting,
-  .repeat-stepper {
+  .settings-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
     min-height: var(--min-touch-target, 44px);
+    padding-inline: 0.25rem;
+    font-size: var(--font-size-min, 0.875rem);
+    font-weight: 600;
+  }
+  /* Each setting is a label over its control; the groups share one row when
+     the sheet is wide enough and wrap into a column when it is not. */
+  .compact-settings {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    gap: 0.75rem 1.25rem;
+    padding: 0.5rem 0.25rem 0;
+  }
+  .video-setting,
+  .repeat-stepper {
+    display: grid;
+    gap: 0.375rem;
+    justify-items: start;
     color: var(--theme-text-secondary);
     font-size: var(--font-size-min, 0.875rem);
   }
-  /* The label keeps its own line when the segments need the row's width. */
+  /* Segmented groups grow to fill the row; the stepper keeps its fixed keys. */
   .video-setting {
-    flex-wrap: wrap;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-items: stretch;
   }
   .video-setting > span {
-    margin-right: auto;
+    justify-self: start;
+  }
+  .repeat-stepper {
+    flex: 0 0 auto;
+  }
+  /* Short labels like "120 fps" stay on one line inside the compact row. */
+  .compact-settings :global(.segment) {
+    white-space: nowrap;
+  }
+  .repeat-stepper {
+    grid-template-columns: repeat(3, auto);
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .repeat-stepper > span {
+    grid-column: 1 / -1;
+    margin-bottom: 0.125rem;
   }
   .repeat-stepper strong {
     min-width: 1.5rem;
@@ -2241,12 +2409,6 @@
     font: inherit;
     font-size: 1.125rem;
     cursor: pointer;
-  }
-  .repeat-stepper {
-    justify-content: flex-end;
-  }
-  .repeat-stepper > span {
-    margin-right: auto;
   }
   .publish-preview {
     max-height: 20rem;

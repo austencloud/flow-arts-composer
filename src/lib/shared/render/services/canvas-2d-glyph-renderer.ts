@@ -27,7 +27,10 @@ import { HandSide, getElementImagePath } from "../../pictograph/shared/domain/en
 import {
   containElementalGlyph,
   getElementalGlyphBox,
+  getPropGlyphRing,
+  PROP_GLYPH_RING,
 } from "../../pictograph/shared/domain/constants/elemental-glyph-layout";
+import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
 import { getMotionColor } from "../../utils/svg-color-utils";
 import {
   drawMonochromeImage,
@@ -418,6 +421,51 @@ export async function drawElementalGlyph(
     ctx.restore();
   } catch (error) {
     console.warn(`[Canvas2D] Failed to draw Elemental glyph:`, error);
+  }
+}
+
+/**
+ * Prop timing-and-direction glyph: the step's prop element in the top-right
+ * slot inside the dashed spin ring. Same geometry as ElementalGlyph.svelte
+ * (variant="prop") so live cells and rasterized cells match.
+ */
+export async function drawPropElementalGlyph(
+  ctx: CanvasRenderingContext2D,
+  pictograph: PictographData,
+  size: number,
+  isDarkMode: boolean
+): Promise<void> {
+  const elementalType = derivePropElementalTypeForStep(pictograph);
+  if (!elementalType) return;
+
+  const box = getElementalGlyphBox(size, 0, "top-right");
+  const ring = getPropGlyphRing(size);
+
+  try {
+    const response = await fetch(getElementImagePath(elementalType));
+    if (!response.ok) return;
+    const img = await createImageBitmap(await response.blob());
+    const fitted = containElementalGlyph(box, img.width, img.height);
+    if (!fitted) return;
+
+    ctx.save();
+    ctx.globalAlpha = PROP_GLYPH_RING.opacity;
+    ctx.strokeStyle = isDarkMode
+      ? PROP_GLYPH_RING.color.dark
+      : PROP_GLYPH_RING.color.light;
+    ctx.lineWidth = ring.strokeWidth;
+    ctx.lineCap = "round";
+    ctx.setLineDash([ring.dash[0], ring.dash[1]]);
+    ctx.beginPath();
+    ctx.arc(ring.cx, ring.cy, ring.r, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.drawImage(img, fitted.x, fitted.y, fitted.width, fitted.height);
+    ctx.restore();
+  } catch (error) {
+    console.warn(`[Canvas2D] Failed to draw prop TnD glyph:`, error);
   }
 }
 

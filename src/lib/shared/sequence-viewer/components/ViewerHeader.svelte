@@ -78,6 +78,12 @@
     onSave?: () => void;
     onRemix?: () => void;
     onPracticeToggle?: () => void;
+    /**
+     * Set while the viewer is in send mode. The header's left side becomes
+     * the way out, as it does for Practice; Escape reaches it through the
+     * shared shortcut owner.
+     */
+    onSendCancel?: () => void;
     canToggleMotionVisibility?: boolean;
     onMotionToggleLeft?: () => void;
     onMotionToggleRight?: () => void;
@@ -115,6 +121,7 @@
     onSave,
     onRemix,
     onPracticeToggle,
+    onSendCancel,
     canToggleMotionVisibility = false,
     onMotionToggleLeft,
     onMotionToggleRight,
@@ -207,7 +214,20 @@
   data-hidden={hidden}
 >
   <div class="header-side header-left">
-    {#if ctx.practiceActive}
+    {#if onSendCancel}
+      <button
+        type="button"
+        class="viewer-action mode-exit"
+        data-escape-shortcut
+        data-escape-shortcut-label="Cancel send"
+        onclick={onSendCancel}
+        aria-label="Cancel sending"
+        title="Cancel sending"
+      >
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        <span class="action-label">Cancel</span>
+      </button>
+    {:else if ctx.practiceActive}
       {#if onPracticeToggle}
         <button
           type="button"
@@ -787,6 +807,12 @@
       transparent
     );
     color: var(--theme-accent, #a78bfa);
+  }
+
+  /* Leaving send mode is a step back, not a stop: the neutral action look,
+     with the label kept so the way out is named. */
+  .mode-exit {
+    gap: 0.5rem;
   }
 
   .practice-exit {

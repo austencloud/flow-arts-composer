@@ -28,6 +28,8 @@
     MIN_VIEWER_PANE_REVEAL_SIZE,
     readViewerCardPaneBox,
     rememberViewerCardPaneBox,
+    rememberViewerSplitCardPaneBox,
+    resolveViewerCardMotionBox,
     resolveViewerPanelDirection,
     resolveViewerPanelLayout,
     resolveViewerPaneDestinationBox,
@@ -254,22 +256,34 @@
       userSplitShares: splitResizable ? userSplitShares : undefined,
     })
   );
-  function handleSplitSizesChange(sizes: number[]): void {
+  /**
+   * Apply a share the user chose for the current axis.
+   *
+   * The Card learns the box it is heading toward before the share lands, so
+   * the frame that shrinks its pane never compares itself against the wider
+   * box it just left and mistakes the new size for a pane still opening.
+   */
+  function applyUserSplitShare(share: number): void {
     const direction = panelLayout.direction;
-    const next = {
-      ...userSplitShares,
-      [direction]: viewerSplitShareFromSizes(sizes),
-    };
+    rememberViewerSplitCardPaneBox({
+      key: cardPaneBoxKey,
+      vw: window.innerWidth,
+      vh: window.innerHeight,
+      direction,
+      share,
+      splitWidth,
+      splitHeight,
+    });
+    cardPaneBoxMemoVersion += 1;
+    const next = { ...userSplitShares, [direction]: share };
     userSplitShares = next;
     saveViewerSplitShares(next);
   }
+  function handleSplitSizesChange(sizes: number[]): void {
+    applyUserSplitShare(viewerSplitShareFromSizes(sizes));
+  }
   function resetSplitShare(): void {
-    const next = {
-      ...userSplitShares,
-      [panelLayout.direction]: VIEWER_SPLIT_DEFAULT_SHARE,
-    };
-    userSplitShares = next;
-    saveViewerSplitShares(next);
+    applyUserSplitShare(VIEWER_SPLIT_DEFAULT_SHARE);
   }
   // Each pane keeps at least a quarter of the axis and the readable minimum.
   const splitAxisLength = $derived(
@@ -409,6 +423,13 @@
 
   let paneBoxSettleTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /**
+   * Bumped after every write to the shared memo. The memo is a plain Map, so
+   * this is what lets the motion box re-derive once a new box is learned
+   * instead of holding the box it read the last time its inputs changed.
+   */
+  let cardPaneBoxMemoVersion = $state(0);
+
   $effect(() => {
     const box = cardContainSizeMotion === null ? liveCardPaneBox : null;
     const eligible =
@@ -426,6 +447,7 @@
         window.innerHeight,
         box
       );
+      cardPaneBoxMemoVersion += 1;
     }, PANE_BOX_SETTLE_MS);
     return () => {
       if (paneBoxSettleTimer !== null) clearTimeout(paneBoxSettleTimer);
@@ -434,27 +456,16 @@
   });
 
   const cardContainMotionBox = $derived.by(() => {
-    const remembered = readViewerCardPaneBox(
-      cardPaneBoxKey,
-      window.innerWidth,
-      window.innerHeight
-    );
-    // Before this layout has settled once at this viewport there is nothing to
-    // remember. Publishing no destination is better than publishing the box
-    // the Card is leaving: that one makes it solve a grid for the wrong shape
-    // and correct in public. Let the ordinary measurement path carry the first
-    // entry instead.
-    if (remembered === null) return liveCardPaneBox;
-    if (cardContainSizeMotion !== null) return remembered;
-    if (liveCardPaneBox === null) return remembered;
-    // A pane measurably smaller than the one this layout settled at is still
-    // opening, whatever the motion flag says. The incoming Card can mount a
-    // frame before the flag is set, and a sliver read as a settled measurement
-    // is what makes it solve for a speck and then grow.
-    const stillOpening =
-      liveCardPaneBox.width < remembered.width * 0.98 ||
-      liveCardPaneBox.height < remembered.height * 0.98;
-    return stillOpening ? remembered : liveCardPaneBox;
+    void cardPaneBoxMemoVersion;
+    return resolveViewerCardMotionBox({
+      remembered: readViewerCardPaneBox(
+        cardPaneBoxKey,
+        window.innerWidth,
+        window.innerHeight
+      ),
+      live: liveCardPaneBox,
+      inMotion: cardContainSizeMotion !== null,
+    });
   });
 
   $effect(() => {
