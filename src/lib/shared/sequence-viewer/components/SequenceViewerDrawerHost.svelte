@@ -475,7 +475,12 @@
   /* Routed through the Drawer.css --sheet-* API; the direct border-top-*-radius
      overrides are redundant (the radius vars already drive those corners). */
   :global(.sequence-viewer-drawer) {
-    --sheet-bg: var(--theme-panel-bg, #0a0a14);
+    /* The theme panel color is translucent, so the loading and error states
+       showed the Create workspace underneath. Resolve it against the solid
+       sheet base so the viewer always sits on a matte surface. */
+    --sheet-bg:
+      linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)),
+      var(--sheet-bg-solid, #0a0a14);
     --sheet-filter: none;
     --sheet-border-radius-top-left: 0px;
     --sheet-border-radius-top-right: 0px;
