@@ -65,12 +65,12 @@ export const COMPOUND_LETTERS: Record<string, CompoundLetter> = {
 export const COMPOUND_CATEGORIES: Record<string, CompoundCategoryInfo> = {
   "type1-beta-alpha": {
     name: "Type 1 Beta-Alpha Compounds",
-    description: "Dual-shift compounds that cycle between beta and alpha positions",
+    description: "Dual-shift compounds that cycle between beta and alpha placements",
     compounds: ["DJ", "EK", "FL"],
   },
   "gamma-internal": {
     name: "Gamma Internal Compounds",
-    description: "Compounds that stay within gamma position (gamma to gamma)",
+    description: "Compounds that stay within gamma placement (gamma to gamma)",
     compounds: ["MP", "NQ", "OR"],
   },
   "type4-dash": {

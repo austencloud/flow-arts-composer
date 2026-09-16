@@ -4,7 +4,7 @@ import {
   calculateArrowPosition,
   calculateArrowPlacement,
 } from "$lib/shared/render/core/calculations/arrow-placement";
-import { getLayer2PointCoordinates } from "$lib/shared/render/core/calculations/grid-position";
+import { getLayer2PointCoordinates } from "$lib/shared/render/core/calculations/grid-placement";
 
 /**
  * The arrow location is where the motion's arrow glyph is drawn. For a shift

@@ -11,9 +11,9 @@ export interface LetterVariationData {
   /** The letter */
   letter: string;
   /** Start position (e.g., "alpha1", "beta3") */
-  startPosition: string;
+  startPlacement: string;
   /** End position */
-  endPosition: string;
+  endPlacement: string;
   /** Blue motion type */
   leftMotionType: string;
   /** Blue start location */

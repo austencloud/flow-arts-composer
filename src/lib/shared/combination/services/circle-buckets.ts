@@ -42,8 +42,8 @@ export function expandClosures(
   for (const unit of units) {
     const displayWord = simplifyRepeatedWord(unit.word);
     for (const closure of admissibleClosures(
-      unit.startPosition,
-      unit.endPosition,
+      unit.startPlacement,
+      unit.endPlacement,
       options
     )) {
       combinations.push({

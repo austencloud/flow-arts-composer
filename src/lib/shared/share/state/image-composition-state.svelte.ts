@@ -25,7 +25,7 @@ export interface ImageCompositionSettings {
   addWord: boolean;
   addStepNumbers: boolean;
   addDifficultyLevel: boolean;
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   darkMode: boolean;
   customName?: string; // Optional custom name for header
 
@@ -43,12 +43,12 @@ export interface ImageCompositionSettings {
   showMandala: boolean;
 
   // Start position layout: "row" = top row, "column" = left column
-  startPositionLayout: "row" | "column";
+  startPlacementLayout: "row" | "column";
 
   // Per-step-count overrides for start position layout.
   // Keys are step counts as strings (for JSON serialization).
-  // When a step count has an override, it takes precedence over the global startPositionLayout.
-  startPositionLayoutOverrides: Record<string, "row" | "column">;
+  // When a step count has an override, it takes precedence over the global startPlacementLayout.
+  startPlacementLayoutOverrides: Record<string, "row" | "column">;
 
   // Per-step-count column count overrides.
   // Keys are step counts as strings. Null records an explicit Auto choice;
@@ -72,7 +72,7 @@ export const DEFAULT_IMAGE_COMPOSITION_SETTINGS: ImageCompositionSettings = {
   addWord: true,
   addStepNumbers: true,
   addDifficultyLevel: false,
-  includeStartPosition: true,
+  includeStartPlacement: true,
   darkMode: false, // Default to light mode (will be synced from global on init)
 
   // LOOP glyph - shown by default when sequence has LOOP constraints
@@ -89,10 +89,10 @@ export const DEFAULT_IMAGE_COMPOSITION_SETTINGS: ImageCompositionSettings = {
   showMandala: true,
 
   // Start position layout - default to row (start as top row, beats fill remaining rows)
-  startPositionLayout: "row" as const,
+  startPlacementLayout: "row" as const,
 
   // No per-step-count overrides by default
-  startPositionLayoutOverrides: {},
+  startPlacementLayoutOverrides: {},
 
   // No per-step-count column count overrides by default (auto layout)
   columnCountOverrides: {},
@@ -124,8 +124,8 @@ function createSettings(
     ...supportedSeed,
     showNotes,
     addUserInfo: showNotes,
-    startPositionLayoutOverrides: {
-      ...(supportedSeed.startPositionLayoutOverrides ?? {}),
+    startPlacementLayoutOverrides: {
+      ...(supportedSeed.startPlacementLayoutOverrides ?? {}),
     },
     columnCountOverrides: {
       ...(supportedSeed.columnCountOverrides ?? {}),
@@ -433,11 +433,11 @@ class ImageCompositionStateManager {
     // Migrate: old persisted "column" default → new "row" default.
     // Only migrate if there are no per-step-count overrides (user hasn't customized yet).
     if (
-      this.settings.startPositionLayout === "column" &&
-      (!this.settings.startPositionLayoutOverrides ||
-        Object.keys(this.settings.startPositionLayoutOverrides).length === 0)
+      this.settings.startPlacementLayout === "column" &&
+      (!this.settings.startPlacementLayoutOverrides ||
+        Object.keys(this.settings.startPlacementLayoutOverrides).length === 0)
     ) {
-      this.settings.startPositionLayout = "row";
+      this.settings.startPlacementLayout = "row";
       migrated = true;
     }
 
@@ -491,8 +491,8 @@ class ImageCompositionStateManager {
    */
   private normalizeOverrides(): boolean {
     let changed = false;
-    if (!this.settings.startPositionLayoutOverrides) {
-      this.settings.startPositionLayoutOverrides = {};
+    if (!this.settings.startPlacementLayoutOverrides) {
+      this.settings.startPlacementLayoutOverrides = {};
       changed = true;
     }
     if (!this.settings.columnCountOverrides) {
@@ -587,8 +587,8 @@ class ImageCompositionStateManager {
     return this.settings.addDifficultyLevel;
   }
 
-  get includeStartPosition(): boolean {
-    return this.settings.includeStartPosition;
+  get includeStartPlacement(): boolean {
+    return this.settings.includeStartPlacement;
   }
 
   /**
@@ -627,24 +627,24 @@ class ImageCompositionStateManager {
     return this.settings.showMandala;
   }
 
-  get startPositionLayout(): "row" | "column" {
-    return this.settings.startPositionLayout;
+  get startPlacementLayout(): "row" | "column" {
+    return this.settings.startPlacementLayout;
   }
 
   /**
    * Resolve start position layout for a specific step count.
    * Checks per-step-count overrides first, then falls back to the global setting.
    */
-  getStartPositionLayoutForStepCount(stepCount: number): "row" | "column" {
-    const override = this.settings.startPositionLayoutOverrides[String(stepCount)];
-    return override ?? this.settings.startPositionLayout;
+  getStartPlacementLayoutForStepCount(stepCount: number): "row" | "column" {
+    const override = this.settings.startPlacementLayoutOverrides[String(stepCount)];
+    return override ?? this.settings.startPlacementLayout;
   }
 
   /**
    * Check if a specific step count has a per-step-count override.
    */
-  hasStartPositionLayoutOverride(stepCount: number): boolean {
-    return String(stepCount) in this.settings.startPositionLayoutOverrides;
+  hasStartPlacementLayoutOverride(stepCount: number): boolean {
+    return String(stepCount) in this.settings.startPlacementLayoutOverrides;
   }
 
   // Get all settings (for passing to share service). Also the snapshot half of
@@ -724,8 +724,8 @@ class ImageCompositionStateManager {
     this.notifyObservers();
   }
 
-  setIncludeStartPosition(value: boolean): void {
-    this.settings.includeStartPosition = value;
+  setIncludeStartPlacement(value: boolean): void {
+    this.settings.includeStartPlacement = value;
     this.saveToStorage();
     this.notifyObservers();
   }
@@ -758,8 +758,8 @@ class ImageCompositionStateManager {
     this.notifyObservers();
   }
 
-  setStartPositionLayout(value: "row" | "column"): void {
-    this.settings.startPositionLayout = value;
+  setStartPlacementLayout(value: "row" | "column"): void {
+    this.settings.startPlacementLayout = value;
     this.saveToStorage();
     this.notifyObservers();
   }
@@ -768,12 +768,12 @@ class ImageCompositionStateManager {
    * Set start position layout for a specific step count.
    * If the value matches the global default, removes the override instead.
    */
-  setStartPositionLayoutForStepCount(stepCount: number, value: "row" | "column"): void {
-    if (value === this.settings.startPositionLayout) {
+  setStartPlacementLayoutForStepCount(stepCount: number, value: "row" | "column"): void {
+    if (value === this.settings.startPlacementLayout) {
       // Matches global default - remove override to keep storage clean
-      delete this.settings.startPositionLayoutOverrides[String(stepCount)];
+      delete this.settings.startPlacementLayoutOverrides[String(stepCount)];
     } else {
-      this.settings.startPositionLayoutOverrides[String(stepCount)] = value;
+      this.settings.startPlacementLayoutOverrides[String(stepCount)] = value;
     }
     this.saveToStorage();
     this.notifyObservers();
@@ -782,8 +782,8 @@ class ImageCompositionStateManager {
   /**
    * Remove the per-step-count override so it falls back to global default.
    */
-  clearStartPositionLayoutOverride(stepCount: number): void {
-    delete this.settings.startPositionLayoutOverrides[String(stepCount)];
+  clearStartPlacementLayoutOverride(stepCount: number): void {
+    delete this.settings.startPlacementLayoutOverrides[String(stepCount)];
     this.saveToStorage();
     this.notifyObservers();
   }
@@ -898,7 +898,7 @@ class ImageCompositionStateManager {
 }
 
 // Singleton instance — preserved across HMR so its loaded settings (showQRCode,
-// showMandala, start-position layout) stay stable. Those feed the thumbnail cache
+// showMandala, start-placement layout) stay stable. Those feed the thumbnail cache
 // key; if the manager reconstructed on each dev save it would briefly serve
 // DEFAULT settings, churning the hash and forcing every gallery thumbnail to
 // re-render. Mirrors auth-state's import.meta.hot.data pattern.

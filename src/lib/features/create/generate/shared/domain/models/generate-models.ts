@@ -15,7 +15,7 @@ import type { LOOPSpec, LOOPSpecWire } from "@tka/sequence-engine/loop";
 export type { LOOPType };
 import type {
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -49,14 +49,14 @@ export interface GenerationOptions {
   motionTypeFilter?: "no-dash" | "prefer-dash" | null | undefined;
 
   // Customize options - advanced constraints for generation
-  /** @deprecated Use blockedStartPositions for multi-select */
-  startPosition?: PictographData | null; // Specific start position constraint
-  endPosition?: PictographData | null; // Specific end position constraint
+  /** @deprecated Use blockedStartPlacements for multi-select */
+  startPlacement?: PictographData | null; // Specific start placement constraint
+  endPlacement?: PictographData | null; // Specific end placement constraint
   mustContainLetters?: Letter[]; // Letters that must appear in the sequence
   mustNotContainLetters?: Letter[]; // Letters that must NOT appear in the sequence
 
-  // Multi-select start position constraints (blocklist approach)
-  blockedStartPositions?: GridPosition[]; // Positions that should NOT be used
+  // Multi-select start placement constraints (blocklist approach)
+  blockedStartPlacements?: GridPlacement[]; // Placements that should NOT be used
 }
 
 export interface LetterDerivationResult {
@@ -80,10 +80,10 @@ export { LOOPComponent, RESERVED_ORIENTATION_PRIMITIVES };
  * Domain of a LOOP transformation.
  *
  * A LOOP component can operate in one of three spaces:
- * - `location`: grid positions transform between passes (classic LOOPs)
- * - `orientation`: orientations transform between passes (positions stay pinned)
+ * - `location`: grid locations transform between passes (classic LOOPs)
+ * - `orientation`: orientations transform between passes (locations stay pinned)
  * - `both`: detected in both spaces (e.g., a sequence that rotates in location
- *   AND accumulates an orientation cycle that matches the positional cycle)
+ *   AND accumulates an orientation cycle that matches the locational cycle)
  */
 export type LOOPDomain = "location" | "orientation" | "both";
 
@@ -112,7 +112,7 @@ export interface LOOPComponentInfo {
   color: string;
 }
 
-export enum PositionSystem {
+export enum PlacementSystem {
   ALPHA_TO_ALPHA = "alpha_to_alpha",
   ALPHA_TO_BETA = "alpha_to_beta",
   ALPHA_TO_GAMMA = "alpha_to_gamma",

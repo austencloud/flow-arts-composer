@@ -6,7 +6,7 @@
  * cycles back to its start value after 1, 2, or 4 passes.
  *
  * Why this exists:
- * Two sequences can share identical grid-position trajectories yet have
+ * Two sequences can share identical grid-placement trajectories yet have
  * different orientation behavior. A 4-step sequence where every beat is at
  * alpha1 but the props rotate 90° per beat is orientation-rotated (period 4)
  * while being position-static. The positional detector misses this entirely.

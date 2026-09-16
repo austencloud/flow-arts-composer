@@ -24,8 +24,8 @@ import { ExportGlyphPrerenderer } from "$lib/shared/animation-engine/services/ex
 function createStep(letter: typeof Letter.A | typeof Letter.W): StepData {
   return {
     letter,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     gridMode: GridMode.DIAMOND,
     motions: {
       left: createMotionData({

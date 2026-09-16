@@ -18,7 +18,7 @@ import type { HandRelationship } from "$lib/shared/create/domain/hand-relationsh
 export type { LOOPType };
 import type {
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -74,26 +74,26 @@ export interface GenerationOptions {
 
   // Customize options - advanced constraints for generation
   /**
-   * Pin the sequence to this start position. The orchestrator reads nothing
-   * from `startPosition` but its grid position, so a caller that has the
-   * position and no pictograph says it here instead of building a motionless
+   * Pin the sequence to this start placement. The orchestrator reads nothing
+   * from `startPlacement` but its grid placement, so a caller that has the
+   * placement and no pictograph says it here instead of building a motionless
    * one to carry a single string.
    */
-  startPositionId?: GridPosition;
-  /** @deprecated Use blockedStartPositions for multi-select */
-  startPosition?: PictographData | null; // Specific start position constraint
-  /** @deprecated Use endPositions for multi-select */
-  endPosition?: PictographData | null; // Specific end position constraint
+  startPlacementId?: GridPlacement;
+  /** @deprecated Use blockedStartPlacements for multi-select */
+  startPlacement?: PictographData | null; // Specific start placement constraint
+  /** @deprecated Use endPlacements for multi-select */
+  endPlacement?: PictographData | null; // Specific end placement constraint
   /**
-   * Allowed end positions. The sequence must end at one of them.
+   * Allowed end placements. The sequence must end at one of them.
    * Empty/undefined = unconstrained ("Any").
    */
-  endPositions?: GridPosition[];
+  endPlacements?: GridPlacement[];
   mustContainLetters?: Letter[]; // Letters that must appear in the sequence
   mustNotContainLetters?: Letter[]; // Letters that must NOT appear in the sequence
 
-  // Multi-select start position constraints (blocklist approach)
-  blockedStartPositions?: GridPosition[]; // Positions that should NOT be used
+  // Multi-select start placement constraints (blocklist approach)
+  blockedStartPlacements?: GridPlacement[]; // Placements that should NOT be used
 
   /**
    * Override the start orientation per hand ("in" | "out" | "clock" | "counter").
@@ -126,10 +126,10 @@ export { LOOPComponent, RESERVED_ORIENTATION_PRIMITIVES };
  * Domain of a LOOP transformation.
  *
  * A LOOP component can operate in one of three spaces:
- * - `location`: grid positions transform between passes (classic LOOPs)
- * - `orientation`: orientations transform between passes (positions stay pinned)
+ * - `location`: grid placements transform between passes (classic LOOPs)
+ * - `orientation`: orientations transform between passes (placements stay pinned)
  * - `both`: detected in both spaces (e.g., a sequence that rotates in location
- *   AND accumulates an orientation cycle that matches the positional cycle)
+ *   AND accumulates an orientation cycle that matches the placement cycle)
  */
 export type LOOPDomain = "location" | "orientation" | "both";
 
@@ -158,7 +158,7 @@ export interface LOOPComponentInfo {
   color: string;
 }
 
-export enum PositionSystem {
+export enum PlacementSystem {
   ALPHA_TO_ALPHA = "alpha_to_alpha",
   ALPHA_TO_BETA = "alpha_to_beta",
   ALPHA_TO_GAMMA = "alpha_to_gamma",

@@ -5,26 +5,26 @@
   interface Props {
     families: readonly CatalogFamily[];
     selectedFamilyIds: string[];
-    activePosition: string | null;
+    activePlacement: string | null;
     totalFiltered: number;
     totalSequences: number;
     isLargeCatalog: boolean;
     onFamilyChange: (familyIds: string[]) => void;
-    onPositionChange: (position: string | null) => void;
+    onPlacementChange: (placement: string | null) => void;
   }
 
   let {
     families,
     selectedFamilyIds,
-    activePosition,
+    activePlacement,
     totalFiltered,
     totalSequences,
     isLargeCatalog,
     onFamilyChange,
-    onPositionChange,
+    onPlacementChange,
   }: Props = $props();
 
-  const positions = ['alpha', 'beta', 'gamma'] as const;
+  const placements = ['alpha', 'beta', 'gamma'] as const;
 
   function toggleFamily(id: string) {
     const current = new Set(selectedFamilyIds);
@@ -36,8 +36,8 @@
     onFamilyChange([...current]);
   }
 
-  function togglePosition(pos: string) {
-    onPositionChange(activePosition === pos ? null : pos);
+  function togglePlacement(placement: string) {
+    onPlacementChange(activePlacement === placement ? null : placement);
   }
 </script>
 
@@ -61,13 +61,13 @@
   <div class="filter-section">
     <span class="filter-label">Start</span>
     <div class="chip-row">
-      {#each positions as pos (pos)}
+      {#each placements as placement (placement)}
         <FilterChipBase
           mode="toggle"
           size="sm"
-          label={pos}
-          active={activePosition === pos}
-          onclick={() => togglePosition(pos)}
+          label={placement}
+          active={activePlacement === placement}
+          onclick={() => togglePlacement(placement)}
         />
       {/each}
     </div>

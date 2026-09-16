@@ -38,8 +38,8 @@ export function resolveMotionType(
   gridMode: GridMode
 ): MotionType {
   const handMotionType = calculateMotionType(
-    step.startPosition,
-    step.endPosition,
+    step.startPlacement,
+    step.endPlacement,
     gridMode
   );
   switch (handMotionType) {
@@ -56,8 +56,8 @@ export function resolveMotionType(
       if (step.turnCount === -0.5) return MotionType.FLOAT;
 
       const handPathDir = calculateRotationDirection(
-        step.startPosition,
-        step.endPosition,
+        step.startPlacement,
+        step.endPlacement,
         gridMode
       );
       return handPathDir === step.rotationDirection
@@ -79,8 +79,8 @@ export interface BuilderHydration {
 /** Recover the builder's editable motion fields without dropping sequence-only metadata. */
 export function motionToBuilderStep(motion: MotionData): BuilderStep {
   return {
-    startPosition: motion.startLocation,
-    endPosition: motion.endLocation,
+    startPlacement: motion.startLocation,
+    endPlacement: motion.endLocation,
     rotationDirection: motion.rotationDirection,
     turnCount: motion.turns === "fl" ? -0.5 : motion.turns,
     startOrientation: motion.startOrientation,
@@ -106,7 +106,7 @@ export function sequenceToBuilderHydration(
   }
 
   const startPoses: Partial<Record<HandSide, BuilderStartPose>> = {};
-  const start = sequence.startingPosition ?? sequence.startPosition;
+  const start = sequence.startingPlacement ?? sequence.startPlacement;
   const startLeft = start?.motions?.[HandSide.LEFT];
   const startRight = start?.motions?.[HandSide.RIGHT];
 
@@ -117,7 +117,7 @@ export function sequenceToBuilderHydration(
     };
   } else if (leftSteps[0]) {
     startPoses[HandSide.LEFT] = {
-      location: leftSteps[0].startPosition,
+      location: leftSteps[0].startPlacement,
       orientation: leftSteps[0].startOrientation,
     };
   }
@@ -129,7 +129,7 @@ export function sequenceToBuilderHydration(
     };
   } else if (rightSteps[0]) {
     startPoses[HandSide.RIGHT] = {
-      location: rightSteps[0].startPosition,
+      location: rightSteps[0].startPlacement,
       orientation: rightSteps[0].startOrientation,
     };
   }
@@ -170,16 +170,16 @@ export function stepToMotion(
 
   const motion = createMotionData({
     hand: color,
-    startLocation: step.startPosition,
-    endLocation: step.endPosition,
+    startLocation: step.startPlacement,
+    endLocation: step.endPlacement,
     motionType,
     rotationDirection: resolvedRotation,
     turns: resolvedTurns,
     startOrientation: step.startOrientation,
     endOrientation: step.endOrientation,
     gridMode,
-    arrowLocation: step.startPosition,
-    handPath: calculateHandPath(step.startPosition, step.endPosition, gridMode),
+    arrowLocation: step.startPlacement,
+    handPath: calculateHandPath(step.startPlacement, step.endPlacement, gridMode),
     isVisible: true,
   });
 
@@ -281,7 +281,7 @@ export function convertToPictographs(
   return result;
 }
 
-export function convertToStartPosition(
+export function convertToStartPlacement(
   startPoses: Partial<Record<HandSide, BuilderStartPose>>,
   leftSteps: BuilderStep[],
   rightSteps: BuilderStep[],
@@ -294,7 +294,7 @@ export function convertToStartPosition(
     startPoses[HandSide.LEFT] ??
     (firstLeft
       ? {
-          location: firstLeft.startPosition,
+          location: firstLeft.startPlacement,
           orientation: firstLeft.startOrientation,
         }
       : null);
@@ -302,7 +302,7 @@ export function convertToStartPosition(
     startPoses[HandSide.RIGHT] ??
     (firstRight
       ? {
-          location: firstRight.startPosition,
+          location: firstRight.startPlacement,
           orientation: firstRight.startOrientation,
         }
       : null);

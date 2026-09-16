@@ -9,7 +9,7 @@
  * RESPONSIBILITY: Persistence coordination, observes state changes
  */
 
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
 import { captureEvent } from "$lib/shared/analytics/services/posthog";
@@ -17,8 +17,8 @@ import type { ActiveCreateModule } from "$lib/shared/foundation/ui/ui-types";
 
 export interface PersistenceState {
   currentSequence: SequenceData | null;
-  selectedStartPosition: StartPositionData | null;
-  hasStartPosition: boolean;
+  selectedStartPlacement: StartPlacementData | null;
+  hasStartPlacement: boolean;
   activeBuildSection: ActiveCreateModule;
 }
 
@@ -110,8 +110,8 @@ export function createSequencePersistenceCoordinator(
 
     async saveSequenceOnly(
       currentSequence: SequenceData | null,
-      selectedStartPosition: StartPositionData | null,
-      hasStartPosition: boolean
+      selectedStartPlacement: StartPlacementData | null,
+      hasStartPlacement: boolean
     ): Promise<void> {
       if (!persistenceService || !state.autoSaveEnabled) return;
 
@@ -120,8 +120,8 @@ export function createSequencePersistenceCoordinator(
         // This eliminates an expensive IndexedDB read operation on every beat addition
         await persistenceService.saveCurrentState({
           currentSequence,
-          selectedStartPosition,
-          hasStartPosition,
+          selectedStartPlacement,
+          hasStartPlacement,
           activeBuildSection: cachedActiveTab,
         });
 

@@ -43,7 +43,7 @@ there is no risk of grading our own homework.
    `pos`/`rot` vectors through **his** `closestPoint()` to recover named grid
    points (`MTC`, `MR`, …).
 3. Map those to TKA compass (`MTC→n`, `MR→e`, `MBC→s`, `ML→w`, and the four
-   intercardinals), then resolve `(startPosition, endPosition, motionTypes,
+   intercardinals), then resolve `(startPlacement, endPlacement, motionTypes,
 locations)` against `static/data/pictographs/{Diamond,Box}PictographDataframe.csv`.
    **Position names and letters both come from the dataframes** — no TKA
    numbering was invented.

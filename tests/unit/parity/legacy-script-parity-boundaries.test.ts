@@ -132,7 +132,7 @@ describe("legacy sequence script parity boundaries", () => {
   it("decomposes current and legacy hand keys into the same solo props", () => {
     const current = composer.decomposeSequence(raw);
     const legacy = JSON.parse(JSON.stringify(raw)) as RawSequence & {
-      startPosition?: { motions?: Record<string, unknown> };
+      startPlacement?: { motions?: Record<string, unknown> };
       steps: Array<{ motions?: Record<string, unknown> }>;
     };
 
@@ -143,7 +143,7 @@ describe("legacy sequence script parity boundaries", () => {
       delete motions.left;
       delete motions.right;
     };
-    remap(legacy.startPosition?.motions);
+    remap(legacy.startPlacement?.motions);
     legacy.steps.forEach((step) => remap(step.motions));
 
     const fromLegacy = composer.decomposeSequence(legacy);
@@ -183,7 +183,7 @@ describe("legacy sequence script parity boundaries", () => {
       "scripts/backfill-sequence-loop-type.cjs"
     );
     const startRepair = readProjectFile(
-      "scripts/repair-broken-start-positions.cjs"
+      "scripts/repair-broken-start-placements.cjs"
     );
 
     expect(loopBackfill).toContain('data.visibility === "public"');

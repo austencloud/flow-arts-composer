@@ -8,7 +8,7 @@ import {
   GridMode,
   GridLocation,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -49,7 +49,7 @@ const motion = (color: HandSide, from: GridLocation, to: GridLocation) =>
 // Positions only derive for cardinal pairs.
 const gp = (a: GridLocation, b: GridLocation) => {
   try {
-    return getGridPositionFromLocations(a, b);
+    return getGridPlacementFromLocations(a, b);
   } catch {
     return null;
   }
@@ -67,8 +67,8 @@ const box = (
     id,
     letter,
     gridMode: GridMode.DIAMOND,
-    startPosition: gp(m[0], m[2]),
-    endPosition: gp(m[1], m[3]),
+    startPlacement: gp(m[0], m[2]),
+    endPlacement: gp(m[1], m[3]),
     motions: {
       left: motion(HandSide.LEFT, m[0], m[1]),
       right: motion(HandSide.RIGHT, m[2], m[3]),

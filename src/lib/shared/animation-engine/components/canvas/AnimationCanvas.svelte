@@ -14,7 +14,7 @@
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
   import type { TrailSettings } from "$lib/shared/animation-engine/domain/types/trail-types";
   import type { VideoRenderResult } from "$lib/shared/animation-engine/services/video-pre-renderer";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
   let {
@@ -37,7 +37,7 @@
     gridVisible?: boolean;
     gridMode?: GridMode | null | undefined;
     letter?: Letter | null;
-    stepData?: StartPositionData | StepData | null;
+    stepData?: StartPlacementData | StepData | null;
     sequenceData?: SequenceData | null;
     isPlaying?: boolean;
     speed?: number;

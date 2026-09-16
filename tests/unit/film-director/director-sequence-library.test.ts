@@ -37,7 +37,7 @@ function deps(): DirectorSequenceLibraryDeps & { calls: string[] } {
       },
       invertSequence: stamp("invert"),
       rewindSequence: stamp("rewind"),
-      shiftStartPosition: (s, step) => {
+      shiftStartPlacement: (s, step) => {
         calls.push(`start-at(${tag(s)},${step})`);
         return seq(`${tag(s)}>start-at`);
       },

@@ -9,8 +9,8 @@
    *                     them floats and the arrow pipeline draws the system arrow).
    *   - Count numbers → StepData.stepNumber (0 → "Start", 1..n numerals) via the
    *                     renderer's top-left StepNumber overlay.
-   *   - Positions     → startPosition/endPosition (getGridPositionFromLocations)
-   *                     → the top-centre γ→γ PositionGlyph.
+   *   - Positions     → startPlacement/endPlacement (getGridPlacementFromLocations)
+   *                     → the top-centre γ→γ PlacementGlyph.
    *   - Mode          → bottom-right ElementalGlyph, derived GEOMETRICALLY by the
    *                     TnD deriver (deriveTnD is letter-free and classifies both
    *                     gamma halves + the quarter modes), so no letter is needed.
@@ -45,7 +45,7 @@
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
   import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
-  import PositionGlyph from "$lib/shared/pictograph/shared/components/PositionGlyph.svelte";
+  import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
   import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import {
     MotionType,
@@ -54,9 +54,9 @@
   import {
     GridMode,
     GridLocation,
-    GridPosition,
+    GridPlacement,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -99,8 +99,8 @@
       id: `gamma-${step}-${m.join("-")}`,
       letter,
       gridMode: GridMode.DIAMOND,
-      startPosition: getGridPositionFromLocations(m[0], m[2]),
-      endPosition: getGridPositionFromLocations(m[1], m[3]),
+      startPlacement: getGridPlacementFromLocations(m[0], m[2]),
+      endPlacement: getGridPlacementFromLocations(m[1], m[3]),
       motions: {
         left: motion(HandSide.LEFT, m[0], m[1]),
         right: motion(HandSide.RIGHT, m[2], m[3]),
@@ -232,7 +232,7 @@
 
   // Left row labels (γ→γ glyph over the italic mode name) + QO column headers,
   // at the proof's own coordinates (glyph line 21.7pt above the mode name).
-  // `pos` renders the real TKA start→end PositionGlyph instead of Greek text.
+  // `pos` renders the real TKA start→end PlacementGlyph instead of Greek text.
   type Label = {
     x: number;
     y: number;
@@ -240,7 +240,7 @@
     fs: number;
     t: string;
     i?: boolean;
-    pos?: { start: GridPosition; end: GridPosition };
+    pos?: { start: GridPlacement; end: GridPlacement };
   };
   let LABELS: Label[] = $state([
     {
@@ -249,7 +249,7 @@
       w: 72,
       fs: 18,
       t: "γ→γ",
-      pos: { start: GridPosition.GAMMA1, end: GridPosition.GAMMA1 },
+      pos: { start: GridPlacement.GAMMA1, end: GridPlacement.GAMMA1 },
     },
     { x: 8, y: 203.3, w: 72, fs: 13, i: true, t: "Quarter-Opp" },
     {
@@ -258,7 +258,7 @@
       w: 72,
       fs: 18,
       t: "γ→γ",
-      pos: { start: GridPosition.GAMMA1, end: GridPosition.GAMMA1 },
+      pos: { start: GridPlacement.GAMMA1, end: GridPlacement.GAMMA1 },
     },
     { x: 8, y: 345.6, w: 72, fs: 13, i: true, t: "Quarter-Same" },
     { x: 190.6, y: 139.5, w: 100, fs: 14, i: true, t: "Parallel" },
@@ -355,7 +355,7 @@
                 rightPropTypeOverride={PropType.HAND}
                 showGrid={true}
                 showTKA={false}
-                showPositions={(sd.stepNumber ?? 0) > 0}
+                showPlacements={(sd.stepNumber ?? 0) > 0}
                 showElemental={(sd.stepNumber ?? 0) > 0}
                 showReversals={false}
                 showTnD={false}
@@ -406,7 +406,7 @@
     </p>
   {/each}
 
-  <!-- Left row labels: the γ→γ lines render the real TKA PositionGlyph; the
+  <!-- Left row labels: the γ→γ lines render the real TKA PlacementGlyph; the
        italic mode names + QO column headers stay as text. -->
   {#each LABELS as l, i (i)}
     <span
@@ -427,7 +427,7 @@
           aria-label={l.t}
           style="height:{l.fs * S}px"
         >
-          <PositionGlyph startPosition={l.pos.start} endPosition={l.pos.end} />
+          <PlacementGlyph startPlacement={l.pos.start} endPlacement={l.pos.end} />
         </svg>
       {:else}{l.t}{/if}
     </span>
@@ -490,7 +490,7 @@
     font-weight: 400;
     font-style: italic;
   }
-  /* γ→γ renders as the real TKA PositionGlyph SVG, centred in the column. */
+  /* γ→γ renders as the real TKA PlacementGlyph SVG, centred in the column. */
   .label.glyph {
     display: flex;
     align-items: center;

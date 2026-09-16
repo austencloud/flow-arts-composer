@@ -20,9 +20,9 @@ describe("generation error reports", () => {
       handRelationship: "mirrored",
       handRelationshipInverted: true,
       matchHandTurns: false,
-      startPositionId: "alpha1",
-      blockedStartPositions: ["beta1", "gamma3"],
-      endPositions: ["alpha3", "alpha7"],
+      startPlacementId: "alpha1",
+      blockedStartPlacements: ["beta1", "gamma3"],
+      endPlacements: ["alpha3", "alpha7"],
       mustContainLetters: ["A"],
       mustNotContainLetters: [],
       leftStartOrientation: "out",
@@ -52,8 +52,8 @@ describe("generation error reports", () => {
       handRelationship: "mirrored",
       handRelationshipInverted: true,
       matchHandTurns: false,
-      startPositionId: "alpha1",
-      endPositions: ["alpha3", "alpha7"],
+      startPlacementId: "alpha1",
+      endPlacements: ["alpha3", "alpha7"],
       leftStartOrientation: "out",
       rightStartOrientation: "clock",
       turnPattern: options.turnPattern,
@@ -67,10 +67,10 @@ describe("generation error reports", () => {
   it("freezes the failed attempt's values before settings can change", () => {
     const options = request();
     const snapshot = captureGenerationErrorContext(options);
-    options.endPositions!.length = 0;
-    options.blockedStartPositions!.length = 0;
-    expect(snapshot.endPositions).toEqual(["alpha3", "alpha7"]);
-    expect(snapshot.blockedStartPositions).toEqual(["beta1", "gamma3"]);
+    options.endPlacements!.length = 0;
+    options.blockedStartPlacements!.length = 0;
+    expect(snapshot.endPlacements).toEqual(["alpha3", "alpha7"]);
+    expect(snapshot.blockedStartPlacements).toEqual(["beta1", "gamma3"]);
   });
 
   it("copies nested configuration, false, zero, null, and empty lists without losing data", () => {
@@ -85,8 +85,8 @@ describe("generation error reports", () => {
       severity: "error",
       reportable: true,
       timestamp: new Date(0),
-      technicalDetails: "No reachable positions",
-      stack: "Error: No reachable positions",
+      technicalDetails: "No reachable placements",
+      stack: "Error: No reachable placements",
       context: {
         module: "create",
         tab: "generate",
@@ -103,10 +103,10 @@ describe("generation error reports", () => {
       "Turn Intensity: 0",
       "Motion Type Filter: null",
       "Must Not Contain Letters: []",
-      "End Positions: alpha3, alpha7",
+      "End Placements: alpha3, alpha7",
       "Left Start Orientation: out",
       "Tab: generate",
-      "No reachable positions",
+      "No reachable placements",
     ])
       expect(report).toContain(text);
     expect(report).not.toContain("[object Object]");

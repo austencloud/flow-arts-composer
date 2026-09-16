@@ -233,9 +233,9 @@ function drawGlyph(
 
 export interface SceneOverlay {
   stepIndex: number;
-  isStartPosition: boolean;
+  isStartPlacement: boolean;
   letterGlyphs: ImageBitmap[];
-  startPositionGlyph: ImageBitmap | null;
+  startPlacementGlyph: ImageBitmap | null;
 }
 
 export interface RenderState {
@@ -306,17 +306,17 @@ export function renderScene(
 
   if (!overlay) return;
 
-  const { stepIndex, isStartPosition, letterGlyphs, startPositionGlyph } =
+  const { stepIndex, isStartPlacement, letterGlyphs, startPlacementGlyph } =
     overlay;
 
   if (renderState) {
     const stepChanged =
       stepIndex !== renderState.prevStepIndex ||
-      isStartPosition !== renderState.prevIsStart;
+      isStartPlacement !== renderState.prevIsStart;
     if (stepChanged) {
       renderState.crossfadeProgress = 0;
       renderState.prevStepIndex = stepIndex;
-      renderState.prevIsStart = isStartPosition;
+      renderState.prevIsStart = isStartPlacement;
     }
     if (renderState.crossfadeProgress < 1) {
       renderState.crossfadeProgress = Math.min(
@@ -331,7 +331,7 @@ export function renderScene(
   ctx.save();
   ctx.scale(scale, scale);
 
-  const stepNumber = isStartPosition ? 0 : stepIndex + 1;
+  const stepNumber = isStartPlacement ? 0 : stepIndex + 1;
   ctx.fillStyle = STEP_NUM_COLOR;
   ctx.font = stepNumber === 0 ? START_FONT : STEP_NUM_FONT;
   ctx.textBaseline = "top";
@@ -344,8 +344,8 @@ export function renderScene(
   );
   ctx.globalAlpha = 1;
 
-  if (isStartPosition && startPositionGlyph) {
-    drawGlyph(ctx, startPositionGlyph, fadeIn);
+  if (isStartPlacement && startPlacementGlyph) {
+    drawGlyph(ctx, startPlacementGlyph, fadeIn);
   } else if (stepIndex >= 0 && stepIndex < letterGlyphs.length) {
     drawGlyph(ctx, letterGlyphs[stepIndex]!, fadeIn);
   }

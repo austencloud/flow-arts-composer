@@ -2,7 +2,7 @@ export interface Placement { x: number; y: number; w: number; h: number; }
 
 export type BackBitmapKind =
   | "brand" | "url-ornament" | "difficulty-badge" | "loop-icon"
-  | "start-pos-pictograph" | "turn-glyph" | "reversal-glyph"
+  | "start-placement-pictograph" | "turn-glyph" | "reversal-glyph"
   | "step-count" | "loop-label";
 
 export interface PlacedBitmap {

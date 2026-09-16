@@ -79,7 +79,7 @@
         data-glossary-search
         name="atlas-search"
         type="search"
-        placeholder="Find a letter, motion, position, or pattern"
+        placeholder="Find a letter, motion, placement, or pattern"
         aria-label="Find anything in the Kinetic Atlas"
         autocomplete="off"
         bind:value={query}

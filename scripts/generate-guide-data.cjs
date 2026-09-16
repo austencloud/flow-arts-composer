@@ -51,8 +51,8 @@ function csvRowToPictographData(row, index) {
   return {
     id,
     letter: row.letter,
-    startPosition: row.startPosition,
-    endPosition: row.endPosition,
+    startPlacement: row.startPlacement,
+    endPlacement: row.endPlacement,
     gridMode: "DIAMOND",
     motions: {
       left: buildMotion("blue"),
@@ -140,7 +140,7 @@ function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
   const chapters = {
-    "positions-motions": buildChapter10(letterIndex),
+    "placements-motions": buildChapter10(letterIndex),
     letters: buildChapter11(letterIndex),
     words: buildChapter12(letterIndex),
   };

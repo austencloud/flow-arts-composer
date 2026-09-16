@@ -1,9 +1,9 @@
 import { browser } from '$app/environment';
 
 import { RandomSequenceGenerator } from './services/random-sequence-generator';
-import * as loopEndPositionResolver from './services/loop-end-position-resolver';
+import * as loopEndPlacementResolver from './services/loop-end-placement-resolver';
 import { letterQueryHandler } from '$lib/shared/pictograph/tka-glyph/services/letter-query-handler';
-import { getStartPositionValidator } from './get-start-position-validator';
+import { getStartPlacementValidator } from './get-start-placement-validator';
 import * as orientationContinuityValidator from './services/orientation-continuity-validator';
 import { getSequenceExtender } from '$lib/features/create/shared/get-sequence-extender';
 import { getStepConverter } from '$lib/features/create/generate/shared/get-step-converter';
@@ -15,11 +15,11 @@ export function getRandomSequenceGenerator(): RandomSequenceGenerator {
 	if (!browser) throw new Error('getRandomSequenceGenerator() is browser-only');
 	return instance ??= new RandomSequenceGenerator(
 		letterQueryHandler,
-		getStartPositionValidator(),
+		getStartPlacementValidator(),
 		orientationContinuityValidator,
 		getSequenceExtender(),
 		getStepConverter(),
 		reversalDetector,
-		loopEndPositionResolver
+		loopEndPlacementResolver
 	);
 }

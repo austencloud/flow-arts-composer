@@ -8,7 +8,7 @@
  * the real scoring running against a world that reacts the way the app reacts,
  * for a few hundred decisions, with every decision written down.
  *
- * So this models the app as state + annotated DOM. Pressing a `start-position`
+ * So this models the app as state + annotated DOM. Pressing a `start-placement`
  * really does create a sequence; pressing `clear` really does raise a confirm;
  * the generate module really is annotated with nothing, because that is the
  * truth today and hiding it would hide the finding.
@@ -115,7 +115,7 @@ function screenKinds(s: SimState): Record<string, number> {
       }
       return {
         ...(s.seqLen === 0
-          ? { "start-position": 8 }
+          ? { "start-placement": 8 }
           : {
               // Continuity is a property of the TRANSITION, not of the letter
               // (getReversalCount takes the surrounding sequence). So the
@@ -181,7 +181,7 @@ function screenKinds(s: SimState): Record<string, number> {
 }
 
 const LABELS: Record<string, string[]> = {
-  "start-position": ["alpha1", "beta3", "gamma5"],
+  "start-placement": ["alpha1", "beta3", "gamma5"],
   option: ["A", "B", "D", "G", "P", "Σ", "Ψ", "W-"],
   "option-filter": ["Continuous", "All", "Reversals"],
   turn: ["Blue turns", "Red turns"],
@@ -397,7 +397,7 @@ export function createSimApp(
     presses.push({ kind, label, moduleId: state.moduleId });
 
     switch (kind) {
-      case "start-position":
+      case "start-placement":
         replaceSequence(1);
         break;
       case "option":

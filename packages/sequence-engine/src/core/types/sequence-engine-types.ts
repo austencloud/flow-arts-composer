@@ -10,7 +10,7 @@
  *     app code still imports via the legacy names while Phase 2 migrates
  *     the app layer. After Phase 2 the aliases can be removed.
  *   - Legacy enum type aliases (MotionType, RotationDirection, Orientation,
- *     GridLocation, LetterCategory, LetterType, PositionGroup) remain as
+ *     GridLocation, LetterCategory, LetterType, PlacementGroup) remain as
  *     loose string literal unions so existing string-flavored engine paths
  *     keep compiling until the enum migration sweep.
  */
@@ -32,10 +32,10 @@ export type SequenceStep = _Step;
 export type MotionData = _Motion;
 
 /**
- * Position groups for letter transitions.
- * Letters can only follow other letters if their position groups match.
+ * Placement groups for letter transitions.
+ * Letters can only follow other letters if their placement groups match.
  */
-export type PositionGroup = "alpha" | "beta" | "gamma";
+export type PlacementGroup = "alpha" | "beta" | "gamma";
 
 /**
  * Motion types for hand movements.
@@ -103,12 +103,12 @@ export type LetterCategory =
 export type LetterType = 1 | 2 | 3 | 4 | 5 | 6;
 
 /**
- * Information about a letter's position transitions.
+ * Information about a letter's placement transitions.
  */
-export interface LetterPositionInfo {
+export interface LetterPlacementInfo {
   letter: string;
-  startPositionGroup: PositionGroup;
-  endPositionGroup: PositionGroup;
+  startPlacementGroup: PlacementGroup;
+  endPlacementGroup: PlacementGroup;
   category?: LetterCategory;
 }
 
@@ -116,8 +116,8 @@ export interface LetterPositionInfo {
  * Raw letter mapping data from letter-mappings.json.
  */
 export interface LetterMappingData {
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: string;
   rightMotion: string;
 }
@@ -139,7 +139,7 @@ export interface LetterMappingsJson {
 export interface SequenceResult {
   /** Whether the build was successful */
   isValid: boolean;
-  /** The sequence steps (index 0 is start position) */
+  /** The sequence steps (index 0 is start placement) */
   steps: SequenceStep[];
   /** Error message if build failed */
   error?: string;

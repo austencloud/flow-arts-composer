@@ -5,7 +5,7 @@ export function getLevelConstraints(majorLevel: MajorLevel): string {
 
   if (majorLevel >= 1) {
     constraints.push(
-      "Level 1 terms: grid, diamond, box, cardinal, intercardinal, alpha, beta, gamma, position, static, shift, dash, motion, pro, anti, prospin, antispin, orientation, in, out, Type 1-6, pictograph, arrow, sequence, LOOP, reversal"
+      "Level 1 terms: grid, diamond, box, cardinal, intercardinal, alpha, beta, gamma, placement, static, shift, dash, motion, pro, anti, prospin, antispin, orientation, in, out, Type 1-6, pictograph, arrow, sequence, LOOP, reversal"
     );
   }
   if (majorLevel >= 2) {
@@ -24,7 +24,7 @@ export function getLevelConstraints(majorLevel: MajorLevel): string {
     constraints.push("Level 6 terms: center, center point, 9-point grid, centric, hash, half-dash, tau, terra");
   }
   if (majorLevel >= 7) {
-    constraints.push("Level 7 terms: conjoined, dual grid, junction point, dash+, dash++, extended dash, inter-grid position");
+    constraints.push("Level 7 terms: conjoined, dual grid, junction point, dash+, dash++, extended dash, inter-grid placement");
   }
   if (majorLevel >= 8) {
     constraints.push("Level 8 terms: plane, wall plane, wheel plane, overhead plane, multi-plane, atomic");
@@ -40,7 +40,7 @@ export function getExplanationGuidance(majorLevel: MajorLevel): string {
   switch (majorLevel) {
     case 1:
       return `The user is at Level 1 (Foundation). They know:
-- Grid points and positions (alpha, beta, gamma)
+- Grid points and placements (alpha, beta, gamma)
 - Motion types (static, shift, dash)
 - Rotation directions (pro, anti)
 - The 6 letter types
@@ -63,7 +63,7 @@ DO NOT use concepts from Level 3+ (half turns, float, clock/counter, skews, etc.
 - Half turns (90° units, values 0.5, 1.5, 2.5)
 - Clock/counter orientations
 - Float motion type (prop holds absolute spatial angle)
-- Expanded position variations
+- Expanded placement variations
 
 DO NOT use concepts from Level 4+ (quarter turns, interradials, skews, center point, etc.).`;
 
@@ -78,7 +78,7 @@ DO NOT use concepts from Level 5+ (skewed grid, zeta/eta, center point, conjoine
     case 5:
       return `The user is at Level 5 (Skewed Grid). They know Levels 1-4 plus:
 - 8-point grid (mixing diamond/box)
-- Zeta and eta positions
+- Zeta and eta placements
 - Skew modifiers (+/-)
 - Extended and shortened shift arcs
 
@@ -88,7 +88,7 @@ DO NOT use concepts from Level 6+ (center point, hash, tau/terra, conjoined grid
       return `The user is at Level 6 (Centric). They know Levels 1-5 plus:
 - Center grid point (9-point grid)
 - Hash hand path (straight line to/from center)
-- Tau and terra positions
+- Tau and terra placements
 - Center orientations (compass-based, absolute rather than center-relative)
 
 DO NOT use concepts from Level 7+ (conjoined grids, extended dashes, 3D, etc.).`;
@@ -98,7 +98,7 @@ DO NOT use concepts from Level 7+ (conjoined grids, extended dashes, 3D, etc.).`
 - All previous levels (complete orientation freedom)
 - Dual grids sharing a junction point
 - Extended dashes (dash+, dash++)
-- Inter-grid positions and cross-grid paths
+- Inter-grid placements and cross-grid paths
 
 DO NOT use concepts from Level 8+ (3D planes, atomics, etc.).`;
 
@@ -114,7 +114,7 @@ DO NOT use concepts from Level 9 (Rubik's cube / cross-plane skews).`;
       return `The user is at Level 9 (Rubik's Cube). They know ALL TKA concepts:
 - All previous levels
 - Inter-plane grid points
-- 3D skewed positions
+- 3D skewed placements
 - Complete 3D mastery
 
 You can use any TKA terminology.`;

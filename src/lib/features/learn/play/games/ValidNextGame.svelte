@@ -3,7 +3,7 @@ Valid Next Game — Play arcade port of the legacy
 quiz/components/ValidNextPictographQuiz.svelte.
 
 Shows a pictograph and asks which pictograph can follow it (next start
-position must match the current end position). The arcade session engine
+placement must match the current end placement). The arcade session engine
 owns scoring/streak/completion; this component owns question loading and
 per-question feedback, reporting each answer via session.submitAnswer()
 with the exact QuizAnswerEvent shape gap detection depends on. The shell

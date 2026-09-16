@@ -96,18 +96,18 @@ export const DIFFICULTY_LEVELS: Record<DifficultyLevel, DifficultyLevelConfig> =
   };
 
 
-export type StartingPosition = "alpha" | "beta" | "gamma";
+export type StartingPlacement = "alpha" | "beta" | "gamma";
 
-export interface StartingPositionConfig {
-  id: StartingPosition;
+export interface StartingPlacementConfig {
+  id: StartingPlacement;
   symbol: string;
   fullName: string;
   color: string;
 }
 
-export const STARTING_POSITIONS: Record<
-  StartingPosition,
-  StartingPositionConfig
+export const STARTING_PLACEMENTS: Record<
+  StartingPlacement,
+  StartingPlacementConfig
 > = {
   alpha: {
     id: "alpha",
@@ -129,10 +129,10 @@ export const STARTING_POSITIONS: Record<
   },
 };
 
-export const STARTING_POSITIONS_LIST: StartingPositionConfig[] = [
-  STARTING_POSITIONS.alpha,
-  STARTING_POSITIONS.beta,
-  STARTING_POSITIONS.gamma,
+export const STARTING_PLACEMENTS_LIST: StartingPlacementConfig[] = [
+  STARTING_PLACEMENTS.alpha,
+  STARTING_PLACEMENTS.beta,
+  STARTING_PLACEMENTS.gamma,
 ];
 
 
@@ -179,7 +179,7 @@ export const LETTER_CARD_COLOR = "#10b981"; // Emerald green
  */
 export interface SequenceParameters {
   level?: DifficultyLevel | null;
-  startingPosition?: StartingPosition | null;
+  startingPlacement?: StartingPlacement | null;
   length?: number | null;
   startingLetter?: string | null;
 }
@@ -188,7 +188,7 @@ export interface SequenceParameters {
  * Extended parameters for Generate (includes generation-specific options)
  */
 export interface GenerateParameters extends SequenceParameters {
-  endPosition?: StartingPosition | null;
+  endPlacement?: StartingPlacement | null;
   mustContainLetters?: string[];
   mustNotContainLetters?: string[];
 }

@@ -94,7 +94,7 @@ describe("LOOP expanded overlay model", () => {
 
     expect(reflection.buttonText).toBe("Apply Flipped");
     expect(inversion.inversionCaption).toBe(
-      "Same hand positions — props flip spin direction every quarter."
+      "Same hand placements — props flip spin direction every quarter."
     );
   });
 });

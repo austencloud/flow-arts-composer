@@ -15,7 +15,7 @@ import { VisibilityStateManager } from "../visibility-state.svelte";
  * and a change notifies the `all` / `non_radial` observers the card listens on.
  */
 describe("VisibilityStateManager — hand colour key", () => {
-  it("defaults the start-position hand key ON so it is baked in until toggled", () => {
+  it("defaults the start-placement hand key ON so it is baked in until toggled", () => {
     const vm = new VisibilityStateManager();
     expect(vm.getRawGlyphVisibility("handColorKey")).toBe(true);
     expect(vm.getState().handColorKey).toBe(true);

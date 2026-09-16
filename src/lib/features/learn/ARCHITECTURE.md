@@ -162,7 +162,7 @@ Mapped directly from TKA Level 1.pdf:
 #### Foundation (13 concepts)
 
 1. Grid - Diamond/Box grid system (p7)
-2. Positions - Beta/Gamma/Alpha positions (p8)
+2. Placements - Beta/Gamma/Alpha placements (p8)
 3. Staff Motions - Basic staff movements (p9)
 4. Type 1 Motion - Dash/Static/Shift (p10)
 5. Type 2 Motion - Vertical-plane Crosser (p11)

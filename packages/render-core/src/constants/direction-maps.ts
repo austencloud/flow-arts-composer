@@ -1,7 +1,7 @@
 /**
  * Beta offset direction maps
  *
- * When two props end at the same location (a "beta" position),
+ * When two props end at the same location (a "beta" placement),
  * they need to be offset from each other so they don't overlap.
  * The direction of offset depends on:
  * - The location (N/S/E/W vs NE/SE/SW/NW)

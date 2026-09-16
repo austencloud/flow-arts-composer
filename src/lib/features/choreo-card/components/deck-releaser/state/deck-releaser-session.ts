@@ -37,7 +37,7 @@ export interface PersistedDeckReleaserSession {
   seed?: string;
   loopTypes?: string[];
   levels?: number[];
-  startPositionIds?: string[];
+  startPlacementIds?: string[];
   startOriLeft?: string;
   startOriRight?: string;
   propStyle?: "smooth" | "mixed" | "choppy";

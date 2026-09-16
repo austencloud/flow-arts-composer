@@ -26,8 +26,8 @@ export interface MotionData {
 
 export interface PictographData {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotion: MotionData;
@@ -51,7 +51,7 @@ export interface LOOPExecutionResult {
 }
 
 /**
- * Execute a LOOP transformation and return only a position-and-orientation
+ * Execute a LOOP transformation and return only a placement-and-orientation
  * closed result.
  */
 export function executeLOOP(
@@ -67,7 +67,7 @@ export function executeLOOP(
       word,
       loopType,
       period,
-      "Sequence must contain a start position and at least one step"
+      "Sequence must contain a start placement and at least one step"
     );
   }
 

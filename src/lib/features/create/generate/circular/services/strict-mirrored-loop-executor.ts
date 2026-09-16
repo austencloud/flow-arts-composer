@@ -6,12 +6,12 @@
  * Period 2 (halved):
  *   Q1 (steps 1..N)       - partial (from input)
  *   Q2 (steps N+1..2N)    - vertical mirror of Q1
- *   Closes positionally + orientationally in 2N steps.
+ *   Closes in placement + orientationally in 2N steps.
  *
  * Period 4 (quartered):
  *   Q1 (steps 1..N)       - partial
- *   Q2 (steps N+1..2N)    - vertical mirror of Q1 (returns to start position)
- *   Q3 (steps 2N+1..3N)   - same positions/motions as Q1, new start orientation
+ *   Q2 (steps N+1..2N)    - vertical mirror of Q1 (returns to start placement)
+ *   Q3 (steps 2N+1..3N)   - same placements/motions as Q1, new start orientation
  *   Q4 (steps 3N+1..4N)   - vertical mirror of Q3
  *   Closes in 4N steps when the partial's per-hand turn total is ≡ 1 or 3 (mod 4).
  *   L1/L2 partials have whole-turn totals (≡ 0 or 2) and close at period 2;
@@ -30,7 +30,7 @@ import {
   HandSide,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type {
-  GridPosition,
+  GridPlacement,
   GridLocation,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
@@ -38,10 +38,10 @@ import {
   updateEndOrientations,
 } from "$lib/shared/pictograph/prop/services/orientation-calculator";
 import {
-  VERTICAL_MIRROR_POSITION_MAP,
+  VERTICAL_MIRROR_PLACEMENT_MAP,
   VERTICAL_MIRROR_LOCATION_MAP,
   MIRRORED_LOOP_VALIDATION_SET,
-} from "../domain/constants/strict-loop-position-maps";
+} from "../domain/constants/strict-loop-placement-maps";
 import { Period } from "../domain/models/circular-models";
 import { buildStrictQuarters } from "./loop-quarter-guard";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -52,15 +52,15 @@ export class StrictMirroredLOOPExecutor {
   /**
    * Execute the strict mirrored LOOP.
    *
-   * @param sequence - Partial sequence including start position at index 0.
+   * @param sequence - Partial sequence including start placement at index 0.
    * @param period - HALVED → period 2 (default). QUARTERED → period 4.
    */
   executeLOOP(sequence: StepData[], period: Period): StepData[] {
     this._validateSequence(sequence);
 
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     const partialLength = sequence.length;
@@ -77,35 +77,35 @@ export class StrictMirroredLOOPExecutor {
       (s, p, n) => this._createCopiedEntry(s, p, n)
     );
 
-    sequence.unshift(startPosition);
+    sequence.unshift(startPlacement);
     return sequence;
   }
 
   /**
    * Validate that the partial sequence can perform a mirrored LOOP.
-   * Requirement: vertical_mirror(start_position) === end_position.
+   * Requirement: vertical_mirror(start_placement) === end_placement.
    */
   private _validateSequence(sequence: StepData[]): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     const key = `${startPos},${endPos}`;
 
     if (!MIRRORED_LOOP_VALIDATION_SET.has(key)) {
       const expectedEnd =
-        VERTICAL_MIRROR_POSITION_MAP[startPos as GridPosition];
+        VERTICAL_MIRROR_PLACEMENT_MAP[startPos as GridPlacement];
       throw new Error(
-        `Invalid position pair for mirrored LOOP: ${startPos} → ${endPos}. ` +
+        `Invalid placement pair for mirrored LOOP: ${startPos} → ${endPos}. ` +
           `For a mirrored LOOP from ${startPos}, the sequence must end at ${expectedEnd}.`
       );
     }
@@ -120,14 +120,14 @@ export class StrictMirroredLOOPExecutor {
     previousStep: StepData,
     stepNumber: number
   ): StepData {
-    const newEndPosition = this._getMirroredPosition(sourceStep);
+    const newEndPlacement = this._getMirroredPlacement(sourceStep);
 
     const newStep: StepData = {
       ...sourceStep,
       id: `step-${stepNumber}`,
       stepNumber,
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: newEndPosition,
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: newEndPlacement,
       motions: {
         [HandSide.LEFT]: this._createMirroredMotion(
           HandSide.LEFT,
@@ -147,7 +147,7 @@ export class StrictMirroredLOOPExecutor {
   }
 
   /**
-   * Create a step that copies a source step's positions/motions verbatim,
+   * Create a step that copies a source step's placements/motions verbatim,
    * with orientations propagated from the previous step.
    * Used for Q3 in the period-4 structure (same letters as Q1, new orientations).
    */
@@ -168,8 +168,8 @@ export class StrictMirroredLOOPExecutor {
       ...sourceStep,
       id: `step-${stepNumber}`,
       stepNumber,
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: sourceStep.endPosition,
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: sourceStep.endPlacement,
       motions: {
         [HandSide.LEFT]: {
           ...sourceLeft,
@@ -190,12 +190,12 @@ export class StrictMirroredLOOPExecutor {
     return updateEndOrientations(stepWithStartOri);
   }
 
-  private _getMirroredPosition(sourceStep: StepData): GridPosition | null {
-    const endPos = sourceStep.endPosition;
+  private _getMirroredPlacement(sourceStep: StepData): GridPlacement | null {
+    const endPos = sourceStep.endPlacement;
     if (!endPos) {
-      throw new Error("Source step must have an end position");
+      throw new Error("Source step must have an end placement");
     }
-    return VERTICAL_MIRROR_POSITION_MAP[endPos as GridPosition];
+    return VERTICAL_MIRROR_PLACEMENT_MAP[endPos as GridPlacement];
   }
 
   private _createMirroredMotion(

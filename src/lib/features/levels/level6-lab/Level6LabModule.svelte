@@ -16,7 +16,7 @@
   import {
     GridLocation,
     GridMode,
-    GridPosition,
+    GridPlacement,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import {
     MotionType,
@@ -85,55 +85,55 @@
     [GridLocation.NORTHWEST]: Orientation.COUNTER_IN,
   };
 
-  // POSITION DATA (Box mode = intercardinal locations)
+  // PLACEMENT DATA (Box mode = intercardinal locations)
 
   /**
-   * Box mode positions with intercardinal locations: [leftLocation, rightLocation]
-   * Sourced from GridPositionDeriver.POSITIONS_MAP (canonical)
+   * Box mode placements with intercardinal locations: [leftLocation, rightLocation]
+   * Sourced from GridPlacementDeriver.POSITIONS_MAP (canonical)
    */
-  const BOX_POSITIONS: Record<string, [GridLocation, GridLocation]> = {
+  const BOX_PLACEMENTS: Record<string, [GridLocation, GridLocation]> = {
     // Alpha (opposite intercardinals)
-    [GridPosition.ALPHA2]: [GridLocation.SOUTHWEST, GridLocation.NORTHEAST],
-    [GridPosition.ALPHA4]: [GridLocation.NORTHWEST, GridLocation.SOUTHEAST],
-    [GridPosition.ALPHA6]: [GridLocation.NORTHEAST, GridLocation.SOUTHWEST],
-    [GridPosition.ALPHA8]: [GridLocation.SOUTHEAST, GridLocation.NORTHWEST],
+    [GridPlacement.ALPHA2]: [GridLocation.SOUTHWEST, GridLocation.NORTHEAST],
+    [GridPlacement.ALPHA4]: [GridLocation.NORTHWEST, GridLocation.SOUTHEAST],
+    [GridPlacement.ALPHA6]: [GridLocation.NORTHEAST, GridLocation.SOUTHWEST],
+    [GridPlacement.ALPHA8]: [GridLocation.SOUTHEAST, GridLocation.NORTHWEST],
     // Beta (same intercardinal)
-    [GridPosition.BETA2]: [GridLocation.NORTHEAST, GridLocation.NORTHEAST],
-    [GridPosition.BETA4]: [GridLocation.SOUTHEAST, GridLocation.SOUTHEAST],
-    [GridPosition.BETA6]: [GridLocation.SOUTHWEST, GridLocation.SOUTHWEST],
-    [GridPosition.BETA8]: [GridLocation.NORTHWEST, GridLocation.NORTHWEST],
+    [GridPlacement.BETA2]: [GridLocation.NORTHEAST, GridLocation.NORTHEAST],
+    [GridPlacement.BETA4]: [GridLocation.SOUTHEAST, GridLocation.SOUTHEAST],
+    [GridPlacement.BETA6]: [GridLocation.SOUTHWEST, GridLocation.SOUTHWEST],
+    [GridPlacement.BETA8]: [GridLocation.NORTHWEST, GridLocation.NORTHWEST],
     // Gamma (adjacent intercardinals)
-    [GridPosition.GAMMA2]: [GridLocation.NORTHWEST, GridLocation.NORTHEAST],
-    [GridPosition.GAMMA4]: [GridLocation.NORTHEAST, GridLocation.SOUTHEAST],
-    [GridPosition.GAMMA6]: [GridLocation.SOUTHEAST, GridLocation.SOUTHWEST],
-    [GridPosition.GAMMA8]: [GridLocation.SOUTHWEST, GridLocation.NORTHWEST],
-    [GridPosition.GAMMA10]: [GridLocation.SOUTHEAST, GridLocation.NORTHEAST],
-    [GridPosition.GAMMA12]: [GridLocation.SOUTHWEST, GridLocation.SOUTHEAST],
-    [GridPosition.GAMMA14]: [GridLocation.NORTHWEST, GridLocation.SOUTHWEST],
-    [GridPosition.GAMMA16]: [GridLocation.NORTHEAST, GridLocation.NORTHWEST],
+    [GridPlacement.GAMMA2]: [GridLocation.NORTHWEST, GridLocation.NORTHEAST],
+    [GridPlacement.GAMMA4]: [GridLocation.NORTHEAST, GridLocation.SOUTHEAST],
+    [GridPlacement.GAMMA6]: [GridLocation.SOUTHEAST, GridLocation.SOUTHWEST],
+    [GridPlacement.GAMMA8]: [GridLocation.SOUTHWEST, GridLocation.NORTHWEST],
+    [GridPlacement.GAMMA10]: [GridLocation.SOUTHEAST, GridLocation.NORTHEAST],
+    [GridPlacement.GAMMA12]: [GridLocation.SOUTHWEST, GridLocation.SOUTHEAST],
+    [GridPlacement.GAMMA14]: [GridLocation.NORTHWEST, GridLocation.SOUTHWEST],
+    [GridPlacement.GAMMA16]: [GridLocation.NORTHEAST, GridLocation.NORTHWEST],
   };
 
-  const ALPHA_POSITIONS = [
-    GridPosition.ALPHA2,
-    GridPosition.ALPHA4,
-    GridPosition.ALPHA6,
-    GridPosition.ALPHA8,
+  const ALPHA_PLACEMENTS = [
+    GridPlacement.ALPHA2,
+    GridPlacement.ALPHA4,
+    GridPlacement.ALPHA6,
+    GridPlacement.ALPHA8,
   ];
-  const BETA_POSITIONS = [
-    GridPosition.BETA2,
-    GridPosition.BETA4,
-    GridPosition.BETA6,
-    GridPosition.BETA8,
+  const BETA_PLACEMENTS = [
+    GridPlacement.BETA2,
+    GridPlacement.BETA4,
+    GridPlacement.BETA6,
+    GridPlacement.BETA8,
   ];
-  const GAMMA_POSITIONS = [
-    GridPosition.GAMMA2,
-    GridPosition.GAMMA4,
-    GridPosition.GAMMA6,
-    GridPosition.GAMMA8,
-    GridPosition.GAMMA10,
-    GridPosition.GAMMA12,
-    GridPosition.GAMMA14,
-    GridPosition.GAMMA16,
+  const GAMMA_PLACEMENTS = [
+    GridPlacement.GAMMA2,
+    GridPlacement.GAMMA4,
+    GridPlacement.GAMMA6,
+    GridPlacement.GAMMA8,
+    GridPlacement.GAMMA10,
+    GridPlacement.GAMMA12,
+    GridPlacement.GAMMA14,
+    GridPlacement.GAMMA16,
   ];
 
   const leftPropType = $derived.by(() => {
@@ -150,21 +150,21 @@
       PropType.STAFF) as PropType;
   });
 
-  interface PositionSection {
+  interface PlacementSection {
     label: string;
-    positions: GridPosition[];
+    placements: GridPlacement[];
   }
 
-  const displaySections = $derived.by((): PositionSection[] => {
-    const sections: PositionSection[] = [];
+  const displaySections = $derived.by((): PlacementSection[] => {
+    const sections: PlacementSection[] = [];
     if (selectedGroup === "all" || selectedGroup === "alpha") {
-      sections.push({ label: "Alpha (opposite)", positions: ALPHA_POSITIONS });
+      sections.push({ label: "Alpha (opposite)", placements: ALPHA_PLACEMENTS });
     }
     if (selectedGroup === "all" || selectedGroup === "beta") {
-      sections.push({ label: "Beta (same)", positions: BETA_POSITIONS });
+      sections.push({ label: "Beta (same)", placements: BETA_PLACEMENTS });
     }
     if (selectedGroup === "all" || selectedGroup === "gamma") {
-      sections.push({ label: "Gamma (adjacent)", positions: GAMMA_POSITIONS });
+      sections.push({ label: "Gamma (adjacent)", placements: GAMMA_PLACEMENTS });
     }
     return sections;
   });
@@ -179,10 +179,10 @@
     return manualOri;
   }
 
-  function createStaticPictograph(position: GridPosition): PictographData {
-    const locations = BOX_POSITIONS[position];
+  function createStaticPictograph(placement: GridPlacement): PictographData {
+    const locations = BOX_PLACEMENTS[placement];
     if (!locations) {
-      throw new Error(`No location mapping for position: ${position}`);
+      throw new Error(`No location mapping for placement: ${placement}`);
     }
     const [leftLocation, rightLocation] = locations;
 
@@ -220,9 +220,9 @@
     });
 
     return {
-      id: `level7-${position}`,
-      startPosition: position,
-      endPosition: position,
+      id: `level7-${placement}`,
+      startPlacement: placement,
+      endPlacement: placement,
       motions: {
         [HandSide.LEFT]: leftMotion,
         [HandSide.RIGHT]: rightMotion,
@@ -230,7 +230,7 @@
     };
   }
 
-  function formatPosition(pos: GridPosition): string {
+  function formatPlacement(pos: GridPlacement): string {
     const match = pos.match(/^(alpha|beta|gamma)(\d+)$/i);
     if (match && match[1] && match[2]) {
       const prefix = match[1].charAt(0).toUpperCase() + match[1].slice(1);
@@ -244,7 +244,7 @@
   }
 
   const totalCount = $derived(
-    ALPHA_POSITIONS.length + BETA_POSITIONS.length + GAMMA_POSITIONS.length
+    ALPHA_PLACEMENTS.length + BETA_PLACEMENTS.length + GAMMA_PLACEMENTS.length
   );
 
   const groupOptions = $derived<
@@ -255,9 +255,9 @@
     }[]
   >([
     { value: "all", label: "All", count: totalCount },
-    { value: "alpha", label: "Alpha", count: ALPHA_POSITIONS.length },
-    { value: "beta", label: "Beta", count: BETA_POSITIONS.length },
-    { value: "gamma", label: "Gamma", count: GAMMA_POSITIONS.length },
+    { value: "alpha", label: "Alpha", count: ALPHA_PLACEMENTS.length },
+    { value: "beta", label: "Beta", count: BETA_PLACEMENTS.length },
+    { value: "gamma", label: "Gamma", count: GAMMA_PLACEMENTS.length },
   ]);
 </script>
 
@@ -355,19 +355,19 @@
 
   <div class="sections themed-scrollbar">
     {#each displaySections as section (section.label)}
-      <section class="position-section">
+      <section class="placement-section">
         <h2 class="section-heading">
           {section.label}
           <span class="section-mode">box</span>
         </h2>
         <div class="grid">
-          {#each section.positions as position (position)}
-            {@const locations = BOX_POSITIONS[position]}
+          {#each section.placements as placement (placement)}
+            {@const locations = BOX_PLACEMENTS[placement]}
             {@const leftLoc = locations?.[0] ?? GridLocation.NORTHEAST}
             {@const rightLoc = locations?.[1] ?? GridLocation.SOUTHWEST}
             {@const leftOri = getOrientation(leftLoc, leftOrientation)}
             {@const rightOri = getOrientation(rightLoc, rightOrientation)}
-            {@const pictograph = createStaticPictograph(position)}
+            {@const pictograph = createStaticPictograph(placement)}
             <article class="card">
               <div class="pictograph-area">
                 <PictographContainer
@@ -376,7 +376,7 @@
                 />
               </div>
               <footer class="card-footer">
-                <span class="position-name">{formatPosition(position)}</span>
+                <span class="placement-name">{formatPlacement(placement)}</span>
                 <div class="ori-labels">
                   <span class="ori-label blue" title="Left orientation"
                     >{formatLocation(leftLoc)}: {leftOri}</span
@@ -598,11 +598,11 @@
     padding: 0 1.5rem 1.5rem;
   }
 
-  .position-section {
+  .placement-section {
     margin-bottom: 1.5rem;
   }
 
-  .position-section:last-child {
+  .placement-section:last-child {
     margin-bottom: 0;
   }
 
@@ -665,7 +665,7 @@
     border-top: 1px solid var(--theme-stroke, rgba(255, 255, 255, 0.05));
   }
 
-  .position-name {
+  .placement-name {
     font-weight: 600;
     font-size: var(--font-size-min, 14px);
     color: var(--theme-text, #fff);

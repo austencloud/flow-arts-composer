@@ -134,7 +134,7 @@
 					<h3>TKA: Center-Referenced</h3>
 					<p>
 						Anchored to the <strong>grid center</strong>.
-						Position = where hands sit on the grid.
+						Placement = where hands sit on the grid.
 						Motion type = how hands move between grid points.
 					</p>
 				</div>

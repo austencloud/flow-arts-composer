@@ -150,7 +150,7 @@
                   >+{option.bridgeLetters.join("")}</span
                 >
                 <span class="bridge-arrow">→</span>
-                <span class="bridge-end">{option.endPosition}</span>
+                <span class="bridge-end">{option.endPlacement}</span>
               </div>
               <div class="bridge-loops">
                 {#each option.availableLOOPs as loop}

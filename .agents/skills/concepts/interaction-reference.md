@@ -29,10 +29,10 @@ Start with something the learner can do (recalling previous knowledge). Build th
 Subtle glow on every correct answer. Particle burst on 3rd streak. Full flourish on perfect score. Never the same response twice in succession. Variable timing keeps anticipation alive. Never make the learner dismiss a celebration — it enhances flow, not interrupts it.
 
 ### 7. Spatial Concepts Deserve Spatial Interactions
-TKA teaches positions on a grid, orientations of props, paths through space. The interface must be spatial too. Drag hands to grid positions. Rotate props with gestures. Trace motion paths with your finger. When interaction mirrors concept, embodied cognition locks learning into motor memory.
+TKA teaches hand placements on a grid, orientations of props, paths through space. The interface must be spatial too. Drag hands to grid locations. Rotate props with gestures. Trace motion paths with your finger. When interaction mirrors concept, embodied cognition locks learning into motor memory.
 
 ### 8. Earn Every Layer Of Complexity
-One thing at a time. Master positions before motions. Master motions before turns. Never two unfamiliar things simultaneously. Progressive disclosure isn't just a UI pattern — it's the curriculum architecture.
+One thing at a time. Master placements before motions. Master motions before turns. Never two unfamiliar things simultaneously. Progressive disclosure isn't just a UI pattern — it's the curriculum architecture.
 
 ---
 
@@ -41,7 +41,7 @@ One thing at a time. Master positions before motions. Master motions before turn
 Read any text in the lesson out loud. Would you say this to another spinner at a fire jam?
 
 - "Tap the grid points where your hands go" — yes
-- "Explore the fundamental spatial relationships of hand positions" — no
+- "Explore the fundamental spatial relationships of hand placements" — no
 
 If it sounds like a textbook, rewrite it. Lessons should sound like a friend showing you something cool.
 
@@ -53,7 +53,7 @@ Use these patterns when designing lesson interactions. Higher rank = higher prio
 
 | Rank | Pattern | Description | Best For |
 |------|---------|-------------|----------|
-| 1 | **Direct Manipulation Discovery** | Drag/tap to discover concept — label appears after you create the condition | Positions, grid modes, orientations |
+| 1 | **Direct Manipulation Discovery** | Drag/tap to discover concept — label appears after you create the condition | Placements, grid modes, orientations |
 | 2 | **Scaffolded Problem Sequences** | Chain of 3-5 micro-problems where each answer teaches the next. No text between. | Motion types, letter categories |
 | 3 | **Transformation Animation** | Animate the continuous change, not before/after snapshots | Turns, shifts, dashes, reversals |
 | 4 | **Variable Micro-Celebrations** | Brief celebrations (200-400ms) on correct answers, bigger at streak milestones | All quizzes |
@@ -61,7 +61,7 @@ Use these patterns when designing lesson interactions. Higher rank = higher prio
 | 6 | **Constraint Puzzles** | Goal + constraints, learner finds solution. Constraints make it solvable not trivial | Letter types, word construction |
 | 7 | **Spatial Challenge Escalation** | Start with one variable, add second only after first mastered | Foundation → Letters → Combinations |
 | 8 | **Semantic Feedback** | Wrong answer animates what your answer WOULD have meant, then contrasts with correct | All quizzes |
-| 9 | **Construction Over Recognition** | "Build an X" instead of "Which one is X?" | Positions, motion types, letters |
+| 9 | **Construction Over Recognition** | "Build an X" instead of "Which one is X?" | Placements, motion types, letters |
 | 10 | **Speed Rounds** | Timed classification with streaks. Builds automaticity after understanding | Mastery drills (unlock after quiz) |
 
 ---

@@ -2099,7 +2099,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/create/construct/start-position-picker/components/StartPositionPicker.svelte",
+      "file": "lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte",
       "total": 707,
       "scriptLines": 323,
       "templateLines": 159,
@@ -3034,7 +3034,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/components/interactive/positions/PositionsConceptExperience.svelte",
+      "file": "lib/features/learn/components/interactive/placements/PlacementsConceptExperience.svelte",
       "total": 663,
       "scriptLines": 249,
       "templateLines": 166,
@@ -3255,7 +3255,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/components/interactive/positions/SpeedRounds.svelte",
+      "file": "lib/features/learn/components/interactive/placements/SpeedRounds.svelte",
       "total": 605,
       "scriptLines": 260,
       "templateLines": 108,
@@ -4309,7 +4309,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/shared/pictograph/shared/components/PositionGlyph.svelte",
+      "file": "lib/shared/pictograph/shared/components/PlacementGlyph.svelte",
       "total": 341,
       "scriptLines": 209,
       "templateLines": 67,
@@ -5907,7 +5907,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/components/interactive/positions/ConstructionQuiz.svelte",
+      "file": "lib/features/learn/components/interactive/placements/ConstructionQuiz.svelte",
       "total": 586,
       "scriptLines": 193,
       "templateLines": 126,
@@ -9358,7 +9358,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/create/construct/start-position-picker/components/ResponsivePositionGrid.svelte",
+      "file": "lib/features/create/construct/start-placement-picker/components/ResponsivePositionGrid.svelte",
       "total": 237,
       "scriptLines": 141,
       "templateLines": 21,
@@ -9902,7 +9902,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/shared/components/position-picker/MultiSelectPositionPicker.svelte",
+      "file": "lib/shared/components/placement-picker/MultiSelectPositionPicker.svelte",
       "total": 330,
       "scriptLines": 121,
       "templateLines": 65,
@@ -12928,7 +12928,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/components/interactive/positions/PositionVisualizer.svelte",
+      "file": "lib/features/learn/components/interactive/placements/PositionVisualizer.svelte",
       "total": 140,
       "scriptLines": 108,
       "templateLines": 22,
@@ -13166,7 +13166,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/shared/components/position-picker/PositionPickerGrid.svelte",
+      "file": "lib/shared/components/placement-picker/PositionPickerGrid.svelte",
       "total": 261,
       "scriptLines": 90,
       "templateLines": 48,
@@ -14271,7 +14271,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/create/construct/start-position-picker/components/AdvancedStartPositionPicker.svelte",
+      "file": "lib/features/create/construct/start-placement-picker/components/AdvancedStartPlacementPicker.svelte",
       "total": 134,
       "scriptLines": 72,
       "templateLines": 50,
@@ -14611,7 +14611,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/components/interactive/positions/DiscoveryVariantA.svelte",
+      "file": "lib/features/learn/components/interactive/placements/DiscoveryVariantA.svelte",
       "total": 303,
       "scriptLines": 81,
       "templateLines": 69,
@@ -14934,7 +14934,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/components/interactive/positions/construction-quiz/SemanticFeedback.svelte",
+      "file": "lib/features/learn/components/interactive/placements/construction-quiz/SemanticFeedback.svelte",
       "total": 244,
       "scriptLines": 66,
       "templateLines": 57,
@@ -15801,7 +15801,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/create/construct/start-position-picker/components/BuildStartPose.svelte",
+      "file": "lib/features/create/construct/start-placement-picker/components/BuildStartPose.svelte",
       "total": 202,
       "scriptLines": 76,
       "templateLines": 48,
@@ -16787,7 +16787,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/create/construct/start-position-picker/components/OrientationCycler.svelte",
+      "file": "lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte",
       "total": 350,
       "scriptLines": 62,
       "templateLines": 87,
@@ -17671,7 +17671,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/components/interactive/positions/PlacementGrid.svelte",
+      "file": "lib/features/learn/components/interactive/placements/PlacementGrid.svelte",
       "total": 91,
       "scriptLines": 69,
       "templateLines": 22,
@@ -18198,7 +18198,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/create/construct/start-position-picker/components/PictographGrid.svelte",
+      "file": "lib/features/create/construct/start-placement-picker/components/PictographGrid.svelte",
       "total": 338,
       "scriptLines": 64,
       "templateLines": 37,
@@ -19065,7 +19065,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/choreo-card/components/card-back/StartPositionMiniGrid.svelte",
+      "file": "lib/features/choreo-card/components/card-back/StartPlacementMiniGrid.svelte",
       "total": 88,
       "scriptLines": 41,
       "templateLines": 47,
@@ -22652,7 +22652,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/shared/components/position-picker/PositionSection.svelte",
+      "file": "lib/shared/components/placement-picker/PositionSection.svelte",
       "total": 226,
       "scriptLines": 39,
       "templateLines": 64,
@@ -23179,7 +23179,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/create/construct/start-position-picker/components/PositionGroupGrid.svelte",
+      "file": "lib/features/create/construct/start-placement-picker/components/PlacementGroupGrid.svelte",
       "total": 201,
       "scriptLines": 41,
       "templateLines": 25,
@@ -23706,7 +23706,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/components/interactive/positions/construction-quiz/StreakDisplay.svelte",
+      "file": "lib/features/learn/components/interactive/placements/construction-quiz/StreakDisplay.svelte",
       "total": 230,
       "scriptLines": 33,
       "templateLines": 41,
@@ -24658,7 +24658,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/lab/trigrid-lab/components/TriGridPositionInfo.svelte",
+      "file": "lib/features/lab/trigrid-lab/components/TriGridPlacementInfo.svelte",
       "total": 180,
       "scriptLines": 37,
       "templateLines": 46,
@@ -24913,7 +24913,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/choreo-card/components/card-back/StartPositionPictograph.svelte",
+      "file": "lib/features/choreo-card/components/card-back/StartPlacementPictograph.svelte",
       "total": 94,
       "scriptLines": 32,
       "templateLines": 34,
@@ -25015,7 +25015,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/skel2tka/components/verification/GridPositionPicker.svelte",
+      "file": "lib/features/skel2tka/components/verification/GridPlacementPicker.svelte",
       "total": 139,
       "scriptLines": 36,
       "templateLines": 38,
@@ -26681,7 +26681,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/shared/onboarding/components/create-tutorial/steps/PickStartPositionStep.svelte",
+      "file": "lib/shared/onboarding/components/create-tutorial/steps/PickStartPlacementStep.svelte",
       "total": 170,
       "scriptLines": 35,
       "templateLines": 20,
@@ -26834,7 +26834,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/create/shared/components/sequence-actions/StartPositionEditMode.svelte",
+      "file": "lib/features/create/shared/components/sequence-actions/StartPlacementEditMode.svelte",
       "total": 82,
       "scriptLines": 26,
       "templateLines": 34,
@@ -28466,7 +28466,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/components/interactive/positions/construction-quiz/QuizPrompt.svelte",
+      "file": "lib/features/learn/components/interactive/placements/construction-quiz/QuizPrompt.svelte",
       "total": 81,
       "scriptLines": 21,
       "templateLines": 15,
@@ -36048,7 +36048,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/learn/math-foundations/components/PositionGroupsSection.svelte",
+      "file": "lib/features/learn/math-foundations/components/PlacementGroupsSection.svelte",
       "total": 270,
       "scriptLines": 9,
       "templateLines": 56,
@@ -39040,7 +39040,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/create/construct/start-position-picker/components/StartPositionPickerBuildTestStub.svelte",
+      "file": "lib/features/create/construct/start-placement-picker/components/StartPlacementPickerBuildTestStub.svelte",
       "total": 2,
       "scriptLines": 0,
       "templateLines": 2,
@@ -39057,7 +39057,7 @@
       "hiddenMonster": false
     },
     {
-      "file": "lib/features/create/construct/start-position-picker/components/StartPositionPickerPresetTestStub.svelte",
+      "file": "lib/features/create/construct/start-placement-picker/components/StartPlacementPickerPresetTestStub.svelte",
       "total": 2,
       "scriptLines": 0,
       "templateLines": 2,

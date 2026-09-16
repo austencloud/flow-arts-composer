@@ -3,7 +3,7 @@
  *
  * A sequence's layer signature — which of the four radial/non-radial
  * combinations the two props sit in, step by step — is decided entirely by its
- * turns. Nothing about the letters, the positions, or the hand paths moves it.
+ * turns. Nothing about the letters, the placements, or the hand paths moves it.
  * That is what makes it targetable: to put a step in a chosen layer you only
  * have to make each prop either cross or not cross, and every motion can be
  * made to do either by nudging its turn value.
@@ -53,7 +53,7 @@ export interface LayerTargetOptions {
 
 /** A motion the retarget could not satisfy, and why. */
 export interface LayerTargetMiss {
-  /** Index into the step array, where 0 is the start position. */
+  /** Index into the step array, where 0 is the start placement. */
   readonly stepIndex: number;
   readonly hand: "left" | "right";
   readonly reason: string;
@@ -180,7 +180,7 @@ function withMotions(step: SequenceStep, left: Motion, right: Motion): SequenceS
 /**
  * Rewrite a sequence's turns so it walks the layers the pattern describes.
  *
- * Step 0 is the start position and carries no turns, so the pattern's first
+ * Step 0 is the start placement and carries no turns, so the pattern's first
  * flip applies to step 1. A pattern shorter than the sequence leaves the
  * remaining steps alone; a longer one ignores its tail.
  */

@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   resolveStartOrientation,
-  positionFamilyOf,
+  placementFamilyOf,
 } from "../start-ori-register";
 import { Orientation, HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 
 const { IN, CLOCK, COUNTER } = Orientation;
 
@@ -33,44 +33,44 @@ describe("resolveStartOrientation — family-aware register table", () => {
 function startPose(
   left: GridLocation,
   right: GridLocation,
-  named?: Partial<StartPositionData>,
-): StartPositionData {
+  named?: Partial<StartPlacementData>,
+): StartPlacementData {
   return {
-    isStartPosition: true,
+    isStartPlacement: true,
     id: "sp",
     motions: {
       [HandSide.LEFT]: createMotionData({ hand: HandSide.LEFT, startLocation: left, endLocation: left }),
       [HandSide.RIGHT]: createMotionData({ hand: HandSide.RIGHT, startLocation: right, endLocation: right }),
     },
     ...named,
-  } as StartPositionData;
+  } as StartPlacementData;
 }
 
-describe("positionFamilyOf", () => {
-  it("reads the stored gridPosition when present", () => {
-    const sp = startPose(GridLocation.NORTH, GridLocation.SOUTH, { gridPosition: "gamma13" as StartPositionData["gridPosition"] });
-    expect(positionFamilyOf(sp)).toBe("gamma");
+describe("placementFamilyOf", () => {
+  it("reads the stored gridPlacement when present", () => {
+    const sp = startPose(GridLocation.NORTH, GridLocation.SOUTH, { gridPlacement: "gamma13" as StartPlacementData["gridPlacement"] });
+    expect(placementFamilyOf(sp)).toBe("gamma");
   });
 
-  it("derives the family from hand locations when no position is stored (both N = beta)", () => {
+  it("derives the family from hand locations when no placement is stored (both N = beta)", () => {
     const sp = startPose(GridLocation.NORTH, GridLocation.NORTH);
-    expect(positionFamilyOf(sp)).toBe("beta");
+    expect(placementFamilyOf(sp)).toBe("beta");
   });
 
   it("derives alpha from opposite hands (N / S)", () => {
     const sp = startPose(GridLocation.NORTH, GridLocation.SOUTH);
-    expect(positionFamilyOf(sp)).toBe("alpha");
+    expect(placementFamilyOf(sp)).toBe("alpha");
   });
 
   it("derives gamma from a 90° pair (N / E)", () => {
     const sp = startPose(GridLocation.NORTH, GridLocation.EAST);
-    expect(positionFamilyOf(sp)).toBe("gamma");
+    expect(placementFamilyOf(sp)).toBe("gamma");
   });
 
   it("returns null for an unsupported family it cannot classify", () => {
     const sp = startPose(GridLocation.NORTH, GridLocation.NORTH, {
-      gridPosition: "zeta1" as StartPositionData["gridPosition"],
+      gridPlacement: "zeta1" as StartPlacementData["gridPlacement"],
     });
-    expect(positionFamilyOf(sp)).toBeNull();
+    expect(placementFamilyOf(sp)).toBeNull();
   });
 });

@@ -60,8 +60,8 @@
     // Composition overrides
     addWord?: boolean;
     addStepNumbers?: boolean;
-    includeStartPosition?: boolean;
-    startPositionLayout?: "row" | "column";
+    includeStartPlacement?: boolean;
+    startPlacementLayout?: "row" | "column";
     addDifficultyLevel?: boolean;
     addUserInfo?: boolean;
     showNotes?: boolean;
@@ -93,8 +93,8 @@
     variant = "gallery",
     addWord,
     addStepNumbers,
-    includeStartPosition,
-    startPositionLayout,
+    includeStartPlacement,
+    startPlacementLayout,
     addDifficultyLevel,
     addUserInfo,
     showNotes,
@@ -141,14 +141,14 @@
   // and [].length is 0 which ?? treats as valid (only null/undefined fall through)
   const stepCount = $derived(galleryStepCount(sequence));
 
-  // Resolve the per-step-count start-position layout (honors the user's
+  // Resolve the per-step-count start-placement layout (honors the user's
   // "Top Row" / "Left Column" choice for THIS length), matching the viewer
-  // preview and the export path. Reading the global startPositionLayout here
+  // preview and the export path. Reading the global startPlacementLayout here
   // ignored per-length overrides, so a one-count set to "Left Column" still
   // rendered row-mode in the gallery.
-  const effectiveStartPositionLayout = $derived(
-    startPositionLayout ??
-      compositionManager.getStartPositionLayoutForStepCount(stepCount)
+  const effectiveStartPlacementLayout = $derived(
+    startPlacementLayout ??
+      compositionManager.getStartPlacementLayoutForStepCount(stepCount)
   );
 
   // Derived: sequence name (raw) — used as the cache-key + source-doc lookup
@@ -170,7 +170,7 @@
     if (variant === "wordcard") {
       return undefined; // Choreo card uses natural image aspect ratio
     }
-    return calculateGalleryAspectRatio(stepCount, effectiveStartPositionLayout);
+    return calculateGalleryAspectRatio(stepCount, effectiveStartPlacementLayout);
   });
 
   // Derived: Build render input from props via the shared builder so the live
@@ -189,8 +189,8 @@
       variant,
       addWord,
       addStepNumbers,
-      includeStartPosition,
-      startPositionLayout,
+      includeStartPlacement,
+      startPlacementLayout,
       addDifficultyLevel,
       addUserInfo,
       showNotes,

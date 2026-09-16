@@ -87,7 +87,7 @@ export class LibrarySaveService {
   ): Promise<SaveResult> {
     // Guests can save: ensure an (anonymous) identity exists so the Firestore
     // sync and thumbnail upload have a uid, regardless of how the user entered
-    // Create (Construct already provisions on start-position select; Generate /
+    // Create (Construct already provisions on start-placement select; Generate /
     // import do not). Best-effort — ensureGuestIdentity() swallows failures
     // (anon provider disabled, offline), and the Dexie write below keeps the
     // save working even when no identity could be provisioned.

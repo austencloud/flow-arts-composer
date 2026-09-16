@@ -17,12 +17,12 @@ describe("Learn decision events", () => {
   beforeEach(() => vi.mocked(logActivity).mockClear());
 
   it("captures lesson entry and completion without lesson content", () => {
-    trackLessonStarted("positions", "available");
-    trackLessonCompleted("positions");
+    trackLessonStarted("placements", "available");
+    trackLessonCompleted("placements");
 
     expect(vi.mocked(logActivity).mock.calls).toEqual([
-      ["lesson_start", "learn", { lessonId: "positions", status: "available" }],
-      ["lesson_complete", "learn", { lessonId: "positions" }],
+      ["lesson_start", "learn", { lessonId: "placements", status: "available" }],
+      ["lesson_complete", "learn", { lessonId: "placements" }],
     ]);
   });
 

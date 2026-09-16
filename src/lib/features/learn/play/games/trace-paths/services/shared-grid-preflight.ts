@@ -4,7 +4,7 @@
  * The trace game defaults to a split grid (one grid per hand) for a physical
  * reason: TKA routes are written for two hands moving through the same space,
  * and a lot of perfectly legal sequences put both hands on the same point at
- * the same moment. Two fingertips cannot occupy one spot. Beta positions do
+ * the same moment. Two fingertips cannot occupy one spot. Beta placements do
  * exactly that by definition, so this check fires often — that is the correct
  * outcome, not a bug to tune away.
  *

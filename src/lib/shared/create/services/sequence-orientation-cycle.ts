@@ -11,12 +11,12 @@ function resolveStartOrientations(sequence: SequenceData): {
   left: EngineOrientation;
   right: EngineOrientation;
 } {
-  const startPosition = sequence.startPosition ?? sequence.startingPosition;
+  const startPlacement = sequence.startPlacement ?? sequence.startingPlacement;
   return {
-    left: (startPosition?.motions?.left?.startOrientation ??
+    left: (startPlacement?.motions?.left?.startOrientation ??
       sequence.steps[0]?.motions.left?.startOrientation ??
       "in") as EngineOrientation,
-    right: (startPosition?.motions?.right?.startOrientation ??
+    right: (startPlacement?.motions?.right?.startOrientation ??
       sequence.steps[0]?.motions.right?.startOrientation ??
       "in") as EngineOrientation,
   };
@@ -45,7 +45,7 @@ export function closeSequenceOrientationCycle(
     return updateSequenceData(sequence, { orientationCycleCount: 1 });
   }
 
-  // A position loop can return home while the prop still points somewhere
+  // A placement loop can return home while the prop still points somewhere
   // else. Repeating the complete path lets the viewer see the whole flower
   // and removes the jump that would otherwise happen at playback's seam.
   return updateSequenceData(sequence, {

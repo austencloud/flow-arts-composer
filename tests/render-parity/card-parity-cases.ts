@@ -50,7 +50,7 @@ export function cardParityCases(): CardParityCase[] {
       options: {
         exportProfile: "print",
         columnCount: 2,
-        startPositionLayout: "row",
+        startPlacementLayout: "row",
         showDifficulty: true,
         loopComponents: ["rotated"],
         rotationPeriod: "quartered",
@@ -63,7 +63,7 @@ export function cardParityCases(): CardParityCase[] {
       options: {
         exportProfile: "print",
         columnCount: 2,
-        startPositionLayout: "row",
+        startPlacementLayout: "row",
       },
     },
     {
@@ -102,7 +102,7 @@ export function cardParityCases(): CardParityCase[] {
       options: {
         exportProfile: "print",
         columnCount: 2,
-        startPositionLayout: "row",
+        startPlacementLayout: "row",
         accentColor: "#2f6fed",
         accentTintOpacity: 0.12,
       },
@@ -113,7 +113,7 @@ export function cardParityCases(): CardParityCase[] {
       options: {
         exportProfile: "print",
         columnCount: 3,
-        startPositionLayout: "column",
+        startPlacementLayout: "column",
         showFooter: true,
         notes: "Accent footer",
       },
@@ -124,7 +124,7 @@ export function cardParityCases(): CardParityCase[] {
       options: {
         exportProfile: "print",
         columnCount: 3,
-        startPositionLayout: "column",
+        startPlacementLayout: "column",
         accentColor: "#d13a2e",
         showFooter: true,
         notes: "Accent footer",
@@ -146,7 +146,7 @@ export function cardParityCases(): CardParityCase[] {
       options: {
         exportProfile: "print",
         columnCount: 3,
-        startPositionLayout: "column",
+        startPlacementLayout: "column",
         showMandala: true,
         qrUrl: DEMO_SEQUENCE_LINKS[8],
       },

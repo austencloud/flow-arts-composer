@@ -3,8 +3,8 @@
  */
 
 export type HandPosition8 = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
-export { type PositionType } from "./shared-types";
-import type { PositionType } from "./shared-types";
+export { type PlacementType } from "./shared-types";
+import type { PlacementType } from "./shared-types";
 // Prop-rotation family for word visualization (distinct from the hand-path
 // MotionType `shift|dash|static` in the motion files — see shared-types.ts).
 export type MotionType = "pro" | "anti" | "hybrid";
@@ -40,13 +40,13 @@ export const GRID_POINTS_8: Record<HandPosition8, GridPoint> = {
 export const LEFT_HAND_COLOR = "#4A9EFF";
 export const RIGHT_HAND_COLOR = "#FF4A9E";
 
-export const POSITION_COLORS: Record<PositionType, string> = {
+export const PLACEMENT_COLORS: Record<PlacementType, string> = {
   alpha: "#FF6B6B",
   beta: "#4ECDC4",
   gamma: "#FFE66D",
 };
 
-// Opposite pairs for detecting Alpha positions
+// Opposite pairs for detecting Alpha placements
 const OPPOSITES: Record<string, string> = {
   N: "S",
   S: "N",
@@ -58,10 +58,10 @@ const OPPOSITES: Record<string, string> = {
   SE: "NW",
 };
 
-export function getPositionType(
+export function getPlacementType(
   left: HandPosition8,
   right: HandPosition8
-): PositionType {
+): PlacementType {
   if (left === right) return "beta";
   if (OPPOSITES[left] === right) return "alpha";
   return "gamma";

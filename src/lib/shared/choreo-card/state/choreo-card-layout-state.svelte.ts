@@ -35,7 +35,7 @@ export interface ChoreoCardLayoutDeps {
   /** The sequence being displayed */
   readonly sequence: SequenceData;
   /** Whether to include the start position cell */
-  readonly includeStartPosition: boolean;
+  readonly includeStartPlacement: boolean;
   /** Override auto-calculated column count (null = auto) */
   readonly columnCount: number | null;
   /** Whether header is visible */
@@ -54,8 +54,8 @@ export interface ChoreoCardLayoutDeps {
   readonly showLeftMotion: boolean;
   /** Red motion visibility */
   readonly showRightMotion: boolean;
-  /** Per-instance override for start-position layout */
-  readonly startPositionLayoutOverride: "row" | "column" | null;
+  /** Per-instance override for start-placement layout */
+  readonly startPlacementLayoutOverride: "row" | "column" | null;
   /** Reactive composition version counter (bumped by observer) */
   readonly compositionVersion: number;
   /** Cell width from ResizeObserver */
@@ -99,7 +99,7 @@ export function createChoreoCardLayoutState(
     void deps.compositionVersion;
     const stepCount = deps.sequence?.steps?.length ?? 0;
     if (stepCount < 1) return false;
-    if (deps.startPositionLayoutOverride) return false;
+    if (deps.startPlacementLayoutOverride) return false;
     if (deps.columnCount !== null && deps.columnCount > 0) return false;
     return compositionManager.getColumnCountForStepCount(stepCount) === null;
   });
@@ -123,7 +123,7 @@ export function createChoreoCardLayoutState(
     return pickBestFitLayout({
       stepCount,
       stepDurations: deps.sequence.steps.map((step) => step.duration ?? 1),
-      includeStartPosition: deps.includeStartPosition,
+      includeStartPlacement: deps.includeStartPlacement,
       containerWidth: cw,
       containerHeight: ch,
       showHeader: deps.showHeader,
@@ -135,18 +135,18 @@ export function createChoreoCardLayoutState(
   // Start-position layout - "row" puts start in a top row spanning all columns,
   // "column" puts start in a left column. On Auto the best-fit picker chooses
   // placement for the container; otherwise the composition setting applies.
-  const startPositionLayout = $derived.by<"row" | "column">(() => {
+  const startPlacementLayout = $derived.by<"row" | "column">(() => {
     const deps = getDeps();
-    if (deps.startPositionLayoutOverride)
-      return deps.startPositionLayoutOverride;
+    if (deps.startPlacementLayoutOverride)
+      return deps.startPlacementLayoutOverride;
     const af = autoFit;
-    if (af && deps.includeStartPosition && af.startPlacement !== "none") {
+    if (af && deps.includeStartPlacement && af.startPlacement !== "none") {
       return af.startPlacement;
     }
     void deps.compositionVersion;
     const stepCount = deps.sequence?.steps?.length ?? 0;
-    if (stepCount === 0) return compositionManager.startPositionLayout;
-    return compositionManager.getStartPositionLayoutForStepCount(stepCount);
+    if (stepCount === 0) return compositionManager.startPlacementLayout;
+    return compositionManager.getStartPlacementLayoutForStepCount(stepCount);
   });
 
   // Effective columns - synchronously computed from best-fit or the layout tables
@@ -158,10 +158,10 @@ export function createChoreoCardLayoutState(
     const seq = deps.sequence;
     if (!seq?.steps?.length) return 0;
     const stepCount = seq.steps.length;
-    const spl = startPositionLayout;
+    const spl = startPlacementLayout;
 
     if (deps.columnCount !== null && deps.columnCount > 0) {
-      return deps.includeStartPosition && spl === "column"
+      return deps.includeStartPlacement && spl === "column"
         ? deps.columnCount + 1
         : deps.columnCount;
     }
@@ -169,7 +169,7 @@ export function createChoreoCardLayoutState(
     const compositionCols =
       compositionManager.getColumnCountForStepCount(stepCount);
     if (compositionCols !== null && compositionCols > 0) {
-      return deps.includeStartPosition && spl === "column"
+      return deps.includeStartPlacement && spl === "column"
         ? compositionCols + 1
         : compositionCols;
     }
@@ -181,7 +181,7 @@ export function createChoreoCardLayoutState(
         return pickScrollColumns(deps.containerWidth);
       return 5;
     }
-    const [cols] = calculateLayout(stepCount, deps.includeStartPosition, spl);
+    const [cols] = calculateLayout(stepCount, deps.includeStartPlacement, spl);
     return cols;
   });
 
@@ -195,7 +195,7 @@ export function createChoreoCardLayoutState(
     if (!seq?.steps?.length) return 0;
     const stepCount = seq.steps.length;
     const cols = baseColumns;
-    const spl = startPositionLayout;
+    const spl = startPlacementLayout;
     const hasCompositionOverride =
       compositionManager.getColumnCountForStepCount(stepCount) !== null;
 
@@ -203,22 +203,22 @@ export function createChoreoCardLayoutState(
       cols > 0 &&
       (deps.columnCount !== null || isLongSequence || hasCompositionOverride)
     ) {
-      if (deps.includeStartPosition && spl === "row") {
+      if (deps.includeStartPlacement && spl === "row") {
         return 1 + Math.ceil(stepCount / cols);
       }
-      const stepsPerRow = deps.includeStartPosition ? cols - 1 : cols;
+      const stepsPerRow = deps.includeStartPlacement ? cols - 1 : cols;
       const firstRowSteps = Math.min(stepsPerRow, stepCount);
       const remainingSteps = stepCount - firstRowSteps;
       return 1 + Math.ceil(remainingSteps / stepsPerRow);
     }
 
-    const [, rws] = calculateLayout(stepCount, deps.includeStartPosition, spl);
+    const [, rws] = calculateLayout(stepCount, deps.includeStartPlacement, spl);
 
     // Column layout only: mandala fill needs at least one col-1 empty between
     if (
       deps.showMandala &&
       deps.showQRCode &&
-      deps.includeStartPosition &&
+      deps.includeStartPlacement &&
       spl === "column" &&
       stepCount === 6 &&
       rws === 2
@@ -235,12 +235,12 @@ export function createChoreoCardLayoutState(
       stepCount: deps.sequence?.steps?.length ?? 0,
       cols: baseColumns,
       rows: baseRows,
-      includeStartPosition: deps.includeStartPosition,
+      includeStartPlacement: deps.includeStartPlacement,
       showQRCode: deps.showQRCode,
       leftVisible: deps.showLeftMotion,
       rightVisible: deps.showRightMotion,
       mandalaEnabled: deps.showMandala,
-      startPositionLayout,
+      startPlacementLayout,
     });
   });
   const mandalaLayoutOverride = $derived(mandalaResult.layoutOverride);
@@ -353,16 +353,16 @@ export function createChoreoCardLayoutState(
   );
 
   // QR code grid position
-  const qrGridPosition = $derived.by(() => {
+  const qrGridPlacement = $derived.by(() => {
     const deps = getDeps();
-    if (!deps.showQRCode || !deps.includeStartPosition) return null;
+    if (!deps.showQRCode || !deps.includeStartPlacement) return null;
     if (mandalaLayoutOverride) {
       return {
         gridColumn: mandalaLayoutOverride.qrPos.col,
         gridRow: mandalaLayoutOverride.qrPos.row,
       };
     }
-    if (startPositionLayout === "row") {
+    if (startPlacementLayout === "row") {
       if (effectiveColumns < 2) return null;
       return { gridColumn: effectiveColumns, gridRow: 1 };
     }
@@ -383,8 +383,8 @@ export function createChoreoCardLayoutState(
     get autoFit() {
       return autoFit;
     },
-    get startPositionLayout() {
-      return startPositionLayout;
+    get startPlacementLayout() {
+      return startPlacementLayout;
     },
     get baseColumns() {
       return baseColumns;
@@ -440,8 +440,8 @@ export function createChoreoCardLayoutState(
     get footerMargin() {
       return footerMargin;
     },
-    get qrGridPosition() {
-      return qrGridPosition;
+    get qrGridPlacement() {
+      return qrGridPlacement;
     },
     SCROLL_THRESHOLD,
   } as const;

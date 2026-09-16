@@ -35,7 +35,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import { isHandPathSequence } from "$lib/shared/foundation/domain/models/sequence-kind";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { Plane } from "@tka/tka-types";
 
@@ -112,8 +112,11 @@ function extractContent(sequence: SequenceData, opts: ExtractOptions): unknown {
 
   return {
     ...(opts.excludeDerived ? {} : { gridMode: seqGridMode }),
-    startPosition: extractStartPosition(
-      sequence.startPosition ?? sequence.startingPosition,
+    // Preimage property names are a persistence protocol. Stored V1 and V2
+    // hashes were minted under the older "startPosition" label, so the key
+    // stays as is while the value comes from the canonical startPlacement.
+    startPosition: extractStartPlacement(
+      sequence.startPlacement ?? sequence.startingPlacement,
       seqGridMode,
       opts
     ),
@@ -121,8 +124,8 @@ function extractContent(sequence: SequenceData, opts: ExtractOptions): unknown {
   };
 }
 
-function extractStartPosition(
-  sp: StartPositionData | undefined,
+function extractStartPlacement(
+  sp: StartPlacementData | undefined,
   inheritedGridMode: string | null,
   opts: ExtractOptions
 ): unknown {

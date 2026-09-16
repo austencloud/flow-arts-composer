@@ -166,11 +166,11 @@ function generateConstraintDescription(
       return `${reversals} reversals in ${steps} beats`;
     }
 
-    case ConstraintType.POSITION_GROUP: {
+    case ConstraintType.PLACEMENT_GROUP: {
       if (score === 1) {
-        return `All positions within required group`;
+        return `All placements within required group`;
       }
-      return `${percentage}% of positions in group`;
+      return `${percentage}% of placements in group`;
     }
 
     case ConstraintType.VTG_TIMING: {

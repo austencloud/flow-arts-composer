@@ -6,7 +6,7 @@
  */
 
 import type {
-  GridPosition,
+  GridPlacement,
   GridLocation,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -14,7 +14,7 @@ import {
   RotationDirection,
   MotionType,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { LOCATION_MAP_EIGHTH_CW } from "$lib/shared/foundation/domain/models/generation/circular-position-maps";
+import { LOCATION_MAP_EIGHTH_CW } from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
 
 /**
  * Normalize rotation steps to a positive count within a single revolution (0-7).
@@ -69,9 +69,9 @@ export function getToggledGridMode(
  * Positive = clockwise, negative = counter-clockwise.
  */
 export function rotateLocation(
-  location: GridPosition | GridLocation,
+  location: GridPlacement | GridLocation,
   rotationAmount: number
-): GridPosition | GridLocation {
+): GridPlacement | GridLocation {
   const steps = normalizeRotationSteps(rotationAmount);
   let rotated = location;
   for (let i = 0; i < steps; i++) {

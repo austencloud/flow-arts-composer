@@ -30,7 +30,7 @@
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
   import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
-  import PositionGlyph from "$lib/shared/pictograph/shared/components/PositionGlyph.svelte";
+  import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
   import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import {
     MotionType,
@@ -41,9 +41,9 @@
   import {
     GridMode,
     GridLocation,
-    GridPosition,
+    GridPlacement,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -191,8 +191,8 @@
       id: `${key}${stepNumber === null ? "" : `-${stepNumber}`}`,
       letter: c.letter,
       gridMode: GridMode.DIAMOND,
-      startPosition: getGridPositionFromLocations(c.left.from, c.right.from),
-      endPosition: getGridPositionFromLocations(c.left.to, c.right.to),
+      startPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
+      endPlacement: getGridPlacementFromLocations(c.left.to, c.right.to),
       stepNumber,
       motions: {
         left: hand(HandSide.LEFT, c.left),
@@ -206,8 +206,8 @@
       letter: null,
       gridMode: GridMode.DIAMOND,
       stepNumber: 0,
-      startPosition: getGridPositionFromLocations(c.left.from, c.right.from),
-      endPosition: getGridPositionFromLocations(c.left.from, c.right.from),
+      startPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
+      endPlacement: getGridPlacementFromLocations(c.left.from, c.right.from),
       motions: {
         left: staticHand(HandSide.LEFT, c.left.from),
         right: staticHand(HandSide.RIGHT, c.right.from),
@@ -340,7 +340,7 @@
   const PICTO_FLAGS = {
     showGrid: true,
     showTKA: true,
-    showPositions: false,
+    showPlacements: false,
     showReversals: false,
     showTnD: false,
     showElemental: false,
@@ -497,7 +497,7 @@
     </div>
   {/each}
 
-  <!-- Margin labels: γ→γ PositionGlyph over the italic qualifier. -->
+  <!-- Margin labels: γ→γ PlacementGlyph over the italic qualifier. -->
   {#each MARGINS as m, i (i)}
     <span
       class="margin glyph"
@@ -510,9 +510,9 @@
         aria-label={m.t}
         style="height:{16 * S}px"
       >
-        <PositionGlyph
-          startPosition={GridPosition.GAMMA1}
-          endPosition={GridPosition.GAMMA1}
+        <PlacementGlyph
+          startPlacement={GridPlacement.GAMMA1}
+          endPlacement={GridPlacement.GAMMA1}
         />
       </svg>
     </span>

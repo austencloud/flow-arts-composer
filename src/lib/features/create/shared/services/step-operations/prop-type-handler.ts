@@ -4,7 +4,7 @@
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import type { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { ICreateModuleState } from "../../types/create-module-types";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
@@ -12,7 +12,7 @@ import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictog
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
 import {
   getStepDataFromState,
-  START_POSITION_BEAT_NUMBER,
+  START_PLACEMENT_BEAT_NUMBER,
 } from "./step-data-helpers";
 
 const logger = createComponentLogger("PropTypeHandler");
@@ -53,17 +53,17 @@ export function updateStepPropType(
     },
   };
 
-  if (stepNumber === START_POSITION_BEAT_NUMBER) {
-    // Convert to proper StartPositionData when updating start position
-    const updatedStartPosition = createStartPositionData({
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+    // Convert to proper StartPlacementData when updating start placement
+    const updatedStartPlacement = createStartPlacementData({
       ...stepData,
       motions: {
         ...stepData.motions,
         [color]: updatedMotion,
       },
     });
-    createModuleState.sequenceState.setStartPosition(updatedStartPosition);
-    logger.log(`Updated start position ${color} prop type to ${propType}`);
+    createModuleState.sequenceState.setStartPlacement(updatedStartPlacement);
+    logger.log(`Updated start placement ${color} prop type to ${propType}`);
   } else {
     const arrayIndex = stepNumber - 1;
     createModuleState.sequenceState.updateStep(arrayIndex, updatedStepData);
@@ -73,31 +73,31 @@ export function updateStepPropType(
 
 /**
  * Bulk update prop type for all motions of a specific color in the sequence
- * Updates both the start position and all steps
+ * Updates both the start placement and all steps
  */
 export function bulkUpdatePropType(
   color: string,
   propType: PropType,
   createModuleState: ICreateModuleState
 ): void {
-  // Update start position
-  const startPosition = createModuleState.sequenceState.selectedStartPosition;
-  if (startPosition?.motions) {
-    const currentMotion = startPosition.motions[color as HandSide];
+  // Update start placement
+  const startPlacement = createModuleState.sequenceState.selectedStartPlacement;
+  if (startPlacement?.motions) {
+    const currentMotion = startPlacement.motions[color as HandSide];
     if (currentMotion) {
       const updatedMotion = {
         ...currentMotion,
         propType: propType,
       };
-      const updatedStartPosition = createStartPositionData({
-        ...startPosition,
+      const updatedStartPlacement = createStartPlacementData({
+        ...startPlacement,
         motions: {
-          ...startPosition.motions,
+          ...startPlacement.motions,
           [color]: updatedMotion,
         },
       });
-      createModuleState.sequenceState.setStartPosition(updatedStartPosition);
-      logger.log(`Updated start position ${color} prop type to ${propType}`);
+      createModuleState.sequenceState.setStartPlacement(updatedStartPlacement);
+      logger.log(`Updated start placement ${color} prop type to ${propType}`);
     }
   }
 

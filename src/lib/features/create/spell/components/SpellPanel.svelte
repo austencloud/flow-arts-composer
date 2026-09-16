@@ -18,7 +18,7 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   import type { VariationExplorationOrchestrator } from "../services/variation-exploration-orchestrator";
   import type { RandomSequenceGenerator } from "../services/random-sequence-generator";
   import * as spellServiceLoaderModule from "../services/spell-service-loader";
-  import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+  import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
   import type { DeviceDetector } from '$lib/shared/device/services/device-detector'
   import { UndoOperationType } from "../../shared/services/undo-manager";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -156,8 +156,8 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
   const canGenerate = $derived(spellState.inputWord.trim().length > 0 && !spellState.isGenerating);
 
 
-  function deriveStartPosition(sequence: SequenceData): SequenceData {
-    if (sequence.startPosition || !sequence.steps?.length) {
+  function deriveStartPlacement(sequence: SequenceData): SequenceData {
+    if (sequence.startPlacement || !sequence.steps?.length) {
       return sequence;
     }
 
@@ -165,13 +165,13 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
     if (!firstStep) return sequence;
 
     try {
-    const derivedStartPosition = startPositionDeriver.deriveFromFirstStep(firstStep);
+    const derivedStartPlacement = startPlacementDeriver.deriveFromFirstStep(firstStep);
       return {
         ...sequence,
-        startPosition: derivedStartPosition,
+        startPlacement: derivedStartPlacement,
       };
     } catch (error) {
-      console.warn("Failed to derive start position:", error);
+      console.warn("Failed to derive start placement:", error);
       return sequence;
     }
   }
@@ -247,7 +247,7 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
         return;
       }
 
-      const sequenceWithStart = deriveStartPosition(sequence);
+      const sequenceWithStart = deriveStartPlacement(sequence);
 
       // Check if LOOP was applied (sequence has extended data in metadata)
       const loopSpellData = sequenceWithStart.metadata?.spellData as {
@@ -280,8 +280,8 @@ import { getDeviceDetector } from "$lib/shared/device/get-device-detector";
         },
       });
 
-      if (sequenceWithStart.startPosition) {
-        sequenceState.setSelectedStartPosition(sequenceWithStart.startPosition);
+      if (sequenceWithStart.startPlacement) {
+        sequenceState.setSelectedStartPlacement(sequenceWithStart.startPlacement);
       }
 
       spellState.pushUndoSnapshot(UndoOperationType.SPELL_GENERATE, {

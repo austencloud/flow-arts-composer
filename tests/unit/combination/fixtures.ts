@@ -15,7 +15,7 @@
  */
 
 import type { SeamState } from "$lib/shared/combination/domain/types";
-import { seamOf } from "$lib/shared/combination/services/position-groups";
+import { seamOf } from "$lib/shared/combination/services/placement-groups";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
@@ -56,7 +56,7 @@ export function seamsOf(seq: SequenceData): SeamState[] {
     const seam = seamOf(step);
     if (!seam) {
       throw new Error(
-        `Fixture step ${step.stepNumber} carries no startPosition`
+        `Fixture step ${step.stepNumber} carries no startPlacement`
       );
     }
     return seam;

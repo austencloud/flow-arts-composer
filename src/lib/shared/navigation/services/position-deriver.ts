@@ -9,9 +9,9 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 export async function derivePositionsForSequence(
   sequence: SequenceData
@@ -22,44 +22,44 @@ export async function derivePositionsForSequence(
   ) as StepData[];
 
   // Derive positions for start position if it exists
-  let updatedStartPosition: StartPositionData | null | undefined =
-    sequence.startPosition;
-  let updatedStartingPositionStep: StartPositionData | undefined =
-    sequence.startingPosition;
+  let updatedStartPlacement: StartPlacementData | null | undefined =
+    sequence.startPlacement;
+  let updatedStartingPlacementStep: StartPlacementData | undefined =
+    sequence.startingPlacement;
 
-  if (sequence.startPosition) {
-    // Cast is safe - we pass StartPositionData so we get StartPositionData back
-    updatedStartPosition = derivePositionsForBeat(
-      sequence.startPosition
-    ) as StartPositionData;
+  if (sequence.startPlacement) {
+    // Cast is safe - we pass StartPlacementData so we get StartPlacementData back
+    updatedStartPlacement = derivePositionsForBeat(
+      sequence.startPlacement
+    ) as StartPlacementData;
   }
 
-  if (sequence.startingPosition) {
-    // Cast is safe - we pass StartPositionData so we get StartPositionData back
-    updatedStartingPositionStep = derivePositionsForBeat(
-      sequence.startingPosition
-    ) as StartPositionData;
+  if (sequence.startingPlacement) {
+    // Cast is safe - we pass StartPlacementData so we get StartPlacementData back
+    updatedStartingPlacementStep = derivePositionsForBeat(
+      sequence.startingPlacement
+    ) as StartPlacementData;
   }
 
   return {
     ...sequence,
     steps: beatsWithPositions,
-    ...(updatedStartPosition !== undefined &&
-      updatedStartPosition !== null && {
-        startPosition: updatedStartPosition,
+    ...(updatedStartPlacement !== undefined &&
+      updatedStartPlacement !== null && {
+        startPlacement: updatedStartPlacement,
       }),
-    ...(updatedStartingPositionStep !== undefined && {
-      startingPosition: updatedStartingPositionStep,
+    ...(updatedStartingPlacementStep !== undefined && {
+      startingPlacement: updatedStartingPlacementStep,
     }),
   };
 }
 
 function derivePositionsForBeat(
-  beat: StepData | StartPositionData
-): StepData | StartPositionData {
+  beat: StepData | StartPlacementData
+): StepData | StartPlacementData {
   // Skip if positions are already set or if motions are missing
   if (
-    (beat.startPosition !== null && beat.endPosition !== null) ||
+    (beat.startPlacement !== null && beat.endPlacement !== null) ||
     !beat.motions.left ||
     !beat.motions.right
   ) {
@@ -68,21 +68,21 @@ function derivePositionsForBeat(
 
   try {
     // Calculate start position from starting hand locations
-    const startPosition: GridPosition = getGridPositionFromLocations(
+    const startPlacement: GridPlacement = getGridPlacementFromLocations(
       beat.motions.left.startLocation,
       beat.motions.right.startLocation
     );
 
     // Calculate end position from ending hand locations
-    const endPosition: GridPosition = getGridPositionFromLocations(
+    const endPlacement: GridPlacement = getGridPlacementFromLocations(
       beat.motions.left.endLocation,
       beat.motions.right.endLocation
     );
 
     return {
       ...beat,
-      startPosition,
-      endPosition,
+      startPlacement,
+      endPlacement,
     };
   } catch (error) {
     // Use appropriate identifier in warning

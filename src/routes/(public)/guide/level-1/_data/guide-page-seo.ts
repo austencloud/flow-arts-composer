@@ -21,12 +21,12 @@ export type GuidePageSeo = {
 };
 
 export const GUIDE_PAGE_SEO: Record<string, GuidePageSeo> = {
-  "hand-positions": {
-    h1: "Flow Arts Positions: Alpha, Beta, Gamma",
-    tagline: "The three starting hand positions in The Kinetic Alphabet.",
-    title: "Flow Arts Positions: Alpha, Beta, Gamma · The Kinetic Alphabet",
+  "hand-placements": {
+    h1: "Flow Arts Placements: Alpha, Beta, Gamma",
+    tagline: "The three starting hand placements in The Kinetic Alphabet.",
+    title: "Flow Arts Placements: Alpha, Beta, Gamma · The Kinetic Alphabet",
     description:
-      "The three starting hand positions in The Kinetic Alphabet notation. In Alpha the hands occupy the points across from each other; in Beta the same point; in Gamma they form a right angle.",
+      "The three starting hand placements in The Kinetic Alphabet notation. In Alpha the hands occupy the points across from each other; in Beta the same point; in Gamma they form a right angle.",
   },
   "the-grid": {
     h1: "The Grid",
@@ -72,10 +72,10 @@ export const GUIDE_PAGE_SEO: Record<string, GuidePageSeo> = {
     title: "Type 4, 5, 6: Dash, Dual-Dash, Static · The Kinetic Alphabet Guide",
     description: "With a Dash, one hand executes a dash while the other hand remains static.",
   },
-  "staff-positions": {
-    h1: "Staff Positions",
+  "staff-placements": {
+    h1: "Staff Placements",
     tagline: "When writing sequences with staves, it helps to mark the thumb end with a line.",
-    title: "Staff Positions · The Kinetic Alphabet Guide",
+    title: "Staff Placements · The Kinetic Alphabet Guide",
     description: "When writing sequences with staves, it helps to mark the thumb end with a line.",
   },
   "staff-motions": {

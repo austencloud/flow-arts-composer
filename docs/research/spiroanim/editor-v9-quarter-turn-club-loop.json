@@ -6,9 +6,9 @@
     "attribution": "SpiroAnim v9 editor artifact supplied by Austen",
     "spiroanimUrl": "https://spiroanim.com/play-edit?r=Ew48Yk11Y&p0=Q__.blEQYq____q_.5JEQzP............_ZEQUV............_ZEQzP............_ZEQUV...........&m0=_1__Vqv__&p1=.blEQYq____q_.5JEQzP......_ZEQUV............_ZEQzP............_ZEQUV............_ZEQzP.....&c=_gLyFq.&v=9"
   },
-  "startPosition": {
+  "startPlacement": {
     "letter": null,
-    "gridPosition": "beta3",
+    "gridPlacement": "beta3",
     "motions": {
       "blue": {
         "color": "blue",
@@ -36,8 +36,8 @@
     {
       "stepNumber": 1,
       "letter": "H",
-      "startPosition": "beta3",
-      "endPosition": "beta5",
+      "startPlacement": "beta3",
+      "endPlacement": "beta5",
       "duration": 1,
       "motions": {
         "blue": {
@@ -65,8 +65,8 @@
     {
       "stepNumber": 2,
       "letter": "H",
-      "startPosition": "beta5",
-      "endPosition": "beta7",
+      "startPlacement": "beta5",
+      "endPlacement": "beta7",
       "duration": 1,
       "motions": {
         "blue": {
@@ -94,8 +94,8 @@
     {
       "stepNumber": 3,
       "letter": "H",
-      "startPosition": "beta7",
-      "endPosition": "beta1",
+      "startPlacement": "beta7",
+      "endPlacement": "beta1",
       "duration": 1,
       "motions": {
         "blue": {
@@ -123,8 +123,8 @@
     {
       "stepNumber": 4,
       "letter": "F",
-      "startPosition": "beta1",
-      "endPosition": "alpha7",
+      "startPlacement": "beta1",
+      "endPlacement": "alpha7",
       "duration": 1,
       "motions": {
         "blue": {
@@ -152,8 +152,8 @@
     {
       "stepNumber": 5,
       "letter": "L",
-      "startPosition": "alpha7",
-      "endPosition": "beta5",
+      "startPlacement": "alpha7",
+      "endPlacement": "beta5",
       "duration": 1,
       "motions": {
         "blue": {
@@ -181,8 +181,8 @@
     {
       "stepNumber": 6,
       "letter": "F",
-      "startPosition": "beta5",
-      "endPosition": "alpha3",
+      "startPlacement": "beta5",
+      "endPlacement": "alpha3",
       "duration": 1,
       "motions": {
         "blue": {
@@ -210,8 +210,8 @@
     {
       "stepNumber": 7,
       "letter": "A",
-      "startPosition": "alpha3",
-      "endPosition": "alpha1",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha1",
       "duration": 1,
       "motions": {
         "blue": {
@@ -239,8 +239,8 @@
     {
       "stepNumber": 8,
       "letter": "A",
-      "startPosition": "alpha1",
-      "endPosition": "alpha7",
+      "startPlacement": "alpha1",
+      "endPlacement": "alpha7",
       "duration": 1,
       "motions": {
         "blue": {
@@ -268,8 +268,8 @@
     {
       "stepNumber": 9,
       "letter": "A",
-      "startPosition": "alpha7",
-      "endPosition": "alpha5",
+      "startPlacement": "alpha7",
+      "endPlacement": "alpha5",
       "duration": 1,
       "motions": {
         "blue": {
@@ -297,8 +297,8 @@
     {
       "stepNumber": 10,
       "letter": "L",
-      "startPosition": "alpha5",
-      "endPosition": "beta7",
+      "startPlacement": "alpha5",
+      "endPlacement": "beta7",
       "duration": 1,
       "motions": {
         "blue": {
@@ -326,8 +326,8 @@
     {
       "stepNumber": 11,
       "letter": "F",
-      "startPosition": "beta7",
-      "endPosition": "alpha1",
+      "startPlacement": "beta7",
+      "endPlacement": "alpha1",
       "duration": 1,
       "motions": {
         "blue": {
@@ -355,8 +355,8 @@
     {
       "stepNumber": 12,
       "letter": "L",
-      "startPosition": "alpha1",
-      "endPosition": "beta3",
+      "startPlacement": "alpha1",
+      "endPlacement": "beta3",
       "duration": 1,
       "motions": {
         "blue": {
@@ -384,8 +384,8 @@
     {
       "stepNumber": 13,
       "letter": "H",
-      "startPosition": "beta3",
-      "endPosition": "beta5",
+      "startPlacement": "beta3",
+      "endPlacement": "beta5",
       "duration": 1,
       "motions": {
         "blue": {
@@ -413,8 +413,8 @@
     {
       "stepNumber": 14,
       "letter": "H",
-      "startPosition": "beta5",
-      "endPosition": "beta7",
+      "startPlacement": "beta5",
+      "endPlacement": "beta7",
       "duration": 1,
       "motions": {
         "blue": {
@@ -442,8 +442,8 @@
     {
       "stepNumber": 15,
       "letter": "H",
-      "startPosition": "beta7",
-      "endPosition": "beta1",
+      "startPlacement": "beta7",
+      "endPlacement": "beta1",
       "duration": 1,
       "motions": {
         "blue": {
@@ -471,8 +471,8 @@
     {
       "stepNumber": 16,
       "letter": "F",
-      "startPosition": "beta1",
-      "endPosition": "alpha7",
+      "startPlacement": "beta1",
+      "endPlacement": "alpha7",
       "duration": 1,
       "motions": {
         "blue": {
@@ -500,8 +500,8 @@
     {
       "stepNumber": 17,
       "letter": "L",
-      "startPosition": "alpha7",
-      "endPosition": "beta5",
+      "startPlacement": "alpha7",
+      "endPlacement": "beta5",
       "duration": 1,
       "motions": {
         "blue": {
@@ -529,8 +529,8 @@
     {
       "stepNumber": 18,
       "letter": "F",
-      "startPosition": "beta5",
-      "endPosition": "alpha3",
+      "startPlacement": "beta5",
+      "endPlacement": "alpha3",
       "duration": 1,
       "motions": {
         "blue": {
@@ -558,8 +558,8 @@
     {
       "stepNumber": 19,
       "letter": "A",
-      "startPosition": "alpha3",
-      "endPosition": "alpha1",
+      "startPlacement": "alpha3",
+      "endPlacement": "alpha1",
       "duration": 1,
       "motions": {
         "blue": {
@@ -587,8 +587,8 @@
     {
       "stepNumber": 20,
       "letter": "A",
-      "startPosition": "alpha1",
-      "endPosition": "alpha7",
+      "startPlacement": "alpha1",
+      "endPlacement": "alpha7",
       "duration": 1,
       "motions": {
         "blue": {
@@ -616,8 +616,8 @@
     {
       "stepNumber": 21,
       "letter": "A",
-      "startPosition": "alpha7",
-      "endPosition": "alpha5",
+      "startPlacement": "alpha7",
+      "endPlacement": "alpha5",
       "duration": 1,
       "motions": {
         "blue": {
@@ -645,8 +645,8 @@
     {
       "stepNumber": 22,
       "letter": "L",
-      "startPosition": "alpha5",
-      "endPosition": "beta7",
+      "startPlacement": "alpha5",
+      "endPlacement": "beta7",
       "duration": 1,
       "motions": {
         "blue": {
@@ -674,8 +674,8 @@
     {
       "stepNumber": 23,
       "letter": "F",
-      "startPosition": "beta7",
-      "endPosition": "alpha1",
+      "startPlacement": "beta7",
+      "endPlacement": "alpha1",
       "duration": 1,
       "motions": {
         "blue": {
@@ -703,8 +703,8 @@
     {
       "stepNumber": 24,
       "letter": "L",
-      "startPosition": "alpha1",
-      "endPosition": "beta3",
+      "startPlacement": "alpha1",
+      "endPlacement": "beta3",
       "duration": 1,
       "motions": {
         "blue": {

@@ -92,7 +92,7 @@ export interface Scene3DFilmRender {
   fps: number;
   resolution: number;
   quality: "standard" | "cinema";
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   includeEndHold: boolean;
 }
 
@@ -231,7 +231,7 @@ export const Scene3DFilmSchema = z.object({
     fps: z.number(),
     resolution: z.number(),
     quality: z.enum(["standard", "cinema"]),
-    includeStartPosition: z.boolean(),
+    includeStartPlacement: z.boolean(),
     includeEndHold: z.boolean(),
   }),
   autoSaved: z.boolean(),

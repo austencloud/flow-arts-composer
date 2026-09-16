@@ -25,7 +25,7 @@ import {
   mirrorSequence,
   rewindSequence,
   rotateSequence,
-  shiftStartPosition,
+  shiftStartPlacement,
   swapHands,
 } from "$lib/shared/create/services/sequence-transformer";
 import type { GenerationOptions } from "$lib/shared/foundation/domain/models/generation/generate-models";
@@ -71,7 +71,7 @@ export interface DirectorSequenceTransforms {
     seq: SequenceData,
     hand: DirectorTransformHand
   ): Promise<SequenceData>;
-  shiftStartPosition(seq: SequenceData, step: number): SequenceData;
+  shiftStartPlacement(seq: SequenceData, step: number): SequenceData;
 }
 
 export interface DirectorSequenceLibraryDeps {
@@ -90,7 +90,7 @@ const PRODUCTION_DEPS: DirectorSequenceLibraryDeps = {
     swapHands,
     invertSequence,
     rewindSequence,
-    shiftStartPosition,
+    shiftStartPlacement,
   },
 };
 
@@ -165,7 +165,7 @@ export async function applyTransformChain(
         current = await transforms.rewindSequence(current, step.hand ?? "both");
         break;
       case "start-at":
-        current = transforms.shiftStartPosition(current, step.step);
+        current = transforms.shiftStartPlacement(current, step.step);
         break;
     }
   }

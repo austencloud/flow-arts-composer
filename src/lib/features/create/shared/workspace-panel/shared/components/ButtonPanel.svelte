@@ -104,10 +104,10 @@
     const sequence = currentSequence;
     if (!sequence) return false;
 
-    const hasStartPosition = !!(
-      sequence.startingPosition || sequence.startPosition
+    const hasStartPlacement = !!(
+      sequence.startingPlacement || sequence.startPlacement
     );
-    return hasStartPosition && (sequence.steps?.length ?? 0) === 0;
+    return hasStartPlacement && (sequence.steps?.length ?? 0) === 0;
   });
   const isPlayTutorialTarget = $derived(
     constructTutorialState.isActive &&

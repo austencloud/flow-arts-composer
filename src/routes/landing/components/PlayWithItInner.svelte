@@ -20,7 +20,7 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
   import * as propTypeApplier from "$lib/shared/landing/services/prop-type-applier";
   import { EndlessSpinnerOrchestrator } from "$lib/features/landing/services/endless-spinner-orchestrator";
   import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
-  import { startPositionDeriver as startPositionDeriverInstance } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+  import { startPlacementDeriver as startPlacementDeriverInstance } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
   import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
   import { TrackingMode } from "$lib/shared/animation-engine/state/animation-settings-state.svelte";
   import { createAnimationScope } from "$lib/shared/animation-engine/state/animation-scope.svelte";
@@ -120,7 +120,7 @@ import { sequenceTransformer } from "$lib/shared/create/services/sequence-transf
         browseLoader as any,
         generationOrchestrator,
         sequenceTransformer as any,
-        startPositionDeriverInstance
+        startPlacementDeriverInstance
       );
 
       // Noop infinite generator (this surface is library-only)

@@ -116,12 +116,12 @@ function invertMotionType(type) {
 function isCircular(sequence) {
   const beats = sequence.fullMetadata?.sequence?.filter((b) => b.beat >= 1);
   if (!beats || beats.length < 2) return false;
-  const startPosition = sequence.fullMetadata?.sequence?.find(
+  const startPlacement = sequence.fullMetadata?.sequence?.find(
     (b) => b.beat === 0
   );
   const lastBeat = beats[beats.length - 1];
-  if (!startPosition || !lastBeat) return false;
-  const startPos = startPosition.endPos || startPosition.sequenceStartPosition;
+  if (!startPlacement || !lastBeat) return false;
+  const startPos = startPlacement.endPos || startPlacement.sequenceStartPlacement;
   const endPos = lastBeat.endPos;
   return startPos === endPos;
 }

@@ -91,14 +91,14 @@ export class OrientationPropagator implements IOrientationPropagator {
       return result;
     }
 
-    const startPosition = result.steps[0];
-    if (!startPosition) {
+    const startPlacement = result.steps[0];
+    if (!startPlacement) {
       return result;
     }
 
     let updatedSteps = [...result.steps];
 
-    const leftStartOrientation = (startPosition.leftMotion.endOrientation ||
+    const leftStartOrientation = (startPlacement.leftMotion.endOrientation ||
       "in") as Orientation;
     updatedSteps = this.propagateForColor(
       updatedSteps,
@@ -106,7 +106,7 @@ export class OrientationPropagator implements IOrientationPropagator {
       leftStartOrientation
     );
 
-    const rightStartOrientation = (startPosition.rightMotion.endOrientation ||
+    const rightStartOrientation = (startPlacement.rightMotion.endOrientation ||
       "in") as Orientation;
     updatedSteps = this.propagateForColor(
       updatedSteps,

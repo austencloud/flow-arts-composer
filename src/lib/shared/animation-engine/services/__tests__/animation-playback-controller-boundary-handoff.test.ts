@@ -81,10 +81,10 @@ function createEngine(options?: { rejectIncoming?: boolean }) {
       word: loadedId,
       author: "test",
     })),
-    getTotalDurationWithStartPosition: vi.fn(() =>
+    getTotalDurationWithStartPlacement: vi.fn(() =>
       loadedId === "incoming" ? 6 : 4
     ),
-    getStartPositionDuration: vi.fn(() => 1),
+    getStartPlacementDuration: vi.fn(() => 1),
     calculateStateDurationAware,
     getCurrentPropStates: vi.fn(() => ({ left: {}, right: {} })),
   } as unknown as SequenceAnimationOrchestrator;

@@ -33,7 +33,7 @@ describe("Create Step Editor availability", () => {
       sequenceHasStepEditorContent({
         id: "start-only-sequence",
         steps: [],
-        startingPosition: {},
+        startingPlacement: {},
       } as SequenceData)
     ).toBe(true);
     expect(sequenceHasStepEditorContent(sequenceWithStep)).toBe(true);

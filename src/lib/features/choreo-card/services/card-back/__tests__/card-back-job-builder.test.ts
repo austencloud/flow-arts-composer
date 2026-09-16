@@ -28,7 +28,7 @@ vi.mock("../../../components/card-back/CardBackUrl.svelte", () => ({ default: {}
 vi.mock("../../../components/card-back/CardBackLoopIcon.svelte", () => ({ default: {} }));
 vi.mock("../../../components/card-back/TurnPatternGlyph.svelte", () => ({ default: {} }));
 vi.mock("../../../components/card-back/ReversalPatternGlyph.svelte", () => ({ default: {} }));
-vi.mock("../../../components/card-back/StartPositionPictograph.svelte", () => ({ default: {} }));
+vi.mock("../../../components/card-back/StartPlacementPictograph.svelte", () => ({ default: {} }));
 vi.mock("../../../components/card-back/CardBackStepCount.svelte", () => ({ default: {} }));
 
 import { buildBackJob, type BuildBackJobDeps } from "../card-back-job-builder";
@@ -100,7 +100,7 @@ function makeFakeDeps(overrides: Partial<BuildBackJobDeps> = {}): {
       record("step", a);
       return fakeBitmap("step");
     }),
-    rasterizeStartPosPictograph: vi.fn(async (...a) => {
+    rasterizeStartPlacementPictograph: vi.fn(async (...a) => {
       record("startpos", a);
       return fakeBitmap("startpos");
     }),
@@ -290,18 +290,18 @@ describe("buildBackJob", () => {
     expect(byKind("step-count")[0]!.placement).toEqual(layout.stepCount);
   });
 
-  it("includes a start-pos-pictograph only when the sequence has a startPosition", async () => {
+  it("includes a start-placement-pictograph only when the sequence has a startPlacement", async () => {
     const { deps: depsNo } = makeFakeDeps();
     const jobNoStart = await buildBackJob(
       makeSequence(),
       { width: WIDTH, height: HEIGHT, bleedPx: BLEED, theme: "cosmic" },
       depsNo,
     );
-    expect(jobNoStart.bitmaps.some((b) => b.kind === "start-pos-pictograph")).toBe(false);
+    expect(jobNoStart.bitmaps.some((b) => b.kind === "start-placement-pictograph")).toBe(false);
 
     const { deps: depsYes } = makeFakeDeps();
     const seqStart = makeSequence({
-      startPosition: { letter: "A", motions: {} } as never,
+      startPlacement: { letter: "A", motions: {} } as never,
     });
     const data = deriveCardBackData(seqStart);
     const layout = computeCardBackLayout(data, {
@@ -314,7 +314,7 @@ describe("buildBackJob", () => {
       { width: WIDTH, height: HEIGHT, bleedPx: BLEED, theme: "cosmic" },
       depsYes,
     );
-    const startBitmaps = jobStart.bitmaps.filter((b) => b.kind === "start-pos-pictograph");
+    const startBitmaps = jobStart.bitmaps.filter((b) => b.kind === "start-placement-pictograph");
     expect(startBitmaps).toHaveLength(1);
     expect(startBitmaps[0]!.placement).toEqual(layout.startPos);
   });

@@ -21,7 +21,7 @@
   interface Props {
     sequence?: SequenceData | null;
     showWord?: boolean;
-    includeStartPosition?: boolean;
+    includeStartPlacement?: boolean;
     onClose: () => void;
     onContextMenu?: (x: number, y: number, rerender: () => void) => void;
     frontImageUrl?: string | null;
@@ -41,7 +41,7 @@
   let {
     sequence,
     showWord = true,
-    includeStartPosition = true,
+    includeStartPlacement = true,
     onClose,
     onContextMenu,
     frontImageUrl,
@@ -238,7 +238,7 @@
             <LiveChoreoCard
               {sequence}
               {showWord}
-              {includeStartPosition}
+              {includeStartPlacement}
               showDifficultyLevel={false}
               showNotes={false}
               showLoopGlyph={true}
@@ -249,7 +249,7 @@
               leftPropType={effLeftProp}
               rightPropType={effRightProp}
               forceContain={true}
-              startPositionLayoutOverride={getCatalogLayoutPolicy(
+              startPlacementLayoutOverride={getCatalogLayoutPolicy(
                 sequence.steps?.length ?? 0
               )}
             />
@@ -258,8 +258,8 @@
           <CardPreviewStack
             {sequence}
             {showWord}
-            {includeStartPosition}
-            startPositionLayout={getCatalogLayoutPolicy(
+            {includeStartPlacement}
+            startPlacementLayout={getCatalogLayoutPolicy(
               sequence?.steps?.length ?? 0
             )}
             {showQRCode}
@@ -275,7 +275,7 @@
           {sequence}
           leftPropType={effLeftProp}
           rightPropType={effRightProp}
-          {includeStartPosition}
+          {includeStartPlacement}
           onSelect={onCellSelected}
         />
       {/if}

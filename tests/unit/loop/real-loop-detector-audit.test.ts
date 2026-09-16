@@ -75,8 +75,8 @@ interface FixtureStep {
   id?: string;
   stepNumber: number;
   letter: string | null;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   motions: { left: FixtureMotion; right: FixtureMotion };
 }
 
@@ -124,8 +124,8 @@ function toSequenceData(sample: FixtureSample): SequenceData {
       stepNumber: s.stepNumber,
       duration: 1,
       letter: s.letter,
-      startPosition: s.startPosition,
-      endPosition: s.endPosition,
+      startPlacement: s.startPlacement,
+      endPlacement: s.endPlacement,
       motions: {
         left: { ...s.motions.left, hand: "left" },
         right: { ...s.motions.right, hand: "right" },
@@ -147,16 +147,16 @@ function toSequenceEntry(sample: FixtureSample): SequenceEntry {
   const raw = [
     {
       beat: 0,
-      sequenceStartPosition: start.startPosition,
-      endPos: start.endPosition,
+      sequenceStartPlacement: start.startPlacement,
+      endPos: start.endPlacement,
     },
     ...sample.steps
       .filter((s) => s.stepNumber > 0)
       .map((s) => ({
         beat: s.stepNumber,
         letter: s.letter ?? "",
-        startPos: s.startPosition,
-        endPos: s.endPosition,
+        startPos: s.startPlacement,
+        endPos: s.endPlacement,
         leftAttributes: {
           motionType: s.motions.left.motionType,
           startLoc: s.motions.left.startLocation,

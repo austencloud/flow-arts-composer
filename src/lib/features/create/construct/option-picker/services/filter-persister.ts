@@ -7,14 +7,14 @@ export interface IFilterPersister {
   saveFilters(
     sortMethod: SortMethod,
     typeFilter: TypeFilter,
-    endPositionFilter: Record<string, boolean>,
+    endPlacementFilter: Record<string, boolean>,
     reversalFilter: Record<string, boolean>,
     isContinuousOnly?: boolean
   ): void;
   loadFilters(): {
     sortMethod: SortMethod;
     typeFilter: TypeFilter;
-    endPositionFilter: Record<string, boolean>;
+    endPlacementFilter: Record<string, boolean>;
     reversalFilter: Record<string, boolean>;
     isContinuousOnly: boolean;
   } | null;
@@ -30,7 +30,7 @@ export class FilterPersister implements IFilterPersister {
   saveFilters(
     sortMethod: SortMethod,
     typeFilter: TypeFilter,
-    endPositionFilter: Record<string, boolean>,
+    endPlacementFilter: Record<string, boolean>,
     reversalFilter: Record<string, boolean>,
     isContinuousOnly?: boolean
   ): void {
@@ -38,7 +38,7 @@ export class FilterPersister implements IFilterPersister {
       const filterData = {
         sortMethod,
         typeFilter,
-        endPositionFilter,
+        endPlacementFilter,
         reversalFilter,
         isContinuousOnly: isContinuousOnly ?? false,
         timestamp: Date.now(),
@@ -80,7 +80,7 @@ export class FilterPersister implements IFilterPersister {
   loadFilters(): {
     sortMethod: SortMethod;
     typeFilter: TypeFilter;
-    endPositionFilter: Record<string, boolean>;
+    endPlacementFilter: Record<string, boolean>;
     reversalFilter: Record<string, boolean>;
     isContinuousOnly: boolean;
   } | null {
@@ -101,7 +101,7 @@ export class FilterPersister implements IFilterPersister {
       return {
         sortMethod: parsed["sortMethod"],
         typeFilter: parsed["typeFilter"],
-        endPositionFilter: parsed.endPositionFilter ?? {},
+        endPlacementFilter: parsed.endPlacementFilter ?? {},
         reversalFilter: parsed.reversalFilter ?? {},
         isContinuousOnly: parsed.isContinuousOnly ?? this.loadContinuousOnly(),
       };
@@ -117,7 +117,7 @@ export class FilterPersister implements IFilterPersister {
   private isValidFilterData(obj: unknown): obj is {
     sortMethod: SortMethod;
     typeFilter: TypeFilter;
-    endPositionFilter?: Record<string, boolean>;
+    endPlacementFilter?: Record<string, boolean>;
     reversalFilter?: Record<string, boolean>;
     isContinuousOnly?: boolean;
   } {

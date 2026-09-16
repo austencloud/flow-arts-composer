@@ -51,7 +51,7 @@ describe("Create front-door source contract", () => {
     const pickerSource = readFileSync(
       resolve(
         root,
-        "src/lib/features/create/construct/start-position-picker/components/StartPositionPicker.svelte"
+        "src/lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte"
       ),
       "utf8"
     );

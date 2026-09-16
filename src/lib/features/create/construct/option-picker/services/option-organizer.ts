@@ -35,7 +35,7 @@ function getLetterTypeFromString(letter: string | null | undefined): string {
 
 /**
  * Organize pictographs by letter types (Types 1-6)
- * Used for type, endPosition, and reversals sorting
+ * Used for type, endPlacement, and reversals sorting
  */
 function organizeByTypes(pictographs: PictographData[]): OrganizedSection[] {
   const allTypes = ["Type1", "Type2", "Type3", "Type4", "Type5", "Type6"];
@@ -80,6 +80,6 @@ export function organizePictographs(
   pictographs: PictographData[],
   _sortMethod: SortMethod
 ): OrganizedSection[] {
-  // All current sort methods (type, endPosition, reversals) use the same type-based organization
+  // All current sort methods (type, endPlacement, reversals) use the same type-based organization
   return organizeByTypes(pictographs);
 }

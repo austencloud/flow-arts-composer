@@ -13,7 +13,7 @@ function stepCols(r: { cols: number; startPlacement: string }): number {
 
 const base = (over: Partial<BestFitInput>): BestFitInput => ({
   stepCount: 4,
-  includeStartPosition: true,
+  includeStartPlacement: true,
   containerWidth: 500,
   containerHeight: 500,
   showHeader: true,
@@ -228,7 +228,7 @@ describe("pickBestFitLayout", () => {
       const shown = pickBestFitLayout(
         base({
           stepCount: 8,
-          includeStartPosition: true,
+          includeStartPlacement: true,
           containerWidth,
           containerHeight,
         })
@@ -236,7 +236,7 @@ describe("pickBestFitLayout", () => {
       const hidden = pickBestFitLayout(
         base({
           stepCount: 8,
-          includeStartPosition: false,
+          includeStartPlacement: false,
           containerWidth,
           containerHeight,
         })
@@ -313,7 +313,7 @@ describe("container-aware Auto coverage", () => {
       for (const [containerWidth, containerHeight] of viewports) {
         const layout = pickBestFitLayout({
           stepCount,
-          includeStartPosition: true,
+          includeStartPlacement: true,
           containerWidth,
           containerHeight,
           showHeader: true,
@@ -336,7 +336,7 @@ describe("container-aware Auto coverage", () => {
 
         const withoutStart = pickBestFitLayout({
           stepCount,
-          includeStartPosition: false,
+          includeStartPlacement: false,
           containerWidth,
           containerHeight,
           showHeader: true,

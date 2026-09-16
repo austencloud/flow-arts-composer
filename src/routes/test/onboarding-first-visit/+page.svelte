@@ -33,7 +33,7 @@
     },
     workspace: {
       title: "Not now ends the interruption.",
-      body: "The offer folds back into the normal start-position heading. No replacement prompt appears and no setup task is marked complete.",
+      body: "The offer folds back into the normal start-placement heading. No replacement prompt appears and no setup task is marked complete.",
       note: "The guide stays available from its replay control later.",
     },
     compose: {

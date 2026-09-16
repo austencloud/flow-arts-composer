@@ -7,7 +7,7 @@
 
 import { TransitionGraph } from "../../vendor/sequence-engine/services/implementations/TransitionGraph.js";
 import { getNodeDataProvider } from "../adapters/NodeDataProvider.js";
-import type { PositionGroup, LetterPositionInfo } from "../../vendor/sequence-engine/domain/models/SequenceEngineTypes.js";
+import type { PlacementGroup, LetterPlacementInfo } from "../../vendor/sequence-engine/domain/models/SequenceEngineTypes.js";
 
 /**
  * Legacy wrapper class that delegates to the shared TransitionGraph.
@@ -62,16 +62,16 @@ export class LetterTransitionGraph {
     return this.sharedGraph.getValidSuccessors(letter);
   }
 
-  getLetterPositionInfo(letter: string): LetterPositionInfo | null {
-    return this.sharedGraph.getLetterPositionInfo(letter);
+  getLetterPlacementInfo(letter: string): LetterPlacementInfo | null {
+    return this.sharedGraph.getLetterPlacementInfo(letter);
   }
 
-  getStartPositionGroup(letter: string): PositionGroup | null {
-    return this.sharedGraph.getStartPositionGroup(letter);
+  getStartPlacementGroup(letter: string): PlacementGroup | null {
+    return this.sharedGraph.getStartPlacementGroup(letter);
   }
 
-  getEndPositionGroup(letter: string): PositionGroup | null {
-    return this.sharedGraph.getEndPositionGroup(letter);
+  getEndPlacementGroup(letter: string): PlacementGroup | null {
+    return this.sharedGraph.getEndPlacementGroup(letter);
   }
 
   findBridgeLetters(letterA: string, letterB: string): string[] {
@@ -120,4 +120,4 @@ export async function ensureTransitionGraphInitialized(): Promise<LetterTransiti
 }
 
 // Re-export types for convenience
-export type { PositionGroup, LetterPositionInfo };
+export type { PlacementGroup, LetterPlacementInfo };

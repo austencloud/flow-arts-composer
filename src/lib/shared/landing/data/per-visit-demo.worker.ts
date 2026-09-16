@@ -26,7 +26,7 @@ export interface PerVisitDemoRequest {
    *  function and cannot cross the boundary, so a caller that supplies one
    *  never reaches the worker (the client keeps it on the main thread). */
   propType?: PropType;
-  startPosition?: PictographData | null;
+  startPlacement?: PictographData | null;
 }
 
 export type PerVisitDemoResponse =
@@ -38,12 +38,12 @@ export type PerVisitDemoResponse =
 const scope = self as unknown as DedicatedWorkerGlobalScope;
 
 scope.addEventListener("message", (event: MessageEvent<PerVisitDemoRequest>) => {
-  const { id, propType, startPosition } = event.data ?? { id: -1 };
+  const { id, propType, startPlacement } = event.data ?? { id: -1 };
   void (async () => {
     try {
       const sequence = await rollPerVisitDemo({
         ...(propType ? { propType } : {}),
-        ...(startPosition ? { startPosition } : {}),
+        ...(startPlacement ? { startPlacement } : {}),
       });
       if (!sequence) {
         scope.postMessage({

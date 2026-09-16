@@ -69,13 +69,13 @@ describe("sequence encoding carries no version sentinel", () => {
       id: "x", name: "", word: "", steps: [
         { stepNumber: 0, duration: 1, leftReversal: false, rightReversal: false, isBlank: false,
           motions: { left: staticMotion(GridLocation.NORTH), right: staticMotion(GridLocation.SOUTH) },
-          id: "s0", letter: null, startPosition: null, endPosition: null },
+          id: "s0", letter: null, startPlacement: null, endPlacement: null },
         { stepNumber: 1, duration: 1, leftReversal: false, rightReversal: false, isBlank: false,
           motions: {
             left: motion({ startLocation: GridLocation.NORTH, endLocation: GridLocation.EAST, rotationDirection: RotationDirection.CLOCKWISE, turns: 0 }),
             right:  motion({ startLocation: GridLocation.SOUTH, endLocation: GridLocation.WEST, rotationDirection: RotationDirection.CLOCKWISE, turns: 0 }),
           },
-          id: "s1", letter: null, startPosition: null, endPosition: null },
+          id: "s1", letter: null, startPlacement: null, endPlacement: null },
       ],
       thumbnails: [], isFavorite: false, isCircular: false, tags: [], metadata: {}, sequenceLength: 1,
     } as never;

@@ -1,26 +1,26 @@
 /**
  * Filter Service Implementation
  *
- * Handles filtering of pictograph options by type, end position, and reversals.
+ * Handles filtering of pictograph options by type, end placement, and reversals.
  * Extracted from OptionPickerService for better separation of concerns.
  */
 
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import { getLetterType } from "$lib/shared/foundation/domain/models/letter";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { GridPositionGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type {
-  EndPositionFilter,
+  EndPlacementFilter,
   ReversalFilter,
   TypeFilter,
 } from "../domain/option-picker-types";
-import type { PositionAnalyzer } from "./position-analyzer";
+import type { PlacementAnalyzer } from "./placement-analyzer";
 import { getReversalCount } from "./reversal-checker";
 import { LetterType } from "../../../../../shared/foundation/domain/models/letter-type";
 
 export class OptionFilter {
   constructor(
-    private positionAnalyzer: PositionAnalyzer
+    private placementAnalyzer: PlacementAnalyzer
   ) {}
 
   applyTypeFiltering(
@@ -50,26 +50,26 @@ export class OptionFilter {
   }
 
   /**
-   * Apply end position filtering to options
+   * Apply end placement filtering to options
    */
-  applyEndPositionFiltering(
+  applyEndPlacementFiltering(
     options: PictographData[],
-    endPositionFilter: EndPositionFilter
+    endPlacementFilter: EndPlacementFilter
   ): PictographData[] {
     return options.filter((option) => {
-      const endPositionGroup = this.positionAnalyzer.getEndPositionGroup(
-        option.endPosition
+      const endPlacementGroup = this.placementAnalyzer.getEndPlacementGroup(
+        option.endPlacement
       );
 
-      switch (endPositionGroup) {
-        case GridPositionGroup.ALPHA:
-          return endPositionFilter.alpha;
-        case GridPositionGroup.BETA:
-          return endPositionFilter.beta;
-        case GridPositionGroup.GAMMA:
-          return endPositionFilter.gamma;
+      switch (endPlacementGroup) {
+        case GridPlacementGroup.ALPHA:
+          return endPlacementFilter.alpha;
+        case GridPlacementGroup.BETA:
+          return endPlacementFilter.beta;
+        case GridPlacementGroup.GAMMA:
+          return endPlacementFilter.gamma;
         default:
-          return true; // Include unknown positions by default
+          return true; // Include unknown placements by default
       }
     });
   }
@@ -144,6 +144,6 @@ export class OptionFilter {
   }
 }
 
-import { positionAnalyzer } from "./position-analyzer";
+import { placementAnalyzer } from "./placement-analyzer";
 
-export const optionFilter = new OptionFilter(positionAnalyzer);
+export const optionFilter = new OptionFilter(placementAnalyzer);

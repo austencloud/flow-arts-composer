@@ -33,7 +33,7 @@
     gridCols,
     currentStep,
     isPlaying,
-    skipStartPosition = true,
+    skipStartPlacement = true,
     selectedCellId,
     occupiedPositions,
     stateGridBounds,
@@ -45,7 +45,7 @@
     gridCols: number;
     currentStep: number;
     isPlaying: boolean;
-    skipStartPosition?: boolean;
+    skipStartPlacement?: boolean;
     selectedCellId: string | null;
     occupiedPositions: Map<string, string>;
     /** Pre-computed grid bounds from state */
@@ -710,7 +710,7 @@
                 cellIndex={arrangeGridState.getCellDisplayIndex(cell.id)}
                 {currentStep}
                 {isPlaying}
-                {skipStartPosition}
+                {skipStartPlacement}
                 isSelected={selectedCellId === cell.id}
                 isDragging={suppressClick}
                 onSelect={() => onSelectCell(cell.id)}

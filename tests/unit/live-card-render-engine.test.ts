@@ -47,8 +47,8 @@ function setup() {
     rightPropType: undefined,
     browseViewMode: undefined,
     showStepNumbers: true,
-    includeStartPosition: true,
-    startPositionLayout: "column",
+    includeStartPlacement: true,
+    startPlacementLayout: "column",
     mandalaLayoutOverride: null,
     effectiveColumns: 5,
     effectiveRows: 2,
@@ -123,7 +123,7 @@ describe("live card rendering lifecycle", () => {
     const { engine, model, deps, setDeps } = setup();
     setDeps({
       ...deps,
-      includeStartPosition: false,
+      includeStartPlacement: false,
       effectiveColumns: 2,
       sequence: {
         ...deps.sequence,

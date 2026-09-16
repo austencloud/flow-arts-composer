@@ -210,7 +210,7 @@
                 rightPropTypeOverride={PropType.STAFF}
                 showGrid
                 showTKA
-                showPositions
+                showPlacements
                 showElemental
                 showTnD={false}
                 showReversals={false}

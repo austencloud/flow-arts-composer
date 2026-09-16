@@ -23,7 +23,7 @@
  * - Mirrored+Swapped+Inverted → 16 letters (8 × 2, with all transformations)
  *
  * IMPORTANT: Supports both halved and quartered slice sizes
- * IMPORTANT: End position for generation must match the rotation requirement
+ * IMPORTANT: End placement for generation must match the rotation requirement
  * IMPORTANT: After rotation, sequence returns to home, which is valid for mirrored-swapped-inverted
  */
 
@@ -40,7 +40,7 @@ export class MirroredRotatedInvertedSwappedLOOPExecutor implements ILOOPExecutor
   /**
    * Execute the mirrored-rotated-inverted-swapped LOOP by composing rotation + mirrored+swapped+inverted
    *
-   * @param sequence - The partial sequence to complete (must include start position at index 0)
+   * @param sequence - The partial sequence to complete (must include start placement at index 0)
    * @param period - The slice size for rotation (halved or quartered)
    * @returns The complete circular sequence with all steps
    */
@@ -48,7 +48,7 @@ export class MirroredRotatedInvertedSwappedLOOPExecutor implements ILOOPExecutor
     // Step 1: Apply ROTATED with user-selected slice size
     // HALVED: doubles the sequence (e.g., 4 steps → 8 steps)
     // QUARTERED: quadruples the sequence (e.g., 2 steps → 8 steps)
-    // Returns to home position in both cases
+    // Returns to home placement in both cases
     const rotatedSequence = this.strictRotatedExecutor.executeLOOP(
       sequence,
       period

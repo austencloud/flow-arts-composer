@@ -73,9 +73,9 @@
   {#if currentStep}
     <div class="beat-info">
       <span class="beat-label">{t('skel2tka_beat_label', { beat: String(currentStep.index + 1) })}</span>
-      {#if currentStep.positionLabel}
-        <span class="position-label {currentStep.positionLabel}">
-          {currentStep.positionLabel}
+      {#if currentStep.placementLabel}
+        <span class="position-label {currentStep.placementLabel}">
+          {currentStep.placementLabel}
         </span>
       {/if}
       <span class="beat-time">

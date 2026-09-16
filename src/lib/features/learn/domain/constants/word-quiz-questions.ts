@@ -12,7 +12,7 @@ export type MotionType = "pro" | "anti" | "hybrid";
 export type QuestionType =
   | "identify-word"
   | "motion-pattern"
-  | "position-transition"
+  | "placement-transition"
   | "letter-sequence"
   | "cap-concept";
 
@@ -92,7 +92,7 @@ export const SAMPLE_LETTERS = {
 export const TYPE_ICONS: Record<QuestionType, string> = {
   "identify-word": "fa-eye",
   "motion-pattern": "fa-rotate",
-  "position-transition": "fa-arrows-left-right",
+  "placement-transition": "fa-arrows-left-right",
   "letter-sequence": "fa-link",
   "cap-concept": "fa-circle-notch",
 } as const;
@@ -124,9 +124,9 @@ export const WORD_QUIZ_QUESTIONS: WordQuizQuestion[] = [
       "This shows the letter A performed twice in sequence, forming the word 'AA'.",
   },
   {
-    type: "position-transition",
+    type: "placement-transition",
     question:
-      "In Alpha (α) position, where are the hands relative to each other?",
+      "In Alpha (α) placement, where are the hands relative to each other?",
     options: [
       "Same point (together)",
       "Opposite sides (180°)",
@@ -135,33 +135,33 @@ export const WORD_QUIZ_QUESTIONS: WordQuizQuestion[] = [
     ],
     correctAnswer: 1,
     explanation:
-      "Alpha position has hands on opposite sides of the grid (180° apart), like N-S or E-W.",
+      "Alpha placement has hands on opposite sides of the grid (180° apart), like N-S or E-W.",
   },
   {
     type: "letter-sequence",
     question: "What makes letters connect in a TKA word?",
     options: [
       "Letters must be alphabetical",
-      "End position of one letter = Start of next",
+      "End placement of one letter = Start of next",
       "All letters must be the same",
       "Letters must alternate motion types",
     ],
     correctAnswer: 1,
     explanation:
-      "Letters connect when the end position of one letter matches the start position of the next letter.",
+      "Letters connect when the end placement of one letter matches the start placement of the next letter.",
   },
   {
     type: "cap-concept",
     question: "What is a LOOP (Linked Orbital Offset Pattern)?",
     options: [
       "A letter that uses only one hand",
-      "A word where end position returns to start",
+      "A word where end placement returns to start",
       "A transition between pro and anti",
-      "A position with both hands together",
+      "A placement with both hands together",
     ],
     correctAnswer: 1,
     explanation:
-      "A LOOP is a word where the final position returns to the original starting position, creating a loop.",
+      "A LOOP is a word where the final placement returns to the original starting placement, creating a loop.",
   },
   {
     type: "identify-word",
@@ -182,8 +182,8 @@ export const WORD_QUIZ_QUESTIONS: WordQuizQuestion[] = [
       "Letter A uses Prospin motion for both hands - they rotate in the same direction as their travel.",
   },
   {
-    type: "position-transition",
-    question: "In Beta (β) position, where are the hands?",
+    type: "placement-transition",
+    question: "In Beta (β) placement, where are the hands?",
     options: [
       "Opposite sides",
       "Right angle apart",
@@ -192,16 +192,16 @@ export const WORD_QUIZ_QUESTIONS: WordQuizQuestion[] = [
     ],
     correctAnswer: 2,
     explanation:
-      "Beta position has both hands at the same point on the grid (0° apart).",
+      "Beta placement has both hands at the same point on the grid (0° apart).",
   },
   {
     type: "letter-sequence",
     question:
-      "If a letter ends in Alpha position (α), what must the next letter start in?",
-    options: ["Beta (β)", "Gamma (γ)", "Alpha (α)", "Any position"],
+      "If a letter ends in Alpha placement (α), what must the next letter start in?",
+    options: ["Beta (β)", "Gamma (γ)", "Alpha (α)", "Any placement"],
     correctAnswer: 2,
     explanation:
-      "For letters to connect, the end position type must match the next letter's start position type.",
+      "For letters to connect, the end placement type must match the next letter's start placement type.",
   },
   {
     type: "cap-concept",
@@ -214,7 +214,7 @@ export const WORD_QUIZ_QUESTIONS: WordQuizQuestion[] = [
     ],
     correctAnswer: 2,
     explanation:
-      "LOOPs (Continuous Assembly Patterns) return to the starting position, creating seamless loops.",
+      "LOOPs (Continuous Assembly Patterns) return to the starting placement, creating seamless loops.",
   },
   {
     type: "identify-word",
@@ -232,7 +232,7 @@ export const WORD_QUIZ_QUESTIONS: WordQuizQuestion[] = [
       "Antispin is faster",
       "Antispin rotates opposite to travel direction",
       "Antispin uses only one hand",
-      "Antispin starts from Beta position",
+      "Antispin starts from Beta placement",
     ],
     correctAnswer: 1,
     explanation:

@@ -16,7 +16,7 @@ import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/mot
 import type {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type {
   MotionType,
@@ -41,8 +41,8 @@ export interface RawMotion {
 
 export interface RawStep {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: RawMotion;
   rightMotion: RawMotion;
   stepNumber: number;
@@ -81,8 +81,8 @@ function convertRaw(
     .map((step) => ({
       id: `museum-${raw.word}-${step.stepNumber}`,
       letter: step.letter as Letter,
-      startPosition: step.startPosition as GridPosition,
-      endPosition: step.endPosition as GridPosition,
+      startPlacement: step.startPlacement as GridPlacement,
+      endPlacement: step.endPlacement as GridPlacement,
       gridMode,
       motions: {
         left: toMotionData(step.leftMotion, gridMode),
@@ -96,12 +96,12 @@ function convertRaw(
     }));
 
   const step0 = raw.steps.find((s) => s.stepNumber === 0);
-  const startPosition: PictographData | null = step0
+  const startPlacement: PictographData | null = step0
     ? {
         id: `museum-${raw.word}-start`,
         letter: step0.letter as Letter,
-        startPosition: step0.startPosition as GridPosition,
-        endPosition: step0.endPosition as GridPosition,
+        startPlacement: step0.startPlacement as GridPlacement,
+        endPlacement: step0.endPlacement as GridPlacement,
         gridMode,
         motions: {
           left: toMotionData(step0.leftMotion, gridMode),
@@ -110,7 +110,7 @@ function convertRaw(
       }
     : null;
 
-  return { word: raw.word, steps, startPosition };
+  return { word: raw.word, steps, startPlacement };
 }
 
 // ── Raw sequence data from MCP get_sequence_data ──
@@ -122,8 +122,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha7",
-        endPosition: "alpha7",
+        startPlacement: "alpha7",
+        endPlacement: "alpha7",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -146,8 +146,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha7",
-        endPosition: "alpha5",
+        startPlacement: "alpha7",
+        endPlacement: "alpha5",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -170,8 +170,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha5",
-        endPosition: "alpha3",
+        startPlacement: "alpha5",
+        endPlacement: "alpha3",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -194,8 +194,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "D",
-        startPosition: "alpha3",
-        endPosition: "alpha7",
+        startPlacement: "alpha3",
+        endPlacement: "alpha7",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -225,8 +225,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha7",
-        endPosition: "alpha7",
+        startPlacement: "alpha7",
+        endPlacement: "alpha7",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -249,8 +249,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha7",
-        endPosition: "alpha1",
+        startPlacement: "alpha7",
+        endPlacement: "alpha1",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -273,8 +273,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha1",
-        endPosition: "alpha7",
+        startPlacement: "alpha1",
+        endPlacement: "alpha7",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -297,8 +297,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha7",
-        endPosition: "alpha5",
+        startPlacement: "alpha7",
+        endPlacement: "alpha5",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -321,8 +321,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "D",
-        startPosition: "alpha5",
-        endPosition: "alpha1",
+        startPlacement: "alpha5",
+        endPlacement: "alpha1",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -352,8 +352,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha3",
-        endPosition: "alpha3",
+        startPlacement: "alpha3",
+        endPlacement: "alpha3",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -376,8 +376,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha3",
-        endPosition: "alpha5",
+        startPlacement: "alpha3",
+        endPlacement: "alpha5",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -400,8 +400,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha5",
-        endPosition: "alpha3",
+        startPlacement: "alpha5",
+        endPlacement: "alpha3",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -424,8 +424,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "C",
-        startPosition: "alpha3",
-        endPosition: "alpha1",
+        startPlacement: "alpha3",
+        endPlacement: "alpha1",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -448,8 +448,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "D",
-        startPosition: "alpha1",
-        endPosition: "alpha5",
+        startPlacement: "alpha1",
+        endPlacement: "alpha5",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -479,8 +479,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "β",
-        startPosition: "beta3",
-        endPosition: "beta3",
+        startPlacement: "beta3",
+        endPlacement: "beta3",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -503,8 +503,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "E",
-        startPosition: "beta3",
-        endPosition: "alpha5",
+        startPlacement: "beta3",
+        endPlacement: "alpha5",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -527,8 +527,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "F",
-        startPosition: "alpha5",
-        endPosition: "alpha1",
+        startPlacement: "alpha5",
+        endPlacement: "alpha1",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -551,8 +551,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "G",
-        startPosition: "alpha1",
-        endPosition: "beta1",
+        startPlacement: "alpha1",
+        endPlacement: "beta1",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -575,8 +575,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "H",
-        startPosition: "beta1",
-        endPosition: "beta3",
+        startPlacement: "beta1",
+        endPlacement: "beta3",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -606,8 +606,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha3",
-        endPosition: "alpha3",
+        startPlacement: "alpha3",
+        endPlacement: "alpha3",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -630,8 +630,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha3",
-        endPosition: "alpha1",
+        startPlacement: "alpha3",
+        endPlacement: "alpha1",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -654,8 +654,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha1",
-        endPosition: "alpha7",
+        startPlacement: "alpha1",
+        endPlacement: "alpha7",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -678,8 +678,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "D",
-        startPosition: "alpha7",
-        endPosition: "alpha3",
+        startPlacement: "alpha7",
+        endPlacement: "alpha3",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -711,8 +711,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha3",
-        endPosition: "alpha3",
+        startPlacement: "alpha3",
+        endPlacement: "alpha3",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -735,8 +735,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha3",
-        endPosition: "alpha5",
+        startPlacement: "alpha3",
+        endPlacement: "alpha5",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -759,8 +759,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha5",
-        endPosition: "alpha3",
+        startPlacement: "alpha5",
+        endPlacement: "alpha3",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -783,8 +783,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha3",
-        endPosition: "alpha5",
+        startPlacement: "alpha3",
+        endPlacement: "alpha5",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -807,8 +807,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha5",
-        endPosition: "alpha3",
+        startPlacement: "alpha5",
+        endPlacement: "alpha3",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -843,8 +843,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "β",
-        startPosition: "beta5",
-        endPosition: "beta5",
+        startPlacement: "beta5",
+        endPlacement: "beta5",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -867,8 +867,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "G",
-        startPosition: "beta5",
-        endPosition: "beta7",
+        startPlacement: "beta5",
+        endPlacement: "beta7",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -891,8 +891,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "G",
-        startPosition: "beta7",
-        endPosition: "beta1",
+        startPlacement: "beta7",
+        endPlacement: "beta1",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -915,8 +915,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "G",
-        startPosition: "beta1",
-        endPosition: "beta3",
+        startPlacement: "beta1",
+        endPlacement: "beta3",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -939,8 +939,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "G",
-        startPosition: "beta3",
-        endPosition: "beta5",
+        startPlacement: "beta3",
+        endPlacement: "beta5",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -969,8 +969,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "β",
-        startPosition: "beta5",
-        endPosition: "beta5",
+        startPlacement: "beta5",
+        endPlacement: "beta5",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -993,8 +993,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "H",
-        startPosition: "beta5",
-        endPosition: "beta7",
+        startPlacement: "beta5",
+        endPlacement: "beta7",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -1017,8 +1017,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "H",
-        startPosition: "beta7",
-        endPosition: "beta1",
+        startPlacement: "beta7",
+        endPlacement: "beta1",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -1041,8 +1041,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "H",
-        startPosition: "beta1",
-        endPosition: "beta3",
+        startPlacement: "beta1",
+        endPlacement: "beta3",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -1065,8 +1065,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "H",
-        startPosition: "beta3",
-        endPosition: "beta5",
+        startPlacement: "beta3",
+        endPlacement: "beta5",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -1095,8 +1095,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "β",
-        startPosition: "beta5",
-        endPosition: "beta5",
+        startPlacement: "beta5",
+        endPlacement: "beta5",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -1119,8 +1119,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "I",
-        startPosition: "beta5",
-        endPosition: "beta7",
+        startPlacement: "beta5",
+        endPlacement: "beta7",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -1143,8 +1143,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "I",
-        startPosition: "beta7",
-        endPosition: "beta1",
+        startPlacement: "beta7",
+        endPlacement: "beta1",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -1167,8 +1167,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "I",
-        startPosition: "beta1",
-        endPosition: "beta3",
+        startPlacement: "beta1",
+        endPlacement: "beta3",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -1191,8 +1191,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "I",
-        startPosition: "beta3",
-        endPosition: "beta5",
+        startPlacement: "beta3",
+        endPlacement: "beta5",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -1228,8 +1228,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "β",
-        startPosition: "beta5",
-        endPosition: "beta5",
+        startPlacement: "beta5",
+        endPlacement: "beta5",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -1252,8 +1252,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "D",
-        startPosition: "beta5",
-        endPosition: "alpha3",
+        startPlacement: "beta5",
+        endPlacement: "alpha3",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -1276,8 +1276,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "J",
-        startPosition: "alpha3",
-        endPosition: "beta1",
+        startPlacement: "alpha3",
+        endPlacement: "beta1",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -1300,8 +1300,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "D",
-        startPosition: "beta1",
-        endPosition: "alpha7",
+        startPlacement: "beta1",
+        endPlacement: "alpha7",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -1324,8 +1324,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "J",
-        startPosition: "alpha7",
-        endPosition: "beta5",
+        startPlacement: "alpha7",
+        endPlacement: "beta5",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -1354,8 +1354,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "β",
-        startPosition: "beta5",
-        endPosition: "beta5",
+        startPlacement: "beta5",
+        endPlacement: "beta5",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -1378,8 +1378,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "E",
-        startPosition: "beta5",
-        endPosition: "alpha3",
+        startPlacement: "beta5",
+        endPlacement: "alpha3",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -1402,8 +1402,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "K",
-        startPosition: "alpha3",
-        endPosition: "beta1",
+        startPlacement: "alpha3",
+        endPlacement: "beta1",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -1426,8 +1426,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "E",
-        startPosition: "beta1",
-        endPosition: "alpha7",
+        startPlacement: "beta1",
+        endPlacement: "alpha7",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -1450,8 +1450,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "K",
-        startPosition: "alpha7",
-        endPosition: "beta5",
+        startPlacement: "alpha7",
+        endPlacement: "beta5",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -1480,8 +1480,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "β",
-        startPosition: "beta5",
-        endPosition: "beta5",
+        startPlacement: "beta5",
+        endPlacement: "beta5",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -1504,8 +1504,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "F",
-        startPosition: "beta5",
-        endPosition: "alpha3",
+        startPlacement: "beta5",
+        endPlacement: "alpha3",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -1528,8 +1528,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "L",
-        startPosition: "alpha3",
-        endPosition: "beta1",
+        startPlacement: "alpha3",
+        endPlacement: "beta1",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -1552,8 +1552,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "F",
-        startPosition: "beta1",
-        endPosition: "alpha7",
+        startPlacement: "beta1",
+        endPlacement: "alpha7",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -1576,8 +1576,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "L",
-        startPosition: "alpha7",
-        endPosition: "beta5",
+        startPlacement: "alpha7",
+        endPlacement: "beta5",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -1611,8 +1611,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "γ",
-        startPosition: "gamma11",
-        endPosition: "gamma11",
+        startPlacement: "gamma11",
+        endPlacement: "gamma11",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -1635,8 +1635,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "U",
-        startPosition: "gamma11",
-        endPosition: "gamma13",
+        startPlacement: "gamma11",
+        endPlacement: "gamma13",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -1659,8 +1659,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "U",
-        startPosition: "gamma13",
-        endPosition: "gamma15",
+        startPlacement: "gamma13",
+        endPlacement: "gamma15",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -1683,8 +1683,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "U",
-        startPosition: "gamma15",
-        endPosition: "gamma9",
+        startPlacement: "gamma15",
+        endPlacement: "gamma9",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -1707,8 +1707,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "U",
-        startPosition: "gamma9",
-        endPosition: "gamma11",
+        startPlacement: "gamma9",
+        endPlacement: "gamma11",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -1736,8 +1736,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "γ",
-        startPosition: "gamma11",
-        endPosition: "gamma11",
+        startPlacement: "gamma11",
+        endPlacement: "gamma11",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -1760,8 +1760,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "S",
-        startPosition: "gamma11",
-        endPosition: "gamma9",
+        startPlacement: "gamma11",
+        endPlacement: "gamma9",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -1784,8 +1784,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "S",
-        startPosition: "gamma9",
-        endPosition: "gamma15",
+        startPlacement: "gamma9",
+        endPlacement: "gamma15",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -1808,8 +1808,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "S",
-        startPosition: "gamma15",
-        endPosition: "gamma13",
+        startPlacement: "gamma15",
+        endPlacement: "gamma13",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -1832,8 +1832,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "S",
-        startPosition: "gamma13",
-        endPosition: "gamma11",
+        startPlacement: "gamma13",
+        endPlacement: "gamma11",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -1861,8 +1861,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "γ",
-        startPosition: "gamma11",
-        endPosition: "gamma11",
+        startPlacement: "gamma11",
+        endPlacement: "gamma11",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -1885,8 +1885,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "V",
-        startPosition: "gamma11",
-        endPosition: "gamma13",
+        startPlacement: "gamma11",
+        endPlacement: "gamma13",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -1909,8 +1909,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "V",
-        startPosition: "gamma13",
-        endPosition: "gamma15",
+        startPlacement: "gamma13",
+        endPlacement: "gamma15",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -1933,8 +1933,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "V",
-        startPosition: "gamma15",
-        endPosition: "gamma9",
+        startPlacement: "gamma15",
+        endPlacement: "gamma9",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -1957,8 +1957,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "V",
-        startPosition: "gamma9",
-        endPosition: "gamma11",
+        startPlacement: "gamma9",
+        endPlacement: "gamma11",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -1986,8 +1986,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "γ",
-        startPosition: "gamma11",
-        endPosition: "gamma11",
+        startPlacement: "gamma11",
+        endPlacement: "gamma11",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -2010,8 +2010,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "T",
-        startPosition: "gamma11",
-        endPosition: "gamma9",
+        startPlacement: "gamma11",
+        endPlacement: "gamma9",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -2034,8 +2034,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "T",
-        startPosition: "gamma9",
-        endPosition: "gamma15",
+        startPlacement: "gamma9",
+        endPlacement: "gamma15",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -2058,8 +2058,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "T",
-        startPosition: "gamma15",
-        endPosition: "gamma13",
+        startPlacement: "gamma15",
+        endPlacement: "gamma13",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -2082,8 +2082,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "T",
-        startPosition: "gamma13",
-        endPosition: "gamma11",
+        startPlacement: "gamma13",
+        endPlacement: "gamma11",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -2122,8 +2122,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "γ",
-        startPosition: "gamma11",
-        endPosition: "gamma11",
+        startPlacement: "gamma11",
+        endPlacement: "gamma11",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -2146,8 +2146,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "M",
-        startPosition: "gamma11",
-        endPosition: "gamma1",
+        startPlacement: "gamma11",
+        endPlacement: "gamma1",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -2170,8 +2170,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "P",
-        startPosition: "gamma1",
-        endPosition: "gamma15",
+        startPlacement: "gamma1",
+        endPlacement: "gamma15",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -2194,8 +2194,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "M",
-        startPosition: "gamma15",
-        endPosition: "gamma5",
+        startPlacement: "gamma15",
+        endPlacement: "gamma5",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -2218,8 +2218,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "P",
-        startPosition: "gamma5",
-        endPosition: "gamma11",
+        startPlacement: "gamma5",
+        endPlacement: "gamma11",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -2247,8 +2247,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "γ",
-        startPosition: "gamma11",
-        endPosition: "gamma11",
+        startPlacement: "gamma11",
+        endPlacement: "gamma11",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -2271,8 +2271,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "N",
-        startPosition: "gamma11",
-        endPosition: "gamma1",
+        startPlacement: "gamma11",
+        endPlacement: "gamma1",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -2295,8 +2295,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "Q",
-        startPosition: "gamma1",
-        endPosition: "gamma15",
+        startPlacement: "gamma1",
+        endPlacement: "gamma15",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -2319,8 +2319,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "N",
-        startPosition: "gamma15",
-        endPosition: "gamma5",
+        startPlacement: "gamma15",
+        endPlacement: "gamma5",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -2343,8 +2343,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "Q",
-        startPosition: "gamma5",
-        endPosition: "gamma11",
+        startPlacement: "gamma5",
+        endPlacement: "gamma11",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -2372,8 +2372,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "γ",
-        startPosition: "gamma11",
-        endPosition: "gamma11",
+        startPlacement: "gamma11",
+        endPlacement: "gamma11",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -2396,8 +2396,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "O",
-        startPosition: "gamma11",
-        endPosition: "gamma1",
+        startPlacement: "gamma11",
+        endPlacement: "gamma1",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -2420,8 +2420,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "R",
-        startPosition: "gamma1",
-        endPosition: "gamma15",
+        startPlacement: "gamma1",
+        endPlacement: "gamma15",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -2444,8 +2444,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "O",
-        startPosition: "gamma15",
-        endPosition: "gamma5",
+        startPlacement: "gamma15",
+        endPlacement: "gamma5",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -2468,8 +2468,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "R",
-        startPosition: "gamma5",
-        endPosition: "gamma11",
+        startPlacement: "gamma5",
+        endPlacement: "gamma11",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -2505,8 +2505,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha1",
-        endPosition: "alpha1",
+        startPlacement: "alpha1",
+        endPlacement: "alpha1",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -2529,8 +2529,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha1",
-        endPosition: "alpha3",
+        startPlacement: "alpha1",
+        endPlacement: "alpha3",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -2553,8 +2553,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha3",
-        endPosition: "alpha5",
+        startPlacement: "alpha3",
+        endPlacement: "alpha5",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -2577,8 +2577,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha5",
-        endPosition: "alpha7",
+        startPlacement: "alpha5",
+        endPlacement: "alpha7",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -2601,8 +2601,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha7",
-        endPosition: "alpha1",
+        startPlacement: "alpha7",
+        endPlacement: "alpha1",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -2631,8 +2631,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha1",
-        endPosition: "alpha1",
+        startPlacement: "alpha1",
+        endPlacement: "alpha1",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -2655,8 +2655,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha1",
-        endPosition: "alpha3",
+        startPlacement: "alpha1",
+        endPlacement: "alpha3",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -2679,8 +2679,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha3",
-        endPosition: "alpha5",
+        startPlacement: "alpha3",
+        endPlacement: "alpha5",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -2703,8 +2703,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha5",
-        endPosition: "alpha7",
+        startPlacement: "alpha5",
+        endPlacement: "alpha7",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -2727,8 +2727,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "B",
-        startPosition: "alpha7",
-        endPosition: "alpha1",
+        startPlacement: "alpha7",
+        endPlacement: "alpha1",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -2757,8 +2757,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha1",
-        endPosition: "alpha1",
+        startPlacement: "alpha1",
+        endPlacement: "alpha1",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -2781,8 +2781,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "C",
-        startPosition: "alpha1",
-        endPosition: "alpha3",
+        startPlacement: "alpha1",
+        endPlacement: "alpha3",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -2805,8 +2805,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "C",
-        startPosition: "alpha3",
-        endPosition: "alpha5",
+        startPlacement: "alpha3",
+        endPlacement: "alpha5",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -2829,8 +2829,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "C",
-        startPosition: "alpha5",
-        endPosition: "alpha7",
+        startPlacement: "alpha5",
+        endPlacement: "alpha7",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -2853,8 +2853,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "C",
-        startPosition: "alpha7",
-        endPosition: "alpha1",
+        startPlacement: "alpha7",
+        endPlacement: "alpha1",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -2892,8 +2892,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha1",
-        endPosition: "alpha1",
+        startPlacement: "alpha1",
+        endPlacement: "alpha1",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -2916,8 +2916,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "J",
-        startPosition: "alpha1",
-        endPosition: "beta3",
+        startPlacement: "alpha1",
+        endPlacement: "beta3",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -2940,8 +2940,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "D",
-        startPosition: "beta3",
-        endPosition: "alpha5",
+        startPlacement: "beta3",
+        endPlacement: "alpha5",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -2964,8 +2964,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "J",
-        startPosition: "alpha5",
-        endPosition: "beta7",
+        startPlacement: "alpha5",
+        endPlacement: "beta7",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -2988,8 +2988,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "D",
-        startPosition: "beta7",
-        endPosition: "alpha1",
+        startPlacement: "beta7",
+        endPlacement: "alpha1",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -3018,8 +3018,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha1",
-        endPosition: "alpha1",
+        startPlacement: "alpha1",
+        endPlacement: "alpha1",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -3042,8 +3042,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "K",
-        startPosition: "alpha1",
-        endPosition: "beta3",
+        startPlacement: "alpha1",
+        endPlacement: "beta3",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -3066,8 +3066,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "E",
-        startPosition: "beta3",
-        endPosition: "alpha5",
+        startPlacement: "beta3",
+        endPlacement: "alpha5",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -3090,8 +3090,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "K",
-        startPosition: "alpha5",
-        endPosition: "beta7",
+        startPlacement: "alpha5",
+        endPlacement: "beta7",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -3114,8 +3114,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "E",
-        startPosition: "beta7",
-        endPosition: "alpha1",
+        startPlacement: "beta7",
+        endPlacement: "alpha1",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -3144,8 +3144,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "α",
-        startPosition: "alpha1",
-        endPosition: "alpha1",
+        startPlacement: "alpha1",
+        endPlacement: "alpha1",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -3168,8 +3168,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "L",
-        startPosition: "alpha1",
-        endPosition: "beta3",
+        startPlacement: "alpha1",
+        endPlacement: "beta3",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -3192,8 +3192,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "F",
-        startPosition: "beta3",
-        endPosition: "alpha5",
+        startPlacement: "beta3",
+        endPlacement: "alpha5",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -3216,8 +3216,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "L",
-        startPosition: "alpha5",
-        endPosition: "beta7",
+        startPlacement: "alpha5",
+        endPlacement: "beta7",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -3240,8 +3240,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "F",
-        startPosition: "beta7",
-        endPosition: "alpha1",
+        startPlacement: "beta7",
+        endPlacement: "alpha1",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -3274,8 +3274,8 @@ const RAW: Record<string, RawSequence> = {
     steps: [
       {
         letter: "γ",
-        startPosition: "gamma3",
-        endPosition: "gamma3",
+        startPlacement: "gamma3",
+        endPlacement: "gamma3",
         stepNumber: 0,
         leftMotion: {
           hand: "left",
@@ -3298,8 +3298,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "O",
-        startPosition: "gamma3",
-        endPosition: "gamma13",
+        startPlacement: "gamma3",
+        endPlacement: "gamma13",
         stepNumber: 1,
         leftMotion: {
           hand: "left",
@@ -3322,8 +3322,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "O",
-        startPosition: "gamma13",
-        endPosition: "gamma3",
+        startPlacement: "gamma13",
+        endPlacement: "gamma3",
         stepNumber: 2,
         leftMotion: {
           hand: "left",
@@ -3346,8 +3346,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "Y",
-        startPosition: "gamma3",
-        endPosition: "beta3",
+        startPlacement: "gamma3",
+        endPlacement: "beta3",
         stepNumber: 3,
         leftMotion: {
           hand: "left",
@@ -3370,8 +3370,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "G",
-        startPosition: "beta3",
-        endPosition: "beta5",
+        startPlacement: "beta3",
+        endPlacement: "beta5",
         stepNumber: 4,
         leftMotion: {
           hand: "left",
@@ -3394,8 +3394,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "D",
-        startPosition: "beta5",
-        endPosition: "alpha7",
+        startPlacement: "beta5",
+        endPlacement: "alpha7",
         stepNumber: 5,
         leftMotion: {
           hand: "left",
@@ -3418,8 +3418,8 @@ const RAW: Record<string, RawSequence> = {
       },
       {
         letter: "A",
-        startPosition: "alpha7",
-        endPosition: "alpha1",
+        startPlacement: "alpha7",
+        endPlacement: "alpha1",
         stepNumber: 6,
         leftMotion: {
           hand: "left",
@@ -3449,7 +3449,7 @@ const RAW: Record<string, RawSequence> = {
 export interface MuseumSequenceData {
   word: string;
   steps: StepData[];
-  startPosition: PictographData | null;
+  startPlacement: PictographData | null;
 }
 
 const GM = "diamond" as GridMode;

@@ -62,7 +62,7 @@ export interface DeckReleaserState {
   seed: string;
   selectedLoopTypes: Set<string>;
   selectedLevels: Set<number>;
-  selectedStartPositionIds: Set<string>;
+  selectedStartPlacementIds: Set<string>;
   startOriLeft: string;
   startOriRight: string;
   propStyle: "smooth" | "mixed" | "choppy";
@@ -152,8 +152,8 @@ export function createDeckReleaserState(
   let selectedLevels = $state<Set<number>>(
     new Set(saved?.levels?.length ? saved.levels : [1])
   );
-  let selectedStartPositionIds = $state<Set<string>>(
-    new Set(saved?.startPositionIds ?? [])
+  let selectedStartPlacementIds = $state<Set<string>>(
+    new Set(saved?.startPlacementIds ?? [])
   );
   let startOriLeft = $state(saved?.startOriLeft ?? "in");
   let startOriRight = $state(saved?.startOriRight ?? "in");
@@ -206,7 +206,7 @@ export function createDeckReleaserState(
       seed,
       loopTypes: [...selectedLoopTypes],
       levels: [...selectedLevels],
-      startPositionIds: [...selectedStartPositionIds],
+      startPlacementIds: [...selectedStartPlacementIds],
       startOriLeft,
       startOriRight,
       propStyle,
@@ -270,8 +270,8 @@ export function createDeckReleaserState(
       recipe.schemaVersion = 1;
       recipe.loopTypes = [...selectedLoopTypes];
       recipe.levels = [...selectedLevels];
-      if (selectedStartPositionIds.size > 0) {
-        recipe.startPositionIds = [...selectedStartPositionIds];
+      if (selectedStartPlacementIds.size > 0) {
+        recipe.startPlacementIds = [...selectedStartPlacementIds];
       }
       recipe.startOriLeft = startOriLeft;
       recipe.startOriRight = startOriRight;
@@ -342,7 +342,7 @@ export function createDeckReleaserState(
         recipe.loopTypes?.length ? recipe.loopTypes : ["rotated"]
       );
       selectedLevels = new Set(recipe.levels?.length ? recipe.levels : [1]);
-      selectedStartPositionIds = new Set(recipe.startPositionIds ?? []);
+      selectedStartPlacementIds = new Set(recipe.startPlacementIds ?? []);
       if (recipe.startOriLeft) startOriLeft = recipe.startOriLeft;
       if (recipe.startOriRight) startOriRight = recipe.startOriRight;
       if (recipe.propStyle) propStyle = recipe.propStyle;
@@ -388,7 +388,7 @@ export function createDeckReleaserState(
     seed = deps.mintSeed();
     selectedLoopTypes = new Set(["rotated"]);
     selectedLevels = new Set([1]);
-    selectedStartPositionIds = new Set();
+    selectedStartPlacementIds = new Set();
     startOriLeft = "in";
     startOriRight = "in";
     step = "configure";
@@ -540,11 +540,11 @@ export function createDeckReleaserState(
     set selectedLevels(value) {
       selectedLevels = value;
     },
-    get selectedStartPositionIds() {
-      return selectedStartPositionIds;
+    get selectedStartPlacementIds() {
+      return selectedStartPlacementIds;
     },
-    set selectedStartPositionIds(value) {
-      selectedStartPositionIds = value;
+    set selectedStartPlacementIds(value) {
+      selectedStartPlacementIds = value;
     },
     get startOriLeft() {
       return startOriLeft;

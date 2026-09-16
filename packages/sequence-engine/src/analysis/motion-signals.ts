@@ -22,7 +22,7 @@
  *      around the grid (endpoint geometry cannot see `skewSteps`).
  *   2. Endpoint geometry on the 8-point location circle (shortest arc), the
  *      same convention as `HAND_ROTATION_DIRECTION_MAP`
- *      (src/loop/position-maps/circular-position-maps.ts) and the app's
+ *      (src/loop/placement-maps/circular-placement-maps.ts) and the app's
  *      `deriveHandPath` / `calculateRotationDirection` helpers. Static
  *      (0 steps) and dash (4 steps, direction-ambiguous) have no arc.
  *
@@ -49,7 +49,7 @@ export interface MotionSignalSource {
   readonly handPath?: string | null;
 }
 
-/** Positions ordered clockwise around the grid: N=0 … NW=7. Center is absent on purpose. */
+/** Locations ordered clockwise around the grid: N=0 … NW=7. Center is absent on purpose. */
 const CLOCKWISE_INDEX: Record<string, number> = {
   n: 0,
   ne: 1,

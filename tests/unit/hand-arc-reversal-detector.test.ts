@@ -72,8 +72,8 @@ function step(
     rightReversal: false,
     isBlank,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: { left: left as never, right: right as never },
   } as unknown as StepData;
 }

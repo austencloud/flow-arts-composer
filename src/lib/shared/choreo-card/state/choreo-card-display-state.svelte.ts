@@ -57,9 +57,9 @@ export function createChoreoCardDisplayState(
     void visibilityVersion;
     return visibilityManager.getRawGlyphVisibility("elementalGlyph");
   });
-  const showPositions = $derived.by(() => {
+  const showPlacements = $derived.by(() => {
     void visibilityVersion;
-    return visibilityManager.getRawGlyphVisibility("positionsGlyph");
+    return visibilityManager.getRawGlyphVisibility("placementsGlyph");
   });
   const showHandColorKey = $derived.by(() => {
     void visibilityVersion;
@@ -178,8 +178,8 @@ export function createChoreoCardDisplayState(
     get showElemental() {
       return showElemental;
     },
-    get showPositions() {
-      return showPositions;
+    get showPlacements() {
+      return showPlacements;
     },
     get showHandColorKey() {
       return showHandColorKey;

@@ -165,7 +165,7 @@ export async function bakeVariationFront(
 ): Promise<string> {
   const tndElement = TND_BY_FAMILY[familyId];
   const canvas = await getPrintCardRenderer().renderFront(seq, {
-    includeStartPosition: true,
+    includeStartPlacement: true,
     tndElement,
     showMandala: true,
     leftPropType: propType,
@@ -180,7 +180,7 @@ export async function bakeVariationBack(
   propType?: PropType
 ): Promise<string> {
   const canvas = await getPrintCardRenderer().renderBack(seq, {
-    includeStartPosition: true,
+    includeStartPlacement: true,
     leftPropType: propType,
     rightPropType: propType,
   });

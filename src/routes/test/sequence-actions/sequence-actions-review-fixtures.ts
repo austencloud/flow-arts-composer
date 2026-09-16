@@ -1,6 +1,6 @@
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   createMotionData,
   type MotionData,
@@ -39,8 +39,8 @@ export const SEQUENCE_ACTIONS_REVIEW_SEQUENCE = createSequenceData({
     return createStepData({
       id: `review-step-${stepNumber}`,
       stepNumber,
-      startPosition: GridPosition.GAMMA1,
-      endPosition: GridPosition.GAMMA1,
+      startPlacement: GridPlacement.GAMMA1,
+      endPlacement: GridPlacement.GAMMA1,
       duration: stepNumber % 5 === 0 ? 2 : 1,
       motions: {
         left: motion(
@@ -65,8 +65,8 @@ export const SEQUENCE_ACTIONS_REVIEW_SEQUENCE = createSequenceData({
 export const SEQUENCE_ACTIONS_EXTENSION_ANALYSIS: ExtensionAnalysis = {
   canExtend: true,
   extensionType: "already_complete",
-  startPosition: GridPosition.GAMMA1,
-  currentEndPosition: GridPosition.GAMMA1,
+  startPlacement: GridPlacement.GAMMA1,
+  currentEndPlacement: GridPlacement.GAMMA1,
   availableLOOPOptions: COMPACT_LOOP_REVIEW_OPTIONS,
   unavailableLOOPOptions: [],
   orientationRepeat: null,

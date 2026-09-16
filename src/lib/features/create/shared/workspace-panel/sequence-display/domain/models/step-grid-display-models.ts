@@ -12,9 +12,9 @@
 export interface GridLayout {
   /** Number of rows in the grid */
   rows: number;
-  /** Number of columns for steps (excludes start position column) */
+  /** Number of columns for steps (excludes start placement column) */
   columns: number;
-  /** Total columns including start position */
+  /** Total columns including start placement */
   totalColumns: number;
   /** Size of each grid cell in pixels */
   cellSize: number;
@@ -35,8 +35,8 @@ export interface DisplayAnimationState {
   newlyAddedStepIndex: number | null;
   /** Whether all steps should animate simultaneously */
   shouldAnimateAllSteps: boolean;
-  /** Whether start position should animate */
-  shouldAnimateStartPosition: boolean;
+  /** Whether start placement should animate */
+  shouldAnimateStartPlacement: boolean;
   /** Current animation mode */
   isSequentialMode: boolean;
   /** Set of beat indices that should currently animate */

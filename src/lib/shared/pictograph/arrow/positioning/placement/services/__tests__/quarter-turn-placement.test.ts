@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { generatePlacementKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator";
 import { ArrowPlacer } from "$lib/shared/pictograph/arrow/positioning/placement/services/arrow-placer";
@@ -106,7 +106,7 @@ describe("quarter-turn default placement", () => {
     });
     const pictograph = {
       letter: "A",
-      endPosition: GridPosition.ALPHA1,
+      endPlacement: GridPlacement.ALPHA1,
       motions: { left, right },
     } as PictographData;
 

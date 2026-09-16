@@ -148,7 +148,7 @@ export class ExportFrameCompositor {
     offscreenCtx: CanvasRenderingContext2D,
     canvas: HTMLCanvasElement,
     stepIndex: number,
-    isInStartPosition: boolean,
+    isInStartPlacement: boolean,
     isInEndHold: boolean,
     playbackPosition: number,
     steps: readonly { duration?: number }[],
@@ -176,8 +176,8 @@ export class ExportFrameCompositor {
 
     const actualCanvasSize = outputCanvasSize;
     const clampedStepIndex = Math.max(0, Math.min(stepIndex, steps.length - 1));
-    const stepNumber = isInStartPosition ? null : clampedStepIndex + 1;
-    const cacheKey = isInStartPosition
+    const stepNumber = isInStartPlacement ? null : clampedStepIndex + 1;
+    const cacheKey = isInStartPlacement
       ? ""
       : this.glyphPrerenderer.getCacheKeyForStep(clampedStepIndex);
 
@@ -201,7 +201,7 @@ export class ExportFrameCompositor {
       }
 
       if (showElementalGlyph) {
-        this.crossfade.currentElementalGlyph = isInStartPosition
+        this.crossfade.currentElementalGlyph = isInStartPlacement
           ? null
           : this.glyphPrerenderer.getElementalGlyphForStep(clampedStepIndex);
       }
@@ -334,7 +334,7 @@ export class ExportFrameCompositor {
 
     if (showProgressBar && !isCompositeMode) {
       const progressBarY = headerHeight + outputCanvasSize;
-      const progressBeat = isInStartPosition
+      const progressBeat = isInStartPlacement
         ? 0
         : isInEndHold
           ? steps.length

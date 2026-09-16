@@ -1,7 +1,7 @@
 /**
  * Glyph positioning constants for pictograph rendering
  *
- * These values determine where glyphs (TKA letter, VTG, position, reversal)
+ * These values determine where glyphs (TKA letter, VTG, placement, reversal)
  * are placed within the 950x950 viewbox.
  */
 
@@ -68,7 +68,7 @@ export const ELEMENTAL_GLYPH = {
 } as const;
 
 
-export const POSITION_GLYPH = {
+export const PLACEMENT_GLYPH = {
   Y: 50,
   SCALE_FACTOR: 0.75,
   SPACING: 25,

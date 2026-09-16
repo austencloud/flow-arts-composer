@@ -73,7 +73,7 @@ export const generatorHelpContent: GeneratorHelpItem[] = [
     color: "#8b5cf6",
     shortDesc: "LOOP vs Freeform",
     fullDesc:
-      "Determines whether your sequence loops back to its starting position or ends freely.",
+      "Determines whether your sequence loops back to its starting placement or ends freely.",
     bullets: [
       "LOOP: Creates a circular sequence that returns to start - perfect for continuous flow",
       "Freeform: Generates without constraints - ends wherever the pattern takes you",
@@ -85,9 +85,9 @@ export const generatorHelpContent: GeneratorHelpItem[] = [
     icon: "fa-border-all",
     name: "Grid System",
     color: "#14b8a6",
-    shortDesc: "Diamond vs Box positioning",
+    shortDesc: "Diamond vs Box hand locations",
     fullDesc:
-      "Changes the underlying grid that determines where your hands can be positioned.",
+      "Changes the underlying grid that determines where your hands can be located.",
     bullets: [
       "Diamond: Hands on cardinal points (N, E, S, W)",
       "Box: Hands on intercardinal points (NE, SE, SW, NW)",
@@ -134,7 +134,7 @@ export const generatorHelpContent: GeneratorHelpItem[] = [
     fullDesc:
       "When using LOOP mode, this determines HOW your sequence returns to start. Each type creates a different visual effect.",
     bullets: [
-      "Rotated: Positions rotate around the grid center",
+      "Rotated: Placements rotate around the grid center",
       "Mirrored: Second half mirrors the first (left↔right)",
       "Swapped: Hands switch roles in the return (blue↔red)",
       "Inverted: Motion types transform (pro↔anti, static↔dash)",
@@ -175,20 +175,20 @@ export const generatorHelpContent: GeneratorHelpItem[] = [
     tip: "Set to 'Off' for equal-duration steps. Pick a rhythm to add musical timing to every generated sequence.",
   },
 
-  // === START/END POSITIONS ===
+  // === START/END PLACEMENTS ===
   {
     id: "start-end",
     icon: "fa-sliders",
     name: "Start/End",
     color: "#22c55e",
-    shortDesc: "Lock start/end positions",
+    shortDesc: "Lock start/end placements",
     fullDesc:
-      "Lets you constrain where your sequence begins and/or ends by selecting specific grid positions.",
+      "Lets you constrain where your sequence begins and/or ends by selecting specific grid placements.",
     bullets: [
-      "Start Position: Force the sequence to begin from a specific hand placement",
-      "End Position: (Freeform only) Force the sequence to end at a specific position",
+      "Start Placement: Force the sequence to begin from a specific hand placement",
+      "End Placement: (Freeform only) Force the sequence to end at a specific placement",
     ],
-    tip: "Use this to practice transitioning into or out of specific positions.",
+    tip: "Use this to practice transitioning into or out of specific placements.",
   },
 
   // === SAVED SETUPS ===

@@ -41,8 +41,8 @@ function startStep(over: any = {}) {
   return {
     id: "start-x",
     letter: "γ",
-    startPosition: "gamma13",
-    endPosition: "gamma13",
+    startPlacement: "gamma13",
+    endPlacement: "gamma13",
     beatIndex: 0,
     stepNumber: 0,
     duration: 1,
@@ -95,8 +95,8 @@ describe("twinSequence", () => {
     expect(t.motions.right.hand).toBe("right");
     // derived from (left s | right e) -> gamma11, not the position-name map
     // (which would give gamma5).
-    expect(t.startPosition).toBe("gamma11");
-    expect(t.endPosition).toBe("gamma11");
+    expect(t.startPlacement).toBe("gamma11");
+    expect(t.endPlacement).toBe("gamma11");
   });
 
   it("flips rotation direction on a moving beat (cw<->ccw)", () => {
@@ -161,7 +161,7 @@ describe("twinSequence", () => {
       },
     });
     const t = twinSequence([beat], { ...deps, locToPos })[0];
-    expect(t.startPosition).toBeNull();
+    expect(t.startPlacement).toBeNull();
   });
 });
 
@@ -176,8 +176,8 @@ describe("isSelfTwin", () => {
   it("is true when a step equals its own twin geometry", () => {
     // A symmetric step: left@n right@n, mirror and hand swap keep n|n.
     const sym = startStep({
-      startPosition: "betaX",
-      endPosition: "betaX",
+      startPlacement: "betaX",
+      endPlacement: "betaX",
       motions: {
         left: {
           motionType: "static",

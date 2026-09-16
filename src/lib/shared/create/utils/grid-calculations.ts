@@ -40,7 +40,7 @@ export interface GridSizingConfig {
   /** Let a narrow grid scroll vertically instead of shrinking cells to its height. */
   preferWidthSizingOnNarrow?: boolean;
   /**
-   * Let a start position or two-step build grow from width on a narrow surface,
+   * Let a start placement or two-step build grow from width on a narrow surface,
    * even when that makes the cells taller than their host.
    *
    * This is useful in the full Composer workspace, where the user benefits from
@@ -143,7 +143,7 @@ export function calculateGridLayout(
     (stableWideColumnCount !== null ||
       isMobileFewSteps ||
       (isNarrowContainer && sizing.preferWidthSizingOnNarrow));
-  // The start-position-only cell may ignore its container height and overflow
+  // The start-placement-only cell may ignore its container height and overflow
   // into the scroller, but ONLY where that trade was designed: a narrow, short
   // container where height sizing would shrink the lone pictograph to nothing.
   // A wide desktop container reaching this path through stableColumnCount sized
@@ -163,10 +163,10 @@ export function calculateGridLayout(
     sizing.maxCellSize = Math.max(sizing.maxCellSize, 400);
   }
 
-  // Handle edge case: no steps (just start position)
+  // Handle edge case: no steps (just start placement)
   // This prevents division by zero and ensures proper single-cell sizing
   if (stepCount === 0) {
-    // Single cell for start position only
+    // Single cell for start placement only
     let cellSize = sizing.maxCellSize;
 
     if (containerWidth > 0 && containerHeight > 0) {
@@ -194,7 +194,7 @@ export function calculateGridLayout(
     return {
       rows: 1,
       columns: 1,
-      totalColumns: 1, // Just the start position column
+      totalColumns: 1, // Just the start placement column
       cellSize,
       maxColumns: 1,
     };
@@ -207,7 +207,7 @@ export function calculateGridLayout(
    */
   function candidateGeometry(columns: number) {
     const rows = Math.ceil(stepCount / columns);
-    const totalColumns = columns + 1; // +1 for start position
+    const totalColumns = columns + 1; // +1 for start placement
     // These values mirror WorkspaceGrid's gap and scroll-wrapper padding.
     const gridGap = 1;
     const scrollContainerPadding = 8;
@@ -251,7 +251,7 @@ export function calculateGridLayout(
         rows,
         affordable: Math.min(maxCellWidth, maxCellHeight),
         // Empty step slots left in the last row. The start column is always
-        // full — start position first, then mandalas — so it does not count.
+        // full — start placement first, then mandalas — so it does not count.
         emptySlots: columns * rows - stepCount,
       };
     };
@@ -372,19 +372,19 @@ export function calculateStepPosition(
   columns: number
 ): { row: number; column: number } {
   const row = Math.floor(stepIndex / columns) + 1;
-  const column = (stepIndex % columns) + 2; // +2 because start position is column 1
+  const column = (stepIndex % columns) + 2; // +2 because start placement is column 1
   return { row, column };
 }
 
 /**
- * Which diagonal band a cell sits on, counted out from the start position.
+ * Which diagonal band a cell sits on, counted out from the start placement.
  *
  * The generation reveal sweeps one front across the grid rather than filling a
  * list, so cells share a delay when they share a diagonal. Row plus column also
  * means the reveal's length tracks the diagonal (rows + columns) instead of the
  * step count: sixteen steps take one band longer than eight, not twice as long.
  *
- * The start position occupies row 1, column 1, so it is band 0 and leads the
+ * The start placement occupies row 1, column 1, so it is band 0 and leads the
  * front without needing a case of its own.
  */
 export function calculateStepWaveBand(
@@ -436,21 +436,21 @@ export interface TimelineRow {
  *
  * @param steps - Array of step data with optional duration (defaults to 1)
  * @param rowCapacity - Maximum duration units per row (default: 4)
- * @param hasStartPosition - Whether to include start position in first row
+ * @param hasStartPlacement - Whether to include start placement in first row
  * @returns Array of row assignments
  */
 export function calculateTimelineRows(
   steps: readonly { duration?: number }[],
   rowCapacity: number = 4,
-  hasStartPosition: boolean = false
+  hasStartPlacement: boolean = false
 ): TimelineRow[] {
   const rows: TimelineRow[] = [];
 
-  // Start position takes 1 unit from first row if present
+  // Start placement takes 1 unit from first row if present
   let currentRow: TimelineRow = {
     rowIndex: 0,
     steps: [],
-    totalDuration: hasStartPosition ? 1 : 0,
+    totalDuration: hasStartPlacement ? 1 : 0,
   };
 
   for (let i = 0; i < steps.length; i++) {
@@ -476,7 +476,7 @@ export function calculateTimelineRows(
   }
 
   // Push final row if it has content
-  if (currentRow.steps.length > 0 || (hasStartPosition && rows.length === 0)) {
+  if (currentRow.steps.length > 0 || (hasStartPlacement && rows.length === 0)) {
     rows.push(currentRow);
   }
 
@@ -610,7 +610,7 @@ export function calculateTimelineUnitSize(
 /**
  * Clamp a width-based timeline unit size so `rowCount` rows fit the container
  * height without scrolling. `rowCount` must count EVERY rendered cell row —
- * including the start-position cell when the sequence has no steps yet, which
+ * including the start-placement cell when the sequence has no steps yet, which
  * renders one row all by itself. Skipping that case is how a start-only
  * sequence got a width-sized tile taller than its wrapper on a Fold in
  * portrait.

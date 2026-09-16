@@ -216,11 +216,11 @@ export function buildHalvedStep(step: StepData, t = 0.5): StepData | null {
   return {
     id: step.id,
     letter: step.letter,
-    // The halfway hand-pair may not match any named GridPosition the
-    // original endPosition referred to — letterless/positionless synthetic
+    // The halfway hand-pair may not match any named GridPlacement the
+    // original endPlacement referred to — letterless/positionless synthetic
     // steps are valid (StepData allows null letter and positions).
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     gridMode: step.gridMode,
     motions,
     stepNumber: step.stepNumber,

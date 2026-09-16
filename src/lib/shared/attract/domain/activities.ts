@@ -152,7 +152,7 @@ export const GHOST_ACTIVITIES: readonly GhostActivityDefinition[] = [
       ctx.moduleId === "create" &&
       ctx.tabId === "construct" &&
       ctx.sequenceLength < 8 &&
-      (has(ctx, "start-position") || has(ctx, "option")),
+      (has(ctx, "start-placement") || has(ctx, "option")),
     appeal: (ctx) => (ctx.hasSequence ? 0.82 : 1),
     plan: (ctx) => composeSteps(ctx, true),
     variants: (ctx) => [

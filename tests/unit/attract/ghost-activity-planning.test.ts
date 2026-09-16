@@ -37,7 +37,7 @@ function context(seed = 7): GhostContext {
     reachableModules: ["create", "library", "play"],
     available: {
       ...EMPTY_WORLD.available,
-      "start-position": 8,
+      "start-placement": 8,
       "nav-module": 3,
     },
   };

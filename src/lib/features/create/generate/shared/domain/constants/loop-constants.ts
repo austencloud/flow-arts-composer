@@ -20,7 +20,7 @@ export const LOOP_COMPONENTS: readonly LOOPComponentInfo[] = [
     component: LOOPComponent.ROTATED,
     label: "Rotated",
     shortLabel: "Rotated",
-    description: "Halved or quartered position rotation",
+    description: "Halved or quartered placement rotation",
     icon: "rotate",
     color: "#36c3ff",
   },

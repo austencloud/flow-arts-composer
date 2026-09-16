@@ -66,7 +66,7 @@ export class StepCellAnimationManager {
     // when cleanupAnimation() runs before the CSS animationend event fires.
     if (shouldAnimate && !this.hasAnimated) return false;
 
-    // Special case: Start position tile (index -1) should be visible even when blank
+    // Special case: Start placement tile (index -1) should be visible even when blank
     if (index === -1) return true;
 
     // If it's a blank step, never show it

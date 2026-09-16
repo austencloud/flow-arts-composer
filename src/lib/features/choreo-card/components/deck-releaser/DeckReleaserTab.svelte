@@ -46,7 +46,7 @@
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import { mintSeed, nextReferenceNumber } from "../../services/deck-recipe";
   import { generationOrchestrator } from "$lib/shared/create/services/generation-orchestrator";
-  import { startPositionManager } from "$lib/shared/create/services/start-position-manager";
+  import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
   import { loadDiamondEdges } from "../../services/pictograph-letter-lookup";
   import FestivalSamplerPrintView from "./FestivalSamplerPrintView.svelte";
   import FestivalSamplerTurnReview from "./FestivalSamplerTurnReview.svelte";
@@ -160,8 +160,8 @@
     },
     generateSequence: (options) =>
       generationOrchestrator.generateSequence(options),
-    getStartPositionVariations: (gridMode, leftOrientation, rightOrientation) =>
-      startPositionManager.getAllStartPositionVariations(
+    getStartPlacementVariations: (gridMode, leftOrientation, rightOrientation) =>
+      startPlacementManager.getAllStartPlacementVariations(
         gridMode,
         leftOrientation,
         rightOrientation

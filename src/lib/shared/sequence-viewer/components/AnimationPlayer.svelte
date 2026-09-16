@@ -210,7 +210,7 @@
       displayedBeatNumber(currentStep, stepDwell),
       seq.steps?.length ?? 0
     );
-    if (beat < 1) return seq.startPosition ?? null;
+    if (beat < 1) return seq.startPlacement ?? null;
     const idx = Math.min(Math.max(0, beat - 1), (seq.steps?.length ?? 1) - 1);
     return seq.steps?.[idx] ?? null;
   });
@@ -307,7 +307,7 @@
     const stepsHash =
       sequence?.steps
         ?.map(
-          (s) => `${s.letter}:${s.duration}:${s.startPosition ? "start" : ""}`
+          (s) => `${s.letter}:${s.duration}:${s.startPlacement ? "start" : ""}`
         )
         .join("|") ?? "";
 

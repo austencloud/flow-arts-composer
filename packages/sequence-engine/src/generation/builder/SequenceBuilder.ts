@@ -5,7 +5,7 @@
  *
  *   1. Parse letters from word
  *   2. Assemble constraints (domain hard + style from preset/text)
- *   3. Select start position
+ *   3. Select start placement
  *   4. Allocate turns
  *   5. Beam search
  *   6. Post-process (orientation propagation, reversal detection, convert to SequenceStep)
@@ -60,7 +60,7 @@ import {
 } from "../../core/orientation/layer-signature.js";
 import { BeamSearch, type BeamSearchResult } from "./BeamSearch.js";
 import { Type6Constraint } from "../constraints/domain/Type6Constraint.js";
-import { PositionContinuityConstraint } from "../constraints/domain/PositionContinuityConstraint.js";
+import { PlacementContinuityConstraint } from "../constraints/domain/PlacementContinuityConstraint.js";
 import { ContinuityConstraint } from "../constraints/style/continuity-constraint.js";
 import { ConstraintType } from "../constraints/constraint-types.js";
 import { FloatConstraint } from "../constraints/domain/FloatConstraint.js";
@@ -92,22 +92,22 @@ import {
 } from "../../loop/detection/LOOPDetector.js";
 import { reduceToMinimalLoop } from "../../loop/reduction/minimal-loop-reducer.js";
 import {
-  determineEndPositionForSpec,
-  loopEndPositionSelector,
-} from "../../loop/targeting/LOOPEndPositionSelector.js";
+  determineEndPlacementForSpec,
+  loopEndPlacementSelector,
+} from "../../loop/targeting/LOOPEndPlacementSelector.js";
 import {
-  QUARTER_POSITION_MAP_CW,
-  QUARTER_POSITION_MAP_CCW,
-} from "../../loop/position-maps/circular-position-maps.js";
+  QUARTER_PLACEMENT_MAP_CW,
+  QUARTER_PLACEMENT_MAP_CCW,
+} from "../../loop/placement-maps/circular-placement-maps.js";
 import {
   DEFAULT_FLIPPED_AXIS,
   DEFAULT_MIRRORED_AXIS,
-  SWAPPED_POSITION_MAP,
-} from "../../loop/position-maps/strict-loop-position-maps.js";
+  SWAPPED_PLACEMENT_MAP,
+} from "../../loop/placement-maps/strict-loop-placement-maps.js";
 import {
-  PositionReachabilityAnalyzer,
+  PlacementReachabilityAnalyzer,
   type ReachabilityResult,
-} from "../reachability/PositionReachabilityAnalyzer.js";
+} from "../reachability/PlacementReachabilityAnalyzer.js";
 
 /**
  * Decide whether this request deliberately needs a four-repetition
@@ -241,10 +241,10 @@ export interface BuildOptions {
   /** The word to spell (e.g. "BOOK", "AΣ-B"). Either word or length must be provided. */
   word?: string;
 
-  /** Number of steps to generate (excluding start position). Either word or length must be provided. */
+  /** Number of steps to generate (excluding start placement). Either word or length must be provided. */
   length?: number;
 
-  /** Grid mode for position lookups */
+  /** Grid mode for placement lookups */
   gridMode: string; // "diamond" | "box" | "skewed"
 
   /** Difficulty level (1-3). Controls turn pool. */
@@ -259,8 +259,8 @@ export interface BuildOptions {
   /** Structured constraint composition (alternative to preset/NL) */
   constraintOptions?: ConstraintOptions;
 
-  /** Force a specific start position (e.g. "alpha1") */
-  startPosition?: string;
+  /** Force a specific start placement (e.g. "alpha1") */
+  startPlacement?: string;
 
   /** Prop type filter passed to variation provider and PropTypeConstraint */
   propType?: string;
@@ -295,7 +295,7 @@ export interface BuildOptions {
   /**
    * Let static (Type 6) letters — α, β, γ — appear as ordinary steps.
    *
-   * They are normally kept to starting positions. Both hands stay put, so
+   * They are normally kept to starting placements. Both hands stay put, so
    * without turns the step is standing still, and a randomly chosen one is
    * almost never wanted. But prop rotation is the entire point of Type 6, so a
    * static step carrying turns is a real figure, and a turn pattern that calls
@@ -303,7 +303,7 @@ export interface BuildOptions {
    *
    * Defaults to on for a turn pattern, a layer target, or a hand-relationship
    * LOOP that excludes dashes and can carry turns. Those LOOPs may need a
-   * stationary-hand step to reach the closing position. Set it explicitly to
+   * stationary-hand step to reach the closing placement. Set it explicitly to
    * override either way. Even when on, a
    * static step still has to clear Type6Constraint, which refuses level 1
    * outright and refuses any step whose hands both sit at zero turns.
@@ -329,25 +329,25 @@ export interface BuildOptions {
   loop?: LoopOptions;
 
   /**
-   * Force a specific end position (e.g. "beta5"). The last step must end here.
-   * @deprecated Pass `endPositions` — the search has always modelled the goal
+   * Force a specific end placement (e.g. "beta5"). The last step must end here.
+   * @deprecated Pass `endPlacements` — the search has always modelled the goal
    * as a set, and one-of-many costs nothing extra.
    */
-  endPosition?: string;
+  endPlacement?: string;
 
   /**
-   * Allowed end positions (e.g. ["beta5", "alpha3"]). The last step must end
+   * Allowed end placements (e.g. ["beta5", "alpha3"]). The last step must end
    * at one of them. Empty or undefined = unconstrained.
    *
    * This is the same `Set<string>` the LOOP targeting path has always built
-   * via getAllValidEndPositions, and PositionReachabilityAnalyzer already
+   * via getAllValidEndPlacements, and PlacementReachabilityAnalyzer already
    * takes the whole set — so N goals search exactly like one, and a wider set
    * is strictly MORE feasible than a single hard target.
    */
-  endPositions?: string[];
+  endPlacements?: string[];
 
-  /** Start positions to exclude from the random start pool. */
-  blockedStartPositions?: string[];
+  /** Start placements to exclude from the random start pool. */
+  blockedStartPlacements?: string[];
 
   /** Letters that must NOT appear in the generated sequence. */
   mustNotContainLetters?: string[];
@@ -372,7 +372,7 @@ export interface LoopOptions {
   /** Period for rotational LOOPs (HALVED = 180 deg, QUARTERED = 90 deg) */
   period: Period;
 
-  /** Whether to use targeted end-position generation */
+  /** Whether to use targeted end-placement generation */
   useTargetedGeneration?: boolean;
 
   /** Compositional LOOPSpec. When present, preferred over type+period by new execution paths. */
@@ -392,11 +392,11 @@ export interface LoopOptions {
  * Result of building a sequence.
  */
 export interface BuildResult {
-  /** The generated sequence steps (index 0 = start position) */
+  /** The generated sequence steps (index 0 = start placement) */
   sequence: SequenceStep[];
 
-  /** The start position step */
-  startPosition: SequenceStep;
+  /** The start placement step */
+  startPlacement: SequenceStep;
 
   /** Indices of steps that are bridge letters */
   bridgeStepIndices: number[];
@@ -529,8 +529,8 @@ export class SequenceBuilder {
     const last = result.sequence[result.sequence.length - 1];
     if (!first || !last) return "empty sequence";
 
-    if (first.startPosition !== last.endPosition) {
-      return `position did not close (${first.startPosition} -> ${last.endPosition})`;
+    if (first.startPlacement !== last.endPlacement) {
+      return `placement did not close (${first.startPlacement} -> ${last.endPlacement})`;
     }
 
     const openOrientations: string[] = [];
@@ -762,33 +762,33 @@ export class SequenceBuilder {
         );
 
     // Stage 4: Beam search
-    // When LOOP is requested, the last letter must end at a position
+    // When LOOP is requested, the last letter must end at a placement
     // compatible with the LOOP type. Retry with different random
-    // variations if the first attempt doesn't land at a valid position.
+    // variations if the first attempt doesn't land at a valid placement.
     const needsLoopTargeting =
       options.loop?.useTargetedGeneration &&
       options.loop.type !== LOOPType.REWOUND;
 
     // Constrain only the legacy rotate+swap degeneracy. Reflection axes do not
     // require fixed-point starts.
-    let effectiveStartPosition = options.startPosition;
+    let effectiveStartPlacement = options.startPlacement;
     if (needsLoopTargeting && options.loop) {
       const constrainedStart = this.constrainStartForLoopType(
         options.loop.type,
-        effectiveStartPosition,
+        effectiveStartPlacement,
         options.gridMode,
         options.constraintOptions?.handRelationship
       );
       if (constrainedStart) {
-        effectiveStartPosition = constrainedStart;
+        effectiveStartPlacement = constrainedStart;
       }
     }
 
     // Build the ordered list of (start, requiredEnds) targets to search toward.
     //
     // The closure constraint is enforced by handing the beam search the set of
-    // valid end positions for the FINAL letter (search() filters the last step
-    // to those). That only works if we know the start position, because the
+    // valid end placements for the FINAL letter (search() filters the last step
+    // to those). That only works if we know the start placement, because the
     // valid ends are a function of (start, loopType). When the caller pins a
     // start we compute a single target. When the start is random for a LOOP we
     // must NOT let the beam draw blind and then reject the pair post-hoc — for
@@ -800,35 +800,35 @@ export class SequenceBuilder {
       start: string | undefined;
       requiredEnds: Set<string> | undefined;
     }>;
-    if (needsLoopTargeting && options.loop && !effectiveStartPosition) {
+    if (needsLoopTargeting && options.loop && !effectiveStartPlacement) {
       searchTargets = this.enumerateLoopStartTargets(
         letters[0]!,
         options.loop,
         options.gridMode,
-        options.blockedStartPositions
+        options.blockedStartPlacements
       );
       if (searchTargets.length === 0) {
         throw new Error(
-          `No closure-compatible start position exists for a ${options.loop.type} LOOP spelling "${options.word}"`
+          `No closure-compatible start placement exists for a ${options.loop.type} LOOP spelling "${options.word}"`
         );
       }
     } else {
-      let requiredEndPositions: Set<string> | undefined;
-      if (needsLoopTargeting && effectiveStartPosition && options.loop) {
-        requiredEndPositions = this.getAllValidEndPositions(
+      let requiredEndPlacements: Set<string> | undefined;
+      if (needsLoopTargeting && effectiveStartPlacement && options.loop) {
+        requiredEndPlacements = this.getAllValidEndPlacements(
           options.loop.type,
-          effectiveStartPosition,
+          effectiveStartPlacement,
           options.loop.period,
           options.loop.loopSpec
         );
       }
       searchTargets = [
-        { start: effectiveStartPosition, requiredEnds: requiredEndPositions },
+        { start: effectiveStartPlacement, requiredEnds: requiredEndPlacements },
       ];
     }
 
     // Word-based LOOP needs more retries because the word constrains which
-    // positions are reachable. Each retry picks different random variations
+    // placements are reachable. Each retry picks different random variations
     // (rotation-direction resolution + turn-driven enrichment) that may take a
     // different lane through the beam.
     const maxRetries = needsLoopTargeting ? 30 : 1;
@@ -867,7 +867,7 @@ export class SequenceBuilder {
           // a pair it will reject downstream.
           if (target.requiredEnds && target.requiredEnds.size > 0) {
             const actualEnd =
-              result.steps[result.steps.length - 1]?.endPosition;
+              result.steps[result.steps.length - 1]?.endPlacement;
             if (!actualEnd || !target.requiredEnds.has(actualEnd)) {
               lastError = `Sequence for "${options.word}" could not close as a ${options.loop?.type} LOOP from ${target.start ?? "?"} (ended ${actualEnd ?? "?"})`;
               continue; // try the next start candidate
@@ -916,11 +916,11 @@ export class SequenceBuilder {
    * constraint scoring. No bridges needed since every transition is direct.
    */
   /**
-   * The caller's own end-position goal, or undefined when they set none.
+   * The caller's own end-placement goal, or undefined when they set none.
    *
    * Shared by both attempt loops in buildByLength. It used to be inlined in
    * each, and the second one — the "hard continuity killed the beam, demote to
-   * soft and retry" fallback — only ever read the legacy single `endPosition`.
+   * soft and retry" fallback — only ever read the legacy single `endPlacement`.
    * With Props on Choppy, continuity is promoted to hard, the constrained pass
    * fails, and that fallback then regenerated with NO end constraint at all:
    * the user picked two allowed ends and got a sequence ending somewhere else
@@ -928,16 +928,16 @@ export class SequenceBuilder {
    * drift apart again.
    *
    * LOOP targeting owns the goal set when active, which is why the UI locks the
-   * End Position row while LOOP is on.
+   * End Placement row while LOOP is on.
    */
-  private userEndPositions(
+  private userEndPlacements(
     options: BuildOptions,
     needsLoopTargeting: boolean | undefined
   ): Set<string> | undefined {
     if (needsLoopTargeting) return undefined;
     const ends = [
-      ...(options.endPositions ?? []),
-      ...(options.endPosition ? [options.endPosition] : []),
+      ...(options.endPlacements ?? []),
+      ...(options.endPlacement ? [options.endPlacement] : []),
     ];
     return ends.length > 0 ? new Set(ends) : undefined;
   }
@@ -952,7 +952,7 @@ export class SequenceBuilder {
 
     // When the user wants smooth continuity, try promoting the constraint to
     // hard first (no reversals allowed). If the beam dies — which can happen
-    // when all variations at a position reverse the established rotation —
+    // when all variations at a placement reverse the established rotation —
     // fall back to soft continuity so the search still produces a result.
     const effectivePropContinuity =
       this.resolveEffectivePropContinuity(options);
@@ -979,12 +979,12 @@ export class SequenceBuilder {
 
     // Stage 4: Beam search by length
     // When generating a LOOP seed, the last step must end at a specific
-    // position determined by the LOOP type and start position. Each LOOP
+    // placement determined by the LOOP type and start placement. Each LOOP
     // type has its own requirement (rotated = 180°/90° away, inverted =
-    // same position, mirrored = vertically mirrored, etc.).
+    // same placement, mirrored = vertically mirrored, etc.).
     //
-    // LOOPEndPositionSelector handles all LOOP types correctly.
-    // When no start position is specified, the beam search picks a random
+    // LOOPEndPlacementSelector handles all LOOP types correctly.
+    // When no start placement is specified, the beam search picks a random
     // one — we retry up to 10 times if the path fails.
     const needsLoopTargeting =
       options.loop?.useTargetedGeneration &&
@@ -992,23 +992,23 @@ export class SequenceBuilder {
 
     // Reflection starts are handled by axis-specific seam targeting. The only
     // start override left here avoids the legacy rotate+swap alpha degeneracy.
-    let effectiveStartPosition = options.startPosition;
+    let effectiveStartPlacement = options.startPlacement;
     if (needsLoopTargeting && options.loop) {
       const constrainedStart = this.constrainStartForLoopType(
         options.loop.type,
-        effectiveStartPosition,
+        effectiveStartPlacement,
         options.gridMode,
         options.constraintOptions?.handRelationship
       );
       if (constrainedStart) {
-        effectiveStartPosition = constrainedStart;
+        effectiveStartPlacement = constrainedStart;
       }
     }
 
     // Build search options for filtering
     const searchOptions = {
-      blockedStartPositions: options.blockedStartPositions
-        ? new Set(options.blockedStartPositions)
+      blockedStartPlacements: options.blockedStartPlacements
+        ? new Set(options.blockedStartPlacements)
         : undefined,
       mustNotContainLetters: options.mustNotContainLetters
         ? new Set(options.mustNotContainLetters)
@@ -1021,7 +1021,7 @@ export class SequenceBuilder {
     // Pre-filter variations by hard constraints for reachability analysis.
     // This only runs once (not per-retry) since hard constraints don't change.
     // Uses the same static-letter gate as BeamSearch, and must: reachability
-    // decides which positions are worth visiting at each step, so excluding
+    // decides which placements are worth visiting at each step, so excluding
     // static letters here would prune the paths to them before the beam ever
     // offered one.
     const allVariationsForReach = this.variationProvider.getAllVariations(
@@ -1046,21 +1046,21 @@ export class SequenceBuilder {
       constraintSet.hard
     );
     const eligibleStarts = new Set(
-      hardConstraintFiltered.map((variation) => variation.startPosition)
+      hardConstraintFiltered.map((variation) => variation.startPlacement)
     );
 
     // A LOOP's target depends on its start. Search each start→end relation as
     // its own problem so backward reachability can keep soft preferences from
     // filling a global beam with attractive paths that cannot close.
     const lengthLoopTargets =
-      needsLoopTargeting && !effectiveStartPosition
+      needsLoopTargeting && !effectiveStartPlacement
         ? Object.entries(
-            this.buildLoopPositionMap(options.loop!, options.gridMode)
+            this.buildLoopPlacementMap(options.loop!, options.gridMode)
           )
             .filter(
               ([start]) =>
                 eligibleStarts.has(start) &&
-                !searchOptions.blockedStartPositions?.has(start)
+                !searchOptions.blockedStartPlacements?.has(start)
             )
             .map(([start, ends]) => ({
               start,
@@ -1073,60 +1073,60 @@ export class SequenceBuilder {
     // not a commitment. Skewed in particular has starts whose outgoing
     // variations can all be removed by a hard filter such as no-static.
     const maxRetries =
-      lengthLoopTargets?.length ?? (effectiveStartPosition ? 1 : 10);
+      lengthLoopTargets?.length ?? (effectiveStartPlacement ? 1 : 10);
     let searchResult: BeamSearchResult | undefined;
     let lastError: string | undefined;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
-      // For LOOP generation, compute the required end position.
-      // If startPosition is specified, compute upfront. If not,
-      // the beam search picks a random start — we compute end position
+      // For LOOP generation, compute the required end placement.
+      // If startPlacement is specified, compute upfront. If not,
+      // the beam search picks a random start — we compute end placement
       // from the actual start after the first step is selected.
-      let requiredEndPositions: Set<string> | undefined;
-      let loopPositionMap: Record<string, string[]> | undefined;
+      let requiredEndPlacements: Set<string> | undefined;
+      let loopPlacementMap: Record<string, string[]> | undefined;
       const loopTarget = lengthLoopTargets?.[attempt];
-      const attemptStartPosition = loopTarget?.start ?? effectiveStartPosition;
+      const attemptStartPlacement = loopTarget?.start ?? effectiveStartPlacement;
 
       if (loopTarget) {
-        requiredEndPositions = loopTarget.requiredEnds;
-      } else if (needsLoopTargeting && attemptStartPosition) {
-        requiredEndPositions = this.getAllValidEndPositions(
+        requiredEndPlacements = loopTarget.requiredEnds;
+      } else if (needsLoopTargeting && attemptStartPlacement) {
+        requiredEndPlacements = this.getAllValidEndPlacements(
           options.loop!.type,
-          attemptStartPosition,
+          attemptStartPlacement,
           options.loop!.period,
           options.loop!.loopSpec
         );
       } else if (needsLoopTargeting) {
-        // No start position specified — build a position map so the beam
-        // search can compute the end position from the actual random start.
-        loopPositionMap = this.buildLoopPositionMap(
+        // No start placement specified — build a placement map so the beam
+        // search can compute the end placement from the actual random start.
+        loopPlacementMap = this.buildLoopPlacementMap(
           options.loop!,
           options.gridMode
         );
       }
 
-      requiredEndPositions =
-        this.userEndPositions(options, needsLoopTargeting) ??
-        requiredEndPositions;
+      requiredEndPlacements =
+        this.userEndPlacements(options, needsLoopTargeting) ??
+        requiredEndPlacements;
 
       // Backward reachability analysis: whenever we have a concrete goal,
-      // pre-compute which positions can participate in a path to it. This is
+      // pre-compute which placements can participate in a path to it. This is
       // required for soft preferences too: scoring must not prune every lane
       // that can still reach the seam.
       let reachability: ReachabilityResult | undefined;
-      if (requiredEndPositions && requiredEndPositions.size > 0) {
-        const analyzer = new PositionReachabilityAnalyzer();
+      if (requiredEndPlacements && requiredEndPlacements.size > 0) {
+        const analyzer = new PlacementReachabilityAnalyzer();
         reachability = analyzer.analyze(
           length,
-          requiredEndPositions,
+          requiredEndPlacements,
           hardConstraintFiltered,
-          searchOptions.blockedStartPositions
+          searchOptions.blockedStartPlacements
         );
 
         if (!reachability.feasible) {
           throw new Error(
             `No valid ${length}-step path exists: step ${reachability.emptyStepIndex! + 1} ` +
-              `has no reachable positions given the current constraints`
+              `has no reachable placements given the current constraints`
           );
         }
       }
@@ -1143,11 +1143,11 @@ export class SequenceBuilder {
       const propContinuity = this.resolveEffectivePropContinuity(options);
       const result = beamSearch.searchByLength(
         length,
-        attemptStartPosition,
+        attemptStartPlacement,
         constraintSet,
         options.beamWidth ?? 10,
-        requiredEndPositions,
-        loopPositionMap,
+        requiredEndPlacements,
+        loopPlacementMap,
         searchOptions,
         turnSource,
         propContinuity,
@@ -1159,8 +1159,8 @@ export class SequenceBuilder {
           const closureError = this.getLengthLoopClosureError(
             result,
             options.loop!.type,
-            requiredEndPositions,
-            loopPositionMap
+            requiredEndPlacements,
+            loopPlacementMap
           );
           if (closureError) {
             lastError = closureError;
@@ -1192,7 +1192,7 @@ export class SequenceBuilder {
     }
 
     // If hard continuity killed the beam, demote to soft and retry once.
-    // Some positions only have variations that reverse the established rotation,
+    // Some placements only have variations that reverse the established rotation,
     // so enforcing continuity as a hard constraint is too strict.
     if (
       (!searchResult ||
@@ -1211,47 +1211,47 @@ export class SequenceBuilder {
       );
 
       for (let attempt = 0; attempt < maxRetries; attempt++) {
-        let requiredEndPositions: Set<string> | undefined;
-        let loopPositionMap: Record<string, string[]> | undefined;
+        let requiredEndPlacements: Set<string> | undefined;
+        let loopPlacementMap: Record<string, string[]> | undefined;
         const loopTarget = lengthLoopTargets?.[attempt];
-        const attemptStartPosition =
-          loopTarget?.start ?? effectiveStartPosition;
+        const attemptStartPlacement =
+          loopTarget?.start ?? effectiveStartPlacement;
 
         if (loopTarget) {
-          requiredEndPositions = loopTarget.requiredEnds;
-        } else if (needsLoopTargeting && attemptStartPosition) {
-          requiredEndPositions = this.getAllValidEndPositions(
+          requiredEndPlacements = loopTarget.requiredEnds;
+        } else if (needsLoopTargeting && attemptStartPlacement) {
+          requiredEndPlacements = this.getAllValidEndPlacements(
             options.loop!.type,
-            attemptStartPosition,
+            attemptStartPlacement,
             options.loop!.period,
             options.loop!.loopSpec
           );
         } else if (needsLoopTargeting) {
-          loopPositionMap = this.buildLoopPositionMap(
+          loopPlacementMap = this.buildLoopPlacementMap(
             options.loop!,
             options.gridMode
           );
         }
 
-        requiredEndPositions =
-          this.userEndPositions(options, needsLoopTargeting) ??
-          requiredEndPositions;
+        requiredEndPlacements =
+          this.userEndPlacements(options, needsLoopTargeting) ??
+          requiredEndPlacements;
 
         // Recompute reachability with the demoted constraint set
         let reachabilityRetry: ReachabilityResult | undefined;
-        if (requiredEndPositions && requiredEndPositions.size > 0) {
-          const analyzer = new PositionReachabilityAnalyzer();
+        if (requiredEndPlacements && requiredEndPlacements.size > 0) {
+          const analyzer = new PlacementReachabilityAnalyzer();
           reachabilityRetry = analyzer.analyze(
             length,
-            requiredEndPositions,
+            requiredEndPlacements,
             demotedHardFiltered,
-            searchOptions.blockedStartPositions
+            searchOptions.blockedStartPlacements
           );
 
           if (!reachabilityRetry.feasible) {
             throw new Error(
               `No valid ${length}-step path exists: step ${reachabilityRetry.emptyStepIndex! + 1} ` +
-                `has no reachable positions given the current constraints`
+                `has no reachable placements given the current constraints`
             );
           }
         }
@@ -1268,11 +1268,11 @@ export class SequenceBuilder {
         const propContinuity = this.resolveEffectivePropContinuity(options);
         const result = beamSearch.searchByLength(
           length,
-          attemptStartPosition,
+          attemptStartPlacement,
           constraintSet,
           options.beamWidth ?? 10,
-          requiredEndPositions,
-          loopPositionMap,
+          requiredEndPlacements,
+          loopPlacementMap,
           searchOptions,
           turnSource,
           propContinuity,
@@ -1284,8 +1284,8 @@ export class SequenceBuilder {
             const closureError = this.getLengthLoopClosureError(
               result,
               options.loop!.type,
-              requiredEndPositions,
-              loopPositionMap
+              requiredEndPlacements,
+              loopPlacementMap
             );
             if (closureError) {
               lastError = closureError;
@@ -1357,30 +1357,30 @@ export class SequenceBuilder {
   private getLengthLoopClosureError(
     result: BeamSearchResult,
     loopType: LOOPType,
-    requiredEndPositions?: Set<string>,
-    loopPositionMap?: Record<string, string[]>
+    requiredEndPlacements?: Set<string>,
+    loopPlacementMap?: Record<string, string[]>
   ): string | undefined {
-    const startPosition = result.steps[0]?.startPosition;
-    const endPosition = result.steps[result.steps.length - 1]?.endPosition;
+    const startPlacement = result.steps[0]?.startPlacement;
+    const endPlacement = result.steps[result.steps.length - 1]?.endPlacement;
     const validEnds =
-      requiredEndPositions && requiredEndPositions.size > 0
-        ? [...requiredEndPositions]
-        : startPosition
-          ? loopPositionMap?.[startPosition]
+      requiredEndPlacements && requiredEndPlacements.size > 0
+        ? [...requiredEndPlacements]
+        : startPlacement
+          ? loopPlacementMap?.[startPlacement]
           : undefined;
 
     if (
-      !startPosition ||
-      !endPosition ||
+      !startPlacement ||
+      !endPlacement ||
       !validEnds ||
       validEnds.length === 0
     ) {
-      return `No valid seed seam exists for a ${loopType} LOOP from ${startPosition ?? "?"}`;
+      return `No valid seed seam exists for a ${loopType} LOOP from ${startPlacement ?? "?"}`;
     }
 
-    if (!validEnds.includes(endPosition)) {
+    if (!validEnds.includes(endPlacement)) {
       return (
-        `Seed for ${loopType} LOOP from ${startPosition} ended at ${endPosition}; ` +
+        `Seed for ${loopType} LOOP from ${startPlacement} ended at ${endPlacement}; ` +
         `expected one of [${validEnds.join(", ")}]`
       );
     }
@@ -1397,7 +1397,7 @@ export class SequenceBuilder {
     // Always-on domain hard constraints
     const hard: IConstraint[] = [
       new Type6Constraint(),
-      new PositionContinuityConstraint(),
+      new PlacementContinuityConstraint(),
       new FloatConstraint(),
     ];
 
@@ -1521,10 +1521,10 @@ export class SequenceBuilder {
       const pd = searchResult.steps[i]!;
       const isBridge = bridgeIndices.has(i);
 
-      // Step index: start position = 0, first letter = 1, etc.
+      // Step index: start placement = 0, first letter = 1, etc.
       // Bridge letters share the step index of the letter they precede.
 
-      // Apply turn allocation. Index 0 = start position (no turns),
+      // Apply turn allocation. Index 0 = start placement (no turns),
       // letter steps are 1-indexed in the turn allocation arrays.
       const stepTurnIndex = i > 0 ? i - 1 : -1;
       // The source owns the bounds question. A random allocation still runs out
@@ -1602,8 +1602,8 @@ export class SequenceBuilder {
       sequence.push({
         id: `step-${i}-${pd.letter}`,
         letter: pd.letter as SequenceStep["letter"],
-        startPosition: pd.startPosition as SequenceStep["startPosition"],
-        endPosition: pd.endPosition as SequenceStep["endPosition"],
+        startPlacement: pd.startPlacement as SequenceStep["startPlacement"],
+        endPlacement: pd.endPlacement as SequenceStep["endPlacement"],
         motions: { left: leftMotion, right: rightMotion },
         stepNumber: i,
         duration: 1,
@@ -1658,9 +1658,9 @@ export class SequenceBuilder {
       rightStartOrientation
     );
 
-    // Update step 0 (start position) orientations when overrides are provided.
+    // Update step 0 (start placement) orientations when overrides are provided.
     // The propagator starts at i=1, so step 0 retains its original CSV orientations.
-    // The start position is a static hold, so start and end orientation are the same.
+    // The start placement is a static hold, so start and end orientation are the same.
     if (orientationOverrides && propagated[0]) {
       const sp = propagated[0];
       if (orientationOverrides.leftStartOrientation) {
@@ -1696,10 +1696,10 @@ export class SequenceBuilder {
       }
     }
 
-    const startPosition = propagated[0]!;
+    const startPlacement = propagated[0]!;
 
     // Report what was actually used rather than what was allocated up front, so
-    // the numbers here cover the bridge steps too. Step 0 is the start position
+    // the numbers here cover the bridge steps too. Step 0 is the start placement
     // and carries no turns, hence the offset.
     const turnAllocation: TurnAllocation = {
       left: propagated.slice(1).map((_, i) => turnSource.at(i, "left") ?? 0),
@@ -1708,7 +1708,7 @@ export class SequenceBuilder {
 
     return {
       sequence: propagated,
-      startPosition,
+      startPlacement,
       bridgeStepIndices: searchResult.bridgeStepIndices,
       constraintReport: searchResult.constraintReport,
       metrics: {
@@ -1725,7 +1725,7 @@ export class SequenceBuilder {
    * We select the executor for the requested LOOPType, pass the seed sequence
    * through, then build metadata about what was derived.
    *
-   * The executors mutate the input array (shift/unshift the start position),
+   * The executors mutate the input array (shift/unshift the start placement),
    * so we pass a copy to keep the original result intact if needed.
    */
   private extendWithLOOP(
@@ -1737,7 +1737,7 @@ export class SequenceBuilder {
     // populated today by the MCP adapter via loopSpecFromLegacy for every
     // request) is preferred over type+period execution when present. The
     // legacy type+period is still required alongside it — seam targeting
-    // (LOOPEndPositionSelector, constrainStartForLoopType) reads
+    // (LOOPEndPlacementSelector, constrainStartForLoopType) reads
     // loopOptions.type/period directly and is unaffected by this branch.
     const loopSpec = loopOptions.loopSpec;
     if (loopSpec) {
@@ -1749,7 +1749,7 @@ export class SequenceBuilder {
       }
     }
 
-    // Build the seed word from non-start-position, non-bridge letters
+    // Build the seed word from non-start-placement, non-bridge letters
     const seedWord = result.sequence
       .slice(1)
       .filter((s) => !s.isBridge)
@@ -1760,7 +1760,7 @@ export class SequenceBuilder {
     const inputSteps = result.sequence.map((s) => ({ ...s }));
 
     // Execute the LOOP transformation. Both paths return the complete
-    // circular sequence (start position + seed steps + derived steps).
+    // circular sequence (start placement + seed steps + derived steps).
     const structurallyExtendedSteps = loopSpec
       ? loopExecutorSelector.executeSpec(inputSteps, loopSpec)
       : loopExecutorSelector
@@ -1825,7 +1825,7 @@ export class SequenceBuilder {
     const completedSteps = minimal.steps;
 
     // Figure out which steps are derived (everything after the original seed).
-    // The original sequence had result.sequence.length steps (including start position).
+    // The original sequence had result.sequence.length steps (including start placement).
     // The seed steps occupy indices 1 through (result.sequence.length - 1).
     // Derived steps start at index result.sequence.length.
     const seedStepCount = result.sequence.length;
@@ -1861,7 +1861,7 @@ export class SequenceBuilder {
     return {
       ...result,
       sequence: completedSteps,
-      startPosition: completedSteps[0]!,
+      startPlacement: completedSteps[0]!,
       loop: {
         seedWord,
         derivedWord,
@@ -1877,7 +1877,7 @@ export class SequenceBuilder {
    */
   private constrainStartForLoopType(
     loopType: LOOPType,
-    currentStartPosition?: string,
+    currentStartPlacement?: string,
     gridMode?: string,
     handRelationship?: HandRelationshipOptions
   ): string | undefined {
@@ -1885,10 +1885,10 @@ export class SequenceBuilder {
     // here can exclude every valid start and cannot remove that symmetry.
     if (handRelationship) return undefined;
     // Grid modes occupy disjoint grid points: diamond uses the cardinal
-    // (odd-index) positions (beta1/3/5/7…), box uses the intercardinal
+    // (odd-index) placements (beta1/3/5/7…), box uses the intercardinal
     // (even-index) ones (beta2/4/6/8…). A start pinned here MUST exist in the
     // active grid mode — otherwise the beam search has zero variations there
-    // and the reachability pass dies at step 1 ("no reachable positions").
+    // and the reachability pass dies at step 1 ("no reachable placements").
     const isBox = (gridMode ?? "").toLowerCase() === "box";
 
     // Swap+rotate combos degenerate from alpha starts (rotate and swap cancel
@@ -1901,15 +1901,15 @@ export class SequenceBuilder {
       loopType === LOOPType.ROTATED_SWAPPED ||
       loopType === LOOPType.ROTATED_SWAPPED_INVERTED
     ) {
-      if (currentStartPosition && !currentStartPosition.startsWith("alpha")) {
+      if (currentStartPlacement && !currentStartPlacement.startsWith("alpha")) {
         return undefined; // beta or gamma — keep
       }
       // Only the betas that exist in this grid mode (odd for diamond, even for
       // box). Picking from all 8 pinned a nonexistent parity ~50% of the time.
-      const betaPositions = isBox
+      const betaPlacements = isBox
         ? ["beta2", "beta4", "beta6", "beta8"]
         : ["beta1", "beta3", "beta5", "beta7"];
-      return betaPositions[Math.floor(Math.random() * betaPositions.length)];
+      return betaPlacements[Math.floor(Math.random() * betaPlacements.length)];
     }
 
     return undefined;
@@ -1931,7 +1931,7 @@ export class SequenceBuilder {
         if (typeof asVariation.couldSatisfy === "function") {
           return asVariation.couldSatisfy(v);
         }
-        // Constraints without couldSatisfy (e.g. PositionContinuityConstraint)
+        // Constraints without couldSatisfy (e.g. PlacementContinuityConstraint)
         // can't pre-filter individual variations — assume they pass.
         return true;
       })
@@ -1940,26 +1940,26 @@ export class SequenceBuilder {
 
   /**
    * For quartered rotated LOOPs, returns both CW and CCW targets.
-   * For other types, returns the single valid end position.
+   * For other types, returns the single valid end placement.
    */
-  private getAllValidEndPositions(
+  private getAllValidEndPlacements(
     loopType: LOOPType,
-    startPosition: string,
+    startPlacement: string,
     period: Period,
     loopSpec?: LOOPSpec
   ): Set<string> {
-    const positions = new Set<string>();
+    const placements = new Set<string>();
 
     // Swap+rotate combos are only non-degenerate from beta starts (see
-    // LOOPEndPositionSelector.determineEndPosition) — enforce it here too
+    // LOOPEndPlacementSelector.determineEndPlacement) — enforce it here too
     // because the quartered fast path below bypasses the selector.
     if (
       (loopType === LOOPType.ROTATED_SWAPPED ||
         loopType === LOOPType.ROTATED_SWAPPED_INVERTED) &&
-      startPosition.startsWith("alpha") &&
+      startPlacement.startsWith("alpha") &&
       !loopSpec
     ) {
-      return positions;
+      return placements;
     }
 
     // For rotated LOOP types with quartered slice, both CW and CCW are valid.
@@ -1970,31 +1970,31 @@ export class SequenceBuilder {
       const isSwapRotate =
         loopType === LOOPType.ROTATED_SWAPPED ||
         loopType === LOOPType.ROTATED_SWAPPED_INVERTED;
-      const cw = QUARTER_POSITION_MAP_CW[startPosition];
-      const ccw = QUARTER_POSITION_MAP_CCW[startPosition];
-      const cwEnd = isSwapRotate && cw ? SWAPPED_POSITION_MAP[cw] : cw;
-      const ccwEnd = isSwapRotate && ccw ? SWAPPED_POSITION_MAP[ccw] : ccw;
-      if (cwEnd) positions.add(cwEnd);
-      if (ccwEnd) positions.add(ccwEnd);
+      const cw = QUARTER_PLACEMENT_MAP_CW[startPlacement];
+      const ccw = QUARTER_PLACEMENT_MAP_CCW[startPlacement];
+      const cwEnd = isSwapRotate && cw ? SWAPPED_PLACEMENT_MAP[cw] : cw;
+      const ccwEnd = isSwapRotate && ccw ? SWAPPED_PLACEMENT_MAP[ccw] : ccw;
+      if (cwEnd) placements.add(cwEnd);
+      if (ccwEnd) placements.add(ccwEnd);
     } else if (loopSpec) {
-      const endPos = determineEndPositionForSpec(loopSpec, startPosition);
-      if (endPos) positions.add(endPos);
+      const endPos = determineEndPlacementForSpec(loopSpec, startPlacement);
+      if (endPos) placements.add(endPos);
     } else {
       // For all other types, delegate to the standard selector
-      const endPos = loopEndPositionSelector.determineEndPosition(
+      const endPos = loopEndPlacementSelector.determineEndPlacement(
         loopType,
-        startPosition,
+        startPlacement,
         period
       );
-      if (endPos) positions.add(endPos);
+      if (endPos) placements.add(endPos);
     }
 
-    return positions;
+    return placements;
   }
 
   /**
-   * Enumerate the closure-compatible start positions the first letter can
-   * occupy for a random-start LOOP, each paired with its valid end positions.
+   * Enumerate the closure-compatible start placements the first letter can
+   * occupy for a random-start LOOP, each paired with its valid end placements.
    *
    * A start is a candidate only when (a) the first letter has a variation that
    * begins there in this grid mode, (b) it is not blocked, and (c) the LOOP
@@ -2007,18 +2007,18 @@ export class SequenceBuilder {
     firstLetter: string,
     loop: LoopOptions,
     gridMode: string,
-    blockedStartPositions?: string[]
+    blockedStartPlacements?: string[]
   ): Array<{ start: string; requiredEnds: Set<string> }> {
-    const blocked = new Set(blockedStartPositions ?? []);
+    const blocked = new Set(blockedStartPlacements ?? []);
     const firstVariations = this.variationProvider
       .getAllVariations(gridMode)
       .filter((p) => p.letter === firstLetter);
-    const starts = [...new Set(firstVariations.map((p) => p.startPosition))];
+    const starts = [...new Set(firstVariations.map((p) => p.startPlacement))];
 
     const targets: Array<{ start: string; requiredEnds: Set<string> }> = [];
     for (const start of starts) {
       if (blocked.has(start)) continue;
-      const requiredEnds = this.getAllValidEndPositions(
+      const requiredEnds = this.getAllValidEndPlacements(
         loop.type,
         start,
         loop.period,
@@ -2029,7 +2029,7 @@ export class SequenceBuilder {
       }
     }
 
-    // Fisher-Yates shuffle for start-position variety across calls.
+    // Fisher-Yates shuffle for start-placement variety across calls.
     for (let i = targets.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       const tmp = targets[i]!;
@@ -2041,34 +2041,34 @@ export class SequenceBuilder {
   }
 
   /**
-   * Maps each possible start position to ALL its valid end positions
+   * Maps each possible start placement to ALL its valid end placements
    * for the given LOOP type. For quartered rotated LOOPs, each start
    * maps to both CW and CCW targets.
    */
-  private buildLoopPositionMap(
+  private buildLoopPlacementMap(
     loopOptions: LoopOptions,
     gridMode: string
   ): Record<string, string[]> {
     const map: Record<string, string[]> = {};
-    const positions = [
+    const placements = [
       ...new Set(
         this.variationProvider
           .getAllVariations(gridMode)
           .flatMap((variation) => [
-            variation.startPosition,
-            variation.endPosition,
+            variation.startPlacement,
+            variation.endPlacement,
           ])
       ),
     ];
-    for (const pos of positions) {
-      const endPositions = this.getAllValidEndPositions(
+    for (const pos of placements) {
+      const endPlacements = this.getAllValidEndPlacements(
         loopOptions.type,
         pos,
         loopOptions.period,
         loopOptions.loopSpec
       );
-      if (endPositions.size > 0) {
-        map[pos] = Array.from(endPositions);
+      if (endPlacements.size > 0) {
+        map[pos] = Array.from(endPlacements);
       }
     }
     return map;

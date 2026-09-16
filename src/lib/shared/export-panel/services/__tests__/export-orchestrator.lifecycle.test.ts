@@ -29,7 +29,7 @@ vi.mock("$lib/shared/share/state/image-composition-state.svelte", () => ({
   getImageCompositionManager: () => ({
     getSettings: () => ({
       darkMode: true,
-      includeStartPosition: true,
+      includeStartPlacement: true,
       addStepNumbers: false,
       addWord: true,
       addDifficultyLevel: false,
@@ -48,7 +48,7 @@ vi.mock(
         loopCount: 1,
         resolution: 1080,
         effectOverrides: null,
-        includeStartPosition: true,
+        includeStartPlacement: true,
         includeEndHold: true,
         quality: 0.9,
       }),

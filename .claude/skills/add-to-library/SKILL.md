@@ -23,7 +23,7 @@ Accept any of these formats and convert to the JSON schema documented in `format
 
 | Format | How to parse |
 |--------|-------------|
-| **Structured beat notation** | Parse header block for metadata. Parse each beat line: extract letter, startPosition, endPosition, and per-hand motion fields (motionType, rotationDirection, startLocation, endLocation, turns, startOrientation, endOrientation). |
+| **Structured beat notation** | Parse header block for metadata. Parse each beat line: extract letter, startPlacement, endPlacement, and per-hand motion fields (motionType, rotationDirection, startLocation, endLocation, turns, startOrientation, endOrientation). |
 | **Raw JSON** | Validate it has `word` and `steps[]`. Normalize field names if needed. Pass through. |
 | **Natural language** | Extract what you can. Ask one focused question for anything genuinely ambiguous. |
 | **MCP generate_sequence output** | Already in the right format. Extract and pass through. |
@@ -33,7 +33,7 @@ Accept any of these formats and convert to the JSON schema documented in `format
 From the input, determine:
 - **word** — sequence name (from header or filename)
 - **gridMode** — diamond (default), box, or skewed
-- **circularity** — if last beat's `endPosition` == start position, it's circular
+- **circularity** — if last beat's `endPlacement` == start placement, it's circular
 - **loopType** — rotated, mirrored, swapped, inverted, or compound (e.g. mirrored_swapped)
 - **difficulty** — if stated
 - **tags** — if stated
@@ -48,10 +48,10 @@ If input is clearly incomplete (missing motion data): ask what's missing.
 
 Construct the JSON object matching the schema in `format-reference.md`. Key rules:
 
-- Every step needs: `beat`, `letter`, `startPosition`, `endPosition`, `motions.blue`, `motions.red`
+- Every step needs: `beat`, `letter`, `startPlacement`, `endPlacement`, `motions.blue`, `motions.red`
 - Every motion needs: `color`, `motionType`, `rotationDirection`, `startLocation`, `endLocation`, `turns`, `startOrientation`, `endOrientation`
 - `rotationDirection` for static/dash without spin = `"noRotation"` (camelCase, not snake_case)
-- Wrap in `{ "word": "...", "gridMode": "...", "startPosition": "...", "steps": [...] }`
+- Wrap in `{ "word": "...", "gridMode": "...", "startPlacement": "...", "steps": [...] }`
 
 ### 5. Write temp file and import
 
@@ -66,7 +66,7 @@ node scripts/import-sequence.cjs tmp-import-<word>.json [--circular] [--loop-typ
 ```
 
 Flag rules:
-- `--circular` — add when sequence is circular (endPosition == startPosition)
+- `--circular` — add when sequence is circular (endPlacement == startPlacement)
 - `--loop-type X` — add when loop type is known (from input metadata or detection)
 - `--notes "text"` — add when user provides a tagline or description
 - `--visibility` — `private` by default; `unlisted` is allowed when explicitly requested
@@ -127,7 +127,7 @@ Field mappings:
 - `loc`: n, e, s, w, ne, se, sw, nw, c → use as-is
 - `ori`: in, out, cw, ccw → map `cw` to `"clock"`, `ccw` to `"counter"` (orientation namespace, not rotation)
 - `t=<N>`: turns value (integer or decimal)
-- Positions: alpha1, beta3, gamma5 etc. → use as-is
+- Placements: alpha1, beta3, gamma5 etc. → use as-is
 
 **Orientation mapping warning:** In the beat notation, `ori` values `cw`/`ccw` mean `clock`/`counter` (the orientation enum), NOT rotation direction. The `in`/`out` values map directly.
 

@@ -135,13 +135,13 @@ export async function bakeGuideMotion(
     // duration-aware path is what actually animates the props.
     //
     // The captured cycle matches one full live loop:
-    //   start-position hold (1 unit) + motion (totalDuration) + end hold
-    // For non-loopable sequences the live controller adds a 1-unit end-position
+    //   start-placement hold (1 unit) + motion (totalDuration) + end hold
+    // For non-loopable sequences the live controller adds a 1-unit end-placement
     // hold; seamlessly loopable sequences skip it. A single guide hand-motion does
     // not return to its start, so it is non-loopable and gets the end hold.
-    const endPositionHold = isSeamlesslyLoopable(sequence) ? 0 : 1;
+    const endPlacementHold = isSeamlesslyLoopable(sequence) ? 0 : 1;
     const totalDuration =
-      orchestrator.getTotalDurationWithStartPosition() + endPositionHold;
+      orchestrator.getTotalDurationWithStartPlacement() + endPlacementHold;
     const totalFrames = Math.max(1, Math.round(totalDuration * fps));
 
     // Half-open bound: frameIndex runs 0..totalFrames-1 so the cycle's final frame

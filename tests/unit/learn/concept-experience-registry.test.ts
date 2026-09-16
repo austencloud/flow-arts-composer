@@ -11,14 +11,14 @@ import { GUIDE_BODY_PAGES } from "../../../src/routes/(public)/guide/level-1/_da
 
 const expectedPublishedIds = [
   "grid",
-  "hand-positions",
+  "hand-placements",
   "hand-motions-intro",
   "timing-and-direction",
   "reading-choreo-cards",
   "rotation-direction",
   "dual-shifts-alpha-beta",
   "gamma-motion",
-  "staff-positions",
+  "staff-placements",
   "letter-codex-intro",
   "type1-abc-ghi",
   "words-alpha-beta",

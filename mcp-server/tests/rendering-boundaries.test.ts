@@ -328,8 +328,8 @@ describe("MCP rendering boundaries", () => {
       sequence: [
         {
           letter: "A",
-          startPosition: "alpha1",
-          endPosition: "alpha3",
+          startPlacement: "alpha1",
+          endPlacement: "alpha3",
           motions: {
             left: { ...motion },
             right: { ...motion },
@@ -354,8 +354,8 @@ describe("MCP rendering boundaries", () => {
     const svg = await renderer.renderToSvg(
       {
         letter: "A",
-        startPosition: "alpha1",
-        endPosition: "alpha3",
+        startPlacement: "alpha1",
+        endPlacement: "alpha3",
         gridMode: "diamond",
         leftMotion: {
           motionType: "pro",
@@ -404,8 +404,8 @@ describe("MCP rendering boundaries", () => {
     const svg = await renderer.renderToSvg(
       {
         letter: "A",
-        startPosition: "alpha1",
-        endPosition: "alpha3",
+        startPlacement: "alpha1",
+        endPlacement: "alpha3",
         gridMode: "diamond",
         leftMotion: {
           motionType: "pro",
@@ -446,8 +446,8 @@ describe("MCP rendering boundaries", () => {
     const renderer = getStandaloneRenderer();
     const input: PictographInput = {
       letter: "Σ",
-      startPosition: "alpha3",
-      endPosition: "gamma1",
+      startPlacement: "alpha3",
+      endPlacement: "gamma1",
       gridMode: "diamond",
       leftMotion: {
         motionType: "static",
@@ -495,8 +495,8 @@ describe("MCP rendering boundaries", () => {
     const svg = await renderer.renderToSvg(
       {
         letter: "H",
-        startPosition: "beta3",
-        endPosition: "beta5",
+        startPlacement: "beta3",
+        endPlacement: "beta5",
         gridMode: "diamond",
         leftMotion: {
           motionType: "pro",

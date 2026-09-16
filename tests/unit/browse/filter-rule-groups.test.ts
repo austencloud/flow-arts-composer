@@ -8,9 +8,9 @@ function chip(key: string, type: string, label: string) {
 describe("groupRuleFilters", () => {
   it("groups by category in first-appearance order with category labels", () => {
     const groups = groupRuleFilters([
-      chip("startPosition:alpha", "startPosition", "Alpha"),
+      chip("startPlacement:alpha", "startPlacement", "Alpha"),
       chip("difficulty:1", "difficulty", "Level 1"),
-      chip("startPosition:beta", "startPosition", "Beta"),
+      chip("startPlacement:beta", "startPlacement", "Beta"),
     ]);
     expect(groups.map((g) => g.label)).toEqual(["Start", "Level"]);
     expect(groups[0]!.chips.map((c) => c.label)).toEqual(["Alpha", "Beta"]);
@@ -19,7 +19,7 @@ describe("groupRuleFilters", () => {
   it("trims the category word off chip display labels that repeat it", () => {
     const groups = groupRuleFilters([
       chip("difficulty:2", "difficulty", "Level 2"),
-      chip("startPosition:alpha", "startPosition", "Alpha"),
+      chip("startPlacement:alpha", "startPlacement", "Alpha"),
     ]);
     expect(groups[0]!.chips[0]!.displayLabel).toBe("2");
     expect(groups[0]!.chips[0]!.label).toBe("Level 2");
@@ -28,8 +28,8 @@ describe("groupRuleFilters", () => {
 
   it('OR-stacking categories read "or"; single-value groups carry no word', () => {
     const groups = groupRuleFilters([
-      chip("startPosition:alpha", "startPosition", "Alpha"),
-      chip("startPosition:beta", "startPosition", "Beta"),
+      chip("startPlacement:alpha", "startPlacement", "Alpha"),
+      chip("startPlacement:beta", "startPlacement", "Beta"),
       chip("difficulty:1", "difficulty", "Level 1"),
     ]);
     expect(groups[0]!.connectiveWord).toBe("or");

@@ -146,9 +146,9 @@ describe("SpiroAnim Eight Step base cells", () => {
           },
         }),
       },
-      startPosition: {
+      startPlacement: {
         letter: null,
-        gridPosition: cell.steps[0]!.startPos,
+        gridPlacement: cell.steps[0]!.startPos,
         motions: {
           left: motionBlob(cell.steps[0]!.blue, "left", true),
           right: motionBlob(cell.steps[0]!.red, "right", true),
@@ -157,8 +157,8 @@ describe("SpiroAnim Eight Step base cells", () => {
       steps: cell.steps.map((s, i) => ({
         stepNumber: i + 1,
         letter: s.letter,
-        startPosition: s.startPos,
-        endPosition: s.endPos,
+        startPlacement: s.startPos,
+        endPlacement: s.endPos,
         duration: 1,
         motions: {
           left: motionBlob(s.blue, "left"),

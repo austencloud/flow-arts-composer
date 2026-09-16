@@ -145,7 +145,7 @@ const BY_KIND: Partial<Record<GhostKind, string[]>> = {
     "Let's try {label} here.",
     "{label} looks like it fits.",
   ],
-  "start-position": [
+  "start-placement": [
     "Let's start from {label}.",
     "{label} is a good place to begin.",
     "I'll open with {label}.",

@@ -74,7 +74,7 @@ with pre-prepared data for better performance.
     showTnD = undefined,
     showElemental = undefined,
     propElementalType = null,
-    showPositions = undefined,
+    showPlacements = undefined,
     showHandColorKey = undefined,
     // Preview mode for visibility settings
     previewMode = false,
@@ -160,7 +160,7 @@ with pre-prepared data for better performance.
     showElemental?: boolean;
     /** Optional prop-path TnD element for the top-right sister glyph. */
     propElementalType?: ElementalType | null;
-    showPositions?: boolean;
+    showPlacements?: boolean;
     /** L/R colour key on start positions; undefined follows the global toggle. */
     showHandColorKey?: boolean;
     previewMode?: boolean;
@@ -233,7 +233,7 @@ with pre-prepared data for better performance.
   const rightReversal = $derived(stepData?.rightReversal ?? false);
   const stepNumber = $derived(stepData?.stepNumber ?? null);
   const duration = $derived(stepData?.duration ?? 1);
-  const isStartPosition = $derived(stepNumber === 0);
+  const isStartPlacement = $derived(stepNumber === 0);
 
   // Visibility manager (for glyph visibility)
   const visibilityManager = getVisibilityStateManager();
@@ -251,7 +251,7 @@ with pre-prepared data for better performance.
     nonRadialPoints: visibilityManager.getNonRadialVisibility(),
     tndGlyph: visibilityManager.getGlyphVisibility("tndGlyph"),
     elementalGlyph: visibilityManager.getGlyphVisibility("elementalGlyph"),
-    positionsGlyph: visibilityManager.getGlyphVisibility("positionsGlyph"),
+    placementsGlyph: visibilityManager.getGlyphVisibility("placementsGlyph"),
     handColorKey: visibilityManager.getGlyphVisibility("handColorKey"),
     handPointVisibility: visibilityManager.getHandPointVisibility(),
     stepNumbers: visibilityManager.getStepNumbersVisibility(),
@@ -262,7 +262,7 @@ with pre-prepared data for better performance.
   // Start positions never show a number; 0/null already excluded downstream.
   const showStepNumber = $derived(
     stepNumber !== null &&
-      !isStartPosition &&
+      !isStartPlacement &&
       (stepNumberOverride ?? syncedVisibility.stepNumbers)
   );
 
@@ -277,7 +277,7 @@ with pre-prepared data for better performance.
       nonRadialPoints: visibilityManager.getNonRadialVisibility(),
       tndGlyph: visibilityManager.getGlyphVisibility("tndGlyph"),
       elementalGlyph: visibilityManager.getGlyphVisibility("elementalGlyph"),
-      positionsGlyph: visibilityManager.getGlyphVisibility("positionsGlyph"),
+      placementsGlyph: visibilityManager.getGlyphVisibility("placementsGlyph"),
       handColorKey: visibilityManager.getGlyphVisibility("handColorKey"),
       handPointVisibility: visibilityManager.getHandPointVisibility(),
       stepNumbers: visibilityManager.getStepNumbersVisibility(),
@@ -365,9 +365,9 @@ with pre-prepared data for better performance.
   );
 
   const effectiveShowPositions = $derived(
-    showPositions !== undefined
-      ? showPositions
-      : syncedVisibility.positionsGlyph
+    showPlacements !== undefined
+      ? showPlacements
+      : syncedVisibility.placementsGlyph
   );
 
   // The renderer draws the key on start positions when this is undefined, so
@@ -462,8 +462,8 @@ with pre-prepared data for better performance.
       ? {
           startLoc: leftMotion.startLocation,
           endLoc: leftMotion.endLocation,
-          startPos: leftMotion.startPosition,
-          endPos: leftMotion.endPosition,
+          startPos: leftMotion.startPlacement,
+          endPos: leftMotion.endPlacement,
           motionType: leftMotion.motionType,
           rotation: leftMotion.rotationDirection,
           // Include orientations so prop rotation updates when orientation changes propagate
@@ -480,8 +480,8 @@ with pre-prepared data for better performance.
       ? {
           startLoc: rightMotion.startLocation,
           endLoc: rightMotion.endLocation,
-          startPos: rightMotion.startPosition,
-          endPos: rightMotion.endPosition,
+          startPos: rightMotion.startPlacement,
+          endPos: rightMotion.endPlacement,
           motionType: rightMotion.motionType,
           rotation: rightMotion.rotationDirection,
           // Include orientations so prop rotation updates when orientation changes propagate
@@ -638,8 +638,8 @@ with pre-prepared data for better performance.
         overrideGridMode ?? preparedData._prepared.gridMode ?? GridMode.DIAMOND,
       leftPropType: effectiveLeftPropType,
       rightPropType: effectiveRightPropType,
-      startPositions: preparedStartData?._prepared?.propPositions ?? {},
-      endPositions: preparedData._prepared.propPositions,
+      startPlacements: preparedStartData?._prepared?.propPositions ?? {},
+      endPlacements: preparedData._prepared.propPositions,
     });
   });
 
@@ -716,7 +716,7 @@ with pre-prepared data for better performance.
         showTnD={effectiveShowVTG}
         showElemental={effectiveShowElemental}
         {propElementalType}
-        showPositions={effectiveShowPositions}
+        showPlacements={effectiveShowPositions}
         showHandColorKey={effectiveShowHandColorKey}
         handPointVisibility={effectiveHandPointVisibility}
         {activeLocations}
@@ -769,7 +769,7 @@ with pre-prepared data for better performance.
             showTnD={effectiveShowVTG}
             showElemental={effectiveShowElemental}
             {propElementalType}
-            showPositions={effectiveShowPositions}
+            showPlacements={effectiveShowPositions}
             showHandColorKey={effectiveShowHandColorKey}
             handPointVisibility={effectiveHandPointVisibility}
             {activeLocations}

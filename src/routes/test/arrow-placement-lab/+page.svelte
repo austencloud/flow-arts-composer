@@ -285,7 +285,7 @@
   function variationLabel(pictograph: PictographData, index: number): string {
     const left = pictograph.motions.left;
     const right = pictograph.motions.right;
-    const position = `${pictograph.startPosition ?? "?"} → ${pictograph.endPosition ?? "?"}`;
+    const position = `${pictograph.startPlacement ?? "?"} → ${pictograph.endPlacement ?? "?"}`;
     const paths = `${left?.startLocation ?? "?"}→${left?.endLocation ?? "?"} / ${right?.startLocation ?? "?"}→${right?.endLocation ?? "?"}`;
     return `${index + 1}. ${position} · ${paths}`;
   }

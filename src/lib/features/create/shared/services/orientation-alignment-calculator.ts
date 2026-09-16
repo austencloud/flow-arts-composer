@@ -10,18 +10,18 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 
 /**
- * Describes orientation alignment status for exact position matches.
+ * Describes orientation alignment status for exact placement matches.
  */
 export interface OrientationAlignment {
-  /** Whether both left and right orientations match the start position */
+  /** Whether both left and right orientations match the start placement */
   matches: boolean;
   /** End orientation of the left prop after adding bridge letter */
   leftEndOri: string;
   /** End orientation of the right prop after adding bridge letter */
   rightEndOri: string;
-  /** Start orientation of the left prop (from sequence start position) */
+  /** Start orientation of the left prop (from sequence start placement) */
   leftStartOri: string;
-  /** Start orientation of the right prop (from sequence start position) */
+  /** Start orientation of the right prop (from sequence start placement) */
   rightStartOri: string;
   /**
    * How many times the sequence needs to repeat to return to original orientations.
@@ -33,12 +33,12 @@ export interface OrientationAlignment {
 }
 
 /**
- * Get the starting orientations from a sequence's start position.
+ * Get the starting orientations from a sequence's start placement.
  */
 export function getStartOrientations(
   sequence: SequenceData
 ): { leftOri: string; rightOri: string } | null {
-  const startPosData = sequence.startPosition || sequence.startingPosition;
+  const startPosData = sequence.startPlacement || sequence.startingPlacement;
   if (!startPosData) return null;
 
   // Extract orientations from motion data
@@ -103,7 +103,7 @@ export function calculateOrientationSteps(
 }
 
 /**
- * Calculate orientation alignment between sequence start and a potential end position.
+ * Calculate orientation alignment between sequence start and a potential end placement.
  */
 export function calculateOrientationAlignment(
   sequence: SequenceData,
@@ -159,7 +159,7 @@ export function calculateResultingLength(
       // 90° rotation = 4x sequence length
       return withBridge * 4;
     case "exact":
-      // Exact position = multiply by repetitions needed for orientation alignment
+      // Exact placement = multiply by repetitions needed for orientation alignment
       return withBridge * repetitionsNeeded;
     default:
       return withBridge;

@@ -1,5 +1,5 @@
 name = "tka-domain-expert"
-description = "Use when the user asks about letters, positions, motion types, or needs pictographs generated. Has access to all TKA MCP tools."
+description = "Use when the user asks about letters, placements, motion types, or needs pictographs generated. Has access to all TKA MCP tools."
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = '''

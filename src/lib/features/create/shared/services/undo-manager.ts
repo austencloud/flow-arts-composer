@@ -17,7 +17,7 @@ import { normalizeLegacySequence } from "@tka/tka-types";
  */
 export enum UndoOperationType {
   // Sequence construction operations
-  SELECT_START_POSITION = "SELECT_START_POSITION",
+  SELECT_START_PLACEMENT = "SELECT_START_PLACEMENT",
   ADD_BEAT = "ADD_BEAT",
   REMOVE_BEATS = "REMOVE_BEATS",
   CLEAR_SEQUENCE = "CLEAR_SEQUENCE",
@@ -70,7 +70,7 @@ export interface CreateModuleStateSnapshot {
   sequence: SequenceData | null;
   selectedStepNumber: number | null;
   activeSection: ActiveCreateModule | null;
-  shouldShowStartPositionPicker?: boolean;
+  shouldShowStartPlacementPicker?: boolean;
   timestamp: number;
 }
 
@@ -128,7 +128,7 @@ export function normalizeUndoHistoryEntries(
  * Human-readable descriptions for operation types
  */
 const OPERATION_DESCRIPTIONS: Record<UndoOperationType, string> = {
-  SELECT_START_POSITION: "Select Start Position",
+  SELECT_START_PLACEMENT: "Select Start Placement",
   ADD_BEAT: "Add Beat",
   REMOVE_BEATS: "Remove Steps",
   CLEAR_SEQUENCE: "Clear Sequence",

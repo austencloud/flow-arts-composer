@@ -48,11 +48,11 @@ describe("computeSheetRegionMap", () => {
             stepSize: 240,
             addWord: true,
             addStepNumbers: true,
-            includeStartPosition: true,
+            includeStartPlacement: true,
             addDifficultyLevel: true,
             addUserInfo: false,
             showNotes: true,
-            startPositionLayout: layoutMode,
+            startPlacementLayout: layoutMode,
           },
           { darkMode: true }
         );

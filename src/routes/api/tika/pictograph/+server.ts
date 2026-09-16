@@ -39,8 +39,8 @@ interface MotionData {
 
 interface PictographData {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotion: MotionData;
@@ -73,8 +73,8 @@ function loadCsvFile(csvPath: string): PictographData[] {
 
       pictographs.push({
         letter: row["letter"] ?? "",
-        startPosition: row["startPosition"] ?? "",
-        endPosition: row["endPosition"] ?? "",
+        startPlacement: row["startPlacement"] ?? "",
+        endPlacement: row["endPlacement"] ?? "",
         timing: row["timing"] ?? "",
         direction: row["direction"] ?? "",
         leftMotion: {
@@ -198,8 +198,8 @@ export const POST: RequestHandler = async (event) => {
     // Convert CSV row to renderer input format
     const pictographInput = {
       letter: csvRow.letter,
-      startPosition: csvRow.startPosition,
-      endPosition: csvRow.endPosition,
+      startPlacement: csvRow.startPlacement,
+      endPlacement: csvRow.endPlacement,
       gridMode,
       leftMotion: {
         motionType: csvRow.leftMotion.motionType,
@@ -229,7 +229,7 @@ export const POST: RequestHandler = async (event) => {
       showTKA: options.showTKA ?? true,
       showTnD: options.showTnD ?? false,
       showElemental: options.showElemental ?? false,
-      showPositions: options.showPositions ?? false,
+      showPlacements: options.showPlacements ?? false,
       showReversals: options.showReversals ?? false,
       showGrid: options.showGrid ?? true,
       showNonRadialPoints: options.showNonRadialPoints ?? false,
@@ -242,8 +242,8 @@ export const POST: RequestHandler = async (event) => {
 
     const motionData = {
       letter: csvRow.letter,
-      startPosition: csvRow.startPosition,
-      endPosition: csvRow.endPosition,
+      startPlacement: csvRow.startPlacement,
+      endPlacement: csvRow.endPlacement,
       leftMotion: {
         motionType: csvRow.leftMotion.motionType,
         startLocation: csvRow.leftMotion.startLocation,
@@ -358,8 +358,8 @@ export const GET: RequestHandler = async (event) => {
 
     const pictographInput = {
       letter: csvRow.letter,
-      startPosition: csvRow.startPosition,
-      endPosition: csvRow.endPosition,
+      startPlacement: csvRow.startPlacement,
+      endPlacement: csvRow.endPlacement,
       gridMode,
       leftMotion: {
         motionType: csvRow.leftMotion.motionType,

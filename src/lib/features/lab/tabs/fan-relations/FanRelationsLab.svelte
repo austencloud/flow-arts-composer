@@ -14,7 +14,7 @@
     type Orientation as OrientationValue,
   } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import SegmentedControl from "$lib/shared/ui/components/SegmentedControl.svelte";
-  import OrientationCycler from "$lib/features/create/construct/start-position-picker/components/OrientationCycler.svelte";
+  import OrientationCycler from "$lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte";
   import FanRelationScene from "./components/FanRelationScene.svelte";
   import {
     FanViewpoint,

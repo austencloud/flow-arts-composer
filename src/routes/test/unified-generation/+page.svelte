@@ -19,9 +19,9 @@
   import { parseLoopComponents } from "$lib/shared/create/services/loop-type-utils";
   import type { LOOPComponent } from "$lib/features/create/generate/shared/domain/constants/loop-components";
   import TurnIntensityCard from "$lib/features/create/generate/components/cards/TurnIntensityCard.svelte";
-  import { startPositionManager } from "$lib/shared/create/services/start-position-manager";
+  import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import OrientationCycler from "$lib/features/create/construct/start-position-picker/components/OrientationCycler.svelte";
+  import OrientationCycler from "$lib/features/create/construct/start-placement-picker/components/OrientationCycler.svelte";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
@@ -106,7 +106,7 @@
 
   // Start Position & Orientation — deck wants a SUBSET (a deck draws from many start
   // positions), so this is MULTI-select, unlike Construct's single-pick. Content-driven grid
-  // reusing PictographContainer + OrientationCycler + startPositionManager (the same data).
+  // reusing PictographContainer + OrientationCycler + startPlacementManager (the same data).
   // Grid mode lives here too, so the standalone Grid toggle tile is gone.
   let showPosOri = $state(false);
   let posGridMode = $state<GridMode>(GridMode.DIAMOND);
@@ -119,8 +119,8 @@
 
   const posList = $derived<PictographData[]>(
     posShowAll
-      ? startPositionManager.getAllStartPositionVariations(posGridMode, posLeftOri, posRightOri)
-      : startPositionManager.getDefaultStartPositions(posGridMode, posLeftOri, posRightOri),
+      ? startPlacementManager.getAllStartPlacementVariations(posGridMode, posLeftOri, posRightOri)
+      : startPlacementManager.getDefaultStartPlacements(posGridMode, posLeftOri, posRightOri),
   );
   function togglePosition(id: string) {
     const next = new Set(selectedPositions);
@@ -132,7 +132,7 @@
   function pickClassic3() {
     posShowAll = false;
     selectedPositions = new Set(
-      startPositionManager.getDefaultStartPositions(posGridMode, posLeftOri, posRightOri).map((p) => p.id),
+      startPlacementManager.getDefaultStartPlacements(posGridMode, posLeftOri, posRightOri).map((p) => p.id),
     );
   }
 
@@ -171,7 +171,7 @@
       ...(wordMode ? { word: word.trim().toUpperCase(), deck: "all-variations" } : { deckSize }),
       loopType, stepCount, level, period, prop: propType,
       grid: posGridMode === GridMode.DIAMOND ? "diamond" : "box",
-      startPositions: selectedPositions.size === 0 ? "any" : Array.from(selectedPositions),
+      startPlacements: selectedPositions.size === 0 ? "any" : Array.from(selectedPositions),
       leftOrientation: posLeftOri, rightOrientation: posRightOri,
       propReversals: propRev, handReversals: handRev, dashes,
       ...(level > 1 ? { turnIntensity } : {}),

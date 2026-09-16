@@ -41,8 +41,8 @@ type CorpusMotion = {
 type CorpusStep = {
   stepNumber: number;
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   duration: 1;
   motions: { left: CorpusMotion; right: CorpusMotion };
 };
@@ -137,8 +137,8 @@ describe("SpiroAnim Quarter Space Tech archive", () => {
       for (const step of sequence.steps) {
         expect(
           lookupLetter(edges, {
-            startPosition: step.startPosition,
-            endPosition: step.endPosition,
+            startPlacement: step.startPlacement,
+            endPlacement: step.endPlacement,
             left: step.motions.left,
             right: step.motions.right,
           })

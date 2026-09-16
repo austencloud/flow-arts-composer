@@ -29,7 +29,7 @@ function step(stepNumber: number, left: unknown, right: unknown) {
   return {
     stepNumber, duration: 1, leftReversal: false, rightReversal: false, isBlank: false,
     motions: { left, right },
-    id: `s${stepNumber}`, letter: null, startPosition: null, endPosition: null,
+    id: `s${stepNumber}`, letter: null, startPlacement: null, endPlacement: null,
   };
 }
 
@@ -55,7 +55,7 @@ describe("QR round-trip preserves derived endOrientation", () => {
     expect(qr.startsWith("s~")).toBe(true);
 
     const back = await decodeSequenceFromQR(qr);
-    // Start position (stepNumber 0) lands on startPosition; the lone real step at steps[0].
+    // Start position (stepNumber 0) lands on startPlacement; the lone real step at steps[0].
     expect(back.steps.length).toBe(1);
     expect(back.steps[0]!.motions.left!.endOrientation).toBe(Orientation.OUT); // anti 0 switches
     expect(back.steps[0]!.motions.right!.endOrientation).toBe(Orientation.IN); // pro 0 preserves

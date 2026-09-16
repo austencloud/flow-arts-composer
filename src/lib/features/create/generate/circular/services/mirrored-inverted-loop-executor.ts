@@ -12,7 +12,7 @@
  * - **Prop rotation directions stay THE SAME** (both transformations flip rotation, so they CANCEL OUT)
  *
  * IMPORTANT: Slice size is ALWAYS halved (no quartering)
- * IMPORTANT: End position must be vertical mirror of start position
+ * IMPORTANT: End placement must be vertical mirror of start placement
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -24,7 +24,7 @@ import {
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   updateStartOrientations,
@@ -34,8 +34,8 @@ import type { LOOPParameterProvider } from "$lib/features/create/generate/shared
 import {
   MIRRORED_INVERTED_VALIDATION_SET,
   VERTICAL_MIRROR_LOCATION_MAP,
-  VERTICAL_MIRROR_POSITION_MAP,
-} from "../domain/constants/strict-loop-position-maps";
+  VERTICAL_MIRROR_PLACEMENT_MAP,
+} from "../domain/constants/strict-loop-placement-maps";
 import type { Period } from "../domain/models/circular-models";
 
 export class MirroredInvertedLOOPExecutor {
@@ -46,7 +46,7 @@ export class MirroredInvertedLOOPExecutor {
   /**
    * Execute the mirrored-inverted LOOP
    *
-   * @param sequence - The partial sequence to complete (must include start position at index 0)
+   * @param sequence - The partial sequence to complete (must include start placement at index 0)
    * @param period - Ignored (mirrored-inverted LOOP always uses halved)
    * @returns The complete circular sequence with all steps
    */
@@ -54,10 +54,10 @@ export class MirroredInvertedLOOPExecutor {
     // Validate the sequence
     this._validateSequence(sequence);
 
-    // Remove start position (index 0) for processing
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    // Remove start placement (index 0) for processing
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     // Calculate how many steps to generate (always doubles for halved)
@@ -84,28 +84,28 @@ export class MirroredInvertedLOOPExecutor {
       lastStep = nextStep;
     }
 
-    // Re-insert start position at the beginning
-    sequence.unshift(startPosition);
+    // Re-insert start placement at the beginning
+    sequence.unshift(startPlacement);
 
     return sequence;
   }
 
   /**
    * Validate that the sequence can perform a mirrored-inverted LOOP
-   * Requirement: end_position must be vertical mirror of start_position
+   * Requirement: end_placement must be vertical mirror of start_placement
    */
   private _validateSequence(sequence: StepData[]): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     // Check if the (start, end) pair is valid for mirrored-inverted
@@ -113,8 +113,8 @@ export class MirroredInvertedLOOPExecutor {
 
     if (!MIRRORED_INVERTED_VALIDATION_SET.has(key)) {
       throw new Error(
-        `Invalid position pair for mirrored-inverted LOOP: ${startPos} → ${endPos}. ` +
-          `For a mirrored-inverted LOOP, the end position must be the vertical mirror of start position.`
+        `Invalid placement pair for mirrored-inverted LOOP: ${startPos} → ${endPos}. ` +
+          `For a mirrored-inverted LOOP, the end placement must be the vertical mirror of start placement.`
       );
     }
   }
@@ -149,8 +149,8 @@ export class MirroredInvertedLOOPExecutor {
       previousMatchingStep.letter as string
     ) as Letter;
 
-    // Get the mirrored end position (MIRRORED effect)
-    const mirroredEndPosition = this._getMirroredPosition(previousMatchingStep);
+    // Get the mirrored end placement (MIRRORED effect)
+    const mirroredEndPlacement = this._getMirroredPlacement(previousMatchingStep);
 
     // Create the new step with mirrored-inverted attributes
     // KEY: Motion type is flipped (INVERTED)
@@ -161,8 +161,8 @@ export class MirroredInvertedLOOPExecutor {
       id: `step-${stepNumber}`,
       stepNumber,
       letter: invertedLetter, // INVERTED: Flip letter
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: mirroredEndPosition, // MIRRORED: Flip position
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: mirroredEndPlacement, // MIRRORED: Flip placement
       motions: {
         [HandSide.LEFT]: this._createMirroredInvertedMotion(
           HandSide.LEFT,
@@ -232,21 +232,21 @@ export class MirroredInvertedLOOPExecutor {
   }
 
   /**
-   * Get the vertical mirrored position
+   * Get the vertical mirrored placement
    */
-  private _getMirroredPosition(
+  private _getMirroredPlacement(
     previousMatchingStep: StepData
-  ): GridPosition | null {
-    const endPos = previousMatchingStep.endPosition;
+  ): GridPlacement | null {
+    const endPos = previousMatchingStep.endPlacement;
 
     if (!endPos) {
-      throw new Error("Previous matching step must have an end position");
+      throw new Error("Previous matching step must have an end placement");
     }
 
-    const mirroredPosition =
-      VERTICAL_MIRROR_POSITION_MAP[endPos as GridPosition];
+    const mirroredPlacement =
+      VERTICAL_MIRROR_PLACEMENT_MAP[endPos as GridPlacement];
 
-    return mirroredPosition;
+    return mirroredPlacement;
   }
 
   /**

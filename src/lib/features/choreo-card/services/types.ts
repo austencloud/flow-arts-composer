@@ -87,8 +87,8 @@ export interface PrintRenderOptions {
   canvasWidth?: number;
   canvasHeight?: number;
   bleedPx?: number;
-  includeStartPosition: boolean;
-  startPositionLayout?: "row" | "column";
+  includeStartPlacement: boolean;
+  startPlacementLayout?: "row" | "column";
   /**
    * Exact total grid columns, including the Start column when Start is placed
    * on the left. This is the renderer-facing form of a resolved Auto layout.

@@ -287,7 +287,7 @@
           displayMode="grid"
           {footers}
           {rerenderKey}
-          includeStartPosition={true}
+          includeStartPlacement={true}
         />
       </div>
     {/if}

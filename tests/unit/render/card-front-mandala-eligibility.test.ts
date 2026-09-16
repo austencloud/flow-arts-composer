@@ -31,7 +31,7 @@ const layout: CardFrontLayout = {
   startColumn: 0,
   startRow: 1,
   stepsPerRow: 4,
-  hasStartPosition: true,
+  hasStartPlacement: true,
 };
 
 describe("paintCardFrontChrome mandala eligibility", () => {
@@ -51,8 +51,8 @@ describe("paintCardFrontChrome mandala eligibility", () => {
       layout,
       sequence,
       {
-        includeStartPosition: true,
-        startPositionLayout: "row",
+        includeStartPlacement: true,
+        startPlacementLayout: "row",
         addWord: false,
         addDifficultyLevel: false,
         addUserInfo: false,

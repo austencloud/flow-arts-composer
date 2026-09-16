@@ -142,7 +142,7 @@ The screenshot identifies a viewport class, not its exact CSS dimensions or devi
 - `src/lib/features/create/shared/components/coordinators/StepEditorCoordinator.svelte`
 - `src/lib/features/create/shared/components/ConstructTabContent.svelte`
 - `src/lib/features/creators/components/CreatorsPanel.svelte`
-- `src/lib/features/create/construct/start-position-picker/components/StartPositionPicker.svelte`
+- `src/lib/features/create/construct/start-placement-picker/components/StartPlacementPicker.svelte`
 - `src/lib/shared/attract/components/ThoughtCaption.svelte`
 - `src/lib/features/browse/gallery-home/GalleryDrill.svelte`
 - `src/lib/features/choreo-card/components/deck-releaser/GalleryComposeBoard.svelte`

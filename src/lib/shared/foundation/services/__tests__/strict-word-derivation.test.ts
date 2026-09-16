@@ -51,14 +51,14 @@ function step(
     rightReversal: false,
     isBlank: false,
     letter,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: { left: motion(), right: motion() },
     ...extra,
   } as StepData;
 }
 
-/** The legacy start-position entry: stepNumber 0, letterless by design. */
+/** The legacy start-placement entry: stepNumber 0, letterless by design. */
 const startStep = () => step(0, null);
 
 function pairing(letter: string | null): StepPairingData {
@@ -66,8 +66,8 @@ function pairing(letter: string | null): StepPairingData {
     letter: letter as StepPairingData["letter"],
     leftReversal: false,
     rightReversal: false,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
   };
 }
 

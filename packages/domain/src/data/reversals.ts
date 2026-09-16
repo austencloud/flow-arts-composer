@@ -24,7 +24,7 @@ export const REVERSAL_TYPES: Record<string, ReversalType> = {
     },
   },
   fullReversal: {
-    description: "Both prop and hand retrace their paths to the previous position",
+    description: "Both prop and hand retrace their paths to the previous placement",
     propBehavior: "Prop reverses direction",
     handBehavior: "Hand returns to previous point",
     notation: "R/R indicates prop reversal component",

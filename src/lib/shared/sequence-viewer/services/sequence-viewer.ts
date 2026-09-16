@@ -1,6 +1,6 @@
 import type { SequenceData } from "../../foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import {
   loadSequence as persistLoadSequence,
   saveSequence as persistSaveSequence,
@@ -74,7 +74,7 @@ export class SequenceViewer {
 
   getStepData(sequence: SequenceData, stepIndex: number): StepData | null {
     if (stepIndex === 0) {
-      const startPos = this.getStartPosition(sequence);
+      const startPos = this.getStartPlacement(sequence);
       if (!startPos) return null;
 
       return {
@@ -95,12 +95,12 @@ export class SequenceViewer {
     return sequence.steps[arrayIndex] as StepData;
   }
 
-  private getStartPosition(
+  private getStartPlacement(
     sequence: SequenceData
-  ): StartPositionData | StepData | null {
+  ): StartPlacementData | StepData | null {
     return (
-      (sequence.startPosition as StartPositionData | StepData) ||
-      (sequence.startingPosition as StartPositionData | StepData) ||
+      (sequence.startPlacement as StartPlacementData | StepData) ||
+      (sequence.startingPlacement as StartPlacementData | StepData) ||
       null
     );
   }

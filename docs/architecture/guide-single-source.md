@@ -14,7 +14,7 @@ Two parallel guide systems had diverged:
 | | `_pages/*` (A) | `_sections/ch*` (B) |
 |---|---|---|
 | What | Faithful pt-coord replicas of the original PDF | Reflowable, `GuideMotionVideo`-animated web reinterpretation |
-| Routes | `/print`, `/book` | `/positions-motions`, `/letters`, `/words` |
+| Routes | `/print`, `/book` | `/placements-motions`, `/letters`, `/words` |
 | Coverage | 7 of ~34 pages (rest = placeholders) | Full, but thinner (e.g. Type 3 = 1 paragraph + a video vs the print page's breakdown + 2 sequences) |
 | Indexable | `noindex` | Indexable (canonical) |
 

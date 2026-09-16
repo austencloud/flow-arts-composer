@@ -8,13 +8,13 @@ import type { CreatorIntent } from "./creator-intent";
  * Immutable data structure for complete kinetic sequences.
  * Based on the modern desktop app's SequenceData but adapted for TypeScript.
  *
- * MIGRATION NOTE: Start position now uses StartPositionData type instead of StepData.
- * The steps array should only contain actual steps (stepNumber >= 1), never start position.
+ * MIGRATION NOTE: Start placement now uses StartPlacementData type instead of StepData.
+ * The steps array should only contain actual steps (stepNumber >= 1), never start placement.
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
-import type { GridPositionGroup } from "../../../pictograph/grid/domain/enums/grid-enums";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import type { GridPlacementGroup } from "../../../pictograph/grid/domain/enums/grid-enums";
 import type { PropType } from "../../../pictograph/prop/domain/enums/prop-type";
 import type { LOOPType } from "$lib/shared/foundation/domain/models/generation/circular-models";
 import type {
@@ -57,12 +57,12 @@ export interface SequenceData {
    * Consumers read this for iteration, counting, and display. */
   readonly steps: readonly StepData[];
 
-  // Start position storage (CONSOLIDATED):
-  // Start positions are semantically distinct from steps - they have no duration, no beat number,
+  // Start placement storage (CONSOLIDATED):
+  // Start placements are semantically distinct from steps - they have no duration, no beat number,
   // and represent the initial static prop configuration before the sequence begins.
-  readonly startPosition?: StartPositionData;
-  readonly startingPosition?: StartPositionData; // Legacy field name, same type
-  readonly startingPositionGroup?: GridPositionGroup; // Position group metadata: "alpha", "beta", "gamma"
+  readonly startPlacement?: StartPlacementData;
+  readonly startingPlacement?: StartPlacementData; // Legacy field name, same type
+  readonly startingPlacementGroup?: GridPlacementGroup; // Placement group metadata: "alpha", "beta", "gamma"
 
   readonly thumbnails: readonly string[];
   readonly sequenceLength?: number;
@@ -111,7 +111,7 @@ export interface SequenceData {
   readonly components?: readonly LOOPComponent[];
   /**
    * Domain annotation for each detected component.
-   * "location" = transformation acts on grid positions.
+   * "location" = transformation acts on grid placements.
    * "orientation" = transformation acts on orientation wheel.
    * "both" = detected in both spaces.
    */
@@ -152,7 +152,7 @@ export interface SequenceData {
    * regardless of turn assignment, letter names, or deck-specific ID scheme. */
   readonly canonicalHandPath?: string;
   /** Min-circular-rotation of the letter array, pipe-delimited (e.g. "M|P|M|P").
-   * Groups sequences that use the same letters but may differ in start position. */
+   * Groups sequences that use the same letters but may differ in start placement. */
   readonly canonicalWord?: string;
 
   // Owner info (populated for public sequences)
@@ -293,14 +293,14 @@ export function createSequenceData(
     ...(data.timeSignature !== undefined && {
       timeSignature: data.timeSignature,
     }),
-    ...(data.startingPosition !== undefined && {
-      startingPosition: data.startingPosition,
+    ...(data.startingPlacement !== undefined && {
+      startingPlacement: data.startingPlacement,
     }),
-    ...(data.startingPositionGroup !== undefined && {
-      startingPositionGroup: data.startingPositionGroup,
+    ...(data.startingPlacementGroup !== undefined && {
+      startingPlacementGroup: data.startingPlacementGroup,
     }),
-    ...(data.startPosition !== undefined && {
-      startPosition: data.startPosition,
+    ...(data.startPlacement !== undefined && {
+      startPlacement: data.startPlacement,
     }),
     ...(data.difficultyLevel !== undefined && {
       difficultyLevel: data.difficultyLevel,

@@ -30,15 +30,15 @@
  * is infeasible at level 1 → returns Infinity.
  *
  * Level 2+ enables half-turn (180°) motions. Level 5 adds the 8-grid which
- * expands position-domain period 8 possibilities. Level 7+ adds the 8-wheel
+ * expands location-domain period 8 possibilities. Level 7+ adds the 8-wheel
  * which expands orientation-domain period 8. Both level 5/7 still land
  * under the same min-length formula, just with period 8 added as valid.
  *
  * ## Domain
  *
  * When the caller knows the LOOP operates purely in orientation domain
- * (positions stay pinned), the minimum equals just `period` steps — one
- * step per pass, since positions can hold while orientations advance.
+ * (locations stay pinned), the minimum equals just `period` steps — one
+ * step per pass, since locations can hold while orientations advance.
  */
 
 import { LOOPType } from "../../loop/loop-types.js";
@@ -65,7 +65,7 @@ export interface MinLengthArgs {
   gridMode?: string;
   /**
    * Operating domain. When absent, the calculator assumes "location" for
-   * positional LOOPs and infers orientation for orientation-only requests.
+   * location-domain LOOPs and infers orientation for orientation-only requests.
    */
   domain?: LOOPDomain;
 }
@@ -85,7 +85,7 @@ export function minLength(args: MinLengthArgs): number {
   // Level 1: no turns at all. Any non-rotation LOOP that needs orientation
   // cycling to close (period > 1 via orientation) is infeasible.
   if (level === 1) {
-    // Rotation is a purely positional LOOP; level 1 can do period 2 rotation
+    // Rotation is a purely location-domain LOOP; level 1 can do period 2 rotation
     // (halved) in diamond or box, and period 4 rotation (quartered) if the
     // grid supports the full cycle.
     if (loopType === LOOPType.ROTATED) {

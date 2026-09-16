@@ -4,7 +4,7 @@ import type { SoloPropData } from "../domain/models/solo-prop-data";
 import type { SoloPropStepData } from "../domain/models/solo-prop-step-data";
 import { createSequenceData } from "../domain/models/sequence-data";
 import { createStepData } from "../domain/factories/create-step-data";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import {
   HandSide,
@@ -75,8 +75,8 @@ export function soloPropToSequence(
       },
     })
   );
-  const startPosition = createStartPositionData({
-    gridPosition: null,
+  const startPlacement = createStartPlacementData({
+    gridPlacement: null,
     motions: {
       [hand]: buildStartMotion(soloProp, hand),
     },
@@ -91,8 +91,8 @@ export function soloPropToSequence(
     displayName: title,
     word: "",
     steps,
-    startPosition,
-    startingPosition: startPosition,
+    startPlacement,
+    startingPlacement: startPlacement,
     sequenceLength: steps.length,
     gridMode: soloProp.impliedGridMode,
     notes: soloProp.notes,

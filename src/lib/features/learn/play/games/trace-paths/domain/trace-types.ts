@@ -26,7 +26,7 @@ import type { HandPathData } from "$lib/shared/foundation/domain/models/hand-pat
  *
  * Deliberately an alias of the canonical `HandSide` rather than a fresh
  * string union: these values are used to index `step.motions[hand]`
- * and `startPosition.motions[hand]`, so tying them to the domain enum means a
+ * and `startPlacement.motions[hand]`, so tying them to the domain enum means a
  * rename over there breaks compilation here instead of silently missing a key.
  *
  * Hand identity is never communicated by color alone at the UI layer — the

@@ -13,7 +13,7 @@ export interface StructuralCopy {
 }
 
 const COMPONENT_VERB: Record<string, string> = {
-  rotated: "rotates positions on the grid",
+  rotated: "rotates placements on the grid",
   mirrored: "mirrors east and west",
   flipped: "flips north and south",
   swapped: "swaps blue and red",
@@ -56,7 +56,7 @@ function singleComponentCopy(
       return {
         lead: structure,
         parts: [
-          { text: "The positions rotate", bold: true },
+          { text: "The placements rotate", bold: true },
           {
             text: ": where the first half places your hands, the second half continues around the grid. ",
             bold: false,
@@ -68,7 +68,7 @@ function singleComponentCopy(
       return {
         lead: structure,
         parts: [
-          { text: "Same letters, but every position ", bold: false },
+          { text: "Same letters, but every placement ", bold: false },
           { text: "flips left-to-right", bold: true },
           {
             text: ". The second half is the mirror image of the first. ",
@@ -81,7 +81,7 @@ function singleComponentCopy(
       return {
         lead: structure,
         parts: [
-          { text: "Same letters, but every position ", bold: false },
+          { text: "Same letters, but every placement ", bold: false },
           { text: "flips top-to-bottom", bold: true },
           {
             text: ". The second half inverts the vertical axis. ",
@@ -94,7 +94,7 @@ function singleComponentCopy(
       return {
         lead: structure,
         parts: [
-          { text: "Same positions, same motions, but ", bold: false },
+          { text: "Same placements, same motions, but ", bold: false },
           { text: "blue and red trade roles", bold: true },
           {
             text: ". What one hand did in the first half, the other does in the second. ",
@@ -107,7 +107,7 @@ function singleComponentCopy(
       return {
         lead: structure,
         parts: [
-          { text: "Same positions, but ", bold: false },
+          { text: "Same placements, but ", bold: false },
           { text: "pro motions become anti and vice versa", bold: true },
           {
             text: ". The rotation direction reverses while the path stays the same. ",
@@ -147,7 +147,7 @@ function quarteredSingleCopy(
         lead: structure,
         parts: [
           { text: "Each pass ", bold: false },
-          { text: "rotates positions 90° further", bold: true },
+          { text: "rotates placements 90° further", bold: true },
           { text: " around the grid. ", bold: false },
           { text: cycleText(cc), bold: false },
         ],
@@ -156,7 +156,7 @@ function quarteredSingleCopy(
       return {
         lead: structure,
         parts: [
-          { text: "Positions ", bold: false },
+          { text: "Placements ", bold: false },
           { text: "mirror every two passes", bold: true },
           {
             text: "; orientations take all four to complete their cycle. ",
@@ -232,7 +232,7 @@ export function generateLoopStructuralCopy(
   if (stepCount === 0 || components.length === 0) {
     return {
       lead: "This sequence loops ",
-      parts: [{ text: "back to its starting position.", bold: false }],
+      parts: [{ text: "back to its starting placement.", bold: false }],
     };
   }
 

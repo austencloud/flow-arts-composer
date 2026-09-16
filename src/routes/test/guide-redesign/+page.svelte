@@ -39,13 +39,13 @@
     <nav class="nav-current">
       <div class="nav-title-current">Level 1 Guide</div>
       <div class="chapter-group-current">
-        <button type="button" class="chapter-link-current active">1.0 - Positions & Motions</button>
+        <button type="button" class="chapter-link-current active">1.0 - Placements & Motions</button>
         <ul class="section-list-current">
           <li><button type="button" class="section-link-current active">The Grid</button></li>
-          <li><button type="button" class="section-link-current">Hand Positions</button></li>
+          <li><button type="button" class="section-link-current">Hand Placements</button></li>
           <li><button type="button" class="section-link-current">Hand Motions</button></li>
           <li><button type="button" class="section-link-current">Types 1–6</button></li>
-          <li><button type="button" class="section-link-current">Staff Positions</button></li>
+          <li><button type="button" class="section-link-current">Staff Placements</button></li>
           <li><button type="button" class="section-link-current">Negative Space</button></li>
         </ul>
       </div>
@@ -58,7 +58,7 @@
     </nav>
   </div>
   <main class="content-current">
-    <h1 class="h1-current">Positions & Motions</h1>
+    <h1 class="h1-current">Placements & Motions</h1>
 
     <section class="section-current">
       <h2 class="h2-current">The Grid</h2>
@@ -68,8 +68,8 @@
         primary positions where your hands can be.
       </p>
       <figure class="diagram-current">
-        <img src="/guide/level-1/images/hand-positions/α1.png" alt="Alpha position 1" />
-        <figcaption>Alpha position — both hands at the same cardinal point</figcaption>
+        <img src="/guide/level-1/images/hand-placements/α1.png" alt="Alpha placement 1" />
+        <figcaption>Alpha placement — both hands at the same cardinal point</figcaption>
       </figure>
       <p class="p-current">
         Each grid point is a location where one or both hands can rest between motions. The grid gives
@@ -78,24 +78,24 @@
     </section>
 
     <section class="section-current">
-      <h2 class="h2-current">Hand Positions</h2>
+      <h2 class="h2-current">Hand Placements</h2>
       <p class="p-current">
-        There are three fundamental hand position types, named with Greek letters:
+        There are three fundamental hand placement types, named with Greek letters:
         <strong>alpha</strong> (α) — both hands at the same point,
         <strong>beta</strong> (β) — hands at opposite points, and
         <strong>gamma</strong> (Γ) — hands at a right angle.
       </p>
       <div class="grid-row-current">
         <figure class="diagram-current small">
-          <img src="/guide/level-1/images/hand-positions/α1.png" alt="Alpha" />
+          <img src="/guide/level-1/images/hand-placements/α1.png" alt="Alpha" />
           <figcaption>Alpha (α)</figcaption>
         </figure>
         <figure class="diagram-current small">
-          <img src="/guide/level-1/images/hand-positions/β1.png" alt="Beta" />
+          <img src="/guide/level-1/images/hand-placements/β1.png" alt="Beta" />
           <figcaption>Beta (β)</figcaption>
         </figure>
         <figure class="diagram-current small">
-          <img src="/guide/level-1/images/hand-positions/Γ1.png" alt="Gamma" />
+          <img src="/guide/level-1/images/hand-placements/Γ1.png" alt="Gamma" />
           <figcaption>Gamma (Γ)</figcaption>
         </figure>
       </div>
@@ -138,15 +138,15 @@
       <div class="chapter-group-glass">
         <button class="chapter-link-glass active">
           <span class="chapter-number">1.0</span>
-          Positions & Motions
+          Placements & Motions
           <span class="progress-fill" style="width: 35%"></span>
         </button>
         <ul class="section-list-glass">
           <li><button type="button" class="section-link-glass active">The Grid</button></li>
-          <li><button type="button" class="section-link-glass">Hand Positions</button></li>
+          <li><button type="button" class="section-link-glass">Hand Placements</button></li>
           <li><button type="button" class="section-link-glass">Hand Motions</button></li>
           <li><button type="button" class="section-link-glass">Types 1–6</button></li>
-          <li><button type="button" class="section-link-glass">Staff Positions</button></li>
+          <li><button type="button" class="section-link-glass">Staff Placements</button></li>
           <li><button type="button" class="section-link-glass">Negative Space</button></li>
         </ul>
       </div>
@@ -170,7 +170,7 @@
     <!-- Reading progress bar -->
     <div class="reading-progress" aria-hidden="true"></div>
 
-    <h1 class="h1-glass">Positions & Motions</h1>
+    <h1 class="h1-glass">Placements & Motions</h1>
     <p class="chapter-intro-glass">The spatial language that makes choreography writable.</p>
 
     <section class="section-glass">
@@ -182,9 +182,9 @@
       </p>
       <figure class="diagram-glass">
         <div class="diagram-frame">
-          <img src="/guide/level-1/images/hand-positions/α1.png" alt="Alpha position 1" />
+          <img src="/guide/level-1/images/hand-placements/α1.png" alt="Alpha placement 1" />
         </div>
-        <figcaption>Alpha position — both hands at the same cardinal point</figcaption>
+        <figcaption>Alpha placement — both hands at the same cardinal point</figcaption>
       </figure>
       <p class="p-glass">
         Each grid point is a location where one or both hands can rest between motions. The grid gives
@@ -193,9 +193,9 @@
     </section>
 
     <section class="section-glass">
-      <h2 class="h2-glass">Hand Positions</h2>
+      <h2 class="h2-glass">Hand Placements</h2>
       <p class="p-glass">
-        There are three fundamental hand position types, named with Greek letters:
+        There are three fundamental hand placement types, named with Greek letters:
         <strong>alpha</strong> (α) — both hands at the same point,
         <strong>beta</strong> (β) — hands at opposite points, and
         <strong>gamma</strong> (Γ) — hands at a right angle.
@@ -203,19 +203,19 @@
       <div class="picto-row-glass">
         <figure class="picto-card-glass">
           <div class="picto-frame">
-            <img src="/guide/level-1/images/hand-positions/α1.png" alt="Alpha" />
+            <img src="/guide/level-1/images/hand-placements/α1.png" alt="Alpha" />
           </div>
           <figcaption>Alpha (α)</figcaption>
         </figure>
         <figure class="picto-card-glass">
           <div class="picto-frame">
-            <img src="/guide/level-1/images/hand-positions/β1.png" alt="Beta" />
+            <img src="/guide/level-1/images/hand-placements/β1.png" alt="Beta" />
           </div>
           <figcaption>Beta (β)</figcaption>
         </figure>
         <figure class="picto-card-glass">
           <div class="picto-frame">
-            <img src="/guide/level-1/images/hand-positions/Γ1.png" alt="Gamma" />
+            <img src="/guide/level-1/images/hand-placements/Γ1.png" alt="Gamma" />
           </div>
           <figcaption>Gamma (Γ)</figcaption>
         </figure>
@@ -270,14 +270,14 @@
       <div class="chapter-group-bleeding">
         <button class="chapter-link-bleeding active">
           <span class="dot active"></span>
-          Positions & Motions
+          Placements & Motions
         </button>
         <ul class="section-list-bleeding">
           <li><button type="button" class="section-link-bleeding active">The Grid</button></li>
-          <li><button type="button" class="section-link-bleeding">Hand Positions</button></li>
+          <li><button type="button" class="section-link-bleeding">Hand Placements</button></li>
           <li><button type="button" class="section-link-bleeding">Hand Motions</button></li>
           <li><button type="button" class="section-link-bleeding">Types 1–6</button></li>
-          <li><button type="button" class="section-link-bleeding">Staff Positions</button></li>
+          <li><button type="button" class="section-link-bleeding">Staff Placements</button></li>
           <li><button type="button" class="section-link-bleeding">Negative Space</button></li>
         </ul>
       </div>
@@ -302,7 +302,7 @@
 
     <div class="hero-bleeding full">
       <span class="chapter-badge">Chapter 1.0</span>
-      <h1 class="h1-bleeding">Positions &<br/>Motions</h1>
+      <h1 class="h1-bleeding">Placements &<br/>Motions</h1>
       <p class="hero-sub">The spatial language that makes choreography writable.</p>
     </div>
 
@@ -318,10 +318,10 @@
       </div>
       <figure class="diagram-bleeding breakout">
         <div class="diagram-frame-bleeding">
-          <img src="/guide/level-1/images/hand-positions/α1.png" alt="Alpha position 1" />
+          <img src="/guide/level-1/images/hand-placements/α1.png" alt="Alpha placement 1" />
         </div>
         <figcaption>
-          <span class="caption-label">Alpha position</span>
+          <span class="caption-label">Alpha placement</span>
           <span class="caption-desc">Both hands at the same cardinal point</span>
         </figcaption>
       </figure>
@@ -335,9 +335,9 @@
 
     <section class="section-bleeding reveal">
       <div class="prose">
-        <h2 class="h2-bleeding">Hand Positions</h2>
+        <h2 class="h2-bleeding">Hand Placements</h2>
         <p class="p-bleeding">
-          Three fundamental position types, named with Greek letters:
+          Three fundamental placement types, named with Greek letters:
           <span class="term">alpha<span class="term-tip">α — Both hands at the same grid point.</span></span> (α),
           <span class="term">beta<span class="term-tip">β — Hands at opposite grid points (180° apart).</span></span> (β), and
           <span class="term">gamma<span class="term-tip">Γ — Hands at a right angle (90° apart).</span></span> (Γ).
@@ -346,19 +346,19 @@
       <div class="picto-row-bleeding full">
         <figure class="picto-card-bleeding">
           <div class="picto-frame-bleeding">
-            <img src="/guide/level-1/images/hand-positions/α1.png" alt="Alpha" />
+            <img src="/guide/level-1/images/hand-placements/α1.png" alt="Alpha" />
           </div>
           <figcaption>Alpha (α)</figcaption>
         </figure>
         <figure class="picto-card-bleeding">
           <div class="picto-frame-bleeding">
-            <img src="/guide/level-1/images/hand-positions/β1.png" alt="Beta" />
+            <img src="/guide/level-1/images/hand-placements/β1.png" alt="Beta" />
           </div>
           <figcaption>Beta (β)</figcaption>
         </figure>
         <figure class="picto-card-bleeding">
           <div class="picto-frame-bleeding">
-            <img src="/guide/level-1/images/hand-positions/Γ1.png" alt="Gamma" />
+            <img src="/guide/level-1/images/hand-placements/Γ1.png" alt="Gamma" />
           </div>
           <figcaption>Gamma (Γ)</figcaption>
         </figure>
@@ -400,38 +400,38 @@
     <!-- Full-width grid comparison — uses ALL available space -->
     <section class="section-bleeding reveal">
       <div class="prose">
-        <h2 class="h2-bleeding">Position Comparison</h2>
+        <h2 class="h2-bleeding">Placement Comparison</h2>
         <p class="p-bleeding">
-          All three position types at a glance. On wider screens this grid expands to fill the viewport.
+          All three placement types at a glance. On wider screens this grid expands to fill the viewport.
           On narrower screens it reflows to fewer columns — no wasted space at any breakpoint.
         </p>
       </div>
-      <div class="position-grid full">
-        <div class="pos-group">
-          <h3 class="pos-group-title">Alpha (α)</h3>
-          <div class="pos-group-cards">
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/α1.png" alt="α1" /></div><figcaption>α1</figcaption></figure>
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/α3.png" alt="α3" /></div><figcaption>α3</figcaption></figure>
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/α5.png" alt="α5" /></div><figcaption>α5</figcaption></figure>
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/α7.png" alt="α7" /></div><figcaption>α7</figcaption></figure>
+      <div class="placement-grid full">
+        <div class="placement-group">
+          <h3 class="placement-group-title">Alpha (α)</h3>
+          <div class="placement-group-cards">
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/α1.png" alt="α1" /></div><figcaption>α1</figcaption></figure>
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/α3.png" alt="α3" /></div><figcaption>α3</figcaption></figure>
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/α5.png" alt="α5" /></div><figcaption>α5</figcaption></figure>
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/α7.png" alt="α7" /></div><figcaption>α7</figcaption></figure>
           </div>
         </div>
-        <div class="pos-group">
-          <h3 class="pos-group-title">Beta (β)</h3>
-          <div class="pos-group-cards">
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/β1.png" alt="β1" /></div><figcaption>β1</figcaption></figure>
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/β3.png" alt="β3" /></div><figcaption>β3</figcaption></figure>
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/β5.png" alt="β5" /></div><figcaption>β5</figcaption></figure>
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/β7.png" alt="β7" /></div><figcaption>β7</figcaption></figure>
+        <div class="placement-group">
+          <h3 class="placement-group-title">Beta (β)</h3>
+          <div class="placement-group-cards">
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/β1.png" alt="β1" /></div><figcaption>β1</figcaption></figure>
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/β3.png" alt="β3" /></div><figcaption>β3</figcaption></figure>
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/β5.png" alt="β5" /></div><figcaption>β5</figcaption></figure>
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/β7.png" alt="β7" /></div><figcaption>β7</figcaption></figure>
           </div>
         </div>
-        <div class="pos-group">
-          <h3 class="pos-group-title">Gamma (Γ)</h3>
-          <div class="pos-group-cards">
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/Γ1.png" alt="Γ1" /></div><figcaption>Γ1</figcaption></figure>
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/Γ3.png" alt="Γ3" /></div><figcaption>Γ3</figcaption></figure>
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/Γ5.png" alt="Γ5" /></div><figcaption>Γ5</figcaption></figure>
-            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-positions/Γ7.png" alt="Γ7" /></div><figcaption>Γ7</figcaption></figure>
+        <div class="placement-group">
+          <h3 class="placement-group-title">Gamma (Γ)</h3>
+          <div class="placement-group-cards">
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/Γ1.png" alt="Γ1" /></div><figcaption>Γ1</figcaption></figure>
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/Γ3.png" alt="Γ3" /></div><figcaption>Γ3</figcaption></figure>
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/Γ5.png" alt="Γ5" /></div><figcaption>Γ5</figcaption></figure>
+            <figure class="picto-card-bleeding"><div class="picto-frame-bleeding"><img src="/guide/level-1/images/hand-placements/Γ7.png" alt="Γ7" /></div><figcaption>Γ7</figcaption></figure>
           </div>
         </div>
       </div>
@@ -1144,20 +1144,20 @@
     font-weight: 500;
   }
 
-  /* Position comparison grid — full width showcase */
-  .position-grid {
+  /* Placement comparison grid — full width showcase */
+  .placement-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
     margin: 1rem 0;
   }
-  .pos-group {
+  .placement-group {
     background: oklch(0.15 0.015 270 / 0.5);
     border: 1px solid oklch(0.28 0.03 270 / 0.15);
     border-radius: 16px;
     padding: 1.25rem;
   }
-  .pos-group-title {
+  .placement-group-title {
     font-size: 0.9rem;
     font-weight: 600;
     color: oklch(0.75 0.08 270);
@@ -1165,13 +1165,13 @@
     text-align: center;
     letter-spacing: 0.02em;
   }
-  .pos-group-cards {
+  .placement-group-cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 0.75rem;
     justify-items: center;
   }
-  .pos-group-cards .picto-frame-bleeding {
+  .placement-group-cards .picto-frame-bleeding {
     max-width: 140px;
   }
 

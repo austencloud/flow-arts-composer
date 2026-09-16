@@ -8,7 +8,7 @@ import type { VideoExportProgress } from "$lib/shared/compose/domain/video-expor
 import type { ExportRequestOptions } from "$lib/shared/sequence-viewer/components/export-coordinator.svelte";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { ResolvedAutoLayout } from "$lib/shared/render/services/container-aware-layout";
 import type { TempoPracticeConfig } from "$lib/shared/sequence-viewer/services/tempo-practice-orchestrator";
@@ -44,7 +44,7 @@ export interface OrchestratorContext {
   currentStepLocal: number;
   bpmLocal: number;
   currentLetter: Letter | null;
-  currentStepData: StartPositionData | StepData | null;
+  currentStepData: StartPlacementData | StepData | null;
   highlightedStepIndex: number | null;
   animationLoading: boolean;
   cardReady: boolean;

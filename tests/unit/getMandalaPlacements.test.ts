@@ -9,12 +9,12 @@ function args(overrides: Partial<GetMandalaPlacementsArgs> = {}): GetMandalaPlac
 		stepCount: 8,
 		cols: 3,
 		rows: 4,
-		includeStartPosition: true,
+		includeStartPlacement: true,
 		showQRCode: true,
 		leftVisible: true,
 		rightVisible: true,
 		mandalaEnabled: true,
-		startPositionLayout: "column",
+		startPlacementLayout: "column",
 		...overrides,
 	};
 }
@@ -26,8 +26,8 @@ describe("getMandalaPlacements — toggle/off cases", () => {
 		expect(res.layoutOverride).toBeNull();
 	});
 
-	it("returns empty when includeStartPosition=false", () => {
-		const res = getMandalaPlacements(args({ includeStartPosition: false }));
+	it("returns empty when includeStartPlacement=false", () => {
+		const res = getMandalaPlacements(args({ includeStartPlacement: false }));
 		expect(res.placements).toEqual([]);
 	});
 
@@ -63,7 +63,7 @@ describe("getMandalaPlacements — 4-count", () => {
 
 	it("stepCount 4 (row layout + QR) → blue col 2, red col 3 in top row, no override", () => {
 		const res = getMandalaPlacements(
-			args({ stepCount: 4, cols: 4, rows: 2, startPositionLayout: "row" }),
+			args({ stepCount: 4, cols: 4, rows: 2, startPlacementLayout: "row" }),
 		);
 		expect(res.placements).toEqual([
 			{ row: 1, col: 2, variant: "left" },

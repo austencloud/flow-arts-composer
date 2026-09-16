@@ -444,8 +444,8 @@ export function registerPresetTools(server: McpServer): void {
               steps = result.steps;
               sequenceWord = result.word;
               loopDebugWord = result.word;
-              loopDebugStart = result.startPosition;
-              loopDebugEnd = result.endPosition;
+              loopDebugStart = result.startPlacement;
+              loopDebugEnd = result.endPlacement;
               break;
             }
 
@@ -512,8 +512,8 @@ export function registerPresetTools(server: McpServer): void {
           steps = constrained.steps.map((picto, index) => ({
             letter: picto.letter,
             variation: constrained.variationIndices[index] || 0,
-            startPosition: picto.startPosition,
-            endPosition: picto.endPosition,
+            startPlacement: picto.startPlacement,
+            endPlacement: picto.endPlacement,
             leftMotion: picto.leftMotion,
             rightMotion: picto.rightMotion,
             stepNumber: index,
@@ -548,9 +548,9 @@ export function registerPresetTools(server: McpServer): void {
           const period =
             config.period === "quartered" ? Period.QUARTERED : Period.HALVED;
 
-          // Debug: check positions before calling executeLOOP
-          const debugStartPos = steps[0]?.startPosition || "???";
-          const debugEndPos = steps[steps.length - 1]?.endPosition || "???";
+          // Debug: check placements before calling executeLOOP
+          const debugStartPos = steps[0]?.startPlacement || "???";
+          const debugEndPos = steps[steps.length - 1]?.endPlacement || "???";
 
           const loopResult = executeLOOP(
             mcpStepsToEngineSteps(steps) as any,
@@ -607,8 +607,8 @@ export function registerPresetTools(server: McpServer): void {
               loopComponents: parsedLoopComponents,
               period: config.period === "quartered" ? 4 : 2,
               showFooter: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
-              startPositionLayout:
-                COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+              startPlacementLayout:
+                COMPOSER_CARD_EXPORT_PROFILE_V1.startPlacementLayout,
               level: level as 1 | 2 | 3,
               exportProfile: input.exportProfile,
               columnCount: input.columnCount,
@@ -660,8 +660,8 @@ export function registerPresetTools(server: McpServer): void {
           darkMode,
           turnAllocation,
           showFooter: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
-          startPositionLayout:
-            COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+          startPlacementLayout:
+            COMPOSER_CARD_EXPORT_PROFILE_V1.startPlacementLayout,
           level: level as 1 | 2 | 3,
           exportProfile: input.exportProfile,
           columnCount: input.columnCount,

@@ -108,11 +108,11 @@ that qualifier matters and which two repros were removed under it.
 at `src/lib/shared/library/services/library-repository.ts:424`
 (`computeHash(sequence)`), then refreshes the compositional fields at
 `:574` (`ensureComposition(libSeq)`). `ensureComposition` **derives** a
-`startPosition` when the incoming sequence has none
+`startPlacement` when the incoming sequence has none
 (`src/lib/shared/foundation/services/sequence-hydrator.ts:250-254`), and
-`startPosition` is part of the hash basis at every version
+`startPlacement` is part of the hash basis at every version
 (`src/lib/shared/library/services/sequence-content-hasher.ts:118-131`,
-`extractStartPosition`).
+`extractStartPlacement`).
 
 The read path re-derives steps through `hydrate` — `library-repository.ts:456-459`
 says so in as many words ("Match the normal read path
@@ -132,7 +132,7 @@ different hash means `fork: true`, and the fork branch
   `computeHash(hydrate(stored))`.
 - A controlled experiment over the generated corpus: **0/45 drift when a start
   position is stored, 45/45 when it is not.** Both runs use the same fixtures
-  and the test removes `startPosition` itself, so the single variable isolates
+  and the test removes `startPlacement` itself, so the single variable isolates
   the MECHANISM.
 
 **Exposure is conditional, and the 45/45 is not prevalence.** The corpus run is
@@ -141,7 +141,7 @@ generated** carries a start position and is therefore not exposed (pinned by
 `"a start-bearing sequence is the shape the generator actually emits"`). This
 audit did **not** identify a runtime producer that hands `saveSequence` a
 start-less sequence, and had no corpus access to count stored documents in that
-shape. `tests/unit/services/ensure-composition-start-position.test.ts` builds
+shape. `tests/unit/services/ensure-composition-start-placement.test.ts` builds
 the shape and calls it "the bug's shape", which shows the shape was considered
 worth defending against — it is a test fixture, not a producer, and it is not
 evidence of prevalence.
@@ -156,7 +156,7 @@ position), so it would be one extra document per sequence, not unbounded
 growth.
 
 **Minimal repro:** `content-hash-operation-order.test.ts` →
-`"SHOULD PASS AFTER FIX: hashing a startPosition-less sequence survives one
+`"SHOULD PASS AFTER FIX: hashing a startPlacement-less sequence survives one
 save/read/save cycle"`.
 
 **Bounded remediation.** Adopt the operation order the publish path already
@@ -206,7 +206,7 @@ carrying the legacy start entry:
 documents. `hydrate`'s non-compositional branch returns stored steps untouched
 (`sequence-hydrator.ts:211-231`), so a legacy document that is opened and saved
 carries its step 0 into `ensureComposition`. The Browse read path _does_ strip
-it (`public-sequences-loader.ts:659` `normalizeStartPosition`); the library read
+it (`public-sequences-loader.ts:659` `normalizeStartPlacement`); the library read
 path does not, which is the asymmetry. I could not measure how many live
 documents still carry the shape — no corpus access from this checkout.
 
@@ -216,7 +216,7 @@ documents still carry the shape — no corpus access from this checkout.
 **Bounded remediation.** Move the strip into the single owner:
 `ensureComposition` should filter `stepNumber === 0` from `sequence.steps`
 before `extractLeftSoloProp` / `extractRightSoloProp` / `extractStepPairings`,
-exactly as the normalizer does, and derive `startPosition` from the stripped
+exactly as the normalizer does, and derive `startPlacement` from the stripped
 entry when one is absent (the normalizer notes the stripped entry's data is not
 lost, because `ensureComposition` re-derives the start from the first content
 beat). The normalizer's own step 2 then becomes a no-op rather than the only
@@ -537,7 +537,7 @@ later change cannot quietly undo them.
   is generator output, so it is evidence about the model, not about the stored
   corpus.
 - **The orientation chain reproduces generator output.** The wire format stores
-  no per-beat orientation and recomputes it from the start-position seed through
+  no per-beat orientation and recomputes it from the start-placement seed through
   `calculateEndOrientation`. On the corpus that derivation reproduces every
   `startOrientation` and `endOrientation` exactly.
 - **Turn fidelity over the wire is intact**, including halves (`1.5`, `0.5`) and

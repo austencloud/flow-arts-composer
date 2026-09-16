@@ -55,8 +55,8 @@ function pointOnBuilderPath(
 }
 
 export interface BuilderMotionPathParams {
-  readonly startPosition: AnimationParams["startPosition"];
-  readonly endPosition: AnimationParams["endPosition"];
+  readonly startPosition: AnimationParams["startPlacement"];
+  readonly endPosition: AnimationParams["endPlacement"];
   readonly rotationDirection: AnimationParams["rotationDirection"];
   readonly turnCount: number;
   readonly startOrientation: AnimationParams["startOrientation"];
@@ -94,8 +94,8 @@ export class SvgPropAnimator {
 
     const {
       element,
-      startPosition,
-      endPosition,
+      startPlacement: startPosition,
+      endPlacement: endPosition,
       rotationDirection,
       turnCount,
       startOrientation,

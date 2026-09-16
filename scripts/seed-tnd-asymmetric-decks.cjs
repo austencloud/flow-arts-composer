@@ -184,14 +184,14 @@ function applyAsymmetricTurns(steps, leftTurns, rightTurns) {
   });
 }
 
-function cloneStartPosition(startPosition) {
-  if (!startPosition) return startPosition;
+function cloneStartPlacement(startPlacement) {
+  if (!startPlacement) return startPlacement;
   return {
-    ...startPosition,
+    ...startPlacement,
     id: randomUUID(),
     motions: {
-      left: { ...startPosition.motions.left, startOrientation: "in", endOrientation: "in", turns: 0 },
-      right: { ...startPosition.motions.right, startOrientation: "in", endOrientation: "in", turns: 0 },
+      left: { ...startPlacement.motions.left, startOrientation: "in", endOrientation: "in", turns: 0 },
+      right: { ...startPlacement.motions.right, startOrientation: "in", endOrientation: "in", turns: 0 },
     },
   };
 }
@@ -232,7 +232,7 @@ async function writeDeck(variant, sourceSequences, sourceMeta) {
 
   for (const srcSeq of sourceSequences) {
     const newSteps = applyAsymmetricTurns(srcSeq.steps, leftTurns, rightTurns);
-    const newStartPos = cloneStartPosition(srcSeq.startPosition);
+    const newStartPos = cloneStartPlacement(srcSeq.startPlacement);
 
     const ratioSlug = pipeRatio.replace(/:/g, "to").replace("|", "v");
     const newSeqId = srcSeq.id.replace("tnd-", `tnd-${ratioSlug}-`);
@@ -242,7 +242,7 @@ async function writeDeck(variant, sourceSequences, sourceMeta) {
       ...srcSeq,
       id: newSeqId,
       steps: newSteps,
-      startPosition: newStartPos,
+      startPlacement: newStartPos,
       tags: ["tnd-deck", "tnd-asymmetric", `vtg-blue-${leftTurns}`, `vtg-red-${rightTurns}`, ...(srcSeq.tags || []).filter(t => !t.startsWith("vtg-") && !t.startsWith("tnd-"))],
       notes: `TnD ${srcSeq.metadata?.vtgCategory || ""} (${pipeRatio}): ${srcSeq.word}`,
       metadata: {

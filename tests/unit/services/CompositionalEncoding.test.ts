@@ -26,7 +26,7 @@ import {
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
@@ -43,8 +43,8 @@ function makeStep(
     rightReversal: false,
     isBlank: false,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     motions: {
       left: createMotionData({ ...left, hand: HandSide.LEFT }),
       right: createMotionData({ ...right, hand: HandSide.RIGHT }),
@@ -52,7 +52,7 @@ function makeStep(
   };
 }
 
-function makeStartPosition(
+function makeStartPlacement(
   left: Partial<Parameters<typeof createMotionData>[0]>,
   right: Partial<Parameters<typeof createMotionData>[0]>
 ): StepData {
@@ -68,12 +68,12 @@ function buildTestSequence(steps: StepData[]): SequenceData {
     name: "Test Sequence",
     steps: actualSteps,
     ...(startPos && {
-      startPosition: {
+      startPlacement: {
         id: startPos.id,
         letter: startPos.letter,
-        gridPosition: startPos.startPosition,
-        startPosition: startPos.startPosition,
-        endPosition: startPos.endPosition,
+        gridPlacement: startPos.startPlacement,
+        startPlacement: startPos.startPlacement,
+        endPlacement: startPos.endPlacement,
         motions: startPos.motions,
       },
     }),
@@ -82,7 +82,7 @@ function buildTestSequence(steps: StepData[]): SequenceData {
 
 function buildSimple3StepSequence(): SequenceData {
   return buildTestSequence([
-    makeStartPosition(
+    makeStartPlacement(
       {
         motionType: MotionType.STATIC,
         startLocation: GridLocation.NORTH,
@@ -226,8 +226,8 @@ describe("CompositionalEncoding", () => {
 
   describe("compositional duration encoding", () => {
     it("preserves a custom seed duration through the r1 recipe path", async () => {
-      const startPosition = {
-        ...makeStartPosition(
+      const startPlacement = {
+        ...makeStartPlacement(
           {
             motionType: MotionType.STATIC,
             startLocation: GridLocation.SOUTH,
@@ -241,8 +241,8 @@ describe("CompositionalEncoding", () => {
             turns: 0,
           }
         ),
-        startPosition: GridPosition.ALPHA1,
-        endPosition: GridPosition.ALPHA1,
+        startPlacement: GridPlacement.ALPHA1,
+        endPlacement: GridPlacement.ALPHA1,
       };
       const seed = {
         ...makeStep(
@@ -262,12 +262,12 @@ describe("CompositionalEncoding", () => {
             turns: 0,
           }
         ),
-        startPosition: GridPosition.ALPHA1,
-        endPosition: GridPosition.ALPHA3,
+        startPlacement: GridPlacement.ALPHA1,
+        endPlacement: GridPlacement.ALPHA3,
         duration: 5,
       };
       const completed = strictRotatedLOOPExecutor.executeLOOP(
-        [startPosition, seed],
+        [startPlacement, seed],
         Period.QUARTERED
       );
       const sequence = buildTestSequence(completed);

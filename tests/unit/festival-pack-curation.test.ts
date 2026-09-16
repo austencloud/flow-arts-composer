@@ -90,8 +90,8 @@ describe("festival pack curation", () => {
       ]);
       expect(candidate.cards).toHaveLength(8);
       for (const card of candidate.cards) {
-        expect(isClassicPosition(card.startPosition as string)).toBe(true);
-        expect(isClassicPosition(card.endPosition as string)).toBe(true);
+        expect(isClassicPosition(card.startPlacement as string)).toBe(true);
+        expect(isClassicPosition(card.endPlacement as string)).toBe(true);
       }
       expect(
         candidate.cards.find((card) => card.slot === "rotated16")?.period
@@ -131,8 +131,8 @@ describe("festival pack curation", () => {
       expect(
         cards.every(
           (card) =>
-            isClassicPosition(card.startPosition) &&
-            card.endPosition === card.startPosition
+            isClassicPosition(card.startPlacement) &&
+            card.endPlacement === card.startPlacement
         )
       ).toBe(true);
     }

@@ -6,13 +6,13 @@
 {
   "word": "STRING — sequence name",
   "gridMode": "diamond | box | skewed",
-  "startPosition": "STRING — grid position like 'alpha7' or 'beta1'",
+  "startPlacement": "STRING — grid placement like 'alpha7' or 'beta1'",
   "steps": [
     {
       "beat": "INTEGER — 1-indexed beat number",
       "letter": "STRING — TKA letter (J, D, Θ-, W, Sigma, etc.)",
-      "startPosition": "STRING — grid position at beat start",
-      "endPosition": "STRING — grid position at beat end",
+      "startPlacement": "STRING — grid placement at beat start",
+      "endPlacement": "STRING — grid placement at beat end",
       "motions": {
         "blue": {
           "color": "blue",
@@ -114,8 +114,8 @@ If these appear, include them in the motion object. If absent, omit (don't set t
 {
   "beat": 3,
   "letter": "Θ-",
-  "startPosition": "alpha3",
-  "endPosition": "gamma5",
+  "startPlacement": "alpha3",
+  "endPlacement": "gamma5",
   "motions": {
     "blue": {
       "color": "blue",
@@ -154,7 +154,7 @@ If these appear, include them in the motion object. If absent, omit (don't set t
 | `t=1` | `"turns": 1` | extract number |
 | `w>e` (location) | `"startLocation": "w", "endLocation": "e"` | split on `>` |
 | `out>in` (orientation) | `"startOrientation": "out", "endOrientation": "in"` | split on `>` |
-| `alpha3>gamma5` (position) | `"startPosition": "alpha3", "endPosition": "gamma5"` | split on `>` |
+| `alpha3>gamma5` (placement) | `"startPlacement": "alpha3", "endPlacement": "gamma5"` | split on `>` |
 
 ## Full Annotated Example
 

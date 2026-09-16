@@ -23,7 +23,7 @@
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { CardVariation } from "$lib/features/choreo-card/domain/models/DeckRelease";
 import { hydrateSequence } from "$lib/features/choreo-card/services/sequence-render-hydrator";
 import {
@@ -139,7 +139,7 @@ function oriToOrientation(o: "in" | "out"): Orientation {
 
 /** Key identifying a start pose by its two hands' start locations (what rotation
  *  actually moves). Two poses with the same key are the same grid position. */
-function startLocKey(sp: StartPositionData | undefined | null): string | null {
+function startLocKey(sp: StartPlacementData | undefined | null): string | null {
   const b = sp?.motions?.left?.startLocation;
   const r = sp?.motions?.right?.startLocation;
   return b && r ? `${b}|${r}` : null;
@@ -154,7 +154,7 @@ function startLocKey(sp: StartPositionData | undefined | null): string | null {
 function rotateToStartKey(seq: SequenceData, targetKey: string): SequenceData | null {
   for (const steps of [0, 2, 4, 6]) {
     const rotated = steps === 0 ? seq : rotateSequenceGeometry(seq, steps);
-    if (startLocKey(rotated.startPosition) === targetKey) return rotated;
+    if (startLocKey(rotated.startPlacement) === targetKey) return rotated;
   }
   return null;
 }
@@ -205,13 +205,13 @@ export interface MatrixDraw {
 
 /**
  * Draw one shape-matrix realization. Picks a random cell + mode, constructs the
- * realization, and re-derives its element. When `chainStartPosition` is given,
+ * realization, and re-derives its element. When `chainStartPlacement` is given,
  * rotates the result (90° steps) so it starts where the previous sequence ended;
  * a draw that can't reach that position is skipped, and if none can, returns null
  * so the caller falls back to a generated draw rather than teleporting.
  */
 export async function drawMatrixRealization(opts?: {
-  chainStartPosition?: StartPositionData | null;
+  chainStartPlacement?: StartPlacementData | null;
   random?: () => number;
 }): Promise<MatrixDraw | null> {
   if (typeof window === "undefined") return null; // client-only (fetch)
@@ -225,8 +225,8 @@ export async function drawMatrixRealization(opts?: {
   const { idx, edges, cells } = pool;
   if (cells.length === 0) return null;
   const random = opts?.random ?? Math.random;
-  const targetKey = opts?.chainStartPosition
-    ? startLocKey(opts.chainStartPosition)
+  const targetKey = opts?.chainStartPlacement
+    ? startLocKey(opts.chainStartPlacement)
     : null;
 
   for (let attempt = 0; attempt < MAX_DRAWS; attempt++) {

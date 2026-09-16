@@ -43,7 +43,7 @@ interface SavedComposition {
   createdAt: number;
   cells: GridCell[];
   bpm: number;
-  skipStartPosition: boolean;
+  skipStartPlacement: boolean;
   gridRows: number;
   gridCols: number;
 }
@@ -169,7 +169,7 @@ export async function migrateLocalStorageCompositions(): Promise<void> {
         gridRows: comp.gridRows ?? 2,
         gridCols: comp.gridCols ?? 2,
         bpm: comp.bpm ?? 120,
-        skipStartPosition: comp.skipStartPosition ?? true,
+        skipStartPlacement: comp.skipStartPlacement ?? true,
       });
       // Preserve original creation date
       composition.createdAt = new Date(comp.createdAt);

@@ -11,7 +11,7 @@
  * which BuildOptions.allowStaticSteps controls — on by default only when the
  * caller set a turn pattern, a layer target, or a no-dash hand-relationship
  * LOOP with turns available. LetterClassifier additionally
- * treats ζ, η, τ and ⊕ as Type 6; those are synthesized position placeholders
+ * treats ζ, η, τ and ⊕ as Type 6; those are synthesized placement placeholders
  * rather than alphabet letters, and never reach the pool.
  */
 

@@ -3,7 +3,7 @@
  *
  * Composes all sub-states and operations into a unified sequence state:
  * - Core state (sequences, loading, errors)
- * - Selection state (step selection, start position)
+ * - Selection state (step selection, start placement)
  * - Arrow state (arrow positioning)
  * - Animation state (removal animations)
  * - Persistence coordination
@@ -20,14 +20,14 @@ import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
 import type { ArrowPosition } from "$lib/shared/pictograph/arrow/orchestration/domain/arrow-models";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ValidationResult } from "$lib/shared/validation/validation-result";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { deepLinker } from "$lib/shared/navigation/services/deep-linker";
 import type { TargetHand } from "./panel-coordination-state.svelte";
 import { logSequenceAction } from "$lib/shared/analytics/services/posthog-activity-logger";
-import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
 import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
 import type { ReversalDetector } from "$lib/shared/create/services/reversal-detector";
@@ -146,7 +146,7 @@ export function createSequenceState(services: SequenceStateServices) {
 
     if (savedState) {
       coreState.setCurrentSequence(savedState.currentSequence);
-      selectionState.setStartPosition(savedState.selectedStartPosition);
+      selectionState.setStartPlacement(savedState.selectedStartPlacement);
     }
   }
 
@@ -155,8 +155,8 @@ export function createSequenceState(services: SequenceStateServices) {
   ): Promise<void> {
     await persistenceCoordinator.saveState({
       currentSequence: coreState.currentSequence,
-      selectedStartPosition: selectionState.selectedStartPosition,
-      hasStartPosition: selectionState.hasStartPosition,
+      selectedStartPlacement: selectionState.selectedStartPlacement,
+      hasStartPlacement: selectionState.hasStartPlacement,
       activeBuildSection,
     });
   }
@@ -164,8 +164,8 @@ export function createSequenceState(services: SequenceStateServices) {
   async function saveSequenceDataOnly(): Promise<void> {
     await persistenceCoordinator.saveSequenceOnly(
       coreState.currentSequence,
-      selectionState.selectedStartPosition,
-      selectionState.hasStartPosition
+      selectionState.selectedStartPlacement,
+      selectionState.hasStartPlacement
     );
   }
 
@@ -197,13 +197,13 @@ export function createSequenceState(services: SequenceStateServices) {
     const selection = $state.snapshot(
       selectionState.captureSnapshot()
     ) as SequenceSelectionSnapshot;
-    const sequenceStartPosition =
-      sequence.startingPosition ?? sequence.startPosition ?? null;
+    const sequenceStartPlacement =
+      sequence.startingPlacement ?? sequence.startPlacement ?? null;
 
     // The sequence is authoritative if a prior HMR/tab handoff left the
     // selection cache stale in either direction.
-    selection.selectedStartPosition = sequenceStartPosition;
-    if (sequenceStartPosition === null && selection.selectedStepNumber === 0) {
+    selection.selectedStartPlacement = sequenceStartPlacement;
+    if (sequenceStartPlacement === null && selection.selectedStepNumber === 0) {
       selection.selectedStepNumber = null;
     }
 
@@ -211,8 +211,8 @@ export function createSequenceState(services: SequenceStateServices) {
     // saveSequenceOnly passes its enabled guard synchronously before yielding.
     void persistenceCoordinator.saveSequenceOnly(
       sequence,
-      sequenceStartPosition,
-      sequenceStartPosition !== null
+      sequenceStartPlacement,
+      sequenceStartPlacement !== null
     );
 
     persistenceCoordinator.setAutoSaveEnabled(false);
@@ -274,7 +274,7 @@ export function createSequenceState(services: SequenceStateServices) {
   }
 
   // Creation is async (the sequence service may hit storage/network), but the
-  // construct UI flips to the option picker the moment a start position is
+  // construct UI flips to the option picker the moment a start placement is
   // chosen. A fast tap lands in that window with currentSequence still null,
   // so callers can await this promise instead of seeing "no current sequence".
   let pendingSequenceCreation: Promise<SequenceData | null> | null = null;
@@ -425,41 +425,41 @@ export function createSequenceState(services: SequenceStateServices) {
       selectionState.clearSelection();
     }
 
-    // Update start position from sequence
-    // Check both startingPosition (full step format) and startPosition (raw position data)
-    // Sequences from Browse gallery may only have startPosition
-    let startPosStep: StartPositionData | null =
-      sequence?.startingPosition || sequence?.startPosition || null;
+    // Update start placement from sequence
+    // Check both startingPlacement (full step format) and startPlacement (raw placement data)
+    // Sequences from Browse gallery may only have startPlacement
+    let startPosStep: StartPlacementData | null =
+      sequence?.startingPlacement || sequence?.startPlacement || null;
 
-    // If no explicit start position but sequence has steps, derive from the first step
+    // If no explicit start placement but sequence has steps, derive from the first step
     // and stamp it back onto the sequence so all downstream code (transforms, saves)
-    // sees a real startPosition instead of undefined.
+    // sees a real startPlacement instead of undefined.
     if (!startPosStep && sequence?.steps?.length) {
       try {
-        const derived = startPositionDeriver.getOrDeriveStartPosition(sequence);
-        // getOrDeriveStartPosition returns StartPositionData when deriving from steps
+        const derived = startPlacementDeriver.getOrDeriveStartPlacement(sequence);
+        // getOrDeriveStartPlacement returns StartPlacementData when deriving from steps
         // The StepData return type is for legacy compatibility only
-        if (derived && "isStartPosition" in derived) {
-          startPosStep = derived as StartPositionData;
+        if (derived && "isStartPlacement" in derived) {
+          startPosStep = derived as StartPlacementData;
 
           // Write it back onto the sequence so transforms (swap, mirror, etc.)
           // can operate on it directly instead of seeing undefined
           sequence = {
             ...sequence,
-            startPosition: startPosStep,
-            startingPosition: startPosStep,
+            startPlacement: startPosStep,
+            startingPlacement: startPosStep,
           };
           coreState.setCurrentSequence(sequence);
         }
       } catch (error) {
-        console.warn("Failed to derive start position from first step:", error);
+        console.warn("Failed to derive start placement from first step:", error);
       }
     }
 
     if (startPosStep) {
-      selectionState.setStartPosition(startPosStep);
+      selectionState.setStartPlacement(startPosStep);
     } else {
-      selectionState.setStartPosition(null);
+      selectionState.setStartPlacement(null);
     }
 
     // 🚀 PERFORMANCE: Debounced auto-save to prevent blocking on every step addition
@@ -473,10 +473,10 @@ export function createSequenceState(services: SequenceStateServices) {
     }, SAVE_DEBOUNCE_MS);
   }
 
-  function setSelectedStartPosition(
-    startPosition: StartPositionData | null
+  function setSelectedStartPlacement(
+    startPlacement: StartPlacementData | null
   ): void {
-    selectionState.setStartPosition(startPosition);
+    selectionState.setStartPlacement(startPlacement);
 
     // 🚀 PERFORMANCE: Debounced auto-save
     if (saveTimeout) {
@@ -484,15 +484,15 @@ export function createSequenceState(services: SequenceStateServices) {
     }
     saveTimeout = setTimeout(() => {
       saveSequenceDataOnly().catch((error) => {
-        console.error("Failed to auto-save start position state:", error);
+        console.error("Failed to auto-save start placement state:", error);
       });
     }, SAVE_DEBOUNCE_MS);
   }
 
   async function clearSequenceCompletely(): Promise<void> {
     try {
-      // Undo and the start-position picker both fire this without awaiting it,
-      // so a redo (or a fresh start-position pick) can land a new sequence
+      // Undo and the start-placement picker both fire this without awaiting it,
+      // so a redo (or a fresh start-placement pick) can land a new sequence
       // inside the 300ms animation window below. Landing the clear afterwards
       // wiped that newer sequence AND its saved copy, with no error and no
       // history entry to get it back. Remember what we agreed to clear.
@@ -542,40 +542,40 @@ export function createSequenceState(services: SequenceStateServices) {
     const sequence = coreState.currentSequence;
     if (sequence) {
       const steps = sequence.steps || [];
-      const startPosition = sequence.startingPosition || sequence.startPosition;
+      const startPlacement = sequence.startingPlacement || sequence.startPlacement;
 
       if (steps.length > 0) {
         return steps.map((step: StepData) => step).filter(Boolean);
-      } else if (startPosition) {
-        // MIGRATION: Only include start position if it's actually StepData (legacy data)
-        // Modern StartPositionData should not be included in steps array
-        if (isStep(startPosition) && !startPosition.isBlank) {
-          return [startPosition];
+      } else if (startPlacement) {
+        // MIGRATION: Only include start placement if it's actually StepData (legacy data)
+        // Modern StartPlacementData should not be included in steps array
+        if (isStep(startPlacement) && !startPlacement.isBlank) {
+          return [startPlacement];
         }
-        // If it's a StartPositionData, don't include it in the steps array
-        // (Start positions are not steps)
+        // If it's a StartPlacementData, don't include it in the steps array
+        // (Start placements are not steps)
 
         return [];
       }
     }
 
-    // FIXED: Don't return selectedStartPosition here!
-    // The selectedStartPosition is tracked separately in construct-tab-state.
+    // FIXED: Don't return selectedStartPlacement here!
+    // The selectedStartPlacement is tracked separately in construct-tab-state.
     // Returning it here causes the option picker to think there's a sequence when there isn't.
     // This was causing the "no options available" bug.
     return [];
   }
 
   function getSelectedStepData(): StepData | null {
-    // If start position is selected, return it as StepData
+    // If start placement is selected, return it as StepData
     if (
-      selectionState.isStartPositionSelected &&
-      selectionState.selectedStartPosition
+      selectionState.isStartPlacementSelected &&
+      selectionState.selectedStartPlacement
     ) {
       // Factory fills any missing hand with an invisible placeholder
       // (both-required canonical Step shape).
       return createStepData({
-        ...selectionState.selectedStartPosition,
+        ...selectionState.selectedStartPlacement,
         stepNumber: 0,
         duration: 1,
         isBlank: false,
@@ -602,12 +602,12 @@ export function createSequenceState(services: SequenceStateServices) {
     }
 
     // Validate stepNumber is within valid range
-    // stepNumber 0 = start position (always valid if we have a start position)
+    // stepNumber 0 = start placement (always valid if we have a start placement)
     // stepNumber 1 to N = steps in the sequence
     const currentSequence = coreState.currentSequence;
 
     if (stepNumber === 0) {
-      // Start position - always allow selection
+      // Start placement - always allow selection
       selectionState.selectStep(stepNumber);
     } else if (
       currentSequence &&
@@ -675,11 +675,11 @@ export function createSequenceState(services: SequenceStateServices) {
     get arrowPositioningError() {
       return arrowState.arrowPositioningError;
     },
-    get selectedStartPosition() {
-      return selectionState.selectedStartPosition;
+    get selectedStartPlacement() {
+      return selectionState.selectedStartPlacement;
     },
-    get hasStartPosition() {
-      return selectionState.hasStartPosition;
+    get hasStartPlacement() {
+      return selectionState.hasStartPlacement;
     },
     get isInitialized() {
       return persistenceCoordinator.isInitialized;
@@ -759,10 +759,10 @@ export function createSequenceState(services: SequenceStateServices) {
     // Selection actions
     selectStep,
     clearSelection: () => selectionState.clearSelection(),
-    selectStartPositionForEditing: () => selectionState.selectStartPosition(),
+    selectStartPlacementForEditing: () => selectionState.selectStartPlacement(),
     isStepSelected: (stepNumber: number) =>
       selectionState.isStepSelected(stepNumber),
-    setSelectedStartPosition,
+    setSelectedStartPlacement,
 
     // Grid mode
     setGridMode: (mode: GridMode) => coreState.setGridMode(mode),
@@ -810,8 +810,8 @@ export function createSequenceState(services: SequenceStateServices) {
     hasContent: () => stepOperations.hasContent(),
 
     // Transform operations - delegate to facade (with targetHand support)
-    setStartPosition: (startPosition: StartPositionData | null) =>
-      transformOperations.setStartPosition(startPosition),
+    setStartPlacement: (startPlacement: StartPlacementData | null) =>
+      transformOperations.setStartPlacement(startPlacement),
     mirrorSequence: (targetHand: TargetHand = "both") =>
       transformOperations.mirrorSequence(targetHand),
     flipSequence: (targetHand: TargetHand = "both") =>
@@ -827,8 +827,8 @@ export function createSequenceState(services: SequenceStateServices) {
       transformOperations.rotateSequence(direction, targetHand, rotationSteps),
     rewindSequence: (targetHand: TargetHand = "both") =>
       transformOperations.rewindSequence(targetHand),
-    shiftStartPosition: (targetStepNumber: number) =>
-      transformOperations.shiftStartPosition(targetStepNumber),
+    shiftStartPlacement: (targetStepNumber: number) =>
+      transformOperations.shiftStartPlacement(targetStepNumber),
     duplicateSequence: (newName?: string) =>
       transformOperations.duplicateSequence(newName),
     validateCurrentSequence: (): ValidationResult | null =>

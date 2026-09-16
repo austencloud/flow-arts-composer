@@ -56,7 +56,7 @@ export interface CardBackLayout {
   levelBadge: Placement;
 
   /**
-   * .corner.bottom-left .start-pos-picto: width:12cqi; height:12cqi at bottom:2cqi left:3.2cqi
+   * .corner.bottom-left .start-placement-picto: width:12cqi; height:12cqi at bottom:2cqi left:3.2cqi
    */
   startPos: Placement;
 
@@ -233,7 +233,7 @@ export function computeCardBackLayout(
   };
 
   // .corner.bottom-left { bottom: 2cqi; left: 3.2cqi; }
-  // .start-pos-picto { width: 12cqi !important; height: 12cqi !important; }
+  // .start-placement-picto { width: 12cqi !important; height: 12cqi !important; }
   const startPosSize = 12 * cqi;
   const startPos: Placement = {
     x: 3.2 * cqi,

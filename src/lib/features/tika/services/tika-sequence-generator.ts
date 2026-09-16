@@ -17,8 +17,8 @@ export interface SequenceStepMotion {
 export interface SequenceStep {
   letter: string;
   variation: number;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   stepNumber: number;
   leftMotion: SequenceStepMotion;
   rightMotion: SequenceStepMotion;
@@ -26,8 +26,8 @@ export interface SequenceStep {
 export interface GeneratedSequenceResult {
   word: string;
   steps: SequenceStep[];
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   isValid: boolean;
   error?: string;
 }
@@ -47,8 +47,8 @@ export class TikaSequenceGenerator {
       return {
         word: "",
         steps: [],
-        startPosition: "",
-        endPosition: "",
+        startPlacement: "",
+        endPlacement: "",
         isValid: false,
         error: "No letters provided",
       };
@@ -64,8 +64,8 @@ export class TikaSequenceGenerator {
     return {
       word: letters.join(""),
       steps: [],
-      startPosition: "",
-      endPosition: "",
+      startPlacement: "",
+      endPlacement: "",
       isValid: false,
       error: `Failed to generate valid sequence after ${maxAttempts} attempts`,
     };
@@ -85,8 +85,8 @@ export class TikaSequenceGenerator {
       return {
         word,
         steps: [],
-        startPosition: "",
-        endPosition: "",
+        startPlacement: "",
+        endPlacement: "",
         isValid: false,
         error: "No first letter",
       };
@@ -100,8 +100,8 @@ export class TikaSequenceGenerator {
       return {
         word,
         steps: [],
-        startPosition: "",
-        endPosition: "",
+        startPlacement: "",
+        endPlacement: "",
         isValid: false,
         error: `No variations found for letter "${firstLetter}"`,
       };
@@ -112,43 +112,43 @@ export class TikaSequenceGenerator {
       return {
         word,
         steps: [],
-        startPosition: "",
-        endPosition: "",
+        startPlacement: "",
+        endPlacement: "",
         isValid: false,
         error: "Failed to pick first variation",
       };
     }
 
     const firstVariationIndex = firstLetterVariations.indexOf(firstVariation);
-    const startPosition = firstVariation.startPosition;
+    const startPlacement = firstVariation.startPlacement;
 
     // Find a valid start position (Type 6 static letter)
-    const validStartPositions = allPictographs.filter((p) => {
+    const validStartPlacements = allPictographs.filter((p) => {
       return (
         TYPE_6_LETTERS.includes(p.letter) &&
-        p.startPosition === startPosition &&
-        p.endPosition === startPosition
+        p.startPlacement === startPlacement &&
+        p.endPlacement === startPlacement
       );
     });
 
-    if (validStartPositions.length === 0) {
+    if (validStartPlacements.length === 0) {
       return {
         word,
         steps: [],
-        startPosition: "",
-        endPosition: "",
+        startPlacement: "",
+        endPlacement: "",
         isValid: false,
-        error: `No Type 6 static letter found at position ${startPosition}`,
+        error: `No Type 6 static letter found at position ${startPlacement}`,
       };
     }
 
-    const startPictograph = this.pickRandom(validStartPositions);
+    const startPictograph = this.pickRandom(validStartPlacements);
     if (!startPictograph) {
       return {
         word,
         steps: [],
-        startPosition: "",
-        endPosition: "",
+        startPlacement: "",
+        endPlacement: "",
         isValid: false,
         error: "Failed to pick start position",
       };
@@ -161,24 +161,24 @@ export class TikaSequenceGenerator {
     steps.push(this.toSequenceStep(firstVariation, firstVariationIndex, 1));
 
     // Walk through remaining letters
-    let currentEndPosition = firstVariation.endPosition;
+    let currentEndPlacement = firstVariation.endPlacement;
 
     for (let i = 1; i < letters.length; i++) {
       const letter = letters[i];
       if (!letter) continue;
 
       const variations = allPictographs.filter(
-        (p) => p.letter === letter && p.startPosition === currentEndPosition
+        (p) => p.letter === letter && p.startPlacement === currentEndPlacement
       );
 
       if (variations.length === 0) {
         return {
           word,
           steps: [],
-          startPosition: "",
-          endPosition: "",
+          startPlacement: "",
+          endPlacement: "",
           isValid: false,
-          error: `No valid continuation for letter "${letter}" from position ${currentEndPosition}`,
+          error: `No valid continuation for letter "${letter}" from position ${currentEndPlacement}`,
         };
       }
 
@@ -187,8 +187,8 @@ export class TikaSequenceGenerator {
         return {
           word,
           steps: [],
-          startPosition: "",
-          endPosition: "",
+          startPlacement: "",
+          endPlacement: "",
           isValid: false,
           error: `Failed to pick variation for letter "${letter}"`,
         };
@@ -207,14 +207,14 @@ export class TikaSequenceGenerator {
         )
       );
 
-      currentEndPosition = chosenVariation.endPosition;
+      currentEndPlacement = chosenVariation.endPlacement;
     }
 
     return {
       word,
       steps,
-      startPosition,
-      endPosition: currentEndPosition,
+      startPlacement,
+      endPlacement: currentEndPlacement,
       isValid: true,
     };
   }
@@ -227,8 +227,8 @@ export class TikaSequenceGenerator {
     return {
       letter: pictograph.letter,
       variation,
-      startPosition: pictograph.startPosition,
-      endPosition: pictograph.endPosition,
+      startPlacement: pictograph.startPlacement,
+      endPlacement: pictograph.endPlacement,
       stepNumber,
       leftMotion: {
         motionType: pictograph.leftMotion.motionType,

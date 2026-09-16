@@ -8,7 +8,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
  * (props are drawn at their end locations). Tapping a tile makes that pose
  * the sequence start, which means the step AFTER it becomes step 1. This
  * translates the tapped tile into the target step number the existing
- * `shiftStartPosition` transform expects, and decides whether the user needs
+ * `shiftStartPlacement` transform expects, and decides whether the user needs
  * to confirm first.
  */
 

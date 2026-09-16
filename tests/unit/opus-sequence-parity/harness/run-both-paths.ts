@@ -12,7 +12,7 @@
  *            (`generation-orchestrator` → `SequenceBuilder.applyLoop`) and by
  *            MCP.
  *
- * Both entry points take `[startPositionStep, ...seedSteps]` and return the
+ * Both entry points take `[startPlacementStep, ...seedSteps]` and return the
  * full extended sequence, so they are directly comparable. Neither call
  * includes the downstream stages (`closeOrientationCycle`,
  * letter re-derivation, `reduceToMinimalLoop`) — those are deliberately out of

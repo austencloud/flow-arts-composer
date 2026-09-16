@@ -79,7 +79,7 @@ describe("Offline3DExporter cancellation checkpoints", () => {
       fps: 1,
       resolution: 720,
       loopCount: 1,
-      includeStartPosition: false,
+      includeStartPlacement: false,
       includeEndHold: false,
     });
 
@@ -103,7 +103,7 @@ describe("Offline3DExporter cancellation checkpoints", () => {
       fps: 1,
       resolution: 720,
       loopCount: 1,
-      includeStartPosition: false,
+      includeStartPlacement: false,
       includeEndHold: false,
     });
 
@@ -134,7 +134,7 @@ describe("Offline3DExporter cancellation checkpoints", () => {
       fps: 1,
       resolution: 720,
       loopCount: 1,
-      includeStartPosition: false,
+      includeStartPlacement: false,
       includeEndHold: false,
     });
 

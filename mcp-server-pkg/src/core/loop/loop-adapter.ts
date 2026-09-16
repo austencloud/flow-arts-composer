@@ -30,8 +30,8 @@ interface MotionData {
 
 export interface PictographData {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotion: MotionData;
@@ -77,7 +77,7 @@ export function executeLOOP(
   period: Period = Period.HALVED,
   allPictographs: PictographData[] = []
 ): LOOPExecutionResult {
-  const originalBeatCount = steps.length - 1; // exclude start position step
+  const originalBeatCount = steps.length - 1; // exclude start placement step
 
   const errorResult = (msg: string): LOOPExecutionResult => ({
     success: false,
@@ -95,7 +95,7 @@ export function executeLOOP(
 
   if (steps.length < 2) {
     return errorResult(
-      "Sequence must have at least 2 steps (start position + 1 beat)"
+      "Sequence must have at least 2 steps (start placement + 1 beat)"
     );
   }
 

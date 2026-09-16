@@ -71,8 +71,8 @@ export function stepDataToStep(sd: StepData): Step {
   return createStep({
     id: sd.id,
     letter: sd.letter ?? null,
-    startPosition: sd.startPosition ?? null,
-    endPosition: sd.endPosition ?? null,
+    startPlacement: sd.startPlacement ?? null,
+    endPlacement: sd.endPlacement ?? null,
     motions: { left: motionDataToMotion(left), right: motionDataToMotion(right) },
     ...(sd.gridMode !== undefined && { gridMode: sd.gridMode }),
     stepNumber: sd.stepNumber,
@@ -133,8 +133,8 @@ export function stepToStepData(step: Step): StepData {
     // App `Letter` is a nominal string enum; tka-types `Letter` is an identical
     // `as const` string union (same 47 members). Pure nominal divergence — cast.
     letter: step.letter as AppLetter | null,
-    startPosition: step.startPosition,
-    endPosition: step.endPosition,
+    startPlacement: step.startPlacement,
+    endPlacement: step.endPlacement,
     motions: {
       [HandSide.LEFT]: motionToMotionData(step.motions.left, HandSide.LEFT),
       [HandSide.RIGHT]: motionToMotionData(step.motions.right, HandSide.RIGHT),

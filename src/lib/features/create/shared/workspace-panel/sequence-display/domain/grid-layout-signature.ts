@@ -17,10 +17,10 @@ export interface GridLayoutSignatureInput {
   isTimelineMode: boolean;
   /** Columns available to steps. */
   columns: number;
-  /** Columns including the start-position column. */
+  /** Columns including the start-placement column. */
   totalColumns: number;
   rows: number;
-  hasStartPosition: boolean;
+  hasStartPlacement: boolean;
   /** Steps per timeline row. Empty in grid mode. */
   timelineRowSizes: readonly number[];
   /** Stable step identities, in presentation order. */
@@ -35,7 +35,7 @@ export function computeGridLayoutSignature(
     input.columns,
     input.totalColumns,
     input.rows,
-    input.hasStartPosition ? "start" : "no-start",
+    input.hasStartPlacement ? "start" : "no-start",
     // Row sizes catch a timeline reflow that leaves the row COUNT unchanged —
     // deleting a step can move one cell up a row without changing either total.
     input.timelineRowSizes.join("-"),

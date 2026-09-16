@@ -51,15 +51,15 @@ const STEP_PAIRINGS = [
     letter: "A",
     leftReversal: false,
     rightReversal: false,
-    startPosition: "alpha1",
-    endPosition: "alpha3",
+    startPlacement: "alpha1",
+    endPlacement: "alpha3",
   },
   {
     letter: "B",
     leftReversal: false,
     rightReversal: false,
-    startPosition: "alpha3",
-    endPosition: "beta5",
+    startPlacement: "alpha3",
+    endPlacement: "beta5",
   },
 ];
 
@@ -103,7 +103,7 @@ function schemaTwoDoc(overrides: Record<string, unknown> = {}) {
     leftSoloProp: SOLO_PROP,
     rightSoloProp: { ...SOLO_PROP, id: "solo-red" },
     stepPairings: STEP_PAIRINGS,
-    startPosition: { isStartPosition: true, id: "start-1" },
+    startPlacement: { isStartPlacement: true, id: "start-1" },
     creatorIntent: {
       propConfig: {
         leftPropType: "staff",
@@ -213,8 +213,8 @@ describe("PublicSequenceWireSchema", () => {
     expect(projection?.contentHash).toBe("hash-1");
     expect(projection?.contentHashVersion).toBe(2);
     expect(projection?.creatorIntent).toBeDefined();
-    expect(projection?.startPosition).toEqual({
-      isStartPosition: true,
+    expect(projection?.startPlacement).toEqual({
+      isStartPlacement: true,
       id: "start-1",
     });
   });

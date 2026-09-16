@@ -85,40 +85,40 @@
 
   const explanation = $derived.by(() => {
     if (question.task === "validity" && question.analysis.canRunAsWritten) {
-      return "Every ending position matches the next starting position.";
+      return "Every ending placement matches the next starting placement.";
     }
 
     if (question.task === "count") {
       if (question.correctAnswer === 0) {
-        return "Every ending position already matches the next starting position.";
+        return "Every ending placement already matches the next starting placement.";
       }
       return "Add the numbers on the gap markers. Select one to inspect it.";
     }
 
     if (question.task === "repair" && selectedRepairChoice) {
       if (selectedRepairChoice.isCorrect) {
-        return `${selectedRepairChoice.letter} starts at ${groupLabel(selectedRepairChoice.startPositionGroup)} and ends at ${groupLabel(selectedRepairChoice.endPositionGroup)}, matching both neighbors.`;
+        return `${selectedRepairChoice.letter} starts at ${groupLabel(selectedRepairChoice.startPlacementGroup)} and ends at ${groupLabel(selectedRepairChoice.endPlacementGroup)}, matching both neighbors.`;
       }
 
       const failures: string[] = [];
       if (!selectedRepairChoice.leftConnects) {
         failures.push(
-          `it starts at ${groupLabel(selectedRepairChoice.startPositionGroup)}, not ${groupLabel(focusGap.fromEndPositionGroup)}`
+          `it starts at ${groupLabel(selectedRepairChoice.startPlacementGroup)}, not ${groupLabel(focusGap.fromEndPlacementGroup)}`
         );
       }
       if (!selectedRepairChoice.rightConnects) {
         failures.push(
-          `it ends at ${groupLabel(selectedRepairChoice.endPositionGroup)}, not ${groupLabel(focusGap.toStartPositionGroup)}`
+          `it ends at ${groupLabel(selectedRepairChoice.endPlacementGroup)}, not ${groupLabel(focusGap.toStartPlacementGroup)}`
         );
       }
       return `${selectedRepairChoice.letter} misses because ${failures.join(" and ")}.`;
     }
 
     if (!focusGap.direct) {
-      return `${focusGap.from} ends at ${groupLabel(focusGap.fromEndPositionGroup)}, while ${focusGap.to} starts at ${groupLabel(focusGap.toStartPositionGroup)}.`;
+      return `${focusGap.from} ends at ${groupLabel(focusGap.fromEndPlacementGroup)}, while ${focusGap.to} starts at ${groupLabel(focusGap.toStartPlacementGroup)}.`;
     }
 
-    return `${focusGap.from} ends at ${groupLabel(focusGap.fromEndPositionGroup)}, matching ${focusGap.to}'s starting group.`;
+    return `${focusGap.from} ends at ${groupLabel(focusGap.fromEndPlacementGroup)}, matching ${focusGap.to}'s starting group.`;
   });
 
   const alternateAnswers = $derived.by(() => {
@@ -130,13 +130,13 @@
 
   function nodeDetail(index: number): string {
     if (index === 0) {
-      return `Ends ${groupLabel(focusGap.fromEndPositionGroup)}`;
+      return `Ends ${groupLabel(focusGap.fromEndPlacementGroup)}`;
     }
     if (index === chainLetters.length - 1) {
-      return `Starts ${groupLabel(focusGap.toStartPositionGroup)}`;
+      return `Starts ${groupLabel(focusGap.toStartPlacementGroup)}`;
     }
     const bridge = explanationPath[index - 1]!;
-    return `${groupLabel(bridge.startPositionGroup)} to ${groupLabel(bridge.endPositionGroup)}`;
+    return `${groupLabel(bridge.startPlacementGroup)} to ${groupLabel(bridge.endPlacementGroup)}`;
   }
 </script>
 
@@ -163,7 +163,7 @@
           bridge={index > 0 && index < chainLetters.length - 1}
         />
         {#if index < chainLetters.length - 1}
-          <span class="match-arrow" aria-label="Positions match">
+          <span class="match-arrow" aria-label="Placements match">
             <span aria-hidden="true">→</span>
             <small>match</small>
           </span>

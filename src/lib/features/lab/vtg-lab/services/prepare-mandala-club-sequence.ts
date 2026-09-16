@@ -5,12 +5,12 @@ import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
 export type MandalaPathShape = "arc" | "linear" | "concave";
 
-/** The motions map carried by both StartPositionData and StepData (via PictographData). */
+/** The motions map carried by both StartPlacementData and StepData (via PictographData). */
 type MotionsMap = PictographData["motions"];
 
 /**
  * Produce a single-club, single-hand SequenceData: the non-shown hand is
- * marked `isVisible: false` on the start position and every step, and the
+ * marked `isVisible: false` on the start placement and every step, and the
  * shown hand's motion is tagged with club + the path shape. The engine and
  * renderers skip invisible hands (isVisibleMotion guards — the both-required
  * Step layer's absence encoding), so the hidden hand has no prop, no
@@ -39,9 +39,9 @@ export function prepareMandalaPropSequence(
     d.motions ? ({ ...d, motions: soloMotions(d.motions) } as T) : d;
   return {
     ...seq,
-    startPosition: seq.startPosition
-      ? apply(seq.startPosition)
-      : seq.startPosition,
+    startPlacement: seq.startPlacement
+      ? apply(seq.startPlacement)
+      : seq.startPlacement,
     steps: (seq.steps ?? []).map(apply),
   } as SequenceData;
 }

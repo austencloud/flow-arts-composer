@@ -132,8 +132,8 @@
         videoUrl={movementMap.video.url}
         videoDuration={movementMap.video.duration}
         steps={movementMap.sequence.steps}
-        startPosition={movementMap.sequence.startPosition ??
-          movementMap.sequence.startingPosition}
+        startPlacement={movementMap.sequence.startPlacement ??
+          movementMap.sequence.startingPlacement}
         bpm={60}
         initialStepMap={movementMap.stepMap ?? undefined}
         draftKey={`movement:${movementMap.sequence.id}:${movementMap.video.id}`}

@@ -67,16 +67,16 @@ export const GROUP_TITLES: Record<GuideGroup, string> = {
 };
 
 export const GUIDE_BODY_PAGES: GuidePageEntry[] = [
-  // ── 1.0 Positions / Motions (p1–p10) ──────────────────────────────────
+  // ── 1.0 Placements / Motions (p1–p10) ──────────────────────────────────
   { id: "the-grid", title: "The Grid", level: 0, group: "1.0" },
-  { id: "hand-positions", title: "Hand Positions", level: 0, group: "1.0" },
+  { id: "hand-placements", title: "Hand Placements", level: 0, group: "1.0" },
   { id: "hand-motions", title: "Hand Motions", level: 0, group: "1.0" },
   { id: "hm-type1", title: "Type 1 Dual-Shifts - Alpha, Beta", level: 1, group: "1.0" },
   { id: "hm-gamma", title: "Gamma - Quarter-Opp, Quarter-Same", level: 1, group: "1.0" },
   { id: "hm-type2", title: "Type 2 - Shifts", level: 1, group: "1.0" },
   { id: "hm-type34", title: "Type 3 - Cross-Shifts", level: 1, group: "1.0" },
   { id: "hm-type56", title: "Type 4/5/6 - Dash, Dual-Dash, Static", level: 1, group: "1.0", selfTitled: true },
-  { id: "staff-positions", title: "Staff Positions", level: 0, group: "1.0" },
+  { id: "staff-placements", title: "Staff Placements", level: 0, group: "1.0" },
   { id: "staff-motions", title: "Staff Motions", level: 0, group: "1.0" },
   { id: "negative-space", title: "Negative Space / Body Turns", level: 0, group: "1.0" },
 

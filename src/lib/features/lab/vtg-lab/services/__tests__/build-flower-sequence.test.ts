@@ -34,8 +34,8 @@ function proArchetype(): SequenceData {
     id: "arch-pro",
     name: "arch",
     word: "A",
-    startPosition: {
-      isStartPosition: true,
+    startPlacement: {
+      isStartPlacement: true,
       id: "SP",
       startPos: "alpha",
       endPos: "alpha",

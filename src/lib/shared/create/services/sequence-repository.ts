@@ -20,7 +20,7 @@ import {
 } from "$lib/shared/persistence/services/dexie-persistence-service";
 import type { SequenceImporter } from "$lib/shared/create/services/sequence-importer";
 type ReversalDetector = { processReversals: (sequence: SequenceData) => SequenceData };
-import { separateStepsFromStartPosition } from "$lib/shared/animation-engine/services/sequence-normalizer";
+import { separateStepsFromStartPlacement } from "$lib/shared/animation-engine/services/sequence-normalizer";
 type SequenceDomainManager = {
   createSequence: (request: unknown) => SequenceData;
   updateStep: (sequence: SequenceData, stepIndex: number, stepData: unknown) => SequenceData;
@@ -141,13 +141,13 @@ export class SequenceRepository {
         sequence = this.reversalDetector.processReversals(sequence);
 
         // Normalize sequence data to ensure start position is separated from steps
-        // This handles legacy data formats where beat 0 or startingPosition was mixed into steps array
+        // This handles legacy data formats where beat 0 or startingPlacement was mixed into steps array
         const normalized =
-          separateStepsFromStartPosition(sequence);
+          separateStepsFromStartPlacement(sequence);
         sequence = {
           ...sequence,
           steps: normalized.steps,
-          startPosition: normalized.startPosition ?? undefined,
+          startPlacement: normalized.startPlacement ?? undefined,
         };
       }
 
@@ -174,11 +174,11 @@ export class SequenceRepository {
 
         // Normalize to separate start position from steps
         const normalized =
-          separateStepsFromStartPosition(processed);
+          separateStepsFromStartPlacement(processed);
         return {
           ...processed,
           steps: normalized.steps,
-          startPosition: normalized.startPosition ?? undefined,
+          startPlacement: normalized.startPlacement ?? undefined,
         };
       });
     } catch (error) {

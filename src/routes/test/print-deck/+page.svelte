@@ -330,7 +330,7 @@
             {footers}
             {tndElements}
             isLoading={false}
-            includeStartPosition={true}
+            includeStartPlacement={true}
             deckMode={true}
             displayMode="sheets"
             deckId={String(selectedDeck.deckNumber).padStart(3, "0")}

@@ -300,7 +300,7 @@ Two guards drop such motions silently:
 Result: cells render grid + letter only. `{}` is truthy and passes both guards
 (the decode path emits `{}`, which is why URL-decoded sequences never hit this).
 Fix (commit fc1ad42df8): `sequence-hydrator.ts` `hydrateSequence` normalizes every
-motion (steps + startPosition) through `createMotionData`, which fills the default
+motion (steps + startPlacement) through `createMotionData`, which fills the default
 placement objects; idempotent for already-full motions. Any load path that builds
 SequenceData from lean stored steps WITHOUT `hydrateSequence` can still hit this.
 Regression test: `tests/unit/poi-scan-cell-prepare.test.ts`.

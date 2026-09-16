@@ -97,7 +97,7 @@ export { DEFAULT_MAX_WORD_LENGTH };
 export interface SimilarityWeights {
   word: number;
   motion: number;
-  position: number;
+  placement: number;
   structural: number;
 }
 
@@ -105,7 +105,7 @@ export interface SimilarityWeights {
 const DEFAULT_SIMILARITY_WEIGHTS: SimilarityWeights = {
   word: 0.2,
   motion: 0.35,
-  position: 0.25,
+  placement: 0.25,
   structural: 0.2,
 };
 
@@ -213,9 +213,9 @@ function parseCard(text: string, slot: SlotId): SequenceData {
     if (typeof step !== "object" || step === null) {
       throw new Error(`${label} is not an object.`);
     }
-    if (!step.startPosition || !step.endPosition) {
+    if (!step.startPlacement || !step.endPlacement) {
       throw new Error(
-        `${label} is missing startPosition/endPosition — the engine walks on seams.`
+        `${label} is missing startPlacement/endPlacement — the engine walks on seams.`
       );
     }
     if (!step.motions?.left || !step.motions?.right) {
@@ -363,7 +363,7 @@ export function createCombinatorLabState(): CombinatorLabState {
     const total =
       similarityWeights.word +
       similarityWeights.motion +
-      similarityWeights.position +
+      similarityWeights.placement +
       similarityWeights.structural;
 
     // All four at zero is a shrug, not an error. Falling back to an even blend
@@ -380,7 +380,7 @@ export function createCombinatorLabState(): CombinatorLabState {
         report: getSimilarityCalculator().computeSimilarity(cardA, cardB, {
           wordWeight: weightOf(similarityWeights.word),
           motionWeight: weightOf(similarityWeights.motion),
-          positionWeight: weightOf(similarityWeights.position),
+          placementWeight: weightOf(similarityWeights.placement),
           structuralWeight: weightOf(similarityWeights.structural),
         }),
         error: "",

@@ -29,7 +29,7 @@
     showGlyph = false,
     showGrid = true,
     showTKA = true,
-    showPositions = false,
+    showPlacements = false,
     showReversals = false,
     showNonRadialPoints = false,
     showName = true,
@@ -49,7 +49,7 @@
     showGlyph?: boolean;
     showGrid?: boolean;
     showTKA?: boolean;
-    showPositions?: boolean;
+    showPlacements?: boolean;
     showReversals?: boolean;
     showNonRadialPoints?: boolean;
     /** Glossary type grids show the letter itself without repeating the
@@ -91,7 +91,7 @@
           {showTKA}
           showTnD={showGlyph}
           showElemental={showGlyph}
-          {showPositions}
+          {showPlacements}
           {showReversals}
           {showNonRadialPoints}
           printMode={true}
@@ -110,7 +110,7 @@
         {showTKA}
         showTnD={showGlyph}
         showElemental={showGlyph}
-        {showPositions}
+        {showPlacements}
         {showReversals}
         {showNonRadialPoints}
         printMode={true}

@@ -15,7 +15,7 @@
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
   import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import AnimatorCanvas from "$lib/shared/animation-engine/components/AnimatorCanvas.svelte";
   import HitTargetOverlay from "./components/HitTargetOverlay.svelte";
@@ -27,7 +27,7 @@
     rightProp: PropState | null;
     gridMode?: GridMode;
     gridVisible?: boolean;
-    stepData?: StartPositionData | StepData | null;
+    stepData?: StartPlacementData | StepData | null;
     backgroundAlpha?: number;
     leftPropType?: string | null;
     rightPropType?: string | null;

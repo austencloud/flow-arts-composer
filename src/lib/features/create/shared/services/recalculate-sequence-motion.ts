@@ -20,7 +20,7 @@ export function recalculateSequenceMotionFrom(
     let step = steps[index]!;
     const previous =
       index === 0
-        ? sequence.startingPosition ?? sequence.startPosition ?? null
+        ? sequence.startingPlacement ?? sequence.startPlacement ?? null
         : steps[index - 1] ?? null;
 
     if (previous && !step.isBlank) {

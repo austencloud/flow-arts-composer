@@ -67,8 +67,8 @@ for (const r of rows) {
   units.push({
     key: k,
     letter: r.letter,
-    start: r.startPosition,
-    end: r.endPosition,
+    start: r.startPlacement,
+    end: r.endPlacement,
     grid: r._grid,
     // Canonical VTG columns. Do NOT re-derive direction from the two
     // rotationDirection fields: for a hybrid (one pro, one anti) the props

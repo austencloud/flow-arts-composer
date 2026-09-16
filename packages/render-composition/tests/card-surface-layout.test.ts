@@ -30,7 +30,7 @@ describe("portable card surface geometry", () => {
       showDifficulty: false,
       showFooter: false,
       showLoopGlyph: true,
-      startPositionLayout: "row",
+      startPlacementLayout: "row",
     });
     expect(layout.headerHeight).toBe(66);
     expect(layout.height).toBe(966);

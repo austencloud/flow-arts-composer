@@ -6,11 +6,11 @@ import type {
   LoopComposabilityEntry,
 } from "../types/loop.js";
 
-export const LOOP_DEFINITION = "Sequences where words repeat to trace complementary patterns. The word must end on a variation of its start position, eventually returning to the exact starting position (home)." as const;
+export const LOOP_DEFINITION = "Sequences where words repeat to trace complementary patterns. The word must end on a variation of its start placement, eventually returning to the exact starting placement (home)." as const;
 
 export const LOOP_BASE_COMPONENTS: Record<LoopComponent, LoopBaseComponent> = {
   rotated: {
-    description: "Positions rotate around the grid to return home",
+    description: "Placements rotate around the grid to return home",
     keyInsight: "Rotated means COMPLETING the full rotation, not just reaching a rotated midpoint. The second half must CONTINUE rotating in the same direction to return home.",
     variants: {
       halved: {
@@ -26,14 +26,14 @@ export const LOOP_BASE_COMPONENTS: Record<LoopComponent, LoopBaseComponent> = {
     },
   },
   mirrored: {
-    description: "Positions mirror vertically to return home",
+    description: "Placements mirror vertically to return home",
     axis: "Vertical axis through center",
-    effect: "Left-right positions swap across the vertical midline",
+    effect: "Left-right placements swap across the vertical midline",
   },
   flipped: {
-    description: "Positions mirror horizontally to return home",
+    description: "Placements mirror horizontally to return home",
     axis: "Horizontal axis through center",
-    effect: "Top-bottom positions swap across the horizontal midline",
+    effect: "Top-bottom placements swap across the horizontal midline",
     note: "Same concept as mirrored but along perpendicular axis",
   },
   swapped: {
@@ -67,8 +67,8 @@ export const COMPOUND_LOOP_TYPES: Record<string, CompoundLoopType> = {
 } as const satisfies Record<string, CompoundLoopType>;
 
 export const LOOP_CONSTRUCTION_PRINCIPLES = {
-  wordEndingRequirement: "Word must end on variation of start position to enable seamless repetition",
-  homeReturn: "Return to exact starting position and orientation through calculated repetitions with transformations",
+  wordEndingRequirement: "Word must end on variation of start placement to enable seamless repetition",
+  homeReturn: "Return to exact starting placement and orientation through calculated repetitions with transformations",
   patternCompletion: "Trace geometric or symmetric patterns in space for visual and kinesthetic satisfaction",
 } as const;
 
@@ -78,7 +78,7 @@ export const LOOP_CONSTRUCTION_PRINCIPLES = {
  * Turn values and orientations are irrelevant to LOOP type.
  */
 export const LOOP_TURN_INDEPENDENCE = {
-  reducedSpace: ["grid positions", "motion types (pro/anti/static/dash/float)", "hand identity (blue/red)"],
+  reducedSpace: ["grid placements", "motion types (pro/anti/static/dash/float)", "hand identity (blue/red)"],
   excludedFromClassification: ["turn values", "orientations"],
   principle: "Every LOOP type has a canonical zero-turn form representing its pure algebraic skeleton. The performed sequence is that skeleton dressed with turn values.",
   formula: "Performed Sequence = LOOP Skeleton + Turn Assignment",
@@ -92,7 +92,7 @@ export const LOOP_TURN_INDEPENDENCE = {
  *
  * Example: `SWAPPED + MIRRORED/INVERTED`
  *   1. Take a SWAPPED inner pattern (seed doubled via hand-role swap)
- *   2. Apply MIRRORED and INVERTED simultaneously (mirror positions + flip pro/anti)
+ *   2. Apply MIRRORED and INVERTED simultaneously (mirror placements + flip pro/anti)
  */
 export const LOOP_COMPOSITIONAL_NOTATION = {
   simultaneousOperator: "/",
@@ -100,51 +100,51 @@ export const LOOP_COMPOSITIONAL_NOTATION = {
   example: {
     notation: "SWAPPED + MIRRORED/INVERTED",
     step1: "Take a SWAPPED inner pattern (seed doubled via hand-role swap)",
-    step2: "Apply MIRRORED and INVERTED simultaneously to that block (mirror positions to opposite side + flip pro/anti)",
+    step2: "Apply MIRRORED and INVERTED simultaneously to that block (mirror placements to opposite side + flip pro/anti)",
   },
   whyItMatters: "The flat label {MIRRORED, SWAPPED, INVERTED} does not tell you which transformation came first or how the sequence was built. Compositional notation preserves the construction order.",
 } as const;
 
 /**
  * Fixed-Point Theorem: For the composition INNER + OUTER, the starting
- * position S must satisfy T(S) = S for any outer transform T.
+ * placement S must satisfy T(S) = S for any outer transform T.
  *
  * INNER produces a circular sub-pattern: starts at S, ends at S.
  * OUTER takes that sub-pattern and doubles it. The outer half must start
  * at S (continuity) and end at S (circularity). Therefore T(S) = S.
  */
 export const LOOP_FIXED_POINT_THEOREM = {
-  statement: "For the composition INNER + OUTER: T(S) = S for any outer transform T. The starting position must be a fixed point of the outer transformation.",
+  statement: "For the composition INNER + OUTER: T(S) = S for any outer transform T. The starting placement must be a fixed point of the outer transformation.",
   proof: "INNER produces a circular sub-pattern (S -> S). OUTER doubles it: the outer half must start at S (continuity) and end at S (circularity). Therefore T(S) = S.",
 } as const;
 
 /**
  * Computed fixed points for each primitive transform, derived from
- * the actual position maps in the codebase.
+ * the actual placement maps in the codebase.
  */
 export const LOOP_FIXED_POINTS: LoopFixedPointEntry[] = [
   {
     transform: "MIRROR (vertical)",
-    fixedPositions: ["alpha1", "alpha5", "beta1", "beta5"],
+    fixedPlacements: ["alpha1", "alpha5", "beta1", "beta5"],
   },
   {
     transform: "FLIP (horizontal)",
-    fixedPositions: ["alpha3", "alpha7", "beta3", "beta7"],
+    fixedPlacements: ["alpha3", "alpha7", "beta3", "beta7"],
   },
   {
     transform: "SWAP",
-    fixedPositions: ["beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta8"],
+    fixedPlacements: ["beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta8"],
     note: "Swap is identity on beta because swapping two hands at the same grid location changes nothing positionally. This is why beta enables the most compositions.",
   },
   {
     transform: "ROTATE 180deg",
-    fixedPositions: ["terra1"],
-    note: "No standard L1-L5 position is a fixed point under 180deg rotation. Only terra1 (both hands at center, L6) maps to itself.",
+    fixedPlacements: ["terra1"],
+    note: "No standard L1-L5 placement is a fixed point under 180deg rotation. Only terra1 (both hands at center, L6) maps to itself.",
   },
   {
     transform: "INVERTED",
-    fixedPositions: ["ALL"],
-    note: "INVERTED does not change positions. All positions are fixed points.",
+    fixedPlacements: ["ALL"],
+    note: "INVERTED does not change placements. All placements are fixed points.",
   },
 ];
 
@@ -153,29 +153,29 @@ export const LOOP_FIXED_POINTS: LoopFixedPointEntry[] = [
  * Computed by intersecting individual fixed-point sets.
  */
 export const LOOP_COMPOUND_FIXED_POINTS: LoopFixedPointEntry[] = [
-  { transform: "MIRROR/INVERTED", fixedPositions: ["alpha1", "alpha5", "beta1", "beta5"] },
-  { transform: "FLIP/INVERTED", fixedPositions: ["alpha3", "alpha7", "beta3", "beta7"] },
-  { transform: "SWAP/INVERTED", fixedPositions: ["beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta8"] },
-  { transform: "MIRROR/SWAP", fixedPositions: ["beta1", "beta5"] },
-  { transform: "FLIP/SWAP", fixedPositions: ["beta3", "beta7"] },
-  { transform: "MIRROR/FLIP", fixedPositions: [], note: "No L1-L5 fixed points. terra1 only at L6." },
-  { transform: "MIRROR/SWAP/INVERTED", fixedPositions: ["beta1", "beta5"] },
-  { transform: "FLIP/SWAP/INVERTED", fixedPositions: ["beta3", "beta7"] },
+  { transform: "MIRROR/INVERTED", fixedPlacements: ["alpha1", "alpha5", "beta1", "beta5"] },
+  { transform: "FLIP/INVERTED", fixedPlacements: ["alpha3", "alpha7", "beta3", "beta7"] },
+  { transform: "SWAP/INVERTED", fixedPlacements: ["beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta8"] },
+  { transform: "MIRROR/SWAP", fixedPlacements: ["beta1", "beta5"] },
+  { transform: "FLIP/SWAP", fixedPlacements: ["beta3", "beta7"] },
+  { transform: "MIRROR/FLIP", fixedPlacements: [], note: "No L1-L5 fixed points. terra1 only at L6." },
+  { transform: "MIRROR/SWAP/INVERTED", fixedPlacements: ["beta1", "beta5"] },
+  { transform: "FLIP/SWAP/INVERTED", fixedPlacements: ["beta3", "beta7"] },
 ];
 
 /**
  * Proof that ROTATE is always the innermost layer.
- * No standard L1-L5 grid position is a fixed point under 180deg rotation.
+ * No standard L1-L5 grid placement is a fixed point under 180deg rotation.
  */
 export const LOOP_ROTATE_ALWAYS_INNER = {
-  statement: "ROTATE cannot be an outer transform from any standard L1-L5 position. It must be the innermost structural layer or standalone.",
+  statement: "ROTATE cannot be an outer transform from any standard L1-L5 placement. It must be the innermost structural layer or standalone.",
   proof: "alpha1 -> alpha5 (moves), beta3 -> beta7 (moves), gamma1 -> gamma5 (moves). Only terra1 (L6 center) maps to itself.",
-  implication: "For ROTATE as INNER, the seed goes S -> ROTATE(S), which is always a different position, producing non-degenerate structure from any starting point. Geometric transforms (MIRROR, FLIP, SWAP) can layer on top as outer.",
+  implication: "For ROTATE as INNER, the seed goes S -> ROTATE(S), which is always a different placement, producing non-degenerate structure from any starting point. Geometric transforms (MIRROR, FLIP, SWAP) can layer on top as outer.",
 } as const;
 
 /**
- * Composability matrices checked against actual position maps.
- * "degenerate" means the inner transform does not change positions (T(S) = S).
+ * Composability matrices checked against actual placement maps.
+ * "degenerate" means the inner transform does not change placements (T(S) = S).
  */
 export const LOOP_COMPOSABILITY_MATRICES: Record<string, LoopComposabilityEntry[]> = {
   alpha1: [
@@ -206,8 +206,8 @@ export const LOOP_COMPOSABILITY_MATRICES: Record<string, LoopComposabilityEntry[
  */
 export const LOOP_COMPOSITIONAL_KEY_RESULTS = [
   "Order matters. SWAP + MIRROR/INV (valid from alpha1) and MIRROR/INV + SWAP (valid from beta3, not alpha1) are different compositions. They are NOT interchangeable.",
-  "Beta is the universal connector. All beta positions are SWAP fixed points. beta1/beta5 additionally support MIRROR as outer. beta3/beta7 support FLIP as outer.",
-  "ROTATE is always the innermost layer. No L1-L5 position is a 180deg rotation fixed point. Rotation produces non-degenerate structure from any position.",
-  "INVERTED is always free. It has no positional constraint (all positions are fixed points). It can be added to any outer transform via / without restricting valid starting positions.",
-  "The current flat detection ({MIRRORED, SWAPPED, INVERTED}) loses information. The same component set can correspond to different compositional structures depending on starting position and construction order.",
+  "Beta is the universal connector. All beta placements are SWAP fixed points. beta1/beta5 additionally support MIRROR as outer. beta3/beta7 support FLIP as outer.",
+  "ROTATE is always the innermost layer. No L1-L5 placement is a 180deg rotation fixed point. Rotation produces non-degenerate structure from any placement.",
+  "INVERTED is always free. It has no positional constraint (all placements are fixed points). It can be added to any outer transform via / without restricting valid starting placements.",
+  "The current flat detection ({MIRRORED, SWAPPED, INVERTED}) loses information. The same component set can correspond to different compositional structures depending on starting placement and construction order.",
 ] as const;

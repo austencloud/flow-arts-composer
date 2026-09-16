@@ -30,8 +30,8 @@ interface CreateModuleGlobalRef {
   ): Promise<SequenceTransformCommandResult>;
   /**
    * Module-owned clear-sequence flow: confirmation dialog (unless opted out),
-   * undo snapshot, back to the start-position picker. Deleting the start
-   * position routes here — never through a partial setStartPosition(null).
+   * undo snapshot, back to the start-placement picker. Deleting the start
+   * placement routes here — never through a partial setStartPlacement(null).
    */
   requestClearSequence?: () => void;
 }

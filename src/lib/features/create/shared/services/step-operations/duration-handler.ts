@@ -7,7 +7,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ICreateModuleState } from "../../types/create-module-types";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import { getStepDataFromState, START_POSITION_BEAT_NUMBER } from "./step-data-helpers";
+import { getStepDataFromState, START_PLACEMENT_BEAT_NUMBER } from "./step-data-helpers";
 import {
   withLoopCertificateCleared,
   invalidateLoopDisplayCache,
@@ -32,7 +32,7 @@ export const DURATION_PRECISION = 0.01;
 
 /**
  * Update duration for a beat
- * @param stepNumber - The beat number (1-based, 0 = start position which doesn't have duration)
+ * @param stepNumber - The beat number (1-based, 0 = start placement which doesn't have duration)
  * @param newDuration - The new duration value (will be clamped to valid range)
  * @param createModuleState - The create module state for accessing/updating sequence
  */
@@ -41,9 +41,9 @@ export function updateStepDuration(
   newDuration: number,
   createModuleState: ICreateModuleState
 ): void {
-  // Start position doesn't have duration
-  if (stepNumber === START_POSITION_BEAT_NUMBER) {
-    logger.warn("Cannot update duration for start position");
+  // Start placement doesn't have duration
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+    logger.warn("Cannot update duration for start placement");
     return;
   }
 

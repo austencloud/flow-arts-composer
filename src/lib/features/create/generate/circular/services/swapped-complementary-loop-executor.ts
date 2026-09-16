@@ -10,10 +10,10 @@
  * - Letters are inverted (A↔B, D↔E, etc.)
  * - Motion types are flipped (PRO↔ANTI)
  * - Prop rotation directions are flipped (CW↔CCW)
- * - Locations stay the same (returns to starting position)
+ * - Locations stay the same (returns to starting placement)
  *
  * IMPORTANT: Slice size is ALWAYS halved (no quartering)
- * IMPORTANT: End position must equal start position (returns to start)
+ * IMPORTANT: End placement must equal start placement (returns to start)
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -31,7 +31,7 @@ import {
 import {
   INVERTED_LOOP_VALIDATION_SET,
   getInvertedLetter,
-} from "../domain/constants/strict-loop-position-maps";
+} from "../domain/constants/strict-loop-placement-maps";
 import type { Period } from "../domain/models/circular-models";
 
 export class SwappedInvertedLOOPExecutor {
@@ -40,7 +40,7 @@ export class SwappedInvertedLOOPExecutor {
   /**
    * Execute the swapped-inverted LOOP
    *
-   * @param sequence - The partial sequence to complete (must include start position at index 0)
+   * @param sequence - The partial sequence to complete (must include start placement at index 0)
    * @param period - Ignored (swapped-inverted LOOP always uses halved)
    * @returns The complete circular sequence with all steps
    */
@@ -48,10 +48,10 @@ export class SwappedInvertedLOOPExecutor {
     // Validate the sequence
     this._validateSequence(sequence);
 
-    // Remove start position (index 0) for processing
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    // Remove start placement (index 0) for processing
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     // Calculate how many steps to generate (always doubles for halved)
@@ -78,28 +78,28 @@ export class SwappedInvertedLOOPExecutor {
       lastStep = nextStep;
     }
 
-    // Re-insert start position at the beginning
-    sequence.unshift(startPosition);
+    // Re-insert start placement at the beginning
+    sequence.unshift(startPlacement);
 
     return sequence;
   }
 
   /**
    * Validate that the sequence can perform a swapped-inverted LOOP
-   * Requirement: end_position === start_position (returns to start)
+   * Requirement: end_placement === start_placement (returns to start)
    */
   private _validateSequence(sequence: StepData[]): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     // Check if the (start, end) pair is valid for swapped-inverted (must return to start)
@@ -107,8 +107,8 @@ export class SwappedInvertedLOOPExecutor {
 
     if (!INVERTED_LOOP_VALIDATION_SET.has(key)) {
       throw new Error(
-        `Invalid position pair for swapped-inverted LOOP: ${startPos} → ${endPos}. ` +
-          `For a swapped-inverted LOOP, the sequence must end at the same position it started (${startPos}).`
+        `Invalid placement pair for swapped-inverted LOOP: ${startPos} → ${endPos}. ` +
+          `For a swapped-inverted LOOP, the sequence must end at the same placement it started (${startPos}).`
       );
     }
   }
@@ -141,8 +141,8 @@ export class SwappedInvertedLOOPExecutor {
       id: `step-${stepNumber}`,
       stepNumber,
       letter: invertedLetter, // INVERTED
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: previousMatchingStep.endPosition ?? null, // Same as matching step (returns to start), handle undefined
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: previousMatchingStep.endPlacement ?? null, // Same as matching step (returns to start), handle undefined
       motions: {
         // SWAP: Blue does what Red did, with inverted transformation
         [HandSide.LEFT]: this._createSwappedInvertedMotion(

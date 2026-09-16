@@ -37,8 +37,8 @@ type MotionTuple = [
 type StepTuple = [
   stepNumber: number,
   letter: string | null,
-  startPosition: string,
-  endPosition: string,
+  startPlacement: string,
+  endPlacement: string,
   left: MotionTuple,
   right: MotionTuple,
 ];
@@ -63,8 +63,8 @@ function motion([
 function step([
   stepNumber,
   letter,
-  startPosition,
-  endPosition,
+  startPlacement,
+  endPlacement,
   left,
   right,
 ]: StepTuple): SequenceStep {
@@ -73,8 +73,8 @@ function step([
     stepNumber,
     duration: 1,
     letter,
-    startPosition,
-    endPosition,
+    startPlacement,
+    endPlacement,
     motions: { left: motion(left), right: motion(right) },
   } as SequenceStep;
 }

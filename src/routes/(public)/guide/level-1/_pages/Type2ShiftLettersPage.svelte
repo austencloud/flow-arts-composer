@@ -24,7 +24,7 @@
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
   import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
-  import PositionGlyph from "$lib/shared/pictograph/shared/components/PositionGlyph.svelte";
+  import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
   import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import {
     MotionType,
@@ -35,9 +35,9 @@
   import {
     GridMode,
     GridLocation,
-    GridPosition,
+    GridPlacement,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
   import { LETTER_TYPE_COLORS } from "$lib/shared/pictograph/shared/domain/constants/pictograph-constants";
@@ -116,8 +116,8 @@
       id,
       letter: c.letter,
       gridMode: GridMode.DIAMOND,
-      startPosition: getGridPositionFromLocations(c.leftLoc, c.from),
-      endPosition: getGridPositionFromLocations(c.leftLoc, c.to),
+      startPlacement: getGridPlacementFromLocations(c.leftLoc, c.from),
+      endPlacement: getGridPlacementFromLocations(c.leftLoc, c.to),
       stepNumber,
       motions: {
         left: staticHand(HandSide.LEFT, c.leftLoc),
@@ -136,8 +136,8 @@
       letter,
       gridMode: GridMode.DIAMOND,
       stepNumber: 0,
-      startPosition: getGridPositionFromLocations(leftLoc, rightLoc),
-      endPosition: getGridPositionFromLocations(leftLoc, rightLoc),
+      startPlacement: getGridPlacementFromLocations(leftLoc, rightLoc),
+      endPlacement: getGridPlacementFromLocations(leftLoc, rightLoc),
       motions: {
         left: staticHand(HandSide.LEFT, leftLoc),
         right: staticHand(HandSide.RIGHT, rightLoc),
@@ -148,7 +148,7 @@
   type BoxDef = {
     x: number;
     y: number;
-    label: { start: GridPosition; end: GridPosition; t: string };
+    label: { start: GridPlacement; end: GridPlacement; t: string };
     tag: "OPEN" | "CLOSE";
     cells: CellDef[];
   };
@@ -156,7 +156,7 @@
     {
       x: 97,
       y: 193.6,
-      label: { start: GridPosition.GAMMA1, end: GridPosition.ALPHA1, t: "γ→α" },
+      label: { start: GridPlacement.GAMMA1, end: GridPlacement.ALPHA1, t: "γ→α" },
       tag: "OPEN",
       cells: [
         {
@@ -180,7 +180,7 @@
     {
       x: 334.9,
       y: 193.6,
-      label: { start: GridPosition.GAMMA1, end: GridPosition.BETA1, t: "γ→β" },
+      label: { start: GridPlacement.GAMMA1, end: GridPlacement.BETA1, t: "γ→β" },
       tag: "CLOSE",
       cells: [
         {
@@ -204,7 +204,7 @@
     {
       x: 97,
       y: 325.5,
-      label: { start: GridPosition.ALPHA1, end: GridPosition.GAMMA1, t: "α→γ" },
+      label: { start: GridPlacement.ALPHA1, end: GridPlacement.GAMMA1, t: "α→γ" },
       tag: "CLOSE",
       cells: [
         {
@@ -228,7 +228,7 @@
     {
       x: 334.9,
       y: 325.5,
-      label: { start: GridPosition.BETA1, end: GridPosition.GAMMA1, t: "β→γ" },
+      label: { start: GridPlacement.BETA1, end: GridPlacement.GAMMA1, t: "β→γ" },
       tag: "OPEN",
       cells: [
         {
@@ -409,7 +409,7 @@
   const PICTO_FLAGS = {
     showGrid: true,
     showTKA: true,
-    showPositions: false,
+    showPlacements: false,
     showReversals: false,
     showTnD: false,
     showElemental: false,
@@ -440,9 +440,9 @@
         aria-label={box.label.t}
         style="height:{15 * S}px"
       >
-        <PositionGlyph
-          startPosition={box.label.start}
-          endPosition={box.label.end}
+        <PlacementGlyph
+          startPlacement={box.label.start}
+          endPlacement={box.label.end}
         />
       </svg>
     </span>

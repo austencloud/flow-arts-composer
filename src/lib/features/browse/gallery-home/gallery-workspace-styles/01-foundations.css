@@ -225,7 +225,7 @@
   background: #fff;
   padding: 4px;
 }
-/* Real start-position pictograph, rendered by PictographContainer in the
+/* Real start-placement pictograph, rendered by PictographContainer in the
      user's live theme (grid + props adapt to light/dark). Square box the
      container fills; scales up on the desktop monument. */
 .drill-ctx .value-pictograph {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import {
     isVisibleMotion,
     type MotionData,
@@ -38,7 +38,7 @@
      *  sequenceData's step refs, path lines follow it — keeping them in sync
      *  with the glyph during step-playback dwells, where the integer boundary
      *  is attributed to the COMPLETED beat rather than the upcoming one. */
-    stepData?: StepData | StartPositionData | null;
+    stepData?: StepData | StartPlacementData | null;
     showLeft?: boolean;
     showRight?: boolean;
     primaryPropColors?: ViewerCustomColorPair;
@@ -79,7 +79,7 @@
     if (stepData) {
       const idx = sequenceData.steps.indexOf(stepData as StepData);
       if (idx >= 0) return sequenceData.steps[idx] ?? null;
-      if (sequenceData.startPosition && stepData === sequenceData.startPosition)
+      if (sequenceData.startPlacement && stepData === sequenceData.startPlacement)
         return null;
     }
     if (stepIndex < 0 || stepIndex >= sequenceData.steps.length) return null;

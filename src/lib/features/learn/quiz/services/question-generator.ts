@@ -233,8 +233,8 @@ function generateValidNextPictographQuestion(
   // Generate initial pictograph (must have START_POS == END_POS)
   const initialPictograph = generateInitialPictograph();
 
-  if (!initialPictograph.endPosition) {
-    throw new Error("Initial pictograph missing endPosition");
+  if (!initialPictograph.endPlacement) {
+    throw new Error("Initial pictograph missing endPlacement");
   }
 
   // Find valid next pictograph (START_POS == initial's END_POS)
@@ -250,7 +250,7 @@ function generateValidNextPictographQuestion(
   const answerOptions: QuizAnswerOption[] = allOptions.map((pictograph) => ({
     id: generateOptionId(),
     content: pictograph,
-    isCorrect: pictograph.startPosition === initialPictograph.endPosition,
+    isCorrect: pictograph.startPlacement === initialPictograph.endPlacement,
   }));
 
   return {
@@ -322,11 +322,11 @@ function generateWrongPictographs(
 
 /**
  * Generate initial pictograph for Lesson 3
- * Must have startPosition === endPosition
+ * Must have startPlacement === endPlacement
  */
 function generateInitialPictograph(): PictographData {
   const validPictographs = allPictographs.filter(
-    (p) => p.startPosition && p.endPosition && p.startPosition === p.endPosition
+    (p) => p.startPlacement && p.endPlacement && p.startPlacement === p.endPlacement
   );
 
   if (validPictographs.length === 0) {
@@ -340,15 +340,15 @@ function generateInitialPictograph(): PictographData {
 
 /**
  * Generate correct next pictograph for Lesson 3
- * Must have startPosition === initialPictograph.endPosition
+ * Must have startPlacement === initialPictograph.endPlacement
  */
 function generateCorrectNextPictograph(initialPictograph: PictographData): PictographData {
-  const endPos = initialPictograph.endPosition;
+  const endPos = initialPictograph.endPlacement;
 
-  const validNextPictographs = allPictographs.filter((p) => p.startPosition === endPos);
+  const validNextPictographs = allPictographs.filter((p) => p.startPlacement === endPos);
 
   if (validNextPictographs.length === 0) {
-    throw new Error(`No valid next pictographs found for endPosition: ${endPos}`);
+    throw new Error(`No valid next pictographs found for endPlacement: ${endPos}`);
   }
 
   return getRandomItem(validNextPictographs);
@@ -356,15 +356,15 @@ function generateCorrectNextPictograph(initialPictograph: PictographData): Picto
 
 /**
  * Generate wrong next pictographs for Lesson 3
- * Must have startPosition !== initialPictograph.endPosition
+ * Must have startPlacement !== initialPictograph.endPlacement
  */
 function generateWrongNextPictographs(
   initialPictograph: PictographData,
   count: number
 ): PictographData[] {
-  const endPos = initialPictograph.endPosition;
+  const endPos = initialPictograph.endPlacement;
 
-  const invalidNextPictographs = allPictographs.filter((p) => p.startPosition !== endPos);
+  const invalidNextPictographs = allPictographs.filter((p) => p.startPlacement !== endPos);
 
   if (invalidNextPictographs.length < count) {
     console.warn(

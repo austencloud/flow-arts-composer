@@ -2,7 +2,7 @@
  * Option Picker State
  *
  * Factory function for creating option picker reactive state.
- * Follows the same pattern as the simplified start position picker.
+ * Follows the same pattern as the simplified start placement picker.
  */
 
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -87,10 +87,10 @@ export function createOptionPickerState(config: OptionPickerStateConfig) {
     const last = sequence[sequence.length - 1];
     return [
       sequence.length,
-      first?.startPosition ?? "x",
+      first?.startPlacement ?? "x",
       getMotionFingerprint(first?.motions?.left),
       getMotionFingerprint(first?.motions?.right),
-      last?.endPosition ?? "x",
+      last?.endPlacement ?? "x",
       getMotionFingerprint(last?.motions?.left),
       getMotionFingerprint(last?.motions?.right),
       gridMode,
@@ -113,8 +113,8 @@ export function createOptionPickerState(config: OptionPickerStateConfig) {
     let filteredResults = [...options];
 
     // Apply continuity filter if enabled
-    // Only apply when we have at least 2 steps (start position + 1 actual beat)
-    // With just a start position, there's no rotation context to compare against
+    // Only apply when we have at least 2 steps (start placement + 1 actual beat)
+    // With just a start placement, there's no rotation context to compare against
     if (isContinuousOnly && currentSequence.length >= 2) {
       const continuousFilter = {
         continuous: true,
@@ -146,8 +146,8 @@ export function createOptionPickerState(config: OptionPickerStateConfig) {
       return; // Prevent concurrent loads
     }
 
-    // Create a sequence ID that includes end position and orientations
-    // This ensures the option picker refreshes when transforms change positions
+    // Create a sequence ID that includes end placement and orientations
+    // This ensures the option picker refreshes when transforms change placements
     const sequenceId = createSequenceId(sequence, gridMode);
 
     if (lastSequenceId === sequenceId) {
@@ -299,8 +299,8 @@ export function createOptionPickerState(config: OptionPickerStateConfig) {
         index: i,
         id: p.id,
         letter: p.letter,
-        startPosition: p.startPosition,
-        endPosition: p.endPosition,
+        startPlacement: p.startPlacement,
+        endPlacement: p.endPlacement,
         ...getMotionDebugData(p),
       })),
       isContinuousOnly,

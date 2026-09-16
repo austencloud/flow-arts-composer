@@ -4,9 +4,9 @@
  * `library-repository.saveSequence` computes the stored identity hash at
  * :424 (`computeHash(sequence)`) but only refreshes the compositional fields at
  * :574 (`ensureComposition(libSeq)`). `ensureComposition` DERIVES a
- * `startPosition` when the incoming sequence has none
- * (`sequence-hydrator.ts:250-254`), and `startPosition` is part of the hash
- * basis at every version (`sequence-content-hasher.ts:extractStartPosition`).
+ * `startPlacement` when the incoming sequence has none
+ * (`sequence-hydrator.ts:250-254`), and `startPlacement` is part of the hash
+ * basis at every version (`sequence-content-hasher.ts:extractStartPlacement`).
  *
  * So save #1 stores hash(document-without-start) next to a document that DOES
  * carry a start. The read path re-derives steps through `hydrate`
@@ -22,12 +22,12 @@
  *
  * ## What is proven here, and what is NOT
  *
- * PROVEN: the ordering defect. Given a sequence with no `startPosition`, the
+ * PROVEN: the ordering defect. Given a sequence with no `startPlacement`, the
  * hash stamped at save time does not describe the document that save writes,
  * and the next read/save cycle produces a different hash.
  *
  * NOT PROVEN: that anything reaches the save path in that shape. The corpus
- * run below strips `startPosition` itself — it is a controlled variable that
+ * run below strips `startPlacement` itself — it is a controlled variable that
  * isolates the MECHANISM across 45 generated sequences, NOT a survey of stored
  * documents and NOT evidence of a current producer. This audit did not find a
  * runtime path that hands `saveSequence` a start-less sequence, and did not
@@ -71,16 +71,16 @@ const withoutStart = () => buildSequence([makeStep(0, "A"), makeStep(1, "B")]);
 const withStart = () => ensureComposition(withoutStart());
 
 describe("content hash operation order (library-repository.saveSequence)", () => {
-  it("measured: a sequence saved with a startPosition keeps one stable identity", async () => {
+  it("measured: a sequence saved with a startPlacement keeps one stable identity", async () => {
     const sequence = withStart();
-    expect(sequence.startPosition).toBeDefined();
+    expect(sequence.startPlacement).toBeDefined();
     expect(await hashAfterReadBack(sequence)).toBe(await hashAsSaved(sequence));
   });
 
-  it("measured: a sequence saved WITHOUT a startPosition gains one during the same save", async () => {
+  it("measured: a sequence saved WITHOUT a startPlacement gains one during the same save", async () => {
     const sequence = withoutStart();
-    expect(sequence.startPosition).toBeUndefined();
-    expect(ensureComposition(sequence).startPosition).toBeDefined();
+    expect(sequence.startPlacement).toBeUndefined();
+    expect(ensureComposition(sequence).startPlacement).toBeDefined();
   });
 
   it("measured: the stored hash therefore stops matching the document it describes", async () => {
@@ -91,7 +91,7 @@ describe("content hash operation order (library-repository.saveSequence)", () =>
   });
 
   it.fails(
-    "SHOULD PASS AFTER FIX: hashing a startPosition-less sequence survives one save/read/save cycle",
+    "SHOULD PASS AFTER FIX: hashing a startPlacement-less sequence survives one save/read/save cycle",
     async () => {
       const sequence = withoutStart();
       expect(await hashAfterReadBack(sequence)).toBe(
@@ -119,7 +119,7 @@ describe("content hash operation order (library-repository.saveSequence)", () =>
       }
       const stripped = {
         ...sequence,
-        startPosition: undefined,
+        startPlacement: undefined,
       } as SequenceData;
       if (
         (await hashAfterReadBack(stripped)) !== (await hashAsSaved(stripped))
@@ -138,7 +138,7 @@ describe("content hash operation order (library-repository.saveSequence)", () =>
     // Recorded so the 45/45 number above can never be read as prevalence.
     const corpus = realCorpusSequences();
     expect(
-      corpus.every(({ sequence }) => sequence.startPosition !== undefined)
+      corpus.every(({ sequence }) => sequence.startPlacement !== undefined)
     ).toBe(true);
   });
 });

@@ -7,7 +7,7 @@ import type { SequenceStep } from "../../../src/core/types/sequence-engine-types
 // motions are pro/anti (so inversion is observable). Build hand-rolled steps
 // with the fields the executors touch (motions, positions, stepNumber, letter).
 function step(n: number, letter: string, sp: string, ep: string, left: any, right: any): SequenceStep {
-  return { stepNumber: n, letter, startPosition: sp, endPosition: ep, motions: { left, right } } as unknown as SequenceStep;
+  return { stepNumber: n, letter, startPlacement: sp, endPlacement: ep, motions: { left, right } } as unknown as SequenceStep;
 }
 const m = (motionType: string, rotationDirection: string, startLocation: string, endLocation: string) => ({
   motionType, rotationDirection, startLocation, endLocation,

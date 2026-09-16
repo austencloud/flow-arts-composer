@@ -1,7 +1,7 @@
 /**
  * In-place motion for the shared prop placement grid.
  *
- * When a start-position location change commits (rotate arrows in the step
+ * When a start-placement location change commits (rotate arrows in the step
  * editor), the grid plays the move instead of snapping: the moving prop
  * travels a pro-with-zero-turns arc around the grid center and the partner
  * prop glides out of (or into) its beta offset. The animation is pure

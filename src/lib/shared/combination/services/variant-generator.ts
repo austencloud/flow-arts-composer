@@ -36,7 +36,7 @@ import {
   rotateSequence,
   swapHands,
 } from "$lib/shared/create/services/sequence-transformer";
-import { createStartPositionFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import {
   updateSequenceData,
@@ -259,8 +259,8 @@ function reverseStep(step: StepData, stepNumber: number): StepData {
     ...step,
     id: `${step.id}~twin`,
     stepNumber,
-    startPosition: step.endPosition,
-    endPosition: step.startPosition,
+    startPlacement: step.endPlacement,
+    endPlacement: step.startPlacement,
     // A carried-over letter would be a lie (a G on an anti step). Null after
     // derivation means the reversed configuration is not a dataframe row.
     letter: null,
@@ -281,7 +281,7 @@ function reverseStep(step: StepData, stepNumber: number): StepData {
  * This models Austen's FLGGFLHH card — the prop rotation flows continuously
  * while the hand path reverses, and the G-run reads as an H-run as a
  * consequence. Concretely: reverse the step order, swap each step's start/end
- * position, swap each motion's start/end location and orientation, KEEP each
+ * placement, swap each motion's start/end location and orientation, KEEP each
  * motion's `rotationDirection`, then re-derive `motionType` and the letters.
  *
  * Proven against the fixtures: `buildRotationFaithfulTwin(GGGG_CW)`
@@ -294,7 +294,7 @@ function reverseStep(step: StepData, stepNumber: number): StepData {
  * Flipping only the type while holding both rotation and locations is
  * impossible: that pair of rows does not exist in the dataframe.
  *
- * Involution: applying it twice restores the original positions, locations,
+ * Involution: applying it twice restores the original placements, locations,
  * rotations, orientations and step numbers.
  */
 export async function buildRotationFaithfulTwin(
@@ -313,14 +313,14 @@ export async function buildRotationFaithfulTwin(
   const twin = normalizeSequence(lettered, true);
 
   const first = twin.steps[0];
-  const hold = first ? createStartPositionFromBeatStart(first) : undefined;
+  const hold = first ? createStartPlacementFromBeatStart(first) : undefined;
 
   return updateSequenceData(twin, {
     word: deriveWordFromBeats(twin.steps),
-    ...(hold && { startPosition: hold }),
+    ...(hold && { startPlacement: hold }),
     ...(hold &&
-      seq.startingPosition !== undefined && {
-        startingPosition: hold,
+      seq.startingPlacement !== undefined && {
+        startingPlacement: hold,
       }),
   });
 }
@@ -378,12 +378,12 @@ function stampIdentity(
   return stamped;
 }
 
-/** Letter + positions + per-hand locations, rotations and motion types. */
+/** Letter + placements + per-hand locations, rotations and motion types. */
 function stepSignature(step: StepData): string {
   return [
     step.letter ?? "-",
-    step.startPosition ?? "-",
-    step.endPosition ?? "-",
+    step.startPlacement ?? "-",
+    step.endPlacement ?? "-",
     ...HANDS.map((hand) => {
       const m = step.motions[hand];
       return `${hand}:${m.motionType}:${m.rotationDirection}:${m.startLocation}>${m.endLocation}`;

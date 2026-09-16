@@ -328,8 +328,8 @@
       <StepGrid
         bind:this={gridRef}
         steps={previewSequence?.steps ?? []}
-        startPosition={previewSequence?.startPosition ??
-          previewSequence?.startingPosition ??
+        startPlacement={previewSequence?.startPlacement ??
+          previewSequence?.startingPlacement ??
           null}
         selectedStepNumber={activeStepNumber}
         autoFocusSelectedStep={false}

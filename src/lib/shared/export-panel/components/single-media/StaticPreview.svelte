@@ -39,7 +39,7 @@
   // Local reactive copies of settings (for UI)
   let addWord = $state(imageSettings.addWord);
   let addStepNumbers = $state(imageSettings.addStepNumbers);
-  let includeStartPosition = $state(imageSettings.includeStartPosition);
+  let includeStartPlacement = $state(imageSettings.includeStartPlacement);
   let addDifficultyLevel = $state(imageSettings.addDifficultyLevel);
   let showNotes = $state(imageSettings.showNotes);
   let darkMode = $state(imageSettings.darkMode);
@@ -71,7 +71,7 @@
     const updateFromManager = () => {
       addWord = imageSettings.addWord;
       addStepNumbers = imageSettings.addStepNumbers;
-      includeStartPosition = imageSettings.includeStartPosition;
+      includeStartPlacement = imageSettings.includeStartPlacement;
       addDifficultyLevel = imageSettings.addDifficultyLevel;
       showNotes = imageSettings.showNotes;
       darkMode = imageSettings.darkMode;
@@ -89,7 +89,7 @@
     // Track all settings for reactivity
     const _word = addWord;
     const _beats = addStepNumbers;
-    const _start = includeStartPosition;
+    const _start = includeStartPlacement;
     const _diff = addDifficultyLevel;
     const _notes = showNotes;
     const _darkMode = darkMode;
@@ -113,7 +113,7 @@
         backgroundColor: _darkMode ? "#0a0a0f" : "#FFFFFF",
         quality: 1.0,
         stepScale: 1.0,
-        includeStartPosition: _start,
+        includeStartPlacement: _start,
         addStepNumbers: _beats,
         addWord: _word,
         addUserInfo: _notes,
@@ -151,8 +151,8 @@
     imageSettings.toggle("addStepNumbers");
   }
 
-  function toggleStartPosition() {
-    imageSettings.toggle("includeStartPosition");
+  function toggleStartPlacement() {
+    imageSettings.toggle("includeStartPlacement");
   }
 
   function toggleDifficulty() {
@@ -226,8 +226,8 @@
       label="Start Pos"
       mode="toggle"
       size="sm"
-      active={includeStartPosition}
-      onclick={toggleStartPosition}
+      active={includeStartPlacement}
+      onclick={toggleStartPlacement}
     />
     <FilterChipBase
       label="Difficulty"

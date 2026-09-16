@@ -74,7 +74,7 @@
         showGlyph={visibility?.showGlyph}
         showGrid={visibility?.showGrid}
         showTKA={visibility?.showTKA}
-        showPositions={visibility?.showPositions}
+        showPlacements={visibility?.showPlacements}
         showReversals={visibility?.showReversals}
         showNonRadialPoints={visibility?.showNonRadialPoints}
         dataOverride={getData?.(cell.id)}

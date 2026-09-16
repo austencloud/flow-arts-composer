@@ -150,7 +150,7 @@ function createArrangeGridState() {
   let gridCols = $state(initialConfig.gridCols);
   let selectedCellId = $state<string | null>(null);
   let showSequencePicker = $state(false);
-  let skipStartPosition = $state(true);
+  let skipStartPlacement = $state(true);
 
   let clipboard = $state<{
     layers: {
@@ -281,7 +281,7 @@ function createArrangeGridState() {
   }
 
   function getTotalBeats(): number {
-    return calculateTotalBeats(cells, skipStartPosition, gridRows, gridCols);
+    return calculateTotalBeats(cells, skipStartPlacement, gridRows, gridCols);
   }
 
   function applySpanningPreset(
@@ -432,8 +432,8 @@ function createArrangeGridState() {
     get totalSteps() {
       return getTotalBeats();
     },
-    get skipStartPosition() {
-      return skipStartPosition;
+    get skipStartPlacement() {
+      return skipStartPlacement;
     },
     get hasAnyLayers() {
       return cells.some(
@@ -1099,8 +1099,8 @@ function createArrangeGridState() {
       startPlaybackPolling();
     },
 
-    toggleSkipStartPosition() {
-      skipStartPosition = !skipStartPosition;
+    toggleSkipStartPlacement() {
+      skipStartPlacement = !skipStartPlacement;
       playbackEngine.setCurrentBeat(0);
     },
 
@@ -1302,7 +1302,7 @@ function createArrangeGridState() {
       return serializeGrid({
         cells: this.visibleCells.filter((c) => c.layers.length > 0),
         bpm: playbackBpm,
-        skipStartPosition,
+        skipStartPlacement,
         gridRows,
         gridCols,
       });
@@ -1316,7 +1316,7 @@ function createArrangeGridState() {
         gridRows,
         gridCols,
         bpm: playbackBpm,
-        skipStartPosition,
+        skipStartPlacement,
       });
       await compositionSyncer.saveComposition(composition);
       return id;
@@ -1332,7 +1332,7 @@ function createArrangeGridState() {
         gridRows = restored.gridRows;
         gridCols = restored.gridCols;
         playbackEngine.setBpm(restored.bpm);
-        skipStartPosition = restored.skipStartPosition;
+        skipStartPlacement = restored.skipStartPlacement;
         selectedCellId = null;
         playbackEngine.stop();
         save();

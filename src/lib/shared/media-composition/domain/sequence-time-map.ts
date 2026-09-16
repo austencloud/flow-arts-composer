@@ -163,7 +163,7 @@ export interface TempoGridTimeMapInput {
   mediaSourceId: string;
   mediaDurationSeconds: number;
   motionDurations: readonly number[];
-  startPositionDuration?: number;
+  startPlacementDuration?: number;
   id?: string;
   updatedAt?: number;
 }
@@ -182,7 +182,7 @@ export function createTempoGridTimeMap(
     mediaSourceId,
     mediaDurationSeconds,
     motionDurations,
-    startPositionDuration = 1,
+    startPlacementDuration = 1,
     id = `${mediaSourceId}:tempo-grid:v1`,
     updatedAt = Date.now(),
   } = input;
@@ -190,7 +190,7 @@ export function createTempoGridTimeMap(
   if (!Number.isFinite(mediaDurationSeconds) || mediaDurationSeconds <= 0) {
     throw new RangeError("Media duration must be a positive finite number");
   }
-  if (!Number.isFinite(startPositionDuration) || startPositionDuration <= 0) {
+  if (!Number.isFinite(startPlacementDuration) || startPlacementDuration <= 0) {
     throw new RangeError(
       "Start-position duration must be a positive finite number"
     );
@@ -207,12 +207,12 @@ export function createTempoGridTimeMap(
   }
 
   const totalUnits =
-    startPositionDuration +
+    startPlacementDuration +
     motionDurations.reduce((total, duration) => total + duration, 0);
   const anchors: SequenceTimeAnchor[] = [
     { mediaTimeSeconds: 0, sequencePosition: 0 },
   ];
-  let elapsedUnits = startPositionDuration;
+  let elapsedUnits = startPlacementDuration;
   anchors.push({
     mediaTimeSeconds: (elapsedUnits / totalUnits) * mediaDurationSeconds,
     sequencePosition: 1,

@@ -21,7 +21,7 @@
       <PictographContainer
         pictographData={pictograph}
         showTKA={false}
-        showPositions={true}
+        showPlacements={true}
         disableTransitions={true}
       />
     {:else}
@@ -29,7 +29,7 @@
     {/if}
   </div>
   <strong class="letter-label">{letter}</strong>
-  <span class="position-label">{detail}</span>
+  <span class="placement-label">{detail}</span>
 </div>
 
 <style>
@@ -72,7 +72,7 @@
     line-height: 1.1;
   }
 
-  .position-label {
+  .placement-label {
     min-height: 2.5em;
     color: var(--theme-text-dim);
     font-size: var(--font-size-compact, 12px);

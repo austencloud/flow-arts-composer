@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import OptionPickerDesktopLayoutHarness from "./OptionPickerDesktopLayoutHarness.svelte";
 
 /**
- * Choosing a start position expands the workspace, and StandardWorkspaceLayout
+ * Choosing a start placement expands the workspace, and StandardWorkspaceLayout
  * eases its grid columns over 450ms to do it. The picker mounts on the first
  * frame of that ease, so its first measurement is the panel's PRE-expansion
  * width. Committing that width opened the 8-column desktop grid inside a panel

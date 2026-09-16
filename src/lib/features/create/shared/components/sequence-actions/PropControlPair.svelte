@@ -174,7 +174,7 @@
     letter-spacing: 0.75px;
   }
 
-  /* Start-position cards have named fields beneath this heading. Giving the
+  /* Start-placement cards have named fields beneath this heading. Giving the
      prop name the stronger tier keeps Left/Right above Location/Orientation in
      the reading order without changing the compact controls used elsewhere. */
   .prop-pair.prominent-labels .prop-label {

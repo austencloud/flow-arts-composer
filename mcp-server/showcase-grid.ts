@@ -11,8 +11,8 @@ const pictographs = [
     name: "A - Water (SS)",
     data: {
       letter: "A",
-      startPosition: "alpha3",
-      endPosition: "alpha5",
+      startPlacement: "alpha3",
+      endPlacement: "alpha5",
       leftMotion: {
         motionType: "pro",
         rotationDirection: "cw",
@@ -35,8 +35,8 @@ const pictographs = [
     name: "D - Fire (SO)",
     data: {
       letter: "D",
-      startPosition: "beta3",
-      endPosition: "alpha5",
+      startPlacement: "beta3",
+      endPlacement: "alpha5",
       leftMotion: {
         motionType: "pro",
         rotationDirection: "ccw",
@@ -59,8 +59,8 @@ const pictographs = [
     name: "G - Earth (TS)",
     data: {
       letter: "G",
-      startPosition: "beta3",
-      endPosition: "beta5",
+      startPlacement: "beta3",
+      endPlacement: "beta5",
       leftMotion: {
         motionType: "pro",
         rotationDirection: "cw",
@@ -83,8 +83,8 @@ const pictographs = [
     name: "J - Air (TO)",
     data: {
       letter: "J",
-      startPosition: "alpha3",
-      endPosition: "beta5",
+      startPlacement: "alpha3",
+      endPlacement: "beta5",
       leftMotion: {
         motionType: "pro",
         rotationDirection: "ccw",
@@ -107,8 +107,8 @@ const pictographs = [
     name: "S - Sun (QS)",
     data: {
       letter: "S",
-      startPosition: "gamma3",
-      endPosition: "gamma5",
+      startPlacement: "gamma3",
+      endPlacement: "gamma5",
       leftMotion: {
         motionType: "pro",
         rotationDirection: "cw",
@@ -131,8 +131,8 @@ const pictographs = [
     name: "M - Moon (QO)",
     data: {
       letter: "M",
-      startPosition: "gamma3",
-      endPosition: "gamma13",
+      startPlacement: "gamma3",
+      endPlacement: "gamma13",
       leftMotion: {
         motionType: "pro",
         rotationDirection: "ccw",
@@ -175,7 +175,7 @@ async function main() {
       showTKA: true,
       showTND: true,
       showElemental: true,
-      showPositions: true,
+      showPlacements: true,
       showGrid: true,
       showLeftMotion: true,
       showRightMotion: true,

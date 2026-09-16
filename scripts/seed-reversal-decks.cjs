@@ -131,8 +131,8 @@ function lookupLetterForStep(step) {
 
   const match = csvEdges.find(
     (e) =>
-      e.startPosition === step.startPosition &&
-      e.endPosition === step.endPosition &&
+      e.startPlacement === step.startPlacement &&
+      e.endPlacement === step.endPlacement &&
       e.leftMotionType === left.motionType &&
       e.leftStartLocation === left.startLocation &&
       e.leftEndLocation === left.endLocation &&
@@ -154,7 +154,7 @@ function lookupLetterForStep(step) {
  * a running state. This preserves the invariant that rotated copies of
  * the same seed beat always share the same motion type after reversal.
  */
-function applyReversalToSequence(steps, patternId, startPosition) {
+function applyReversalToSequence(steps, patternId, startPlacement) {
   const pattern = REVERSAL_PATTERNS[patternId];
   const seq = pattern.sequence;
 
@@ -168,7 +168,7 @@ function applyReversalToSequence(steps, patternId, startPosition) {
   let beatIndex = 0;
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
-    if (step.isStartPosition) continue;
+    if (step.isStartPlacement) continue;
 
     const left = step.motions?.left;
     const right = step.motions?.right;
@@ -215,7 +215,7 @@ function applyReversalToSequence(steps, patternId, startPosition) {
   }
 
   // Recalculate orientations through the chain (baselined from the start position)
-  recalcOrientations(steps, startPosition);
+  recalcOrientations(steps, startPlacement);
 
   return steps;
 }
@@ -231,11 +231,11 @@ function applyReversalToSequence(steps, patternId, startPosition) {
  * and never recomputed the first beat, leaving it with stale pre-reversal data
  * that then cascaded down the whole chain.
  */
-function recalcOrientations(steps, startPosition) {
-  const beats = steps.filter((s) => !s.isStartPosition);
+function recalcOrientations(steps, startPlacement) {
+  const beats = steps.filter((s) => !s.isStartPlacement);
 
-  let prevLeftEnd = startPosition?.motions?.left?.endOrientation ?? "in";
-  let prevRightEnd = startPosition?.motions?.right?.endOrientation ?? "in";
+  let prevLeftEnd = startPlacement?.motions?.left?.endOrientation ?? "in";
+  let prevRightEnd = startPlacement?.motions?.right?.endOrientation ?? "in";
 
   for (const step of beats) {
     const left = step.motions?.left;
@@ -311,10 +311,10 @@ async function main() {
       const steps = cloned.steps || [];
 
       // Apply reversal
-      applyReversalToSequence(steps, patternId, cloned.startPosition);
+      applyReversalToSequence(steps, patternId, cloned.startPlacement);
 
       // Recompute word from new letters
-      const beatSteps = steps.filter((s) => !s.isStartPosition);
+      const beatSteps = steps.filter((s) => !s.isStartPlacement);
       const word = beatSteps.map((s) => s.letter).join("");
 
       cloned.word = word;

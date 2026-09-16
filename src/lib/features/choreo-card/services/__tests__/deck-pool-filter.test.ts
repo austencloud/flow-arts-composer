@@ -50,16 +50,16 @@ describe("buildSequencePool filters", () => {
     expect([...pool.values()].flat()).toHaveLength(2);
   });
 
-  it("filters by start-position id subset", () => {
+  it("filters by start-placement id subset", () => {
     const cat = loopCatalog({ id: "sp", loopType: "rotated" }, ["alpha1_AB", "beta3_CD"]);
-    const pool = buildSequencePool([cat], { sliceTypes: slice, startPositionIds: new Set(["alpha1"]) });
+    const pool = buildSequencePool([cat], { sliceTypes: slice, startPlacementIds: new Set(["alpha1"]) });
     const words = [...pool.values()].flat().map((e) => e.sequenceId);
     expect(words).toEqual(["alpha1_AB"]);
   });
 
-  it("parses startPosition from the seqId prefix", () => {
+  it("parses startPlacement from the seqId prefix", () => {
     const cat = loopCatalog({ id: "sp" }, ["beta3_XY"]);
     const pool = buildSequencePool([cat], { sliceTypes: slice });
-    expect([...pool.values()].flat()[0]?.startPosition).toEqual("beta3");
+    expect([...pool.values()].flat()[0]?.startPlacement).toEqual("beta3");
   });
 });

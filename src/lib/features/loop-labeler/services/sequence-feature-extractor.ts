@@ -16,8 +16,8 @@ import type {
 } from "../domain/models/sequence-features";
 import { createDefaultSequenceFeatures } from "../domain/models/sequence-features";
 import {
-  GridPositionGroup,
-  type GridPosition,
+  GridPlacementGroup,
+  type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   MotionType,
@@ -213,8 +213,8 @@ export class SequenceFeatureExtractor {
 
     for (const step of validSteps) {
       // Count start positions
-      if (step.startPosition) {
-        const group = this.getPositionGroup(step.startPosition);
+      if (step.startPlacement) {
+        const group = this.getPlacementGroup(step.startPlacement);
         this.incrementGroupCount(
           group,
           () => alphaCount++,
@@ -225,8 +225,8 @@ export class SequenceFeatureExtractor {
       }
 
       // Count end positions
-      if (step.endPosition) {
-        const group = this.getPositionGroup(step.endPosition);
+      if (step.endPlacement) {
+        const group = this.getPlacementGroup(step.endPlacement);
         this.incrementGroupCount(
           group,
           () => alphaCount++,
@@ -263,17 +263,17 @@ export class SequenceFeatureExtractor {
       alphaPercent <= 40 && betaPercent <= 40 && gammaPercent <= 40;
 
     // Determine primary group
-    let primaryGroup: GridPositionGroup | null = null;
+    let primaryGroup: GridPlacementGroup | null = null;
     if (alphaCount >= betaCount && alphaCount >= gammaCount && alphaCount > 0) {
-      primaryGroup = GridPositionGroup.ALPHA;
+      primaryGroup = GridPlacementGroup.ALPHA;
     } else if (
       betaCount >= alphaCount &&
       betaCount >= gammaCount &&
       betaCount > 0
     ) {
-      primaryGroup = GridPositionGroup.BETA;
+      primaryGroup = GridPlacementGroup.BETA;
     } else if (gammaCount > 0) {
-      primaryGroup = GridPositionGroup.GAMMA;
+      primaryGroup = GridPlacementGroup.GAMMA;
     }
 
     return {
@@ -301,17 +301,17 @@ export class SequenceFeatureExtractor {
     let hasGamma = false;
 
     for (const step of steps) {
-      if (step.startPosition) {
-        const group = this.getPositionGroup(step.startPosition);
-        if (group === GridPositionGroup.ALPHA) hasAlpha = true;
-        if (group === GridPositionGroup.BETA) hasBeta = true;
-        if (group === GridPositionGroup.GAMMA) hasGamma = true;
+      if (step.startPlacement) {
+        const group = this.getPlacementGroup(step.startPlacement);
+        if (group === GridPlacementGroup.ALPHA) hasAlpha = true;
+        if (group === GridPlacementGroup.BETA) hasBeta = true;
+        if (group === GridPlacementGroup.GAMMA) hasGamma = true;
       }
-      if (step.endPosition) {
-        const group = this.getPositionGroup(step.endPosition);
-        if (group === GridPositionGroup.ALPHA) hasAlpha = true;
-        if (group === GridPositionGroup.BETA) hasBeta = true;
-        if (group === GridPositionGroup.GAMMA) hasGamma = true;
+      if (step.endPlacement) {
+        const group = this.getPlacementGroup(step.endPlacement);
+        if (group === GridPlacementGroup.ALPHA) hasAlpha = true;
+        if (group === GridPlacementGroup.BETA) hasBeta = true;
+        if (group === GridPlacementGroup.GAMMA) hasGamma = true;
       }
 
       // Early exit if all found
@@ -366,36 +366,36 @@ export class SequenceFeatureExtractor {
     return sequence.steps.filter((step) => !step.isBlank);
   }
 
-  private getPositionGroup(position: GridPosition): GridPositionGroup | null {
+  private getPlacementGroup(position: GridPlacement): GridPlacementGroup | null {
     const posStr = position.toString().toLowerCase();
 
     if (posStr.startsWith("alpha")) {
-      return GridPositionGroup.ALPHA;
+      return GridPlacementGroup.ALPHA;
     }
     if (posStr.startsWith("beta")) {
-      return GridPositionGroup.BETA;
+      return GridPlacementGroup.BETA;
     }
     if (posStr.startsWith("gamma")) {
-      return GridPositionGroup.GAMMA;
+      return GridPlacementGroup.GAMMA;
     }
 
     return null;
   }
 
   private incrementGroupCount(
-    group: GridPositionGroup | null,
+    group: GridPlacementGroup | null,
     incAlpha: () => void,
     incBeta: () => void,
     incGamma: () => void
   ): void {
     switch (group) {
-      case GridPositionGroup.ALPHA:
+      case GridPlacementGroup.ALPHA:
         incAlpha();
         break;
-      case GridPositionGroup.BETA:
+      case GridPlacementGroup.BETA:
         incBeta();
         break;
-      case GridPositionGroup.GAMMA:
+      case GridPlacementGroup.GAMMA:
         incGamma();
         break;
     }

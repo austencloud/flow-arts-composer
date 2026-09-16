@@ -51,7 +51,7 @@
   </p>
 
   {#if step === 1 && gridPhase === "merged"}
-    <p class="secondary">We'll use this grid to learn hand positions.</p>
+    <p class="secondary">We'll use this grid to learn hand placements.</p>
   {/if}
 </LessonStageHeading>
 

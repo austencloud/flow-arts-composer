@@ -6,9 +6,9 @@ import { shuffleArray } from "./shared-types";
 
 export type HandPosition = "N" | "E" | "S" | "W";
 export type ThumbOrientation = "in" | "out";
-export { type PositionType } from "./shared-types";
+export { type PlacementType } from "./shared-types";
 export type RotationType = "prospin" | "antispin" | "none";
-export type QuestionType = "position" | "thumb" | "rotation";
+export type QuestionType = "placement" | "thumb" | "rotation";
 
 export interface StaffQuizQuestion {
   type: QuestionType;
@@ -56,49 +56,49 @@ export function getAnswerInfo(answer: string): AnswerInfo {
 export function generateStaffQuizQuestions(): StaffQuizQuestion[] {
   const q: StaffQuizQuestion[] = [];
 
-  // Position identification questions (4 questions)
+  // Placement identification questions (4 questions)
   q.push({
-    type: "position",
+    type: "placement",
     leftPos: "N",
     rightPos: "S",
     leftThumb: "in",
     rightThumb: "in",
     correctAnswer: "alpha",
     options: ["alpha", "beta", "gamma"],
-    questionText: "What position type is shown?",
+    questionText: "What placement type is shown?",
   });
 
   q.push({
-    type: "position",
+    type: "placement",
     leftPos: "E",
     rightPos: "E",
     leftThumb: "in",
     rightThumb: "in",
     correctAnswer: "beta",
     options: ["alpha", "beta", "gamma"],
-    questionText: "What position type is shown?",
+    questionText: "What placement type is shown?",
   });
 
   q.push({
-    type: "position",
+    type: "placement",
     leftPos: "N",
     rightPos: "E",
     leftThumb: "in",
     rightThumb: "in",
     correctAnswer: "gamma",
     options: ["alpha", "beta", "gamma"],
-    questionText: "What position type is shown?",
+    questionText: "What placement type is shown?",
   });
 
   q.push({
-    type: "position",
+    type: "placement",
     leftPos: "W",
     rightPos: "S",
     leftThumb: "out",
     rightThumb: "out",
     correctAnswer: "gamma",
     options: ["alpha", "beta", "gamma"],
-    questionText: "What position type is shown?",
+    questionText: "What placement type is shown?",
   });
 
   // Thumb orientation questions (2 questions)

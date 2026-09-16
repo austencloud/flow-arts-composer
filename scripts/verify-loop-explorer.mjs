@@ -26,7 +26,7 @@
  * src/lib/shared/foundation/services/sequence-loopability-checker.ts, which
  * is SvelteKit-alias-resolved ($lib) app code, not reachable from a plain
  * Node script without a Vite/SvelteKit runtime. This harness approximates it:
- * position closure (first step startPosition === last step endPosition) AND
+ * position closure (first step startPlacement === last step endPlacement) AND
  * orientation closure (first letter step's start orientation === last step's
  * end orientation, both hands) computed directly off the generated
  * SequenceStep array. This is the same two conditions isSeamlesslyLoopable
@@ -174,8 +174,8 @@ function generateOne({ appLoopType, components, period, length, level, allPictog
   const buildOptions = assembleBuildOptions({ appLoopType, components, period, length, level, allPictographs });
   const buildResult = builder.build(buildOptions);
 
-  // The engine returns step 0 = the start-position pseudo-step (stepNumber 0,
-  // startPosition === endPosition, real letter steps follow with stepNumber
+  // The engine returns step 0 = the start-placement pseudo-step (stepNumber 0,
+  // startPlacement === endPlacement, real letter steps follow with stepNumber
   // 1..n). Both engine detectors (LOOPDetectorClass, detectLOOPFromSteps)
   // expect EXACTLY this shape — see LOOPDetector.js docstring: "Takes an
   // array of SequenceStep where step 0 is the start position". So the raw
@@ -191,7 +191,7 @@ function isApproxSeamlesslyLoopable(rawSteps) {
   if (rawSteps.length < 2) return false;
   const startStep = rawSteps[0]; // stepNumber 0, the declared start position + orientation
   const last = rawSteps[rawSteps.length - 1];
-  if (startStep.startPosition !== last.endPosition) return false;
+  if (startStep.startPlacement !== last.endPlacement) return false;
   const orientClose = (hand) =>
     startStep.motions[hand]?.startOrientation === last.motions[hand]?.endOrientation;
   return orientClose("blue") && orientClose("red");
@@ -315,11 +315,11 @@ for (const combo of COMBOS) {
           const word = letterSteps.map((s) => s.letter).join("");
           curatedSeeds[combo.appLoopType][slice].push({
             word,
-            startPosition: rawSteps[0].startPosition,
+            startPlacement: rawSteps[0].startPlacement,
             steps: letterSteps.map((s) => ({
               letter: s.letter,
-              startPosition: s.startPosition,
-              endPosition: s.endPosition,
+              startPlacement: s.startPlacement,
+              endPlacement: s.endPlacement,
               stepNumber: s.stepNumber,
               leftMotion: s.motions.left,
               rightMotion: s.motions.right,

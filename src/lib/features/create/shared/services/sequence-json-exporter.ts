@@ -1,6 +1,6 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 
 export interface MinimalMotion {
@@ -40,12 +40,12 @@ export interface MinimalSequence {
   word: string;
   isCircular: boolean;
   gridMode: string;
-  startPosition: MinimalStep | null;
+  startPlacement: MinimalStep | null;
   steps: (MinimalStep | null)[];
 }
 
 /** Union type for beat-like objects that can be exported */
-type StepLike = StepData | StartPositionData | null | undefined;
+type StepLike = StepData | StartPlacementData | null | undefined;
 
 /**
  * Exports sequences to minimal JSON format for debugging/admin use.
@@ -67,13 +67,13 @@ function minimalMotion(motion: MotionData | null | undefined): MinimalMotion | n
 
 function minimalStep(beat: StepLike): MinimalStep | null {
   if (!beat) return null;
-  // Handle both StepData (has stepNumber) and StartPositionData (no stepNumber)
+  // Handle both StepData (has stepNumber) and StartPlacementData (no stepNumber)
   const stepNumber = "stepNumber" in beat ? beat.stepNumber : 0;
   return {
     step: stepNumber ?? 0,
     letter: beat.letter || "",
-    startPos: beat.startPosition || "",
-    endPos: beat.endPosition || "",
+    startPos: beat.startPlacement || "",
+    endPos: beat.endPlacement || "",
     left: minimalMotion(beat.motions?.left),
     right: minimalMotion(beat.motions?.right),
   };
@@ -82,8 +82,8 @@ function minimalStep(beat: StepLike): MinimalStep | null {
 export function toMinimalJson(sequence: SequenceData): MinimalSequence {
   return {
     key: {
-      startPos: "position = combination of both hand locations (e.g. gamma1, alpha3)",
-      endPos: "position at end of step",
+      startPos: "placement = combination of both hand locations (e.g. gamma1, alpha3)",
+      endPos: "placement at end of step",
       startLoc: "single hand grid location (n/e/s/w)",
       endLoc: "hand grid location at end of motion",
       startOri: "prop orientation at start (in/out/cw/ccw)",
@@ -96,8 +96,8 @@ export function toMinimalJson(sequence: SequenceData): MinimalSequence {
     word: sequence.word || "",
     isCircular: sequence.isCircular || false,
     gridMode: sequence.gridMode || "",
-    startPosition: minimalStep(
-      sequence.startPosition || sequence.startingPosition
+    startPlacement: minimalStep(
+      sequence.startPlacement || sequence.startingPlacement
     ),
     steps: (sequence.steps || []).map((step) => minimalStep(step)),
   };

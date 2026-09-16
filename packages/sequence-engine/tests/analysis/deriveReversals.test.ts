@@ -29,7 +29,7 @@ import {
   createStep,
   createStartStep,
   createMotion,
-  GridPosition,
+  GridPlacement,
   GridLocation,
   MotionType,
   RotationDirection,
@@ -89,8 +89,8 @@ function mkStep(
   return createStep({
     id: `s${++stepId}`,
     letter: Letter.A,
-    startPosition: GridPosition.alpha1,
-    endPosition: GridPosition.alpha3,
+    startPlacement: GridPlacement.alpha1,
+    endPlacement: GridPlacement.alpha3,
     motions: { left, right },
     stepNumber,
     duration: 1,
@@ -107,13 +107,13 @@ describe("deriveReversals — basics", () => {
     expect(deriveReversals([])).toEqual([]);
   });
 
-  it("marks the start-position step (stepNumber 0) as no reversal", () => {
-    const start = createStartStep(GridPosition.alpha1);
+  it("marks the start-placement step (stepNumber 0) as no reversal", () => {
+    const start = createStartStep(GridPlacement.alpha1);
     expect(deriveReversals([start])).toEqual([{ left: NONE, right: NONE }]);
   });
 
   it("marks the first real step as no reversal (nothing to reverse against)", () => {
-    const start = createStartStep(GridPosition.alpha1);
+    const start = createStartStep(GridPlacement.alpha1);
     const s1 = mkStep(1, proWN("left"), parked("right"));
     expect(deriveReversals([start, s1])).toEqual([
       { left: NONE, right: NONE },

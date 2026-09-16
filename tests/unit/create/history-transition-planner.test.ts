@@ -104,7 +104,7 @@ describe("history transition planner", () => {
     expect(result.kind).toBe("content");
   });
 
-  it("classifies blank-state and pictograph-position consequences", () => {
+  it("classifies blank-state and pictograph-placement consequences", () => {
     const original = createStepData({
       id: "visibility",
       stepNumber: 1,
@@ -113,7 +113,7 @@ describe("history transition planner", () => {
     const changed = createStepData({
       ...original,
       isBlank: true,
-      startPosition: "alpha1",
+      startPlacement: "alpha1",
     });
 
     const result = plan(sequence([original]), sequence([changed]));

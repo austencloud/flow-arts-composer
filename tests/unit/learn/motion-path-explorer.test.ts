@@ -208,7 +208,7 @@ describe("motion path guide isolation", () => {
           expect(current.endLocation).toBe(next.startLocation);
           expect(current.endOrientation).toBe(next.startOrientation);
         }
-        expect(sequence.startPosition!.motions[hand].endLocation).toBe(
+        expect(sequence.startPlacement!.motions[hand].endLocation).toBe(
           motions[0]!.startLocation
         );
       }

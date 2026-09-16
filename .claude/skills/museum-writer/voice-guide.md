@@ -34,7 +34,7 @@ A 21-year-old Order employee who genuinely believes in the mission. Technically 
 
 **1990-1992 (Egyptian, Classical, Medieval wings):**
 - Looser. More natural delivery.
-- Small asides that go slightly off-script: "Note the systematic use of position markers and the clear indication of rotational direction" — the "clear indication" is K editorializing, not quoting the script.
+- Small asides that go slightly off-script: "Note the systematic use of placement markers and the clear indication of rotational direction" — the "clear indication" is K editorializing, not quoting the script.
 - Admiration for the material leaking through. A half-second pause before a particularly beautiful exhibit description, as if he just looked at it again.
 - Still institutional register, but less robotic.
 
@@ -59,7 +59,7 @@ A 21-year-old Order employee who genuinely believes in the mission. Technically 
 > "The sequence depicted — now catalogued as OOGA-1 in the Proto-Kinetic Index — shows a four-beat pattern using what appear to be burning branches. Analysis of wear patterns suggests these tablets were handled frequently, likely for instructional purposes."
 
 **1991 (Egyptian wing):**
-> "The burial chamber contained forty-seven distinct position diagrams. Forty-seven. Each one a complete notation. The pharaoh was, it seems, quite thorough in her documentation."
+> "The burial chamber contained forty-seven distinct placement diagrams. Forty-seven. Each one a complete notation. The pharaoh was, it seems, quite thorough in her documentation."
 
 (Note the repetition of "forty-seven" — K going slightly off-script, emphasizing what strikes him.)
 

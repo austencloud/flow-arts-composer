@@ -43,7 +43,7 @@ export interface PictographAdjustmentInput {
   leftMotion: MotionAdjustmentInput;
   rightMotion: MotionAdjustmentInput;
   gridMode: GridMode;
-  endPosition?: string; // e.g., "alpha5", "beta3", "gamma11"
+  endPlacement?: string; // e.g., "alpha5", "beta3", "gamma11"
 }
 
 type TurnsTupleKey = string; // e.g., "(1, 1)", "(fl, 0.5)"
@@ -508,9 +508,9 @@ function loadDefaultPlacementData(
   }
 }
 
-function getPositionType(endPosition?: string): string {
-  if (!endPosition) return "alpha";
-  const lower = endPosition.toLowerCase();
+function getPlacementType(endPlacement?: string): string {
+  if (!endPlacement) return "alpha";
+  const lower = endPlacement.toLowerCase();
   if (lower.startsWith("alpha")) return "alpha";
   if (lower.startsWith("beta")) return "beta";
   if (lower.startsWith("gamma")) return "gamma";
@@ -529,16 +529,16 @@ function getLayerType(endOrientation?: string): string {
 }
 
 /**
- * Format: {motionType}_to_{layer}_{positionType}
+ * Format: {motionType}_to_{layer}_{placementType}
  */
 function generatePlacementKey(
   motionType: string,
   endOrientation?: string,
-  endPosition?: string
+  endPlacement?: string
 ): string {
-  const posType = getPositionType(endPosition);
+  const placementType = getPlacementType(endPlacement);
   const layerType = getLayerType(endOrientation);
-  return `${motionType}_to_${layerType}_${posType}`;
+  return `${motionType}_to_${layerType}_${placementType}`;
 }
 
 function getDefaultAdjustment(
@@ -546,7 +546,7 @@ function getDefaultAdjustment(
   turns: number | "fl" | undefined,
   gridMode: GridMode,
   endOrientation?: string,
-  endPosition?: string
+  endPlacement?: string
 ): [number, number] {
   const normalizedType = motionType.toLowerCase();
   const data = loadDefaultPlacementData(gridMode, normalizedType);
@@ -558,7 +558,7 @@ function getDefaultAdjustment(
   const placementKey = generatePlacementKey(
     normalizedType,
     endOrientation,
-    endPosition
+    endPlacement
   );
   const turnsStr = turns === "fl" ? "fl" : (turns ?? 0).toString();
 
@@ -568,7 +568,7 @@ function getDefaultAdjustment(
   }
 
   // Try without the layer suffix as fallback
-  const simpleKey = `${normalizedType}_to_layer1_${getPositionType(endPosition)}`;
+  const simpleKey = `${normalizedType}_to_layer1_${getPlacementType(endPlacement)}`;
   const simpleData = data[simpleKey];
   if (simpleData && simpleData[turnsStr]) {
     return simpleData[turnsStr];
@@ -634,7 +634,7 @@ export function calculateArrowAdjustment(
       motion.turns,
       pictograph.gridMode,
       motion.endOrientation,
-      pictograph.endPosition
+      pictograph.endPlacement
     );
     baseX = defaultAdj[0];
     baseY = defaultAdj[1];

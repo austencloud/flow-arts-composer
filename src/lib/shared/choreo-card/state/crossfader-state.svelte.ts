@@ -13,7 +13,7 @@ export function createCrossfaderState(getInitialDarkMode: () => boolean) {
   let lastContentKey = "";
   let lastImageKey = "";
   // Tracks the portion of the render key that drives GRID STRUCTURE (cell
-  // count, columns, durations, start-position row). Crossfade-swaps are
+  // count, columns, durations, start-placement row). Crossfade-swaps are
   // only safe when this is unchanged - otherwise cells might shift
   // between old/new rows mid-transition and read as visual glitches.
   let lastGridStableKey = "";

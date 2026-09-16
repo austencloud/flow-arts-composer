@@ -51,8 +51,8 @@ export interface VideoExportOrchestratorOptions {
   compositeMode?: "none" | "horizontal" | "vertical";
   gridStepSize?: number;
   showStepNumbers?: boolean;
-  includeStartPosition?: boolean;
-  includeAnimationStartPosition?: boolean;
+  includeStartPlacement?: boolean;
+  includeAnimationStartPlacement?: boolean;
   includeEndHold?: boolean;
   /** Prop type strings (e.g. "staff"). Drive the prop BODY textures the offscreen
    *  export engine loads — without them the export falls back to global settings

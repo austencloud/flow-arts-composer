@@ -4,11 +4,11 @@
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import type { ICreateModuleState } from "../../types/create-module-types";
 import type { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import { getStepDataFromState, START_POSITION_BEAT_NUMBER } from "./step-data-helpers";
+import { getStepDataFromState, START_PLACEMENT_BEAT_NUMBER } from "./step-data-helpers";
 import { UndoOperationType } from "../undo-manager";
 
 const logger = createComponentLogger("ArrowAdjustmentHandler");
@@ -62,27 +62,27 @@ export function updateArrowAdjustment(
     return;
   }
 
-  if (stepNumber === START_POSITION_BEAT_NUMBER) {
-    // Update start position
-    const startPosition = createModuleState.sequenceState.selectedStartPosition;
-    const updatedStartPosition = startPosition
-      ? createStartPositionData({
-          ...startPosition,
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+    // Update start placement
+    const startPlacement = createModuleState.sequenceState.selectedStartPlacement;
+    const updatedStartPlacement = startPlacement
+      ? createStartPlacementData({
+          ...startPlacement,
           motions: updatedStepData.motions,
         })
       : null;
 
     const updatedSequence = {
       ...currentSequence,
-      startPosition: updatedStartPosition ?? undefined,
-      startingPosition: updatedStartPosition ?? undefined,
+      startPlacement: updatedStartPlacement ?? undefined,
+      startingPlacement: updatedStartPlacement ?? undefined,
     };
 
     // D4 skip: manualAdjustmentX/Y are visual arrow-placement offsets, not
     // motion structure — no certificate invalidation needed.
     createModuleState.sequenceState.setCurrentSequence(updatedSequence);
     logger.success(
-      `Updated start position ${color} arrow adjustment to (${adjustmentX}, ${adjustmentY})`
+      `Updated start placement ${color} arrow adjustment to (${adjustmentX}, ${adjustmentY})`
     );
   } else {
     // Update beat in sequence
@@ -123,32 +123,32 @@ export function persistBeatWithAdjustments(
   // Push undo snapshot before applying changes
   createModuleState.pushUndoSnapshot(UndoOperationType.MODIFY_BEAT_PROPERTIES, {
     stepIndex: stepNumber,
-    description: `Adjust arrow positions for step ${stepNumber === START_POSITION_BEAT_NUMBER ? "start position" : stepNumber}`,
+    description: `Adjust arrow positions for step ${stepNumber === START_PLACEMENT_BEAT_NUMBER ? "start placement" : stepNumber}`,
   });
 
-  if (stepNumber === START_POSITION_BEAT_NUMBER) {
-    // Update start position - get the existing start position data to preserve its properties
-    const existingStartPosition = createModuleState.sequenceState.selectedStartPosition;
-    if (!existingStartPosition) {
-      logger.warn("Cannot persist start position - no existing start position");
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+    // Update start placement - get the existing start placement data to preserve its properties
+    const existingStartPlacement = createModuleState.sequenceState.selectedStartPlacement;
+    if (!existingStartPlacement) {
+      logger.warn("Cannot persist start placement - no existing start placement");
       return;
     }
 
-    const updatedStartPosition = createStartPositionData({
-      ...existingStartPosition,
+    const updatedStartPlacement = createStartPlacementData({
+      ...existingStartPlacement,
       motions: updatedStepData.motions,
     });
 
     const updatedSequence = {
       ...currentSequence,
-      startPosition: updatedStartPosition,
-      startingPosition: updatedStartPosition,
+      startPlacement: updatedStartPlacement,
+      startingPlacement: updatedStartPlacement,
     };
 
     // D4 skip: persists accumulated manual arrow-placement offsets, not
     // motion structure — no certificate invalidation needed.
     createModuleState.sequenceState.setCurrentSequence(updatedSequence);
-    logger.success(`Persisted start position arrow adjustments`);
+    logger.success(`Persisted start placement arrow adjustments`);
   } else {
     // Update beat in sequence
     const arrayIndex = stepNumber - 1;

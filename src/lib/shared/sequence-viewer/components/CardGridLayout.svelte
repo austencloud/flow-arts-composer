@@ -61,8 +61,8 @@
     hasMixedDurations: boolean;
     durationRows: TimelineRow[];
     durationColCount: number;
-    includeStartPosition: boolean;
-    startPositionLayout: "row" | "column";
+    includeStartPlacement: boolean;
+    startPlacementLayout: "row" | "column";
     needsScroll: boolean;
     showHighlight: boolean;
     highlightedStepIndex: number | null;
@@ -70,7 +70,7 @@
     qrDataUrl: string | null;
     /** A QR is being minted for this card — reserve the cell and show it working. */
     qrPending?: boolean;
-    qrGridPosition: { gridColumn: number; gridRow: number } | null;
+    qrGridPlacement: { gridColumn: number; gridRow: number } | null;
     showMandala: boolean;
     mandalaPlacements: MandalaPlacement[];
     flipDuration: number;
@@ -82,7 +82,7 @@
     /** When provided, render a clickable play badge over the QR (interactive
         viewer only). Click switches to the 2D animation view and starts play. */
     onQrPlayClick?: () => void;
-    /** When true, the start-position cell is clickable too (calls onStepClick(-1)). */
+    /** When true, the start-placement cell is clickable too (calls onStepClick(-1)). */
     clickableStart?: boolean;
     onGridScrollRefChange: (el: HTMLDivElement | undefined) => void;
     // CellRenderer pass-through props
@@ -113,15 +113,15 @@
     hasMixedDurations,
     durationRows,
     durationColCount,
-    includeStartPosition,
-    startPositionLayout,
+    includeStartPlacement,
+    startPlacementLayout,
     needsScroll,
     showHighlight,
     highlightedStepIndex,
     showQRCode,
     qrDataUrl,
     qrPending = false,
-    qrGridPosition,
+    qrGridPlacement,
     showMandala,
     mandalaPlacements,
     flipDuration,
@@ -276,17 +276,17 @@
 {#if hasMixedDurations && durationRows.length > 0}
   <!-- Duration-aware layout: Auto can place Start above or beside the timeline. -->
   {@const startCell = cells.find(c => c.index === -1)}
-  {@const startInColumn = includeStartPosition && startPositionLayout === "column"}
+  {@const startInColumn = includeStartPlacement && startPlacementLayout === "column"}
   {@const stepMaxUnits = durationColCount - (startInColumn ? 1 : 0)}
   {#if needsScroll}
     <div class="grid-scroll-container themed-scrollbar" use:bindGridScrollRef>
       <div
         class="duration-layout"
-        class:start-row={includeStartPosition && startPositionLayout === "row"}
+        class:start-row={includeStartPlacement && startPlacementLayout === "row"}
         class:dark-mode={activeDarkMode}
         style="--max-units: {durationColCount}; --step-max: {stepMaxUnits};"
       >
-        {#if includeStartPosition && startCell}
+        {#if includeStartPlacement && startCell}
           <div class="duration-start-col" class:dark-mode={activeDarkMode} transition:fade|local={{ duration: scaleDuration }}>
             {@render startCellBlock(startCell)}
             {#if showQRCode}
@@ -370,11 +370,11 @@
   {:else}
     <div
       class="duration-layout"
-      class:start-row={includeStartPosition && startPositionLayout === "row"}
+      class:start-row={includeStartPlacement && startPlacementLayout === "row"}
       class:dark-mode={activeDarkMode}
       style="--max-units: {durationColCount}; --step-max: {stepMaxUnits};"
     >
-      {#if includeStartPosition && startCell}
+      {#if includeStartPlacement && startCell}
         <div class="duration-start-col" class:dark-mode={activeDarkMode}>
           {@render startCellBlock(startCell)}
           {#if showQRCode && (qrDataUrl || qrPending)}
@@ -464,7 +464,7 @@
       class:dark-mode={activeDarkMode}
       style="grid-template-columns: repeat({effectiveColumns}, 1fr);"
     >
-      {#if startCellScroll && includeStartPosition}
+      {#if startCellScroll && includeStartPlacement}
         <div
           class="cell-flip-wrapper"
           style="grid-column: 1; grid-row: 1;"
@@ -537,10 +537,10 @@
         {/if}
         </div>
       {/each}
-      {#if qrGridPosition && (qrDataUrl || qrPending)}
+      {#if qrGridPlacement && (qrDataUrl || qrPending)}
         <div
           class="cell-flip-wrapper qr-cell-wrapper"
-          style="grid-column: {qrGridPosition.gridColumn}; grid-row: {qrGridPosition.gridRow};"
+          style="grid-column: {qrGridPlacement.gridColumn}; grid-row: {qrGridPlacement.gridRow};"
           transition:scale|local={{ duration: scaleDuration, easing: cubicOut }}
         >
           <div class="pictograph-cell qr-cell" class:dark-mode={activeDarkMode}>
@@ -580,7 +580,7 @@
     class:dark-mode={activeDarkMode}
     style="grid-template-columns: repeat({effectiveColumns}, 1fr);"
   >
-    {#if startCell && includeStartPosition}
+    {#if startCell && includeStartPlacement}
       <div
         class="cell-flip-wrapper start-cell-wrapper"
         style="grid-column: 1; grid-row: 1;"
@@ -653,10 +653,10 @@
       {/if}
       </div>
     {/each}
-    {#if qrGridPosition && (qrDataUrl || qrPending)}
+    {#if qrGridPlacement && (qrDataUrl || qrPending)}
       <div
         class="cell-flip-wrapper qr-cell-wrapper"
-        style="grid-column: {qrGridPosition.gridColumn}; grid-row: {qrGridPosition.gridRow};"
+        style="grid-column: {qrGridPlacement.gridColumn}; grid-row: {qrGridPlacement.gridRow};"
         transition:scale|local={{ duration: scaleDuration, easing: cubicOut }}
       >
         <div class="pictograph-cell qr-cell" class:dark-mode={activeDarkMode}>

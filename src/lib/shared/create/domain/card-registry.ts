@@ -143,7 +143,7 @@ export const CARD_REGISTRY = [
       name: "Customize",
       shortDesc: "Fine-tune the recipe",
       fullDesc:
-        "Open Customize to set the movement style, start and end positions, and turn pattern used by Generate.",
+        "Open Customize to set the movement style, start and end placements, and turn pattern used by Generate.",
       bullets: undefined,
       images: undefined,
     },

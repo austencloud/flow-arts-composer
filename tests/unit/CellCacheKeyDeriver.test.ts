@@ -32,7 +32,7 @@ import {
 // object so the existing `deriver.deriveCacheKey(...)` call sites are unchanged.
 const deriver = { deriveCacheKey };
 
-function makeStartPosition(overrides?: {
+function makeStartPlacement(overrides?: {
   leftPropType?: PropType;
   rightPropType?: PropType;
   leftStartLocation?: GridLocation;
@@ -141,7 +141,7 @@ function makeQuarterTurnPictograph(turns = 0.25): PictographData {
 describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
   it("rekeys visible-motion cells after canonical hand arrows are restored", () => {
     const key = deriver.deriveCacheKey(
-      makeStartPosition(),
+      makeStartPlacement(),
       undefined,
       false,
       makeOptions()
@@ -154,7 +154,7 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
   it("preserves lsp11 keys for fully-visible pictographs", () => {
     const key = deriver.deriveCacheKey(
-      makeStartPosition(),
+      makeStartPlacement(),
       undefined,
       false,
       makeOptions()
@@ -164,8 +164,8 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
   });
 
   it("separates invisible placeholders from visible static motions", () => {
-    const visible = makeStartPosition();
-    const hidden = makeStartPosition();
+    const visible = makeStartPlacement();
+    const hidden = makeStartPlacement();
     (hidden.motions.right as { isVisible: boolean }).isVisible = false;
 
     const visibleKey = deriver.deriveCacheKey(
@@ -290,11 +290,11 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
   describe("motion-intrinsic propType differentiation (the original bug)", () => {
     it("HAND vs STAFF motion propType produces different keys even with same settings propType", () => {
-      const staffStart = makeStartPosition({
+      const staffStart = makeStartPlacement({
         leftPropType: PropType.STAFF,
         rightPropType: PropType.STAFF,
       });
-      const handStart = makeStartPosition({
+      const handStart = makeStartPlacement({
         leftPropType: PropType.HAND,
         rightPropType: PropType.HAND,
       });
@@ -319,11 +319,11 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
     });
 
     it("FAN vs STAFF motion propType produces different keys", () => {
-      const staffStart = makeStartPosition({
+      const staffStart = makeStartPlacement({
         leftPropType: PropType.STAFF,
         rightPropType: PropType.STAFF,
       });
-      const fanStart = makeStartPosition({
+      const fanStart = makeStartPlacement({
         leftPropType: PropType.FAN,
         rightPropType: PropType.FAN,
       });
@@ -349,7 +349,7 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
   describe("targeted authored-prop appearance revision", () => {
     it("rekeys club rasters without invalidating staff rasters", () => {
-      const data = makeStartPosition();
+      const data = makeStartPlacement();
       const clubKey = deriver.deriveCacheKey(
         data,
         undefined,
@@ -369,7 +369,7 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
     it("rekeys a cat/dog cell when either effective prop uses the revised club art", () => {
       const key = deriver.deriveCacheKey(
-        makeStartPosition(),
+        makeStartPlacement(),
         undefined,
         true,
         makeOptions({
@@ -384,13 +384,13 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
     it("keeps Regular and Classic Club raster identities separate", () => {
       const regular = deriver.deriveCacheKey(
-        makeStartPosition(),
+        makeStartPlacement(),
         undefined,
         true,
         makeOptions({ leftPropType: PropType.CLUB })
       );
       const classic = deriver.deriveCacheKey(
-        makeStartPosition(),
+        makeStartPlacement(),
         undefined,
         true,
         makeOptions({ leftPropType: PropType.CLASSIC_CLUB })
@@ -403,7 +403,7 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
   describe("handPathMode differentiation", () => {
     it("handPathMode on vs off produces different keys for same pictograph data", () => {
-      const data = makeStartPosition();
+      const data = makeStartPlacement();
       const normalOptions = makeOptions({ handPathMode: false });
       const handPathOptions = makeOptions({ handPathMode: true });
 
@@ -426,7 +426,7 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
   describe("handPointVisibility differentiation", () => {
     it("'all' vs 'active' produces different keys", () => {
-      const data = makeStartPosition();
+      const data = makeStartPlacement();
       const allOptions = makeOptions({ handPointVisibility: "all" });
       const activeOptions = makeOptions({ handPointVisibility: "active" });
 
@@ -445,12 +445,12 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
   describe("gridMode differentiation (previously missing entirely)", () => {
     it("diamond vs box mode produces different keys", () => {
       // Diamond mode: cardinal locations
-      const diamondStart = makeStartPosition({
+      const diamondStart = makeStartPlacement({
         leftStartLocation: GridLocation.NORTH,
         rightStartLocation: GridLocation.SOUTH,
       });
       // Box mode: intercardinal locations
-      const boxStart = makeStartPosition({
+      const boxStart = makeStartPlacement({
         leftStartLocation: GridLocation.NORTHEAST,
         rightStartLocation: GridLocation.SOUTHWEST,
       });
@@ -476,7 +476,7 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
   describe("cell-specific dimensions still differentiate", () => {
     it("different sizes produce different keys", () => {
-      const data = makeStartPosition();
+      const data = makeStartPlacement();
       const small = makeOptions({ size: 120 });
       const large = makeOptions({ size: 480 });
 
@@ -487,7 +487,7 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
     });
 
     it("different step numbers produce different keys when showStepNumbers is true", () => {
-      const data = makeStartPosition();
+      const data = makeStartPlacement();
       const options = makeOptions({ showStepNumbers: true });
 
       const key1 = deriver.deriveCacheKey(data, 1, false, options);
@@ -497,7 +497,7 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
     });
 
     it("dark vs light mode produces different keys", () => {
-      const data = makeStartPosition();
+      const data = makeStartPlacement();
       const options = makeOptions();
 
       const darkKey = deriver.deriveCacheKey(data, undefined, true, options);
@@ -509,9 +509,9 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
   describe("reversal flags differentiation (lsp11)", () => {
     it("blueReversal true vs false produces different keys when showReversals is on", () => {
-      const plain = makeStartPosition();
+      const plain = makeStartPlacement();
       const reversed = {
-        ...makeStartPosition(),
+        ...makeStartPlacement(),
         leftReversal: true,
       } as PictographData;
       const options = makeOptions({ showReversals: true });
@@ -528,9 +528,9 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
     });
 
     it("redReversal true vs false produces different keys when showReversals is on", () => {
-      const plain = makeStartPosition();
+      const plain = makeStartPlacement();
       const reversed = {
-        ...makeStartPosition(),
+        ...makeStartPlacement(),
         rightReversal: true,
       } as PictographData;
       const options = makeOptions({ showReversals: true });
@@ -547,9 +547,9 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
     });
 
     it("reversal flags are neutralized when showReversals is off (no pointless cache split)", () => {
-      const plain = makeStartPosition();
+      const plain = makeStartPlacement();
       const reversed = {
-        ...makeStartPosition(),
+        ...makeStartPlacement(),
         leftReversal: true,
         rightReversal: true,
       } as PictographData;
@@ -569,9 +569,9 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
   describe("betaSwapped differentiation (lsp11)", () => {
     it("betaSwapped true vs false produces different keys", () => {
-      const plain = makeStartPosition();
+      const plain = makeStartPlacement();
       const swapped = {
-        ...makeStartPosition(),
+        ...makeStartPlacement(),
         betaSwapped: true,
       } as PictographData;
       const options = makeOptions();
@@ -590,7 +590,7 @@ describe("CellCacheKeyDeriver (lsp11/lsp12 composition)", () => {
 
   describe("identical inputs produce identical keys (determinism)", () => {
     it("same data and options always produce the same key", () => {
-      const data = makeStartPosition();
+      const data = makeStartPlacement();
       const options = makeOptions();
 
       const key1 = deriver.deriveCacheKey(data, undefined, false, options);

@@ -26,7 +26,7 @@ export interface DifficultyLevel {
 }
 
 /** Start position layout mode */
-export type StartPositionLayout = "sidebar" | "top" | "column" | "row" | "none";
+export type StartPlacementLayout = "sidebar" | "top" | "column" | "row" | "none";
 
 /** Letter styling for header (bridge/derived letters) */
 export interface LetterStyle {

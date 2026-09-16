@@ -71,7 +71,7 @@ export class DeepLinkSequenceHandler {
     }
 
     try {
-      // Set sequence immediately (positions/letters enriched async)
+      // Set sequence immediately (placements/letters enriched async)
       setSequence(deepLinkData.sequence);
 
       // Enrich sequence with derived data in background
@@ -104,8 +104,8 @@ export class DeepLinkSequenceHandler {
       const sequence = createSequenceData(rawData);
       setSequence(sequence);
 
-      // Enrich sequence with derived positions/letters in background
-      // This is critical for imported sequences from Browse which have null positions
+      // Enrich sequence with derived placements/letters in background
+      // This is critical for imported sequences from Browse which have null placements
       this.enrichSequenceAsync(sequence, setSequence);
 
       // Set session flag BEFORE clearing localStorage
@@ -151,7 +151,7 @@ export class DeepLinkSequenceHandler {
   }
 
   /**
-   * Enrich sequence with derived positions and letters asynchronously.
+   * Enrich sequence with derived placements and letters asynchronously.
    * This is the complex merging logic extracted from CreateModule.svelte.
    */
   private enrichSequenceAsync(
@@ -162,59 +162,59 @@ export class DeepLinkSequenceHandler {
       derivePositionsForSequence(sequence),
       deriveLettersForSequence(sequence),
     ])
-      .then(([sequenceWithPositions, sequenceWithLetters]) => {
+      .then(([sequenceWithPlacements, sequenceWithLetters]) => {
         const enrichedSequence = this.mergeEnrichedSequence(
-          sequenceWithPositions,
+          sequenceWithPlacements,
           sequenceWithLetters
         );
         setSequence(enrichedSequence);
       })
       .catch((err) => {
-        console.warn("Position/letter derivation failed:", err);
+        console.warn("Placement/letter derivation failed:", err);
         // Original sequence already loaded, no action needed
       });
   }
 
   /**
-   * Merge position-enriched and letter-enriched sequences.
-   * Letters take precedence but preserve positions from position derivation.
+   * Merge placement-enriched and letter-enriched sequences.
+   * Letters take precedence but preserve placements from placement derivation.
    */
   private mergeEnrichedSequence(
-    sequenceWithPositions: SequenceData,
+    sequenceWithPlacements: SequenceData,
     sequenceWithLetters: SequenceData
   ): SequenceData {
     return {
       ...sequenceWithLetters,
       steps: sequenceWithLetters.steps.map((step, index) => ({
         ...step,
-        startPosition:
-          step.startPosition ??
-          sequenceWithPositions.steps[index]?.startPosition,
-        endPosition:
-          step.endPosition ?? sequenceWithPositions.steps[index]?.endPosition,
+        startPlacement:
+          step.startPlacement ??
+          sequenceWithPlacements.steps[index]?.startPlacement,
+        endPlacement:
+          step.endPlacement ?? sequenceWithPlacements.steps[index]?.endPlacement,
       })),
-      startPosition: sequenceWithLetters.startPosition
+      startPlacement: sequenceWithLetters.startPlacement
         ? {
-            ...sequenceWithLetters.startPosition,
-            startPosition:
-              sequenceWithLetters.startPosition.startPosition ??
-              sequenceWithPositions.startPosition?.startPosition,
-            endPosition:
-              sequenceWithLetters.startPosition.endPosition ??
-              sequenceWithPositions.startPosition?.endPosition,
+            ...sequenceWithLetters.startPlacement,
+            startPlacement:
+              sequenceWithLetters.startPlacement.startPlacement ??
+              sequenceWithPlacements.startPlacement?.startPlacement,
+            endPlacement:
+              sequenceWithLetters.startPlacement.endPlacement ??
+              sequenceWithPlacements.startPlacement?.endPlacement,
           }
-        : sequenceWithPositions.startPosition,
-      startingPosition: sequenceWithLetters.startingPosition
+        : sequenceWithPlacements.startPlacement,
+      startingPlacement: sequenceWithLetters.startingPlacement
         ? {
-            ...sequenceWithLetters.startingPosition,
-            startPosition:
-              sequenceWithLetters.startingPosition.startPosition ??
-              sequenceWithPositions.startingPosition?.startPosition,
-            endPosition:
-              sequenceWithLetters.startingPosition.endPosition ??
-              sequenceWithPositions.startingPosition?.endPosition,
+            ...sequenceWithLetters.startingPlacement,
+            startPlacement:
+              sequenceWithLetters.startingPlacement.startPlacement ??
+              sequenceWithPlacements.startingPlacement?.startPlacement,
+            endPlacement:
+              sequenceWithLetters.startingPlacement.endPlacement ??
+              sequenceWithPlacements.startingPlacement?.endPlacement,
           }
-        : sequenceWithPositions.startingPosition,
+        : sequenceWithPlacements.startingPlacement,
       // Add timestamp to ensure reactivity
       metadata: {
         ...sequenceWithLetters.metadata,

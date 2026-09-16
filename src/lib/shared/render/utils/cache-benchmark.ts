@@ -123,7 +123,7 @@ export async function runCacheBenchmark(
 
     const renderOptions = {
       stepSize: 240,
-      includeStartPosition: true,
+      includeStartPlacement: true,
       addStepNumbers: true,
       addWord: true,
       addDifficultyLevel: true,
@@ -131,7 +131,7 @@ export async function runCacheBenchmark(
         showTKA: true,
         showTnD: false,
         showElemental: false,
-        showPositions: false,
+        showPlacements: false,
         showReversals: true,
         showNonRadialPoints: false,
         darkMode: false,
@@ -488,7 +488,7 @@ export async function runVisibilityChangeBenchmark(
     // Base render options (without visibility)
     const baseRenderOptions = {
       stepSize: 240,
-      includeStartPosition: true,
+      includeStartPlacement: true,
       addStepNumbers: true,
       addWord: true,
       addDifficultyLevel: true,
@@ -499,7 +499,7 @@ export async function runVisibilityChangeBenchmark(
       showTKA: true,
       showTnD: false,
       showElemental: false,
-      showPositions: false,
+      showPlacements: false,
       showReversals: true,
       showNonRadialPoints: false,
       darkMode: false,

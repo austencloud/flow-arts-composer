@@ -3,7 +3,7 @@
  *
  * Rasterizers for the card-back elements that VARY PER SEQUENCE and therefore
  * are NOT cached — each card has its own turn pattern, reversal pattern, step
- * count, loop row, and start position. Each element is rendered to an ImageBitmap
+ * count, loop row, and start placement. Each element is rendered to an ImageBitmap
  * (worker-transferable) and composited later.
  *
  * CANVAS-NATIVE: the turn glyph, reversal glyph, step count, and loop row are
@@ -15,7 +15,7 @@
  *   - reversal glyph ReversalPatternGlyph.svelte dot-pair columns
  *   - step count    CardBackStepCount.svelte / CardBack `.corner-label`
  *   - loop row      CardBackLoopRow.svelte (icons stay CACHED-mount; row composed here)
- *   - start-position pictograph — already canvas-native via Canvas2DDirectRenderer
+ *   - start-placement pictograph — already canvas-native via Canvas2DDirectRenderer
  *     (`renderPicto`); left untouched.
  *
  * RENDER SCALE — single source of truth (matches card-back-bitmaps-constant.ts
@@ -84,7 +84,7 @@ const DEFAULT_CTX: PerCardRenderCtx = {
 };
 
 /**
- * Render-a-pictograph indirection (for the start position). Defaults to the
+ * Render-a-pictograph indirection (for the start placement). Defaults to the
  * shared Canvas2DDirectRenderer singleton, lazily initialized once. Injectable
  * so tests assert the call without running the real (asset-loading) renderer.
  */
@@ -496,21 +496,21 @@ export async function rasterizeStepCount(
   return createImageBitmap(canvas);
 }
 
-// ── Start-position pictograph (per-card) ───────────────────────────────────
+// ── Start-placement pictograph (per-card) ───────────────────────────────────
 
 /**
- * Rasterize the mini start-position pictograph into a 12cqi × 12cqi bitmap.
+ * Rasterize the mini start-placement pictograph into a 12cqi × 12cqi bitmap.
  *
  * Renders the pictograph via Canvas2DDirectRenderer (DOM-free, reliable) at the
- * 1.3× zoom StartPositionPictograph applies (`.picto-zoom { scale(1.3) }`),
+ * 1.3× zoom StartPlacementPictograph applies (`.picto-zoom { scale(1.3) }`),
  * composited into the box with the rounded border + overflow-clip, matching
- * CardBack's `.start-pos-picto` (border 0.3cqi `--card-text-muted`, radius 1cqi).
- * Visibility mirrors StartPositionPictograph's PictographRenderer props.
+ * CardBack's `.start-placement-picto` (border 0.3cqi `--card-text-muted`, radius 1cqi).
+ * Visibility mirrors StartPlacementPictograph's PictographRenderer props.
  *
- * @param pictographData The start position data (SequenceData.startPosition).
+ * @param pictographData The start placement data (SequenceData.startPlacement).
  * @param darkMode Theme dark-mode flag (CardBack passes `isDarkTheme`).
  */
-export async function rasterizeStartPosPictograph(
+export async function rasterizeStartPlacementPictograph(
   pictographData: unknown,
   darkMode: boolean,
   ctx: PerCardRenderCtx = DEFAULT_CTX,
@@ -529,7 +529,7 @@ export async function rasterizeStartPosPictograph(
       showTKA: false,
       showTnD: false,
       showElemental: false,
-      showPositions: false,
+      showPlacements: false,
       showReversals: false,
       showNonRadialPoints: false,
       handPointVisibility: "all",

@@ -30,7 +30,7 @@ const PER_CARD_KINDS: ReadonlySet<BackBitmapKind> = new Set<BackBitmapKind>([
   "turn-glyph",
   "reversal-glyph",
   "step-count",
-  "start-pos-pictograph",
+  "start-placement-pictograph",
   "loop-icon",
   "loop-label",
 ]);

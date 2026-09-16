@@ -231,7 +231,7 @@ export class Sharer {
     const showNotes = shareOptions.showNotes ?? shareOptions.addUserInfo;
 
     return {
-      includeStartPosition: shareOptions.includeStartPosition,
+      includeStartPlacement: shareOptions.includeStartPlacement,
       addStepNumbers: shareOptions.addStepNumbers,
       addReversalSymbols: true,
       addUserInfo: showNotes,
@@ -267,7 +267,7 @@ export class Sharer {
     const showNotes = shareOptions.showNotes ?? shareOptions.addUserInfo;
 
     return {
-      includeStartPosition: shareOptions.includeStartPosition,
+      includeStartPlacement: shareOptions.includeStartPlacement,
       addStepNumbers: shareOptions.addStepNumbers,
       addReversalSymbols: true,
       addUserInfo: showNotes,

@@ -59,11 +59,11 @@ export interface CreateModuleContext {
   handlers: {
     onError: (error: string) => void;
     /**
-     * Route a "delete the start position" gesture to the module-owned
+     * Route a "delete the start placement" gesture to the module-owned
      * clear-sequence flow: confirmation dialog (unless opted out), undo
-     * snapshot, and return to the start-position picker. A start position
+     * snapshot, and return to the start-placement picker. A start placement
      * with no sequence steps behind it is invalid state — partial clears
-     * (setStartPosition(null) while steps remain) are forbidden.
+     * (setStartPlacement(null) while steps remain) are forbidden.
      */
     requestClearSequence: () => void;
   };

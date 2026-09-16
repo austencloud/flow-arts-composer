@@ -6,8 +6,8 @@
     {
       "id": "step-1-1788373518913",
       "letter": "M",
-      "startPosition": "gamma13",
-      "endPosition": "gamma3",
+      "startPlacement": "gamma13",
+      "endPlacement": "gamma3",
       "motions": {
         "left": {
           "motionType": "pro",
@@ -88,8 +88,8 @@
     {
       "id": "step-2-1788373518913",
       "letter": "Y",
-      "startPosition": "gamma3",
-      "endPosition": "beta3",
+      "startPlacement": "gamma3",
+      "endPlacement": "beta3",
       "motions": {
         "left": {
           "motionType": "pro",
@@ -170,8 +170,8 @@
     {
       "id": "step-3-1788373518913",
       "letter": "Ω",
-      "startPosition": "beta3",
-      "endPosition": "gamma5",
+      "startPlacement": "beta3",
+      "endPlacement": "gamma5",
       "motions": {
         "left": {
           "motionType": "static",
@@ -252,8 +252,8 @@
     {
       "id": "step-4-1788373518913",
       "letter": "N",
-      "startPosition": "gamma5",
-      "endPosition": "gamma15",
+      "startPlacement": "gamma5",
+      "endPlacement": "gamma15",
       "motions": {
         "left": {
           "motionType": "anti",
@@ -334,8 +334,8 @@
     {
       "id": "step-5-1788373518913",
       "letter": "M",
-      "startPosition": "gamma15",
-      "endPosition": "gamma5",
+      "startPlacement": "gamma15",
+      "endPlacement": "gamma5",
       "motions": {
         "left": {
           "motionType": "pro",
@@ -416,8 +416,8 @@
     {
       "id": "step-6-1788373518913",
       "letter": "Y",
-      "startPosition": "gamma5",
-      "endPosition": "beta5",
+      "startPlacement": "gamma5",
+      "endPlacement": "beta5",
       "motions": {
         "left": {
           "motionType": "pro",
@@ -498,8 +498,8 @@
     {
       "id": "step-7-1788373518913",
       "letter": "Ω",
-      "startPosition": "beta5",
-      "endPosition": "gamma7",
+      "startPlacement": "beta5",
+      "endPlacement": "gamma7",
       "motions": {
         "left": {
           "motionType": "static",
@@ -580,8 +580,8 @@
     {
       "id": "step-8-1788373518913",
       "letter": "N",
-      "startPosition": "gamma7",
-      "endPosition": "gamma9",
+      "startPlacement": "gamma7",
+      "endPlacement": "gamma9",
       "motions": {
         "left": {
           "motionType": "anti",
@@ -662,8 +662,8 @@
     {
       "id": "step-9-1788373518913",
       "letter": "M",
-      "startPosition": "gamma9",
-      "endPosition": "gamma7",
+      "startPlacement": "gamma9",
+      "endPlacement": "gamma7",
       "motions": {
         "left": {
           "motionType": "pro",
@@ -744,8 +744,8 @@
     {
       "id": "step-10-1788373518913",
       "letter": "Y",
-      "startPosition": "gamma7",
-      "endPosition": "beta7",
+      "startPlacement": "gamma7",
+      "endPlacement": "beta7",
       "motions": {
         "left": {
           "motionType": "pro",
@@ -826,8 +826,8 @@
     {
       "id": "step-11-1788373518913",
       "letter": "Ω",
-      "startPosition": "beta7",
-      "endPosition": "gamma1",
+      "startPlacement": "beta7",
+      "endPlacement": "gamma1",
       "motions": {
         "left": {
           "motionType": "static",
@@ -908,8 +908,8 @@
     {
       "id": "step-12-1788373518913",
       "letter": "N",
-      "startPosition": "gamma1",
-      "endPosition": "gamma11",
+      "startPlacement": "gamma1",
+      "endPlacement": "gamma11",
       "motions": {
         "left": {
           "motionType": "anti",
@@ -990,8 +990,8 @@
     {
       "id": "step-13-1788373518913",
       "letter": "M",
-      "startPosition": "gamma11",
-      "endPosition": "gamma1",
+      "startPlacement": "gamma11",
+      "endPlacement": "gamma1",
       "motions": {
         "left": {
           "motionType": "pro",
@@ -1072,8 +1072,8 @@
     {
       "id": "step-14-1788373518913",
       "letter": "Y",
-      "startPosition": "gamma1",
-      "endPosition": "beta1",
+      "startPlacement": "gamma1",
+      "endPlacement": "beta1",
       "motions": {
         "left": {
           "motionType": "pro",
@@ -1154,8 +1154,8 @@
     {
       "id": "step-15-1788373518913",
       "letter": "Ω",
-      "startPosition": "beta1",
-      "endPosition": "gamma3",
+      "startPlacement": "beta1",
+      "endPlacement": "gamma3",
       "motions": {
         "left": {
           "motionType": "static",
@@ -1236,8 +1236,8 @@
     {
       "id": "step-16-1788373518913",
       "letter": "N",
-      "startPosition": "gamma3",
-      "endPosition": "gamma13",
+      "startPlacement": "gamma3",
+      "endPlacement": "gamma13",
       "motions": {
         "left": {
           "motionType": "anti",
@@ -1338,13 +1338,13 @@
     "level": 2
   },
   "gridMode": "diamond",
-  "startingPosition": {
-    "isStartPosition": true,
+  "startingPlacement": {
+    "isStartPlacement": true,
     "id": "start-1788373518912",
-    "gridPosition": "gamma13",
+    "gridPlacement": "gamma13",
     "letter": "γ",
-    "startPosition": "gamma13",
-    "endPosition": "gamma13",
+    "startPlacement": "gamma13",
+    "endPlacement": "gamma13",
     "motions": {
       "left": {
         "motionType": "static",
@@ -1416,13 +1416,13 @@
       }
     }
   },
-  "startPosition": {
-    "isStartPosition": true,
+  "startPlacement": {
+    "isStartPlacement": true,
     "id": "start-1788373518912",
-    "gridPosition": "gamma13",
+    "gridPlacement": "gamma13",
     "letter": "γ",
-    "startPosition": "gamma13",
-    "endPosition": "gamma13",
+    "startPlacement": "gamma13",
+    "endPlacement": "gamma13",
     "motions": {
       "left": {
         "motionType": "static",

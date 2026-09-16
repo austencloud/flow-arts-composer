@@ -16,7 +16,7 @@ with a staff in hand.
   teaching while demonstrating, counts kept.
 - **`[CUE: ...]`** = stage direction, not spoken. Same convention as before.
 - **`[AUSTEN: ...]`** = a slot only you can fill: a negative-space pocket, a
-  twist fix, a start-position preference, a "how this feels" line. Every slot is
+  twist fix, a start-placement preference, a "how this feels" line. Every slot is
   a question, not a placeholder to delete. If the answer is "there's nothing
   there" (e.g. no twist problem), that's worth saying on camera — contrast
   teaches.

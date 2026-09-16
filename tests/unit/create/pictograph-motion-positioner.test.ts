@@ -47,12 +47,12 @@ const step = createStepData({
   },
 });
 
-const startPositions = {
+const startPlacements = {
   left: { x: 327.4, y: 480.2, rotation: 180 },
   right: { x: 478.8, y: 622.6, rotation: 0 },
 };
 
-const endPositions = {
+const endPlacements = {
   left: { x: 622.9, y: 471.7, rotation: 0 },
   right: { x: 470.5, y: 326.4, rotation: 180 },
 };
@@ -64,16 +64,16 @@ describe("calculatePictographMotionPositions", () => {
       gridMode: GridMode.DIAMOND,
       leftPropType: PropType.STAFF,
       rightPropType: PropType.STAFF,
-      startPositions,
-      endPositions,
+      startPlacements,
+      endPlacements,
     };
 
     expect(
       calculatePictographMotionPositions({ ...common, progress: 0 })
-    ).toEqual(startPositions);
+    ).toEqual(startPlacements);
     expect(
       calculatePictographMotionPositions({ ...common, progress: 1 })
-    ).toEqual(endPositions);
+    ).toEqual(endPlacements);
   });
 
   it("moves through the animation path instead of jumping between endpoints", () => {
@@ -83,14 +83,14 @@ describe("calculatePictographMotionPositions", () => {
       gridMode: GridMode.DIAMOND,
       leftPropType: PropType.STAFF,
       rightPropType: PropType.STAFF,
-      startPositions,
-      endPositions,
+      startPlacements,
+      endPlacements,
     });
 
-    expect(midpoint.left?.x).toBeGreaterThan(startPositions.left.x);
-    expect(midpoint.left?.x).toBeLessThan(endPositions.left.x);
+    expect(midpoint.left?.x).toBeGreaterThan(startPlacements.left.x);
+    expect(midpoint.left?.x).toBeLessThan(endPlacements.left.x);
     expect(midpoint.left?.y).toBeCloseTo(475.95, 0);
-    expect(midpoint.right?.y).toBeLessThan(startPositions.right.y);
-    expect(midpoint.right?.y).toBeGreaterThan(endPositions.right.y);
+    expect(midpoint.right?.y).toBeLessThan(startPlacements.right.y);
+    expect(midpoint.right?.y).toBeGreaterThan(endPlacements.right.y);
   });
 });

@@ -47,10 +47,10 @@ export class BrowseFilter {
         return this.filterByLength(sequences, filterValue);
       case BrowseFilterType.DIFFICULTY:
         return this.filterByDifficulty(sequences, filterValue);
-      case BrowseFilterType.STARTING_POSITION:
-        return this.filterByStartingPosition(sequences, filterValue);
-      case BrowseFilterType.END_POSITION:
-        return this.filterByEndPosition(sequences, filterValue);
+      case BrowseFilterType.STARTING_PLACEMENT:
+        return this.filterByStartingPlacement(sequences, filterValue);
+      case BrowseFilterType.END_PLACEMENT:
+        return this.filterByEndPlacement(sequences, filterValue);
       case BrowseFilterType.AUTHOR:
         return this.filterByAuthor(sequences, filterValue);
       case BrowseFilterType.GRID_MODE:
@@ -235,7 +235,7 @@ export class BrowseFilter {
     });
   }
 
-  private filterByStartingPosition(
+  private filterByStartingPlacement(
     sequences: SequenceData[],
     filterValue: BrowseFilterValue
   ): SequenceData[] {
@@ -248,9 +248,9 @@ export class BrowseFilter {
     let targetPosition: string | null = null;
 
     if (typeof filterValue === "object" && filterValue !== null) {
-      // PictographData object - extract position from startPosition field
-      const pictoData = filterValue as { startPosition?: string | null };
-      targetPosition = pictoData.startPosition?.toLowerCase() ?? null;
+      // PictographData object - extract position from startPlacement field
+      const pictoData = filterValue as { startPlacement?: string | null };
+      targetPosition = pictoData.startPlacement?.toLowerCase() ?? null;
     } else if (typeof filterValue === "string") {
       // Direct string value (e.g., "alpha1", "beta5")
       targetPosition = filterValue.toLowerCase();
@@ -265,25 +265,25 @@ export class BrowseFilter {
 
     const results = sequences.filter((seq) => {
       // Try exact position match first
-      const seqStartPos = seq.startPosition || seq.startingPosition;
+      const seqStartPos = seq.startPlacement || seq.startingPlacement;
       if (seqStartPos) {
-        // Check gridPosition field (StartPositionData)
-        const gridPos = (seqStartPos as { gridPosition?: string | null })
-          .gridPosition;
+        // Check gridPlacement field (StartPlacementData)
+        const gridPos = (seqStartPos as { gridPlacement?: string | null })
+          .gridPlacement;
         if (gridPos?.toLowerCase() === targetPosition) {
           return true;
         }
 
-        // Check startPosition field (PictographData/StepData)
-        const startPos = (seqStartPos as { startPosition?: string | null })
-          .startPosition;
+        // Check startPlacement field (PictographData/StepData)
+        const startPos = (seqStartPos as { startPlacement?: string | null })
+          .startPlacement;
         if (startPos?.toLowerCase() === targetPosition) {
           return true;
         }
       }
 
       // Fallback: match by position group (alpha, beta, gamma)
-      const seqGroup = this.normalizePositionGroup(seq.startingPositionGroup);
+      const seqGroup = this.normalizePlacementGroup(seq.startingPlacementGroup);
       if (seqGroup === targetGroup) {
         return true;
       }
@@ -294,7 +294,7 @@ export class BrowseFilter {
     return results;
   }
 
-  private filterByEndPosition(
+  private filterByEndPlacement(
     sequences: SequenceData[],
     filterValue: BrowseFilterValue
   ): SequenceData[] {
@@ -307,9 +307,9 @@ export class BrowseFilter {
     let targetPosition: string | null = null;
 
     if (typeof filterValue === "object" && filterValue !== null) {
-      // PictographData object - extract position from startPosition field (which represents the end position for filtering)
-      const pictoData = filterValue as { startPosition?: string | null };
-      targetPosition = pictoData.startPosition?.toLowerCase() ?? null;
+      // PictographData object - extract position from startPlacement field (which represents the end position for filtering)
+      const pictoData = filterValue as { startPlacement?: string | null };
+      targetPosition = pictoData.startPlacement?.toLowerCase() ?? null;
     } else if (typeof filterValue === "string") {
       // Direct string value (e.g., "alpha1", "beta5")
       targetPosition = filterValue.toLowerCase();
@@ -329,15 +329,15 @@ export class BrowseFilter {
         return false;
       }
 
-      // Check endPosition field on the last beat
-      const endPos = (lastStep as { endPosition?: string | null }).endPosition;
+      // Check endPlacement field on the last beat
+      const endPos = (lastStep as { endPlacement?: string | null }).endPlacement;
       if (endPos?.toLowerCase() === targetPosition) {
         return true;
       }
 
-      // Check startPosition on last beat (some data might use this)
-      const startPos = (lastStep as { startPosition?: string | null })
-        .startPosition;
+      // Check startPlacement on last beat (some data might use this)
+      const startPos = (lastStep as { startPlacement?: string | null })
+        .startPlacement;
       if (startPos?.toLowerCase() === targetPosition) {
         return true;
       }
@@ -529,7 +529,7 @@ export class BrowseFilter {
    * Normalize position group to handle different formats
    * Handles: "alpha", "Alpha", "ALPHA", "α", etc.
    */
-  private normalizePositionGroup(group: string | undefined | null): string {
+  private normalizePlacementGroup(group: string | undefined | null): string {
     if (!group) return "";
 
     const normalized = group.toLowerCase().trim();

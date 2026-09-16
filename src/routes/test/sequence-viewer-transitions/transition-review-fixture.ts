@@ -1,12 +1,12 @@
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   GridLocation,
   GridMode,
-  GridPosition,
-  type GridPosition as GridPositionValue,
+  GridPlacement,
+  type GridPlacement as GridPlacementValue,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   HandSide,
@@ -33,8 +33,8 @@ interface CanonicalMotionInput {
 
 interface CanonicalStepInput {
   letter: (typeof Letter)[keyof typeof Letter];
-  startPosition: GridPositionValue;
-  endPosition: GridPositionValue;
+  startPlacement: GridPlacementValue;
+  endPlacement: GridPlacementValue;
   variation: number;
   left: CanonicalMotionInput;
   right: CanonicalMotionInput;
@@ -74,8 +74,8 @@ const STATIC_WEST: CanonicalMotionInput = {
 const CANONICAL_STEPS: readonly CanonicalStepInput[] = [
   {
     letter: Letter.A,
-    startPosition: GridPosition.ALPHA7,
-    endPosition: GridPosition.ALPHA1,
+    startPlacement: GridPlacement.ALPHA7,
+    endPlacement: GridPlacement.ALPHA1,
     variation: 2,
     left: {
       startLocation: GridLocation.EAST,
@@ -96,8 +96,8 @@ const CANONICAL_STEPS: readonly CanonicalStepInput[] = [
   },
   {
     letter: Letter.B,
-    startPosition: GridPosition.ALPHA1,
-    endPosition: GridPosition.ALPHA7,
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.ALPHA7,
     variation: 1,
     left: {
       startLocation: GridLocation.SOUTH,
@@ -118,8 +118,8 @@ const CANONICAL_STEPS: readonly CanonicalStepInput[] = [
   },
   {
     letter: Letter.C,
-    startPosition: GridPosition.ALPHA7,
-    endPosition: GridPosition.ALPHA5,
+    startPlacement: GridPlacement.ALPHA7,
+    endPlacement: GridPlacement.ALPHA5,
     variation: 3,
     left: {
       startLocation: GridLocation.EAST,
@@ -140,8 +140,8 @@ const CANONICAL_STEPS: readonly CanonicalStepInput[] = [
   },
   {
     letter: Letter.J,
-    startPosition: GridPosition.ALPHA5,
-    endPosition: GridPosition.BETA7,
+    startPlacement: GridPlacement.ALPHA5,
+    endPlacement: GridPlacement.BETA7,
     variation: 0,
     left: {
       startLocation: GridLocation.NORTH,
@@ -162,8 +162,8 @@ const CANONICAL_STEPS: readonly CanonicalStepInput[] = [
   },
   {
     letter: Letter.D,
-    startPosition: GridPosition.BETA7,
-    endPosition: GridPosition.ALPHA1,
+    startPlacement: GridPlacement.BETA7,
+    endPlacement: GridPlacement.ALPHA1,
     variation: 0,
     left: {
       startLocation: GridLocation.WEST,
@@ -184,8 +184,8 @@ const CANONICAL_STEPS: readonly CanonicalStepInput[] = [
   },
   {
     letter: Letter.J,
-    startPosition: GridPosition.ALPHA1,
-    endPosition: GridPosition.BETA3,
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.BETA3,
     variation: 0,
     left: {
       startLocation: GridLocation.SOUTH,
@@ -206,8 +206,8 @@ const CANONICAL_STEPS: readonly CanonicalStepInput[] = [
   },
   {
     letter: Letter.E,
-    startPosition: GridPosition.BETA3,
-    endPosition: GridPosition.ALPHA5,
+    startPlacement: GridPlacement.BETA3,
+    endPlacement: GridPlacement.ALPHA5,
     variation: 0,
     left: {
       startLocation: GridLocation.EAST,
@@ -228,8 +228,8 @@ const CANONICAL_STEPS: readonly CanonicalStepInput[] = [
   },
   {
     letter: Letter.J,
-    startPosition: GridPosition.ALPHA5,
-    endPosition: GridPosition.BETA3,
+    startPlacement: GridPlacement.ALPHA5,
+    endPlacement: GridPlacement.BETA3,
     variation: 1,
     left: {
       startLocation: GridLocation.NORTH,
@@ -250,12 +250,12 @@ const CANONICAL_STEPS: readonly CanonicalStepInput[] = [
   },
 ];
 
-const startPosition = createStartPositionData({
+const startPlacement = createStartPlacementData({
   id: "transition-review-start",
   letter: Letter.ALPHA,
-  gridPosition: GridPosition.ALPHA7,
-  startPosition: GridPosition.ALPHA7,
-  endPosition: GridPosition.ALPHA7,
+  gridPlacement: GridPlacement.ALPHA7,
+  startPlacement: GridPlacement.ALPHA7,
+  endPlacement: GridPlacement.ALPHA7,
   motions: {
     left: motion(HandSide.LEFT, STATIC_EAST),
     right: motion(HandSide.RIGHT, STATIC_WEST),
@@ -268,15 +268,15 @@ export const TRANSITION_REVIEW_SEQUENCE = createSequenceData({
   intendedWord: "ABCDE",
   word: "ABCJDJEJ",
   gridMode: GridMode.DIAMOND,
-  startPosition,
-  startingPosition: startPosition,
+  startPlacement,
+  startingPlacement: startPlacement,
   steps: CANONICAL_STEPS.map((step, index) =>
     createStepData({
       id: `transition-review-step-${index + 1}`,
       stepNumber: index + 1,
       letter: step.letter,
-      startPosition: step.startPosition,
-      endPosition: step.endPosition,
+      startPlacement: step.startPlacement,
+      endPlacement: step.endPlacement,
       variation: step.variation,
       gridMode: GridMode.DIAMOND,
       duration: 1,

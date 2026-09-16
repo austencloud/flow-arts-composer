@@ -249,12 +249,12 @@ function motionForHand(motions, hand) {
 }
 
 function extractSoloProp(sequence, hand) {
-  const startPositionMotions =
-    sequence.startPosition?.motions ?? sequence.startingPosition?.motions;
+  const startPlacementMotions =
+    sequence.startPlacement?.motions ?? sequence.startingPlacement?.motions;
 
-  const startPositionMotion = motionForHand(startPositionMotions, hand);
-  const startLocationFromPos = startPositionMotion?.startLocation;
-  const startOrientationFromPos = startPositionMotion?.startOrientation;
+  const startPlacementMotion = motionForHand(startPlacementMotions, hand);
+  const startLocationFromPos = startPlacementMotion?.startLocation;
+  const startOrientationFromPos = startPlacementMotion?.startOrientation;
 
   const firstStepMotion = motionForHand(sequence.steps[0]?.motions, hand);
 
@@ -288,8 +288,8 @@ function extractStepPairings(sequence) {
     letter: step.letter ?? null,
     leftReversal: step.leftReversal ?? false,
     rightReversal: step.rightReversal ?? false,
-    startPosition: step.startPosition ?? null,
-    endPosition: step.endPosition ?? null,
+    startPlacement: step.startPlacement ?? null,
+    endPlacement: step.endPlacement ?? null,
   }));
 }
 
@@ -302,7 +302,7 @@ function extractStepPairings(sequence) {
  *
  * @param {object} sequence - Must have `steps[]` with current
  *   motions.left/right or legacy motions.blue/red, and optionally a
- *   `startPosition` with motions.
+ *   `startPlacement` with motions.
  * @returns {object|null} Compositional fields to merge into the Firestore doc,
  *   or null if the sequence has no steps.
  */

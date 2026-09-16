@@ -560,7 +560,7 @@
                 showWord={false}
                 customTitleText={cardTitle ?? "Hand paths"}
                 showDifficultyLevel={false}
-                includeStartPosition
+                includeStartPlacement
                 columnCount={2}
                 showNotes={false}
                 showLoopGlyph={false}

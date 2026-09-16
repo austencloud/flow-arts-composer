@@ -41,16 +41,16 @@ const RED_STATIC = m("static", "noRotation", "s", "s", "in", "in");
 function step(
   stepNumber: number,
   letter: string | null,
-  startPosition: string,
-  endPosition: string,
+  startPlacement: string,
+  endPlacement: string,
   left: ReturnType<typeof m>,
 ): Step {
   return {
     id: `step-${stepNumber}`,
     stepNumber,
     letter: letter as Step["letter"],
-    startPosition: startPosition as Step["startPosition"],
-    endPosition: endPosition as Step["endPosition"],
+    startPlacement: startPlacement as Step["startPlacement"],
+    endPlacement: endPlacement as Step["endPlacement"],
     duration: 1,
     motions: { left: left as never, right: { ...RED_STATIC } as never },
   } as Step;

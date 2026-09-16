@@ -8,7 +8,7 @@
   springs twins in/out; a motion toggle changes nothing here (its dots never
   appear), which is the "motion is free" teaching moment.
 
-  Sibling of card-back/StartPositionMiniGrid (same blue/red hand convention);
+  Sibling of card-back/StartPlacementMiniGrid (same blue/red hand convention);
   count/twin structure comes from performer-ring-model.
 -->
 <script lang="ts">

@@ -15,12 +15,12 @@ import { reversalDetector } from "$lib/shared/create/services/reversal-detector"
 import { normalizeLegacySequence } from "@tka/tka-types";
 import { hydrate } from "$lib/shared/foundation/services/sequence-hydrator";
 
-function letterFromGridPosition(gridPosition: unknown): Letter | null {
-  if (!gridPosition) return null;
-  const position = String(gridPosition).toLowerCase();
-  if (position.startsWith("alpha")) return Letter.ALPHA;
-  if (position.startsWith("beta")) return Letter.BETA;
-  if (position.startsWith("gamma")) return Letter.GAMMA;
+function letterFromGridPlacement(gridPlacement: unknown): Letter | null {
+  if (!gridPlacement) return null;
+  const placement = String(gridPlacement).toLowerCase();
+  if (placement.startsWith("alpha")) return Letter.ALPHA;
+  if (placement.startsWith("beta")) return Letter.BETA;
+  if (placement.startsWith("gamma")) return Letter.GAMMA;
   return null;
 }
 
@@ -66,20 +66,20 @@ export function hydrateSequence(raw: Record<string, unknown>): SequenceData {
   // recovered.
   const created = createSequenceData(normalizeLegacySequence(raw));
   const sequence = created.steps.length > 0 ? created : hydrate(created);
-  const startPosition = sequence.startPosition
+  const startPlacement = sequence.startPlacement
     ? {
-        ...sequence.startPosition,
-        motions: hydrateMotions(sequence.startPosition.motions),
+        ...sequence.startPlacement,
+        motions: hydrateMotions(sequence.startPlacement.motions),
         letter:
-          sequence.startPosition.letter ??
-          letterFromGridPosition(sequence.startPosition.gridPosition),
+          sequence.startPlacement.letter ??
+          letterFromGridPlacement(sequence.startPlacement.gridPlacement),
       }
     : undefined;
 
   const hydrated: SequenceData = {
     ...sequence,
     steps: hydrateSteps(sequence.steps),
-    ...(startPosition && { startPosition }),
+    ...(startPlacement && { startPlacement }),
   };
 
   const hasStoredReversals = hydrated.steps.some(

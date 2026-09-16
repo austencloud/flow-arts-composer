@@ -6,7 +6,7 @@ describe("Construct live tutorial state", () => {
     const tutorial = createConstructTutorialState();
     tutorial.start();
 
-    expect(tutorial.stage).toBe("start-position");
+    expect(tutorial.stage).toBe("start-placement");
     expect(
       tutorial.recordOptionApplied({
         letter: "A",
@@ -14,9 +14,9 @@ describe("Construct live tutorial state", () => {
       })
     ).toBe(false);
 
-    expect(tutorial.recordStartPosition("α1")).toBe(true);
+    expect(tutorial.recordStartPlacement("α1")).toBe(true);
     expect(tutorial.stage).toBe("next-pictograph");
-    expect(tutorial.positionLabel).toBe("α1");
+    expect(tutorial.placementLabel).toBe("α1");
 
     expect(
       tutorial.recordOptionApplied({
@@ -34,7 +34,7 @@ describe("Construct live tutorial state", () => {
   it("dismisses and can restart cleanly", () => {
     const tutorial = createConstructTutorialState();
     tutorial.start();
-    tutorial.recordStartPosition("β5");
+    tutorial.recordStartPlacement("β5");
     tutorial.dismiss();
 
     expect(tutorial.status).toBe("dismissed");
@@ -47,17 +47,17 @@ describe("Construct live tutorial state", () => {
 
     tutorial.start();
     expect(tutorial.status).toBe("active");
-    expect(tutorial.stage).toBe("start-position");
-    expect(tutorial.positionLabel).toBeNull();
+    expect(tutorial.stage).toBe("start-placement");
+    expect(tutorial.placementLabel).toBeNull();
     expect(tutorial.addedLetter).toBeNull();
   });
 
-  it("accepts a valid custom start position without a canonical label", () => {
+  it("accepts a valid custom start placement without a canonical label", () => {
     const tutorial = createConstructTutorialState();
     tutorial.start();
 
-    expect(tutorial.recordStartPosition(null)).toBe(true);
+    expect(tutorial.recordStartPlacement(null)).toBe(true);
     expect(tutorial.stage).toBe("next-pictograph");
-    expect(tutorial.positionLabel).toBeNull();
+    expect(tutorial.placementLabel).toBeNull();
   });
 });

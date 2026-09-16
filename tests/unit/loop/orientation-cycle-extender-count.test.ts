@@ -13,7 +13,7 @@ import type { StepData } from "../../../src/lib/shared/foundation/domain/models/
 import { Letter } from "../../../src/lib/shared/foundation/domain/models/letter";
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "../../../src/lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   HandSide,
@@ -45,8 +45,8 @@ const dashMotion = (
 // "already_complete" and where orientation may still be open.
 const step = (
   n: number,
-  start: GridPosition,
-  end: GridPosition,
+  start: GridPlacement,
+  end: GridPlacement,
   blueFrom: GridLocation,
   blueTo: GridLocation,
   turns: number
@@ -55,8 +55,8 @@ const step = (
   stepNumber: n,
   duration: 1.0,
   letter: Letter.PHI_DASH,
-  startPosition: start,
-  endPosition: end,
+  startPlacement: start,
+  endPlacement: end,
   motions: {
     [HandSide.LEFT]: dashMotion(HandSide.LEFT, blueFrom, blueTo, turns),
     [HandSide.RIGHT]: dashMotion(HandSide.RIGHT, blueTo, blueFrom, turns),
@@ -70,8 +70,8 @@ function sequenceWithTurns(turns: number) {
   return createSequenceData({
     word: "Φ-Φ-",
     steps: [
-      step(1, GridPosition.ALPHA1, GridPosition.ALPHA5, GridLocation.SOUTH, GridLocation.NORTH, turns),
-      step(2, GridPosition.ALPHA5, GridPosition.ALPHA1, GridLocation.NORTH, GridLocation.SOUTH, turns),
+      step(1, GridPlacement.ALPHA1, GridPlacement.ALPHA5, GridLocation.SOUTH, GridLocation.NORTH, turns),
+      step(2, GridPlacement.ALPHA5, GridPlacement.ALPHA1, GridLocation.NORTH, GridLocation.SOUTH, turns),
     ],
   });
 }

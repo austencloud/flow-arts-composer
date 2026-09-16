@@ -147,7 +147,7 @@
         <p class="eyebrow">Type 1 letters</p>
         <h1 id="type1-title">Same path family. Different spins.</h1>
         <p class="lede">
-          A, B, and C stay in the alpha position family. G, H, and I repeat
+          A, B, and C stay in the alpha placement family. G, H, and I repeat
           those same spin patterns in beta. Select any letter to compare the
           real pictographs.
         </p>
@@ -159,7 +159,7 @@
               <small>A · B · C</small>
             </div>
             <div class="letter-row" aria-label="Alpha-family Type 1 letters">
-              {#each TYPE1_LESSON_LETTERS.filter((item) => item.positionFamily === "alpha") as item}
+              {#each TYPE1_LESSON_LETTERS.filter((item) => item.placementFamily === "alpha") as item}
                 <button
                   type="button"
                   class:active={selectedLetter === item.letter}
@@ -179,7 +179,7 @@
               <small>G · H · I</small>
             </div>
             <div class="letter-row" aria-label="Beta-family Type 1 letters">
-              {#each TYPE1_LESSON_LETTERS.filter((item) => item.positionFamily === "beta") as item}
+              {#each TYPE1_LESSON_LETTERS.filter((item) => item.placementFamily === "beta") as item}
                 <button
                   type="button"
                   class:active={selectedLetter === item.letter}
@@ -199,7 +199,7 @@
           <div>
             <strong>{TYPE1_PATTERN_LABELS[activeLetter.pattern]}</strong>
             <p>
-              Both hands shift within the {activeLetter.positionFamily} family.
+              Both hands shift within the {activeLetter.placementFamily} family.
             </p>
           </div>
         </div>
@@ -278,13 +278,13 @@
               <p>
                 <strong>{selectedAnswerData.letter}</strong> is
                 {TYPE1_PATTERN_LABELS[selectedAnswerData.pattern].toLowerCase()} in
-                {selectedAnswerData.positionFamily}. Look for
+                {selectedAnswerData.placementFamily}. Look for
                 <strong
                   >{TYPE1_PATTERN_LABELS[
                     answerLetter.pattern
                   ].toLowerCase()}</strong
                 >
-                in {answerLetter.positionFamily}.
+                in {answerLetter.placementFamily}.
               </p>
             </div>
           {:else if answerState === "correct"}
@@ -293,7 +293,7 @@
               <p>
                 <strong>{answerLetter.letter}</strong> is
                 {TYPE1_PATTERN_LABELS[answerLetter.pattern].toLowerCase()} in
-                {answerLetter.positionFamily}.
+                {answerLetter.placementFamily}.
               </p>
             </div>
           {/if}
@@ -315,9 +315,9 @@
   {:else}
     <section class="summary" aria-labelledby="type1-summary-title">
       <p class="eyebrow">Letter map</p>
-      <h1 id="type1-summary-title">Three patterns, two position families</h1>
+      <h1 id="type1-summary-title">Three patterns, two placement families</h1>
       <p class="summary-lede">
-        The A/B/C pattern repeats as G/H/I. The position family changes; the
+        The A/B/C pattern repeats as G/H/I. The placement family changes; the
         pairing of pro and anti stays recognizable.
       </p>
 

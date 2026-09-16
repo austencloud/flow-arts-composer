@@ -69,7 +69,7 @@ function findPosition(left, right) {
 }
 
 /** Get position group (beta or gamma) */
-function positionGroup(posName) {
+function placementGroup(posName) {
   return posName.startsWith("beta") ? "beta" : "gamma";
 }
 
@@ -90,7 +90,7 @@ function shift(vertex, direction) {
 // ============================================================================
 
 const CSV_HEADER =
-  "letter,startPosition,endPosition,timing,direction," +
+  "letter,startPlacement,endPlacement,timing,direction," +
   "blueMotionType,blueRotationDirection,blueStartLocation,blueEndLocation," +
   "redMotionType,redRotationDirection,redStartLocation,redEndLocation";
 
@@ -278,7 +278,7 @@ function generateGammaToGamma() {
         const endPos = findPosition(leftEnd, rightEnd);
 
         // Only keep gamma→gamma transitions
-        if (endPos && positionGroup(endPos) === "gamma") {
+        if (endPos && placementGroup(endPos) === "gamma") {
           rows.push(
             makeRow(letter, startP.name, endPos, timing, direction, {
               motionType: leftMotion,
@@ -335,7 +335,7 @@ function generateQuarterTime() {
         const rightEnd = shift(startP.right, rightDir);
         const endPos = findPosition(leftEnd, rightEnd);
 
-        if (endPos && positionGroup(endPos) === "gamma") {
+        if (endPos && placementGroup(endPos) === "gamma") {
           rows.push(
             makeRow(letter, startP.name, endPos, timing, direction, {
               motionType: leftMotion,
@@ -378,7 +378,7 @@ function generateType2() {
         {
           const leftEnd = shift(startP.left, dir);
           const endPos = findPosition(leftEnd, startP.right);
-          if (endPos && positionGroup(endPos) === "gamma") {
+          if (endPos && placementGroup(endPos) === "gamma") {
             rows.push(
               makeRow(letter, startP.name, endPos, "split", "opp", {
                 motionType: shiftMotion,
@@ -399,7 +399,7 @@ function generateType2() {
         {
           const rightEnd = shift(startP.right, dir);
           const endPos = findPosition(startP.left, rightEnd);
-          if (endPos && positionGroup(endPos) === "gamma") {
+          if (endPos && placementGroup(endPos) === "gamma") {
             rows.push(
               makeRow(letter, startP.name, endPos, "split", "opp", {
                 motionType: "static",
@@ -431,7 +431,7 @@ function generateType2() {
           const leftEnd = shift(startP.left, dir);
           if (leftEnd === startP.right) {
             const endPos = findPosition(leftEnd, startP.right);
-            if (endPos && positionGroup(endPos) === "beta") {
+            if (endPos && placementGroup(endPos) === "beta") {
               rows.push(
                 makeRow(letter, startP.name, endPos, "split", "opp", {
                   motionType: shiftMotion,
@@ -454,7 +454,7 @@ function generateType2() {
           const rightEnd = shift(startP.right, dir);
           if (rightEnd === startP.left) {
             const endPos = findPosition(startP.left, rightEnd);
-            if (endPos && positionGroup(endPos) === "beta") {
+            if (endPos && placementGroup(endPos) === "beta") {
               rows.push(
                 makeRow(letter, startP.name, endPos, "split", "opp", {
                   motionType: "static",
@@ -560,8 +560,8 @@ for (const [letter, count] of Object.entries(letterCounts).sort()) {
 const transitionPairs = new Set();
 for (const row of rows) {
   const parts = row.split(",");
-  const startGroup = positionGroup(parts[1]);
-  const endGroup = positionGroup(parts[2]);
+  const startGroup = placementGroup(parts[1]);
+  const endGroup = placementGroup(parts[2]);
   transitionPairs.add(`${startGroup}→${endGroup}`);
 }
 console.log("\nTransition coverage:", [...transitionPairs].sort().join(", "));

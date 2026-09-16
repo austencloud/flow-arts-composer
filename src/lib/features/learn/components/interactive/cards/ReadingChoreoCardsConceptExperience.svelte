@@ -32,7 +32,7 @@
   const steps = [
     {
       region: "start",
-      title: "Start with the start position",
+      title: "Start with the start placement",
       text: "This first cell shows where both hands begin. The sequence returns here after its last step.",
     },
     {

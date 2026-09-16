@@ -6,14 +6,14 @@
   2. "Wrong at beat N" - open correction UI for a specific beat
   3. "Try again" - reject and re-run the pipeline
 
-  When correcting, shows a GridPositionPicker for each hand per beat.
+  When correcting, shows a GridPlacementPicker for each hand per beat.
 -->
 <script lang="ts">
   import { t } from "$lib/shared/i18n/i18n.svelte";
   import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import type { DetectedBeat } from "../../domain/models";
   import type { PhaseVerdict, UserCorrection } from "../../domain/verification-models";
-  import GridPositionPicker from "./GridPositionPicker.svelte";
+  import GridPlacementPicker from "./GridPlacementPicker.svelte";
 
   let {
     beats,
@@ -147,7 +147,7 @@
           <span class="detected-value">
             {t('skel2tka_detected_value', { value: detectedLeft?.toUpperCase() ?? t('skel2tka_none') })}
           </span>
-          <GridPositionPicker
+          <GridPlacementPicker
             selected={correctedLeft}
             hand="left"
             onSelect={(loc) => (correctedLeft = loc)}
@@ -159,7 +159,7 @@
           <span class="detected-value">
             {t('skel2tka_detected_value', { value: detectedRight?.toUpperCase() ?? t('skel2tka_none') })}
           </span>
-          <GridPositionPicker
+          <GridPlacementPicker
             selected={correctedRight}
             hand="right"
             onSelect={(loc) => (correctedRight = loc)}

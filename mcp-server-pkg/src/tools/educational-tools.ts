@@ -2,7 +2,8 @@
  * Educational Tools
  *
  * Tools for learning about TKA: get_alphabet_info, get_letter_explanation,
- * get_term_definition, compare_letters, list_letters_by_type, get_position_info
+ * get_term_definition, compare_letters, list_letters_by_type, get_placement_info
+ * (get_position_info kept as a deprecated alias for get_placement_info)
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -35,7 +36,7 @@ export function registerEducationalTools(server: McpServer): void {
               type: "text" as const,
               text: `TKA Quick Reference:
 - Grid: 8 points (N,E,S,W + NE,SE,SW,NW) + center (Level 4)
-- Positions: Alpha=opposite, Beta=same, Gamma=right-angle, Zeta=obtuse, Eta=acute, Tau=one-center, Terra=both-center
+- Placements: Alpha=opposite, Beta=same, Gamma=right-angle, Zeta=obtuse, Eta=acute, Tau=one-center, Terra=both-center
 - Hand paths: Static=stay, Shift=arc to adjacent, Dash=straight to opposite(180°), Hash=straight to/from center (L4, "half-dash")
 - Prop rotations: Pro=with hand path (0 turns=isolation, preserves center-relative orientation), Anti=against, Float=holds absolute spatial angle
 - Types: 1=Dual-Shift(A-V), 2=Shift(W-Ω), 3=Cross-Shift(W--Ω-), 4=Dash(Φ,Ψ,Λ), 5=Dual-Dash(Φ-,Ψ-,Λ-), 6=Static(α,β,γ)
@@ -52,10 +53,10 @@ export function registerEducationalTools(server: McpServer): void {
 
 ## Overview
 
-TKA is a notation system for flow arts with dual wielded props (staff, fans, clubs, etc.) that encodes hand positions and movements into letters. Each "pictograph" represents one beat of motion showing:
-- Left and right props at specific grid positions (canonically blue and red)
+TKA is a notation system for flow arts with dual wielded props (staff, fans, clubs, etc.) that encodes hand locations and movements into letters. Each "pictograph" represents one beat of motion showing:
+- Left and right props at specific grid locations (canonically blue and red)
 - Motion arrows showing how each hand moves
-- Start and end positions
+- Start and end placements
 
 ## The Grid System
 
@@ -70,7 +71,7 @@ Pictographs use a grid with up to 9 points:
 - **Centric**: At least one hand at center (Level 4, not yet implemented)
 - **Skewed**: One cardinal + one intercardinal (Level 5)
 
-## Hand Positions
+## Hand Placements
 
 - **Alpha (α)**: Hands at opposite points (180°)
 - **Beta (β)**: Hands at the same point (0°)
@@ -117,7 +118,7 @@ All levels 1-7 work on a single plane at a time (any of the three). Level 8 (ato
 
 ## Conjoined Grids (Level 7)
 
-Two grids sharing a junction point, each showing one hand's motion. Expands the spatial canvas while staying in 2D. Creates new position combinations that can't exist on a single grid, including patterns with two center points. Uses existing position terminology (alpha, beta, gamma) to express the new spatial relationships across paired grids.
+Two grids sharing a junction point, each showing one hand's motion. Expands the spatial canvas while staying in 2D. Creates new placement combinations that can't exist on a single grid, including patterns with two center points. Uses existing placement terminology (alpha, beta, gamma) to express the new spatial relationships across paired grids.
 
 ## The 6 Letter Types
 
@@ -170,7 +171,7 @@ Three types of directional changes, indicated by colored dots on the left edge o
 ## LOOPs (Circular Sequences)
 
 Sequences that return home through transformations:
-- **Rotated**: Positions continue rotating same direction (180° or 90° slices)
+- **Rotated**: Placements continue rotating same direction (180° or 90° slices)
 - **Mirrored**: Left-right swap across vertical axis
 - **Flipped**: Top-bottom swap across horizontal axis
 - **Swapped**: Left and right hand roles swap
@@ -179,7 +180,7 @@ Sequences that return home through transformations:
 
 ## Variations
 
-Each letter has multiple variations based on starting/ending positions, rotation directions, and grid locations.
+Each letter has multiple variations based on starting/ending placements, rotation directions, and grid locations.
 Use \`list_letter_variations\` to see all variations for a specific letter.`;
 
       return {
@@ -237,7 +238,7 @@ Use \`list_letter_variations\` to see all variations for a specific letter.`;
           content: [
             {
               type: "text" as const,
-              text: `${letter}: Type ${typeNum} (${fullTypeInfo?.name || "?"}) | Left hand: ${varData.leftMotion.motionType} | Right hand: ${varData.rightMotion.motionType} | ${variations.length} variations | Var ${variation}: ${varData.startPosition}→${varData.endPosition}`,
+              text: `${letter}: Type ${typeNum} (${fullTypeInfo?.name || "?"}) | Left hand: ${varData.leftMotion.motionType} | Right hand: ${varData.rightMotion.motionType} | ${variations.length} variations | Var ${variation}: ${varData.startPlacement}→${varData.endPlacement}`,
             },
           ],
         };
@@ -271,15 +272,15 @@ ${fullTypeInfo?.characteristics ? "**Characteristics:**\n" + fullTypeInfo.charac
 - **Right hand:** ${describeMotion(varData.rightMotion)}
 
 ## Variation ${variation} Details
-- **Start position:** ${varData.startPosition}
-- **End position:** ${varData.endPosition}
+- **Start placement:** ${varData.startPlacement}
+- **End placement:** ${varData.endPlacement}
 - **Left-hand motion:** ${varData.leftMotion.startLocation} → ${varData.leftMotion.endLocation}
 - **Right-hand motion:** ${varData.rightMotion.startLocation} → ${varData.rightMotion.endLocation}
 
 ## All Variations (${variations.length} total)
 ${variations
   .slice(0, 5)
-  .map((v, i) => `[${i}] ${v.startPosition} → ${v.endPosition}`)
+  .map((v, i) => `[${i}] ${v.startPlacement} → ${v.endPlacement}`)
   .join(
     "\n"
   )}${variations.length > 5 ? `\n... and ${variations.length - 5} more` : ""}
@@ -497,19 +498,19 @@ ${entry.examples.map((e) => `- ${e}`).join("\n")}
         );
       }
 
-      // Compare position patterns
-      const startPos1 = rep1.startPosition.replace(/\d+/g, "");
-      const endPos1 = rep1.endPosition.replace(/\d+/g, "");
-      const startPos2 = rep2.startPosition.replace(/\d+/g, "");
-      const endPos2 = rep2.endPosition.replace(/\d+/g, "");
+      // Compare placement patterns
+      const startPos1 = rep1.startPlacement.replace(/\d+/g, "");
+      const endPos1 = rep1.endPlacement.replace(/\d+/g, "");
+      const startPos2 = rep2.startPlacement.replace(/\d+/g, "");
+      const endPos2 = rep2.endPlacement.replace(/\d+/g, "");
       const pattern1 = `${startPos1}→${endPos1}`;
       const pattern2 = `${startPos2}→${endPos2}`;
 
       if (pattern1 === pattern2) {
-        similarities.push(`Same position pattern: ${pattern1}`);
+        similarities.push(`Same placement pattern: ${pattern1}`);
       } else {
         differences.push(
-          `Position pattern differs: ${letter1} is ${pattern1}, ${letter2} is ${pattern2}`
+          `Placement pattern differs: ${letter1} is ${pattern1}, ${letter2} is ${pattern2}`
         );
       }
 
@@ -540,7 +541,7 @@ ${entry.examples.map((e) => `- ${e}`).join("\n")}
         );
       }
 
-      // Check compound pair (opposite position transitions)
+      // Check compound pair (opposite placement transitions)
       if (
         startPos1 === endPos2 &&
         endPos1 === startPos2 &&
@@ -559,7 +560,7 @@ ${entry.examples.map((e) => `- ${e}`).join("\n")}
 | Type | ${typeNum1} (${letterTypes[typeNum1]?.name || "?"}) | ${typeNum2} (${letterTypes[typeNum2]?.name || "?"}) |
 | Left-hand motion | ${describeRotation(rep1.leftMotion)} ${rep1.leftMotion.motionType} | ${describeRotation(rep2.leftMotion)} ${rep2.leftMotion.motionType} |
 | Right-hand motion | ${describeRotation(rep1.rightMotion)} ${rep1.rightMotion.motionType} | ${describeRotation(rep2.rightMotion)} ${rep2.rightMotion.motionType} |
-| Position pattern | ${pattern1} | ${pattern2} |
+| Placement pattern | ${pattern1} | ${pattern2} |
 | Variations | ${var1.length} | ${var2.length} |
 
 ## Similarities
@@ -653,167 +654,184 @@ ${letterCounts.map(({ letter, count }) => `- **${letter}** (${count} variations)
     }
   );
 
-  // Tool: get_position_info
+  const PLACEMENTS: Record<
+    string,
+    {
+      name: string;
+      angleDegrees: string;
+      description: string;
+      gridDescription: string;
+      examples: string[];
+      level: number;
+    }
+  > = {
+    alpha: {
+      name: "Alpha (α)",
+      angleDegrees: "180°",
+      description:
+        "Hands are at opposite grid points, forming a straight line through the center.",
+      gridDescription:
+        "Examples: N/S, E/W, NE/SW, NW/SE. The hands are as far apart as possible.",
+      examples: [
+        "alpha1: Hands at N and S (diamond mode, vertical axis)",
+        "alpha3: Hands at E and W (diamond mode, horizontal axis)",
+        "alpha5: Hands at NE and SW (box mode, diagonal)",
+      ],
+      level: 1,
+    },
+    beta: {
+      name: "Beta (β)",
+      angleDegrees: "0°",
+      description:
+        "Both hands are at the same grid point, stacked on top of each other.",
+      gridDescription: "Both props share a single location.",
+      examples: [
+        "beta1: Both hands at N (diamond mode)",
+        "beta5: Both hands at NE (box mode)",
+        "beta3: Both hands at E (diamond mode)",
+      ],
+      level: 1,
+    },
+    gamma: {
+      name: "Gamma (γ)",
+      angleDegrees: "90°",
+      description:
+        "Hands form a right angle, positioned on adjacent grid points.",
+      gridDescription:
+        "One hand is 90° away from the other, creating an 'L' shape.",
+      examples: [
+        "gamma1: Hands at N and E (diamond mode)",
+        "gamma5: Hands at NE and NW (box mode, 90° apart)",
+        "gamma9: Hands at NE and SE (box mode)",
+      ],
+      level: 1,
+    },
+    zeta: {
+      name: "Zeta (ζ)",
+      angleDegrees: "~135°",
+      description:
+        "Hands form an obtuse angle. Introduced in Level 5 with skewed grid mode.",
+      gridDescription:
+        "One hand is on a cardinal point, the other on an intercardinal point, forming an angle greater than 90°.",
+      examples: [
+        "Hands at N and SE (skewed mode, ~135°)",
+        "Hands at E and NW (skewed mode)",
+      ],
+      level: 5,
+    },
+    eta: {
+      name: "Eta (η)",
+      angleDegrees: "~45°",
+      description:
+        "Hands form an acute angle. Introduced in Level 5 with skewed grid mode.",
+      gridDescription:
+        "One hand is on a cardinal point, the other on an intercardinal point, forming an angle less than 90°.",
+      examples: [
+        "Hands at N and NE (skewed mode, ~45°)",
+        "Hands at E and SE (skewed mode)",
+      ],
+      level: 5,
+    },
+    tau: {
+      name: "Tau (τ)",
+      angleDegrees: "variable",
+      description:
+        "One hand is at the center grid point, the other at a non-center point. Introduced in Level 4 with centric grid mode. Not yet implemented in Flow Arts Composer.",
+      gridDescription:
+        "The center point is the 9th grid location. Tau placements have one hand there and one at any of the 8 outer points.",
+      examples: [
+        "One hand at center, one at N",
+        "One hand at center, one at NE",
+      ],
+      level: 4,
+    },
+    terra: {
+      name: "Terra",
+      angleDegrees: "0° (both at center)",
+      description:
+        "Both hands are at the center grid point. Introduced in Level 4 with centric grid mode. Not yet implemented in Flow Arts Composer.",
+      gridDescription:
+        "Both props stacked at the center of the grid. Similar to beta (both at same point) but at the unique center location.",
+      examples: ["Both hands at center"],
+      level: 4,
+    },
+  };
+
+  async function getPlacementInfoOutput(placementInput: string) {
+    const normalizedPlacement = placementInput.toLowerCase().trim();
+    const placementInfo = PLACEMENTS[normalizedPlacement];
+
+    if (!placementInfo) {
+      const availablePlacements = Object.keys(PLACEMENTS).join(", ");
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Placement "${placementInput}" not recognized. Available placements: ${availablePlacements}`,
+          },
+        ],
+      };
+    }
+
+    const allPictographs = ensureDataLoaded();
+    const startCount = allPictographs.filter((p) =>
+      p.startPlacement.toLowerCase().startsWith(normalizedPlacement)
+    ).length;
+    const endCount = allPictographs.filter((p) =>
+      p.endPlacement.toLowerCase().startsWith(normalizedPlacement)
+    ).length;
+
+    const output = `# ${placementInfo.name}
+
+**Angle:** ${placementInfo.angleDegrees} between hands
+
+**Description:** ${placementInfo.description}
+
+**Grid Configuration:** ${placementInfo.gridDescription}
+
+**Examples:**
+${placementInfo.examples.map((e) => `- ${e}`).join("\n")}
+
+**Introduced:** Level ${placementInfo.level}
+
+**Usage in Pictographs:**
+- Used as starting placement: ${startCount} pictographs
+- Used as ending placement: ${endCount} pictographs
+
+**Related:** ${Object.keys(PLACEMENTS)
+      .filter((p) => p !== normalizedPlacement)
+      .join(", ")}`;
+
+    return {
+      content: [{ type: "text" as const, text: output }],
+    };
+  }
+
+  // Tool: get_placement_info
+  server.tool(
+    "get_placement_info",
+    "Get detailed information about a TKA placement (alpha, beta, gamma, zeta, eta, tau, terra) including grid configuration and examples. 'Placement' is the current term; older TKA material and this tool's deprecated alias (get_position_info) call it 'position'. VTG's term for the same idea is 'placement'.",
+    {
+      placement: z
+        .string()
+        .describe("Placement name (alpha, beta, gamma, zeta, eta, tau, terra)"),
+    },
+    async ({ placement }) => {
+      return getPlacementInfoOutput(placement);
+    }
+  );
+
+  // Tool: get_position_info (deprecated alias)
   server.tool(
     "get_position_info",
-    "Get detailed information about a TKA position (alpha, beta, gamma, zeta, eta, tau, terra) including grid configuration and examples.",
+    "Deprecated. Use get_placement_info instead. 'Position' is the older TKA term for what this system now calls a placement. Kept for backward compatibility only.",
     {
       position: z
         .string()
-        .describe("Position name (alpha, beta, gamma, zeta, eta, tau, terra)"),
+        .describe("Placement name (alpha, beta, gamma, zeta, eta, tau, terra)"),
     },
     async ({ position }) => {
-      const normalizedPos = position.toLowerCase().trim();
-
-      const positions: Record<
-        string,
-        {
-          name: string;
-          angleDegrees: string;
-          description: string;
-          gridDescription: string;
-          examples: string[];
-          level: number;
-        }
-      > = {
-        alpha: {
-          name: "Alpha (α)",
-          angleDegrees: "180°",
-          description:
-            "Hands are at opposite grid points, forming a straight line through the center.",
-          gridDescription:
-            "Examples: N/S, E/W, NE/SW, NW/SE. The hands are as far apart as possible.",
-          examples: [
-            "alpha1: Hands at N and S (diamond mode, vertical axis)",
-            "alpha3: Hands at E and W (diamond mode, horizontal axis)",
-            "alpha5: Hands at NE and SW (box mode, diagonal)",
-          ],
-          level: 1,
-        },
-        beta: {
-          name: "Beta (β)",
-          angleDegrees: "0°",
-          description:
-            "Both hands are at the same grid point, stacked on top of each other.",
-          gridDescription: "Both props share a single location.",
-          examples: [
-            "beta1: Both hands at N (diamond mode)",
-            "beta5: Both hands at NE (box mode)",
-            "beta3: Both hands at E (diamond mode)",
-          ],
-          level: 1,
-        },
-        gamma: {
-          name: "Gamma (γ)",
-          angleDegrees: "90°",
-          description:
-            "Hands form a right angle, positioned on adjacent grid points.",
-          gridDescription:
-            "One hand is 90° away from the other, creating an 'L' shape.",
-          examples: [
-            "gamma1: Hands at N and E (diamond mode)",
-            "gamma5: Hands at NE and NW (box mode, 90° apart)",
-            "gamma9: Hands at NE and SE (box mode)",
-          ],
-          level: 1,
-        },
-        zeta: {
-          name: "Zeta (ζ)",
-          angleDegrees: "~135°",
-          description:
-            "Hands form an obtuse angle. Introduced in Level 5 with skewed grid mode.",
-          gridDescription:
-            "One hand is on a cardinal point, the other on an intercardinal point, forming an angle greater than 90°.",
-          examples: [
-            "Hands at N and SE (skewed mode, ~135°)",
-            "Hands at E and NW (skewed mode)",
-          ],
-          level: 5,
-        },
-        eta: {
-          name: "Eta (η)",
-          angleDegrees: "~45°",
-          description:
-            "Hands form an acute angle. Introduced in Level 5 with skewed grid mode.",
-          gridDescription:
-            "One hand is on a cardinal point, the other on an intercardinal point, forming an angle less than 90°.",
-          examples: [
-            "Hands at N and NE (skewed mode, ~45°)",
-            "Hands at E and SE (skewed mode)",
-          ],
-          level: 5,
-        },
-        tau: {
-          name: "Tau (τ)",
-          angleDegrees: "variable",
-          description:
-            "One hand is at the center grid point, the other at a non-center point. Introduced in Level 4 with centric grid mode. Not yet implemented in Flow Arts Composer.",
-          gridDescription:
-            "The center point is the 9th grid location. Tau positions have one hand there and one at any of the 8 outer points.",
-          examples: [
-            "One hand at center, one at N",
-            "One hand at center, one at NE",
-          ],
-          level: 4,
-        },
-        terra: {
-          name: "Terra",
-          angleDegrees: "0° (both at center)",
-          description:
-            "Both hands are at the center grid point. Introduced in Level 4 with centric grid mode. Not yet implemented in Flow Arts Composer.",
-          gridDescription:
-            "Both props stacked at the center of the grid. Similar to beta (both at same point) but at the unique center location.",
-          examples: ["Both hands at center"],
-          level: 4,
-        },
-      };
-
-      const posInfo = positions[normalizedPos];
-
-      if (!posInfo) {
-        const availablePositions = Object.keys(positions).join(", ");
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Position "${position}" not recognized. Available positions: ${availablePositions}`,
-            },
-          ],
-        };
-      }
-
-      const allPictographs = ensureDataLoaded();
-      const startCount = allPictographs.filter((p) =>
-        p.startPosition.toLowerCase().startsWith(normalizedPos)
-      ).length;
-      const endCount = allPictographs.filter((p) =>
-        p.endPosition.toLowerCase().startsWith(normalizedPos)
-      ).length;
-
-      const output = `# ${posInfo.name}
-
-**Angle:** ${posInfo.angleDegrees} between hands
-
-**Description:** ${posInfo.description}
-
-**Grid Configuration:** ${posInfo.gridDescription}
-
-**Examples:**
-${posInfo.examples.map((e) => `- ${e}`).join("\n")}
-
-**Introduced:** Level ${posInfo.level}
-
-**Usage in Pictographs:**
-- Used as starting position: ${startCount} pictographs
-- Used as ending position: ${endCount} pictographs
-
-**Related:** ${Object.keys(positions)
-        .filter((p) => p !== normalizedPos)
-        .join(", ")}`;
-
-      return {
-        content: [{ type: "text" as const, text: output }],
-      };
+      return getPlacementInfoOutput(position);
     }
   );
 }

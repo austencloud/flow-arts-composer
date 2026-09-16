@@ -68,7 +68,7 @@ export const PRECISE_QUARTER_SAME_EXPLANATION = `Type 1 (dual-shift, 22 letters)
 
 Every group is two pure members (pro|pro, anti|anti) plus one hybrid (pro|anti) = 3 letters — except Quarter-Same, which has 4.
 
-A letter is invariant under rotation, reflection, and color-swap: those transformations never produce a new letter. That invariance holds for symmetric positions (alpha, beta) and for opposite-direction motion anywhere. It breaks only for same-direction motion in an asymmetric position — Quarter-Same — where one hand leads and one follows.
+A letter is invariant under rotation, reflection, and color-swap: those transformations never produce a new letter. That invariance holds for symmetric placements (alpha, beta) and for opposite-direction motion anywhere. It breaks only for same-direction motion in an asymmetric placement — Quarter-Same — where one hand leads and one follows.
 
 - S (pro|pro) and T (anti|anti): swapping colors only swaps who leads, so the move is identical — one letter each. (Leader/follower still places turns: leader on top of the glyph, follower below.)
 - The hybrid case: swapping colors changes which motion type leads, producing a genuinely different move. So it splits into two letters — U (leader pro, follower anti) and V (leader anti, follower pro).

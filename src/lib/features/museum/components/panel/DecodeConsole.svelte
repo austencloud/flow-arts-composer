@@ -126,7 +126,7 @@
             pictographData={step}
             showGrid={true}
             showTKA={i < revealed}
-            showPositions={false}
+            showPlacements={false}
             showReversals={false}
           />
           <span class="cell-index">{String(i + 1).padStart(2, "0")}</span>

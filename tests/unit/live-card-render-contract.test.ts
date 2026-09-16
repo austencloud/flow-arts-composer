@@ -20,7 +20,7 @@ describe("shared live card / bitmap cell contract", () => {
       primaryPropColors: { left: "#00ff00", right: "#ff00ff" },
       showTKA: false,
       showGrid: false,
-      showPositions: true,
+      showPlacements: true,
     });
     expect(after.data).toBe(before.data);
     expect(after.prepareOptions).toEqual(before.prepareOptions);
@@ -48,13 +48,13 @@ describe("shared live card / bitmap cell contract", () => {
       browseViewMode: { subject: "props", granularity: "solo", hand: "right" },
       showTKA: true,
       showTnD: true,
-      showPositions: true,
+      showPlacements: true,
     });
     expect(result.data.motions?.left).toBeUndefined();
     expect(result.data.motions?.right).toBe(data.motions?.right);
     expect(data.motions?.left).toBeDefined();
     expect(result.visibility).toEqual({ showTKA: false, showReversals: false });
-    expect(result.renderOptions.showPositions).toBe(false);
+    expect(result.renderOptions.showPlacements).toBe(false);
   });
   it("prepares hand paths as hands with chirality disabled", () => {
     const result = resolvePreviewCellRender(data, true, {
@@ -78,12 +78,12 @@ describe("shared live card / bitmap cell contract", () => {
       ...base,
       showRightMotion: false,
       showElemental: true,
-      showPositions: true,
+      showPlacements: true,
     });
     expect(result.prepareOptions.showRightMotion).toBe(false);
     expect(result.renderOptions.showRightMotion).toBe(false);
     expect(result.renderOptions.showElemental).toBe(false);
-    expect(result.renderOptions.showPositions).toBe(false);
+    expect(result.renderOptions.showPlacements).toBe(false);
   });
   it("keeps duration width in composition, independent of prop preparation", () => {
     const before = resolvePreviewCellRender(data, false, base);

@@ -55,7 +55,7 @@ export function createOptionHistoryManager({
       return;
     }
 
-    // Skip index 0 because it represents the start position
+    // Skip index 0 because it represents the start placement
     const steps = sequence.steps ?? [];
     for (let i = 1; i < steps.length; i++) {
       const beat = steps[i];

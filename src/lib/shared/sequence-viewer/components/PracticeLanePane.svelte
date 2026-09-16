@@ -31,13 +31,13 @@
     rightPropType?: PropType | null;
     /** Jump playback to a step (0 = start position, 1..N = steps). */
     onSeek?: ((stepNumber: number) => void) | null;
-    /** Pre-roll count-in: include + focus the start-position tile so the lane
+    /** Pre-roll count-in: include + focus the start-placement tile so the lane
      *  matches the start pose parked on the canvas. Off during the running loop. */
     showStartCell?: boolean;
   } = $props();
 
   // Practice loops continuously, so during the running loop we drop the
-  // start-position cell: its pose equals the sequence's end, and the lane
+  // start-placement cell: its pose equals the sequence's end, and the lane
   // shouldn't travel back through it each loop. Steps only, cycled; currentStep
   // is shifted −1 so step k focuses its own cell.
   //

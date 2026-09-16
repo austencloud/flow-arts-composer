@@ -17,7 +17,7 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { getLoopDetector } from "$lib/shared/create/get-loop-detector";
 import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
@@ -26,7 +26,7 @@ import {
   getLoopExecutor,
   getPeriodForTag,
   computeRecipeHash,
-  enrichStepsWithGridPositions,
+  enrichStepsWithGridPlacements,
 } from "./compositional-utils";
 
 export class CompositionalEncoder {
@@ -119,15 +119,15 @@ export class CompositionalEncoder {
       // It expects the start position at index 0, then seed beats.
       const inputSteps = [...(seedSequence.steps as StepData[])];
 
-      // The flat encoder only preserves motion locations, not GridPosition
-      // fields (startPosition/endPosition). The executor needs these for
+      // The flat encoder only preserves motion locations, not GridPlacement
+      // fields (startPlacement/endPlacement). The executor needs these for
       // validation and position chaining. Derive them from motion locations.
-      enrichStepsWithGridPositions(inputSteps);
+      enrichStepsWithGridPlacements(inputSteps);
 
-      // If the decoded seed has a startPosition/startingPosition,
+      // If the decoded seed has a startPlacement/startingPlacement,
       // we need to prepend it as step 0 for the executor.
       const startPos =
-        seedSequence.startPosition ?? seedSequence.startingPosition;
+        seedSequence.startPlacement ?? seedSequence.startingPlacement;
       if (startPos) {
         const startStep: StepData = createStepData({
           stepNumber: 0,
@@ -137,8 +137,8 @@ export class CompositionalEncoder {
           id: startPos.id ?? crypto.randomUUID(),
           letter: startPos.letter ?? null,
         });
-        // Derive GridPosition from motion locations for the start step too
-        enrichStepsWithGridPositions([startStep]);
+        // Derive GridPlacement from motion locations for the start step too
+        enrichStepsWithGridPlacements([startStep]);
         inputSteps.unshift(startStep);
       }
 
@@ -146,24 +146,24 @@ export class CompositionalEncoder {
 
       // The executor returns steps WITH the start position at index 0.
       // Separate them back out to match the original structure.
-      const startPositionStep = reconstructedSteps.shift();
+      const startPlacementStep = reconstructedSteps.shift();
 
-      const restoredStartPos = startPositionStep
-        ? createStartPositionData({
-            id: startPositionStep.id,
-            letter: startPositionStep.letter,
-            gridPosition: startPositionStep.startPosition,
-            startPosition: startPositionStep.startPosition,
-            endPosition: startPositionStep.endPosition,
-            motions: startPositionStep.motions,
+      const restoredStartPos = startPlacementStep
+        ? createStartPlacementData({
+            id: startPlacementStep.id,
+            letter: startPlacementStep.letter,
+            gridPlacement: startPlacementStep.startPlacement,
+            startPlacement: startPlacementStep.startPlacement,
+            endPlacement: startPlacementStep.endPlacement,
+            motions: startPlacementStep.motions,
           })
         : undefined;
 
       return {
         ...originalSequence,
         steps: reconstructedSteps,
-        startPosition: restoredStartPos ?? originalSequence.startPosition,
-        startingPosition: restoredStartPos ?? originalSequence.startingPosition,
+        startPlacement: restoredStartPos ?? originalSequence.startPlacement,
+        startingPlacement: restoredStartPos ?? originalSequence.startingPlacement,
       };
     } catch {
       // Recipe encoding is opportunistic. A detector candidate can still fail

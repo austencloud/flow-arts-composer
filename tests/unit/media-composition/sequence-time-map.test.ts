@@ -43,7 +43,7 @@ describe("SequenceTimeMap", () => {
       sequenceRef,
       mediaSourceId: "video-a",
       mediaDurationSeconds: 8,
-      startPositionDuration: 1,
+      startPlacementDuration: 1,
       motionDurations: [1, 2, 4],
       updatedAt: 1,
     });

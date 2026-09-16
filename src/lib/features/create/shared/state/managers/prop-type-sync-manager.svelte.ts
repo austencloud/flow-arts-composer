@@ -66,7 +66,7 @@ export function createPropTypeSyncEffect(
 
       // Sync on initial load AND when prop type changes
       // Removed `previousPropType !== undefined` check - we need to sync on mount
-      // to ensure start positions (created with default STAFF) match user settings
+      // to ensure start placements (created with default STAFF) match user settings
       if (newLeftPropType && newLeftPropType !== previousLeftPropType) {
         StepOperator.bulkUpdatePropType(
           "blue",

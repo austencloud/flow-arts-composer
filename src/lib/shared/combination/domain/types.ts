@@ -7,10 +7,10 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
-/** A seam is the total position between steps — a GridPosition value ("beta5"). */
-export type SeamState = GridPosition;
+/** A seam is the total placement between steps — a GridPlacement value ("beta5"). */
+export type SeamState = GridPlacement;
 
 /** Spatial/hand-role/invert variant applied to card B (or the invert twin of A). */
 export interface VariantDescriptor {
@@ -21,7 +21,7 @@ export interface VariantDescriptor {
   /**
    * Rotation-faithful twin: the card traversed BACKWARDS while every prop keeps
    * rotating the way it already was. Step order reverses, each step's
-   * start/end position and each motion's start/end location+orientation swap,
+   * start/end placement and each motion's start/end location+orientation swap,
    * `rotationDirection` is PRESERVED, and `motionType` + letters are re-derived
    * from the result. See `services/variant-generator.ts`.
    *

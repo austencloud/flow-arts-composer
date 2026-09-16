@@ -6,7 +6,7 @@
  */
 
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   MotionType,
   Orientation,
@@ -35,7 +35,7 @@ export const TRIAD_COLORS = {
   synthesis: "#14b8a6", // Teal
 } as const;
 
-export interface PositionGroupData {
+export interface PlacementGroupData {
   name: string;
   greek: string;
   count: number;
@@ -44,7 +44,7 @@ export interface PositionGroupData {
   color: string;
 }
 
-export const POSITION_GROUPS: PositionGroupData[] = [
+export const PLACEMENT_GROUPS: PlacementGroupData[] = [
   {
     name: "Alpha",
     greek: "α",
@@ -118,8 +118,8 @@ export function createLetterAPictograph(): PictographData {
   return {
     id: "math-foundations-letter-a",
     letter: Letter.A,
-    startPosition: GridPosition.ALPHA1,
-    endPosition: GridPosition.ALPHA3,
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.ALPHA3,
     motions: {
       left: createMotionData({
         motionType: MotionType.PRO,
@@ -156,8 +156,8 @@ export function createLetterBPictograph(): PictographData {
   return {
     id: "math-foundations-letter-b",
     letter: Letter.B,
-    startPosition: GridPosition.ALPHA1,
-    endPosition: GridPosition.ALPHA3,
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.ALPHA3,
     motions: {
       left: createMotionData({
         motionType: MotionType.ANTI,
@@ -194,8 +194,8 @@ export function createLetterCPictograph(): PictographData {
   return {
     id: "math-foundations-letter-c",
     letter: Letter.C,
-    startPosition: GridPosition.ALPHA1,
-    endPosition: GridPosition.ALPHA3,
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.ALPHA3,
     motions: {
       left: createMotionData({
         motionType: MotionType.PRO,

@@ -30,7 +30,7 @@ export interface PublicSequenceDocument {
   gridMode?: string;
   loopType?: string | null;
   isCircular?: boolean;
-  startPosition?: unknown;
+  startPlacement?: unknown;
   sequenceLength?: number;
   blueSoloProp?: { steps: unknown[] };
   redSoloProp?: { steps: unknown[] };
@@ -78,7 +78,7 @@ export function rebuildPublicSequence(
     name: normalized.name ?? normalized.word ?? id,
     word: normalized.word ?? "",
     steps,
-    startPosition: normalized.startPosition as SequenceData["startPosition"],
+    startPlacement: normalized.startPlacement as SequenceData["startPlacement"],
     thumbnails: [],
     isFavorite: false,
     isCircular: Boolean(normalized.isCircular),

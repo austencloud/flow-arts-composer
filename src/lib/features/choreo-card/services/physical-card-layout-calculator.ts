@@ -8,14 +8,14 @@ export interface PhysicalCardLayoutInput {
   canvasWidth: number;
   canvasHeight: number;
   bleedPx: number;
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   showHeader: boolean;
   showFooter: boolean;
   showQRCode: boolean;
 }
 
 export interface PhysicalCardLayout {
-  startPositionLayout: "row" | "column";
+  startPlacementLayout: "row" | "column";
   totalGridColumns?: number;
 }
 
@@ -32,7 +32,7 @@ export function calculatePhysicalCardLayout(
     canvasWidth,
     canvasHeight,
     bleedPx,
-    includeStartPosition,
+    includeStartPlacement,
     showHeader,
     showFooter,
     showQRCode,
@@ -41,7 +41,7 @@ export function calculatePhysicalCardLayout(
   const layout = pickBestFitLayout({
     stepCount: sequence.steps.length,
     stepDurations: sequence.steps.map((step) => step.duration ?? 1),
-    includeStartPosition,
+    includeStartPlacement,
     containerWidth: canvasWidth - frameInset * 2,
     containerHeight: canvasHeight - frameInset * 2,
     showHeader,
@@ -49,13 +49,13 @@ export function calculatePhysicalCardLayout(
     showQRCode,
   });
 
-  const startPositionLayout =
+  const startPlacementLayout =
     layout?.startPlacement === "row" || layout?.startPlacement === "column"
       ? layout.startPlacement
       : getCatalogLayoutPolicy(sequence.steps.length);
 
   return {
-    startPositionLayout,
+    startPlacementLayout,
     ...(layout ? { totalGridColumns: layout.cols } : {}),
   };
 }

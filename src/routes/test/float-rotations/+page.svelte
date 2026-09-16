@@ -5,7 +5,7 @@
   import {
     GridLocation,
     GridMode,
-    GridPosition,
+    GridPlacement,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import {
     MotionType,
@@ -180,8 +180,8 @@
       id: c.id,
       letter: null,
       gridMode: c.gridMode,
-      startPosition: null,
-      endPosition: null,
+      startPlacement: null,
+      endPlacement: null,
       motions: {
         [HandSide.RIGHT]: createMotionData({
           motionType: MotionType.FLOAT,
@@ -221,8 +221,8 @@
     id: "reported-B-beat10",
     letter: Letter.B,
     gridMode: GridMode.DIAMOND,
-    startPosition: GridPosition.ALPHA3,
-    endPosition: GridPosition.ALPHA1,
+    startPlacement: GridPlacement.ALPHA3,
+    endPlacement: GridPlacement.ALPHA1,
     motions: {
       [HandSide.LEFT]: createMotionData({
         motionType: MotionType.ANTI,

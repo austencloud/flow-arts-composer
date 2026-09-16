@@ -9,7 +9,7 @@ import { GUIDE_BODY_PAGES } from "./guide-manifest";
 // env. The builder only reads `built`'s KEYS, so a fake map exercises it fully.
 const BUILT_IDS = [
   "the-grid",
-  "hand-positions",
+  "hand-placements",
   "hand-motions",
   "hm-type1",
   "hm-gamma",

@@ -82,7 +82,7 @@ function stepMotionsMatch(dec: LooseStep, emb: LooseStep): boolean {
 }
 
 /**
- * Steps arrays may or may not lead with a start-position entry depending on
+ * Steps arrays may or may not lead with a start-placement entry depending on
  * era and channel. Content beats are the shared tail, so align from the end:
  * a one-entry length difference means one side carries a leading start step.
  * Anything further apart is a different sequence — no graft.

@@ -7,7 +7,7 @@ import {
 import { Letter } from "../../../../foundation/domain/models/letter";
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "../../../grid/domain/enums/grid-enums";
 import { PropType } from "../../../prop/domain/enums/prop-type";
 import {
@@ -92,8 +92,8 @@ const PictographDataObjectSchema = z.object({
     .min(1)
     .default(() => crypto.randomUUID()),
   letter: z.nativeEnum(Letter).nullable().default(null),
-  startPosition: z.nativeEnum(GridPosition).nullable().default(null),
-  endPosition: z.nativeEnum(GridPosition).nullable().default(null),
+  startPlacement: z.nativeEnum(GridPlacement).nullable().default(null),
+  endPlacement: z.nativeEnum(GridPlacement).nullable().default(null),
   motions: z
     .preprocess(
       normalizeLegacyMotionRecord,

@@ -126,8 +126,8 @@ function canonicalPair(left: SoloPropData, right: SoloPropData) {
     letter: null,
     leftReversal: false,
     rightReversal: false,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
   }));
   return createSequenceData({
     name: "canonical",

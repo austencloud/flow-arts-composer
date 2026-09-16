@@ -97,7 +97,7 @@ export function createSequenceCoreState(
 
     // Setters
     setCurrentSequence(sequence: SequenceData | null) {
-      // Derived fields (gridMode, start/end positions) are recomputed from the
+      // Derived fields (gridMode, start/end placements) are recomputed from the
       // motions here so stale stored copies from single-hand edits self-heal.
       const reconciled = sequence
         ? normalizeSequenceDerived(sequence)

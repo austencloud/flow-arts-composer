@@ -3,8 +3,8 @@
  *
  * Supports both halved (period 2) and quartered (period 4) inverted LOOPs.
  *
- * Inverted is the pro↔anti and CW↔CCW flip. Positions stay the same (start
- * and end positions equal). Period 2 applies one inversion; period 4 applies
+ * Inverted is the pro↔anti and CW↔CCW flip. Placements stay the same (start
+ * and end placements equal). Period 2 applies one inversion; period 4 applies
  * two inversions with orientation evolving between, matching the structure
  * in StrictMirroredLOOPExecutor.
  */
@@ -24,7 +24,7 @@ import {
 import {
   INVERTED_LOOP_VALIDATION_SET,
   getInvertedLetter,
-} from "../domain/constants/strict-loop-position-maps";
+} from "../domain/constants/strict-loop-placement-maps";
 import { Period } from "../domain/models/circular-models";
 import { buildStrictQuarters } from "./loop-quarter-guard";
 
@@ -34,9 +34,9 @@ export class StrictInvertedLOOPExecutor {
   executeLOOP(sequence: StepData[], period: Period): StepData[] {
     this._validateSequence(sequence);
 
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     const partialLength = sequence.length;
@@ -52,30 +52,30 @@ export class StrictInvertedLOOPExecutor {
       (s, p, n) => this._createCopiedEntry(s, p, n),
     );
 
-    sequence.unshift(startPosition);
+    sequence.unshift(startPlacement);
     return sequence;
   }
 
   private _validateSequence(sequence: StepData[]): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     const key = `${startPos},${endPos}`;
 
     if (!INVERTED_LOOP_VALIDATION_SET.has(key)) {
       throw new Error(
-        `Invalid position pair for inverted LOOP: ${startPos} → ${endPos}. ` +
-          `For an inverted LOOP, the sequence must end at the same position it started (${startPos}).`
+        `Invalid placement pair for inverted LOOP: ${startPos} → ${endPos}. ` +
+          `For an inverted LOOP, the sequence must end at the same placement it started (${startPos}).`
       );
     }
   }
@@ -92,8 +92,8 @@ export class StrictInvertedLOOPExecutor {
       id: `step-${stepNumber}`,
       stepNumber,
       letter: invertedLetter,
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: sourceStep.endPosition ?? null,
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: sourceStep.endPlacement ?? null,
       motions: {
         [HandSide.LEFT]: this._createInvertedMotion(
           HandSide.LEFT,
@@ -132,8 +132,8 @@ export class StrictInvertedLOOPExecutor {
       ...sourceStep,
       id: `step-${stepNumber}`,
       stepNumber,
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: sourceStep.endPosition,
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: sourceStep.endPlacement,
       motions: {
         [HandSide.LEFT]: {
           ...sourceLeft,

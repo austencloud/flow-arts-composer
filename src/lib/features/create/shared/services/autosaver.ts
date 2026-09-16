@@ -121,7 +121,7 @@ export class Autosaver {
           sequenceData
         );
         // Deep-clone the sequence data via JSON to strip undefined values -
-        // Firestore rejects them (e.g. startPosition.startPosition can be
+        // Firestore rejects them (e.g. startPlacement.startPlacement can be
         // undefined on fresh pictographs). Timestamps are added after the
         // clone since serverTimestamp() is a Firestore sentinel, not JSON.
         const cleanData = JSON.parse(JSON.stringify(draftData));

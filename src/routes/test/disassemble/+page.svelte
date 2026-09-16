@@ -8,7 +8,7 @@ import { getBrowseLoader } from "$lib/shared/browse/get-browse-loader";
 import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get-animation-playback-controller";
 
   import { getAnimationVisibilityManager } from "$lib/shared/animation-engine/state/animation-visibility-state.svelte";
-  import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+  import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import * as propTypeApplier from "$lib/shared/landing/services/prop-type-applier";
   import type { PublicSequencesLoader } from "$lib/shared/browse/services/public-sequences-loader";
@@ -21,15 +21,15 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
   let ready = $state(false);
   let error = $state<string | null>(null);
 
-  let derivedStartPosition = $derived.by(() => {
+  let derivedStartPlacement = $derived.by(() => {
     if (!animationState.sequenceData) return null;
-    return startPositionDeriver.getOrDeriveStartPosition(animationState.sequenceData);
+    return startPlacementDeriver.getOrDeriveStartPlacement(animationState.sequenceData);
   });
 
   let currentLetter = $derived.by(() => {
     if (!animationState.sequenceData) return null;
     const step = animationState.currentStep;
-    if (step < 1) return derivedStartPosition?.letter || null;
+    if (step < 1) return derivedStartPlacement?.letter || null;
     if (animationState.sequenceData.steps?.length > 0) {
       const idx = Math.max(0, Math.min(Math.floor(step) - 1, animationState.sequenceData.steps.length - 1));
       return animationState.sequenceData.steps[idx]?.letter || null;
@@ -40,7 +40,7 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
   let currentStepData = $derived.by(() => {
     if (!animationState.sequenceData) return null;
     const step = animationState.currentStep;
-    if (step < 1) return derivedStartPosition || null;
+    if (step < 1) return derivedStartPlacement || null;
     if (animationState.sequenceData.steps?.length > 0) {
       const idx = Math.max(0, Math.min(Math.floor(step) - 1, animationState.sequenceData.steps.length - 1));
       return animationState.sequenceData.steps[idx] || null;

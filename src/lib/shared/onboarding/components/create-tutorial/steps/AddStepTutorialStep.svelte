@@ -1,7 +1,7 @@
 <!--
   AddStepTutorialStep - Step 2 of the create tutorial
 
-  Shows available next steps via the OptionPicker after the user picked a start position.
+  Shows available next steps via the OptionPicker after the user picked a start placement.
   The user picks 4 steps total. Each pick updates the sequence and refreshes options.
   Auto-advances to the next wizard step after the 4th step.
 -->
@@ -23,14 +23,14 @@
 
   const { onAdvance }: Props = $props();
 
-  // The full sequence so far: start position + all steps picked
+  // The full sequence so far: start placement + all steps picked
   const currentSequence = $derived<PictographData[]>(
     createTutorialState.sequence
   );
 
   const stepCount = $derived(createTutorialState.steps.length);
 
-  // Use the grid mode stored when the start position was picked
+  // Use the grid mode stored when the start placement was picked
   const currentGridMode = $derived(createTutorialState.gridMode);
 
   function handleOptionSelected(option: PictographData) {

@@ -242,7 +242,7 @@ function makeMockState(steps: StepData[]): ICreateModuleState {
   return {
     sequenceState: {
       currentSequence: sequence,
-      selectedStartPosition: null,
+      selectedStartPlacement: null,
       setCurrentSequence: (seq: unknown) => {
         captured = seq;
       },

@@ -78,8 +78,8 @@ function sequence(length: number, overrides: Partial<Motion> = {}): SequenceStep
     steps.push({
       id: `step-${i}`,
       letter: null,
-      startPosition: null,
-      endPosition: null,
+      startPlacement: null,
+      endPlacement: null,
       stepNumber: i,
       duration: 1,
       motions: {

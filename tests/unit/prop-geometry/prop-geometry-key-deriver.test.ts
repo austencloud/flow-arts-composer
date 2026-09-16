@@ -23,8 +23,8 @@ function makePictograph(left: MotionData, right: MotionData): PictographData {
   return {
     id: "t",
     letter: "Q",
-    startPosition: "gamma1",
-    endPosition: "gamma15",
+    startPlacement: "gamma1",
+    endPlacement: "gamma15",
     motions: { left, right },
   } as PictographData;
 }
@@ -96,11 +96,11 @@ describe("derivePropGeometryKey", () => {
     ).toBe("right");
   });
 
-  it("returns null when endPosition is missing", () => {
+  it("returns null when endPlacement is missing", () => {
     const left = makeMotion();
     const right = makeMotion({ hand: "right" });
     const pg = makePictograph(left, right);
-    (pg as { endPosition?: string }).endPosition = undefined;
+    (pg as { endPlacement?: string }).endPlacement = undefined;
     expect(derivePropGeometryKey(pg, left, "left")).toBeNull();
   });
 
@@ -109,8 +109,8 @@ describe("derivePropGeometryKey", () => {
     const pg = {
       id: "t",
       letter: "Q",
-      startPosition: "a",
-      endPosition: "beta5",
+      startPlacement: "a",
+      endPlacement: "beta5",
       motions: { left },
     } as unknown as PictographData;
     expect(derivePropGeometryKey(pg, left, "left")).toBeNull();

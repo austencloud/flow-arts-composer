@@ -35,7 +35,7 @@ type EntryFactory = (
 ) => StepData;
 
 /**
- * Extend a partial (already in `sequence`, start-position step removed) into a
+ * Extend a partial (already in `sequence`, start-placement step removed) into a
  * strict LOOP, stopping at period 2 when orientation already closes.
  *
  * Odd quarters apply `createTransformed` (the mirror/flip/swap/invert); even
@@ -68,7 +68,7 @@ export function buildStrictQuarters(
     }
 
     // After the period-2 close, bail out of further passes if the loop already
-    // returns to its start orientation (position closure is guaranteed by each
+    // returns to its start orientation (placement closure is guaranteed by each
     // executor's _validateSequence).
     if (quarterIdx === 1 && orientationCloses(firstBeat, lastStep)) break;
   }

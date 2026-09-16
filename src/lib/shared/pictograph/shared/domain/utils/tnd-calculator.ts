@@ -12,7 +12,7 @@
 
 import { TnDMode as TnDMode, ElementalType } from "../enums/pictograph-enums";
 import type { Letter } from "../../../../foundation/domain/models/letter";
-import { GridMode, GridPosition } from "../../../grid/domain/enums/grid-enums";
+import { GridMode, GridPlacement } from "../../../grid/domain/enums/grid-enums";
 
 export interface TnDCalculationResult {
   tndMode: TnDMode | null;
@@ -20,14 +20,14 @@ export interface TnDCalculationResult {
 }
 
 // Position subsets used by conditional VTG lookups.
-// Typed as GridPosition[] so .includes() accepts the full GridPosition union.
-const BETA_3_7: GridPosition[] = [GridPosition.BETA3, GridPosition.BETA7];
-const ALPHA_1_5: GridPosition[] = [GridPosition.ALPHA1, GridPosition.ALPHA5];
-const GAMMA_DIAG: GridPosition[] = [
-  GridPosition.GAMMA10,
-  GridPosition.GAMMA8,
-  GridPosition.GAMMA14,
-  GridPosition.GAMMA4,
+// Typed as GridPlacement[] so .includes() accepts the full GridPlacement union.
+const BETA_3_7: GridPlacement[] = [GridPlacement.BETA3, GridPlacement.BETA7];
+const ALPHA_1_5: GridPlacement[] = [GridPlacement.ALPHA1, GridPlacement.ALPHA5];
+const GAMMA_DIAG: GridPlacement[] = [
+  GridPlacement.GAMMA10,
+  GridPlacement.GAMMA8,
+  GridPlacement.GAMMA14,
+  GridPlacement.GAMMA4,
 ];
 
 /**
@@ -54,35 +54,35 @@ export const TND_TO_ELEMENTAL: Record<TnDMode, ElementalType> = {
 // DIAMOND grid mode lookup
 const DIAMOND_MODE_MAP: Record<
   string,
-  TnDMode | ((startPos: GridPosition) => TnDMode)
+  TnDMode | ((startPos: GridPlacement) => TnDMode)
 > = {
   A: TnDMode.SPLIT_SAME,
   B: TnDMode.SPLIT_SAME,
   C: TnDMode.SPLIT_SAME,
-  D: (startPos: GridPosition) =>
+  D: (startPos: GridPlacement) =>
     BETA_3_7.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
-  E: (startPos: GridPosition) =>
+  E: (startPos: GridPlacement) =>
     BETA_3_7.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
-  F: (startPos: GridPosition) =>
+  F: (startPos: GridPlacement) =>
     BETA_3_7.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
   G: TnDMode.TOG_SAME,
   H: TnDMode.TOG_SAME,
   I: TnDMode.TOG_SAME,
-  J: (startPos: GridPosition) =>
+  J: (startPos: GridPlacement) =>
     ALPHA_1_5.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
-  K: (startPos: GridPosition) =>
+  K: (startPos: GridPlacement) =>
     ALPHA_1_5.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
-  L: (startPos: GridPosition) =>
+  L: (startPos: GridPlacement) =>
     ALPHA_1_5.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
@@ -101,7 +101,7 @@ const DIAMOND_MODE_MAP: Record<
 // BOX grid mode lookup
 const BOX_MODE_MAP: Record<
   string,
-  TnDMode | ((startPos: GridPosition) => TnDMode)
+  TnDMode | ((startPos: GridPlacement) => TnDMode)
 > = {
   A: TnDMode.SPLIT_SAME,
   B: TnDMode.SPLIT_SAME,
@@ -115,27 +115,27 @@ const BOX_MODE_MAP: Record<
   J: TnDMode.QUARTER_OPP,
   K: TnDMode.QUARTER_OPP,
   L: TnDMode.QUARTER_OPP,
-  M: (startPos: GridPosition) =>
+  M: (startPos: GridPlacement) =>
     GAMMA_DIAG.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
-  N: (startPos: GridPosition) =>
+  N: (startPos: GridPlacement) =>
     GAMMA_DIAG.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
-  O: (startPos: GridPosition) =>
+  O: (startPos: GridPlacement) =>
     GAMMA_DIAG.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
-  P: (startPos: GridPosition) =>
+  P: (startPos: GridPlacement) =>
     GAMMA_DIAG.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
-  Q: (startPos: GridPosition) =>
+  Q: (startPos: GridPlacement) =>
     GAMMA_DIAG.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
-  R: (startPos: GridPosition) =>
+  R: (startPos: GridPlacement) =>
     GAMMA_DIAG.includes(startPos)
       ? TnDMode.SPLIT_OPP
       : TnDMode.TOG_OPP,
@@ -150,13 +150,13 @@ const BOX_MODE_MAP: Record<
  *
  * @param letter - Letter enum value
  * @param gridMode - Grid mode (DIAMOND or BOX)
- * @param startPosition - Start position
+ * @param startPlacement - Start position
  * @returns VTG calculation result
  */
 export function calculateTnD(
   letter: Letter,
   gridMode: GridMode,
-  startPosition: GridPosition
+  startPlacement: GridPlacement
 ): TnDCalculationResult {
   const defaultResult: TnDCalculationResult = {
     tndMode: null,
@@ -184,7 +184,7 @@ export function calculateTnD(
   // If it's a function, call it with the start position
   const tndMode =
     typeof modeOrFunction === "function"
-      ? modeOrFunction(startPosition)
+      ? modeOrFunction(startPlacement)
       : modeOrFunction;
 
   // Map VTG mode to elemental type

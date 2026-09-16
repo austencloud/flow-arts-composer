@@ -17,12 +17,12 @@ import {
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { LOCATION_MAP_EIGHTH_CW } from "../../../create/generate/circular/domain/constants/circular-position-maps";
+import { LOCATION_MAP_EIGHTH_CW } from "../../../create/generate/circular/domain/constants/circular-placement-maps";
 import {
-  VERTICAL_MIRROR_POSITION_MAP,
+  VERTICAL_MIRROR_PLACEMENT_MAP,
   VERTICAL_MIRROR_LOCATION_MAP,
-  SWAPPED_POSITION_MAP,
-} from "../../../create/generate/circular/domain/constants/strict-loop-position-maps";
+  SWAPPED_PLACEMENT_MAP,
+} from "../../../create/generate/circular/domain/constants/strict-loop-placement-maps";
 import type { CodexTransformationOperation } from "../domain/types/codex-types";
 
 /**
@@ -38,7 +38,7 @@ export function rotateAllPictographs(
 
 /**
  * Mirror all pictographs vertically
- * - Mirrors all positions and locations
+ * - Mirrors all placements and locations
  * - Reverses rotation directions
  */
 export function mirrorAllPictographs(
@@ -50,7 +50,7 @@ export function mirrorAllPictographs(
 /**
  * Swap hands for all pictographs
  * - Swaps left and right motion data
- * - Updates positions based on swapped locations
+ * - Updates placements based on swapped locations
  */
 export function handSwapAllPictographs(
   pictographs: PictographData[]
@@ -124,16 +124,16 @@ function rotatePictograph(pictograph: PictographData): PictographData {
     });
   }
 
-  // Positions are derived from location pairs (left + right), so we keep them as-is
+  // Placements are derived from location pairs (left + right), so we keep them as-is
   // The pictograph renderer will use the rotated motion locations to position elements correctly
-  // Positions like alpha1, beta3, gamma11 describe the combined state, not individual locations
+  // Placements like alpha1, beta3, gamma11 describe the combined state, not individual locations
 
   return {
     ...pictograph,
     motions: rotatedMotions,
-    // Keep original positions - they describe the letter's start/end configuration
-    startPosition: pictograph.startPosition,
-    endPosition: pictograph.endPosition,
+    // Keep original placements - they describe the letter's start/end configuration
+    startPlacement: pictograph.startPlacement,
+    endPlacement: pictograph.endPlacement,
   };
 }
 
@@ -170,19 +170,19 @@ function mirrorPictograph(pictograph: PictographData): PictographData {
     };
   }
 
-  // Mirror positions
-  const mirroredStartPosition = pictograph.startPosition
-    ? VERTICAL_MIRROR_POSITION_MAP[pictograph.startPosition]
-    : pictograph.startPosition;
-  const mirroredEndPosition = pictograph.endPosition
-    ? VERTICAL_MIRROR_POSITION_MAP[pictograph.endPosition]
-    : pictograph.endPosition;
+  // Mirror placements
+  const mirroredStartPlacement = pictograph.startPlacement
+    ? VERTICAL_MIRROR_PLACEMENT_MAP[pictograph.startPlacement]
+    : pictograph.startPlacement;
+  const mirroredEndPlacement = pictograph.endPlacement
+    ? VERTICAL_MIRROR_PLACEMENT_MAP[pictograph.endPlacement]
+    : pictograph.endPlacement;
 
   return {
     ...pictograph,
     motions: mirroredMotions,
-    startPosition: mirroredStartPosition,
-    endPosition: mirroredEndPosition,
+    startPlacement: mirroredStartPlacement,
+    endPlacement: mirroredEndPlacement,
   };
 }
 
@@ -210,19 +210,19 @@ function handSwapPictograph(pictograph: PictographData): PictographData {
     };
   }
 
-  // Swap positions using swap position map
-  const swappedStartPosition = pictograph.startPosition
-    ? SWAPPED_POSITION_MAP[pictograph.startPosition]
-    : pictograph.startPosition;
-  const swappedEndPosition = pictograph.endPosition
-    ? SWAPPED_POSITION_MAP[pictograph.endPosition]
-    : pictograph.endPosition;
+  // Swap placements using SWAPPED_PLACEMENT_MAP
+  const swappedStartPlacement = pictograph.startPlacement
+    ? SWAPPED_PLACEMENT_MAP[pictograph.startPlacement]
+    : pictograph.startPlacement;
+  const swappedEndPlacement = pictograph.endPlacement
+    ? SWAPPED_PLACEMENT_MAP[pictograph.endPlacement]
+    : pictograph.endPlacement;
 
   return {
     ...pictograph,
     motions: swappedMotions,
-    startPosition: swappedStartPosition,
-    endPosition: swappedEndPosition,
+    startPlacement: swappedStartPlacement,
+    endPlacement: swappedEndPlacement,
   };
 }
 

@@ -116,15 +116,15 @@
     }
   }
 
-  // Handle start position selection (stepNumber 0)
-  function handleStartPositionSelected() {
+  // Handle start placement selection (stepNumber 0)
+  function handleStartPlacementSelected() {
     if (panelState?.workspacePlayback) return;
     if (!sequenceState) return;
 
-    // Only proceed if there's actually a start position selected
+    // Only proceed if there's actually a start placement selected
     if (
-      !sequenceState.hasStartPosition ||
-      !sequenceState.selectedStartPosition
+      !sequenceState.hasStartPlacement ||
+      !sequenceState.selectedStartPlacement
     ) {
       return;
     }
@@ -135,9 +135,9 @@
     panelState?.closeAnimationPanel();
     animationStateRef?.stop();
 
-    // Select start position for editing (stepNumber 0)
+    // Select start placement for editing (stepNumber 0)
     // Derived state will update automatically
-    sequenceState.selectStartPositionForEditing();
+    sequenceState.selectStartPlacementForEditing();
 
     // Open the step editor panel directly (same fix as handleBeatSelected)
     panelState?.openStepEditorPanel();
@@ -152,8 +152,8 @@
     }
 
     try {
-      // Special case: Start position (stepNumber 0). Steps can't exist
-      // without a start position, so this is a whole-sequence clear.
+      // Special case: Start placement (stepNumber 0). Steps can't exist
+      // without a start placement, so this is a whole-sequence clear.
       if (stepNumber === 0) {
         // For assemble tab, reset the builder state entirely
         if (navigationState.activeTab === "assemble") {
@@ -162,7 +162,7 @@
           return;
         }
         // Route to the module-owned confirmed clear flow (confirmation
-        // dialog, undo snapshot, back to the start-position picker).
+        // dialog, undo snapshot, back to the start-placement picker).
         createModuleContext?.handlers.requestClearSequence();
         return;
       }
@@ -204,7 +204,7 @@
       <SequenceDisplay
         {sequenceState}
         onStepSelected={handleBeatSelected}
-        onStartPositionSelected={handleStartPositionSelected}
+        onStartPlacementSelected={handleStartPlacementSelected}
         onStepDelete={handleStepDelete}
         selectedStepNumber={effectiveSelectedStepNumber}
         practiceStepNumber={animatingStepNumber ?? practiceStepIndex}

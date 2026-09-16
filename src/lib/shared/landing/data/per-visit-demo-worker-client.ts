@@ -107,15 +107,15 @@ function ensureWorker(): Worker | null {
 /**
  * Ask the worker for one roll.
  *
- * `startPosition` is plain-ified before it crosses: the hero holds its current
- * sequence in `$state`, so `sequence.startPosition` is a Svelte reactive Proxy,
+ * `startPlacement` is plain-ified before it crosses: the hero holds its current
+ * sequence in `$state`, so `sequence.startPlacement` is a Svelte reactive Proxy,
  * and the structured clone algorithm throws DataCloneError on any Proxy exotic
- * object. The JSON round trip is over a single start-position pictograph, not a
+ * object. The JSON round trip is over a single start-placement pictograph, not a
  * sequence, so it is cheap.
  */
 export function rollInWorker(options?: {
   propType?: PropType;
-  startPosition?: PictographData | null;
+  startPlacement?: PictographData | null;
 }): Promise<WorkerRollResult> {
   const active = ensureWorker();
   if (!active) return Promise.resolve(UNAVAILABLE);
@@ -125,10 +125,10 @@ export function rollInWorker(options?: {
     request = {
       id: nextRequestId++,
       ...(options?.propType ? { propType: options.propType } : {}),
-      ...(options?.startPosition
+      ...(options?.startPlacement
         ? {
-            startPosition: JSON.parse(
-              JSON.stringify(options.startPosition)
+            startPlacement: JSON.parse(
+              JSON.stringify(options.startPlacement)
             ) as PictographData,
           }
         : {}),

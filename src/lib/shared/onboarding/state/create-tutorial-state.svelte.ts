@@ -25,7 +25,7 @@ const STEPS: CreateTutorialStep[] = [
 
 interface CreateTutorialData {
   currentStepIndex: number;
-  startPosition: PictographData | null;
+  startPlacement: PictographData | null;
   gridMode: GridMode;
   steps: PictographData[];
 }
@@ -33,7 +33,7 @@ interface CreateTutorialData {
 function createCreateTutorialState() {
   const data = $state<CreateTutorialData>({
     currentStepIndex: 0,
-    startPosition: null,
+    startPlacement: null,
     gridMode: GridMode.DIAMOND,
     steps: [],
   });
@@ -51,8 +51,8 @@ function createCreateTutorialState() {
     get progress() {
       return ((data.currentStepIndex + 1) / STEPS.length) * 100;
     },
-    get startPosition() {
-      return data.startPosition;
+    get startPlacement() {
+      return data.startPlacement;
     },
     get gridMode() {
       return data.gridMode;
@@ -60,10 +60,10 @@ function createCreateTutorialState() {
     get steps(): PictographData[] {
       return data.steps;
     },
-    /** Full sequence: start position + all steps */
+    /** Full sequence: start placement + all steps */
     get sequence(): PictographData[] {
       const seq: PictographData[] = [];
-      if (data.startPosition) seq.push(data.startPosition);
+      if (data.startPlacement) seq.push(data.startPlacement);
       seq.push(...data.steps);
       return seq;
     },
@@ -71,9 +71,9 @@ function createCreateTutorialState() {
       return REQUIRED_STEPS - data.steps.length;
     },
 
-    setStartPosition(pos: PictographData, gridMode?: GridMode) {
-      data.startPosition = pos;
-      // Clear steps - they were computed from the old start position
+    setStartPlacement(pos: PictographData, gridMode?: GridMode) {
+      data.startPlacement = pos;
+      // Clear steps - they were computed from the old start placement
       data.steps = [];
       if (gridMode) {
         data.gridMode = gridMode;
@@ -109,7 +109,7 @@ function createCreateTutorialState() {
 
     reset() {
       data.currentStepIndex = 0;
-      data.startPosition = null;
+      data.startPlacement = null;
       data.gridMode = GridMode.DIAMOND;
       data.steps = [];
     },

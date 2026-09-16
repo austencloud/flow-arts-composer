@@ -38,7 +38,7 @@ import {
   decomposeLoopType,
   componentStringToEnum,
   autoBridgeForLoop,
-  isLOOPValidForPositionPair,
+  isLOOPValidForPlacementPair,
   LOOPComponent,
 } from "../core/loop/index.js";
 
@@ -412,8 +412,8 @@ export function registerPresetTools(server: McpServer): void {
             );
             if (!baseResult.isValid) continue;
 
-            const pp = `${baseResult.startPosition},${baseResult.endPosition}`;
-            if (!isLOOPValidForPositionPair(loopTypeValue, pp, slice)) continue;
+            const pp = `${baseResult.startPlacement},${baseResult.endPlacement}`;
+            if (!isLOOPValidForPlacementPair(loopTypeValue, pp, slice)) continue;
 
             loopResult = executeLOOP(
               baseResult.steps,
@@ -445,8 +445,8 @@ export function registerPresetTools(server: McpServer): void {
               const bridgeResult = autoBridgeForLoop(
                 baseResult.word,
                 letters,
-                baseResult.startPosition,
-                baseResult.endPosition,
+                baseResult.startPlacement,
+                baseResult.endPlacement,
                 loopTypeValue,
                 slice,
                 allPictographs
@@ -461,8 +461,8 @@ export function registerPresetTools(server: McpServer): void {
               );
               if (!finalResult.isValid) continue;
 
-              const pp = `${finalResult.startPosition},${finalResult.endPosition}`;
-              if (!isLOOPValidForPositionPair(loopTypeValue, pp, slice))
+              const pp = `${finalResult.startPlacement},${finalResult.endPlacement}`;
+              if (!isLOOPValidForPlacementPair(loopTypeValue, pp, slice))
                 continue;
 
               loopResult = executeLOOP(
@@ -494,8 +494,8 @@ export function registerPresetTools(server: McpServer): void {
           steps = loopResult.steps;
           sequenceWord = loopResult.loopWord;
           loopDebugWord = loopResult.seedWord;
-          loopDebugStart = baseResult!.startPosition;
-          loopDebugEnd = baseResult!.endPosition;
+          loopDebugStart = baseResult!.startPlacement;
+          loopDebugEnd = baseResult!.endPlacement;
 
           // Render directly and return — skip the second executeLOOP call below
           const effectiveComponents = config.loopComponents
@@ -519,8 +519,8 @@ export function registerPresetTools(server: McpServer): void {
               derivedBeatIndices: loopResult.derivedBeatIndices,
               seedWord: loopResult.seedWord,
               showFooter: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
-              startPositionLayout:
-                COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+              startPlacementLayout:
+                COMPOSER_CARD_EXPORT_PROFILE_V1.startPlacementLayout,
               level: level as 1 | 2 | 3,
               exportProfile: input.exportProfile,
               columnCount: input.columnCount,
@@ -590,8 +590,8 @@ export function registerPresetTools(server: McpServer): void {
           steps = constrained.steps.map((picto, index) => ({
             letter: picto.letter,
             variation: constrained.variationIndices[index] || 0,
-            startPosition: picto.startPosition,
-            endPosition: picto.endPosition,
+            startPlacement: picto.startPlacement,
+            endPlacement: picto.endPlacement,
             leftMotion: picto.leftMotion,
             rightMotion: picto.rightMotion,
             stepNumber: index,
@@ -627,8 +627,8 @@ export function registerPresetTools(server: McpServer): void {
           darkMode,
           turnAllocation,
           showFooter: COMPOSER_CARD_EXPORT_PROFILE_V1.showFooter,
-          startPositionLayout:
-            COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+          startPlacementLayout:
+            COMPOSER_CARD_EXPORT_PROFILE_V1.startPlacementLayout,
           level: level as 1 | 2 | 3,
           exportProfile: input.exportProfile,
           columnCount: input.columnCount,

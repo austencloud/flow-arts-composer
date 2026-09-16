@@ -17,7 +17,7 @@
 import { bootProfiler } from "$lib/shared/analytics/boot-profiler";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import type { StartPositionManager } from "$lib/shared/create/services/start-position-manager";
+import type { StartPlacementManager } from "$lib/shared/create/services/start-placement-manager";
 import { createCreateModuleState } from "$lib/features/create/shared/state/create-module-state.svelte";
 import { createConstructTabState } from "$lib/features/create/shared/state/construct-tab-state.svelte";
 // ARCHIVED: createAssemblerTabState import removed (Feb 2026)
@@ -59,7 +59,7 @@ export interface CreateModuleInitializationResult {
   // Core services
   sequenceService: SequenceRepository;
   SequencePersister: SequencePersister;
-  StartPositionManager: StartPositionManager;
+  StartPlacementManager: StartPlacementManager;
   CreateModuleOrchestrator: CreateModuleOrchestrator;
   layoutService: ResponsiveLayoutManager;
   NavigationSyncer: NavigationSyncer;
@@ -85,7 +85,7 @@ export class CreateModuleInitializer {
     // Core services
     private readonly sequenceService: SequenceRepository,
     private readonly SequencePersister: SequencePersister,
-    private readonly StartPositionManager: StartPositionManager,
+    private readonly StartPlacementManager: StartPlacementManager,
     private readonly CreateModuleOrchestrator: CreateModuleOrchestrator,
     private readonly layoutService: ResponsiveLayoutManager,
     private readonly NavigationSyncer: NavigationSyncer,
@@ -165,7 +165,7 @@ export class CreateModuleInitializer {
       `[Create init] Orchestrator: ${Math.round(performance.now() - t1)}ms`
     );
 
-    // Initialize all tab states + start positions in parallel (independent of each other)
+    // Initialize all tab states + start placements in parallel (independent of each other)
     const t2 = performance.now();
     await Promise.all([
       bootProfiler.measureAsync("create:construct-tab", () =>
@@ -177,12 +177,12 @@ export class CreateModuleInitializer {
       bootProfiler.measureAsync("create:assemble-tab", () =>
         assembleTabState.initializeAssembleTab()
       ),
-      bootProfiler.measureAsync("create:start-positions", () =>
-        this.loadStartPositions(GridMode.DIAMOND)
+      bootProfiler.measureAsync("create:start-placements", () =>
+        this.loadStartPlacements(GridMode.DIAMOND)
       ),
     ]);
     console.log(
-      `[Create init] Tabs + start positions: ${Math.round(performance.now() - t2)}ms`
+      `[Create init] Tabs + start placements: ${Math.round(performance.now() - t2)}ms`
     );
     console.log(`[Create init] Total: ${Math.round(performance.now() - t0)}ms`);
 
@@ -197,7 +197,7 @@ export class CreateModuleInitializer {
       // Core services
       sequenceService: this.sequenceService,
       SequencePersister: this.SequencePersister,
-      StartPositionManager: this.StartPositionManager,
+      StartPlacementManager: this.StartPlacementManager,
       CreateModuleOrchestrator: this.CreateModuleOrchestrator,
       layoutService: this.layoutService,
       NavigationSyncer: this.NavigationSyncer,
@@ -310,7 +310,7 @@ export class CreateModuleInitializer {
     };
   }
 
-  async loadStartPositions(gridMode: GridMode): Promise<void> {
-    await this.StartPositionManager.getDefaultStartPositions(gridMode);
+  async loadStartPlacements(gridMode: GridMode): Promise<void> {
+    await this.StartPlacementManager.getDefaultStartPlacements(gridMode);
   }
 }

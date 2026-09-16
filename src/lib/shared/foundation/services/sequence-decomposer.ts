@@ -91,8 +91,8 @@ export function extractStepPairings(
     letter: step.letter ?? null,
     leftReversal: step.leftReversal,
     rightReversal: step.rightReversal,
-    startPosition: step.startPosition ?? null,
-    endPosition: step.endPosition ?? null,
+    startPlacement: step.startPlacement ?? null,
+    endPlacement: step.endPlacement ?? null,
   }));
 }
 
@@ -105,16 +105,16 @@ function extractSoloProp(
   // Resolve the authoritative start location and orientation.
   //
   // Priority order:
-  // 1. startPosition (the modern, canonical field)
-  // 2. startingPosition (legacy alias - same semantic, different field name)
+  // 1. startPlacement (the modern, canonical field)
+  // 2. startingPlacement (legacy alias - same semantic, different field name)
   // 3. steps[0] motion (last-resort: read the initial state from the first beat)
   // 4. Hard default: NORTH / IN - only reached on empty or fully-corrupt data
-  const startPositionMotions =
-    sequence.startPosition?.motions ?? sequence.startingPosition?.motions;
+  const startPlacementMotions =
+    sequence.startPlacement?.motions ?? sequence.startingPlacement?.motions;
 
-  const startLocationFromPos = startPositionMotions?.[color]?.startLocation;
+  const startLocationFromPos = startPlacementMotions?.[color]?.startLocation;
   const startOrientationFromPos =
-    startPositionMotions?.[color]?.startOrientation;
+    startPlacementMotions?.[color]?.startOrientation;
 
   const firstStepMotion = sequence.steps[0]?.motions?.[color];
 

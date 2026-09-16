@@ -91,8 +91,8 @@ interface MotionInput {
 
 interface PictographInput {
   letter: string;
-  startPosition?: string;  // For TnD and position glyph calculations
-  endPosition?: string;    // For position glyph
+  startPlacement?: string;  // For TnD and position glyph calculations
+  endPlacement?: string;    // For position glyph
   leftMotion: MotionInput;
   rightMotion: MotionInput;
 }
@@ -109,7 +109,7 @@ export interface RenderVisibilityOptions {
   // Glyphs
   showTKA?: boolean;           // Letter glyph (default: true)
   showTND?: boolean;           // TnD timing & direction glyph (default: false)
-  showPositions?: boolean;     // Start→End positions glyph (default: false)
+  showPlacements?: boolean;     // Start→End positions glyph (default: false)
   showReversals?: boolean;     // Reversal indicators (default: false)
 
   // Grid
@@ -159,7 +159,7 @@ export class StandalonePictographRenderer {
       darkMode = true,
       showTKA = true,
       showTND = false,
-      showPositions = false,
+      showPlacements = false,
       showReversals = false,
       showGrid = true,
       showLeftMotion = true,
@@ -206,8 +206,8 @@ export class StandalonePictographRenderer {
     }
 
     // 5. Position glyph (start → end) at top center
-    if (showPositions && input.startPosition && input.endPosition) {
-      const positionSvg = this.renderPositionGlyph(input.startPosition, input.endPosition, darkMode);
+    if (showPlacements && input.startPlacement && input.endPlacement) {
+      const positionSvg = this.renderPlacementGlyph(input.startPlacement, input.endPlacement, darkMode);
       if (positionSvg) svgParts.push(positionSvg);
     }
 
@@ -218,8 +218,8 @@ export class StandalonePictographRenderer {
     }
 
     // 7. TnD glyph (bottom right) - only for Type1 letters (A-V)
-    if (showTND && input.letter && input.startPosition) {
-      const vtgSvg = this.renderVTGGlyph(input.letter, input.startPosition, darkMode);
+    if (showTND && input.letter && input.startPlacement) {
+      const vtgSvg = this.renderVTGGlyph(input.letter, input.startPlacement, darkMode);
       if (vtgSvg) svgParts.push(vtgSvg);
     }
 
@@ -488,7 +488,7 @@ ${svgParts.join("\n")}
   /**
    * Calculate VTG mode for a letter (Type1 letters only: A-V)
    */
-  private calculateVTGMode(letter: string, startPosition: string): VTGMode | null {
+  private calculateVTGMode(letter: string, startPlacement: string): VTGMode | null {
     // Only Type1 letters (A-V) have VTG modes
     const letterUpper = letter.toUpperCase();
     if (letterUpper.length !== 1 || letterUpper < "A" || letterUpper > "V") {
@@ -501,7 +501,7 @@ ${svgParts.join("\n")}
     }
 
     if (typeof modeOrFunction === "function") {
-      return modeOrFunction(startPosition);
+      return modeOrFunction(startPlacement);
     }
     return modeOrFunction;
   }
@@ -510,8 +510,8 @@ ${svgParts.join("\n")}
    * Render the TnD glyph (bottom-right corner)
    * Only renders for Type1 letters (A-V)
    */
-  private renderVTGGlyph(letter: string, startPosition: string, darkMode: boolean): string {
-    const vtgMode = this.calculateVTGMode(letter, startPosition);
+  private renderVTGGlyph(letter: string, startPlacement: string, darkMode: boolean): string {
+    const vtgMode = this.calculateVTGMode(letter, startPlacement);
     if (!vtgMode) {
       return "";
     }
@@ -557,7 +557,7 @@ ${svgParts.join("\n")}
   /**
    * Extract position group from position string (e.g., "alpha1" -> "alpha")
    */
-  private extractPositionGroup(position: string): string | null {
+  private extractPlacementGroup(position: string): string | null {
     const match = position.match(/[a-z]+/i);
     return match ? match[0].toLowerCase() : null;
   }
@@ -566,9 +566,9 @@ ${svgParts.join("\n")}
    * Render the position glyph (start → end) at top center
    * Not shown for static letters (α, β, γ)
    */
-  private renderPositionGlyph(startPosition: string, endPosition: string, darkMode: boolean): string {
-    const startGroup = this.extractPositionGroup(startPosition);
-    const endGroup = this.extractPositionGroup(endPosition);
+  private renderPlacementGlyph(startPlacement: string, endPlacement: string, darkMode: boolean): string {
+    const startGroup = this.extractPlacementGroup(startPlacement);
+    const endGroup = this.extractPlacementGroup(endPlacement);
 
     if (!startGroup || !endGroup) {
       return "";

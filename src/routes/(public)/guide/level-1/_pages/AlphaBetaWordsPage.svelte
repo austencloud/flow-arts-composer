@@ -28,7 +28,7 @@
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
   import SelectionHit from "$lib/shared/selection/SelectionHit.svelte";
   import { getSequenceSelection } from "$lib/shared/selection/sequence-selection.svelte";
-  import PositionGlyph from "$lib/shared/pictograph/shared/components/PositionGlyph.svelte";
+  import PlacementGlyph from "$lib/shared/pictograph/shared/components/PlacementGlyph.svelte";
   import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
   import {
     MotionType,
@@ -39,9 +39,9 @@
   import {
     GridMode,
     GridLocation,
-    GridPosition,
+    GridPlacement,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -200,8 +200,8 @@
       id: `${w.key}-${i + 1}`,
       letter: w.letter,
       gridMode: GridMode.DIAMOND,
-      startPosition: getGridPositionFromLocations(bl[0], rl[0]),
-      endPosition: getGridPositionFromLocations(bl[1], rl[1]),
+      startPlacement: getGridPlacementFromLocations(bl[0], rl[0]),
+      endPlacement: getGridPlacementFromLocations(bl[1], rl[1]),
       stepNumber: forStrip ? i + 1 : null,
       motions: {
         left: w.leftAnti
@@ -221,14 +221,14 @@
       letter: block === "alpha" ? Letter.ALPHA : Letter.BETA,
       gridMode: GridMode.DIAMOND,
       stepNumber: 0,
-      startPosition:
+      startPlacement:
         block === "alpha"
-          ? getGridPositionFromLocations(SO_, N)
-          : getGridPositionFromLocations(SO_, SO_),
-      endPosition:
+          ? getGridPlacementFromLocations(SO_, N)
+          : getGridPlacementFromLocations(SO_, SO_),
+      endPlacement:
         block === "alpha"
-          ? getGridPositionFromLocations(SO_, N)
-          : getGridPositionFromLocations(SO_, SO_),
+          ? getGridPlacementFromLocations(SO_, N)
+          : getGridPlacementFromLocations(SO_, SO_),
       motions: {
         left: staticHand(HandSide.LEFT, SO_),
         right: staticHand(HandSide.RIGHT, block === "alpha" ? N : SO_),
@@ -271,18 +271,18 @@
     beta: ["w-gggg", "w-hhhh", "w-iiii"],
   };
 
-  // ── Margin labels: real TKA PositionGlyph over the italic mode name ─────────
+  // ── Margin labels: real TKA PlacementGlyph over the italic mode name ─────────
   const MARGIN_CX = 64;
   const MARGINS = [
     {
-      pos: GridPosition.ALPHA1,
+      pos: GridPlacement.ALPHA1,
       t: "α→α",
       mode: "Split-Same",
       glyphY: 219,
       modeY: 240.3,
     },
     {
-      pos: GridPosition.BETA1,
+      pos: GridPlacement.BETA1,
       t: "β→β",
       mode: "Tog-Same",
       glyphY: 528.5,
@@ -359,7 +359,7 @@
         rightPropTypeOverride={PropType.STAFF}
         showGrid={true}
         showTKA={true}
-        showPositions={false}
+        showPlacements={false}
         showReversals={false}
         showTnD={false}
         showElemental={false}
@@ -401,7 +401,7 @@
             rightPropTypeOverride={PropType.STAFF}
             showGrid={true}
             showTKA={true}
-            showPositions={false}
+            showPlacements={false}
             showReversals={false}
             showTnD={false}
             showElemental={false}
@@ -428,7 +428,7 @@
     </div>
   {/each}
 
-  <!-- Margin labels: real TKA PositionGlyph over the italic handpath mode. -->
+  <!-- Margin labels: real TKA PlacementGlyph over the italic handpath mode. -->
   {#each MARGINS as m (m.t)}
     <span
       class="margin glyph"
@@ -442,7 +442,7 @@
         aria-label={m.t}
         style="height:{20 * S}px"
       >
-        <PositionGlyph startPosition={m.pos} endPosition={m.pos} />
+        <PlacementGlyph startPlacement={m.pos} endPlacement={m.pos} />
       </svg>
     </span>
     <span

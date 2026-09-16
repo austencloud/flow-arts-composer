@@ -58,8 +58,8 @@ describe("requested LOOP identity with constrained hands", () => {
         matchHandTurns: true,
         leftStartOrientation: "in",
         rightStartOrientation: "in",
-        blockedStartPositions: [
-          ...new Set(rows.map((row) => row.startPosition)),
+        blockedStartPlacements: [
+          ...new Set(rows.map((row) => row.startPlacement)),
         ].filter((position) => position !== "alpha1" && position !== "beta1"),
         constraintOptions: {
           propContinuity: "maximize",
@@ -77,7 +77,7 @@ describe("requested LOOP identity with constrained hands", () => {
       });
       expect(result.sequence).toHaveLength(9);
       expect(isSequenceCircular(result.sequence)).toBe(true);
-      expect(result.sequence[0]!.startPosition).toBe("beta1");
+      expect(result.sequence[0]!.startPlacement).toBe("beta1");
       for (const step of result.sequence.slice(1)) {
         expect(step.motions.left.motionType).not.toBe("dash");
         expect(step.motions.right.motionType).not.toBe("dash");

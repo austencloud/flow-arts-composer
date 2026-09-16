@@ -28,7 +28,7 @@ export type {
   GammaInternalGroup,
 } from "./types/transformation.js";
 export type { ReversalType } from "./types/reversal.js";
-export type { PositionName, PositionDefinition } from "./types/position.js";
+export type { PlacementName, PlacementDefinition } from "./types/placement.js";
 export type { MotionTypeName, MotionTypeDefinition } from "./types/motion.js";
 export type { RotationDefinition } from "./types/rotation.js";
 export type { GridModeName, GridModeDefinition } from "./types/grid.js";
@@ -95,13 +95,25 @@ export {
   resolveTermAlias,
 } from "./constants/alias-map.js";
 export {
-  POSITION_DEFINITIONS,
-  FOUNDATION_POSITIONS,
-  SKEWED_POSITIONS,
-  CENTRIC_POSITIONS,
-  ALL_POSITIONS,
-  getPositionsAtLevel,
-} from "./constants/position-groups.js";
+  PLACEMENT_DEFINITIONS,
+  FOUNDATION_PLACEMENTS,
+  SKEWED_PLACEMENTS,
+  CENTRIC_PLACEMENTS,
+  ALL_PLACEMENTS,
+  getPlacementsAtLevel,
+  /** @deprecated Use PLACEMENT_DEFINITIONS. "Position" is the older TKA term for what this system now calls a placement. */
+  PLACEMENT_DEFINITIONS as POSITION_DEFINITIONS,
+  /** @deprecated Use FOUNDATION_PLACEMENTS. */
+  FOUNDATION_PLACEMENTS as FOUNDATION_POSITIONS,
+  /** @deprecated Use SKEWED_PLACEMENTS. */
+  SKEWED_PLACEMENTS as SKEWED_POSITIONS,
+  /** @deprecated Use CENTRIC_PLACEMENTS. */
+  CENTRIC_PLACEMENTS as CENTRIC_POSITIONS,
+  /** @deprecated Use ALL_PLACEMENTS. */
+  ALL_PLACEMENTS as ALL_POSITIONS,
+  /** @deprecated Use getPlacementsAtLevel. */
+  getPlacementsAtLevel as getPositionsAtLevel,
+} from "./constants/placement-groups.js";
 
 export {
   TYPE_DEFINITIONS,
@@ -114,9 +126,13 @@ export {
   getTypeNamingOrigin,
 } from "./reference/type-naming.js";
 export {
-  getPositionExplanation,
-  getPositionComparison,
-} from "./reference/position-explanations.js";
+  getPlacementExplanation,
+  getPlacementComparison,
+  /** @deprecated Use getPlacementExplanation. "Position" is the older TKA term for what this system now calls a placement. */
+  getPlacementExplanation as getPositionExplanation,
+  /** @deprecated Use getPlacementComparison. */
+  getPlacementComparison as getPositionComparison,
+} from "./reference/placement-explanations.js";
 export {
   MOTION_TYPE_DEFINITIONS,
   getMotionTypeExplanation,

@@ -75,7 +75,7 @@
   onclick={() => onselect(entry)}
 >
   {#if entry.art.kind === "plate"}
-    <span class="mini-art plate position-preview" aria-hidden="true">
+    <span class="mini-art plate placement-preview" aria-hidden="true">
       <img src={entry.art.src} alt="" width="32" height="32" loading="lazy" />
     </span>
   {:else if entry.art.kind === "grid"}
@@ -553,7 +553,7 @@
   .mini-tile.unified .mini-art.plate {
     background: #fff;
   }
-  .mini-tile.unified .mini-art.plate.position-preview img {
+  .mini-tile.unified .mini-art.plate.placement-preview img {
     width: calc(100% - 0.35rem);
     height: calc(100% - 0.35rem);
     object-fit: contain;
@@ -724,7 +724,7 @@
 
   /* Fold landscape: the art carries the identity when height is scarce. */
   @media (min-width: 700px) and (max-height: 520px) {
-    .mini-tile.unified .mini-art.position-preview,
+    .mini-tile.unified .mini-art.placement-preview,
     .mini-tile.unified .mini-art.grid-composite-preview {
       width: 3.75rem;
       min-width: 3.75rem;

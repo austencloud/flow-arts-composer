@@ -367,7 +367,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         fps: opts.fps,
         loopCount: opts.loopCount,
         resolution: opts.resolution,
-        includeStartPosition: opts.includeStartPosition,
+        includeStartPlacement: opts.includeStartPlacement,
         includeEndHold: opts.includeEndHold,
         sourceSizeOverride: squareSize,
         additionalLayersForBeat,
@@ -520,7 +520,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         (sum, s) => sum + (s.duration ?? 1),
         0
       );
-      const startDur = opts.includeStartPosition ? 1 : 0;
+      const startDur = opts.includeStartPlacement ? 1 : 0;
       const endDur = opts.includeEndHold ? 1 : 0;
       const singleLoopSec =
         (startDur + totalDurationUnits + endDur) * secondsPerBeat;
@@ -629,7 +629,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
         fps: opts.fps,
         resolution: opts.resolution,
         quality: opts.quality,
-        includeStartPosition: opts.includeStartPosition,
+        includeStartPlacement: opts.includeStartPlacement,
         includeEndHold: opts.includeEndHold,
       };
       const filmEntry = await saveFilmRecipe({
@@ -663,7 +663,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
           fps: renderOpts.fps,
           resolution: renderOpts.resolution,
           quality: renderOpts.quality,
-          includeStartPosition: renderOpts.includeStartPosition,
+          includeStartPlacement: renderOpts.includeStartPlacement,
           includeEndHold: renderOpts.includeEndHold,
         });
       }
@@ -675,7 +675,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
             fps: renderOpts.fps,
             loopCount: 1,
             resolution: renderOpts.resolution,
-            includeStartPosition: renderOpts.includeStartPosition,
+            includeStartPlacement: renderOpts.includeStartPlacement,
             includeEndHold: renderOpts.includeEndHold,
             quality: renderOpts.quality,
           },
@@ -718,7 +718,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
             fps: renderOpts.fps,
             resolution: renderOpts.resolution,
             quality: renderOpts.quality,
-            includeStartPosition: renderOpts.includeStartPosition,
+            includeStartPlacement: renderOpts.includeStartPlacement,
             includeEndHold: renderOpts.includeEndHold,
           },
           durationSeconds: recordedDuration,
@@ -739,7 +739,7 @@ export function createExportCoordinator(deps: ExportCoordinatorDeps) {
           fps: opts.fps,
           loopCount: opts.loopCount,
           resolution: opts.resolution,
-          includeStartPosition: opts.includeStartPosition,
+          includeStartPlacement: opts.includeStartPlacement,
           includeEndHold: opts.includeEndHold,
           leftMotionVisible: motion?.left,
           rightMotionVisible: motion?.right,

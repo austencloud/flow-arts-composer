@@ -1,10 +1,10 @@
 /**
  * Construct Tab Coordination Service - Implementation
  *
- * Coordinates between construct tab components (start position picker, option picker).
+ * Coordinates between construct tab components (start placement picker, option picker).
  * Based on desktop ConstructTabCoordinationService but simplified for web with runes.
  *
- * FIXED: Added proper state synchronization to resolve start position selection getting stuck
+ * FIXED: Added proper state synchronization to resolve start placement selection getting stuck
  */
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
@@ -24,7 +24,7 @@ export class ConstructCoordinator {
   private isHandlingSequenceModification = false;
   private eventListenersSetup = false;
   private boundEventHandlers: {
-    startPositionSelected: (event: CustomEvent) => void;
+    startPlacementSelected: (event: CustomEvent) => void;
     optionSelected: (event: CustomEvent) => void;
     sequenceModified: (event: CustomEvent) => void;
   } | null = null;
@@ -73,11 +73,11 @@ export class ConstructCoordinator {
     }
   }
 
-  handleStartPositionSet(_startPosition: Step): void {
+  handleStartPlacementSet(_startPlacement: Step): void {
     try {
       return;
     } catch (error) {
-      console.error("❌ Error handling start position set:", error);
+      console.error("❌ Error handling start placement set:", error);
       // Error handling is managed by individual components
     }
   }
@@ -142,8 +142,8 @@ export class ConstructCoordinator {
     if (typeof window !== "undefined") {
       // Create bound event handlers to allow proper cleanup
       this.boundEventHandlers = {
-        startPositionSelected: ((event: CustomEvent) => {
-          void this.handleStartPositionSet(event.detail.startPosition);
+        startPlacementSelected: ((event: CustomEvent) => {
+          void this.handleStartPlacementSet(event.detail.startPlacement);
         }) as (event: CustomEvent) => void,
 
         optionSelected: ((event: CustomEvent) => {
@@ -156,8 +156,8 @@ export class ConstructCoordinator {
       };
 
       document.addEventListener(
-        "start-position-selected",
-        this.boundEventHandlers.startPositionSelected as EventListener
+        "start-placement-selected",
+        this.boundEventHandlers.startPlacementSelected as EventListener
       );
       document.addEventListener(
         "option-selected",
@@ -176,8 +176,8 @@ export class ConstructCoordinator {
   private disconnectComponentSignals(): void {
     if (typeof window !== "undefined" && this.boundEventHandlers) {
       document.removeEventListener(
-        "start-position-selected",
-        this.boundEventHandlers.startPositionSelected as EventListener
+        "start-placement-selected",
+        this.boundEventHandlers.startPlacementSelected as EventListener
       );
       document.removeEventListener(
         "option-selected",
@@ -195,15 +195,15 @@ export class ConstructCoordinator {
   private async updateUIBasedOnSequence(sequence: SequenceData): Promise<void> {
     try {
       // Determine which panel to show based on sequence state
-      const hasStartPosition = sequence.startingPosition != null;
+      const hasStartPlacement = sequence.startingPlacement != null;
       const hasSteps = sequence.steps.length > 0;
 
       let targetPanel: string;
 
-      if (hasStartPosition || hasSteps) {
+      if (hasStartPlacement || hasSteps) {
         targetPanel = "option_picker";
       } else {
-        targetPanel = "start_position_picker";
+        targetPanel = "start_placement_picker";
       }
 
       // Transition to appropriate panel

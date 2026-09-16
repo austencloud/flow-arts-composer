@@ -1,5 +1,5 @@
 import { withCalculatedArrowLocations } from "$lib/features/assemble-lab/services/builder-step-converter";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import {
   createSequenceData,
@@ -8,7 +8,7 @@ import {
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   HandSide,
@@ -170,12 +170,12 @@ export const ISOLATION_SEQUENCE: SequenceData = createSequenceData({
   word: "",
   gridMode: GridMode.DIAMOND,
   isCircular: true,
-  startPosition: createStartPositionData({
+  startPlacement: createStartPlacementData({
     id: "single-hand-isolation-start",
     letter: null,
-    startPosition: GridPosition.ALPHA1,
-    endPosition: GridPosition.ALPHA1,
-    gridPosition: GridPosition.ALPHA1,
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.ALPHA1,
+    gridPlacement: GridPlacement.ALPHA1,
     motions: {
       [HandSide.LEFT]: undefined,
       [HandSide.RIGHT]: motion(
@@ -191,8 +191,8 @@ export const ISOLATION_SEQUENCE: SequenceData = createSequenceData({
         id: `single-hand-isolation-${index + 1}`,
         stepNumber: index + 1,
         duration: 1,
-        startPosition: GridPosition.ALPHA1,
-        endPosition: GridPosition.ALPHA1,
+        startPlacement: GridPlacement.ALPHA1,
+        endPlacement: GridPlacement.ALPHA1,
         gridMode: GridMode.DIAMOND,
         motions: {
           // An absent motion sends the free arm through the rig's rest path, not a

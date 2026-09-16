@@ -125,7 +125,7 @@ function findPublishedSequence(documents, name) {
 
 function assertSlot(sequence, slot) {
   const requirement = SLOT_REQUIREMENTS[slot];
-  const startPosition = sequence.startPosition?.gridPosition;
+  const startPlacement = sequence.startPlacement?.gridPlacement;
   if (!requirement) throw new Error(`unknown sampler slot: ${slot}`);
   if (
     sequence.level !== 1 ||
@@ -134,7 +134,7 @@ function assertSlot(sequence, slot) {
     (requirement.period != null &&
       Number(sequence.period) !== requirement.period) ||
     sequence.isCircular !== true ||
-    !isClassicPosition(startPosition) ||
+    !isClassicPosition(startPlacement) ||
     typeof sequence.sourceRef !== "string"
   ) {
     throw new Error(
@@ -145,7 +145,7 @@ function assertSlot(sequence, slot) {
           sequenceLength: sequence.sequenceLength,
           period: sequence.period ?? null,
           isCircular: sequence.isCircular,
-          startPosition,
+          startPlacement,
           sourceRef: sequence.sourceRef,
         })
     );
@@ -154,7 +154,7 @@ function assertSlot(sequence, slot) {
 
 function publishedCard(sequence, slot) {
   assertSlot(sequence, slot);
-  const startPosition = sequence.startPosition.gridPosition;
+  const startPlacement = sequence.startPlacement.gridPlacement;
   return {
     slot,
     source: "publicSequences",
@@ -167,8 +167,8 @@ function publishedCard(sequence, slot) {
     sequenceLength: sequence.sequenceLength,
     gridMode: sequence.gridMode,
     period: sequence.period ?? null,
-    startPosition,
-    endPosition: startPosition,
+    startPlacement,
+    endPlacement: startPlacement,
     sourceRef: sequence.sourceRef,
   };
 }
@@ -177,20 +177,19 @@ function tndCard({ slot, record }) {
   const name = record?.name;
   const familyId = record?.metadata?.familyId;
   const family = record?.metadata?.familyLabel;
-  const startPosition =
-    record?.startPosition?.gridPosition ?? record?.steps?.[0]?.startPosition;
-  const endPosition = record?.steps?.at(-1)?.endPosition;
+  const startPlacement = recordStartPlacement(record);
+  const endPlacement = recordEndPlacement(record);
   if (
     typeof name !== "string" ||
     typeof familyId !== "string" ||
     typeof family !== "string" ||
     record?.isCircular !== true ||
-    !isClassicPosition(startPosition) ||
-    !isClassicPosition(endPosition)
+    !isClassicPosition(startPlacement) ||
+    !isClassicPosition(endPlacement)
   ) {
     throw new Error(
       `${name} must start and end in Alpha, Beta, or Gamma: ` +
-        JSON.stringify({ startPosition, endPosition })
+        JSON.stringify({ startPlacement, endPlacement })
     );
   }
   return {
@@ -206,20 +205,19 @@ function tndCard({ slot, record }) {
     vtgFamily: family,
     ratio: "1:1",
     turnIntensity: 0,
-    startPosition,
-    endPosition,
+    startPlacement,
+    endPlacement,
   };
 }
 
 function buildTndPools(records) {
   const classic = records.filter((record) => {
-    const startPosition =
-      record?.startPosition?.gridPosition ?? record?.steps?.[0]?.startPosition;
-    const endPosition = record?.steps?.at(-1)?.endPosition;
+    const startPlacement = recordStartPlacement(record);
+    const endPlacement = recordEndPlacement(record);
     return (
       record?.isCircular === true &&
-      isClassicPosition(startPosition) &&
-      isClassicPosition(endPosition)
+      isClassicPosition(startPlacement) &&
+      isClassicPosition(endPlacement)
     );
   });
   const same = classic
@@ -267,9 +265,26 @@ function motionForHand(step, hand) {
   return step?.motions?.right ?? step?.motions?.red;
 }
 
+// Local evidence snapshots predate the placement rename, so read both the
+// current "placement" keys and the legacy "position" keys.
+function recordStartPlacement(record) {
+  return (
+    record?.startPlacement?.gridPlacement ??
+    record?.startPosition?.gridPosition ??
+    record?.steps?.[0]?.startPlacement ??
+    record?.steps?.[0]?.startPosition
+  );
+}
+
+function recordEndPlacement(record) {
+  const last = record?.steps?.at(-1);
+  return last?.endPlacement ?? last?.endPosition;
+}
+
 function localCard(record, slot) {
-  const startPosition = record?.startPosition?.gridPosition;
-  const endPosition = record?.steps?.at(-1)?.endPosition;
+  const startPlacement =
+    record?.startPlacement?.gridPlacement ?? record?.startPosition?.gridPosition;
+  const endPlacement = recordEndPlacement(record);
   const requirement = SLOT_REQUIREMENTS[slot];
   const turns = (record?.steps ?? []).flatMap((step) => [
     motionForHand(step, "left")?.turns,
@@ -285,8 +300,8 @@ function localCard(record, slot) {
     record?.loopType !== requirement.loopType ||
     record?.steps?.length !== requirement.sequenceLength ||
     record?.isCircular !== true ||
-    !isClassicPosition(startPosition) ||
-    !isClassicPosition(endPosition)
+    !isClassicPosition(startPlacement) ||
+    !isClassicPosition(endPlacement)
   ) {
     throw new Error(
       `${record?.name ?? "local sequence"} does not satisfy ${slot}: ` +
@@ -296,8 +311,8 @@ function localCard(record, slot) {
           loopType: record?.loopType,
           sequenceLength: record?.steps?.length,
           isCircular: record?.isCircular,
-          startPosition,
-          endPosition,
+          startPlacement,
+          endPlacement,
         })
     );
   }
@@ -313,8 +328,8 @@ function localCard(record, slot) {
     sequenceLength: record.steps.length,
     gridMode: record.gridMode,
     period: record.period ?? null,
-    startPosition,
-    endPosition,
+    startPlacement,
+    endPlacement,
   };
 }
 

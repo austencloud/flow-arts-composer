@@ -75,7 +75,7 @@
       >{/if}
     <span class="sep">·</span>
     <span class="bl path"
-      >{displayData?.startPosition ?? "—"} → {displayData?.endPosition ??
+      >{displayData?.startPlacement ?? "—"} → {displayData?.endPlacement ??
         "—"}</span
     >
   </div>

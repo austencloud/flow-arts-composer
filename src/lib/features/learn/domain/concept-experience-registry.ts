@@ -41,12 +41,12 @@ export const CONCEPT_EXPERIENCES = [
       import("../components/interactive/GridConceptExperience.svelte"),
   }),
   experience({
-    conceptId: "hand-positions",
-    guideSlug: "hand-positions",
-    guideLabel: "Hand Positions",
+    conceptId: "hand-placements",
+    guideSlug: "hand-placements",
+    guideLabel: "Hand Placements",
     reviewStatus: "built",
     load: () =>
-      import("../components/interactive/positions/PositionsConceptExperience.svelte"),
+      import("../components/interactive/placements/PlacementsConceptExperience.svelte"),
   }),
   experience({
     conceptId: "hand-motions-intro",
@@ -101,9 +101,9 @@ export const CONCEPT_EXPERIENCES = [
       import("../components/interactive/foundations/GammaMotionConceptExperience.svelte"),
   }),
   experience({
-    conceptId: "staff-positions",
-    guideSlug: "staff-positions",
-    guideLabel: "Staff Positions and Rotations",
+    conceptId: "staff-placements",
+    guideSlug: "staff-placements",
+    guideLabel: "Staff Placements and Rotations",
     reviewStatus: "built",
     load: () =>
       import("../components/interactive/staff/StaffConceptExperience.svelte"),

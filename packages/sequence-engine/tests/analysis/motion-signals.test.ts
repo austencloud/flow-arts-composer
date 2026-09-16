@@ -2,7 +2,7 @@
  * Tests for motion-signals — hand-arc direction and prop-rotation extraction.
  *
  * The hand-arc geometry must agree with the pre-existing primitive
- * `HAND_ROTATION_DIRECTION_MAP` (loop/position-maps) on every pair it defines,
+ * `HAND_ROTATION_DIRECTION_MAP` (loop/placement-maps) on every pair it defines,
  * and extend it totally (mixed cardinal↔intercardinal pairs, center, unknown
  * data) without throwing.
  */
@@ -12,7 +12,7 @@ import {
   handArcDirection,
   propRotationDirection,
 } from "../../src/analysis/motion-signals.js";
-import { HAND_ROTATION_DIRECTION_MAP } from "../../src/loop/position-maps/circular-position-maps.js";
+import { HAND_ROTATION_DIRECTION_MAP } from "../../src/loop/placement-maps/circular-placement-maps.js";
 
 afterEach(() => {
   vi.restoreAllMocks();

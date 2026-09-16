@@ -11,7 +11,7 @@ import { createSequence as createSequenceData } from "$lib/shared/create/service
 import type { SequencePersister } from "$lib/features/create/shared/services/sequence-persister";
 import type { SequenceRepository } from "$lib/shared/create/services/sequence-repository";
 import type { SequenceState } from "$lib/features/create/shared/state/sequence-state-orchestrator.svelte";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 
 function makeSequence(name: string, length = 2) {
   const sequence = createSequenceData({
@@ -19,15 +19,15 @@ function makeSequence(name: string, length = 2) {
     word: name,
     length,
   });
-  const startPosition = {
+  const startPlacement = {
     id: `${sequence.id}-start`,
-    isStartPosition: true,
-  } as unknown as StartPositionData;
+    isStartPlacement: true,
+  } as unknown as StartPlacementData;
 
   return {
     ...sequence,
-    startPosition,
-    startingPosition: startPosition,
+    startPlacement,
+    startingPlacement: startPlacement,
   };
 }
 
@@ -82,7 +82,7 @@ describe("Construct tutorial workspace isolation", () => {
 
     state.setCurrentSequence(original);
     // Simulate the stale selection cache seen during live HMR/tab handoffs.
-    state.setSelectedStartPosition(null);
+    state.setSelectedStartPlacement(null);
     state.selectStep(2);
 
     expect(state.beginTutorialWorkspace()).toBe(true);
@@ -105,7 +105,7 @@ describe("Construct tutorial workspace isolation", () => {
     expect(
       persister.saveCurrentState.mock.calls[0]?.[0].currentSequence?.id
     ).toBe(original.id);
-    expect(persister.saveCurrentState.mock.calls[0]?.[0].hasStartPosition).toBe(
+    expect(persister.saveCurrentState.mock.calls[0]?.[0].hasStartPlacement).toBe(
       true
     );
     expect(persister.clearCurrentState).not.toHaveBeenCalled();
@@ -114,7 +114,7 @@ describe("Construct tutorial workspace isolation", () => {
     expect(state.isTutorialWorkspaceIsolated).toBe(false);
     expect(state.currentSequence?.id).toBe(original.id);
     expect(state.currentSequence?.name).toBe("Original draft");
-    expect(state.hasStartPosition).toBe(true);
+    expect(state.hasStartPlacement).toBe(true);
     expect(state.selectedStepNumber).toBe(2);
 
     await state.saveSequenceDataOnly();
@@ -147,17 +147,17 @@ describe("Construct tutorial workspace isolation", () => {
     const state = createSequenceState({
       sequenceService: repository.service,
     });
-    const staleStartPosition = {
+    const staleStartPlacement = {
       id: "stale-start",
-      isStartPosition: true,
-    } as unknown as StartPositionData;
+      isStartPlacement: true,
+    } as unknown as StartPlacementData;
 
-    state.setSelectedStartPosition(staleStartPosition);
+    state.setSelectedStartPlacement(staleStartPlacement);
     state.selectStep(0);
 
     expect(state.beginTutorialWorkspace()).toBe(false);
     expect(state.isTutorialWorkspaceIsolated).toBe(false);
-    expect(state.selectedStartPosition).toBeNull();
+    expect(state.selectedStartPlacement).toBeNull();
     expect(state.selectedStepNumber).toBeNull();
 
     const sequence = await state.createSequence({

@@ -75,7 +75,7 @@
     if (request.stepIndex > 0) {
       return sequence.steps[request.stepIndex - 1] ?? null;
     }
-    return sequence.startPosition ?? sequence.startingPosition ?? null;
+    return sequence.startPlacement ?? sequence.startingPlacement ?? null;
   });
 
   let phase = $state<ArrivalPhase>("preparing");
@@ -204,7 +204,7 @@
     }
 
     if (!reducedMotionEnabled) {
-      // The start position only needs a quick recognition beat. Prop motion
+      // The start placement only needs a quick recognition beat. Prop motion
       // begins while the card and background finish settling, so the arrival
       // never feels like it has paused after popping forward.
       phaseTimer = setTimeout(() => {

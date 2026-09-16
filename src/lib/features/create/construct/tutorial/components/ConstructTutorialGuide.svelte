@@ -9,16 +9,16 @@
 
   const message = $derived.by(() => {
     switch (constructTutorialState.stage) {
-      case "start-position":
+      case "start-placement":
         return {
-          title: "Choose a start position",
+          title: "Choose a start placement",
           instruction: "Use Presets, or choose Build to place both props.",
         };
       case "next-pictograph":
         return {
-          title: constructTutorialState.positionLabel
-            ? `Start position: ${constructTutorialState.positionLabel}`
-            : "Start position set",
+          title: constructTutorialState.placementLabel
+            ? `Start placement: ${constructTutorialState.placementLabel}`
+            : "Start placement set",
           instruction: "Tap a pictograph to add it. Hold one to preview it.",
         };
       case "play-sequence":

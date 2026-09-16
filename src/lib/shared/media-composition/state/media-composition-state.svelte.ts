@@ -63,7 +63,7 @@ export interface MediaCompositionStateDeps {
   getBindings: () => readonly CompositionSourceBinding[];
   getSequenceTimeMap?: (durationSeconds: number) => SequenceTimeMap | null;
   getSequenceSteps?: () => readonly StepData[];
-  startPositionDuration?: number;
+  startPlacementDuration?: number;
   requestSource?: (roleKey: string) => void;
 }
 
@@ -175,13 +175,13 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
       return activePreset.duration.seconds;
     }
     if (activePreset.duration.mode === "sequence-tempo") {
-      const startPositionDuration = deps.startPositionDuration ?? 1;
+      const startPlacementDuration = deps.startPlacementDuration ?? 1;
       const motionDuration = (deps.getSequenceSteps?.() ?? []).reduce(
         (total, step) => total + (step.duration ?? 1),
         0
       );
       return (
-        (startPositionDuration + motionDuration) *
+        (startPlacementDuration + motionDuration) *
         getStepDuration(activePreset.duration.bpm)
       );
     }
@@ -280,7 +280,7 @@ export function createMediaCompositionState(deps: MediaCompositionStateDeps) {
         ? {
             timeMap,
             steps,
-            startPositionDuration: deps.startPositionDuration ?? 1,
+            startPlacementDuration: deps.startPlacementDuration ?? 1,
             mediaTimeOffsetSeconds: getMappedTimeOffset(),
           }
         : null,

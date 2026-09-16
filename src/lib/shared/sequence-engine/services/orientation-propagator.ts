@@ -79,17 +79,17 @@ export function recalculateAll(result: SequenceResult): SequenceResult {
     return result;
   }
 
-  const startPosition = result.steps[0];
-  if (!startPosition) {
+  const startPlacement = result.steps[0];
+  if (!startPlacement) {
     return result;
   }
 
   let updatedSteps = [...result.steps];
 
-  const leftStartOrientation = (startPosition.leftMotion.endOrientation || "in") as Orientation;
+  const leftStartOrientation = (startPlacement.leftMotion.endOrientation || "in") as Orientation;
   updatedSteps = propagateForHand(updatedSteps, "left", leftStartOrientation);
 
-  const rightStartOrientation = (startPosition.rightMotion.endOrientation || "in") as Orientation;
+  const rightStartOrientation = (startPlacement.rightMotion.endOrientation || "in") as Orientation;
   updatedSteps = propagateForHand(updatedSteps, "right", rightStartOrientation);
 
   return {

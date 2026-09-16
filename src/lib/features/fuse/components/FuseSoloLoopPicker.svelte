@@ -105,7 +105,7 @@
                 hand: side,
               }}
               columnCount={Math.min(4, length)}
-              includeStartPosition={false}
+              includeStartPlacement={false}
               showWord={false}
               showStepNumbers={true}
               showDifficultyLevel={false}

@@ -21,8 +21,8 @@ export interface PoolEntry {
   sourceCatalogId: string;
   stepCount: number;
   word: string;
-  /** Start-position id parsed from the enumerated seqId prefix (`${startPos}_${seedWord}`). */
-  startPosition: string;
+  /** Start-placement id parsed from the enumerated seqId prefix (`${startPos}_${seedWord}`). */
+  startPlacement: string;
 }
 
 export interface CatalogPoolFilter {
@@ -31,8 +31,8 @@ export interface CatalogPoolFilter {
   loopTypes?: Set<string>;
   /** Optional level narrowing. Absent ⇒ all levels. */
   levels?: Set<number>;
-  /** Optional start-position id subset (applied per pool entry). Absent/empty ⇒ any. */
-  startPositionIds?: Set<string>;
+  /** Optional start-placement id subset (applied per pool entry). Absent/empty ⇒ any. */
+  startPlacementIds?: Set<string>;
 }
 
 function isZeroTurnCatalog(catalog: Catalog): boolean {
@@ -55,7 +55,7 @@ function containsType6(word: string): boolean {
 export function buildSequencePool(catalogs: Catalog[], filter?: CatalogPoolFilter): Map<number, PoolEntry[]> {
   const pool = new Map<number, PoolEntry[]>();
 
-  const posFilter = filter?.startPositionIds && filter.startPositionIds.size > 0 ? filter.startPositionIds : null;
+  const posFilter = filter?.startPlacementIds && filter.startPlacementIds.size > 0 ? filter.startPlacementIds : null;
 
   for (const catalog of catalogs) {
     if (catalog.collection !== "LOOPs") continue;
@@ -70,14 +70,14 @@ export function buildSequencePool(catalogs: Catalog[], filter?: CatalogPoolFilte
     for (const family of catalog.families) {
       for (const seqId of family.sequenceIds) {
         if (zeroTurn && containsType6(seqId)) continue;
-        const startPosition = seqId.split("_")[0] ?? "";
-        if (posFilter && !posFilter.has(startPosition)) continue;
+        const startPlacement = seqId.split("_")[0] ?? "";
+        if (posFilter && !posFilter.has(startPlacement)) continue;
         bucket.push({
           sequenceId: seqId,
           sourceCatalogId: catalog.id,
           stepCount,
           word: seqId,
-          startPosition,
+          startPlacement,
         });
       }
     }

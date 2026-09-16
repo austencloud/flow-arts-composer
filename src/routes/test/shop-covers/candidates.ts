@@ -23,8 +23,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -59,8 +59,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Φ-",
-            "startPosition": "alpha7",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -95,8 +95,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "B",
-            "startPosition": "alpha3",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -131,8 +131,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -167,8 +167,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "B",
-            "startPosition": "alpha5",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -203,8 +203,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Φ-",
-            "startPosition": "alpha3",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -239,8 +239,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "B",
-            "startPosition": "alpha7",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -275,8 +275,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -309,10 +309,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_BΦ-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -368,8 +368,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -404,8 +404,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "B",
-            "startPosition": "alpha5",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -440,8 +440,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Φ-",
-            "startPosition": "alpha3",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -476,8 +476,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "B",
-            "startPosition": "alpha7",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -512,8 +512,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -548,8 +548,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -584,8 +584,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Φ-",
-            "startPosition": "alpha7",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -620,8 +620,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "B",
-            "startPosition": "alpha3",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -654,10 +654,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Φ-B",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -713,8 +713,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "H",
-            "startPosition": "beta5",
-            "endPosition": "beta3",
+            "startPlacement": "beta5",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -749,8 +749,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Ψ-",
-            "startPosition": "beta3",
-            "endPosition": "beta7",
+            "startPlacement": "beta3",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -785,8 +785,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "H",
-            "startPosition": "beta7",
-            "endPosition": "beta5",
+            "startPlacement": "beta7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -821,8 +821,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Ψ-",
-            "startPosition": "beta5",
-            "endPosition": "beta1",
+            "startPlacement": "beta5",
+            "endPlacement": "beta1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -857,8 +857,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "H",
-            "startPosition": "beta1",
-            "endPosition": "beta7",
+            "startPlacement": "beta1",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -893,8 +893,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ψ-",
-            "startPosition": "beta7",
-            "endPosition": "beta3",
+            "startPlacement": "beta7",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -929,8 +929,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "H",
-            "startPosition": "beta3",
-            "endPosition": "beta1",
+            "startPlacement": "beta3",
+            "endPlacement": "beta1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -965,8 +965,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Ψ-",
-            "startPosition": "beta1",
-            "endPosition": "beta5",
+            "startPlacement": "beta1",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -999,10 +999,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_HΨ-",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -1058,8 +1058,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Ψ-",
-            "startPosition": "beta5",
-            "endPosition": "beta1",
+            "startPlacement": "beta5",
+            "endPlacement": "beta1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1094,8 +1094,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "H",
-            "startPosition": "beta1",
-            "endPosition": "beta7",
+            "startPlacement": "beta1",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1130,8 +1130,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Ψ-",
-            "startPosition": "beta7",
-            "endPosition": "beta3",
+            "startPlacement": "beta7",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1166,8 +1166,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "H",
-            "startPosition": "beta3",
-            "endPosition": "beta1",
+            "startPlacement": "beta3",
+            "endPlacement": "beta1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1202,8 +1202,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Ψ-",
-            "startPosition": "beta1",
-            "endPosition": "beta5",
+            "startPlacement": "beta1",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1238,8 +1238,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "H",
-            "startPosition": "beta5",
-            "endPosition": "beta3",
+            "startPlacement": "beta5",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1274,8 +1274,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Ψ-",
-            "startPosition": "beta3",
-            "endPosition": "beta7",
+            "startPlacement": "beta3",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1310,8 +1310,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "H",
-            "startPosition": "beta7",
-            "endPosition": "beta5",
+            "startPlacement": "beta7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1344,10 +1344,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_Ψ-H",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -1403,8 +1403,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "T",
-            "startPosition": "gamma11",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1439,8 +1439,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Λ-",
-            "startPosition": "gamma9",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1475,8 +1475,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "T",
-            "startPosition": "gamma13",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma13",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1511,8 +1511,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Λ-",
-            "startPosition": "gamma11",
-            "endPosition": "gamma15",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1547,8 +1547,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "T",
-            "startPosition": "gamma15",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma15",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1583,8 +1583,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Λ-",
-            "startPosition": "gamma13",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma13",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1619,8 +1619,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "T",
-            "startPosition": "gamma9",
-            "endPosition": "gamma15",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1655,8 +1655,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Λ-",
-            "startPosition": "gamma15",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma15",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1689,10 +1689,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_TΛ-",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -1748,8 +1748,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Λ-",
-            "startPosition": "gamma11",
-            "endPosition": "gamma15",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1784,8 +1784,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "T",
-            "startPosition": "gamma15",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma15",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1820,8 +1820,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Λ-",
-            "startPosition": "gamma13",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma13",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1856,8 +1856,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "T",
-            "startPosition": "gamma9",
-            "endPosition": "gamma15",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1892,8 +1892,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Λ-",
-            "startPosition": "gamma15",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma15",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1928,8 +1928,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "T",
-            "startPosition": "gamma11",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -1964,8 +1964,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Λ-",
-            "startPosition": "gamma9",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2000,8 +2000,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "T",
-            "startPosition": "gamma13",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma13",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2034,10 +2034,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_Λ-T",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -2093,8 +2093,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "K",
-            "startPosition": "alpha1",
-            "endPosition": "beta3",
+            "startPlacement": "alpha1",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2129,8 +2129,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Φ",
-            "startPosition": "beta3",
-            "endPosition": "alpha3",
+            "startPlacement": "beta3",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2165,8 +2165,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "K",
-            "startPosition": "alpha3",
-            "endPosition": "beta5",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2201,8 +2201,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Φ",
-            "startPosition": "beta5",
-            "endPosition": "alpha5",
+            "startPlacement": "beta5",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2237,8 +2237,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "K",
-            "startPosition": "alpha5",
-            "endPosition": "beta7",
+            "startPlacement": "alpha5",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2273,8 +2273,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Φ",
-            "startPosition": "beta7",
-            "endPosition": "alpha7",
+            "startPlacement": "beta7",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2309,8 +2309,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "K",
-            "startPosition": "alpha7",
-            "endPosition": "beta1",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2345,8 +2345,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Φ",
-            "startPosition": "beta1",
-            "endPosition": "alpha1",
+            "startPlacement": "beta1",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2379,10 +2379,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_KΦ",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -2438,8 +2438,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Θ-",
-            "startPosition": "alpha1",
-            "endPosition": "gamma15",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2474,8 +2474,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "X-",
-            "startPosition": "gamma15",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma15",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2510,8 +2510,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Θ-",
-            "startPosition": "alpha3",
-            "endPosition": "gamma9",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2546,8 +2546,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "X-",
-            "startPosition": "gamma9",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma9",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2582,8 +2582,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Θ-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma11",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2618,8 +2618,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "X-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2654,8 +2654,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Θ-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma13",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2690,8 +2690,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "X-",
-            "startPosition": "gamma13",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma13",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2724,10 +2724,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Θ-X-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -2796,8 +2796,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Σ-",
-            "startPosition": "beta5",
-            "endPosition": "gamma15",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -2832,8 +2832,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "X",
-            "startPosition": "gamma15",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma15",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2868,8 +2868,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -2904,8 +2904,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "L",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -2940,8 +2940,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Δ-",
-            "startPosition": "beta5",
-            "endPosition": "gamma15",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -2976,8 +2976,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "W",
-            "startPosition": "gamma15",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma15",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3012,8 +3012,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "B",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -3048,8 +3048,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "L",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3082,10 +3082,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_Σ-XAL",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -3141,8 +3141,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "W-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -3177,8 +3177,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3213,8 +3213,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Θ-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma1",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3249,8 +3249,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "M",
-            "startPosition": "gamma1",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma11",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -3285,8 +3285,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "X-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -3321,8 +3321,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "B",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3357,8 +3357,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Ω-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma1",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3393,8 +3393,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "N",
-            "startPosition": "gamma1",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma11",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -3427,10 +3427,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_W-AΘ-M",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -3486,8 +3486,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "W",
-            "startPosition": "gamma11",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -3522,8 +3522,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Σ",
-            "startPosition": "alpha1",
-            "endPosition": "gamma7",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3558,8 +3558,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "N",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -3594,8 +3594,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "U",
-            "startPosition": "gamma9",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3630,8 +3630,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "X",
-            "startPosition": "gamma11",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -3666,8 +3666,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Δ",
-            "startPosition": "alpha1",
-            "endPosition": "gamma7",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3702,8 +3702,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "M",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -3738,8 +3738,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "V",
-            "startPosition": "gamma9",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3772,10 +3772,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_WΣNU",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -3831,8 +3831,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -3867,8 +3867,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Θ-",
-            "startPosition": "alpha3",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3903,8 +3903,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "W",
-            "startPosition": "gamma5",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha5",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -3939,8 +3939,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -3975,8 +3975,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -4011,8 +4011,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ω-",
-            "startPosition": "alpha3",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4047,8 +4047,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "X",
-            "startPosition": "gamma5",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha5",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -4083,8 +4083,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4117,10 +4117,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_AΘ-WΦ-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -4176,8 +4176,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -4212,8 +4212,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Ψ",
-            "startPosition": "alpha3",
-            "endPosition": "beta7",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4248,8 +4248,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Ψ-",
-            "startPosition": "beta7",
-            "endPosition": "beta3",
+            "startPlacement": "beta7",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4284,8 +4284,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "D",
-            "startPosition": "beta3",
-            "endPosition": "alpha1",
+            "startPlacement": "beta3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -4320,8 +4320,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -4356,8 +4356,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ψ",
-            "startPosition": "alpha3",
-            "endPosition": "beta7",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4392,8 +4392,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Ψ-",
-            "startPosition": "beta7",
-            "endPosition": "beta3",
+            "startPlacement": "beta7",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4428,8 +4428,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "E",
-            "startPosition": "beta3",
-            "endPosition": "alpha1",
+            "startPlacement": "beta3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -4462,10 +4462,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_AΨΨ-D",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -4521,8 +4521,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Θ-",
-            "startPosition": "alpha1",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -4557,8 +4557,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "M",
-            "startPosition": "gamma3",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma3",
+            "endPlacement": "gamma13",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -4593,8 +4593,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X",
-            "startPosition": "gamma13",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma13",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4629,8 +4629,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4665,8 +4665,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Ω-",
-            "startPosition": "alpha1",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -4701,8 +4701,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "N",
-            "startPosition": "gamma3",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma3",
+            "endPlacement": "gamma13",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -4737,8 +4737,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "W",
-            "startPosition": "gamma13",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma13",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4773,8 +4773,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4807,10 +4807,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Θ-MXΦ-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -4866,8 +4866,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4902,8 +4902,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Θ-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma7",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -4938,8 +4938,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "W",
-            "startPosition": "gamma7",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma7",
+            "endPlacement": "alpha7",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -4974,8 +4974,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "B",
-            "startPosition": "alpha7",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -5010,8 +5010,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5046,8 +5046,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ω-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma7",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5082,8 +5082,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "X",
-            "startPosition": "gamma7",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma7",
+            "endPlacement": "alpha7",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -5118,8 +5118,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "A",
-            "startPosition": "alpha7",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -5152,10 +5152,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Φ-Θ-WB",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -5211,8 +5211,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5247,8 +5247,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Ψ",
-            "startPosition": "alpha5",
-            "endPosition": "beta1",
+            "startPlacement": "alpha5",
+            "endPlacement": "beta1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5283,8 +5283,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "D",
-            "startPosition": "beta1",
-            "endPosition": "alpha3",
+            "startPlacement": "beta1",
+            "endPlacement": "alpha3",
             "leftReversal": true,
             "rightReversal": true,
             "motions": {
@@ -5319,8 +5319,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "C",
-            "startPosition": "alpha3",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5355,8 +5355,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5391,8 +5391,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ψ",
-            "startPosition": "alpha5",
-            "endPosition": "beta1",
+            "startPlacement": "alpha5",
+            "endPlacement": "beta1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5427,8 +5427,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "E",
-            "startPosition": "beta1",
-            "endPosition": "alpha3",
+            "startPlacement": "beta1",
+            "endPlacement": "alpha3",
             "leftReversal": true,
             "rightReversal": true,
             "motions": {
@@ -5463,8 +5463,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "C",
-            "startPosition": "alpha3",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5497,10 +5497,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Φ-ΨDC",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -5569,8 +5569,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "F",
-            "startPosition": "beta5",
-            "endPosition": "alpha7",
+            "startPlacement": "beta5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5605,8 +5605,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "A",
-            "startPosition": "alpha7",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5641,8 +5641,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5677,8 +5677,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "L",
-            "startPosition": "alpha3",
-            "endPosition": "beta5",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5713,8 +5713,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "F",
-            "startPosition": "beta5",
-            "endPosition": "alpha3",
+            "startPlacement": "beta5",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5749,8 +5749,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "A",
-            "startPosition": "alpha3",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5785,8 +5785,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5821,8 +5821,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "L",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5855,10 +5855,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_FAAL",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -5914,8 +5914,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Λ",
-            "startPosition": "gamma11",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5950,8 +5950,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "O",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -5986,8 +5986,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "O",
-            "startPosition": "gamma9",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6022,8 +6022,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "T",
-            "startPosition": "gamma7",
-            "endPosition": "gamma5",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6058,8 +6058,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Λ",
-            "startPosition": "gamma5",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma5",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6094,8 +6094,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "O",
-            "startPosition": "gamma13",
-            "endPosition": "gamma3",
+            "startPlacement": "gamma13",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6130,8 +6130,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "O",
-            "startPosition": "gamma3",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma3",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6166,8 +6166,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "T",
-            "startPosition": "gamma13",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma13",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6200,10 +6200,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_ΛOOT",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -6259,8 +6259,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Σ-",
-            "startPosition": "beta5",
-            "endPosition": "gamma15",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6295,8 +6295,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "O",
-            "startPosition": "gamma15",
-            "endPosition": "gamma5",
+            "startPlacement": "gamma15",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6331,8 +6331,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "W",
-            "startPosition": "gamma5",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6367,8 +6367,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "L",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6403,8 +6403,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Σ-",
-            "startPosition": "beta5",
-            "endPosition": "gamma1",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6439,8 +6439,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "O",
-            "startPosition": "gamma1",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6475,8 +6475,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "W",
-            "startPosition": "gamma11",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6511,8 +6511,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "L",
-            "startPosition": "alpha3",
-            "endPosition": "beta5",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6545,10 +6545,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_Σ-OWL",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -6604,8 +6604,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "F",
-            "startPosition": "beta5",
-            "endPosition": "alpha7",
+            "startPlacement": "beta5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6640,8 +6640,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Σ",
-            "startPosition": "alpha7",
-            "endPosition": "gamma9",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6676,8 +6676,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X",
-            "startPosition": "gamma9",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma9",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6712,8 +6712,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "L",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6748,8 +6748,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "F",
-            "startPosition": "beta5",
-            "endPosition": "alpha3",
+            "startPlacement": "beta5",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6784,8 +6784,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Σ",
-            "startPosition": "alpha3",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6820,8 +6820,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "X",
-            "startPosition": "gamma3",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma3",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6856,8 +6856,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "L",
-            "startPosition": "alpha3",
-            "endPosition": "beta5",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6890,10 +6890,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_FΣXL",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -6949,8 +6949,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "R",
-            "startPosition": "gamma11",
-            "endPosition": "gamma5",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -6985,8 +6985,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Λ-",
-            "startPosition": "gamma5",
-            "endPosition": "gamma1",
+            "startPlacement": "gamma5",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7021,8 +7021,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X-",
-            "startPosition": "gamma1",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7057,8 +7057,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Δ",
-            "startPosition": "alpha7",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7093,8 +7093,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "R",
-            "startPosition": "gamma5",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma5",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7129,8 +7129,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Λ-",
-            "startPosition": "gamma11",
-            "endPosition": "gamma15",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7165,8 +7165,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "X-",
-            "startPosition": "gamma15",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma15",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7201,8 +7201,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Δ",
-            "startPosition": "alpha3",
-            "endPosition": "gamma11",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7235,10 +7235,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_RΛ-X-Δ",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -7294,8 +7294,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "W-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7330,8 +7330,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7366,8 +7366,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7402,8 +7402,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Δ",
-            "startPosition": "alpha7",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7438,8 +7438,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "W-",
-            "startPosition": "gamma5",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7474,8 +7474,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7510,8 +7510,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "B",
-            "startPosition": "alpha5",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7546,8 +7546,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Δ",
-            "startPosition": "alpha3",
-            "endPosition": "gamma11",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7580,10 +7580,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_W-Φ-BΔ",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -7639,8 +7639,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Λ-",
-            "startPosition": "gamma11",
-            "endPosition": "gamma15",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7675,8 +7675,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "O",
-            "startPosition": "gamma15",
-            "endPosition": "gamma5",
+            "startPlacement": "gamma15",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7711,8 +7711,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "W-",
-            "startPosition": "gamma5",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7747,8 +7747,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Ω-",
-            "startPosition": "alpha3",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7783,8 +7783,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Λ-",
-            "startPosition": "gamma5",
-            "endPosition": "gamma1",
+            "startPlacement": "gamma5",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7819,8 +7819,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "O",
-            "startPosition": "gamma1",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7855,8 +7855,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "W-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7891,8 +7891,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Ω-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma11",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -7925,10 +7925,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_Λ-OW-Ω-",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -7984,8 +7984,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8020,8 +8020,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Φ-",
-            "startPosition": "alpha3",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8056,8 +8056,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "α",
-            "startPosition": "alpha7",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8092,8 +8092,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "B",
-            "startPosition": "alpha7",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8128,8 +8128,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8164,8 +8164,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Φ-",
-            "startPosition": "alpha7",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8200,8 +8200,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "α",
-            "startPosition": "alpha3",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8236,8 +8236,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "B",
-            "startPosition": "alpha3",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8270,10 +8270,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_AΦ-αB",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -8342,8 +8342,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "M",
-            "startPosition": "gamma11",
-            "endPosition": "gamma1",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma1",
             "leftReversal": true,
             "rightReversal": true,
             "motions": {
@@ -8378,8 +8378,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "N",
-            "startPosition": "gamma1",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8414,8 +8414,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8450,8 +8450,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Ω-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma7",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8486,8 +8486,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "M",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": true,
             "rightReversal": true,
             "motions": {
@@ -8522,8 +8522,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "N",
-            "startPosition": "gamma9",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8558,8 +8558,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "X-",
-            "startPosition": "gamma7",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8594,8 +8594,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Ω-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma11",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8628,10 +8628,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_MNX-Ω-",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -8687,8 +8687,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Θ",
-            "startPosition": "beta5",
-            "endPosition": "gamma7",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -8723,8 +8723,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "X-",
-            "startPosition": "gamma7",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8759,8 +8759,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -8795,8 +8795,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "L",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8831,8 +8831,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Θ",
-            "startPosition": "beta5",
-            "endPosition": "gamma11",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -8867,8 +8867,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "X-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8903,8 +8903,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha3",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -8939,8 +8939,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "L",
-            "startPosition": "alpha3",
-            "endPosition": "beta5",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -8973,10 +8973,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_ΘX-AL",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -9032,8 +9032,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "M",
-            "startPosition": "gamma11",
-            "endPosition": "gamma1",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma1",
             "leftReversal": true,
             "rightReversal": true,
             "motions": {
@@ -9068,8 +9068,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "W-",
-            "startPosition": "gamma1",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9104,8 +9104,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Θ-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma13",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9140,8 +9140,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Q",
-            "startPosition": "gamma13",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma13",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9176,8 +9176,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "M",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": true,
             "rightReversal": true,
             "motions": {
@@ -9212,8 +9212,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "W-",
-            "startPosition": "gamma9",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma9",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9248,8 +9248,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Θ-",
-            "startPosition": "alpha3",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9284,8 +9284,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Q",
-            "startPosition": "gamma5",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma5",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9318,10 +9318,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_MW-Θ-Q",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -9377,8 +9377,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "W-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -9413,8 +9413,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -9449,8 +9449,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Θ-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma1",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9485,8 +9485,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "T",
-            "startPosition": "gamma1",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9521,8 +9521,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "W-",
-            "startPosition": "gamma7",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -9557,8 +9557,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha3",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -9593,8 +9593,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Θ-",
-            "startPosition": "alpha3",
-            "endPosition": "gamma9",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9629,8 +9629,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "T",
-            "startPosition": "gamma9",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9663,10 +9663,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_W-AΘ-T",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -9722,8 +9722,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": true,
             "rightReversal": true,
             "motions": {
@@ -9758,8 +9758,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Σ",
-            "startPosition": "alpha3",
-            "endPosition": "gamma13",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9794,8 +9794,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X",
-            "startPosition": "gamma13",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma13",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9830,8 +9830,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "B",
-            "startPosition": "alpha3",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9866,8 +9866,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": true,
             "rightReversal": true,
             "motions": {
@@ -9902,8 +9902,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Σ",
-            "startPosition": "alpha7",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9938,8 +9938,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "X",
-            "startPosition": "gamma5",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -9974,8 +9974,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "B",
-            "startPosition": "alpha7",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10008,10 +10008,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_AΣXB",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -10067,8 +10067,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": true,
             "rightReversal": true,
             "motions": {
@@ -10103,8 +10103,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "A",
-            "startPosition": "alpha3",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10139,8 +10139,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Σ",
-            "startPosition": "alpha5",
-            "endPosition": "gamma15",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10175,8 +10175,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "W-",
-            "startPosition": "gamma15",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma15",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10211,8 +10211,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": true,
             "rightReversal": true,
             "motions": {
@@ -10247,8 +10247,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "A",
-            "startPosition": "alpha7",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10283,8 +10283,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Σ",
-            "startPosition": "alpha5",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10319,8 +10319,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "W-",
-            "startPosition": "gamma3",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10353,10 +10353,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_AAΣW-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -10412,8 +10412,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Σ",
-            "startPosition": "alpha1",
-            "endPosition": "gamma11",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -10448,8 +10448,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "N",
-            "startPosition": "gamma11",
-            "endPosition": "gamma1",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10484,8 +10484,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Λ-",
-            "startPosition": "gamma1",
-            "endPosition": "gamma5",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10520,8 +10520,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "W-",
-            "startPosition": "gamma5",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha1",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -10556,8 +10556,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Σ",
-            "startPosition": "alpha1",
-            "endPosition": "gamma7",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -10592,8 +10592,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "N",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10628,8 +10628,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Λ-",
-            "startPosition": "gamma9",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10664,8 +10664,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "W-",
-            "startPosition": "gamma13",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma13",
+            "endPlacement": "alpha1",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -10698,10 +10698,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_ΣNΛ-W-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -10757,8 +10757,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Θ-",
-            "startPosition": "alpha1",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -10793,8 +10793,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Λ-",
-            "startPosition": "gamma3",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma3",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10829,8 +10829,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "M",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -10865,8 +10865,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "X",
-            "startPosition": "gamma9",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma9",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10901,8 +10901,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Θ-",
-            "startPosition": "alpha1",
-            "endPosition": "gamma15",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": true,
             "motions": {
@@ -10937,8 +10937,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Λ-",
-            "startPosition": "gamma15",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma15",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -10973,8 +10973,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "M",
-            "startPosition": "gamma11",
-            "endPosition": "gamma1",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma1",
             "leftReversal": true,
             "rightReversal": false,
             "motions": {
@@ -11009,8 +11009,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "X",
-            "startPosition": "gamma1",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma1",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11043,10 +11043,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Θ-Λ-MX",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -11115,8 +11115,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11151,8 +11151,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "A",
-            "startPosition": "alpha3",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11187,8 +11187,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Σ",
-            "startPosition": "alpha5",
-            "endPosition": "gamma15",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11223,8 +11223,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "W-",
-            "startPosition": "gamma15",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma15",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11259,8 +11259,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11295,8 +11295,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "B",
-            "startPosition": "alpha7",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11331,8 +11331,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Δ",
-            "startPosition": "alpha5",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11367,8 +11367,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "X-",
-            "startPosition": "gamma3",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11401,10 +11401,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_AAΣW-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -11460,8 +11460,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Θ",
-            "startPosition": "beta5",
-            "endPosition": "gamma7",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11496,8 +11496,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "X-",
-            "startPosition": "gamma7",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11532,8 +11532,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11568,8 +11568,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "L",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11604,8 +11604,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Ω",
-            "startPosition": "beta5",
-            "endPosition": "gamma11",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11640,8 +11640,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "W-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11676,8 +11676,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "B",
-            "startPosition": "alpha5",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11712,8 +11712,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "L",
-            "startPosition": "alpha3",
-            "endPosition": "beta5",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11746,10 +11746,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_ΘX-AL",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -11805,8 +11805,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "M",
-            "startPosition": "gamma11",
-            "endPosition": "gamma1",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11841,8 +11841,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "N",
-            "startPosition": "gamma1",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11877,8 +11877,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11913,8 +11913,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Ω-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma7",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11949,8 +11949,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "N",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -11985,8 +11985,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "M",
-            "startPosition": "gamma9",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12021,8 +12021,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "W-",
-            "startPosition": "gamma7",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12057,8 +12057,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Θ-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma11",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12091,10 +12091,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_MNX-Ω-",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -12150,8 +12150,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "M",
-            "startPosition": "gamma11",
-            "endPosition": "gamma1",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12186,8 +12186,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "W-",
-            "startPosition": "gamma1",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12222,8 +12222,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Θ-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma13",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12258,8 +12258,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Q",
-            "startPosition": "gamma13",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma13",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12294,8 +12294,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "N",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12330,8 +12330,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "X-",
-            "startPosition": "gamma9",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma9",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12366,8 +12366,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Ω-",
-            "startPosition": "alpha3",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12402,8 +12402,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "P",
-            "startPosition": "gamma5",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma5",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12436,10 +12436,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_MW-Θ-Q",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -12495,8 +12495,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "W-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12531,8 +12531,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12567,8 +12567,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Θ-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma1",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12603,8 +12603,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "T",
-            "startPosition": "gamma1",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12639,8 +12639,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "X-",
-            "startPosition": "gamma7",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12675,8 +12675,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "B",
-            "startPosition": "alpha5",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12711,8 +12711,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Ω-",
-            "startPosition": "alpha3",
-            "endPosition": "gamma9",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12747,8 +12747,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "S",
-            "startPosition": "gamma9",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12781,10 +12781,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_W-AΘ-T",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -12840,8 +12840,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12876,8 +12876,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Σ",
-            "startPosition": "alpha3",
-            "endPosition": "gamma13",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12912,8 +12912,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X",
-            "startPosition": "gamma13",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma13",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12948,8 +12948,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "B",
-            "startPosition": "alpha3",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -12984,8 +12984,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13020,8 +13020,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Δ",
-            "startPosition": "alpha7",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13056,8 +13056,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "W",
-            "startPosition": "gamma5",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13092,8 +13092,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "A",
-            "startPosition": "alpha7",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13126,10 +13126,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_AΣXB",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -13185,8 +13185,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13221,8 +13221,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Θ-",
-            "startPosition": "alpha3",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13257,8 +13257,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X",
-            "startPosition": "gamma5",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13293,8 +13293,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13329,8 +13329,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13365,8 +13365,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ω-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma13",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13401,8 +13401,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "W",
-            "startPosition": "gamma13",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma13",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13437,8 +13437,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13471,10 +13471,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_AΘ-XΦ-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -13530,8 +13530,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13566,8 +13566,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Φ-",
-            "startPosition": "alpha3",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13602,8 +13602,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Ψ",
-            "startPosition": "alpha7",
-            "endPosition": "beta3",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13638,8 +13638,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "F",
-            "startPosition": "beta3",
-            "endPosition": "alpha1",
+            "startPlacement": "beta3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13674,8 +13674,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13710,8 +13710,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Φ-",
-            "startPosition": "alpha7",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13746,8 +13746,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Ψ",
-            "startPosition": "alpha3",
-            "endPosition": "beta7",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13782,8 +13782,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "F",
-            "startPosition": "beta7",
-            "endPosition": "alpha1",
+            "startPlacement": "beta7",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13816,10 +13816,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_BΦ-ΨF",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -13888,8 +13888,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "D",
-            "startPosition": "beta5",
-            "endPosition": "alpha7",
+            "startPlacement": "beta5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13924,8 +13924,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "C",
-            "startPosition": "alpha7",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13960,8 +13960,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "C",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -13996,8 +13996,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "J",
-            "startPosition": "alpha3",
-            "endPosition": "beta5",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14032,8 +14032,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "D",
-            "startPosition": "beta5",
-            "endPosition": "alpha7",
+            "startPlacement": "beta5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14068,8 +14068,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "C",
-            "startPosition": "alpha7",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14104,8 +14104,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "C",
-            "startPosition": "alpha5",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14140,8 +14140,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "J",
-            "startPosition": "alpha3",
-            "endPosition": "beta5",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14174,10 +14174,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_DCCJ",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -14233,8 +14233,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Σ-",
-            "startPosition": "beta5",
-            "endPosition": "gamma15",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14269,8 +14269,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "N",
-            "startPosition": "gamma15",
-            "endPosition": "gamma5",
+            "startPlacement": "gamma15",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14305,8 +14305,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "W",
-            "startPosition": "gamma5",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14341,8 +14341,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "K",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14377,8 +14377,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Σ-",
-            "startPosition": "beta5",
-            "endPosition": "gamma9",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14413,8 +14413,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "N",
-            "startPosition": "gamma9",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14449,8 +14449,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "W",
-            "startPosition": "gamma7",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma7",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14485,8 +14485,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "K",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14519,10 +14519,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_Σ-NWK",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -14578,8 +14578,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Λ",
-            "startPosition": "gamma11",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma11",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14614,8 +14614,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "M",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14650,8 +14650,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "N",
-            "startPosition": "gamma9",
-            "endPosition": "gamma7",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14686,8 +14686,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Q",
-            "startPosition": "gamma7",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14722,8 +14722,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Λ",
-            "startPosition": "gamma13",
-            "endPosition": "gamma5",
+            "startPlacement": "gamma13",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14758,8 +14758,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "M",
-            "startPosition": "gamma5",
-            "endPosition": "gamma15",
+            "startPlacement": "gamma5",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14794,8 +14794,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "N",
-            "startPosition": "gamma15",
-            "endPosition": "gamma5",
+            "startPlacement": "gamma15",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14830,8 +14830,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Q",
-            "startPosition": "gamma5",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma5",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14864,10 +14864,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_ΛMNQ",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -14923,8 +14923,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "D",
-            "startPosition": "beta5",
-            "endPosition": "alpha7",
+            "startPlacement": "beta5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14959,8 +14959,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Σ",
-            "startPosition": "alpha7",
-            "endPosition": "gamma9",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -14995,8 +14995,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X",
-            "startPosition": "gamma9",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma9",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15031,8 +15031,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "K",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15067,8 +15067,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "D",
-            "startPosition": "beta5",
-            "endPosition": "alpha7",
+            "startPlacement": "beta5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15103,8 +15103,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Σ",
-            "startPosition": "alpha7",
-            "endPosition": "gamma15",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15139,8 +15139,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "X",
-            "startPosition": "gamma15",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma15",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15175,8 +15175,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "K",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15209,10 +15209,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_DΣXK",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -15268,8 +15268,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Θ-",
-            "startPosition": "alpha1",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15304,8 +15304,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "X-",
-            "startPosition": "gamma3",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma3",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15340,8 +15340,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Θ-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma1",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15376,8 +15376,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "X-",
-            "startPosition": "gamma1",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15412,8 +15412,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Θ-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma1",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15448,8 +15448,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "X-",
-            "startPosition": "gamma1",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15484,8 +15484,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Θ-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15520,8 +15520,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "X-",
-            "startPosition": "gamma3",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15554,10 +15554,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Θ-X-Θ-X-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -15613,8 +15613,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "C",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15649,8 +15649,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Ψ",
-            "startPosition": "alpha3",
-            "endPosition": "beta7",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15685,8 +15685,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Ψ-",
-            "startPosition": "beta7",
-            "endPosition": "beta3",
+            "startPlacement": "beta7",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15721,8 +15721,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "D",
-            "startPosition": "beta3",
-            "endPosition": "alpha5",
+            "startPlacement": "beta3",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15757,8 +15757,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "C",
-            "startPosition": "alpha5",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15793,8 +15793,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ψ",
-            "startPosition": "alpha3",
-            "endPosition": "beta3",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15829,8 +15829,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Ψ-",
-            "startPosition": "beta3",
-            "endPosition": "beta7",
+            "startPlacement": "beta3",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15865,8 +15865,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "D",
-            "startPosition": "beta7",
-            "endPosition": "alpha1",
+            "startPlacement": "beta7",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15899,10 +15899,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_CΨΨ-D",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -15958,8 +15958,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "J",
-            "startPosition": "alpha1",
-            "endPosition": "beta3",
+            "startPlacement": "alpha1",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -15994,8 +15994,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Ψ-",
-            "startPosition": "beta3",
-            "endPosition": "beta7",
+            "startPlacement": "beta3",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16030,8 +16030,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "β",
-            "startPosition": "beta7",
-            "endPosition": "beta7",
+            "startPlacement": "beta7",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16066,8 +16066,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "E",
-            "startPosition": "beta7",
-            "endPosition": "alpha5",
+            "startPlacement": "beta7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16102,8 +16102,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "J",
-            "startPosition": "alpha5",
-            "endPosition": "beta7",
+            "startPlacement": "alpha5",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16138,8 +16138,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ψ-",
-            "startPosition": "beta7",
-            "endPosition": "beta3",
+            "startPlacement": "beta7",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16174,8 +16174,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "β",
-            "startPosition": "beta3",
-            "endPosition": "beta3",
+            "startPlacement": "beta3",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16210,8 +16210,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "E",
-            "startPosition": "beta3",
-            "endPosition": "alpha1",
+            "startPlacement": "beta3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16244,10 +16244,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_JΨ-βE",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -16303,8 +16303,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Θ-",
-            "startPosition": "alpha1",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16339,8 +16339,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Y-",
-            "startPosition": "gamma3",
-            "endPosition": "beta7",
+            "startPlacement": "gamma3",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16375,8 +16375,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "β",
-            "startPosition": "beta7",
-            "endPosition": "beta7",
+            "startPlacement": "beta7",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16411,8 +16411,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "E",
-            "startPosition": "beta7",
-            "endPosition": "alpha5",
+            "startPlacement": "beta7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16447,8 +16447,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Θ-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma1",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16483,8 +16483,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Y-",
-            "startPosition": "gamma1",
-            "endPosition": "beta3",
+            "startPlacement": "gamma1",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16519,8 +16519,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "β",
-            "startPosition": "beta3",
-            "endPosition": "beta3",
+            "startPlacement": "beta3",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16555,8 +16555,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "E",
-            "startPosition": "beta3",
-            "endPosition": "alpha1",
+            "startPlacement": "beta3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16589,10 +16589,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Θ-Y-βE",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -16661,8 +16661,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Σ-",
-            "startPosition": "beta5",
-            "endPosition": "gamma15",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16697,8 +16697,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "X",
-            "startPosition": "gamma15",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma15",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16733,8 +16733,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16769,8 +16769,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "L",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16805,8 +16805,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Δ-",
-            "startPosition": "beta5",
-            "endPosition": "gamma9",
+            "startPlacement": "beta5",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16841,8 +16841,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "W",
-            "startPosition": "gamma9",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma9",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16877,8 +16877,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16913,8 +16913,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "L",
-            "startPosition": "alpha7",
-            "endPosition": "beta5",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -16947,10 +16947,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-beta5_Σ-XAL",
-          "gridPosition": "beta5",
+          "gridPlacement": "beta5",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -17006,8 +17006,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "W-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17042,8 +17042,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "A",
-            "startPosition": "alpha5",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17078,8 +17078,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Θ-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma1",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17114,8 +17114,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "O",
-            "startPosition": "gamma1",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17150,8 +17150,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "X-",
-            "startPosition": "gamma11",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17186,8 +17186,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "B",
-            "startPosition": "alpha7",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17222,8 +17222,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Ω-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma1",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17258,8 +17258,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "O",
-            "startPosition": "gamma1",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma1",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17292,10 +17292,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_W-AΘ-O",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -17351,8 +17351,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "W",
-            "startPosition": "gamma11",
-            "endPosition": "alpha1",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17387,8 +17387,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Σ",
-            "startPosition": "alpha1",
-            "endPosition": "gamma7",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17423,8 +17423,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "O",
-            "startPosition": "gamma7",
-            "endPosition": "gamma9",
+            "startPlacement": "gamma7",
+            "endPlacement": "gamma9",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17459,8 +17459,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "T",
-            "startPosition": "gamma9",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma9",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17495,8 +17495,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "X",
-            "startPosition": "gamma11",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma11",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17531,8 +17531,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Δ",
-            "startPosition": "alpha3",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17567,8 +17567,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "O",
-            "startPosition": "gamma3",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma3",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17603,8 +17603,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "S",
-            "startPosition": "gamma13",
-            "endPosition": "gamma11",
+            "startPlacement": "gamma13",
+            "endPlacement": "gamma11",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17637,10 +17637,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-gamma11_WΣOT",
-          "gridPosition": "gamma11",
+          "gridPlacement": "gamma11",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -17696,8 +17696,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17732,8 +17732,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Θ-",
-            "startPosition": "alpha3",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha3",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17768,8 +17768,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X",
-            "startPosition": "gamma5",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma5",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17804,8 +17804,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17840,8 +17840,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17876,8 +17876,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ω-",
-            "startPosition": "alpha7",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha7",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17912,8 +17912,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "W",
-            "startPosition": "gamma3",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma3",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17948,8 +17948,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -17982,10 +17982,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_AΘ-XΦ-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -18041,8 +18041,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "B",
-            "startPosition": "alpha1",
-            "endPosition": "alpha3",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18077,8 +18077,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Ψ",
-            "startPosition": "alpha3",
-            "endPosition": "beta7",
+            "startPlacement": "alpha3",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18113,8 +18113,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "Ψ-",
-            "startPosition": "beta7",
-            "endPosition": "beta3",
+            "startPlacement": "beta7",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18149,8 +18149,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "F",
-            "startPosition": "beta3",
-            "endPosition": "alpha1",
+            "startPlacement": "beta3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18185,8 +18185,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "A",
-            "startPosition": "alpha1",
-            "endPosition": "alpha7",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18221,8 +18221,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ψ",
-            "startPosition": "alpha7",
-            "endPosition": "beta7",
+            "startPlacement": "alpha7",
+            "endPlacement": "beta7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18257,8 +18257,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "Ψ-",
-            "startPosition": "beta7",
-            "endPosition": "beta3",
+            "startPlacement": "beta7",
+            "endPlacement": "beta3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18293,8 +18293,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "F",
-            "startPosition": "beta3",
-            "endPosition": "alpha1",
+            "startPlacement": "beta3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18327,10 +18327,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_BΨΨ-F",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -18386,8 +18386,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Θ-",
-            "startPosition": "alpha1",
-            "endPosition": "gamma3",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18422,8 +18422,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "O",
-            "startPosition": "gamma3",
-            "endPosition": "gamma13",
+            "startPlacement": "gamma3",
+            "endPlacement": "gamma13",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18458,8 +18458,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "W",
-            "startPosition": "gamma13",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma13",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18494,8 +18494,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18530,8 +18530,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Ω-",
-            "startPosition": "alpha1",
-            "endPosition": "gamma5",
+            "startPlacement": "alpha1",
+            "endPlacement": "gamma5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18566,8 +18566,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "O",
-            "startPosition": "gamma5",
-            "endPosition": "gamma15",
+            "startPlacement": "gamma5",
+            "endPlacement": "gamma15",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18602,8 +18602,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "X",
-            "startPosition": "gamma15",
-            "endPosition": "alpha5",
+            "startPlacement": "gamma15",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18638,8 +18638,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "Φ-",
-            "startPosition": "alpha5",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha5",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18672,10 +18672,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Θ-OWΦ-",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -18731,8 +18731,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18767,8 +18767,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Θ-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma7",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18803,8 +18803,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "X",
-            "startPosition": "gamma7",
-            "endPosition": "alpha7",
+            "startPlacement": "gamma7",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18839,8 +18839,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "A",
-            "startPosition": "alpha7",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18875,8 +18875,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18911,8 +18911,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ω-",
-            "startPosition": "alpha5",
-            "endPosition": "gamma1",
+            "startPlacement": "alpha5",
+            "endPlacement": "gamma1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18947,8 +18947,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "W",
-            "startPosition": "gamma1",
-            "endPosition": "alpha3",
+            "startPlacement": "gamma1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -18983,8 +18983,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "B",
-            "startPosition": "alpha3",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -19017,10 +19017,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Φ-Θ-XA",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {
@@ -19076,8 +19076,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 0,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -19112,8 +19112,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 1,
             "letter": "Ψ",
-            "startPosition": "alpha5",
-            "endPosition": "beta1",
+            "startPlacement": "alpha5",
+            "endPlacement": "beta1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -19148,8 +19148,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 2,
             "letter": "F",
-            "startPosition": "beta1",
-            "endPosition": "alpha3",
+            "startPlacement": "beta1",
+            "endPlacement": "alpha3",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -19184,8 +19184,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 3,
             "letter": "B",
-            "startPosition": "alpha3",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha3",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -19220,8 +19220,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 4,
             "letter": "Φ-",
-            "startPosition": "alpha1",
-            "endPosition": "alpha5",
+            "startPlacement": "alpha1",
+            "endPlacement": "alpha5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -19256,8 +19256,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 5,
             "letter": "Ψ",
-            "startPosition": "alpha5",
-            "endPosition": "beta5",
+            "startPlacement": "alpha5",
+            "endPlacement": "beta5",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -19292,8 +19292,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 6,
             "letter": "F",
-            "startPosition": "beta5",
-            "endPosition": "alpha7",
+            "startPlacement": "beta5",
+            "endPlacement": "alpha7",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -19328,8 +19328,8 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
           {
             "beat": 7,
             "letter": "A",
-            "startPosition": "alpha7",
-            "endPosition": "alpha1",
+            "startPlacement": "alpha7",
+            "endPlacement": "alpha1",
             "leftReversal": false,
             "rightReversal": false,
             "motions": {
@@ -19362,10 +19362,10 @@ export const COVER_CANDIDATES: Record<string, { label: string; sequences: any[];
             }
           }
         ],
-        "startPosition": {
-          "isStartPosition": true,
+        "startPlacement": {
+          "isStartPlacement": true,
           "id": "start-alpha1_Φ-ΨFB",
-          "gridPosition": "alpha1",
+          "gridPlacement": "alpha1",
           "gridMode": "diamond",
           "motions": {
             "left": {

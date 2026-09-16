@@ -15,7 +15,7 @@
  *
  * Stored data does not always satisfy the invariant. Shortcode/URL-resolved
  * sequences are stored lean, and older Firestore documents carry a
- * `startPosition` that was serialized before the fields existed. Anything read
+ * `startPlacement` that was serialized before the fields existed. Anything read
  * from storage and handed to the renderer has to be re-run through
  * `createMotionData`, which restores the default placement objects (the placers
  * recompute them downstream anyway).
@@ -25,7 +25,7 @@
  * cards (fc1ad42df8). It was never ported to the near-identically-named
  * `foundation/services/sequence-hydrator.ts`, which is the hydrator the
  * browse / library / thumbnail path actually runs — so the same silent bug
- * resurfaced months later as start-position cells rendering with no props
+ * resurfaced months later as start-placement cells rendering with no props
  * across the browse grid, ProfileTabs, the watch feed and the local library.
  * Two copies drifted once; one copy cannot. Import it, do not re-derive it.
  */
@@ -48,8 +48,8 @@ export function ensureMotionPlacement(
  * Guarantee both motions of a step-shaped record carry placement data.
  *
  * Deliberately generic over anything with a `motions` pair rather than typed to
- * `StepData`: the same shape covers steps, `startPosition` and
- * `startingPosition`, and keeping it structural lets this live in the
+ * `StepData`: the same shape covers steps, `startPlacement` and
+ * `startingPlacement`, and keeping it structural lets this live in the
  * pictograph layer without importing a sequence model.
  *
  * Takes a non-optional argument on purpose. An `T | undefined` overload made

@@ -24,7 +24,7 @@ function profile(name: string) {
 function viewerAuto(stepCount: number, panel: typeof VIEWER_PORTRAIT) {
   return pickBestFitLayout({
     stepCount,
-    includeStartPosition: true,
+    includeStartPlacement: true,
     ...panel,
     showHeader: true,
     showFooter: false,
@@ -43,7 +43,7 @@ function printLayout(stepCount: number, showFooter: boolean) {
     canvasWidth: poker.canvasWidth,
     canvasHeight: poker.canvasHeight,
     bleedPx: poker.bleedPx,
-    includeStartPosition: true,
+    includeStartPlacement: true,
     showHeader: true,
     showFooter,
     showQRCode: true,
@@ -55,38 +55,38 @@ describe("card profile cases mirror the real layout selectors", () => {
     const fit = viewerAuto(4, VIEWER_PORTRAIT);
     const options = profile("viewer-auto-portrait-4").options;
     expect(options.columnCount).toBe(fit.cols);
-    expect(options.startPositionLayout).toBe(fit.startPlacement);
+    expect(options.startPlacementLayout).toBe(fit.startPlacement);
   });
 
   it("viewer Auto, landscape panel, four steps", () => {
     const fit = viewerAuto(4, VIEWER_LANDSCAPE);
     const options = profile("viewer-auto-landscape-4").options;
     expect(options.columnCount).toBe(fit.cols);
-    expect(options.startPositionLayout).toBe(fit.startPlacement);
+    expect(options.startPlacementLayout).toBe(fit.startPlacement);
   });
 
   it("poker print, four steps: Start in the top row with two columns, footer or not", () => {
     const options = profile("print-poker-4").options;
     for (const showFooter of [false, true]) {
       const layout = printLayout(4, showFooter);
-      expect(layout.startPositionLayout).toBe("row");
+      expect(layout.startPlacementLayout).toBe("row");
       expect(options.columnCount).toBe(layout.totalGridColumns);
-      expect(options.startPositionLayout).toBe(layout.startPositionLayout);
+      expect(options.startPlacementLayout).toBe(layout.startPlacementLayout);
     }
   });
 
   it("poker print, eight steps: Start column with three total columns", () => {
     const options = profile("print-poker-8").options;
     const layout = printLayout(8, true);
-    expect(layout.startPositionLayout).toBe("column");
+    expect(layout.startPlacementLayout).toBe("column");
     expect(options.columnCount).toBe(layout.totalGridColumns);
-    expect(options.startPositionLayout).toBe(layout.startPositionLayout);
+    expect(options.startPlacementLayout).toBe(layout.startPlacementLayout);
   });
 
   it("the default export carries no layout override", () => {
     const options = profile("export-composer-default-4").options;
     expect(options.columnCount).toBeUndefined();
-    expect(options.startPositionLayout).toBeUndefined();
+    expect(options.startPlacementLayout).toBeUndefined();
     expect(options.exportProfile).toBeUndefined();
   });
 });

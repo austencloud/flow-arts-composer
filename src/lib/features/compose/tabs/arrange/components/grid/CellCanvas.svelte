@@ -28,7 +28,7 @@
     cellIndex,
     currentStep,
     isPlaying,
-    skipStartPosition = true,
+    skipStartPlacement = true,
     isSelected = false,
     isDragging = false,
     onSelect,
@@ -38,7 +38,7 @@
     currentStep: number;
     isPlaying: boolean;
     /** When true, step 0 (start position) is skipped and beats map to steps 1..N */
-    skipStartPosition?: boolean;
+    skipStartPlacement?: boolean;
     isSelected?: boolean;
     /** When true, click is suppressed (drag just ended) */
     isDragging?: boolean;
@@ -132,30 +132,30 @@
   // The orchestrator uses 1-based steps: step=1 is beat 1 (steps[0]), step < 1 is start position.
   // steps.length = number of motion beats (start position is stored separately).
   //
-  // skipStartPosition=true (seamless loop):
+  // skipStartPlacement=true (seamless loop):
   //   actualBeats = stepCount, wrapped ranges 0..stepCount-1, step = wrapped + 1
   //   So orchestrator sees steps 1..stepCount (all motion beats, no start position)
   //
-  // skipStartPosition=false (show start pose):
+  // skipStartPlacement=false (show start pose):
   //   actualBeats = stepCount + 1, wrapped ranges 0..stepCount
   //   step = wrapped (0 = start position, 1..stepCount = motion beats)
   const primaryCurrentStep = $derived.by(() => {
     if (!primaryLayer) return 0;
     const stepCount = primaryLayer.sequence.steps?.length || 1;
-    const actualBeats = skipStartPosition ? stepCount : stepCount + 1;
+    const actualBeats = skipStartPlacement ? stepCount : stepCount + 1;
     const layerBeat = effectiveBeat + primaryLayer.beatOffset;
     const wrapped = layerBeat % actualBeats;
-    return skipStartPosition ? wrapped + 1 : wrapped;
+    return skipStartPlacement ? wrapped + 1 : wrapped;
   });
 
   // Current steps for each additional layer
   const additionalCurrentSteps = $derived.by(() => {
     return extraLayers.map((layer) => {
       const stepCount = layer.sequence.steps?.length || 1;
-      const actualBeats = skipStartPosition ? stepCount : stepCount + 1;
+      const actualBeats = skipStartPlacement ? stepCount : stepCount + 1;
       const layerBeat = effectiveBeat + layer.beatOffset;
       const wrapped = layerBeat % actualBeats;
-      return skipStartPosition ? wrapped + 1 : wrapped;
+      return skipStartPlacement ? wrapped + 1 : wrapped;
     });
   });
 

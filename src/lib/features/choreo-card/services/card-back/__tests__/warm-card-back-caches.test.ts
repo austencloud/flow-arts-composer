@@ -28,7 +28,7 @@ function makeJob() {
       { kind: "turn-glyph", bitmap: bmp(), placement: {} },
       { kind: "reversal-glyph", bitmap: bmp(), placement: {} },
       { kind: "step-count", bitmap: bmp(), placement: {} },
-      { kind: "start-pos-pictograph", bitmap: bmp(), placement: {} },
+      { kind: "start-placement-pictograph", bitmap: bmp(), placement: {} },
       { kind: "loop-icon", bitmap: bmp(), placement: {} },
     ],
   } as never;
@@ -51,7 +51,7 @@ describe("warmCardBackCaches", () => {
       ),
     );
     // Per-card kinds → closed.
-    for (const k of ["turn-glyph", "reversal-glyph", "step-count", "start-pos-pictograph", "loop-icon"]) {
+    for (const k of ["turn-glyph", "reversal-glyph", "step-count", "start-placement-pictograph", "loop-icon"]) {
       expect(closeByKind[k]).toHaveBeenCalledOnce();
     }
     expect((job as { mandala: { bitmap: { close: ReturnType<typeof vi.fn> } } }).mandala.bitmap.close).toHaveBeenCalledOnce();

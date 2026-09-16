@@ -73,8 +73,8 @@ export class PreviewCache {
     // Create a stable string representation of the sequence steps
     const beatsJson = JSON.stringify({
       steps: sequence.steps,
-      startingPosition: sequence.startingPosition,
-      startPosition: sequence.startPosition,
+      startingPlacement: sequence.startingPlacement,
+      startPlacement: sequence.startPlacement,
     });
 
     // FNV-1a hash (Math.imul keeps the multiply overflow-correct in 32-bit)
@@ -97,7 +97,7 @@ export class PreviewCache {
       quality: options.quality,
       addWord: options.addWord,
       addStepNumbers: options.addStepNumbers,
-      includeStartPosition: options.includeStartPosition,
+      includeStartPlacement: options.includeStartPlacement,
       addDifficultyLevel: options.addDifficultyLevel,
       showNotes: options.showNotes ?? options.addUserInfo,
       customNotesText: options.customNotesText,

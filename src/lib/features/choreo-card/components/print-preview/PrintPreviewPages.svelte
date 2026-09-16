@@ -52,7 +52,7 @@
     paperSize?: PaperSizeId;
     theme: string;
     isLoading: boolean;
-    includeStartPosition?: boolean;
+    includeStartPlacement?: boolean;
     tndElement?: TnDElement;
     /** Per-card TnD elements, index-aligned with sequences (overrides single tndElement) */
     tndElements?: (TnDElement | undefined)[];
@@ -135,7 +135,7 @@
     paperSize = "letter",
     theme,
     isLoading,
-    includeStartPosition = true,
+    includeStartPlacement = true,
     tndElement,
     tndElements,
     footers,
@@ -409,7 +409,7 @@
             canvasWidth: size.canvasWidth,
             canvasHeight: size.canvasHeight,
             bleedPx,
-            includeStartPosition,
+            includeStartPlacement,
             showHeader: true,
             showFooter: Boolean(
               footer?.left ||
@@ -424,14 +424,14 @@
     return {
       canvasWidth: size.canvasWidth,
       canvasHeight: size.canvasHeight,
-      includeStartPosition,
-      startPositionLayout: isHandPath
+      includeStartPlacement,
+      startPlacementLayout: isHandPath
         ? "row"
         : physicalLayout
-          ? physicalLayout.startPositionLayout
+          ? physicalLayout.startPlacementLayout
           : stepCount != null
-            ? imageComposition.getStartPositionLayoutForStepCount(stepCount)
-            : imageComposition.startPositionLayout,
+            ? imageComposition.getStartPlacementLayoutForStepCount(stepCount)
+            : imageComposition.startPlacementLayout,
       ...(isHandPath
         ? { totalGridColumns: 2 }
         : physicalLayout?.totalGridColumns !== undefined
@@ -464,7 +464,7 @@
     const seqId = seq.id ?? seq.word ?? seq.name ?? "";
     const footer = footers?.[index];
     const renderOptions = buildRenderOptions(seq, footer, index);
-    const layout = `${renderOptions.startPositionLayout}:${renderOptions.totalGridColumns ?? "static"}`;
+    const layout = `${renderOptions.startPlacementLayout}:${renderOptions.totalGridColumns ?? "static"}`;
     const optsPart = [
       CARD_RENDER_SCHEMA,
       cardSize,
@@ -529,7 +529,7 @@
     const seqs = sequences;
     const _cardSize = cardSize;
     const _theme = theme;
-    const _includeStartPosition = includeStartPosition;
+    const _includeStartPlacement = includeStartPlacement;
     const _rerenderKey = rerenderKey;
     const _bgType = resolvedBackground;
     const _leftProp = resolvedLeftProp;
@@ -541,7 +541,7 @@
     // Void unused captures to satisfy linter
     void _cardSize;
     void _theme;
-    void _includeStartPosition;
+    void _includeStartPlacement;
     void _rerenderKey;
     void _bgType;
     void _leftProp;

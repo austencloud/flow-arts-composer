@@ -6,7 +6,7 @@
 //
 // Sequences are generated, not spelled: the letters are whatever the transition
 // graph produces. What matters is that each card looks good and closes back to
-// its home position, which is what the LOOP transform guarantees.
+// its home placement, which is what the LOOP transform guarantees.
 //
 // This file documents the retired pre-MCP generator used for the first
 // comparison. Current evidence must be regenerated through the flow-arts MCP
@@ -23,7 +23,7 @@ import {
 } from "../mcp-server-pkg/src/core/sequence-builder.js";
 import {
   executeLOOP,
-  isLOOPValidForPositionPair,
+  isLOOPValidForPlacementPair,
 } from "../mcp-server-pkg/src/core/loop/index.js";
 import { renderSequenceToImage } from "../mcp-server-pkg/src/core/sequence-renderer.js";
 import { ensureTransitionGraphInitialized } from "../mcp-server-pkg/src/core/letter-transition-graph.js";
@@ -55,8 +55,8 @@ const TND_BASE_WORDS = JSON.parse(
 type TndMotion = Record<string, unknown>;
 type TndStep = {
   letter?: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   motions: { left: TndMotion; right: TndMotion };
 };
 type TndEntry = { id: string; steps: TndStep[] };
@@ -80,7 +80,7 @@ const TND_FAMILY_LABEL: Record<TndFamily, string> = {
   "quarter-opp": "Quarter · Opposite",
 };
 
-const POSITION_GLYPH: Record<string, string> = {
+const PLACEMENT_GLYPH: Record<string, string> = {
   alpha: "α",
   beta: "β",
   gamma: "γ",
@@ -96,13 +96,13 @@ function tndFamily(id: string): TndFamily {
 }
 
 /**
- * Catalog steps use the app shape (motions.left/right, no start-position step).
+ * Catalog steps use the app shape (motions.left/right, no start-placement step).
  * The renderer wants MCP shape (leftMotion/rightMotion, steps[0] = start pose).
  */
 function toMcpSteps(entry: TndEntry) {
   const first = entry.steps[0];
   if (!first) throw new Error(`TnD catalog entry ${entry.id} has no steps`);
-  const startPos = first.startPosition;
+  const startPlacement = first.startPlacement;
   const hold = (m: TndMotion, hand: "left" | "right") => ({
     ...m,
     hand,
@@ -113,11 +113,11 @@ function toMcpSteps(entry: TndEntry) {
     turns: 0,
   });
   const startStep = {
-    letter: POSITION_GLYPH[startPos.replace(/\d+$/, "")] ?? "α",
+    letter: PLACEMENT_GLYPH[startPlacement.replace(/\d+$/, "")] ?? "α",
     variation: 0,
     stepNumber: 0,
-    startPosition: startPos,
-    endPosition: startPos,
+    startPlacement: startPlacement,
+    endPlacement: startPlacement,
     leftMotion: hold(first.motions.left, "left"),
     rightMotion: hold(first.motions.right, "right"),
   };
@@ -125,8 +125,8 @@ function toMcpSteps(entry: TndEntry) {
     letter: s.letter ?? "",
     variation: 0,
     stepNumber: i + 1,
-    startPosition: s.startPosition,
-    endPosition: s.endPosition,
+    startPlacement: s.startPlacement,
+    endPlacement: s.endPlacement,
     leftMotion: { ...s.motions.left, hand: "left" },
     rightMotion: { ...s.motions.right, hand: "right" },
   }));
@@ -196,7 +196,7 @@ const SLOTS = [
   },
 ] as const;
 
-const CLASSIC_START_POSITIONS = ["alpha1", "beta5", "gamma11"] as const;
+const CLASSIC_START_PLACEMENTS = ["alpha1", "beta5", "gamma11"] as const;
 
 const pictographs = ensureDataLoaded("diamond" as never);
 // getLetterTransitionGraph() kicks off initialization without awaiting it, so
@@ -206,15 +206,15 @@ await ensureTransitionGraphInitialized();
 /**
  * A card reads better when it isn't the same letter over and over and when it
  * travels across the grid rather than sitting still. Rank candidates by
- * distinct letters first, then distinct positions visited.
+ * distinct letters first, then distinct placements visited.
  */
 function prettiness(
   letters: string[],
-  steps: { startPosition?: string }[]
+  steps: { startPlacement?: string }[]
 ): number {
   const distinctLetters = new Set(letters).size;
-  const positions = new Set(steps.map((s) => s.startPosition).filter(Boolean));
-  return distinctLetters * 10 + positions.size;
+  const placements = new Set(steps.map((s) => s.startPlacement).filter(Boolean));
+  return distinctLetters * 10 + placements.size;
 }
 
 type Built = {
@@ -227,7 +227,7 @@ type Built = {
 /** Generate seeds until enough satisfy the slot's LOOP, then take the prettiest. */
 function bestSeed(
   slot: (typeof SLOTS)[number],
-  classicStartPosition: (typeof CLASSIC_START_POSITIONS)[number],
+  classicStartPlacement: (typeof CLASSIC_START_PLACEMENTS)[number],
   tries = 900
 ): Built | null {
   const exclude = ["α", "β", "γ"];
@@ -242,13 +242,13 @@ function bestSeed(
       undefined,
       true
     );
-    // steps[0] is the start-position step, so an N-letter bridge-free build has N+1.
+    // steps[0] is the start-placement step, so an N-letter bridge-free build has N+1.
     if (!r.isValid || r.steps.length !== slot.seedLen + 1) continue;
-    if (r.startPosition !== classicStartPosition) continue;
+    if (r.startPlacement !== classicStartPlacement) continue;
     if (slot.loop) {
-      const pair = `${r.startPosition},${r.endPosition}`;
+      const pair = `${r.startPlacement},${r.endPlacement}`;
       if (
-        !isLOOPValidForPositionPair(
+        !isLOOPValidForPlacementPair(
           slot.loop as never,
           pair,
           slot.period as never
@@ -275,8 +275,8 @@ type Card = {
   counts: number;
   file: string;
   period?: "halved" | "quartered" | null;
-  startPosition?: string;
-  endPosition?: string;
+  startPlacement?: string;
+  endPlacement?: string;
 };
 
 async function makeTndCard(
@@ -343,17 +343,17 @@ async function makeCard(
 ): Promise<Card | null> {
   if ("tnd" in slot && slot.tnd) return makeTndCard(slot, packIndex);
 
-  const classicStartPosition =
-    CLASSIC_START_POSITIONS[
+  const classicStartPlacement =
+    CLASSIC_START_PLACEMENTS[
       (packIndex + SLOTS.findIndex((candidate) => candidate.id === slot.id)) %
-        CLASSIC_START_POSITIONS.length
+        CLASSIC_START_PLACEMENTS.length
     ]!;
 
   // Long seeds under a strict LOOP (mirrored 16) are rare in random search,
   // so keep widening the net rather than dropping the slot from the pack.
-  let seed = bestSeed(slot, classicStartPosition);
+  let seed = bestSeed(slot, classicStartPlacement);
   for (let retry = 0; !seed && retry < 6; retry++)
-    seed = bestSeed(slot, classicStartPosition, 4000);
+    seed = bestSeed(slot, classicStartPlacement, 4000);
   if (!seed) {
     process.stderr.write(`  no seed: ${slot.id}\n`);
     return null;
@@ -406,8 +406,8 @@ async function makeCard(
     counts,
     file,
     period: slot.period,
-    startPosition: classicStartPosition,
-    endPosition: classicStartPosition,
+    startPlacement: classicStartPlacement,
+    endPlacement: classicStartPlacement,
   };
 }
 

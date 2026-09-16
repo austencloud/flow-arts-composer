@@ -12,7 +12,7 @@ import type { IVariationProvider } from "../../src/generation/data/IVariationPro
 import type { PictographData, MotionData } from "../../src/generation/constraints/types.js";
 import { setLetterTransitionGraph } from "../../src/core/transition-graph/LetterTransitionGraph.js";
 import type { ITransitionGraph } from "../../src/core/transition-graph/ITransitionGraph.js";
-import type { PositionGroup, LetterPositionInfo } from "../../src/core/types/sequence-engine-types.js";
+import type { PlacementGroup, LetterPlacementInfo } from "../../src/core/types/sequence-engine-types.js";
 import { LOOPType, Period } from "../../src/loop/loop-types.js";
 
 // Mock data factory (same pattern as full-build tests)
@@ -32,8 +32,8 @@ function makeMotion(overrides: Partial<MotionData> = {}): MotionData {
 
 function makePictograph(overrides: Partial<PictographData> & { letter: string }): PictographData {
   return {
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     timing: "together",
     direction: "together",
     leftMotion: makeMotion({ hand: "left" }),
@@ -54,43 +54,43 @@ function makePictograph(overrides: Partial<PictographData> & { letter: string })
 const MOCK_PICTOGRAPHS: PictographData[] = [
   makePictograph({
     letter: "α",
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
     rightMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
   }),
   makePictograph({
     letter: "α",
-    startPosition: "beta3",
-    endPosition: "beta3",
+    startPlacement: "beta3",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
     rightMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
   }),
   makePictograph({
     letter: "A",
-    startPosition: "alpha1",
-    endPosition: "beta3",
+    startPlacement: "alpha1",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ startLocation: "n", endLocation: "e" }),
     rightMotion: makeMotion({ startLocation: "s", endLocation: "w" }),
   }),
   makePictograph({
     letter: "B",
-    startPosition: "beta3",
-    endPosition: "alpha1",
+    startPlacement: "beta3",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ startLocation: "e", endLocation: "n" }),
     rightMotion: makeMotion({ startLocation: "w", endLocation: "s" }),
   }),
   makePictograph({
     letter: "C",
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ startLocation: "n", endLocation: "n" }),
     rightMotion: makeMotion({ startLocation: "s", endLocation: "s" }),
   }),
   makePictograph({
     letter: "D",
-    startPosition: "beta3",
-    endPosition: "beta3",
+    startPlacement: "beta3",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ startLocation: "e", endLocation: "e" }),
     rightMotion: makeMotion({ startLocation: "w", endLocation: "w" }),
   }),
@@ -107,7 +107,7 @@ class MockVariationProvider implements IVariationProvider {
 
   getVariations(letter: string, position: string, _gridMode: string): PictographData[] {
     return this.data.filter(
-      (p) => p.letter === letter && p.startPosition === position,
+      (p) => p.letter === letter && p.startPlacement === position,
     );
   }
 
@@ -116,7 +116,7 @@ class MockVariationProvider implements IVariationProvider {
   }
 }
 
-const LETTER_POSITIONS: Record<string, { start: PositionGroup; end: PositionGroup }> = {
+const LETTER_POSITIONS: Record<string, { start: PlacementGroup; end: PlacementGroup }> = {
   A: { start: "alpha", end: "beta" },
   B: { start: "beta", end: "alpha" },
   C: { start: "alpha", end: "alpha" },
@@ -142,29 +142,29 @@ class MockTransitionGraph implements ITransitionGraph {
       .map(([l]) => l);
   }
 
-  getLettersStartingAt(positionGroup: PositionGroup): string[] {
+  getLettersStartingAt(placementGroup: PlacementGroup): string[] {
     return Object.entries(LETTER_POSITIONS)
-      .filter(([_, pos]) => pos.start === positionGroup)
+      .filter(([_, pos]) => pos.start === placementGroup)
       .map(([l]) => l);
   }
 
-  getLettersEndingAt(positionGroup: PositionGroup): string[] {
+  getLettersEndingAt(placementGroup: PlacementGroup): string[] {
     return Object.entries(LETTER_POSITIONS)
-      .filter(([_, pos]) => pos.end === positionGroup)
+      .filter(([_, pos]) => pos.end === placementGroup)
       .map(([l]) => l);
   }
 
-  getLetterPositionInfo(letter: string): LetterPositionInfo | null {
+  getLetterPlacementInfo(letter: string): LetterPlacementInfo | null {
     const pos = LETTER_POSITIONS[letter];
     if (!pos) return null;
-    return { letter, startPositionGroup: pos.start, endPositionGroup: pos.end };
+    return { letter, startPlacementGroup: pos.start, endPlacementGroup: pos.end };
   }
 
-  getStartPositionGroup(letter: string): PositionGroup | null {
+  getStartPlacementGroup(letter: string): PlacementGroup | null {
     return LETTER_POSITIONS[letter]?.start ?? null;
   }
 
-  getEndPositionGroup(letter: string): PositionGroup | null {
+  getEndPlacementGroup(letter: string): PlacementGroup | null {
     return LETTER_POSITIONS[letter]?.end ?? null;
   }
 
@@ -273,11 +273,11 @@ describe("SequenceBuilder LOOP extension", () => {
       },
     });
 
-    // Every step's startPosition should match the previous step's endPosition
+    // Every step's startPlacement should match the previous step's endPlacement
     for (let i = 1; i < result.sequence.length; i++) {
       const prev = result.sequence[i - 1]!;
       const curr = result.sequence[i]!;
-      expect(curr.startPosition).toBe(prev.endPosition);
+      expect(curr.startPlacement).toBe(prev.endPlacement);
     }
   });
 

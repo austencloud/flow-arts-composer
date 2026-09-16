@@ -377,8 +377,8 @@ export class LetterQueryHandler implements ILetterQueryHandler {
     const matchingRow = csvRows.find(
       (row: ParsedCsvRow) =>
         row.letter === letter &&
-        row.startPosition === mapping.startPosition &&
-        row.endPosition === mapping.endPosition &&
+        row.startPlacement === mapping.startPlacement &&
+        row.endPlacement === mapping.endPlacement &&
         row.leftMotionType ===
           String(mappingData.leftMotion ?? mappingData.leftMotionType) &&
         row.rightMotionType ===

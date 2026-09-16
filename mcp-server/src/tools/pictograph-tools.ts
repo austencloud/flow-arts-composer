@@ -116,10 +116,10 @@ export function registerPictographTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe("Override: show TnD (timing & direction) glyph"),
-      showPositions: z
+      showPlacements: z
         .boolean()
         .optional()
-        .describe("Override: show start→end positions glyph"),
+        .describe("Override: show start→end placements glyph"),
       showReversals: z
         .boolean()
         .optional()
@@ -128,7 +128,7 @@ export function registerPictographTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe(
-          "Render as a start position: adds the L/R hand colour key in the bottom band"
+          "Render as a start placement: adds the L/R hand colour key in the bottom band"
         ),
       showGrid: z.boolean().optional().describe("Override: show grid"),
       showNonRadialPoints: z
@@ -189,8 +189,8 @@ export function registerPictographTools(server: McpServer): void {
         if (overrides.size !== undefined) prefs.size = overrides.size;
         if (overrides.showTKA !== undefined) prefs.showTKA = overrides.showTKA;
         if (overrides.showTND !== undefined) prefs.showTND = overrides.showTND;
-        if (overrides.showPositions !== undefined)
-          prefs.showPositions = overrides.showPositions;
+        if (overrides.showPlacements !== undefined)
+          prefs.showPlacements = overrides.showPlacements;
         if (overrides.showReversals !== undefined)
           prefs.showReversals = overrides.showReversals;
         if (overrides.showGrid !== undefined)
@@ -204,8 +204,8 @@ export function registerPictographTools(server: McpServer): void {
 
         const pictographInput: PictographInput = {
           letter: csvRow.letter,
-          startPosition: csvRow.startPosition,
-          endPosition: csvRow.endPosition,
+          startPlacement: csvRow.startPlacement,
+          endPlacement: csvRow.endPlacement,
           leftMotion: {
             motionType: csvRow.leftMotion.motionType,
             rotationDirection:
@@ -233,7 +233,7 @@ export function registerPictographTools(server: McpServer): void {
           size: prefs.size,
           showTKA: prefs.showTKA,
           showTND: prefs.showTND,
-          showPositions: prefs.showPositions,
+          showPlacements: prefs.showPlacements,
           showReversals: prefs.showReversals,
           showHandColorKey: overrides.showHandColorKey,
           showGrid: prefs.showGrid,
@@ -274,7 +274,7 @@ export function registerPictographTools(server: McpServer): void {
         if (includeTextData) {
           const motionData = `## ${letter} (variation ${variation})
 
-**Position:** ${csvRow.startPosition} → ${csvRow.endPosition}
+**Placement:** ${csvRow.startPlacement} → ${csvRow.endPlacement}
 
 **Left-hand motion:** ${leftMotionDesc}
 **Right-hand motion:** ${rightMotionDesc}`;
@@ -329,10 +329,10 @@ export function registerPictographTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe("Override: show TnD (timing & direction) glyph"),
-      showPositions: z
+      showPlacements: z
         .boolean()
         .optional()
-        .describe("Override: show start→end positions glyph"),
+        .describe("Override: show start→end placements glyph"),
       showReversals: z
         .boolean()
         .optional()
@@ -341,7 +341,7 @@ export function registerPictographTools(server: McpServer): void {
         .boolean()
         .optional()
         .describe(
-          "Render as a start position: adds the L/R hand colour key in the bottom band"
+          "Render as a start placement: adds the L/R hand colour key in the bottom band"
         ),
       showGrid: z.boolean().optional().describe("Override: show grid"),
       showNonRadialPoints: z
@@ -394,8 +394,8 @@ export function registerPictographTools(server: McpServer): void {
         if (overrides.size !== undefined) prefs.size = overrides.size;
         if (overrides.showTKA !== undefined) prefs.showTKA = overrides.showTKA;
         if (overrides.showTND !== undefined) prefs.showTND = overrides.showTND;
-        if (overrides.showPositions !== undefined)
-          prefs.showPositions = overrides.showPositions;
+        if (overrides.showPlacements !== undefined)
+          prefs.showPlacements = overrides.showPlacements;
         if (overrides.showReversals !== undefined)
           prefs.showReversals = overrides.showReversals;
         if (overrides.showGrid !== undefined)
@@ -409,8 +409,8 @@ export function registerPictographTools(server: McpServer): void {
 
         const pictographInput: PictographInput = {
           letter: csvRow.letter,
-          startPosition: csvRow.startPosition,
-          endPosition: csvRow.endPosition,
+          startPlacement: csvRow.startPlacement,
+          endPlacement: csvRow.endPlacement,
           leftMotion: {
             motionType: csvRow.leftMotion.motionType,
             rotationDirection:
@@ -438,7 +438,7 @@ export function registerPictographTools(server: McpServer): void {
           size: prefs.size,
           showTKA: prefs.showTKA,
           showTND: prefs.showTND,
-          showPositions: prefs.showPositions,
+          showPlacements: prefs.showPlacements,
           showReversals: prefs.showReversals,
           showHandColorKey: overrides.showHandColorKey,
           showGrid: prefs.showGrid,
@@ -462,7 +462,7 @@ export function registerPictographTools(server: McpServer): void {
           content: [
             {
               type: "text" as const,
-              text: `Opened ${letter} (variation ${variation}) in system viewer.\nPosition: ${csvRow.startPosition} → ${csvRow.endPosition}\nFile: ${tempPath}`,
+              text: `Opened ${letter} (variation ${variation}) in system viewer.\nPlacement: ${csvRow.startPlacement} → ${csvRow.endPlacement}\nFile: ${tempPath}`,
             },
           ],
         };

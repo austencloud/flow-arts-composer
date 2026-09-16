@@ -70,13 +70,13 @@ async function main() {
     console.log(`  ID: ${doc.id}`);
     console.log(`  Path: ${doc.ref.path}`);
     console.log(`  Beats array length: ${(data.beats || []).length}`);
-    console.log(`  Has startPosition: ${data.startPosition ? 'yes' : 'no'}`);
-    console.log(`  Has startingPositionBeat: ${data.startingPositionBeat ? 'yes' : 'no'}`);
+    console.log(`  Has startPlacement: ${data.startPlacement ? 'yes' : 'no'}`);
+    console.log(`  Has startingPlacementBeat: ${data.startingPlacementBeat ? 'yes' : 'no'}`);
 
     // Show start position if exists
-    if (data.startPosition) {
+    if (data.startPlacement) {
       console.log('\n  Start Position:');
-      const sp = data.startPosition;
+      const sp = data.startPlacement;
       console.log(`    letter: ${sp.letter}`);
       if (sp.motions?.left) {
         const left = sp.motions.left;

@@ -11,15 +11,15 @@ import {
   GridLocation,
   GridMode,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
 
 const queryStub = {
   findLetterByMotionConfiguration: async () => null,
 } as unknown as IMotionQueryHandler;
 
-describe("single-hand rotateBeat reconciles positions", () => {
-  it("recomputes startPosition from the rotated blue location (no longer stale)", async () => {
+describe("single-hand rotateBeat reconciles placements", () => {
+  it("recomputes startPlacement from the rotated blue location (no longer stale)", async () => {
     const s = createStepData({
       stepNumber: 1,
       motions: {
@@ -40,16 +40,16 @@ describe("single-hand rotateBeat reconciles positions", () => {
       },
     });
 
-    // Rotate ONLY the left hand by 1 step (45° CW) — positions must reflect the new pair.
+    // Rotate ONLY the left hand by 1 step (45° CW) — placements must reflect the new pair.
     const out = await rotateBeat(s, 1, GridMode.DIAMOND, queryStub, "left");
 
     const left = out.motions[HandSide.LEFT]!;
     const right = out.motions[HandSide.RIGHT]!;
-    expect(out.startPosition).toBe(
-      getGridPositionFromLocations(left.startLocation, right.startLocation)
+    expect(out.startPlacement).toBe(
+      getGridPlacementFromLocations(left.startLocation, right.startLocation)
     );
-    expect(out.endPosition).toBe(
-      getGridPositionFromLocations(left.endLocation, right.endLocation)
+    expect(out.endPlacement).toBe(
+      getGridPlacementFromLocations(left.endLocation, right.endLocation)
     );
   });
 });

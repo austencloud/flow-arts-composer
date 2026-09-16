@@ -7,7 +7,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { ICreateModuleState } from "../../types/create-module-types";
 import { createComponentLogger } from "$lib/shared/utils/debug-logger";
-import { getStepDataFromState, START_POSITION_BEAT_NUMBER } from "./step-data-helpers";
+import { getStepDataFromState, START_PLACEMENT_BEAT_NUMBER } from "./step-data-helpers";
 
 const logger = createComponentLogger("BetaSwapHandler");
 
@@ -15,8 +15,8 @@ export function toggleBetaSwap(
   stepNumber: number,
   createModuleState: ICreateModuleState
 ): void {
-  if (stepNumber === START_POSITION_BEAT_NUMBER) {
-    logger.warn("Cannot toggle beta swap for start position");
+  if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+    logger.warn("Cannot toggle beta swap for start placement");
     return;
   }
 

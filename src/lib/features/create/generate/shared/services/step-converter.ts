@@ -1,10 +1,10 @@
 /**
- * Step Converter — converts PictographData to StepData and StartPositionData.
+ * Step Converter — converts PictographData to StepData and StartPlacementData.
  */
 
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
@@ -16,7 +16,7 @@ import {
   HandSide,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 
 /**
  * Convert PictographData to StepData.
@@ -40,18 +40,18 @@ export function convertToStep(
 }
 
 /**
- * Convert PictographData to StartPositionData.
+ * Convert PictographData to StartPlacementData.
  */
-export function convertToStartPosition(
+export function convertToStartPlacement(
   pictograph: PictographData,
   gridMode: GridMode
-): StartPositionData {
+): StartPlacementData {
   const motions = ensureMotionsWithGridMode(pictograph, gridMode);
 
-  return createStartPositionData({
+  return createStartPlacementData({
     ...pictograph,
     motions,
-    gridPosition: pictograph.startPosition,
+    gridPlacement: pictograph.startPlacement,
   });
 }
 
@@ -89,5 +89,5 @@ function ensureMotionsWithGridMode(
  */
 export const stepConverter = {
   convertToStep,
-  convertToStartPosition,
+  convertToStartPlacement,
 };

@@ -150,8 +150,8 @@
   }
 
   function formatPosition(p: PictographData): string {
-    const start = p.startPosition?.replace(/^(\w+)(\d+)$/, "$1$2") || "?";
-    const end = p.endPosition?.replace(/^(\w+)(\d+)$/, "$1$2") || "?";
+    const start = p.startPlacement?.replace(/^(\w+)(\d+)$/, "$1$2") || "?";
+    const end = p.endPlacement?.replace(/^(\w+)(\d+)$/, "$1$2") || "?";
     return `${start} → ${end}`;
   }
 </script>

@@ -174,7 +174,7 @@ export class SequenceRenderer {
 
   getDefaultOptions(): SequenceExportOptions {
     return {
-      includeStartPosition: true,
+      includeStartPlacement: true,
       addStepNumbers: true,
       addReversalSymbols: true,
       addUserInfo: true,

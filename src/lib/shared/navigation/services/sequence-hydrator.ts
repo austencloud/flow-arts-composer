@@ -30,7 +30,7 @@ import { deriveLettersForSequence } from "$lib/shared/navigation/services/letter
 import { derivePositionsForSequence } from "$lib/shared/navigation/services/position-deriver";
 import type { ILOOPDetector } from "$lib/shared/create/services/ILOOPDetector";
 import { deriveGridMode } from "../../pictograph/grid/services/grid-mode-deriver";
-import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 
 export interface SequenceHydratorDeps {
   loopDetector: ILOOPDetector | null;
@@ -50,44 +50,44 @@ export async function hydrateSequence(
   ]);
 
   // Merge: letters take precedence (they carry `word`), but fall back
-  // to position-derived start/endPosition when the letter pass didn't
+  // to position-derived start/endPlacement when the letter pass didn't
   // populate them. Mirrors DeepLinkSequenceHandler.mergeEnrichedSequence
   // so behavior stays identical across entry points.
   const merged: SequenceData = {
     ...withLetters,
     steps: withLetters.steps.map((step, index) => ({
       ...step,
-      startPosition:
-        step.startPosition ?? withPositions.steps[index]?.startPosition ?? null,
-      endPosition:
-        step.endPosition ?? withPositions.steps[index]?.endPosition ?? null,
+      startPlacement:
+        step.startPlacement ?? withPositions.steps[index]?.startPlacement ?? null,
+      endPlacement:
+        step.endPlacement ?? withPositions.steps[index]?.endPlacement ?? null,
     })),
-    startPosition: withLetters.startPosition
+    startPlacement: withLetters.startPlacement
       ? {
-          ...withLetters.startPosition,
-          startPosition:
-            withLetters.startPosition.startPosition ??
-            withPositions.startPosition?.startPosition ??
+          ...withLetters.startPlacement,
+          startPlacement:
+            withLetters.startPlacement.startPlacement ??
+            withPositions.startPlacement?.startPlacement ??
             null,
-          endPosition:
-            withLetters.startPosition.endPosition ??
-            withPositions.startPosition?.endPosition ??
+          endPlacement:
+            withLetters.startPlacement.endPlacement ??
+            withPositions.startPlacement?.endPlacement ??
             null,
         }
-      : withPositions.startPosition,
-    startingPosition: withLetters.startingPosition
+      : withPositions.startPlacement,
+    startingPlacement: withLetters.startingPlacement
       ? {
-          ...withLetters.startingPosition,
-          startPosition:
-            withLetters.startingPosition.startPosition ??
-            withPositions.startingPosition?.startPosition ??
+          ...withLetters.startingPlacement,
+          startPlacement:
+            withLetters.startingPlacement.startPlacement ??
+            withPositions.startingPlacement?.startPlacement ??
             null,
-          endPosition:
-            withLetters.startingPosition.endPosition ??
-            withPositions.startingPosition?.endPosition ??
+          endPlacement:
+            withLetters.startingPlacement.endPlacement ??
+            withPositions.startingPlacement?.endPlacement ??
             null,
         }
-      : withPositions.startingPosition,
+      : withPositions.startingPlacement,
   };
 
   const loopResult =
@@ -98,11 +98,11 @@ export async function hydrateSequence(
   const placementHydrated: SequenceData = {
     ...merged,
     steps: merged.steps.map(ensureStepPlacement),
-    ...(merged.startPosition && {
-      startPosition: ensureStepPlacement(merged.startPosition),
+    ...(merged.startPlacement && {
+      startPlacement: ensureStepPlacement(merged.startPlacement),
     }),
-    ...(merged.startingPosition && {
-      startingPosition: ensureStepPlacement(merged.startingPosition),
+    ...(merged.startingPlacement && {
+      startingPlacement: ensureStepPlacement(merged.startingPlacement),
     }),
   };
 
@@ -112,7 +112,7 @@ export async function hydrateSequence(
   // invariant after motion placement hydration, then keep the canonical and
   // legacy fields identical so every downstream renderer sees visible props.
   const renderableStart =
-    startPositionDeriver.getOrDeriveStartPosition(placementHydrated);
+    startPlacementDeriver.getOrDeriveStartPlacement(placementHydrated);
 
   // gridMode: infer from the first beat whose motions decoded cleanly.
   // Using the start position's motions isn't reliable - at beat 0 the
@@ -134,8 +134,8 @@ export async function hydrateSequence(
 
   return {
     ...placementHydrated,
-    startPosition: renderableStart ?? undefined,
-    startingPosition: renderableStart ?? undefined,
+    startPlacement: renderableStart ?? undefined,
+    startingPlacement: renderableStart ?? undefined,
     ...(loopResult && {
       isCircular: loopResult.isCircular,
       loopType: loopResult.loopType ?? undefined,

@@ -20,8 +20,8 @@ import { deriveTnDFromPictograph } from "./tnd-deriver";
 /** The minimal shape needed to describe a pictograph (Prepared/Pictograph data). */
 type Describable = {
   letter?: string | null;
-  startPosition?: string | null;
-  endPosition?: string | null;
+  startPlacement?: string | null;
+  endPlacement?: string | null;
   motions?: { left?: MotionData | null; right?: MotionData | null } | null;
 };
 
@@ -108,8 +108,8 @@ export function describePictograph(
   if (!isVisibleMotion(left) && !isVisibleMotion(right))
     return "Pictograph (empty)";
 
-  const startG = groupOf(p?.startPosition);
-  const endG = groupOf(p?.endPosition);
+  const startG = groupOf(p?.startPlacement);
+  const endG = groupOf(p?.endPlacement);
   const startFull = startG ? (GROUP_NAME[startG] ?? startG) : null;
   const endFull = endG ? (GROUP_NAME[endG] ?? endG) : null;
   const posPhrase =

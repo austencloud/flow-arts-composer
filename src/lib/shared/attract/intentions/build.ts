@@ -26,14 +26,14 @@ export const BUILD_INTENTIONS: Intention[] = [
     id: "pick-start",
     category: "build",
     changesPresentation: true,
-    target: (ctx) => pickOf(ctx, "start-position"),
+    target: (ctx) => pickOf(ctx, "start-placement"),
     thought: (ctx, target) =>
-      monologueFor("start-position", target, ctx, "Let's start somewhere."),
-    can: (ctx) => !ctx.hasSequence && has(ctx, "start-position"),
+      monologueFor("start-placement", target, ctx, "Let's start somewhere."),
+    can: (ctx) => !ctx.hasSequence && has(ctx, "start-placement"),
     appeal: () => 0.9,
     perform: async (g, ctx, target) => {
       if (!target || g.halted()) return false;
-      await g.browseThenPress(target, visibleAll(safe("start-position")));
+      await g.browseThenPress(target, visibleAll(safe("start-placement")));
       return true;
     },
   },

@@ -42,7 +42,7 @@ const SCORES = {
   "2026-06-21-art-settings-panel-design": [3, "S"],
   "2026-06-21-enchanted-autumn-dusk-design": [2, "M"],
   "2026-06-21-personal-museum-design": [2, "L"],
-  "2026-06-21-tutorial-coach-mark-start-position-design": [3, "S"],
+  "2026-06-21-tutorial-coach-mark-start-placement-design": [3, "S"],
   "2026-06-22-qr-minimal-viewer-parity-design": [4, "S"],
   "2026-06-22-qr-scan-to-play-design": [4, "M"],
   "2026-06-22-tunnel-effects-layer-coverage-design": [3, "M"],

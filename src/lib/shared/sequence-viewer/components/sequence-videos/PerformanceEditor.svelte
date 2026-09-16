@@ -30,7 +30,7 @@
       videoUrl={workspace.mappingVideo.videoUrl}
       videoDuration={workspace.mappingVideo.duration}
       steps={sequence.steps}
-      startPosition={sequence.startPosition ?? sequence.startingPosition}
+      startPlacement={sequence.startPlacement ?? sequence.startingPlacement}
       initialStepMap={workspace.mappingVideo.beatMap}
       draftKey={`${sequence.id}:${workspace.mappingVideo.id}`}
       {bpm}

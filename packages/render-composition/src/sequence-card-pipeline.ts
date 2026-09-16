@@ -28,7 +28,7 @@ export interface SequenceCardExportProfile {
   showFooter: boolean;
   showMandala: boolean;
   showReversals: boolean;
-  startPositionLayout: "row" | "column";
+  startPlacementLayout: "row" | "column";
   level: number;
 }
 
@@ -46,7 +46,7 @@ export const COMPOSER_CARD_EXPORT_PROFILE_V1: Readonly<SequenceCardExportProfile
     showFooter: false,
     showMandala: true,
     showReversals: true,
-    startPositionLayout: "row",
+    startPlacementLayout: "row",
     level: 1,
   };
 
@@ -65,7 +65,7 @@ export interface SequenceCardCompositionOptions {
   showMandala: boolean;
   showReversals: boolean;
   darkMode: boolean;
-  startPositionLayout: "row" | "column";
+  startPlacementLayout: "row" | "column";
   /** Reserve the Composer's QR slot; the pipeline's `renderQRCode` hook fills it. */
   showQRCode?: boolean;
   /** Print cards: TnD accent tint on the side bands, header and footer. */
@@ -150,7 +150,7 @@ export function calculateSequenceCardLayout(
     | "showWord"
     | "showDifficulty"
     | "showFooter"
-    | "startPositionLayout"
+    | "startPlacementLayout"
     | "exportProfile"
     | "frame"
     | "columnCount"
@@ -161,11 +161,11 @@ export function calculateSequenceCardLayout(
   let [columns, rows] =
     options.layout === "strip"
       ? [stepCount, 1]
-      : getLayout(stepCount - 1, options.startPositionLayout);
+      : getLayout(stepCount - 1, options.startPlacementLayout);
   if (options.columnCount && options.layout !== "strip") {
     columns = options.columnCount;
     rows =
-      options.startPositionLayout === "row"
+      options.startPlacementLayout === "row"
         ? 1 + Math.ceil((stepCount - 1) / columns)
         : Math.max(1, Math.ceil((stepCount - 1) / Math.max(1, columns - 1)));
   }
@@ -197,13 +197,13 @@ export function calculateSequenceCardLayout(
 export function calculateSequenceCardCell(
   index: number,
   columns: number,
-  startPositionLayout: "row" | "column" = "column",
+  startPlacementLayout: "row" | "column" = "column",
   layout: "grid" | "strip" = "grid"
 ): Pick<SequenceCardCell, "index" | "x" | "y"> & { row: number; col: number } {
   if (layout === "strip") return { index, row: 0, col: index, x: index, y: 0 };
   if (index === 0) return { index, row: 0, col: 0, x: 0, y: 0 };
 
-  if (layout === "grid" && startPositionLayout === "row") {
+  if (layout === "grid" && startPlacementLayout === "row") {
     const stepIndex = index - 1;
     const row = Math.floor(stepIndex / columns) + 1;
     const col = stepIndex % columns;
@@ -230,12 +230,12 @@ export function calculateSequenceCardCell(
  */
 export function calculateSequenceCardQRCell(
   layout: Pick<SequenceCardLayout, "columns" | "rows">,
-  options: Pick<SequenceCardCompositionOptions, "layout" | "startPositionLayout">,
+  options: Pick<SequenceCardCompositionOptions, "layout" | "startPlacementLayout">,
   stepCount: number,
   occupiedCells: ReadonlySet<string>
 ): { col: number; row: number } | null {
   if (options.layout === "strip" || stepCount <= 1) return null;
-  if (options.startPositionLayout === "row")
+  if (options.startPlacementLayout === "row")
     return { col: layout.columns - 1, row: 0 };
   for (let row = layout.rows - 1; row >= 0; row--) {
     for (let col = 0; col < layout.columns; col++) {
@@ -249,7 +249,7 @@ export function calculateSequenceCardMandalaPlacements(
   layout: SequenceCardLayout,
   options: Pick<
     SequenceCardCompositionOptions,
-    "layout" | "cellSize" | "showMandala" | "startPositionLayout"
+    "layout" | "cellSize" | "showMandala" | "startPlacementLayout"
   >,
   occupiedCells: ReadonlySet<string>,
   /** Steps excluding the start position; short sequences leave info cells empty. */
@@ -259,7 +259,7 @@ export function calculateSequenceCardMandalaPlacements(
   if (stepCount !== undefined && stepCount < MANDALA_MIN_STEP_COUNT) return [];
 
   const candidates: { col: number; row: number }[] = [];
-  if (options.startPositionLayout === "row") {
+  if (options.startPlacementLayout === "row") {
     for (let col = 1; col < layout.columns; col++) {
       if (!occupiedCells.has(`${col},0`)) candidates.push({ col, row: 0 });
     }
@@ -341,7 +341,7 @@ export async function composeSequenceCard<TStep, TCanvas>(
     const position = calculateSequenceCardCell(
       index,
       layout.columns,
-      pipeline.options.startPositionLayout,
+      pipeline.options.startPlacementLayout,
       pipeline.options.layout
     );
     const cell: SequenceCardCell = {

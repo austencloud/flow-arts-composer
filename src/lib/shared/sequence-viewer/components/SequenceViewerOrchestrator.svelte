@@ -911,7 +911,7 @@
     if (!sequence?.steps?.length) return 1;
     const stepCount = sequence.steps.length;
     return calculateThumbnailAspectRatio(stepCount, {
-      includeStartPosition: imgComp.imgShowStartPos,
+      includeStartPlacement: imgComp.imgShowStartPos,
       hasHeader: imgComp.imgShowWord,
       hasFooter: imgComp.imgShowNotes,
     });

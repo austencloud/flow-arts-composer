@@ -6,7 +6,7 @@ import {
   isIdleSequence,
   isLibrarySequence,
   isTransformedSequence,
-  resolvePositionRef,
+  resolvePlacementRef,
   sequenceDirectiveKey,
   transformSourceId,
 } from "../../../src/routes/test/film-director/_lib/sequence-language";
@@ -29,44 +29,44 @@ function firstSequence(performers: Record<string, unknown>[]) {
 
 describe("position references", () => {
   it("takes a position by name", () => {
-    expect(resolvePositionRef("beta5", "here")).toBe("beta5");
-    expect(resolvePositionRef("BETA5", "here")).toBe("beta5");
+    expect(resolvePlacementRef("beta5", "here")).toBe("beta5");
+    expect(resolvePlacementRef("BETA5", "here")).toBe("beta5");
   });
 
   it("derives a position from a hand pair", () => {
-    expect(resolvePositionRef({ left: "s", right: "s" }, "here")).toBe("beta5");
-    expect(resolvePositionRef({ left: "s", right: "n" }, "here")).toBe(
+    expect(resolvePlacementRef({ left: "s", right: "s" }, "here")).toBe("beta5");
+    expect(resolvePlacementRef({ left: "s", right: "n" }, "here")).toBe(
       "alpha1"
     );
   });
 
   it("resolves a group at a spoken location", () => {
     expect(
-      resolvePositionRef({ group: "beta", location: "south" }, "here")
+      resolvePlacementRef({ group: "beta", location: "south" }, "here")
     ).toBe("beta5");
     expect(
-      resolvePositionRef({ group: "beta", location: "North-East" }, "here")
+      resolvePlacementRef({ group: "beta", location: "North-East" }, "here")
     ).toBe("beta2");
   });
 
   it("refuses to guess which hand an ambiguous group reference meant", () => {
     expect(() =>
-      resolvePositionRef({ group: "alpha", location: "south" }, "here")
+      resolvePlacementRef({ group: "alpha", location: "south" }, "here")
     ).toThrow(/alpha1 \(left s, right n\) or alpha5 \(left n, right s\)/);
   });
 
   it("names the catalog when a location or position does not exist", () => {
-    expect(() => resolvePositionRef("beta9", "here")).toThrow(
-      /unknown position "beta9"/
+    expect(() => resolvePlacementRef("beta9", "here")).toThrow(
+      /unknown placement "beta9"/
     );
     expect(() =>
-      resolvePositionRef({ group: "beta", location: "up" }, "here")
+      resolvePlacementRef({ group: "beta", location: "up" }, "here")
     ).toThrow(/unknown grid location "up"/);
   });
 
   it("lists every candidate when a group puts several positions at one location", () => {
     expect(() =>
-      resolvePositionRef({ group: "zeta", location: "north" }, "here")
+      resolvePlacementRef({ group: "zeta", location: "north" }, "here")
     ).toThrow(/zeta1 .* or zeta4 .* or zeta9 .* or zeta14/);
   });
 });
@@ -124,13 +124,13 @@ describe("the compiler", () => {
   it("compiles Austen's spoken example", () => {
     const options = compileSequenceDirective({
       word: "DJ",
-      startPosition: { group: "beta", location: "south" },
+      startPlacement: { group: "beta", location: "south" },
       turns: 1,
     });
     expect(options).toMatchObject({
       word: "DJ",
       length: 2,
-      startPositionId: "beta5",
+      startPlacementId: "beta5",
       turnPattern: { left: [1], right: [1] },
       gridMode: "diamond",
       difficulty: "intermediate",
@@ -170,13 +170,13 @@ describe("the compiler", () => {
       startOrientation: { left: "in", right: "counter" },
       mustContain: ["A"],
       mustNotContain: ["B", "C"],
-      endPosition: [{ left: "s", right: "s" }, "alpha3"],
+      endPlacement: [{ left: "s", right: "s" }, "alpha3"],
     });
     expect(options.leftStartOrientation).toBe("in");
     expect(options.rightStartOrientation).toBe("counter");
     expect(options.mustContainLetters).toEqual(["A"]);
     expect(options.mustNotContainLetters).toEqual(["B", "C"]);
-    expect(options.endPositions).toEqual(["beta5", "alpha3"]);
+    expect(options.endPlacements).toEqual(["beta5", "alpha3"]);
   });
 
   it("repeats one spoken orientation across both hands", () => {
@@ -222,14 +222,14 @@ describe("the film schema", () => {
           id: "lead",
           sequence: {
             word: "DJ",
-            startPosition: { group: "beta", location: "south" },
+            startPlacement: { group: "beta", location: "south" },
             turns: 1,
           },
         },
       ])
     ).toEqual({
       word: "DJ",
-      startPosition: { group: "beta", location: "south" },
+      startPlacement: { group: "beta", location: "south" },
       turns: 1,
     });
   });
@@ -267,9 +267,9 @@ describe("the film schema", () => {
   it("stops the film when a directive names a position that cannot exist", () => {
     expect(() =>
       firstSequence([
-        { id: "lead", sequence: { word: "DJ", startPosition: "beta9" } },
+        { id: "lead", sequence: { word: "DJ", startPlacement: "beta9" } },
       ])
-    ).toThrow(/unknown position "beta9"/);
+    ).toThrow(/unknown placement "beta9"/);
   });
 });
 

@@ -209,7 +209,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       const earlyStepDuration = earlySteps.length > 0
         ? earlySteps.reduce((sum, s) => sum + (s.duration ?? 1), 0)
         : panelState.totalSteps;
-      const earlyStartDur = (options.includeAnimationStartPosition ?? true) ? 1 : 0;
+      const earlyStartDur = (options.includeAnimationStartPlacement ?? true) ? 1 : 0;
       const earlyIsLoopable = playbackController.isSeamlesslyLoopable;
       const earlyEndDur = (options.includeEndHold ?? !earlyIsLoopable) ? 1 : 0;
       const earlyLoopCount = options.loopCount ?? panelState.exportLoopCount ?? 1;
@@ -355,9 +355,9 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       // The animation engine uses beat 0 = start position, beat 1+ = motion steps.
       // Without accounting for this, the exported glyph overlay is one beat ahead
       // of the animation, and the end position is cut off abruptly.
-      const startPositionDuration = (options.includeAnimationStartPosition ?? true) ? 1 : 0;
+      const startPlacementDuration = (options.includeAnimationStartPlacement ?? true) ? 1 : 0;
       const isLoopable = playbackController.isSeamlesslyLoopable;
-      const endPositionHoldDuration = (options.includeEndHold ?? !isLoopable) ? 1 : 0;
+      const endPlacementHoldDuration = (options.includeEndHold ?? !isLoopable) ? 1 : 0;
 
       // Apply loop count for repeating the motion portion back-to-back.
       // Prefer options.loopCount if provided, otherwise use panelState.exportLoopCount.
@@ -366,7 +366,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       const loopCount = options.loopCount ?? panelState.exportLoopCount ?? 1;
       const motionLoopUnits = totalDurationUnits * loopCount;
       const totalDurationWithHolds =
-        startPositionDuration + motionLoopUnits + endPositionHoldDuration;
+        startPlacementDuration + motionLoopUnits + endPlacementHoldDuration;
 
       // Calculate effective duration at user's BPM/speed
       // At speed=1.0 (60 BPM): 1 second per beat unit
@@ -400,7 +400,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         await this.compositeRenderer.initialize(panelState.sequenceData, {
           orientation: options.compositeMode as "horizontal" | "vertical",
           gridStepSize: options.gridStepSize ?? 120,
-          includeStartPosition: options.includeStartPosition ?? false,
+          includeStartPlacement: options.includeStartPlacement ?? false,
           showStepNumbers: options.showStepNumbers ?? true,
         });
         await this.compositeRenderer.cacheStaticGrid();
@@ -566,7 +566,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
       // trail fade timing carries over; the encoder timestamps still start at 0.
       // Seamless-loop captures sample motion phases at frame MIDPOINTS (+0.5)
       // so neither endpoint snapshot is hit: phase 0 renders playbackPosition
-      // exactly 1.0 (the static start-position pose, OFF the continuous motion
+      // exactly 1.0 (the static start-placement pose, OFF the continuous motion
       // curve → a one-frame flash at every loop seam) and phase == period would
       // duplicate it at the tail. Midpoint sampling keeps captures strictly
       // inside (0, period), so the start snapshot is never captured AND the wrap
@@ -595,12 +595,12 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
           const virtualTimeMs = (w / fps) * 1000;
           panelState.setVirtualTime(virtualTimeMs);
 
-          const motionStart = startPositionDuration;
+          const motionStart = startPlacementDuration;
           const motionEnd = motionStart + motionLoopUnits;
           let warmBeat: number;
-          if (startPositionDuration > 0 && timeProgress < motionStart) {
-            warmBeat = timeProgress / startPositionDuration;
-          } else if (endPositionHoldDuration > 0 && timeProgress >= motionEnd) {
+          if (startPlacementDuration > 0 && timeProgress < motionStart) {
+            warmBeat = timeProgress / startPlacementDuration;
+          } else if (endPlacementHoldDuration > 0 && timeProgress >= motionEnd) {
             warmBeat = steps.length + 1;
           } else {
             const motionTime = timeProgress - motionStart;
@@ -637,18 +637,18 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
 
         let playbackPosition: number;
         let stepIndex: number;
-        let isInStartPosition = false;
+        let isInStartPlacement = false;
         let isInEndHold = false;
 
-        const motionStart = startPositionDuration;
+        const motionStart = startPlacementDuration;
         const motionEnd = motionStart + motionLoopUnits;
 
-        if (startPositionDuration > 0 && timeProgress < motionStart) {
+        if (startPlacementDuration > 0 && timeProgress < motionStart) {
           // Start position phase - show initial pose, no glyph (once, at the beginning)
-          playbackPosition = timeProgress / startPositionDuration;
+          playbackPosition = timeProgress / startPlacementDuration;
           stepIndex = -1;
-          isInStartPosition = true;
-        } else if (endPositionHoldDuration > 0 && timeProgress >= motionEnd) {
+          isInStartPlacement = true;
+        } else if (endPlacementHoldDuration > 0 && timeProgress >= motionEnd) {
           // End position hold - freeze on the completed last motion step (once, at the end)
           playbackPosition = steps.length + 1;
           stepIndex = steps.length - 1;
@@ -710,7 +710,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
         // When the canvas is temporarily unavailable, the offscreen canvas keeps
         // its previous content, producing a duplicated frame in the video.
         if (canvasAvailable) {
-          const compositeStepIndex = isInStartPosition ? 0 : Math.max(0, stepIndex);
+          const compositeStepIndex = isInStartPlacement ? 0 : Math.max(0, stepIndex);
           frameCompositor.renderCanvasLayers(
             offscreenCtx,
             sourceCanvas,
@@ -724,7 +724,7 @@ export class VideoExportOrchestrator implements IVideoExportOrchestrator {
             offscreenCtx,
             sourceCanvas,
             stepIndex,
-            isInStartPosition,
+            isInStartPlacement,
             isInEndHold,
             playbackPosition,
             steps,

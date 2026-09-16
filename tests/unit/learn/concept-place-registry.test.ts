@@ -66,7 +66,7 @@ describe("concept place registry", () => {
 
   it("finds the official place for a lesson handoff", () => {
     expect(getConceptPlaceIdForLesson("grid")).toBe("1.1");
-    expect(getConceptPlaceIdForLesson("hand-positions")).toBe("1.2");
+    expect(getConceptPlaceIdForLesson("hand-placements")).toBe("1.2");
     expect(getConceptPlaceIdForLesson("timing-and-direction")).toBe("1.3");
     expect(getConceptPlaceIdForLesson("not-a-lesson")).toBeNull();
   });
@@ -96,8 +96,8 @@ describe("concept place registry", () => {
     expect(place.lessonIds).toEqual([]);
     expect(place.guideRefs).toEqual([
       {
-        slug: "staff-positions",
-        label: "Staff Positions",
+        slug: "staff-placements",
+        label: "Staff Placements",
         coverage: "partial",
       },
     ]);

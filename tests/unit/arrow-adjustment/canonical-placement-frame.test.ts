@@ -5,7 +5,7 @@ import { rotateLocation } from "$lib/shared/create/services/rotation-helpers";
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   HandSide,
@@ -84,14 +84,14 @@ function makePair(): {
     diamond: {
       id: "canonical-a",
       letter: "A" as never,
-      endPosition: GridPosition.GAMMA1,
+      endPlacement: GridPlacement.GAMMA1,
       gridMode: GridMode.DIAMOND,
       motions: { left: diamondLeft, right: diamondRight },
     },
     box: {
       id: "box-a",
       letter: "A" as never,
-      endPosition: GridPosition.GAMMA2,
+      endPlacement: GridPlacement.GAMMA2,
       gridMode: GridMode.BOX,
       motions: { left: boxLeft, right: boxRight },
     },

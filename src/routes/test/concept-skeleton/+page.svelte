@@ -2,14 +2,14 @@
   CONCEPT SKELETON — design-reaction scaffold (NOT a shipped lesson).
 
   Purpose: let Austen react to the "layered illustration" idea for converging the
-  written guide into the Concepts module. Shows ONE concept (Hand Positions:
+  written guide into the Concepts module. Shows ONE concept (Hand Placements:
   alpha/beta/gamma) rendered through every available illustration LAYER at once,
   inside a step-through shell, with per-layer toggles.
 
   Real components wired:
     - LessonGridDisplay  → bare 2D grid (the "spatial" layer)
-    - GuidePictograph    → the position as TKA notation (fed from positions-motions.json)
-    - GuideMotionVideo   → baked static-position loop (the "animation" layer)
+    - GuidePictograph    → the placement as TKA notation (fed from placements-motions.json)
+    - GuideMotionVideo   → baked static-placement loop (the "animation" layer)
   Placeholder:
     - 3D avatar slot     → where the real Viewer3DCanvas + PerformerRig wires in.
 
@@ -20,10 +20,10 @@
   import LessonGridDisplay from "$lib/shared/pictograph/grid/components/LessonGridDisplay.svelte";
   import GuidePictograph from "../../(public)/guide/level-1/_components/GuidePictograph.svelte";
   import GuideMotionVideo from "../../(public)/guide/level-1/_components/GuideMotionVideo.svelte";
-  import positionsData from "../../(public)/guide/level-1/_data/positions-motions.json";
+  import placementsData from "../../(public)/guide/level-1/_data/placements-motions.json";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
-  const pictographs = (positionsData as { pictographs: Record<string, unknown> }).pictographs;
+  const pictographs = (placementsData as { pictographs: Record<string, unknown> }).pictographs;
   function pick(id: string) {
     return (pictographs[id] ?? null) as never;
   }
@@ -44,7 +44,7 @@
     {
       key: "discover",
       title: "Discover",
-      blurb: "Two hands. Where they sit relative to each other names the position. Drag them on the grid and the name appears — you find alpha/beta/gamma by playing, not by being told.",
+      blurb: "Two hands. Where they sit relative to each other names the placement. Drag them on the grid and the name appears — you find alpha/beta/gamma by playing, not by being told.",
       primaryId: "pos-alpha3",
       variationIds: ["pos-alpha1", "pos-alpha2", "pos-alpha3", "pos-alpha4"],
       motionId: null,
@@ -92,11 +92,11 @@
   }
 </script>
 
-<svelte:head><title>Concept Skeleton — Hand Positions</title></svelte:head>
+<svelte:head><title>Concept Skeleton — Hand Placements</title></svelte:head>
 
 <div class="shell">
   <header class="top">
-    <div class="crumb">SKELETON · Hand Positions · concept #2</div>
+    <div class="crumb">SKELETON · Hand Placements · concept #2</div>
     <div class="layer-toggles">
       {#each layerDefs as l}
         <button

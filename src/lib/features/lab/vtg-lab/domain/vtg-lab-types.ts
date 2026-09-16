@@ -19,12 +19,12 @@ export interface VtgPatternEntry {
 	letter: string;
 	/** Rotation style: pro/pro, anti/anti, or hybrid */
 	rotationStyle: RotationStyle;
-	/** Position transition (e.g. "alpha to alpha", "beta to alpha") */
-	positionTransition: string;
-	/** Whether this letter has position-dependent VTG classification */
-	isPositionDependent: boolean;
-	/** Note about position-dependent behavior, if any */
-	positionNote?: string;
+	/** Placement transition (e.g. "alpha to alpha", "beta to alpha") */
+	placementTransition: string;
+	/** Whether this letter has placement-dependent VTG classification */
+	isPlacementDependent: boolean;
+	/** Note about placement-dependent behavior, if any */
+	placementNote?: string;
 }
 
 /** A group of letters sharing a rotation style within a mode */
@@ -44,7 +44,7 @@ export interface CompoundInfo {
 	mnemonic: string;
 	/** Rotation style */
 	rotationStyle: RotationStyle;
-	/** Position cycle description */
+	/** Placement cycle description */
 	cycle: string;
 }
 
@@ -54,8 +54,8 @@ export interface VtgModeGroup {
 	mode: VTGMode;
 	/** Full name (e.g. "Split-Same") */
 	name: string;
-	/** TKA position description (e.g. "alpha to alpha") */
-	tkaPositionDescription: string;
+	/** TKA placement description (e.g. "alpha to alpha") */
+	tkaPlacementDescription: string;
 	/** TKA motion description */
 	tkaMotionDescription: string;
 	/** Letter type number(s) this covers */
@@ -64,10 +64,10 @@ export interface VtgModeGroup {
 	rotationGroups: RotationGroup[];
 	/** Compound letters associated with this mode (if any) */
 	compounds: CompoundInfo[];
-	/** Whether classification is position-dependent for some letters */
-	hasPositionDependentLetters: boolean;
-	/** Note about position-dependent classification */
-	positionDependenceNote?: string;
+	/** Whether classification is placement-dependent for some letters */
+	hasPlacementDependentLetters: boolean;
+	/** Note about placement-dependent classification */
+	placementDependenceNote?: string;
 }
 
 /** A row in the VTG <-> TKA terminology comparison table */

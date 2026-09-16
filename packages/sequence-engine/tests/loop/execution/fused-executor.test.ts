@@ -27,8 +27,8 @@ function makeStep(
     stepNumber,
     duration: 1,
     letter: "A" as SequenceStep["letter"],
-    startPosition: "alpha1",
-    endPosition: "alpha5",
+    startPlacement: "alpha1",
+    endPlacement: "alpha5",
     motions: {
       left: makeMotion(),
       right: makeMotion({

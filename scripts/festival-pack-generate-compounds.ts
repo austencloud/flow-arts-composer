@@ -27,8 +27,8 @@ type SlotConfig = (typeof SLOT_CONFIGS)[number];
 type LoopType = SlotConfig["loopType"];
 type GeneratedStep = {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: Record<string, unknown>;
   rightMotion: Record<string, unknown>;
   stepNumber: number;
@@ -68,23 +68,23 @@ function buildRecord(
     duration: 1,
     gridMode: "diamond",
     letter: step.letter,
-    startPosition: step.startPosition,
-    endPosition: step.endPosition,
+    startPlacement: step.startPlacement,
+    endPlacement: step.endPlacement,
     motions: {
       left: motionForApp(step.leftMotion, "left"),
       right: motionForApp(step.rightMotion, "right"),
     },
   }));
-  const endPosition = sequenceSteps.at(-1)?.endPosition;
+  const endPlacement = sequenceSteps.at(-1)?.endPlacement;
   if (
     !CLASSIC_POSITIONS.includes(
-      start.startPosition as (typeof CLASSIC_POSITIONS)[number]
+      start.startPlacement as (typeof CLASSIC_POSITIONS)[number]
     ) ||
-    endPosition !== start.startPosition ||
+    endPlacement !== start.startPlacement ||
     sequenceSteps.length !== sequenceLength
   ) {
     throw new Error(
-      `${loopType} ${word} violated the festival slot: ${start.startPosition} -> ${endPosition}, ${sequenceSteps.length} steps`
+      `${loopType} ${word} violated the festival slot: ${start.startPlacement} -> ${endPlacement}, ${sequenceSteps.length} steps`
     );
   }
 
@@ -101,13 +101,13 @@ function buildRecord(
     components,
     period: period === "quartered" ? 4 : 2,
     notes: "Festival Sampler 2026",
-    startPosition: {
+    startPlacement: {
       id: `${id}-start`,
-      isStartPosition: true,
+      isStartPlacement: true,
       gridMode: "diamond",
-      gridPosition: start.startPosition,
-      startPosition: start.startPosition,
-      endPosition: start.startPosition,
+      gridPlacement: start.startPlacement,
+      startPlacement: start.startPlacement,
+      endPlacement: start.startPlacement,
       letter: start.letter,
       motions: {
         left: motionForApp(start.leftMotion, "left"),
@@ -135,7 +135,7 @@ for (const { loopType, sequenceLength, period } of SLOT_CONFIGS) {
       );
     }
     const index = words.size;
-    const startPosition = CLASSIC_POSITIONS[index % CLASSIC_POSITIONS.length];
+    const startPlacement = CLASSIC_POSITIONS[index % CLASSIC_POSITIONS.length];
     let generated;
     try {
       generated = generateViaEngine(
@@ -148,7 +148,7 @@ for (const { loopType, sequenceLength, period } of SLOT_CONFIGS) {
           turnIntensity: 0,
           propType: "staff",
           constraintPreset: "smooth",
-          startPosition,
+          startPlacement,
         },
         allPictographs as never
       );

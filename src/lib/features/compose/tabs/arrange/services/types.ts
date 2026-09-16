@@ -138,7 +138,7 @@ export interface TransformResult {
 export interface SerializationContext {
   cells: GridCell[];
   bpm: number;
-  skipStartPosition: boolean;
+  skipStartPlacement: boolean;
   gridRows: number;
   gridCols: number;
 }
@@ -156,5 +156,5 @@ export interface GridStateSnapshot {
   gridRows: number;
   gridCols: number;
   bpm: number;
-  skipStartPosition: boolean;
+  skipStartPlacement: boolean;
 }

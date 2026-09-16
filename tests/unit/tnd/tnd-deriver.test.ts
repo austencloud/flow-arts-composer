@@ -15,7 +15,7 @@ import {
 import {
   GridLocation,
   GridMode,
-  type GridPosition,
+  type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
@@ -120,7 +120,7 @@ describe("deriveTnDFromPictograph", () => {
     expect(deriveTnDFromPictograph(p).tndMode).toBe(TnDMode.QUARTER_OPP);
   });
 
-  it("returns null when a motion is static (start-position pictograph)", () => {
+  it("returns null when a motion is static (start-placement pictograph)", () => {
     const p = pictograph(
       {
         motionType: MotionType.STATIC,
@@ -194,7 +194,7 @@ describe("golden snapshot: deriveTnD reproduces the calculateTnD table", () => {
         const expected = calculateTnD(
           row.letter as Letter,
           gridMode,
-          row.startPosition as GridPosition
+          row.startPlacement as GridPlacement
         ).tndMode;
         if (!expected) continue; // not a TnD letter
         checked++;
@@ -206,7 +206,7 @@ describe("golden snapshot: deriveTnD reproduces the calculateTnD table", () => {
         );
         if (got.tndMode !== expected) {
           mismatches.push(
-            `${row.letter} ${row.startPosition}: left ${row.blueStartLocation}→${row.blueEndLocation} ` +
+            `${row.letter} ${row.startPlacement}: left ${row.blueStartLocation}→${row.blueEndLocation} ` +
               `right ${row.redStartLocation}→${row.redEndLocation} table=${expected} derived=${got.tndMode}`
           );
         }

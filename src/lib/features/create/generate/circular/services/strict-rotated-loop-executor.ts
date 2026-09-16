@@ -10,14 +10,14 @@
  * - Taking each pictograph from the first section
  * - Rotating its hand locations based on the hand's rotation direction
  * - Maintaining the same motion types, turns, and letter patterns
- * - Creating new steps that fit the rotated positions
+ * - Creating new steps that fit the rotated placements
  */
 
 import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   updateStartOrientations,
   updateEndOrientations,
@@ -27,7 +27,7 @@ import {
   QUARTERED_LOOPS,
   getHandRotationDirection,
   getLocationMapForHandRotation,
-} from "../domain/constants/circular-position-maps";
+} from "../domain/constants/circular-placement-maps";
 import { Period } from "../domain/models/circular-models";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
@@ -37,7 +37,7 @@ export class StrictRotatedLOOPExecutor {
   /**
    * Execute the strict rotated LOOP
    *
-   * @param sequence - The partial sequence to complete (must include start position at index 0)
+   * @param sequence - The partial sequence to complete (must include start placement at index 0)
    * @param period - Whether to use halved (180°) or quartered (90°) rotation
    * @returns The complete circular sequence with all steps
    */
@@ -45,10 +45,10 @@ export class StrictRotatedLOOPExecutor {
     // Validate the sequence
     this._validateSequence(sequence, period);
 
-    // Remove start position (index 0) for processing
-    const startPosition = sequence.shift();
-    if (!startPosition) {
-      throw new Error("Sequence must have a start position");
+    // Remove start placement (index 0) for processing
+    const startPlacement = sequence.shift();
+    if (!startPlacement) {
+      throw new Error("Sequence must have a start placement");
     }
 
     // Calculate how many steps to generate
@@ -76,8 +76,8 @@ export class StrictRotatedLOOPExecutor {
       nextStepNumber++;
     }
 
-    // Re-insert start position at the beginning
-    sequence.unshift(startPosition);
+    // Re-insert start placement at the beginning
+    sequence.unshift(startPlacement);
 
     return sequence;
   }
@@ -88,15 +88,15 @@ export class StrictRotatedLOOPExecutor {
   private _validateSequence(sequence: StepData[], period: Period): void {
     if (sequence.length < 2) {
       throw new Error(
-        "Sequence must have at least 2 steps (start position + 1 step)"
+        "Sequence must have at least 2 steps (start placement + 1 step)"
       );
     }
 
-    const startPos = sequence[0]!.startPosition;
-    const endPos = sequence[sequence.length - 1]!.endPosition;
+    const startPos = sequence[0]!.startPlacement;
+    const endPos = sequence[sequence.length - 1]!.endPlacement;
 
     if (!startPos || !endPos) {
-      throw new Error("Sequence steps must have valid start and end positions");
+      throw new Error("Sequence steps must have valid start and end placements");
     }
 
     // Check if the (start, end) pair is valid for the slice size
@@ -106,7 +106,7 @@ export class StrictRotatedLOOPExecutor {
 
     if (!validationSet.has(key)) {
       throw new Error(
-        `Invalid position pair for ${period} LOOP: ${startPos} → ${endPos}. ` +
+        `Invalid placement pair for ${period} LOOP: ${startPos} → ${endPos}. ` +
           `This pair cannot complete a ${period} rotation.`
       );
     }
@@ -144,8 +144,8 @@ export class StrictRotatedLOOPExecutor {
       period
     );
 
-    // Calculate new end position
-    const newEndPosition = this._calculateNewEndPosition(
+    // Calculate new end placement
+    const newEndPlacement = this._calculateNewEndPlacement(
       previousMatchingStep,
       previousStep
     );
@@ -155,8 +155,8 @@ export class StrictRotatedLOOPExecutor {
       ...previousMatchingStep,
       id: `step-${stepNumber}`,
       stepNumber,
-      startPosition: previousStep.endPosition ?? null,
-      endPosition: newEndPosition,
+      startPlacement: previousStep.endPlacement ?? null,
+      endPlacement: newEndPlacement,
       motions: {
         [HandSide.LEFT]: this._createTransformedMotion(
           HandSide.LEFT,
@@ -247,12 +247,12 @@ export class StrictRotatedLOOPExecutor {
   }
 
   /**
-   * Calculate the new end position by rotating locations
+   * Calculate the new end placement by rotating locations
    */
-  private _calculateNewEndPosition(
+  private _calculateNewEndPlacement(
     previousMatchingStep: StepData,
     previousStep: StepData
-  ): GridPosition | null {
+  ): GridPlacement | null {
     const leftMotion = previousMatchingStep.motions[HandSide.LEFT];
     const rightMotion = previousMatchingStep.motions[HandSide.RIGHT];
 
@@ -285,13 +285,13 @@ export class StrictRotatedLOOPExecutor {
     const newRightEndLoc =
       rightLocationMap[previousRightEndLoc as GridLocation];
 
-    // Derive GridPosition from (blue, red) location tuple using GridPositionDeriver
-    const newPosition = getGridPositionFromLocations(
+    // Derive GridPlacement from (blue, red) location tuple using GridPlacementDeriver
+    const newPlacement = getGridPlacementFromLocations(
       newLeftEndLoc,
       newRightEndLoc
     );
 
-    return newPosition;
+    return newPlacement;
   }
 
   /**

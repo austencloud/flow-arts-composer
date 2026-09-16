@@ -144,7 +144,7 @@
       {poseOnly}
       showTnD={options.showTnD}
       showElemental={options.showElemental}
-      showPositions={options.showPositions}
+      showPlacements={options.showPlacements}
       leftReversal={!!step.leftReversal && options.showLeftMotion !== false}
       rightReversal={!!step.rightReversal && options.showRightMotion !== false}
       onGridReady={() => {

@@ -346,9 +346,9 @@ and VTG sources go through `fitSoloPathToLoop(solo, length)`. So the LCM tiling
 branch is, in practice, dead: `lcm(length, length) === length`. A future source
 that is not length-matched would immediately expose this.
 
-**L4 — the fused sequence has no `startPosition`.** Measured: both
-`startPosition` and `startingPosition` are absent, and `StepData.gridMode` is
-absent on every fused step, where `deriveSteps`/`deriveStartPosition` populate
+**L4 — the fused sequence has no `startPlacement`.** Measured: both
+`startPlacement` and `startingPlacement` are absent, and `StepData.gridMode` is
+absent on every fused step, where `deriveSteps`/`deriveStartPlacement` populate
 both. Every consumer checked has a fallback — `FuseLivePathGrid` synthesizes one
 from `steps[0]`, `resolveFusePictographMotionFrame` falls back to the last step,
 `isSeamlesslyLoopable` falls back to per-hand motion locations — and for a

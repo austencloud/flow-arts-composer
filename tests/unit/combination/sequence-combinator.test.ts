@@ -2,7 +2,7 @@
  * Layer 1 core — the seam-graph closed-walk search.
  *
  * Three things this suite pins:
- *   1. Every result is a CLOSED loop with position continuity at every seam,
+ *   1. Every result is a CLOSED loop with placement continuity at every seam,
  *      including the wrap from the last step back to the first.
  *   2. `impossible` is a STRUCTURAL proof and nothing else. AAAA (alpha world)
  *      + GGGG (beta world) is answered by the reachability precheck — at
@@ -100,7 +100,7 @@ describe("sequence combinator — walk search", () => {
     expect(letters).toMatch(/H/);
   });
 
-  it("every result is a closed loop with position continuity", async () => {
+  it("every result is a closed loop with placement continuity", async () => {
     const report = await gh();
     expect(report.results.length).toBeGreaterThan(0);
 
@@ -108,12 +108,12 @@ describe("sequence combinator — walk search", () => {
       const steps = result.sequence.steps;
       expect(steps.length).toBeGreaterThanOrEqual(2);
       for (let i = 1; i < steps.length; i++) {
-        expect(steps[i]!.startPosition, result.canonicalHash).toBe(
-          steps[i - 1]!.endPosition
+        expect(steps[i]!.startPlacement, result.canonicalHash).toBe(
+          steps[i - 1]!.endPlacement
         );
       }
-      expect(steps[0]!.startPosition, result.canonicalHash).toBe(
-        steps.at(-1)!.endPosition
+      expect(steps[0]!.startPlacement, result.canonicalHash).toBe(
+        steps.at(-1)!.endPlacement
       );
       expect(steps.map((s) => s.stepNumber)).toEqual(
         steps.map((_, i) => i + 1)
@@ -208,7 +208,7 @@ describe("sequence combinator — walk search", () => {
   }, 60_000);
 
   it("proves AAAA + GGGG impossible at DEFAULT options, without searching", async () => {
-    // No spatial/colour/twin transform moves a position family, so no card-B
+    // No spatial/colour/twin transform moves a placement family, so no card-B
     // seam is reachable from any card-A seam. The precheck settles that in
     // O(seams) for EVERY length — the old bounded sweep could only have said
     // "nothing up to 8", and at the default length 32 it would have run out of

@@ -19,8 +19,8 @@ import { getDeepLinkSequenceHandler } from "$lib/features/create/shared/get-deep
 
 type ConstructTabState =
   | {
-      setShowStartPositionPicker: (show: boolean) => void;
-      setSelectedStartPosition: (value: unknown) => void;
+      setShowStartPlacementPicker: (show: boolean) => void;
+      setSelectedStartPlacement: (value: unknown) => void;
     }
   | null
   | undefined;
@@ -151,14 +151,14 @@ export function createCreateModulePersistenceController({
       if (savedState) {
         // Load saved state for this tab's specific sequence state
         tabSequenceState.setCurrentSequence(savedState.currentSequence);
-        tabSequenceState.setSelectedStartPosition(
-          savedState.selectedStartPosition ?? null
+        tabSequenceState.setSelectedStartPlacement(
+          savedState.selectedStartPlacement ?? null
         );
 
         syncConstructTabState(
           constructTabState,
-          savedState.hasStartPosition,
-          savedState.selectedStartPosition
+          savedState.hasStartPlacement,
+          savedState.selectedStartPlacement
         );
       } else {
         // FIX: No saved state exists - preserve in-memory sequence!
@@ -168,7 +168,7 @@ export function createCreateModulePersistenceController({
         // Now we only preserve existing in-memory data instead of clearing it.
 
         // Don't touch the sequence state - it may already have valid in-memory data
-        // Only sync construct tab state to show the start position picker if needed
+        // Only sync construct tab state to show the start placement picker if needed
         if (constructTabState && !tabSequenceState.currentSequence) {
           syncConstructTabState(constructTabState, false, null);
         }
@@ -180,19 +180,19 @@ export function createCreateModulePersistenceController({
 
   function syncConstructTabState(
     constructTabState: ConstructTabState,
-    hasStartPosition: boolean,
-    selectedStartPosition: unknown
+    hasStartPlacement: boolean,
+    selectedStartPlacement: unknown
   ) {
     if (!constructTabState) {
       return;
     }
 
-    if (hasStartPosition && selectedStartPosition) {
-      constructTabState.setShowStartPositionPicker(false);
-      constructTabState.setSelectedStartPosition(selectedStartPosition);
+    if (hasStartPlacement && selectedStartPlacement) {
+      constructTabState.setShowStartPlacementPicker(false);
+      constructTabState.setSelectedStartPlacement(selectedStartPlacement);
     } else {
-      constructTabState.setShowStartPositionPicker(true);
-      constructTabState.setSelectedStartPosition(null);
+      constructTabState.setShowStartPlacementPicker(true);
+      constructTabState.setSelectedStartPlacement(null);
     }
   }
 

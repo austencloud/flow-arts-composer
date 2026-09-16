@@ -1,26 +1,26 @@
 /**
  * Beta Detector Implementation
  *
- * Provides methods for detecting beta positions in pictographs.
+ * Provides methods for detecting beta placements in pictographs.
  * Migrated from utils/betaDetection.ts to proper service architecture.
  */
 
-import { getGridPositionFromLocations } from "../../grid/services/grid-position-deriver";
-import type { GridPosition } from "../../grid/domain/enums/grid-enums";
+import { getGridPlacementFromLocations } from "../../grid/services/grid-placement-deriver";
+import type { GridPlacement } from "../../grid/domain/enums/grid-enums";
 import type { PictographData } from "../../shared/domain/models/pictograph-data";
 import { isVisibleMotion } from "../../shared/domain/models/motion-data";
 
 export class BetaDetector {
   /**
-   * Check if a grid position is a beta position
-   * Beta positions are the BETA enum values
+   * Check if a grid placement is a beta placement
+   * Beta placements are the BETA enum values
    */
-  isBetaPosition(position: GridPosition): boolean {
-    return position.toString().startsWith("beta");
+  isBetaPlacement(placement: GridPlacement): boolean {
+    return placement.toString().startsWith("beta");
   }
 
   /**
-   * Check if a pictograph starts with beta (start position is a beta position)
+   * Check if a pictograph starts with beta (start placement is a beta placement)
    */
   startsWithBeta(pictographData: PictographData): boolean {
     if (
@@ -30,23 +30,23 @@ export class BetaDetector {
       return false;
     }
 
-    const startPosition = getGridPositionFromLocations(
+    const startPlacement = getGridPlacementFromLocations(
       pictographData.motions.left.startLocation,
       pictographData.motions.right.startLocation
     );
 
-    return this.isBetaPosition(startPosition);
+    return this.isBetaPlacement(startPlacement);
   }
 
   /**
-   * Check if a pictograph ends with beta (end position is a beta position)
+   * Check if a pictograph ends with beta (end placement is a beta placement)
    */
   endsWithBeta(pictographData: PictographData): boolean {
     if (
       !isVisibleMotion(pictographData.motions.left) ||
       !isVisibleMotion(pictographData.motions.right)
     ) {
-      // No motion data = can't end with beta position
+      // No motion data = can't end with beta placement
       // This is expected in some contexts (static pictographs, loading states)
       return false;
     }

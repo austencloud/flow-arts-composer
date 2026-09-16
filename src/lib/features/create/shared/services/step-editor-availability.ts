@@ -1,7 +1,7 @@
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 
 /**
- * The Step Editor needs at least one editable beat or start position. A bare
+ * The Step Editor needs at least one editable beat or start placement. A bare
  * sequence shell can exist briefly during creation, but it has nothing to edit.
  */
 export function sequenceHasStepEditorContent(
@@ -11,8 +11,8 @@ export function sequenceHasStepEditorContent(
 
   return Boolean(
     sequence.steps?.length ||
-    sequence.startingPosition ||
-    sequence.startPosition
+    sequence.startingPlacement ||
+    sequence.startPlacement
   );
 }
 

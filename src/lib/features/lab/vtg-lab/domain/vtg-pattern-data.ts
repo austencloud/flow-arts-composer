@@ -11,11 +11,11 @@ import type {
 function entry(
 	letter: string,
 	rotationStyle: "pro/pro" | "anti/anti" | "hybrid",
-	positionTransition: string,
-	isPositionDependent = false,
-	positionNote?: string
+	placementTransition: string,
+	isPlacementDependent = false,
+	placementNote?: string
 ): VtgPatternEntry {
-	return { letter, rotationStyle, positionTransition, isPositionDependent, positionNote };
+	return { letter, rotationStyle, placementTransition, isPlacementDependent, placementNote };
 }
 
 const SS_GROUPS: RotationGroup[] = [
@@ -100,7 +100,7 @@ const TO_COMPOUNDS: CompoundInfo[] = [
 ];
 
 const SO_NOTE =
-	"At alpha1/alpha5 in Diamond mode, these classify as Split-Opp. At other alpha positions, they classify as Tog-Opp.";
+	"At alpha1/alpha5 in Diamond mode, these classify as Split-Opp. At other alpha placements, they classify as Tog-Opp.";
 
 const SO_GROUPS: RotationGroup[] = [
 	{
@@ -196,66 +196,66 @@ export const VTG_MODE_GROUPS: VtgModeGroup[] = [
 	{
 		mode: "SS",
 		name: "Split-Same",
-		tkaPositionDescription: "Alpha \u2192 Alpha (hands at opposite points, stay opposite)",
+		tkaPlacementDescription: "Alpha \u2192 Alpha (hands at opposite points, stay opposite)",
 		tkaMotionDescription: "Both hands shift, same rotation direction",
 		letterType: "Type 1 (Dual-Shift)",
 		rotationGroups: SS_GROUPS,
 		compounds: [],
-		hasPositionDependentLetters: false,
+		hasPlacementDependentLetters: false,
 	},
 	{
 		mode: "TS",
 		name: "Together-Same",
-		tkaPositionDescription: "Beta \u2192 Beta (hands at same point, stay together)",
+		tkaPlacementDescription: "Beta \u2192 Beta (hands at same point, stay together)",
 		tkaMotionDescription: "Both hands shift, same rotation direction",
 		letterType: "Type 1 (Dual-Shift)",
 		rotationGroups: TS_GROUPS,
 		compounds: [],
-		hasPositionDependentLetters: false,
+		hasPlacementDependentLetters: false,
 	},
 	{
 		mode: "TO",
 		name: "Together-Opposite",
-		tkaPositionDescription: "Beta \u2192 Alpha (hands start together, end opposite)",
+		tkaPlacementDescription: "Beta \u2192 Alpha (hands start together, end opposite)",
 		tkaMotionDescription: "Both hands shift, opposite rotation directions",
 		letterType: "Type 1 (Dual-Shift)",
 		rotationGroups: TO_GROUPS,
 		compounds: TO_COMPOUNDS,
-		hasPositionDependentLetters: true,
-		positionDependenceNote:
-			"In Diamond mode, D/E/F classify as TO at most positions, but as SO at beta3/beta7.",
+		hasPlacementDependentLetters: true,
+		placementDependenceNote:
+			"In Diamond mode, D/E/F classify as TO at most placements, but as SO at beta3/beta7.",
 	},
 	{
 		mode: "SO",
 		name: "Split-Opposite",
-		tkaPositionDescription: "Alpha \u2192 Beta (hands start opposite, end together)",
+		tkaPlacementDescription: "Alpha \u2192 Beta (hands start opposite, end together)",
 		tkaMotionDescription: "Both hands shift, opposite rotation directions",
 		letterType: "Type 1 (Dual-Shift)",
 		rotationGroups: SO_GROUPS,
 		compounds: SO_COMPOUNDS,
-		hasPositionDependentLetters: true,
-		positionDependenceNote:
-			"In Diamond mode, J/K/L classify as SO at alpha1/alpha5, but as TO at other alpha positions.",
+		hasPlacementDependentLetters: true,
+		placementDependenceNote:
+			"In Diamond mode, J/K/L classify as SO at alpha1/alpha5, but as TO at other alpha placements.",
 	},
 	{
 		mode: "QS",
 		name: "Quarter-Same",
-		tkaPositionDescription: "Gamma \u2192 Gamma (hands at right angle, stay at right angle)",
+		tkaPlacementDescription: "Gamma \u2192 Gamma (hands at right angle, stay at right angle)",
 		tkaMotionDescription: "Both hands shift, same rotation direction, 90\u00b0 phase offset",
 		letterType: "Type 1 (Dual-Shift)",
 		rotationGroups: QS_GROUPS,
 		compounds: [],
-		hasPositionDependentLetters: false,
+		hasPlacementDependentLetters: false,
 	},
 	{
 		mode: "QO",
 		name: "Quarter-Opposite",
-		tkaPositionDescription: "Gamma \u2192 Gamma (hands at right angle, stay at right angle)",
+		tkaPlacementDescription: "Gamma \u2192 Gamma (hands at right angle, stay at right angle)",
 		tkaMotionDescription: "Both hands shift, opposite rotation directions, 90\u00b0 phase offset",
 		letterType: "Type 1 (Dual-Shift)",
 		rotationGroups: QO_GROUPS,
 		compounds: QO_COMPOUNDS,
-		hasPositionDependentLetters: false,
+		hasPlacementDependentLetters: false,
 	},
 ];
 
@@ -324,7 +324,7 @@ export const TERMINOLOGY_ROWS: TerminologyRow[] = [
 		vtgTerm: "Flower",
 		vtgMeaning: "Any pattern where the prop traces petals as the hand moves in a circle. Petal count depends on turn ratio.",
 		tkaTerm: "(no single term)",
-		tkaMeaning: "TKA describes the components: motion type + turns + position transitions",
+		tkaMeaning: "TKA describes the components: motion type + turns + placement transitions",
 	},
 	{
 		vtgTerm: "Stall",
@@ -413,30 +413,30 @@ export const BEYOND_VTG_ITEMS: BeyondVtgItem[] = [
 		tkaFeature: "Level 4: Interradial",
 	},
 	{
-		title: "Skewed Positions (Level 5)",
+		title: "Skewed Placements (Level 5)",
 		description:
-			"One hand on a cardinal point, one on an intercardinal point. Creates Zeta (obtuse angle) and Eta (acute angle) positions that VTG has no classification for.",
+			"One hand on a cardinal point, one on an intercardinal point. Creates Zeta (obtuse angle) and Eta (acute angle) placements that VTG has no classification for.",
 		icon: "fa-bezier-curve",
 		tkaFeature: "Level 5: Zeta & Eta",
 	},
 	{
-		title: "Centric Positions (Level 6)",
+		title: "Centric Placements (Level 6)",
 		description:
-			"At least one hand at the center of the grid. Creates Tau (one hand center) and Terra (both hands center) positions.",
+			"At least one hand at the center of the grid. Creates Tau (one hand center) and Terra (both hands center) placements.",
 		icon: "fa-bullseye",
 		tkaFeature: "Level 6: Tau & Terra",
 	},
 	{
-		title: "Exact Position Tracking",
+		title: "Exact Placement Tracking",
 		description:
-			"VTG says 'split' or 'together'. TKA tracks exactly which grid points: alpha1 vs alpha5, beta3 vs beta7. Two variations of the same VTG pattern can have different TKA positions.",
+			"VTG says 'split' or 'together'. TKA tracks exactly which grid points: alpha1 vs alpha5, beta3 vs beta7. Two variations of the same VTG pattern can have different TKA placements.",
 		icon: "fa-crosshairs",
-		tkaFeature: "Numbered positions (alpha1\u2013alpha8, etc.)",
+		tkaFeature: "Numbered placements (alpha1\u2013alpha8, etc.)",
 	},
 	{
 		title: "Bridge & Transition Letters",
 		description:
-			"Letters like \u03a3, \u0394, \u0398, \u03a9 that bridge between positions VTG doesn't distinguish. These connect otherwise-unreachable letter combinations.",
+			"Letters like \u03a3, \u0394, \u0398, \u03a9 that bridge between placements VTG doesn't distinguish. These connect otherwise-unreachable letter combinations.",
 		icon: "fa-bridge",
 		tkaFeature: "Type 2\u20133 bridge letters",
 	},

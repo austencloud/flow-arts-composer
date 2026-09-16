@@ -186,8 +186,8 @@ export function formatBasicInfo(
   Letter: ${displayData.letter ?? "None"}
   Grid Mode: ${gridMode}
   Prop Type: ${propType}
-  Start Position: ${displayData.startPosition ?? "N/A"}
-  End Position: ${displayData.endPosition ?? "N/A"}
+  Start Placement: ${displayData.startPlacement ?? "N/A"}
+  End Placement: ${displayData.endPlacement ?? "N/A"}
   Blue Reversal: ${displayData.leftReversal}
   Red Reversal: ${displayData.rightReversal}
   ID: ${displayData.id}`;

@@ -4,7 +4,7 @@ import {
   calculatePropRotation,
   calculatePropPlacement,
 } from "$lib/shared/render/core/calculations/prop-placement";
-import { getHandPointCoordinates } from "$lib/shared/render/core/calculations/grid-position";
+import { getHandPointCoordinates } from "$lib/shared/render/core/calculations/grid-placement";
 import { switchOrientation } from "$lib/shared/render/core/calculations/orientation";
 import type { Orientation } from "$lib/shared/render/core/types";
 

@@ -5,7 +5,7 @@ WordHandPositions - Renders left and right hand positions with connection
   import {
     LEFT_HAND_COLOR,
     RIGHT_HAND_COLOR,
-    POSITION_COLORS,
+    PLACEMENT_COLORS,
   } from "../../../../domain/constants/word-visualizer-data";
 
   let {
@@ -23,12 +23,12 @@ WordHandPositions - Renders left and right hand positions with connection
 
 <g class="hand-positions">
   {#if areSamePos}
-    <!-- Both hands at same position (Beta) -->
+    <!-- Both hands at same placement (Beta) -->
     <circle
       cx={leftPos.x}
       cy={leftPos.y}
       r="10"
-      fill={POSITION_COLORS.beta}
+      fill={PLACEMENT_COLORS.beta}
       class="hand-glow"
     />
     <circle

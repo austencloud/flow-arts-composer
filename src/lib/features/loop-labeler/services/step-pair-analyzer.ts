@@ -5,7 +5,7 @@ import {
   INVERTED_LETTER_MAP,
   COMPOUND_LETTER_MAP,
   ALPHA_BETA_COUNTERPART_LETTER_MAP,
-} from "$lib/features/create/generate/circular/domain/constants/strict-loop-position-maps";
+} from "$lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps";
 import type { StepPairRelationship, LetterRelationshipInfo } from "./types";
 
 /**

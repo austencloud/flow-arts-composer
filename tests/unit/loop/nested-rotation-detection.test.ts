@@ -78,14 +78,14 @@ function buildSequence(): SequenceData {
     loopType: "mirrored_inverted_rotated",
     gridMode: "diamond",
     thumbnails: [],
-    startPosition: { endPosition: "beta1" },
+    startPlacement: { endPlacement: "beta1" },
     steps: BEATS.map((b, i) => ({
       id: `step-${i + 1}`,
       stepNumber: i + 1,
       duration: 1,
       letter: b.letter,
-      startPosition: b.start,
-      endPosition: b.end,
+      startPlacement: b.start,
+      endPlacement: b.end,
       motions: {
         left: { ...b.left, color: "blue" },
         right: { ...b.right, color: "red" },

@@ -1,7 +1,7 @@
 <!--
   TriGridControls.svelte - Sidebar controls for the trigrid lab.
 
-  Mode toggle, position selector, per-hand orientation pickers, motion type selector,
+  Mode toggle, placement selector, per-hand orientation pickers, motion type selector,
   and visibility toggles.
 -->
 <script lang="ts">
@@ -9,7 +9,7 @@
   import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
   import type { TriGridMode, TriGridMotionType } from "../domain/trigrid-types";
   import { TRIGRID_ORIENTATIONS } from "../domain/trigrid-types";
-  import { getTriGridPositions } from "../domain/trigrid-positions";
+  import { getTriGridPlacements } from "../domain/trigrid-placements";
   import {
     BLUE_PROP_COLOR,
     RED_PROP_COLOR,
@@ -43,7 +43,7 @@
     motionType: TriGridMotionType;
     showGrid: boolean;
     onModeChange: (mode: TriGridMode) => void;
-    onPositionChange: (left, right) => void;
+    onPlacementChange: (left, right) => void;
     onLeftOrientationChange: (o: Orientation) => void;
     onRightOrientationChange: (o: Orientation) => void;
     onMotionTypeChange: (t: TriGridMotionType) => void;
@@ -59,14 +59,14 @@
     motionType,
     showGrid,
     onModeChange,
-    onPositionChange,
+    onPlacementChange,
     onLeftOrientationChange,
     onRightOrientationChange,
     onMotionTypeChange,
     onToggleGrid,
   }: Props = $props();
 
-  const positions = $derived(getTriGridPositions(mode));
+  const placements = $derived(getTriGridPlacements(mode));
   const motionTypes: TriGridMotionType[] = ["pro", "anti", "float", "static"];
 
   const orientationLabels: Record<string, string> = {
@@ -123,16 +123,16 @@
     </div>
   </section>
 
-  <!-- Position selector -->
+  <!-- Placement selector -->
   <section class="control-section">
-    <h3>Position</h3>
-    <div class="position-list">
-      {#each positions as pos}
+    <h3>Placement</h3>
+    <div class="placement-list">
+      {#each placements as pos}
         <button
-          class="position-btn"
+          class="placement-btn"
           class:active={leftLocation === pos.leftLocation &&
             rightLocation === pos.rightLocation}
-          onclick={() => onPositionChange(pos.leftLocation, pos.rightLocation)}
+          onclick={() => onPlacementChange(pos.leftLocation, pos.rightLocation)}
         >
           <span
             class="pos-group"
@@ -286,13 +286,13 @@
     color: #ffffff;
   }
 
-  .position-list {
+  .placement-list {
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
 
-  .position-btn {
+  .placement-btn {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -307,12 +307,12 @@
     text-align: left;
   }
 
-  .position-btn:hover {
+  .placement-btn:hover {
     border-color: var(--theme-stroke-strong, rgba(255, 255, 255, 0.2));
     color: var(--theme-text, #ffffff);
   }
 
-  .position-btn.active {
+  .placement-btn.active {
     background: rgba(255, 255, 255, 0.08);
     border-color: var(--theme-accent, #10b981);
     color: var(--theme-text, #ffffff);

@@ -90,8 +90,8 @@ describe("Assemble state invariants", () => {
 
   it("derives anti, float, and hash motion types from the canonical builder converter", () => {
     const baseStep = {
-      startPosition: GridLocation.NORTH,
-      endPosition: GridLocation.EAST,
+      startPlacement: GridLocation.NORTH,
+      endPlacement: GridLocation.EAST,
       rotationDirection: RotationDirection.COUNTER_CLOCKWISE,
       turnCount: 0,
       startOrientation: Orientation.IN,
@@ -106,8 +106,8 @@ describe("Assemble state invariants", () => {
       resolveMotionType(
         {
           ...baseStep,
-          startPosition: GridLocation.CENTER,
-          endPosition: GridLocation.EAST,
+          startPlacement: GridLocation.CENTER,
+          endPlacement: GridLocation.EAST,
         },
         GridMode.DIAMOND
       )
@@ -318,10 +318,10 @@ describe("Assemble state invariants", () => {
 
     expect(state.leftSteps).toHaveLength(1);
     expect(state.rightSteps).toHaveLength(1);
-    expect(state.leftSteps[0]?.startPosition).toBe(GridLocation.NORTH);
-    expect(state.leftSteps[0]?.endPosition).toBe(GridLocation.SOUTH);
-    expect(state.rightSteps[0]?.startPosition).toBe(GridLocation.WEST);
-    expect(state.rightSteps[0]?.endPosition).toBe(GridLocation.EAST);
+    expect(state.leftSteps[0]?.startPlacement).toBe(GridLocation.NORTH);
+    expect(state.leftSteps[0]?.endPlacement).toBe(GridLocation.SOUTH);
+    expect(state.rightSteps[0]?.startPlacement).toBe(GridLocation.WEST);
+    expect(state.rightSteps[0]?.endPlacement).toBe(GridLocation.EAST);
 
     state.undoStep();
     expect(state.leftSteps).toHaveLength(2);
@@ -338,8 +338,8 @@ describe("Assemble state invariants", () => {
 
     state.handlePointClick(GridLocation.WEST);
 
-    expect(state.leftSteps[0]?.endPosition).toBe(GridLocation.WEST);
-    expect(state.leftSteps[1]?.startPosition).toBe(GridLocation.WEST);
+    expect(state.leftSteps[0]?.endPlacement).toBe(GridLocation.WEST);
+    expect(state.leftSteps[1]?.startPlacement).toBe(GridLocation.WEST);
     expect(state.leftSteps[1]?.startOrientation).toBe(
       state.leftSteps[0]?.endOrientation
     );
@@ -358,16 +358,16 @@ describe("Assemble state invariants", () => {
 
     state.moveStep(1, 0);
 
-    expect(state.leftSteps.map((step) => step.endPosition)).toEqual([
+    expect(state.leftSteps.map((step) => step.endPlacement)).toEqual([
       GridLocation.SOUTH,
       GridLocation.EAST,
     ]);
-    expect(state.rightSteps.map((step) => step.endPosition)).toEqual([
+    expect(state.rightSteps.map((step) => step.endPlacement)).toEqual([
       GridLocation.EAST,
       GridLocation.SOUTH,
     ]);
-    expect(state.leftSteps[1]?.startPosition).toBe(
-      state.leftSteps[0]?.endPosition
+    expect(state.leftSteps[1]?.startPlacement).toBe(
+      state.leftSteps[0]?.endPlacement
     );
     expect(state.rightSteps[1]?.startOrientation).toBe(
       state.rightSteps[0]?.endOrientation
@@ -375,7 +375,7 @@ describe("Assemble state invariants", () => {
     expect(state.selectedStepIndex).toBe(0);
 
     state.undoStep();
-    expect(state.leftSteps.map((step) => step.endPosition)).toEqual([
+    expect(state.leftSteps.map((step) => step.endPlacement)).toEqual([
       GridLocation.EAST,
       GridLocation.SOUTH,
     ]);

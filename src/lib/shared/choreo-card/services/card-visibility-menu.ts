@@ -18,13 +18,13 @@ export interface CardCompositionVisibility {
   readonly addWord: boolean;
   readonly addDifficultyLevel: boolean;
   readonly showLoopGlyph: boolean;
-  readonly includeStartPosition: boolean;
+  readonly includeStartPlacement: boolean;
   readonly showQRCode: boolean;
   readonly showMandala: boolean;
   setAddWord(value: boolean): void;
   setAddDifficultyLevel(value: boolean): void;
   setShowLoopGlyph(value: boolean): void;
-  setIncludeStartPosition(value: boolean): void;
+  setIncludeStartPlacement(value: boolean): void;
   setShowQRCode(value: boolean): void;
   setShowMandala(value: boolean): void;
 }
@@ -76,12 +76,12 @@ export function buildCardVisibilityMenuItems(
       action: () => c.setShowLoopGlyph(!c.showLoopGlyph),
     },
     {
-      id: "card-vis-start-position",
+      id: "card-vis-start-placement",
       label: "Start Position",
       icon: "fa-flag",
-      checked: c.includeStartPosition,
+      checked: c.includeStartPlacement,
       keepOpen: true,
-      action: () => c.setIncludeStartPosition(!c.includeStartPosition),
+      action: () => c.setIncludeStartPlacement(!c.includeStartPlacement),
     },
   ];
 

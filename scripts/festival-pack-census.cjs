@@ -72,7 +72,7 @@ async function fetchCatalogs() {
         gridMode: s.gridMode,
         loopType: s.loopType,
         period: s.period,
-        startPositionId: s.startPosition?.id ?? null,
+        startPlacementId: s.startPlacement?.id ?? null,
       };
     });
     console.error(`  fetched ${id}: ${snap.size}`);

@@ -108,10 +108,10 @@ describe("parseSequenceRouteId", () => {
 
     expect(correct.steps).toHaveLength(1);
     expect(misdecoded.steps).toHaveLength(2);
-    expect(correct.startPosition?.motions.right?.startLocation).toBe("s");
-    expect(misdecoded.startPosition?.motions.right?.startLocation).toBe("n");
-    expect(correct.startPosition?.motions.left?.propType).toBe(PropType.STAFF);
-    expect(correct.startPosition?.motions.left?.startOrientation).toBe(
+    expect(correct.startPlacement?.motions.right?.startLocation).toBe("s");
+    expect(misdecoded.startPlacement?.motions.right?.startLocation).toBe("n");
+    expect(correct.startPlacement?.motions.left?.propType).toBe(PropType.STAFF);
+    expect(correct.startPlacement?.motions.left?.startOrientation).toBe(
       Orientation.IN
     );
     expect(seed.steps.length).toBeGreaterThan(0);

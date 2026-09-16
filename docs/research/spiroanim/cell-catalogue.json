@@ -4,7 +4,7 @@
   "cell": "1-1",
   "speedRatio": "1:1",
   "word": "GGGG",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -13,7 +13,7 @@
   "cell": "1-1",
   "speedRatio": "1:1",
   "word": "SSSS",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -22,7 +22,7 @@
   "cell": "1-1",
   "speedRatio": "1:3",
   "word": "HHHH",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -31,7 +31,7 @@
   "cell": "1-1",
   "speedRatio": "1:3",
   "word": "TTTT",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -40,7 +40,7 @@
   "cell": "1-1",
   "speedRatio": "1:5",
   "word": "GGGG",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -49,7 +49,7 @@
   "cell": "1-1",
   "speedRatio": "1:5",
   "word": "SSSS",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -58,7 +58,7 @@
   "cell": "1-2",
   "speedRatio": "1:1",
   "word": "JDJD",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -67,7 +67,7 @@
   "cell": "1-2",
   "speedRatio": "1:1",
   "word": "MPMP",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -76,7 +76,7 @@
   "cell": "1-2",
   "speedRatio": "1:3",
   "word": "KEKE",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -85,7 +85,7 @@
   "cell": "1-2",
   "speedRatio": "1:3",
   "word": "NQNQ",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -94,7 +94,7 @@
   "cell": "1-2",
   "speedRatio": "1:5",
   "word": "JDJD",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -103,7 +103,7 @@
   "cell": "1-2",
   "speedRatio": "1:5",
   "word": "MPMP",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -112,7 +112,7 @@
   "cell": "1-3",
   "speedRatio": "1:1",
   "word": "HHHH",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -121,7 +121,7 @@
   "cell": "1-3",
   "speedRatio": "1:1",
   "word": "TTTT",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -130,7 +130,7 @@
   "cell": "1-3",
   "speedRatio": "1:3",
   "word": "GGGG",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -139,7 +139,7 @@
   "cell": "1-3",
   "speedRatio": "1:3",
   "word": "SSSS",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -148,7 +148,7 @@
   "cell": "1-3",
   "speedRatio": "1:5",
   "word": "HHHH",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -157,7 +157,7 @@
   "cell": "1-3",
   "speedRatio": "1:5",
   "word": "TTTT",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -166,7 +166,7 @@
   "cell": "1-4",
   "speedRatio": "1:1",
   "word": "KEKE",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -175,7 +175,7 @@
   "cell": "1-4",
   "speedRatio": "1:1",
   "word": "NQNQ",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -184,7 +184,7 @@
   "cell": "1-4",
   "speedRatio": "1:3",
   "word": "JDJD",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -193,7 +193,7 @@
   "cell": "1-4",
   "speedRatio": "1:3",
   "word": "MPMP",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -202,7 +202,7 @@
   "cell": "1-4",
   "speedRatio": "1:5",
   "word": "KEKE",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -211,7 +211,7 @@
   "cell": "1-4",
   "speedRatio": "1:5",
   "word": "NQNQ",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -220,7 +220,7 @@
   "cell": "1-5",
   "speedRatio": "1:1",
   "word": "IIII",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -229,7 +229,7 @@
   "cell": "1-5",
   "speedRatio": "1:1",
   "word": "UUUU",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -238,7 +238,7 @@
   "cell": "1-5",
   "speedRatio": "1:3",
   "word": "IIII",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -247,7 +247,7 @@
   "cell": "1-5",
   "speedRatio": "1:3",
   "word": "VVVV",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -256,7 +256,7 @@
   "cell": "1-5",
   "speedRatio": "1:5",
   "word": "IIII",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -265,7 +265,7 @@
   "cell": "1-5",
   "speedRatio": "1:5",
   "word": "UUUU",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -274,7 +274,7 @@
   "cell": "1-6",
   "speedRatio": "1:1",
   "word": "LFLF",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -283,7 +283,7 @@
   "cell": "1-6",
   "speedRatio": "1:1",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -292,7 +292,7 @@
   "cell": "1-6",
   "speedRatio": "1:3",
   "word": "LFLF",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -301,7 +301,7 @@
   "cell": "1-6",
   "speedRatio": "1:3",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -310,7 +310,7 @@
   "cell": "1-6",
   "speedRatio": "1:5",
   "word": "LFLF",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -319,7 +319,7 @@
   "cell": "1-6",
   "speedRatio": "1:5",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -328,7 +328,7 @@
   "cell": "2-1",
   "speedRatio": "1:1",
   "word": "DJDJ",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -337,7 +337,7 @@
   "cell": "2-1",
   "speedRatio": "1:1",
   "word": "PMPM",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -346,7 +346,7 @@
   "cell": "2-1",
   "speedRatio": "1:3",
   "word": "EKEK",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -355,7 +355,7 @@
   "cell": "2-1",
   "speedRatio": "1:3",
   "word": "QNQN",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -364,7 +364,7 @@
   "cell": "2-1",
   "speedRatio": "1:5",
   "word": "DJDJ",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -373,7 +373,7 @@
   "cell": "2-1",
   "speedRatio": "1:5",
   "word": "PMPM",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -382,7 +382,7 @@
   "cell": "2-2",
   "speedRatio": "1:1",
   "word": "AAAA",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -391,7 +391,7 @@
   "cell": "2-2",
   "speedRatio": "1:1",
   "word": "SSSS",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -400,7 +400,7 @@
   "cell": "2-2",
   "speedRatio": "1:3",
   "word": "BBBB",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -409,7 +409,7 @@
   "cell": "2-2",
   "speedRatio": "1:3",
   "word": "TTTT",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -418,7 +418,7 @@
   "cell": "2-2",
   "speedRatio": "1:5",
   "word": "AAAA",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -427,7 +427,7 @@
   "cell": "2-2",
   "speedRatio": "1:5",
   "word": "SSSS",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -436,7 +436,7 @@
   "cell": "2-3",
   "speedRatio": "1:1",
   "word": "EKEK",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -445,7 +445,7 @@
   "cell": "2-3",
   "speedRatio": "1:1",
   "word": "QNQN",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -454,7 +454,7 @@
   "cell": "2-3",
   "speedRatio": "1:3",
   "word": "DJDJ",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -463,7 +463,7 @@
   "cell": "2-3",
   "speedRatio": "1:3",
   "word": "PMPM",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -472,7 +472,7 @@
   "cell": "2-3",
   "speedRatio": "1:5",
   "word": "EKEK",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -481,7 +481,7 @@
   "cell": "2-3",
   "speedRatio": "1:5",
   "word": "QNQN",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -490,7 +490,7 @@
   "cell": "2-4",
   "speedRatio": "1:1",
   "word": "BBBB",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -499,7 +499,7 @@
   "cell": "2-4",
   "speedRatio": "1:1",
   "word": "TTTT",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -508,7 +508,7 @@
   "cell": "2-4",
   "speedRatio": "1:3",
   "word": "AAAA",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -517,7 +517,7 @@
   "cell": "2-4",
   "speedRatio": "1:3",
   "word": "SSSS",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -526,7 +526,7 @@
   "cell": "2-4",
   "speedRatio": "1:5",
   "word": "BBBB",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -535,7 +535,7 @@
   "cell": "2-4",
   "speedRatio": "1:5",
   "word": "TTTT",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -544,7 +544,7 @@
   "cell": "2-5",
   "speedRatio": "1:1",
   "word": "FLFL",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -553,7 +553,7 @@
   "cell": "2-5",
   "speedRatio": "1:1",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -562,7 +562,7 @@
   "cell": "2-5",
   "speedRatio": "1:3",
   "word": "FLFL",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -571,7 +571,7 @@
   "cell": "2-5",
   "speedRatio": "1:3",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -580,7 +580,7 @@
   "cell": "2-5",
   "speedRatio": "1:5",
   "word": "FLFL",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -589,7 +589,7 @@
   "cell": "2-5",
   "speedRatio": "1:5",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -598,7 +598,7 @@
   "cell": "2-6",
   "speedRatio": "1:1",
   "word": "CCCC",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -607,7 +607,7 @@
   "cell": "2-6",
   "speedRatio": "1:1",
   "word": "VVVV",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -616,7 +616,7 @@
   "cell": "2-6",
   "speedRatio": "1:3",
   "word": "CCCC",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -625,7 +625,7 @@
   "cell": "2-6",
   "speedRatio": "1:3",
   "word": "UUUU",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -634,7 +634,7 @@
   "cell": "2-6",
   "speedRatio": "1:5",
   "word": "CCCC",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -643,7 +643,7 @@
   "cell": "2-6",
   "speedRatio": "1:5",
   "word": "VVVV",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -652,7 +652,7 @@
   "cell": "3-1",
   "speedRatio": "1:1",
   "word": "HHHH",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -661,7 +661,7 @@
   "cell": "3-1",
   "speedRatio": "1:1",
   "word": "TTTT",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -670,7 +670,7 @@
   "cell": "3-1",
   "speedRatio": "1:3",
   "word": "GGGG",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -679,7 +679,7 @@
   "cell": "3-1",
   "speedRatio": "1:3",
   "word": "SSSS",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -688,7 +688,7 @@
   "cell": "3-1",
   "speedRatio": "1:5",
   "word": "HHHH",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -697,7 +697,7 @@
   "cell": "3-1",
   "speedRatio": "1:5",
   "word": "TTTT",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -706,7 +706,7 @@
   "cell": "3-2",
   "speedRatio": "1:1",
   "word": "KEKE",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -715,7 +715,7 @@
   "cell": "3-2",
   "speedRatio": "1:1",
   "word": "NQNQ",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -724,7 +724,7 @@
   "cell": "3-2",
   "speedRatio": "1:3",
   "word": "JDJD",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -733,7 +733,7 @@
   "cell": "3-2",
   "speedRatio": "1:3",
   "word": "MPMP",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -742,7 +742,7 @@
   "cell": "3-2",
   "speedRatio": "1:5",
   "word": "KEKE",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -751,7 +751,7 @@
   "cell": "3-2",
   "speedRatio": "1:5",
   "word": "NQNQ",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -760,7 +760,7 @@
   "cell": "3-3",
   "speedRatio": "1:1",
   "word": "GGGG",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -769,7 +769,7 @@
   "cell": "3-3",
   "speedRatio": "1:1",
   "word": "SSSS",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -778,7 +778,7 @@
   "cell": "3-3",
   "speedRatio": "1:3",
   "word": "HHHH",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -787,7 +787,7 @@
   "cell": "3-3",
   "speedRatio": "1:3",
   "word": "TTTT",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -796,7 +796,7 @@
   "cell": "3-3",
   "speedRatio": "1:5",
   "word": "GGGG",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -805,7 +805,7 @@
   "cell": "3-3",
   "speedRatio": "1:5",
   "word": "SSSS",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -814,7 +814,7 @@
   "cell": "3-4",
   "speedRatio": "1:1",
   "word": "JDJD",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -823,7 +823,7 @@
   "cell": "3-4",
   "speedRatio": "1:1",
   "word": "MPMP",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -832,7 +832,7 @@
   "cell": "3-4",
   "speedRatio": "1:3",
   "word": "KEKE",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -841,7 +841,7 @@
   "cell": "3-4",
   "speedRatio": "1:3",
   "word": "NQNQ",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -850,7 +850,7 @@
   "cell": "3-4",
   "speedRatio": "1:5",
   "word": "JDJD",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -859,7 +859,7 @@
   "cell": "3-4",
   "speedRatio": "1:5",
   "word": "MPMP",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -868,7 +868,7 @@
   "cell": "3-5",
   "speedRatio": "1:1",
   "word": "IIII",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -877,7 +877,7 @@
   "cell": "3-5",
   "speedRatio": "1:1",
   "word": "VVVV",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -886,7 +886,7 @@
   "cell": "3-5",
   "speedRatio": "1:3",
   "word": "IIII",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -895,7 +895,7 @@
   "cell": "3-5",
   "speedRatio": "1:3",
   "word": "UUUU",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -904,7 +904,7 @@
   "cell": "3-5",
   "speedRatio": "1:5",
   "word": "IIII",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -913,7 +913,7 @@
   "cell": "3-5",
   "speedRatio": "1:5",
   "word": "VVVV",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -922,7 +922,7 @@
   "cell": "3-6",
   "speedRatio": "1:1",
   "word": "LFLF",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -931,7 +931,7 @@
   "cell": "3-6",
   "speedRatio": "1:1",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -940,7 +940,7 @@
   "cell": "3-6",
   "speedRatio": "1:3",
   "word": "LFLF",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -949,7 +949,7 @@
   "cell": "3-6",
   "speedRatio": "1:3",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -958,7 +958,7 @@
   "cell": "3-6",
   "speedRatio": "1:5",
   "word": "LFLF",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -967,7 +967,7 @@
   "cell": "3-6",
   "speedRatio": "1:5",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -976,7 +976,7 @@
   "cell": "4-1",
   "speedRatio": "1:1",
   "word": "EKEK",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -985,7 +985,7 @@
   "cell": "4-1",
   "speedRatio": "1:1",
   "word": "QNQN",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -994,7 +994,7 @@
   "cell": "4-1",
   "speedRatio": "1:3",
   "word": "DJDJ",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1003,7 +1003,7 @@
   "cell": "4-1",
   "speedRatio": "1:3",
   "word": "PMPM",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1012,7 +1012,7 @@
   "cell": "4-1",
   "speedRatio": "1:5",
   "word": "EKEK",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1021,7 +1021,7 @@
   "cell": "4-1",
   "speedRatio": "1:5",
   "word": "QNQN",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1030,7 +1030,7 @@
   "cell": "4-2",
   "speedRatio": "1:1",
   "word": "BBBB",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1039,7 +1039,7 @@
   "cell": "4-2",
   "speedRatio": "1:1",
   "word": "TTTT",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1048,7 +1048,7 @@
   "cell": "4-2",
   "speedRatio": "1:3",
   "word": "AAAA",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1057,7 +1057,7 @@
   "cell": "4-2",
   "speedRatio": "1:3",
   "word": "SSSS",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1066,7 +1066,7 @@
   "cell": "4-2",
   "speedRatio": "1:5",
   "word": "BBBB",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1075,7 +1075,7 @@
   "cell": "4-2",
   "speedRatio": "1:5",
   "word": "TTTT",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1084,7 +1084,7 @@
   "cell": "4-3",
   "speedRatio": "1:1",
   "word": "DJDJ",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1093,7 +1093,7 @@
   "cell": "4-3",
   "speedRatio": "1:1",
   "word": "PMPM",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1102,7 +1102,7 @@
   "cell": "4-3",
   "speedRatio": "1:3",
   "word": "EKEK",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1111,7 +1111,7 @@
   "cell": "4-3",
   "speedRatio": "1:3",
   "word": "QNQN",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1120,7 +1120,7 @@
   "cell": "4-3",
   "speedRatio": "1:5",
   "word": "DJDJ",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1129,7 +1129,7 @@
   "cell": "4-3",
   "speedRatio": "1:5",
   "word": "PMPM",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1138,7 +1138,7 @@
   "cell": "4-4",
   "speedRatio": "1:1",
   "word": "AAAA",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1147,7 +1147,7 @@
   "cell": "4-4",
   "speedRatio": "1:1",
   "word": "SSSS",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1156,7 +1156,7 @@
   "cell": "4-4",
   "speedRatio": "1:3",
   "word": "BBBB",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1165,7 +1165,7 @@
   "cell": "4-4",
   "speedRatio": "1:3",
   "word": "TTTT",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1174,7 +1174,7 @@
   "cell": "4-4",
   "speedRatio": "1:5",
   "word": "AAAA",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1183,7 +1183,7 @@
   "cell": "4-4",
   "speedRatio": "1:5",
   "word": "SSSS",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1192,7 +1192,7 @@
   "cell": "4-5",
   "speedRatio": "1:1",
   "word": "FLFL",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1201,7 +1201,7 @@
   "cell": "4-5",
   "speedRatio": "1:1",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1210,7 +1210,7 @@
   "cell": "4-5",
   "speedRatio": "1:3",
   "word": "FLFL",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1219,7 +1219,7 @@
   "cell": "4-5",
   "speedRatio": "1:3",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1228,7 +1228,7 @@
   "cell": "4-5",
   "speedRatio": "1:5",
   "word": "FLFL",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1237,7 +1237,7 @@
   "cell": "4-5",
   "speedRatio": "1:5",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1246,7 +1246,7 @@
   "cell": "4-6",
   "speedRatio": "1:1",
   "word": "CCCC",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1255,7 +1255,7 @@
   "cell": "4-6",
   "speedRatio": "1:1",
   "word": "UUUU",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1264,7 +1264,7 @@
   "cell": "4-6",
   "speedRatio": "1:3",
   "word": "CCCC",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1273,7 +1273,7 @@
   "cell": "4-6",
   "speedRatio": "1:3",
   "word": "VVVV",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1282,7 +1282,7 @@
   "cell": "4-6",
   "speedRatio": "1:5",
   "word": "CCCC",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1291,7 +1291,7 @@
   "cell": "4-6",
   "speedRatio": "1:5",
   "word": "UUUU",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1300,7 +1300,7 @@
   "cell": "5-1",
   "speedRatio": "1:1",
   "word": "IIII",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1309,7 +1309,7 @@
   "cell": "5-1",
   "speedRatio": "1:1",
   "word": "VVVV",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1318,7 +1318,7 @@
   "cell": "5-1",
   "speedRatio": "1:3",
   "word": "IIII",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1327,7 +1327,7 @@
   "cell": "5-1",
   "speedRatio": "1:3",
   "word": "VVVV",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1336,7 +1336,7 @@
   "cell": "5-1",
   "speedRatio": "1:5",
   "word": "IIII",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1345,7 +1345,7 @@
   "cell": "5-1",
   "speedRatio": "1:5",
   "word": "VVVV",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1354,7 +1354,7 @@
   "cell": "5-2",
   "speedRatio": "1:1",
   "word": "LFLF",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1363,7 +1363,7 @@
   "cell": "5-2",
   "speedRatio": "1:1",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1372,7 +1372,7 @@
   "cell": "5-2",
   "speedRatio": "1:3",
   "word": "LFLF",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1381,7 +1381,7 @@
   "cell": "5-2",
   "speedRatio": "1:3",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1390,7 +1390,7 @@
   "cell": "5-2",
   "speedRatio": "1:5",
   "word": "LFLF",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1399,7 +1399,7 @@
   "cell": "5-2",
   "speedRatio": "1:5",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1408,7 +1408,7 @@
   "cell": "5-3",
   "speedRatio": "1:1",
   "word": "IIII",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1417,7 +1417,7 @@
   "cell": "5-3",
   "speedRatio": "1:1",
   "word": "VVVV",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1426,7 +1426,7 @@
   "cell": "5-3",
   "speedRatio": "1:3",
   "word": "IIII",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1435,7 +1435,7 @@
   "cell": "5-3",
   "speedRatio": "1:3",
   "word": "VVVV",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1444,7 +1444,7 @@
   "cell": "5-3",
   "speedRatio": "1:5",
   "word": "IIII",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1453,7 +1453,7 @@
   "cell": "5-3",
   "speedRatio": "1:5",
   "word": "VVVV",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1462,7 +1462,7 @@
   "cell": "5-4",
   "speedRatio": "1:1",
   "word": "LFLF",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1471,7 +1471,7 @@
   "cell": "5-4",
   "speedRatio": "1:1",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1480,7 +1480,7 @@
   "cell": "5-4",
   "speedRatio": "1:3",
   "word": "LFLF",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1489,7 +1489,7 @@
   "cell": "5-4",
   "speedRatio": "1:3",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1498,7 +1498,7 @@
   "cell": "5-4",
   "speedRatio": "1:5",
   "word": "LFLF",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1507,7 +1507,7 @@
   "cell": "5-4",
   "speedRatio": "1:5",
   "word": "OROR",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1516,7 +1516,7 @@
   "cell": "5-5",
   "speedRatio": "1:1",
   "word": "GGGG",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1525,7 +1525,7 @@
   "cell": "5-5",
   "speedRatio": "1:1",
   "word": "SSSS",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1534,7 +1534,7 @@
   "cell": "5-5",
   "speedRatio": "1:3",
   "word": "GGGG",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1543,7 +1543,7 @@
   "cell": "5-5",
   "speedRatio": "1:3",
   "word": "SSSS",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1552,7 +1552,7 @@
   "cell": "5-5",
   "speedRatio": "1:5",
   "word": "GGGG",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1561,7 +1561,7 @@
   "cell": "5-5",
   "speedRatio": "1:5",
   "word": "SSSS",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1570,7 +1570,7 @@
   "cell": "5-6",
   "speedRatio": "1:1",
   "word": "JDJD",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1579,7 +1579,7 @@
   "cell": "5-6",
   "speedRatio": "1:1",
   "word": "PMPM",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1588,7 +1588,7 @@
   "cell": "5-6",
   "speedRatio": "1:3",
   "word": "JDJD",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1597,7 +1597,7 @@
   "cell": "5-6",
   "speedRatio": "1:3",
   "word": "PMPM",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1606,7 +1606,7 @@
   "cell": "5-6",
   "speedRatio": "1:5",
   "word": "JDJD",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1615,7 +1615,7 @@
   "cell": "5-6",
   "speedRatio": "1:5",
   "word": "PMPM",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1624,7 +1624,7 @@
   "cell": "6-1",
   "speedRatio": "1:1",
   "word": "FLFL",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1633,7 +1633,7 @@
   "cell": "6-1",
   "speedRatio": "1:1",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1642,7 +1642,7 @@
   "cell": "6-1",
   "speedRatio": "1:3",
   "word": "FLFL",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1651,7 +1651,7 @@
   "cell": "6-1",
   "speedRatio": "1:3",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1660,7 +1660,7 @@
   "cell": "6-1",
   "speedRatio": "1:5",
   "word": "FLFL",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1669,7 +1669,7 @@
   "cell": "6-1",
   "speedRatio": "1:5",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1678,7 +1678,7 @@
   "cell": "6-2",
   "speedRatio": "1:1",
   "word": "CCCC",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1687,7 +1687,7 @@
   "cell": "6-2",
   "speedRatio": "1:1",
   "word": "UUUU",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1696,7 +1696,7 @@
   "cell": "6-2",
   "speedRatio": "1:3",
   "word": "CCCC",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1705,7 +1705,7 @@
   "cell": "6-2",
   "speedRatio": "1:3",
   "word": "UUUU",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1714,7 +1714,7 @@
   "cell": "6-2",
   "speedRatio": "1:5",
   "word": "CCCC",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1723,7 +1723,7 @@
   "cell": "6-2",
   "speedRatio": "1:5",
   "word": "UUUU",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1732,7 +1732,7 @@
   "cell": "6-3",
   "speedRatio": "1:1",
   "word": "FLFL",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1741,7 +1741,7 @@
   "cell": "6-3",
   "speedRatio": "1:1",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1750,7 +1750,7 @@
   "cell": "6-3",
   "speedRatio": "1:3",
   "word": "FLFL",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1759,7 +1759,7 @@
   "cell": "6-3",
   "speedRatio": "1:3",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1768,7 +1768,7 @@
   "cell": "6-3",
   "speedRatio": "1:5",
   "word": "FLFL",
-  "startPosition": "beta3",
+  "startPlacement": "beta3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1777,7 +1777,7 @@
   "cell": "6-3",
   "speedRatio": "1:5",
   "word": "RORO",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1786,7 +1786,7 @@
   "cell": "6-4",
   "speedRatio": "1:1",
   "word": "CCCC",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1795,7 +1795,7 @@
   "cell": "6-4",
   "speedRatio": "1:1",
   "word": "UUUU",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1804,7 +1804,7 @@
   "cell": "6-4",
   "speedRatio": "1:3",
   "word": "CCCC",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1813,7 +1813,7 @@
   "cell": "6-4",
   "speedRatio": "1:3",
   "word": "UUUU",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1822,7 +1822,7 @@
   "cell": "6-4",
   "speedRatio": "1:5",
   "word": "CCCC",
-  "startPosition": "alpha7",
+  "startPlacement": "alpha7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1831,7 +1831,7 @@
   "cell": "6-4",
   "speedRatio": "1:5",
   "word": "UUUU",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1840,7 +1840,7 @@
   "cell": "6-5",
   "speedRatio": "1:1",
   "word": "DJDJ",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1849,7 +1849,7 @@
   "cell": "6-5",
   "speedRatio": "1:1",
   "word": "MPMP",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1858,7 +1858,7 @@
   "cell": "6-5",
   "speedRatio": "1:3",
   "word": "DJDJ",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1867,7 +1867,7 @@
   "cell": "6-5",
   "speedRatio": "1:3",
   "word": "MPMP",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1876,7 +1876,7 @@
   "cell": "6-5",
   "speedRatio": "1:5",
   "word": "DJDJ",
-  "startPosition": "beta7",
+  "startPlacement": "beta7",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1885,7 +1885,7 @@
   "cell": "6-5",
   "speedRatio": "1:5",
   "word": "MPMP",
-  "startPosition": "gamma15",
+  "startPlacement": "gamma15",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1894,7 +1894,7 @@
   "cell": "6-6",
   "speedRatio": "1:1",
   "word": "AAAA",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1903,7 +1903,7 @@
   "cell": "6-6",
   "speedRatio": "1:1",
   "word": "SSSS",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1912,7 +1912,7 @@
   "cell": "6-6",
   "speedRatio": "1:3",
   "word": "AAAA",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1921,7 +1921,7 @@
   "cell": "6-6",
   "speedRatio": "1:3",
   "word": "SSSS",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1930,7 +1930,7 @@
   "cell": "6-6",
   "speedRatio": "1:5",
   "word": "AAAA",
-  "startPosition": "alpha3",
+  "startPlacement": "alpha3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1939,7 +1939,7 @@
   "cell": "6-6",
   "speedRatio": "1:5",
   "word": "SSSS",
-  "startPosition": "gamma3",
+  "startPlacement": "gamma3",
   "blueTurns": 2,
   "redTurns": 2
  },
@@ -1948,7 +1948,7 @@
   "cell": "1-AA",
   "speedRatio": null,
   "word": "KECKECKECKEC",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1957,7 +1957,7 @@
   "cell": "1-AE",
   "speedRatio": null,
   "word": "LFALFALFALFA",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -1966,7 +1966,7 @@
   "cell": "1-AI",
   "speedRatio": null,
   "word": "LFALFALFALFA",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -1975,7 +1975,7 @@
   "cell": "1-EA",
   "speedRatio": null,
   "word": "LFBLFBLFBLFB",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -1984,7 +1984,7 @@
   "cell": "1-EE",
   "speedRatio": null,
   "word": "JDCJDCJDCJDC",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -1993,7 +1993,7 @@
   "cell": "1-EI",
   "speedRatio": null,
   "word": "JDCJDCJDCJDC",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2002,7 +2002,7 @@
   "cell": "1-IA",
   "speedRatio": null,
   "word": "LFBLFBLFBLFB",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2011,7 +2011,7 @@
   "cell": "1-IE",
   "speedRatio": null,
   "word": "JDCJDCJDCJDC",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2020,7 +2020,7 @@
   "cell": "1-II",
   "speedRatio": null,
   "word": "JDCJDCJDCJDC",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2029,7 +2029,7 @@
   "cell": "2-AA",
   "speedRatio": null,
   "word": "EKIEKIEKIEKI",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2038,7 +2038,7 @@
   "cell": "2-AE",
   "speedRatio": null,
   "word": "FLGFLGFLGFLG",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2047,7 +2047,7 @@
   "cell": "2-AI",
   "speedRatio": null,
   "word": "FLGFLGFLGFLG",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2056,7 +2056,7 @@
   "cell": "2-EA",
   "speedRatio": null,
   "word": "FLHFLHFLHFLH",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2065,7 +2065,7 @@
   "cell": "2-EE",
   "speedRatio": null,
   "word": "DJIDJIDJIDJI",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -2074,7 +2074,7 @@
   "cell": "2-EI",
   "speedRatio": null,
   "word": "DJIDJIDJIDJI",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2083,7 +2083,7 @@
   "cell": "2-IA",
   "speedRatio": null,
   "word": "FLHFLHFLHFLH",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2092,7 +2092,7 @@
   "cell": "2-IE",
   "speedRatio": null,
   "word": "DJIDJIDJIDJI",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2101,7 +2101,7 @@
   "cell": "2-II",
   "speedRatio": null,
   "word": "DJIDJIDJIDJI",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2110,7 +2110,7 @@
   "cell": "3-AA",
   "speedRatio": null,
   "word": "HHFBBLHHFBBL",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2119,7 +2119,7 @@
   "cell": "3-AE",
   "speedRatio": null,
   "word": "IIDCCJIIDCCJ",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2128,7 +2128,7 @@
   "cell": "3-AI",
   "speedRatio": null,
   "word": "IIDCCJIIDCCJ",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2137,7 +2137,7 @@
   "cell": "3-EA",
   "speedRatio": null,
   "word": "IIECCKIIECCK",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2146,7 +2146,7 @@
   "cell": "3-EE",
   "speedRatio": null,
   "word": "GGFAALGGFAAL",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -2155,7 +2155,7 @@
   "cell": "3-EI",
   "speedRatio": null,
   "word": "GGFAALGGFAAL",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2164,7 +2164,7 @@
   "cell": "3-IA",
   "speedRatio": null,
   "word": "IIECCKIIECCK",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2173,7 +2173,7 @@
   "cell": "3-IE",
   "speedRatio": null,
   "word": "GGFAALGGFAAL",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2182,7 +2182,7 @@
   "cell": "3-II",
   "speedRatio": null,
   "word": "GGFAALGGFAAL",
-  "startPosition": "beta5",
+  "startPlacement": "beta5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2191,7 +2191,7 @@
   "cell": "4-AA",
   "speedRatio": null,
   "word": "BBLHHFBBLHHF",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2200,7 +2200,7 @@
   "cell": "4-AE",
   "speedRatio": null,
   "word": "CCJIIDCCJIID",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2209,7 +2209,7 @@
   "cell": "4-AI",
   "speedRatio": null,
   "word": "CCJIIDCCJIID",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2218,7 +2218,7 @@
   "cell": "4-EA",
   "speedRatio": null,
   "word": "CCKIIECCKIIE",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2227,7 +2227,7 @@
   "cell": "4-EE",
   "speedRatio": null,
   "word": "AALGGFAALGGF",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -2236,7 +2236,7 @@
   "cell": "4-EI",
   "speedRatio": null,
   "word": "AALGGFAALGGF",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2245,7 +2245,7 @@
   "cell": "4-IA",
   "speedRatio": null,
   "word": "CCKIIECCKIIE",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2254,7 +2254,7 @@
   "cell": "4-IE",
   "speedRatio": null,
   "word": "AALGGFAALGGF",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2263,7 +2263,7 @@
   "cell": "4-II",
   "speedRatio": null,
   "word": "AALGGFAALGGF",
-  "startPosition": "alpha5",
+  "startPlacement": "alpha5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2272,7 +2272,7 @@
   "cell": "5-AA",
   "speedRatio": null,
   "word": "TTRTTOTTRTTO",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2281,7 +2281,7 @@
   "cell": "5-AE",
   "speedRatio": null,
   "word": "VVPUUMVVPUUM",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2290,7 +2290,7 @@
   "cell": "5-AI",
   "speedRatio": null,
   "word": "VVPUUMVVPUUM",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2299,7 +2299,7 @@
   "cell": "5-EA",
   "speedRatio": null,
   "word": "UUQVVNUUQVVN",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2308,7 +2308,7 @@
   "cell": "5-EE",
   "speedRatio": null,
   "word": "SSRSSOSSRSSO",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -2317,7 +2317,7 @@
   "cell": "5-EI",
   "speedRatio": null,
   "word": "SSRSSOSSRSSO",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2326,7 +2326,7 @@
   "cell": "5-IA",
   "speedRatio": null,
   "word": "UUQVVNUUQVVN",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2335,7 +2335,7 @@
   "cell": "5-IE",
   "speedRatio": null,
   "word": "SSRSSOSSRSSO",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2344,7 +2344,7 @@
   "cell": "5-II",
   "speedRatio": null,
   "word": "SSRSSOSSRSSO",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2353,7 +2353,7 @@
   "cell": "6-AA",
   "speedRatio": null,
   "word": "TTOTTRTTOTTR",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2362,7 +2362,7 @@
   "cell": "6-AE",
   "speedRatio": null,
   "word": "UUMVVPUUMVVP",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2371,7 +2371,7 @@
   "cell": "6-AI",
   "speedRatio": null,
   "word": "UUMVVPUUMVVP",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2380,7 +2380,7 @@
   "cell": "6-EA",
   "speedRatio": null,
   "word": "VVNUUQVVNUUQ",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2389,7 +2389,7 @@
   "cell": "6-EE",
   "speedRatio": null,
   "word": "SSOSSRSSOSSR",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -2398,7 +2398,7 @@
   "cell": "6-EI",
   "speedRatio": null,
   "word": "SSOSSRSSOSSR",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2407,7 +2407,7 @@
   "cell": "6-IA",
   "speedRatio": null,
   "word": "VVNUUQVVNUUQ",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2416,7 +2416,7 @@
   "cell": "6-IE",
   "speedRatio": null,
   "word": "SSOSSRSSOSSR",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2425,7 +2425,7 @@
   "cell": "6-II",
   "speedRatio": null,
   "word": "SSOSSRSSOSSR",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2434,7 +2434,7 @@
   "cell": "7-AA",
   "speedRatio": null,
   "word": "QNUQNUQNUQNU",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2443,7 +2443,7 @@
   "cell": "7-AE",
   "speedRatio": null,
   "word": "ROSROSROSROS",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2452,7 +2452,7 @@
   "cell": "7-AI",
   "speedRatio": null,
   "word": "ROSROSROSROS",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2461,7 +2461,7 @@
   "cell": "7-EA",
   "speedRatio": null,
   "word": "ROTROTROTROT",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2470,7 +2470,7 @@
   "cell": "7-EE",
   "speedRatio": null,
   "word": "PMVPMVPMVPMV",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -2479,7 +2479,7 @@
   "cell": "7-EI",
   "speedRatio": null,
   "word": "PMVPMVPMVPMV",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2488,7 +2488,7 @@
   "cell": "7-IA",
   "speedRatio": null,
   "word": "ROTROTROTROT",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2497,7 +2497,7 @@
   "cell": "7-IE",
   "speedRatio": null,
   "word": "PMVPMVPMVPMV",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2506,7 +2506,7 @@
   "cell": "7-II",
   "speedRatio": null,
   "word": "PMVPMVPMVPMV",
-  "startPosition": "gamma13",
+  "startPlacement": "gamma13",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2515,7 +2515,7 @@
   "cell": "8-AA",
   "speedRatio": null,
   "word": "NQVNQVNQVNQV",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2524,7 +2524,7 @@
   "cell": "8-AE",
   "speedRatio": null,
   "word": "ORSORSORSORS",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2533,7 +2533,7 @@
   "cell": "8-AI",
   "speedRatio": null,
   "word": "ORSORSORSORS",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2542,7 +2542,7 @@
   "cell": "8-EA",
   "speedRatio": null,
   "word": "ORTORTORTORT",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2551,7 +2551,7 @@
   "cell": "8-EE",
   "speedRatio": null,
   "word": "MPUMPUMPUMPU",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 0,
   "redTurns": 0
  },
@@ -2560,7 +2560,7 @@
   "cell": "8-EI",
   "speedRatio": null,
   "word": "MPUMPUMPUMPU",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 0,
   "redTurns": 1
  },
@@ -2569,7 +2569,7 @@
   "cell": "8-IA",
   "speedRatio": null,
   "word": "ORTORTORTORT",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 1
  },
@@ -2578,7 +2578,7 @@
   "cell": "8-IE",
   "speedRatio": null,
   "word": "MPUMPUMPUMPU",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 0
  },
@@ -2587,7 +2587,7 @@
   "cell": "8-II",
   "speedRatio": null,
   "word": "MPUMPUMPUMPU",
-  "startPosition": "gamma5",
+  "startPlacement": "gamma5",
   "blueTurns": 1,
   "redTurns": 1
  }

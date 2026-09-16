@@ -5,29 +5,29 @@ export const GRID_MODE_DEFINITIONS: Record<string, GridModeDefinition> = {
     name: "Diamond Grid",
     description: "Uses the four cardinal points: North, East, South, West.",
     points: ["N (north)", "E (east)", "S (south)", "W (west)"],
-    positions: ["Alpha (N/S or E/W)", "Beta (same point)", "Gamma (adjacent like N/E)"],
+    placements: ["Alpha (N/S or E/W)", "Beta (same point)", "Gamma (adjacent like N/E)"],
     keyFact: "Diamond is the primary grid mode. Most Level 1-3 work uses diamond grid.",
   },
   box: {
     name: "Box Grid",
     description: "Uses the four intercardinal points: NE, SE, SW, NW.",
     points: ["NE (northeast)", "SE (southeast)", "SW (southwest)", "NW (northwest)"],
-    positions: ["Alpha (NE/SW or NW/SE)", "Beta (same point)", "Gamma (adjacent like NE/SE)"],
-    keyFact: "Box grid is rotated 45° from diamond. Same positions, different orientation.",
+    placements: ["Alpha (NE/SW or NW/SE)", "Beta (same point)", "Gamma (adjacent like NE/SE)"],
+    keyFact: "Box grid is rotated 45° from diamond. Same placements, different orientation.",
   },
   skewed: {
     name: "Skewed Grid",
     description: "Mixes cardinal (diamond) and intercardinal (box) points.",
     points: ["One hand on cardinal (N/E/S/W)", "One hand on intercardinal (NE/SE/SW/NW)"],
-    positions: ["Zeta (~135° angle)", "Eta (~45° angle)"],
-    keyFact: "Skewed positions are Level 5. They bridge the two grid systems.",
+    placements: ["Zeta (~135° angle)", "Eta (~45° angle)"],
+    keyFact: "Skewed placements are Level 5. They bridge the two grid systems.",
     level: 5,
   },
   centric: {
     name: "Centric Grid",
     description: "Uses the center point of the grid. At least one hand at the center.",
     points: ["Center point", "Any of the 8 outer points (cardinal or intercardinal)"],
-    positions: ["Tau (one hand at center, one elsewhere)", "Terra (both hands at center)"],
+    placements: ["Tau (one hand at center, one elsewhere)", "Terra (both hands at center)"],
     keyFact: "Centric is Level 6. Introduces the 9th grid point and the hash hand path.",
     level: 4,
   },
@@ -40,7 +40,7 @@ export function getGridModeExplanation(mode: string): string {
     const validModes = Object.keys(GRID_MODE_DEFINITIONS).join(", ");
     return `Grid mode "${mode}" not recognized. Valid modes: ${validModes}`;
   }
-  let result = `## ${g.name}\n\n**Definition:** ${g.description}\n\n**Grid points:**\n${g.points.map(p => `- ${p}`).join("\n")}\n\n**Positions available:**\n${g.positions.map(p => `- ${p}`).join("\n")}\n\n**Key fact:** ${g.keyFact}`;
+  let result = `## ${g.name}\n\n**Definition:** ${g.description}\n\n**Grid points:**\n${g.points.map(p => `- ${p}`).join("\n")}\n\n**Placements available:**\n${g.placements.map(p => `- ${p}`).join("\n")}\n\n**Key fact:** ${g.keyFact}`;
   if (g.level) result += `\n\n**Introduced at:** Level ${g.level}`;
   return result;
 }

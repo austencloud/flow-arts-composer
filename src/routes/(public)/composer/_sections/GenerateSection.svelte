@@ -195,8 +195,8 @@
   let mounted = false;
   let generationRun = 0;
 
-  const startPosition = $derived(
-    current?.startPosition ?? current?.startingPosition ?? null
+  const startPlacement = $derived(
+    current?.startPlacement ?? current?.startingPlacement ?? null
   );
   const gridLayout = $derived.by(() => {
     const raw = calculateGridLayout(
@@ -637,7 +637,7 @@
                   {#if current}
                     <WorkspaceGrid
                       steps={current.steps}
-                      {startPosition}
+                      {startPlacement}
                       {gridLayout}
                       displayState={workspaceDisplayState}
                       scrollState={workspaceScrollState}

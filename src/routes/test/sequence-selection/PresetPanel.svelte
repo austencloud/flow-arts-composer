@@ -14,7 +14,7 @@
     GridMode,
     GridLocation,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
@@ -31,7 +31,7 @@
 
   const gp = (a: GridLocation, b: GridLocation) => {
     try {
-      return getGridPositionFromLocations(a, b);
+      return getGridPlacementFromLocations(a, b);
     } catch {
       return null;
     }
@@ -44,8 +44,8 @@
       id: `${presetClass}-${step}`,
       letter: null,
       gridMode: GridMode.DIAMOND,
-      startPosition: gp(b, r),
-      endPosition: gp(b, r),
+      startPlacement: gp(b, r),
+      endPlacement: gp(b, r),
       motions: {
         left: createMotionData({
           motionType: MotionType.STATIC,
@@ -101,7 +101,7 @@
               rightPropTypeOverride={PropType.HAND}
               showGrid={true}
               showTKA={false}
-              showPositions={c > 0}
+              showPlacements={c > 0}
               showHandPoints={true}
               darkMode={false}
               printMode={true}
@@ -135,7 +135,7 @@
                 rightPropTypeOverride={PropType.HAND}
                 showGrid={true}
                 showTKA={false}
-                showPositions={c > 0}
+                showPlacements={c > 0}
                 showHandPoints={true}
                 darkMode={false}
                 printMode={true}

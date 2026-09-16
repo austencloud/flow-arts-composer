@@ -8,5 +8,5 @@
 
 export { Type6Constraint } from "./Type6Constraint.js";
 export { PropTypeConstraint } from "./PropTypeConstraint.js";
-export { PositionContinuityConstraint } from "./PositionContinuityConstraint.js";
+export { PlacementContinuityConstraint } from "./PlacementContinuityConstraint.js";
 export { FloatConstraint } from "./FloatConstraint.js";

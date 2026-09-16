@@ -92,18 +92,18 @@ function assertClassicEndpoints(
   card: SelectedCard,
   sequence: SequenceData
 ): void {
-  const startPosition =
-    sequence.startPosition?.gridPosition ?? sequence.steps[0]?.startPosition;
-  const endPosition =
-    sequence.steps.at(-1)?.endPosition ??
-    (sequence.isCircular ? startPosition : undefined);
+  const startPlacement =
+    sequence.startPlacement?.gridPlacement ?? sequence.steps[0]?.startPlacement;
+  const endPlacement =
+    sequence.steps.at(-1)?.endPlacement ??
+    (sequence.isCircular ? startPlacement : undefined);
 
   if (
-    !CLASSIC_POSITIONS.has(startPosition ?? "") ||
-    !CLASSIC_POSITIONS.has(endPosition ?? "")
+    !CLASSIC_POSITIONS.has(startPlacement ?? "") ||
+    !CLASSIC_POSITIONS.has(endPlacement ?? "")
   ) {
     throw new Error(
-      `${card.name} must start and end in Alpha, Beta, or Gamma; got ${startPosition ?? "unknown"} → ${endPosition ?? "unknown"}`
+      `${card.name} must start and end in Alpha, Beta, or Gamma; got ${startPlacement ?? "unknown"} → ${endPlacement ?? "unknown"}`
     );
   }
 }

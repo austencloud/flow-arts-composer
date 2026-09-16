@@ -3,7 +3,7 @@
  * engine's ambient layer.
  *
  * Every entry's `letters` (the primitive letter cycle) and `edges` (their
- * canonical position-family transitions, in cycle order) are grounded in the
+ * canonical placement-family transitions, in cycle order) are grounded in the
  * canonical diamond dataframe
  * (`static/data/pictographs/DiamondPictographDataframe.csv`) — verified
  * directly against it in
@@ -31,18 +31,18 @@
  * utility's job, not this registry's.
  */
 
-import { GridPositionGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import type { LetterEdge } from "../services/letter-calculus";
 
-const A = GridPositionGroup.ALPHA;
-const B = GridPositionGroup.BETA;
-const G = GridPositionGroup.GAMMA;
+const A = GridPlacementGroup.ALPHA;
+const B = GridPlacementGroup.BETA;
+const G = GridPlacementGroup.GAMMA;
 
 const edge = (
   letter: Letter,
-  from: GridPositionGroup,
-  to: GridPositionGroup
+  from: GridPlacementGroup,
+  to: GridPlacementGroup
 ): LetterEdge => ({ letter, from, to });
 
 export interface BaseSequenceEntry {
@@ -52,7 +52,7 @@ export interface BaseSequenceEntry {
   /** The primitive letter cycle, first-class data — e.g. `["G"]` for GG,
    * `["D","J"]` for DJ, `["W","Σ","Y","Θ"]` for WΣYΘ. */
   readonly letters: readonly Letter[];
-  /** Canonical position-family transitions, one per entry in `letters`, in
+  /** Canonical placement-family transitions, one per entry in `letters`, in
    * cycle order: `edges[i].to === edges[(i+1) % edges.length].from`.
    * Grounded in the diamond dataframe — see module doc comment. */
   readonly edges: readonly LetterEdge[];

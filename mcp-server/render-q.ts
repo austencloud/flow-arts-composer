@@ -4,8 +4,8 @@ import { writeFileSync } from "fs";
 
 const input = {
   letter: "Q",
-  startPosition: "gamma11",
-  endPosition: "gamma5",
+  startPlacement: "gamma11",
+  endPlacement: "gamma5",
   leftMotion: {
     motionType: "anti",
     rotationDirection: "cw",
@@ -36,7 +36,7 @@ async function main() {
     darkMode: true,
     showTKA: true,
     showTND: true,
-    showPositions: true,
+    showPlacements: true,
     showGrid: true,
     showLeftMotion: true,
     showRightMotion: true,

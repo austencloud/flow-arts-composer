@@ -1,7 +1,7 @@
 {
   "createdAt": "2026-07-17",
   "page": "misc-permutations",
-  "note": "Type 1 LOOPs page. Recipe: constraintPreset smooth + motionTypeFilter no-dash + mustNotContainLetters [Type 2 set, alpha, beta, gamma] forces pure Type 1 words. Steps captured verbatim from MCP generate_sequence (beat keys mapped to step). Phase 0 findings recorded in the rollout spec: mustContainLetters is a post-hoc filter in loop mode (fails instead of steering); startPosition may be overridden by loop closure; server still runs pre-fix engine so closure retries may be needed.",
+  "note": "Type 1 LOOPs page. Recipe: constraintPreset smooth + motionTypeFilter no-dash + mustNotContainLetters [Type 2 set, alpha, beta, gamma] forces pure Type 1 words. Steps captured verbatim from MCP generate_sequence (beat keys mapped to step). Phase 0 findings recorded in the rollout spec: mustContainLetters is a post-hoc filter in loop mode (fails instead of steering); startPlacement may be overridden by loop closure; server still runs pre-fix engine so closure retries may be needed.",
   "generationDefaults": {
     "constraintPreset": "smooth",
     "motionTypeFilter": "no-dash",

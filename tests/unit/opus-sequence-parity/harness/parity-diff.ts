@@ -44,7 +44,7 @@ export interface FieldDifference {
 }
 
 export interface ParityComparison {
-  /** Output length in steps, including the start-position step. */
+  /** Output length in steps, including the start-placement step. */
   readonly appLength: number;
   readonly engineLength: number;
   readonly lengthMatches: boolean;
@@ -71,7 +71,7 @@ export function compareOutputs(
     const a = app[i]!;
     const e = engine[i]!;
 
-    for (const field of ["startPosition", "endPosition", "stepNumber"] as const) {
+    for (const field of ["startPlacement", "endPlacement", "stepNumber"] as const) {
       if (norm(a[field]) !== norm(e[field])) {
         semantic.push({
           stepIndex: i,
@@ -137,7 +137,7 @@ export function firstSemanticDifference(
 /**
  * Position-and-orientation closure of a completed LOOP.
  *
- * A LOOP closes when the last step returns the hands to the start-position
+ * A LOOP closes when the last step returns the hands to the start-placement
  * step's grid position AND to its start orientations. Both pipelines claim
  * this property (the app via each executor's `_validateSequence` plus the
  * quarter guard; the engine via `closeOrientationCycle` downstream), so it is
@@ -152,7 +152,7 @@ export function describeClosure(steps: StepData[]): ClosureReport {
   const first = steps[0]!;
   const last = steps[steps.length - 1]!;
   return {
-    positionCloses: last.endPosition === first.startPosition,
+    positionCloses: last.endPlacement === first.startPlacement,
     orientationCloses:
       last.motions.left.endOrientation === first.motions.left.startOrientation &&
       last.motions.right.endOrientation === first.motions.right.startOrientation,

@@ -26,7 +26,7 @@ interface TunnelSaveAttemptResult {
 
 type TunnelSaveSequence = Pick<
   SequenceData,
-  "word" | "steps" | "startPosition"
+  "word" | "steps" | "startPlacement"
 >;
 
 function fingerprintComposition(

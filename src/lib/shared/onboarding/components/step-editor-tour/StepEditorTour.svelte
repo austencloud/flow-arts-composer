@@ -36,7 +36,7 @@
       icon: "fa-image",
       title: "Step Preview",
       description:
-        "This pictograph shows the step you selected, with both props and their positions.",
+        "This pictograph shows the step you selected, with both props and their locations.",
       highlight: "preview",
     },
     {
@@ -52,7 +52,7 @@
       icon: "fa-clock",
       title: "Duration",
       description:
-        "Adjust how long this step lasts in your sequence. Longer steps hold the position.",
+        "Adjust how long this step lasts in your sequence. Longer steps hold the placement.",
       highlight: "duration",
     },
   ];

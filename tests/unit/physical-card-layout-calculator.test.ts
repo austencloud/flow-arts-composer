@@ -18,13 +18,13 @@ describe("calculatePhysicalCardLayout", () => {
         canvasWidth: 822,
         canvasHeight: 1122,
         bleedPx: 36,
-        includeStartPosition: true,
+        includeStartPlacement: true,
         showHeader: true,
         showFooter: true,
         showQRCode: true,
       })
     ).toEqual({
-      startPositionLayout: "column",
+      startPlacementLayout: "column",
       totalGridColumns: 3,
     });
   });
@@ -35,13 +35,13 @@ describe("calculatePhysicalCardLayout", () => {
       canvasWidth: 822,
       canvasHeight: 1122,
       bleedPx: 36,
-      includeStartPosition: true,
+      includeStartPlacement: true,
       showHeader: true,
       showFooter: false,
       showQRCode: true,
     });
 
-    expect(layout.startPositionLayout).toBe("row");
+    expect(layout.startPlacementLayout).toBe("row");
     expect(layout.totalGridColumns).toBe(2);
   });
 });

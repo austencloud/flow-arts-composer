@@ -174,7 +174,7 @@
   });
   const showStartPos = $derived.by(() => {
     void compositionVersion;
-    return imageComposition.includeStartPosition;
+    return imageComposition.includeStartPlacement;
   });
 
   // null = Auto. In Auto, columns and start placement are one layout decision;
@@ -198,7 +198,7 @@
     void compositionVersion;
     return automaticLayout && automaticLayout.startPlacement !== "none"
       ? automaticLayout.startPlacement
-      : imageComposition.getStartPositionLayoutForStepCount(stepCount);
+      : imageComposition.getStartPlacementLayoutForStepCount(stepCount);
   });
 
   // One-spot cards (a single empty info cell) route QR vs Mandala through one
@@ -207,8 +207,8 @@
     void compositionVersion;
     return getInfoCellCount({
       stepCount,
-      includeStartPosition: imageComposition.includeStartPosition,
-      startPositionLayout: startPosLayout,
+      includeStartPlacement: imageComposition.includeStartPlacement,
+      startPlacementLayout: startPosLayout,
       columnCount:
         currentColumnCount ??
         (automaticLayout ? getStepColumnsForLayout(automaticLayout) : null),
@@ -273,9 +273,9 @@
     void vmVersion;
     return vm.getRawGlyphVisibility("tndGlyph");
   });
-  const positionsGlyph = $derived.by(() => {
+  const placementsGlyph = $derived.by(() => {
     void vmVersion;
-    return vm.getRawGlyphVisibility("positionsGlyph");
+    return vm.getRawGlyphVisibility("placementsGlyph");
   });
   const nonRadial = $derived.by(() => {
     void vmVersion;
@@ -291,7 +291,7 @@
   // if all are off, a click turns everything on.
   const headerAnyOn = $derived(showWord || showDifficulty || showLoopGlyph);
   const pictographAnyOn = $derived(
-    showGrid || tkaGlyph || tndGlyph || positionsGlyph || handColorKey || nonRadial
+    showGrid || tkaGlyph || tndGlyph || placementsGlyph || handColorKey || nonRadial
   );
 
   function toggleHeader(): void {
@@ -308,7 +308,7 @@
     vm.setGlyphVisibility("tkaGlyph", target);
     vm.setGlyphVisibility("tndGlyph", target);
     vm.setGlyphVisibility("elementalGlyph", target);
-    vm.setGlyphVisibility("positionsGlyph", target);
+    vm.setGlyphVisibility("placementsGlyph", target);
     vm.setGlyphVisibility("handColorKey", target);
     vm.setNonRadialVisibility(target);
     reportSetting("pictograph_all", pictographAnyOn, target);
@@ -343,7 +343,7 @@
     reportSetting("info_cell", previous, value);
   }
 
-  function setStartPositionLayout(value: "row" | "column"): void {
+  function setStartPlacementLayout(value: "row" | "column"): void {
     const previous = startPosLayout;
     // Choosing a Start direction is an explicit layout decision. If Auto is
     // active, keep its measured step-column count and move only the Start lane.
@@ -363,7 +363,7 @@
         : closestCanonical;
       if (manualColumns !== null) setColumns(manualColumns);
     }
-    imageComposition.setStartPositionLayoutForStepCount(stepCount, value);
+    imageComposition.setStartPlacementLayoutForStepCount(stepCount, value);
     reportSetting("start_position_layout", previous, value);
   }
 
@@ -505,12 +505,12 @@
                 <button
                   type="button"
                   class="rt-chip"
-                  aria-pressed={positionsGlyph}
+                  aria-pressed={placementsGlyph}
                   onclick={() =>
                     togglePictographSetting(
                       "positions_glyph",
-                      positionsGlyph,
-                      (value) => vm.setGlyphVisibility("positionsGlyph", value)
+                      placementsGlyph,
+                      (value) => vm.setGlyphVisibility("placementsGlyph", value)
                     )}>Positions</button
                 >
                 <button
@@ -602,7 +602,7 @@
                     toggleCompositionSetting(
                       "start_position",
                       showStartPos,
-                      imageComposition.setIncludeStartPosition.bind(
+                      imageComposition.setIncludeStartPlacement.bind(
                         imageComposition
                       )
                     )}>Show</button
@@ -613,7 +613,7 @@
                     class="rt-chip"
                     transition:fade={{ duration: 150 }}
                     aria-pressed={startPosLayout === "row"}
-                    onclick={() => setStartPositionLayout("row")}
+                    onclick={() => setStartPlacementLayout("row")}
                     >Top Row</button
                   >
                   <button
@@ -621,7 +621,7 @@
                     class="rt-chip"
                     transition:fade={{ duration: 150 }}
                     aria-pressed={startPosLayout === "column"}
-                    onclick={() => setStartPositionLayout("column")}
+                    onclick={() => setStartPlacementLayout("column")}
                     >Left Column</button
                   >
                 {/if}
@@ -816,14 +816,14 @@
             <button
               type="button"
               class="chip"
-              class:active={positionsGlyph}
+              class:active={placementsGlyph}
               onclick={() =>
                 togglePictographSetting(
                   "positions_glyph",
-                  positionsGlyph,
-                  (value) => vm.setGlyphVisibility("positionsGlyph", value)
+                  placementsGlyph,
+                  (value) => vm.setGlyphVisibility("placementsGlyph", value)
                 )}
-              aria-pressed={positionsGlyph}>Positions</button
+              aria-pressed={placementsGlyph}>Positions</button
             >
             <button
               type="button"
@@ -926,7 +926,7 @@
                 toggleCompositionSetting(
                   "start_position",
                   showStartPos,
-                  imageComposition.setIncludeStartPosition.bind(
+                  imageComposition.setIncludeStartPlacement.bind(
                     imageComposition
                   )
                 )}
@@ -937,14 +937,14 @@
                 type="button"
                 class="chip"
                 class:active={startPosLayout === "row"}
-                onclick={() => setStartPositionLayout("row")}
+                onclick={() => setStartPlacementLayout("row")}
                 aria-pressed={startPosLayout === "row"}>Top Row</button
               >
               <button
                 type="button"
                 class="chip"
                 class:active={startPosLayout === "column"}
-                onclick={() => setStartPositionLayout("column")}
+                onclick={() => setStartPlacementLayout("column")}
                 aria-pressed={startPosLayout === "column"}>Left Column</button
               >
             {/if}

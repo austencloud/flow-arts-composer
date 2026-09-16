@@ -12,9 +12,9 @@ carries a different letter.
 
 Nothing about the dance changes — each hand keeps its own path, motion type
 (pro/anti), and rotation direction. The only thing that changes is the **gap**
-between the hands, and therefore the position family that describes it:
+between the hands, and therefore the placement family that describes it:
 
-| Gap between hands | Position family | VTG timing |
+| Gap between hands | Placement family | VTG timing |
 |---|---|---|
 | 0° (same point) | beta | Together |
 | 90° (right angle) | gamma | Quarter |
@@ -286,12 +286,12 @@ expect one to predict the other.
 
 Rotating one hand 45° puts it on the diagonals while the other stays cardinal.
 Austen built a working closed 4-step skewed loop this way (`G F A L` in eta/zeta
-positions), and skew **keeps the original letter names** — the skew generator
+placements), and skew **keeps the original letter names** — the skew generator
 applies skew to existing diamond/box pictographs and preserves the letter.
 
 But `SkewedPictographDataframe.csv` (byte-identical in `static/data/pictographs/`
 and `mcp-server-pkg/assets/data/pictographs/`, 5120 rows) contains **no rows that
-start from a skewed position**. Its start positions are only alpha/beta/gamma.
+start from a skewed placement**. Its start placements are only alpha/beta/gamma.
 `scripts/generate-skewed-dataframe.ts` builds it by applying skew to existing
 diamond and box pictographs, so it can describe stepping *into* skew and never
 describes continuing *within* it.

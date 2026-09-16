@@ -20,7 +20,7 @@ import {
   applyFilter,
   getSequenceMaxTurn,
 } from "$lib/shared/browse/services/browse-filter";
-import { startPositionManager } from "$lib/shared/create/services/start-position-manager";
+import { startPlacementManager } from "$lib/shared/create/services/start-placement-manager";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import { browser } from "$app/environment";
@@ -42,7 +42,7 @@ export type Section =
   | "level"
   | "length"
   | "letter"
-  | "position"
+  | "placement"
   | "gridmode"
   | "author"
   | "performance"
@@ -56,7 +56,7 @@ export const SECTIONS: readonly Section[] = [
   "level",
   "length",
   "letter",
-  "position",
+  "placement",
   "gridmode",
   "author",
   "performance",
@@ -72,7 +72,7 @@ export const SCREEN_CLASS: Record<Section, string> = {
   level: "screen-level",
   length: "screen-length",
   letter: "screen-letter",
-  position: "screen-positions",
+  placement: "screen-placements",
   gridmode: "screen-gridmode",
   author: "screen-creator",
   performance: "screen-performance",
@@ -92,7 +92,7 @@ export const LEVEL_DESCRIPTIONS: Record<number, string> = {
 };
 
 // Legacy starting_position_section values + descriptions, verbatim.
-export const POSITIONS = [
+export const PLACEMENTS = [
   {
     value: "alpha",
     label: "Alpha",
@@ -163,7 +163,7 @@ export const LOOP_OPTIONS = (() => {
   ];
 })();
 
-const LETTER_TO_POSITION: Record<string, string> = {
+const LETTER_TO_PLACEMENT: Record<string, string> = {
   [Letter.ALPHA]: "alpha",
   [Letter.BETA]: "beta",
   [Letter.GAMMA]: "gamma",
@@ -383,25 +383,25 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     )
   );
 
-  const positionValues = $derived(
-    POSITIONS.map((p) => ({
+  const placementValues = $derived(
+    PLACEMENTS.map((p) => ({
       ...p,
-      count: deps.getCount(BrowseFilterType.STARTING_POSITION, p.value),
+      count: deps.getCount(BrowseFilterType.STARTING_PLACEMENT, p.value),
     }))
   );
-  const maxPositionCount = $derived(
-    Math.max(1, ...positionValues.map((v) => v.count))
+  const maxPlacementCount = $derived(
+    Math.max(1, ...placementValues.map((v) => v.count))
   );
 
-  // Real start-position pictographs (alpha/beta/gamma) keyed by position value —
-  // the same canonical PictographData the Create start-position picker renders.
-  const startPosPictographs = $derived.by(() => {
+  // Real start-placement pictographs (alpha/beta/gamma) keyed by placement value —
+  // the same canonical PictographData the Create start-placement picker renders.
+  const startPlacementPictographs = $derived.by(() => {
     const map = new Map<string, PictographData>();
     if (!browser) return map;
-    for (const pd of startPositionManager.getDefaultStartPositions(
+    for (const pd of startPlacementManager.getDefaultStartPlacements(
       GridMode.DIAMOND
     )) {
-      const key = LETTER_TO_POSITION[pd.letter as string];
+      const key = LETTER_TO_PLACEMENT[pd.letter as string];
       if (key) map.set(key, pd);
     }
     return map;
@@ -543,7 +543,7 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
 
   const sectionPresence = $derived<Record<string, boolean>>({
     letter: letterValues.length > 1,
-    position: positionValues.length > 1,
+    placement: placementValues.length > 1,
     gridmode: gridModeValues.length > 1,
     loop: loopValues.some((v) => v.count > 0),
     author: creatorValues.length > 1,
@@ -641,19 +641,19 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
         narrowedOut: sectionNarrowedOut("letter"),
       });
     }
-    if (showSection("position")) {
+    if (showSection("placement")) {
       out.push({
-        key: "position",
-        title: "Start position",
-        sub: sectionNarrowedOut("position")
+        key: "placement",
+        title: "Start placement",
+        sub: sectionNarrowedOut("placement")
           ? "No matches with this rule"
           : "Alpha, beta, gamma",
         art: {
           kind: "plate",
-          src: positionValues[0]?.img ?? POSITIONS[0]!.img,
+          src: placementValues[0]?.img ?? PLACEMENTS[0]!.img,
         },
-        section: "position",
-        narrowedOut: sectionNarrowedOut("position"),
+        section: "placement",
+        narrowedOut: sectionNarrowedOut("placement"),
       });
     }
     if (showSection("gridmode")) {
@@ -812,14 +812,14 @@ export function createGalleryCatalog(deps: GalleryCatalogDeps) {
     get letterValues() {
       return letterValues;
     },
-    get positionValues() {
-      return positionValues;
+    get placementValues() {
+      return placementValues;
     },
-    get maxPositionCount() {
-      return maxPositionCount;
+    get maxPlacementCount() {
+      return maxPlacementCount;
     },
-    get startPosPictographs() {
-      return startPosPictographs;
+    get startPlacementPictographs() {
+      return startPlacementPictographs;
     },
     get gridModeValues() {
       return gridModeValues;

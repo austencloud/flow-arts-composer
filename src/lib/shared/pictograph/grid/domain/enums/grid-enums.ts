@@ -12,7 +12,7 @@ export const GridLocation = {
 
 export type GridLocation = (typeof GridLocation)[keyof typeof GridLocation];
 
-export const GridPositionGroup = {
+export const GridPlacementGroup = {
   ALPHA: "alpha",
   BETA: "beta",
   GAMMA: "gamma",
@@ -22,10 +22,10 @@ export const GridPositionGroup = {
   TERRA: "terra",
 } as const;
 
-export type GridPositionGroup =
-  (typeof GridPositionGroup)[keyof typeof GridPositionGroup];
+export type GridPlacementGroup =
+  (typeof GridPlacementGroup)[keyof typeof GridPlacementGroup];
 
-export const GridPosition = {
+export const GridPlacement = {
   ALPHA1: "alpha1",
   ALPHA2: "alpha2",
   ALPHA3: "alpha3",
@@ -121,7 +121,7 @@ export const GridPosition = {
   TERRA1: "terra1",
 } as const;
 
-export type GridPosition = (typeof GridPosition)[keyof typeof GridPosition];
+export type GridPlacement = (typeof GridPlacement)[keyof typeof GridPlacement];
 
 export const GridMode = {
   DIAMOND: "diamond",

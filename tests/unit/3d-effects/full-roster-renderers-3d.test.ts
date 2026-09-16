@@ -14,7 +14,7 @@ import { PulseRenderer3D } from "$lib/shared/3d/effects/pulse/pulse-renderer-3d"
 import { TipPositionBridge3D } from "$lib/shared/3d/effects/tip-position-bridge-3d";
 import { MUSEUM_EXHIBIT_SEQUENCES } from "$lib/features/museum/data/museum-exhibit-sequences";
 import {
-  getStartPositionConfigs,
+  getStartPlacementConfigs,
   sequenceToMotionConfigs,
 } from "$lib/shared/3d/services/sequence-converter";
 import { calculatePropState } from "$lib/shared/3d/services/prop-state-interpolator";
@@ -309,7 +309,7 @@ describe("native 3D full-roster renderers", () => {
     const renderer = new AnimalRenderer3D();
     const bridge = new TipPositionBridge3D();
     const sequence = MUSEUM_EXHIBIT_SEQUENCES["gallery-practice-seq"]!;
-    const start = getStartPositionConfigs(sequence, Plane.WALL)!;
+    const start = getStartPlacementConfigs(sequence, Plane.WALL)!;
     const steps = [start, ...sequenceToMotionConfigs(sequence, Plane.WALL)];
     const source: AnimalTipSource3D = {
       ...base,

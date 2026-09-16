@@ -6,7 +6,7 @@
  * - Swap hands
  * - Rotate sequence
  * - Duplicate sequence
- * - Set start position
+ * - Set start placement
  * - Validation
  *
  * RESPONSIBILITY: Transform operations coordinator, orchestrates state + services
@@ -14,7 +14,7 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { updateSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { SequenceStatsCalculator } from "$lib/features/create/shared/services/sequence-stats-calculator";
 import type { SequenceTransformer } from "$lib/features/create/shared/services/sequence-transforms/sequence-transformer";
 import type { SequenceValidator } from "$lib/features/create/shared/services/sequence-validator";
@@ -54,36 +54,36 @@ export function createSequenceTransformOperations(
   }
 
   return {
-    setStartPosition(startPosition: StartPositionData | null) {
+    setStartPlacement(startPlacement: StartPlacementData | null) {
       if (!coreState.currentSequence) return;
 
       try {
-        if (startPosition === null) {
-          // Clear start position
+        if (startPlacement === null) {
+          // Clear start placement
           const updatedSequence = updateSequenceData(
             coreState.currentSequence,
             {
-              startPosition: undefined,
-              startingPosition: undefined,
+              startPlacement: undefined,
+              startingPlacement: undefined,
             }
           );
           coreState.setCurrentSequence(updatedSequence);
-          selectionState.setStartPosition(null);
+          selectionState.setStartPlacement(null);
         } else {
-          // Update sequence with start position - set both fields for compatibility
+          // Update sequence with start placement - set both fields for compatibility
           const updatedSequence = updateSequenceData(
             coreState.currentSequence,
             {
-              startPosition: startPosition,
-              startingPosition: startPosition, // CRITICAL: Set both fields for compatibility
+              startPlacement: startPlacement,
+              startingPlacement: startPlacement, // CRITICAL: Set both fields for compatibility
             }
           );
           coreState.setCurrentSequence(updatedSequence);
-          selectionState.setStartPosition(startPosition);
+          selectionState.setStartPlacement(startPlacement);
         }
         coreState.clearError();
       } catch (error) {
-        handleError("Failed to set start position", error);
+        handleError("Failed to set start placement", error);
       }
     },
 
@@ -101,8 +101,8 @@ export function createSequenceTransformOperations(
 
         // Update state immediately - animation starts here
         coreState.setCurrentSequence(transformedSequence);
-        if (transformedSequence.startPosition) {
-          selectionState.setStartPosition(transformedSequence.startPosition);
+        if (transformedSequence.startPlacement) {
+          selectionState.setStartPlacement(transformedSequence.startPlacement);
         }
         coreState.clearError();
 
@@ -145,9 +145,9 @@ export function createSequenceTransformOperations(
         );
         coreState.setCurrentSequence(updatedSequence);
 
-        // Update selection state with transformed start position so UI re-renders
-        if (updatedSequence.startPosition) {
-          selectionState.setStartPosition(updatedSequence.startPosition);
+        // Update selection state with transformed start placement so UI re-renders
+        if (updatedSequence.startPlacement) {
+          selectionState.setStartPlacement(updatedSequence.startPlacement);
         }
 
         coreState.clearError();
@@ -183,8 +183,8 @@ export function createSequenceTransformOperations(
 
         // Update state immediately - animation starts here
         coreState.setCurrentSequence(transformedSequence);
-        if (transformedSequence.startPosition) {
-          selectionState.setStartPosition(transformedSequence.startPosition);
+        if (transformedSequence.startPlacement) {
+          selectionState.setStartPlacement(transformedSequence.startPlacement);
         }
         coreState.clearError();
 
@@ -248,8 +248,8 @@ export function createSequenceTransformOperations(
 
         // Update state immediately - animation starts here
         coreState.setCurrentSequence(transformedSequence);
-        if (transformedSequence.startPosition) {
-          selectionState.setStartPosition(transformedSequence.startPosition);
+        if (transformedSequence.startPlacement) {
+          selectionState.setStartPlacement(transformedSequence.startPlacement);
         }
         coreState.clearError();
 
@@ -279,19 +279,19 @@ export function createSequenceTransformOperations(
       }
     },
 
-    async shiftStartPosition(targetStepNumber: number) {
+    async shiftStartPlacement(targetStepNumber: number) {
       if (!coreState.currentSequence || !SequenceTransformer) return;
 
       try {
-        const shiftedSequence = SequenceTransformer.shiftStartPosition(
+        const shiftedSequence = SequenceTransformer.shiftStartPlacement(
           coreState.currentSequence,
           targetStepNumber
         );
         coreState.setCurrentSequence(shiftedSequence);
 
-        // Update selection state with new start position so UI re-renders
-        if (shiftedSequence.startPosition) {
-          selectionState.setStartPosition(shiftedSequence.startPosition);
+        // Update selection state with new start placement so UI re-renders
+        if (shiftedSequence.startPlacement) {
+          selectionState.setStartPlacement(shiftedSequence.startPlacement);
         }
 
         coreState.clearError();
@@ -299,7 +299,7 @@ export function createSequenceTransformOperations(
         // Persist the transformed sequence
         await onSave?.();
       } catch (error) {
-        handleError("Failed to shift start position", error);
+        handleError("Failed to shift start placement", error);
       }
     },
 
@@ -315,8 +315,8 @@ export function createSequenceTransformOperations(
 
         // Update state immediately - animation starts here
         coreState.setCurrentSequence(transformedSequence);
-        if (transformedSequence.startPosition) {
-          selectionState.setStartPosition(transformedSequence.startPosition);
+        if (transformedSequence.startPlacement) {
+          selectionState.setStartPlacement(transformedSequence.startPlacement);
         }
         coreState.clearError();
 
@@ -356,8 +356,8 @@ export function createSequenceTransformOperations(
 
         // Update state immediately - animation starts here
         coreState.setCurrentSequence(transformedSequence);
-        if (transformedSequence.startPosition) {
-          selectionState.setStartPosition(transformedSequence.startPosition);
+        if (transformedSequence.startPlacement) {
+          selectionState.setStartPlacement(transformedSequence.startPlacement);
         }
         coreState.clearError();
 

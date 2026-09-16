@@ -174,7 +174,7 @@ export function createCreateModuleState(
   let guidedModeHeaderText = $state<string | null>(null);
 
   /**
-   * Check if workspace is empty (no steps and no start position)
+   * Check if workspace is empty (no steps and no start placement)
    */
   function isWorkspaceEmpty(): boolean {
     const activeSequenceState = getActiveTabSequenceState();
@@ -183,9 +183,9 @@ export function createCreateModuleState(
       return true;
     }
     const hasStep = sequence.steps && sequence.steps.length > 0;
-    const hasStartPosition =
-      sequence.startingPosition || sequence.startPosition;
-    return !hasStep && !hasStartPosition;
+    const hasStartPlacement =
+      sequence.startingPlacement || sequence.startPlacement;
+    return !hasStep && !hasStartPlacement;
   }
 
   function getCurrentBeatCount(): number {
@@ -220,7 +220,7 @@ export function createCreateModuleState(
 
   /**
    * Check if sequence actions button can be shown
-   * Shows when there's a start position OR steps (not just steps)
+   * Shows when there's a start placement OR steps (not just steps)
    */
   function canShowSequenceActionsButton(): boolean {
     const activeSequenceState = getActiveTabSequenceState();
@@ -228,10 +228,10 @@ export function createCreateModuleState(
     if (!sequence) return false;
 
     const hasStep = sequence.steps && sequence.steps.length > 0;
-    const hasStartPosition = !!(
-      sequence.startingPosition || sequence.startPosition
+    const hasStartPlacement = !!(
+      sequence.startingPlacement || sequence.startPlacement
     );
-    return hasStep || hasStartPosition;
+    return hasStep || hasStartPlacement;
   }
 
   /**
@@ -397,9 +397,9 @@ export function createCreateModuleState(
       const controller = getActiveTabUndoController();
       controller?.clearUndoHistory();
     },
-    setShowStartPositionPickerCallback: (callback: () => void) => {
+    setShowStartPlacementPickerCallback: (callback: () => void) => {
       const controller = getActiveTabUndoController();
-      controller?.setShowStartPositionPickerCallback(callback);
+      controller?.setShowStartPlacementPickerCallback(callback);
     },
     setSyncPickerStateCallback: (callback: () => void) => {
       const controller = getActiveTabUndoController();

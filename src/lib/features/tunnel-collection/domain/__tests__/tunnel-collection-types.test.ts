@@ -124,8 +124,8 @@ describe("CollectedTunnelSchema", () => {
     const orientedStep = {
       id: "step-1",
       letter: null,
-      startPosition: null,
-      endPosition: null,
+      startPlacement: null,
+      endPlacement: null,
       stepNumber: 1,
       duration: 1,
       leftReversal: false,

@@ -90,16 +90,16 @@ export function getOccupiedCells(
 ): Set<string> {
   const occupied = new Set<string>();
 
-  const hasStartPositionToRender =
-    options.includeStartPosition &&
-    (sequence.startPosition || (sequence.steps && sequence.steps.length > 0));
-  if (hasStartPositionToRender) {
+  const hasStartPlacementToRender =
+    options.includeStartPlacement &&
+    (sequence.startPlacement || (sequence.steps && sequence.steps.length > 0));
+  if (hasStartPlacementToRender) {
     occupied.add("0,0");
   }
 
-  const layoutMode = options.startPositionLayout ?? "row";
-  const useColumnMode = layoutMode === "column" && !!options.includeStartPosition;
-  const startRow = (!useColumnMode && options.includeStartPosition) ? 1 : 0;
+  const layoutMode = options.startPlacementLayout ?? "row";
+  const useColumnMode = layoutMode === "column" && !!options.includeStartPlacement;
+  const startRow = (!useColumnMode && options.includeStartPlacement) ? 1 : 0;
   const startColumn = useColumnMode ? 1 : 0;
   const stepsPerRow = columns - startColumn;
 
@@ -120,14 +120,14 @@ export function findEmptyCellForQR(
 ): { col: number; row: number } | null {
   // One-count cards (a single beat + the start position) have no spare cell.
   // In row mode the heuristic below would pick { col: columns - 1, row: 0 },
-  // which for columns === 1 IS the start-position cell — the QR would paint
+  // which for columns === 1 IS the start-placement cell — the QR would paint
   // over the start. One-count cards never carry a QR, in any layout mode.
   if ((sequence.steps?.length ?? 0) <= 1) return null;
 
-  const layoutMode = options.startPositionLayout ?? "row";
-  const useColumnMode = layoutMode === "column" && !!options.includeStartPosition;
+  const layoutMode = options.startPlacementLayout ?? "row";
+  const useColumnMode = layoutMode === "column" && !!options.includeStartPlacement;
 
-  if (options.includeStartPosition && !useColumnMode) {
+  if (options.includeStartPlacement && !useColumnMode) {
     return { col: columns - 1, row: 0 };
   }
 

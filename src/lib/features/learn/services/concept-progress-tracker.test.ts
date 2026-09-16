@@ -156,12 +156,12 @@ describe("ConceptProgressTracker completion reconciliation", () => {
   it("reports a concept completed when only completedConcepts carries it", () => {
     // Shape written by the server-side TIKA verifier: the completed list is
     // updated but no per-concept record lands alongside it.
-    writeStoredProgress({ completedConcepts: ["grid", "hand-positions"] });
+    writeStoredProgress({ completedConcepts: ["grid", "hand-placements"] });
 
     const tracker = new ConceptProgressTracker();
 
     expect(tracker.getConceptStatus("grid")).toBe("completed");
-    expect(tracker.getConceptStatus("hand-positions")).toBe("completed");
+    expect(tracker.getConceptStatus("hand-placements")).toBe("completed");
     expect(tracker.getConceptProgress("grid").status).toBe("completed");
     expect(tracker.getConceptProgress("grid").percentComplete).toBe(100);
     // Untouched concepts are unaffected.
@@ -515,7 +515,7 @@ describe("ConceptProgressTracker account switching", () => {
     // window's progress goes to B at all is the unnamespaced-cache issue in
     // the report's follow-ups — one device's storage is not scoped per
     // account. This test pins only who the writes are addressed to.)
-    tracker.completeConcept("hand-positions");
+    tracker.completeConcept("hand-placements");
     expect(persister.saveProgress.mock.calls.map((call) => call[0])).toEqual([
       "user-b",
       "user-b",

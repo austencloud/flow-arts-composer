@@ -1,20 +1,20 @@
 {
   "alpha": {
-    "definition": "A position where the two hands are at opposite grid points (180 degrees apart). Note: the Type 6 letter α (lowercase) shares this name because a static letter is essentially a held position: the same concept. When someone asks 'what is alpha?', context determines whether they mean the position (hands opposite) or the letter (both hands static at opposite points).",
+    "definition": "A placement where the two hands are at opposite grid points (180 degrees apart). Note: the Type 6 letter α (lowercase) shares this name because a static letter is essentially a held placement: the same concept. When someone asks 'what is alpha?', context determines whether they mean the placement (hands opposite) or the letter (both hands static at opposite points).",
     "examples": [
       "alpha1: hands at N and S",
       "alpha3: hands at E and W",
-      "The Type 6 letter α represents holding an alpha position with no motion"
+      "The Type 6 letter α represents holding an alpha placement with no motion"
     ],
     "relatedTerms": [
       "beta",
       "gamma",
-      "position"
+      "placement"
     ],
-    "category": "position"
+    "category": "placement"
   },
   "beta": {
-    "definition": "A position where both hands are at the same grid point (0 degrees apart). The Type 6 letter β (lowercase) shares this name. It represents holding a beta position with no motion, which is also a natural start position for 'together' patterns.",
+    "definition": "A placement where both hands are at the same grid point (0 degrees apart). The Type 6 letter β (lowercase) shares this name. It represents holding a beta placement with no motion, which is also a natural start placement for 'together' patterns.",
     "examples": [
       "beta1: both hands at N",
       "beta5: both hands at NE"
@@ -22,12 +22,12 @@
     "relatedTerms": [
       "alpha",
       "gamma",
-      "position"
+      "placement"
     ],
-    "category": "position"
+    "category": "placement"
   },
   "gamma": {
-    "definition": "A position where the hands form a right angle (90 degrees apart on adjacent grid points). The Type 6 letter γ (lowercase) shares this name. It represents holding a gamma position with no motion.",
+    "definition": "A placement where the hands form a right angle (90 degrees apart on adjacent grid points). The Type 6 letter γ (lowercase) shares this name. It represents holding a gamma placement with no motion.",
     "examples": [
       "gamma1: hands at N and E",
       "gamma5: hands at NE and NW (box mode)"
@@ -35,36 +35,36 @@
     "relatedTerms": [
       "alpha",
       "beta",
-      "position"
+      "placement"
     ],
-    "category": "position"
+    "category": "placement"
   },
   "zeta": {
-    "definition": "A position where the hands form an obtuse angle (greater than 90 degrees). Introduced in Level 5 with skewed grid mode.",
+    "definition": "A placement where the hands form an obtuse angle (greater than 90 degrees). Introduced in Level 5 with skewed grid mode.",
     "examples": [
       "One hand cardinal, one intercardinal, forming ~135 degree angle"
     ],
     "relatedTerms": [
       "eta",
       "skewed",
-      "position"
+      "placement"
     ],
-    "category": "position"
+    "category": "placement"
   },
   "eta": {
-    "definition": "A position where the hands form an acute angle (less than 90 degrees). Introduced in Level 5 with skewed grid mode.",
+    "definition": "A placement where the hands form an acute angle (less than 90 degrees). Introduced in Level 5 with skewed grid mode.",
     "examples": [
       "One hand cardinal, one intercardinal, forming ~45 degree angle"
     ],
     "relatedTerms": [
       "zeta",
       "skewed",
-      "position"
+      "placement"
     ],
-    "category": "position"
+    "category": "placement"
   },
   "tau": {
-    "definition": "A position where one hand is at the center grid point and the other is at a non-center point. Introduced in Level 6 with centric grid mode.",
+    "definition": "A placement where one hand is at the center grid point and the other is at a non-center point. Introduced in Level 6 with centric grid mode.",
     "examples": [
       "One hand at center, one hand at N",
       "One hand at center, one hand at NE"
@@ -72,24 +72,24 @@
     "relatedTerms": [
       "terra",
       "centric",
-      "position"
+      "placement"
     ],
-    "category": "position"
+    "category": "placement"
   },
   "terra": {
-    "definition": "A position where both hands are at the center grid point. Introduced in Level 6 with centric grid mode.",
+    "definition": "A placement where both hands are at the center grid point. Introduced in Level 6 with centric grid mode.",
     "examples": [
       "Both hands stacked at the center of the grid"
     ],
     "relatedTerms": [
       "tau",
       "centric",
-      "position"
+      "placement"
     ],
-    "category": "position"
+    "category": "placement"
   },
-  "position": {
-    "definition": "Where the two hands are relative to each other on the grid. Defined by the angle between them. Seven positions exist across the level system: alpha, beta, gamma, zeta, eta, tau, and terra.",
+  "placement": {
+    "definition": "Where the two hands are relative to each other on the grid. Defined by the angle between them. Seven placements exist across the level system: alpha, beta, gamma, zeta, eta, tau, and terra. Older TKA material calls this a 'position'; this system now follows VTG's term, 'placement'.",
     "examples": [
       "Alpha = hands opposite (180°)",
       "Beta = hands together (0°)",
@@ -106,18 +106,18 @@
     ],
     "category": "general"
   },
-  "home-position": {
-    "definition": "The starting hand position a sequence uses as its reference point. Returning home means the final hand locations reconnect to the starting locations. A fully realized LOOP can require additional passes for the prop orientations to close as well.",
+  "home-placement": {
+    "definition": "The starting hand placement a sequence uses as its reference point. Returning home means the final hand locations reconnect to the starting locations. A fully realized LOOP can require additional passes for the prop orientations to close as well.",
     "examples": [
       "A LOOP returns from its final step to the same hand locations where it began",
-      "A position cycle may close before the prop-orientation cycle does"
+      "A placement cycle may close before the prop-orientation cycle does"
     ],
     "relatedTerms": [
-      "position",
+      "placement",
       "loop",
       "sequence"
     ],
-    "category": "position"
+    "category": "placement"
   },
   "grid": {
     "definition": "The spatial reference used to place hands and draw motion paths in a TKA pictograph. Diamond and box are the two 4-point grid modes. Together they form an 8-point grid around a shared center.",
@@ -182,7 +182,7 @@
     "category": "grid"
   },
   "tka": {
-    "definition": "The Kinetic Alphabet is a notation system for dual-wielded flow arts, built around double staves. A pictograph records one step by showing both hands, both props, their grid positions, and their motion paths.",
+    "definition": "The Kinetic Alphabet is a notation system for dual-wielded flow arts, built around double staves. A pictograph records one step by showing both hands, both props, their grid placements, and their motion paths.",
     "examples": [
       "A TKA word is written as a sequence of lettered pictographs",
       "Double staves provide visible thumb-end and pinky-end references"
@@ -245,7 +245,7 @@
     "category": "general"
   },
   "sequence": {
-    "definition": "An ordered series of pictographs representing choreography. A sequence includes a start position (step 0) followed by one pictograph per letter in the word. The visual output is called a choreo card.",
+    "definition": "An ordered series of pictographs representing choreography. A sequence includes a start placement (step 0) followed by one pictograph per letter in the word. The visual output is called a choreo card.",
     "examples": [
       "A 4-letter word produces a sequence with 5 pictographs (start + 4 steps)",
       "Sequences can be rendered as grid layouts or single-row strips"
@@ -259,10 +259,10 @@
     "category": "general"
   },
   "compound-letter": {
-    "definition": "A complementary pair of TKA letters whose two steps complete a motion cycle and return to the starting position type. Despite the singular name, a compound letter is written as a pair.",
+    "definition": "A complementary pair of TKA letters whose two steps complete a motion cycle and return to the starting placement type. Despite the singular name, a compound letter is written as a pair.",
     "examples": [
       "DJ moves beta to alpha, then alpha to beta",
-      "EK and FL complete the same position cycle with different prop rotations",
+      "EK and FL complete the same placement cycle with different prop rotations",
       "MP, NQ, and OR are gamma-to-gamma compound pairs"
     ],
     "relatedTerms": [
@@ -301,11 +301,11 @@
     "category": "general"
   },
   "level": {
-    "definition": "A progressive difficulty tier that introduces new positions, grid modes, turn counts, and orientations. Level 1: 0 turns only. Level 2: whole turns (0-3). Level 3: half turns and float. Level 4: interradial orientations and quarter turns (clockIn, clockOut, counterIn, counterOut: completes orientation freedom at 8 values). Level 5: skewed grid (zeta, eta positions, 8-point grid, skew+/- shifts). Level 6: centric grid with center point (tau, terra positions, hash hand path, completes the single grid, not yet implemented). Level 7: conjoined grids (dual grids sharing a junction point, new position combinations, bridges to 3D). Level 8: atomics (two props on different spinning planes simultaneously). Level 9: Rubik's cube tech (in-between points across intersecting planes, same expansion skewed brought to single-plane).",
+    "definition": "A progressive difficulty tier that introduces new placements, grid modes, turn counts, and orientations. Level 1: 0 turns only. Level 2: whole turns (0-3). Level 3: half turns and float. Level 4: interradial orientations and quarter turns (clockIn, clockOut, counterIn, counterOut: completes orientation freedom at 8 values). Level 5: skewed grid (zeta, eta placements, 8-point grid, skew+/- shifts). Level 6: centric grid with center point (tau, terra placements, hash hand path, completes the single grid, not yet implemented). Level 7: conjoined grids (dual grids sharing a junction point, new placement combinations, bridges to 3D). Level 8: atomics (two props on different spinning planes simultaneously). Level 9: Rubik's cube tech (in-between points across intersecting planes, same expansion skewed brought to single-plane).",
     "examples": [
-      "Level 1: alpha, beta, gamma positions with 0 turns only",
+      "Level 1: alpha, beta, gamma placements with 0 turns only",
       "Level 4: interradial orientations and quarter turns double angular precision",
-      "Level 5: introduces zeta, eta positions with skewed grid",
+      "Level 5: introduces zeta, eta placements with skewed grid",
       "Level 6: introduces center point with centric grid (completes single-grid 2D)",
       "Level 7: conjoined grids expand the spatial canvas with dual grids, bridging to 3D",
       "Level 8: one prop on wall plane, one on wheel plane (atomics)",
@@ -313,7 +313,7 @@
     ],
     "relatedTerms": [
       "turns",
-      "position",
+      "placement",
       "orientation",
       "spinning-plane",
       "atomic",
@@ -327,7 +327,7 @@
     "examples": [
       "TKA glyph: shows the letter name and turn numbers",
       "TnD glyph: shows timing & direction relationship between hands",
-      "Position glyph: shows start and end positions"
+      "Placement glyph: shows start and end placements"
     ],
     "relatedTerms": [
       "pictograph",
@@ -452,7 +452,7 @@
     "category": "notation"
   },
   "opening": {
-    "definition": "A per-hand designation used by Lambda (Λ), Lambda-Dash (Λ-), and gamma (γ). Opening means the rotating hand's trajectory would continue through a pro shift toward an alpha position. Each hand can be opening or closing independently.",
+    "definition": "A per-hand designation used by Lambda (Λ), Lambda-Dash (Λ-), and gamma (γ). Opening means the rotating hand's trajectory would continue through a pro shift toward an alpha placement. Each hand can be opening or closing independently.",
     "examples": [
       "Λ(0,1,op): Lambda with 1-turn static hand whose trajectory would resolve to alpha",
       "Λ-(1,1,op,cl): Lambda-Dash with the left hand opening (toward alpha), right hand closing (toward beta)",
@@ -467,7 +467,7 @@
     "category": "notation"
   },
   "closing": {
-    "definition": "A per-hand designation used by Lambda (Λ), Lambda-Dash (Λ-), and gamma (γ). Closing means the rotating hand's trajectory would continue through a pro shift toward a beta position. Each hand can be opening or closing independently.",
+    "definition": "A per-hand designation used by Lambda (Λ), Lambda-Dash (Λ-), and gamma (γ). Closing means the rotating hand's trajectory would continue through a pro shift toward a beta placement. Each hand can be opening or closing independently.",
     "examples": [
       "Λ(0,1,cl): Lambda with 1-turn static hand whose trajectory would resolve to beta",
       "Λ-(1,1,cl,cl): Lambda-Dash with both hands closing (both trajectories resolve to beta)",
@@ -530,7 +530,7 @@
       "high-slot",
       "pads"
     ],
-    "category": "position"
+    "category": "placement"
   },
   "following": {
     "definition": "The hand that trails the leading hand in a Quarter-Same gamma motion. In S and T, the following hand occupies the glyph's low turn slot. In U and V, PADS assigns the slots by pro and anti instead.",
@@ -545,13 +545,13 @@
       "low-slot",
       "pads"
     ],
-    "category": "position"
+    "category": "placement"
   },
   "prop": {
     "definition": "The object manipulated while the hands move through the grid. TKA is built around a pair of staves gripped at their centers, so each prop has a thumb end and a pinky end. Other gripped static props can use the notation when their orientations remain readable; momentum-driven props require additional interpretation.",
     "examples": [
       "A double-staff pictograph tracks both staff orientations",
-      "A fan or club can use the same hand-position vocabulary"
+      "A fan or club can use the same hand-placement vocabulary"
     ],
     "relatedTerms": [
       "bilateral",
@@ -567,7 +567,7 @@
   "chirality": {
     "definition": "Which of two mirror-image forms an asymmetric prop takes. A chiral prop is not superimposable on its own mirror image, so the shape has a handedness that rotation cannot change: orientation turns the prop, chirality decides which of the two shapes is being turned. Chirality is set per hand, so the left and right props can differ. In TKA it applies to the buugeng family, where the pair's relative chirality is what matters: two props of the same chirality stay visibly apart at a shared hand point, while two of opposite chirality nest into a single combined shape and take no separation offset. Neither form is the canonical one, so TKA names them A and B rather than treating one as a mirrored version of the other.",
     "examples": [
-      "Left A beside right B is the pairing that nests at a beta position",
+      "Left A beside right B is the pairing that nests at a beta placement",
       "Left A beside right A stays separated, the same as any other matched pair",
       "Flipping one hand's chirality changes the shape drawn, not its rotation angle"
     ],
@@ -639,7 +639,7 @@
     "definition": "The end-label convention used to read a staff's orientation in TKA. With a center grip, the end nearest the thumb is the thumb end and the end nearest the pinky is the pinky end.",
     "examples": [
       "The marked thumb end makes an in orientation unambiguous",
-      "A thumb-end marker lets two visually similar staff positions be distinguished"
+      "A thumb-end marker lets two visually similar staff placements be distinguished"
     ],
     "relatedTerms": [
       "prop",
@@ -932,10 +932,10 @@
     "category": "rotation"
   },
   "step": {
-    "definition": "A pictograph in the context of a sequence. A sequence of N letters has N steps of motion plus a start position (step 0). Each step shows what both hands and props do, while its duration is measured separately in musical beats.",
+    "definition": "A pictograph in the context of a sequence. A sequence of N letters has N steps of motion plus a start placement (step 0). Each step shows what both hands and props do, while its duration is measured separately in musical beats.",
     "examples": [
       "A 4-letter word is 4 steps long",
-      "Step 0 is the start position (no motion yet)",
+      "Step 0 is the start placement (no motion yet)",
       "Each step corresponds to one pictograph in the choreo card"
     ],
     "relatedTerms": [
@@ -1007,7 +1007,7 @@
   "type-4": {
     "definition": "The Dash letter type. One hand follows the dash hand-path family while the other remains static. The Level 1 dataframe contains Φ, Ψ, and Λ. Tau-Dash (τ-) is a registered Level 6 extension with the static hand at center.",
     "examples": [
-      "Φ increases the angle between perimeter hand positions",
+      "Φ increases the angle between perimeter hand placements",
       "Ψ decreases that angle",
       "Λ preserves a gamma angle",
       "τ- pairs a perimeter dash with a static center hand"
@@ -1037,11 +1037,11 @@
     "category": "letterType"
   },
   "type-6": {
-    "definition": "The Static letter type. Both hands stay at their current grid points while the props may rotate in place. Type 6 contains the position letters α, β, and γ.",
+    "definition": "The Static letter type. Both hands stay at their current grid points while the props may rotate in place. Type 6 contains the placement letters α, β, and γ.",
     "examples": [
-      "α holds an alpha position",
-      "β holds a beta position",
-      "γ holds a gamma position"
+      "α holds an alpha placement",
+      "β holds a beta placement",
+      "γ holds a gamma placement"
     ],
     "relatedTerms": [
       "letter-type",
@@ -1071,7 +1071,7 @@
   "diamond": {
     "definition": "A grid mode where hands are placed only on cardinal points (N, E, S, W). The default grid mode.",
     "examples": [
-      "Standard positions like alpha1 (N/S) use diamond mode"
+      "Standard placements like alpha1 (N/S) use diamond mode"
     ],
     "relatedTerms": [
       "box",
@@ -1084,7 +1084,7 @@
   "box": {
     "definition": "A grid mode where hands are placed only on intercardinal points (NE, SE, SW, NW).",
     "examples": [
-      "Position beta5 (both hands at NE) uses box mode"
+      "Placement beta5 (both hands at NE) uses box mode"
     ],
     "relatedTerms": [
       "diamond",
@@ -1095,10 +1095,10 @@
     "category": "grid"
   },
   "skewed": {
-    "definition": "A grid mode introduced in Level 5 where one hand is on a cardinal point and one is on an intercardinal point. Creates zeta and eta positions.",
+    "definition": "A grid mode introduced in Level 5 where one hand is on a cardinal point and one is on an intercardinal point. Creates zeta and eta placements.",
     "examples": [
       "Hand at N and hand at NE",
-      "Creates zeta and eta positions"
+      "Creates zeta and eta placements"
     ],
     "relatedTerms": [
       "diamond",
@@ -1110,10 +1110,10 @@
     "category": "grid"
   },
   "centric": {
-    "definition": "A grid mode introduced in Level 6 where at least one hand is at the center grid point. Creates tau and terra positions. Not yet implemented in Flow Arts Composer.",
+    "definition": "A grid mode introduced in Level 6 where at least one hand is at the center grid point. Creates tau and terra placements. Not yet implemented in Flow Arts Composer.",
     "examples": [
-      "One hand at center, one at N (tau position)",
-      "Both hands at center (terra position)"
+      "One hand at center, one at N (tau placement)",
+      "Both hands at center (terra placement)"
     ],
     "relatedTerms": [
       "diamond",
@@ -1127,8 +1127,8 @@
   "center": {
     "definition": "The 9th grid point, located at the center of the grid. Introduced in Level 6 with centric grid mode. Not yet implemented in Flow Arts Composer.",
     "examples": [
-      "Tau position: one hand at center",
-      "Terra position: both hands at center"
+      "Tau placement: one hand at center",
+      "Terra placement: both hands at center"
     ],
     "relatedTerms": [
       "centric",
@@ -1140,7 +1140,7 @@
     "category": "grid"
   },
   "pictograph": {
-    "definition": "A visual TKA diagram showing two props, arrows indicating motion, and optional glyphs for letter name, timing, positions, and reversals. A pictograph can stand alone; when it is placed in a sequence, it functions as a step.",
+    "definition": "A visual TKA diagram showing two props, arrows indicating motion, and optional glyphs for letter name, timing, placements, and reversals. A pictograph can stand alone; when it is placed in a sequence, it functions as a step.",
     "examples": [
       "Each letter has multiple pictograph variations",
       "Pictographs can be sequenced into choreo cards"
@@ -1154,7 +1154,7 @@
     "category": "general"
   },
   "variation": {
-    "definition": "A specific instance of a letter with particular starting/ending positions and locations. Each letter can have many variations that all produce the same letter classification but differ in where on the grid they happen.",
+    "definition": "A specific instance of a letter with particular starting/ending placements and locations. Each letter can have many variations that all produce the same letter classification but differ in where on the grid they happen.",
     "examples": [
       "Letter A has variations starting from alpha1, alpha3, etc.",
       "Variations differ by rotation direction and grid locations"
@@ -1162,7 +1162,7 @@
     "relatedTerms": [
       "letter",
       "pictograph",
-      "position"
+      "placement"
     ],
     "category": "general"
   },
@@ -1264,7 +1264,7 @@
     "category": "notation"
   },
   "split": {
-    "definition": "A VTG timing classification where the two props are 180 degrees out of phase: one is at the downbeat (south) when the other is at the top. In TKA terms, split timing corresponds to alpha positions (hands at opposite points).",
+    "definition": "A VTG timing classification where the two props are 180 degrees out of phase: one is at the downbeat (south) when the other is at the top. In TKA terms, split timing corresponds to alpha placements (hands at opposite points).",
     "examples": [
       "Letters A, B, C (alpha to alpha) are always split-same",
       "DJ compound can be split-opp depending on variation"
@@ -1279,7 +1279,7 @@
     "category": "notation"
   },
   "together": {
-    "definition": "A VTG timing classification where both props pass through the downbeat (south) at the same moment. Abbreviated as 'tog'. In TKA terms, together timing corresponds to beta positions (hands at the same point).",
+    "definition": "A VTG timing classification where both props pass through the downbeat (south) at the same moment. Abbreviated as 'tog'. In TKA terms, together timing corresponds to beta placements (hands at the same point).",
     "examples": [
       "Letters G, H, I (beta to beta) are always together-same"
     ],
@@ -1293,7 +1293,7 @@
     "category": "notation"
   },
   "downbeat": {
-    "definition": "The reference point for VTG timing, located at the south (bottom) of the circle. VTG classifies patterns based on when and how props pass through the downbeat. TKA uses center-referenced positions instead, but maps to VTG for compatibility.",
+    "definition": "The reference point for VTG timing, located at the south (bottom) of the circle. VTG classifies patterns based on when and how props pass through the downbeat. TKA uses center-referenced placements instead, but maps to VTG for compatibility.",
     "examples": [
       "Both props at south simultaneously = together timing",
       "Props 180° out of phase relative to south = split timing"
@@ -1359,7 +1359,7 @@
     "category": "notation"
   },
   "quarter-opposite": {
-    "definition": "A dual-shift timing and direction family where the hands are 90 degrees out of phase in a gamma position and arc in opposite hand-path directions. The TKA letters M through R belong to this family.",
+    "definition": "A dual-shift timing and direction family where the hands are 90 degrees out of phase in a gamma placement and arc in opposite hand-path directions. The TKA letters M through R belong to this family.",
     "examples": [
       "M, N, and O are one half of the quarter-opposite group",
       "P, Q, and R complete the MP, NQ, and OR compounds",
@@ -1375,7 +1375,7 @@
     "category": "notation"
   },
   "quarter-same": {
-    "definition": "A dual-shift timing and direction family where the hands are 90 degrees out of phase in a gamma position and arc in the same hand-path direction. The TKA letters S, T, U, and V belong to this family and have a leading and following hand.",
+    "definition": "A dual-shift timing and direction family where the hands are 90 degrees out of phase in a gamma placement and arc in the same hand-path direction. The TKA letters S, T, U, and V belong to this family and have a leading and following hand.",
     "examples": [
       "S is the pro/pro quarter-same letter",
       "T is the anti/anti quarter-same letter",
@@ -1443,7 +1443,7 @@
     "category": "motion"
   },
   "rotated": {
-    "definition": "A LOOP transformation where positions rotate around the grid to return home. The second half continues rotating in the same direction as the first half to complete a full 360 degrees. Not to be confused with rewound, where hands reverse direction.",
+    "definition": "A LOOP transformation where placements rotate around the grid to return home. The second half continues rotating in the same direction as the first half to complete a full 360 degrees. Not to be confused with rewound, where hands reverse direction.",
     "examples": [
       "Halved: two halves, each rotates 180° (total 360°)",
       "Quartered: four quarters, each rotates 90° (total 360°)"
@@ -1487,10 +1487,10 @@
     "category": "sequence"
   },
   "mirrored": {
-    "definition": "A LOOP transformation where positions mirror across the vertical axis (left-right swap) to return home.",
+    "definition": "A LOOP transformation where placements mirror across the vertical axis (left-right swap) to return home.",
     "examples": [
       "Hand at E mirrors to W",
-      "Left-right positions swap across the vertical midline"
+      "Left-right placements swap across the vertical midline"
     ],
     "relatedTerms": [
       "loop",
@@ -1500,10 +1500,10 @@
     "category": "sequence"
   },
   "flipped": {
-    "definition": "A LOOP transformation where positions mirror across the horizontal axis (top-bottom swap) to return home.",
+    "definition": "A LOOP transformation where placements mirror across the horizontal axis (top-bottom swap) to return home.",
     "examples": [
       "Hand at N flips to S",
-      "Top-bottom positions swap across the horizontal midline"
+      "Top-bottom placements swap across the horizontal midline"
     ],
     "relatedTerms": [
       "loop",
@@ -1580,7 +1580,7 @@
   "thumb-orientation": {
     "definition": "Tracking whether thumbs point inward or outward on each step to verify prop rotation.",
     "examples": [
-      "thumbs-in: starting position with thumbs toward center",
+      "thumbs-in: starting placement with thumbs toward center",
       "thumbs-out: thumbs away from center"
     ],
     "relatedTerms": [
@@ -1589,10 +1589,10 @@
       "anti"
     ],
     "category": "execution",
-    "importance": "Track rotations and check position on every step"
+    "importance": "Track rotations and check placement on every step"
   },
   "loop": {
-    "definition": "A circular sequence that returns to its starting position through transformations. Six base transformations (rotated, mirrored, flipped, swapped, inverted, rewound) can be combined into compound types like mirrored-swapped or rotated-inverted. The word repeats with transformations applied until it arrives back home.",
+    "definition": "A circular sequence that returns to its starting placement through transformations. Six base transformations (rotated, mirrored, flipped, swapped, inverted, rewound) can be combined into compound types like mirrored-swapped or rotated-inverted. The word repeats with transformations applied until it arrives back home.",
     "examples": [
       "DJII (8-count rewound loop)",
       "AABB with mirrored-swapped transformation",
@@ -1611,7 +1611,7 @@
     "category": "sequence"
   },
   "transition": {
-    "definition": "The connection between two consecutive letters in a sequence. A valid transition requires the end position of one letter to match the start position of the next. When no valid transition exists, a bridge letter is inserted.",
+    "definition": "The connection between two consecutive letters in a sequence. A valid transition requires the end placement of one letter to match the start placement of the next. When no valid transition exists, a bridge letter is inserted.",
     "examples": [
       "A ends at alpha, next letter starts at alpha = valid transition",
       "B ends at alpha, O starts at gamma = needs bridge letter"
@@ -1781,7 +1781,7 @@
     "category": "general"
   },
   "conjoined-grid": {
-    "definition": "A Level 7 concept where two grids share a junction point, expanding the spatial canvas and bridging to 3D. Each grid shows one hand's motion. The junction point creates new position combinations that can't exist on a single grid, including patterns with two center points. Uses existing terminology (alpha, beta, gamma, etc.) to express new spatial relationships across the paired grids. Placed after the centric grid (L6) so the single grid is complete — every orientation (L4), every perimeter pairing (L5), and the center point itself (L6) — before expanding beyond one grid. The junction consumes the center point directly.",
+    "definition": "A Level 7 concept where two grids share a junction point, expanding the spatial canvas and bridging to 3D. Each grid shows one hand's motion. The junction point creates new placement combinations that can't exist on a single grid, including patterns with two center points. Uses existing terminology (alpha, beta, gamma, etc.) to express new spatial relationships across the paired grids. Placed after the centric grid (L6) so the single grid is complete — every orientation (L4), every perimeter pairing (L5), and the center point itself (L6) — before expanding beyond one grid. The junction consumes the center point directly.",
     "examples": [
       "Two grids sharing a north/south junction, left hand on grid A, right hand on grid B",
       "Layouts: left-right, top-bottom, diagonal arrangements",
@@ -1790,7 +1790,7 @@
     "relatedTerms": [
       "level",
       "centric",
-      "position"
+      "placement"
     ],
     "category": "grid"
   },
@@ -1966,26 +1966,26 @@
     "category": "motion"
   },
   "leader-follower": {
-    "definition": "A distinction that arises in asymmetric positions (gamma, zeta, eta) when both hands shift the same direction. One hand is directionally 'ahead' of the other, creating a leader and a follower. This matters for letter assignment because the leader and follower can have different turn values. In the TKA glyph, the leader's turn number appears on top, the follower's on bottom. Leader/follower does NOT apply to opposite-direction movement (hands diverge/converge symmetrically) or to symmetric positions (alpha, beta). Leader/follower is combinatorially equivalent to mixed motion types: it doubles the variation space the same way that having one pro and one anti does.",
+    "definition": "A distinction that arises in asymmetric placements (gamma, zeta, eta) when both hands shift the same direction. One hand is directionally 'ahead' of the other, creating a leader and a follower. This matters for letter assignment because the leader and follower can have different turn values. In the TKA glyph, the leader's turn number appears on top, the follower's on bottom. Leader/follower does NOT apply to opposite-direction movement (hands diverge/converge symmetrically) or to symmetric placements (alpha, beta). Leader/follower is combinatorially equivalent to mixed motion types: it doubles the variation space the same way that having one pro and one anti does.",
     "examples": [
       "In gamma, same-direction shifts create leader/follower. Requires S, T, U, V letters",
       "In alpha (symmetric), no leader/follower. Uses A through L",
-      "Opposite-direction shifts in any position have no leader/follower",
+      "Opposite-direction shifts in any placement have no leader/follower",
       "S,T,U,V each have the same variation count as hybrids (C, F, I, L, O) because leader/follower doubles the space"
     ],
     "relatedTerms": [
       "gamma",
       "zeta",
       "eta",
-      "position",
+      "placement",
       "symmetry-invariance",
       "leading",
       "following"
     ],
-    "category": "position"
+    "category": "placement"
   },
   "symmetry-invariance": {
-    "definition": "The founding design principle that a pictograph represents the same letter under rotation, reflection, and color swap. This minimizes the alphabet by treating spatially equivalent arrangements as identical. The principle holds for symmetric positions (alpha, beta) and opposite-direction movement. It breaks for same-direction movement in asymmetric positions (gamma), which is why the quarter-same group has 4 letters (S,T,U,V) instead of the usual 3.",
+    "definition": "The founding design principle that a pictograph represents the same letter under rotation, reflection, and color swap. This minimizes the alphabet by treating spatially equivalent arrangements as identical. The principle holds for symmetric placements (alpha, beta) and opposite-direction movement. It breaks for same-direction movement in asymmetric placements (gamma), which is why the quarter-same group has 4 letters (S,T,U,V) instead of the usual 3.",
     "examples": [
       "Rotate a pictograph card: same letter",
       "Mirror a pictograph: same letter",

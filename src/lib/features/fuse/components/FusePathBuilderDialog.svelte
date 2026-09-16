@@ -102,7 +102,7 @@
     return activeSteps
       .map(
         (step) =>
-          `${step.startPosition}:${step.endPosition}:${step.startOrientation}:${step.endOrientation}:${step.rotationDirection}:${step.turnCount}`
+          `${step.startPlacement}:${step.endPlacement}:${step.startOrientation}:${step.endOrientation}:${step.rotationDirection}:${step.turnCount}`
       )
       .join("|");
   }

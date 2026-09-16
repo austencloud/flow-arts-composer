@@ -153,7 +153,7 @@
             active={active && !!current}
             props={{
               steps: stepData,
-              startPosition: current?.startPosition ?? null,
+              startPlacement: current?.startPlacement ?? null,
               manualColumnCount: compactLayout.current
                 ? COMPACT_STEP_COLUMNS
                 : STEP_COLUMNS,

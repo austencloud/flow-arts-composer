@@ -328,8 +328,8 @@
     color: #ffffff;
   }
 
-  /* Motion-solo top-center locations - matches PositionGlyph composition.
-     Canonical arrow dimensions from PositionGlyph: 88.9 × 34.8 * 0.75
+  /* Motion-solo top-center locations - matches PlacementGlyph composition.
+     Canonical arrow dimensions from PlacementGlyph: 88.9 × 34.8 * 0.75
      ≈ 66.675 × 26.1 units in a 950-unit pictograph viewBox, i.e.
      7.02cqw wide by 2.75cqw tall when 100cqw == cell width. We keep the
      same arrow SVG and size it identically so headers read consistently. */
@@ -345,7 +345,7 @@
     gap: 1.15cqw;
     font-family: Cambria, "Hoefler Text", Georgia, serif;
     font-weight: 700;
-    font-size: 7.9cqw; /* matches scaled letter height in PositionGlyph */
+    font-size: 7.9cqw; /* matches scaled letter height in PlacementGlyph */
     line-height: 1;
     color: #231f20;
     pointer-events: none;
@@ -376,7 +376,7 @@
   }
 
   /* Shared arrow sizing - both header rows use the exact dimensions of
-     the PositionGlyph's rendered arrow so the two look like siblings. The
+     the PlacementGlyph's rendered arrow so the two look like siblings. The
      letters are lowercase, so their visual mass (x-height) sits BELOW the
      line's geometric middle; flex-centering leaves the arrow floating above
      them. Drop the arrow onto the lowercase optical center so the tail-to-head

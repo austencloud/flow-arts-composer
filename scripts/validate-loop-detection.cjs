@@ -42,15 +42,15 @@ function isCircular(sequence) {
   const beats = sequence.fullMetadata?.sequence?.filter((b) => b.beat >= 1);
   if (!beats || beats.length < 2) return false;
 
-  const startPosition = sequence.fullMetadata?.sequence?.find(
+  const startPlacement = sequence.fullMetadata?.sequence?.find(
     (b) => b.beat === 0
   );
   const lastBeat = beats[beats.length - 1];
 
-  if (!startPosition || !lastBeat) return false;
+  if (!startPlacement || !lastBeat) return false;
 
   // Check if last beat's end position matches start position
-  const startPos = startPosition.endPos || startPosition.sequenceStartPosition;
+  const startPos = startPlacement.endPos || startPlacement.sequenceStartPlacement;
   const endPos = lastBeat.endPos;
 
   // Normalize positions (remove numeric suffix for comparison in some cases)

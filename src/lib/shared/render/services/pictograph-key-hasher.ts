@@ -54,7 +54,7 @@ interface PictographKeyInput {
     showTKA: boolean;
     showTnD: boolean;
     showElemental: boolean;
-    showPositions: boolean;
+    showPlacements: boolean;
     showHandColorKey: boolean;
     showReversals: boolean;
     showNonRadialPoints: boolean;
@@ -304,7 +304,7 @@ export class PictographKeyHasher {
         showTKA: visibility.showTKA ?? true,
         showTnD: visibility.showTnD ?? false,
         showElemental: visibility.showElemental ?? false,
-        showPositions: visibility.showPositions ?? false,
+        showPlacements: visibility.showPlacements ?? false,
         showHandColorKey: visibility.showHandColorKey ?? true,
         showReversals: visibility.showReversals ?? true,
         showNonRadialPoints: visibility.showNonRadialPoints ?? true,

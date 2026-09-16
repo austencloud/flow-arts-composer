@@ -15,8 +15,8 @@ function makeStep(id: string, overrides: Partial<StepData> = {}): StepData {
   return {
     id,
     letter: null,
-    startPosition: null,
-    endPosition: null,
+    startPlacement: null,
+    endPlacement: null,
     stepNumber: 1,
     duration: 1,
     leftReversal: false,

@@ -36,7 +36,7 @@ export const SYNONYMS: Record<string, string[]> = {
   handpath: ["hand-path", "hand path", "hand reversal", "handpath reversals", "path reversal", "path reversals", "hand direction"],
   propreversal: ["prop reversal", "prop reversals", "spin reversal", "spin reversals", "rotation reversal"],
 
-  // Positions
+  // Placements
   alpha: ["opposite", "split", "across"],
   beta: ["together", "same", "tog"],
   gamma: ["right-angle", "perpendicular", "l-shape"],

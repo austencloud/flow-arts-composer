@@ -19,8 +19,8 @@ const MAX_HISTORY = 10;
 
 type ConstructTabState =
   | {
-      setShowStartPositionPicker: (show: boolean) => void;
-      setSelectedStartPosition: (value: unknown) => void;
+      setShowStartPlacementPicker: (show: boolean) => void;
+      setSelectedStartPlacement: (value: unknown) => void;
     }
   | null
   | undefined;

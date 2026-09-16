@@ -73,7 +73,7 @@
   <div class="beat-strip">
     {#if startLabel && beats.length > 0}
       <div
-        class="beat-cell start-position"
+        class="beat-cell start-placement"
         class:active={activeStep === 0}
         role="button"
         tabindex="0"

@@ -46,11 +46,11 @@ describe("FlowFrame", () => {
 });
 
 describe("GUIDE_CONTENT registry", () => {
-  it("registers hand-positions", async () => {
+  it("registers hand-placements", async () => {
     const { GUIDE_CONTENT, hasReflowContent } =
       await import("../../src/routes/(public)/guide/level-1/_data/guide-content");
-    expect(hasReflowContent("hand-positions")).toBe(true);
-    expect(GUIDE_CONTENT["hand-positions"]!.length).toBeGreaterThan(0);
+    expect(hasReflowContent("hand-placements")).toBe(true);
+    expect(GUIDE_CONTENT["hand-placements"]!.length).toBeGreaterThan(0);
   }, 20_000);
 
   it("models The Grid as one reflow source with one canonical mode explorer", async () => {

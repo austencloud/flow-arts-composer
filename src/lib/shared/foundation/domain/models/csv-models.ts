@@ -10,8 +10,8 @@
  */
 export interface ParsedCsvRow {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotionType: string;

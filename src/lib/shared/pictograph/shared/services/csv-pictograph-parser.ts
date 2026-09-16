@@ -1,5 +1,5 @@
 import type { GridMode } from "../../grid/domain/enums/grid-enums";
-import { GridPosition } from "../../grid/domain/enums/grid-enums";
+import { GridPlacement } from "../../grid/domain/enums/grid-enums";
 import type { Letter } from "../../../foundation/domain/models/letter";
 import { HandSide, HandPath, SkewDirection } from "../domain/enums/pictograph-enums";
 import { createMotionData } from "../domain/models/motion-data";
@@ -15,8 +15,8 @@ import { Orientation } from "../domain/enums/pictograph-enums";
  */
 export interface CSVRow {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   timing: string;
   direction: string;
   leftMotionType: string;
@@ -158,8 +158,8 @@ export class CSVPictographParser {
 
     return createPictographData({
       letter,
-      startPosition: this.mapStringToGridPosition(row.startPosition),
-      endPosition: this.mapStringToGridPosition(row.endPosition),
+      startPlacement: this.mapStringToGridPlacement(row.startPlacement),
+      endPlacement: this.mapStringToGridPlacement(row.endPlacement),
       motions: {
         [HandSide.LEFT]: leftMotion,
         [HandSide.RIGHT]: rightMotion,
@@ -168,11 +168,11 @@ export class CSVPictographParser {
     });
   }
 
-  private mapStringToGridPosition(position: string): GridPosition | null {
+  private mapStringToGridPlacement(position: string): GridPlacement | null {
     const upperPosition = position.toUpperCase();
 
-    if (upperPosition in GridPosition) {
-      return GridPosition[upperPosition as keyof typeof GridPosition];
+    if (upperPosition in GridPlacement) {
+      return GridPlacement[upperPosition as keyof typeof GridPlacement];
     }
 
     return null;
@@ -188,8 +188,8 @@ export class CSVPictographParser {
   validateCSVRow(row: unknown): row is CSVRow {
     const requiredFields = [
       "letter",
-      "startPosition",
-      "endPosition",
+      "startPlacement",
+      "endPlacement",
       "timing",
       "direction",
       "blueMotionType",

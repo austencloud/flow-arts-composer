@@ -121,8 +121,8 @@
 
     // Start position: currentStep < 1 (before beat 1 starts)
     // This matches SequenceAnimationOrchestrator's check
-    if (currentStep < 1 && animationPanelState.sequenceData.startPosition) {
-      return animationPanelState.sequenceData.startPosition.letter || null;
+    if (currentStep < 1 && animationPanelState.sequenceData.startPlacement) {
+      return animationPanelState.sequenceData.startPlacement.letter || null;
     }
 
     // Motion steps: currentStep >= 1
@@ -159,8 +159,8 @@
     const currentStep = animationPanelState.currentStep;
 
     // Start position: currentStep < 1 (before beat 1 starts)
-    if (currentStep < 1 && animationPanelState.sequenceData.startPosition) {
-      return animationPanelState.sequenceData.startPosition;
+    if (currentStep < 1 && animationPanelState.sequenceData.startPlacement) {
+      return animationPanelState.sequenceData.startPlacement;
     }
 
     // Motion steps: currentStep >= 1
@@ -409,8 +409,8 @@
 
     // If sequence already has motion data, use it directly
     if (hasMotionData(sequence)) {
-      // Normalize startPosition and return
-      return normalizeStartPosition(sequence);
+      // Normalize startPlacement and return
+      return normalizeStartPlacement(sequence);
     }
 
     // Try to load from gallery using word/name (gallery sequences)
@@ -419,7 +419,7 @@
       try {
         const loaded = await loader.loadFullSequenceData(galleryId);
         if (loaded && hasMotionData(loaded)) {
-          return normalizeStartPosition(loaded);
+          return normalizeStartPlacement(loaded);
         }
       } catch (err) {
         console.warn(`Could not load sequence from gallery: ${galleryId}`, err);
@@ -427,21 +427,21 @@
     }
 
     // Return original sequence if we couldn't load motion data
-    return normalizeStartPosition(sequence);
+    return normalizeStartPlacement(sequence);
   }
 
   /**
-   * Normalize startPosition field from legacy formats
+   * Normalize startPlacement field from legacy formats
    */
-  function normalizeStartPosition(sequence: SequenceData): SequenceData {
+  function normalizeStartPlacement(sequence: SequenceData): SequenceData {
     const withStarting = sequence as unknown as {
-      startingPosition?: unknown;
+      startingPlacement?: unknown;
     };
-    if (!sequence.startPosition && withStarting.startingPosition) {
+    if (!sequence.startPlacement && withStarting.startingPlacement) {
       return {
         ...sequence,
-        startPosition:
-          withStarting.startingPosition as SequenceData["startPosition"],
+        startPlacement:
+          withStarting.startingPlacement as SequenceData["startPlacement"],
       };
     }
     return sequence;

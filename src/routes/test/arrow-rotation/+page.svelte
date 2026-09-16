@@ -17,7 +17,7 @@
     Orientation,
     HandSide,
   } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-  import { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+  import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import { Letter } from "$lib/shared/foundation/domain/models/letter";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 
@@ -78,8 +78,8 @@
   const xAtEast: PictographData = {
     id: "x-at-east",
     letter: Letter.X,
-    startPosition: GridPosition.GAMMA11,
-    endPosition: GridPosition.ALPHA3,
+    startPlacement: GridPlacement.GAMMA11,
+    endPlacement: GridPlacement.ALPHA3,
     motions: {
       [HandSide.LEFT]: createMotionData({
         motionType: MotionType.ANTI,
@@ -112,8 +112,8 @@
   const xAtWest: PictographData = {
     id: "x-at-west",
     letter: Letter.X,
-    startPosition: GridPosition.GAMMA15,
-    endPosition: GridPosition.ALPHA7,
+    startPlacement: GridPlacement.GAMMA15,
+    endPlacement: GridPlacement.ALPHA7,
     motions: {
       [HandSide.LEFT]: createMotionData({
         motionType: MotionType.ANTI,
@@ -146,8 +146,8 @@
   const xAtNorth: PictographData = {
     id: "x-at-north",
     letter: Letter.X,
-    startPosition: GridPosition.GAMMA9,
-    endPosition: GridPosition.ALPHA1,
+    startPlacement: GridPlacement.GAMMA9,
+    endPlacement: GridPlacement.ALPHA1,
     motions: {
       [HandSide.LEFT]: createMotionData({
         motionType: MotionType.ANTI,
@@ -183,8 +183,8 @@
   const thetaBoxSE: PictographData = {
     id: "theta-box-se",
     letter: Letter.THETA,
-    startPosition: GridPosition.BETA4,
-    endPosition: GridPosition.GAMMA10,
+    startPlacement: GridPlacement.BETA4,
+    endPlacement: GridPlacement.GAMMA10,
     motions: {
       [HandSide.LEFT]: createMotionData({
         motionType: MotionType.STATIC,
@@ -217,8 +217,8 @@
   const thetaBoxSW: PictographData = {
     id: "theta-box-sw",
     letter: Letter.THETA,
-    startPosition: GridPosition.BETA6,
-    endPosition: GridPosition.GAMMA12,
+    startPlacement: GridPlacement.BETA6,
+    endPlacement: GridPlacement.GAMMA12,
     motions: {
       [HandSide.LEFT]: createMotionData({
         motionType: MotionType.STATIC,
@@ -251,8 +251,8 @@
   const thetaBoxNE: PictographData = {
     id: "theta-box-ne",
     letter: Letter.THETA,
-    startPosition: GridPosition.BETA2,
-    endPosition: GridPosition.GAMMA4,
+    startPlacement: GridPlacement.BETA2,
+    endPlacement: GridPlacement.GAMMA4,
     motions: {
       [HandSide.LEFT]: createMotionData({
         motionType: MotionType.STATIC,
@@ -285,8 +285,8 @@
   const thetaBoxNW: PictographData = {
     id: "theta-box-nw",
     letter: Letter.THETA,
-    startPosition: GridPosition.BETA8,
-    endPosition: GridPosition.GAMMA16,
+    startPlacement: GridPlacement.BETA8,
+    endPlacement: GridPlacement.GAMMA16,
     motions: {
       [HandSide.LEFT]: createMotionData({
         motionType: MotionType.STATIC,

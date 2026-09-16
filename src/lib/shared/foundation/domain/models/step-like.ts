@@ -2,7 +2,7 @@
  * StepLike — the structural step shape shared by the app's `StepData` and the
  * canonical `@tka/tka-types` `Step`.
  *
- * Consumers that only read structural fields (motions, positions, letter)
+ * Consumers that only read structural fields (motions, placements, letter)
  * should accept this instead of `StepData` so they are already typed for the
  * StepData->Step migration: `StepData` (optional fat motions) and canonical
  * `Step` (required lean motions) are BOTH assignable to it, because
@@ -14,7 +14,7 @@
  * guards.
  */
 import type { Letter } from "./letter";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { MotionWithView } from "$lib/shared/pictograph/shared/domain/models/motion-view";
 
 export interface StepLikeMotions {
@@ -24,8 +24,8 @@ export interface StepLikeMotions {
 
 export interface StepLike {
   readonly letter?: Letter | null;
-  readonly startPosition?: GridPosition | null;
-  readonly endPosition?: GridPosition | null;
+  readonly startPlacement?: GridPlacement | null;
+  readonly endPlacement?: GridPlacement | null;
   readonly motions: StepLikeMotions;
 }
 

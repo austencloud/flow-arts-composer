@@ -14,7 +14,7 @@ import {
   HAND_PATH_REFERENCE_MOVES,
   type Move,
 } from "$lib/features/choreo-card/domain/hand-path-reference-cards";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import {
   createSequenceData,
@@ -24,7 +24,7 @@ import {
   GridLocation,
   GridMode,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
   HandSide,
@@ -154,7 +154,7 @@ export function buildCycleSequence(
 ): SequenceData {
   const startLeft = cycle.left[0]!;
   const startRight = cycle.right[0]!;
-  const startPosition = getGridPositionFromLocations(startLeft, startRight);
+  const startPlacement = getGridPlacementFromLocations(startLeft, startRight);
 
   return createSequenceData({
     id,
@@ -164,11 +164,11 @@ export function buildCycleSequence(
     word: "",
     gridMode: GridMode.DIAMOND,
     isCircular: true,
-    startPosition: createStartPositionData({
+    startPlacement: createStartPlacementData({
       id: `${id}-start`,
-      startPosition,
-      endPosition: startPosition,
-      gridPosition: startPosition,
+      startPlacement,
+      endPlacement: startPlacement,
+      gridPlacement: startPlacement,
       motions: {
         left: handMotion(HandSide.LEFT, startLeft, startLeft),
         right: handMotion(HandSide.RIGHT, startRight, startRight),
@@ -183,8 +183,8 @@ export function buildCycleSequence(
         id: `${id}-${index + 1}`,
         letter: null,
         gridMode: GridMode.DIAMOND,
-        startPosition: getGridPositionFromLocations(leftFrom, rightFrom),
-        endPosition: getGridPositionFromLocations(leftTo, rightTo),
+        startPlacement: getGridPlacementFromLocations(leftFrom, rightFrom),
+        endPlacement: getGridPlacementFromLocations(leftTo, rightTo),
         stepNumber: index + 1,
         motions: {
           left: handMotion(HandSide.LEFT, leftFrom, leftTo),

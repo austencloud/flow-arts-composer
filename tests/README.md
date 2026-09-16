@@ -66,7 +66,7 @@ npm run test:seo:debug     # Run SEO tests in debug mode
 
 **Key Test Files:**
 
-- `GridPositionDeriver.test.ts` - Core domain logic (37 tests)
+- `GridPlacementDeriver.test.ts` - Core domain logic (37 tests)
 - `DimensionCalculationService.test.ts` - Rendering calculations (64 tests)
 - `BeatNumberingService.test.ts` - Data integrity (15 tests)
 - `container.test.ts` - DI container (22 tests)

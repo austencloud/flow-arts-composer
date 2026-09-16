@@ -115,7 +115,7 @@ export async function bakeMandalaClips(
           fps,
           loopCount: 1,
           effectOverrides: { trails: true },
-          includeAnimationStartPosition: false,
+          includeAnimationStartPlacement: false,
           includeEndHold: false,
           seamlessTrailLoop: true,
           fragmented: true,

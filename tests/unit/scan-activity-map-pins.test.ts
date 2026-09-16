@@ -310,10 +310,10 @@ describe("scan activity state", () => {
               sequence: "BOOK",
               scanCount: 4,
               sequenceData: {
-                startPosition: {
+                startPlacement: {
                   id: "embedded-start",
-                  gridPosition: "alpha1",
-                  isStartPosition: true,
+                  gridPlacement: "alpha1",
+                  isStartPlacement: true,
                   motions: {
                     left: {
                       color: "blue",
@@ -342,8 +342,8 @@ describe("scan activity state", () => {
                     id: "embedded-step",
                     beat: 0,
                     letter: "A",
-                    startPosition: "alpha1",
-                    endPosition: "beta1",
+                    startPlacement: "alpha1",
+                    endPlacement: "beta1",
                     motions: {
                       left: {
                         color: "blue",
@@ -395,9 +395,9 @@ describe("scan activity state", () => {
         name: "A",
         word: "A",
         ownerId: "owner-1",
-        startPosition: {
+        startPlacement: {
           id: "embedded-start",
-          gridPosition: "alpha1",
+          gridPlacement: "alpha1",
         },
         steps: [{ id: "embedded-step", stepNumber: 1 }],
       },
@@ -413,10 +413,10 @@ describe("scan activity state", () => {
     expect(decoded?.steps[0]?.motions.right.arrowPlacementData).toBeDefined();
     expect(decoded?.steps[0]?.motions.right.propPlacementData).toBeDefined();
     expect(
-      decoded?.startPosition?.motions.left.propPlacementData
+      decoded?.startPlacement?.motions.left.propPlacementData
     ).toBeDefined();
     expect(
-      decoded?.startPosition?.motions.right.propPlacementData
+      decoded?.startPlacement?.motions.right.propPlacementData
     ).toBeDefined();
     expect(sequenceForScanPreview(state.codes[0] ?? null)?.id).toBe(
       "scan-activity-embedded-v1-LEGACY"

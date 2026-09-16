@@ -9,14 +9,14 @@
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 export interface InvariantViolation {
   readonly stepIndex: number;
   readonly rule:
-    | "end-position-matches-hands"
-    | "start-position-chains"
+    | "end-placement-matches-hands"
+    | "start-placement-chains"
     | "hand-locations-chain"
     | "undeliverable-position";
   readonly detail: string;
@@ -24,8 +24,8 @@ export interface InvariantViolation {
 
 /**
  * Every step must satisfy:
- *   1. `endPosition` is the grid position of its own two hands' end locations;
- *   2. `startPosition` equals the previous step's `endPosition`;
+ *   1. `endPlacement` is the grid position of its own two hands' end locations;
+ *   2. `startPlacement` equals the previous step's `endPlacement`;
  *   3. each hand's `startLocation` equals that hand's previous `endLocation`.
  *
  * (1) is the one that catches a transform which moves the hands one way and
@@ -41,7 +41,7 @@ export function checkStepCoherence(steps: StepData[]): InvariantViolation[] {
 
     let derived: string | null = null;
     try {
-      derived = getGridPositionFromLocations(
+      derived = getGridPlacementFromLocations(
         step.motions.left.endLocation as GridLocation,
         step.motions.right.endLocation as GridLocation
       );
@@ -55,19 +55,19 @@ export function checkStepCoherence(steps: StepData[]): InvariantViolation[] {
       });
     }
 
-    if (derived !== null && derived !== step.endPosition) {
+    if (derived !== null && derived !== step.endPlacement) {
       violations.push({
         stepIndex: i,
-        rule: "end-position-matches-hands",
-        detail: `stored ${step.endPosition}, hands ${step.motions.left.endLocation}/${step.motions.right.endLocation} → ${derived}`,
+        rule: "end-placement-matches-hands",
+        detail: `stored ${step.endPlacement}, hands ${step.motions.left.endLocation}/${step.motions.right.endLocation} → ${derived}`,
       });
     }
 
-    if (step.startPosition !== previous.endPosition) {
+    if (step.startPlacement !== previous.endPlacement) {
       violations.push({
         stepIndex: i,
-        rule: "start-position-chains",
-        detail: `startPosition ${step.startPosition} after previous endPosition ${previous.endPosition}`,
+        rule: "start-placement-chains",
+        detail: `startPlacement ${step.startPlacement} after previous endPlacement ${previous.endPlacement}`,
       });
     }
 
@@ -91,9 +91,9 @@ export function checkStepCoherence(steps: StepData[]): InvariantViolation[] {
  * A LOOP must return to its start position. Both pipelines depend on this:
  * the app's executors validate the seed's position pair specifically to
  * guarantee it, and the engine's `closeOrientationCycle` throws
- * ("Cannot close orientation on an open position pattern") when it does not
+ * ("Cannot close orientation on an open placement pattern") when it does not
  * hold.
  */
 export function positionCloses(steps: StepData[]): boolean {
-  return steps[steps.length - 1]!.endPosition === steps[0]!.startPosition;
+  return steps[steps.length - 1]!.endPlacement === steps[0]!.startPlacement;
 }

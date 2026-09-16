@@ -256,7 +256,7 @@ export class ExportOrchestrator {
       // Use dark mode setting to determine background color
       backgroundColor: compositionSettings.darkMode ? "#0a0a0f" : "#FFFFFF",
       darkMode: compositionSettings.darkMode,
-      includeStartPosition: compositionSettings.includeStartPosition,
+      includeStartPlacement: compositionSettings.includeStartPlacement,
       addStepNumbers: compositionSettings.addStepNumbers,
       addWord: compositionSettings.addWord,
       addUserInfo: compositionSettings.showNotes,
@@ -367,7 +367,7 @@ export class ExportOrchestrator {
         fps: exportOpts.fps,
         resolution: exportOpts.resolution,
         loopCount: exportOpts.loopCount,
-        includeAnimationStartPosition: exportOpts.includeStartPosition,
+        includeAnimationStartPlacement: exportOpts.includeStartPlacement,
         includeEndHold: exportOpts.includeEndHold,
         effectOverrides: exportOpts.effectOverrides ?? undefined,
         format: "mp4",

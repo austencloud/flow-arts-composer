@@ -2,7 +2,7 @@ import type { AuthoredHand } from "$lib/shared/foundation/domain/models/authored
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import {
   createMotionData,
@@ -119,9 +119,9 @@ export function pairSoloReviewSequences(
     })
   );
 
-  const blueStart = blue.startPosition ?? blue.startingPosition;
-  const redStart = red.startPosition ?? red.startingPosition;
-  const startPosition = createStartPositionData({
+  const blueStart = blue.startPlacement ?? blue.startingPlacement;
+  const redStart = red.startPlacement ?? red.startingPlacement;
+  const startPlacement = createStartPlacementData({
     id: "construct-solo-review-paired-start",
     motions: {
       [HandSide.LEFT]: blueStart?.motions[HandSide.LEFT],
@@ -135,8 +135,8 @@ export function pairSoloReviewSequences(
     name: "Smooth box pair",
     displayName: "Smooth box pair",
     steps,
-    startPosition,
-    startingPosition: startPosition,
+    startPlacement,
+    startingPlacement: startPlacement,
     sequenceLength: steps.length,
     metadata: {
       artifactKind: "sequence",

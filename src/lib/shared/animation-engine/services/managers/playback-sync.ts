@@ -33,7 +33,7 @@ import type { AnimationVisibilityState } from "../animation-visibility-synchroni
 import type { AnimationVisibilityStateManager } from "../../state/animation-visibility-state.svelte";
 import type { AnimationEngineProps, AnimationEngineCallbacks } from "../animation-engine.svelte";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { TrailSettings } from "../../domain/types/trail-types";
@@ -68,7 +68,7 @@ export class PlaybackSync {
 
   // ── Change-detection state (moved from engine) ───────────────────────────────
   private _lastPropsRef: AnimationEngineProps | null = null;
-  private prevStepData: StartPositionData | StepData | null = null;
+  private prevStepData: StartPlacementData | StepData | null = null;
   private prevSequenceData: SequenceData | null = null;
   private prevIsPlaying: boolean = false;
   private prevGridMode: GridMode | null = null;
@@ -77,7 +77,7 @@ export class PlaybackSync {
   // for the seamless-handoff check in the content-hash block below.
   // prevSequenceData can't serve this — it's overwritten with the incoming
   // sequence at the top of update(), before that block compares anything.
-  private lastTrailSeqStartPosition: string | null = null;
+  private lastTrailSeqStartPlacement: string | null = null;
   private lastTrailSeqWasCircular = false;
 
   private previewDarkModeActive: boolean = false;
@@ -233,7 +233,7 @@ export class PlaybackSync {
         // Seamless handoff: the outgoing sequence was a CIRCULAR loop (end
         // pose = start pose) and the incoming one starts at that same grid
         // position — the hero attract act constructs exactly this by
-        // generating each next sequence with the current one's startPosition.
+        // generating each next sequence with the current one's startPlacement.
         // The prop never teleports across such a boundary, so the ring-buffer
         // points stay geometrically valid and the trail must NOT be wiped:
         // clearBuffers() also wipes the overlay's accumulated pixels, which
@@ -241,12 +241,12 @@ export class PlaybackSync {
         // ("let the earlier trail fade away naturally" — 2026-07-19). Any
         // discontinuous change (gallery switching sequences, first load)
         // still clears exactly as before.
-        const newStart = props.sequenceData.startPosition?.startPosition ?? null;
+        const newStart = props.sequenceData.startPlacement?.startPlacement ?? null;
         const seamlessHandoff =
           this.lastTrailSeqWasCircular &&
-          this.lastTrailSeqStartPosition != null &&
-          this.lastTrailSeqStartPosition === newStart;
-        this.lastTrailSeqStartPosition = newStart;
+          this.lastTrailSeqStartPlacement != null &&
+          this.lastTrailSeqStartPlacement === newStart;
+        this.lastTrailSeqStartPlacement = newStart;
         this.lastTrailSeqWasCircular = props.sequenceData.isCircular === true;
 
         lifecycleManager.orchestrator.initializeWithDomainData(props.sequenceData);

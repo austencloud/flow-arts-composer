@@ -24,7 +24,7 @@ import { toast } from "$lib/shared/toast/state/toast-state.svelte";
 import * as propTypeApplierModule from "$lib/shared/landing/services/prop-type-applier";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import type { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 
 interface SequenceChainingOptions {
@@ -271,20 +271,20 @@ export class SequenceChainingOrchestrator {
 
   private extractEndState(): EndState {
     if (!this.currentSequence) {
-      return { position: null, leftOrientation: null, rightOrientation: null };
+      return { placement: null, leftOrientation: null, rightOrientation: null };
     }
 
     const seq = this.currentSequence;
     const finalStep = seq.steps?.[seq.steps.length - 1];
-    let position = finalStep?.endPosition ?? null;
+    let placement = finalStep?.endPlacement ?? null;
 
     // Fallback 1: derive from motion end locations
-    if (!position && finalStep?.motions) {
+    if (!placement && finalStep?.motions) {
       const leftMotion = finalStep.motions[HandSide.LEFT];
       const rightMotion = finalStep.motions[HandSide.RIGHT];
       if (leftMotion?.endLocation && rightMotion?.endLocation) {
         try {
-          position = getGridPositionFromLocations(
+          placement = getGridPlacementFromLocations(
             leftMotion.endLocation,
             rightMotion.endLocation
           );
@@ -294,16 +294,16 @@ export class SequenceChainingOrchestrator {
       }
     }
 
-    // Fallback 2: for circular sequences, end position = start position
-    if (!position && seq.isCircular) {
-      const startPos = seq.startPosition ?? seq.startingPosition;
+    // Fallback 2: for circular sequences, end placement = start placement
+    if (!placement && seq.isCircular) {
+      const startPos = seq.startPlacement ?? seq.startingPlacement;
       if (startPos) {
-        position = startPos.gridPosition ?? startPos.startPosition ?? null;
+        placement = startPos.gridPlacement ?? startPos.startPlacement ?? null;
       }
     }
 
     return {
-      position,
+      placement,
       // Invisible placeholder = hand not really there (both-required Step
       // shape): null orientation disables orientation matching downstream.
       leftOrientation: (isVisibleMotion(finalStep?.motions?.left)

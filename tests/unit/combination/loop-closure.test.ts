@@ -2,7 +2,7 @@
  * Stage 3 (Closure) in isolation — the stage the 2026-08-04 engine never had.
  *
  * These assertions are about the CLOSURE VOCABULARY, not about search results:
- * which transforms the app admits for a given realized position pair, at which
+ * which transforms the app admits for a given realized placement pair, at which
  * period, and how many passes each takes. `oracle-agreement.test.ts` checks the
  * whole pipeline against the published bucket profile.
  */
@@ -60,7 +60,7 @@ describe("Stage 3 — closure", () => {
   });
 
   it("emits no closure at all for a pair nothing closes", () => {
-    // alpha3 -> beta1 is neither the same position, nor a rotation, reflection
+    // alpha3 -> beta1 is neither the same placement, nor a rotation, reflection
     // or colour swap of it. This is the freeform case, and Stage 3 says so by
     // answering with nothing.
     expect(admissibleClosures("alpha3", "beta1")).toEqual([]);
@@ -68,7 +68,7 @@ describe("Stage 3 — closure", () => {
   });
 
   it("leaves rewound out, because it would make the discard rule vacuous", () => {
-    // `isLOOPValidForPositionPair` returns true for REWOUND at EVERY pair — any
+    // `isLOOPValidForPlacementPair` returns true for REWOUND at EVERY pair — any
     // sequence can be played backwards — so counting it would mean no walk is
     // ever freeform.
     expect(idsOf("alpha3", "beta1")).toEqual([]);
@@ -98,9 +98,9 @@ describe("Stage 3 — closure", () => {
   it("admits the diagonal reflection axes the app ships no validation set for", () => {
     // alpha1 is (blue s, red n) and alpha3 is (blue w, red e); reflecting s and
     // n across the NE-SW diagonal gives exactly w and e. TKA canon holds all
-    // four axes equally valid; the engine's position-pair sets cover only
+    // four axes equally valid; the engine's placement-pair sets cover only
     // north-south and east-west, so the diagonals are composed from its own
-    // position maps.
+    // placement maps.
     const diagonals = admissibleClosures("alpha1", "alpha3").filter(
       (closure) => closure.family === "reflection"
     );

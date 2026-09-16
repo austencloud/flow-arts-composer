@@ -134,7 +134,7 @@ export interface UnitCanonicalizer {
    *
    * A face exists only when EVERY step of the rotated unit is a real row of the
    * dataframe. Faces that fall off the shipped map (which is every 45-degree
-   * face — skew has no rows starting from a skewed position) are simply absent.
+   * face — skew has no rows starting from a skewed placement) are simply absent.
    */
   orbitFaceKeys(steps: readonly StepData[]): readonly string[];
 }

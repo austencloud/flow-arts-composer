@@ -12,7 +12,7 @@
   constructTutorialState.start();
 
   if (atPictographStep || atPlayStep) {
-    constructTutorialState.recordStartPosition("α1");
+    constructTutorialState.recordStartPlacement("α1");
   }
 
   if (atPlayStep) {

@@ -6,7 +6,7 @@
  *
  * Data sources:
  * - Type mapping: Letter.ts getLetterType()
- * - Type 1 positions/rotations: type1-letter-data.ts
+ * - Type 1 placements/rotations: type1-letter-data.ts
  * - Type 2-6: domain specification (user-verified)
  * - TnD modes: tnd-calculator.ts (Type 1 only)
  */
@@ -14,8 +14,8 @@
 export interface LetterBreakdownEntry {
   typeNumber: number;
   typeName: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   motionDescription: string;
   tndMode?: string;
   tndElement?: string;
@@ -26,7 +26,7 @@ export interface LetterBreakdownEntry {
 /**
  * Static lookup for every TKA letter.
  *
- * Type 1 (A-V): Both hands shift. Organized by position transition + rotation pattern.
+ * Type 1 (A-V): Both hands shift. Organized by placement transition + rotation pattern.
  * Type 2 (W-Ω, μ, ν): One hand shifts, other stays static.
  * Type 3 (W- through Ω-): One hand shifts, other dashes. Upgrade of Type 2.
  * Type 4 (Φ, Ψ, Λ, τ-): One hand dashes, other stays static.
@@ -45,8 +45,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "alpha",
-        endPosition: "alpha",
+        startPlacement: "alpha",
+        endPlacement: "alpha",
         motionDescription: "both pro",
         tndMode: "split-same",
         tndElement: "Water",
@@ -58,8 +58,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "beta",
-        endPosition: "alpha",
+        startPlacement: "beta",
+        endPlacement: "alpha",
         motionDescription: "both pro",
         motionGroup: "prospin",
       },
@@ -69,8 +69,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "beta",
-        endPosition: "beta",
+        startPlacement: "beta",
+        endPlacement: "beta",
         motionDescription: "both pro",
         tndMode: "tog-same",
         tndElement: "Earth",
@@ -82,8 +82,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "alpha",
-        endPosition: "beta",
+        startPlacement: "alpha",
+        endPlacement: "beta",
         motionDescription: "both pro",
         motionGroup: "prospin",
       },
@@ -95,8 +95,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "alpha",
-        endPosition: "alpha",
+        startPlacement: "alpha",
+        endPlacement: "alpha",
         motionDescription: "both anti",
         tndMode: "split-same",
         tndElement: "Sun",
@@ -108,8 +108,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "beta",
-        endPosition: "alpha",
+        startPlacement: "beta",
+        endPlacement: "alpha",
         motionDescription: "both anti",
         motionGroup: "antispin",
       },
@@ -119,8 +119,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "beta",
-        endPosition: "beta",
+        startPlacement: "beta",
+        endPlacement: "beta",
         motionDescription: "both anti",
         tndMode: "tog-same",
         tndElement: "Moon",
@@ -132,8 +132,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "alpha",
-        endPosition: "beta",
+        startPlacement: "alpha",
+        endPlacement: "beta",
         motionDescription: "both anti",
         motionGroup: "antispin",
       },
@@ -145,8 +145,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "alpha",
-        endPosition: "alpha",
+        startPlacement: "alpha",
+        endPlacement: "alpha",
         motionDescription: "hybrid (one pro, one anti)",
         tndMode: "split-same",
         tndElement: "Fire",
@@ -158,8 +158,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "beta",
-        endPosition: "alpha",
+        startPlacement: "beta",
+        endPlacement: "alpha",
         motionDescription: "hybrid (one pro, one anti)",
         motionGroup: "hybrid",
       },
@@ -169,8 +169,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "beta",
-        endPosition: "beta",
+        startPlacement: "beta",
+        endPlacement: "beta",
         motionDescription: "hybrid (one pro, one anti)",
         tndMode: "tog-same",
         tndElement: "Air",
@@ -182,8 +182,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "alpha",
-        endPosition: "beta",
+        startPlacement: "alpha",
+        endPlacement: "beta",
         motionDescription: "hybrid (one pro, one anti)",
         motionGroup: "hybrid",
       },
@@ -195,8 +195,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "both pro",
         tndMode: "quarter-opp",
         motionGroup: "prospin",
@@ -207,8 +207,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "both pro",
         tndMode: "quarter-opp",
         motionGroup: "prospin",
@@ -219,8 +219,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "both pro",
         tndMode: "quarter-same",
         motionGroup: "prospin",
@@ -233,8 +233,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "both anti",
         tndMode: "quarter-opp",
         motionGroup: "antispin",
@@ -245,8 +245,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "both anti",
         tndMode: "quarter-opp",
         motionGroup: "antispin",
@@ -257,8 +257,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "both anti",
         tndMode: "quarter-same",
         motionGroup: "antispin",
@@ -271,8 +271,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "hybrid (one pro, one anti)",
         tndMode: "quarter-opp",
         motionGroup: "hybrid",
@@ -283,8 +283,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "hybrid (one pro, one anti)",
         tndMode: "quarter-opp",
         motionGroup: "hybrid",
@@ -295,8 +295,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "hybrid (one pro, one anti)",
         tndMode: "quarter-same",
         motionGroup: "hybrid",
@@ -307,8 +307,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 1,
         typeName: "Dual-Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "hybrid (one pro, one anti, reverse leading hand)",
         tndMode: "quarter-same",
         motionGroup: "hybrid",
@@ -323,8 +323,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 2,
         typeName: "Shift",
-        startPosition: "gamma",
-        endPosition: "alpha",
+        startPlacement: "gamma",
+        endPlacement: "alpha",
         motionDescription: "one pro shift, one static",
       },
     ],
@@ -333,8 +333,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 2,
         typeName: "Shift",
-        startPosition: "gamma",
-        endPosition: "alpha",
+        startPlacement: "gamma",
+        endPlacement: "alpha",
         motionDescription: "one anti shift, one static",
       },
     ],
@@ -343,8 +343,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 2,
         typeName: "Shift",
-        startPosition: "gamma",
-        endPosition: "beta",
+        startPlacement: "gamma",
+        endPlacement: "beta",
         motionDescription: "one pro shift, one static",
       },
     ],
@@ -353,8 +353,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 2,
         typeName: "Shift",
-        startPosition: "gamma",
-        endPosition: "beta",
+        startPlacement: "gamma",
+        endPlacement: "beta",
         motionDescription: "one anti shift, one static",
       },
     ],
@@ -363,8 +363,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 2,
         typeName: "Shift",
-        startPosition: "alpha",
-        endPosition: "gamma",
+        startPlacement: "alpha",
+        endPlacement: "gamma",
         motionDescription: "one pro shift, one static",
       },
     ],
@@ -373,8 +373,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 2,
         typeName: "Shift",
-        startPosition: "alpha",
-        endPosition: "gamma",
+        startPlacement: "alpha",
+        endPlacement: "gamma",
         motionDescription: "one anti shift, one static",
       },
     ],
@@ -383,8 +383,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 2,
         typeName: "Shift",
-        startPosition: "beta",
-        endPosition: "gamma",
+        startPlacement: "beta",
+        endPlacement: "gamma",
         motionDescription: "one pro shift, one static",
       },
     ],
@@ -393,8 +393,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 2,
         typeName: "Shift",
-        startPosition: "beta",
-        endPosition: "gamma",
+        startPlacement: "beta",
+        endPlacement: "gamma",
         motionDescription: "one anti shift, one static",
       },
     ],
@@ -403,8 +403,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 2,
         typeName: "Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "one pro shift, one static",
       },
     ],
@@ -413,8 +413,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 2,
         typeName: "Shift",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "one anti shift, one static",
       },
     ],
@@ -428,8 +428,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 3,
         typeName: "Cross-Shift",
-        startPosition: "gamma",
-        endPosition: "alpha",
+        startPlacement: "gamma",
+        endPlacement: "alpha",
         motionDescription: "one pro shift, one dash",
         upgradeFrom: "W",
       },
@@ -439,8 +439,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 3,
         typeName: "Cross-Shift",
-        startPosition: "gamma",
-        endPosition: "alpha",
+        startPlacement: "gamma",
+        endPlacement: "alpha",
         motionDescription: "one anti shift, one dash",
         upgradeFrom: "X",
       },
@@ -450,8 +450,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 3,
         typeName: "Cross-Shift",
-        startPosition: "gamma",
-        endPosition: "beta",
+        startPlacement: "gamma",
+        endPlacement: "beta",
         motionDescription: "one pro shift, one dash",
         upgradeFrom: "Y",
       },
@@ -461,8 +461,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 3,
         typeName: "Cross-Shift",
-        startPosition: "gamma",
-        endPosition: "beta",
+        startPlacement: "gamma",
+        endPlacement: "beta",
         motionDescription: "one anti shift, one dash",
         upgradeFrom: "Z",
       },
@@ -472,8 +472,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 3,
         typeName: "Cross-Shift",
-        startPosition: "alpha",
-        endPosition: "gamma",
+        startPlacement: "alpha",
+        endPlacement: "gamma",
         motionDescription: "one pro shift, one dash",
         upgradeFrom: "Σ",
       },
@@ -483,8 +483,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 3,
         typeName: "Cross-Shift",
-        startPosition: "alpha",
-        endPosition: "gamma",
+        startPlacement: "alpha",
+        endPlacement: "gamma",
         motionDescription: "one anti shift, one dash",
         upgradeFrom: "Δ",
       },
@@ -494,8 +494,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 3,
         typeName: "Cross-Shift",
-        startPosition: "beta",
-        endPosition: "gamma",
+        startPlacement: "beta",
+        endPlacement: "gamma",
         motionDescription: "one pro shift, one dash",
         upgradeFrom: "Θ",
       },
@@ -505,8 +505,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 3,
         typeName: "Cross-Shift",
-        startPosition: "beta",
-        endPosition: "gamma",
+        startPlacement: "beta",
+        endPlacement: "gamma",
         motionDescription: "one anti shift, one dash",
         upgradeFrom: "Ω",
       },
@@ -520,8 +520,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 4,
         typeName: "Dash",
-        startPosition: "gamma",
-        endPosition: "alpha",
+        startPlacement: "gamma",
+        endPlacement: "alpha",
         motionDescription: "one dash, one static (diverging)",
       },
     ],
@@ -530,8 +530,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 4,
         typeName: "Dash",
-        startPosition: "gamma",
-        endPosition: "beta",
+        startPlacement: "gamma",
+        endPlacement: "beta",
         motionDescription: "one dash, one static (converging)",
       },
     ],
@@ -540,8 +540,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 4,
         typeName: "Dash",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "one dash, one static (angle preserved)",
       },
     ],
@@ -550,8 +550,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 4,
         typeName: "Dash",
-        startPosition: "alpha",
-        endPosition: "beta",
+        startPlacement: "alpha",
+        endPlacement: "beta",
         motionDescription: "one dash, one static",
       },
     ],
@@ -565,8 +565,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 5,
         typeName: "Dual-Dash",
-        startPosition: "gamma",
-        endPosition: "alpha",
+        startPlacement: "gamma",
+        endPlacement: "alpha",
         motionDescription: "both dash (diverging)",
         upgradeFrom: "Φ",
       },
@@ -576,8 +576,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 5,
         typeName: "Dual-Dash",
-        startPosition: "gamma",
-        endPosition: "beta",
+        startPlacement: "gamma",
+        endPlacement: "beta",
         motionDescription: "both dash (converging)",
         upgradeFrom: "Ψ",
       },
@@ -587,23 +587,23 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 5,
         typeName: "Dual-Dash",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "both dash (angle preserved)",
         upgradeFrom: "Λ",
       },
     ],
 
     // ═══════════════════════════════════════════════════════════════
-    // Type 6: Static - both hands stay at their position
+    // Type 6: Static - both hands stay at their placement
     // ═══════════════════════════════════════════════════════════════
     [
       "α",
       {
         typeNumber: 6,
         typeName: "Static",
-        startPosition: "alpha",
-        endPosition: "alpha",
+        startPlacement: "alpha",
+        endPlacement: "alpha",
         motionDescription: "both static",
       },
     ],
@@ -612,8 +612,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 6,
         typeName: "Static",
-        startPosition: "beta",
-        endPosition: "beta",
+        startPlacement: "beta",
+        endPlacement: "beta",
         motionDescription: "both static",
       },
     ],
@@ -622,8 +622,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 6,
         typeName: "Static",
-        startPosition: "gamma",
-        endPosition: "gamma",
+        startPlacement: "gamma",
+        endPlacement: "gamma",
         motionDescription: "both static",
       },
     ],
@@ -632,8 +632,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 6,
         typeName: "Static",
-        startPosition: "zeta",
-        endPosition: "zeta",
+        startPlacement: "zeta",
+        endPlacement: "zeta",
         motionDescription: "both static",
       },
     ],
@@ -642,8 +642,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 6,
         typeName: "Static",
-        startPosition: "eta",
-        endPosition: "eta",
+        startPlacement: "eta",
+        endPlacement: "eta",
         motionDescription: "both static",
       },
     ],
@@ -652,8 +652,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 6,
         typeName: "Static",
-        startPosition: "tau",
-        endPosition: "tau",
+        startPlacement: "tau",
+        endPlacement: "tau",
         motionDescription: "both static",
       },
     ],
@@ -662,8 +662,8 @@ export const LETTER_BREAKDOWN_TABLE: ReadonlyMap<string, LetterBreakdownEntry> =
       {
         typeNumber: 6,
         typeName: "Static",
-        startPosition: "terra",
-        endPosition: "terra",
+        startPlacement: "terra",
+        endPlacement: "terra",
         motionDescription: "both static",
       },
     ],

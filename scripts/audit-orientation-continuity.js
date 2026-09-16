@@ -4,7 +4,7 @@
  *
  * Checks every sequence in every deck for:
  * 1. Beat-to-beat orientation continuity (each step's startOri = previous step's endOri)
- * 2. Loop closure (last step's endOri = startPosition's ori for circular sequences)
+ * 2. Loop closure (last step's endOri = startPlacement's ori for circular sequences)
  *
  * Usage:
  *   node scripts/audit-orientation-continuity.js
@@ -48,18 +48,18 @@ function getSteps(seq) {
   return seq.steps || seq.beats || [];
 }
 
-function getStartPosition(seq) {
-  return seq.startPosition || seq.start_position || null;
+function getStartPlacement(seq) {
+  return seq.startPlacement || seq.start_position || null;
 }
 
 function validateSequence(seq, deckId) {
   const errors = [];
   const steps = getSteps(seq);
-  const startPos = getStartPosition(seq);
+  const startPos = getStartPlacement(seq);
 
   if (steps.length === 0) return errors;
 
-  // Check 1: startPosition → first step continuity
+  // Check 1: startPlacement → first step continuity
   if (startPos) {
     const firstStep = steps[0];
     for (const color of COLORS) {
@@ -77,7 +77,7 @@ function validateSequence(seq, deckId) {
           color,
           expected: expectedStart,
           actual: actualStart,
-          message: `${color} ori break: startPosition.endOri="${expectedStart}" → step1.startOri="${actualStart}"`,
+          message: `${color} ori break: startPlacement.endOri="${expectedStart}" → step1.startOri="${actualStart}"`,
         });
       }
     }
@@ -109,7 +109,7 @@ function validateSequence(seq, deckId) {
     }
   }
 
-  // Check 3: loop closure (last step → startPosition)
+  // Check 3: loop closure (last step → startPlacement)
   if (startPos && (seq.isCircular || seq.loopType)) {
     const lastStep = steps[steps.length - 1];
     for (const color of COLORS) {
@@ -127,7 +127,7 @@ function validateSequence(seq, deckId) {
           color,
           expected: startStart,
           actual: lastEnd,
-          message: `${color} loop closure break: lastStep.endOri="${lastEnd}" ≠ startPosition.startOri="${startStart}"`,
+          message: `${color} loop closure break: lastStep.endOri="${lastEnd}" ≠ startPlacement.startOri="${startStart}"`,
         });
       }
     }

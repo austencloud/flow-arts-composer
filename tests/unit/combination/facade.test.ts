@@ -23,12 +23,12 @@ import {
   ambientLetterSet,
   rosterConfirmedBases,
 } from "$lib/shared/combination/domain/base-sequence-registry";
-import { positionLabelsMatchLocations } from "$lib/shared/combination/services/position-groups";
+import { placementLabelsMatchLocations } from "$lib/shared/combination/services/placement-groups";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import {
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
 
@@ -102,25 +102,25 @@ describe("getSequenceCombinator", () => {
 describe("createRuntimeAmbientProvider", () => {
   it("answers a bare seam with real dataset steps, ambient-filtered", async () => {
     const provider = createRuntimeAmbientProvider(GridMode.DIAMOND);
-    const options = await provider.optionsAt(GridPosition.BETA5);
+    const options = await provider.optionsAt(GridPlacement.BETA5);
     const eligible = ambientLetterSet();
 
     expect(options.length).toBeGreaterThan(0);
     for (const step of options) {
-      expect(step.startPosition).toBe(GridPosition.BETA5);
+      expect(step.startPlacement).toBe(GridPlacement.BETA5);
       expect(step.letter).not.toBeNull();
       expect(eligible.has(step.letter!)).toBe(true);
-      expect(positionLabelsMatchLocations(step)).toBe(true);
+      expect(placementLabelsMatchLocations(step)).toBe(true);
     }
 
     // Second call is served from the per-seam cache, identically.
-    const again = await provider.optionsAt(GridPosition.BETA5);
+    const again = await provider.optionsAt(GridPlacement.BETA5);
     expect(again).toBe(options);
   });
 
   it("rejects nothing on the real dataset — the label gate never fires", async () => {
     // Watch-item from the Task-9 review: the engine drops provider material
-    // whose position labels disagree with its own motion locations, warning
+    // whose placement labels disagree with its own motion locations, warning
     // ONCE. If the shipped dataframe ever disagreed, legitimate bridges would
     // vanish almost silently. Sweep it and pin the count at zero.
     let failures = 0;
@@ -129,7 +129,7 @@ describe("createRuntimeAmbientProvider", () => {
       const all = await motionQueryHandler.queryMotions({ gridMode });
       for (const pictograph of all) {
         rows++;
-        if (!positionLabelsMatchLocations(createStepData({ ...pictograph }))) {
+        if (!placementLabelsMatchLocations(createStepData({ ...pictograph }))) {
           failures++;
         }
       }
@@ -141,7 +141,7 @@ describe("createRuntimeAmbientProvider", () => {
 
   it("counts what it rejected, so a silent drop is observable", async () => {
     const provider = createRuntimeAmbientProvider(GridMode.DIAMOND);
-    await provider.optionsAt(GridPosition.BETA5);
+    await provider.optionsAt(GridPlacement.BETA5);
 
     expect(provider.stats.seamsQueried).toBe(1);
     expect(provider.stats.optionsOffered).toBeGreaterThan(0);
@@ -151,11 +151,11 @@ describe("createRuntimeAmbientProvider", () => {
   });
 
   it("counts the handler's no-match fallback apart from real rejections", async () => {
-    // Nothing in the DIAMOND dataframe starts at a skewed-mode position, so
+    // Nothing in the DIAMOND dataframe starts at a skewed-mode placement, so
     // the handler relays its whole row set. That is an EMPTY seam, not 576
     // suspect candidates — it must not inflate seamMismatches.
     const provider = createRuntimeAmbientProvider(GridMode.DIAMOND);
-    const options = await provider.optionsAt(GridPosition.ZETA1);
+    const options = await provider.optionsAt(GridPlacement.ZETA1);
 
     expect(options).toEqual([]);
     expect(provider.stats.fallbackRelays).toBe(1);

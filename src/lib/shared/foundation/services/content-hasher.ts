@@ -105,9 +105,9 @@ export function hashSoloProp(
 /** Every field that affects how a choreo-card pictograph renders for a node. */
 interface HashableNode {
   letter?: unknown;
-  startPosition?: unknown;
-  endPosition?: unknown;
-  gridPosition?: unknown;
+  startPlacement?: unknown;
+  endPlacement?: unknown;
+  gridPlacement?: unknown;
   leftReversal?: boolean;
   rightReversal?: boolean;
   motions?: { left?: MotionData; right?: MotionData };
@@ -124,8 +124,8 @@ function serializeMotion(m?: MotionData): string {
 function serializeChoreoNode(node: HashableNode): string {
   return [
     node.letter ?? "",
-    node.startPosition ?? node.gridPosition ?? "",
-    node.endPosition ?? "",
+    node.startPlacement ?? node.gridPlacement ?? "",
+    node.endPlacement ?? "",
     serializeMotion(node.motions?.left),
     serializeMotion(node.motions?.right),
     node.leftReversal ? "B" : "",
@@ -143,11 +143,11 @@ function serializeChoreoNode(node: HashableNode): string {
  * and reversal variants that reuse a base sequence's id never collide.
  */
 export function hashSequenceContent(
-  seq: Pick<SequenceData, "word" | "steps" | "startPosition">
+  seq: Pick<SequenceData, "word" | "steps" | "startPlacement">
 ): string {
   const parts: string[] = [String(seq.word ?? "")];
-  if (seq.startPosition) {
-    parts.push("sp|" + serializeChoreoNode(seq.startPosition as HashableNode));
+  if (seq.startPlacement) {
+    parts.push("sp|" + serializeChoreoNode(seq.startPlacement as HashableNode));
   }
   for (const step of seq.steps ?? []) {
     parts.push(serializeChoreoNode(step as HashableNode));
@@ -171,8 +171,8 @@ function serializeMotionSkeleton(m?: MotionData): string {
 function serializeSkeletonNode(node: HashableNode): string {
   return [
     node.letter ?? "",
-    node.startPosition ?? node.gridPosition ?? "",
-    node.endPosition ?? "",
+    node.startPlacement ?? node.gridPlacement ?? "",
+    node.endPlacement ?? "",
     serializeMotionSkeleton(node.motions?.left),
     serializeMotionSkeleton(node.motions?.right),
   ].join(":");
@@ -189,12 +189,12 @@ function serializeSkeletonNode(node: HashableNode): string {
  * never as the same path re-spun with a different turn pattern.
  */
 export function hashSequenceSkeleton(
-  seq: Pick<SequenceData, "word" | "steps" | "startPosition">
+  seq: Pick<SequenceData, "word" | "steps" | "startPlacement">
 ): string {
   const parts: string[] = [String(seq.word ?? "")];
-  if (seq.startPosition) {
+  if (seq.startPlacement) {
     parts.push(
-      "sp|" + serializeSkeletonNode(seq.startPosition as HashableNode)
+      "sp|" + serializeSkeletonNode(seq.startPlacement as HashableNode)
     );
   }
   for (const step of seq.steps ?? []) {

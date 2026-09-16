@@ -63,7 +63,7 @@ selection and calls `persistenceCoordinator.clearState()`. The undo controller
 fires it with `void` and returns `true` immediately:
 
 ```ts
-if (lastEntry.type === UndoOperationType.SELECT_START_POSITION) {
+if (lastEntry.type === UndoOperationType.SELECT_START_PLACEMENT) {
   void sequenceState.clearSequenceCompletely();
   ...
   return true;
@@ -187,17 +187,17 @@ a coordinator re-adding the duplicate push.
 ### Fixtures
 
 Sequences are built from the project factories — `createSequence`,
-`createStepData`, `createStartPositionData`, `createMotionData` — as a canonical
+`createStepData`, `createStartPlacementData`, `createMotionData` — as a canonical
 alpha1 -> alpha3 shift (left south to west, right north to east) with an
 explicit alpha1 start position and both hands visible. The three
 orchestrator tests construct it with the real `reversalDetector`, matching how
 the Construct tab wires `createSequenceState`.
 
 An earlier revision used `motions: {}` placeholder steps. Those are not
-renderable, so `setCurrentSequence` fell into `startPositionDeriver`'s failure
+renderable, so `setCurrentSequence` fell into `startPlacementDeriver`'s failure
 branch and logged `Failed to derive start position from first beat` on every
 call. The assertions still passed, but they were passing on a path the app never
-takes. The canonical fixtures run the real start-position and reversal paths
+takes. The canonical fixtures run the real start-placement and reversal paths
 instead. Rather than silencing that output, the three orchestrator tests now
 assert it never happens: they spy on `console.warn`/`console.error` without a
 mock implementation — so anything logged still reaches stderr — and fail if

@@ -11,7 +11,7 @@ import { getWorkerRenderPool } from "$lib/shared/render/services/worker-render-p
 import { settingsService } from "$lib/shared/settings/state/settings-state.svelte";
 import { buildRenderOptions as buildCellRenderOptions } from "$lib/shared/choreo-card/services/choreo-card-cell-pipeline";
 import { isCatDogMode } from "$lib/shared/browse/utils/prop-mode-helpers";
-import { createStartPositionFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
+import { createStartPlacementFromBeatStart } from "$lib/shared/create/services/sequence-transforms";
 import { getVisibilityStateManager } from "$lib/shared/pictograph/shared/state/visibility-state.svelte";
 
 interface CellTask {
@@ -146,7 +146,7 @@ export class CellPreWarmer {
         showReversals: vm.getRawGlyphVisibility("reversalIndicators"),
         showTnD: vm.getRawGlyphVisibility("tndGlyph"),
         showElemental: vm.getRawGlyphVisibility("elementalGlyph"),
-        showPositions: vm.getRawGlyphVisibility("positionsGlyph"),
+        showPlacements: vm.getRawGlyphVisibility("placementsGlyph"),
         showHandColorKey: vm.getRawGlyphVisibility("handColorKey"),
         isSoloMode: false,
         handPathMode: false,
@@ -165,9 +165,9 @@ export class CellPreWarmer {
     const tasks: CellTask[] = [];
 
     const firstStep = sequence.steps![0];
-    if (sequence.startPosition || firstStep) {
+    if (sequence.startPlacement || firstStep) {
       const startData =
-        sequence.startPosition || createStartPositionFromBeatStart(firstStep!);
+        sequence.startPlacement || createStartPlacementFromBeatStart(firstStep!);
       tasks.push({
         pictographData: startData,
         stepNumber: undefined,

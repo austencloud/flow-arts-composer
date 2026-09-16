@@ -109,10 +109,10 @@ export function createCurrentWordDisplayEffect(
         // Build display text from the simplified sources
         displayText = letterSources.map(s => s.letter).join("");
       }
-      // PRIORITY 2: Construct tab - start position instructions
+      // PRIORITY 2: Construct tab - start placement instructions
       else if (navigationState.activeTab === "construct") {
-        if (constructTabState.shouldShowStartPositionPicker()) {
-          displayText = "Choose your start position!";
+        if (constructTabState.shouldShowStartPlacementPicker()) {
+          displayText = "Choose your start placement!";
         } else {
           displayText = CreateModuleState.sequenceState.sequenceWord() ?? "";
         }

@@ -46,7 +46,7 @@ export interface VerifiedStepPosition {
   rightLocation: GridLocation | null;
 
   /** TKA position label (alpha, beta, gamma) */
-  positionLabel: string | null;
+  placementLabel: string | null;
 
   /** Beat start time in seconds */
   startTime: number;

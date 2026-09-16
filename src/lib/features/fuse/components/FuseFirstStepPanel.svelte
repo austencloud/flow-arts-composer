@@ -76,7 +76,7 @@
           <ChoreoCard
             {sequence}
             {browseViewMode}
-            includeStartPosition={false}
+            includeStartPlacement={false}
             showMandala={false}
             showWord={false}
             showStepNumbers={true}

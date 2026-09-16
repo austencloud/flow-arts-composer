@@ -38,7 +38,7 @@ describe("ex slice", () => {
     store.setSplitOrientation("vertical");
     store.setSplitGridStepSize(80);
     store.setSplitShowStepNumbers(false);
-    store.setSplitIncludeStartPosition(false);
+    store.setSplitIncludeStartPlacement(false);
     store.setSplitLoopCount(3);
 
     const slice = captureExSlice(store);

@@ -8,7 +8,7 @@ import type { PictographData } from "../constraints/types.js";
 export interface IVariationProvider {
   getVariations(
     letter: string,
-    position: string,
+    placement: string,
     gridMode: string,
   ): PictographData[];
 

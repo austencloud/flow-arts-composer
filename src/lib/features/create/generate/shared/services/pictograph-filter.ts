@@ -4,7 +4,7 @@
  */
 
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { RotationDirection } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
@@ -20,27 +20,27 @@ const ROTATION_DIRS = {
 } as const;
 
 /**
- * Filter by continuity — next step's start position must match last step's end position.
+ * Filter by continuity — next step's start placement must match last step's end placement.
  */
 export function filterByContinuity(
   options: PictographData[],
-  lastStep: StepData | StartPositionData | null
+  lastStep: StepData | StartPlacementData | null
 ): PictographData[] {
-  if (!lastStep?.endPosition) {
+  if (!lastStep?.endPlacement) {
     return options;
   }
 
-  const lastEndPosition = lastStep.endPosition.toLowerCase();
+  const lastEndPlacement = lastStep.endPlacement.toLowerCase();
 
   const filtered = options.filter((option: PictographData) => {
-    if (!option.startPosition) return false;
-    const optionStartPosition = option.startPosition.toLowerCase();
-    return optionStartPosition === lastEndPosition;
+    if (!option.startPlacement) return false;
+    const optionStartPlacement = option.startPlacement.toLowerCase();
+    return optionStartPlacement === lastEndPlacement;
   });
 
   if (filtered.length === 0) {
     console.warn(
-      `⚠️ No options match end position "${lastEndPosition}", using all options`
+      `⚠️ No options match end placement "${lastEndPlacement}", using all options`
     );
     return options;
   }
@@ -81,20 +81,20 @@ export function filterByRotation(
 }
 
 /**
- * Filter for start positions — static pictographs where startPosition === endPosition.
+ * Filter for start placements — static pictographs where startPlacement === endPlacement.
  */
-export function filterStartPositions(options: PictographData[]): PictographData[] {
+export function filterStartPlacements(options: PictographData[]): PictographData[] {
   const filtered = options.filter((option: PictographData) => {
-    if (!option.startPosition || !option.endPosition) return false;
-    const startPos = option.startPosition.toLowerCase();
-    const endPos = option.endPosition.toLowerCase();
+    if (!option.startPlacement || !option.endPlacement) return false;
+    const startPos = option.startPlacement.toLowerCase();
+    const endPos = option.endPlacement.toLowerCase();
     return startPos === endPos;
   });
 
   if (filtered.length === 0) {
     throw new FilteringError(
-      "No valid start positions found in options",
-      "start_positions",
+      "No valid start placements found in options",
+      "start_placements",
       { totalOptions: options.length }
     );
   }
@@ -128,22 +128,22 @@ export function filterStaticType6(
 }
 
 /**
- * Filter pictographs by required end position.
+ * Filter pictographs by required end placement.
  */
-export function filterByEndPosition(
+export function filterByEndPlacement(
   options: PictographData[],
-  requiredEndPosition: string
+  requiredEndPlacement: string
 ): PictographData[] {
-  const targetEndPos = requiredEndPosition.toLowerCase();
+  const targetEndPos = requiredEndPlacement.toLowerCase();
 
   const filtered = options.filter((option: PictographData) => {
-    if (!option.endPosition) return false;
-    return option.endPosition.toLowerCase() === targetEndPos;
+    if (!option.endPlacement) return false;
+    return option.endPlacement.toLowerCase() === targetEndPos;
   });
 
   if (filtered.length === 0) {
     console.warn(
-      `⚠️ No pictographs end at position "${requiredEndPosition}". Cannot satisfy end position constraint.`
+      `⚠️ No pictographs end at placement "${requiredEndPlacement}". Cannot satisfy end placement constraint.`
     );
   }
 
@@ -207,9 +207,9 @@ export function selectRandom<T>(array: T[]): T {
 export const pictographFilter = {
   filterByContinuity,
   filterByRotation,
-  filterStartPositions,
+  filterStartPlacements,
   filterStaticType6,
-  filterByEndPosition,
+  filterByEndPlacement,
   filterByPropType,
   selectRandom,
 };

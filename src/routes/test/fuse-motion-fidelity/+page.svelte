@@ -85,7 +85,7 @@
               showTKA={false}
               showReversals={false}
               showNonRadialPoints={true}
-              showPositions={false}
+              showPlacements={false}
               showHandPoints={true}
               showLeftMotion={true}
               showRightMotion={true}

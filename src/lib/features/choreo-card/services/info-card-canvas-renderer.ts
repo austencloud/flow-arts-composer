@@ -451,7 +451,7 @@ export async function renderInfoCardBack(options: InfoCardCanvasOptions): Promis
 
   ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
   ctx.font = `400 ${13 * REF_SCALE}px "Segoe UI", system-ui, sans-serif`;
-  const chainText = "Group cards by start position. Any two α cards play back to back. Same for β and γ.";
+  const chainText = "Group cards by start placement. Any two α cards play back to back. Same for β and γ.";
   const chainLines = wrapText(ctx, chainText, innerW - padX * 2);
   for (const line of chainLines) {
     ctx.fillText(line, cX, curY);

@@ -48,7 +48,7 @@ export function getPreviewCacheKey(
   colCount: number | null,
   isDark: boolean,
   spl: "row" | "column" = "column",
-  includeStartPosition: boolean = true
+  includeStartPlacement: boolean = true
 ): string {
   const sequenceContentKey = hashSequenceContent(seq);
   const durationFingerprint =
@@ -62,15 +62,15 @@ export function getPreviewCacheKey(
   const resolvedLeft = opts.leftPropType ?? settings.leftPropType ?? "staff";
   const resolvedRight = opts.rightPropType ?? settings.rightPropType ?? "staff";
   const mv = `${opts.showLeftMotion === false ? "B0" : "B1"}${opts.showRightMotion === false ? "R0" : "R1"}`;
-  const gv = `${opts.showTnD ? "V1" : "V0"}${opts.showElemental ? "E1" : "E0"}${opts.showPositions ? "P1" : "P0"}${opts.showGrid === false ? "G0" : "G1"}${opts.showHandColorKey === false ? "K0" : "K1"}`;
-  // includeStartPosition changes the cell layout (start cell present + reserved
+  const gv = `${opts.showTnD ? "V1" : "V0"}${opts.showElemental ? "E1" : "E0"}${opts.showPlacements ? "P1" : "P0"}${opts.showGrid === false ? "G0" : "G1"}${opts.showHandColorKey === false ? "K0" : "K1"}`;
+  // includeStartPlacement changes the cell layout (start cell present + reserved
   // row/col vs. tightly-packed steps) AND the row/column counts. It MUST be in
   // the key: the global preview cache is shared across every ChoreoCard, so a
   // start-off render (viewer with the toggle off) and a start-on render (save
   // panel default) for the same sequence would otherwise collide — the onMount
   // probe adopts the other mode's cells while the frame sizes for this mode,
   // reserving a phantom start row that spreads the step rows apart.
-  const sp = includeStartPosition ? "sp1" : "sp0";
+  const sp = includeStartPlacement ? "sp1" : "sp0";
   // This cache is checked before the palette-aware cell cache. It must also
   // distinguish colors or a reactive repaint will simply adopt the old images.
   const paletteKey = opts.primaryPropColors
@@ -123,11 +123,11 @@ export function storePreviewInCache(
  * With start position (row layout): first row reserved for start.
  * Without start position: all columns available for steps.
  */
-export function calculateGridPosition(
+export function calculateGridPlacement(
   stepIndex: number,
   cols: number,
-  includeStartPosition: boolean,
-  startPositionLayout: "row" | "column",
+  includeStartPlacement: boolean,
+  startPlacementLayout: "row" | "column",
   mandalaLayoutOverride: MandalaLayoutOverride | null
 ): { gridColumn: number; gridRow: number } {
   // 4-count horizontal mandala override: start/step positions come from the override spec.
@@ -147,7 +147,7 @@ export function calculateGridPosition(
     return { gridColumn: 1, gridRow: 1 };
   }
 
-  if (includeStartPosition && startPositionLayout === "row") {
+  if (includeStartPlacement && startPlacementLayout === "row") {
     // Row layout: start position occupies row 1 alone; steps fill full-width
     // rows starting at row 2, using all `cols` columns.
     const col = (stepIndex % cols) + 1;
@@ -155,7 +155,7 @@ export function calculateGridPosition(
     return { gridColumn: col, gridRow: row };
   }
 
-  if (includeStartPosition) {
+  if (includeStartPlacement) {
     // Column layout: col 1 is reserved for start, steps start at col 2.
     const stepsPerRow = cols - 1;
     const firstRowSteps = cols - 1;
@@ -203,7 +203,7 @@ export function buildRenderOptions(params: {
   showReversals: boolean;
   showTnD: boolean;
   showElemental: boolean;
-  showPositions: boolean;
+  showPlacements: boolean;
   showHandColorKey?: boolean;
   isSoloMode: boolean;
   handPathMode: boolean;
@@ -229,7 +229,7 @@ export function buildRenderOptions(params: {
     showReversals: params.isSoloMode ? false : params.showReversals,
     showTnD: params.isSoloMode ? false : params.showTnD,
     showElemental: params.isSoloMode ? false : params.showElemental,
-    showPositions: params.isSoloMode ? false : params.showPositions,
+    showPlacements: params.isSoloMode ? false : params.showPlacements,
     showHandColorKey: params.isSoloMode
       ? false
       : (params.showHandColorKey ?? true),

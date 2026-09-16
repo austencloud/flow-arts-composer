@@ -1,14 +1,14 @@
 import generated from "./examples.json";
 import { createSequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import {
   createMotionData,
   type MotionData,
 } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import {
   GridMode,
-  type GridPosition,
+  type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
@@ -20,8 +20,8 @@ export const motionPathExamples = generated.map((record) => {
     createStepData({
       id: `path-guide-${record.word}-${step.stepNumber}`,
       letter: step.letter as Letter,
-      startPosition: step.startPosition as GridPosition,
-      endPosition: step.endPosition as GridPosition,
+      startPlacement: step.startPlacement as GridPlacement,
+      endPlacement: step.endPlacement as GridPlacement,
       stepNumber: step.stepNumber,
       variation: step.variation,
       gridMode: GridMode.DIAMOND,
@@ -44,9 +44,9 @@ export const motionPathExamples = generated.map((record) => {
     word: record.word,
     name: record.word,
     gridMode: GridMode.DIAMOND,
-    startPosition: createStartPositionData({
+    startPlacement: createStartPlacementData({
       ...boxes[0],
-      gridPosition: record.startPosition as GridPosition,
+      gridPlacement: record.startPlacement as GridPlacement,
     }),
     steps: boxes.slice(1),
     isCircular: true,

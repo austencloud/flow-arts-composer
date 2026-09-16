@@ -85,7 +85,7 @@ function aggregateStepScores(
     });
   }
 
-  // Collect scores from each step (excluding start position)
+  // Collect scores from each step (excluding start placement)
   for (let i = 1; i < state.stepScores.length; i++) {
     const stepScore = state.stepScores[i];
     if (!stepScore) continue;
@@ -131,7 +131,7 @@ function generateConstraintDescription(
   score: number,
   state: SearchState
 ): string {
-  const steps = state.steps.length - 1; // Exclude start position
+  const steps = state.steps.length - 1; // Exclude start placement
   const percentage = Math.round(score * 100);
 
   switch (type) {
@@ -166,11 +166,11 @@ function generateConstraintDescription(
       return `${reversals} reversals in ${steps} steps`;
     }
 
-    case ConstraintType.POSITION_GROUP: {
+    case ConstraintType.PLACEMENT_GROUP: {
       if (score === 1) {
-        return `All positions within required group`;
+        return `All placements within required group`;
       }
-      return `${percentage}% of positions in group`;
+      return `${percentage}% of placements in group`;
     }
 
     case ConstraintType.VTG_TIMING: {

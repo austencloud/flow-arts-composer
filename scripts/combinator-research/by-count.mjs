@@ -11,17 +11,17 @@ const ri = (l) => RING.indexOf(l);
 
 const rows = [];
 for (const line of readFileSync(`${DIR}/DiamondPictographDataframe.csv`, "utf8").trim().split(/\r?\n/).slice(1)) {
-  const [letter, startPosition, endPosition, , , bT, bR, bS, bE, rT, rR, rS, rE] = line.split(",");
-  if (!letter || !startPosition) continue;
-  rows.push({ letter, startPosition, endPosition, bT, bR, bS, bE, rT, rR, rS, rE });
+  const [letter, startPlacement, endPlacement, , , bT, bR, bS, bE, rT, rR, rS, rE] = line.split(",");
+  if (!letter || !startPlacement) continue;
+  rows.push({ letter, startPlacement, endPlacement, bT, bR, bS, bE, rT, rR, rS, rE });
 }
 const posPair = new Map();
-for (const r of rows) if (!posPair.has(r.startPosition)) posPair.set(r.startPosition, [r.bS, r.rS]);
-for (const r of rows) if (!posPair.has(r.endPosition)) posPair.set(r.endPosition, [r.bE, r.rE]);
+for (const r of rows) if (!posPair.has(r.startPlacement)) posPair.set(r.startPlacement, [r.bS, r.rS]);
+for (const r of rows) if (!posPair.has(r.endPlacement)) posPair.set(r.endPlacement, [r.bE, r.rE]);
 const out = new Map();
 for (const r of rows) {
-  if (!out.has(r.startPosition)) out.set(r.startPosition, []);
-  out.get(r.startPosition).push(r);
+  if (!out.has(r.startPlacement)) out.set(r.startPlacement, []);
+  out.get(r.startPlacement).push(r);
 }
 
 const rotL = (l, s) => (ri(l) < 0 ? l : RING[(ri(l) + s + 8) % 8]);
@@ -89,7 +89,7 @@ function run({ lettersA, lettersB, maxLen = 6, maxConnectors = 2 }) {
         const k = kind(e.letter);
         if (k === "C" && conn >= maxConnectors) continue;
         walk.push(e);
-        dfs(e.endPosition, conn + (k === "C" ? 1 : 0), uA || k === "A", uB || k === "B");
+        dfs(e.endPlacement, conn + (k === "C" ? 1 : 0), uA || k === "A", uB || k === "B");
         walk.pop();
       }
     })(startPos, 0, false, false);

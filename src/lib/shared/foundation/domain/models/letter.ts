@@ -68,7 +68,7 @@ export const Letter = {
   PSI_DASH: "Ψ-",
   LAMBDA_DASH: "Λ-",
 
-  // Type6: Static (lowercase Greek letters for static positions)
+  // Type6: Static (lowercase Greek letters for static placements)
   ALPHA: "α",
   BETA: "β",
   GAMMA: "γ",
@@ -146,8 +146,8 @@ const TYPE6_LETTERS: readonly Letter[] = [
 /**
  * Legacy spellings that exist in historical stored data but are not part of
  * the canonical alphabet. The legacy desktop convention wrote the gamma
- * start-position letter as uppercase "Γ" (U+0393); the canon is lowercase
- * "γ" (U+03B3). import-sequence.cjs and repair-broken-start-positions.cjs
+ * start-placement letter as uppercase "Γ" (U+0393); the canon is lowercase
+ * "γ" (U+03B3). import-sequence.cjs and repair-broken-start-placements.cjs
  * copied that convention into Firestore docs and QR blobs, and printed cards
  * embed the legacy form forever — so runtime normalization can never be
  * removed even after the stored docs are repaired.

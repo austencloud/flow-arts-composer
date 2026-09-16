@@ -26,28 +26,28 @@ A single motion (`MotionData`) has these identity-relevant properties:
 | `motionType` | Core identity | Yes |
 | `rotationDirection` | Core identity | Yes |
 | `turns` | Core identity | Yes |
-| `startLocation` | Position | No - changes with spatial rotation |
-| `endLocation` | Position | No - changes with spatial rotation |
-| `startOrientation` | Orientation | Yes (relative to position) |
-| `endOrientation` | Orientation | Yes (relative to position) |
+| `startLocation` | Location | No - changes with spatial rotation |
+| `endLocation` | Location | No - changes with spatial rotation |
+| `startOrientation` | Orientation | Yes (relative to location) |
+| `endOrientation` | Orientation | Yes (relative to location) |
 | `handPath` | Derived from motion | Yes |
 | `skewSteps` | Skew identity | Yes |
 | `skewDir` | Skew identity | Yes |
 
-### Position Abstraction Levels
+### Placement Abstraction Levels
 
-Positions can be compared at different abstraction levels:
+Placements can be compared at different abstraction levels:
 
 1. **Concrete** - Exact grid locations (n, ne, e, se, s, sw, w, nw)
 2. **Relative** - Angular relationship between hands (alpha, beta, gamma, zeta, eta)
-3. **Abstract** - Position group only, ignoring specific variant (alpha vs alpha1-8)
+3. **Abstract** - Placement group only, ignoring specific variant (alpha vs alpha1-8)
 
-For rotation-invariant comparison, we use **relative** positions (the angular relationship between hands).
+For rotation-invariant comparison, we use **relative** placements (the angular relationship between hands).
 
 ### The Core Insight: Geometric Invariants
 
 Two sequences are "the same pattern" if they share these geometric invariants:
-- Same position group transitions (alpha→beta, gamma→gamma, etc.)
+- Same placement group transitions (alpha→beta, gamma→gamma, etc.)
 - Same motion types per hand (pro, anti, static, dash, float)
 - Same rotation directions relative to hand path
 - Same turn counts
@@ -113,9 +113,9 @@ Creates rotation-invariant signatures for complete beats (both hands).
 
 ```typescript
 interface BeatSignature {
-  // Position group (not specific variant)
-  readonly startPositionGroup: GridPositionGroup;
-  readonly endPositionGroup: GridPositionGroup;
+  // Placement group (not specific variant)
+  readonly startPlacementGroup: GridPlacementGroup;
+  readonly endPlacementGroup: GridPlacementGroup;
 
   // Motion signatures for each hand
   readonly blue: MotionSignature;
@@ -143,7 +143,7 @@ interface IBeatSignatureGenerator {
 interface BeatSimilarityResult {
   readonly score: number; // 0.0 - 1.0
   readonly breakdown: {
-    readonly positionMatch: boolean;
+    readonly placementMatch: boolean;
     readonly blueMotionScore: number;
     readonly redMotionScore: number;
   };
@@ -152,7 +152,7 @@ interface BeatSimilarityResult {
 
 ### 1.3 `ISpatialTransformDetector`
 
-Detects what spatial transform (if any) relates two beats/positions.
+Detects what spatial transform (if any) relates two beats/placements.
 
 ```typescript
 type SpatialTransform = {
@@ -325,7 +325,7 @@ interface SimilarityReport {
   // Component scores
   readonly wordSimilarity: number;      // TKA letter word comparison
   readonly motionSimilarity: number;    // Motion pattern similarity
-  readonly positionSimilarity: number;  // Position transition similarity
+  readonly placementSimilarity: number;  // Placement transition similarity (field name not yet renamed in src/lib/shared/comparison/services/types.ts)
   readonly structuralSimilarity: number; // Length, circularity match
 
   // Detailed breakdown
@@ -472,7 +472,7 @@ interface IPatternMatcher {
 |--------|--------|---------|
 | Blue motion similarity | 0.35 | Motion similarity score |
 | Red motion similarity | 0.35 | Motion similarity score |
-| Position group match | 0.2 | 1.0 if same transition, 0.0 if different |
+| Placement group match | 0.2 | 1.0 if same transition, 0.0 if different |
 | Hand angle preservation | 0.1 | 1.0 if same, 0.5 if close, 0.0 if different |
 
 ### Sequence Similarity Scoring

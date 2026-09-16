@@ -6,25 +6,25 @@ import {
   type IngredientEdges,
 } from "$lib/shared/combination/services/letter-calculus";
 import { GGGG_CW, HHHH_CCW, AAAA_CCW, FALG } from "./fixtures";
-import { GridPositionGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridPlacementGroup } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 const FL: IngredientEdges = {
   name: "FL",
   edges: [
-    { letter: "F", from: GridPositionGroup.BETA, to: GridPositionGroup.ALPHA },
-    { letter: "L", from: GridPositionGroup.ALPHA, to: GridPositionGroup.BETA },
+    { letter: "F", from: GridPlacementGroup.BETA, to: GridPlacementGroup.ALPHA },
+    { letter: "L", from: GridPlacementGroup.ALPHA, to: GridPlacementGroup.BETA },
   ],
 };
 const AA: IngredientEdges = {
   name: "AA",
   edges: [
-    { letter: "A", from: GridPositionGroup.ALPHA, to: GridPositionGroup.ALPHA },
+    { letter: "A", from: GridPlacementGroup.ALPHA, to: GridPlacementGroup.ALPHA },
   ],
 };
 const GG: IngredientEdges = {
   name: "GG",
   edges: [
-    { letter: "G", from: GridPositionGroup.BETA, to: GridPositionGroup.BETA },
+    { letter: "G", from: GridPlacementGroup.BETA, to: GridPlacementGroup.BETA },
   ],
 };
 
@@ -158,8 +158,8 @@ describe("letter calculus", () => {
       edges: [
         {
           letter: "G",
-          from: GridPositionGroup.BETA,
-          to: GridPositionGroup.BETA,
+          from: GridPlacementGroup.BETA,
+          to: GridPlacementGroup.BETA,
         },
       ],
     };
@@ -168,8 +168,8 @@ describe("letter calculus", () => {
       edges: [
         {
           letter: "G",
-          from: GridPositionGroup.BETA,
-          to: GridPositionGroup.BETA,
+          from: GridPlacementGroup.BETA,
+          to: GridPlacementGroup.BETA,
         },
       ],
     };
@@ -178,8 +178,8 @@ describe("letter calculus", () => {
       edges: [
         {
           letter: "X",
-          from: GridPositionGroup.BETA,
-          to: GridPositionGroup.BETA,
+          from: GridPlacementGroup.BETA,
+          to: GridPlacementGroup.BETA,
         },
       ],
     };
@@ -206,8 +206,8 @@ describe("letter calculus", () => {
         edges: [
           {
             letter: "G",
-            from: GridPositionGroup.BETA,
-            to: GridPositionGroup.BETA,
+            from: GridPlacementGroup.BETA,
+            to: GridPlacementGroup.BETA,
           },
         ],
       })

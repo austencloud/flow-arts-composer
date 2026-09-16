@@ -15,16 +15,16 @@ import type { RawPool } from "../../src/routes/(public)/guide/level-1/_data/exam
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   MotionType,
   RotationDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import {
-  getGridPositionFromLocations,
-  getGridLocationsFromPosition,
-} from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  getGridPlacementFromLocations,
+  getGridLocationsFromPlacement,
+} from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 
 // The adapter turns curated MCP step JSON into pictograph strips via the SAME
@@ -42,7 +42,7 @@ describe("position inverse (the canon the adapter relies on)", () => {
       for (const right of Object.values(GridLocation)) {
         let pos: string;
         try {
-          pos = getGridPositionFromLocations(left, right);
+          pos = getGridPlacementFromLocations(left, right);
         } catch {
           continue;
         }
@@ -53,8 +53,8 @@ describe("position inverse (the canon the adapter relies on)", () => {
       }
     }
     for (const [pos, key] of producedBy) {
-      const [b, r] = getGridLocationsFromPosition(pos as GridPosition);
-      expect(getGridPositionFromLocations(b, r)).toBe(pos);
+      const [b, r] = getGridLocationsFromPlacement(pos as GridPlacement);
+      expect(getGridPlacementFromLocations(b, r)).toBe(pos);
       expect(`${b},${r}`).toBe(key);
     }
   });
@@ -78,7 +78,7 @@ describe("entryToStrip — GΘSZ spot check (field-by-field)", () => {
     expect(start.letter).toBe(Letter.BETA);
     expect(start.stepNumber).toBe(0);
     // beta7 = (WEST, WEST) per the canonical deriver.
-    expect(start.startPosition).toBe(GridPosition.BETA7);
+    expect(start.startPlacement).toBe(GridPlacement.BETA7);
     expect(start.motions.left.startLocation).toBe(GridLocation.WEST);
     expect(start.motions.right.startLocation).toBe(GridLocation.WEST);
   });
@@ -87,8 +87,8 @@ describe("entryToStrip — GΘSZ spot check (field-by-field)", () => {
     const s1 = strip[1]!;
     expect(s1.letter).toBe(Letter.G);
     expect(s1.stepNumber).toBe(1);
-    expect(s1.startPosition).toBe(GridPosition.BETA7); // (w,w)
-    expect(s1.endPosition).toBe(GridPosition.BETA1); // (n,n)
+    expect(s1.startPlacement).toBe(GridPlacement.BETA7); // (w,w)
+    expect(s1.endPlacement).toBe(GridPlacement.BETA1); // (n,n)
     // Locations come from inverting the JSON positions, per hand.
     expect(s1.motions.left.startLocation).toBe(GridLocation.WEST);
     expect(s1.motions.left.endLocation).toBe(GridLocation.NORTH);
@@ -228,8 +228,8 @@ describe("factory sweep: every pool JSON builds cleanly", () => {
             for (const step of candidate.steps) {
               const [startName, endName] = step.pos.split("→").map((s) => s.trim());
               for (const name of [startName, endName]) {
-                const [left, right] = getGridLocationsFromPosition(name as GridPosition);
-                expect(getGridPositionFromLocations(left, right)).toBe(name);
+                const [left, right] = getGridLocationsFromPlacement(name as GridPlacement);
+                expect(getGridPlacementFromLocations(left, right)).toBe(name);
               }
             }
           });

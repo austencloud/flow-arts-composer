@@ -17,7 +17,7 @@ import {
   type MotionData,
 } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 
 export type PlacementMotionName = "pro" | "anti" | "float" | "dash" | "static";
 export type PlacementMap = Record<string, Record<string, [number, number]>>;
@@ -146,11 +146,11 @@ export function buildPictographPlacementFixture(
     ...diamond,
     id: `box-${sourceId}-${turns}`,
     gridMode: GridMode.BOX,
-    startPosition: getGridPositionFromLocations(
+    startPlacement: getGridPlacementFromLocations(
       boxMotion.startLocation,
       boxOther.startLocation
     ),
-    endPosition: getGridPositionFromLocations(
+    endPlacement: getGridPlacementFromLocations(
       boxMotion.endLocation,
       boxOther.endLocation
     ),

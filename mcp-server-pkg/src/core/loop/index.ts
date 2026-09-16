@@ -10,7 +10,7 @@ import {
   LOOPType as _LOOPType,
   Period as _Period,
   ALL_LOOP_TYPES as _ALL_LOOP_TYPES,
-  isLOOPValidForPositionPair as _isValid,
+  isLOOPValidForPlacementPair as _isValid,
   findBridgeLettersForLoop as _findBridge,
 } from "@tka/sequence-engine/loop";
 import { LOOPComponent } from "../sequence-renderer.js";
@@ -59,18 +59,18 @@ export { LOOPComponent };
 export function autoBridgeForLoop(
   originalWord: string,
   letters: string[],
-  startPosition: string,
-  endPosition: string,
+  startPlacement: string,
+  endPlacement: string,
   loopType: _LOOPType,
   period: _Period,
-  allPictographs: Array<{ letter: string; startPosition: string; endPosition: string }>
+  allPictographs: Array<{ letter: string; startPlacement: string; endPlacement: string }>
 ): { word: string; letters: string[]; bridgeAdded: string | null } {
-  const positionPair = `${startPosition},${endPosition}`;
-  if (_isValid(loopType, positionPair, period)) {
+  const placementPair = `${startPlacement},${endPlacement}`;
+  if (_isValid(loopType, placementPair, period)) {
     return { word: originalWord, letters, bridgeAdded: null };
   }
 
-  const bridgeOptions = _findBridge(startPosition, endPosition, loopType, period, allPictographs);
+  const bridgeOptions = _findBridge(startPlacement, endPlacement, loopType, period, allPictographs);
   if (bridgeOptions.length === 0) {
     return { word: originalWord, letters, bridgeAdded: null };
   }
@@ -79,12 +79,12 @@ export function autoBridgeForLoop(
   return { word: originalWord + bridgeLetter, letters: [...letters, bridgeLetter], bridgeAdded: bridgeLetter };
 }
 
-// Validation (from engine — uses string position pairs, no step conversion needed)
+// Validation (from engine — uses string placement pairs, no step conversion needed)
 export {
-  isLOOPValidForPositionPair,
-  getLOOPOptionsForPositionPair,
-  getExpectedEndPosition,
-  getValidEndPositionsForLoop,
+  isLOOPValidForPlacementPair,
+  getLOOPOptionsForPlacementPair,
+  getExpectedEndPlacement,
+  getValidEndPlacementsForLoop,
   findBridgeLettersForLoop,
   HALVED_LOOPS,
   QUARTERED_LOOPS,

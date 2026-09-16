@@ -50,7 +50,7 @@ import {
   loopDetectorClass,
 } from "../packages/sequence-engine/src/loop/detection/LOOPDetector.js";
 import { findLetterByMotions } from "../packages/sequence-engine/src/loop/LetterLookup.js";
-import { gridPositionDeriver } from "../packages/sequence-engine/src/core/positions/GridPositionDeriver.js";
+import { gridPlacementDeriver } from "../packages/sequence-engine/src/core/placements/GridPlacementDeriver.js";
 import { LetterClassifier } from "../packages/sequence-engine/src/core/letters/LetterClassifier.js";
 import { LetterParser } from "../packages/sequence-engine/src/core/letters/LetterParser.js";
 
@@ -105,8 +105,8 @@ interface AuditRecord {
   result?: {
     word: string;
     stepCount: number;
-    startPosition: string;
-    endPosition: string;
+    startPlacement: string;
+    endPlacement: string;
     bridgeStepIndices: number[];
     expectedLoopComponents: string[];
     detection: DetectionSummary;
@@ -441,8 +441,8 @@ function distinctPositions(data: PictographData[]): string[] {
   return [
     ...new Set(
       data.flatMap((pictograph) => [
-        pictograph.startPosition,
-        pictograph.endPosition,
+        pictograph.startPlacement,
+        pictograph.endPlacement,
       ])
     ),
   ]
@@ -460,7 +460,7 @@ function* loopStartCases(
     for (const period of PERIODS) {
       for (const gridMode of GRID_MODES) {
         const positions = distinctPositions(dataByGrid.get(gridMode) ?? []);
-        for (const startPosition of positions) {
+        for (const startPlacement of positions) {
           yield makeCase("loop-starts", ordinal++, {
             length: 16,
             loopType,
@@ -471,7 +471,7 @@ function* loopStartCases(
             turnIntensity: 3,
             constraintPreset: "smooth",
             handPathMode: "mixed",
-            startPosition,
+            startPlacement,
           });
         }
       }
@@ -529,8 +529,8 @@ function* positionControlCases(
   for (const gridMode of GRID_MODES) {
     const positions = distinctPositions(dataByGrid.get(gridMode) ?? []);
 
-    for (const startPosition of positions) {
-      for (const endPosition of positions) {
+    for (const startPlacement of positions) {
+      for (const endPlacement of positions) {
         yield makeCase("position-controls", ordinal++, {
           length: 8,
           gridMode,
@@ -539,8 +539,8 @@ function* positionControlCases(
           turnIntensity: 2,
           constraintPreset: "smooth",
           handPathMode: "mixed",
-          startPosition,
-          endPosition,
+          startPlacement,
+          endPlacement,
         });
       }
     }
@@ -557,19 +557,19 @@ function* positionControlCases(
       };
       yield makeCase("position-controls", ordinal++, {
         ...common,
-        startPosition: position,
+        startPlacement: position,
       });
       yield makeCase("position-controls", ordinal++, {
         ...common,
-        endPosition: position,
+        endPlacement: position,
       });
       yield makeCase("position-controls", ordinal++, {
         ...common,
-        blockedStartPositions: [position],
+        blockedStartPlacements: [position],
       });
       yield makeCase("position-controls", ordinal++, {
         ...common,
-        blockedStartPositions: positions.filter(
+        blockedStartPlacements: positions.filter(
           (candidate) => candidate !== position
         ),
       });
@@ -696,8 +696,8 @@ function stepSignatures(steps: SequenceStep[]): StepSignature[] {
   return steps.map((step, index) => ({
     n: step.stepNumber ?? index,
     letter: step.letter ?? "",
-    start: step.startPosition ?? "",
-    end: step.endPosition ?? "",
+    start: step.startPlacement ?? "",
+    end: step.endPlacement ?? "",
     left: motionSignature(step.leftMotion),
     right: motionSignature(step.rightMotion),
   }));
@@ -865,28 +865,28 @@ function validateSequence(
     addViolation(violations, "empty-sequence", "no steps returned");
   }
 
-  if (params.startPosition && first?.startPosition !== params.startPosition) {
+  if (params.startPlacement && first?.startPlacement !== params.startPlacement) {
     addViolation(
       violations,
-      "requested-start-position",
-      `requested ${params.startPosition}, received ${first?.startPosition ?? "?"}`
+      "requested-start-placement",
+      `requested ${params.startPlacement}, received ${first?.startPlacement ?? "?"}`
     );
   }
-  if (params.endPosition && last?.endPosition !== params.endPosition) {
+  if (params.endPlacement && last?.endPlacement !== params.endPlacement) {
     addViolation(
       violations,
-      "requested-end-position",
-      `requested ${params.endPosition}, received ${last?.endPosition ?? "?"}`
+      "requested-end-placement",
+      `requested ${params.endPlacement}, received ${last?.endPlacement ?? "?"}`
     );
   }
   if (
-    first?.startPosition &&
-    params.blockedStartPositions?.includes(first.startPosition)
+    first?.startPlacement &&
+    params.blockedStartPlacements?.includes(first.startPlacement)
   ) {
     addViolation(
       violations,
-      "blocked-start-position",
-      `${first.startPosition} was explicitly blocked`
+      "blocked-start-placement",
+      `${first.startPlacement} was explicitly blocked`
     );
   }
 
@@ -945,18 +945,18 @@ function validateSequence(
       );
     }
 
-    if (step.startPosition && !validPositions.has(step.startPosition)) {
+    if (step.startPlacement && !validPositions.has(step.startPlacement)) {
       addViolation(
         violations,
-        "grid-start-position",
-        `${step.startPosition} is absent from ${params.gridMode}`
+        "grid-start-placement",
+        `${step.startPlacement} is absent from ${params.gridMode}`
       );
     }
-    if (step.endPosition && !validPositions.has(step.endPosition)) {
+    if (step.endPlacement && !validPositions.has(step.endPlacement)) {
       addViolation(
         violations,
-        "grid-end-position",
-        `${step.endPosition} is absent from ${params.gridMode}`
+        "grid-end-placement",
+        `${step.endPlacement} is absent from ${params.gridMode}`
       );
     }
 
@@ -975,26 +975,26 @@ function validateSequence(
 
     if (step.leftMotion && step.rightMotion) {
       try {
-        const derivedStart = gridPositionDeriver.getGridPositionFromLocations(
+        const derivedStart = gridPlacementDeriver.getGridPlacementFromLocations(
           String(step.leftMotion.startLocation),
           String(step.rightMotion.startLocation)
         );
-        const derivedEnd = gridPositionDeriver.getGridPositionFromLocations(
+        const derivedEnd = gridPlacementDeriver.getGridPlacementFromLocations(
           String(step.leftMotion.endLocation),
           String(step.rightMotion.endLocation)
         );
-        if (derivedStart !== step.startPosition) {
+        if (derivedStart !== step.startPlacement) {
           addViolation(
             violations,
-            "derived-start-position",
-            `step ${index}: ${step.startPosition} != ${derivedStart}`
+            "derived-start-placement",
+            `step ${index}: ${step.startPlacement} != ${derivedStart}`
           );
         }
-        if (derivedEnd !== step.endPosition) {
+        if (derivedEnd !== step.endPlacement) {
           addViolation(
             violations,
-            "derived-end-position",
-            `step ${index}: ${step.endPosition} != ${derivedEnd}`
+            "derived-end-placement",
+            `step ${index}: ${step.endPlacement} != ${derivedEnd}`
           );
         }
       } catch (error) {
@@ -1039,11 +1039,11 @@ function validateSequence(
     if (index === 0) continue;
     const previous = steps[index - 1]!;
 
-    if (previous.endPosition !== step.startPosition) {
+    if (previous.endPlacement !== step.startPlacement) {
       addViolation(
         violations,
         "position-continuity",
-        `step ${index}: ${previous.endPosition} -> ${step.startPosition}`
+        `step ${index}: ${previous.endPlacement} -> ${step.startPlacement}`
       );
     }
 
@@ -1109,11 +1109,11 @@ function validateSequence(
   };
 
   if (params.loopType) {
-    if (!first || !last || first.startPosition !== last.endPosition) {
+    if (!first || !last || first.startPlacement !== last.endPlacement) {
       addViolation(
         violations,
         "loop-position-closure",
-        `${first?.startPosition ?? "?"} -> ${last?.endPosition ?? "?"}`
+        `${first?.startPlacement ?? "?"} -> ${last?.endPlacement ?? "?"}`
       );
     }
 
@@ -1209,8 +1209,8 @@ async function main(): Promise<void> {
       gridMode,
       new Set(
         data.flatMap((pictograph) => [
-          pictograph.startPosition,
-          pictograph.endPosition,
+          pictograph.startPlacement,
+          pictograph.endPlacement,
         ])
       )
     );
@@ -1324,8 +1324,8 @@ async function main(): Promise<void> {
         result: {
           word: generated.result.word,
           stepCount: Math.max(0, generated.result.steps.length - 1),
-          startPosition: generated.result.startPosition,
-          endPosition: generated.result.endPosition,
+          startPlacement: generated.result.startPlacement,
+          endPlacement: generated.result.endPlacement,
           bridgeStepIndices: generated.result.bridgeStepIndices,
           expectedLoopComponents: normalizeComponents(
             generated.loopComponents ?? []

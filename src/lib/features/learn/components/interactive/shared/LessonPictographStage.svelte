@@ -3,7 +3,7 @@
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
   import PictographContainer from "$lib/shared/pictograph/shared/components/PictographContainer.svelte";
-  import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+  import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 
@@ -28,7 +28,7 @@
   const motionStartData = $derived.by(() => {
     if (!pictograph) return null;
     try {
-      return startPositionDeriver.deriveFromFirstStep(
+      return startPlacementDeriver.deriveFromFirstStep(
         pictograph as unknown as StepData
       );
     } catch {
@@ -93,7 +93,7 @@
         showReversals={false}
         showTnD={false}
         showElemental={false}
-        showPositions={false}
+        showPlacements={false}
         showNonRadialPoints={false}
         showHandPoints
         leftPropTypeOverride={PropType.STAFF}

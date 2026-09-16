@@ -586,7 +586,7 @@ export class FrameParameterBuilder {
 
     // Check start position. Invisible placeholders count as "not there"
     // (both-required Step shape: absence is encoded as isVisible:false).
-    const startPos = seq.startPosition ?? seq.startingPosition;
+    const startPos = seq.startPlacement ?? seq.startingPlacement;
     if (isVisibleMotion(startPos?.motions?.left)) hasLeft = true;
     if (isVisibleMotion(startPos?.motions?.right)) hasRight = true;
 

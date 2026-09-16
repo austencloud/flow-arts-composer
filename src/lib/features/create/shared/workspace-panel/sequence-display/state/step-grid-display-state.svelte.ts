@@ -63,7 +63,7 @@ export function createStepGridDisplayState() {
   // Animation state
   let newlyAddedStepIndex = $state<number | null>(null);
   let shouldAnimateAllSteps = $state<boolean>(false);
-  let shouldAnimateStartPosition = $state<boolean>(false);
+  let shouldAnimateStartPlacement = $state<boolean>(false);
   let isSequentialMode = $state<boolean>(true); // Default to sequential
   let stepsToAnimate = $state<Set<number>>(new Set());
   let isPreparingFullAnimation = $state<boolean>(false);
@@ -122,7 +122,7 @@ export function createStepGridDisplayState() {
 
     // Set animation state IMMEDIATELY so steps render invisible
     isPreparingFullAnimation = true;
-    shouldAnimateStartPosition = true;
+    shouldAnimateStartPlacement = true;
     newlyAddedStepIndex = null;
     // The previous wave's clock is dead the moment a new one is being set up.
     // Leaving it running let a cell that reported ready during the gap schedule
@@ -162,7 +162,7 @@ export function createStepGridDisplayState() {
 
     // DO NOT set isPreparingFullAnimation - existing beats must stay visible
     isPreparingFullAnimation = false;
-    shouldAnimateStartPosition = false;
+    shouldAnimateStartPlacement = false;
     shouldAnimateAllSteps = false;
     newlyAddedStepIndex = null;
     // Same reason as prepareSequenceAnimation: the old wave's clock must not
@@ -282,7 +282,7 @@ export function createStepGridDisplayState() {
     isPreparingFullAnimation = false;
     newlyAddedStepIndex = stepIndex;
     shouldAnimateAllSteps = false;
-    shouldAnimateStartPosition = false;
+    shouldAnimateStartPlacement = false;
     stepsToAnimate = new Set();
     arrivalRequest = shouldStageArrival
       ? {
@@ -338,7 +338,7 @@ export function createStepGridDisplayState() {
   function cleanupAnimation() {
     isPreparingFullAnimation = false;
     isWaitingForSequentialAnimation = false;
-    shouldAnimateStartPosition = false;
+    shouldAnimateStartPlacement = false;
     shouldAnimateAllSteps = false;
     stepsToAnimate = new Set();
     arrivalRequest = null;
@@ -381,8 +381,8 @@ export function createStepGridDisplayState() {
     get shouldAnimateAllSteps() {
       return shouldAnimateAllSteps;
     },
-    get shouldAnimateStartPosition() {
-      return shouldAnimateStartPosition;
+    get shouldAnimateStartPlacement() {
+      return shouldAnimateStartPlacement;
     },
     get isSequentialMode() {
       return isSequentialMode;

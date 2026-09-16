@@ -51,7 +51,7 @@ describe("Construct solo proposal", () => {
 
     expect(paired.steps).toHaveLength(8);
     expect(getSequenceMotionProfile(paired).kind).toBe("paired");
-    expect(isVisibleMotion(paired.startPosition?.motions.left)).toBe(true);
-    expect(isVisibleMotion(paired.startPosition?.motions.right)).toBe(true);
+    expect(isVisibleMotion(paired.startPlacement?.motions.left)).toBe(true);
+    expect(isVisibleMotion(paired.startPlacement?.motions.right)).toBe(true);
   });
 });

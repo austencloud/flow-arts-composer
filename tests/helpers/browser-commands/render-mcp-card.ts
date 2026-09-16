@@ -9,7 +9,7 @@ export const renderMcpCard: BrowserCommand<
   [adapter: Adapter, sequence: any, options: Record<string, unknown>],
   string
 > = async (_ctx, adapter, sequence, options) => {
-  const steps = [sequence.startPosition, ...sequence.steps].map(
+  const steps = [sequence.startPlacement, ...sequence.steps].map(
     (step: any, index: number) => ({
       ...step,
       stepNumber: index,

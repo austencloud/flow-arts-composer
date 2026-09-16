@@ -12,7 +12,7 @@ import {
  * sequences.
  *
  * The playback controller's own boundary resumes a seamlessly loopable
- * sequence at `startPositionDuration` — it skips the repeated start hold —
+ * sequence at `startPlacementDuration` — it skips the repeated start hold —
  * and restarts a freeform one at 0, replaying it. The card preview must make
  * the same distinction, because a held start beat inserted into a loopable
  * repeat is a pause in something meant to spin continuously.
@@ -26,7 +26,7 @@ function loopableSequence(): SequenceData {
     name: "Loopable",
     word: fixture.word,
     steps: fixture.steps,
-    startPosition: fixture.startPosition ?? undefined,
+    startPlacement: fixture.startPlacement ?? undefined,
     thumbnails: [],
     isFavorite: false,
     isCircular: true,
@@ -42,7 +42,7 @@ function freeformSequence(): SequenceData {
   return {
     ...sequence,
     id: "freeform",
-    steps: [...sequence.steps.slice(0, -1), { ...last, endPosition: "alpha1" }],
+    steps: [...sequence.steps.slice(0, -1), { ...last, endPlacement: "alpha1" }],
   } as SequenceData;
 }
 

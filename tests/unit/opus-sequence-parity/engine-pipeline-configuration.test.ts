@@ -246,7 +246,7 @@ describe("engine pipeline configuration — period 4", () => {
       `threw ${rotatedInverted.samples}/${rotatedInverted.samples}`
     );
     expect(full.firstThrow).toContain(
-      "Cannot close orientation on an open position pattern"
+      "Cannot close orientation on an open placement pattern"
     );
   });
 
@@ -260,6 +260,6 @@ describe("engine pipeline configuration — period 4", () => {
     expect(`threw ${rhythm.threw}/${rsi.samples}`).toBe(
       `threw ${rsi.samples}/${rsi.samples}`
     );
-    expect(rhythm.firstThrow).toContain("Invalid position pair for quartered LOOP");
+    expect(rhythm.firstThrow).toContain("Invalid placement pair for quartered LOOP");
   });
 });

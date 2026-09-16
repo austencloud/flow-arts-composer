@@ -31,8 +31,8 @@ function convertStepsToRaw(sequence: SequenceData): RawStepData[] {
   const result: RawStepData[] = [];
 
   // Add metadata object as beat 0 (the LOOP detector expects this)
-  const startPos = sequence.startPosition ?? sequence.startingPosition;
-  const startPosName = startPos?.endPosition ?? startPos?.gridPosition;
+  const startPos = sequence.startPlacement ?? sequence.startingPlacement;
+  const startPosName = startPos?.endPlacement ?? startPos?.gridPlacement;
   result.push({
     beat: 0,
     word: sequence.word,
@@ -40,7 +40,7 @@ function convertStepsToRaw(sequence: SequenceData): RawStepData[] {
     level: sequence.level,
     isCircular: sequence.isCircular,
     gridMode: sequence.gridMode ?? GridMode.DIAMOND,
-    sequenceStartPosition: startPosName ?? undefined,
+    sequenceStartPlacement: startPosName ?? undefined,
     endPos: startPosName ?? undefined,
   });
 
@@ -59,8 +59,8 @@ function convertStepToRaw(step: Step): RawStepData {
   return {
     beat: step.stepNumber,
     letter: step.letter ?? undefined,
-    startPos: step.startPosition ?? undefined,
-    endPos: step.endPosition ?? undefined,
+    startPos: step.startPlacement ?? undefined,
+    endPos: step.endPlacement ?? undefined,
     leftAttributes: leftMotion ? convertMotionToRaw(leftMotion) : undefined,
     rightAttributes: rightMotion ? convertMotionToRaw(rightMotion) : undefined,
   };

@@ -4,7 +4,7 @@
  * SpiroAnim's transcription records what each cell DOES — letter, start and end
  * position, per-hand turns — but not the motions themselves. Those live in
  * TKA's own pictograph dataframes, so the resolver recovers each step by
- * looking up `(letter, startPosition, endPosition)` there and then hands the
+ * looking up `(letter, startPlacement, endPlacement)` there and then hands the
  * result to the canonical owners: `applyPendingTurnsToOption` for turns,
  * `propagateOrientationsForHand` for the orientation chain, and
  * `hydrateSequence` for letters, positions, word, LOOP, placement and grid
@@ -12,7 +12,7 @@
  *
  * ## Choosing the row
  *
- * `(letter, startPosition, endPosition)` addresses exactly one dataframe row
+ * `(letter, startPlacement, endPlacement)` addresses exactly one dataframe row
  * for every step in this corpus except the six one-pro-one-anti letters
  * (C, F, I, L, O, R), where two rows differ only in which hand carries the anti
  * motion. Every one of those pairs is a pure blue↔red swap — verified across
@@ -63,8 +63,8 @@ import { loopDetector } from "$lib/features/create/generate/circular/services/lo
  */
 export interface TranscriptionStep {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   swapped: boolean;
   blueTurns: number;
   redTurns: number;
@@ -99,7 +99,7 @@ interface IndexedRow {
 let rowIndexPromise: Promise<Map<string, IndexedRow[]>> | null = null;
 
 /**
- * Diamond and Box in one index, keyed by `(letter, startPosition, endPosition)`.
+ * Diamond and Box in one index, keyed by `(letter, startPlacement, endPlacement)`.
  *
  * A cell's declared shape is SpiroAnim's word for its own grid, not a promise
  * about which dataframe holds the pictograph: 144 cells labelled `box` resolve
@@ -115,14 +115,14 @@ async function getRowIndex(): Promise<Map<string, IndexedRow[]>> {
       for (const pictograph of variations) {
         if (
           !pictograph.letter ||
-          !pictograph.startPosition ||
-          !pictograph.endPosition
+          !pictograph.startPlacement ||
+          !pictograph.endPlacement
         )
           continue;
         const key = rowKey(
           String(pictograph.letter),
-          String(pictograph.startPosition),
-          String(pictograph.endPosition)
+          String(pictograph.startPlacement),
+          String(pictograph.endPlacement)
         );
         const bucket = index.get(key);
         if (bucket) bucket.push({ pictograph, gridMode });
@@ -136,10 +136,10 @@ async function getRowIndex(): Promise<Map<string, IndexedRow[]>> {
 
 function rowKey(
   letter: string,
-  startPosition: string,
-  endPosition: string
+  startPlacement: string,
+  endPlacement: string
 ): string {
-  return `${letter}|${startPosition}|${endPosition}`;
+  return `${letter}|${startPlacement}|${endPlacement}`;
 }
 
 function rotationOf(row: IndexedRow, hand: HandSide): RotationDirection | null {
@@ -156,7 +156,7 @@ function chooseRows(
   index: Map<string, IndexedRow[]>
 ): IndexedRow[] | null {
   const candidates = entry.steps.map((step) =>
-    index.get(rowKey(step.letter, step.startPosition, step.endPosition))
+    index.get(rowKey(step.letter, step.startPlacement, step.endPlacement))
   );
   if (candidates.some((bucket) => !bucket || bucket.length === 0)) return null;
   const buckets = candidates as IndexedRow[][];
@@ -257,13 +257,13 @@ function withRequestedOrientation(
   if (clockwiseSteps === 0) return entry;
   const rotated: TranscriptionStep[] = [];
   for (const step of entry.steps) {
-    const startPosition = rotatePositionName(
-      step.startPosition,
+    const startPlacement = rotatePositionName(
+      step.startPlacement,
       clockwiseSteps
     );
-    const endPosition = rotatePositionName(step.endPosition, clockwiseSteps);
-    if (!startPosition || !endPosition) return null;
-    rotated.push({ ...step, startPosition, endPosition });
+    const endPlacement = rotatePositionName(step.endPlacement, clockwiseSteps);
+    if (!startPlacement || !endPlacement) return null;
+    rotated.push({ ...step, startPlacement, endPlacement });
   }
   return { ...entry, steps: rotated };
 }

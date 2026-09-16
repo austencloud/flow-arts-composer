@@ -4,7 +4,7 @@
  * The invariants below are derived from the timeline definition, not copied
  * from the implementation:
  *
- *   timeline = [0, D0)  start hold, D0 = startPositionDuration
+ *   timeline = [0, D0)  start hold, D0 = startPlacementDuration
  *             then step k (0-based) occupies [D0 + P_k, D0 + P_k + d_k)
  *             where P_k = sum of d_0..d_{k-1} computed HERE, in the test.
  *
@@ -57,8 +57,8 @@ describe("animation clock — elapsed time to step position", () => {
     for (const sequence of [UNIFORM, FRACTIONAL]) {
       const orchestrator = orchestratorFor(sequence);
       const expected =
-        orchestrator.getStartPositionDuration() + motionDurationTotal(sequence);
-      expect(orchestrator.getTotalDurationWithStartPosition()).toBeCloseTo(
+        orchestrator.getStartPlacementDuration() + motionDurationTotal(sequence);
+      expect(orchestrator.getTotalDurationWithStartPlacement()).toBeCloseTo(
         expected,
         10
       );
@@ -67,7 +67,7 @@ describe("animation clock — elapsed time to step position", () => {
 
   it("lands exactly on beat k+1 at the independently computed start time of step k", () => {
     const orchestrator = orchestratorFor(FRACTIONAL);
-    const startHold = orchestrator.getStartPositionDuration();
+    const startHold = orchestrator.getStartPlacementDuration();
     const durations = motionDurations(FRACTIONAL);
     const prefixes = prefixSums(durations);
 
@@ -82,7 +82,7 @@ describe("animation clock — elapsed time to step position", () => {
 
   it("advances position at 1/duration per time unit inside every step", () => {
     const orchestrator = orchestratorFor(FRACTIONAL);
-    const startHold = orchestrator.getStartPositionDuration();
+    const startHold = orchestrator.getStartPlacementDuration();
     const durations = motionDurations(FRACTIONAL);
     const prefixes = prefixSums(durations);
 
@@ -102,7 +102,7 @@ describe("animation clock — elapsed time to step position", () => {
   it("is non-decreasing across the whole timeline at 1ms resolution", () => {
     for (const sequence of [UNIFORM, FRACTIONAL]) {
       const orchestrator = orchestratorFor(sequence);
-      const total = orchestrator.getTotalDurationWithStartPosition();
+      const total = orchestrator.getTotalDurationWithStartPlacement();
       let previous = -Infinity;
       let worstRegression = 0;
       for (let t = 0; t <= total + 1e-9; t += 0.001) {
@@ -117,7 +117,7 @@ describe("animation clock — elapsed time to step position", () => {
   it("round-trips time -> position -> time within 1e-9 across the timeline", () => {
     for (const sequence of [UNIFORM, FRACTIONAL]) {
       const orchestrator = orchestratorFor(sequence);
-      const total = orchestrator.getTotalDurationWithStartPosition();
+      const total = orchestrator.getTotalDurationWithStartPlacement();
       let worst = 0;
       for (let t = 0; t <= total + 1e-9; t += 0.0137) {
         const position = orchestrator.calculateStateDurationAware(t);
@@ -145,7 +145,7 @@ describe("animation clock — elapsed time to step position", () => {
     // Time keeps running there; position must stay pinned at totalSteps + 1.
     const freeform = canonicalFreeformSequence("rotated", 0);
     const orchestrator = orchestratorFor(freeform);
-    const endOfMotion = orchestrator.getTotalDurationWithStartPosition();
+    const endOfMotion = orchestrator.getTotalDurationWithStartPlacement();
     const totalSteps = orchestrator.getTotalBeats();
 
     expect(orchestrator.calculateStateDurationAware(endOfMotion)).toBeCloseTo(
@@ -161,7 +161,7 @@ describe("animation clock — elapsed time to step position", () => {
 
   it("keeps the start hold one beat wide and linear in time", () => {
     const orchestrator = orchestratorFor(FRACTIONAL);
-    const startHold = orchestrator.getStartPositionDuration();
+    const startHold = orchestrator.getStartPlacementDuration();
     expect(startHold).toBe(1);
     for (const fraction of [0, 0.25, 0.5, 0.9999]) {
       expect(
@@ -176,7 +176,7 @@ describe("animation clock — elapsed time to step position", () => {
     // At equal positions they must agree, or scrubbing and playing the same
     // instant show different props.
     const orchestrator = orchestratorFor(FRACTIONAL);
-    const total = orchestrator.getTotalDurationWithStartPosition();
+    const total = orchestrator.getTotalDurationWithStartPlacement();
     let worstAngleDelta = 0;
 
     for (let t = 0; t <= total; t += 0.0137) {

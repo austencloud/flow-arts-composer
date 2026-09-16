@@ -2,7 +2,7 @@
  * Walk -> SequenceData: the pass that turns a graph object into something a
  * human can actually pick up two props and perform.
  *
- * The search guarantees POSITIONAL continuity — every block starts where the
+ * The search guarantees PLACEMENT continuity — every block starts where the
  * previous one ended, and the walk returns to its own start seam. It guarantees
  * nothing about ORIENTATION, and it cannot: a block's entry orientation depends
  * on whatever now precedes it, which in a spliced walk is not what preceded it
@@ -12,7 +12,7 @@
  * So the whole chain is re-derived here, from a single seed:
  *
  *   1. Flatten the blocks in walk order, renumbering 1..n.
- *   2. Rebuild the START POSITION through `startPositionDeriver` — the same
+ *   2. Rebuild the START PLACEMENT through `startPlacementDeriver` — the same
  *      derivation the sequence-hydrator uses. That hold IS the frame: its end
  *      orientations are the walk's only orientation input.
  *   3. `recalculateAllOrientations` — propagate from the hold through every
@@ -27,9 +27,9 @@
  *      flip appears, which is what Austen's letter-faithful GG+HH examples show.
  *   6. Strict word + honest circularity + period (below).
  *
- * **isCircular is measured, not asserted.** A walk closes POSITIONALLY by
+ * **isCircular is measured, not asserted.** A walk closes at the PLACEMENT level by
  * construction, but `isCircular` in this codebase means the app's stricter
- * seamless-loop definition — position AND orientation return to the start, so a
+ * seamless-loop definition — placement AND orientation return to the start, so a
  * player can repeat it with no visible jump (`isSeamlesslyLoopable`). Hard-coding
  * `true` would have lied about every result whose orientation chain takes two
  * passes.
@@ -50,8 +50,8 @@
  * Everything here is DETERMINISTIC: ids are derived from block index, step
  * index and the source step's own id, never minted. Two identical walks must
  * produce byte-identical sequences, or the search's determinism guarantee stops
- * at this boundary. (`startPositionDeriver`'s own id, `derived-start-<position>`,
- * is derived too — unlike `createStartPositionFromBeatStart`, whose id is
+ * at this boundary. (`startPlacementDeriver`'s own id, `derived-start-<placement>`,
+ * is derived too — unlike `createStartPlacementFromBeatStart`, whose id is
  * `start-derived-${Date.now()}`.)
  */
 
@@ -76,7 +76,7 @@ import {
   HandSide,
   type Orientation,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 
 import type { WalkBlock } from "../domain/types";
 
@@ -96,7 +96,7 @@ type OrientationSeed = Partial<Record<HandSide, Orientation>>;
 
 /** Where each hand stands before the first step: the start hold's end state. */
 function seedOf(sequence: SequenceData): OrientationSeed {
-  const hold = sequence.startPosition;
+  const hold = sequence.startPlacement;
   if (!hold) return {};
   return Object.fromEntries(
     HANDS.map((hand) => [hand, hold.motions[hand]?.endOrientation])
@@ -221,7 +221,7 @@ function withWrapReversals(seq: SequenceData): SequenceData {
  * Assemble a closed walk's blocks into a performable SequenceData.
  *
  * `frameCard` is the card the combination is expressed in — card A. Its grid
- * mode is carried onto the result; its start position is NOT, because a walk
+ * mode is carried onto the result; its start placement is NOT, because a walk
  * may enter card A at any step and the hold has to match the step the walk
  * actually begins on.
  *
@@ -272,7 +272,7 @@ export async function buildResult(
     // Provisional; measured at the end, once orientations are real.
     isCircular: false,
     ...(frameCard.gridMode !== undefined && { gridMode: frameCard.gridMode }),
-    startPosition: startPositionDeriver.deriveFromFirstStep(first),
+    startPlacement: startPlacementDeriver.deriveFromFirstStep(first),
   });
 
   // 3 → 4 → 5. Order matters only between 3 and 5: reversal flags are read off

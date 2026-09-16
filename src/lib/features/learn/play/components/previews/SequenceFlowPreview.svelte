@@ -39,7 +39,7 @@
             showNonRadialPoints={false}
             showTnD={false}
             showElemental={false}
-            showPositions={false}
+            showPlacements={false}
             showHandPoints={false}
           />
         </div>
@@ -58,7 +58,7 @@
               showNonRadialPoints={false}
               showTnD={false}
               showElemental={false}
-              showPositions={false}
+              showPlacements={false}
               showHandPoints={false}
             />
           </div>

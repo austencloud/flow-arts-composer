@@ -126,17 +126,17 @@ export type Type1Pattern = "pro-pro" | "anti-anti" | "hybrid";
 
 export interface Type1LessonLetter {
   letter: Letter;
-  positionFamily: "alpha" | "beta";
+  placementFamily: "alpha" | "beta";
   pattern: Type1Pattern;
 }
 
 export const TYPE1_LESSON_LETTERS = [
-  { letter: TkaLetter.A, positionFamily: "alpha", pattern: "pro-pro" },
-  { letter: TkaLetter.B, positionFamily: "alpha", pattern: "anti-anti" },
-  { letter: TkaLetter.C, positionFamily: "alpha", pattern: "hybrid" },
-  { letter: TkaLetter.G, positionFamily: "beta", pattern: "pro-pro" },
-  { letter: TkaLetter.H, positionFamily: "beta", pattern: "anti-anti" },
-  { letter: TkaLetter.I, positionFamily: "beta", pattern: "hybrid" },
+  { letter: TkaLetter.A, placementFamily: "alpha", pattern: "pro-pro" },
+  { letter: TkaLetter.B, placementFamily: "alpha", pattern: "anti-anti" },
+  { letter: TkaLetter.C, placementFamily: "alpha", pattern: "hybrid" },
+  { letter: TkaLetter.G, placementFamily: "beta", pattern: "pro-pro" },
+  { letter: TkaLetter.H, placementFamily: "beta", pattern: "anti-anti" },
+  { letter: TkaLetter.I, placementFamily: "beta", pattern: "hybrid" },
 ] as const satisfies readonly Type1LessonLetter[];
 
 export const TYPE1_PATTERN_LABELS: Record<Type1Pattern, string> = {

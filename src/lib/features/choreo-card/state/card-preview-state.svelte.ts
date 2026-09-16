@@ -10,7 +10,7 @@ export interface VisibilitySettings {
   showGrid: boolean;
   showTKA: boolean;
   showWord: boolean;
-  includeStartPosition: boolean;
+  includeStartPlacement: boolean;
   handPointsVisible: boolean;
   theme: string;
 }
@@ -52,7 +52,7 @@ export function createCardPreviewState(
   );
 
   let selectedFamilyIds = $state<string[]>([]);
-  let startPositionFilter = $state<string | null>(null);
+  let startPlacementFilter = $state<string | null>(null);
 
   let sequences = $state<SequenceData[]>([]);
   let isLoading = $state(false);
@@ -64,7 +64,7 @@ export function createCardPreviewState(
     (selectedCatalog?.totalSequences ?? 0) >= LARGE_CATALOG_THRESHOLD
   );
 
-  // Applies active family and start-position filters to the loaded sequence set.
+  // Applies active family and start-placement filters to the loaded sequence set.
   const filteredSequences = $derived.by(() => {
     let result = sequences;
 
@@ -78,9 +78,9 @@ export function createCardPreviewState(
       result = result.filter(s => seqIds.has(s.id));
     }
 
-    if (startPositionFilter) {
+    if (startPlacementFilter) {
       result = result.filter(
-        s => s.startingPositionGroup === startPositionFilter
+        s => s.startingPlacementGroup === startPlacementFilter
       );
     }
 
@@ -139,7 +139,7 @@ export function createCardPreviewState(
     get breadcrumbs() { return breadcrumbs; },
     get cardSize() { return cardSize; },
     get selectedFamilyIds() { return selectedFamilyIds; },
-    get startPositionFilter() { return startPositionFilter; },
+    get startPlacementFilter() { return startPlacementFilter; },
     get filteredSequences() { return filteredSequences; },
     get isLoading() { return isLoading; },
     get isLargeCatalog() { return isLargeCatalog; },
@@ -166,7 +166,7 @@ export function createCardPreviewState(
       selectedCatalog = catalog;
       level = 2;
       selectedFamilyIds = [];
-      startPositionFilter = null;
+      startPlacementFilter = null;
       persist(STORAGE_CATALOG_ID, catalog.id);
 
       if ((catalog.totalSequences ?? 0) < LARGE_CATALOG_THRESHOLD) {
@@ -179,7 +179,7 @@ export function createCardPreviewState(
         selectedCatalog = null;
         sequences = [];
         selectedFamilyIds = [];
-        startPositionFilter = null;
+        startPlacementFilter = null;
       }
       if (targetLevel === 0) {
         selectedSource = null;
@@ -201,8 +201,8 @@ export function createCardPreviewState(
       }
     },
 
-    setStartPositionFilter(pos: string | null) {
-      startPositionFilter = pos;
+    setStartPlacementFilter(pos: string | null) {
+      startPlacementFilter = pos;
     },
 
     // Converts current card size + caller-supplied visibility into render options
@@ -213,7 +213,7 @@ export function createCardPreviewState(
         canvasWidth: size.canvasWidth,
         canvasHeight: size.canvasHeight,
         bleedPx: size.bleedPx,
-        includeStartPosition: visibility.includeStartPosition,
+        includeStartPlacement: visibility.includeStartPlacement,
         theme: visibility.theme,
       };
     },

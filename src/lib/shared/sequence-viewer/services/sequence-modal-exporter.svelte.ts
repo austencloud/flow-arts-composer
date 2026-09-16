@@ -37,7 +37,7 @@ export interface VideoExportOptions {
   loopCount: number;
   resolution: 720 | 1080 | 2160 | 4320;
   effectOverrides?: VideoExportEffectOverrides;
-  includeStartPosition?: boolean;
+  includeStartPlacement?: boolean;
   includeEndHold?: boolean;
   /** Viewer Blue/Red motion toggles; a hand hidden on screen stays hidden in the file. */
   leftMotionVisible?: boolean;
@@ -251,7 +251,7 @@ export class SequenceModalExporter {
           loopCount: options.loopCount,
           resolution: options.resolution,
           effectOverrides: options.effectOverrides,
-          includeAnimationStartPosition: options.includeStartPosition,
+          includeAnimationStartPlacement: options.includeStartPlacement,
           includeEndHold: options.includeEndHold,
           leftMotionVisible: options.leftMotionVisible,
           rightMotionVisible: options.rightMotionVisible,
@@ -348,7 +348,7 @@ export class SequenceModalExporter {
           fps: options.fps,
           resolution: options.resolution,
           loopCount: options.loopCount,
-          includeStartPosition: options.includeStartPosition ?? true,
+          includeStartPlacement: options.includeStartPlacement ?? true,
           includeEndHold: options.includeEndHold ?? false,
           quality: options.quality ?? "standard",
         }

@@ -21,8 +21,8 @@ export enum BrowseFilterType {
    * the human creator shown on cards. */
   OWNER = "owner",
   GRID_MODE = "gridMode",
-  STARTING_POSITION = "startPosition",
-  END_POSITION = "endPosition",
+  STARTING_PLACEMENT = "startPlacement",
+  END_PLACEMENT = "endPlacement",
   RECENT = "recent",
   /** Public performance availability projected onto publicSequences. This
    * never reveals private or collaborators-only video existence. */

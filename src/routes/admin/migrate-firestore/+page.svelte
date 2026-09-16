@@ -28,49 +28,49 @@
   /**
    * Normalize sequence data
    */
-  function separateStepsFromStartPosition(sequence: any) {
-    if (sequence.startPosition && Array.isArray(sequence.steps)) {
+  function separateStepsFromStartPlacement(sequence: any) {
+    if (sequence.startPlacement && Array.isArray(sequence.steps)) {
       const hasStartInBeats = sequence.steps.some(
-        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPosition === true
+        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPlacement === true
       );
       if (!hasStartInBeats) {
-        return { steps: sequence.steps, startPosition: sequence.startPosition };
+        return { steps: sequence.steps, startPlacement: sequence.startPlacement };
       }
     }
 
-    if (sequence.startingPosition) {
+    if (sequence.startingPlacement) {
       const steps = Array.isArray(sequence.steps)
         ? sequence.steps.filter(
             (beat: any) =>
-              beat && beat.stepNumber !== 0 && !beat.isStartPosition
+              beat && beat.stepNumber !== 0 && !beat.isStartPlacement
           )
         : [];
-      return { steps, startPosition: sequence.startingPosition };
+      return { steps, startPlacement: sequence.startingPlacement };
     }
 
     if (Array.isArray(sequence.steps) && sequence.steps.length > 0) {
-      const startPositionStep = sequence.steps.find(
-        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPosition === true
+      const startPlacementStep = sequence.steps.find(
+        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPlacement === true
       );
-      if (startPositionStep) {
+      if (startPlacementStep) {
         const steps = sequence.steps.filter(
-          (step: any) => step && step.stepNumber !== 0 && !step.isStartPosition
+          (step: any) => step && step.stepNumber !== 0 && !step.isStartPlacement
         );
-        return { steps, startPosition: startPositionStep };
+        return { steps, startPlacement: startPlacementStep };
       }
     }
 
     return {
       steps: sequence.steps || [],
-      startPosition: sequence.startPosition || null,
+      startPlacement: sequence.startPlacement || null,
     };
   }
 
   function needsMigration(sequence: any): boolean {
-    if (sequence.startingPosition) return true;
+    if (sequence.startingPlacement) return true;
     if (Array.isArray(sequence.steps)) {
       return sequence.steps.some(
-        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPosition === true
+        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPlacement === true
       );
     }
     return false;
@@ -106,7 +106,7 @@
         const sequence = docSnapshot.data();
         if (needsMigration(sequence)) {
           needsMigrationCount++;
-          const normalized = separateStepsFromStartPosition(sequence);
+          const normalized = separateStepsFromStartPlacement(sequence);
           migrationLog.push({
             id: docSnapshot.id,
             word: sequence.word || sequence.name || "Untitled",
@@ -154,7 +154,7 @@
           currentSequence = sequence.word || sequence.name || docSnapshot.id;
 
           try {
-            const normalized = separateStepsFromStartPosition(sequence);
+            const normalized = separateStepsFromStartPlacement(sequence);
             const docRef = doc(
               firestore,
               `users/${user.uid}/sequences/${docSnapshot.id}`
@@ -162,8 +162,8 @@
 
             await updateDoc(docRef, {
               steps: normalized.steps,
-              startPosition: normalized.startPosition,
-              startingPosition: null, // Remove legacy field
+              startPlacement: normalized.startPlacement,
+              startingPlacement: null, // Remove legacy field
             });
 
             migratedCount++;
@@ -312,7 +312,7 @@
       <li>Migrates sequences in Firebase Firestore (not IndexedDB)</li>
       <li>Separates start position from steps array</li>
       <li>
-        Converts <code>startingPosition</code> → <code>startPosition</code>
+        Converts <code>startingPlacement</code> → <code>startPlacement</code>
       </li>
       <li>Removes beat 0 from steps array</li>
       <li>Updates at <code>users/{"{uid}"}/sequences</code></li>

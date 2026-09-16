@@ -4,7 +4,7 @@ import type { SequenceTransformer } from "$lib/features/create/shared/services/s
 import type { SequenceCoreState } from "$lib/features/create/shared/state/core/sequence-core-state.svelte";
 import type { SequenceSelectionState } from "$lib/features/create/shared/state/selection/sequence-selection-state.svelte";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -12,16 +12,16 @@ afterEach(() => {
 
 describe("sequence transform operations", () => {
   it("applies a multi-step single-hand rotation once and resolves after letter derivation", async () => {
-    const startPosition = {
+    const startPlacement = {
       id: "start",
       motions: {},
-      isStartPosition: true,
-    } as unknown as StartPositionData;
+      isStartPlacement: true,
+    } as unknown as StartPlacementData;
     const sequence = {
       id: "sequence",
       steps: [],
-      startPosition,
-      startingPosition: startPosition,
+      startPlacement,
+      startingPlacement: startPlacement,
     } as unknown as SequenceData;
     const transformedSequence = {
       ...sequence,
@@ -45,7 +45,7 @@ describe("sequence transform operations", () => {
       setError: vi.fn(),
     } as unknown as SequenceCoreState;
     const selectionState = {
-      setStartPosition: vi.fn(),
+      setStartPlacement: vi.fn(),
     } as unknown as SequenceSelectionState;
     const rotateSequence = vi.fn(async () => transformedSequence);
     const deriveSequenceLetters = vi.fn(async () => sequenceWithLetters);
@@ -75,7 +75,7 @@ describe("sequence transform operations", () => {
     expect(deriveSequenceLetters).toHaveBeenCalledWith(transformedSequence);
     expect(setCurrentSequence).toHaveBeenNthCalledWith(1, transformedSequence);
     expect(setCurrentSequence).toHaveBeenNthCalledWith(2, sequenceWithLetters);
-    expect(selectionState.setStartPosition).toHaveBeenCalledWith(startPosition);
+    expect(selectionState.setStartPlacement).toHaveBeenCalledWith(startPlacement);
     expect(onSave).toHaveBeenCalledTimes(1);
   });
 });

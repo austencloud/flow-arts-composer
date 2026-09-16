@@ -28,7 +28,7 @@ function motion(
   } as MotionData;
 }
 
-function closedPositionPattern(
+function closedPlacementPattern(
   leftTurns: number,
   rightTurns = leftTurns
 ): SequenceStep[] {
@@ -37,8 +37,8 @@ function closedPositionPattern(
       id: "start",
       stepNumber: 0,
       letter: null,
-      startPosition: "beta1",
-      endPosition: "beta1",
+      startPlacement: "beta1",
+      endPlacement: "beta1",
       motions: {
         left: motion(0),
         right: motion(0),
@@ -48,8 +48,8 @@ function closedPositionPattern(
       id: "step-1",
       stepNumber: 1,
       letter: "A",
-      startPosition: "beta1",
-      endPosition: "beta1",
+      startPlacement: "beta1",
+      endPlacement: "beta1",
       motions: {
         left: motion(leftTurns),
         right: motion(rightTurns),
@@ -60,7 +60,7 @@ function closedPositionPattern(
 
 describe("orientation cycle ownership", () => {
   it("analyzes the least common cycle required by both props", () => {
-    const result = analyzeOrientationCycle(closedPositionPattern(1, 0.5));
+    const result = analyzeOrientationCycle(closedPlacementPattern(1, 0.5));
 
     expect(result.cycleCount).toBe(4);
     expect(result.leftOrientations.at(-1)).toBe("in");
@@ -68,7 +68,7 @@ describe("orientation cycle ownership", () => {
   });
 
   it("supports all eight radial orientation states", () => {
-    const result = analyzeOrientationCycle(closedPositionPattern(0.25));
+    const result = analyzeOrientationCycle(closedPlacementPattern(0.25));
 
     expect(result.cycleCount).toBe(8);
     expect(result.leftOrientations).toHaveLength(9);
@@ -77,7 +77,7 @@ describe("orientation cycle ownership", () => {
   });
 
   it("emits repeated steps until orientations close", () => {
-    const result = closeOrientationCycle(closedPositionPattern(1), {
+    const result = closeOrientationCycle(closedPlacementPattern(1), {
       seedStepCount: 1,
     });
 
@@ -93,7 +93,7 @@ describe("orientation cycle ownership", () => {
   });
 
   it("honors the larger multiplier chosen for an exact total length", () => {
-    const result = closeOrientationCycle(closedPositionPattern(1), {
+    const result = closeOrientationCycle(closedPlacementPattern(1), {
       seedStepCount: 1,
       minimumExpansionMultiplier: 4,
     });
@@ -106,15 +106,15 @@ describe("orientation cycle ownership", () => {
     expect(result.steps[4]!.motions.right.endOrientation).toBe("in");
   });
 
-  it("refuses to repeat a position pattern that is still open", () => {
-    const open = closedPositionPattern(1);
+  it("refuses to repeat a placement pattern that is still open", () => {
+    const open = closedPlacementPattern(1);
     open[1] = {
       ...open[1]!,
-      endPosition: "beta3",
+      endPlacement: "beta3",
     };
 
     expect(() => closeOrientationCycle(open)).toThrow(
-      /open position pattern/
+      /open placement pattern/
     );
   });
 });

@@ -8,7 +8,7 @@
  *      its variations as an edge, plus the connectors (`unit-search.ts`).
  *   2. **Unit search** — exhaustive DFS inside a declared box (`unit-search.ts`).
  *   3. **Closure** — the app's own LOOP machinery decides which types each
- *      realized position pair admits; anything admitting none is dropped
+ *      realized placement pair admits; anything admitting none is dropped
  *      (`loop-closure.ts`).
  *   4. **Present** — bucket by full circle count, group by closure inside the
  *      bucket (`circle-buckets.ts`).
@@ -126,7 +126,7 @@ export async function findLOOPCombinations(
  * expanded circle.
  *
  * Reuses the splice builder, which re-derives the whole orientation chain from
- * a rebuilt start position: a walk guarantees positional continuity and says
+ * a rebuilt start placement: a walk guarantees placement continuity and says
  * nothing about orientation, and a unit assembled from several cards' material
  * needs that pass before anyone can pick up two props. Expanding the seed into
  * its full circle is the LOOP executor's job, which takes this sequence plus the

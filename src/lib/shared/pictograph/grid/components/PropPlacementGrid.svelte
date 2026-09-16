@@ -334,7 +334,7 @@
           showReversals={previewPictographData ? undefined : false}
           showTnD={previewPictographData ? undefined : false}
           showElemental={previewPictographData ? undefined : false}
-          showPositions={previewPictographData ? undefined : false}
+          showPlacements={previewPictographData ? undefined : false}
           disableTransitions={true}
           {animateContent}
           directPropPositioning={aim.grabbedLocationColor !== null ||

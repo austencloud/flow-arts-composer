@@ -24,7 +24,7 @@ describe("Codex letter search", () => {
   it("resolves registered extensions without treating partial prose as a letter", () => {
     expect(resolve("tau dash")).toBe("τ-");
     expect(resolve("τ-")).toBe("τ-");
-    expect(resolve("alpha position")).toBeNull();
+    expect(resolve("alpha placement")).toBeNull();
     expect(resolve("letters")).toBeNull();
   });
 });

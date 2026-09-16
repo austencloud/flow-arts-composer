@@ -109,14 +109,14 @@ export class LOOPDetector implements ILOOPDetector {
     );
     if (!steps || steps.length < 2) return false;
 
-    const startPosition = sequence.fullMetadata?.sequence?.find(
+    const startPlacement = sequence.fullMetadata?.sequence?.find(
       (b) => b.beat === 0
     );
     const lastStep = steps[steps.length - 1];
-    if (!startPosition || !lastStep) return false;
+    if (!startPlacement || !lastStep) return false;
 
     const startPos =
-      startPosition.endPos || startPosition.sequenceStartPosition;
+      startPlacement.endPos || startPlacement.sequenceStartPlacement;
     const endPos = lastStep.endPos;
     return startPos === endPos;
   }

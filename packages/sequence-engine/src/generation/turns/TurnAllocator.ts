@@ -105,7 +105,7 @@ function wheelQuarters(turn: number | "fl"): number {
 
 /**
  * Allocate turns for a sequence.
- * @param stepCount - Number of steps (excluding start position)
+ * @param stepCount - Number of steps (excluding start placement)
  * @param level - Difficulty level (1-3)
  * @param maxTurnIntensity - Maximum turn intensity allowed (0-3, or undefined for level default)
  * @param options - Optional allocation constraints (e.g. period-4 parity)

@@ -27,9 +27,9 @@ node scripts/enumerate-deck.cjs --loopType rotated --slice quartered --seedLengt
 
 1. Load CSV adjacency graph
 2. Filter by level (L1 = 0-turn only)
-3. Resolve end-position constraint from engine validation sets
+3. Resolve end-placement constraint from engine validation sets
 4. DFS walk N beats with rotation continuity
-5. Dedup by `(startPosition, seedWord)`
+5. Dedup by `(startPlacement, seedWord)`
 6. Group by hand-path family
 7. Execute LOOP on each seed
 8. **MUST propagate orientations** through the full sequence
@@ -51,7 +51,7 @@ Script: `scripts/seed-tnd-turn-decks.cjs` — clones the base TnD deck (19 seque
 ## UI Structure
 
 Three-level navigation in `DeckBrowser.svelte`:
-1. Deck list → 2. Family cards (motion-type pills) → 3. Sequences grouped by start position (α/β/γ)
+1. Deck list → 2. Family cards (motion-type pills) → 3. Sequences grouped by start placement (α/β/γ)
 
 Family-level loading prevents 27,000+ sequence decks from loading all at once.
 

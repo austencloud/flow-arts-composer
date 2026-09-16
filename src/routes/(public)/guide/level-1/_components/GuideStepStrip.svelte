@@ -64,7 +64,7 @@
   const r = $derived({
     propType: render?.propType ?? PropType.HAND,
     showTKA: render?.showTKA ?? true,
-    showPositions: render?.showPositions ?? false,
+    showPlacements: render?.showPlacements ?? false,
     showElemental: render?.showElemental ?? false,
     showReversals: render?.showReversals ?? false,
     showNonRadialPoints: render?.showNonRadialPoints ?? false,
@@ -149,7 +149,7 @@
         forceTheme={picTheme}
         propType={r.propType}
         showTKA={r.showTKA}
-        showPositions={r.showPositions}
+        showPlacements={r.showPlacements}
         showElemental={r.showElemental}
         showReversals={r.showReversals}
         showNonRadialPoints={r.showNonRadialPoints}

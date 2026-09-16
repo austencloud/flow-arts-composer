@@ -80,8 +80,8 @@ export class ClaudeCodeCopier {
         if (!step) continue;
         const beatNum = i + 1;
         const letter = step.letter ? ` ${step.letter}` : "";
-        const pos = step.startPosition && step.endPosition
-          ? ` ${step.startPosition}>${step.endPosition}`
+        const pos = step.startPlacement && step.endPlacement
+          ? ` ${step.startPlacement}>${step.endPlacement}`
           : "";
 
         const left = this.formatMotionCompact(step.motions?.left);

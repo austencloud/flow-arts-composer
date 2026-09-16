@@ -17,7 +17,7 @@ export const CANONICAL_DECK_CARD_PROFILE = Object.freeze({
   handPointVisibility: "all" as const,
   showNonRadialPoints: false,
   showReversals: true,
-  showPositions: false,
+  showPlacements: false,
   showTnD: false,
   showHandColorKey: true,
   // Composition flags that are always-on for deck cards
@@ -38,7 +38,7 @@ export interface CanonicalCardVisibility {
     | "handPointVisibility"
     | "showNonRadialPoints"
     | "showReversals"
-    | "showPositions"
+    | "showPlacements"
     | "showTnD"
     | "showHandColorKey"
     | "showElemental"
@@ -67,7 +67,7 @@ export function buildCanonicalCardVisibility(args: {
       handPointVisibility: CANONICAL_DECK_CARD_PROFILE.handPointVisibility,
       showNonRadialPoints: CANONICAL_DECK_CARD_PROFILE.showNonRadialPoints,
       showReversals: CANONICAL_DECK_CARD_PROFILE.showReversals,
-      showPositions: CANONICAL_DECK_CARD_PROFILE.showPositions,
+      showPlacements: CANONICAL_DECK_CARD_PROFILE.showPlacements,
       showTnD: CANONICAL_DECK_CARD_PROFILE.showTnD,
       showHandColorKey: CANONICAL_DECK_CARD_PROFILE.showHandColorKey,
       showElemental: args.tndElement != null,

@@ -18,7 +18,7 @@ export interface StudioAnimationFrame {
   playing: boolean;
   left: PropState | null;
   right: PropState | null;
-  step: SequenceData["steps"][number] | SequenceData["startPosition"] | null;
+  step: SequenceData["steps"][number] | SequenceData["startPlacement"] | null;
   leftPropType?: PropType;
   rightPropType?: PropType;
 }

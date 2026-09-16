@@ -9,7 +9,7 @@ import {
   isVisitorOwnedConstructSequence,
   shouldAdoptCarriedSequence,
 } from "../../src/routes/(public)/composer/_components/composer-sequence-ownership";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import {
   createSequenceData,
@@ -21,7 +21,7 @@ import { SCENE_FEATURES } from "$lib/shared/3d/scene-features/domain/scene-featu
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import {
@@ -34,10 +34,10 @@ import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/mo
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 
 const POSITION_BY_LOCATION = {
-  [GridLocation.NORTH]: GridPosition.BETA1,
-  [GridLocation.EAST]: GridPosition.BETA3,
-  [GridLocation.SOUTH]: GridPosition.BETA5,
-  [GridLocation.WEST]: GridPosition.BETA7,
+  [GridLocation.NORTH]: GridPlacement.BETA1,
+  [GridLocation.EAST]: GridPlacement.BETA3,
+  [GridLocation.SOUTH]: GridPlacement.BETA5,
+  [GridLocation.WEST]: GridPlacement.BETA7,
 } as const;
 
 function pictograph(
@@ -62,8 +62,8 @@ function pictograph(
   return {
     id,
     letter: null,
-    startPosition: POSITION_BY_LOCATION[start],
-    endPosition: POSITION_BY_LOCATION[end],
+    startPlacement: POSITION_BY_LOCATION[start],
+    endPlacement: POSITION_BY_LOCATION[end],
     motions: {
       left: createMotion(HandSide.LEFT),
       right: createMotion(HandSide.RIGHT),
@@ -77,7 +77,7 @@ function sequenceFixture(): SequenceData {
     GridLocation.NORTH,
     GridLocation.NORTH
   );
-  const start = createStartPositionData(startPictograph);
+  const start = createStartPlacementData(startPictograph);
   const steps = [
     pictograph("one", GridLocation.NORTH, GridLocation.EAST),
     pictograph("two", GridLocation.EAST, GridLocation.SOUTH),
@@ -92,8 +92,8 @@ function sequenceFixture(): SequenceData {
   return createSequenceData({
     id: "presentation-sequence",
     name: "Presentation sequence",
-    startPosition: start,
-    startingPosition: start,
+    startPlacement: start,
+    startingPlacement: start,
     steps,
     isCircular: true,
     canonicalSignature: "stale-after-edit",

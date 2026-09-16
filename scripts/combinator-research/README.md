@@ -29,7 +29,7 @@ is checked against.
    `DiamondPictographDataframe.csv`. Box is loaded in `letter-orbits.mjs` only.
 2. **The closure test is a reimplementation.** It checks position-pair membership
    against a locally-built D4×colour-swap group. It was verified 2026-08-05 to
-   agree with the app's `isLOOPValidForPositionPair`
+   agree with the app's `isLOOPValidForPlacementPair`
    (`packages/sequence-engine/src/loop/validation/LOOPValidator.ts`) — but the
    real engine must call the app's validator, not this.
 3. **Counts are sensitive to the equivalence relation**, which is the open

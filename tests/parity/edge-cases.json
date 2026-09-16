@@ -326,7 +326,7 @@
     {
       "id": "empty-start-only",
       "kind": "start",
-      "startPosition": "alpha1",
+      "startPlacement": "alpha1",
       "options": {},
       "description": "Start position only — no letters"
     },

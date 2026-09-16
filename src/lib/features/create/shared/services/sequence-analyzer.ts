@@ -1,4 +1,4 @@
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import type { MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
@@ -28,13 +28,13 @@ export interface CircularityAnalysis {
   readonly isCircular: boolean;
   /** Type of circular relationship (same/halved/quartered) */
   readonly circularType: CircularType | null;
-  /** Starting position of the sequence */
-  readonly startPosition: GridPosition | null;
-  /** Ending position of the sequence */
-  readonly endPosition: GridPosition | null;
-  /** Whether start position is a beta position */
+  /** Starting placement of the sequence */
+  readonly startPlacement: GridPlacement | null;
+  /** Ending placement of the sequence */
+  readonly endPlacement: GridPlacement | null;
+  /** Whether start placement is a beta placement */
   readonly startIsBeta: boolean;
-  /** Whether end position is a beta position */
+  /** Whether end placement is a beta placement */
   readonly endIsBeta: boolean;
   /** Possible LOOP types this sequence could become */
   readonly possibleLoopTypes: readonly StrictLoopType[];
@@ -44,11 +44,11 @@ export interface CircularityAnalysis {
 import {
   HALVED_LOOPS,
   QUARTERED_LOOPS,
-} from "../../generate/circular/domain/constants/circular-position-maps";
+} from "../../generate/circular/domain/constants/circular-placement-maps";
 import {
-  SWAPPED_POSITION_MAP,
-  VERTICAL_MIRROR_POSITION_MAP,
-} from "../../generate/circular/domain/constants/strict-loop-position-maps";
+  SWAPPED_PLACEMENT_MAP,
+  VERTICAL_MIRROR_PLACEMENT_MAP,
+} from "../../generate/circular/domain/constants/strict-loop-placement-maps";
 
 /**
  * Sequence Analysis Service Implementation
@@ -57,9 +57,9 @@ import {
  *
  * Key Concepts:
  * - Circular sequences can be "autocompleted" by applying LOOP transformations
- * - The start→end position relationship determines which LOOP types are possible
+ * - The start→end placement relationship determines which LOOP types are possible
  * - Uses predefined position maps (quartered, halved, mirrored, swapped, inverted)
- * - Intermediate pictographs are irrelevant - only start/end positions matter
+ * - Intermediate pictographs are irrelevant - only start/end placements matter
  */
 export class SequenceAnalyzer {
   constructor(private readonly BetaDetector: BetaDetector) {}
@@ -75,8 +75,8 @@ export class SequenceAnalyzer {
     const defaultResult: CircularityAnalysis = {
       isCircular: false,
       circularType: null,
-      startPosition: null,
-      endPosition: null,
+      startPlacement: null,
+      endPlacement: null,
       startIsBeta: false,
       endIsBeta: false,
       possibleLoopTypes: [],
@@ -88,38 +88,38 @@ export class SequenceAnalyzer {
       return defaultResult;
     }
 
-    // Get start and end positions
-    const startPosition = startStep.startPosition;
-    const endPosition = endStep.endPosition;
+    // Get start and end placements
+    const startPlacement = startStep.startPlacement;
+    const endPlacement = endStep.endPlacement;
 
-    if (!startPosition || !endPosition) {
+    if (!startPlacement || !endPlacement) {
       return defaultResult;
     }
 
-    // Check if both positions are in the same position group
-    const sameGroup = this.areSamePositionGroup(startPosition, endPosition);
-    const startIsBeta = this.isBetaPosition(startPosition);
-    const endIsBeta = this.isBetaPosition(endPosition);
+    // Check if both placements are in the same placement group
+    const sameGroup = this.areSamePlacementGroup(startPlacement, endPlacement);
+    const startIsBeta = this.isBetaPlacement(startPlacement);
+    const endIsBeta = this.isBetaPlacement(endPlacement);
 
     if (!sameGroup) {
       return {
         ...defaultResult,
-        startPosition,
-        endPosition,
+        startPlacement,
+        endPlacement,
         startIsBeta,
         endIsBeta,
-        description: "Positions are not in the same position group",
+        description: "Placements are not in the same placement group",
       };
     }
 
     // Determine circular type
-    const circularType = this.getCircularType(startPosition, endPosition);
+    const circularType = this.getCircularType(startPlacement, endPlacement);
 
     if (!circularType) {
       return {
         ...defaultResult,
-        startPosition,
-        endPosition,
+        startPlacement,
+        endPlacement,
         startIsBeta,
         endIsBeta,
         description: "Invalid circular relationship",
@@ -133,14 +133,14 @@ export class SequenceAnalyzer {
     return {
       isCircular: true,
       circularType,
-      startPosition,
-      endPosition,
+      startPlacement,
+      endPlacement,
       startIsBeta,
       endIsBeta,
       possibleLoopTypes,
       description: this.buildCircularDescription(
-        startPosition,
-        endPosition,
+        startPlacement,
+        endPlacement,
         circularType
       ),
     };
@@ -163,42 +163,42 @@ export class SequenceAnalyzer {
   }
 
   /**
-   * Determine the circular relationship between two positions
+   * Determine the circular relationship between two placements
    *
    * Uses the predefined transformation maps to check if the start→end pair
    * exists in any of the LOOP validation sets:
-   * - Same position → 'same' (inverted, mirrored, swapped)
+   * - Same placement → 'same' (inverted, mirrored, swapped)
    * - Quartered map → 'quartered' (90° rotation)
    * - Halved map → 'halved' (180° rotation)
    */
   getCircularType(
-    startPosition: GridPosition,
-    endPosition: GridPosition
+    startPlacement: GridPlacement,
+    endPlacement: GridPlacement
   ): CircularType | null {
-    const positionKey = `${startPosition},${endPosition}`;
+    const placementKey = `${startPlacement},${endPlacement}`;
 
-    // Check if same position (inverted LOOP)
-    if (startPosition === endPosition) {
+    // Check if same placement (inverted LOOP)
+    if (startPlacement === endPlacement) {
       return "same";
     }
 
     // Check quartered LOOPs (90° rotation)
-    if (QUARTERED_LOOPS.has(positionKey)) {
+    if (QUARTERED_LOOPS.has(placementKey)) {
       return "quartered";
     }
 
     // Check halved LOOPs (180° rotation)
-    if (HALVED_LOOPS.has(positionKey)) {
+    if (HALVED_LOOPS.has(placementKey)) {
       return "halved";
     }
 
-    // Check mirrored positions (also 'same' type)
-    if (VERTICAL_MIRROR_POSITION_MAP[startPosition] === endPosition) {
+    // Check mirrored placements (also 'same' type)
+    if (VERTICAL_MIRROR_PLACEMENT_MAP[startPlacement] === endPlacement) {
       return "same";
     }
 
-    // Check swapped positions (also 'halved' type since alpha1→alpha5 is both)
-    if (SWAPPED_POSITION_MAP[startPosition] === endPosition) {
+    // Check swapped placements (also 'halved' type since alpha1→alpha5 is both)
+    if (SWAPPED_PLACEMENT_MAP[startPlacement] === endPlacement) {
       return "halved";
     }
 
@@ -206,21 +206,21 @@ export class SequenceAnalyzer {
   }
 
   /**
-   * Check if a position is a beta position
+   * Check if a placement is a beta placement
    */
-  isBetaPosition(position: GridPosition): boolean {
-    return this.BetaDetector.isBetaPosition(position);
+  isBetaPlacement(placement: GridPlacement): boolean {
+    return this.BetaDetector.isBetaPlacement(placement);
   }
 
   /**
-   * Check if both positions are in the same position group
+   * Check if both placements are in the same placement group
    */
-  private areSamePositionGroup(
-    pos1: GridPosition,
-    pos2: GridPosition
+  private areSamePlacementGroup(
+    pos1: GridPlacement,
+    pos2: GridPlacement
   ): boolean {
-    const info1 = this.extractPositionInfo(pos1);
-    const info2 = this.extractPositionInfo(pos2);
+    const info1 = this.extractPlacementInfo(pos1);
+    const info2 = this.extractPlacementInfo(pos2);
 
     if (!info1 || !info2) return false;
 
@@ -235,9 +235,9 @@ export class SequenceAnalyzer {
       return null;
     }
 
-    // Find first beat with a start position
+    // Find first beat with a start placement
     for (const step of sequence.steps) {
-      if (step.startPosition && !step.isBlank) {
+      if (step.startPlacement && !step.isBlank) {
         return step;
       }
     }
@@ -253,10 +253,10 @@ export class SequenceAnalyzer {
       return null;
     }
 
-    // Find last beat with an end position (iterate backwards)
+    // Find last beat with an end placement (iterate backwards)
     for (let i = sequence.steps.length - 1; i >= 0; i--) {
       const beat = sequence.steps[i];
-      if (beat?.endPosition && !beat.isBlank) {
+      if (beat?.endPlacement && !beat.isBlank) {
         return beat;
       }
     }
@@ -284,26 +284,26 @@ export class SequenceAnalyzer {
 
     // Filter out blank steps
     const validSteps = sequence.steps.filter(
-      (step) => !step.isBlank && step.endPosition
+      (step) => !step.isBlank && step.endPlacement
     );
 
     if (validSteps.length === 0) {
       return [];
     }
 
-    // Check 1: Static LOOP - all steps at the same position
-    const allSamePosition = validSteps.every(
+    // Check 1: Static LOOP - all steps at the same placement
+    const allSamePlacement = validSteps.every(
       (step) =>
-        step.startPosition === validSteps[0]!.startPosition &&
-        step.endPosition === validSteps[0]!.endPosition
+        step.startPlacement === validSteps[0]!.startPlacement &&
+        step.endPlacement === validSteps[0]!.endPlacement
     );
 
-    if (allSamePosition) {
+    if (allSamePlacement) {
       return ["static"] as const;
     }
 
     // Build consecutive pairs: each beat's end → next beat's start
-    const consecutivePairs: Array<{ from: GridPosition; to: GridPosition }> =
+    const consecutivePairs: Array<{ from: GridPlacement; to: GridPlacement }> =
       [];
 
     for (let i = 0; i < validSteps.length; i++) {
@@ -313,12 +313,12 @@ export class SequenceAnalyzer {
       if (
         currentStep &&
         nextStep &&
-        currentStep.endPosition &&
-        nextStep.startPosition
+        currentStep.endPlacement &&
+        nextStep.startPlacement
       ) {
         consecutivePairs.push({
-          from: currentStep.endPosition,
-          to: nextStep.startPosition,
+          from: currentStep.endPlacement,
+          to: nextStep.startPlacement,
         });
       }
     }
@@ -347,16 +347,16 @@ export class SequenceAnalyzer {
       }
 
       // Check vertical mirror map
-      if (VERTICAL_MIRROR_POSITION_MAP[pair.from] === pair.to) {
+      if (VERTICAL_MIRROR_PLACEMENT_MAP[pair.from] === pair.to) {
         return true;
       }
 
-      // Check swapped positions
-      if (SWAPPED_POSITION_MAP[pair.from] === pair.to) {
+      // Check swapped placements
+      if (SWAPPED_PLACEMENT_MAP[pair.from] === pair.to) {
         return true;
       }
 
-      // Check if same position (like alpha1 → alpha1 with mirrored turns)
+      // Check if same placement (like alpha1 → alpha1 with mirrored turns)
       if (pair.from === pair.to) {
         return true;
       }
@@ -397,28 +397,28 @@ export class SequenceAnalyzer {
    * Build a human-readable description
    */
   private buildCircularDescription(
-    startPosition: GridPosition,
-    endPosition: GridPosition,
+    startPlacement: GridPlacement,
+    endPlacement: GridPlacement,
     circularType: CircularType
   ): string {
     const typeDescriptions: Record<CircularType, string> = {
-      same: "Same position",
-      halved: "Opposite/halved position (180°)",
-      quartered: "Adjacent/quartered position (90°)",
+      same: "Same placement",
+      halved: "Opposite/halved placement (180°)",
+      quartered: "Adjacent/quartered placement (90°)",
     };
 
     const typeDesc = typeDescriptions[circularType];
-    return `${typeDesc}: ${startPosition} → ${endPosition}`;
+    return `${typeDesc}: ${startPlacement} → ${endPlacement}`;
   }
 
   /**
-   * Extract position group and number from a GridPosition
+   * Extract placement group and number from a GridPlacement
    */
-  private extractPositionInfo(
-    position: GridPosition
+  private extractPlacementInfo(
+    placement: GridPlacement
   ): { group: string; number: number; groupSize: number } | null {
-    const positionStr = position.toString().toLowerCase();
-    const match = positionStr.match(/^(alpha|beta|gamma)(\d+)$/);
+    const placementStr = placement.toString().toLowerCase();
+    const match = placementStr.match(/^(alpha|beta|gamma)(\d+)$/);
     if (!match) return null;
 
     const group = match[1]!;
@@ -444,48 +444,48 @@ export class SequenceAnalyzer {
     return { group, number: num, groupSize };
   }
 
-  // ============ Position Extraction Methods ============
+  // ============ Placement Extraction Methods ============
 
   /**
-   * Get the starting position from a sequence.
-   * Checks multiple possible locations for start position data.
+   * Get the starting placement from a sequence.
+   * Checks multiple possible locations for start placement data.
    */
-  getStartPosition(sequence: SequenceData): GridPosition | null {
-    // Check for explicit start position data object
-    if (sequence.startPosition) {
-      const startPosData = sequence.startPosition as unknown as Record<
+  getStartPlacement(sequence: SequenceData): GridPlacement | null {
+    // Check for explicit start placement data object
+    if (sequence.startPlacement) {
+      const startPosData = sequence.startPlacement as unknown as Record<
         string,
         unknown
       >;
 
-      // Internal format: startPosition field
-      if ("startPosition" in startPosData && startPosData.startPosition) {
-        return startPosData.startPosition as GridPosition;
+      // Internal format: startPlacement field
+      if ("startPlacement" in startPosData && startPosData.startPlacement) {
+        return startPosData.startPlacement as GridPlacement;
       }
       // External/JSON format: start field
       if ("start" in startPosData && startPosData.start) {
-        return startPosData.start as GridPosition;
+        return startPosData.start as GridPlacement;
       }
-      // gridPosition field (StartPositionData format)
-      if ("gridPosition" in startPosData && startPosData.gridPosition) {
-        return startPosData.gridPosition as GridPosition;
+      // gridPlacement field (StartPlacementData format)
+      if ("gridPlacement" in startPosData && startPosData.gridPlacement) {
+        return startPosData.gridPlacement as GridPlacement;
       }
     }
 
-    // Check for startingPosition (legacy field)
-    const startStep = sequence.startingPosition as
+    // Check for startingPlacement (legacy field)
+    const startStep = sequence.startingPlacement as
       | Record<string, unknown>
       | undefined;
     if (startStep) {
-      if ("startPosition" in startStep && startStep.startPosition) {
-        return startStep.startPosition as GridPosition;
+      if ("startPlacement" in startStep && startStep.startPlacement) {
+        return startStep.startPlacement as GridPlacement;
       }
       if ("start" in startStep && startStep.start) {
-        return startStep.start as GridPosition;
+        return startStep.start as GridPlacement;
       }
     }
 
-    // Check first beat (beat 0) if it's the start position
+    // Check first beat (beat 0) if it's the start placement
     const steps = sequence.steps || [];
     const firstStep = steps.find(
       (b) =>
@@ -494,11 +494,11 @@ export class SequenceAnalyzer {
     );
     if (firstStep) {
       const stepData = firstStep as unknown as Record<string, unknown>;
-      if (stepData.startPosition) {
-        return stepData.startPosition as GridPosition;
+      if (stepData.startPlacement) {
+        return stepData.startPlacement as GridPlacement;
       }
       if (stepData.start) {
-        return stepData.start as GridPosition;
+        return stepData.start as GridPlacement;
       }
     }
 
@@ -506,9 +506,9 @@ export class SequenceAnalyzer {
   }
 
   /**
-   * Get the current end position from the last beat in a sequence.
+   * Get the current end placement from the last beat in a sequence.
    */
-  getCurrentEndPosition(sequence: SequenceData): GridPosition | null {
+  getCurrentEndPlacement(sequence: SequenceData): GridPlacement | null {
     const steps = sequence.steps || [];
     if (steps.length === 0) return null;
 
@@ -519,14 +519,14 @@ export class SequenceAnalyzer {
       return 0;
     };
 
-    // Helper to get end position from either format
-    const getEndPosition = (beat: Record<string, unknown>): string | null => {
-      if (beat.endPosition) return beat.endPosition as string;
+    // Helper to get end placement from either format
+    const getEndPlacement = (beat: Record<string, unknown>): string | null => {
+      if (beat.endPlacement) return beat.endPlacement as string;
       if (beat.end) return beat.end as string;
       return null;
     };
 
-    // Find the last actual beat (not the start position beat 0)
+    // Find the last actual beat (not the start placement beat 0)
     const beatsAsRecords = steps as unknown as Record<string, unknown>[];
     const sortedSteps = [...beatsAsRecords].sort(
       (a, b) => getStepNumber(b) - getStepNumber(a)
@@ -535,9 +535,9 @@ export class SequenceAnalyzer {
       sortedSteps.find((b) => getStepNumber(b) > 0) || sortedSteps[0];
 
     if (lastStep) {
-      const endPos = getEndPosition(lastStep);
+      const endPos = getEndPlacement(lastStep);
       if (endPos) {
-        return endPos as GridPosition;
+        return endPos as GridPlacement;
       }
     }
 
@@ -546,13 +546,13 @@ export class SequenceAnalyzer {
 
   /**
    * Convert a SequenceData to StepData array for LOOP executor.
-   * The LOOP executor expects: [startPosition (beat 0), beat 1, beat 2, ...]
+   * The LOOP executor expects: [startPlacement (beat 0), beat 1, beat 2, ...]
    */
   convertSequenceToBeats(sequence: SequenceData): StepData[] {
     const steps = sequence.steps || [];
     const result: StepData[] = [];
 
-    // Check if beat 0 (start position) is already in steps array
+    // Check if beat 0 (start placement) is already in steps array
     const step0 = steps.find((b) => b.stepNumber === 0);
 
     if (step0) {
@@ -562,19 +562,19 @@ export class SequenceAnalyzer {
         .sort((a, b) => a.stepNumber - b.stepNumber);
     }
 
-    // Beat 0 not in array - need to create it from startPosition/startingPosition
+    // Beat 0 not in array - need to create it from startPlacement/startingPlacement
     const startPosData =
-      sequence.startPosition || sequence.startingPosition;
+      sequence.startPlacement || sequence.startingPlacement;
 
     if (startPosData) {
-      const startPos = this.getStartPosition(sequence);
-      // Create a beat 0 entry from the start position data. The factory fills
+      const startPos = this.getStartPlacement(sequence);
+      // Create a beat 0 entry from the start placement data. The factory fills
       // any missing hand with an invisible placeholder (both-required shape).
       const startStep: StepData = createStepData({
-        id: "start-position",
+        id: "start-placement",
         stepNumber: 0,
-        startPosition: startPos,
-        endPosition: startPos, // Start position ends where it starts
+        startPlacement: startPos,
+        endPlacement: startPos, // Start placement ends where it starts
         letter: null,
         motions: (startPosData as unknown as {
           motions?: Partial<Record<HandSide, MotionData | undefined>>;

@@ -4,7 +4,7 @@
    * (level-1-v05.pdf, "Type 3 - Cross-Shifts") in the CURRENT renderer's language.
    * Same recipe as GammaPage/Type2ShiftsPage: proof-placed strips of real
    * PictographContainers, every adornment system-owned (float arrows, dash arrows,
-   * Start/count StepNumber, per-box PositionGlyph), grouped centred paragraphs.
+   * Start/count StepNumber, per-box PlacementGlyph), grouped centred paragraphs.
    *
    * A Cross-Shift = one hand SHIFTS (90°, adjacent) and one hand DASHES (180°,
    * straight through the centre to the opposite point). So each box has ONE float
@@ -14,7 +14,7 @@
    *                   dash → straight dash arrow through centre).
    *   - still hand  → STATIC (Start boxes only).
    *   - Count numbers → StepData.stepNumber (0 → "Start", 1..8) via StepNumber.
-   *   - Positions     → startPosition/endPosition → top-centre PositionGlyph
+   *   - Positions     → startPlacement/endPlacement → top-centre PlacementGlyph
    *                     (α→γ / γ→α, β→γ / γ→β per box, geometric).
    *   - No elemental  → the proof shows no mode badge, so showElemental is off.
    *
@@ -26,7 +26,7 @@
    * halfway (dash hand at centre, shift hand on the SE diagonal) → end (blue N,
    * red E) → the combined pictograph with both real arrows.
    *
-   * Facelift: lowercase γ (PositionGlyph renders the canonical glyph); "Cross"
+   * Facelift: lowercase γ (PlacementGlyph renders the canonical glyph); "Cross"
    * tinted the Type-3 green, "-Shift(s)" the shift purple, both bold.
    *
    * Geometry is EXACT: the two sequence strips are single flattened 500×200 images
@@ -47,7 +47,7 @@
     GridMode,
     GridLocation,
   } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
-  import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
   import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
   import { describePictograph } from "$lib/shared/pictograph/shared/domain/utils/pictograph-description";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
@@ -105,7 +105,7 @@
   // don't show a glyph, so a null position is fine.
   const gp = (a: GridLocation, b: GridLocation) => {
     try {
-      return getGridPositionFromLocations(a, b);
+      return getGridPlacementFromLocations(a, b);
     } catch {
       return null;
     }
@@ -118,8 +118,8 @@
       id,
       letter: null,
       gridMode: GridMode.DIAMOND,
-      startPosition: gp(m[0], m[2]),
-      endPosition: gp(m[1], m[3]),
+      startPlacement: gp(m[0], m[2]),
+      endPlacement: gp(m[1], m[3]),
       motions: {
         left: motion(HandSide.LEFT, m[0], m[1]),
         right: motion(HandSide.RIGHT, m[2], m[3]),
@@ -348,7 +348,7 @@
         rightPropTypeOverride={PropType.HAND}
         showGrid={true}
         showTKA={false}
-        showPositions={false}
+        showPlacements={false}
         showElemental={false}
         showReversals={false}
         showTnD={false}
@@ -400,7 +400,7 @@
                 rightPropTypeOverride={PropType.HAND}
                 showGrid={true}
                 showTKA={false}
-                showPositions={(sd.stepNumber ?? 0) > 0}
+                showPlacements={(sd.stepNumber ?? 0) > 0}
                 showElemental={false}
                 showReversals={false}
                 showTnD={false}

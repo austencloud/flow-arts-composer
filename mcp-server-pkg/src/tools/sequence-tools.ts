@@ -33,7 +33,7 @@ import {
   Period,
   detectLOOPFromSteps,
   executeLOOP,
-  isLOOPValidForPositionPair,
+  isLOOPValidForPlacementPair,
   loopTypeSchema,
   periodSchema,
   loopComponentsSchema,
@@ -90,15 +90,15 @@ function buildSequenceWithConstraints(
         steps: constrainedResult.steps.map((step, i) => ({
           letter: step.letter,
           variation: constrainedResult.variationIndices[i] ?? 0,
-          startPosition: step.startPosition,
-          endPosition: step.endPosition,
+          startPlacement: step.startPlacement,
+          endPlacement: step.endPlacement,
           leftMotion: step.leftMotion,
           rightMotion: step.rightMotion,
           stepNumber: i,
           isBridge: bridgeIndicesSet.has(i),
         })),
-        startPosition: constrainedResult.startPosition,
-        endPosition: constrainedResult.endPosition,
+        startPlacement: constrainedResult.startPlacement,
+        endPlacement: constrainedResult.endPlacement,
         isValid: true,
         bridgeStepIndices: constrainedResult.bridgeStepIndices,
       },
@@ -363,7 +363,7 @@ export function registerSequenceTools(server: McpServer): void {
 
   server.tool(
     "get_sequence_data",
-    "Get sequence data without rendering an image. Use when Claude needs to analyze step data, check positions, or verify generation before showing to user. For showing sequences to users, use generate_sequence instead.",
+    "Get sequence data without rendering an image. Use when Claude needs to analyze step data, check placements, or verify generation before showing to user. For showing sequences to users, use generate_sequence instead.",
     {
       word: z.string().describe('The sequence word, e.g., "ABC" or "DEFGH"'),
       gridMode: z
@@ -553,8 +553,8 @@ export function registerSequenceTools(server: McpServer): void {
             variation: result.variationIndices[i] ?? 0,
             stepNumber: i,
           })),
-          startPosition: result.startPosition,
-          endPosition: result.endPosition,
+          startPlacement: result.startPlacement,
+          endPlacement: result.endPlacement,
           stepCount: result.steps.length - 1,
           constraintReport: {
             score: result.constraintReport.score,
@@ -613,7 +613,7 @@ export function registerSequenceTools(server: McpServer): void {
             content: [
               {
                 type: "text" as const,
-                text: `${result.word}: ${result.steps.length} beats | ${result.startPosition}→${result.endPosition} | Score: ${score.toFixed(2)} | Satisfied: ${satisfiedConstraints}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}`,
+                text: `${result.word}: ${result.steps.length} beats | ${result.startPlacement}→${result.endPlacement} | Score: ${score.toFixed(2)} | Satisfied: ${satisfiedConstraints}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}`,
               },
             ],
           };
@@ -665,7 +665,7 @@ export function registerSequenceTools(server: McpServer): void {
           content: [
             {
               type: "text" as const,
-              text: `${result.word}: ${result.steps.length} beats | ${result.startPosition}→${result.endPosition}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}`,
+              text: `${result.word}: ${result.steps.length} beats | ${result.startPlacement}→${result.endPlacement}${bridgeCount > 0 ? ` | Bridges: ${bridgeCount}` : ""}`,
             },
           ],
         };
@@ -679,8 +679,8 @@ export function registerSequenceTools(server: McpServer): void {
               {
                 word: result.word,
                 steps: result.steps,
-                startPosition: result.startPosition,
-                endPosition: result.endPosition,
+                startPlacement: result.startPlacement,
+                endPlacement: result.endPlacement,
                 stepCount: result.steps.length - 1,
                 bridges: result.bridges,
               },
@@ -1028,8 +1028,8 @@ export function registerSequenceTools(server: McpServer): void {
           );
           if (!baseResult.isValid) continue;
 
-          const pp = `${baseResult.startPosition},${baseResult.endPosition}`;
-          if (!isLOOPValidForPositionPair(loopTypeValue, pp, slice)) continue;
+          const pp = `${baseResult.startPlacement},${baseResult.endPlacement}`;
+          if (!isLOOPValidForPlacementPair(loopTypeValue, pp, slice)) continue;
 
           loopResult = executeLOOP(
             baseResult.steps,
@@ -1055,8 +1055,8 @@ export function registerSequenceTools(server: McpServer): void {
             const bridgeResult = autoBridgeForLoop(
               baseResult.word,
               letters,
-              baseResult.startPosition,
-              baseResult.endPosition,
+              baseResult.startPlacement,
+              baseResult.endPlacement,
               loopTypeValue,
               slice,
               allPictographs
@@ -1071,8 +1071,8 @@ export function registerSequenceTools(server: McpServer): void {
             );
             if (!finalResult.isValid) continue;
 
-            const pp = `${finalResult.startPosition},${finalResult.endPosition}`;
-            if (!isLOOPValidForPositionPair(loopTypeValue, pp, slice)) continue;
+            const pp = `${finalResult.startPlacement},${finalResult.endPlacement}`;
+            if (!isLOOPValidForPlacementPair(loopTypeValue, pp, slice)) continue;
 
             loopResult = executeLOOP(
               finalResult.steps,
@@ -1094,7 +1094,7 @@ export function registerSequenceTools(server: McpServer): void {
             content: [
               {
                 type: "text" as const,
-                text: `Failed to generate ${effectiveLoopType} LOOP: no compatible position found after ${maxAttempts} attempts`,
+                text: `Failed to generate ${effectiveLoopType} LOOP: no compatible placement found after ${maxAttempts} attempts`,
               },
             ],
             isError: true,
@@ -1137,8 +1137,8 @@ export function registerSequenceTools(server: McpServer): void {
                 (exportProfile === "print" ||
                   COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
               showFooter: Boolean(notes && notes !== "none"),
-              startPositionLayout:
-                COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+              startPlacementLayout:
+                COMPOSER_CARD_EXPORT_PROFILE_V1.startPlacementLayout,
               userName,
               notes,
               birthday: birthdayDate,
@@ -1325,8 +1325,8 @@ export function registerSequenceTools(server: McpServer): void {
               (exportProfile === "print" ||
                 COMPOSER_CARD_EXPORT_PROFILE_V1.showDifficulty),
             showFooter: Boolean(notes && notes !== "none"),
-            startPositionLayout:
-              COMPOSER_CARD_EXPORT_PROFILE_V1.startPositionLayout,
+            startPlacementLayout:
+              COMPOSER_CARD_EXPORT_PROFILE_V1.startPlacementLayout,
             userName,
             notes,
             birthday: birthdayDate,

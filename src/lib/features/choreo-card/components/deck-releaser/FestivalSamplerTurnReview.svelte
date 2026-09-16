@@ -419,7 +419,7 @@
                       showTKA
                       showTnD
                       showElemental
-                      showPositions
+                      showPlacements
                       stepNumberOverride={false}
                       darkMode={true}
                     />

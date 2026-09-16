@@ -4,19 +4,19 @@
  * Manages selection state for:
  * - Single-select mode: One beat at a time (default)
  * - Multi-select mode: Multiple steps for batch editing
- * - Selected beat NUMBER (0 = start position, 1 = first beat, 2 = second beat, etc.)
- * - Selected start position
- * - Start position editing mode
+ * - Selected beat NUMBER (0 = start placement, 1 = first beat, 2 = second beat, etc.)
+ * - Selected start placement
+ * - Start placement editing mode
  *
  * RESPONSIBILITY: Pure selection tracking, no business logic
  *
  * NOTE: Uses stepNumber instead of array index
- * - stepNumber 0 = start position
+ * - stepNumber 0 = start placement
  * - stepNumber 1 = steps[0] (first beat in array)
  * - stepNumber 2 = steps[1] (second beat in array)
  */
 
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { createPersistenceHelper } from "$lib/shared/state/utils/persistent-state";
 
 export type SelectionMode = "single" | "multi";
@@ -57,9 +57,9 @@ export interface SequenceSelectionStateData {
   // Anchor for shift-range selection (transient — the last plain/toggle click)
   selectionAnchor: number | null;
 
-  // Start position
-  selectedStartPosition: StartPositionData | null;
-  hasStartPosition: boolean;
+  // Start placement
+  selectedStartPlacement: StartPlacementData | null;
+  hasStartPlacement: boolean;
 }
 
 export interface SequenceSelectionSnapshot {
@@ -67,7 +67,7 @@ export interface SequenceSelectionSnapshot {
   selectedStepNumber: number | null;
   selectedStepNumbers: number[];
   selectionAnchor: number | null;
-  selectedStartPosition: StartPositionData | null;
+  selectedStartPlacement: StartPlacementData | null;
 }
 
 export function createSequenceSelectionState() {
@@ -83,8 +83,8 @@ export function createSequenceSelectionState() {
       restoredMulti ? persistedMulti.stepNumbers : []
     ),
     selectionAnchor: persistedMulti.anchor,
-    selectedStartPosition: null,
-    hasStartPosition: false,
+    selectedStartPlacement: null,
+    hasStartPlacement: false,
   });
 
   // Auto-save selection so HMR / refresh restores it — both the single-select
@@ -123,13 +123,13 @@ export function createSequenceSelectionState() {
       return state.selectedStepNumber - 1;
     },
 
-    get selectedStartPosition() {
-      return state.selectedStartPosition;
+    get selectedStartPlacement() {
+      return state.selectedStartPlacement;
     },
-    get hasStartPosition() {
-      return state.hasStartPosition;
+    get hasStartPlacement() {
+      return state.hasStartPlacement;
     },
-    get isStartPositionSelected() {
+    get isStartPlacementSelected() {
       return state.selectedStepNumber === 0;
     },
 
@@ -177,14 +177,14 @@ export function createSequenceSelectionState() {
 
     /**
      * Front door for a workspace beat click. Routes single-select, shift-range,
-     * and ctrl/cmd-toggle in one place so the start-position guard and the
+     * and ctrl/cmd-toggle in one place so the start-placement guard and the
      * multi-vs-single transitions stay centralized.
      *
      * - shift (range): select the contiguous span from the anchor to `target`.
      * - toggle (ctrl/cmd): add/remove `target`, carrying the current single beat
      *   into the multi set on the first toggle.
      * - neither: plain single-select.
-     * The start position (0) never participates in multi-select.
+     * The start placement (0) never participates in multi-select.
      */
     applyClickSelection(
       target: number,
@@ -197,7 +197,7 @@ export function createSequenceSelectionState() {
         state.selectionAnchor = n;
       };
 
-      // Start position: always single, never mixed with beats.
+      // Start placement: always single, never mixed with beats.
       if (target === 0) {
         toSingle(0);
         return;
@@ -261,7 +261,7 @@ export function createSequenceSelectionState() {
       toSingle(target);
     },
 
-    selectStartPosition() {
+    selectStartPlacement() {
       state.selectedStepNumber = 0;
     },
 
@@ -297,26 +297,26 @@ export function createSequenceSelectionState() {
         return { success: false, error: "Not in multi-select mode" };
       }
 
-      // Validate: Cannot mix start position (0) with regular steps (>0)
-      const hasStartPosition = state.selectedStepNumbers.has(0);
+      // Validate: Cannot mix start placement (0) with regular steps (>0)
+      const hasStartPlacement = state.selectedStepNumbers.has(0);
       const hasRegularBeats = Array.from(state.selectedStepNumbers).some(
         (n) => n > 0
       );
-      const isStartPosition = stepNumber === 0;
+      const isStartPlacement = stepNumber === 0;
 
-      if (isStartPosition && hasRegularBeats) {
+      if (isStartPlacement && hasRegularBeats) {
         return {
           success: false,
           error:
-            "Cannot select start position with steps. They have different properties.",
+            "Cannot select start placement with steps. They have different properties.",
         };
       }
 
-      if (!isStartPosition && hasStartPosition) {
+      if (!isStartPlacement && hasStartPlacement) {
         return {
           success: false,
           error:
-            "Cannot select steps with start position. They have different properties.",
+            "Cannot select steps with start placement. They have different properties.",
         };
       }
 
@@ -337,11 +337,11 @@ export function createSequenceSelectionState() {
         state.mode = "multi";
       }
 
-      // Filter out start position if regular steps are included, and vice versa
-      const hasStartPosition = stepNumbers.includes(0);
+      // Filter out start placement if regular steps are included, and vice versa
+      const hasStartPlacement = stepNumbers.includes(0);
       const regularSteps = stepNumbers.filter((n) => n > 0);
 
-      if (hasStartPosition && regularSteps.length > 0) {
+      if (hasStartPlacement && regularSteps.length > 0) {
         // If both types, prefer regular steps (more common use case)
         state.selectedStepNumbers = new Set(regularSteps);
       } else {
@@ -353,10 +353,10 @@ export function createSequenceSelectionState() {
       state.selectedStepNumbers.clear();
     },
 
-    // Start position management
-    setStartPosition(startPosition: StartPositionData | null) {
-      state.selectedStartPosition = startPosition;
-      state.hasStartPosition = startPosition !== null;
+    // Start placement management
+    setStartPlacement(startPlacement: StartPlacementData | null) {
+      state.selectedStartPlacement = startPlacement;
+      state.hasStartPlacement = startPlacement !== null;
     },
 
     captureSnapshot(): SequenceSelectionSnapshot {
@@ -365,7 +365,7 @@ export function createSequenceSelectionState() {
         selectedStepNumber: state.selectedStepNumber,
         selectedStepNumbers: Array.from(state.selectedStepNumbers),
         selectionAnchor: state.selectionAnchor,
-        selectedStartPosition: state.selectedStartPosition,
+        selectedStartPlacement: state.selectedStartPlacement,
       };
     },
 
@@ -374,8 +374,8 @@ export function createSequenceSelectionState() {
       state.selectedStepNumber = snapshot.selectedStepNumber;
       state.selectedStepNumbers = new Set(snapshot.selectedStepNumbers);
       state.selectionAnchor = snapshot.selectionAnchor;
-      state.selectedStartPosition = snapshot.selectedStartPosition;
-      state.hasStartPosition = snapshot.selectedStartPosition !== null;
+      state.selectedStartPlacement = snapshot.selectedStartPlacement;
+      state.hasStartPlacement = snapshot.selectedStartPlacement !== null;
     },
 
     // Helpers for beat removal adjustments
@@ -404,8 +404,8 @@ export function createSequenceSelectionState() {
       state.selectedStepNumber = null;
       state.selectedStepNumbers.clear();
       state.selectionAnchor = null;
-      state.selectedStartPosition = null;
-      state.hasStartPosition = false;
+      state.selectedStartPlacement = null;
+      state.hasStartPlacement = false;
     },
   };
 }

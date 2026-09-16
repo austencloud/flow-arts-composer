@@ -188,7 +188,7 @@ describe("spiroanim bridge resolver", () => {
     expect(resolved).not.toBeNull();
     expect(resolved!.entry.concept).toBe("vtg");
     expect(resolved!.entry.reference).toBe("1-1");
-    expect(resolved!.sequence.startPosition).toBeTruthy();
+    expect(resolved!.sequence.startPlacement).toBeTruthy();
   });
 });
 
@@ -202,8 +202,8 @@ describe("spiroanim bridge resolver", () => {
  * clockwise for every hand.
  */
 describe("spiroanim bridge orientation translation", () => {
-  const positionsOf = (steps: readonly { startPosition: unknown; endPosition: unknown }[]) =>
-    steps.map((step) => `${step.startPosition}>${step.endPosition}`);
+  const positionsOf = (steps: readonly { startPlacement: unknown; endPlacement: unknown }[]) =>
+    steps.map((step) => `${step.startPlacement}>${step.endPlacement}`);
 
   it("renders the default view 90° clockwise of the transcription", async () => {
     // vtg 3-4 @ 1:3 is the cell Austen reported: KEKE, transcribed as

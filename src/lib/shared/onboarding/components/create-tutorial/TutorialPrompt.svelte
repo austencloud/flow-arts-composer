@@ -86,7 +86,7 @@
       Try the Construct guide?
     </h2>
     <p class="prompt-body">
-      Choose a start position, add one pictograph, then play the sequence.
+      Choose a start placement, add one pictograph, then play the sequence.
     </p>
 
     <div class="prompt-actions">

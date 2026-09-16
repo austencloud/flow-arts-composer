@@ -1,10 +1,10 @@
 /**
- * Grid-related enums: GridLocation, GridMode, GridPosition.
+ * Grid-related enums: GridLocation, GridMode, GridPlacement.
  *
  * Values grounded in:
- *   - `packages/sequence-engine/src/core/positions/GridPositionDeriver.ts` (GridPosition list)
+ *   - `packages/sequence-engine/src/core/placements/GridPlacementDeriver.ts` (GridPlacement list)
  *   - `packages/sequence-engine/src/core/types/sequence-engine-types.ts` (GridLocation list)
- *   - MCP `get_position_info` / domain-topic references for Alpha/Beta/Gamma/Zeta/Eta semantics
+ *   - MCP `get_placement_info` / domain-topic references for Alpha/Beta/Gamma/Zeta/Eta semantics
  */
 
 /**
@@ -34,7 +34,7 @@ export const GRID_LOCATIONS: readonly GridLocation[] = Object.freeze(
 /**
  * Grid mode: diamond mode uses cardinal points (N/E/S/W), box mode uses
  * intercardinal points (NE/SE/SW/NW). Skewed mode mixes one cardinal with
- * one intercardinal for Eta (45 degrees) and Zeta (135 degrees) positions.
+ * one intercardinal for Eta (45 degrees) and Zeta (135 degrees) placements.
  */
 export const GridMode = {
   diamond: "diamond",
@@ -52,8 +52,8 @@ export const GRID_MODES: readonly GridMode[] = Object.freeze(
 );
 
 /**
- * Named two-hand grid position. Identifies (left_hand_location, right_hand_location)
- * via the enumeration in `GridPositionDeriver.ts`.
+ * Named two-hand grid placement. Identifies (left_hand_location, right_hand_location)
+ * via the enumeration in `GridPlacementDeriver.ts`.
  *
  * Families:
  *   - Alpha 1–8: hands 180 degrees apart
@@ -62,7 +62,7 @@ export const GRID_MODES: readonly GridMode[] = Object.freeze(
  *   - Zeta 1–16: hands 135 degrees apart (skewed mode)
  *   - Eta 1–16: hands 45 degrees apart (skewed mode)
  */
-export const GridPosition = {
+export const GridPlacement = {
   alpha1: "alpha1",
   alpha2: "alpha2",
   alpha3: "alpha3",
@@ -132,7 +132,7 @@ export const GridPosition = {
   eta15: "eta15",
   eta16: "eta16",
 
-  // Tau positions — one hand at center, other at perimeter (centric mode)
+  // Tau placements — one hand at center, other at perimeter (centric mode)
   tau1: "tau1",
   tau2: "tau2",
   tau3: "tau3",
@@ -150,27 +150,27 @@ export const GridPosition = {
   tau15: "tau15",
   tau16: "tau16",
 
-  // Terra position — both hands at center (centric mode)
+  // Terra placement — both hands at center (centric mode)
   terra1: "terra1",
 } as const;
 
-export type GridPosition = (typeof GridPosition)[keyof typeof GridPosition];
+export type GridPlacement = (typeof GridPlacement)[keyof typeof GridPlacement];
 
-export const GRID_POSITIONS: readonly GridPosition[] = Object.freeze(
-  Object.values(GridPosition)
+export const GRID_PLACEMENTS: readonly GridPlacement[] = Object.freeze(
+  Object.values(GridPlacement)
 );
 
 /**
- * Position family — the Greek-letter prefix classifying a GridPosition.
+ * Placement family — the Greek-letter prefix classifying a GridPlacement.
  */
-export type PositionFamily = "alpha" | "beta" | "gamma" | "zeta" | "eta" | "tau" | "terra";
+export type PlacementFamily = "alpha" | "beta" | "gamma" | "zeta" | "eta" | "tau" | "terra";
 
-export function getPositionFamily(position: GridPosition): PositionFamily {
-  if (position.startsWith("alpha")) return "alpha";
-  if (position.startsWith("beta")) return "beta";
-  if (position.startsWith("gamma")) return "gamma";
-  if (position.startsWith("zeta")) return "zeta";
-  if (position.startsWith("tau")) return "tau";
-  if (position.startsWith("terra")) return "terra";
+export function getPlacementFamily(placement: GridPlacement): PlacementFamily {
+  if (placement.startsWith("alpha")) return "alpha";
+  if (placement.startsWith("beta")) return "beta";
+  if (placement.startsWith("gamma")) return "gamma";
+  if (placement.startsWith("zeta")) return "zeta";
+  if (placement.startsWith("tau")) return "tau";
+  if (placement.startsWith("terra")) return "terra";
   return "eta";
 }

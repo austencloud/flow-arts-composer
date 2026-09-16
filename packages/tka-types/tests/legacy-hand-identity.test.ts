@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   normalizeLegacyHandPair,
   normalizeLegacyHandSide,
+  normalizeLegacyPictograph,
   normalizeLegacySequence,
   normalizeLegacyStep,
   normalizeLegacySteps,
+  normalizeLegacyStepPairing,
 } from "../src/legacy-hand-identity.js";
 
 describe("legacy hand identity normalization", () => {
@@ -102,5 +104,186 @@ describe("legacy hand identity normalization", () => {
     expect(normalized).not.toHaveProperty("blueSoloProp");
     expect(normalized).not.toHaveProperty("redSoloProp");
     expect(source.blueSoloProp.id).toBe("blue-solo");
+  });
+});
+
+describe("legacy placement (position -> placement) normalization", () => {
+  it("moves startPosition/endPosition on a step-shaped record", () => {
+    const normalized = normalizeLegacyStep({
+      id: "legacy-step",
+      startPosition: "alpha1",
+      endPosition: "beta3",
+    }) as Record<string, any>;
+
+    expect(normalized).toMatchObject({
+      id: "legacy-step",
+      startPlacement: "alpha1",
+      endPlacement: "beta3",
+    });
+    expect(normalized).not.toHaveProperty("startPosition");
+    expect(normalized).not.toHaveProperty("endPosition");
+  });
+
+  it("moves gridPosition/isStartPosition on a start-placement-shaped record", () => {
+    const normalized = normalizeLegacyStep({
+      id: "legacy-start",
+      isStartPosition: true,
+      gridPosition: "gamma7",
+      startPosition: "gamma7",
+      endPosition: "gamma7",
+    }) as Record<string, any>;
+
+    expect(normalized).toMatchObject({
+      id: "legacy-start",
+      isStartPlacement: true,
+      gridPlacement: "gamma7",
+      startPlacement: "gamma7",
+      endPlacement: "gamma7",
+    });
+    expect(normalized).not.toHaveProperty("isStartPosition");
+    expect(normalized).not.toHaveProperty("gridPosition");
+    expect(normalized).not.toHaveProperty("startPosition");
+    expect(normalized).not.toHaveProperty("endPosition");
+  });
+
+  it("prefers canonical placement keys over legacy position keys when both are present", () => {
+    const normalized = normalizeLegacyStep({
+      startPosition: "alpha1",
+      startPlacement: "beta3",
+      endPosition: "gamma5",
+      endPlacement: "delta1",
+    }) as Record<string, any>;
+
+    expect(normalized.startPlacement).toBe("beta3");
+    expect(normalized.endPlacement).toBe("delta1");
+    expect(normalized).not.toHaveProperty("startPosition");
+    expect(normalized).not.toHaveProperty("endPosition");
+  });
+
+  it("normalizes legacy position keys on a bare pictograph-shaped record", () => {
+    const normalized = normalizeLegacyPictograph({
+      id: "pict-1",
+      startPosition: "alpha1",
+      endPosition: "beta3",
+      motions: {
+        blue: { color: "blue", motionType: "pro" },
+        red: { color: "red", motionType: "anti" },
+      },
+    }) as Record<string, any>;
+
+    expect(normalized.startPlacement).toBe("alpha1");
+    expect(normalized.endPlacement).toBe("beta3");
+    expect(normalized.motions.left.hand).toBe("left");
+    expect(normalized).not.toHaveProperty("startPosition");
+    expect(normalized).not.toHaveProperty("endPosition");
+  });
+
+  it("moves startPosition/endPosition on a step pairing", () => {
+    const normalized = normalizeLegacyStepPairing({
+      letter: "A",
+      startPosition: "alpha1",
+      endPosition: "beta3",
+    }) as Record<string, any>;
+
+    expect(normalized).toMatchObject({
+      letter: "A",
+      startPlacement: "alpha1",
+      endPlacement: "beta3",
+    });
+    expect(normalized).not.toHaveProperty("startPosition");
+    expect(normalized).not.toHaveProperty("endPosition");
+  });
+
+  it("moves a legacy startPosition/startingPosition sequence field, normalizing recursively", () => {
+    const source = {
+      id: "seq-1",
+      startPosition: {
+        id: "start-cell",
+        isStartPosition: true,
+        gridPosition: "alpha1",
+        blueReversal: false,
+        redReversal: false,
+        motions: { blue: { color: "blue" }, red: { color: "red" } },
+      },
+      startingPosition: {
+        id: "starting-cell",
+        gridPosition: "beta3",
+      },
+    };
+
+    const normalized = normalizeLegacySequence(source) as Record<string, any>;
+
+    expect(normalized).not.toHaveProperty("startPosition");
+    expect(normalized).not.toHaveProperty("startingPosition");
+    expect(normalized.startPlacement).toMatchObject({
+      id: "start-cell",
+      isStartPlacement: true,
+      gridPlacement: "alpha1",
+      leftReversal: false,
+      rightReversal: false,
+      motions: { left: { hand: "left" }, right: { hand: "right" } },
+    });
+    expect(normalized.startingPlacement).toMatchObject({
+      id: "starting-cell",
+      gridPlacement: "beta3",
+    });
+    // Source is untouched.
+    expect(source.startPosition.gridPosition).toBe("alpha1");
+  });
+
+  it("prefers a canonical startPlacement sequence field over a legacy startPosition sibling", () => {
+    const source = {
+      id: "seq-2",
+      startPosition: { id: "legacy-start", gridPosition: "alpha1" },
+      startPlacement: { id: "canonical-start", gridPlacement: "gamma5" },
+    };
+
+    const normalized = normalizeLegacySequence(source) as Record<string, any>;
+
+    expect(normalized.startPlacement).toMatchObject({
+      id: "canonical-start",
+      gridPlacement: "gamma5",
+    });
+    expect(normalized).not.toHaveProperty("startPosition");
+  });
+
+  it("normalizes a mixed document carrying both hand-identity and placement legacy keys", () => {
+    const source = {
+      id: "seq-mixed",
+      steps: [
+        {
+          id: "step-1",
+          blueReversal: true,
+          startPosition: "alpha1",
+          endPosition: "beta3",
+          motions: { blue: { color: "blue" }, red: { color: "red" } },
+        },
+      ],
+      startPosition: {
+        id: "start-cell",
+        gridPosition: "alpha1",
+      },
+      stepPairings: [
+        { blueReversal: true, startPosition: "alpha1", endPosition: "beta3" },
+      ],
+    };
+
+    const normalized = normalizeLegacySequence(source) as Record<string, any>;
+
+    expect(normalized.steps[0]).toMatchObject({
+      leftReversal: true,
+      startPlacement: "alpha1",
+      endPlacement: "beta3",
+      motions: { left: { hand: "left" } },
+    });
+    expect(normalized.startPlacement).toMatchObject({
+      id: "start-cell",
+      gridPlacement: "alpha1",
+    });
+    expect(normalized.stepPairings[0]).toMatchObject({
+      leftReversal: true,
+      startPlacement: "alpha1",
+      endPlacement: "beta3",
+    });
   });
 });

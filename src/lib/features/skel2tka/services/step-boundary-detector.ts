@@ -149,7 +149,7 @@ function groupToBeat(
     endTime,
     frameCount: group.frames.length,
     positions,
-    positionLabel: derivePositionLabel(group.leftLocation, group.rightLocation),
+    placementLabel: derivePlacementLabel(group.leftLocation, group.rightLocation),
   };
 }
 
@@ -170,7 +170,7 @@ function getValidLocation(
  * Alpha = opposite points, Beta = same point, Gamma = right angle.
  * Returns null if either hand is undetected.
  */
-function derivePositionLabel(
+function derivePlacementLabel(
   left: GridLocation | null,
   right: GridLocation | null
 ): string | null {

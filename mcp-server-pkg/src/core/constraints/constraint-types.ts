@@ -17,8 +17,8 @@ export enum ConstraintType {
   REVERSAL = "reversal",
   HAND_PATH = "handPath",
 
-  // Position constraints
-  POSITION_GROUP = "positionGroup",
+  // Placement constraints
+  PLACEMENT_GROUP = "placementGroup",
 
   // Timing constraints
   VTG_TIMING = "vtgTiming",
@@ -38,7 +38,7 @@ export type ConstraintMode = "hard" | "soft";
 export enum ConstraintCategory {
   MOTION = "motion",
   SEQUENCE = "sequence",
-  POSITION = "position",
+  PLACEMENT = "placement",
   TIMING = "timing",
   PATTERN = "pattern",
 }
@@ -53,7 +53,7 @@ export const CONSTRAINT_CATEGORIES: Record<ConstraintType, ConstraintCategory> =
     [ConstraintType.CONTINUITY]: ConstraintCategory.SEQUENCE,
     [ConstraintType.REVERSAL]: ConstraintCategory.SEQUENCE,
     [ConstraintType.HAND_PATH]: ConstraintCategory.SEQUENCE,
-    [ConstraintType.POSITION_GROUP]: ConstraintCategory.POSITION,
+    [ConstraintType.PLACEMENT_GROUP]: ConstraintCategory.PLACEMENT,
     [ConstraintType.VTG_TIMING]: ConstraintCategory.TIMING,
     [ConstraintType.ALTERNATING]: ConstraintCategory.PATTERN,
   };

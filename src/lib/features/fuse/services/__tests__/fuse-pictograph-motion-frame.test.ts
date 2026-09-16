@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { resolveFusePictographMotionFrame } from "../fuse-pictograph-motion-frame";
 
@@ -10,14 +10,14 @@ function step(id: string, stepNumber: number): StepData {
 
 function sequence(
   steps: readonly StepData[],
-  startPosition?: StartPositionData
+  startPlacement?: StartPlacementData
 ): SequenceData {
   return {
     id: "fuse-source",
     name: "Fuse source",
     word: "",
     steps,
-    startPosition,
+    startPlacement,
     thumbnails: [],
     isFavorite: false,
     isCircular: true,
@@ -28,15 +28,15 @@ function sequence(
 
 describe("resolveFusePictographMotionFrame", () => {
   const steps = [step("one", 1), step("two", 2), step("three", 3)];
-  const startPosition = {
+  const startPlacement = {
     id: "start",
-    isStartPosition: true,
+    isStartPlacement: true,
     motions: {},
-  } as StartPositionData;
+  } as StartPlacementData;
 
   it("maps the Fuse clock to the active target motion and its progress", () => {
     const frame = resolveFusePictographMotionFrame(
-      sequence(steps, startPosition),
+      sequence(steps, startPlacement),
       1.4
     );
 
@@ -50,12 +50,12 @@ describe("resolveFusePictographMotionFrame", () => {
 
   it("uses the canonical start position for the first motion", () => {
     const frame = resolveFusePictographMotionFrame(
-      sequence(steps, startPosition),
+      sequence(steps, startPlacement),
       0.25
     );
 
     expect(frame?.step).toBe(steps[0]);
-    expect(frame?.motionStartData).toBe(startPosition);
+    expect(frame?.motionStartData).toBe(startPlacement);
     expect(frame?.motionProgress).toBe(0.25);
   });
 
@@ -73,7 +73,7 @@ describe("resolveFusePictographMotionFrame", () => {
   it("normalizes negative and invalid clock values", () => {
     const wrapped = resolveFusePictographMotionFrame(sequence(steps), -0.25);
     const invalid = resolveFusePictographMotionFrame(
-      sequence(steps, startPosition),
+      sequence(steps, startPlacement),
       Number.NaN
     );
 
@@ -86,7 +86,7 @@ describe("resolveFusePictographMotionFrame", () => {
     expect(invalid).toMatchObject({
       step: steps[0],
       stepIndex: 0,
-      motionStartData: startPosition,
+      motionStartData: startPlacement,
       motionProgress: 0,
     });
   });

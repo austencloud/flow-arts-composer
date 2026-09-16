@@ -3,7 +3,7 @@
  *
  * Coverage axes (the product is enumerated in full):
  *   - grid mode:        diamond, box
- *   - seed length:      1, 2, 3 canonical steps (+ the start-position step)
+ *   - seed length:      1, 2, 3 canonical steps (+ the start-placement step)
  *   - per-hand turns:   0/0, 1/1, 0/1 (asymmetric), 0.5/0.5 (half turns)
  *   - start orientations: in/in, out/in, clock/counter
  *

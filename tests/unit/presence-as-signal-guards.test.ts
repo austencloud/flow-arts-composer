@@ -33,7 +33,7 @@ import {
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
 
@@ -63,7 +63,7 @@ vi.mock("$lib/shared/navigation/services/position-deriver", () => ({
 }));
 import { hydrateSequence } from "$lib/shared/navigation/services/sequence-hydrator";
 import { analyzeDifficulty } from "$lib/shared/browse/services/sequence-difficulty-calculator";
-import { enrichStepsWithGridPositions } from "$lib/shared/qr/services/compositional-utils";
+import { enrichStepsWithGridPlacements } from "$lib/shared/qr/services/compositional-utils";
 import { extractPattern } from "$lib/features/create/shared/services/rotation-direction-pattern-manager";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
@@ -113,18 +113,18 @@ function seq(steps: StepData[]): SequenceData {
 describe("reconcileStepDerived — one-hand steps pass through UNCHANGED", () => {
   it("does not recompute gridMode/positions for a one-hand step (stale values kept)", () => {
     const step = oneHandStep({
-      startPosition: GridPosition.GAMMA11, // deliberately stale/wrong
-      endPosition: GridPosition.GAMMA11,
+      startPlacement: GridPlacement.GAMMA11, // deliberately stale/wrong
+      endPlacement: GridPlacement.GAMMA11,
     });
     const out = reconcileStepDerived(step);
     expect(out).toBe(step); // identity: absence short-circuits derivation entirely
   });
 
   it("DOES recompute for a both-hand step (control: proves the gate is presence)", () => {
-    const step = bothHandStep({ startPosition: GridPosition.GAMMA11 });
+    const step = bothHandStep({ startPlacement: GridPlacement.GAMMA11 });
     const out = reconcileStepDerived(step);
     expect(out).not.toBe(step);
-    expect(out.startPosition).not.toBe(GridPosition.GAMMA11);
+    expect(out.startPlacement).not.toBe(GridPlacement.GAMMA11);
   });
 });
 
@@ -209,12 +209,12 @@ describe('hashSequenceContent — absent motion hashes as the "-" sentinel', () 
     const h1 = hashSequenceContent({
       word: "W",
       steps: [oneHand],
-      startPosition: undefined,
+      startPlacement: undefined,
     });
     const h2 = hashSequenceContent({
       word: "W",
       steps: [bothHands],
-      startPosition: undefined,
+      startPlacement: undefined,
     });
     expect(h1).not.toBe(h2); // a bridge that fabricates the red motion re-keys render caches
   });
@@ -224,12 +224,12 @@ describe('hashSequenceContent — absent motion hashes as the "-" sentinel', () 
     const a = hashSequenceContent({
       word: "W",
       steps: [step],
-      startPosition: undefined,
+      startPlacement: undefined,
     });
     const b = hashSequenceContent({
       word: "W",
       steps: [step],
-      startPosition: undefined,
+      startPlacement: undefined,
     });
     expect(a).toBe(b);
   });
@@ -450,8 +450,8 @@ describe("analyzeDifficulty — invisible placeholders don't inflate the badge",
   });
 });
 
-describe("enrichStepsWithGridPositions — placeholder beats keep null positions", () => {
-  it("does not fabricate GridPositions from placeholder locations", () => {
+describe("enrichStepsWithGridPlacements — placeholder beats keep null positions", () => {
+  it("does not fabricate GridPlacements from placeholder locations", () => {
     const blank = createStepData({
       stepNumber: 1,
       motions: {
@@ -459,16 +459,16 @@ describe("enrichStepsWithGridPositions — placeholder beats keep null positions
         [HandSide.RIGHT]: invisibleMotion({ color: HandSide.RIGHT }),
       },
     });
-    enrichStepsWithGridPositions([blank]);
-    expect(blank.startPosition).toBeNull();
-    expect(blank.endPosition).toBeNull();
+    enrichStepsWithGridPlacements([blank]);
+    expect(blank.startPlacement).toBeNull();
+    expect(blank.endPlacement).toBeNull();
   });
 
   it("DOES derive for a visible both-hand step (control)", () => {
     const step = bothHandStep();
-    enrichStepsWithGridPositions([step]);
-    expect(step.startPosition).not.toBeNull();
-    expect(step.endPosition).not.toBeNull();
+    enrichStepsWithGridPlacements([step]);
+    expect(step.startPlacement).not.toBeNull();
+    expect(step.endPlacement).not.toBeNull();
   });
 });
 

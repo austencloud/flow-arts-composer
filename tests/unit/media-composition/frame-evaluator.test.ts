@@ -67,7 +67,7 @@ describe("evaluatePresetFrame", () => {
     const layers = evaluatePresetFrame(performancePreset, 10, 5, {
       timeMap,
       steps: variableDurationSteps,
-      startPositionDuration: 1,
+      startPlacementDuration: 1,
     });
 
     expect(layers).toHaveLength(3);
@@ -86,12 +86,12 @@ describe("evaluatePresetFrame", () => {
       { ...performancePreset, animationPlaybackMode: "step" },
       10,
       4,
-      { timeMap, steps: variableDurationSteps, startPositionDuration: 1 }
+      { timeMap, steps: variableDurationSteps, startPlacementDuration: 1 }
     );
     const [continuous] = evaluatePresetFrame(performancePreset, 10, 4, {
       timeMap,
       steps: variableDurationSteps,
-      startPositionDuration: 1,
+      startPlacementDuration: 1,
     });
 
     expect(continuous?.sequencePosition).toBeGreaterThan(1);
@@ -124,7 +124,7 @@ describe("evaluatePresetFrame", () => {
       evaluatePresetFrame(performancePreset, 10, seconds, {
         timeMap: twoPassMap,
         steps: variableDurationSteps,
-        startPositionDuration: 1,
+        startPlacementDuration: 1,
       })[0]?.sequencePosition;
 
     // The opening pose is position zero and stays itself - every pass after

@@ -198,7 +198,7 @@ Uses organizer and sizer services for section grouping and sizing.
     return shouldUseWideLayout ? 8 : 4;
   });
 
-  // Only show filter toggle when we have at least 2 steps (start position + 1 actual beat)
+  // Only show filter toggle when we have at least 2 steps (start placement + 1 actual beat)
   // Without a previous beat, there's no rotation context to filter against
   const shouldShowFilterToggle = $derived(() => {
     const availableBeforeDirectionFiltering =
@@ -503,7 +503,7 @@ Uses organizer and sizer services for section grouping and sizing.
 
     // Initial measurement — taken once the box has stopped moving.
     //
-    // Choosing a start position expands the workspace, and
+    // Choosing a start placement expands the workspace, and
     // StandardWorkspaceLayout eases its grid columns over 450ms to do it. The
     // picker mounts before that ease has run a frame, so measuring immediately
     // reports the panel at its PRE-expansion width: wide enough to commit to

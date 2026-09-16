@@ -57,43 +57,43 @@ function ensureEngineTransitionGraph(): Promise<void> {
 }
 
 /**
- * The engine's end-position goal, as position strings.
+ * The engine's end-placement goal, as placement strings.
  *
- * Until 2026-08-03 neither `endPosition` nor `endPositions` was passed to
- * `builder.build()` at all — the End Position picker wrote to state, persisted,
+ * Until 2026-08-03 neither `endPlacement` nor `endPlacements` was passed to
+ * `builder.build()` at all — the End Placement picker wrote to state, persisted,
  * and showed on the Customize card, and the constraint was silently dropped at
  * this boundary. Anything added to GenerationOptions has to be threaded through
  * here or it does nothing.
  *
- * `endPositions` is the multi-select form. `endPosition` is the legacy single
- * PictographData; its `.endPosition` field carries the grid position (a
- * start-position pictograph is static, so start and end are the same value —
- * see start-position-manager's createStartPosition). Empty = unconstrained.
+ * `endPlacements` is the multi-select form. `endPlacement` is the legacy single
+ * PictographData; its `.endPlacement` field carries the grid placement (a
+ * start-placement pictograph is static, so start and end are the same value —
+ * see start-placement-manager's createStartPlacement). Empty = unconstrained.
  */
-function resolveEndPositions(
+function resolveEndPlacements(
   options: GenerationOptions
 ): string[] | undefined {
   const ends = new Set<string>();
-  for (const p of options.endPositions ?? []) {
+  for (const p of options.endPlacements ?? []) {
     if (p) ends.add(String(p));
   }
   const legacy =
-    options.endPosition?.endPosition ?? options.endPosition?.startPosition;
+    options.endPlacement?.endPlacement ?? options.endPlacement?.startPlacement;
   if (legacy) ends.add(String(legacy));
   return ends.size > 0 ? [...ends] : undefined;
 }
 
 /**
- * The engine's pinned start position.
+ * The engine's pinned start placement.
  *
- * `startPositionId` is the direct form. `startPosition` is the legacy
- * PictographData whose `.startPosition` field carries the same grid position;
- * a start-position pictograph is static, so its start and end are one value.
+ * `startPlacementId` is the direct form. `startPlacement` is the legacy
+ * PictographData whose `.startPlacement` field carries the same grid placement;
+ * a start-placement pictograph is static, so its start and end are one value.
  */
-function resolveStartPosition(options: GenerationOptions): string | undefined {
-  if (options.startPositionId) return String(options.startPositionId);
-  return options.startPosition?.startPosition
-    ? String(options.startPosition.startPosition)
+function resolveStartPlacement(options: GenerationOptions): string | undefined {
+  if (options.startPlacementId) return String(options.startPlacementId);
+  return options.startPlacement?.startPlacement
+    ? String(options.startPlacement.startPlacement)
     : undefined;
 }
 
@@ -135,9 +135,9 @@ export class GenerationOrchestrator {
       gridMode: String(options.gridMode),
       level,
       constraintOptions: this.mapConstraints(options),
-      startPosition: resolveStartPosition(options),
-      blockedStartPositions: options.blockedStartPositions?.map(String),
-      endPositions: resolveEndPositions(options),
+      startPlacement: resolveStartPlacement(options),
+      blockedStartPlacements: options.blockedStartPlacements?.map(String),
+      endPlacements: resolveEndPlacements(options),
       mustContainLetters: options.mustContainLetters?.map(String),
       mustNotContainLetters: options.mustNotContainLetters?.map(String),
       maxTurnIntensity: options.turnIntensity,
@@ -206,9 +206,9 @@ export class GenerationOrchestrator {
       gridMode: String(options.gridMode),
       level,
       constraintOptions: this.mapConstraints(options),
-      startPosition: resolveStartPosition(options),
-      blockedStartPositions: options.blockedStartPositions?.map(String),
-      endPositions: resolveEndPositions(options),
+      startPlacement: resolveStartPlacement(options),
+      blockedStartPlacements: options.blockedStartPlacements?.map(String),
+      endPlacements: resolveEndPlacements(options),
       mustContainLetters: options.mustContainLetters?.map(String),
       mustNotContainLetters: options.mustNotContainLetters?.map(String),
       maxTurnIntensity: options.turnIntensity,
@@ -280,7 +280,7 @@ export class GenerationOrchestrator {
 
     // Hand relationship: a hard per-step constraint, passed straight through.
     // Anything added to GenerationOptions has to be threaded here or it does
-    // nothing (see the endPositions note at the top of this file).
+    // nothing (see the endPlacements note at the top of this file).
     const relationship = handRelationshipToEngine(
       options.handRelationship ?? "free",
       options.handRelationshipInverted ?? false

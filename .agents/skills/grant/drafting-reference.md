@@ -33,11 +33,11 @@
 
 1. **Sound like Austen, not like a grant writer.** Direct, confident, no art-speak. Apply every rule from the AI-isms section of AGENTS.md. If a sentence could appear in any grant application for any project, rewrite it until it couldn't.
 
-2. **Be specific about what exists.** Flow Arts Composer is a working web application. The notation system has defined letter forms, position classifications, and rotation tracking. The museum game has a 350-line story bible. Say what's real.
+2. **Be specific about what exists.** Flow Arts Composer is a working web application. The notation system has defined letter forms, placement classifications, and rotation tracking. The museum game has a 350-line story bible. Say what's real.
 
 3. **Don't overclaim.** TKA is for dual-wielded rigid gripped props. Not all flow arts. Not all movement. Not dance notation. Be precise about scope.
 
-4. **Lead with the concrete, follow with the vision.** "I built a notation system for movement arts. 24 letter forms map hand positions through space. A web app renders them in real time. Now I'm building the cultural argument for why this matters — a narrative game set in an abandoned government archive." Not the other way around.
+4. **Lead with the concrete, follow with the vision.** "I built a notation system for movement arts. 24 letter forms map hand placements through space. A web app renders them in real time. Now I'm building the cultural argument for why this matters — a narrative game set in an abandoned government archive." Not the other way around.
 
 5. **Hit the word count, not over it.** If the limit is 150 words, draft at 140-148. Reviewers notice when you hit the limit exactly — it suggests you had more to say. Slightly under says you said what you needed.
 

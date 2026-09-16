@@ -71,15 +71,15 @@ export const CONCEPT_RESOURCE_BINDINGS: Readonly<
   "1.2": {
     lessonIds: [
       {
-        lessonId: "hand-positions",
-        label: "Hand Positions lesson",
+        lessonId: "hand-placements",
+        label: "Hand Placements lesson",
         coverage: "focused",
       },
     ],
     guideRefs: [
       {
-        slug: "hand-positions",
-        label: "Hand Positions",
+        slug: "hand-placements",
+        label: "Hand Placements",
         coverage: "focused",
       },
     ],
@@ -175,8 +175,8 @@ export const CONCEPT_RESOURCE_BINDINGS: Readonly<
     lessonIds: [],
     guideRefs: [
       {
-        slug: "staff-positions",
-        label: "Staff Positions",
+        slug: "staff-placements",
+        label: "Staff Placements",
         coverage: "partial",
       },
     ],

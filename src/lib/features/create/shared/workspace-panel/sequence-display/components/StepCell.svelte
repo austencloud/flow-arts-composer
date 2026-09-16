@@ -101,7 +101,7 @@
   // Reactive state from animation manager
   let animationState = $state(animationManager.getState());
 
-  const isStartPosition = $derived.by(() => {
+  const isStartPlacement = $derived.by(() => {
     return step.stepNumber === 0;
   });
 
@@ -110,8 +110,8 @@
   });
 
   const ariaLabel = $derived.by(() => {
-    if (isStartPosition) {
-      return "Start Position";
+    if (isStartPlacement) {
+      return "Start Placement";
     }
     return `Step ${displayStepNumber} ${step.isBlank ? "Empty" : "Pictograph"}`;
   });
@@ -253,7 +253,7 @@
       // Don't call onClick - let global shortcuts handle Space
       return;
     } else if (event.key === "Delete" || event.key === "Backspace") {
-      // Allow deletion if step is selected (including start position)
+      // Allow deletion if step is selected (including start placement)
       if (isSelected) {
         event.preventDefault();
         // Trigger warning haptic feedback for deletion

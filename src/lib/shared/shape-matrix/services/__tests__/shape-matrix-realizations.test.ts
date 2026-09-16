@@ -5,8 +5,8 @@ import type { CsvEdge } from "$lib/features/choreo-card/services/pictograph-lett
 const edge = (over: Partial<CsvEdge>): CsvEdge =>
   ({
     letter: "A",
-    startPosition: "alpha1",
-    endPosition: "alpha3",
+    startPlacement: "alpha1",
+    endPlacement: "alpha3",
     timing: "split",
     direction: "same",
     leftMotionType: "pro",

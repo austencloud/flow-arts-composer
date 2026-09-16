@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CreateModuleEventHandler } from "$lib/features/create/shared/services/create-module-event-handler";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import {
   createSequenceData,
@@ -9,7 +9,7 @@ import {
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   HandSide,
@@ -21,11 +21,11 @@ import { createMotionData } from "$lib/shared/pictograph/shared/domain/models/mo
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import { buildAppendedOptionSequence } from "$lib/features/create/construct/option-picker/services/build-appended-option-sequence";
 
-const POSITION_BY_LOCATION = {
-  [GridLocation.NORTH]: GridPosition.BETA1,
-  [GridLocation.EAST]: GridPosition.BETA3,
-  [GridLocation.SOUTH]: GridPosition.BETA5,
-  [GridLocation.WEST]: GridPosition.BETA7,
+const PLACEMENT_BY_LOCATION = {
+  [GridLocation.NORTH]: GridPlacement.BETA1,
+  [GridLocation.EAST]: GridPlacement.BETA3,
+  [GridLocation.SOUTH]: GridPlacement.BETA5,
+  [GridLocation.WEST]: GridPlacement.BETA7,
 } as const;
 
 function pictograph(
@@ -51,8 +51,8 @@ function pictograph(
   return {
     id,
     letter: null,
-    startPosition: POSITION_BY_LOCATION[start],
-    endPosition: POSITION_BY_LOCATION[end],
+    startPlacement: PLACEMENT_BY_LOCATION[start],
+    endPlacement: PLACEMENT_BY_LOCATION[end],
     motions: {
       left: createMotion(HandSide.LEFT),
       right: createMotion(HandSide.RIGHT),
@@ -66,7 +66,7 @@ function sequenceFixture(): SequenceData {
     GridLocation.NORTH,
     GridLocation.NORTH
   );
-  const start = createStartPositionData(startPictograph);
+  const start = createStartPlacementData(startPictograph);
   const steps = [
     pictograph("one", GridLocation.NORTH, GridLocation.EAST),
     pictograph("two", GridLocation.EAST, GridLocation.SOUTH),
@@ -81,8 +81,8 @@ function sequenceFixture(): SequenceData {
   return createSequenceData({
     id: "sequence",
     name: "Append preview",
-    startPosition: start,
-    startingPosition: start,
+    startPlacement: start,
+    startingPlacement: start,
     steps,
   });
 }

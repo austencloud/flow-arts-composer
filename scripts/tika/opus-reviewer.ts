@@ -281,7 +281,7 @@ function executeTool(name: string, input: Record<string, unknown>): string {
       return `Letter ${letter}: Type ${typeNum} (${typeName})
 Left motion: ${v.leftMotionType} (${v.leftStartLocation} → ${v.leftEndLocation})
 Right motion: ${v.rightMotionType} (${v.rightStartLocation} → ${v.rightEndLocation})
-Start position: ${v.startPosition}, End position: ${v.endPosition}
+Start position: ${v.startPlacement}, End position: ${v.endPlacement}
 Total variations: ${variations.length}`;
     }
 

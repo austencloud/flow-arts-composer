@@ -43,7 +43,7 @@ describe("svg precache manifest generator", () => {
   });
 
   it("includes the root-level glyph SVGs", () => {
-    // Fetched directly by glyph-cache.ts, PositionGlyph.svelte, and
+    // Fetched directly by glyph-cache.ts, PlacementGlyph.svelte, and
     // canvas-2d-glyph-renderer.ts — omitting them leaves glyphs blank offline.
     expect(assets).toContain("/images/arrow.svg");
     expect(assets).toContain("/images/blank.svg");

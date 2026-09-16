@@ -51,7 +51,7 @@ export interface DetectedBeat {
   /** Stable hand positions during this beat */
   positions: StepPosition[];
   /** TKA position label derived from blue+red locations (alpha, beta, gamma, etc.) */
-  positionLabel: string | null;
+  placementLabel: string | null;
 }
 
 /** Complete result from Phase 1 analysis */

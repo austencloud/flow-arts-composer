@@ -40,7 +40,7 @@ export interface GuideCodexVisibility {
   showGlyph: boolean;
   showGrid: boolean;
   showTKA: boolean;
-  showPositions: boolean;
+  showPlacements: boolean;
   showReversals: boolean;
   showNonRadialPoints: boolean;
 }
@@ -62,7 +62,7 @@ export function defaultGuideCodexVisibility(): GuideCodexVisibility {
     showGlyph: false,
     showGrid: true,
     showTKA: true,
-    showPositions: false,
+    showPlacements: false,
     showReversals: false,
     showNonRadialPoints: false,
   };

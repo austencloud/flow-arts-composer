@@ -29,7 +29,7 @@ const SYLLABLES: Record<string, number> = {
   [Letter.LAMBDA_DASH]: 2,
 
   // No shorthand in GREEK_TO_ASCII, so these keep their full names. All seven
-  // are position names rather than letters a word can hold.
+  // are placement names rather than letters a word can hold.
   [Letter.MU]: 1, [Letter.NU]: 1, [Letter.ZETA]: 2, [Letter.ETA]: 2,
   [Letter.TAU]: 1, [Letter.TAU_DASH]: 2, [Letter.TERRA]: 2,
 };

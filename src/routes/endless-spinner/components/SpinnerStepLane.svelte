@@ -55,7 +55,7 @@
   // is the whole point of this wrapper (see the header comment).
   const fillHeight = $derived(orientation === "vertical");
 
-  // The spinner loops forever, so the start-position cell is dropped: its pose
+  // The spinner loops forever, so the start-placement cell is dropped: its pose
   // equals the sequence's end and the lane shouldn't travel back through it on
   // every repeat. currentStep is shifted −1 so step k focuses its own cell.
   const cells = $derived(

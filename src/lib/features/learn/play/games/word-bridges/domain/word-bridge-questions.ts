@@ -3,14 +3,14 @@ import { simplifyRepeatedWord } from "$lib/shared/foundation/utils/word-simplifi
 import type { BridgeTask } from "../../../domain/arcade-types";
 
 export interface WordBridgeGraphLetterInfo {
-  startPositionGroup: string;
-  endPositionGroup: string;
+  startPlacementGroup: string;
+  endPlacementGroup: string;
 }
 
 /** The narrow transition-graph surface needed by this game. */
 export interface WordBridgeGraph {
   canFollow(from: string, to: string): boolean;
-  getLetterPositionInfo(letter: string): WordBridgeGraphLetterInfo | null;
+  getLetterPlacementInfo(letter: string): WordBridgeGraphLetterInfo | null;
   findAllBridgeOptions(from: string, to: string): string[];
   findBridgeLetters(from: string, to: string): string[];
 }
@@ -24,8 +24,8 @@ export interface WordBridgeGap {
   from: string;
   to: string;
   direct: boolean;
-  fromEndPositionGroup: string;
-  toStartPositionGroup: string;
+  fromEndPlacementGroup: string;
+  toStartPlacementGroup: string;
   /** Every canonical one-letter answer. Empty for direct or multi-letter paths. */
   bridgeOptions: BridgeLetterInfo[];
   /** One shortest path for explanation and bridge counting. */
@@ -90,8 +90,8 @@ export interface BuildWordBridgeDeckOptions {
 }
 
 export interface PositionedPictograph {
-  readonly startPosition?: string | null;
-  readonly endPosition?: string | null;
+  readonly startPlacement?: string | null;
+  readonly endPlacement?: string | null;
 }
 
 const COMMON_WORD_SEEDS = [
@@ -177,7 +177,7 @@ function asBridgeInfo(
   letter: string,
   graph: WordBridgeGraph
 ): BridgeLetterInfo | null {
-  const info = graph.getLetterPositionInfo(letter);
+  const info = graph.getLetterPlacementInfo(letter);
   return info ? { letter, ...info } : null;
 }
 
@@ -205,7 +205,7 @@ export function analyzeWordTransitions(
 ): WordBridgeAnalysis {
   const normalizedLetters = [...letters];
   const invalidLetters = unique(
-    normalizedLetters.filter((letter) => !graph.getLetterPositionInfo(letter))
+    normalizedLetters.filter((letter) => !graph.getLetterPlacementInfo(letter))
   );
 
   if (invalidLetters.length > 0) {
@@ -225,8 +225,8 @@ export function analyzeWordTransitions(
   for (let index = 0; index < normalizedLetters.length - 1; index++) {
     const from = normalizedLetters[index]!;
     const to = normalizedLetters[index + 1]!;
-    const fromInfo = graph.getLetterPositionInfo(from)!;
-    const toInfo = graph.getLetterPositionInfo(to)!;
+    const fromInfo = graph.getLetterPlacementInfo(from)!;
+    const toInfo = graph.getLetterPlacementInfo(to)!;
     const direct = graph.canFollow(from, to);
 
     if (direct) {
@@ -235,8 +235,8 @@ export function analyzeWordTransitions(
         from,
         to,
         direct: true,
-        fromEndPositionGroup: fromInfo.endPositionGroup,
-        toStartPositionGroup: toInfo.startPositionGroup,
+        fromEndPlacementGroup: fromInfo.endPlacementGroup,
+        toStartPlacementGroup: toInfo.startPlacementGroup,
         bridgeOptions: [],
         shortestBridgePath: [],
         bridgeCount: 0,
@@ -265,8 +265,8 @@ export function analyzeWordTransitions(
       from,
       to,
       direct: false,
-      fromEndPositionGroup: fromInfo.endPositionGroup,
-      toStartPositionGroup: toInfo.startPositionGroup,
+      fromEndPlacementGroup: fromInfo.endPlacementGroup,
+      toStartPlacementGroup: toInfo.startPlacementGroup,
       bridgeOptions,
       shortestBridgePath,
       bridgeCount:
@@ -457,8 +457,8 @@ function createRepairChoices(
       .map<RepairChoice>((info) => ({
         ...info,
         isCorrect: false,
-        leftConnects: info.startPositionGroup === gap.fromEndPositionGroup,
-        rightConnects: info.endPositionGroup === gap.toStartPositionGroup,
+        leftConnects: info.startPlacementGroup === gap.fromEndPlacementGroup,
+        rightConnects: info.endPlacementGroup === gap.toStartPlacementGroup,
       }))
       .filter((choice) => !choice.leftConnects || !choice.rightConnects),
     random
@@ -587,7 +587,7 @@ export function isRepairAnswerCorrect(
 }
 
 /**
- * Pick real pictograph variations whose numbered positions connect exactly.
+ * Pick real pictograph variations whose numbered placements connect exactly.
  * Returns null instead of showing an independently selected, misleading chain.
  */
 export function findExactPictographChain<T extends PositionedPictograph>(
@@ -601,10 +601,10 @@ export function findExactPictographChain<T extends PositionedPictograph>(
 
     const candidates = pool.get(letters[index]!) ?? [];
     for (const candidate of candidates) {
-      if (!candidate.startPosition || !candidate.endPosition) continue;
+      if (!candidate.startPlacement || !candidate.endPlacement) continue;
 
       const previous = chain.at(-1);
-      if (previous && previous.endPosition !== candidate.startPosition) {
+      if (previous && previous.endPlacement !== candidate.startPlacement) {
         continue;
       }
 

@@ -5,7 +5,7 @@ StaffQuizSection - Main quiz UI with visualizer and answers
   import StaffPositionVisualizer from "../StaffPositionVisualizer.svelte";
   import {
     type StaffQuizQuestion,
-    type PositionType,
+    type PlacementType,
     getAnswerInfo,
   } from "../../../../domain/constants/staff-quiz-questions";
   import StaffQuizTypeBadge from "./StaffQuizTypeBadge.svelte";
@@ -39,8 +39,8 @@ StaffQuizSection - Main quiz UI with visualizer and answers
       showLabels={true}
       showRotationPath={question.showRotationPath || false}
       rotationType={question.rotationType || "none"}
-      highlightType={answerState !== "idle" && question.type === "position"
-        ? (question.correctAnswer as PositionType)
+      highlightType={answerState !== "idle" && question.type === "placement"
+        ? (question.correctAnswer as PlacementType)
         : null}
     />
   </div>

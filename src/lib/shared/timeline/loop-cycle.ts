@@ -24,7 +24,7 @@ import { isSeamlesslyLoopable } from "$lib/shared/foundation/services/sequence-l
  *
  * Canonical loop semantics, from the playback controller's own boundary
  * (`onAnimationUpdate`): a seamlessly loopable sequence resumes at
- * `startPositionDuration` — it skips the repeated start hold, because its last
+ * `startPlacementDuration` — it skips the repeated start hold, because its last
  * beat already ends on the start pose — while a freeform sequence restarts at 0
  * and shows the hold again, which is what makes its pose jump legible.
  *

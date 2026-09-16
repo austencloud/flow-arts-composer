@@ -39,21 +39,21 @@ export function cardProfileCases(): CardProfileCase[] {
       description:
         "Flexible export with Start explicitly moved to the left column. Same profile as the default export; only the Start placement setting differs.",
       sequence: four,
-      options: { startPositionLayout: "column" },
+      options: { startPlacementLayout: "column" },
     },
     {
       name: "viewer-auto-portrait-4",
       description:
         "What the sequence viewer Auto layout chooses for four steps in a portrait panel (630 by 885 px): two columns with Start in the top row. Auto follows the panel, so this is one snapshot, not a fixed preset.",
       sequence: four,
-      options: { columnCount: 2, startPositionLayout: "row" },
+      options: { columnCount: 2, startPlacementLayout: "row" },
     },
     {
       name: "viewer-auto-landscape-4",
       description:
         "The same four steps when the viewer panel is wide (1400 by 700 px): Auto switches to a Start column with three total columns.",
       sequence: four,
-      options: { columnCount: 3, startPositionLayout: "column" },
+      options: { columnCount: 3, startPlacementLayout: "column" },
     },
     {
       name: "print-poker-4",
@@ -63,7 +63,7 @@ export function cardProfileCases(): CardProfileCase[] {
       options: {
         exportProfile: "print",
         columnCount: 2,
-        startPositionLayout: "row",
+        startPlacementLayout: "row",
         showMandala: false,
       },
     },
@@ -75,7 +75,7 @@ export function cardProfileCases(): CardProfileCase[] {
       options: {
         exportProfile: "print",
         columnCount: 3,
-        startPositionLayout: "column",
+        startPlacementLayout: "column",
         showMandala: false,
       },
     },

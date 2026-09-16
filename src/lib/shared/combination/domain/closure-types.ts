@@ -4,7 +4,7 @@
  * The 2026-08-04 engine emitted freeform closed walks: it found walks that
  * returned to their own start seam, classified them, and never once asked
  * whether the result was a **LOOP**. There is no reference to
- * `isLOOPValidForPositionPair` anywhere in the shipped `combination/` tree —
+ * `isLOOPValidForPlacementPair` anywhere in the shipped `combination/` tree —
  * which is exactly why the output was rejected ("not a single one of these
  * sequences is a LOOP and I don't want freeform crap sequences", 2026-08-05).
  *
@@ -21,7 +21,7 @@
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { LOOPType, Period } from "@tka/sequence-engine/loop";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 
 /**
  * Which family a closure came from.
@@ -37,7 +37,7 @@ import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid
  * - `reflection` — a reflection across one of the two DIAGONAL axes. TKA canon
  *   holds all four axes equally valid (`.claude/rules/tka-domain.md`, "LOOP
  *   Reflection Guardrails") and the engine ships their location maps, but its
- *   position-pair validation sets cover only north-south (MIRRORED) and
+ *   placement-pair validation sets cover only north-south (MIRRORED) and
  *   east-west (FLIPPED). Dropping the diagonals costs A+G's 8-count bucket 12
  *   of its 32 words — the mixed-crossing units, the whole point of the feature.
  */
@@ -92,13 +92,13 @@ export interface AdmissibleClosure {
  * REALIZED is the load-bearing word. A word does not determine its closure —
  * from alpha7, Psi's blue-dash variation lands beta7 and its red-dash variation
  * lands beta3, 180 degrees apart from the same start. So the closure question is
- * asked of the actual step list's `startPosition`/`endPosition` and never of the
+ * asked of the actual step list's `startPlacement`/`endPlacement` and never of the
  * letters (`redesign-design.md`, "A word does not determine its closure").
  */
 export interface CandidateUnit {
   readonly steps: readonly StepData[];
-  readonly startPosition: GridPosition;
-  readonly endPosition: GridPosition;
+  readonly startPlacement: GridPlacement;
+  readonly endPlacement: GridPlacement;
   /** Letters as walked, unsimplified. Display goes through `simplifyRepeatedWord`. */
   readonly word: string;
   /** Steps drawn from neither card — the bridge material. */

@@ -29,10 +29,10 @@ describe("Construct solo review fixture", () => {
     const blue = createConstructSoloReviewSequence("left");
     const red = createConstructRedPartnerReviewSequence();
 
-    expect(blue.startPosition?.motions.left?.startLocation).toBe(
+    expect(blue.startPlacement?.motions.left?.startLocation).toBe(
       GridLocation.NORTHWEST
     );
-    expect(red.startPosition?.motions.right?.startLocation).toBe(
+    expect(red.startPlacement?.motions.right?.startLocation).toBe(
       GridLocation.SOUTHEAST
     );
     expect(red.name).toBe("Counterpoint box orbit");

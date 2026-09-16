@@ -204,7 +204,7 @@ function canonicalFingerprint(letterArray) {
 
 (async function main() {
   const circularMaps =
-    await import("../packages/sequence-engine/dist/loop/position-maps/circular-position-maps.js");
+    await import("../packages/sequence-engine/dist/loop/placement-maps/circular-placement-maps.js");
   const { QUARTERED_LOOPS } = circularMaps;
 
   const { loopExecutorSelector } =
@@ -269,8 +269,8 @@ function canonicalFingerprint(letterArray) {
     return {
       id: `beat-${beatIndex}`,
       letter: edge.letter,
-      startPosition: edge.startPos,
-      endPosition: edge.endPos,
+      startPlacement: edge.startPos,
+      endPlacement: edge.endPos,
       beatIndex,
       stepNumber: beatIndex,
       duration: 1,
@@ -337,8 +337,8 @@ function canonicalFingerprint(letterArray) {
         : seed.startPos.startsWith("beta")
           ? "β"
           : "γ",
-      startPosition: seed.startPos,
-      endPosition: seed.startPos,
+      startPlacement: seed.startPos,
+      endPlacement: seed.startPos,
       beatIndex: 0,
       stepNumber: 0,
       duration: 1,
@@ -662,8 +662,8 @@ function canonicalFingerprint(letterArray) {
       const firestoreSteps = stepsWithTurns.map((step, i) => ({
         beat: i,
         letter: step.letter,
-        startPosition: step.startPosition,
-        endPosition: step.endPosition,
+        startPlacement: step.startPlacement,
+        endPlacement: step.endPlacement,
         leftReversal: false,
         rightReversal: false,
         motions: {
@@ -696,10 +696,10 @@ function canonicalFingerprint(letterArray) {
         },
       }));
 
-      const startPosition = {
-        isStartPosition: true,
+      const startPlacement = {
+        isStartPlacement: true,
         id: `start-${seqId}`,
-        gridPosition: sp.startPosition,
+        gridPlacement: sp.startPlacement,
         gridMode: GRID_MODE,
         motions: {
           left: {
@@ -747,7 +747,7 @@ function canonicalFingerprint(letterArray) {
         tags: ["vtg-overlap"],
         thumbnails: [],
         steps: firestoreSteps,
-        startPosition,
+        startPlacement,
         metadata: {
           deckId: DECK_ID,
           canonicalFingerprint: canon.fingerprint,

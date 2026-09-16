@@ -27,21 +27,21 @@
   let { data }: { data: PageData } = $props();
   const desktopQuery = new MediaQuery("(min-width: 1024px)");
 
-  // Position-term slugs (from @tka/domain's GLOSSARY keys, see +page.server.ts)
+  // Placement-term slugs (from @tka/domain's GLOSSARY keys, see +page.server.ts)
   // that get a pictograph thumbnail in their detail view. Fixed-size PNGs,
   // present from first paint — no layout shift.
-  const POSITION_THUMBS: Record<string, { src: string; alt: string }> = {
+  const PLACEMENT_THUMBS: Record<string, { src: string; alt: string }> = {
     alpha: {
       src: "/images/position_images/alpha.png",
-      alt: "Alpha position pictograph",
+      alt: "Alpha placement pictograph",
     },
     beta: {
       src: "/images/position_images/beta.png",
-      alt: "Beta position pictograph",
+      alt: "Beta placement pictograph",
     },
     gamma: {
       src: "/images/position_images/gamma.png",
-      alt: "Gamma position pictograph",
+      alt: "Gamma placement pictograph",
     },
   };
 
@@ -148,8 +148,10 @@
   };
 
   function insertCodexGroup(groups: GlossaryGroup[]): NavigationGroup[] {
-    const positionIndex = groups.findIndex((group) => group.key === "position");
-    const insertionIndex = positionIndex >= 0 ? positionIndex + 1 : 0;
+    // "position" is the external @tka/domain GlossaryCategory key (see
+    // +page.server.ts) for what this UI displays as "Placements".
+    const placementIndex = groups.findIndex((group) => group.key === "position");
+    const insertionIndex = placementIndex >= 0 ? placementIndex + 1 : 0;
     return [
       ...groups.slice(0, insertionIndex),
       codexGroup,
@@ -743,7 +745,7 @@
                       <div class="row-body-inner">
                         <GlossaryTermDetail
                           entry={t}
-                          thumb={POSITION_THUMBS[t.slug] ?? null}
+                          thumb={PLACEMENT_THUMBS[t.slug] ?? null}
                           showTitle={false}
                           showLetterPictographs={selected === t.slug &&
                             !desktopQuery.current}
@@ -780,7 +782,7 @@
             {#if selectedEntry}
               <GlossaryTermDetail
                 entry={selectedEntry}
-                thumb={POSITION_THUMBS[selectedEntry.slug] ?? null}
+                thumb={PLACEMENT_THUMBS[selectedEntry.slug] ?? null}
                 showLetterPictographs={desktopQuery.current}
                 onrelated={(s, e) => reveal(s, e)}
               />

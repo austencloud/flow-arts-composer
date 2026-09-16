@@ -231,7 +231,7 @@ export {
 // Domain constraints (always-on hard constraints)
 export { Type6Constraint } from "./constraints/domain/Type6Constraint.js";
 export { PropTypeConstraint } from "./constraints/domain/PropTypeConstraint.js";
-export { PositionContinuityConstraint } from "./constraints/domain/PositionContinuityConstraint.js";
+export { PlacementContinuityConstraint } from "./constraints/domain/PlacementContinuityConstraint.js";
 export { FloatConstraint } from "./constraints/domain/FloatConstraint.js";
 
 // Data provider contracts
@@ -256,7 +256,7 @@ export {
 
 // Reachability analysis (backward arc consistency for LOOP targeting)
 export {
-  PositionReachabilityAnalyzer,
+  PlacementReachabilityAnalyzer,
   type ReachabilityResult,
-} from "./reachability/PositionReachabilityAnalyzer.js";
-export { PositionTransitionGraph } from "./reachability/PositionTransitionGraph.js";
+} from "./reachability/PlacementReachabilityAnalyzer.js";
+export { PlacementTransitionGraph } from "./reachability/PlacementTransitionGraph.js";

@@ -114,7 +114,7 @@ Impact, stated conservatively:
   (`prop-svg-loader.ts:176`) and the `animated/` artwork would lose the
   authored shaft body as well. This audit found no current caller that sends a
   torch through that option: `HandPathBuilderLab.svelte` and
-  `InteractiveGrid.svelte` pass `false`, while `/test/positions-concept` passes
+  `InteractiveGrid.svelte` pass `false`, while `/test/placements-concept` passes
   `true` only for a hard-coded hand prop. The animated result is therefore a
   latent transform defect rather than an established live rendering path.
 - The animation canvas is not affected. `svg-generator.ts:485` calls

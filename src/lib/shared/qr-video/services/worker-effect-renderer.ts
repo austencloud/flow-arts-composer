@@ -90,7 +90,7 @@ export interface WorkerEffectRenderer {
     frameIndex: number,
     dt: number,
     stepIndex: number,
-    isStartPosition: boolean,
+    isStartPlacement: boolean,
     propImages?: WorkerPropImages
   ): void;
   dispose(): void;
@@ -540,10 +540,10 @@ function createGhostRenderer(canvasSize: number): WorkerEffectRenderer {
       frameIndex,
       dt,
       stepIndex,
-      isStartPosition
+      isStartPlacement
     ) {
       if (!accumCtx) return;
-      const currentStep = isStartPosition
+      const currentStep = isStartPlacement
         ? 0
         : stepIndex + ((frameIndex * dt) % 1);
       // Ghost now onion-skins the REAL prop sprite, which the export worker does
@@ -591,7 +591,7 @@ function createPulseRenderer(canvasSize: number): WorkerEffectRenderer {
       frameIndex,
       dt,
       stepIndex,
-      isStartPosition
+      isStartPlacement
     ) {
       const tips: PulseTipInput[] = [];
       const bt = computeTips(cs, left, leftVB);
@@ -630,7 +630,7 @@ function createPulseRenderer(canvasSize: number): WorkerEffectRenderer {
         });
       }
 
-      const currentStep = isStartPosition
+      const currentStep = isStartPlacement
         ? 0
         : stepIndex + ((frameIndex * dt) % 1);
       renderer.render(
@@ -676,7 +676,7 @@ function createFireRenderer(canvasSize: number): WorkerEffectRenderer | null {
       frameIndex,
       dt,
       _stepIndex,
-      _isStartPosition,
+      _isStartPlacement,
       propImages
     ) {
       const tips: PropTipData[] = [];

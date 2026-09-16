@@ -23,11 +23,11 @@
   // Construct is the default tab so ConstructTabContent stays eager. This keeps
   // ~400 files out of the Create module's first-paint graph (see scripts/trace-create-three.cjs).
   import {
-    logConstructStartPositionCompleted,
-    type StartPositionPath,
+    logConstructStartPlacementCompleted,
+    type StartPlacementPath,
   } from "../../construct/services/construct-analytics";
-  import { getStartPositionDisplayLabel } from "../../construct/start-position-picker/services/start-position-display-label";
-  import { areStartPositionsEquivalent } from "../../construct/start-position-picker/services/start-position-equivalence";
+  import { getStartPlacementDisplayLabel } from "../../construct/start-placement-picker/services/start-placement-display-label";
+  import { areStartPlacementsEquivalent } from "../../construct/start-placement-picker/services/start-placement-equivalence";
 
   const ctx = getCreateModuleContext();
   const {
@@ -64,66 +64,66 @@
     return state;
   });
 
-  const isStartPositionSelected = $derived(
+  const isStartPlacementSelected = $derived(
     activeSequenceState.selectedStepNumber === 0
   );
 
   // Properly handle null state - don't convert to false, let it stay null for loading detection
-  const shouldShowStartPositionPicker = $derived.by(() => {
+  const shouldShowStartPlacementPicker = $derived.by(() => {
     if (!isPersistenceFullyInitialized) return null;
     if (!constructTabState?.isInitialized) return null;
 
-    const pickerState = constructTabState.shouldShowStartPositionPicker();
+    const pickerState = constructTabState.shouldShowStartPlacementPicker();
     // Return null if state is not yet determined (still initializing)
     if (pickerState === null) return null;
 
-    return pickerState || isStartPositionSelected;
+    return pickerState || isStartPlacementSelected;
   });
 
   // Loading when either persistence isn't ready OR picker state is null (still determining)
   const isPickerStateLoading = $derived(
     !constructTabState?.isPersistenceInitialized ||
-      shouldShowStartPositionPicker === null
+      shouldShowStartPlacementPicker === null
   );
 
   // Convert SequenceData to PictographData[] for OptionViewer
-  // Include startingPosition as the first element if it exists
+  // Include startingPlacement as the first element if it exists
   // IMPORTANT: Use getActiveTabSequenceState() to get tab-specific data
   const currentSequenceData = $derived.by(() => {
     const seq = activeSequenceState.currentSequence;
     if (!seq) return [];
 
-    const startStep = seq.startingPosition || seq.startPosition;
+    const startStep = seq.startingPlacement || seq.startPlacement;
     if (!startStep) return [...seq.steps];
 
-    // Include start position beat as first element, followed by regular steps
+    // Include start placement beat as first element, followed by regular steps
     return [startStep, ...seq.steps];
   });
 
   // Get grid mode from the sequence (source of truth after transforms)
-  // Falls back to startPositionState when no sequence exists yet
+  // Falls back to startPlacementState when no sequence exists yet
   const sequenceGridMode = $derived.by(() => {
     const seq = activeSequenceState.currentSequence;
     // Use sequence's grid mode if available (updated by rotations)
     if (seq?.gridMode) return seq.gridMode;
-    // Fallback to start position picker's grid mode (for initial selection)
+    // Fallback to start placement picker's grid mode (for initial selection)
     return (
-      constructTabState?.startPositionStateService?.currentGridMode ??
+      constructTabState?.startPlacementStateService?.currentGridMode ??
       GridMode.DIAMOND
     );
   });
-  const currentStartPosition = $derived(
-    activeSequenceState.currentSequence?.startingPosition ??
-      activeSequenceState.currentSequence?.startPosition ??
+  const currentStartPlacement = $derived(
+    activeSequenceState.currentSequence?.startingPlacement ??
+      activeSequenceState.currentSequence?.startPlacement ??
       null
   );
   const isEditingExistingStart = $derived(
-    isStartPositionSelected && activeSequenceState.currentSequence !== null
+    isStartPlacementSelected && activeSequenceState.currentSequence !== null
   );
 
-  let pendingStartPosition = $state<{
-    path: StartPositionPath;
-    previousPosition: PictographData | null;
+  let pendingStartPlacement = $state<{
+    path: StartPlacementPath;
+    previousPlacement: PictographData | null;
   } | null>(null);
 
   // Props (only callbacks and bindable refs)
@@ -141,43 +141,43 @@
     onCloseFilters: () => void;
   } = $props();
 
-  function handleStartPositionSubmitted(
-    position: PictographData,
-    path: StartPositionPath
+  function handleStartPlacementSubmitted(
+    placement: PictographData,
+    path: StartPlacementPath
   ): void {
-    if (areStartPositionsEquivalent(position, currentStartPosition)) {
-      completeTutorialStartPosition(position, path);
-      pendingStartPosition = null;
+    if (areStartPlacementsEquivalent(placement, currentStartPlacement)) {
+      completeTutorialStartPlacement(placement, path);
+      pendingStartPlacement = null;
       return;
     }
 
-    pendingStartPosition = {
+    pendingStartPlacement = {
       path,
-      previousPosition: currentStartPosition,
+      previousPlacement: currentStartPlacement,
     };
   }
 
-  function completeTutorialStartPosition(
-    position: PictographData,
-    path: StartPositionPath
+  function completeTutorialStartPlacement(
+    placement: PictographData,
+    path: StartPlacementPath
   ): void {
-    logConstructStartPositionCompleted({
+    logConstructStartPlacementCompleted({
       path,
       gridMode: sequenceGridMode,
     });
-    constructTutorialState.recordStartPosition(
-      getStartPositionDisplayLabel(position)
+    constructTutorialState.recordStartPlacement(
+      getStartPlacementDisplayLabel(placement)
     );
   }
 
   $effect(() => {
-    const pending = pendingStartPosition;
-    const committedPosition = currentStartPosition;
-    if (!pending || !committedPosition) return;
-    if (committedPosition === pending.previousPosition) return;
+    const pending = pendingStartPlacement;
+    const committedPlacement = currentStartPlacement;
+    if (!pending || !committedPlacement) return;
+    if (committedPlacement === pending.previousPlacement) return;
 
-    completeTutorialStartPosition(committedPosition, pending.path);
-    pendingStartPosition = null;
+    completeTutorialStartPlacement(committedPlacement, pending.path);
+    pendingStartPlacement = null;
   });
 </script>
 
@@ -252,17 +252,17 @@
               </div>
             {:else}
               <ConstructTabContent
-                shouldShowStartPositionPicker={shouldShowStartPositionPicker ===
+                shouldShowStartPlacementPicker={shouldShowStartPlacementPicker ===
                   true}
-                startPositionState={constructTabState.startPositionStateService}
+                startPlacementState={constructTabState.startPlacementStateService}
                 currentSequence={currentSequenceData}
                 currentGridMode={sequenceGridMode}
-                initialStartPosition={currentStartPosition}
+                initialStartPlacement={currentStartPlacement}
                 lockStartGridMode={isEditingExistingStart}
-                startPositionValidationMessage={constructTabState.error}
+                startPlacementValidationMessage={constructTabState.error}
                 {onOptionSelected}
-                onStartPositionNavigateToAdvanced={() => {}}
-                onStartPositionNavigateToDefault={() => {}}
+                onStartPlacementNavigateToAdvanced={() => {}}
+                onStartPlacementNavigateToDefault={() => {}}
                 {isSideBySideLayout}
                 {onOpenFilters}
                 {onCloseFilters}
@@ -270,7 +270,7 @@
                 isContinuousOnly={constructTabState.isContinuousOnly}
                 onToggleContinuous={(value) =>
                   constructTabState.setContinuousOnly(value)}
-                onStartPositionSubmitted={handleStartPositionSubmitted}
+                onStartPlacementSubmitted={handleStartPlacementSubmitted}
               />
             {/if}
           {:else if activeToolPanel === "assemble"}

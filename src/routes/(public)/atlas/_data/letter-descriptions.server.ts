@@ -13,7 +13,7 @@
 //   - the per-hand motion types for Types 2 and 3 are read from the same
 //     pictograph dataframe the Codex draws, so a caption can never disagree
 //     with the picture beside it;
-//   - the position phrases are short forms of POSITION_DEFINITIONS' own
+//   - the placement phrases are short forms of PLACEMENT_DEFINITIONS' own
 //     descriptions (alpha 180 degrees, beta 0 degrees, gamma 90 degrees).
 //
 // Letters that the canon does not distinguish read alike on purpose. M and P
@@ -35,8 +35,8 @@ const VTG_GROUP_NAME: Record<VtgGroup, string> = {
   qo: "Quarter-Opposite",
 };
 
-/** Short forms of POSITION_DEFINITIONS' descriptions, sized for one line. */
-const POSITION_PHRASE: Record<string, string> = {
+/** Short forms of PLACEMENT_DEFINITIONS' descriptions, sized for one line. */
+const PLACEMENT_PHRASE: Record<string, string> = {
   alpha: "at opposite points",
   beta: "both at the same point",
   gamma: "at a right angle",
@@ -44,8 +44,8 @@ const POSITION_PHRASE: Record<string, string> = {
 
 type RawMotion = { motionType?: string };
 type RawPictograph = {
-  startPosition?: string;
-  endPosition?: string;
+  startPlacement?: string;
+  endPlacement?: string;
   motions?: { left?: RawMotion; right?: RawMotion };
 };
 
@@ -53,16 +53,16 @@ const PICTOGRAPHS = (lettersData as unknown as { pictographs: Record<string, Raw
   .pictographs;
 
 /** "alpha3" -> "alpha". */
-function group(position: string | undefined): string | null {
-  const match = position?.match(/[a-z]+/i);
+function group(placement: string | undefined): string | null {
+  const match = placement?.match(/[a-z]+/i);
   return match ? match[0].toLowerCase() : null;
 }
 
-function positionSentence(p: RawPictograph, isStatic: boolean): string {
-  const start = group(p.startPosition);
-  const end = group(p.endPosition);
+function placementSentence(p: RawPictograph, isStatic: boolean): string {
+  const start = group(p.startPlacement);
+  const end = group(p.endPlacement);
   if (!start || !end) return "";
-  const phrase = (g: string): string => `${g}, ${POSITION_PHRASE[g] ?? ""}`.trimEnd().replace(/,$/, "");
+  const phrase = (g: string): string => `${g}, ${PLACEMENT_PHRASE[g] ?? ""}`.trimEnd().replace(/,$/, "");
   if (isStatic) return `The hands hold ${phrase(start)}.`;
   if (start === end) return `The hands start and finish in ${phrase(start)}.`;
   return `The hands start in ${phrase(start)}, and finish in ${phrase(end)}.`;
@@ -112,7 +112,7 @@ function describe(letter: string): string {
         ? shiftRotation(pictograph)
         : "";
 
-  return [handPath, rotation, positionSentence(pictograph, typeNumber === 6)]
+  return [handPath, rotation, placementSentence(pictograph, typeNumber === 6)]
     .filter(Boolean)
     .join(" ");
 }

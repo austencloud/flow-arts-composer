@@ -388,7 +388,7 @@ export const EMPTY_WORLD: GhostWorld = {
   pickerOpen: false,
   reachableModules: [],
   available: {
-    "start-position": 0,
+    "start-placement": 0,
     option: 0,
     "option-filter": 0,
     turn: 0,
@@ -601,7 +601,7 @@ export interface Intention {
    *
    * A 400-decision simulation of the shipped bag never once added two steps in
    * a row and never got a sequence past six steps — the ghost demonstrated a
-   * start-position picker rather than a composer, which is exactly what Austen
+   * start-placement picker rather than a composer, which is exactly what Austen
    * saw: "he won't build a whole sequence."
    *
    * Set this only where repetition is the point, and give the intention its own

@@ -111,7 +111,7 @@
         </div>
       </div>
     {:else}
-      <p class="workspace-hint">Choose your start position</p>
+      <p class="workspace-hint">Choose your start placement</p>
     {/if}
   </Crossfade>
 </div>

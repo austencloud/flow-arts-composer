@@ -15,13 +15,13 @@
 {#if sequence}
   <div class="sequence-strip museum-gold-scope">
     <div class="strip-cells">
-      {#if sequence.startPosition}
+      {#if sequence.startPlacement}
         <div class="cell start-cell">
           <PictographContainer
-            pictographData={sequence.startPosition}
+            pictographData={sequence.startPlacement}
             showGrid={true}
             showTKA={true}
-            showPositions={true}
+            showPlacements={true}
             showReversals={false}
           />
         </div>
@@ -32,7 +32,7 @@
             pictographData={step}
             showGrid={true}
             showTKA={true}
-            showPositions={true}
+            showPlacements={true}
             showReversals={false}
           />
         </div>

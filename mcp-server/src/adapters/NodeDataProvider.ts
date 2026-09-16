@@ -122,8 +122,8 @@ export class NodeDataProvider implements ISequenceDataProvider {
         const right = readPictographCsvMotion(row, "right");
         variations.push({
           letter: row.letter,
-          startPosition: row.startPosition,
-          endPosition: row.endPosition,
+          startPlacement: row.startPlacement,
+          endPlacement: row.endPlacement,
           leftMotionType: left.motionType,
           leftStartLocation: left.startLocation,
           leftEndLocation: left.endLocation,

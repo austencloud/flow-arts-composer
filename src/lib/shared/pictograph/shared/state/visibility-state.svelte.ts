@@ -26,7 +26,7 @@ interface VisibilitySettings {
   tkaGlyph: boolean; 
   tndGlyph: boolean;
   elementalGlyph: boolean;
-  positionsGlyph: boolean;
+  placementsGlyph: boolean;
   showGrid: boolean; 
   nonRadialPoints: boolean;
   /** L/R colour key on the start position. */
@@ -44,7 +44,7 @@ export class VisibilityStateManager {
     "tkaGlyph",
     "tndGlyph",
     "elementalGlyph",
-    "positionsGlyph",
+    "placementsGlyph",
   ];
 
   private settingsLoadedPromise: Promise<void> | null = null;
@@ -59,7 +59,7 @@ export class VisibilityStateManager {
       tkaGlyph: true,
       tndGlyph: false,
       elementalGlyph: false,
-      positionsGlyph: false,
+      placementsGlyph: false,
       showGrid: true,
       nonRadialPoints: false,
       handColorKey: true,
@@ -98,8 +98,8 @@ export class VisibilityStateManager {
         if (v.tndGlyph !== undefined) this.settings.tndGlyph = v.tndGlyph;
         if (v.elementalGlyph !== undefined)
           this.settings.elementalGlyph = v.elementalGlyph;
-        if (v.positionsGlyph !== undefined)
-          this.settings.positionsGlyph = v.positionsGlyph;
+        if (v.placementsGlyph !== undefined)
+          this.settings.placementsGlyph = v.placementsGlyph;
         if (v.reversalIndicators !== undefined)
           this.settings.reversalIndicators = v.reversalIndicators;
         if (v.showGrid !== undefined)
@@ -145,7 +145,7 @@ export class VisibilityStateManager {
       tkaGlyph: this.settings.tkaGlyph,
       tndGlyph: this.settings.tndGlyph,
       elementalGlyph: this.settings.elementalGlyph,
-      positionsGlyph: this.settings.positionsGlyph,
+      placementsGlyph: this.settings.placementsGlyph,
       reversalIndicators: this.settings.reversalIndicators,
       showGrid: this.settings.showGrid,
       nonRadialPoints: this.settings.nonRadialPoints,
@@ -169,7 +169,7 @@ export class VisibilityStateManager {
       reversalIndicators: this.settings.reversalIndicators,
       tndGlyph: this.settings.tndGlyph,
       elementalGlyph: this.settings.elementalGlyph,
-      positionsGlyph: this.settings.positionsGlyph,
+      placementsGlyph: this.settings.placementsGlyph,
       nonRadialPoints: this.settings.nonRadialPoints,
       handColorKey: this.settings.handColorKey,
     };
@@ -313,7 +313,7 @@ export class VisibilityStateManager {
       "reversalIndicators",
       "tndGlyph",
       "elementalGlyph",
-      "positionsGlyph",
+      "placementsGlyph",
       "handColorKey",
     ].filter((glyph) => this.getGlyphVisibility(glyph));
   }

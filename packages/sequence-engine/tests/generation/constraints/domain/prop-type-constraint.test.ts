@@ -21,8 +21,8 @@ function makeContext(
     previousSteps: [],
     candidate: {
       letter: "A",
-      startPosition: "alpha1",
-      endPosition: "alpha1",
+      startPlacement: "alpha1",
+      endPlacement: "alpha1",
       timing: "together",
       direction: "same",
       leftMotion: EMPTY_MOTION,

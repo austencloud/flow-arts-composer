@@ -90,7 +90,7 @@ export class MirroredClosureConstraint extends PerTypeClosureConstraint {
   ): boolean {
     // Minimal structural check: the two steps reference the same letter in
     // mirrored form. Full motion-level validation lives in the mirror
-    // position maps; this skeleton trusts that the beam-search candidate
+    // placement maps; this skeleton trusts that the beam-search candidate
     // generation already honors those maps when closure is requested.
     return base.letter === paired.letter || base.letter !== paired.letter;
     // Deliberately permissive at the skeleton level; returning true allows

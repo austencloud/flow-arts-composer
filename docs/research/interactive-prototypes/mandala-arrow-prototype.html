@@ -831,7 +831,7 @@ function renderPictograph(blueMotion, redMotion, size, label) {
 
   // Grid
   if (state.showGrid) {
-    const gridPositions = Object.entries(LOCATION_ANGLES);
+    const gridPlacements = Object.entries(LOCATION_ANGLES);
     // Diamond outline
     const diamond = ['n', 'e', 's', 'w'].map(k => {
       const a = LOCATION_ANGLES[k];
@@ -846,7 +846,7 @@ function renderPictograph(blueMotion, redMotion, size, label) {
     svg += `<line x1="${Math.cos(ea)*GRID_RADIUS}" y1="${Math.sin(ea)*GRID_RADIUS}" x2="${Math.cos(wa)*GRID_RADIUS}" y2="${Math.sin(wa)*GRID_RADIUS}" stroke="#21262d" stroke-width="0.5" opacity="0.5"/>`;
 
     // Grid points
-    for (const [key, angle] of gridPositions) {
+    for (const [key, angle] of gridPlacements) {
       if (key === 'c') continue;
       const gx = Math.cos(angle) * GRID_RADIUS;
       const gy = Math.sin(angle) * GRID_RADIUS;

@@ -10,8 +10,8 @@ const FOUR_BEATS = {
 } as unknown as SequenceData;
 
 const OPTIONS: PrintRenderOptions = {
-  includeStartPosition: true,
-  startPositionLayout: "row",
+  includeStartPlacement: true,
+  startPlacementLayout: "row",
   bleedPx: 36,
 };
 

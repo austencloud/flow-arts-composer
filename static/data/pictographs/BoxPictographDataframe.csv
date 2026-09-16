@@ -1,4 +1,4 @@
-letter,startPosition,endPosition,timing,direction,blueMotionType,blueRotationDirection,blueStartLocation,blueEndLocation,redMotionType,redRotationDirection,redStartLocation,redEndLocation
+letter,startPlacement,endPlacement,timing,direction,blueMotionType,blueRotationDirection,blueStartLocation,blueEndLocation,redMotionType,redRotationDirection,redStartLocation,redEndLocation
 A,alpha2,alpha4,split,same,pro,cw,sw,nw,pro,cw,ne,se
 A,alpha4,alpha6,split,same,pro,cw,nw,ne,pro,cw,se,sw
 A,alpha6,alpha8,split,same,pro,cw,ne,se,pro,cw,sw,nw

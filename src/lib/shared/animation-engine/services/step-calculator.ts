@@ -267,7 +267,7 @@ export function getStepStartTime(stepIndex: number, steps: readonly Step[]): num
 export function sequencePositionToAnimationTime(
   sequencePosition: number,
   steps: readonly Step[],
-  startPositionDuration: number
+  startPlacementDuration: number
 ): number {
   if (steps.length === 0) return 0;
 
@@ -276,13 +276,13 @@ export function sequencePositionToAnimationTime(
     Math.min(sequencePosition, steps.length + 1)
   );
   if (clampedPosition < 1) {
-    return clampedPosition * startPositionDuration;
+    return clampedPosition * startPlacementDuration;
   }
 
   const stepIndex = Math.floor(clampedPosition) - 1;
   const stepProgress = clampedPosition - Math.floor(clampedPosition);
   let timePosition =
-    startPositionDuration + getStepStartTime(stepIndex, steps);
+    startPlacementDuration + getStepStartTime(stepIndex, steps);
 
   if (stepIndex >= 0 && stepIndex < steps.length) {
     timePosition += stepProgress * (steps[stepIndex]?.duration ?? 1);

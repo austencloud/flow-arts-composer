@@ -6,14 +6,14 @@
  */
 import type { Component } from "svelte";
 import TheGridPage from "../_pages/TheGridPage.svelte";
-import HandPositionsPage from "../_pages/HandPositionsPage.svelte";
+import HandPlacementsPage from "../_pages/HandPlacementsPage.svelte";
 import HandMotionsPage from "../_pages/HandMotionsPage.svelte";
 import Type1AlphaBetaPage from "../_pages/Type1AlphaBetaPage.svelte";
 import GammaPage from "../_pages/GammaPage.svelte";
 import Type2ShiftsPage from "../_pages/Type2ShiftsPage.svelte";
 import Type3CrossShiftsPage from "../_pages/Type3CrossShiftsPage.svelte";
 import Type456Page from "../_pages/Type456Page.svelte";
-import StaffPositionsPage from "../_pages/StaffPositionsPage.svelte";
+import StaffPlacementsPage from "../_pages/StaffPlacementsPage.svelte";
 import StaffMotionsPage from "../_pages/StaffMotionsPage.svelte";
 import NegativeSpacePage from "../_pages/NegativeSpacePage.svelte";
 import BaseLettersPage from "../_pages/BaseLettersPage.svelte";
@@ -42,14 +42,14 @@ import GuideCodexPage2 from "../_pages/GuideCodexPage2.svelte";
 
 export const BUILT: Record<string, Component> = {
   "the-grid": TheGridPage,
-  "hand-positions": HandPositionsPage,
+  "hand-placements": HandPlacementsPage,
   "hand-motions": HandMotionsPage,
   "hm-type1": Type1AlphaBetaPage,
   "hm-gamma": GammaPage,
   "hm-type2": Type2ShiftsPage,
   "hm-type34": Type3CrossShiftsPage,
   "hm-type56": Type456Page,
-  "staff-positions": StaffPositionsPage,
+  "staff-placements": StaffPlacementsPage,
   "staff-motions": StaffMotionsPage,
   "negative-space": NegativeSpacePage,
   "base-letters": BaseLettersPage,

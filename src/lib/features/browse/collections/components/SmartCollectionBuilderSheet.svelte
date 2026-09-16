@@ -33,7 +33,7 @@ one rail while the live matching grid gets the rest of the canvas.
     | "level"
     | "length"
     | "letter"
-    | "position"
+    | "placement"
     | "gridmode"
     | "author"
     | "performance"
@@ -124,7 +124,7 @@ one rail while the live matching grid gets the rest of the canvas.
     [BrowseFilterType.DIFFICULTY]: "level",
     [BrowseFilterType.LENGTH]: "length",
     [BrowseFilterType.STARTING_LETTER]: "letter",
-    [BrowseFilterType.STARTING_POSITION]: "position",
+    [BrowseFilterType.STARTING_PLACEMENT]: "placement",
     [BrowseFilterType.GRID_MODE]: "gridmode",
     [BrowseFilterType.OWNER]: "author",
     [BrowseFilterType.PERFORMANCE_AVAILABILITY]: "performance",

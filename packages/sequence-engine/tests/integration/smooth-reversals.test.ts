@@ -16,7 +16,7 @@ import type { IVariationProvider } from "../../src/generation/data/IVariationPro
 import type { PictographData, MotionData } from "../../src/generation/constraints/types.js";
 import { setLetterTransitionGraph } from "../../src/core/transition-graph/LetterTransitionGraph.js";
 import type { ITransitionGraph } from "../../src/core/transition-graph/ITransitionGraph.js";
-import type { PositionGroup, LetterPositionInfo } from "../../src/core/types/sequence-engine-types.js";
+import type { PlacementGroup, LetterPlacementInfo } from "../../src/core/types/sequence-engine-types.js";
 
 // Mock data — must have BOTH cw and ccw variations for each letter so the
 // constraint has a real choice to make.
@@ -36,8 +36,8 @@ function makeMotion(overrides: Partial<MotionData> = {}): MotionData {
 
 function makePictograph(overrides: Partial<PictographData> & { letter: string }): PictographData {
   return {
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     timing: "together",
     direction: "together",
     leftMotion: makeMotion({ hand: "left" }),
@@ -57,15 +57,15 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // Start positions
   makePictograph({
     letter: "α",
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation", startLocation: "s", endLocation: "s" }),
     rightMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation", startLocation: "n", endLocation: "n" }),
   }),
   makePictograph({
     letter: "α",
-    startPosition: "beta3",
-    endPosition: "beta3",
+    startPlacement: "beta3",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation", startLocation: "e", endLocation: "e" }),
     rightMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation", startLocation: "n", endLocation: "n" }),
   }),
@@ -73,16 +73,16 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // A: alpha1→beta3, CW variant
   makePictograph({
     letter: "A",
-    startPosition: "alpha1",
-    endPosition: "beta3",
+    startPlacement: "alpha1",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ motionType: "pro", rotationDirection: "cw", startLocation: "s", endLocation: "e" }),
     rightMotion: makeMotion({ motionType: "pro", rotationDirection: "cw", startLocation: "n", endLocation: "e" }),
   }),
   // A: alpha1→beta3, CCW variant
   makePictograph({
     letter: "A",
-    startPosition: "alpha1",
-    endPosition: "beta3",
+    startPlacement: "alpha1",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ motionType: "pro", rotationDirection: "ccw", startLocation: "s", endLocation: "e" }),
     rightMotion: makeMotion({ motionType: "pro", rotationDirection: "ccw", startLocation: "n", endLocation: "e" }),
   }),
@@ -90,16 +90,16 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // B: beta3→alpha1, CW variant
   makePictograph({
     letter: "B",
-    startPosition: "beta3",
-    endPosition: "alpha1",
+    startPlacement: "beta3",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ motionType: "pro", rotationDirection: "cw", startLocation: "e", endLocation: "s" }),
     rightMotion: makeMotion({ motionType: "pro", rotationDirection: "cw", startLocation: "e", endLocation: "n" }),
   }),
   // B: beta3→alpha1, CCW variant
   makePictograph({
     letter: "B",
-    startPosition: "beta3",
-    endPosition: "alpha1",
+    startPlacement: "beta3",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ motionType: "pro", rotationDirection: "ccw", startLocation: "e", endLocation: "s" }),
     rightMotion: makeMotion({ motionType: "pro", rotationDirection: "ccw", startLocation: "e", endLocation: "n" }),
   }),
@@ -107,15 +107,15 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // C: alpha1→alpha1 — static left (noRotation), pro right with cw/ccw variants
   makePictograph({
     letter: "C",
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation", startLocation: "s", endLocation: "s" }),
     rightMotion: makeMotion({ motionType: "pro", rotationDirection: "cw", startLocation: "n", endLocation: "n" }),
   }),
   makePictograph({
     letter: "C",
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation", startLocation: "s", endLocation: "s" }),
     rightMotion: makeMotion({ motionType: "pro", rotationDirection: "ccw", startLocation: "n", endLocation: "n" }),
   }),
@@ -123,15 +123,15 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // D: beta3→beta3 — static left (noRotation), pro right with cw/ccw variants
   makePictograph({
     letter: "D",
-    startPosition: "beta3",
-    endPosition: "beta3",
+    startPlacement: "beta3",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation", startLocation: "e", endLocation: "e" }),
     rightMotion: makeMotion({ motionType: "pro", rotationDirection: "cw", startLocation: "n", endLocation: "n" }),
   }),
   makePictograph({
     letter: "D",
-    startPosition: "beta3",
-    endPosition: "beta3",
+    startPlacement: "beta3",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation", startLocation: "e", endLocation: "e" }),
     rightMotion: makeMotion({ motionType: "pro", rotationDirection: "ccw", startLocation: "n", endLocation: "n" }),
   }),
@@ -140,9 +140,9 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
 // Mock variation provider
 
 class MockVariationProvider implements IVariationProvider {
-  getVariations(letter: string, startPosition: string, _gridMode: string): PictographData[] {
+  getVariations(letter: string, startPlacement: string, _gridMode: string): PictographData[] {
     return MOCK_PICTOGRAPHS.filter(
-      (p) => p.letter === letter && p.startPosition === startPosition,
+      (p) => p.letter === letter && p.startPlacement === startPlacement,
     );
   }
 
@@ -156,17 +156,17 @@ class MockVariationProvider implements IVariationProvider {
 const mockTransitionGraph: ITransitionGraph = {
   findBridgeLetters: () => [],
   findAllBridgeOptions: () => [],
-  getPositionGroup: (pos: string): PositionGroup => {
-    if (pos.startsWith("alpha")) return "alpha" as PositionGroup;
-    if (pos.startsWith("beta")) return "beta" as PositionGroup;
-    return "gamma" as PositionGroup;
+  getPlacementGroup: (pos: string): PlacementGroup => {
+    if (pos.startsWith("alpha")) return "alpha" as PlacementGroup;
+    if (pos.startsWith("beta")) return "beta" as PlacementGroup;
+    return "gamma" as PlacementGroup;
   },
-  getLetterPositionInfo: (letter: string): LetterPositionInfo | null => {
-    const info: Record<string, LetterPositionInfo> = {
-      A: { letter: "A", startGroups: ["alpha" as PositionGroup], endGroups: ["beta" as PositionGroup] },
-      B: { letter: "B", startGroups: ["beta" as PositionGroup], endGroups: ["alpha" as PositionGroup] },
-      C: { letter: "C", startGroups: ["alpha" as PositionGroup], endGroups: ["alpha" as PositionGroup] },
-      D: { letter: "D", startGroups: ["beta" as PositionGroup], endGroups: ["beta" as PositionGroup] },
+  getLetterPlacementInfo: (letter: string): LetterPlacementInfo | null => {
+    const info: Record<string, LetterPlacementInfo> = {
+      A: { letter: "A", startGroups: ["alpha" as PlacementGroup], endGroups: ["beta" as PlacementGroup] },
+      B: { letter: "B", startGroups: ["beta" as PlacementGroup], endGroups: ["alpha" as PlacementGroup] },
+      C: { letter: "C", startGroups: ["alpha" as PlacementGroup], endGroups: ["alpha" as PlacementGroup] },
+      D: { letter: "D", startGroups: ["beta" as PlacementGroup], endGroups: ["beta" as PlacementGroup] },
     };
     return info[letter] ?? null;
   },

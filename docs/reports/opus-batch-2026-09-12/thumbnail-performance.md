@@ -228,7 +228,7 @@ comments describe, reached through a supported setting rather than a bug.
 **Bounded fix.** Do for these flags what was already done for QR
 (`thumbnail-key-deriver.ts:269-274`): they are not personal data, they are
 _shared-cacheable variants_. Move `showMandala` (and, if the warm budget allows,
-`startPositionLayout: "column"`) out of the disqualifier list and into the
+`startPlacementLayout: "column"`) out of the disqualifier list and into the
 shared key + storage path as explicit suffixes, then warm both values. Keep
 `primaryPropColors` and `customNotesText` personal. This multiplies warm cost by
 the number of admitted variants, so it is a product decision: admit the two

@@ -33,7 +33,7 @@ describe("LayoutCalculator", () => {
   });
 
   describe("calculateGalleryAspectRatio", () => {
-    it("uses column-based layout when startPositionLayout is column", () => {
+    it("uses column-based layout when startPlacementLayout is column", () => {
       // 16 steps → LAYOUT_WITH_START_COLUMN[16] = [5, 4]
       const ar = calculateGalleryAspectRatio(16, "column");
       expect(ar).toBeCloseTo(5 / (4 + 10 / 21), 3);

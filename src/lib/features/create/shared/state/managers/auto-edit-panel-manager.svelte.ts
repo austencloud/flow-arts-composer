@@ -27,7 +27,7 @@ const getLogger = () => {
   return logger;
 };
 
-const START_POSITION_BEAT_NUMBER = 0;
+const START_PLACEMENT_BEAT_NUMBER = 0;
 
 export interface AutoEditPanelConfig {
   CreateModuleState: CreateModuleState;
@@ -66,9 +66,9 @@ export function createAutoEditPanelEffect(
         );
         const stepsData = stepNumbersArray
           .map((stepNumber) => {
-            if (stepNumber === START_POSITION_BEAT_NUMBER) {
-              // Beat 0 is the start position
-              return sequenceState.selectedStartPosition;
+            if (stepNumber === START_PLACEMENT_BEAT_NUMBER) {
+              // Beat 0 is the start placement
+              return sequenceState.selectedStartPlacement;
             } else {
               // Steps are numbered 1, 2, 3... but stored in array at indices 0, 1, 2...
               const stepIndex = stepNumber - 1;

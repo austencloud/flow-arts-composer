@@ -19,7 +19,7 @@ You understand the complete arrow positioning pipeline:
    - Files: `/static/data/arrow_placement/{gridMode}/default/default_{gridMode}_{motionType}_placements.json`
    - Key: `{motionType}_to_{layer}_{positionType}` → turns → `[x, y]`
    - Layers: `layer1` (both radial), `layer2` (both non-radial), `radial_layer3`, `nonradial_layer3`
-   - Position types: `alpha`, `beta`, `gamma` (derived from endPosition)
+   - Position types: `alpha`, `beta`, `gamma` (derived from endPlacement)
 
 2. **Prop Geometry Adjustment** (Firestore: `prop_geometry_adjustments`)
    - Letter-free, prop-type-aware adjustments
@@ -218,7 +218,7 @@ You'll typically be called with a pictograph data dump showing an arrow-prop ove
 
 ## Key Concepts
 
-- **Position type** is derived from `endPosition` by stripping the trailing number: `"beta7"` → `"beta"`
+- **Position type** is derived from `endPlacement` by stripping the trailing number: `"beta7"` → `"beta"`
 - **oriKey** classifies both hands' end orientations: both radial = `from_layer1`, both non-radial = `from_layer2`, mixed = `from_layer3_*`
 - **turnsTuple** captures BOTH hands' turns as `(blueTurns, redTurns)`
 - **Directional tuples** mean one base adjustment covers all four quadrants — the rotation matrix handles the rest

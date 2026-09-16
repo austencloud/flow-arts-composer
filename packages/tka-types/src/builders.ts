@@ -15,7 +15,7 @@ import type { Motion, StepMotions, Step } from "./index.js";
 import { MotionType } from "./motion-type.js";
 import { RotationDirection } from "./rotation-direction.js";
 import { Orientation } from "./orientation.js";
-import { GridLocation, GridMode, GridPosition } from "./grid.js";
+import { GridLocation, GridMode, GridPlacement } from "./grid.js";
 import { Plane } from "./plane.js";
 import { HandSide } from "./hand-side.js";
 
@@ -25,7 +25,7 @@ const ROTATION_DIRECTION_VALUES = new Set<string>(Object.values(RotationDirectio
 const ORIENTATION_VALUES = new Set<string>(Object.values(Orientation));
 const GRID_LOCATION_VALUES = new Set<string>(Object.values(GridLocation));
 const GRID_MODE_VALUES = new Set<string>(Object.values(GridMode));
-const GRID_POSITION_VALUES = new Set<string>(Object.values(GridPosition));
+const GRID_PLACEMENT_VALUES = new Set<string>(Object.values(GridPlacement));
 const PLANE_VALUES = new Set<string>(Object.values(Plane));
 const HAND_SIDE_VALUES = new Set<string>(Object.values(HandSide));
 
@@ -155,11 +155,11 @@ function validateStepScalars(input: Step): void {
       `Step.duration must be a positive finite number, got ${input.duration}`
     );
   }
-  if (input.startPosition !== null) {
-    assertMember(input.startPosition, GRID_POSITION_VALUES, "startPosition");
+  if (input.startPlacement !== null) {
+    assertMember(input.startPlacement, GRID_PLACEMENT_VALUES, "startPlacement");
   }
-  if (input.endPosition !== null) {
-    assertMember(input.endPosition, GRID_POSITION_VALUES, "endPosition");
+  if (input.endPlacement !== null) {
+    assertMember(input.endPlacement, GRID_PLACEMENT_VALUES, "endPlacement");
   }
   assertOptionalMember(input.gridMode, GRID_MODE_VALUES, "gridMode");
   if (input.variation !== undefined) {
@@ -215,8 +215,8 @@ export function createStep(input: CreateStepInput): Step {
   const frozen: Step = {
     id: populated.id,
     letter: populated.letter,
-    startPosition: populated.startPosition,
-    endPosition: populated.endPosition,
+    startPlacement: populated.startPlacement,
+    endPlacement: populated.endPlacement,
     motions,
     stepNumber: populated.stepNumber,
     duration: populated.duration,
@@ -231,9 +231,9 @@ export function createStep(input: CreateStepInput): Step {
 /**
  *
  * Both hands hold static motions at the center point with radial orientation.
- * `letter` is null (start position has no letter).
+ * `letter` is null (start placement has no letter).
  */
-export function createStartStep(pos: GridPosition): Step {
+export function createStartStep(pos: GridPlacement): Step {
   const staticBlue = createMotion({
     motionType: MotionType.static,
     startLocation: GridLocation.n,
@@ -259,8 +259,8 @@ export function createStartStep(pos: GridPosition): Step {
   return createStep({
     id: `step-0-${pos}`,
     letter: null,
-    startPosition: pos,
-    endPosition: pos,
+    startPlacement: pos,
+    endPlacement: pos,
     motions: { left: staticBlue, right: staticRed },
     stepNumber: 0,
     duration: 1,

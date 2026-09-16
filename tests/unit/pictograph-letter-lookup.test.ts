@@ -6,7 +6,7 @@ import {
 } from "$lib/features/choreo-card/services/pictograph-letter-lookup";
 
 const CSV = [
-  "letter,startPosition,endPosition,blueMotionType,blueStartLocation,blueEndLocation,redMotionType,redStartLocation,redEndLocation",
+  "letter,startPlacement,endPlacement,blueMotionType,blueStartLocation,blueEndLocation,redMotionType,redStartLocation,redEndLocation",
   "A,alpha1,alpha2,pro,s,w,pro,n,e",
   "B,alpha1,alpha2,anti,s,w,anti,n,e",
 ].join("\n");
@@ -24,8 +24,8 @@ describe("lookupLetter", () => {
   const edges = parseCsvEdges(CSV);
   it("matches a step on positions + motion types + locations", () => {
     const letter = lookupLetter(edges, {
-      startPosition: "alpha1",
-      endPosition: "alpha2",
+      startPlacement: "alpha1",
+      endPlacement: "alpha2",
       left: { motionType: "anti", startLocation: "s", endLocation: "w" },
       right: { motionType: "anti", startLocation: "n", endLocation: "e" },
     });
@@ -33,8 +33,8 @@ describe("lookupLetter", () => {
   });
   it("returns null when no edge matches", () => {
     const letter = lookupLetter(edges, {
-      startPosition: "beta1",
-      endPosition: "beta2",
+      startPlacement: "beta1",
+      endPlacement: "beta2",
       left: { motionType: "pro", startLocation: "s", endLocation: "w" },
       right: { motionType: "pro", startLocation: "n", endLocation: "e" },
     });

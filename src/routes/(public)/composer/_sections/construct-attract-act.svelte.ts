@@ -19,7 +19,7 @@ import {
 } from "$lib/shared/attract/services/attract-ghost.svelte";
 
 const START_SEL =
-  '[data-testid="start-position-picker"] .pictograph-container[role="button"]';
+  '[data-testid="start-placement-picker"] .pictograph-container[role="button"]';
 // The option grid renders OptionCard ("option-card") on the wide desktop layout
 // and OptionViewerSection tiles ("option-item") on the swipe/fallback layouts —
 // the demo pane uses the fallback, so the act must match BOTH. (Matching only

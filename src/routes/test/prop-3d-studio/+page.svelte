@@ -182,7 +182,7 @@
    * The app's playback clock, not a local one. It owns the invariant this page
    * used to get wrong: step N's motion spans currentStep N to N+1, so a
    * 16-count LOOP has to reach 17 before it has actually played its closing
-   * step, and a seamless LOOP skips the start-position hold on every pass after
+   * step, and a seamless LOOP skips the start-placement hold on every pass after
    * the first. The hand-rolled counter that wrapped at `steps.length` from zero
    * paid a dead beat at the top and then cut the motion that returns the props
    * to where they started -- the LOOP never closed.

@@ -1,6 +1,6 @@
 <!--
   TutorialStepStub - test-only stand-in for the 4 real tutorial step
-  components (PickStartPositionStep / AddStepTutorialStep / PlaySequenceStep /
+  components (PickStartPlacementStep / AddStepTutorialStep / PlaySequenceStep /
   ReadyStep), used ONLY by CreateTutorialWizard.svelte.test.ts.
 
   The real steps embed live Create-module pickers/players (Firestore-backed

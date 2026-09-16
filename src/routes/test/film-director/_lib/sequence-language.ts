@@ -29,12 +29,12 @@ import {
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
-  getGridLocationsFromPosition,
-  getGridPositionFromLocations,
-} from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+  getGridLocationsFromPlacement,
+  getGridPlacementFromLocations,
+} from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { getTurnPool, type TurnLanes } from "@tka/sequence-engine/generation";
 
@@ -53,11 +53,11 @@ export const DIRECTOR_LOCATION_NAMES = {
 } as const satisfies Record<string, GridLocation>;
 
 /**
- * Position groups a start or end position can be named by. These are the
- * groups the grid-position deriver maps to hand locations — tau and terra are
- * centric-mode positions it does not carry, so they cannot be resolved here.
+ * Placement groups a start or end placement can be named by. These are the
+ * groups the grid-placement deriver maps to hand locations — tau and terra are
+ * centric-mode placements it does not carry, so they cannot be resolved here.
  */
-export const DIRECTOR_POSITION_GROUPS = [
+export const DIRECTOR_PLACEMENT_GROUPS = [
   "alpha",
   "beta",
   "gamma",
@@ -77,7 +77,7 @@ export const DIRECTOR_MOTION_TYPE_FILTERS = ["no-dash", "prefer-dash"] as const;
 
 export const DIRECTOR_LOOP_PERIODS = ["halved", "quartered"] as const;
 
-export type DirectorPositionGroup = (typeof DIRECTOR_POSITION_GROUPS)[number];
+export type DirectorPlacementGroup = (typeof DIRECTOR_PLACEMENT_GROUPS)[number];
 export type DirectorSequenceLevel = (typeof DIRECTOR_SEQUENCE_LEVELS)[number];
 export type DirectorOrientation = (typeof DIRECTOR_ORIENTATIONS)[number];
 export type DirectorContinuity = (typeof DIRECTOR_CONTINUITIES)[number];
@@ -96,10 +96,10 @@ const DIFFICULTY_BY_LEVEL: Record<DirectorSequenceLevel, DifficultyLevel> = {
 
 // Types
 
-export type DirectorPositionRef =
+export type DirectorPlacementRef =
   | string
   | { left: string; right: string }
-  | { group: DirectorPositionGroup; location: string };
+  | { group: DirectorPlacementGroup; location: string };
 
 export type DirectorTurnValue = number | "fl";
 
@@ -129,7 +129,7 @@ export type DirectorLoop =
  * spoken axis; absent means the generator's own default.
  */
 export interface DirectorSequenceControls {
-  startPosition?: DirectorPositionRef;
+  startPlacement?: DirectorPlacementRef;
   startOrientation?: DirectorStartOrientation;
   turns?: DirectorTurns;
   /**
@@ -147,7 +147,7 @@ export interface DirectorSequenceControls {
   loop?: DirectorLoop;
   mustContain?: string[];
   mustNotContain?: string[];
-  endPosition?: DirectorPositionRef | DirectorPositionRef[];
+  endPlacement?: DirectorPlacementRef | DirectorPlacementRef[];
 }
 
 export type DirectorGeneratedSequence =
@@ -264,7 +264,7 @@ export function transformSourceId(
 }
 
 // ---------------------------------------------------------------------------
-// Locations and positions
+// Locations and placements
 // ---------------------------------------------------------------------------
 
 const LOCATION_BY_NAME = new Map<string, GridLocation>();
@@ -291,33 +291,33 @@ function requireLocation(raw: string, where: string): GridLocation {
   );
 }
 
-const POSITION_GROUP_PATTERN = /^([a-z]+)\d+$/;
+const PLACEMENT_GROUP_PATTERN = /^([a-z]+)\d+$/;
 
-const POSITIONS_BY_GROUP = new Map<DirectorPositionGroup, GridPosition[]>(
-  DIRECTOR_POSITION_GROUPS.map((group) => [
+const PLACEMENTS_BY_GROUP = new Map<DirectorPlacementGroup, GridPlacement[]>(
+  DIRECTOR_PLACEMENT_GROUPS.map((group) => [
     group,
-    Object.values(GridPosition).filter(
-      (position) => POSITION_GROUP_PATTERN.exec(position)?.[1] === group
+    Object.values(GridPlacement).filter(
+      (placement) => PLACEMENT_GROUP_PATTERN.exec(placement)?.[1] === group
     ),
   ])
 );
 
-const KNOWN_POSITIONS = new Set<string>(
-  [...POSITIONS_BY_GROUP.values()].flat()
+const KNOWN_PLACEMENTS = new Set<string>(
+  [...PLACEMENTS_BY_GROUP.values()].flat()
 );
 
-const POSITION_CATALOG = DIRECTOR_POSITION_GROUPS.map((group) => {
-  const positions = POSITIONS_BY_GROUP.get(group)!;
-  return `${group}1-${positions.length}`;
+const PLACEMENT_CATALOG = DIRECTOR_PLACEMENT_GROUPS.map((group) => {
+  const placements = PLACEMENTS_BY_GROUP.get(group)!;
+  return `${group}1-${placements.length}`;
 }).join(", ");
 
-function describePosition(position: GridPosition): string {
-  const [left, right] = getGridLocationsFromPosition(position);
-  return `${position} (left ${left}, right ${right})`;
+function describePlacement(placement: GridPlacement): string {
+  const [left, right] = getGridLocationsFromPlacement(placement);
+  return `${placement} (left ${left}, right ${right})`;
 }
 
 /**
- * Turn a spoken position reference into a grid position.
+ * Turn a spoken placement reference into a grid placement.
  *
  * `{ group, location }` is the form a director actually says — "beta at
  * South". It is unique inside beta, where both hands share a point, and
@@ -325,47 +325,47 @@ function describePosition(position: GridPosition): string {
  * Ambiguity throws with the candidates rather than picking one, because
  * guessing here silently changes which hand leads.
  */
-export function resolvePositionRef(
-  ref: DirectorPositionRef,
+export function resolvePlacementRef(
+  ref: DirectorPlacementRef,
   where: string
-): GridPosition {
+): GridPlacement {
   if (typeof ref === "string") {
     const name = ref.trim().toLowerCase();
-    if (!KNOWN_POSITIONS.has(name)) {
+    if (!KNOWN_PLACEMENTS.has(name)) {
       throw new Error(
-        `${where}: unknown position "${ref}". Positions are ${POSITION_CATALOG}.`
+        `${where}: unknown placement "${ref}". Placements are ${PLACEMENT_CATALOG}.`
       );
     }
-    return name as GridPosition;
+    return name as GridPlacement;
   }
 
   if ("left" in ref) {
     const left = requireLocation(ref.left, where);
     const right = requireLocation(ref.right, where);
     try {
-      return getGridPositionFromLocations(left, right);
+      return getGridPlacementFromLocations(left, right);
     } catch {
       throw new Error(
-        `${where}: no TKA position puts the left hand at ${left} and right hand at ${right}.`
+        `${where}: no TKA placement puts the left hand at ${left} and right hand at ${right}.`
       );
     }
   }
 
   const location = requireLocation(ref.location, where);
-  const candidates = POSITIONS_BY_GROUP.get(ref.group)!.filter((position) => {
-    const [left, right] = getGridLocationsFromPosition(position);
+  const candidates = PLACEMENTS_BY_GROUP.get(ref.group)!.filter((placement) => {
+    const [left, right] = getGridLocationsFromPlacement(placement);
     return left === location || right === location;
   });
 
   if (candidates.length === 1) return candidates[0]!;
   if (candidates.length === 0) {
     throw new Error(
-      `${where}: no ${ref.group} position has a hand at ${location}.`
+      `${where}: no ${ref.group} placement has a hand at ${location}.`
     );
   }
   throw new Error(
     `${where}: "${ref.group} at ${location}" could be ${candidates
-      .map(describePosition)
+      .map(describePlacement)
       .join(" or ")}. Name one, or give a {left, right} pair.`
   );
 }
@@ -501,13 +501,13 @@ function compileLetters(
   });
 }
 
-function compileEndPositions(
-  endPosition: DirectorPositionRef | DirectorPositionRef[] | undefined,
+function compileEndPlacements(
+  endPlacement: DirectorPlacementRef | DirectorPlacementRef[] | undefined,
   where: string
-): GridPosition[] | undefined {
-  if (endPosition === undefined) return undefined;
-  const refs = Array.isArray(endPosition) ? endPosition : [endPosition];
-  return refs.map((ref) => resolvePositionRef(ref, `${where} end position`));
+): GridPlacement[] | undefined {
+  if (endPlacement === undefined) return undefined;
+  const refs = Array.isArray(endPlacement) ? endPlacement : [endPlacement];
+  return refs.map((ref) => resolvePlacementRef(ref, `${where} end placement`));
 }
 
 // ---------------------------------------------------------------------------
@@ -530,8 +530,8 @@ export function compileSequenceDirective(
   const level =
     typeof spokenLevel === "number" ? spokenLevel : DEFAULT_SEQUENCE_LEVEL;
   const turns = compileTurns(sequence.turns, level, where);
-  const startPosition = sequence.startPosition
-    ? resolvePositionRef(sequence.startPosition, `${where} start position`)
+  const startPlacement = sequence.startPlacement
+    ? resolvePlacementRef(sequence.startPlacement, `${where} start placement`)
     : undefined;
 
   return {
@@ -548,7 +548,7 @@ export function compileSequenceDirective(
     constraintPreset: sequence.flow ?? "smooth",
     ...(sequence.handPath ? { handPathMode: sequence.handPath } : {}),
     ...(sequence.motionTypes ? { motionTypeFilter: sequence.motionTypes } : {}),
-    ...(startPosition ? { startPositionId: startPosition } : {}),
+    ...(startPlacement ? { startPlacementId: startPlacement } : {}),
     ...turns,
     ...compileOrientations(sequence.startOrientation),
     ...compileLoop(sequence.loop),
@@ -570,8 +570,8 @@ export function compileSequenceDirective(
           ),
         }
       : {}),
-    ...(sequence.endPosition
-      ? { endPositions: compileEndPositions(sequence.endPosition, where) }
+    ...(sequence.endPlacement
+      ? { endPlacements: compileEndPlacements(sequence.endPlacement, where) }
       : {}),
   };
 }

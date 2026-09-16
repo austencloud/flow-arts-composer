@@ -197,7 +197,7 @@ console.log(`\n${classes.length} orbit classes over ${m90.size} letters.`);
 console.log("\n\n########## position families ##########");
 const fam = new Map();
 for (const r of rows) {
-  const k = `${posFamily(r.startPosition)}>${posFamily(r.endPosition)}`;
+  const k = `${posFamily(r.startPlacement)}>${posFamily(r.endPlacement)}`;
   if (!fam.has(r.letter)) fam.set(r.letter, new Set());
   fam.get(r.letter).add(k);
 }

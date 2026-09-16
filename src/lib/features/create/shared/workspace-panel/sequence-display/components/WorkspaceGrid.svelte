@@ -5,7 +5,7 @@
   import { fade } from "svelte/transition";
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { BuildModeId } from "$lib/shared/foundation/ui/ui-types";
   import type {
     GridLayout,
@@ -69,7 +69,7 @@
 
   let {
     steps,
-    startPosition = null,
+    startPlacement = null,
     isTimelineMode = false,
     gridLayout,
     standardGridCenterOffset = 0,
@@ -108,7 +108,7 @@
     scrollContainerRef = $bindable(),
   }: {
     steps: ReadonlyArray<StepData> | StepData[];
-    startPosition?: StartPositionData | StepData | null;
+    startPlacement?: StartPlacementData | StepData | null;
     isTimelineMode?: boolean;
     gridLayout: GridLayout;
     standardGridCenterOffset?: number;
@@ -343,11 +343,11 @@
   }
 
   const isStartTileAwaiting = $derived(
-    displayState.shouldAnimateStartPosition &&
+    displayState.shouldAnimateStartPlacement &&
       isAwaitingReveal(START_TILE_REVEAL_KEY)
   );
   const isStartTileCascading = $derived(
-    displayState.shouldAnimateStartPosition && !isStartTileAwaiting
+    displayState.shouldAnimateStartPlacement && !isStartTileAwaiting
   );
   const isMandalaAwaiting = (slot: number) =>
     isAwaitingReveal(mandalaRevealKey(slot));
@@ -426,9 +426,9 @@
   // --- Mandala fill ---
   type MandalaShow = MandalaRenderOptions["show"];
 
-  const hasStartPosition = $derived(
-    startPosition !== null &&
-      !("isBlank" in startPosition && startPosition.isBlank)
+  const hasStartPlacement = $derived(
+    startPlacement !== null &&
+      !("isBlank" in startPlacement && startPlacement.isBlank)
   );
 
   const isLightBackground = $derived(
@@ -441,12 +441,12 @@
       stepCount: steps.length,
       cols: gridLayout.totalColumns,
       rows: gridLayout.rows,
-      includeStartPosition: hasStartPosition,
+      includeStartPlacement: hasStartPlacement,
       showQRCode: false,
       leftVisible: true,
       rightVisible: true,
       mandalaEnabled: true,
-      startPositionLayout: "column",
+      startPlacementLayout: "column",
     });
 
     return placements.map(({ row, col, variant }) => ({
@@ -460,8 +460,8 @@
   // These no longer carry a layout version to force re-measurement: the layout
   // transition below measures the real rectangles itself, before and after.
   const standardStartCells = $derived.by(() => {
-    if (isTimelineMode || !hasStartPosition || !startPosition) return [];
-    return [{ key: "start-position", startPosition }];
+    if (isTimelineMode || !hasStartPlacement || !startPlacement) return [];
+    return [{ key: "start-placement", startPlacement }];
   });
 
   const standardStepCells = $derived.by(() => {
@@ -489,8 +489,8 @@
         datasetKey: "historyStepIdentity",
       },
       {
-        selector: "[data-history-start-position]",
-        datasetKey: "historyStartPosition",
+        selector: "[data-history-start-placement]",
+        datasetKey: "historyStartPlacement",
       },
       { selector: "[data-layout-mandala-key]", datasetKey: "layoutMandalaKey" },
     ],
@@ -516,7 +516,7 @@
       columns: gridLayout.columns,
       totalColumns: gridLayout.totalColumns,
       rows: gridLayout.rows,
-      hasStartPosition,
+      hasStartPlacement,
       timelineRowSizes: isTimelineMode
         ? timelineRows.map((row) => row.steps.length)
         : [],
@@ -543,7 +543,7 @@
   }
 
   function getHistoryStartDuration(): number {
-    return historyTransition?.startPositionChanged ? motionDuration(180) : 0;
+    return historyTransition?.startPlacementChanged ? motionDuration(180) : 0;
   }
 
   function getStepLayoutElements(): Map<string, HTMLElement> {
@@ -570,7 +570,7 @@
     const surface = gridSurfaceRef;
     if (
       surface &&
-      (plan.startPositionChanged ||
+      (plan.startPlacementChanged ||
         plan.gridModeChanged ||
         plan.circularityChanged)
     ) {
@@ -672,12 +672,12 @@
       stepCount: steps.length,
       cols: gridLayout.totalColumns,
       rows: rowCount,
-      includeStartPosition: hasStartPosition,
+      includeStartPlacement: hasStartPlacement,
       showQRCode: false,
       leftVisible: true,
       rightVisible: true,
       mandalaEnabled: true,
-      startPositionLayout: "column",
+      startPlacementLayout: "column",
     });
 
     // Every timeline row still needs a left-column cell to stay aligned with
@@ -849,7 +849,7 @@
   >
     {#if isTimelineMode}
       <!-- ===== Timeline layout: start column + flexbox rows ===== -->
-      {#if startPosition && !("isBlank" in startPosition && startPosition.isBlank)}
+      {#if startPlacement && !("isBlank" in startPlacement && startPlacement.isBlank)}
         <div class="timeline-start-column">
           <div
             class="timeline-cell"
@@ -857,7 +857,7 @@
             class:awaiting-reveal={isStartTileAwaiting}
             class:cell-selected={selectedStepNumber === 0}
             class:cell-practice={practiceStepNumber === 0}
-            data-history-start-position
+            data-history-start-placement
             style:--reveal-delay={revealDelayFor(START_TILE_REVEAL_KEY, 0)}
             in:fade={{ duration: getHistoryStartDuration() }}
             out:fade={{ duration: getHistoryStartDuration() }}
@@ -869,7 +869,7 @@
             {/if}
             <div class="history-layout-shell" inert={isStartTileAwaiting}>
               <StartTile
-                {startPosition}
+                {startPlacement}
                 shouldAnimate={isStartTileCascading}
                 isSelected={selectedStepNumber === 0}
                 isPracticeStep={practiceStepNumber === 0}
@@ -1045,7 +1045,7 @@
           class="step-container"
           class:cascading={isStartTileCascading}
           class:awaiting-reveal={isStartTileAwaiting}
-          data-history-start-position
+          data-history-start-placement
           style:grid-row="1"
           style:grid-column="1"
           style:--reveal-delay={revealDelayFor(START_TILE_REVEAL_KEY, 0)}
@@ -1059,7 +1059,7 @@
           {/if}
           <div class="history-layout-shell" inert={isStartTileAwaiting}>
             <StartTile
-              startPosition={startCell.startPosition}
+              startPlacement={startCell.startPlacement}
               shouldAnimate={isStartTileCascading}
               isSelected={selectedStepNumber === 0}
               isPracticeStep={practiceStepNumber === 0}

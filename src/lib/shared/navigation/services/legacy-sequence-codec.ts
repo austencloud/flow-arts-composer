@@ -7,8 +7,8 @@
  */
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import {
   createMotionData,
@@ -225,7 +225,7 @@ function encodeLegacyMotion(
 }
 
 function encodeLegacyBeat(
-  beat: StepData | StartPositionData,
+  beat: StepData | StartPlacementData,
   format: LegacySequenceFormat
 ): string {
   return `${encodeLegacyMotion(beat.motions.left, format)}:${encodeLegacyMotion(beat.motions.right, format)}`;
@@ -402,7 +402,7 @@ function decodeLegacyBeat(
 }
 
 function sequenceFromParts(
-  startPosition: StartPositionData | undefined,
+  startPlacement: StartPlacementData | undefined,
   steps: StepData[]
 ): SequenceData {
   return {
@@ -410,9 +410,9 @@ function sequenceFromParts(
     name: "Shared Sequence",
     word: "",
     steps,
-    ...(startPosition && {
-      startPosition,
-      startingPosition: startPosition,
+    ...(startPlacement && {
+      startPlacement,
+      startingPlacement: startPlacement,
     }),
     thumbnails: [],
     isFavorite: false,
@@ -452,13 +452,13 @@ export function decodeLegacySequence(encoded: string): SequenceData {
       return step;
     });
     const startStep = decoded.shift();
-    const startPosition = startStep
-      ? createStartPositionData({
+    const startPlacement = startStep
+      ? createStartPlacementData({
           id: startStep.id,
           motions: startStep.motions,
         })
       : undefined;
-    return sequenceFromParts(startPosition, decoded);
+    return sequenceFromParts(startPlacement, decoded);
   }
 
   const firstPart = parts[0];
@@ -478,7 +478,7 @@ export function decodeLegacySequence(encoded: string): SequenceData {
   }
 
   const startStep = decodeLegacyBeat(firstPart, 0, format);
-  const startPosition = createStartPositionData({
+  const startPlacement = createStartPlacementData({
     id: startStep.id,
     motions: startStep.motions,
   });
@@ -486,18 +486,18 @@ export function decodeLegacySequence(encoded: string): SequenceData {
     .slice(1)
     .filter(Boolean)
     .map((beat, index) => decodeLegacyBeat(beat, index + 1, format));
-  return sequenceFromParts(startPosition, steps);
+  return sequenceFromParts(startPlacement, steps);
 }
 
 export function encodeLegacySequence(
   sequence: SequenceData,
   format: LegacySequenceFormat
 ): string {
-  const startPosition =
-    sequence.startPosition ??
-    sequence.startingPosition ??
-    createStartPositionData({ id: crypto.randomUUID() });
-  const encodedStart = encodeLegacyBeat(startPosition, format);
+  const startPlacement =
+    sequence.startPlacement ??
+    sequence.startingPlacement ??
+    createStartPlacementData({ id: crypto.randomUUID() });
+  const encodedStart = encodeLegacyBeat(startPlacement, format);
   const encodedSteps = sequence.steps.map((step) =>
     encodeLegacyBeat(step, format)
   );
@@ -505,11 +505,11 @@ export function encodeLegacySequence(
   if (format === 3) {
     const leftSeed =
       ORIENTATION_ENCODE[
-        startPosition.motions.left?.startOrientation ?? Orientation.IN
+        startPlacement.motions.left?.startOrientation ?? Orientation.IN
       ] ?? "i";
     const rightSeed =
       ORIENTATION_ENCODE[
-        startPosition.motions.right?.startOrientation ?? Orientation.IN
+        startPlacement.motions.right?.startOrientation ?? Orientation.IN
       ] ?? "i";
     return `v3|${leftSeed}${rightSeed}|${encodedStart}|${encodedSteps.join("|")}`;
   }

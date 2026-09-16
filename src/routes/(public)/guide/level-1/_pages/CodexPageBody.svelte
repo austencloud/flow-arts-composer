@@ -130,8 +130,8 @@
       letter: null,
       gridMode: data.gridMode,
       stepNumber: 0,
-      startPosition: data.startPosition,
-      endPosition: data.startPosition,
+      startPlacement: data.startPlacement,
+      endPlacement: data.startPlacement,
       motions: {
         left: staticFrom(left, HandSide.LEFT),
         right: staticFrom(right, HandSide.RIGHT),

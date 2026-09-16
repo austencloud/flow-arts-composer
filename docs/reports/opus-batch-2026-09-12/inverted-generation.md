@@ -60,13 +60,13 @@ Derived the ground-truth inversion for every letter directly from
 (cw↔ccw), keep the locations, and look up the resulting motion pair.
 
 All 47 letters agree with `INVERTED_LETTER_MAP` in
-`src/lib/shared/create/domain/strict-loop-position-maps.ts`, with zero rows
+`src/lib/shared/create/domain/strict-loop-placement-maps.ts`, with zero rows
 having no inverse. A↔B, C↔C, S↔T, U↔V, W↔X, W-↔X-, Σ↔Δ, Θ↔Ω, Φ↔Φ, α↔α, … —
 every mapping confirmed by data, none by memory.
 
 ### 2.2 Structure, continuity and labelling of generated inverted LOOPs
 
-Audited generated sequences for: `startPosition == previous endPosition`;
+Audited generated sequences for: `startPlacement == previous endPlacement`;
 per-hand `startLocation == previous endLocation`; per-hand
 `startOrientation == previous endOrientation`; positional closure; orientation
 closure; every step's motion pair existing in the canonical dataset; and the

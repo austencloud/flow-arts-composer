@@ -24,8 +24,8 @@ function seq(
   return {
     steps: steps.map((s, i) => ({
       stepNumber: i + 1,
-      startPosition: s.start,
-      endPosition: s.end,
+      startPlacement: s.start,
+      endPlacement: s.end,
       motions: {
         [HandSide.LEFT]: {
           startOrientation: s.bStart ?? "in",

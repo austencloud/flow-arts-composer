@@ -1,5 +1,5 @@
 import type { ArrowPlacement, Coordinates, GridLocation, GridMode, MotionType } from "../types.js";
-import { getLayer2PointCoordinates } from "./grid-position.js";
+import { getLayer2PointCoordinates } from "./grid-placement.js";
 import { calculateArrowRotation } from "./arrow-rotation.js";
 
 function createLocationPairKey(locations: GridLocation[]): string {

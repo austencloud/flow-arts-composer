@@ -16,7 +16,7 @@
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
 import { type TrailSettings } from "../domain/types/trail-types";
@@ -92,7 +92,7 @@ export interface AnimationEngineProps {
   gridMode?: GridMode | null;
   backgroundAlpha?: number;
   letter?: Letter | null;
-  stepData?: StartPositionData | StepData | null;
+  stepData?: StartPlacementData | StepData | null;
   sequenceData?: SequenceData | null;
   currentStep?: number;
   isPlaying?: boolean;

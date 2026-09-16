@@ -15,18 +15,18 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { LOOPExplanation, SeedInfo, SeedTransformation } from "./types";
 import {
-  HORIZONTAL_MIRROR_POSITION_MAP,
-  VERTICAL_MIRROR_POSITION_MAP,
+  HORIZONTAL_MIRROR_PLACEMENT_MAP,
+  VERTICAL_MIRROR_PLACEMENT_MAP,
   INVERTED_LETTER_MAP,
-} from "$lib/features/create/generate/circular/domain/constants/strict-loop-position-maps";
+} from "$lib/features/create/generate/circular/domain/constants/strict-loop-placement-maps";
 import {
-  HALF_POSITION_MAP,
-} from "$lib/shared/foundation/domain/models/generation/circular-position-maps";
+  HALF_PLACEMENT_MAP,
+} from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
 
 // Verb phrases describing what each transformation does to the sequence.
 // Written so they read naturally after a subject: "The second half [verb]."
 const COMPONENT_VERB: Record<string, string> = {
-  rotated: "rotates positions on the grid",
+  rotated: "rotates placements on the grid",
   mirrored: "mirrors east and west",
   flipped: "flips north and south",
   swapped: "swaps blue and red",
@@ -86,7 +86,7 @@ function explainSimple(
 
   const summary = parts.length > 0
     ? `The second half ${parts.join(" and ")}. ${cycleText}`
-    : `Returns to starting position each repetition. ${cycleText}`;
+    : `Returns to starting placement each repetition. ${cycleText}`;
 
   return {
     type: "simple",
@@ -339,24 +339,24 @@ function extractStepsForRange(
 
 /**
  * Check if beat group B is a horizontal flip (N↔S) of beat group A.
- * Compares end positions through HORIZONTAL_MIRROR_POSITION_MAP.
+ * Compares end placements through HORIZONTAL_MIRROR_PLACEMENT_MAP.
  */
 function checkFlipped(a: readonly StepData[], b: readonly StepData[]): boolean {
-  return checkPositionTransform(a, b, HORIZONTAL_MIRROR_POSITION_MAP);
+  return checkPlacementTransform(a, b, HORIZONTAL_MIRROR_PLACEMENT_MAP);
 }
 
 /**
  * Check if beat group B is a vertical mirror (E↔W) of beat group A.
  */
 function checkMirrored(a: readonly StepData[], b: readonly StepData[]): boolean {
-  return checkPositionTransform(a, b, VERTICAL_MIRROR_POSITION_MAP);
+  return checkPlacementTransform(a, b, VERTICAL_MIRROR_PLACEMENT_MAP);
 }
 
 /**
  * Check if beat group B is a 180° rotation of beat group A.
  */
 function checkRotated(a: readonly StepData[], b: readonly StepData[]): boolean {
-  return checkPositionTransform(a, b, HALF_POSITION_MAP);
+  return checkPlacementTransform(a, b, HALF_PLACEMENT_MAP);
 }
 
 /**
@@ -438,14 +438,14 @@ function checkInverted(a: readonly StepData[], b: readonly StepData[]): boolean 
 }
 
 /**
- * Compare end positions of two beat groups through a position map.
+ * Compare end placements of two beat groups through a placement map.
  * Requires all comparable beats to match (exact, no threshold)
  * because this text appears on a printed card.
  */
-function checkPositionTransform(
+function checkPlacementTransform(
   a: readonly StepData[],
   b: readonly StepData[],
-  positionMap: Record<string, string>
+  placementMap: Record<string, string>
 ): boolean {
   const len = Math.min(a.length, b.length);
   if (len === 0) return false;
@@ -453,12 +453,12 @@ function checkPositionTransform(
   let checkCount = 0;
 
   for (let i = 0; i < len; i++) {
-    const endA = a[i]?.endPosition;
-    const endB = b[i]?.endPosition;
+    const endA = a[i]?.endPlacement;
+    const endB = b[i]?.endPlacement;
     if (!endA || !endB) continue;
 
     checkCount++;
-    const expected = positionMap[endA as string];
+    const expected = placementMap[endA as string];
     if (expected !== (endB as string)) {
       return false;
     }
@@ -541,7 +541,7 @@ function fallbackExplanation(
       : `Repeats ${cycleCount} times to return to start.`;
     summary = `Each time through, the sequence ${parts.join(" and ")}. ${cycleText}`;
   } else {
-    summary = "Returns to starting position after each repetition.";
+    summary = "Returns to starting placement after each repetition.";
   }
 
   return {

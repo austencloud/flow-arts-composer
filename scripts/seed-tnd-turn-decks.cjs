@@ -130,21 +130,21 @@ function applyTurnsToSteps(steps, turnValue) {
  * Update the start position step's orientations to "in" (they should
  * already be "in" for static motions at 0 turns, but we make it explicit).
  */
-function cloneStartPosition(startPosition) {
-  if (!startPosition) return startPosition;
+function cloneStartPlacement(startPlacement) {
+  if (!startPlacement) return startPlacement;
 
   return {
-    ...startPosition,
+    ...startPlacement,
     id: randomUUID(),
     motions: {
       left: {
-        ...startPosition.motions.left,
+        ...startPlacement.motions.left,
         startOrientation: "in",
         endOrientation: "in",
         turns: 0,
       },
       right: {
-        ...startPosition.motions.right,
+        ...startPlacement.motions.right,
         startOrientation: "in",
         endOrientation: "in",
         turns: 0,
@@ -215,7 +215,7 @@ async function writeDeck(variant, sourceSequences, sourceMeta) {
   for (const srcSeq of sourceSequences) {
     // Clone and transform steps with new turn value
     const newSteps = applyTurnsToSteps(srcSeq.steps, turns);
-    const newStartPos = cloneStartPosition(srcSeq.startPosition);
+    const newStartPos = cloneStartPlacement(srcSeq.startPlacement);
 
     // Build new sequence ID: replace "vtg-" prefix with ratio-specific prefix
     const newSeqId = srcSeq.id.replace("tnd-", `tnd-${ratio.replace(":", "to")}-`);
@@ -225,7 +225,7 @@ async function writeDeck(variant, sourceSequences, sourceMeta) {
       ...srcSeq,
       id: newSeqId,
       steps: newSteps,
-      startPosition: newStartPos,
+      startPlacement: newStartPos,
       tags: ["tnd-deck", `vtg-${ratio.replace(":", "to")}`, ...(srcSeq.tags || []).filter(t => t !== "tnd-deck")],
       notes: `TnD ${srcSeq.metadata?.vtgCategory || ""} (${ratio}): ${srcSeq.word}`,
       metadata: {

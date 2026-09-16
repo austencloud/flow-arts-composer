@@ -46,12 +46,12 @@ export interface PerVisitDemoOptions {
    * Constrains the roll to start at this exact grid position. The hero
    * attract act (hero-act.svelte.ts) uses this to chain sequences: a
    * CIRCULAR loop's end pose equals its start pose, so passing the
-   * currently-playing sequence's `startPosition` here guarantees the next
+   * currently-playing sequence's `startPlacement` here guarantees the next
    * draw picks up where the current one left off instead of teleporting.
-   * `SequenceData.startPosition` (a `StartPositionData`) is structurally a
+   * `SequenceData.startPlacement` (a `StartPlacementData`) is structurally a
    * `PictographData` — no mapping needed, pass it straight through.
    */
-  startPosition?: PictographData | null;
+  startPlacement?: PictographData | null;
 }
 
 /**
@@ -93,7 +93,7 @@ export async function rollPerVisitDemo(
     models.DifficultyLevel.INTERMEDIATE;
 
   async function rollBest(
-    startPosition: PictographData | null
+    startPlacement: PictographData | null
   ): Promise<SequenceData | null> {
     let best: SequenceData | null = null;
     let bestScore = -1;
@@ -119,7 +119,7 @@ export async function rollPerVisitDemo(
         propType: options?.propType ?? prop.PropType.STAFF,
         difficulty,
         constraintPreset: "smooth",
-        ...(startPosition ? { startPosition } : {}),
+        ...(startPlacement ? { startPlacement } : {}),
       });
       // Plain-ify reactive proxies before handing to players/canvases.
       const plain = JSON.parse(JSON.stringify(seq)) as SequenceData;
@@ -146,7 +146,7 @@ export async function rollPerVisitDemo(
     return best;
   }
 
-  const constrained = options?.startPosition ?? null;
+  const constrained = options?.startPlacement ?? null;
   try {
     return await rollBest(constrained);
   } catch (constrainedError) {

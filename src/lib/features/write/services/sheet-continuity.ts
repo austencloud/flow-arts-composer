@@ -11,7 +11,7 @@ import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { isVisibleMotion, type MotionData } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import { shiftStartPosition } from "$lib/shared/create/services/sequence-transformer";
+import { shiftStartPlacement } from "$lib/shared/create/services/sequence-transformer";
 
 /** A hand's orientation, or undefined when the hand is not really there
  *  (invisible placeholder under the both-required Step shape) — preserving the
@@ -30,7 +30,7 @@ function oriOf(
 export interface EdgeState {
   // Opaque comparison keys — the exact domain types don't matter to this module,
   // only that a row's end tuple equals the next row's start tuple.
-  position: StepData["startPosition"];
+  position: StepData["startPlacement"];
   leftOri: string | undefined;
   rightOri: string | undefined;
 }
@@ -40,7 +40,7 @@ export function startStateOf(seq: SequenceData): EdgeState | null {
   const first = seq.steps[0];
   if (!first) return null;
   return {
-    position: first.startPosition,
+    position: first.startPlacement,
     leftOri: oriOf(first.motions?.[HandSide.LEFT], "start"),
     rightOri: oriOf(first.motions?.[HandSide.RIGHT], "start"),
   };
@@ -51,7 +51,7 @@ export function endStateOf(seq: SequenceData): EdgeState | null {
   const last = seq.steps[seq.steps.length - 1];
   if (!last) return null;
   return {
-    position: last.endPosition,
+    position: last.endPlacement,
     leftOri: oriOf(last.motions?.[HandSide.LEFT], "end"),
     rightOri: oriOf(last.motions?.[HandSide.RIGHT], "end"),
   };
@@ -76,21 +76,21 @@ export function connects(prev: SequenceData, next: SequenceData): boolean {
  * result to decide if the boundary is truly clean.
  *
  * - Already aligned            → returned as-is.
- * - Circular + passes through  → shiftStartPosition to that beat.
+ * - Circular + passes through  → shiftStartPlacement to that beat.
  * - Otherwise                  → returned unchanged (boundary stays a break).
  *
  * Only circular sequences are rebased: on a non-circular sequence
- * `shiftStartPosition` truncates the preceding beats, which we never want here.
+ * `shiftStartPlacement` truncates the preceding beats, which we never want here.
  */
 export function normalizeToStart(seq: SequenceData, target: EdgeState): SequenceData {
   const start = startStateOf(seq);
   if (start && statesMatch(start, target)) return seq;
   if (!seq.isCircular) return seq;
 
-  const beat = seq.steps.find((s) => s.startPosition === target.position);
+  const beat = seq.steps.find((s) => s.startPlacement === target.position);
   if (!beat) return seq;
 
-  return shiftStartPosition(seq, beat.stepNumber);
+  return shiftStartPlacement(seq, beat.stepNumber);
 }
 
 export type LoopStatus = "empty" | "loops" | "open";

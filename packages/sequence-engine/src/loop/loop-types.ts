@@ -9,10 +9,10 @@
  * @deprecated Use LOOPSpec from loop-spec.ts with loopSpecFromLegacy for migration.
  */
 export enum LOOPType {
-  /** Rotated - rotates positions around the grid */
+  /** Rotated - rotates locations around the grid */
   ROTATED = "rotated",
 
-  /** Mirrored - mirrors positions vertically */
+  /** Mirrored - mirrors locations vertically */
   MIRRORED = "mirrored",
 
   /** Swapped - swaps left and right attributes */
@@ -54,7 +54,7 @@ export enum LOOPType {
   /** Mirrored rotated inverted swapped - combines all four transformations */
   MIRRORED_ROTATED_INVERTED_SWAPPED = "mirrored_rotated_inverted_swapped",
 
-  /** Flipped - mirrors positions horizontally (north/south) */
+  /** Flipped - mirrors locations horizontally (north/south) */
   FLIPPED = "flipped",
 
   /** Rewound - appends reversed sequence to double length */
@@ -75,7 +75,7 @@ export enum Period {
 /**
  *
  * HALVED → 2, QUARTERED → 4. The integer is the count of passes required for a
- * LOOP to return to identity in both position and orientation.
+ * LOOP to return to identity in both location and orientation.
  */
 export function periodToNumber(period: Period | undefined): number {
   if (period === Period.QUARTERED) return 4;
@@ -119,9 +119,9 @@ export const LOOP_TYPE_LABELS: Record<LOOPType, string> = {
  * LOOP descriptions for each type
  */
 export const LOOP_TYPE_DESCRIPTIONS: Record<LOOPType, string> = {
-  [LOOPType.ROTATED]: "Rotates positions around the grid",
-  [LOOPType.MIRRORED]: "Mirrors positions vertically",
-  [LOOPType.FLIPPED]: "Mirrors positions horizontally (north/south)",
+  [LOOPType.ROTATED]: "Rotates locations around the grid",
+  [LOOPType.MIRRORED]: "Mirrors locations vertically",
+  [LOOPType.FLIPPED]: "Mirrors locations horizontally (north/south)",
   [LOOPType.SWAPPED]: "Swaps left and right props",
   [LOOPType.INVERTED]: "Inverts motion directions",
   [LOOPType.SWAPPED_INVERTED]: "Swaps colors with inverted motion",

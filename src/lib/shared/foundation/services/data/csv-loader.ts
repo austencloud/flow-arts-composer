@@ -9,7 +9,13 @@ let sharedPendingLoad: Promise<CsvDataSet> | null = null;
 const IDB_NAME = "tka-csv-cache";
 const IDB_VERSION = 1;
 const IDB_STORE = "csv-data";
-const IDB_KEY = "pictograph-csv";
+// Bumped from "pictograph-csv" for the placement rename: the CSV header row
+// changed from startPosition,endPosition to startPlacement,endPlacement, and
+// existing IndexedDB caches hold the pre-rename header text under the old
+// key. A new key forces a fresh fetch instead of reading stale cached text
+// with the old header spelling; the orphaned old-key record is harmless and
+// simply never read again.
+const IDB_KEY = "pictograph-csv-v2";
 
 export class CsvLoader {
   async loadCSVFile(filename: string): Promise<{

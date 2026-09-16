@@ -2,7 +2,7 @@ import { captureEvent } from "$lib/shared/analytics/services/posthog";
 import type { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { LetterTypeGroupKey } from "../option-picker/services/section-title-formatter";
 
-export type StartPositionPath = "presets" | "build";
+export type StartPlacementPath = "presets" | "build";
 export type LetterTypeNavigationSource = "selector" | "carousel";
 
 const IMMEDIATE_UNDO_WINDOW_MS = 5_000;
@@ -17,12 +17,12 @@ function monotonicNow(): number {
   return typeof performance === "undefined" ? Date.now() : performance.now();
 }
 
-export function logConstructStartPositionPath(path: StartPositionPath): void {
+export function logConstructStartPlacementPath(path: StartPlacementPath): void {
   captureEvent("construct_start_pose_path_selected", { path });
 }
 
-export function logConstructStartPositionCompleted(props: {
-  path: StartPositionPath;
+export function logConstructStartPlacementCompleted(props: {
+  path: StartPlacementPath;
   gridMode: GridMode;
 }): void {
   captureEvent("construct_start_pose_completed", {
@@ -31,8 +31,8 @@ export function logConstructStartPositionCompleted(props: {
   });
 }
 
-export function logConstructStartPositionCancelled(
-  path: StartPositionPath
+export function logConstructStartPlacementCancelled(
+  path: StartPlacementPath
 ): void {
   captureEvent("construct_start_pose_cancelled", { path });
 }

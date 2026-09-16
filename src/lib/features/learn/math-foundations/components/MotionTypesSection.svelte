@@ -19,7 +19,7 @@
     <div class="subsection">
       <h3>Movement Intensity: Another Triad</h3>
       <p class="subsection-intro">
-        Just as positions split into Alpha/Beta/Gamma, movement intensity splits into three types:
+        Just as placements split into Alpha/Beta/Gamma, movement intensity splits into three types:
       </p>
 
       <div class="triad-grid">
@@ -129,7 +129,7 @@
       <h3>The Base-4 Structure</h3>
       <p>
         Notice the pattern: <strong>4</strong> orientations, <strong>4</strong> primary motion types,
-        positions that combine as <strong>8 + 8 = 16</strong> (multiples of 4).
+        placements that combine as <strong>8 + 8 = 16</strong> (multiples of 4).
         TKA operates in something akin to <strong>base-4</strong>, where the fundamental unit
         is the quartet rather than the decimal ten.
       </p>

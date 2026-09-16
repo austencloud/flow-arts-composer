@@ -13,11 +13,11 @@
 
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import {
   GridLocation,
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   MotionType,
@@ -133,7 +133,7 @@ export async function generateChooChoo(
 
   // Build start position
   const floatStartLoc = orbit[actualStartIndex] ?? GridLocation.SOUTH;
-  const startPosition = createStartPosition(fullConfig, floatStartLoc);
+  const startPlacement = createStartPlacement(fullConfig, floatStartLoc);
 
   // Build steps with proper letter derivation
   const steps: StepData[] = [];
@@ -160,7 +160,7 @@ export async function generateChooChoo(
     name: `Choo Choo (${fullConfig.steps === 4 ? "Full" : "Half"}, ${fullConfig.staticProp} static, ${fullConfig.rotationDirection} rotation)`,
     word,
     steps,
-    startPosition,
+    startPlacement,
     thumbnails: [],
     isFavorite: false,
     isCircular: fullConfig.steps === 4,
@@ -174,10 +174,10 @@ export async function generateChooChoo(
   };
 }
 
-function createStartPosition(
+function createStartPlacement(
   config: ChooChooConfig,
   floatLocation: GridLocation
-): StartPositionData {
+): StartPlacementData {
   const staticMotion = createMotionData({
     motionType: MotionType.STATIC,
     rotationDirection: RotationDirection.NO_ROTATION,
@@ -208,10 +208,10 @@ function createStartPosition(
 
   return {
     id: crypto.randomUUID(),
-    isStartPosition: true,
+    isStartPlacement: true,
     letter: Letter.BETA,
-    startPosition: GridPosition.BETA5,
-    endPosition: GridPosition.BETA5,
+    startPlacement: GridPlacement.BETA5,
+    endPlacement: GridPlacement.BETA5,
     motions: {
       [HandSide.LEFT]:
         config.staticProp === "left" ? staticMotion : floatMotion,
@@ -312,8 +312,8 @@ async function createStep(
   }
 
   // Calculate grid positions
-  const startGridPos = getGridPosition(floatStart, config.staticLocation);
-  const endGridPos = getGridPosition(floatEnd, config.staticLocation);
+  const startGridPos = getGridPlacement(floatStart, config.staticLocation);
+  const endGridPos = getGridPlacement(floatEnd, config.staticLocation);
 
   return {
     id: crypto.randomUUID(),
@@ -323,8 +323,8 @@ async function createStep(
     rightReversal: false,
     isBlank: false,
     letter,
-    startPosition: startGridPos,
-    endPosition: endGridPos,
+    startPlacement: startGridPos,
+    endPlacement: endGridPos,
     motions: {
       [HandSide.LEFT]: leftMotion,
       [HandSide.RIGHT]: rightMotion,
@@ -336,19 +336,19 @@ async function createStep(
  * Get grid position based on float location and static location
  * This is a simplified mapping - real implementation would be more complex
  */
-function getGridPosition(
+function getGridPlacement(
   floatLoc: GridLocation,
   staticLoc: GridLocation
-): GridPosition {
+): GridPlacement {
   // Simplified mapping for demonstration
-  const positionMap: Record<string, GridPosition> = {
-    [`${GridLocation.SOUTH}_${GridLocation.SOUTH}`]: GridPosition.BETA5,
-    [`${GridLocation.WEST}_${GridLocation.SOUTH}`]: GridPosition.GAMMA7,
-    [`${GridLocation.NORTH}_${GridLocation.SOUTH}`]: GridPosition.ALPHA1,
-    [`${GridLocation.EAST}_${GridLocation.SOUTH}`]: GridPosition.GAMMA11,
+  const positionMap: Record<string, GridPlacement> = {
+    [`${GridLocation.SOUTH}_${GridLocation.SOUTH}`]: GridPlacement.BETA5,
+    [`${GridLocation.WEST}_${GridLocation.SOUTH}`]: GridPlacement.GAMMA7,
+    [`${GridLocation.NORTH}_${GridLocation.SOUTH}`]: GridPlacement.ALPHA1,
+    [`${GridLocation.EAST}_${GridLocation.SOUTH}`]: GridPlacement.GAMMA11,
   };
 
-  return positionMap[`${floatLoc}_${staticLoc}`] || GridPosition.BETA5;
+  return positionMap[`${floatLoc}_${staticLoc}`] || GridPlacement.BETA5;
 }
 
 /**

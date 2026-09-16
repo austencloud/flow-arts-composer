@@ -9,7 +9,7 @@ import type { PropType } from "../../pictograph/prop/domain/enums/prop-type";
 import type { CompositionRecipe } from "../../pictograph/prop/domain/prop-composition-recipes";
 import type {
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "../../pictograph/grid/domain/enums/grid-enums";
 import type { BackgroundType } from "@austencloud/backgrounds";
 import type { BackgroundLabSettings } from "$lib/shared/background-builder/domain/lab-settings-types";
@@ -102,14 +102,14 @@ export interface AppSettings {
     tkaGlyph?: boolean; // TKA Glyph includes turn numbers
     tndGlyph?: boolean;
     elementalGlyph?: boolean;
-    positionsGlyph?: boolean;
+    placementsGlyph?: boolean;
     reversalIndicators?: boolean;
     showGrid?: boolean; // Master toggle for grid visibility
     nonRadialPoints?: boolean;
-    handColorKey?: boolean; // L/R colour key in the start-position bottom band
+    handColorKey?: boolean; // L/R colour key in the start-placement bottom band
     handPointVisibility?: "all" | "active" | "none"; // all hand points, only where props are, or hidden
     stepNumbers?: boolean; // Show beat numbers on pictographs in sequences
-    beatPositionGlyph?: boolean; // Show beat position glyph (musical timeline position)
+    beatPlacementGlyph?: boolean; // Show beat position glyph (musical timeline position)
   };
 
   // Community/Privacy Settings
@@ -120,9 +120,9 @@ export interface AppSettings {
   skipLoopConfirmation?: boolean; // Skip confirmation when applying LOOP auto-completion (undo is available)
 
   // Generator Settings
-  blockedStartPositions?: GridPosition[]; // Custom blocked positions for sequence generation
+  blockedStartPlacements?: GridPlacement[]; // Custom blocked positions for sequence generation
   // Saved independently so Diamond and Box restore their own selection
-  blockedStartPositionsByGridMode?: Partial<Record<GridMode, GridPosition[]>>;
+  blockedStartPlacementsByGridMode?: Partial<Record<GridMode, GridPlacement[]>>;
 
   // Global Visual Effects
   darkMode?: boolean; // Dark Mode: dark background, inverted grid, white text/outlines
@@ -151,7 +151,7 @@ export interface AppSettings {
     addWord?: boolean;
     addStepNumbers?: boolean;
     addDifficultyLevel?: boolean;
-    includeStartPosition?: boolean;
+    includeStartPlacement?: boolean;
     darkMode?: boolean;
     customName?: string; // Optional custom name for header
 

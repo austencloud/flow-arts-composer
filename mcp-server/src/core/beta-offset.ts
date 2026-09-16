@@ -1,7 +1,7 @@
 /**
  * Beta Offset Calculator for Standalone Renderer
  *
- * When two props end at the same location (a "beta" position),
+ * When two props end at the same location (a "beta" placement),
  * they need to be offset from each other so they don't overlap.
  * The direction of offset depends on:
  * - The location (N/S/E/W vs NE/SE/SW/NW)
@@ -274,7 +274,7 @@ export function calculateBetaOffset(
 ): { x: number; y: number } {
   const { leftMotion, rightMotion, letter, gridMode } = input;
 
-  // Check if both props end at the same location (beta position)
+  // Check if both props end at the same location (beta placement)
   const leftEndLoc = normalizeLocation(leftMotion.endLocation);
   const rightEndLoc = normalizeLocation(rightMotion.endLocation);
 

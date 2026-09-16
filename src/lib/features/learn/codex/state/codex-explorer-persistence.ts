@@ -15,7 +15,7 @@ export interface CodexExplorerVisibility {
   showGlyph: boolean;
   showGrid: boolean;
   showTKA: boolean;
-  showPositions: boolean;
+  showPlacements: boolean;
   showReversals: boolean;
   showNonRadialPoints: boolean;
 }
@@ -34,7 +34,7 @@ export function defaultCodexExplorerVisibility(): CodexExplorerVisibility {
     showGlyph: true,
     showGrid: true,
     showTKA: true,
-    showPositions: false,
+    showPlacements: false,
     showReversals: false,
     showNonRadialPoints: false,
   };

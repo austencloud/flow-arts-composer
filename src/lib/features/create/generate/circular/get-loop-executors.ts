@@ -29,7 +29,7 @@ let _strictInverted: StrictInvertedLOOPExecutor | null = null;
 let _mirroredSwapped: MirroredSwappedLOOPExecutor | null = null;
 let _swappedInverted: SwappedInvertedLOOPExecutor | null = null;
 
-// Executors needing gridPositionDeriver too
+// Executors needing gridPlacementDeriver too
 let _strictRotated: StrictRotatedLOOPExecutor | null = null;
 let _strictSwapped: StrictSwappedLOOPExecutor | null = null;
 let _rotatedSwapped: RotatedSwappedLOOPExecutor | null = null;

@@ -63,8 +63,8 @@ export function createPendingEditEffect(config: PendingEditConfig): () => void {
           createModuleState.sequenceState.setCurrentSequence(sequence);
         }
 
-        if (constructTabState?.setShowStartPositionPicker) {
-          constructTabState.setShowStartPositionPicker(false);
+        if (constructTabState?.setShowStartPlacementPicker) {
+          constructTabState.setShowStartPlacementPicker(false);
         }
       });
     });

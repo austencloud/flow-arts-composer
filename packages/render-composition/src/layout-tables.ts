@@ -1,13 +1,13 @@
-import type { StartPositionLayout } from "./types.js";
+import type { StartPlacementLayout } from "./types.js";
 
 export const BASE_STEP_SIZE = 144;
 
 /**
  * Layout table for sequences WITH start position (sidebar/top rendering).
- * Copied exactly from LayoutCalculator.ts (LAYOUT_WITH_START_POSITION).
+ * Copied exactly from LayoutCalculator.ts (LAYOUT_WITH_START_PLACEMENT).
  * Format: stepCount -> [columns, rows]
  */
-const WITH_START_POSITION: Record<number, [number, number]> = {
+const WITH_START_PLACEMENT: Record<number, [number, number]> = {
   0: [1, 1],
   1: [2, 1],
   2: [3, 1],
@@ -77,10 +77,10 @@ const WITH_START_POSITION: Record<number, [number, number]> = {
 
 /**
  * Layout table for sequences WITHOUT start position.
- * Copied exactly from LayoutCalculator.ts (LAYOUT_WITHOUT_START_POSITION).
+ * Copied exactly from LayoutCalculator.ts (LAYOUT_WITHOUT_START_PLACEMENT).
  * Format: stepCount -> [columns, rows]
  */
-const WITHOUT_START_POSITION: Record<number, [number, number]> = {
+const WITHOUT_START_PLACEMENT: Record<number, [number, number]> = {
   0: [1, 1],
   1: [1, 1],
   2: [2, 1],
@@ -150,11 +150,11 @@ const WITHOUT_START_POSITION: Record<number, [number, number]> = {
 
 /**
  * Layout table for sequences with start position as a TOP ROW.
- * Derived from WITHOUT_START_POSITION by adding 1 row — the start pictograph
+ * Derived from WITHOUT_START_PLACEMENT by adding 1 row — the start pictograph
  * and QR code occupy row 0, steps begin at row 1.
  */
 const WITH_START_ROW: Record<number, [number, number]> = Object.fromEntries(
-  Object.entries(WITHOUT_START_POSITION).map(([stepCount, [cols, rows]]) => [
+  Object.entries(WITHOUT_START_PLACEMENT).map(([stepCount, [cols, rows]]) => [
     stepCount,
     [cols, rows + 1] as [number, number],
   ])
@@ -235,36 +235,36 @@ const WITH_START_COLUMN: Record<number, [number, number]> = {
 };
 
 function getTableForLayout(
-  layout: StartPositionLayout
+  layout: StartPlacementLayout
 ): Record<number, [number, number]> {
   switch (layout) {
     case "sidebar":
-      return WITH_START_POSITION;
+      return WITH_START_PLACEMENT;
     case "top":
       // Same underlying table as sidebar — the rendering layer decides how to
       // visually place the start position; the grid dimensions are identical.
-      return WITH_START_POSITION;
+      return WITH_START_PLACEMENT;
     case "column":
       return WITH_START_COLUMN;
     case "row":
       return WITH_START_ROW;
     case "none":
-      return WITHOUT_START_POSITION;
+      return WITHOUT_START_PLACEMENT;
   }
 }
 
 /**
  * Look up the [columns, rows] grid dimensions for a given step count and
- * start-position layout mode.
+ * start-placement layout mode.
  *
  * Falls back to the same aspect-ratio calculation used by Composer when the
  * step count exceeds the predefined tables.
  */
 export function getLayout(
   stepCount: number,
-  startPositionLayout: StartPositionLayout
+  startPlacementLayout: StartPlacementLayout
 ): [columns: number, rows: number] {
-  const table = getTableForLayout(startPositionLayout);
+  const table = getTableForLayout(startPlacementLayout);
   const predefined = table[stepCount];
   if (predefined) return predefined;
 
@@ -273,8 +273,8 @@ export function getLayout(
   const rows = Math.max(1, Math.round(Math.sqrt(stepCount / aspectRatio)));
   const columns = Math.max(1, Math.ceil(stepCount / rows));
 
-  if (startPositionLayout === "none") return [columns, rows];
-  if (startPositionLayout === "row") return [columns, rows + 1];
+  if (startPlacementLayout === "none") return [columns, rows];
+  if (startPlacementLayout === "row") return [columns, rows + 1];
   return [columns + 1, rows];
 }
 

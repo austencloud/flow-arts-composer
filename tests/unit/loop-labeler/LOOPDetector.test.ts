@@ -66,7 +66,7 @@ function halvedFixture(): SequenceEntry {
   return makeEntry([
     {
       beat: 0,
-      sequenceStartPosition: "alpha1",
+      sequenceStartPlacement: "alpha1",
       endPos: "alpha1",
     },
     // Beat 1: blue n→e (pro), red s→w (pro)
@@ -127,7 +127,7 @@ function quarteredFixture(): SequenceEntry {
   return makeEntry([
     {
       beat: 0,
-      sequenceStartPosition: "alpha1",
+      sequenceStartPlacement: "alpha1",
       endPos: "alpha1",
     },
     // Beat 1: blue n→e, red s→w
@@ -188,7 +188,7 @@ describe("LOOPDetector.detectLOOP transformationIntervals", () => {
     const entry = makeEntry([
       {
         beat: 0,
-        sequenceStartPosition: "alpha1",
+        sequenceStartPlacement: "alpha1",
         endPos: "alpha1",
       },
       {
@@ -292,7 +292,7 @@ describe("LOOPDetector.detectLOOP transformationIntervals", () => {
     const entry = makeEntry([
       {
         beat: 0,
-        sequenceStartPosition: "alpha1",
+        sequenceStartPlacement: "alpha1",
         endPos: "alpha1",
       },
       {
@@ -331,7 +331,7 @@ describe("LOOPDetector.detectLOOP transformationIntervals", () => {
     const entry = makeEntry([
       {
         beat: 0,
-        sequenceStartPosition: "alpha1",
+        sequenceStartPlacement: "alpha1",
         endPos: "alpha1",
       },
       {
@@ -392,7 +392,7 @@ describe("LOOPDetector.detectLOOP transformationIntervals", () => {
     ): MotionAttrs => ({ startLoc: s, endLoc: e, motionType, propRotDir });
 
     const entry = makeEntry([
-      { beat: 0, sequenceStartPosition: "alpha1", endPos: "alpha1" },
+      { beat: 0, sequenceStartPlacement: "alpha1", endPos: "alpha1" },
       // ---- Half 1 ----
       // Beat 1: anti/ccw
       makeBeat(1, m("n", "e", "anti", "ccw"), m("e", "s", "anti", "ccw"), "alpha1", "gamma3"),

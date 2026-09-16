@@ -23,7 +23,7 @@ export const LETTER_TYPES: Record<string, LetterTypeDefinition> = {
     description: "One hand shifts while the other stays static. Creates asymmetric movements.",
     characteristics: [
       "One hand moves, one stays in place",
-      "Often used for transitions between symmetric and asymmetric positions",
+      "Often used for transitions between symmetric and asymmetric placements",
       "Uses Greek letters for most of this type"
     ],
     letters: ["W", "X", "Y", "Z", "Σ", "Δ", "Θ", "Ω"],
@@ -52,7 +52,7 @@ export const LETTER_TYPES: Record<string, LetterTypeDefinition> = {
     name: "Dash",
     description: "One hand follows the dash hand-path family while the other stays static.",
     characteristics: [
-      "Creates dramatic position changes",
+      "Creates dramatic placement changes",
       "Uses Greek letters Phi, Psi, Lambda",
       "3 Level 1 letters, plus the Level 6 Tau-Dash extension",
       "Phi = diverging (angular separation increases): beta→alpha, or eta→zeta on 8-point grid",
@@ -85,7 +85,7 @@ export const LETTER_TYPES: Record<string, LetterTypeDefinition> = {
   },
   "6": {
     name: "Static",
-    description: "Both hands remain stationary. The props may still rotate, but hands don't change position.",
+    description: "Both hands remain stationary. The props may still rotate, but hands don't change placement.",
     characteristics: [
       "No hand movement",
       "Focus is entirely on prop rotation",

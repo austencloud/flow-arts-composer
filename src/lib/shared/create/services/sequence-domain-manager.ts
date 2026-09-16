@@ -114,7 +114,7 @@ export function validateCreateRequest(request: unknown): ValidationResult {
   }
 
   // Length validation from desktop domain models
-  // Allow 0 length for progressive creation (start position only)
+  // Allow 0 length for progressive creation (start placement only)
   if (
     typedRequest.length !== undefined &&
     (typedRequest.length < 0 || typedRequest.length > 64)

@@ -58,7 +58,7 @@ function makeSequence(overrides: Record<string, unknown> = {}) {
     word: "A",
     steps: [makeStep()],
     gridMode: "diamond",
-    startPosition: {
+    startPlacement: {
       motions: {
         [HandSide.LEFT]: makeMotion(),
         [HandSide.RIGHT]: makeMotion(),

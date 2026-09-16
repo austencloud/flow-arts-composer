@@ -1,7 +1,7 @@
 /**
  * Partial Sequence Generator (Stub)
  *
- * Generates partial sequences constrained to end at a specific position,
+ * Generates partial sequences constrained to end at a specific placement,
  * which is the prerequisite for LOOP execution. The partial sequence is
  * the "seed" that gets transformed (rotated, mirrored, etc.) by the
  * LOOP executors.
@@ -32,7 +32,7 @@ import type { Period } from "../loop-types.js";
 export interface PartialSequenceOptions {
   /** Target total steps for the full LOOP (before slicing) */
   length: number;
-  /** Grid mode for position lookups */
+  /** Grid mode for placement lookups */
   gridMode: "box" | "diamond";
   /** Turn intensity (1-3) */
   turnIntensity?: number;
@@ -48,8 +48,8 @@ export interface PartialSequenceOptions {
  * Interface for partial sequence generation.
  *
  * Implementations generate a sequence of steps that starts at startPos
- * and ends at endPos (or any position if endPos is null). The result
- * includes a start-position step (stepNumber 0) followed by the generated steps.
+ * and ends at endPos (or any placement if endPos is null). The result
+ * includes a start-placement step (stepNumber 0) followed by the generated steps.
  */
 export interface IPartialSequenceGenerator {
   generatePartialSequence(

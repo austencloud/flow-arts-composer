@@ -3,5 +3,5 @@
   "id": "empty-start-only",
   "kind": "start",
   "options": {},
-  "startPosition": "alpha1"
+  "startPlacement": "alpha1"
 }

@@ -1,7 +1,7 @@
 {
   "createdAt": "2026-07-17",
   "page": "type2-loops",
-  "note": "Type 2 LOOPs page: rotated loops that travel between alpha/beta and gamma via Type 2 connector letters. Recipe: loopType rotated + smooth + no-dash + startPosition in the slot's family; travel through gamma verified per candidate (no direct constraint exists). Slots keyed by the start family of the page's three print examples (BΣTX alpha, EΔUZ beta, OYHΘ gamma).",
+  "note": "Type 2 LOOPs page: rotated loops that travel between alpha/beta and gamma via Type 2 connector letters. Recipe: loopType rotated + smooth + no-dash + startPlacement in the slot's family; travel through gamma verified per candidate (no direct constraint exists). Slots keyed by the start family of the page's three print examples (BΣTX alpha, EΔUZ beta, OYHΘ gamma).",
   "generationDefaults": {
     "constraintPreset": "smooth",
     "motionTypeFilter": "no-dash",

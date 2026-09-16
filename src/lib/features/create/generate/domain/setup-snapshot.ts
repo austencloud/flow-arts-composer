@@ -14,7 +14,7 @@ export interface SetupSnapshot {
 }
 
 const SET_SEMANTIC_KEYS = new Set([
-  "blockedStartPositions",
+  "blockedStartPlacements",
   "mustContainLetters",
   "mustNotContainLetters",
 ]);

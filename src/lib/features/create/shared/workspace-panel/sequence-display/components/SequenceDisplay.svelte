@@ -23,7 +23,7 @@
   let {
     sequenceState,
     onStepSelected,
-    onStartPositionSelected,
+    onStartPlacementSelected,
     onStepDelete,
     onStepLongPress,
     selectedStepNumber = null,
@@ -39,7 +39,7 @@
       stepNumber: number,
       modifiers?: { range: boolean; toggle: boolean }
     ) => void;
-    onStartPositionSelected?: () => void;
+    onStartPlacementSelected?: () => void;
     onStepDelete?: (stepNumber: number) => void;
     onStepLongPress?: () => void;
     selectedStepNumber?: number | null; // 0=start, 1=first beat, 2=second beat, etc.
@@ -68,8 +68,8 @@
   // Use $derived.by() to ensure Svelte tracks the getters properly
   // when sequenceState is passed as a prop (not a reactive state)
   const currentSequence = $derived.by(() => sequenceState.currentSequence);
-  const selectedStartPosition = $derived.by(
-    () => sequenceState.selectedStartPosition
+  const selectedStartPlacement = $derived.by(
+    () => sequenceState.selectedStartPlacement
   );
   const removingStepIndex = $derived.by(() =>
     sequenceState.getRemovingStepIndex()
@@ -141,13 +141,13 @@
     return columns;
   });
 
-  // Convert selectedStartPosition (PictographData) to StepData format for StepGrid
-  const startPositionStep = $derived(() => {
-    if (!selectedStartPosition) return null;
+  // Convert selectedStartPlacement (PictographData) to StepData format for StepGrid
+  const startPlacementStep = $derived(() => {
+    if (!selectedStartPlacement) return null;
 
     // Create StepData that extends the PictographData
     return {
-      ...selectedStartPosition,
+      ...selectedStartPlacement,
       stepNumber: 0,
       duration: 1,
       leftReversal: false,
@@ -173,7 +173,7 @@
     onStepSelected?.(stepNumber, modifiers);
   }
 
-  function handleStartPositionClick() {
+  function handleStartPlacementClick() {
     hapticService?.trigger("selection");
 
     // Choose Start treats the start tile as a pose too (index 0).
@@ -182,7 +182,7 @@
       return;
     }
 
-    onStartPositionSelected?.();
+    onStartPlacementSelected?.();
   }
 
   function handleMandalaClick(
@@ -236,9 +236,9 @@
           steps={displaySequence?.steps ?? []}
           arrivalSequence={displaySequence}
           {optionAudition}
-          startPosition={startPositionStep() ?? undefined}
+          startPlacement={startPlacementStep() ?? undefined}
           onStepClick={handleStepClick}
-          onStartClick={handleStartPositionClick}
+          onStartClick={handleStartPlacementClick}
           posePicker={isShiftStartMode}
           {onStepDelete}
           {onStepLongPress}

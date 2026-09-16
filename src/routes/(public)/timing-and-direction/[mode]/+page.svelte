@@ -701,8 +701,8 @@
                             <ChoreoCard
                               sequence={loop.sequence}
                               showMandala={true}
-                              includeStartPosition={true}
-                              startPositionLayoutOverride="row"
+                              includeStartPlacement={true}
+                              startPlacementLayoutOverride="row"
                               columnCount={2}
                               showQRCode={false}
                               showWord={true}

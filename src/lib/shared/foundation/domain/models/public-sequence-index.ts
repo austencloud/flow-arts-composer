@@ -60,7 +60,7 @@ export interface PublicSequenceIndex {
   /** Numeric difficulty level (1-5). Preferred over difficultyLevel string. */
   readonly level?: number;
 
-  /** Grid used by the sequence's positions. */
+  /** Grid used by the sequence's placements. */
   readonly gridMode?: GridMode;
 
   /** LOOP type label (e.g., "rotated", "mirrored+swapped", "freeform", null for non-LOOP) */

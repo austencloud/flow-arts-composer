@@ -9,21 +9,21 @@ import {
 } from "../customize-summary";
 import {
   GridMode,
-  GridPosition,
+  GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { Orientation } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import type { StartEndOptions } from "$lib/shared/create/state/panel-coordination-state.svelte";
 import {
-  ALL_DIAMOND_POSITIONS,
-  CLASSIC_DIAMOND_POSITIONS,
-} from "../../../shared/domain/start-position-presets";
+  ALL_DIAMOND_PLACEMENTS,
+  CLASSIC_DIAMOND_PLACEMENTS,
+} from "../../../shared/domain/start-placement-presets";
 
 const NO_CONSTRAINTS: StartEndOptions = {
-  blockedStartPositions: [],
-  startPosition: null,
-  endPosition: null,
-  endPositions: [],
+  blockedStartPlacements: [],
+  startPlacement: null,
+  endPlacement: null,
+  endPlacements: [],
   mustContainLetters: [],
   mustNotContainLetters: [],
   leftStartOrientation: Orientation.IN,
@@ -50,8 +50,8 @@ function inputFrom(
   };
 }
 
-function blockAllExcept(allowed: GridPosition[]): GridPosition[] {
-  return ALL_DIAMOND_POSITIONS.filter((p) => !allowed.includes(p));
+function blockAllExcept(allowed: GridPlacement[]): GridPlacement[] {
+  return ALL_DIAMOND_PLACEMENTS.filter((p) => !allowed.includes(p));
 }
 
 function pictograph(fields: Partial<PictographData>): PictographData {
@@ -123,36 +123,36 @@ describe("buildCustomizeSummary — style axes", () => {
   });
 });
 
-describe("buildCustomizeSummary — start and end positions", () => {
+describe("buildCustomizeSummary — start and end placements", () => {
   it("names the Classic 3 preset", () => {
     const summary = buildCustomizeSummary(
       inputFrom(PRODUCTION_STYLE_BASELINE, {
         ...NO_CONSTRAINTS,
-        blockedStartPositions: blockAllExcept(CLASSIC_DIAMOND_POSITIONS),
+        blockedStartPlacements: blockAllExcept(CLASSIC_DIAMOND_PLACEMENTS),
       })
     );
     expect(summary.facts).toEqual(["Classic 3"]);
   });
 
-  it("names the position when exactly one is allowed", () => {
+  it("names the placement when exactly one is allowed", () => {
     const summary = buildCustomizeSummary(
       inputFrom(PRODUCTION_STYLE_BASELINE, {
         ...NO_CONSTRAINTS,
-        blockedStartPositions: blockAllExcept([GridPosition.BETA5]),
+        blockedStartPlacements: blockAllExcept([GridPlacement.BETA5]),
       })
     );
-    expect(summary.facts).toEqual([`Start: ${GridPosition.BETA5}`]);
+    expect(summary.facts).toEqual([`Start: ${GridPlacement.BETA5}`]);
   });
 
   it("counts a custom set instead of collapsing it to Custom", () => {
     const summary = buildCustomizeSummary(
       inputFrom(PRODUCTION_STYLE_BASELINE, {
         ...NO_CONSTRAINTS,
-        blockedStartPositions: blockAllExcept([
-          GridPosition.ALPHA1,
-          GridPosition.ALPHA3,
-          GridPosition.BETA5,
-          GridPosition.GAMMA11,
+        blockedStartPlacements: blockAllExcept([
+          GridPlacement.ALPHA1,
+          GridPlacement.ALPHA3,
+          GridPlacement.BETA5,
+          GridPlacement.GAMMA11,
         ]),
       })
     );
@@ -160,21 +160,21 @@ describe("buildCustomizeSummary — start and end positions", () => {
     expect(summary.isDefault).toBe(false);
   });
 
-  it("keeps the deprecated exact start position", () => {
+  it("keeps the deprecated exact start placement", () => {
     const summary = buildCustomizeSummary(
       inputFrom(PRODUCTION_STYLE_BASELINE, {
         ...NO_CONSTRAINTS,
-        startPosition: pictograph({ startPosition: GridPosition.ALPHA3 }),
+        startPlacement: pictograph({ startPlacement: GridPlacement.ALPHA3 }),
       })
     );
-    expect(summary.facts).toEqual([`Start: ${GridPosition.ALPHA3}`]);
+    expect(summary.facts).toEqual([`Start: ${GridPlacement.ALPHA3}`]);
   });
 
-  it("keeps the end position and falls back to its letter", () => {
+  it("keeps the end placement and falls back to its letter", () => {
     const summary = buildCustomizeSummary(
       inputFrom(PRODUCTION_STYLE_BASELINE, {
         ...NO_CONSTRAINTS,
-        endPosition: pictograph({
+        endPlacement: pictograph({
           letter: "A" as unknown as PictographData["letter"],
         }),
       })
@@ -186,11 +186,11 @@ describe("buildCustomizeSummary — start and end positions", () => {
     const summary = buildCustomizeSummary(
       inputFrom(PRODUCTION_STYLE_BASELINE, {
         ...NO_CONSTRAINTS,
-        blockedStartPositions: blockAllExcept([GridPosition.BETA5]),
-        startPosition: pictograph({ startPosition: GridPosition.BETA5 }),
+        blockedStartPlacements: blockAllExcept([GridPlacement.BETA5]),
+        startPlacement: pictograph({ startPlacement: GridPlacement.BETA5 }),
       })
     );
-    expect(summary.facts).toEqual([`Start: ${GridPosition.BETA5}`]);
+    expect(summary.facts).toEqual([`Start: ${GridPlacement.BETA5}`]);
   });
 });
 
@@ -279,7 +279,7 @@ describe("summaryRowBudget", () => {
       {
         ...inputFrom(PRODUCTION_STYLE_BASELINE, {
           ...NO_CONSTRAINTS,
-          blockedStartPositions: blockAllExcept(CLASSIC_DIAMOND_POSITIONS),
+          blockedStartPlacements: blockAllExcept(CLASSIC_DIAMOND_PLACEMENTS),
           leftStartOrientation: Orientation.CLOCK,
         }),
         constraintPreset: "choppy",

@@ -29,7 +29,7 @@
     if (sawSplash && !splash) mark("splash-removed");
     if (document.querySelector(".module-content")) mark("module-container");
     const cards = [
-      ...document.querySelectorAll('[data-ghost-kind="start-position"]'),
+      ...document.querySelectorAll('[data-ghost-kind="start-placement"]'),
     ];
     for (const el of cards) {
       if (!el.querySelector("svg")) continue;
@@ -64,7 +64,7 @@
 
 (() => {
   const observeChoices = (event) => {
-    if (!event.target.closest?.('[data-ghost-kind="start-position"]')) return;
+    if (!event.target.closest?.('[data-ghost-kind="start-placement"]')) return;
     const result = { start: performance.now(), ready: null, count: 0 };
     (window.__startupObservation.interactions ??= []).push(result);
     const poll = () => {

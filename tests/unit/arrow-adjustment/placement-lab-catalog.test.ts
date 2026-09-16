@@ -10,7 +10,7 @@ import {
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { generatePlacementKey } from "$lib/shared/pictograph/arrow/positioning/key-generation/services/arrow-placement-key-generator";
 import { calculateEndOrientation } from "$lib/shared/pictograph/prop/services/orientation-calculator";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import { createCanonicalPlacementContext } from "$lib/shared/pictograph/arrow/positioning/calculation/services/canonical-placement-frame";
 import { arrowLocationCalculator } from "$lib/shared/pictograph/arrow/positioning/calculation/services/arrow-location-calculator";
 import { applyRotationMatrix } from "$lib/shared/pictograph/arrow/orchestration/services/arrow-coordinate-transformer";
@@ -99,11 +99,11 @@ describe("arrow placement lab catalog", () => {
     const source = {
       ...sourceFixture.diamond,
       letter: "H" as never,
-      startPosition: getGridPositionFromLocations(
+      startPlacement: getGridPlacementFromLocations(
         sourceFixture.diamond.motions.left!.startLocation,
         sourceFixture.diamond.motions.right!.startLocation
       ),
-      endPosition: getGridPositionFromLocations(
+      endPlacement: getGridPlacementFromLocations(
         sourceFixture.diamond.motions.left!.endLocation,
         sourceFixture.diamond.motions.right!.endLocation
       ),
@@ -121,21 +121,21 @@ describe("arrow placement lab catalog", () => {
     expect(source.motions.left?.turns).toBe(0);
     expect(source.motions.right?.turns).toBe(0);
     expect(source).toEqual(sourceSnapshot);
-    expect(fixture.box.startPosition).toBe(
-      getGridPositionFromLocations(
+    expect(fixture.box.startPlacement).toBe(
+      getGridPlacementFromLocations(
         fixture.box.motions.left!.startLocation,
         fixture.box.motions.right!.startLocation
       )
     );
-    expect(fixture.box.endPosition).toBe(
-      getGridPositionFromLocations(
+    expect(fixture.box.endPlacement).toBe(
+      getGridPlacementFromLocations(
         fixture.box.motions.left!.endLocation,
         fixture.box.motions.right!.endLocation
       )
     );
     expect([
-      fixture.box.startPosition !== source.startPosition,
-      fixture.box.endPosition !== source.endPosition,
+      fixture.box.startPlacement !== source.startPlacement,
+      fixture.box.endPlacement !== source.endPlacement,
     ]).toContain(true);
     expect(fixture.diamondMotion.endOrientation).toBe(
       calculateEndOrientation(fixture.diamondMotion, HandSide.LEFT)

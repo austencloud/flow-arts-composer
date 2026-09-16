@@ -24,7 +24,7 @@ export interface SequenceTransformActionState {
     direction: "clockwise" | "counterclockwise",
     targetHand?: SequenceActionTargetHand
   ): Promise<void>;
-  shiftStartPosition(stepNumber: number): Promise<void>;
+  shiftStartPlacement(stepNumber: number): Promise<void>;
 }
 
 interface SequenceTransformActionDispatcherDependencies {
@@ -94,7 +94,7 @@ export function createSequenceTransformActionDispatcher(
         await state.rotateSequence("clockwise", targetHand);
         return;
       case "shift_start":
-        await state.shiftStartPosition(stepNumber ?? 2);
+        await state.shiftStartPlacement(stepNumber ?? 2);
     }
   }
 
@@ -112,8 +112,8 @@ export function createSequenceTransformActionDispatcher(
       targetHand: action === "swap" ? "both" : targetHand,
       createMode: deps.getCreateMode(),
       stepCount: sequence?.steps.length ?? 0,
-      hasStartPosition: !!(
-        sequence?.startPosition || sequence?.startingPosition
+      hasStartPlacement: !!(
+        sequence?.startPlacement || sequence?.startingPlacement
       ),
     };
 

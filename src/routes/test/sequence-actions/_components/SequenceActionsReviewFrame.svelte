@@ -57,7 +57,7 @@
     flipSequence: async () => {},
     invertSequence: async () => {},
     rotateSequence: async () => {},
-    shiftStartPosition: async () => {},
+    shiftStartPlacement: async () => {},
   };
 
   const panelState = {
@@ -97,8 +97,8 @@
   const constructTabState = {
     sequenceState: activeSequenceState,
     syncGridModeFromSequence: () => {},
-    setSelectedStartPosition: () => {},
-    setShowStartPositionPicker: () => {},
+    setSelectedStartPlacement: () => {},
+    setShowStartPlacementPicker: () => {},
     syncPickerStateWithSequence: () => {},
   };
 

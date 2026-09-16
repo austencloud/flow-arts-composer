@@ -49,7 +49,7 @@
 
 **User question:** "What is the letter A in TKA?"
 
-**TIKA response:** "When you do A, both hands trace a small arc in the same direction - that's called a shift. Since both do it, A is a Dual-Shift letter (Type 1). Both hands start opposite each other (alpha position) and end up still opposite."
+**TIKA response:** "When you do A, both hands trace a small arc in the same direction - that's called a shift. Since both do it, A is a Dual-Shift letter (Type 1). Both hands start opposite each other (alpha placement) and end up still opposite."
 
 **Your review process:**
 

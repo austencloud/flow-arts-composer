@@ -18,7 +18,7 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
     type SequenceData,
   } from "$lib/shared/foundation/domain/models/sequence-data";
   import { pictographDataToStepData } from "$lib/shared/pictograph/shared/domain/utils/step-pictograph-conversion";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import type { AnimationPlaybackController } from "$lib/shared/animation-engine/services/animation-playback-controller";
   import {
@@ -53,13 +53,13 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
 
   // Build a real SequenceData from the tutorial selections
   function buildTutorialSequence(): SequenceData | null {
-    const startPicto = createTutorialState.startPosition;
+    const startPicto = createTutorialState.startPlacement;
     const steps = createTutorialState.steps;
     if (!startPicto || steps.length === 0) return null;
 
-    const startPosition: StartPositionData = {
+    const startPlacement: StartPlacementData = {
       ...startPicto,
-      isStartPosition: true as const,
+      isStartPlacement: true as const,
     };
 
     const sequenceSteps = steps.map((step, i) =>
@@ -71,7 +71,7 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
     return createSequenceData({
       name: "Tutorial",
       word,
-      startPosition,
+      startPlacement,
       steps: sequenceSteps,
       gridMode: createTutorialState.gridMode,
     });
@@ -83,7 +83,7 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
   const currentStepData = $derived.by(() => {
     const seq = animationState.sequenceData;
     if (!seq) return null;
-    if (currentStep < 1 && seq.startPosition) return seq.startPosition;
+    if (currentStep < 1 && seq.startPlacement) return seq.startPlacement;
     if (seq.steps?.length > 0) {
       const idx = Math.min(
         Math.max(0, Math.floor(currentStep) - 1),
@@ -175,12 +175,12 @@ import { getAnimationPlaybackController } from "$lib/shared/animation-engine/get
       <p class="loading">Building sequence...</p>
     {:else if showCard}
       <div class="card-pane">
-        <!-- Force the start position into its own left column (not the top row),
+        <!-- Force the start placement into its own left column (not the top row),
              independent of the user's saved layout preference. -->
         <ChoreoCard
           sequence={tutorialSequence}
           darkMode={isDarkMode}
-          startPositionLayoutOverride="column"
+          startPlacementLayoutOverride="column"
         />
       </div>
     {:else}

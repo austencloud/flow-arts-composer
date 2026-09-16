@@ -26,7 +26,7 @@ const LETTER_TYPE_KEYS = LETTER_TYPE_NUMBERS.map((number) => `type-${number}`);
 // DefinedTerms and must not inflate the glossary's term count or JSON-LD.
 const CATEGORY_ORDER: { key: GlossaryCategory; label: string }[] = [
   { key: "general", label: "Core Concepts" },
-  { key: "position", label: "Positions" },
+  { key: "placement", label: "Placements" },
   { key: "letterType", label: "Letter Types" },
   { key: "motion", label: "Motions" },
   { key: "rotation", label: "Rotations" },
@@ -40,10 +40,10 @@ const ATLAS_REGION_DEFINITIONS = [
   {
     key: "space",
     label: "Space",
-    summary: "Grids, points, and positions",
+    summary: "Grids, points, and placements",
     description:
-      "Explore grids, points, and named positions in one spatial reference.",
-    groupKeys: ["position", "grid"],
+      "Explore grids, points, and named placements in one spatial reference.",
+    groupKeys: ["placement", "grid"],
     includesCodex: false,
   },
   {

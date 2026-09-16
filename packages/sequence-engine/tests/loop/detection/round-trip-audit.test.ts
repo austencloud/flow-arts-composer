@@ -36,7 +36,7 @@ import {
   loopDetectorClass,
   isSequenceCircular,
 } from "../../../src/loop/detection/LOOPDetector.js";
-import { gridPositionDeriver } from "../../../src/core/positions/GridPositionDeriver.js";
+import { gridPlacementDeriver } from "../../../src/core/placements/GridPlacementDeriver.js";
 import type {
   SequenceStep,
   MotionData,
@@ -70,14 +70,14 @@ function makeStep(
     stepNumber: n,
     duration: 1,
     letter,
-    startPosition: startPos,
-    endPosition: endPos,
+    startPlacement: startPos,
+    endPlacement: endPos,
     motions: { left: makeMotion(left), right: makeMotion(right) },
   } as SequenceStep;
 }
 
 const derive = (leftLoc: string, rightLoc: string) =>
-  gridPositionDeriver.getGridPositionFromLocations(leftLoc, rightLoc);
+  gridPlacementDeriver.getGridPlacementFromLocations(leftLoc, rightLoc);
 
 /** A step with positions DERIVED from hand locations (label/location consistent). */
 function step(
@@ -97,7 +97,7 @@ function step(
   );
 }
 
-/** Static start-position marker (stepNumber 0). */
+/** Static start-placement marker (stepNumber 0). */
 function startStep(bs: string, rs: string): SequenceStep {
   return makeStep(
     0,

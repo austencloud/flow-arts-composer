@@ -14,7 +14,7 @@
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
-import { createStartPositionData } from "$lib/shared/foundation/domain/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/foundation/domain/factories/create-start-placement-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
 import { RECIPE_PREFIX, TAG_TO_LOOP_TYPE } from "./types";
 import type { ICompositionalDecoder } from "./types";
@@ -22,7 +22,7 @@ import {
   getLoopExecutor,
   getPeriodForTag,
   computeRecipeHash,
-  enrichStepsWithGridPositions,
+  enrichStepsWithGridPlacements,
 } from "./compositional-utils";
 
 export class CompositionalDecoder implements ICompositionalDecoder {
@@ -80,13 +80,13 @@ export class CompositionalDecoder implements ICompositionalDecoder {
     // Prepare input: executor expects start position at index 0, then seed beats.
     const inputSteps = [...(seedSequence.steps as StepData[])];
 
-    // The flat encoder only preserves motion locations, not GridPosition
-    // fields (startPosition/endPosition). The executor needs these for
+    // The flat encoder only preserves motion locations, not GridPlacement
+    // fields (startPlacement/endPlacement). The executor needs these for
     // validation and position chaining. Derive them from motion locations.
-    enrichStepsWithGridPositions(inputSteps);
+    enrichStepsWithGridPlacements(inputSteps);
 
     const startPos =
-      seedSequence.startPosition ?? seedSequence.startingPosition;
+      seedSequence.startPlacement ?? seedSequence.startingPlacement;
     if (startPos) {
       const startStep: StepData = createStepData({
         stepNumber: 0,
@@ -96,24 +96,24 @@ export class CompositionalDecoder implements ICompositionalDecoder {
         id: startPos.id ?? crypto.randomUUID(),
         letter: startPos.letter ?? null,
       });
-      enrichStepsWithGridPositions([startStep]);
+      enrichStepsWithGridPlacements([startStep]);
       inputSteps.unshift(startStep);
     }
 
     const reconstructedSteps = executor.executeLOOP(inputSteps, period);
 
     // Separate start position back out
-    const startPositionStep = reconstructedSteps.shift();
+    const startPlacementStep = reconstructedSteps.shift();
 
     // Build reconstructed sequence
-    const restoredStartPos = startPositionStep
-      ? createStartPositionData({
-          id: startPositionStep.id,
-          letter: startPositionStep.letter,
-          gridPosition: startPositionStep.startPosition,
-          startPosition: startPositionStep.startPosition,
-          endPosition: startPositionStep.endPosition,
-          motions: startPositionStep.motions,
+    const restoredStartPos = startPlacementStep
+      ? createStartPlacementData({
+          id: startPlacementStep.id,
+          letter: startPlacementStep.letter,
+          gridPlacement: startPlacementStep.startPlacement,
+          startPlacement: startPlacementStep.startPlacement,
+          endPlacement: startPlacementStep.endPlacement,
+          motions: startPlacementStep.motions,
         })
       : undefined;
 
@@ -121,8 +121,8 @@ export class CompositionalDecoder implements ICompositionalDecoder {
       ...seedSequence,
       steps: reconstructedSteps,
       word: this.expandWord(seedSequence.word || "", period),
-      startPosition: restoredStartPos ?? seedSequence.startPosition,
-      startingPosition: restoredStartPos ?? seedSequence.startingPosition,
+      startPlacement: restoredStartPos ?? seedSequence.startPlacement,
+      startingPlacement: restoredStartPos ?? seedSequence.startingPlacement,
     };
 
     // Single canonical format: hash the flat encoding directly.

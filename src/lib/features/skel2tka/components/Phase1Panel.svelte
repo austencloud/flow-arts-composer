@@ -28,7 +28,7 @@
   import { getTrainingDataPersister } from "$lib/features/skel2tka/get-training-data-persister";
   import VideoUploadDropzone from "./VideoUploadDropzone.svelte";
   import TrajectoryTimeline from "./TrajectoryTimeline.svelte";
-  import PositionSequenceOutput from "./PositionSequenceOutput.svelte";
+  import PlacementSequenceOutput from "./PlacementSequenceOutput.svelte";
   import FrameInspector from "./verification/FrameInspector.svelte";
   import SanityCheckPanel from "./verification/SanityCheckPanel.svelte";
   import PhaseVerificationPanel from "./verification/PhaseVerificationPanel.svelte";
@@ -171,7 +171,7 @@
           stepNumber: step.index,
           leftLocation,
           rightLocation,
-          positionLabel: step.positionLabel,
+          placementLabel: step.placementLabel,
           startTime: step.startTime,
           endTime: step.endTime,
         };
@@ -275,7 +275,7 @@
       </div>
 
       <TrajectoryTimeline timeline={result.timeline} />
-      <PositionSequenceOutput beats={result.beats} />
+      <PlacementSequenceOutput beats={result.beats} />
 
       {#if sanityReport}
         <SanityCheckPanel report={sanityReport} />

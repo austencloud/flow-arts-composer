@@ -54,8 +54,8 @@ const GRID_COLS = 11; // Max letters per row
 
 interface PictographData {
   letter: string;
-  startPosition: string;
-  endPosition: string;
+  startPlacement: string;
+  endPlacement: string;
   leftMotion: {
     hand: "left";
     startLocation: string;
@@ -99,8 +99,8 @@ function loadAllPictographs(): PictographData[] {
 
       result.push({
         letter: values[getIndex("letter")],
-        startPosition: values[getIndex("startPosition")],
-        endPosition: values[getIndex("endPosition")],
+        startPlacement: values[getIndex("startPlacement")],
+        endPlacement: values[getIndex("endPlacement")],
         leftMotion: {
           hand: "left",
           motionType: values[getIndex("blueMotionType")],
@@ -158,8 +158,8 @@ async function renderLetter(
 
   const input = {
     letter: data.letter,
-    startPosition: data.startPosition,
-    endPosition: data.endPosition,
+    startPlacement: data.startPlacement,
+    endPlacement: data.endPlacement,
     leftMotion: {
       hand: "left" as const,
       motionType: data.leftMotion.motionType,
@@ -185,7 +185,7 @@ async function renderLetter(
     showTKA: true,
     showTND: true,
     showElemental: true,
-    showPositions: true,
+    showPlacements: true,
     showGrid: true,
     showLeftMotion: true,
     showRightMotion: true,

@@ -19,8 +19,8 @@ export interface CatalogEntry {
   id: string;
   steps: {
     letter: string;
-    startPosition: string;
-    endPosition: string;
+    startPlacement: string;
+    endPlacement: string;
     stepNumber: number;
     motions: { left: RawMotion; right: RawMotion };
   }[];
@@ -153,8 +153,8 @@ function checkVerbatimBinding(
     const fromMuseum = museumSteps[index]!;
     const stepMatches =
       fromCatalog.letter === fromMuseum.letter &&
-      fromCatalog.startPosition === fromMuseum.startPosition &&
-      fromCatalog.endPosition === fromMuseum.endPosition &&
+      fromCatalog.startPlacement === fromMuseum.startPlacement &&
+      fromCatalog.endPlacement === fromMuseum.endPlacement &&
       motionsMatch(fromCatalog.motions.left, fromMuseum.leftMotion) &&
       motionsMatch(fromCatalog.motions.right, fromMuseum.rightMotion);
     if (!stepMatches) {

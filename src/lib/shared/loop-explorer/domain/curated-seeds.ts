@@ -6,7 +6,7 @@
  * `leftMotion` / `rightMotion`, positions are strings, and view-layer defaults
  * are omitted. Keep that distinction explicit at this boundary. Casting the
  * JSON straight to `SequenceData` lets those strings reach the animation
- * engine as if they were `StartPositionData` objects.
+ * engine as if they were `StartPlacementData` objects.
  *
  * Seeds hydrate on demand and cache by pool position. Editorial routes import
  * the dedicated teaser fixture instead, so this complete fallback corpus is

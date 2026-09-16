@@ -63,7 +63,7 @@ async function createShortcode(db, sequenceId, publicDoc, sourceDoc, isAdmin, Fi
   // being embedded, never copied from a mutable doc field, and a mint with no
   // derivable complete word is refused — the same invariant allocateCode
   // enforces in short-code-manager.ts. publicDoc.word is a cross-check only.
-  const { beats, steps, startPosition, startingPosition } =
+  const { beats, steps, startPlacement, startingPlacement } =
     sourceDoc ?? publicDoc ?? {};
   const stepsData = beats || steps || [];
   if (stepsData.length === 0) {
@@ -98,9 +98,9 @@ async function createShortcode(db, sequenceId, publicDoc, sourceDoc, isAdmin, Fi
     scanCount: 0,
     sequenceData: { steps: stepsData },
   };
-  const startPos = startPosition || startingPosition || null;
+  const startPos = startPlacement || startingPlacement || null;
   if (startPos) {
-    record.sequenceData.startPosition = startPos;
+    record.sequenceData.startPlacement = startPos;
   }
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {

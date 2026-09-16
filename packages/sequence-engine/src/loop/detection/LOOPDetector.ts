@@ -15,11 +15,11 @@
  */
 
 import type { SequenceStep } from "../../core/types/sequence-engine-types.js";
-import { gridPositionDeriver } from "../../core/positions/GridPositionDeriver.js";
+import { gridPlacementDeriver } from "../../core/placements/GridPlacementDeriver.js";
 import {
-  QUARTER_POSITION_MAP_CW,
-  QUARTER_POSITION_MAP_CCW,
-} from "../position-maps/circular-position-maps.js";
+  QUARTER_PLACEMENT_MAP_CW,
+  QUARTER_PLACEMENT_MAP_CCW,
+} from "../placement-maps/circular-placement-maps.js";
 import { LOOPType, Period } from "../loop-types.js";
 import {
   LOOPComponent,
@@ -27,7 +27,7 @@ import {
   type PropLOOPSpec,
   type ComponentSpec,
 } from "../loop-spec.js";
-import type { ReflectionAxis } from "../position-maps/strict-loop-position-maps.js";
+import type { ReflectionAxis } from "../placement-maps/strict-loop-placement-maps.js";
 import {
   uniformHalvedRelation,
   uniformRelationAtInterval,
@@ -162,14 +162,14 @@ function deriveLoopTypeFromComponents(
 export function isSequenceCircular(steps: SequenceStep[]): boolean {
   if (steps.length < 2) return false;
 
-  const startPositionStep = steps.find(
+  const startPlacementStep = steps.find(
     (s) => (s.stepNumber ?? s.stepNumber) === 0
   );
   const lastStep = steps[steps.length - 1];
 
-  if (!startPositionStep || !lastStep) return false;
+  if (!startPlacementStep || !lastStep) return false;
 
-  return startPositionStep.startPosition === lastStep.endPosition;
+  return startPlacementStep.startPlacement === lastStep.endPlacement;
 }
 
 export function detectLOOPFromSteps(
@@ -188,7 +188,7 @@ export function detectLOOPFromSteps(
     };
   }
 
-  // Get letter steps only (exclude step 0 start position)
+  // Get letter steps only (exclude step 0 start placement)
   const letterSteps = reduceRepeatedMotionSkeleton(
     steps.filter((s) => (s.stepNumber ?? s.stepNumber) > 0)
   );
@@ -309,10 +309,10 @@ function toPairMotions(steps: readonly SequenceStep[]): PairMotions[] {
 }
 
 /**
- * Orientation closure may repeat an already-complete position/motion
+ * Orientation closure may repeat an already-complete placement/motion
  * skeleton. LOOP classification is defined on that reduced signal space, so
  * detect against the shortest exact motion cycle rather than mistaking two
- * identical position cycles for a repeated/freeform LOOP.
+ * identical placement cycles for a repeated/freeform LOOP.
  */
 function reduceRepeatedMotionSkeleton(
   steps: readonly SequenceStep[]
@@ -353,13 +353,13 @@ function sameLOOPSignal(a: SequenceStep, b: SequenceStep): boolean {
  * needing app-specific dependencies.
  */
 export class LOOPDetectorClass {
-  private deriveStartPosition(step: SequenceStep): string | null {
+  private deriveStartPlacement(step: SequenceStep): string | null {
     const left = step.motions.left;
     const right = step.motions.right;
     if (!left?.startLocation || !right?.startLocation) return null;
 
     try {
-      return gridPositionDeriver.getGridPositionFromLocations(
+      return gridPlacementDeriver.getGridPlacementFromLocations(
         left.startLocation,
         right.startLocation
       );
@@ -411,11 +411,11 @@ export class LOOPDetectorClass {
   }
 
   /**
-   * Takes an array of SequenceStep where step 0 is the start position
+   * Takes an array of SequenceStep where step 0 is the start placement
    * and subsequent steps are the letter steps.
    */
   detectLOOPType(steps: SequenceStep[]): RichLOOPDetectionResult {
-    // Check circularity using the start-position step and last step
+    // Check circularity using the start-placement step and last step
     const circular = isSequenceCircular(steps);
 
     if (!circular) {
@@ -429,7 +429,7 @@ export class LOOPDetectorClass {
       };
     }
 
-    // Get letter steps only (exclude start position)
+    // Get letter steps only (exclude start placement)
     const letterSteps = reduceRepeatedMotionSkeleton(
       steps.filter((s) => (s.stepNumber ?? s.stepNumber) > 0)
     );
@@ -536,28 +536,28 @@ export class LOOPDetectorClass {
 
     const quarterLength = length / 4;
 
-    const q1Start = steps[0] ? this.deriveStartPosition(steps[0]) : null;
+    const q1Start = steps[0] ? this.deriveStartPlacement(steps[0]) : null;
     const q2Start = steps[quarterLength]
-      ? this.deriveStartPosition(steps[quarterLength]!)
+      ? this.deriveStartPlacement(steps[quarterLength]!)
       : null;
     const q3Start = steps[quarterLength * 2]
-      ? this.deriveStartPosition(steps[quarterLength * 2]!)
+      ? this.deriveStartPlacement(steps[quarterLength * 2]!)
       : null;
     const q4Start = steps[quarterLength * 3]
-      ? this.deriveStartPosition(steps[quarterLength * 3]!)
+      ? this.deriveStartPlacement(steps[quarterLength * 3]!)
       : null;
 
     if (!q1Start || !q2Start || !q3Start || !q4Start) return false;
 
     const cwMatch =
-      QUARTER_POSITION_MAP_CW[q1Start] === q2Start &&
-      QUARTER_POSITION_MAP_CW[q2Start] === q3Start &&
-      QUARTER_POSITION_MAP_CW[q3Start] === q4Start;
+      QUARTER_PLACEMENT_MAP_CW[q1Start] === q2Start &&
+      QUARTER_PLACEMENT_MAP_CW[q2Start] === q3Start &&
+      QUARTER_PLACEMENT_MAP_CW[q3Start] === q4Start;
 
     const ccwMatch =
-      QUARTER_POSITION_MAP_CCW[q1Start] === q2Start &&
-      QUARTER_POSITION_MAP_CCW[q2Start] === q3Start &&
-      QUARTER_POSITION_MAP_CCW[q3Start] === q4Start;
+      QUARTER_PLACEMENT_MAP_CCW[q1Start] === q2Start &&
+      QUARTER_PLACEMENT_MAP_CCW[q2Start] === q3Start &&
+      QUARTER_PLACEMENT_MAP_CCW[q3Start] === q4Start;
 
     return cwMatch || ccwMatch;
   }
@@ -705,14 +705,14 @@ export class LOOPDetectorClass {
     if (length < 4 || length % 4 !== 0) return null;
 
     const quarterLength = length / 4;
-    const q1Start = steps[0] ? this.deriveStartPosition(steps[0]) : null;
+    const q1Start = steps[0] ? this.deriveStartPlacement(steps[0]) : null;
     const q2Start = steps[quarterLength]
-      ? this.deriveStartPosition(steps[quarterLength]!)
+      ? this.deriveStartPlacement(steps[quarterLength]!)
       : null;
 
     if (!q1Start || !q2Start) return null;
-    if (QUARTER_POSITION_MAP_CW[q1Start] === q2Start) return "cw";
-    if (QUARTER_POSITION_MAP_CCW[q1Start] === q2Start) return "ccw";
+    if (QUARTER_PLACEMENT_MAP_CW[q1Start] === q2Start) return "cw";
+    if (QUARTER_PLACEMENT_MAP_CCW[q1Start] === q2Start) return "ccw";
     return null;
   }
 }

@@ -428,7 +428,7 @@
                   <div class="grid-layer themed-scrollbar">
                     <StepGrid
                       steps={playback.animationState.sequenceData.steps}
-                      startPosition={playback.derivedStartPosition}
+                      startPlacement={playback.derivedStartPlacement}
                       selectedStepNumber={currentStepNumber}
                       manualColumnCount={gridColumnCount}
                       heightSizingRowThreshold={gridWidthSized ? 1 : undefined}

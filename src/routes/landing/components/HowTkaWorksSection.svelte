@@ -48,8 +48,8 @@
       id: firstStep.id ?? "how-motion",
       letter: (firstStep.letter || undefined) as Letter | undefined,
       stepNumber: 1,
-      startPosition: firstStep.startPosition,
-      endPosition: firstStep.endPosition,
+      startPlacement: firstStep.startPlacement,
+      endPlacement: firstStep.endPlacement,
       motions: {
         left: forceProps(firstStep.motions?.left),
         right: forceProps(firstStep.motions?.right),
@@ -143,7 +143,7 @@
             showGrid={true}
             showTKA={true}
             showReversals={false}
-            showPositions={true}
+            showPlacements={true}
             showHandPoints={true}
             showLeftMotion={true}
             showRightMotion={true}
@@ -162,7 +162,7 @@
             columnCount={2}
             leftPropType={propType}
             rightPropType={propType}
-            startPositionLayoutOverride="column"
+            startPlacementLayoutOverride="column"
             showMandala={true}
             showNotes={false}
           />

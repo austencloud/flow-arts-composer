@@ -20,7 +20,9 @@ import type { DisplayOutput } from "./types";
  */
 const INTERNAL_FIELDS = new Set([
   "contextData",
-  "startPosition", // Position numbers like "alpha3"
+  "startPlacement", // Position numbers like "alpha3"
+  "endPlacement",
+  "startPosition", // Pre-rename aliases remain filtered at this untrusted boundary.
   "endPosition",
   "letterType", // Raw type number
   "leftMotion", // Full motion object
@@ -104,6 +106,7 @@ export function toDisplayOutput(result: unknown): DisplayOutput | string {
       // Skip if it has internal field patterns
       if (
         "contextData" in nested ||
+        "startPlacement" in nested ||
         "startPosition" in nested ||
         "leftMotion" in nested ||
         "rightMotion" in nested ||
@@ -284,7 +287,7 @@ export function filterSequence(result: unknown): DisplayOutput | string {
         stepNumber: step.stepNumber,
         letter: step.letter,
         label: step.label,
-        // Exclude variation, startPosition, endPosition
+        // Exclude variation, startPlacement, endPlacement
       })),
       caption: grid.caption as string | undefined,
     };

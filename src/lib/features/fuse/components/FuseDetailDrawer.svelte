@@ -95,7 +95,7 @@
           sequence={source.sequence}
           browseViewMode={viewMode}
           columnCount={cardColumns}
-          includeStartPosition={false}
+          includeStartPlacement={false}
           showWord={false}
           showStepNumbers={true}
           showDifficultyLevel={false}

@@ -9,8 +9,8 @@
 
 import type { BrowserDataProvider } from "../data/browser-data-provider";
 import type {
-  PositionGroup,
-  LetterPositionInfo,
+  PlacementGroup,
+  LetterPlacementInfo,
   LetterMappingsJson,
   LetterMappingData,
 } from "../domain/models/sequence-engine-types";
@@ -20,14 +20,14 @@ import type {
  * Manages valid transitions and finds bridge paths using BFS.
  */
 export class TransitionGraph {
-  private letterPositions: Map<string, LetterPositionInfo> = new Map();
-  private lettersByStartGroup: Map<PositionGroup, string[]> = new Map();
-  private lettersByEndGroup: Map<PositionGroup, string[]> = new Map();
+  private letterPositions: Map<string, LetterPlacementInfo> = new Map();
+  private lettersByStartGroup: Map<PlacementGroup, string[]> = new Map();
+  private lettersByEndGroup: Map<PlacementGroup, string[]> = new Map();
   private initialized = false;
 
   constructor(private readonly dataProvider: BrowserDataProvider) {
     // Initialize maps for each position group
-    const groups: PositionGroup[] = ["alpha", "beta", "gamma"];
+    const groups: PlacementGroup[] = ["alpha", "beta", "gamma"];
     for (const group of groups) {
       this.lettersByStartGroup.set(group, []);
       this.lettersByEndGroup.set(group, []);
@@ -45,17 +45,17 @@ export class TransitionGraph {
   private buildGraph(data: LetterMappingsJson): void {
     // Process each letter
     for (const [letterStr, mapping] of Object.entries(data.letters) as [string, LetterMappingData][]) {
-      const startGroup = this.positionToGroup(mapping.startPosition);
-      const endGroup = this.positionToGroup(mapping.endPosition);
+      const startGroup = this.placementToGroup(mapping.startPlacement);
+      const endGroup = this.placementToGroup(mapping.endPlacement);
 
       if (!startGroup || !endGroup) continue;
 
       const category = this.getCategoryForLetter(letterStr, data.categories);
 
-      const positionInfo: LetterPositionInfo = {
+      const positionInfo: LetterPlacementInfo = {
         letter: letterStr,
-        startPositionGroup: startGroup,
-        endPositionGroup: endGroup,
+        startPlacementGroup: startGroup,
+        endPlacementGroup: endGroup,
         category,
       };
 
@@ -65,7 +65,7 @@ export class TransitionGraph {
     }
   }
 
-  private positionToGroup(position: string): PositionGroup | null {
+  private placementToGroup(position: string): PlacementGroup | null {
     if (position.startsWith("alpha")) return "alpha";
     if (position.startsWith("beta")) return "beta";
     if (position.startsWith("gamma")) return "gamma";
@@ -75,10 +75,10 @@ export class TransitionGraph {
   private getCategoryForLetter(
     letterStr: string,
     categories: Record<string, string[]>
-  ): LetterPositionInfo["category"] {
+  ): LetterPlacementInfo["category"] {
     for (const [category, letters] of Object.entries(categories)) {
       if (letters.includes(letterStr)) {
-        return category as LetterPositionInfo["category"];
+        return category as LetterPlacementInfo["category"];
       }
     }
     return "dual-shift"; // Default
@@ -90,34 +90,34 @@ export class TransitionGraph {
 
     if (!infoA || !infoB) return false;
 
-    return infoA.endPositionGroup === infoB.startPositionGroup;
+    return infoA.endPlacementGroup === infoB.startPlacementGroup;
   }
 
   getValidSuccessors(letter: string): string[] {
     const info = this.letterPositions.get(letter);
     if (!info) return [];
 
-    return this.lettersByStartGroup.get(info.endPositionGroup) || [];
+    return this.lettersByStartGroup.get(info.endPlacementGroup) || [];
   }
 
-  getLettersStartingAt(positionGroup: PositionGroup): string[] {
-    return this.lettersByStartGroup.get(positionGroup) || [];
+  getLettersStartingAt(placementGroup: PlacementGroup): string[] {
+    return this.lettersByStartGroup.get(placementGroup) || [];
   }
 
-  getLettersEndingAt(positionGroup: PositionGroup): string[] {
-    return this.lettersByEndGroup.get(positionGroup) || [];
+  getLettersEndingAt(placementGroup: PlacementGroup): string[] {
+    return this.lettersByEndGroup.get(placementGroup) || [];
   }
 
-  getLetterPositionInfo(letter: string): LetterPositionInfo | null {
+  getLetterPlacementInfo(letter: string): LetterPlacementInfo | null {
     return this.letterPositions.get(letter) || null;
   }
 
-  getStartPositionGroup(letter: string): PositionGroup | null {
-    return this.letterPositions.get(letter)?.startPositionGroup || null;
+  getStartPlacementGroup(letter: string): PlacementGroup | null {
+    return this.letterPositions.get(letter)?.startPlacementGroup || null;
   }
 
-  getEndPositionGroup(letter: string): PositionGroup | null {
-    return this.letterPositions.get(letter)?.endPositionGroup || null;
+  getEndPlacementGroup(letter: string): PlacementGroup | null {
+    return this.letterPositions.get(letter)?.endPlacementGroup || null;
   }
 
   findBridgeLetters(letterA: string, letterB: string): string[] {
@@ -143,8 +143,8 @@ export class TransitionGraph {
     }
 
     // Fallback to BFS for multi-letter bridges (rare case)
-    const startGroup = infoA.endPositionGroup;
-    const targetGroup = infoB.startPositionGroup;
+    const startGroup = infoA.endPlacementGroup;
+    const targetGroup = infoB.startPlacementGroup;
 
     return this.findShortestBridgePath(startGroup, targetGroup);
   }
@@ -153,16 +153,16 @@ export class TransitionGraph {
    * BFS to find the shortest sequence of letters to get from one position group to another.
    */
   private findShortestBridgePath(
-    startGroup: PositionGroup,
-    targetGroup: PositionGroup
+    startGroup: PlacementGroup,
+    targetGroup: PlacementGroup
   ): string[] {
     if (startGroup === targetGroup) {
       return [];
     }
 
     // BFS queue: [current group, path of letters taken]
-    const queue: [PositionGroup, string[]][] = [[startGroup, []]];
-    const visited = new Set<PositionGroup>();
+    const queue: [PlacementGroup, string[]][] = [[startGroup, []]];
+    const visited = new Set<PlacementGroup>();
     visited.add(startGroup);
 
     while (queue.length > 0) {
@@ -178,7 +178,7 @@ export class TransitionGraph {
         const info = this.letterPositions.get(letter);
         if (!info) continue;
 
-        const nextGroup = info.endPositionGroup;
+        const nextGroup = info.endPlacementGroup;
         const newPath = [...path, letter];
 
         // Found the target!
@@ -213,15 +213,15 @@ export class TransitionGraph {
 
     // Find all single-letter bridges: letters that START at A's end group
     // and END at B's start group
-    const startGroup = infoA.endPositionGroup;
-    const targetGroup = infoB.startPositionGroup;
+    const startGroup = infoA.endPlacementGroup;
+    const targetGroup = infoB.startPlacementGroup;
 
     const bridges: string[] = [];
     const lettersFromStartGroup = this.lettersByStartGroup.get(startGroup) || [];
 
     for (const letter of lettersFromStartGroup) {
       const info = this.letterPositions.get(letter);
-      if (info?.endPositionGroup === targetGroup) {
+      if (info?.endPlacementGroup === targetGroup) {
         bridges.push(letter);
       }
     }

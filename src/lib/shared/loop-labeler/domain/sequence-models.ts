@@ -23,7 +23,7 @@ export interface RawStepData {
   letter?: string;
   startPos?: string;
   endPos?: string;
-  sequenceStartPosition?: string;
+  sequenceStartPlacement?: string;
   leftAttributes?: RawMotionAttributes;
   rightAttributes?: RawMotionAttributes;
   // Metadata object (first item in sequence array) fields

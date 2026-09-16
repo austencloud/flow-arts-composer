@@ -7,7 +7,7 @@
    */
   import type { BaseSequenceEntry } from "../domain/models/review-models";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
   import CopyForAIButton from "$lib/shared/foundation/ui/CopyForAIButton.svelte";
   import type { Snippet } from "svelte";
@@ -15,10 +15,10 @@
   interface Props {
     sequence: BaseSequenceEntry | null;
     parsedSteps: StepData[];
-    startPosition: StartPositionData | null;
-    showStartPosition: boolean;
+    startPlacement: StartPlacementData | null;
+    showStartPlacement: boolean;
     manualColumnCount: number | null;
-    onShowStartPositionChange: (value: boolean) => void;
+    onShowStartPlacementChange: (value: boolean) => void;
     onColumnCountChange: (value: number | null) => void;
     onStepClick?: (stepNumber: number) => void;
     highlightedSteps?: Map<number, { bg: string; border: string }>;
@@ -33,10 +33,10 @@
   let {
     sequence,
     parsedSteps,
-    startPosition,
-    showStartPosition,
+    startPlacement,
+    showStartPlacement,
     manualColumnCount,
-    onShowStartPositionChange,
+    onShowStartPlacementChange,
     onColumnCountChange,
     onStepClick,
     highlightedSteps,
@@ -134,8 +134,8 @@
       <div class="grid-controls">
         <button
           class="control-chip"
-          class:active={showStartPosition}
-          onclick={() => onShowStartPositionChange(!showStartPosition)}
+          class:active={showStartPlacement}
+          onclick={() => onShowStartPlacementChange(!showStartPlacement)}
         >
           Start Pos
         </button>
@@ -167,7 +167,7 @@
         {#await import("$lib/features/create/shared/workspace-panel/sequence-display/components/StepGrid.svelte") then mod}
           <mod.default
             steps={parsedSteps}
-            startPosition={showStartPosition ? startPosition : null}
+            startPlacement={showStartPlacement ? startPlacement : null}
             {onStepClick}
             manualColumnCount={effectiveColumnCount}
             {highlightedSteps}

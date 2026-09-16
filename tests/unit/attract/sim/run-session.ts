@@ -93,7 +93,7 @@ export function runSession(seed: number, decisions: number) {
       isPlaying: app.playing(),
       activeEffectIds: [...app.state.activeEffects],
       viewerOpen: app.state.viewerOpen,
-      pickerOpen: available.option > 0 || available["start-position"] > 0,
+      pickerOpen: available.option > 0 || available["start-placement"] > 0,
       reachableModules: [...SIM_MODULES],
       available,
       cameraGranted: true,

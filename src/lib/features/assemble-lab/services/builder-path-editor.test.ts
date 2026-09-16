@@ -27,7 +27,7 @@ function makePath() {
   );
   const second = createBuilderStep(
     {
-      location: first.endPosition,
+      location: first.endPlacement,
       orientation: first.endOrientation,
     },
     GridLocation.SOUTH,
@@ -36,7 +36,7 @@ function makePath() {
   );
   const third = createBuilderStep(
     {
-      location: second.endPosition,
+      location: second.endPlacement,
       orientation: second.endOrientation,
     },
     GridLocation.WEST,
@@ -48,7 +48,7 @@ function makePath() {
 
 function expectContinuous(path: ReturnType<typeof makePath>): void {
   for (let index = 1; index < path.length; index += 1) {
-    expect(path[index]?.startPosition).toBe(path[index - 1]?.endPosition);
+    expect(path[index]?.startPlacement).toBe(path[index - 1]?.endPlacement);
     expect(path[index]?.startOrientation).toBe(path[index - 1]?.endOrientation);
   }
 }
@@ -57,7 +57,7 @@ describe("builder path editing", () => {
   it("bridges across a deleted middle motion", () => {
     const edited = removeBuilderStep(makePath(), 1, startPose);
 
-    expect(edited.map((step) => step.endPosition)).toEqual([
+    expect(edited.map((step) => step.endPlacement)).toEqual([
       GridLocation.EAST,
       GridLocation.WEST,
     ]);
@@ -72,14 +72,14 @@ describe("builder path editing", () => {
       startPose
     );
 
-    expect(edited[0]?.endPosition).toBe(GridLocation.WEST);
+    expect(edited[0]?.endPlacement).toBe(GridLocation.WEST);
     expectContinuous(edited as ReturnType<typeof makePath>);
   });
 
   it("moves a motion by destination and reconnects the path", () => {
     const edited = moveBuilderStep(makePath(), 2, 0, startPose);
 
-    expect(edited.map((step) => step.endPosition)).toEqual([
+    expect(edited.map((step) => step.endPlacement)).toEqual([
       GridLocation.WEST,
       GridLocation.EAST,
       GridLocation.SOUTH,

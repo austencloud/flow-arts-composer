@@ -32,18 +32,18 @@ function floatMotion(start: string, end: string): MotionData {
 
 function option(
   letter: string,
-  endPosition: string,
+  endPlacement: string,
   leftStart: string,
   leftEnd: string,
   rightStart: string,
   rightEnd: string,
-  id = `${letter}-${endPosition}`
+  id = `${letter}-${endPlacement}`
 ): PictographData {
   return {
     id,
     letter: letter as PictographData["letter"],
-    startPosition: "gamma3" as PictographData["startPosition"],
-    endPosition: endPosition as PictographData["endPosition"],
+    startPlacement: "gamma3" as PictographData["startPlacement"],
+    endPlacement: endPlacement as PictographData["endPlacement"],
     motions: {
       left: floatMotion(leftStart, leftEnd),
       right: floatMotion(rightStart, rightEnd),

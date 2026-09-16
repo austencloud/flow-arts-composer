@@ -75,11 +75,11 @@ function makeMockState(steps: StepData[]): ICreateModuleState {
       get currentSequence() {
         return current;
       },
-      selectedStartPosition: null,
+      selectedStartPlacement: null,
       setCurrentSequence: (seq: unknown) => {
         current = seq as typeof current;
       },
-      setStartPosition: () => {},
+      setStartPlacement: () => {},
       updateStep: () => {},
     },
     pushUndoSnapshot: () => {},

@@ -319,7 +319,7 @@
                       showWord={false}
                       customTitleText={mode.element.name}
                       showDifficultyLevel={false}
-                      includeStartPosition
+                      includeStartPlacement
                       columnCount={2}
                       showNotes
                       customNotesText={definitionFor(mode)}

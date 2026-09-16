@@ -1,10 +1,10 @@
 /**
- * getPreviewCacheKey — start-position layout collision
+ * getPreviewCacheKey — start-placement layout collision
  *
  * Regression: the global ChoreoCard preview cache is a module-level Map shared
- * by every ChoreoCard instance. Its key captured the start-position LAYOUT
+ * by every ChoreoCard instance. Its key captured the start-placement LAYOUT
  * ("row"/"column") but NOT whether the start cell exists at all
- * (includeStartPosition). So the same sequence rendered with the start position
+ * (includeStartPlacement). So the same sequence rendered with the start position
  * ON (viewer) and OFF (save panel) collided on one key. The onMount probe then
  * adopted cells laid out for the wrong mode while the reactive frame sized for
  * the current mode — reserving a phantom start row and spreading the step rows.
@@ -47,7 +47,7 @@ function makeOptions(): PreviewCellRenderOptions {
   } as unknown as PreviewCellRenderOptions;
 }
 
-describe("getPreviewCacheKey — includeStartPosition", () => {
+describe("getPreviewCacheKey — includeStartPlacement", () => {
   it("does not reuse a previous fan build after a card remount", () => {
     const seq = makeSequence();
     const fire: PreviewCellRenderOptions = {

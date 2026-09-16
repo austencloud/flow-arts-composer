@@ -18,22 +18,22 @@
  * (unlike deck-variation.ts). deck-variation re-exports for backward compat.
  */
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import { Orientation, HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 
 export type StartOriMode = "radial" | "nonradial" | "split";
-export type PositionFamily = "alpha" | "beta" | "gamma";
+export type PlacementFamily = "alpha" | "beta" | "gamma";
 
 /**
- * Classify a start pose into its position family. Prefers the stored position
+ * Classify a start pose into its placement family. Prefers the stored placement
  * name, falling back to deriving it from the hand locations (robust to stale or
- * missing position fields). Returns null for unsupported families
+ * missing placement fields). Returns null for unsupported families
  * (zeta/eta/skewed) — callers leave those at the radial default.
  */
-export function positionFamilyOf(sp: StartPositionData): PositionFamily | null {
+export function placementFamilyOf(sp: StartPlacementData): PlacementFamily | null {
   let pos: string | null =
-    (sp.gridPosition ?? sp.startPosition ?? sp.endPosition ?? null) as string | null;
+    (sp.gridPlacement ?? sp.startPlacement ?? sp.endPlacement ?? null) as string | null;
 
   if (!pos) {
     const left = sp.motions?.[HandSide.LEFT];
@@ -41,7 +41,7 @@ export function positionFamilyOf(sp: StartPositionData): PositionFamily | null {
     // Invisible placeholder = hand not really there (both-required Step shape).
     if (isVisibleMotion(left) && isVisibleMotion(right)) {
       try {
-        pos = getGridPositionFromLocations(left.startLocation, right.startLocation);
+        pos = getGridPlacementFromLocations(left.startLocation, right.startLocation);
       } catch {
         pos = null;
       }
@@ -58,7 +58,7 @@ export function positionFamilyOf(sp: StartPositionData): PositionFamily | null {
 /** Resolve a register + family to its per-hand start-orientation pair (rendering seed). */
 export function resolveStartOrientation(
   mode: StartOriMode,
-  family: PositionFamily,
+  family: PlacementFamily,
 ): { left: Orientation; right: Orientation } {
   if (mode === "radial") {
     return { left: Orientation.IN, right: Orientation.IN };

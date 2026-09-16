@@ -30,7 +30,7 @@ export interface UserPreferences {
   showTKA: boolean;
   showTND: boolean;
   showElemental: boolean;
-  showPositions: boolean;
+  showPlacements: boolean;
   showReversals: boolean;
   showGrid: boolean;
   showNonRadialPoints: boolean;
@@ -52,7 +52,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showTKA: true,
   showTND: false,
   showElemental: false,
-  showPositions: false,
+  showPlacements: false,
   showReversals: false,
   showGrid: true,
   showNonRadialPoints: false,
@@ -222,8 +222,8 @@ function loadDataframe(gridMode: GridMode): PictographData[] {
 
       pictographs.push({
         letter: row.letter,
-        startPosition: row.startPosition,
-        endPosition: row.endPosition,
+        startPlacement: row.startPlacement,
+        endPlacement: row.endPlacement,
         timing: row.timing,
         direction: row.direction,
         leftMotion: {

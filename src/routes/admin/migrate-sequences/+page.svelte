@@ -30,50 +30,50 @@
   /**
    * Normalize sequence data - same logic as SequenceNormalizationService
    */
-  function separateStepsFromStartPosition(sequence: any) {
+  function separateStepsFromStartPlacement(sequence: any) {
     // Modern format - already normalized
-    if (sequence.startPosition && Array.isArray(sequence.steps)) {
+    if (sequence.startPlacement && Array.isArray(sequence.steps)) {
       const hasStartInBeats = sequence.steps.some(
-        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPosition === true
+        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPlacement === true
       );
 
       if (!hasStartInBeats) {
         return {
           steps: sequence.steps,
-          startPosition: sequence.startPosition,
+          startPlacement: sequence.startPlacement,
         };
       }
     }
 
-    // Legacy format 2: startingPosition field
-    if (sequence.startingPosition) {
+    // Legacy format 2: startingPlacement field
+    if (sequence.startingPlacement) {
       const steps = Array.isArray(sequence.steps)
         ? sequence.steps.filter(
             (beat: any) =>
-              beat && beat.stepNumber !== 0 && !beat.isStartPosition
+              beat && beat.stepNumber !== 0 && !beat.isStartPlacement
           )
         : [];
 
       return {
         steps,
-        startPosition: sequence.startingPosition,
+        startPlacement: sequence.startingPlacement,
       };
     }
 
     // Legacy format 1: Beat 0 in steps array
     if (Array.isArray(sequence.steps) && sequence.steps.length > 0) {
-      const startPositionStep = sequence.steps.find(
-        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPosition === true
+      const startPlacementStep = sequence.steps.find(
+        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPlacement === true
       );
 
-      if (startPositionStep) {
+      if (startPlacementStep) {
         const steps = sequence.steps.filter(
-          (step: any) => step && step.stepNumber !== 0 && !step.isStartPosition
+          (step: any) => step && step.stepNumber !== 0 && !step.isStartPlacement
         );
 
         return {
           steps,
-          startPosition: startPositionStep,
+          startPlacement: startPlacementStep,
         };
       }
     }
@@ -81,7 +81,7 @@
     // No start position found - return as-is
     return {
       steps: sequence.steps || [],
-      startPosition: sequence.startPosition || null,
+      startPlacement: sequence.startPlacement || null,
     };
   }
 
@@ -89,15 +89,15 @@
    * Check if sequence needs migration
    */
   function needsMigration(sequence: any): boolean {
-    // Has legacy startingPosition field
-    if (sequence.startingPosition) {
+    // Has legacy startingPlacement field
+    if (sequence.startingPlacement) {
       return true;
     }
 
-    // Has beat 0 or isStartPosition in steps array
+    // Has beat 0 or isStartPlacement in steps array
     if (Array.isArray(sequence.steps)) {
       const hasStartInBeats = sequence.steps.some(
-        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPosition === true
+        (beat: any) => beat?.stepNumber === 0 || beat?.isStartPlacement === true
       );
       if (hasStartInBeats) {
         return true;
@@ -126,7 +126,7 @@
       for (const sequence of sequences) {
         if (needsMigration(sequence)) {
           needsMigrationCount++;
-          const normalized = separateStepsFromStartPosition(sequence);
+          const normalized = separateStepsFromStartPlacement(sequence);
           migrationLog.push({
             id: sequence.id,
             word: sequence.word || sequence.name || "Untitled",
@@ -162,13 +162,13 @@
           currentSequence = sequence.word || sequence.name || sequence.id;
 
           try {
-            const normalized = separateStepsFromStartPosition(sequence);
+            const normalized = separateStepsFromStartPlacement(sequence);
 
             // Update the sequence
             await db.sequences.update(sequence.id, {
               steps: normalized.steps,
-              startPosition: normalized.startPosition,
-              startingPosition: undefined, // Remove legacy field
+              startPlacement: normalized.startPlacement,
+              startingPlacement: undefined, // Remove legacy field
             });
 
             migratedCount++;
@@ -287,7 +287,7 @@
     <ul>
       <li>Separates start position from steps array</li>
       <li>
-        Converts <code>startingPosition</code> → <code>startPosition</code>
+        Converts <code>startingPlacement</code> → <code>startPlacement</code>
       </li>
       <li>Removes beat 0 from steps array</li>
       <li>Preserves all other sequence data</li>

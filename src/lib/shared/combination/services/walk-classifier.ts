@@ -321,7 +321,7 @@ export function stepContentKey(step: StepData): string {
       ].join(",");
     })
     .join("|");
-  return `${step.letter ?? "?"}@${step.startPosition}>${step.endPosition}:${hands}`;
+  return `${step.letter ?? "?"}@${step.startPlacement}>${step.endPlacement}:${hands}`;
 }
 
 export function contentDedupKey(sequence: SequenceData): string {

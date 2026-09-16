@@ -50,9 +50,9 @@ export function validateSequence(
     const currentStep = sequence.steps[i];
     if (!currentStep) continue;
 
-    // Get the previous beat (or start position for first beat)
+    // Get the previous beat (or start placement for first beat)
     const previousBeat =
-      i === 0 ? sequence.startPosition : sequence.steps[i - 1];
+      i === 0 ? sequence.startPlacement : sequence.steps[i - 1];
 
     if (!previousBeat?.motions) continue;
 

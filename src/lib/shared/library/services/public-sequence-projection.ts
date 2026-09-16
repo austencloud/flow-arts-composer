@@ -184,7 +184,7 @@ export interface PublicSequenceProjectionWrite {
   readonly rightPathHash?: string;
   readonly leftSoloHash?: string;
   readonly rightSoloHash?: string;
-  readonly startPosition?: SequenceData["startPosition"];
+  readonly startPlacement?: SequenceData["startPlacement"];
 
   readonly creatorIntent?: NonNullable<SequenceData["creatorIntent"]>;
 
@@ -316,8 +316,8 @@ export async function buildPublicSequenceProjection(
     ...(source.rightSoloHash !== undefined && {
       rightSoloHash: source.rightSoloHash,
     }),
-    ...(source.startPosition !== undefined && {
-      startPosition: source.startPosition,
+    ...(source.startPlacement !== undefined && {
+      startPlacement: source.startPlacement,
     }),
 
     // `null` is the legacy "none recorded" value and is not persisted.

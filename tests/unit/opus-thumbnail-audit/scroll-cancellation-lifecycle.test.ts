@@ -65,7 +65,7 @@ const input = (id: string): ThumbnailRenderInput => ({
   catDogModeEnabled: false,
   lightMode: false,
   variant: "gallery",
-  startPositionLayout: "row",
+  startPlacementLayout: "row",
   visibility: { showQRCode: false, showMandala: true },
 });
 

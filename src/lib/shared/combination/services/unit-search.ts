@@ -9,12 +9,12 @@
  * variation is taken.
  *
  * **Stage 2, Unit search.** An exhaustive DFS over those edges, bounded by unit
- * length and connector budget, requiring both cards to appear, with positional
+ * length and connector budget, requiring both cards to appear, with placement
  * continuity pruning at every step. No caps and no truncation banner: the box is
  * declared, and the search inside it finishes.
  *
  * The search does NOT decide what closes. It asks the `closes` predicate, which
- * defaults to Stage 3 (`admissibleClosures`) memoized per position pair. Keeping
+ * defaults to Stage 3 (`admissibleClosures`) memoized per placement pair. Keeping
  * that as an injected question rather than an inlined rule is what stops the
  * closure rule from being quietly reimplemented here — the failure that produced
  * the freeform output in the first place.
@@ -24,7 +24,7 @@ import { createStepData } from "$lib/shared/foundation/domain/factories/create-s
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import {
   GridMode,
-  type GridPosition,
+  type GridPlacement,
 } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { PictographData } from "$lib/shared/pictograph/shared/domain/models/pictograph-data";
 import { motionQueryHandler } from "$lib/shared/pictograph/shared/services/motion-query-handler";
@@ -64,7 +64,7 @@ export interface UnitSearchInput {
    */
   readonly connectorLetters?: ReadonlySet<string> | null;
   /**
-   * Does this position pair close? Defaults to Stage 3, memoized. Inject only
+   * Does this placement pair close? Defaults to Stage 3, memoized. Inject only
    * to narrow the closure vocabulary (see `ClosureOptions`), never to redefine
    * it.
    */
@@ -80,7 +80,7 @@ export async function loadCombinationSteps(
 }
 
 /**
- * Keep only the rows a walk can actually use: both hands present, both position
+ * Keep only the rows a walk can actually use: both hands present, both placement
  * labels present. A row missing either cannot join a chain, and letting it in
  * would put a hole in the middle of a "performable" result.
  */
@@ -90,14 +90,14 @@ export function toSteps(
   const steps: StepData[] = [];
   for (const pictograph of pictographs) {
     if (!pictograph.letter) continue;
-    if (!pictograph.startPosition || !pictograph.endPosition) continue;
+    if (!pictograph.startPlacement || !pictograph.endPlacement) continue;
     if (!pictograph.motions.left || !pictograph.motions.right) continue;
     steps.push(createStepData({ ...pictograph, id: pictograph.id }));
   }
   return steps;
 }
 
-/** Memoized Stage 3 admissibility, keyed by position pair. */
+/** Memoized Stage 3 admissibility, keyed by placement pair. */
 export function createClosurePredicate(
   options: ClosureOptions = {}
 ): (start: string, end: string) => boolean {
@@ -185,7 +185,7 @@ export function searchCandidateUnits(
 
   const outEdges = new Map<string, StepData[]>();
   for (const step of input.steps) {
-    const start = step.startPosition;
+    const start = step.startPlacement;
     if (!start || !step.letter) continue;
     if (originOf(step.letter) === null) continue;
     const list = outEdges.get(start);
@@ -198,14 +198,14 @@ export function searchCandidateUnits(
   const origins: Origin[] = [];
 
   const record = (
-    startPosition: string,
-    endPosition: string,
+    startPlacement: string,
+    endPlacement: string,
     connectorCount: number
   ): void => {
     units.push({
       steps: [...walk],
-      startPosition: startPosition as GridPosition,
-      endPosition: endPosition as GridPosition,
+      startPlacement: startPlacement as GridPlacement,
+      endPlacement: endPlacement as GridPlacement,
       word: walk.map((step) => step.letter ?? "").join(""),
       connectorCount,
       ...shapeOf(origins),
@@ -213,8 +213,8 @@ export function searchCandidateUnits(
   };
 
   const visit = (
-    startPosition: string,
-    position: string,
+    startPlacement: string,
+    currentPlacement: string,
     connectors: number,
     usedA: boolean,
     usedB: boolean
@@ -222,24 +222,24 @@ export function searchCandidateUnits(
     if (
       walk.length >= 1 &&
       (!bounds.requireBothCards || (usedA && usedB)) &&
-      closes(startPosition, position)
+      closes(startPlacement, currentPlacement)
     ) {
-      record(startPosition, position, connectors);
+      record(startPlacement, currentPlacement, connectors);
     }
     if (walk.length >= bounds.maxUnitLength) return;
 
-    for (const step of outEdges.get(position) ?? []) {
+    for (const step of outEdges.get(currentPlacement) ?? []) {
       const origin = originOf(step.letter ?? "");
       if (origin === null) continue;
       const isConnector = origin === "connector";
       if (isConnector && connectors >= bounds.maxConnectors) continue;
-      const end = step.endPosition;
+      const end = step.endPlacement;
       if (!end) continue;
 
       walk.push(step);
       origins.push(origin);
       visit(
-        startPosition,
+        startPlacement,
         end,
         connectors + (isConnector ? 1 : 0),
         usedA || origin === "cardA",
@@ -250,8 +250,8 @@ export function searchCandidateUnits(
     }
   };
 
-  for (const startPosition of outEdges.keys()) {
-    visit(startPosition, startPosition, 0, false, false);
+  for (const startPlacement of outEdges.keys()) {
+    visit(startPlacement, startPlacement, 0, false, false);
   }
 
   return units;

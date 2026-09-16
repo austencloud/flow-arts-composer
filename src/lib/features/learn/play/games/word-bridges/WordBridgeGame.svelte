@@ -137,12 +137,12 @@
     const asLetter = (letter: string) => letter as Letter;
     return {
       canFollow: (from, to) => graph.canFollow(asLetter(from), asLetter(to)),
-      getLetterPositionInfo: (letter) => {
-        const info = graph.getLetterPositionInfo(asLetter(letter));
+      getLetterPlacementInfo: (letter) => {
+        const info = graph.getLetterPlacementInfo(asLetter(letter));
         return info
           ? {
-              startPositionGroup: String(info.startPositionGroup),
-              endPositionGroup: String(info.endPositionGroup),
+              startPlacementGroup: String(info.startPlacementGroup),
+              endPlacementGroup: String(info.endPlacementGroup),
             }
           : null;
       },
@@ -473,8 +473,8 @@
                   <QuizPictographButton
                     {pictograph}
                     caption={choice.letter}
-                    ariaLabel={`Bridge letter ${choice.letter}, starts ${groupLabel(choice.startPositionGroup)} and ends ${groupLabel(choice.endPositionGroup)}`}
-                    showPositions={true}
+                    ariaLabel={`Bridge letter ${choice.letter}, starts ${groupLabel(choice.startPlacementGroup)} and ends ${groupLabel(choice.endPlacementGroup)}`}
+                    showPlacements={true}
                     state={repairAnswerState(choice)}
                     disabled={isAnswered}
                     onclick={() =>
@@ -521,7 +521,7 @@
               </div>
               <h3>Check each gap</h3>
               <p>
-                Matching position groups connect directly. A mismatch needs a
+                Matching placement groups connect directly. A mismatch needs a
                 bridge letter between them.
               </p>
               <span class="take-time"

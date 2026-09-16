@@ -46,7 +46,7 @@ export async function buildHandPathShortCodePayload(
         name: title,
         sequenceKind: "hand-path",
         steps: sequence.steps,
-        startPosition: sequence.startPosition,
+        startPlacement: sequence.startPlacement,
         gridMode: sequence.gridMode,
         isCircular: sequence.isCircular,
         notes: sequence.notes,

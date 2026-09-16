@@ -18,7 +18,7 @@ import type { StepData } from "../../../src/lib/shared/foundation/domain/models/
 import { Letter } from "../../../src/lib/shared/foundation/domain/models/letter";
 import {
   GridLocation,
-  GridPosition,
+  GridPlacement,
 } from "../../../src/lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   HandSide,
@@ -61,8 +61,8 @@ const alpha1StartBeat: StepData = {
   stepNumber: 0,
   duration: 1.0,
   letter: Letter.ALPHA,
-  startPosition: GridPosition.ALPHA1,
-  endPosition: GridPosition.ALPHA1,
+  startPlacement: GridPlacement.ALPHA1,
+  endPlacement: GridPlacement.ALPHA1,
   motions: {
     [HandSide.LEFT]: staticMotion(HandSide.LEFT, GridLocation.SOUTH),
     [HandSide.RIGHT]: staticMotion(HandSide.RIGHT, GridLocation.NORTH),
@@ -78,8 +78,8 @@ const phiDashForward: StepData = {
   stepNumber: 1,
   duration: 1.0,
   letter: Letter.PHI_DASH,
-  startPosition: GridPosition.ALPHA1,
-  endPosition: GridPosition.ALPHA5,
+  startPlacement: GridPlacement.ALPHA1,
+  endPlacement: GridPlacement.ALPHA5,
   motions: {
     [HandSide.LEFT]: dashMotion(
       HandSide.LEFT,
@@ -103,8 +103,8 @@ const phiDashReverse: StepData = {
   stepNumber: 2,
   duration: 1.0,
   letter: Letter.PHI_DASH,
-  startPosition: GridPosition.ALPHA5,
-  endPosition: GridPosition.ALPHA1,
+  startPlacement: GridPlacement.ALPHA5,
+  endPlacement: GridPlacement.ALPHA1,
   motions: {
     [HandSide.LEFT]: dashMotion(
       HandSide.LEFT,
@@ -142,7 +142,7 @@ describe("RotatedSwappedLOOPExecutor", () => {
     // start + 2 original + 2 generated
     expect(result.length).toBe(5);
     // The completed halved LOOP closes back to the start position
-    expect(result[result.length - 1]!.endPosition).toBe(GridPosition.ALPHA1);
+    expect(result[result.length - 1]!.endPlacement).toBe(GridPlacement.ALPHA1);
   });
 
   it("rejects the pure-180° end (alpha1 → alpha5) that only HALVED_LOOPS allowed", () => {
@@ -152,6 +152,6 @@ describe("RotatedSwappedLOOPExecutor", () => {
 
     expect(() =>
       executor.executeLOOP([...partial], Period.HALVED)
-    ).toThrow(/Invalid position pair for rotated-swapped/);
+    ).toThrow(/Invalid placement pair for rotated-swapped/);
   });
 });

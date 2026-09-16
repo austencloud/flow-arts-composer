@@ -202,7 +202,7 @@ export function startGalleryWarm(
             catDogModeEnabled: false,
             lightMode: combo.mode === "light",
             variant: "gallery",
-            startPositionLayout: "row",
+            startPlacementLayout: "row",
             allowQR: combo.qr,
             visibility: { showQRCode: combo.qr, showMandala: true },
             compositionManager: DEFAULT_GALLERY_COMPOSITION,

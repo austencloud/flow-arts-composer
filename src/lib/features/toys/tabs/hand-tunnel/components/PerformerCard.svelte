@@ -25,7 +25,7 @@
     leftColor: string;
     rightColor: string;
     selected: boolean;
-    positionLabel: string;
+    placementLabel: string;
     canRemove: boolean;
     onSelect: () => void;
     onChange: (patch: Partial<Segment>) => void;
@@ -38,7 +38,7 @@
     leftColor,
     rightColor,
     selected,
-    positionLabel,
+    placementLabel,
     canRemove,
     onSelect,
     onChange,
@@ -79,7 +79,7 @@
       <span class="swatch" style:background={rightColor}></span>
     </span>
     <span class="label">{performer.label}</span>
-    <span class="pos">{positionLabel}</span>
+    <span class="pos">{placementLabel}</span>
   </button>
 
   <div class="paths" aria-hidden="true">

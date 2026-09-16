@@ -101,7 +101,7 @@
 	// Local export settings (for export panel mode)
 	let localAddWord = $state(imageSettings.addWord);
 	let localAddBeatNumbers = $state(imageSettings.addStepNumbers);
-	let localIncludeStartPosition = $state(imageSettings.includeStartPosition);
+	let localIncludeStartPlacement = $state(imageSettings.includeStartPlacement);
 	let localAddDifficultyLevel = $state(imageSettings.addDifficultyLevel);
 	let localDarkMode = $state(imageSettings.darkMode);
 	let localShowLoopGlyph = $state(imageSettings.showLoopGlyph);
@@ -111,7 +111,7 @@
 	function handleImageSettingsChange() {
 		localAddWord = imageSettings.addWord;
 		localAddBeatNumbers = imageSettings.addStepNumbers;
-		localIncludeStartPosition = imageSettings.includeStartPosition;
+		localIncludeStartPlacement = imageSettings.includeStartPlacement;
 		localAddDifficultyLevel = imageSettings.addDifficultyLevel;
 		localDarkMode = imageSettings.darkMode;
 		localShowLoopGlyph = imageSettings.showLoopGlyph;
@@ -128,7 +128,7 @@
 	// Effective settings - use global when browsing, local when customizing for export
 	const addWord = $derived(showVisibilitySettings ? localAddWord : (globalImageExport?.addWord ?? true));
 	const addStepNumbers = $derived(showVisibilitySettings ? localAddBeatNumbers : (globalImageExport?.addStepNumbers ?? true));
-	const includeStartPosition = $derived(showVisibilitySettings ? localIncludeStartPosition : (globalImageExport?.includeStartPosition ?? true));
+	const includeStartPlacement = $derived(showVisibilitySettings ? localIncludeStartPlacement : (globalImageExport?.includeStartPlacement ?? true));
 	const addDifficultyLevel = $derived(showVisibilitySettings ? localAddDifficultyLevel : (globalImageExport?.addDifficultyLevel ?? false));
 	const addUserInfo = $derived(showVisibilitySettings ? localShowNotes : (globalImageExport?.showNotes ?? false));
 	const darkMode = $derived(showVisibilitySettings ? localDarkMode : globalDarkMode);
@@ -151,8 +151,8 @@
 	function toggleStepNumbers() {
 		imageSettings.toggle("addStepNumbers");
 	}
-	function toggleStartPosition() {
-		imageSettings.toggle("includeStartPosition");
+	function toggleStartPlacement() {
+		imageSettings.toggle("includeStartPlacement");
 	}
 	function toggleDifficulty() {
 		imageSettings.toggle("addDifficultyLevel");
@@ -194,7 +194,7 @@
 				stepSize: 240,
 				format: "PNG",
 				quality: 1.0,
-				includeStartPosition,
+				includeStartPlacement,
 				addStepNumbers,
 				addWord,
 				addDifficultyLevel,
@@ -329,7 +329,7 @@
 							{sequence}
 							showStepNumbers={addStepNumbers}
 							showDifficultyLevel={addDifficultyLevel}
-							{includeStartPosition}
+							{includeStartPlacement}
 							{showNotes}
 							{showLoopGlyph}
 							{handPathMode}
@@ -348,7 +348,7 @@
 							lightMode={!darkMode}
 							{addWord}
 							{addStepNumbers}
-							{includeStartPosition}
+							{includeStartPlacement}
 							{addDifficultyLevel}
 							{addUserInfo}
 							{showNotes}
@@ -380,9 +380,9 @@
 						<button
 							type="button"
 							class="chip"
-							class:active={includeStartPosition}
-							onclick={toggleStartPosition}
-							aria-pressed={includeStartPosition}
+							class:active={includeStartPlacement}
+							onclick={toggleStartPlacement}
+							aria-pressed={includeStartPlacement}
 						>
 							Start Pos
 						</button>

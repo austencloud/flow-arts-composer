@@ -48,7 +48,7 @@ const options: PrintRenderOptions = {
   canvasWidth: 822,
   canvasHeight: 1122,
   bleedPx: 36,
-  includeStartPosition: true,
+  includeStartPlacement: true,
 };
 
 describe("PrintCardRenderer.renderFront worker path", () => {

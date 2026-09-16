@@ -100,7 +100,7 @@
   const stepData = $derived.by(() => {
     const activeSequence = sequenceData;
     if (!activeSequence) return null;
-    if (animCurrentStep < 1) return activeSequence.startPosition ?? null;
+    if (animCurrentStep < 1) return activeSequence.startPlacement ?? null;
     const index = Math.min(
       Math.max(0, Math.floor(animCurrentStep) - 1),
       (activeSequence.steps.length || 1) - 1

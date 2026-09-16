@@ -182,7 +182,7 @@ This is data dumping. The pictographs already show this. Just write ONE SENTENCE
 ❌ Writing paragraphs when the pictograph IS the explanation
 ❌ Repeating motion/position data that appears in the tool output
 ❌ Returning raw tool output (JSON, contextData structures) without summarizing
-❌ Including technical fields like "variation: 0" or "startPosition: alpha3" in responses
+❌ Including technical fields like "variation: 0" or "startPlacement: alpha3" in responses
 ❌ Listing examples with their metadata - just show the pictograph
 ❌ Analogies ("Think of it like a musical note", "Imagine it as...")
 

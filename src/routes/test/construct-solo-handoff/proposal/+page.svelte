@@ -174,7 +174,7 @@
       <div class="sequence-stage">
         <StepGrid
           steps={visibleSequence.steps}
-          startPosition={visibleSequence.startPosition}
+          startPlacement={visibleSequence.startPlacement}
           {selectedStepNumber}
           onStepClick={(stepNumber) => (selectedStepNumber = stepNumber)}
           fitAllSteps
@@ -282,7 +282,7 @@
             <div class="red-sequence-preview">
               <StepGrid
                 steps={redSequence.steps}
-                startPosition={redSequence.startPosition}
+                startPlacement={redSequence.startPlacement}
                 fitAllSteps
                 sizingProfile="preview"
                 manualColumnCount={compactViewport ? 9 : 4}

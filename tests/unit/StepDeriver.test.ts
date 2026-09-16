@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { deriveSteps, deriveStartPosition } from "$lib/shared/foundation/services/step-deriver";
+import { deriveSteps, deriveStartPlacement } from "$lib/shared/foundation/services/step-deriver";
 import { GridLocation, GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import {
   Orientation,
@@ -9,7 +9,7 @@ import {
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { PropType } from "$lib/shared/pictograph/prop/domain/enums/prop-type";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { SoloPropData } from "$lib/shared/foundation/domain/models/solo-prop-data";
 import type { SoloPropStepData } from "$lib/shared/foundation/domain/models/solo-prop-step-data";
 import type { StepPairingData } from "$lib/shared/foundation/domain/models/step-pairing-data";
@@ -66,8 +66,8 @@ function makePairing(overrides: Partial<StepPairingData> = {}): StepPairingData 
     letter: Letter.A,
     leftReversal: false,
     rightReversal: false,
-    startPosition: GridPosition.ALPHA1,
-    endPosition: GridPosition.BETA1,
+    startPlacement: GridPlacement.ALPHA1,
+    endPlacement: GridPlacement.BETA1,
     ...overrides,
   };
 }
@@ -103,7 +103,7 @@ describe("StepDeriver", () => {
       expect(steps[2]!.stepNumber).toBe(3);
     });
 
-    it("transfers letter, startPosition, endPosition from pairing", () => {
+    it("transfers letter, startPlacement, endPlacement from pairing", () => {
       const leftStep = makeStep(GridLocation.NORTH, GridLocation.EAST);
       const rightStep = makeStep(GridLocation.SOUTH, GridLocation.WEST);
 
@@ -112,16 +112,16 @@ describe("StepDeriver", () => {
       const pairings = [
         makePairing({
           letter: Letter.C,
-          startPosition: GridPosition.GAMMA1,
-          endPosition: GridPosition.GAMMA5,
+          startPlacement: GridPlacement.GAMMA1,
+          endPlacement: GridPlacement.GAMMA5,
         }),
       ];
 
       const [step] = deriveSteps(left, right, pairings);
 
       expect(step!.letter).toBe(Letter.C);
-      expect(step!.startPosition).toBe(GridPosition.GAMMA1);
-      expect(step!.endPosition).toBe(GridPosition.GAMMA5);
+      expect(step!.startPlacement).toBe(GridPlacement.GAMMA1);
+      expect(step!.endPlacement).toBe(GridPlacement.GAMMA5);
     });
 
     it("transfers blueReversal and redReversal from pairing", () => {
@@ -344,21 +344,21 @@ describe("StepDeriver", () => {
     });
   });
 
-  describe("deriveStartPosition", () => {
-    it("returns an object with isStartPosition true", () => {
+  describe("deriveStartPlacement", () => {
+    it("returns an object with isStartPlacement true", () => {
       const left = makeSoloProp([], GridLocation.NORTH, Orientation.IN);
       const right = makeSoloProp([], GridLocation.SOUTH, Orientation.OUT);
 
-      const startPos = deriveStartPosition(left, right);
+      const startPos = deriveStartPlacement(left, right);
 
-      expect(startPos.isStartPosition).toBe(true);
+      expect(startPos.isStartPlacement).toBe(true);
     });
 
     it("produces STATIC motions for both colors", () => {
       const left = makeSoloProp([], GridLocation.NORTH, Orientation.IN);
       const right = makeSoloProp([], GridLocation.SOUTH, Orientation.OUT);
 
-      const startPos = deriveStartPosition(left, right);
+      const startPos = deriveStartPlacement(left, right);
 
       expect(startPos.motions.left?.motionType).toBe(MotionType.STATIC);
       expect(startPos.motions.right?.motionType).toBe(MotionType.STATIC);
@@ -368,7 +368,7 @@ describe("StepDeriver", () => {
       const left = makeSoloProp([], GridLocation.EAST, Orientation.IN);
       const right = makeSoloProp([], GridLocation.WEST, Orientation.OUT);
 
-      const startPos = deriveStartPosition(left, right);
+      const startPos = deriveStartPlacement(left, right);
 
       expect(startPos.motions.left?.startLocation).toBe(GridLocation.EAST);
       expect(startPos.motions.left?.endLocation).toBe(GridLocation.EAST);
@@ -380,7 +380,7 @@ describe("StepDeriver", () => {
       const left = makeSoloProp([], GridLocation.NORTH, Orientation.CLOCK);
       const right = makeSoloProp([], GridLocation.SOUTH, Orientation.COUNTER);
 
-      const startPos = deriveStartPosition(left, right);
+      const startPos = deriveStartPlacement(left, right);
 
       expect(startPos.motions.left?.startOrientation).toBe(Orientation.CLOCK);
       expect(startPos.motions.right?.startOrientation).toBe(Orientation.COUNTER);
@@ -390,7 +390,7 @@ describe("StepDeriver", () => {
       const left = makeSoloProp([], GridLocation.NORTH, Orientation.IN);
       const right = makeSoloProp([], GridLocation.SOUTH, Orientation.OUT);
 
-      const startPos = deriveStartPosition(left, right);
+      const startPos = deriveStartPlacement(left, right);
 
       expect(startPos.gridMode).toBe(GridMode.DIAMOND);
     });
@@ -399,19 +399,19 @@ describe("StepDeriver", () => {
       const left = makeSoloProp([], GridLocation.NORTH, Orientation.IN);
       const right = makeSoloProp([], GridLocation.SOUTH, Orientation.OUT);
 
-      const sp1 = deriveStartPosition(left, right);
-      const sp2 = deriveStartPosition(left, right);
+      const sp1 = deriveStartPlacement(left, right);
+      const sp2 = deriveStartPlacement(left, right);
 
       expect(sp1.id).not.toBe(sp2.id);
     });
 
-    it("sets gridPosition to null (position-lookup is out of scope)", () => {
+    it("sets gridPlacement to null (position-lookup is out of scope)", () => {
       const left = makeSoloProp([], GridLocation.NORTH, Orientation.IN);
       const right = makeSoloProp([], GridLocation.SOUTH, Orientation.OUT);
 
-      const startPos = deriveStartPosition(left, right);
+      const startPos = deriveStartPlacement(left, right);
 
-      expect(startPos.gridPosition).toBeNull();
+      expect(startPos.gridPlacement).toBeNull();
     });
   });
 

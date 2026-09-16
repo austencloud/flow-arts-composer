@@ -160,8 +160,8 @@
     const pictographData: PictographData = {
       id: stepData.id,
       letter: stepData.letter ?? null,
-      startPosition: stepData.startPosition,
-      endPosition: stepData.endPosition,
+      startPlacement: stepData.startPlacement,
+      endPlacement: stepData.endPlacement,
       motions: stepData.motions as PictographData["motions"],
     };
     return { motionData: motion, hand: activeHand, pictographData };
@@ -201,8 +201,8 @@
     const pd: PictographData = selectedArrowContext?.pictographData ?? {
       id: stepData.id,
       letter: stepData.letter,
-      startPosition: stepData.startPosition,
-      endPosition: stepData.endPosition,
+      startPlacement: stepData.startPlacement,
+      endPlacement: stepData.endPlacement,
       motions: stepData.motions as PictographData["motions"],
     };
     return computeSpecialOverrideKey(pd, motion, c);
@@ -619,8 +619,8 @@
     const pd: PictographData = selectedArrowContext?.pictographData ?? {
       id: stepData.id,
       letter: stepData.letter,
-      startPosition: stepData.startPosition,
-      endPosition: stepData.endPosition,
+      startPlacement: stepData.startPlacement,
+      endPlacement: stepData.endPlacement,
       motions: stepData.motions as PictographData["motions"],
     };
     const fields = parseSpecialOverrideKey(

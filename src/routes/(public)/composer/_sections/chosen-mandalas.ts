@@ -83,8 +83,8 @@ export const CHOSEN_MANDALAS = [
         },
         "letter": "V",
         "stepNumber": 1,
-        "endPosition": "gamma13",
-        "startPosition": "gamma11",
+        "endPlacement": "gamma13",
+        "startPlacement": "gamma11",
         "duration": 1,
         "isBlank": false
       },
@@ -168,8 +168,8 @@ export const CHOSEN_MANDALAS = [
         "stepNumber": 2,
         "letter": "Z-",
         "duration": 1,
-        "endPosition": "beta1",
-        "startPosition": "gamma13",
+        "endPlacement": "beta1",
+        "startPlacement": "gamma13",
         "isBlank": false
       },
       {
@@ -247,8 +247,8 @@ export const CHOSEN_MANDALAS = [
           }
         },
         "leftReversal": false,
-        "startPosition": "beta1",
-        "endPosition": "gamma5",
+        "startPlacement": "beta1",
+        "endPlacement": "gamma5",
         "duration": 1,
         "letter": "Δ-",
         "stepNumber": 3,
@@ -331,8 +331,8 @@ export const CHOSEN_MANDALAS = [
         "rightReversal": false,
         "isBlank": false,
         "duration": 1,
-        "startPosition": "gamma5",
-        "endPosition": "gamma9",
+        "startPlacement": "gamma5",
+        "endPlacement": "gamma9",
         "letter": "Λ",
         "stepNumber": 4
       },
@@ -340,8 +340,8 @@ export const CHOSEN_MANDALAS = [
         "isBlank": false,
         "letter": "V",
         "stepNumber": 5,
-        "endPosition": "gamma11",
-        "startPosition": "gamma9",
+        "endPlacement": "gamma11",
+        "startPlacement": "gamma9",
         "duration": 1,
         "leftReversal": false,
         "motions": {
@@ -423,8 +423,8 @@ export const CHOSEN_MANDALAS = [
         "letter": "Z-",
         "stepNumber": 6,
         "duration": 1,
-        "startPosition": "gamma11",
-        "endPosition": "beta7",
+        "startPlacement": "gamma11",
+        "endPlacement": "beta7",
         "leftReversal": false,
         "motions": {
           "left": {
@@ -580,16 +580,16 @@ export const CHOSEN_MANDALAS = [
         "isBlank": false,
         "stepNumber": 7,
         "letter": "Δ-",
-        "startPosition": "beta7",
-        "endPosition": "gamma3",
+        "startPlacement": "beta7",
+        "endPlacement": "gamma3",
         "duration": 1
       },
       {
         "isBlank": false,
         "stepNumber": 8,
         "letter": "Λ",
-        "endPosition": "gamma15",
-        "startPosition": "gamma3",
+        "endPlacement": "gamma15",
+        "startPlacement": "gamma3",
         "duration": 1,
         "leftReversal": false,
         "motions": {
@@ -669,8 +669,8 @@ export const CHOSEN_MANDALAS = [
       {
         "letter": "V",
         "stepNumber": 9,
-        "endPosition": "gamma9",
-        "startPosition": "gamma15",
+        "endPlacement": "gamma9",
+        "startPlacement": "gamma15",
         "duration": 1,
         "isBlank": false,
         "id": "step-9-1784271460511",
@@ -750,8 +750,8 @@ export const CHOSEN_MANDALAS = [
       },
       {
         "isBlank": false,
-        "startPosition": "gamma9",
-        "endPosition": "beta5",
+        "startPlacement": "gamma9",
+        "endPlacement": "beta5",
         "duration": 1,
         "letter": "Z-",
         "stepNumber": 10,
@@ -911,8 +911,8 @@ export const CHOSEN_MANDALAS = [
         "stepNumber": 11,
         "letter": "Δ-",
         "duration": 1,
-        "endPosition": "gamma1",
-        "startPosition": "beta5"
+        "endPlacement": "gamma1",
+        "startPlacement": "beta5"
       },
       {
         "motions": {
@@ -990,8 +990,8 @@ export const CHOSEN_MANDALAS = [
         "rightReversal": false,
         "id": "step-12-1784271460511",
         "isBlank": false,
-        "startPosition": "gamma1",
-        "endPosition": "gamma13",
+        "startPlacement": "gamma1",
+        "endPlacement": "gamma13",
         "duration": 1,
         "letter": "Λ",
         "stepNumber": 12
@@ -1000,8 +1000,8 @@ export const CHOSEN_MANDALAS = [
         "letter": "V",
         "stepNumber": 13,
         "duration": 1,
-        "endPosition": "gamma15",
-        "startPosition": "gamma13",
+        "endPlacement": "gamma15",
+        "startPlacement": "gamma13",
         "isBlank": false,
         "id": "step-13-1784271460511",
         "rightReversal": false,
@@ -1081,8 +1081,8 @@ export const CHOSEN_MANDALAS = [
       {
         "letter": "Z-",
         "stepNumber": 14,
-        "startPosition": "gamma15",
-        "endPosition": "beta3",
+        "startPlacement": "gamma15",
+        "endPlacement": "beta3",
         "duration": 1,
         "isBlank": false,
         "rightReversal": false,
@@ -1240,8 +1240,8 @@ export const CHOSEN_MANDALAS = [
         "letter": "Δ-",
         "stepNumber": 15,
         "duration": 1,
-        "startPosition": "beta3",
-        "endPosition": "gamma7",
+        "startPlacement": "beta3",
+        "endPlacement": "gamma7",
         "isBlank": false
       },
       {
@@ -1320,8 +1320,8 @@ export const CHOSEN_MANDALAS = [
         "id": "step-16-1784271460511",
         "rightReversal": false,
         "isBlank": false,
-        "endPosition": "gamma11",
-        "startPosition": "gamma7",
+        "endPlacement": "gamma11",
+        "startPlacement": "gamma7",
         "duration": 1,
         "letter": "Λ",
         "stepNumber": 16
@@ -1413,8 +1413,8 @@ export const CHOSEN_MANDALAS = [
         "id": "step-1-1784271453329",
         "rightReversal": false,
         "isBlank": false,
-        "endPosition": "beta3",
-        "startPosition": "gamma11",
+        "endPlacement": "beta3",
+        "startPlacement": "gamma11",
         "duration": 1,
         "letter": "Z",
         "stepNumber": 1
@@ -1495,8 +1495,8 @@ export const CHOSEN_MANDALAS = [
         },
         "leftReversal": false,
         "duration": 1,
-        "endPosition": "alpha1",
-        "startPosition": "beta3",
+        "endPlacement": "alpha1",
+        "startPlacement": "beta3",
         "stepNumber": 2,
         "letter": "D",
         "isBlank": false
@@ -1579,8 +1579,8 @@ export const CHOSEN_MANDALAS = [
         "isBlank": false,
         "stepNumber": 3,
         "letter": "Δ",
-        "endPosition": "gamma11",
-        "startPosition": "alpha1",
+        "endPlacement": "gamma11",
+        "startPlacement": "alpha1",
         "duration": 1
       },
       {
@@ -1663,15 +1663,15 @@ export const CHOSEN_MANDALAS = [
         "isBlank": false,
         "stepNumber": 4,
         "letter": "U",
-        "startPosition": "gamma11",
-        "endPosition": "gamma9",
+        "startPlacement": "gamma11",
+        "endPlacement": "gamma9",
         "duration": 1
       },
       {
         "letter": "Z",
         "stepNumber": 5,
-        "startPosition": "gamma9",
-        "endPosition": "beta1",
+        "startPlacement": "gamma9",
+        "endPlacement": "beta1",
         "duration": 1,
         "isBlank": false,
         "rightReversal": false,
@@ -1827,8 +1827,8 @@ export const CHOSEN_MANDALAS = [
         "rightReversal": false,
         "id": "step-6-1784271453329",
         "isBlank": false,
-        "startPosition": "beta1",
-        "endPosition": "alpha7",
+        "startPlacement": "beta1",
+        "endPlacement": "alpha7",
         "duration": 1,
         "letter": "D",
         "stepNumber": 6
@@ -1910,8 +1910,8 @@ export const CHOSEN_MANDALAS = [
         },
         "stepNumber": 7,
         "letter": "Δ",
-        "endPosition": "gamma9",
-        "startPosition": "alpha7",
+        "endPlacement": "gamma9",
+        "startPlacement": "alpha7",
         "duration": 1,
         "isBlank": false
       },
@@ -1919,8 +1919,8 @@ export const CHOSEN_MANDALAS = [
         "letter": "U",
         "stepNumber": 8,
         "duration": 1,
-        "startPosition": "gamma9",
-        "endPosition": "gamma15",
+        "startPlacement": "gamma9",
+        "endPlacement": "gamma15",
         "isBlank": false,
         "rightReversal": false,
         "id": "step-8-1784271453329",
@@ -2078,8 +2078,8 @@ export const CHOSEN_MANDALAS = [
         },
         "letter": "Z",
         "stepNumber": 9,
-        "endPosition": "beta7",
-        "startPosition": "gamma15",
+        "endPlacement": "beta7",
+        "startPlacement": "gamma15",
         "duration": 1,
         "isBlank": false
       },
@@ -2160,8 +2160,8 @@ export const CHOSEN_MANDALAS = [
         "rightReversal": false,
         "isBlank": false,
         "duration": 1,
-        "startPosition": "beta7",
-        "endPosition": "alpha5",
+        "startPlacement": "beta7",
+        "endPlacement": "alpha5",
         "letter": "D",
         "stepNumber": 10
       },
@@ -2240,8 +2240,8 @@ export const CHOSEN_MANDALAS = [
           }
         },
         "leftReversal": false,
-        "endPosition": "gamma15",
-        "startPosition": "alpha5",
+        "endPlacement": "gamma15",
+        "startPlacement": "alpha5",
         "duration": 1,
         "letter": "Δ",
         "stepNumber": 11,
@@ -2251,8 +2251,8 @@ export const CHOSEN_MANDALAS = [
         "isBlank": false,
         "stepNumber": 12,
         "letter": "U",
-        "endPosition": "gamma13",
-        "startPosition": "gamma15",
+        "endPlacement": "gamma13",
+        "startPlacement": "gamma15",
         "duration": 1,
         "leftReversal": false,
         "motions": {
@@ -2410,8 +2410,8 @@ export const CHOSEN_MANDALAS = [
         },
         "letter": "Z",
         "stepNumber": 13,
-        "endPosition": "beta5",
-        "startPosition": "gamma13",
+        "endPlacement": "beta5",
+        "startPlacement": "gamma13",
         "duration": 1,
         "isBlank": false
       },
@@ -2492,8 +2492,8 @@ export const CHOSEN_MANDALAS = [
         "rightReversal": false,
         "isBlank": false,
         "duration": 1,
-        "startPosition": "beta5",
-        "endPosition": "alpha3",
+        "startPlacement": "beta5",
+        "endPlacement": "alpha3",
         "letter": "D",
         "stepNumber": 14
       },
@@ -2575,8 +2575,8 @@ export const CHOSEN_MANDALAS = [
         "letter": "Δ",
         "stepNumber": 15,
         "duration": 1,
-        "endPosition": "gamma13",
-        "startPosition": "alpha3",
+        "endPlacement": "gamma13",
+        "startPlacement": "alpha3",
         "isBlank": false
       },
       {
@@ -2584,8 +2584,8 @@ export const CHOSEN_MANDALAS = [
         "stepNumber": 16,
         "letter": "U",
         "duration": 1,
-        "endPosition": "gamma11",
-        "startPosition": "gamma13",
+        "endPlacement": "gamma11",
+        "startPlacement": "gamma13",
         "leftReversal": false,
         "motions": {
           "right": {
@@ -2676,8 +2676,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1783547667550",
         "letter": "Θ-",
-        "startPosition": "alpha1",
-        "endPosition": "gamma3",
+        "startPlacement": "alpha1",
+        "endPlacement": "gamma3",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -2759,8 +2759,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1783547667550",
         "letter": "S",
-        "startPosition": "gamma3",
-        "endPosition": "gamma5",
+        "startPlacement": "gamma3",
+        "endPlacement": "gamma5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -2842,8 +2842,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1783547667550",
         "letter": "O",
-        "startPosition": "gamma5",
-        "endPosition": "gamma15",
+        "startPlacement": "gamma5",
+        "endPlacement": "gamma15",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -2925,8 +2925,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1783547667550",
         "letter": "X-",
-        "startPosition": "gamma15",
-        "endPosition": "alpha3",
+        "startPlacement": "gamma15",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -3008,8 +3008,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1783547667550",
         "letter": "Θ-",
-        "startPosition": "alpha3",
-        "endPosition": "gamma5",
+        "startPlacement": "alpha3",
+        "endPlacement": "gamma5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -3091,8 +3091,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1783547667550",
         "letter": "S",
-        "startPosition": "gamma5",
-        "endPosition": "gamma7",
+        "startPlacement": "gamma5",
+        "endPlacement": "gamma7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -3174,8 +3174,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1783547667550",
         "letter": "O",
-        "startPosition": "gamma7",
-        "endPosition": "gamma9",
+        "startPlacement": "gamma7",
+        "endPlacement": "gamma9",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -3257,8 +3257,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1783547667550",
         "letter": "X-",
-        "startPosition": "gamma9",
-        "endPosition": "alpha5",
+        "startPlacement": "gamma9",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -3340,8 +3340,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9-1783547667550",
         "letter": "Θ-",
-        "startPosition": "alpha5",
-        "endPosition": "gamma7",
+        "startPlacement": "alpha5",
+        "endPlacement": "gamma7",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -3423,8 +3423,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10-1783547667550",
         "letter": "S",
-        "startPosition": "gamma7",
-        "endPosition": "gamma1",
+        "startPlacement": "gamma7",
+        "endPlacement": "gamma1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -3506,8 +3506,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11-1783547667550",
         "letter": "O",
-        "startPosition": "gamma1",
-        "endPosition": "gamma11",
+        "startPlacement": "gamma1",
+        "endPlacement": "gamma11",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -3589,8 +3589,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12-1783547667550",
         "letter": "X-",
-        "startPosition": "gamma11",
-        "endPosition": "alpha7",
+        "startPlacement": "gamma11",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -3672,8 +3672,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13-1783547667550",
         "letter": "Θ-",
-        "startPosition": "alpha7",
-        "endPosition": "gamma1",
+        "startPlacement": "alpha7",
+        "endPlacement": "gamma1",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -3755,8 +3755,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14-1783547667550",
         "letter": "S",
-        "startPosition": "gamma1",
-        "endPosition": "gamma3",
+        "startPlacement": "gamma1",
+        "endPlacement": "gamma3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -3838,8 +3838,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15-1783547667550",
         "letter": "O",
-        "startPosition": "gamma3",
-        "endPosition": "gamma13",
+        "startPlacement": "gamma3",
+        "endPlacement": "gamma13",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -3921,8 +3921,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16-1783547667550",
         "letter": "X-",
-        "startPosition": "gamma13",
-        "endPosition": "alpha1",
+        "startPlacement": "gamma13",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -4013,8 +4013,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1783353569245",
         "letter": "A",
-        "startPosition": "alpha1",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -4096,8 +4096,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1783353569245",
         "letter": "Φ-",
-        "startPosition": "alpha7",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -4179,8 +4179,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1783353569245",
         "letter": "A",
-        "startPosition": "alpha3",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -4262,8 +4262,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1783353569245",
         "letter": "Φ-",
-        "startPosition": "alpha1",
-        "endPosition": "alpha5",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -4345,8 +4345,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1783353569245",
         "letter": "A",
-        "startPosition": "alpha5",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha5",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -4428,8 +4428,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1783353569245",
         "letter": "Φ-",
-        "startPosition": "alpha3",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -4511,8 +4511,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1783353569245",
         "letter": "A",
-        "startPosition": "alpha7",
-        "endPosition": "alpha5",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -4594,8 +4594,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1783353569245",
         "letter": "Φ-",
-        "startPosition": "alpha5",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha5",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -4686,8 +4686,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1783015950209",
         "letter": "E",
-        "startPosition": "beta5",
-        "endPosition": "alpha3",
+        "startPlacement": "beta5",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -4769,8 +4769,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1783015950209",
         "letter": "Θ-",
-        "startPosition": "alpha3",
-        "endPosition": "gamma5",
+        "startPlacement": "alpha3",
+        "endPlacement": "gamma5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -4852,8 +4852,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1783015950209",
         "letter": "M",
-        "startPosition": "gamma5",
-        "endPosition": "gamma15",
+        "startPlacement": "gamma5",
+        "endPlacement": "gamma15",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -4935,8 +4935,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1783015950209",
         "letter": "P",
-        "startPosition": "gamma15",
-        "endPosition": "gamma1",
+        "startPlacement": "gamma15",
+        "endPlacement": "gamma1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -5018,8 +5018,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1783015950209",
         "letter": "W",
-        "startPosition": "gamma1",
-        "endPosition": "alpha3",
+        "startPlacement": "gamma1",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "static",
@@ -5101,8 +5101,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1783015950209",
         "letter": "C",
-        "startPosition": "alpha3",
-        "endPosition": "alpha5",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -5184,8 +5184,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1783015950209",
         "letter": "C",
-        "startPosition": "alpha5",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha5",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -5267,8 +5267,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1783015950209",
         "letter": "J",
-        "startPosition": "alpha3",
-        "endPosition": "beta5",
+        "startPlacement": "alpha3",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -5350,8 +5350,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9-1783015950209",
         "letter": "E",
-        "startPosition": "beta5",
-        "endPosition": "alpha3",
+        "startPlacement": "beta5",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -5433,8 +5433,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10-1783015950209",
         "letter": "Θ-",
-        "startPosition": "alpha3",
-        "endPosition": "gamma7",
+        "startPlacement": "alpha3",
+        "endPlacement": "gamma7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -5516,8 +5516,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11-1783015950209",
         "letter": "M",
-        "startPosition": "gamma7",
-        "endPosition": "gamma9",
+        "startPlacement": "gamma7",
+        "endPlacement": "gamma9",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -5599,8 +5599,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12-1783015950209",
         "letter": "P",
-        "startPosition": "gamma9",
-        "endPosition": "gamma3",
+        "startPlacement": "gamma9",
+        "endPlacement": "gamma3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -5682,8 +5682,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13-1783015950209",
         "letter": "W",
-        "startPosition": "gamma3",
-        "endPosition": "alpha3",
+        "startPlacement": "gamma3",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -5765,8 +5765,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14-1783015950209",
         "letter": "C",
-        "startPosition": "alpha3",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -5848,8 +5848,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15-1783015950209",
         "letter": "C",
-        "startPosition": "alpha1",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -5931,8 +5931,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16-1783015950210",
         "letter": "J",
-        "startPosition": "alpha3",
-        "endPosition": "beta5",
+        "startPlacement": "alpha3",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -6023,8 +6023,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1783015708938",
         "letter": "F",
-        "startPosition": "beta5",
-        "endPosition": "alpha3",
+        "startPlacement": "beta5",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -6106,8 +6106,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1783015708938",
         "letter": "Ψ",
-        "startPosition": "alpha3",
-        "endPosition": "beta3",
+        "startPlacement": "alpha3",
+        "endPlacement": "beta3",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -6189,8 +6189,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1783015708938",
         "letter": "F",
-        "startPosition": "beta3",
-        "endPosition": "alpha1",
+        "startPlacement": "beta3",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -6272,8 +6272,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1783015708938",
         "letter": "Ψ",
-        "startPosition": "alpha1",
-        "endPosition": "beta1",
+        "startPlacement": "alpha1",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -6355,8 +6355,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1783015708938",
         "letter": "F",
-        "startPosition": "beta1",
-        "endPosition": "alpha7",
+        "startPlacement": "beta1",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -6438,8 +6438,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1783015708938",
         "letter": "Ψ",
-        "startPosition": "alpha7",
-        "endPosition": "beta7",
+        "startPlacement": "alpha7",
+        "endPlacement": "beta7",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -6521,8 +6521,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1783015708938",
         "letter": "F",
-        "startPosition": "beta7",
-        "endPosition": "alpha5",
+        "startPlacement": "beta7",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -6604,8 +6604,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1783015708938",
         "letter": "Ψ",
-        "startPosition": "alpha5",
-        "endPosition": "beta5",
+        "startPlacement": "alpha5",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -6696,8 +6696,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "848057b6-e8b5-42fd-82f8-f5eb2f8c22e5",
         "letter": "Φ-",
-        "startPosition": "alpha3",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -6779,8 +6779,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "6ebd1e4f-7a86-48fe-8915-8ac3215769e6",
         "letter": "J",
-        "startPosition": "alpha7",
-        "endPosition": "beta1",
+        "startPlacement": "alpha7",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -6862,8 +6862,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "e4405b5c-df22-44a8-b3f2-33756108c23c",
         "letter": "Ψ-",
-        "startPosition": "beta1",
-        "endPosition": "beta5",
+        "startPlacement": "beta1",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -6945,8 +6945,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "1b933e72-077f-4500-8874-7b9da72f42bb",
         "letter": "D",
-        "startPosition": "beta5",
-        "endPosition": "alpha7",
+        "startPlacement": "beta5",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -7028,8 +7028,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5",
         "letter": "Φ-",
-        "startPosition": "alpha7",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -7111,8 +7111,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6",
         "letter": "J",
-        "startPosition": "alpha3",
-        "endPosition": "beta5",
+        "startPlacement": "alpha3",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -7194,8 +7194,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7",
         "letter": "Ψ-",
-        "startPosition": "beta5",
-        "endPosition": "beta1",
+        "startPlacement": "beta5",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -7277,8 +7277,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8",
         "letter": "D",
-        "startPosition": "beta1",
-        "endPosition": "alpha3",
+        "startPlacement": "beta1",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -7369,8 +7369,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1779473471313",
         "letter": "Y",
-        "startPosition": "gamma11",
-        "endPosition": "beta3",
+        "startPlacement": "gamma11",
+        "endPlacement": "beta3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -7451,8 +7451,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1779473471313",
         "letter": "Θ",
-        "startPosition": "beta3",
-        "endPosition": "gamma9",
+        "startPlacement": "beta3",
+        "endPlacement": "gamma9",
         "motions": {
           "left": {
             "motionType": "static",
@@ -7533,8 +7533,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1779473471313",
         "letter": "Y-",
-        "startPosition": "gamma9",
-        "endPosition": "beta7",
+        "startPlacement": "gamma9",
+        "endPlacement": "beta7",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -7615,8 +7615,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1779473471313",
         "letter": "Θ",
-        "startPosition": "beta7",
-        "endPosition": "gamma13",
+        "startPlacement": "beta7",
+        "endPlacement": "gamma13",
         "motions": {
           "left": {
             "motionType": "static",
@@ -7697,8 +7697,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1779473471313",
         "letter": "Y",
-        "startPosition": "gamma13",
-        "endPosition": "beta5",
+        "startPlacement": "gamma13",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -7779,8 +7779,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1779473471313",
         "letter": "Θ",
-        "startPosition": "beta5",
-        "endPosition": "gamma11",
+        "startPlacement": "beta5",
+        "endPlacement": "gamma11",
         "motions": {
           "left": {
             "motionType": "static",
@@ -7861,8 +7861,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1779473471313",
         "letter": "Y-",
-        "startPosition": "gamma11",
-        "endPosition": "beta1",
+        "startPlacement": "gamma11",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -7943,8 +7943,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1779473471313",
         "letter": "Θ",
-        "startPosition": "beta1",
-        "endPosition": "gamma15",
+        "startPlacement": "beta1",
+        "endPlacement": "gamma15",
         "motions": {
           "left": {
             "motionType": "static",
@@ -8025,8 +8025,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9-1779473471313",
         "letter": "Y",
-        "startPosition": "gamma15",
-        "endPosition": "beta7",
+        "startPlacement": "gamma15",
+        "endPlacement": "beta7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -8107,8 +8107,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10-1779473471313",
         "letter": "Θ",
-        "startPosition": "beta7",
-        "endPosition": "gamma13",
+        "startPlacement": "beta7",
+        "endPlacement": "gamma13",
         "motions": {
           "left": {
             "motionType": "static",
@@ -8189,8 +8189,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11-1779473471313",
         "letter": "Y-",
-        "startPosition": "gamma13",
-        "endPosition": "beta3",
+        "startPlacement": "gamma13",
+        "endPlacement": "beta3",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -8271,8 +8271,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12-1779473471313",
         "letter": "Θ",
-        "startPosition": "beta3",
-        "endPosition": "gamma9",
+        "startPlacement": "beta3",
+        "endPlacement": "gamma9",
         "motions": {
           "left": {
             "motionType": "static",
@@ -8353,8 +8353,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13-1779473471313",
         "letter": "Y",
-        "startPosition": "gamma9",
-        "endPosition": "beta1",
+        "startPlacement": "gamma9",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -8435,8 +8435,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14-1779473471313",
         "letter": "Θ",
-        "startPosition": "beta1",
-        "endPosition": "gamma15",
+        "startPlacement": "beta1",
+        "endPlacement": "gamma15",
         "motions": {
           "left": {
             "motionType": "static",
@@ -8517,8 +8517,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15-1779473471313",
         "letter": "Y-",
-        "startPosition": "gamma15",
-        "endPosition": "beta5",
+        "startPlacement": "gamma15",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -8599,8 +8599,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16-1779473471313",
         "letter": "Θ",
-        "startPosition": "beta5",
-        "endPosition": "gamma11",
+        "startPlacement": "beta5",
+        "endPlacement": "gamma11",
         "motions": {
           "left": {
             "motionType": "static",
@@ -8690,8 +8690,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1779214623308",
         "letter": "F",
-        "startPosition": "beta5",
-        "endPosition": "alpha7",
+        "startPlacement": "beta5",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -8772,8 +8772,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1779214623308",
         "letter": "Ψ",
-        "startPosition": "alpha7",
-        "endPosition": "beta7",
+        "startPlacement": "alpha7",
+        "endPlacement": "beta7",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -8854,8 +8854,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1779214623308",
         "letter": "F",
-        "startPosition": "beta7",
-        "endPosition": "alpha5",
+        "startPlacement": "beta7",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -8936,8 +8936,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1779214623308",
         "letter": "L",
-        "startPosition": "alpha5",
-        "endPosition": "beta7",
+        "startPlacement": "alpha5",
+        "endPlacement": "beta7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -9018,8 +9018,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1779214623308",
         "letter": "F",
-        "startPosition": "beta7",
-        "endPosition": "alpha1",
+        "startPlacement": "beta7",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -9100,8 +9100,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1779214623308",
         "letter": "Ψ",
-        "startPosition": "alpha1",
-        "endPosition": "beta1",
+        "startPlacement": "alpha1",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -9182,8 +9182,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1779214623308",
         "letter": "F",
-        "startPosition": "beta1",
-        "endPosition": "alpha7",
+        "startPlacement": "beta1",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -9264,8 +9264,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1779214623308",
         "letter": "L",
-        "startPosition": "alpha7",
-        "endPosition": "beta1",
+        "startPlacement": "alpha7",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -9346,8 +9346,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9-1779214623308",
         "letter": "F",
-        "startPosition": "beta1",
-        "endPosition": "alpha3",
+        "startPlacement": "beta1",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -9428,8 +9428,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10-1779214623308",
         "letter": "Ψ",
-        "startPosition": "alpha3",
-        "endPosition": "beta3",
+        "startPlacement": "alpha3",
+        "endPlacement": "beta3",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -9510,8 +9510,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11-1779214623308",
         "letter": "F",
-        "startPosition": "beta3",
-        "endPosition": "alpha1",
+        "startPlacement": "beta3",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -9592,8 +9592,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12-1779214623308",
         "letter": "L",
-        "startPosition": "alpha1",
-        "endPosition": "beta3",
+        "startPlacement": "alpha1",
+        "endPlacement": "beta3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -9674,8 +9674,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13-1779214623308",
         "letter": "F",
-        "startPosition": "beta3",
-        "endPosition": "alpha5",
+        "startPlacement": "beta3",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -9756,8 +9756,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14-1779214623308",
         "letter": "Ψ",
-        "startPosition": "alpha5",
-        "endPosition": "beta5",
+        "startPlacement": "alpha5",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -9838,8 +9838,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15-1779214623308",
         "letter": "F",
-        "startPosition": "beta5",
-        "endPosition": "alpha3",
+        "startPlacement": "beta5",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -9920,8 +9920,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16-1779214623308",
         "letter": "L",
-        "startPosition": "alpha3",
-        "endPosition": "beta5",
+        "startPlacement": "alpha3",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -10011,8 +10011,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1778992335265",
         "letter": "L",
-        "startPosition": "alpha5",
-        "endPosition": "beta7",
+        "startPlacement": "alpha5",
+        "endPlacement": "beta7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -10093,8 +10093,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1778992335265",
         "letter": "Φ",
-        "startPosition": "beta7",
-        "endPosition": "alpha3",
+        "startPlacement": "beta7",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "static",
@@ -10175,8 +10175,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1778992335265",
         "letter": "A",
-        "startPosition": "alpha3",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -10257,8 +10257,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1778992335265",
         "letter": "Ω-",
-        "startPosition": "alpha1",
-        "endPosition": "gamma13",
+        "startPlacement": "alpha1",
+        "endPlacement": "gamma13",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -10339,8 +10339,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1778992335265",
         "letter": "R",
-        "startPosition": "gamma13",
-        "endPosition": "gamma7",
+        "startPlacement": "gamma13",
+        "endPlacement": "gamma7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -10421,8 +10421,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1778992335265",
         "letter": "S",
-        "startPosition": "gamma7",
-        "endPosition": "gamma5",
+        "startPlacement": "gamma7",
+        "endPlacement": "gamma5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -10505,8 +10505,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "397da0d7-b434-4196-94d4-709dd7097166",
         "letter": "W",
-        "startPosition": "gamma5",
-        "endPosition": "alpha7",
+        "startPlacement": "gamma5",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "static",
@@ -10587,8 +10587,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8",
         "letter": "L",
-        "startPosition": "alpha7",
-        "endPosition": "beta1",
+        "startPlacement": "alpha7",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -10669,8 +10669,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9",
         "letter": "Φ",
-        "startPosition": "beta1",
-        "endPosition": "alpha5",
+        "startPlacement": "beta1",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "static",
@@ -10751,8 +10751,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10",
         "letter": "A",
-        "startPosition": "alpha5",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha5",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -10833,8 +10833,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11",
         "letter": "Ω-",
-        "startPosition": "alpha3",
-        "endPosition": "gamma15",
+        "startPlacement": "alpha3",
+        "endPlacement": "gamma15",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -10915,8 +10915,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12",
         "letter": "R",
-        "startPosition": "gamma15",
-        "endPosition": "gamma1",
+        "startPlacement": "gamma15",
+        "endPlacement": "gamma1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -10997,8 +10997,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13",
         "letter": "S",
-        "startPosition": "gamma1",
-        "endPosition": "gamma7",
+        "startPlacement": "gamma1",
+        "endPlacement": "gamma7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -11081,8 +11081,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14",
         "letter": "W",
-        "startPosition": "gamma7",
-        "endPosition": "alpha1",
+        "startPlacement": "gamma7",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "static",
@@ -11163,8 +11163,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15",
         "letter": "L",
-        "startPosition": "alpha1",
-        "endPosition": "beta3",
+        "startPlacement": "alpha1",
+        "endPlacement": "beta3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -11245,8 +11245,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16",
         "letter": "Φ",
-        "startPosition": "beta3",
-        "endPosition": "alpha7",
+        "startPlacement": "beta3",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "static",
@@ -11327,8 +11327,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-17",
         "letter": "A",
-        "startPosition": "alpha7",
-        "endPosition": "alpha5",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -11409,8 +11409,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-18",
         "letter": "Ω-",
-        "startPosition": "alpha5",
-        "endPosition": "gamma9",
+        "startPlacement": "alpha5",
+        "endPlacement": "gamma9",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -11491,8 +11491,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-19",
         "letter": "R",
-        "startPosition": "gamma9",
-        "endPosition": "gamma3",
+        "startPlacement": "gamma9",
+        "endPlacement": "gamma3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -11573,8 +11573,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-20",
         "letter": "S",
-        "startPosition": "gamma3",
-        "endPosition": "gamma1",
+        "startPlacement": "gamma3",
+        "endPlacement": "gamma1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -11657,8 +11657,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-21",
         "letter": "W",
-        "startPosition": "gamma1",
-        "endPosition": "alpha3",
+        "startPlacement": "gamma1",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "static",
@@ -11739,8 +11739,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-22",
         "letter": "L",
-        "startPosition": "alpha3",
-        "endPosition": "beta5",
+        "startPlacement": "alpha3",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -11821,8 +11821,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-23",
         "letter": "Φ",
-        "startPosition": "beta5",
-        "endPosition": "alpha1",
+        "startPlacement": "beta5",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "static",
@@ -11903,8 +11903,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-24",
         "letter": "A",
-        "startPosition": "alpha1",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -11985,8 +11985,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-25",
         "letter": "Ω-",
-        "startPosition": "alpha7",
-        "endPosition": "gamma11",
+        "startPlacement": "alpha7",
+        "endPlacement": "gamma11",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -12067,8 +12067,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-26",
         "letter": "R",
-        "startPosition": "gamma11",
-        "endPosition": "gamma5",
+        "startPlacement": "gamma11",
+        "endPlacement": "gamma5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -12149,8 +12149,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-27",
         "letter": "S",
-        "startPosition": "gamma5",
-        "endPosition": "gamma3",
+        "startPlacement": "gamma5",
+        "endPlacement": "gamma3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -12233,8 +12233,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-28",
         "letter": "W",
-        "startPosition": "gamma3",
-        "endPosition": "alpha5",
+        "startPlacement": "gamma3",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "static",
@@ -12324,8 +12324,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1778909918187",
         "letter": "Φ-",
-        "startPosition": "alpha1",
-        "endPosition": "alpha5",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -12406,8 +12406,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1778909918187",
         "letter": "J",
-        "startPosition": "alpha5",
-        "endPosition": "beta3",
+        "startPlacement": "alpha5",
+        "endPlacement": "beta3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -12488,8 +12488,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1778909918187",
         "letter": "Σ-",
-        "startPosition": "beta3",
-        "endPosition": "gamma1",
+        "startPlacement": "beta3",
+        "endPlacement": "gamma1",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -12572,8 +12572,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1778909918187",
         "letter": "W-",
-        "startPosition": "gamma1",
-        "endPosition": "alpha7",
+        "startPlacement": "gamma1",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -12654,8 +12654,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1778909918187",
         "letter": "Φ-",
-        "startPosition": "alpha7",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -12736,8 +12736,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1778909918187",
         "letter": "J",
-        "startPosition": "alpha3",
-        "endPosition": "beta1",
+        "startPlacement": "alpha3",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -12818,8 +12818,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1778909918187",
         "letter": "Σ-",
-        "startPosition": "beta1",
-        "endPosition": "gamma7",
+        "startPlacement": "beta1",
+        "endPlacement": "gamma7",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -12902,8 +12902,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1778909918187",
         "letter": "W-",
-        "startPosition": "gamma7",
-        "endPosition": "alpha5",
+        "startPlacement": "gamma7",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -12984,8 +12984,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9-1778909918187",
         "letter": "Φ-",
-        "startPosition": "alpha5",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha5",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -13066,8 +13066,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10-1778909918187",
         "letter": "J",
-        "startPosition": "alpha1",
-        "endPosition": "beta7",
+        "startPlacement": "alpha1",
+        "endPlacement": "beta7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -13148,8 +13148,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11-1778909918187",
         "letter": "Σ-",
-        "startPosition": "beta7",
-        "endPosition": "gamma5",
+        "startPlacement": "beta7",
+        "endPlacement": "gamma5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -13232,8 +13232,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12-1778909918187",
         "letter": "W-",
-        "startPosition": "gamma5",
-        "endPosition": "alpha3",
+        "startPlacement": "gamma5",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -13314,8 +13314,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13-1778909918187",
         "letter": "Φ-",
-        "startPosition": "alpha3",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -13396,8 +13396,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14-1778909918187",
         "letter": "J",
-        "startPosition": "alpha7",
-        "endPosition": "beta5",
+        "startPlacement": "alpha7",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -13478,8 +13478,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15-1778909918187",
         "letter": "Σ-",
-        "startPosition": "beta5",
-        "endPosition": "gamma3",
+        "startPlacement": "beta5",
+        "endPlacement": "gamma3",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -13562,8 +13562,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16-1778909918187",
         "letter": "W-",
-        "startPosition": "gamma3",
-        "endPosition": "alpha1",
+        "startPlacement": "gamma3",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -13653,8 +13653,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1778909471513",
         "letter": "L",
-        "startPosition": "alpha1",
-        "endPosition": "beta3",
+        "startPlacement": "alpha1",
+        "endPlacement": "beta3",
         "motions": {
           "left": {
             "motionType": "float",
@@ -13739,8 +13739,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1778909471513",
         "letter": "G",
-        "startPosition": "beta3",
-        "endPosition": "beta5",
+        "startPlacement": "beta3",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -13821,8 +13821,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1778909471513",
         "letter": "Δ-",
-        "startPosition": "beta5",
-        "endPosition": "gamma9",
+        "startPlacement": "beta5",
+        "endPlacement": "gamma9",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -13903,8 +13903,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1778909471513",
         "letter": "W-",
-        "startPosition": "gamma9",
-        "endPosition": "alpha3",
+        "startPlacement": "gamma9",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -13985,8 +13985,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1778909471513",
         "letter": "L",
-        "startPosition": "alpha3",
-        "endPosition": "beta5",
+        "startPlacement": "alpha3",
+        "endPlacement": "beta5",
         "motions": {
           "left": {
             "motionType": "float",
@@ -14071,8 +14071,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1778909471513",
         "letter": "G",
-        "startPosition": "beta5",
-        "endPosition": "beta7",
+        "startPlacement": "beta5",
+        "endPlacement": "beta7",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -14153,8 +14153,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1778909471513",
         "letter": "Δ-",
-        "startPosition": "beta7",
-        "endPosition": "gamma11",
+        "startPlacement": "beta7",
+        "endPlacement": "gamma11",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -14235,8 +14235,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1778909471513",
         "letter": "W-",
-        "startPosition": "gamma11",
-        "endPosition": "alpha5",
+        "startPlacement": "gamma11",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -14317,8 +14317,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9-1778909471513",
         "letter": "L",
-        "startPosition": "alpha5",
-        "endPosition": "beta7",
+        "startPlacement": "alpha5",
+        "endPlacement": "beta7",
         "motions": {
           "left": {
             "motionType": "float",
@@ -14403,8 +14403,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10-1778909471513",
         "letter": "G",
-        "startPosition": "beta7",
-        "endPosition": "beta1",
+        "startPlacement": "beta7",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -14485,8 +14485,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11-1778909471513",
         "letter": "Δ-",
-        "startPosition": "beta1",
-        "endPosition": "gamma13",
+        "startPlacement": "beta1",
+        "endPlacement": "gamma13",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -14567,8 +14567,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12-1778909471513",
         "letter": "W-",
-        "startPosition": "gamma13",
-        "endPosition": "alpha7",
+        "startPlacement": "gamma13",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -14649,8 +14649,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13-1778909471513",
         "letter": "L",
-        "startPosition": "alpha7",
-        "endPosition": "beta1",
+        "startPlacement": "alpha7",
+        "endPlacement": "beta1",
         "motions": {
           "left": {
             "motionType": "float",
@@ -14735,8 +14735,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14-1778909471513",
         "letter": "G",
-        "startPosition": "beta1",
-        "endPosition": "beta3",
+        "startPlacement": "beta1",
+        "endPlacement": "beta3",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -14817,8 +14817,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15-1778909471513",
         "letter": "Δ-",
-        "startPosition": "beta3",
-        "endPosition": "gamma15",
+        "startPlacement": "beta3",
+        "endPlacement": "gamma15",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -14899,8 +14899,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16-1778909471513",
         "letter": "W-",
-        "startPosition": "gamma15",
-        "endPosition": "alpha1",
+        "startPlacement": "gamma15",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -14990,8 +14990,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1778906738734",
         "letter": "C",
-        "startPosition": "alpha1",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -15072,8 +15072,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1778906738734",
         "letter": "C",
-        "startPosition": "alpha7",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "float",
@@ -15158,8 +15158,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1778906738734",
         "letter": "Σ",
-        "startPosition": "alpha1",
-        "endPosition": "gamma7",
+        "startPlacement": "alpha1",
+        "endPlacement": "gamma7",
         "motions": {
           "left": {
             "motionType": "static",
@@ -15240,8 +15240,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1778906738734",
         "letter": "X",
-        "startPosition": "gamma7",
-        "endPosition": "alpha7",
+        "startPlacement": "gamma7",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -15322,8 +15322,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1778906738734",
         "letter": "C",
-        "startPosition": "alpha7",
-        "endPosition": "alpha5",
+        "startPlacement": "alpha7",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -15404,8 +15404,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1778906738734",
         "letter": "C",
-        "startPosition": "alpha5",
-        "endPosition": "alpha7",
+        "startPlacement": "alpha5",
+        "endPlacement": "alpha7",
         "motions": {
           "left": {
             "motionType": "float",
@@ -15490,8 +15490,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1778906738734",
         "letter": "Σ",
-        "startPosition": "alpha7",
-        "endPosition": "gamma5",
+        "startPlacement": "alpha7",
+        "endPlacement": "gamma5",
         "motions": {
           "left": {
             "motionType": "static",
@@ -15572,8 +15572,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1778906738734",
         "letter": "X",
-        "startPosition": "gamma5",
-        "endPosition": "alpha5",
+        "startPlacement": "gamma5",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -15654,8 +15654,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9-1778906738734",
         "letter": "C",
-        "startPosition": "alpha5",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha5",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -15736,8 +15736,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10-1778906738734",
         "letter": "C",
-        "startPosition": "alpha3",
-        "endPosition": "alpha5",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha5",
         "motions": {
           "left": {
             "motionType": "float",
@@ -15822,8 +15822,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11-1778906738734",
         "letter": "Σ",
-        "startPosition": "alpha5",
-        "endPosition": "gamma3",
+        "startPlacement": "alpha5",
+        "endPlacement": "gamma3",
         "motions": {
           "left": {
             "motionType": "static",
@@ -15904,8 +15904,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12-1778906738734",
         "letter": "X",
-        "startPosition": "gamma3",
-        "endPosition": "alpha3",
+        "startPlacement": "gamma3",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -15986,8 +15986,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13-1778906738734",
         "letter": "C",
-        "startPosition": "alpha3",
-        "endPosition": "alpha1",
+        "startPlacement": "alpha3",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -16068,8 +16068,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14-1778906738734",
         "letter": "C",
-        "startPosition": "alpha1",
-        "endPosition": "alpha3",
+        "startPlacement": "alpha1",
+        "endPlacement": "alpha3",
         "motions": {
           "left": {
             "motionType": "float",
@@ -16154,8 +16154,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15-1778906738734",
         "letter": "Σ",
-        "startPosition": "alpha3",
-        "endPosition": "gamma1",
+        "startPlacement": "alpha3",
+        "endPlacement": "gamma1",
         "motions": {
           "left": {
             "motionType": "static",
@@ -16236,8 +16236,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16-1778906738734",
         "letter": "X",
-        "startPosition": "gamma1",
-        "endPosition": "alpha1",
+        "startPlacement": "gamma1",
+        "endPlacement": "alpha1",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -16327,8 +16327,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1778745385407",
         "letter": "T",
-        "startPosition": "gamma6",
-        "endPosition": "gamma8",
+        "startPlacement": "gamma6",
+        "endPlacement": "gamma8",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -16409,8 +16409,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1778745385407",
         "letter": "Λ",
-        "startPosition": "gamma8",
-        "endPosition": "gamma16",
+        "startPlacement": "gamma8",
+        "endPlacement": "gamma16",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -16491,8 +16491,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1778745385407",
         "letter": "R",
-        "startPosition": "gamma16",
-        "endPosition": "gamma2",
+        "startPlacement": "gamma16",
+        "endPlacement": "gamma2",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -16573,8 +16573,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1778745385407",
         "letter": "S",
-        "startPosition": "gamma2",
-        "endPosition": "gamma8",
+        "startPlacement": "gamma2",
+        "endPlacement": "gamma8",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -16655,8 +16655,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1778745385407",
         "letter": "T",
-        "startPosition": "gamma8",
-        "endPosition": "gamma2",
+        "startPlacement": "gamma8",
+        "endPlacement": "gamma2",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -16737,8 +16737,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1778745385407",
         "letter": "Λ",
-        "startPosition": "gamma2",
-        "endPosition": "gamma10",
+        "startPlacement": "gamma2",
+        "endPlacement": "gamma10",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -16819,8 +16819,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1778745385407",
         "letter": "R",
-        "startPosition": "gamma10",
-        "endPosition": "gamma4",
+        "startPlacement": "gamma10",
+        "endPlacement": "gamma4",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -16901,8 +16901,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1778745385407",
         "letter": "S",
-        "startPosition": "gamma4",
-        "endPosition": "gamma2",
+        "startPlacement": "gamma4",
+        "endPlacement": "gamma2",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -16983,8 +16983,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9-1778745385407",
         "letter": "T",
-        "startPosition": "gamma2",
-        "endPosition": "gamma4",
+        "startPlacement": "gamma2",
+        "endPlacement": "gamma4",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -17065,8 +17065,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10-1778745385407",
         "letter": "Λ",
-        "startPosition": "gamma4",
-        "endPosition": "gamma12",
+        "startPlacement": "gamma4",
+        "endPlacement": "gamma12",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -17147,8 +17147,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11-1778745385407",
         "letter": "R",
-        "startPosition": "gamma12",
-        "endPosition": "gamma6",
+        "startPlacement": "gamma12",
+        "endPlacement": "gamma6",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -17229,8 +17229,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12-1778745385407",
         "letter": "S",
-        "startPosition": "gamma6",
-        "endPosition": "gamma4",
+        "startPlacement": "gamma6",
+        "endPlacement": "gamma4",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -17311,8 +17311,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13-1778745385407",
         "letter": "T",
-        "startPosition": "gamma4",
-        "endPosition": "gamma6",
+        "startPlacement": "gamma4",
+        "endPlacement": "gamma6",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -17393,8 +17393,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14-1778745385407",
         "letter": "Λ",
-        "startPosition": "gamma6",
-        "endPosition": "gamma14",
+        "startPlacement": "gamma6",
+        "endPlacement": "gamma14",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -17475,8 +17475,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15-1778745385407",
         "letter": "R",
-        "startPosition": "gamma14",
-        "endPosition": "gamma8",
+        "startPlacement": "gamma14",
+        "endPlacement": "gamma8",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -17557,8 +17557,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16-1778745385407",
         "letter": "S",
-        "startPosition": "gamma8",
-        "endPosition": "gamma6",
+        "startPlacement": "gamma8",
+        "endPlacement": "gamma6",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -17648,8 +17648,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1778745336106",
         "letter": "U",
-        "startPosition": "gamma2",
-        "endPosition": "gamma8",
+        "startPlacement": "gamma2",
+        "endPlacement": "gamma8",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -17730,8 +17730,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1778745336106",
         "letter": "Z",
-        "startPosition": "gamma8",
-        "endPosition": "beta6",
+        "startPlacement": "gamma8",
+        "endPlacement": "beta6",
         "motions": {
           "left": {
             "motionType": "static",
@@ -17812,8 +17812,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1778745336106",
         "letter": "E",
-        "startPosition": "beta6",
-        "endPosition": "alpha4",
+        "startPlacement": "beta6",
+        "endPlacement": "alpha4",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -17894,8 +17894,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1778745336106",
         "letter": "Θ-",
-        "startPosition": "alpha4",
-        "endPosition": "gamma8",
+        "startPlacement": "alpha4",
+        "endPlacement": "gamma8",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -17976,8 +17976,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1778745336106",
         "letter": "U",
-        "startPosition": "gamma8",
-        "endPosition": "gamma6",
+        "startPlacement": "gamma8",
+        "endPlacement": "gamma6",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -18058,8 +18058,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1778745336106",
         "letter": "Z",
-        "startPosition": "gamma6",
-        "endPosition": "beta4",
+        "startPlacement": "gamma6",
+        "endPlacement": "beta4",
         "motions": {
           "left": {
             "motionType": "static",
@@ -18140,8 +18140,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1778745336106",
         "letter": "E",
-        "startPosition": "beta4",
-        "endPosition": "alpha2",
+        "startPlacement": "beta4",
+        "endPlacement": "alpha2",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -18222,8 +18222,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1778745336106",
         "letter": "Θ-",
-        "startPosition": "alpha2",
-        "endPosition": "gamma6",
+        "startPlacement": "alpha2",
+        "endPlacement": "gamma6",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -18304,8 +18304,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9-1778745336106",
         "letter": "U",
-        "startPosition": "gamma6",
-        "endPosition": "gamma4",
+        "startPlacement": "gamma6",
+        "endPlacement": "gamma4",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -18386,8 +18386,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10-1778745336106",
         "letter": "Z",
-        "startPosition": "gamma4",
-        "endPosition": "beta2",
+        "startPlacement": "gamma4",
+        "endPlacement": "beta2",
         "motions": {
           "left": {
             "motionType": "static",
@@ -18468,8 +18468,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11-1778745336106",
         "letter": "E",
-        "startPosition": "beta2",
-        "endPosition": "alpha8",
+        "startPlacement": "beta2",
+        "endPlacement": "alpha8",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -18550,8 +18550,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12-1778745336106",
         "letter": "Θ-",
-        "startPosition": "alpha8",
-        "endPosition": "gamma4",
+        "startPlacement": "alpha8",
+        "endPlacement": "gamma4",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -18632,8 +18632,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13-1778745336106",
         "letter": "U",
-        "startPosition": "gamma4",
-        "endPosition": "gamma2",
+        "startPlacement": "gamma4",
+        "endPlacement": "gamma2",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -18714,8 +18714,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14-1778745336106",
         "letter": "Z",
-        "startPosition": "gamma2",
-        "endPosition": "beta8",
+        "startPlacement": "gamma2",
+        "endPlacement": "beta8",
         "motions": {
           "left": {
             "motionType": "static",
@@ -18796,8 +18796,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15-1778745336106",
         "letter": "E",
-        "startPosition": "beta8",
-        "endPosition": "alpha6",
+        "startPlacement": "beta8",
+        "endPlacement": "alpha6",
         "motions": {
           "left": {
             "motionType": "anti",
@@ -18878,8 +18878,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16-1778745336106",
         "letter": "Θ-",
-        "startPosition": "alpha6",
-        "endPosition": "gamma2",
+        "startPlacement": "alpha6",
+        "endPlacement": "gamma2",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -18969,8 +18969,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-1-1778745315222",
         "letter": "J",
-        "startPosition": "alpha2",
-        "endPosition": "beta4",
+        "startPlacement": "alpha2",
+        "endPlacement": "beta4",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -19051,8 +19051,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-2-1778745315222",
         "letter": "Σ-",
-        "startPosition": "beta4",
-        "endPosition": "gamma16",
+        "startPlacement": "beta4",
+        "endPlacement": "gamma16",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -19133,8 +19133,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-3-1778745315222",
         "letter": "W-",
-        "startPosition": "gamma16",
-        "endPosition": "alpha4",
+        "startPlacement": "gamma16",
+        "endPlacement": "alpha4",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -19215,8 +19215,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-4-1778745315222",
         "letter": "Φ-",
-        "startPosition": "alpha4",
-        "endPosition": "alpha8",
+        "startPlacement": "alpha4",
+        "endPlacement": "alpha8",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -19297,8 +19297,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-5-1778745315222",
         "letter": "J",
-        "startPosition": "alpha8",
-        "endPosition": "beta2",
+        "startPlacement": "alpha8",
+        "endPlacement": "beta2",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -19379,8 +19379,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-6-1778745315222",
         "letter": "Σ-",
-        "startPosition": "beta2",
-        "endPosition": "gamma14",
+        "startPlacement": "beta2",
+        "endPlacement": "gamma14",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -19461,8 +19461,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-7-1778745315222",
         "letter": "W-",
-        "startPosition": "gamma14",
-        "endPosition": "alpha2",
+        "startPlacement": "gamma14",
+        "endPlacement": "alpha2",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -19543,8 +19543,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-8-1778745315222",
         "letter": "Φ-",
-        "startPosition": "alpha2",
-        "endPosition": "alpha6",
+        "startPlacement": "alpha2",
+        "endPlacement": "alpha6",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -19625,8 +19625,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-9-1778745315222",
         "letter": "J",
-        "startPosition": "alpha6",
-        "endPosition": "beta8",
+        "startPlacement": "alpha6",
+        "endPlacement": "beta8",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -19707,8 +19707,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-10-1778745315222",
         "letter": "Σ-",
-        "startPosition": "beta8",
-        "endPosition": "gamma12",
+        "startPlacement": "beta8",
+        "endPlacement": "gamma12",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -19789,8 +19789,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-11-1778745315222",
         "letter": "W-",
-        "startPosition": "gamma12",
-        "endPosition": "alpha8",
+        "startPlacement": "gamma12",
+        "endPlacement": "alpha8",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -19871,8 +19871,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-12-1778745315222",
         "letter": "Φ-",
-        "startPosition": "alpha8",
-        "endPosition": "alpha4",
+        "startPlacement": "alpha8",
+        "endPlacement": "alpha4",
         "motions": {
           "left": {
             "motionType": "dash",
@@ -19953,8 +19953,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-13-1778745315222",
         "letter": "J",
-        "startPosition": "alpha4",
-        "endPosition": "beta6",
+        "startPlacement": "alpha4",
+        "endPlacement": "beta6",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -20035,8 +20035,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-14-1778745315222",
         "letter": "Σ-",
-        "startPosition": "beta6",
-        "endPosition": "gamma10",
+        "startPlacement": "beta6",
+        "endPlacement": "gamma10",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -20117,8 +20117,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-15-1778745315222",
         "letter": "W-",
-        "startPosition": "gamma10",
-        "endPosition": "alpha6",
+        "startPlacement": "gamma10",
+        "endPlacement": "alpha6",
         "motions": {
           "left": {
             "motionType": "pro",
@@ -20199,8 +20199,8 @@ export const CHOSEN_MANDALAS = [
         "isStep": true,
         "id": "step-16-1778745315222",
         "letter": "Φ-",
-        "startPosition": "alpha6",
-        "endPosition": "alpha2",
+        "startPlacement": "alpha6",
+        "endPlacement": "alpha2",
         "motions": {
           "left": {
             "motionType": "dash",

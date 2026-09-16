@@ -2,7 +2,7 @@
  * Sequence Transforms
  *
  * Pure functions that transform entire SequenceData objects.
- * Composes beat and start position transforms.
+ * Composes beat and start placement transforms.
  *
  * Supports targetHand parameter to transform only specific hand(s):
  * - "left": Only transform left motion
@@ -11,14 +11,14 @@
  */
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
-import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import {
   updateSequenceData,
   createSequenceData,
 } from "$lib/shared/foundation/domain/models/sequence-data";
 import { createStepData } from "$lib/shared/foundation/domain/factories/create-step-data";
-import { createStartPositionData } from "$lib/shared/create/factories/create-start-position-data";
+import { createStartPlacementData } from "$lib/shared/create/factories/create-start-placement-data";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { GridMode } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { deriveGridMode } from "$lib/shared/pictograph/grid/services/grid-mode-deriver";
@@ -28,7 +28,7 @@ import {
   RotationDirection,
 } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { Letter } from "$lib/shared/foundation/domain/models/letter";
-import type { GridPosition } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
+import type { GridPlacement } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import type { IMotionQueryHandler } from "$lib/shared/foundation/services/data/data-contracts";
 
 import {
@@ -40,14 +40,14 @@ import {
   rewindBeat,
 } from "$lib/shared/create/services/step-transforms";
 import { rewindMotion } from "$lib/shared/create/services/motion-transforms";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import {
-  mirrorStartPosition,
-  flipStartPosition,
-  rotateStartPosition,
-  handSwapStartPosition,
-  invertStartPosition,
-} from "$lib/shared/create/services/start-position-transforms";
+  mirrorStartPlacement,
+  flipStartPlacement,
+  rotateStartPlacement,
+  handSwapStartPlacement,
+  invertStartPlacement,
+} from "$lib/shared/create/services/start-placement-transforms";
 import { recalculateAllOrientations } from "$lib/shared/create/services/orientation-propagation";
 import { getToggledGridMode } from "$lib/shared/create/services/rotation-helpers";
 import type { TargetHand } from "$lib/shared/create/state/panel-coordination-state.svelte";
@@ -87,7 +87,7 @@ export function duplicateSequence(
 
 /**
  * Mirror sequence across vertical axis (E ↔ W).
- * For single-hand transforms, derives new positions and looks up new letters.
+ * For single-hand transforms, derives new placements and looks up new letters.
  * @param targetHand - Which hand(s) to transform. Defaults to "both".
  */
 export async function mirrorSequence(
@@ -103,27 +103,27 @@ export async function mirrorSequence(
     )
   );
 
-  // Transform start positions (always StartPositionData, never StepData)
-  const mirroredStartPosition = sequence.startPosition
-    ? mirrorStartPosition(sequence.startPosition, targetHand)
+  // Transform start placements (always StartPlacementData, never StepData)
+  const mirroredStartPlacement = sequence.startPlacement
+    ? mirrorStartPlacement(sequence.startPlacement, targetHand)
     : undefined;
 
-  const mirroredStartingPositionStep = sequence.startingPosition
-    ? mirrorStartPosition(sequence.startingPosition, targetHand)
+  const mirroredStartingPlacementStep = sequence.startingPlacement
+    ? mirrorStartPlacement(sequence.startingPlacement, targetHand)
     : undefined;
 
   return updateSequenceData(sequence, {
     steps: mirroredBeats,
-    ...(mirroredStartPosition && { startPosition: mirroredStartPosition }),
-    ...(mirroredStartingPositionStep && {
-      startingPosition: mirroredStartingPositionStep,
+    ...(mirroredStartPlacement && { startPlacement: mirroredStartPlacement }),
+    ...(mirroredStartingPlacementStep && {
+      startingPlacement: mirroredStartingPlacementStep,
     }),
   });
 }
 
 /**
  * Flip sequence across horizontal axis (N ↔ S).
- * For single-hand transforms, derives new positions and looks up new letters.
+ * For single-hand transforms, derives new placements and looks up new letters.
  * @param targetHand - Which hand(s) to transform. Defaults to "both".
  */
 export async function flipSequence(
@@ -139,20 +139,20 @@ export async function flipSequence(
     )
   );
 
-  // Transform start positions (always StartPositionData, never StepData)
-  const flippedStartPosition = sequence.startPosition
-    ? flipStartPosition(sequence.startPosition, targetHand)
+  // Transform start placements (always StartPlacementData, never StepData)
+  const flippedStartPlacement = sequence.startPlacement
+    ? flipStartPlacement(sequence.startPlacement, targetHand)
     : undefined;
 
-  const flippedStartingPositionStep = sequence.startingPosition
-    ? flipStartPosition(sequence.startingPosition, targetHand)
+  const flippedStartingPlacementStep = sequence.startingPlacement
+    ? flipStartPlacement(sequence.startingPlacement, targetHand)
     : undefined;
 
   return updateSequenceData(sequence, {
     steps: flippedBeats,
-    ...(flippedStartPosition && { startPosition: flippedStartPosition }),
-    ...(flippedStartingPositionStep && {
-      startingPosition: flippedStartingPositionStep,
+    ...(flippedStartPlacement && { startPlacement: flippedStartPlacement }),
+    ...(flippedStartingPlacementStep && {
+      startingPlacement: flippedStartingPlacementStep,
     }),
   });
 }
@@ -176,13 +176,13 @@ export async function rotateSequence(
     )
   );
 
-  // Transform start positions (always StartPositionData, never StepData)
-  const rotatedStartPosition = sequence.startPosition
-    ? rotateStartPosition(sequence.startPosition, rotationAmount, targetHand)
+  // Transform start placements (always StartPlacementData, never StepData)
+  const rotatedStartPlacement = sequence.startPlacement
+    ? rotateStartPlacement(sequence.startPlacement, rotationAmount, targetHand)
     : undefined;
 
-  const rotatedStartingPositionStep = sequence.startingPosition
-    ? rotateStartPosition(sequence.startingPosition, rotationAmount, targetHand)
+  const rotatedStartingPlacementStep = sequence.startingPlacement
+    ? rotateStartPlacement(sequence.startingPlacement, rotationAmount, targetHand)
     : undefined;
 
   // Only toggle grid mode when both hands are rotated
@@ -193,9 +193,9 @@ export async function rotateSequence(
 
   return updateSequenceData(sequence, {
     steps: rotatedBeats,
-    ...(rotatedStartPosition && { startPosition: rotatedStartPosition }),
-    ...(rotatedStartingPositionStep && {
-      startingPosition: rotatedStartingPositionStep,
+    ...(rotatedStartPlacement && { startPlacement: rotatedStartPlacement }),
+    ...(rotatedStartingPlacementStep && {
+      startingPlacement: rotatedStartingPlacementStep,
     }),
     gridMode: newGridMode,
   });
@@ -207,20 +207,20 @@ export async function rotateSequence(
 export function handSwapSequence(sequence: SequenceData): SequenceData {
   const swappedBeats = sequence.steps.map(handSwapBeat);
 
-  // Transform start positions (always StartPositionData, never StepData)
-  const swappedStartPosition = sequence.startPosition
-    ? handSwapStartPosition(sequence.startPosition)
+  // Transform start placements (always StartPlacementData, never StepData)
+  const swappedStartPlacement = sequence.startPlacement
+    ? handSwapStartPlacement(sequence.startPlacement)
     : undefined;
 
-  const swappedStartingPositionStep = sequence.startingPosition
-    ? handSwapStartPosition(sequence.startingPosition)
+  const swappedStartingPlacementStep = sequence.startingPlacement
+    ? handSwapStartPlacement(sequence.startingPlacement)
     : undefined;
 
   return updateSequenceData(sequence, {
     steps: swappedBeats,
-    ...(swappedStartPosition && { startPosition: swappedStartPosition }),
-    ...(swappedStartingPositionStep && {
-      startingPosition: swappedStartingPositionStep,
+    ...(swappedStartPlacement && { startPlacement: swappedStartPlacement }),
+    ...(swappedStartingPlacementStep && {
+      startingPlacement: swappedStartingPlacementStep,
     }),
   });
 }
@@ -249,20 +249,20 @@ export async function invertSequence(
     invertedBeats.push(invertedBeat);
   }
 
-  // Transform start positions (always StartPositionData, never StepData)
-  const invertedStartPosition = sequence.startPosition
-    ? invertStartPosition(sequence.startPosition, targetHand)
+  // Transform start placements (always StartPlacementData, never StepData)
+  const invertedStartPlacement = sequence.startPlacement
+    ? invertStartPlacement(sequence.startPlacement, targetHand)
     : undefined;
 
-  const invertedStartingPositionStep = sequence.startingPosition
-    ? invertStartPosition(sequence.startingPosition, targetHand)
+  const invertedStartingPlacementStep = sequence.startingPlacement
+    ? invertStartPlacement(sequence.startingPlacement, targetHand)
     : undefined;
 
   const invertedSequence = updateSequenceData(sequence, {
     steps: invertedBeats,
-    ...(invertedStartPosition && { startPosition: invertedStartPosition }),
-    ...(invertedStartingPositionStep && {
-      startingPosition: invertedStartingPositionStep,
+    ...(invertedStartPlacement && { startPlacement: invertedStartPlacement }),
+    ...(invertedStartingPlacementStep && {
+      startingPlacement: invertedStartingPlacementStep,
     }),
   });
 
@@ -273,7 +273,7 @@ export async function invertSequence(
  * Rewind sequence (play backwards).
  *
  * "both": the whole sequence plays in reverse — reverse beat ORDER and rewind
- * each beat (both hands), with the new start position taken from the old final
+ * each beat (both hands), with the new start placement taken from the old final
  * end.
  *
  * "left"/"right": rewind ONE hand's path while the other hand plays forward. This
@@ -298,9 +298,9 @@ export async function rewindSequence(
   }
 
   // Both hands: reverse beat order, rewind each beat, derive the new start
-  // position from the old final beat's end state.
+  // placement from the old final beat's end state.
   const finalStep = sequence.steps[sequence.steps.length - 1]!;
-  const newStartPosition = createStartPositionFromStepEnd(finalStep);
+  const newStartPlacement = createStartPlacementFromStepEnd(finalStep);
 
   const beatsToProcess = [...sequence.steps].reverse();
   const rewindBeats: StepData[] = [];
@@ -318,8 +318,8 @@ export async function rewindSequence(
 
   return updateSequenceData(sequence, {
     steps: rewindBeats,
-    startPosition: newStartPosition,
-    startingPosition: newStartPosition,
+    startPlacement: newStartPlacement,
+    startingPlacement: newStartPlacement,
     name: `${sequence.name} (Rewound)`,
   });
 }
@@ -331,9 +331,9 @@ export async function rewindSequence(
  * beat in place. New beat i pairs the rewound (N-1-i)th target motion with the
  * i-th forward other-hand motion. Because the target retraces its own contiguous
  * path and the other hand keeps its own, both hands chain (each beat's start ==
- * previous beat's end). Positions and letters are re-derived from the new
+ * previous beat's end). Placements and letters are re-derived from the new
  * hand-location pairs (they are genuinely new — neither the original start nor
- * end labels apply). The new start position is just beat 1's start state: the
+ * end labels apply). The new start placement is just beat 1's start state: the
  * target hand at its path end, the other hand at its original start.
  */
 async function rewindSingleHand(
@@ -360,21 +360,21 @@ async function rewindSingleHand(
     const leftM = newMotions[HandSide.LEFT];
     const rightM = newMotions[HandSide.RIGHT];
 
-    let startPosition: GridPosition | null = forwardStep.startPosition ?? null;
-    let endPosition: GridPosition | null = forwardStep.endPosition ?? null;
+    let startPlacement: GridPlacement | null = forwardStep.startPlacement ?? null;
+    let endPlacement: GridPlacement | null = forwardStep.endPlacement ?? null;
     if (leftM && rightM) {
       try {
-        startPosition = getGridPositionFromLocations(
+        startPlacement = getGridPlacementFromLocations(
           leftM.startLocation,
           rightM.startLocation
         );
-        endPosition = getGridPositionFromLocations(
+        endPlacement = getGridPlacementFromLocations(
           leftM.endLocation,
           rightM.endLocation
         );
       } catch (error) {
         console.warn(
-          "Failed to derive positions for single-hand rewind beat:",
+          "Failed to derive placements for single-hand rewind beat:",
           error
         );
       }
@@ -399,8 +399,8 @@ async function rewindSingleHand(
         ...forwardStep,
         stepNumber: i + 1,
         motions: newMotions,
-        startPosition,
-        endPosition,
+        startPlacement,
+        endPlacement,
         letter,
         // Reversal flags must be recalculated for the new ordering.
         leftReversal: false,
@@ -409,25 +409,25 @@ async function rewindSingleHand(
     );
   }
 
-  const newStartPosition = newSteps[0]
-    ? createStartPositionFromBeatStart(newSteps[0])
-    : sequence.startPosition;
+  const newStartPlacement = newSteps[0]
+    ? createStartPlacementFromBeatStart(newSteps[0])
+    : sequence.startPlacement;
 
   return updateSequenceData(sequence, {
     steps: newSteps,
-    ...(newStartPosition
-      ? { startPosition: newStartPosition, startingPosition: newStartPosition }
+    ...(newStartPlacement
+      ? { startPlacement: newStartPlacement, startingPlacement: newStartPlacement }
       : {}),
     name: `${sequence.name} (Rewound)`,
   });
 }
 
 /**
- * Shift the start position of a sequence.
+ * Shift the start placement of a sequence.
  * For circular: rotates steps so target beat's end becomes new start.
  * For non-circular: truncates steps before target.
  */
-export function shiftStartPosition(
+export function shiftStartPlacement(
   sequence: SequenceData,
   targetStepNumber: number
 ): SequenceData {
@@ -450,18 +450,18 @@ export function shiftStartPosition(
 /**
  * Shift a circular sequence by rotating steps.
  * Target beat becomes the new beat 1.
- * The beat BEFORE target's end position becomes the new start.
+ * The beat BEFORE target's end placement becomes the new start.
  */
 function shiftCircularSequence(
   sequence: SequenceData,
   targetStepNumber: number
 ): SequenceData {
-  // New start position is the beat BEFORE target's end position
-  // (which is the same as target beat's start position)
+  // New start placement is the beat BEFORE target's end placement
+  // (which is the same as target beat's start placement)
   const beatBeforeTarget = sequence.steps[targetStepNumber - 2];
-  const newStartPosition = beatBeforeTarget
-    ? createStartPositionFromStepEnd(beatBeforeTarget)
-    : sequence.startPosition || sequence.startingPosition;
+  const newStartPlacement = beatBeforeTarget
+    ? createStartPlacementFromStepEnd(beatBeforeTarget)
+    : sequence.startPlacement || sequence.startingPlacement;
 
   // Rotate steps: target and after come first, then everything before target
   const fromTarget = sequence.steps.slice(targetStepNumber - 1);
@@ -475,8 +475,8 @@ function shiftCircularSequence(
 
   return updateSequenceData(sequence, {
     steps: renumberedSteps,
-    startPosition: newStartPosition,
-    startingPosition: newStartPosition,
+    startPlacement: newStartPlacement,
+    startingPlacement: newStartPlacement,
   });
 }
 
@@ -488,9 +488,9 @@ function truncateToNewStart(
   sequence: SequenceData,
   targetStepNumber: number
 ): SequenceData {
-  // New start position from beat BEFORE target
+  // New start placement from beat BEFORE target
   const beatBeforeTarget = sequence.steps[targetStepNumber - 2]!;
-  const newStartPosition = createStartPositionFromStepEnd(beatBeforeTarget);
+  const newStartPlacement = createStartPlacementFromStepEnd(beatBeforeTarget);
 
   // Keep only steps from target onwards
   const keptBeats = sequence.steps.slice(targetStepNumber - 1);
@@ -502,27 +502,27 @@ function truncateToNewStart(
 
   return updateSequenceData(sequence, {
     steps: renumberedSteps,
-    startPosition: newStartPosition,
-    startingPosition: newStartPosition,
+    startPlacement: newStartPlacement,
+    startingPlacement: newStartPlacement,
     isCircular: false, // No longer circular after truncation
   });
 }
 
 /**
- * Derive the static letter (α, β, γ) from a grid position.
- * Alpha positions → Letter.ALPHA (α)
- * Beta positions → Letter.BETA (β)
- * Gamma positions → Letter.GAMMA (γ)
+ * Derive the static letter (α, β, γ) from a grid placement.
+ * Alpha placements → Letter.ALPHA (α)
+ * Beta placements → Letter.BETA (β)
+ * Gamma placements → Letter.GAMMA (γ)
  */
-function getStaticLetterFromGridPosition(
-  position: GridPosition | null | undefined
+function getStaticLetterFromGridPlacement(
+  placement: GridPlacement | null | undefined
 ): Letter {
-  if (!position) return Letter.ALPHA; // Fallback for null/undefined
+  if (!placement) return Letter.ALPHA; // Fallback for null/undefined
 
-  const positionStr = position.toString().toLowerCase();
-  if (positionStr.startsWith("beta")) return Letter.BETA;
-  if (positionStr.startsWith("gamma")) return Letter.GAMMA;
-  return Letter.ALPHA; // Default for alpha positions
+  const placementStr = placement.toString().toLowerCase();
+  if (placementStr.startsWith("beta")) return Letter.BETA;
+  if (placementStr.startsWith("gamma")) return Letter.GAMMA;
+  return Letter.ALPHA; // Default for alpha placements
 }
 
 /**
@@ -582,24 +582,24 @@ export async function deriveSequenceLetters(
 }
 
 /**
- * Create a start position from a beat's end state.
- * Returns StartPositionData (not StepData) - start positions are semantically distinct from steps.
+ * Create a start placement from a beat's end state.
+ * Returns StartPlacementData (not StepData) - start placements are semantically distinct from steps.
  */
-export function createStartPositionFromStepEnd(
+export function createStartPlacementFromStepEnd(
   step: StepData
-): StartPositionData {
+): StartPlacementData {
   const leftMotion = step.motions[HandSide.LEFT];
   const rightMotion = step.motions[HandSide.RIGHT];
 
-  // Derive the correct letter from the end position (alpha, beta, or gamma)
-  const letter = getStaticLetterFromGridPosition(step.endPosition);
+  // Derive the correct letter from the end placement (alpha, beta, or gamma)
+  const letter = getStaticLetterFromGridPlacement(step.endPlacement);
 
-  return createStartPositionData({
+  return createStartPlacementData({
     id: `start-${Date.now()}`,
     letter: letter,
-    startPosition: step.endPosition ?? null,
-    endPosition: step.endPosition ?? null,
-    gridPosition: step.endPosition ?? null,
+    startPlacement: step.endPlacement ?? null,
+    endPlacement: step.endPlacement ?? null,
+    gridPlacement: step.endPlacement ?? null,
     motions: {
       [HandSide.LEFT]: leftMotion
         ? {
@@ -632,26 +632,26 @@ export function createStartPositionFromStepEnd(
 }
 
 /**
- * Create a start position from a beat's START state.
- * Used when a sequence doesn't have an explicit startPosition but we need to derive one
+ * Create a start placement from a beat's START state.
+ * Used when a sequence doesn't have an explicit startPlacement but we need to derive one
  * from beat 1's starting configuration.
- * Returns StartPositionData (not StepData) - start positions are semantically distinct from steps.
+ * Returns StartPlacementData (not StepData) - start placements are semantically distinct from steps.
  */
-export function createStartPositionFromBeatStart(
+export function createStartPlacementFromBeatStart(
   step: StepData
-): StartPositionData {
+): StartPlacementData {
   const leftMotion = step.motions[HandSide.LEFT];
   const rightMotion = step.motions[HandSide.RIGHT];
 
-  // Derive the correct letter from the start position (alpha, beta, or gamma)
-  const letter = getStaticLetterFromGridPosition(step.startPosition);
+  // Derive the correct letter from the start placement (alpha, beta, or gamma)
+  const letter = getStaticLetterFromGridPlacement(step.startPlacement);
 
-  return createStartPositionData({
+  return createStartPlacementData({
     id: `start-derived-${Date.now()}`,
     letter: letter,
-    startPosition: step.startPosition ?? null,
-    endPosition: step.startPosition ?? null,
-    gridPosition: step.startPosition ?? null,
+    startPlacement: step.startPlacement ?? null,
+    endPlacement: step.startPlacement ?? null,
+    gridPlacement: step.startPlacement ?? null,
     motions: {
       [HandSide.LEFT]: leftMotion
         ? {

@@ -24,7 +24,7 @@ import {
 export interface TransitionAnalysis {
   fromLetter: string;
   toLetter: string;
-  /** Total valid variations (position matches) */
+  /** Total valid variations (placement matches) */
   totalValidTransitions: number;
   /** How many have no hand path reversals */
   noHandReversalCount: number;
@@ -167,8 +167,8 @@ export function analyzeTransition(
       const to = toVariations[toIdx];
       if (!to) continue;
 
-      // Check if positions match (end of from = start of to)
-      if (from.endPosition !== to.startPosition) {
+      // Check if placements match (end of from = start of to)
+      if (from.endPlacement !== to.startPlacement) {
         continue;
       }
 

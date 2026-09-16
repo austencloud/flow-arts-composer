@@ -42,7 +42,7 @@ Usage:
   import { parseTurnsTuple } from "../../tka-glyph/utils/turn-tuple-parser";
   import ReversalIndicators from "./ReversalIndicators.svelte";
   import ElementalGlyph from "./ElementalGlyph.svelte";
-  import PositionGlyph from "./PositionGlyph.svelte";
+  import PlacementGlyph from "./PlacementGlyph.svelte";
   import StepNumber from "./StepNumber.svelte";
   import DurationGlyph from "./DurationGlyph.svelte";
   import PathShapeGlyph from "./PathShapeGlyph.svelte";
@@ -82,7 +82,7 @@ Usage:
     showTnD = false,
     showElemental = false,
     propElementalType = null,
-    showPositions = false,
+    showPlacements = false,
     // Hand point visibility (all = show all 8, active = only where props are)
     handPointVisibility = "all",
     // Active locations for hand point filtering
@@ -173,7 +173,7 @@ Usage:
     showElemental?: boolean;
     /** Optional prop-path TnD element, rendered opposite the hand-path glyph. */
     propElementalType?: ElementalType | null;
-    showPositions?: boolean;
+    showPlacements?: boolean;
     /** Hand point visibility mode: "all" shows all 8 points, "active" shows only where props are, "none" hides all */
     handPointVisibility?: "all" | "active" | "none";
     /** Active locations for filtering hand points when in "active" mode */
@@ -247,18 +247,18 @@ Usage:
   );
 
   // Derived beat context
-  const isStartPosition = $derived(stepNumber === 0);
-  const handColorKeyShown = $derived(showHandColorKey ?? isStartPosition);
+  const isStartPlacement = $derived(stepNumber === 0);
+  const handColorKeyShown = $derived(showHandColorKey ?? isStartPlacement);
   // Keep the key mounted while hidden only where a caller drives the toggle
   // and the pictograph is (or may be) a start position, so its fade can play.
   const handColorKeyMounted = $derived(
     handColorKeyShown ||
       (animateVisibility &&
         showHandColorKey !== undefined &&
-        (stepNumber === null || isStartPosition))
+        (stepNumber === null || isStartPlacement))
   );
   const shouldShowBeatNumber = $derived(
-    showStepNumber && stepNumber !== null && !isStartPosition && !poseOnly
+    showStepNumber && stepNumber !== null && !isStartPlacement && !poseOnly
   );
 
   // Derive grid mode from override, pre-calculated, or motions
@@ -705,7 +705,7 @@ Usage:
       {stepNumber}
       showStepNumber={shouldShowBeatNumber}
       {animateVisibility}
-      {isStartPosition}
+      {isStartPlacement}
       {hasValidData}
       {darkMode}
     />
@@ -794,12 +794,12 @@ Usage:
 
     <!-- Position glyph -->
     <g opacity={glyphOpacity}>
-      <PositionGlyph
-        startPosition={pictograph.startPosition}
-        endPosition={pictograph.endPosition}
+      <PlacementGlyph
+        startPlacement={pictograph.startPlacement}
+        endPlacement={pictograph.endPlacement}
         letter={pictograph.letter}
         {hasValidData}
-        visible={showPositions && !poseOnly}
+        visible={showPlacements && !poseOnly}
         {previewMode}
         {animateVisibility}
         onToggle={onTogglePositions}

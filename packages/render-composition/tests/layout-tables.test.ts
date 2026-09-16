@@ -28,8 +28,8 @@ describe("getLayout", () => {
   });
 
   it("returns correct layout for 4 steps with start row", () => {
-    // WITH_START_ROW adds 1 row to WITHOUT_START_POSITION
-    // WITHOUT_START_POSITION[4] = [2, 2] → WITH_START_ROW[4] = [2, 3]
+    // WITH_START_ROW adds 1 row to WITHOUT_START_PLACEMENT
+    // WITHOUT_START_PLACEMENT[4] = [2, 2] → WITH_START_ROW[4] = [2, 3]
     expect(getLayout(4, "row")).toEqual([2, 3]);
   });
 
@@ -55,7 +55,7 @@ describe("getLayout", () => {
     expect(getLayout(8, "column")).toEqual([5, 2]);
   });
 
-  it("WITH_START_ROW has one more row than WITHOUT_START_POSITION for every step count", () => {
+  it("WITH_START_ROW has one more row than WITHOUT_START_PLACEMENT for every step count", () => {
     const stepCounts = [1, 5, 12, 32, 64];
     for (const n of stepCounts) {
       const [colsNone, rowsNone] = getLayout(n, "none");

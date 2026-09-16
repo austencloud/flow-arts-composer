@@ -11,7 +11,7 @@ QuizPictographButton - Answer button containing a pictograph
     disabled,
     onclick,
     showTKA = false,
-    showPositions = false,
+    showPlacements = false,
     caption = null,
     ariaLabel = null,
   }: {
@@ -20,7 +20,7 @@ QuizPictographButton - Answer button containing a pictograph
     disabled: boolean;
     onclick: () => void;
     showTKA?: boolean;
-    showPositions?: boolean;
+    showPlacements?: boolean;
     caption?: string | null;
     ariaLabel?: string | null;
   } = $props();
@@ -37,7 +37,7 @@ QuizPictographButton - Answer button containing a pictograph
   aria-label={ariaLabel ?? "Answer: pictograph option"}
 >
   <div class="pictograph-wrapper">
-    <PictographContainer pictographData={pictograph} {showTKA} {showPositions} />
+    <PictographContainer pictographData={pictograph} {showTKA} {showPlacements} />
   </div>
   {#if caption}
     <span class="answer-caption">{caption}</span>

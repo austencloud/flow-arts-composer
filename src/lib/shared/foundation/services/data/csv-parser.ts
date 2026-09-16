@@ -23,8 +23,13 @@ function createRowFromValues(headers: string[], values: string[]): ParsedCsvRow 
 
   return {
     letter: row["letter"] || "",
-    startPosition: row["startPosition"] || "",
-    endPosition: row["endPosition"] || "",
+    // Defense in depth alongside the csv-loader IndexedDB cache-key bump:
+    // accept the pre-rename header spelling too, so any CSV text that still
+    // has an old header row (a stale cache the bump missed, an offline
+    // export, a hand-copied fixture) still parses instead of coming back
+    // with empty placements.
+    startPlacement: row["startPlacement"] || row["startPosition"] || "",
+    endPlacement: row["endPlacement"] || row["endPosition"] || "",
     timing: row["timing"] || "",
     direction: row["direction"] || "",
     leftMotionType: row["blueMotionType"] || "",
@@ -41,14 +46,16 @@ function createRowFromValues(headers: string[], values: string[]): ParsedCsvRow 
 
 function isValidRow(row: ParsedCsvRow): boolean {
   const hasLetter = !!(row["letter"] && row["letter"].trim() !== "");
-  const hasStartPosition = !!(
-    row["startPosition"] && row["startPosition"].trim() !== ""
+  // row already carries the fallback-resolved startPlacement/endPlacement
+  // from createRowFromValues, so no legacy check is needed here.
+  const hasStartPlacement = !!(
+    row["startPlacement"] && row["startPlacement"].trim() !== ""
   );
-  const hasEndPosition = !!(
-    row["endPosition"] && row["endPosition"].trim() !== ""
+  const hasEndPlacement = !!(
+    row["endPlacement"] && row["endPlacement"].trim() !== ""
   );
 
-  return hasLetter && hasStartPosition && hasEndPosition;
+  return hasLetter && hasStartPlacement && hasEndPlacement;
 }
 
 export function parseCSV(csvText: string): CsvParseResult {
@@ -170,11 +177,17 @@ export function validateCSVStructure(csvText: string): {
     return { isValid: false, errors };
   }
   const headers = headerLine.split(",").map((h) => h.trim());
-  const requiredHeaders = ["letter", "startPosition", "endPosition"];
+  // Each entry accepts either the canonical or the pre-rename header
+  // spelling, matching the createRowFromValues fallback above.
+  const requiredHeaders: ReadonlyArray<readonly string[]> = [
+    ["letter"],
+    ["startPlacement", "startPosition"],
+    ["endPlacement", "endPosition"],
+  ];
 
-  for (const required of requiredHeaders) {
-    if (!headers.includes(required)) {
-      errors.push(`Missing required header: ${required}`);
+  for (const accepted of requiredHeaders) {
+    if (!accepted.some((name) => headers.includes(name))) {
+      errors.push(`Missing required header: ${accepted[0]}`);
     }
   }
 

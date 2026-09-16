@@ -28,8 +28,8 @@
     if (!sequence) return false;
     return (
       (sequence.steps?.length ?? 0) > 0 ||
-      !!sequence.startPosition ||
-      !!sequence.startingPosition
+      !!sequence.startPlacement ||
+      !!sequence.startingPlacement
     );
   });
 

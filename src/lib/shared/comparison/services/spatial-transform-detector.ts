@@ -9,7 +9,7 @@ import type { Step } from "@tka/tka-types";
 import type { SpatialTransform, SpatialTransformResult } from "../domain/models/signatures";
 import { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
-import { LOCATION_MAP_EIGHTH_CW } from "$lib/shared/foundation/domain/models/generation/circular-position-maps";
+import { LOCATION_MAP_EIGHTH_CW } from "$lib/shared/foundation/domain/models/generation/circular-placement-maps";
 
 /**
  * Map of grid locations to their angular position (in 45° steps from north).

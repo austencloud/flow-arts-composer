@@ -181,7 +181,7 @@
   const r = (render?: PictographRender) => ({
     propType: render?.propType ?? PropType.HAND,
     showTKA: render?.showTKA ?? true,
-    showPositions: render?.showPositions ?? false,
+    showPlacements: render?.showPlacements ?? false,
     showElemental: render?.showElemental ?? false,
     showReversals: render?.showReversals ?? false,
     showNonRadialPoints: render?.showNonRadialPoints ?? false,
@@ -290,7 +290,7 @@
               forceTheme={picTheme}
               propType={rp.propType}
               showTKA={rp.showTKA}
-              showPositions={rp.showPositions}
+              showPlacements={rp.showPlacements}
               showElemental={rp.showElemental}
               showReversals={rp.showReversals}
               showNonRadialPoints={rp.showNonRadialPoints}
@@ -321,7 +321,7 @@
                   forceTheme={picTheme}
                   propType={rp.propType}
                   showTKA={rp.showTKA}
-                  showPositions={rp.showPositions}
+                  showPlacements={rp.showPlacements}
                   showElemental={rp.showElemental}
                   showReversals={rp.showReversals}
                   showNonRadialPoints={rp.showNonRadialPoints}

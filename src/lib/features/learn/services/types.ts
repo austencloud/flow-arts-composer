@@ -38,7 +38,7 @@ export interface MisconceptionPattern {
  *
  * Produces deterministic, correct letter descriptions and comparisons
  * from structured domain data. No LLM needed - everything is derivable
- * from type, positions, rotation types, and VTG mode.
+ * from type, placements, rotation types, and VTG mode.
  *
  * Used by MisconceptionHint and QuizMisconceptionSummary to build
  * factually correct seed messages for TIKA.
@@ -47,7 +47,7 @@ export interface LetterBreakdown {
   letter: string;
   typeNumber: number;
   typeName: string;
-  positionDescription: string;
+  placementDescription: string;
   motionDescription: string;
   tndMode?: string;
   tndElement?: string;
@@ -64,12 +64,12 @@ export interface LetterComparison {
 }
 
 export type ComparisonRelationship =
-  | "same-type-different-position"
+  | "same-type-different-placement"
   | "same-type-different-rotation"
   | "same-type-different-group"
   | "cross-type-upgrade"
   | "cross-type-confusion"
-  | "same-position-different-type"
+  | "same-placement-different-type"
   | "unrelated";
 
 /**

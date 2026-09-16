@@ -37,7 +37,7 @@ captureEffectDiagnostics to the context menu.
   import { getSettings } from "$lib/shared/application/state/app-state.svelte";
   import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
   import type { Letter } from "$lib/shared/foundation/domain/models/letter";
-  import type { StartPositionData } from "$lib/shared/foundation/domain/models/start-position-data";
+  import type { StartPlacementData } from "$lib/shared/foundation/domain/models/start-placement-data";
   import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
   import type { PropState } from "$lib/shared/foundation/domain/types/prop-state";
   import type { TrailSettings } from "../domain/types/trail-types";
@@ -122,7 +122,7 @@ captureEffectDiagnostics to the context menu.
     propElementalType = null,
     glyphFrame = "pictograph",
     effectiveBeatNumbersVisible = false,
-    positionGlyphVisible = false,
+    placementGlyphVisible = false,
     leftPathLinesVisible = false,
     rightPathLinesVisible = false,
     suppress2DOverlays = false,
@@ -159,7 +159,7 @@ captureEffectDiagnostics to the context menu.
     gridMode?: GridMode | null;
     backgroundAlpha?: number;
     letter?: Letter | null;
-    stepData?: StartPositionData | StepData | null;
+    stepData?: StartPlacementData | StepData | null;
     sequenceData?: SequenceData | null;
     currentStep?: number;
     isPlaying?: boolean;
@@ -190,7 +190,7 @@ captureEffectDiagnostics to the context menu.
     glyphFrame?: GlyphOverlayFrameMode;
     effectiveBeatNumbersVisible?: boolean;
     /** Show the α/β/γ start→end position indicator (guide hand-path exploration). */
-    positionGlyphVisible?: boolean;
+    placementGlyphVisible?: boolean;
     leftPathLinesVisible?: boolean;
     rightPathLinesVisible?: boolean;
     suppress2DOverlays?: boolean;
@@ -580,13 +580,13 @@ captureEffectDiagnostics to the context menu.
       {propElementalType}
       {glyphFrame}
       stepNumbersVisible={effectiveBeatNumbersVisible}
-      {positionGlyphVisible}
+      {placementGlyphVisible}
       darkMode={darkModeEnabled}
-      isAtStartPosition={beatIndicators &&
+      isAtStartPlacement={beatIndicators &&
         !hideStepNumbers &&
         currentStep < 1 &&
         sequenceData !== null}
-      isAtEndPosition={beatIndicators &&
+      isAtEndPlacement={beatIndicators &&
         !hideStepNumbers &&
         sequenceData !== null &&
         !effectiveIsSeamlesslyLoopable &&

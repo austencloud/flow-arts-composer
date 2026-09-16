@@ -130,7 +130,7 @@ re-initialise that recomputes `totalDuration`, carry the remainder the way
 `acceptSequenceBoundary` already does:
 
 ```
-const base = this._isSeamlesslyLoopable ? fallbackStartPositionDuration : 0;
+const base = this._isSeamlesslyLoopable ? fallbackStartPlacementDuration : 0;
 this.timePosition = Math.min(base + boundaryOverrun, this.totalDuration);
 ```
 
@@ -294,7 +294,7 @@ result before `updatePropStatesFromEngine()` in the paused branch too.
 ### C5 — Live start pose and export sampler disagree when beat 1 is blank
 
 **Confirmed. Low.** `calculateState` (`sequence-animation-orchestrator.ts:208`)
-and `calculateStartPositionState` (`:705`) read the start pose off `steps[0]`
+and `calculateStartPlacementState` (`:705`) read the start pose off `steps[0]`
 and return **without touching prop state** when that step has no visible motion.
 `initializePropStates` (`:473`) and `samplePropStateAt` (`:372`) instead use
 `findFirstBeatWithMotion()`.
@@ -308,7 +308,7 @@ So the "byte-for-byte what `calculateStateForStep` produced" claim on
 hold for sequences with a blank first beat.
 
 **Bounded fix (2 call sites).** Resolve the start pose through
-`findFirstBeatWithMotion()` in `calculateState` and `calculateStartPositionState`,
+`findFirstBeatWithMotion()` in `calculateState` and `calculateStartPlacementState`,
 matching what the initialiser and the sampler already do.
 
 ### C6 — The step transport ignores per-step durations

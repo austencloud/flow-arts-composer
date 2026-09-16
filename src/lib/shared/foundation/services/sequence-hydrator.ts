@@ -14,7 +14,7 @@ import {
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
 import { calculateHandpathDirection } from "$lib/shared/pictograph/arrow/positioning/calculation/services/handpath-direction-calculator";
 import { reversalDetector } from "$lib/shared/create/services/reversal-detector";
-import { startPositionDeriver } from "$lib/shared/pictograph/shared/services/start-position-deriver";
+import { startPlacementDeriver } from "$lib/shared/pictograph/shared/services/start-placement-deriver";
 import { ensureStepPlacement } from "$lib/shared/pictograph/shared/services/motion-placement";
 import { normalizeLegacySequence } from "@tka/tka-types";
 
@@ -102,8 +102,8 @@ function backfillPrefloatFromLegacySteps(
 }
 
 /**
- * Reconstruct the start-position pictograph from a sequence's first step.
- * Delegates to the canonical StartPositionDeriver, which computes the actual
+ * Reconstruct the start-placement pictograph from a sequence's first step.
+ * Delegates to the canonical StartPlacementDeriver, which computes the actual
  * start POSITION (alpha/beta/gamma) from the first step's blue+red start
  * locations and places both props STATIC there. Shared by hydrate() (runtime)
  * and ensureComposition() (persist time) so a sequence always carries a
@@ -111,9 +111,9 @@ function backfillPrefloatFromLegacySteps(
  * step's letter (the bug that showed U/B/V… in the start cell). Returns
  * undefined when the first step lacks the blue/red motions to derive from.
  */
-export function deriveStartPositionFromSteps(
+export function deriveStartPlacementFromSteps(
   steps: readonly StepData[]
-): SequenceData["startPosition"] | undefined {
+): SequenceData["startPlacement"] | undefined {
   const first = steps[0];
   // Invisible placeholder = hand not really there (both-required Step shape);
   // deriving a start cell from a placeholder's default location would lie.
@@ -123,9 +123,9 @@ export function deriveStartPositionFromSteps(
   )
     return undefined;
   try {
-    return startPositionDeriver.deriveFromFirstStep(
+    return startPlacementDeriver.deriveFromFirstStep(
       first
-    ) as SequenceData["startPosition"];
+    ) as SequenceData["startPlacement"];
   } catch {
     return undefined;
   }
@@ -180,20 +180,20 @@ export function hydrate(sequence: SequenceData): SequenceData {
 
     const steps = backfillPrefloatFromLegacySteps(derived, sequence.steps);
 
-    // A stored startPosition is kept as-is (the `??` only derives when it is
+    // A stored startPlacement is kept as-is (the `??` only derives when it is
     // absent), so an older document's start cell arrives with motions that
     // predate arrow/propPlacementData — and the renderer drops props and
     // arrows SILENTLY for exactly that shape. Backfill before returning.
     const storedStart =
-      sequence.startPosition ?? deriveStartPositionFromSteps(steps);
-    const startPosition = storedStart
+      sequence.startPlacement ?? deriveStartPlacementFromSteps(steps);
+    const startPlacement = storedStart
       ? ensureStepPlacement(storedStart)
       : undefined;
 
     const hydrated = {
       ...sequence,
       steps,
-      ...(startPosition && { startPosition }),
+      ...(startPlacement && { startPlacement }),
     };
     return hydrated.steps.length > 0
       ? reversalDetector.processReversals(hydrated)
@@ -221,8 +221,8 @@ export function hydrate(sequence: SequenceData): SequenceData {
   const withPlacement = {
     ...sequence,
     steps: sequence.steps.map(ensureStepPlacement),
-    ...(sequence.startPosition && {
-      startPosition: ensureStepPlacement(sequence.startPosition),
+    ...(sequence.startPlacement && {
+      startPlacement: ensureStepPlacement(sequence.startPlacement),
     }),
   };
 
@@ -246,10 +246,10 @@ export function ensureComposition(sequence: SequenceData): SequenceData {
   // bug the 2026-06 backfill repaired. Deriving here keeps every save/publish
   // self-sufficient instead of relying on read-time hydrate().
   // Persist-time twin of the read-time backfill above: a doc saved from an
-  // already-lean startPosition would otherwise write the propless shape back.
+  // already-lean startPlacement would otherwise write the propless shape back.
   const derivedStart =
-    sequence.startPosition ?? deriveStartPositionFromSteps(sequence.steps);
-  const startPosition = derivedStart
+    sequence.startPlacement ?? deriveStartPlacementFromSteps(sequence.steps);
+  const startPlacement = derivedStart
     ? ensureStepPlacement(derivedStart)
     : undefined;
 
@@ -262,6 +262,6 @@ export function ensureComposition(sequence: SequenceData): SequenceData {
     rightPathHash: rightSoloProp.handPath.contentHash,
     leftSoloHash: leftSoloProp.contentHash,
     rightSoloHash: rightSoloProp.contentHash,
-    ...(startPosition && { startPosition }),
+    ...(startPlacement && { startPlacement }),
   };
 }

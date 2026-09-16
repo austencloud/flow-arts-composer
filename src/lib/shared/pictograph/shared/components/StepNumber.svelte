@@ -14,7 +14,7 @@ dark mode independent of app dark mode). Export uses explicit darkMode prop.
     stepNumber = null,
     showStepNumber = true,
     animateVisibility = false,
-    isStartPosition = false,
+    isStartPlacement = false,
     hasValidData = true,
     darkMode = undefined,
   } = $props<{
@@ -25,7 +25,7 @@ dark mode independent of app dark mode). Export uses explicit darkMode prop.
     /** Keep mounted while hidden so the opacity fade can play (live DOM only, not export) */
     animateVisibility?: boolean;
     /** Whether this is a start position (no step number) */
-    isStartPosition?: boolean;
+    isStartPlacement?: boolean;
     /** Whether the pictograph has valid data */
     hasValidData?: boolean;
     /** Dark mode override for export. When set, overrides visibility manager state. */
@@ -59,7 +59,7 @@ dark mode independent of app dark mode). Export uses explicit darkMode prop.
   // Beat number -2 is excluded so it falls through to show "End" text.
   const isNumericStep = $derived.by(() => {
     return (
-      !isStartPosition &&
+      !isStartPlacement &&
       hasValidData &&
       stepNumber !== null &&
       stepNumber !== -1 &&

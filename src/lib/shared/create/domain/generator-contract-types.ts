@@ -72,9 +72,9 @@ export interface CardHandlers {
     /** LOOP-multiplied natural length (without extras) - the stepper floor */
     naturalDisplayLength: number;
   };
-  // Trigger value that increments when positions are reset due to grid mode change
-  positionsResetTrigger?: number;
-  // Current grid mode for position picker filtering
+  // Trigger value that increments when placements are reset due to grid mode change
+  placementsResetTrigger?: number;
+  // Current grid mode for placement picker filtering
   currentGridMode?: GridMode;
   // Saved setups card
   setupsCardValue?: string;

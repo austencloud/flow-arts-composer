@@ -5,7 +5,7 @@
   Shows letters that bring a sequence to a loopable position.
   Groups options by rotation type and shows resulting sequence length.
 
-  Pattern follows: PictographGrid from StartPositionPicker
+  Pattern follows: PictographGrid from StartPlacementPicker
 -->
 <script lang="ts">
   import { getHapticFeedback } from "$lib/shared/application/get-haptic-feedback";
@@ -135,7 +135,7 @@
           >
         </div>
         <div class="bridge-grid">
-          {#each halfRotationOptions as option, index (option.bridgeLetters[0] + "-" + option.endPosition)}
+          {#each halfRotationOptions as option, index (option.bridgeLetters[0] + "-" + option.endPlacement)}
             {@const pictograph = option.pictographData}
             {#if pictograph}
               <button
@@ -148,7 +148,7 @@
                 style:--animation-delay="{index * 40}ms"
                 aria-label="Add {option
                   .bridgeLetters[0]} → {option.resultingLength || ''} steps"
-                title="{option.bridgeLetters[0]} → {option.endPosition}"
+                title="{option.bridgeLetters[0]} → {option.endPlacement}"
               >
                 <div class="pictograph-wrapper">
                   <PictographContainer pictographData={pictograph} />
@@ -171,7 +171,7 @@
           >
         </div>
         <div class="bridge-grid">
-          {#each quarterRotationOptions as option, index (option.bridgeLetters[0] + "-" + option.endPosition)}
+          {#each quarterRotationOptions as option, index (option.bridgeLetters[0] + "-" + option.endPlacement)}
             {@const pictograph = option.pictographData}
             {#if pictograph}
               <button
@@ -184,7 +184,7 @@
                 style:--animation-delay="{index * 40}ms"
                 aria-label="Add {option
                   .bridgeLetters[0]} → {option.resultingLength || ''} steps"
-                title="{option.bridgeLetters[0]} → {option.endPosition}"
+                title="{option.bridgeLetters[0]} → {option.endPlacement}"
               >
                 <div class="pictograph-wrapper">
                   <PictographContainer pictographData={pictograph} />
@@ -207,7 +207,7 @@
           >
         </div>
         <div class="bridge-grid">
-          {#each exactOptions as option, index (option.bridgeLetters[0] + "-" + option.endPosition)}
+          {#each exactOptions as option, index (option.bridgeLetters[0] + "-" + option.endPlacement)}
             {@const pictograph = option.pictographData}
             {@const badgeInfo = getExactBadgeInfo(option)}
             {#if pictograph}

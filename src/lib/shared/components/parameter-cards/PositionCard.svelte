@@ -9,8 +9,8 @@ Supports Alpha, Beta, Gamma positions with Greek symbol pills
   import type { HapticFeedback } from "$lib/shared/application/services/haptic-feedback";
   import { onMount } from "svelte";
   import {
-    type StartingPosition,
-    STARTING_POSITIONS_LIST,
+    type StartingPlacement,
+    STARTING_PLACEMENTS_LIST,
   } from "$lib/shared/domain/models/sequence-parameters";
 
   let {
@@ -21,12 +21,12 @@ Supports Alpha, Beta, Gamma positions with Greek symbol pills
     cardIndex = 0,
     onChange,
   }: {
-    value?: StartingPosition | null;
+    value?: StartingPlacement | null;
     allowNull?: boolean;
     disabled?: boolean;
     gridColumnSpan?: number;
     cardIndex?: number;
-    onChange: (position: StartingPosition | null) => void;
+    onChange: (position: StartingPlacement | null) => void;
   } = $props();
 
   let hapticService: HapticFeedback | null = null;
@@ -45,7 +45,7 @@ Supports Alpha, Beta, Gamma positions with Greek symbol pills
     return undefined;
   });
 
-  function handlePositionClick(positionId: StartingPosition) {
+  function handlePositionClick(positionId: StartingPlacement) {
     if (disabled) return;
     hapticService?.trigger("selection");
 
@@ -58,7 +58,7 @@ Supports Alpha, Beta, Gamma positions with Greek symbol pills
 
   const displayValue = $derived(
     value
-      ? (STARTING_POSITIONS_LIST.find((p) => p.id === value)?.fullName ?? value)
+      ? (STARTING_PLACEMENTS_LIST.find((p) => p.id === value)?.fullName ?? value)
       : "Any"
   );
 </script>
@@ -78,7 +78,7 @@ Supports Alpha, Beta, Gamma positions with Greek symbol pills
   <div class="current-value">{displayValue}</div>
 
   <div class="pill-toggle">
-    {#each STARTING_POSITIONS_LIST as position}
+    {#each STARTING_PLACEMENTS_LIST as position}
       <button
         class="pill-option"
         class:selected={value === position.id}

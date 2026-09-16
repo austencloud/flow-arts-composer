@@ -111,7 +111,7 @@
           <div class="sequence-name" data-testid="current-sequence-name">
             {currentName}
           </div>
-          {#if currentSequence && (currentSequence.steps?.length > 0 || currentSequence.startPosition)}
+          {#if currentSequence && (currentSequence.steps?.length > 0 || currentSequence.startPlacement)}
             <div
               class="beat-grid-preview"
               style:height="{currentPreviewHeight}px"
@@ -119,8 +119,8 @@
             >
               <StepGrid
                 steps={currentSequence.steps ?? []}
-                startPosition={currentSequence.startPosition ??
-                  currentSequence.startingPosition ??
+                startPlacement={currentSequence.startPlacement ??
+                  currentSequence.startingPlacement ??
                   null}
               />
             </div>
@@ -143,7 +143,7 @@
           <div class="sequence-name" data-testid="incoming-sequence-name">
             {incomingName}
           </div>
-          {#if incomingSequence && (incomingSequence.steps?.length > 0 || incomingSequence.startPosition)}
+          {#if incomingSequence && (incomingSequence.steps?.length > 0 || incomingSequence.startPlacement)}
             <div
               class="beat-grid-preview"
               style:height="{incomingPreviewHeight}px"
@@ -151,8 +151,8 @@
             >
               <StepGrid
                 steps={incomingSequence.steps ?? []}
-                startPosition={incomingSequence.startPosition ??
-                  incomingSequence.startingPosition ??
+                startPlacement={incomingSequence.startPlacement ??
+                  incomingSequence.startingPlacement ??
                   null}
               />
             </div>

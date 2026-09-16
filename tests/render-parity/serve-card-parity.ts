@@ -136,7 +136,7 @@ const server = createServer(async (request, response) => {
         return;
       }
       const sequence = testCase.sequence;
-      const steps = [sequence.startPosition, ...sequence.steps].map(
+      const steps = [sequence.startPlacement, ...sequence.steps].map(
         (step, index) => ({
           ...step,
           stepNumber: index,

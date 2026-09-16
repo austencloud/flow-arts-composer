@@ -11,7 +11,7 @@ export interface DeckMetadata {
   readonly cardBackTemplateId?: string;
   readonly printConfig?: {
     readonly cardSize: "poker" | "tarot" | "mini";
-    readonly includeStartPosition: boolean;
+    readonly includeStartPlacement: boolean;
   };
   readonly promotedAt: Timestamp;
 }

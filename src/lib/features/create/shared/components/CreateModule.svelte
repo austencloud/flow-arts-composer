@@ -275,15 +275,15 @@
       return;
     }
 
-    const startPosition = constructTabState.sequenceState.selectedStartPosition;
+    const startPlacement = constructTabState.sequenceState.selectedStartPlacement;
 
-    constructTabState.setSelectedStartPosition(startPosition);
-    if (startPosition) {
-      constructTabState.startPositionStateService.setSelectedPosition(
-        startPosition
+    constructTabState.setSelectedStartPlacement(startPlacement);
+    if (startPlacement) {
+      constructTabState.startPlacementStateService.setSelectedPlacement(
+        startPlacement
       );
     } else {
-      constructTabState.startPositionStateService.clearSelectedPosition();
+      constructTabState.startPlacementStateService.clearSelectedPlacement();
     }
     constructTabState.syncPickerStateWithSequence();
   }
@@ -439,7 +439,7 @@
         services = {
           sequenceService: result.sequenceService,
           SequencePersister: result.SequencePersister,
-          StartPositionManager: result.StartPositionManager,
+          StartPlacementManager: result.StartPlacementManager,
           CreateModuleOrchestrator: result.CreateModuleOrchestrator,
           layoutService: result.layoutService,
           NavigationSyncer: result.NavigationSyncer,
@@ -533,9 +533,9 @@
             navigationState.setActiveTab(loadResult.targetTab);
           }
 
-          // A deep-linked sequence already carries its start position. Bring
+          // A deep-linked sequence already carries its start placement. Bring
           // Construct's picker state into line with that sequence immediately,
-          // otherwise the workspace asks for a start position the user has
+          // otherwise the workspace asks for a start placement the user has
           // already chosen and hides the available next pictographs.
           syncConstructWorkspaceUi();
 
@@ -610,7 +610,7 @@
 
         // First-time guided-build offer: only when the user landed on an empty
         // Create (no deep link, no restored work). isWorkspaceEmpty() counts a
-        // start-position-only sequence as non-empty, so a guest who began a
+        // start-placement-only sequence as non-empty, so a guest who began a
         // build isn't interrupted. Skippable and self-suppressing after the
         // first decision (appEntryState persists it).
         if (!hasDeepLink && CreateModuleState.isWorkspaceEmpty()) {
@@ -862,8 +862,8 @@
       // Save the sequence to Constructor's localStorage key
       await services.SequencePersister.saveCurrentState({
         currentSequence: sequence,
-        selectedStartPosition: sequence.steps[0] || null,
-        hasStartPosition: sequence.steps.length > 0,
+        selectedStartPlacement: sequence.steps[0] || null,
+        hasStartPlacement: sequence.steps.length > 0,
         activeBuildSection: "construct",
       });
 
@@ -1048,7 +1048,7 @@
         <ConfirmDialog
           bind:isOpen={showClearSequenceConfirm}
           title="Clear Sequence?"
-          message="This will remove all steps and the start position. Use undo to restore if needed."
+          message="This will remove all steps and the start placement. Use undo to restore if needed."
           confirmText="Clear All"
           cancelText="Keep"
           variant="danger"

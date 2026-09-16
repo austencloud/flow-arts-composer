@@ -16,7 +16,7 @@ import {
 export interface SequenceFrameAlignment {
   timeMap: SequenceTimeMap;
   steps: readonly StepData[];
-  startPositionDuration: number;
+  startPlacementDuration: number;
   dwellOnCompletedBeat?: boolean;
   /**
    * Where project time zero sits in the mapped media. A step map is recorded
@@ -105,7 +105,7 @@ export function evaluatePresetFrame(
       ? sequencePositionToAnimationTime(
           sequencePosition,
           alignment.steps,
-          alignment.startPositionDuration
+          alignment.startPlacementDuration
         )
       : undefined;
   const cardBeatNumber =

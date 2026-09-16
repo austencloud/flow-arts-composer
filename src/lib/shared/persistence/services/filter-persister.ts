@@ -18,7 +18,14 @@ import {
 } from "../../foundation/services/storage-manager";
 
 export class FilterPersister {
-  private readonly CACHE_VERSION = "v2.1"; // ✅ ROBUST: Cache versioning
+  // Bumped for the startPosition -> startPlacement BrowseFilterType rename:
+  // a stale sessionStorage entry could carry filter.type "startPosition"
+  // (the pre-rename enum value), which would no longer match
+  // BrowseFilterType.STARTING_PLACEMENT ("startPlacement") on the read side.
+  // sessionStorage already resets on tab close, so a version bump (matching
+  // the csv-loader IndexedDB cache-key bump) is simpler and safer here than
+  // teaching every read site to accept both string values.
+  private readonly CACHE_VERSION = "v2.2"; // ✅ ROBUST: Cache versioning
   private readonly BROWSE_STATE_KEY = `tka-${this.CACHE_VERSION}-browse-state`;
   private readonly FILTER_HISTORY_KEY = `tka-${this.CACHE_VERSION}-filter-history`;
   private readonly MAX_HISTORY_SIZE = 50;

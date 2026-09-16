@@ -28,7 +28,7 @@ import type { MasteryContext } from "$lib/features/learn/domain/quiz-history-typ
 import {
   deriveUserOverlay,
   getTypeComparison,
-  getPositionComparison,
+  getPlacementComparison,
   getMotionTypeComparison,
   getRotationExplanation,
   getGridModeExplanation,
@@ -182,7 +182,7 @@ export function _createTikaTools(userId: string, completedConcepts: string[], ma
         },
         required: ["position1", "position2"],
       }),
-      execute: async ({ position1, position2 }) => getPositionComparison(position1, position2),
+      execute: async ({ position1, position2 }) => getPlacementComparison(position1, position2),
     }),
 
     compare_types: tool({

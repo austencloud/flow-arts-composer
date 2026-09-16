@@ -31,8 +31,8 @@ export function createAssembleHydrationController(
     document.showCenter =
       [...document.leftSteps, ...document.rightSteps].some(
         (step) =>
-          step.startPosition === GridLocation.CENTER ||
-          step.endPosition === GridLocation.CENTER
+          step.startPlacement === GridLocation.CENTER ||
+          step.endPlacement === GridLocation.CENTER
       ) ||
       Object.values(document.startPoses).some(
         (pose) => pose?.location === GridLocation.CENTER

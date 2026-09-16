@@ -10,7 +10,7 @@
 
 import type { StepData } from "$lib/shared/foundation/domain/models/step-data";
 import { Period } from "$lib/shared/foundation/domain/models/generation/circular-models";
-import { getGridPositionFromLocations } from "$lib/shared/pictograph/grid/services/grid-position-deriver";
+import { getGridPlacementFromLocations } from "$lib/shared/pictograph/grid/services/grid-placement-deriver";
 import type { GridLocation } from "$lib/shared/pictograph/grid/domain/enums/grid-enums";
 import { HandSide } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
 import { isVisibleMotion } from "$lib/shared/pictograph/shared/domain/models/motion-data";
@@ -73,18 +73,18 @@ export function getPeriodForTag(tag: string): Period {
 }
 
 /**
- * Enrich decoded steps with derived GridPosition values.
+ * Enrich decoded steps with derived GridPlacement values.
  *
  * The flat encoder only preserves motion locations (N, E, S, W, etc.),
- * not the GridPosition fields (alpha1, beta5, etc.) on each step.
- * But the LOOP executors need startPosition/endPosition for validation
+ * not the GridPlacement fields (alpha1, beta5, etc.) on each step.
+ * But the LOOP executors need startPlacement/endPlacement for validation
  * and chaining. This function derives them from the motion locations
  * using the same logic the rest of the app uses.
  */
-export function enrichStepsWithGridPositions(steps: StepData[]): void {
+export function enrichStepsWithGridPlacements(steps: StepData[]): void {
   for (const step of steps) {
     // Only really-there hands may donate positions. Decode synthesizes
-    // invisible placeholders for empty segments; deriving GridPositions from
+    // invisible placeholders for empty segments; deriving GridPlacements from
     // placeholder locations would hand LOOP executors fabricated positions
     // for blank beats (Wave 0 straggler fix, presence register site C).
     const leftRaw = step.motions?.[HandSide.LEFT];
@@ -93,12 +93,12 @@ export function enrichStepsWithGridPositions(steps: StepData[]): void {
     const right = isVisibleMotion(rightRaw) ? rightRaw : undefined;
 
     // StepData fields are readonly, but we need to set them here because
-    // the flat encoder strips GridPosition and the executor needs it.
-    const mutable = step as { startPosition: unknown; endPosition: unknown };
+    // the flat encoder strips GridPlacement and the executor needs it.
+    const mutable = step as { startPlacement: unknown; endPlacement: unknown };
 
     if (left?.startLocation && right?.startLocation) {
       try {
-        mutable.startPosition = getGridPositionFromLocations(
+        mutable.startPlacement = getGridPlacementFromLocations(
           left.startLocation as GridLocation,
           right.startLocation as GridLocation
         );
@@ -109,7 +109,7 @@ export function enrichStepsWithGridPositions(steps: StepData[]): void {
 
     if (left?.endLocation && right?.endLocation) {
       try {
-        mutable.endPosition = getGridPositionFromLocations(
+        mutable.endPlacement = getGridPlacementFromLocations(
           left.endLocation as GridLocation,
           right.endLocation as GridLocation
         );

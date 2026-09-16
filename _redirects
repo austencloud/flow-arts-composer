@@ -1,3 +1,5 @@
 # Domain-level redirects (tkascribe.com, tkacomposer.com) are handled
 # by Cloudflare zone redirect rules, not this file.
 # This file applies to ALL custom domains on the Pages project.
+
+/guide/level-1/positions-motions  /guide/level-1/placements-motions  301

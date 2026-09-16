@@ -11,7 +11,7 @@
  * siblings while open, and both clearing on close — not just that markup
  * exists.
  *
- * The 4 real step components (PickStartPositionStep etc.) embed live
+ * The 4 real step components (PickStartPlacementStep etc.) embed live
  * Create-module pickers/players (Firestore-backed state, AnimatorCanvas, 3D
  * pipelines) that are heavy and orthogonal to the wizard CHROME under test
  * here, so they're swapped for a trivial stub — same rationale as
@@ -26,7 +26,7 @@ import CreateTutorialWizard from "./CreateTutorialWizard.svelte";
 import { createTutorialState } from "../../state/create-tutorial-state.svelte";
 import { expectNoA11yViolations } from "$test-helpers/component-a11y";
 
-vi.mock("./steps/PickStartPositionStep.svelte", async () => {
+vi.mock("./steps/PickStartPlacementStep.svelte", async () => {
   const mod = await import("./__test-stubs__/TutorialStepStub.svelte");
   return { default: mod.default };
 });

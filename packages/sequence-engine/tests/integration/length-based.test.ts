@@ -11,7 +11,7 @@ import type { IVariationProvider } from "../../src/generation/data/IVariationPro
 import type { PictographData, MotionData } from "../../src/generation/constraints/types.js";
 import { setLetterTransitionGraph } from "../../src/core/transition-graph/LetterTransitionGraph.js";
 import type { ITransitionGraph } from "../../src/core/transition-graph/ITransitionGraph.js";
-import type { PositionGroup, LetterPositionInfo } from "../../src/core/types/sequence-engine-types.js";
+import type { PlacementGroup, LetterPlacementInfo } from "../../src/core/types/sequence-engine-types.js";
 
 // Mock data factory (same pattern as full-build.test.ts)
 
@@ -30,8 +30,8 @@ function makeMotion(overrides: Partial<MotionData> = {}): MotionData {
 
 function makePictograph(overrides: Partial<PictographData> & { letter: string }): PictographData {
   return {
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     timing: "together",
     direction: "together",
     leftMotion: makeMotion({ hand: "left" }),
@@ -55,15 +55,15 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // Start positions (Type 6)
   makePictograph({
     letter: "α",
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
     rightMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
   }),
   makePictograph({
     letter: "α",
-    startPosition: "beta3",
-    endPosition: "beta3",
+    startPlacement: "beta3",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
     rightMotion: makeMotion({ motionType: "static", rotationDirection: "noRotation" }),
   }),
@@ -71,8 +71,8 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // A: alpha1 → beta3
   makePictograph({
     letter: "A",
-    startPosition: "alpha1",
-    endPosition: "beta3",
+    startPlacement: "alpha1",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ startLocation: "n", endLocation: "e" }),
     rightMotion: makeMotion({ startLocation: "s", endLocation: "w" }),
   }),
@@ -80,8 +80,8 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // B: beta3 → alpha1
   makePictograph({
     letter: "B",
-    startPosition: "beta3",
-    endPosition: "alpha1",
+    startPlacement: "beta3",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ startLocation: "e", endLocation: "n" }),
     rightMotion: makeMotion({ startLocation: "w", endLocation: "s" }),
   }),
@@ -89,8 +89,8 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // C: alpha1 → alpha1
   makePictograph({
     letter: "C",
-    startPosition: "alpha1",
-    endPosition: "alpha1",
+    startPlacement: "alpha1",
+    endPlacement: "alpha1",
     leftMotion: makeMotion({ startLocation: "n", endLocation: "n" }),
     rightMotion: makeMotion({ startLocation: "s", endLocation: "s" }),
   }),
@@ -98,8 +98,8 @@ const MOCK_PICTOGRAPHS: PictographData[] = [
   // D: beta3 → beta3
   makePictograph({
     letter: "D",
-    startPosition: "beta3",
-    endPosition: "beta3",
+    startPlacement: "beta3",
+    endPlacement: "beta3",
     leftMotion: makeMotion({ startLocation: "e", endLocation: "e" }),
     rightMotion: makeMotion({ startLocation: "w", endLocation: "w" }),
   }),
@@ -116,7 +116,7 @@ class MockVariationProvider implements IVariationProvider {
 
   getVariations(letter: string, position: string, _gridMode: string): PictographData[] {
     return this.data.filter(
-      (p) => p.letter === letter && p.startPosition === position,
+      (p) => p.letter === letter && p.startPlacement === position,
     );
   }
 
@@ -127,7 +127,7 @@ class MockVariationProvider implements IVariationProvider {
 
 // Mock ITransitionGraph
 
-const LETTER_POSITIONS: Record<string, { start: PositionGroup; end: PositionGroup }> = {
+const LETTER_POSITIONS: Record<string, { start: PlacementGroup; end: PlacementGroup }> = {
   A: { start: "alpha", end: "beta" },
   B: { start: "beta", end: "alpha" },
   C: { start: "alpha", end: "alpha" },
@@ -153,33 +153,33 @@ class MockTransitionGraph implements ITransitionGraph {
       .map(([l]) => l);
   }
 
-  getLettersStartingAt(positionGroup: PositionGroup): string[] {
+  getLettersStartingAt(placementGroup: PlacementGroup): string[] {
     return Object.entries(LETTER_POSITIONS)
-      .filter(([_, pos]) => pos.start === positionGroup)
+      .filter(([_, pos]) => pos.start === placementGroup)
       .map(([l]) => l);
   }
 
-  getLettersEndingAt(positionGroup: PositionGroup): string[] {
+  getLettersEndingAt(placementGroup: PlacementGroup): string[] {
     return Object.entries(LETTER_POSITIONS)
-      .filter(([_, pos]) => pos.end === positionGroup)
+      .filter(([_, pos]) => pos.end === placementGroup)
       .map(([l]) => l);
   }
 
-  getLetterPositionInfo(letter: string): LetterPositionInfo | null {
+  getLetterPlacementInfo(letter: string): LetterPlacementInfo | null {
     const pos = LETTER_POSITIONS[letter];
     if (!pos) return null;
     return {
       letter,
-      startPositionGroup: pos.start,
-      endPositionGroup: pos.end,
+      startPlacementGroup: pos.start,
+      endPlacementGroup: pos.end,
     };
   }
 
-  getStartPositionGroup(letter: string): PositionGroup | null {
+  getStartPlacementGroup(letter: string): PlacementGroup | null {
     return LETTER_POSITIONS[letter]?.start ?? null;
   }
 
-  getEndPositionGroup(letter: string): PositionGroup | null {
+  getEndPlacementGroup(letter: string): PlacementGroup | null {
     return LETTER_POSITIONS[letter]?.end ?? null;
   }
 
@@ -264,7 +264,7 @@ describe("length-based generation", () => {
       level: 1,
     });
 
-    expect(result.startPosition.letter).toBe("α");
+    expect(result.startPlacement.letter).toBe("α");
   });
 
   it("maintains position continuity through the sequence", () => {
@@ -277,7 +277,7 @@ describe("length-based generation", () => {
     for (let i = 1; i < result.sequence.length; i++) {
       const prev = result.sequence[i - 1]!;
       const curr = result.sequence[i]!;
-      expect(curr.startPosition).toBe(prev.endPosition);
+      expect(curr.startPlacement).toBe(prev.endPlacement);
     }
   });
 
@@ -328,15 +328,15 @@ describe("length-based generation", () => {
     expect(result.turnAllocation.right).toHaveLength(4);
   });
 
-  it("respects startPosition when provided", () => {
+  it("respects startPlacement when provided", () => {
     const result = builder.build({
       length: 2,
       gridMode: "diamond",
       level: 1,
-      startPosition: "alpha1",
+      startPlacement: "alpha1",
     });
 
-    expect(result.startPosition.startPosition).toBe("alpha1");
+    expect(result.startPlacement.startPlacement).toBe("alpha1");
   });
 
   it("applies constraint preset without errors", () => {
@@ -373,7 +373,7 @@ describe("length-based generation", () => {
  * one of several (the search has always held it as a Set; only the option was
  * singular).
  */
-describe("end-position constraints", () => {
+describe("end-placement constraints", () => {
   let builder: SequenceBuilder;
 
   beforeEach(() => {
@@ -381,32 +381,32 @@ describe("end-position constraints", () => {
     builder = new SequenceBuilder(new MockVariationProvider(MOCK_PICTOGRAPHS));
   });
 
-  const lastEnd = (r: { sequence: { endPosition: string }[] }) =>
-    r.sequence[r.sequence.length - 1]!.endPosition;
+  const lastEnd = (r: { sequence: { endPlacement: string }[] }) =>
+    r.sequence[r.sequence.length - 1]!.endPlacement;
 
   // Repeated, because this mock graph only has two positions: a build that
   // ignored the goal entirely would still land on it by chance about half the
   // time. Ten runs per goal makes an accidental pass ~1 in a million.
-  it("honours a single endPositions entry", () => {
+  it("honours a single endPlacements entry", () => {
     for (const goal of ["alpha1", "beta3"]) {
       for (let i = 0; i < 10; i++) {
         const result = builder.build({
           length: 4,
           gridMode: "diamond",
           level: 1,
-          endPositions: [goal],
+          endPlacements: [goal],
         });
         expect(lastEnd(result)).toBe(goal);
       }
     }
   });
 
-  it("honours the deprecated single endPosition", () => {
+  it("honours the deprecated single endPlacement", () => {
     const result = builder.build({
       length: 4,
       gridMode: "diamond",
       level: 1,
-      endPosition: "beta3",
+      endPlacement: "beta3",
     });
 
     expect(lastEnd(result)).toBe("beta3");
@@ -419,18 +419,18 @@ describe("end-position constraints", () => {
       length: 4,
       gridMode: "diamond",
       level: 1,
-      endPositions: ["alpha1", "beta3"],
+      endPlacements: ["alpha1", "beta3"],
     });
 
     expect(["alpha1", "beta3"]).toContain(lastEnd(result));
   });
 
-  it("is unconstrained when endPositions is empty", () => {
+  it("is unconstrained when endPlacements is empty", () => {
     const result = builder.build({
       length: 4,
       gridMode: "diamond",
       level: 1,
-      endPositions: [],
+      endPlacements: [],
     });
 
     // An empty list must mean "Any", not an impossible zero-goal search.
@@ -440,10 +440,10 @@ describe("end-position constraints", () => {
   // The bug this suite exists for. buildByLength has TWO attempt loops: the
   // main one, and a fallback that demotes hard prop-continuity to soft when the
   // beam dies and retries. The fallback re-derived its goal from scratch and
-  // only ever read the legacy single endPosition, so with Props on Choppy the
+  // only ever read the legacy single endPlacement, so with Props on Choppy the
   // constrained pass would fail, the fallback would regenerate with NO end
   // constraint, and the user's picked positions were silently ignored. Both
-  // loops now call the same userEndPositions helper.
+  // loops now call the same userEndPlacements helper.
   it("honours end positions when prop continuity forces the retry path", () => {
     for (const goal of ["alpha1", "beta3"]) {
       for (let i = 0; i < 5; i++) {
@@ -452,7 +452,7 @@ describe("end-position constraints", () => {
           gridMode: "diamond",
           level: 1,
           constraintPreset: "smooth",
-          endPositions: [goal],
+          endPlacements: [goal],
         });
         expect(lastEnd(result)).toBe(goal);
       }
@@ -464,8 +464,8 @@ describe("end-position constraints", () => {
       length: 4,
       gridMode: "diamond",
       level: 1,
-      endPositions: ["alpha1"],
-      endPosition: "beta3",
+      endPlacements: ["alpha1"],
+      endPlacement: "beta3",
     });
 
     expect(["alpha1", "beta3"]).toContain(lastEnd(result));

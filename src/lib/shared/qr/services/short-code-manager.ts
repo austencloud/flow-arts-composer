@@ -898,8 +898,8 @@ export class ShortCodeManager {
       // The immutable payload word comes from these steps. A stale mutable
       // sequence.word must not survive inside an otherwise-correct embed.
       seqData.word = payloadWord;
-      if (sequence.startPosition != null)
-        seqData.startPosition = sequence.startPosition;
+      if (sequence.startPlacement != null)
+        seqData.startPlacement = sequence.startPlacement;
       if (sequence.gridMode != null) seqData.gridMode = sequence.gridMode;
       if (sequence.isCircular != null) seqData.isCircular = sequence.isCircular;
       if (sequence.loopType != null) seqData.loopType = sequence.loopType;
