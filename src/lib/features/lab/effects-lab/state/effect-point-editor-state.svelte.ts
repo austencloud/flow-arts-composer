@@ -1,7 +1,11 @@
 import type { TipPointOverrideProvider } from "../services/tip-point-override-provider";
 import type { EffectPointsPersister } from "../services/effect-points-persister";
 import type { TipPoint } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
-import { getTipPoints } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import {
+	describeTipPointResolution,
+	getTipPointsBaseline,
+	type TipPointSource,
+} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
 import type { TrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
 
 const MAX_UNDO_DEPTH = 20;
@@ -35,6 +39,8 @@ export class EffectPointEditorState {
 	saveIndicatorVisible = $state(false);
 	actionFeedback = $state<string | null>(null);
 	trailConfig = $state<TrailPointConfig | null>(null);
+	/** Bumped whenever stored points change so resolution getters re-run. */
+	private storeRevision = $state(0);
 
 	private undoStack: UndoEntry[] = [];
 	private provider: TipPointOverrideProvider;
@@ -80,6 +86,21 @@ export class EffectPointEditorState {
 
 	get hasUserDefault(): boolean {
 		return this.provider.hasUserDefault(this.selectedPropType);
+	}
+
+	/**
+	 * Where the animation canvas gets this prop's tips right now. "override"
+	 * means the points on screen come from the lab store (or a published
+	 * default) instead of the code table in prop-tip-points.ts, and any
+	 * later change to that table is invisible until the override is cleared.
+	 */
+	get tipSource(): TipPointSource {
+		void this.storeRevision;
+		return describeTipPointResolution(this.selectedPropType).source;
+	}
+
+	get isOverridingCodeTable(): boolean {
+		return this.tipSource === "override";
 	}
 
 	get canUndo(): boolean {
@@ -172,12 +193,33 @@ export class EffectPointEditorState {
 			this.showActionFeedback("Reset to your default");
 		} else {
 			this.points = deepCopy(
-				getTipPoints(this.selectedPropType).points,
+				getTipPointsBaseline(this.selectedPropType).points,
 			);
 			this.showActionFeedback("Reset to system defaults");
 		}
 		this.selectedPointIndex = -1;
 		this.autoSave();
+	}
+
+	/**
+	 * Drop the stored override and show the code table's points. Unlike
+	 * resetToUserDefault this does not write the points back, so the canvas
+	 * follows prop-tip-points.ts again from here on. A published default for
+	 * the prop still wins over the table; the badge stays lit in that case.
+	 */
+	useCodeTable(): void {
+		this.pushUndo("Use code table");
+		this.provider.clearOverride(this.selectedPropType);
+		this.points = deepCopy(
+			getTipPointsBaseline(this.selectedPropType).points,
+		);
+		this.selectedPointIndex = -1;
+		this.storeRevision++;
+		this.showActionFeedback(
+			this.isOverridingCodeTable
+				? "Published default still applies"
+				: "Using code table",
+		);
 	}
 
 	toJSON(): string {
@@ -237,9 +279,10 @@ export class EffectPointEditorState {
 			this.points = deepCopy(override.points);
 		} else {
 			this.points = deepCopy(
-				getTipPoints(this.selectedPropType).points,
+				getTipPointsBaseline(this.selectedPropType).points,
 			);
 		}
+		this.storeRevision++;
 
 		// Load trail assignment for this prop
 		this.trailConfig = this.provider.getTrailAssignment(this.selectedPropType) ?? null;
@@ -248,6 +291,7 @@ export class EffectPointEditorState {
 	private autoSave(): void {
 		const config = { points: deepCopy(this.points) };
 		this.provider.saveOverride(this.selectedPropType, config);
+		this.storeRevision++;
 		this.showSaveIndicator();
 	}
 
