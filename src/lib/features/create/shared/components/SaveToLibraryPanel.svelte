@@ -482,6 +482,18 @@
 {/if}
 
 <style>
+  :global(.drawer-content.save-library-panel-container) {
+    /* A form full of toggles, collection tiles and a card preview needs a
+       matte reading surface. The shared translucent gradient let the live
+       workspace (undo/redo, the card, the button row) bleed through, so
+       resolve the theme panel color against the solid sheet base, like the
+       sequence actions panel does. */
+    --sheet-bg:
+      linear-gradient(var(--theme-panel-bg), var(--theme-panel-bg)),
+      var(--sheet-bg-solid, rgb(15, 15, 20));
+    --sheet-filter: none;
+  }
+
   .panel-inner {
     display: flex;
     flex-direction: column;
