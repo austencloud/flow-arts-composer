@@ -1,14 +1,14 @@
 <!-- src/lib/shared/shape-matrix/components/ElementChipRow.svelte
   The six VTG timing-and-direction modes as elemental pickers. Bespoke rather
   than FilterChipBase/SegmentedControl per chip-primitives.md's keep-separate
-  carve-out: per-option element accent colors + icon PNGs + stacked
-  icon/code/name layout, plus an at-most-one selection that clears on re-click
-  (SegmentedControl cannot represent none-selected). Mode → element mapping is
-  diamond-grid-specific (see build-mode-realizations.ts). -->
+  carve-out: per-option element accent colors + icon PNGs + an icon beside a
+  timing/direction word stack, plus an at-most-one selection that clears on
+  re-click (SegmentedControl cannot represent none-selected). Mode → element
+  mapping is diamond-grid-specific (see build-mode-realizations.ts). -->
 <script lang="ts">
   import {
     MODE_ORDER,
-    MODE_LABEL,
+    MODE_WORDS,
     type VtgMode,
   } from "../services/shape-matrix-realizations";
   import { FAMILY_BY_MODE } from "../services/build-mode-realizations";
@@ -40,7 +40,7 @@
   // VtgMode maps to a real family in practice. Filter rather than assert.
   const chips = MODE_ORDER.map((mode) => ({
     mode,
-    label: MODE_LABEL[mode],
+    words: MODE_WORDS[mode],
     el: TND_BY_FAMILY[FAMILY_BY_MODE[mode]],
   })).filter(
     (c): c is typeof c & { el: NonNullable<typeof c.el> } => c.el !== undefined
@@ -62,12 +62,11 @@
       {compact}
       accent={c.el.accentColor}
       icon={c.el.iconPath}
-      code={c.el.name}
-      compactCode={c.mode}
-      label={elementName(c.el.element)}
+      timing={c.words.timing}
+      direction={c.words.direction}
       active={selected === c.mode}
       disabled={disabled || (availabilityReady && !available.includes(c.mode))}
-      ariaLabel={`${c.mode} ${elementName(c.el.element)} (${c.label})${
+      ariaLabel={`${c.words.timing} ${c.words.direction}, ${elementName(c.el.element)} (${c.mode})${
         availabilityReady && !available.includes(c.mode)
           ? ", unavailable for these flowers"
           : ""

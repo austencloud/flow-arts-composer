@@ -1,10 +1,17 @@
+<!-- src/lib/shared/shape-matrix/components/RelationshipChoiceChip.svelte
+  One timing-and-direction choice. The element icon carries the family's code
+  in its art, so it is the identifier and is drawn large; beside it (or under
+  it, in a narrow drill) the family is spelled out as two stacked words,
+  timing over direction, which is what the code abbreviates. The element's
+  name (Water, Air) is not repeated in the box: the icon and accent already
+  say it, and the words a learner is choosing between are the timing and the
+  direction. -->
 <script lang="ts">
   let {
     accent,
     icon = null,
-    code,
-    compactCode = code,
-    label,
+    timing,
+    direction,
     active = false,
     disabled = false,
     compact = false,
@@ -13,9 +20,8 @@
   }: {
     accent: string;
     icon?: string | null;
-    code: string;
-    compactCode?: string;
-    label: string;
+    timing: string;
+    direction: string;
     active?: boolean;
     disabled?: boolean;
     compact?: boolean;
@@ -41,11 +47,8 @@
     <span class="choice-dot" aria-hidden="true"></span>
   {/if}
   <span class="choice-copy">
-    <strong>
-      <span class="code-compact">{compactCode}</span>
-      <span class="code-wide">{code}</span>
-    </strong>
-    <small>{label}</small>
+    <strong>{timing}</strong>
+    <small>{direction}</small>
   </span>
   <!-- Colour alone did not answer "which one did I pick?" across six element
        accents, several of them dark. The mark is always in the box and sits on
@@ -57,8 +60,15 @@
 
 <style>
   /* Unchosen chips are a quiet set: the element accent still identifies each
-     one through its icon and code, but the surface stays near the panel. The
-     chosen chip then advances on four axes at once — ring, fill, glow, mark. */
+     one through its icon and words, but the surface stays near the panel. The
+     chosen chip then advances on four axes at once — ring, fill, glow, mark.
+
+     Shape: the icon carries the family's code in its art, so it is the thing
+     to enlarge. A narrow drill stacks the icon over the two centred words; a
+     wide one (55rem and up, where six chips are about 8.5rem or more each)
+     puts the icon on the left and the words on the right, timing over
+     direction. The short-wide split stays in the row shape at a smaller
+     scale because it is height-bound. */
   .relationship-choice {
     position: relative;
     display: flex;
@@ -68,12 +78,13 @@
     align-items: center;
     justify-content: center;
     gap: 0.2rem;
-    padding: 0.5rem 0.35rem;
+    padding: 0.45rem 0.35rem;
     border: 1px solid color-mix(in srgb, var(--choice-accent) 22%, transparent);
     border-radius: 12px;
     background: color-mix(in srgb, var(--choice-accent) 5%, transparent);
     color: var(--theme-text, #fff);
     font: inherit;
+    text-align: center;
     cursor: pointer;
     transition:
       background var(--duration-fast, 150ms) ease,
@@ -136,9 +147,10 @@
     outline-offset: 2px;
   }
 
+  /* The baked-in code (SS, TO…) was illegible at 1.55rem. */
   .choice-icon {
-    width: 1.55rem;
-    height: 1.55rem;
+    width: 2.25rem;
+    height: 2.25rem;
     flex: 0 0 auto;
     object-fit: contain;
     opacity: 0.68;
@@ -164,7 +176,7 @@
     display: grid;
     width: 100%;
     min-width: 0;
-    text-align: center;
+    line-height: 1.2;
   }
 
   .choice-copy strong,
@@ -174,25 +186,16 @@
     white-space: nowrap;
   }
 
-  .relationship-choice.compact {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.4rem;
-    padding: 0.3rem 0.45rem;
-  }
-  .compact .choice-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-  .compact .choice-copy {
-    text-align: left;
-  }
-
   .choice-copy strong {
     color: color-mix(in srgb, var(--choice-accent) 80%, white);
     font-size: var(--font-size-compact, 0.75rem);
-    letter-spacing: 0.035em;
+    letter-spacing: 0.02em;
     transition: color var(--duration-fast, 150ms) ease;
+  }
+
+  .choice-copy small {
+    color: var(--theme-text-dim, rgb(255 255 255 / 0.64));
+    font-size: var(--font-size-compact, 0.75rem);
   }
 
   .relationship-choice.active .choice-copy strong {
@@ -203,63 +206,67 @@
     color: color-mix(in srgb, var(--choice-accent) 22%, white);
   }
 
-  .code-wide {
-    display: none;
+  /* A host outside the drill (the guide's explorer) asks for the row shape
+     outright at a smaller scale. */
+  .relationship-choice.compact {
+    flex-direction: row;
+    gap: 0.45rem;
+    padding: 0.3rem 0.5rem;
+    text-align: left;
+  }
+  .compact .choice-icon {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+  .compact .choice-copy {
+    width: auto;
+    flex: 0 1 auto;
   }
 
-  /* Six choices are tighter at ordinary desktop split widths than they are on
-     a full-width phone row. Spell the relationship out only when the drill has
-     enough room for every family; otherwise the shared VTG code stays intact. */
-  @container shape-matrix-drill (min-width: 48rem) {
-    .code-compact {
-      display: none;
-    }
-
-    .code-wide {
-      display: inline;
-    }
-  }
-
-  .choice-copy small {
-    color: var(--theme-text-dim, rgb(255 255 255 / 0.64));
-    font-size: var(--font-size-compact, 0.75rem);
-  }
-
-  @container shape-matrix-drill (max-width: 30rem) {
+  @container shape-matrix-drill (min-width: 55rem) {
     .relationship-choice {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 0.4rem;
-      justify-content: start;
-      padding: 0.3rem 0.45rem;
+      flex-direction: row;
+      gap: 0.5rem;
+      padding: 0.45rem 0.55rem;
+      text-align: left;
     }
 
     .choice-icon {
-      width: 1.25rem;
-      height: 1.25rem;
+      width: 2.75rem;
+      height: 2.75rem;
     }
 
     .choice-copy {
-      text-align: left;
+      width: auto;
+      flex: 0 1 auto;
+    }
+
+    .choice-copy strong {
+      font-size: var(--font-size-min, 0.875rem);
     }
   }
 
   @container shape-matrix-drill (min-width: 42rem) and (max-height: 24rem) {
     .relationship-choice {
-      display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      gap: 0.4rem;
+      flex-direction: row;
       justify-content: start;
-      padding: 0.3rem 0.45rem;
+      gap: 0.45rem;
+      padding: 0.3rem 0.5rem;
+      text-align: left;
     }
 
     .choice-icon {
-      width: 1.25rem;
-      height: 1.25rem;
+      width: 2.1rem;
+      height: 2.1rem;
     }
 
     .choice-copy {
-      text-align: left;
+      width: auto;
+      flex: 0 1 auto;
+    }
+
+    .choice-copy strong {
+      font-size: var(--font-size-compact, 0.75rem);
     }
   }
 

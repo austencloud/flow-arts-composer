@@ -119,6 +119,7 @@ captureEffectDiagnostics to the context menu.
     darkModeEnabled = false,
     effectiveTkaGlyphVisible = false,
     elementalGlyphVisible = false,
+    propElementalGlyphVisible = false,
     propElementalType = null,
     glyphFrame = "pictograph",
     effectiveBeatNumbersVisible = false,
@@ -186,6 +187,7 @@ captureEffectDiagnostics to the context menu.
     darkModeEnabled?: boolean;
     effectiveTkaGlyphVisible?: boolean;
     elementalGlyphVisible?: boolean;
+    propElementalGlyphVisible?: boolean;
     propElementalType?: ElementalType | null;
     glyphFrame?: GlyphOverlayFrameMode;
     effectiveBeatNumbersVisible?: boolean;
@@ -577,6 +579,7 @@ captureEffectDiagnostics to the context menu.
       {stepData}
       tkaGlyphVisible={effectiveTkaGlyphVisible}
       {elementalGlyphVisible}
+      {propElementalGlyphVisible}
       {propElementalType}
       {glyphFrame}
       stepNumbersVisible={effectiveBeatNumbersVisible}

@@ -102,6 +102,7 @@ export interface AppSettings {
     tkaGlyph?: boolean; // TKA Glyph includes turn numbers
     tndGlyph?: boolean;
     elementalGlyph?: boolean;
+    propTndGlyph?: boolean; // Prop timing-and-direction element (top-right, dashed ring)
     positionsGlyph?: boolean;
     reversalIndicators?: boolean;
     showGrid?: boolean; // Master toggle for grid visibility
