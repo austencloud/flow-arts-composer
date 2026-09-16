@@ -327,6 +327,18 @@
         {editorState.hasUserDefault ? "Reset to My Default" : "Reset to Defaults"}
       </button>
 
+      {#if editorState.isOverridingCodeTable}
+        <button
+          class="action-btn code-table-btn"
+          onclick={() => editorState.useCodeTable()}
+          aria-label="Stop overriding the code table for this prop"
+          title="Clear the stored points so the canvas follows prop-tip-points.ts again"
+        >
+          <i class="fas fa-code" aria-hidden="true"></i>
+          Use Code Table
+        </button>
+      {/if}
+
       <button
         data-undo-shortcut
         data-undo-shortcut-label="Last point change"
@@ -387,6 +399,23 @@
       {#if editorState.hasUserDefault}
         <span class="status-has-default" title="Custom default set">
           <i class="fas fa-bookmark" aria-hidden="true"></i>
+        </span>
+      {/if}
+      {#if editorState.isOverridingCodeTable}
+        <span
+          class="status-override"
+          title="These points come from the lab store, not prop-tip-points.ts. Edits to the code table are invisible for this prop until the override is cleared."
+        >
+          <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+          Overriding code table
+        </span>
+      {:else if editorState.tipSource === "render-key"}
+        <span class="status-source" title="Tips come from the build-specific table in prop-tip-points.ts">
+          build table
+        </span>
+      {:else}
+        <span class="status-source" title="Tips come from the notation table in prop-tip-points.ts">
+          code table
         </span>
       {/if}
     </span>
@@ -681,6 +710,15 @@
     background: var(--semantic-error-dim, rgba(239, 68, 68, 0.1));
   }
 
+  .code-table-btn {
+    border-color: var(--semantic-warning-dim, rgba(245, 158, 11, 0.4));
+    color: var(--semantic-warning, #f59e0b);
+  }
+
+  .code-table-btn:hover:not(:disabled) {
+    background: var(--semantic-warning-dim, rgba(245, 158, 11, 0.1));
+  }
+
   .import-section {
     margin-top: var(--spacing-sm, 8px);
     display: flex;
@@ -724,6 +762,22 @@
 
   .status-has-default {
     color: var(--semantic-success, #22c55e);
+    font-size: var(--font-size-compact, 12px);
+  }
+
+  .status-override {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    border: 1px solid var(--semantic-warning-dim, rgba(245, 158, 11, 0.4));
+    color: var(--semantic-warning, #f59e0b);
+    font-size: var(--font-size-compact, 12px);
+  }
+
+  .status-source {
+    color: var(--theme-text-dim, rgba(255, 255, 255, 0.4));
     font-size: var(--font-size-compact, 12px);
   }
 

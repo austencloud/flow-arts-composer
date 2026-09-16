@@ -13,6 +13,11 @@
  * here. Each effect renderer applies its own global scaling at read time.
  */
 
+import {
+  PROP_MODEL_SPRITES,
+  type PropModelSpriteEntry,
+} from "$lib/shared/pictograph/prop/domain/prop-model-sprites.generated";
+
 /**
  * A single tip attachment point on a prop. Position only - no effect-specific
  * properties. All effects (fire, LED, trail, charcoal) emit from these same
@@ -413,6 +418,140 @@ const EMPTY_TIP_POINTS: PropTipConfig = {
   points: [],
 };
 
+const DOUBLECONTACTBALL_TIP_POINTS: PropTipConfig = {
+  points: [
+    { dx: -75, dy: 0 },
+    { dx: 75, dy: 0 },
+  ],
+};
+
+const BIGDOUBLECONTACTBALL_TIP_POINTS: PropTipConfig = {
+  points: [
+    { dx: -150, dy: 0 },
+    { dx: 150, dy: 0 },
+  ],
+};
+
+// ---------------------------------------------------------------------------
+// Fan builds. Each 2D fan look is different artwork on the same 260 x 207 box
+// with the hand pivot at (130, 103.5), so the pictograph rib intersections in
+// FAN_TIP_POINTS land in open air on every one of them. These are the wick or
+// LED centres of each build in that box, ordered top to bottom like
+// FAN_TIP_POINTS so per-tip effect assignments stay on the same spoke.
+// ---------------------------------------------------------------------------
+
+function mirroredFanTips(
+  upper: readonly (readonly [number, number])[],
+  apex: number
+): PropTipConfig {
+  return {
+    points: [
+      ...upper.map(([dx, dy]) => ({ dx, dy: -dy })),
+      { dx: apex, dy: 0 },
+      ...[...upper].reverse().map(([dx, dy]) => ({ dx, dy })),
+    ],
+  };
+}
+
+// DoodleGrip Fire: wick centres from scripts/assets/doodlegrip-fire-reference
+// .json through the build script's box mapping. The covered build wraps the
+// same wicks, so it shares the table.
+export const FAN_FIRE_TIP_POINTS: PropTipConfig = mirroredFanTips(
+  [
+    [50, 92.54],
+    [98, 55.7],
+  ],
+  119.05
+);
+
+// Lotus Fire: wick centres of the Home of Poi artwork after the build
+// script's rotate/scale placement onto the fan box.
+export const FAN_LOTUS_TIP_POINTS: PropTipConfig = mirroredFanTips(
+  [
+    [39.99, 85.51],
+    [103.85, 66.25],
+  ],
+  114.06
+);
+
+// Flat Grip Fire: the five wick centres are authored asymmetrically (the
+// lower spokes sit a few units in), so they are listed as measured rather
+// than mirrored.
+export const FAN_FLAT_GRIP_TIP_POINTS: PropTipConfig = {
+  points: [
+    { dx: 49.5, dy: -98.58 },
+    { dx: 93.5, dy: -56.27 },
+    { dx: 109.16, dy: 0 },
+    { dx: 90.12, dy: 53.31 },
+    { dx: 46.12, dy: 88.85 },
+  ],
+};
+
+// DoodleGrip Day: the plate rim points shared with the 3D build, through the
+// same box mapping as the fire fan at the day build's 0.97 fit. The frame
+// colour only changes paint, not geometry, so all four keys share it.
+export const FAN_DAY_TIP_POINTS: PropTipConfig = mirroredFanTips(
+  [
+    [54.87, 101.56],
+    [110.27, 62.68],
+  ],
+  129.88
+);
+
+// Moon LED: the light runs along the outer diffuser rim. Sampled on the
+// painted rim at the fire fan's five spoke bearings, then pulled 3 units in
+// so the tracked point is inside the diffuser rather than on its edge.
+export const FAN_MOON_TIP_POINTS: PropTipConfig = mirroredFanTips(
+  [
+    [45.13, 93.98],
+    [99.21, 63.42],
+  ],
+  126
+);
+
+// Big Fan draws every build as the regular artwork scaled about the hand
+// pivot into the 600 x 566.9 bigfan box (scaleFanAppearanceForBigFan), so its
+// tips are the regular tips scaled by the same factor.
+const BIGFAN_BUILD_SCALE = 1.8461538;
+
+function scaledTips(config: PropTipConfig, scale: number): PropTipConfig {
+  return {
+    points: config.points.map((point) => ({
+      dx: point.dx * scale,
+      dy: point.dy * scale,
+    })),
+  };
+}
+
+function fanBuildTables(
+  propType: "fan" | "bigfan",
+  scale: number
+): Record<string, PropTipConfig> {
+  const fire = scaledTips(FAN_FIRE_TIP_POINTS, scale);
+  const day = scaledTips(FAN_DAY_TIP_POINTS, scale);
+  return {
+    [`${propType}__fire_bare`]: fire,
+    [`${propType}__fire_covered`]: fire,
+    [`${propType}__lotus`]: scaledTips(FAN_LOTUS_TIP_POINTS, scale),
+    [`${propType}__flat-grip`]: scaledTips(FAN_FLAT_GRIP_TIP_POINTS, scale),
+    [`${propType}__moon`]: scaledTips(FAN_MOON_TIP_POINTS, scale),
+    [`${propType}__day_black_bare`]: day,
+    [`${propType}__day_black_covered`]: day,
+    [`${propType}__day_white_bare`]: day,
+    [`${propType}__day_white_covered`]: day,
+  };
+}
+
+/**
+ * Tip points keyed by renderer identity (resolvePropRenderKey) rather than
+ * notation prop type. A render key that is absent here resolves to its
+ * notation table, so plain props and unknown builds behave as before.
+ */
+export const PROP_RENDER_KEY_TIP_POINTS: Record<string, PropTipConfig> = {
+  ...fanBuildTables("fan", 1),
+  ...fanBuildTables("bigfan", BIGFAN_BUILD_SCALE),
+};
+
 // Callback injection avoids a circular dependency on the feature layer.
 type TipPointOverrideFn = (propType: string) => PropTipConfig | null;
 let overrideProvider: TipPointOverrideFn | null = null;
@@ -493,11 +632,14 @@ export const PROP_TIP_POINTS: Record<string, PropTipConfig> = {
   // Quiad
   quiad: QUIAD_TIP_POINTS,
 
-  // Contact ball family
+  // Contact ball family. A single ball sits in the hand, so nothing trails
+  // from it. The double contact ball is two-ended (TWO_ENDED_PROPS in
+  // prop-tip-ends.ts): the tracked points are the two ball centres, authored
+  // at 75 / 225 in the 300-wide box and 150 / 450 in the 600-wide one.
   contactball: EMPTY_TIP_POINTS,
   bigcontactball: EMPTY_TIP_POINTS,
-  doublecontactball: EMPTY_TIP_POINTS,
-  bigdoublecontactball: EMPTY_TIP_POINTS,
+  doublecontactball: DOUBLECONTACTBALL_TIP_POINTS,
+  bigdoublecontactball: BIGDOUBLECONTACTBALL_TIP_POINTS,
 
   // Torch family
   torch: TORCH_TIP_POINTS,
@@ -509,26 +651,191 @@ export const PROP_TIP_POINTS: Record<string, PropTipConfig> = {
 
 export const DEFAULT_TIP_POINTS: PropTipConfig = STAFF_TIP_POINTS;
 
+const RENDER_KEY_SEPARATOR = "__";
+const MODEL_RENDER_KEY_SUFFIX = "__model";
+
+/** The notation prop type behind a render key (`fan__lotus` -> `fan`). */
+function baseKeyOf(key: string): string {
+  const separator = key.indexOf(RENDER_KEY_SEPARATOR);
+  return separator === -1 ? key : key.slice(0, separator);
+}
+
+// ---------------------------------------------------------------------------
+// Model sprites. A "3D model" look draws a baked capture on the same
+// grip-centred box as the notation glyph, so the notation table applies —
+// except where the capture paints short of the notation reach along the prop
+// axis. Then an axial prop's tips are pulled in to the painted extent so
+// flames and trails attach to the sprite that is actually on screen. Tips are
+// never pushed out past the notation reach: several tables deliberately sit
+// inside the paint (wick centres, poi heads).
+// ---------------------------------------------------------------------------
+
+/** Painted reach is within this fraction of the box half-width: keep the table. */
+const MODEL_REACH_TOLERANCE = 0.05;
+
 /**
- * Look up tip points for a prop type. Checks override provider first,
- * then hardcoded registry, then falls back to staff-like endpoints.
+ * Painted reach below this fraction of the half-width means the capture has
+ * no end on that side (a club held at its knob paints nothing past the hand).
+ * Its tips are dropped rather than pulled in onto the hand.
+ */
+const MODEL_REACH_DROP = 0.25;
+
+function isAxialTable(config: PropTipConfig): boolean {
+  return (
+    config.points.length > 0 && config.points.every((point) => point.dy === 0)
+  );
+}
+
+/**
+ * True when an axial prop's capture paints on the -x side of the hand. Every
+ * tip table puts a one-ended prop's business end at +x, so the animation
+ * canvas rotates such sprites 180 degrees when it draws them (svg-generator)
+ * and the derived tips below assume the rotated sprite. The decision is made
+ * from the painted geometry alone: a capture of a two-ended notation prop can
+ * still be one-sided (the big club model is a club held at its knob).
+ */
+export function modelSpriteFacesAwayFromTips(
+  propType: string,
+  entry: PropModelSpriteEntry | undefined = PROP_MODEL_SPRITES[
+    propType.toLowerCase()
+  ]
+): boolean {
+  if (!entry?.bounds) return false;
+  const base = PROP_TIP_POINTS[baseKeyOf(propType.toLowerCase())];
+  if (!base || !isAxialTable(base)) return false;
+  const paintedCentre = entry.bounds.x + entry.bounds.width / 2;
+  return paintedCentre < entry.width / 2 - entry.width * 0.1;
+}
+
+const modelTipCache = new Map<string, PropTipConfig>();
+
+function modelSpriteTipPoints(key: string): PropTipConfig | null {
+  const cached = modelTipCache.get(key);
+  if (cached) return cached;
+  const baseKey = baseKeyOf(key);
+  const base = PROP_TIP_POINTS[baseKey];
+  const entry = PROP_MODEL_SPRITES[baseKey];
+  if (!base || !entry?.bounds || !isAxialTable(base)) return null;
+
+  const half = entry.width / 2;
+  const facesAway = modelSpriteFacesAwayFromTips(baseKey, entry);
+  // Reach on each side of the hand as the sprite is drawn (after the
+  // renderer's 180 degree correction for away-facing captures).
+  const paintedLeft = half - entry.bounds.x;
+  const paintedRight = entry.bounds.x + entry.bounds.width - half;
+  const reachPositive = facesAway ? paintedLeft : paintedRight;
+  const reachNegative = facesAway ? paintedRight : paintedLeft;
+  const scalePositive = Math.min(1, reachPositive / half);
+  const scaleNegative = Math.min(1, reachNegative / half);
+  const needsPositive =
+    base.points.some((point) => point.dx > 0) &&
+    scalePositive < 1 - MODEL_REACH_TOLERANCE;
+  const needsNegative =
+    base.points.some((point) => point.dx < 0) &&
+    scaleNegative < 1 - MODEL_REACH_TOLERANCE;
+  if (!needsPositive && !needsNegative) {
+    modelTipCache.set(key, base);
+    return base;
+  }
+  const scaled: PropTipConfig = {
+    points: base.points
+      .filter((point) =>
+        point.dx > 0
+          ? !needsPositive || scalePositive >= MODEL_REACH_DROP
+          : point.dx < 0
+            ? !needsNegative || scaleNegative >= MODEL_REACH_DROP
+            : true
+      )
+      .map((point) => ({
+        dx:
+          point.dx > 0 && needsPositive
+            ? point.dx * scalePositive
+            : point.dx < 0 && needsNegative
+              ? point.dx * scaleNegative
+              : point.dx,
+        dy: point.dy,
+      })),
+  };
+  // A capture with no end on either side has nothing to attach to; fall
+  // back to the notation table rather than an empty one.
+  const result = scaled.points.length > 0 ? scaled : base;
+  modelTipCache.set(key, result);
+  return result;
+}
+
+function tableFor(key: string): PropTipConfig | null {
+  const renderKeyed = PROP_RENDER_KEY_TIP_POINTS[key];
+  if (renderKeyed) return renderKeyed;
+  if (key.endsWith(MODEL_RENDER_KEY_SUFFIX)) {
+    const model = modelSpriteTipPoints(key);
+    if (model) return model;
+  }
+  return null;
+}
+
+export type TipPointSource = "override" | "render-key" | "base" | "default";
+
+export interface TipPointResolution {
+  /** The key as asked for, lower-cased. */
+  key: string;
+  /** The key whose table or override answered, or null for the staff default. */
+  resolvedKey: string | null;
+  source: TipPointSource;
+}
+
+/**
+ * Where getTipPoints(key) gets its answer. Order: an override for the exact
+ * key, the render-key table (fan builds, model sprites), an override for the
+ * notation type behind the key, the notation table, then the staff default.
+ * A render-key table outranks a notation override because the override was
+ * tuned against the notation artwork, not this build.
+ */
+export function describeTipPointResolution(
+  propType: string | null | undefined
+): TipPointResolution {
+  if (!propType) return { key: "", resolvedKey: null, source: "default" };
+  const key = propType.toLowerCase();
+  const baseKey = baseKeyOf(key);
+  if (overrideProvider?.(key)) {
+    return { key, resolvedKey: key, source: "override" };
+  }
+  if (tableFor(key)) {
+    return { key, resolvedKey: key, source: "render-key" };
+  }
+  if (baseKey !== key && overrideProvider?.(baseKey)) {
+    return { key, resolvedKey: baseKey, source: "override" };
+  }
+  if (PROP_TIP_POINTS[baseKey]) {
+    return { key, resolvedKey: baseKey, source: "base" };
+  }
+  return { key, resolvedKey: null, source: "default" };
+}
+
+/**
+ * Look up tip points for a prop type or render key. See
+ * describeTipPointResolution for the precedence.
  */
 export function getTipPoints(
   propType: string | null | undefined
 ): PropTipConfig {
   if (!propType) return DEFAULT_TIP_POINTS;
   const key = propType.toLowerCase();
-  if (overrideProvider) {
-    const override = overrideProvider(key);
-    if (override) return override;
+  const override = overrideProvider?.(key);
+  if (override) return override;
+  const table = tableFor(key);
+  if (table) return table;
+  const baseKey = baseKeyOf(key);
+  if (baseKey !== key) {
+    const baseOverride = overrideProvider?.(baseKey);
+    if (baseOverride) return baseOverride;
   }
-  return PROP_TIP_POINTS[key] ?? DEFAULT_TIP_POINTS;
+  return PROP_TIP_POINTS[baseKey] ?? DEFAULT_TIP_POINTS;
 }
 
 /**
- * Look up baseline tip points for a prop type, bypassing any registered
- * override provider. Used by the mandala geometry calculator, which traces
- * hand-path geometry using canonical prop dimensions rather than
+ * Look up baseline tip points for a prop type or render key, bypassing any
+ * registered override provider. Used by the mandala geometry calculator,
+ * which traces hand-path geometry using canonical prop dimensions rather than
  * effects-lab custom tip positions.
  */
 export function getTipPointsBaseline(
@@ -536,5 +843,22 @@ export function getTipPointsBaseline(
 ): PropTipConfig {
   if (!propType) return DEFAULT_TIP_POINTS;
   const key = propType.toLowerCase();
-  return PROP_TIP_POINTS[key] ?? DEFAULT_TIP_POINTS;
+  return tableFor(key) ?? PROP_TIP_POINTS[baseKeyOf(key)] ?? DEFAULT_TIP_POINTS;
+}
+
+/**
+ * Compact identity of the points a key resolves to right now. Two keys with
+ * the same signature put effects at the same prop-local positions; the fire
+ * frame cache keys on it so a look change never replays flames recorded for
+ * other artwork.
+ */
+export function tipPointSignature(
+  propType: string | null | undefined
+): string {
+  const points = getTipPoints(propType).points;
+  let signature = "";
+  for (const point of points) {
+    signature += `${point.dx.toFixed(2)},${point.dy.toFixed(2)};`;
+  }
+  return signature;
 }

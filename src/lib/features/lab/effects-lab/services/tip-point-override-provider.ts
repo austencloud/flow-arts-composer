@@ -1,4 +1,8 @@
-import { PROP_TIP_POINTS, type PropTipConfig } from "$lib/shared/animation-engine/domain/types/prop-tip-points";
+import {
+  PROP_RENDER_KEY_TIP_POINTS,
+  PROP_TIP_POINTS,
+  type PropTipConfig,
+} from "$lib/shared/animation-engine/domain/types/prop-tip-points";
 import type { EffectPoint } from "./types";
 import type { EffectPointsPersister } from "./effect-points-persister";
 import type { TrailPointConfig } from "$lib/shared/animation-engine/domain/types/trail-point-types";
@@ -55,7 +59,10 @@ export class TipPointOverrideProvider {
 
   getOverriddenTypes(): string[] {
     const types: string[] = [];
-    for (const key of Object.keys(PROP_TIP_POINTS)) {
+    for (const key of [
+      ...Object.keys(PROP_TIP_POINTS),
+      ...Object.keys(PROP_RENDER_KEY_TIP_POINTS),
+    ]) {
       if (this.persister.getPoints(key) !== null) {
         types.push(key);
       }
@@ -93,8 +100,14 @@ export class TipPointOverrideProvider {
     this.saveOverride(propType, config);
   }
 
+  /**
+   * Only points the lab stored count as the user's default. A published
+   * default is not one (hasUserDefault agrees), so a reset with nothing
+   * stored lands on the code table, not on the published copy of it.
+   */
   getUserDefault(propType: string): PropTipConfig | null {
-    return this.getOverride(propType);
+    const stored = this.persister.getPoints(propType.toLowerCase());
+    return stored ? { points: stored.map((p) => ({ dx: p.dx, dy: p.dy })) } : null;
   }
 
   hasUserDefault(propType: string): boolean {

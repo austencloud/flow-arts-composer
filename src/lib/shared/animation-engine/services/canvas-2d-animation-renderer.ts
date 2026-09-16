@@ -39,6 +39,7 @@ export type {
 import { spotlightFactor } from "$lib/shared/sequence-viewer/tunnel/tunnel-prop-colors";
 import { Canvas2DApplicationManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-application-manager";
 import { Canvas2DImageLoader } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-image-loader";
+import { propTextureMatchesRequest } from "$lib/shared/animation-engine/services/canvas2d/prop-texture-match";
 import { Canvas2DTrailRenderer } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-trail-renderer";
 import { Canvas2DFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-fade-manager";
 import { Canvas2DGridFadeManager } from "$lib/shared/animation-engine/services/canvas2d/canvas-2d-grid-fade-manager";
@@ -552,8 +553,11 @@ export class Canvas2DAnimationRenderer {
           scaleFactor: gridScaleFactor,
         };
         const loadedLeftType = this.imageLoader.getLeftPropType();
-        const leftTextureMatchesRequest =
-          params.leftPropType?.toLowerCase() === loadedLeftType?.toLowerCase();
+        const leftTextureMatchesRequest = propTextureMatchesRequest({
+          loaded: loadedLeftType,
+          requested: this.imageLoader.getRequestedLeftPropType(),
+          paramsPropType: params.leftPropType,
+        });
         const leftCrossfadeActive =
           previousLeftProp != null && !leftCrossfade.isComplete;
         const leftSharedTransform =
@@ -712,9 +716,11 @@ export class Canvas2DAnimationRenderer {
           scaleFactor: gridScaleFactor,
         };
         const loadedRightType = this.imageLoader.getRightPropType();
-        const rightTextureMatchesRequest =
-          params.rightPropType?.toLowerCase() ===
-          loadedRightType?.toLowerCase();
+        const rightTextureMatchesRequest = propTextureMatchesRequest({
+          loaded: loadedRightType,
+          requested: this.imageLoader.getRequestedRightPropType(),
+          paramsPropType: params.rightPropType,
+        });
         const rightCrossfadeActive =
           previousRightProp != null && !rightCrossfade.isComplete;
         const rightSharedTransform =
@@ -1207,6 +1213,18 @@ export class Canvas2DAnimationRenderer {
 
   getRightPropDimensions(): { width: number; height: number } {
     return this.imageLoader.getRightPropDimensions();
+  }
+
+  /**
+   * Render keys of the sprites currently on the canvas. Effects resolve tip
+   * points from these so flames follow the painted artwork (a fan build, a
+   * model sprite) rather than the notation glyph.
+   */
+  getLoadedPropRenderKeys(): { left: string | null; right: string | null } {
+    return {
+      left: this.imageLoader.getLeftPropType(),
+      right: this.imageLoader.getRightPropType(),
+    };
   }
 
   destroy(): void {
