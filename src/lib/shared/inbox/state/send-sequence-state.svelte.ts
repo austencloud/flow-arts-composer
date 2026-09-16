@@ -17,6 +17,57 @@ export function openSendSequenceSheet(p: SequenceSharePayload): void {
 }
 
 /**
+ * A sequence share that lives outside the inbox drawer: the viewer's send
+ * mode holds one of these while the person chooses recipients. `payload` is
+ * what the send state queues; the card render lands beside it the same way it
+ * lands in the drawer's sheet, and a render that fails settles `pending` so
+ * the stage stops waiting.
+ */
+export interface SequenceSendSession {
+  readonly payload: SequenceSharePayload;
+  readonly previewBlob: Blob | null;
+  readonly previewPending: boolean;
+}
+
+/**
+ * Prepares a sequence share for a host that is not the inbox drawer. Same
+ * guest gate and the same card render as `openSendSequenceSheetWithCard`;
+ * returns null when the sign-up drawer took over instead.
+ */
+export function createSequenceSendSession(
+  sequence: SequenceData,
+  renderCard: (sequence: SequenceData) => Promise<Blob>
+): SequenceSendSession | null {
+  if (!authState.isFullAccount) {
+    authDrawerState.show("signup", "share-sequence");
+    return null;
+  }
+  inboxState.requestHost();
+  const payload = buildSequenceSharePayload(sequence);
+  let previewBlob = $state.raw<Blob | null>(null);
+  let previewPending = $state(true);
+  void renderCard(sequence).then(
+    (blob) => {
+      previewBlob = blob;
+      previewPending = false;
+    },
+    (error) => {
+      console.error("[sendSequence] Card preview render failed:", error);
+      previewPending = false;
+    }
+  );
+  return {
+    payload,
+    get previewBlob() {
+      return previewBlob;
+    },
+    get previewPending() {
+      return previewPending;
+    },
+  };
+}
+
+/**
  * Opens the send sheet at once and drops a freshly drawn Choreo Card into its
  * preview when the render lands. This is the same card the Create module's
  * Send hands the sheet. Callers without a prepared card used to guess a

@@ -52,7 +52,7 @@ describe("AnimationVisibilityStateManager (ephemeral)", () => {
   it("starts from defaults even when persisted settings exist", () => {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ effortPreset: "punch", gridMode: "none" }),
+      JSON.stringify({ effortPreset: "punch", gridMode: "none" })
     );
 
     const vm = new AnimationVisibilityStateManager({ ephemeral: true });
@@ -60,11 +60,14 @@ describe("AnimationVisibilityStateManager (ephemeral)", () => {
     expect(vm.getEffortPreset()).toBe("linear");
     expect(vm.getGridMode()).toBe("8point");
     expect(vm.getVisibility("elementalGlyph")).toBe(false);
+    expect(vm.getVisibility("propElementalGlyph")).toBe(false);
   });
 
   it("keeps the elemental glyph toggle isolated and observable", () => {
     const globalVm = new AnimationVisibilityStateManager();
-    const ephemeralVm = new AnimationVisibilityStateManager({ ephemeral: true });
+    const ephemeralVm = new AnimationVisibilityStateManager({
+      ephemeral: true,
+    });
     let notified = 0;
     ephemeralVm.registerObserver(() => notified++);
 
@@ -78,21 +81,24 @@ describe("AnimationVisibilityStateManager (ephemeral)", () => {
   it("migrates older persisted settings with the elemental glyph off", () => {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ gridMode: "8point", props: true }),
+      JSON.stringify({ gridMode: "8point", props: true })
     );
 
     const vm = new AnimationVisibilityStateManager();
 
     expect(vm.getVisibility("elementalGlyph")).toBe(false);
+    expect(vm.getVisibility("propElementalGlyph")).toBe(false);
     vm.setVisibility("elementalGlyph", true);
     expect(
-      JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}").elementalGlyph,
+      JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}").elementalGlyph
     ).toBe(true);
   });
 
   it("keeps ephemeral and persistent instances fully independent", () => {
     const globalVm = new AnimationVisibilityStateManager();
-    const ephemeralVm = new AnimationVisibilityStateManager({ ephemeral: true });
+    const ephemeralVm = new AnimationVisibilityStateManager({
+      ephemeral: true,
+    });
 
     ephemeralVm.setEffortPreset("elastic");
     expect(globalVm.getEffortPreset()).toBe("linear");
@@ -107,7 +113,9 @@ describe("AnimationVisibilityStateManager (ephemeral)", () => {
 
   it("notifies its own observers, not the other instance's", () => {
     const globalVm = new AnimationVisibilityStateManager();
-    const ephemeralVm = new AnimationVisibilityStateManager({ ephemeral: true });
+    const ephemeralVm = new AnimationVisibilityStateManager({
+      ephemeral: true,
+    });
 
     let globalNotified = 0;
     let ephemeralNotified = 0;
@@ -122,29 +130,49 @@ describe("AnimationVisibilityStateManager (ephemeral)", () => {
 });
 
 describe("buildPillSpecs membership (host-optional Export pill)", () => {
-  const ORDER = ["effects", "props", "effort", "playback", "display", "export"] as const;
+  const ORDER = [
+    "effects",
+    "props",
+    "effort",
+    "playback",
+    "display",
+    "export",
+  ] as const;
 
   it("omitted keys produce no pill — a host without export gets no Export pill", () => {
     const specs = buildPillSpecs(
       {
-        effects: { icon: "fa-wand-magic-sparkles", label: "Effects", summary: "" },
+        effects: {
+          icon: "fa-wand-magic-sparkles",
+          label: "Effects",
+          summary: "",
+        },
         effort: { label: "Effort", summary: "" },
         playback: { icon: "fa-play", label: "Playback", summary: "" },
         display: { icon: "fa-eye", label: "Display", summary: "" },
       },
-      ORDER,
+      ORDER
     );
 
-    expect(specs.map((p) => p.id)).toEqual(["effects", "effort", "playback", "display"]);
+    expect(specs.map((p) => p.id)).toEqual([
+      "effects",
+      "effort",
+      "playback",
+      "display",
+    ]);
   });
 
   it("included export key produces the pill in host order", () => {
     const specs = buildPillSpecs(
       {
-        effects: { icon: "fa-wand-magic-sparkles", label: "Effects", summary: "" },
+        effects: {
+          icon: "fa-wand-magic-sparkles",
+          label: "Effects",
+          summary: "",
+        },
         export: { icon: "fa-sliders", label: "Export", summary: "" },
       },
-      ORDER,
+      ORDER
     );
 
     expect(specs.map((p) => p.id)).toEqual(["effects", "export"]);

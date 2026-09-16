@@ -41,7 +41,10 @@
     onSettingChange,
   }: {
     showMotionVisibility?: boolean;
-    sequence?: { word?: string | null; steps?: ReadonlyArray<{ letter?: string | null }> | null } | null;
+    sequence?: {
+      word?: string | null;
+      steps?: ReadonlyArray<{ letter?: string | null }> | null;
+    } | null;
     propType?: string;
     fill?: boolean;
     showSequenceMarks?: boolean;
@@ -60,6 +63,7 @@
   let gridVisible = $state(vm.isGridVisible());
   let tkaGlyph = $state(vm.getVisibility("tkaGlyph"));
   let elementalGlyph = $state(vm.getVisibility("elementalGlyph"));
+  let propElementalGlyph = $state(vm.getVisibility("propElementalGlyph"));
   let stepNumbers = $state(vm.getVisibility("stepNumbers"));
   let propsVisibilityEnabled = $state(vm.getVisibility("props"));
   const propsVisible = $derived(
@@ -84,6 +88,7 @@
     gridVisible = vm.isGridVisible();
     tkaGlyph = vm.getVisibility("tkaGlyph");
     elementalGlyph = vm.getVisibility("elementalGlyph");
+    propElementalGlyph = vm.getVisibility("propElementalGlyph");
     stepNumbers = vm.getVisibility("stepNumbers");
     propsVisibilityEnabled = vm.getVisibility("props");
     wordHeader = vm.getVisibility("wordHeader");
@@ -209,6 +214,13 @@
       toggle: () => vm.toggleVisibility("elementalGlyph"),
     },
     {
+      id: "propElementalGlyph",
+      label: "Prop TnD",
+      preview: "element",
+      active: () => propElementalGlyph,
+      toggle: () => vm.toggleVisibility("propElementalGlyph"),
+    },
+    {
       id: "stepNumbers",
       label: "Step #",
       preview: "stepNumber",
@@ -305,7 +317,8 @@
       // The breath between the two groups is a row gap when the boundary falls
       // on a row edge, and a column gap when one row holds everything.
       const artW =
-        (width - gapX * (cols - 1) - (rows === 1 ? GROUP_GAP : 0)) / cols - padX;
+        (width - gapX * (cols - 1) - (rows === 1 ? GROUP_GAP : 0)) / cols -
+        padX;
       const artH =
         (height - gapY * (rows - 1) - (rows > 1 ? GROUP_GAP : 0)) / rows -
         chromeY;

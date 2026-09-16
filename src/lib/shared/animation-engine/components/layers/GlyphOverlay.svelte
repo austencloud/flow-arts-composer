@@ -25,6 +25,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   import ElementalGlyph from "$lib/shared/pictograph/shared/components/ElementalGlyph.svelte";
   import { getLetterDimensions } from "$lib/shared/pictograph/tka-glyph/components/TKAGlyph.svelte";
   import { deriveTnDFromPictograph } from "$lib/shared/pictograph/shared/domain/utils/tnd-deriver";
+  import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
   import { DURATION } from "$lib/shared/transitions/transitions";
   import { motionDuration } from "$lib/shared/transitions/motion";
   import type { ElementalType } from "$lib/shared/pictograph/shared/domain/enums/pictograph-enums";
@@ -45,6 +46,7 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     // Visibility
     tkaGlyphVisible = true,
     elementalGlyphVisible = false,
+    propElementalGlyphVisible = false,
     propElementalType = null,
     stepNumbersVisible = true,
     // Start→end position indicator (α/β/γ) centered at the top. Educational
@@ -68,6 +70,8 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
     stepData?: PictographData | null;
     tkaGlyphVisible?: boolean;
     elementalGlyphVisible?: boolean;
+    propElementalGlyphVisible?: boolean;
+    /** Host-supplied prop relationship; derived from the step when absent. */
     propElementalType?: ElementalType | null;
     stepNumbersVisible?: boolean;
     positionGlyphVisible?: boolean;
@@ -143,7 +147,11 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
   // The artwork itself is keyed by element. Consecutive steps that share the
   // same symbol stay visually steady; an actual symbol change crossfades once.
   const elementalKey = $derived(elementalInfo.elementalType);
-  const propElementalKey = $derived(propElementalType);
+  // The props' own relationship, classified from this step's spin and phase.
+  const effectivePropElementalType = $derived(
+    propElementalType ?? derivePropElementalTypeForStep(stepData)
+  );
+  const propElementalKey = $derived(effectivePropElementalType);
 
   // Current step's start/end grid positions (α/β/γ) for the PositionGlyph.
   // StepData carries both; StartPositionData/PictographData without them just
@@ -243,10 +251,10 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
       {/key}
     {/if}
 
-    <!-- The hand relationship owns the bottom-right corner. Hosts with a fully
-         derived prop relationship can place its sister in the opposite corner
-         without adding another label to every pictograph. -->
-    {#if elementalGlyphVisible && propElementalType}
+    <!-- The hand relationship owns the bottom-right corner; the prop
+         relationship sits top-right inside its dashed spin ring, behind its
+         own toggle. -->
+    {#if propElementalGlyphVisible && effectivePropElementalType}
       {#key propElementalKey}
         <g
           class="prop-elemental-glyph-transition"
@@ -261,10 +269,12 @@ CSS class .dark-mode triggers styling, with fallback to :global(:root.dark).
           }}
         >
           <ElementalGlyph
-            elementalType={propElementalType}
+            elementalType={effectivePropElementalType}
             visible={true}
             corner="top-right"
-            ariaLabel={`Prop timing and direction element: ${propElementalType}`}
+            variant="prop"
+            {darkMode}
+            ariaLabel={`Prop timing and direction element: ${effectivePropElementalType}`}
           />
         </g>
       {/key}

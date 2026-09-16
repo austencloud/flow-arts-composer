@@ -107,6 +107,7 @@
           showNonRadialPoints: false,
           showTnD: false,
           showElemental: false,
+          showPropTnD: false,
           showPositions: false,
           showHandColorKey: true,
           showMandala: COMPOSER_CARD_EXPORT_PROFILE_V1.showMandala,

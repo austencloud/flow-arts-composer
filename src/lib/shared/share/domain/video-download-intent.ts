@@ -31,12 +31,15 @@ export function videoDownloadSettingsKey(value: {
   repeats: number;
   quality: string;
   is3DExport: boolean;
+  /** The chosen opener image; omitted by hosts whose renders cannot take one. */
+  opener?: string;
 }): string {
   return [
     value.resolution,
     value.fps,
     value.repeats,
     value.is3DExport ? value.quality : "",
+    value.opener ?? "",
   ].join("|");
 }
 

@@ -498,6 +498,7 @@ export class LayerCompositor {
         showRightMotion: options.showRightMotion,
         showTnD: options.showTnD,
         showElemental: options.showElemental,
+        showPropTnD: options.showPropTnD,
         showPositions: options.showPositions,
         handPathMode: options.handPathMode,
       },

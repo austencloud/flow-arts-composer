@@ -13,6 +13,7 @@
   import ProgressRing from "$lib/shared/components/loading/ProgressRing.svelte";
   import { resolvePreviewCellRender } from "../services/preview-cell-render-contract";
   import { ensureCardFonts } from "$lib/shared/render/services/gelasio-fonts";
+  import { derivePropElementalTypeForStep } from "$lib/shared/shape-matrix/domain/prop-relationship";
 
   let {
     live,
@@ -91,6 +92,10 @@
       .filter((location): location is GridLocation => !!location)
   );
   const step = $derived(live.data as Partial<StepData>);
+  // Derived even while the chip is off so the glyph stays mounted and fades.
+  const propElementalType = $derived(
+    derivePropElementalTypeForStep(live.data)
+  );
   // Diamond and box share one loaded SVG; rotating it does not emit onGridReady.
   const gridMode = $derived(
     prepared?._prepared?.gridMode === GridMode.SKEWED ? "skewed" : "diamond"
@@ -144,6 +149,8 @@
       {poseOnly}
       showTnD={options.showTnD}
       showElemental={options.showElemental}
+      {propElementalType}
+      showPropTnD={options.showPropTnD}
       showPositions={options.showPositions}
       leftReversal={!!step.leftReversal && options.showLeftMotion !== false}
       rightReversal={!!step.rightReversal && options.showRightMotion !== false}
