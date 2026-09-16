@@ -1,3 +1,4 @@
+import { untrack } from "svelte";
 import type { SequenceData } from "$lib/shared/foundation/domain/models/sequence-data";
 import type { HandLabeling } from "$lib/shared/video-collaboration/domain/hand-labeling";
 import {
@@ -31,19 +32,24 @@ export function createHandLabeledCard(
   inputs: { getSequence(): SequenceData; getLabeling(): HandLabeling | null },
   resolve: HandLabeledSequenceResolver = sequenceForHandLabeling
 ): HandLabeledCard {
-  let held = $state<Held | null>(null);
-  let pending = $state(false);
+  // Raw: the pair is compared by object identity against the source, and a deep
+  // proxy would never be identical to the sequence the caller handed in.
+  let held = $state.raw<Held | null>(null);
   $effect(() => {
     const source = inputs.getSequence();
     const labeling = inputs.getLabeling();
+    // Untracked: the effect writes `held`, and each resolve assigns a fresh
+    // pair. Tracking it would re-run the effect after every resolve, forever.
+    const current = untrack(() => held);
     if (!labeling) {
       held = null;
-      pending = false;
       return;
     }
-    if (held && held.source !== source) held = null;
+    if (current && current.source === source && current.labeling === labeling) {
+      return;
+    }
+    if (current && current.source !== source) held = null;
     let cancelled = false;
-    pending = true;
     resolve(source, labeling)
       .then((sequence) => {
         if (!cancelled) held = { source, labeling, sequence };
@@ -53,13 +59,16 @@ export function createHandLabeledCard(
           "[hand-labeled-card] Could not label the notation:",
           error
         );
-      })
-      .finally(() => {
-        if (!cancelled) pending = false;
       });
     return () => {
       cancelled = true;
     };
+  });
+  const pending = $derived.by(() => {
+    const labeling = inputs.getLabeling();
+    if (!labeling) return false;
+    const source = inputs.getSequence();
+    return !(held && held.source === source && held.labeling === labeling);
   });
   return {
     get sequence() {
