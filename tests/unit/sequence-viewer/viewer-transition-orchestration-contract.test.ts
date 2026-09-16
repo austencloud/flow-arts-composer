@@ -623,7 +623,10 @@ describe("Sequence Viewer transition orchestration contract", () => {
     expect(workspacePanels).toContain("viewer-motion-stage-layer");
     expect(shell).toContain("performance-stage-layer");
     expect(shell).toContain("performance-inspector-layer");
-    expect(shell).toContain("takeoverActive={performanceEditorActive}");
+    // Send mode shares the takeover path with the performance editor, so the
+    // shell hands the panels one derived flag that covers both.
+    expect(shell).toContain("takeoverActive={workspaceTakeoverActive}");
+    expect(shell).toContain("performanceEditorActive || share.sendModeActive");
     expect(shellLayoutState).toContain("showVideoGallery ||");
     // Performances owns its own inspector profile. The gap between its width
     // and the effects inspector width is the seam travel Gate 5 animates.
